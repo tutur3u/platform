@@ -26,7 +26,7 @@ test('emitted ai Worker applies security and personalized cache policy', {
       );
     },
   });
-  for (const host of ['ai.tuturuuu.com', 'ai-staging.tuturuuu.com']) {
+  for (const host of ['ai.tuturuuu.com', 'ai.staging.tutur3u.com']) {
     for (const path of ['/api/build-info', '/api/private', '/vi']) {
       const response = await worker.request(path, { host });
       if (path === '/api/build-info') assert.equal(response.status, 200);

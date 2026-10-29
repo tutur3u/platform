@@ -3892,6 +3892,11 @@
       "audio_minutes": "Audio minutes submitted",
       "capturing": "Transcribing live",
       "cost": "Estimated Gemini cost",
+      "credits_daily_limit": "Today's AI credit limit has been reached. Start again tomorrow or upgrade your plan.",
+      "credits_exhausted": "Your personal AI credit balance is used up. Top up in AI Hub, then start again.",
+      "credits_model_not_on_plan": "Your AI plan does not include the transcription model.",
+      "credits_stopped": "Transcription stopped because AI credits are unavailable.",
+      "credits_unavailable": "Check your AI Hub balance, then start again.",
       "decisions": "Decisions",
       "empty": "No transcript yet.",
       "failed": "Meeting AI could not complete this request. Your saved transcript is still available.",
@@ -4525,6 +4530,9 @@
       "sign_in": "Sign in to continue",
       "transcription_hint": "Each transcription session lasts up to 3 hours. Start a new session to continue taking notes during a longer call."
     },
+    "recording_permissions": {
+      "denied": "Only the recording creator or a workspace admin can stop this recording. The recording is still active."
+    },
     "transcription": {
       "empty": "This recording contains no audio to transcribe. The saved recording remains available.",
       "too_large": "This recording is too large for inline transcription. The saved recording remains available.",
@@ -4582,6 +4590,8 @@
     "participants": "Participants",
     "registered_users": "Registered users",
     "select-time-zone": "Select time zone",
+    "sign_in_to_create_plan": "Sign in to create a plan",
+    "sign_in_to_create_plan_desc": "Creating a plan requires a signed-in Tuturuuu account. Anyone with a public plan link can still join without signing in.",
     "smart_scheduling": "Smart Scheduling",
     "something_went_wrong": "Something went wrong",
     "soonest-time-to-meet": "Soonest time",

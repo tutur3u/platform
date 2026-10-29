@@ -4590,6 +4590,7 @@
     },
     "feature": "Tính năng và phạm vi",
     "features": {
+      "abuse-guard_0": "Kho chống lạm dụng",
       "ai_0": "Trò chuyện AI và truy cập mô hình",
       "ai_1": "Câu lệnh, tác tử và bộ dữ liệu",
       "ai_2": "Thử nghiệm và lượt chạy",
@@ -8647,6 +8648,12 @@
     "workspaces": "Không gian làm việc"
   },
   "integrations-page": {
+    "discord-disconnect-cancel": "Hủy",
+    "discord-disconnect-confirm": "Ngắt kết nối và xóa liên kết",
+    "discord-disconnect-description": "Thao tác này sẽ gỡ kết nối giữa không gian làm việc và máy chủ Discord, đồng thời xóa vĩnh viễn mọi liên kết thành viên Discord của máy chủ này. Kết nối lại sẽ không khôi phục chúng; bạn cần liên kết lại các thành viên. Bot vẫn ở trong máy chủ Discord nhưng sẽ không phản hồi lệnh.",
+    "discord-disconnect-pending": "Đang ngắt kết nối...",
+    "discord-disconnect-title": "Ngắt kết nối tích hợp Discord",
+    "discord-disconnect-trigger": "Ngắt kết nối tích hợp",
     "sepay-connected-description": "SePay đã được kết nối thành công. Việc đồng bộ tài khoản ngân hàng và cấu hình webhook đã sẵn sàng để kiểm tra trong không gian làm việc này.",
     "sepay-connected-title": "SePay đã được kết nối",
     "sepay-error-description": "SePay chưa thể hoàn tất kết nối. Hãy kiểm tra trạng thái tích hợp và thử lại từ không gian làm việc này.",
@@ -8872,9 +8879,9 @@
         "capabilities": {
           "contextAware": "Hiểu ngữ cảnh",
           "learning": "Học liên tục",
-          "proactive": "Chủ động"
+          "proactive": "Làm việc thực tế"
         },
-        "description": "Mira là AI thực sự hiểu bạn. Cô ấy lên kế hoạch, suy nghĩ và hành động thay bạn—đồng bộ lịch, mục tiêu và tin nhắn để gợi ý đúng lúc bạn cần.",
+        "description": "Mira là trợ lý AI ngay trong Tuturuuu. Bạn chỉ cần nhờ, Mira sẽ sắp xếp ngày làm việc, xếp task vào lịch, soạn thư trả lời hay ghi lại chi tiêu, dựa trên những gì đã có trong workspace của bạn.",
         "prompts": [
           "Đặt lịch standup 9h sáng mai",
           "Tóm tắt việc tuần này",
@@ -8943,7 +8950,7 @@
         "role": "Cầu nối con người"
       },
       "mira": {
-        "description": "Mira là JARVIS mà chúng ta từng mơ. Cô ấy lên kế hoạch, suy nghĩ và hành động thay bạn—đồng bộ lịch, mục tiêu, tài chính và tin nhắn để gợi ý chủ động thay vì chỉ nhắc thụ động.",
+        "description": "Mira là trợ lý AI ngay trong Tuturuuu. Mira làm việc cùng task, lịch, email, tài chính và thời gian của bạn: bạn nhờ, Mira lên kế hoạch, xếp lịch, soạn thư và ghi chép giúp bạn.",
         "title": "Gặp Mira - Trợ Lý AI"
       },
       "nova": {
@@ -8995,7 +9002,7 @@
           "tasks": "Xem task"
         },
         "status": "Online",
-        "subtitle": "Trợ lý AI chủ động của bạn",
+        "subtitle": "Trợ lý AI cho công việc của bạn",
         "title": "Mira - Trợ Lý AI",
         "toolCall": {
           "checking": "Đang kiểm tra 3 lịch",
@@ -9030,9 +9037,9 @@
         "mira": {
           "badges": {
             "learning": "Luôn Học Hỏi",
-            "proactive": "AI Chủ Động"
+            "proactive": "Làm việc thực tế"
           },
-          "description": "Mira là trợ lý AI chủ động của bạn—JARVIS mà chúng ta hằng mơ ước. Cô ấy lập kế hoạch, suy luận và hành động thay mặt bạn, đồng bộ hóa lịch, mục tiêu, tài chính và giao tiếp để đưa ra các đề xuất chủ động thay vì chỉ nhắc nhở thụ động.",
+          "description": "Mira là trợ lý AI ngay trong Tuturuuu. Mira làm việc cùng task, lịch, email, tài chính và thời gian của bạn: bạn nhờ, Mira lên kế hoạch, xếp lịch, soạn thư và ghi chép giúp bạn.",
           "title": "Mira: Đối Tác AI Của Bạn"
         },
         "subtitle": "Gặp gỡ Mira và hệ thống AI giúp Tuturuuu thực sự thông minh",
@@ -9663,6 +9670,28 @@
       },
       "title": "Tìm không gian làm việc phù hợp cho đội nhóm"
     }
+  },
+  "legalRedesign": {
+    "added": "Đã thêm",
+    "all": "Tất cả văn bản",
+    "changes": "Những thay đổi",
+    "compare": "Mở toàn bộ bản so sánh",
+    "contents": "Nội dung",
+    "effective": "Hiệu lực",
+    "exact": "Xem chính xác thay đổi câu chữ",
+    "from": "Đang áp dụng",
+    "language": "Ngôn ngữ",
+    "navigation": "Văn bản pháp lý",
+    "notice": "Chưa có hiệu lực",
+    "print": "In hoặc lưu PDF",
+    "published": "Công bố",
+    "removed": "Đã xóa",
+    "revised": "Đã sửa",
+    "skip": "Chuyển đến nội dung pháp lý",
+    "summary": "Tóm tắt, không phải văn bản pháp lý",
+    "to": "Dự kiến",
+    "unchanged": "Không đổi",
+    "version": "Phiên bản"
   },
   "link-shortener": {
     "access_denied": "Truy cập bị từ chối",
@@ -10297,6 +10326,10 @@
       "description": "Kết nối công việc, lịch, tài liệu và công cụ kinh doanh trong một không gian làm việc mã nguồn mở. Lập kế hoạch và cộng tác với trợ lý AI Mira.",
       "title": "Không gian làm việc tất cả trong một cho đội nhóm"
     },
+    "legal_changes": {
+      "description": "Dự kiến — chưa có hiệu lực",
+      "title": "Thay đổi sắp tới"
+    },
     "legal_dpa": {
       "description": "Đọc phụ lục xử lý dữ liệu Tuturuuu và các trách nhiệm áp dụng khi xử lý dữ liệu cá nhân.",
       "title": "Phụ lục xử lý dữ liệu"
@@ -10461,6 +10494,8 @@
     "participants": "Người tham gia",
     "registered_users": "Người dùng đã đăng ký",
     "select-time-zone": "Chọn múi giờ",
+    "sign_in_to_create_plan": "Đăng nhập để tạo kế hoạch",
+    "sign_in_to_create_plan_desc": "Bạn cần đăng nhập tài khoản Tuturuuu để tạo kế hoạch. Bất kỳ ai có liên kết kế hoạch công khai vẫn có thể tham gia mà không cần đăng nhập.",
     "smart_scheduling": "Lập lịch thông minh",
     "something_went_wrong": "Có lỗi xảy ra",
     "soonest-time-to-meet": "Giờ sớm nhất",
@@ -13758,7 +13793,7 @@
         },
         "eyebrow": "Lõi AI",
         "mira": {
-          "description": "Trợ lý bạn trò chuyện. Cô ấy lên kế hoạch, suy luận và hành động thay bạn trên lịch, mục tiêu, tài chính và tin nhắn, đưa ra gợi ý chủ động thay vì lời nhắc thụ động.",
+          "description": "Trợ lý bạn trò chuyện cùng. Bạn nhờ, Mira lên kế hoạch, xếp lịch, soạn thư và ghi chép trên task, lịch, email và tài chính của bạn.",
           "title": "Mira, người bạn đồng hành AI"
         },
         "nova": {
@@ -24517,6 +24552,10 @@
     "created_at": "Không gian làm việc này được tạo lúc ",
     "danger_zone": "Vùng nguy hiểm",
     "delete": "Xóa không gian làm việc",
+    "delete_confirmation_description": "Hành động này <strong>không thể hoàn tác</strong>. Không gian làm việc <strong>{name}</strong> và toàn bộ dữ liệu sẽ bị xóa vĩnh viễn.",
+    "delete_confirmation_prompt": "Vui lòng nhập <strong>{name}</strong> để xác nhận.",
+    "delete_failed": "Không thể xóa không gian làm việc",
+    "delete_failed_description": "Không thể xác nhận việc xóa. Hãy kiểm tra không gian làm việc trước khi thử lại hoặc liên hệ hỗ trợ.",
     "delete_workspace_warning": "Khi bạn xóa một không gian làm việc, sẽ không thể hoàn tác. Xin hãy cẩn thận.",
     "deleting": "Đang xóa",
     "description": "Quản lý các thiết lập không gian làm việc.",

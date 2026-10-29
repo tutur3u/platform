@@ -1,0 +1,429 @@
+---
+title: "Calendar views and behavior"
+description: "Calendar feature contracts, implementation guidance and regression coverage."
+---
+
+## Views and keyboard support
+
+Calendar views share behavior across Calendar, Tasks, and embedded Web calendars.
+Use D, 4, W, M, Y, or A for day, four days, week, month, year, or agenda. These
+page shortcuts are inactive inside editors, menus, and dialogs, during input
+composition, or alongside Cmd/Ctrl/Alt. Month selection updates the host's
+controlled state and is restored from the saved view preference.
+
+Month provides event previews and day details; year opens the selected month or
+day; agenda searches titles and locations across its 30-day window. Event queries
+must cover the entire year or all 30 agenda days, not just the first day.
+The event route reads ordered 1,000-row pages so busy years are not truncated
+by the database response limit. Shared
+settings list the shortcuts alongside command search, app launcher, and sidebar
+commands. Verify modified shortcuts in Calendar and Tasks and check typing,
+modifiers, modal focus, and mobile overflow when changing these views.
+
+Global command/app launchers remain available while editing. Calendar view shortcuts are intentionally suppressed throughout editor descendants, including non-editable embedded content, to prevent unexpected view changes while working in an editor.
+
+## Two-Way Sync Controls
+
+Calendar sync has two layers of user control:
+
+- Workspace-user preferences in
+  `private.calendar_user_workspace_preferences` enable or disable inbound
+  imports, outbound Tuturuuu-to-provider mirroring, the default outbound
+  provider calendar, and the conflict policy.
+- `calendar_connections` controls each external calendar's import, outbound
+  write, and provider-delete behavior.
+
+Outbound mirroring is opt-in. When enabled, native Tuturuuu event creates and
+edits mirror to the selected writable Google or Microsoft connection, and the
+local event stores provider identity so future updates and deletes propagate
+externally. Manual or cron sync with `direction: "outbound"` or `"both"` may
+also catch up local-only or previously failed Tuturuuu events in the active sync
+window.
+
+Inbound provider deletes are controlled per connection through
+`sync_delete_enabled`. User-initiated deletion of a synced external event still
+deletes the provider event directly because it is explicit CRUD, not passive
+provider import cleanup.
+
+After adding or changing two-way sync columns, prepare migrations in
+`apps/database`; do not run production Supabase push commands from agent
+sessions. Apply locally with `bun sb:up` when feasible, then regenerate database
+types only after the local schema reflects the migration.
+
+## Installation and caching
+
+Calendar and Tasks serve their own `/serwist/sw.js` workers and installable
+app manifests. Client instrumentation captures the install event before hydration;
+these hosts explicitly transpile `@tuturuuu/ui` for that bootstrap entry point.
+The **Settings → Install app** control uses the browser prompt when
+available and gives Home Screen instructions otherwise. `/offline.html` is a
+public, bilingual fallback that bypasses authentication middleware.
+
+These productivity hosts use `cacheNavigations: false` and
+`staticAssetsOnly: true`: private HTML, APIs, and private images are never
+persisted by the worker. Installation precaches only the fallback, icons, and
+manifest. Hashed Next assets cache on demand, with at most 160 runtime entries.
+This avoids downloading the entire application at installation.
+
+Loaded data remains available in an open app through memory caches. Calendar
+snapshots are keyed by workspace and date range and limited to 12 ranges; event
+lookups pre-index date intervals and memoize at most 400 day results. Private
+snapshots are not persisted across app restarts. Reopening a workspace, syncing,
+and saving changes require connectivity; this release does not add a durable
+offline write queue. The offline indicator communicates that limitation.
+
+Verify worker registration, install manifest, cached asset reuse, offline
+fallback, and the absence of API/private-page entries in Cache Storage on both
+Calendar and Tasks. Re-run both app builds when changing the worker routes or
+tracing configuration.
+
+### Calendar regression tests
+
+Calendar owns a workspace `test` script, so `bun test` and CI coverage include
+its provider, authorization, cron and event-route suites automatically. Run
+`ttr resources run -- bun run --cwd apps/calendar test --maxWorkers=2` for the
+complete focused suite. Manual provider smoke tests supplement these regressions;
+they do not replace the automated suite or prove that closed-client scheduling
+is active in production.
+
+### Invitation delivery API
+
+Explicit invitations use the events collection POST with an `invitation`
+containing guest email addresses, optional-attendee flags and an IANA time zone,
+plus a UUIDv7 `requestId`. Choose a writable connected Google or Microsoft
+calendar. Provider-owned RSVP status is never accepted as organizer input.
+
+The same request ID must survive retries. The server binds it to the actor,
+workspace, source and complete invitation details. It reserves an encrypted
+local event before sending, then records the provider identity. Google uses a
+stable event ID and a private request fingerprint; Graph uses `transactionId`.
+A duplicate Google event with a different fingerprint is rejected. A timeout
+does not authorize a fresh send or a new request ID.
+
+Calendar requires server-only `CLOUDFLARE_COORDINATION_URL` and
+`CLOUDFLARE_COORDINATION_TOKEN` for its Durable Object request lease. The token
+has an encrypted backup in the Infrastructure vault. Missing storage fails closed.
+Only request hashes and completion state enter the Durable Object; provider credentials and
+guest lists do not. New reservations are accepted for 15 minutes, with one minute
+of forward clock tolerance. An older request can only resume its existing
+actor-bound reservation with identical details and the original provider
+idempotency key. This also recovers pending delivery after provider exceptions
+or missing responses; an expired request never recreates a deleted reservation.
+A 409 or ambiguous failure must leave the client in a
+review/retry state. Check the calendar before creating a replacement request.
+Pending deliveries cannot be edited or deleted through the event API.
+
+POST `/api/v1/workspaces/:wsId/calendar/events/:eventId/response` accepts
+`accepted`, `declined` or `tentative`. The selected connected account must
+actually be an attendee; organizer identity, provider concurrency and workspace
+authorization are checked before writing. Native clients use the authenticated
+infrastructure gateway, which permits only POST on this route. Responses are
+private and uncached.
+
+This is the delivery foundation. Scheduling surfaces and assistant tools must
+present the exact meeting and recipients for user confirmation before calling
+the send operation. These API tests do not establish live Gmail/Outlook delivery;
+verify invitations and RSVP updates using explicitly authorized test accounts
+before claiming provider interoperability.
+
+### Google color identity and inheritance
+
+Google inbound sync preserves the provider's explicit event color ID, calendar-scoped
+label ID, inherited-color intent and resolved opaque RGB in
+`scheduling_metadata.google_color`. The existing canonical event-color foreign key
+remains a compatibility value, not an exact Google color definition. Google labels
+take precedence over legacy event color IDs; an event with neither inherits the
+connected calendar's current RGB color. Calendar custom RGB takes precedence over
+its calendar palette ID, which belongs to a different palette from event IDs.
+
+Active sync refreshes the matching connection's source color even when no events
+changed. Missing provider metadata remains unresolved and observable rather than
+inventing a custom color. Label-definition changes without an event delta can leave
+an explicit event's resolved RGB snapshot stale until the event is fetched again.
+
+Unrelated title/time updates read the current Google event, preserve its exact
+color or label identity and use its ETag to reject concurrent changes. Native
+creates map their canonical color argument to the Google event palette.
+The capability-gated shared web picker uses exact event IDs, calendar-scoped
+label IDs, and inherited color; its choices preserve opaque provider RGB.
+Microsoft and disabled-candidate surfaces keep their canonical palette. These
+source paths require the recovery schema and exact-commit build validation before
+activation. Sync never rewrites a calendar's label array or implicitly publishes
+a private native calendar to Google.
+
+
+### Recoverable Google color operation development
+
+Exported-route overlap tests model the authoritative provider-series read-only
+RPC separately from operation-ledger RPCs. A writable fixture returns `false`;
+read-only and unavailable states must still reject PUT/DELETE before reservation
+or provider dispatch. `google-color-operations/route-overlap.test.ts` covers these
+states alongside delayed-request fencing and recovery. When adding an admission
+lookup, update shared route fixtures to its actual result contract so a fixture
+failure cannot masquerade as a provider or operation conflict.
+
+The same-calendar color-write followup has a server-only operation ledger,
+immutable prepared patch/ETag and private operation marker. Conditional replay
+uses the original ETag; it never refreshes an old operation's precondition. A
+provider 412 fences the old attempt, then current provider state is fetched and
+settled by its operation marker. Matching color alone is not completion proof.
+An authorized resumption must recheck Calendar management permission, connection
+owner and exact token/calendar/event identity. Only definitely-unsent reserved or
+prepared operations can cancel. Local commit failures remain recoverable.
+
+This is an unpublished implementation stage. A bounded route slice now connects
+same-calendar color PUT, encrypted content/time/local-lock PUT and conditional
+DELETE to reservation, immutable conditional dispatch and atomic finalization.
+The generic operation stores sensitive request content only in an authenticated
+encrypted journal. Finalization encrypts the authoritative provider projection;
+route callers do not perform a second local write. Conditional deletion settles
+habit skips and task/habit links in the same transaction and retains an authorized
+tombstone for recovery after the event row is gone. Dedicated authenticated `color-operation` GET/POST/DELETE
+handlers expose only operation ID/phase, execute recovery, or safely cancel an
+unsent operation. Recovery bodies accept only `operationId`; source, generation,
+prepared patches and force-clear overrides are never caller inputs. Reservation
+state is private and never added to generic event scheduling metadata.
+
+The candidate slice is disabled unless the server-only
+`CALENDAR_GOOGLE_COLOR_OPERATIONS_ENABLED` setting is `true`. That candidate
+mode supports same-source color, content/time/local-lock edits, invitation
+responses and deletion through the shared generation boundary. RSVP uses only
+the authenticated connected account's self attendee, seals the response against
+the original provider version, and projects the resulting event before reporting
+delivery. Cancelled meetings and superseded responses return a conflict. Supported source movement uses the durable provider saga described below.
+Unsupported move types return 409 before side effects. A pending operation blocks
+content, color and delete successors. Attendee updates are `all` for content/time
+edits and deletion; color/local-lock-only edits use `none`. Recovery executes the
+server-stored operation kind and original conditional request, never a new
+caller-supplied mutation. Status GET may accept a strict `operationId` query to
+reauthorize an already-deleted event's retained operation. Native/Microsoft routes
+retain their existing behavior. This mode remains disabled by default and is not
+approved for normal production mutation behavior: every provider writer must
+cooperate before enabling it; mixed enabled/disabled API versions are unsafe.
+
+The private RPC and transaction capability atomically merge Google color into
+latest metadata and commit sync/completion together. Generation persists after
+completion. Prepared import changes capture it before provider GET/list, apply
+through guarded transactions and durably defer conflicting identities before a
+sync token advances. Deferred replay captures again and fetches fresh provider
+state, rather than saving old content or credentials. The new SQL/types and
+combined route/import contracts still require isolated validation.
+
+Do not release either migration or enable the candidate setting on its own.
+Complete adoption by Web, Tasks, outbound sync, RSVP and all other competing
+writers, plus the source move/create saga, before enabling writes. Regression
+evidence is in `mutation-routes.test.ts`, `route-overlap.test.ts`, the encrypted
+mutation executor/provider suites and `calendar-google-mutation-replay.sql`. The sync coordination cooldown is
+not a lock. Google ETags are opaque equality tokens, not sortable revisions.
+Google moves lack a documented conditional fence and remain a separate recovery
+scope. Synthetic controlled overlapping routes demonstrate the intended
+ordering against an atomic storage double; they do not substitute for SQL,
+import, owning build or deployment proof.
+
+
+### Event rendering and provider identity
+
+Web event surfaces render opaque provider fills with the higher-contrast black
+or white foreground. Mobile agenda, day/three-day/week cards, all-day chips and
+month indicators blend the same read-only provider hue into the active theme.
+Completed mobile events (end at or before the shared projected wall clock) use
+a weaker background tint and accent; foreground text remains fully opaque with
+at least 4.5:1 contrast. All-day ends remain exclusive, so an event stays active
+until its final midnight boundary. A shared minute clock refreshes completion
+styles while the Calendar screen is visible. This presentation never changes
+the stored provider RGB, explicit/inherited intent or event times. Persisted `google_color` RGB is used when available; only
+known inherited intent uses a valid current source RGB. Authenticated list/item
+reads join the current stored connection RGB only for a persisted source calendar
+link in the actor's active Google accounts. Unbound legacy rows, mismatched source
+links, and ambiguous or unavailable account matches retain the event snapshot. Active sync
+refreshes that connection even without an event delta. This read join does not
+fetch or mutate Google and does not infer intent for legacy rows. Native and legacy events
+without resolved provider metadata retain their canonical event color. Rendering
+does not infer old color intent, fetch a provider palette, or rewrite events.
+
+Web timed, all-day, agenda, month/year, location and drag previews use the same
+read-only color policy. Past web events fade with an overlay over their opaque
+fills; optimistic/preview status uses outlines. Hovering an overlapped lower card
+hides upper cards instead of blending their fills, and restores them when the
+hover ends. Focus/drag/resize states retain opaque backgrounds. The existing
+`preservePastEventOpacity` adapter option suppresses this fade. Past external
+provider events follow the same policy; previews, pending writes and active
+drag/resize states keep full intensity.
+Regression coverage for the policy and hover treatment lives in
+`past-event-treatment.test.ts` and `event-card.test.tsx`. Mobile source RGB survives date projections and local cache
+serialization. Regression coverage lives in `calendar-event-colors.test.ts`,
+`event-card.test.tsx`, `calendar-views.test.tsx`, `dynamic-island.test.tsx` and
+mobile `event_colors_test.dart`. These checks do not establish full palette
+editing, legacy-row refresh, or completed Google write reconciliation.
+
+
+## Calendar navigation dates and query boundaries
+
+The legacy calendar treats its selected date and visible grid dates as calendar
+days: their local year, month, and day fields identify the selection. An explicit
+`YYYY-MM-DD` navigation value preserves that day when the effective timezone
+changes. Timestamp navigation values and Today project the actual instant into
+the resolved calendar timezone. The Calendar host supplies that timezone to its
+navigation provider; shared calendar content also supplies it to the event sync
+provider. Web's calendar route redirects to the Calendar host. Deep links apply
+once using the first available resolved timezone so later settings updates cannot
+reset a user selection. A timestamp link applied before personal settings finish
+loading retains that initially projected day; following the pending instant until
+settings settle needs a separate selection ownership contract.
+
+Headers, sidebar selection, day/week/month/year/agenda labels, and Today markers
+use these day fields consistently. A shared minute clock updates Today and the
+current-time indicator without changing the selected day. Timed event lookup
+projects event instants into the resolved timezone before grouping by day.
+
+Fetch ranges independently construct the first day's midnight and the midnight
+after the last day in the effective timezone. This supports 23-hour and 25-hour
+days across daylight-saving changes. Calendar cache keys include the timezone
+and the selected calendar-day fields, so a timezone change cannot reuse a range
+from another timezone.
+
+These changes preserve existing event storage, recurrence, and all-day identity
+contracts. All-day lookup uses the same canonical civil dates as the all-day strip,
+so month/year and agenda grouping agree with the configured-zone bar for legacy
+midnight payloads and zoned DST spans. All-day bar drag and location
+create/resize/split callbacks retain
+their existing timestamp conversion: their inferred all-day classification cannot
+safely represent zoned 23-hour or 25-hour midnight spans without a persistent
+intent contract. They do not establish a persistent all-day intent flag or verify
+live provider writes. Focused mounted tests exercise navigation, labels, grouping,
+and fetch boundaries; deployed browser verification and exact-head CI remain
+separate release checks.
+
+
+### Recoverable creation and calendar transfers
+
+The candidate mode remains disabled by default. New event, label, and inherited
+provider-color commands return 409 while it is disabled. The shared web picker
+reads `providerColorWrites` from the actor-scoped color-options response and
+shows the legacy native palette until that capability is enabled; unsupported
+Microsoft sources retain the legacy palette. Color-only saves send only their
+color command and do not notify guests. Native mobile resolves the Google
+connection from fresh, uniquely matching canonical source options. Its full
+palette requires the same capability; provider-color commands are online only,
+and combined content/date/color changes must be saved separately. Missing or
+ambiguous source mapping preserves the legacy mobile palette.
+Activation requires draining existing
+legacy writer activity after the schema and retained guards are deployed.
+
+Its routes support deterministic
+Google creation, source-only movement between two calendars of the same Google
+account, native-to-Google creation, and conditional Google-to-native transfer.
+Google move preserves the provider event identity and iCalendar UID; a move may
+include a local lock change, but combined content/color/time changes return 409
+before provider effects. A lost move response remains ambiguous: a matching ID and
+UID at the destination cannot distinguish this operation from an independent copy.
+Only a successful response from the attempted move permits that invocation to
+finalize; resumption never attributes an unmarked destination to the operation.
+Google-to-native transfers reject recurring masters and instances before admission
+because a single native snapshot cannot preserve the source recurrence. Cross-account copy/delete and Microsoft sagas return 409
+before admission because their retry and compensation fences are not established.
+Google-to-Google moves of events with a calendar-scoped label also return 409
+before key resolution or admission because that label cannot be carried safely
+to another calendar. This restriction applies to legacy and candidate moves.
+
+Creation uses a UUIDv7 request ID retained across retries for the same draft. That
+ID owns the local event, encrypted intent and deterministic Google event ID.
+The manual draft and every generated draft each retain a separate ID in state.
+An uncertain draft cannot reuse its ID after edits; recover the submitted intent
+before deliberately starting a new draft. Independent creation calls allocate
+new IDs unless their caller supplies an explicit retry ID. An unresolved existing
+calendar source never defaults to another account during an ordinary edit.
+Reusing an ID for a different payload is a conflict. Recovery exposes only the
+operation ID and phase, including terminal native transfers and deleted
+placeholders, and never returns sealed intent.
+
+Retained event generations are consulted independently of the feature flag. A
+pending generation blocks competing writes; a completed native transfer uses a
+native generation comparison for subsequent edits and deletion. Disabling the
+candidate cannot reopen legacy provider writes for a retained event. Legacy batch
+sync preflights every event before dispatch, and invited creation and automatic
+outbound mirroring remain blocked in candidate mode until they adopt the same
+boundary. With candidate mode disabled, ledgerless ordinary native behavior remains unchanged. When enabled, native edits use generation zero as their initial compare-and-set fence, so a concurrently admitted transfer rejects the stale edit. Native-to-Google admission compares the complete stored native row under the event lock before creating its retained generation. A concurrent ledgerless edit returns a conflict without a provider write, without depending on a native mutation timestamp. The transient encrypted row comparison never enters the public binding or persisted journal; route/service regressions and `calendar-provider-saga.sql` cover stale rejection and fresh admission.
+
+Synthetic Google acceptance established stale-version delete and move rejection,
+identity-preserving movement, duplicate insert rejection, and rejection of late
+recreation after a tombstone. This does not establish Microsoft behavior or
+permission on customer events. Source regressions cover stable draft request IDs,
+lost-response retry, unsupported operation rejection before keys/admission, and
+public native recovery without private intent.
+The admission and provider adapter label-move regressions live in
+`provider-saga-request-service.test.ts` and `provider-saga-adapter.test.ts`.
+### Mobile wall-clock display and timezone preference recovery
+
+Mobile parses offset-bearing API timestamps into UTC instants once, then projects
+those instants into the selected Calendar timezone once. Agenda labels consume the
+projected wall-clock fields directly, including when the device timezone differs;
+they must not call native `toLocal` on a projected event. Existing UTC date-only
+all-day identity and DST-aware midnight bounds remain unchanged. Regression
+coverage lives in `agenda_view_test.dart`, `calendar_date_time_test.dart` and
+`calendar_event_presentation_test.dart`.
+
+Personal and workspace timezone preferences load independently. A successfully
+loaded scope remains editable if the other scope or the native timezone lookup
+fails. Saving a named personal preference can resolve Calendar without a device
+lookup. Workspace saving still requires permission and a loaded workspace scope.
+Failed reads retain Unknown with an explicit retry; they never imply an automatic
+preference or cause an implicit save. Failed saves retain the prior preference and
+allow retry. Account/workspace changes invalidate in-flight replies and editors.
+Mobile only marks a timezone resolved after the bundled timezone database accepts
+the effective personal, workspace or native identifier. The full IANA database
+accepts native aliases such as `Asia/Saigon`. Calendar, reminder scheduling,
+Settings offsets and Inventory period eligibility share one lazy, idempotent
+resolver; opening Inventory never resets the configured device-local zone.
+Compact timezone data is excluded from application imports. Unsupported identifiers
+remain a recoverable settings failure rather than throwing from Calendar or the
+personal Agenda clock. An acknowledged save retains its saved value even if its
+new inherited timezone cannot resolve. Existing initialized device-local timezone
+configuration is preserved. `calendar_timezone_failure_test.dart` covers invalid
+saved/native identifiers, rejected writes and acknowledged-save recovery.
+`timezone_settings_http_contract_test.dart` and
+`timezone_settings_http_widget_test.dart` exercise production gateway paths,
+Bearer serialization, failure/retry and explicit saving with synthetic data.
+Those checks do not prove a real provider session or explain a particular user's
+failed authenticated request without runtime evidence.
+
+Calendar's local authentication rejections classify existing IP blocks as
+`ip-already-blocked` and upstream authentication backpressure as
+`backend-auth-rate-limit`. The native gateway preserves these fixed categories
+for safe timezone diagnostics. Each branch names its policy; unknown caller/window fields stay Unknown.
+Unclassified responses distinguish absent metadata from unsupported values. Status 429,
+Retry-After, authentication, bans and quotas retain their existing behavior.
+`api-auth-rate-diagnostics.test.ts` exercises the real personal preference GET
+and gateway; `api_rate_limit_local_auth_test.dart` checks the safe mobile copy.
+These classifications do not establish the cause of a past rejection without
+an exact deployed runtime receipt.
+
+
+Mobile Calendar completion styling refreshes at wall-clock minute boundaries.
+Timed events without an end use the same 30-minute fallback as rendered cards.
+Timezone retry repeats a failed explicit save for its original scope; read failures
+reload preferences. Unknown device zones stay unresolved until native lookup
+succeeds, including after workspace changes during rate-limit cooldown.
+`calendar_minute_clock_test.dart` and the HTTP settings tests cover these rules.
+The shard-zero mobile test job additionally runs `agenda_view_test.dart` with
+`TZ=Asia/Ho_Chi_Minh` and `CALENDAR_NATIVE_TZ_REGRESSION=1`; its explicit native
+UTC+07 offset assertion prevents a UTC runner from silently weakening the
+wall-clock double-conversion regression.
+
+Creation recovery on the shared Calendar form keeps the original submitted request
+ID and body immutable after an uncertain failure. Automatic original retry is available
+only when the initially submitted Google source advertised durable provider writes;
+legacy/native or unknown-capability failures require checking the calendar first.
+An unavailable capability cannot later turn an uncertain legacy create into a retry.
+The original retry action preserves
+the edited form. Only a confirmed creation ID allows its next explicit Save to update
+that event; edited drafts never silently start another creation. This applies to
+shared web Calendar forms; legacy creation payloads keep optional IDs while explicit
+recoverable Google payloads require a UUIDv7 ID validated at enabled admission.
+Regression: `use-calendar-draft-save.test.tsx` and `calendar-creation-request.test.ts`.
+
+For copy-delete compensation, authoritative fresh absence at both bound endpoints
+settles a persisted `target-removed` checkpoint as a superseded tombstone under the
+current generation. Linked habits and cascading links are skipped. Retained generation
+and retired identities prevent a stale import from recreating the event. Regression:
+`calendar-provider-saga.sql` and provider saga projection tests.

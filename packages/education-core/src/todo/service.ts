@@ -71,6 +71,7 @@ export async function listEducationTodo({
   kind,
   page,
   pageSize,
+  isTutoringEnabled,
 }: {
   db: TypedSupabaseClient;
   wsId: string;
@@ -79,6 +80,12 @@ export async function listEducationTodo({
   kind: TodoKind;
   page: number;
   pageSize: number;
+  /**
+   * Resolves the workspace's `ENABLE_TUTORING` toggle (see
+   * `./tutoring-module`). Injected by the route adapter; tutoring sessions are
+   * never read while it answers false.
+   */
+  isTutoringEnabled: (wsId: string) => Promise<boolean>;
 }) {
   const actorId = await resolveTodoActor(db, wsId, userId);
   const empty = {
@@ -92,6 +99,8 @@ export async function listEducationTodo({
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
   if (kind === 'tutoring') {
+    // A workspace that switched tutoring off lists no tutoring sessions.
+    if (!(await isTutoringEnabled(wsId))) return empty;
     // Assignment is explicit; a tutor does not need to be the learner's homeroom teacher.
     const { data, error, count } = await db
       .schema('private')

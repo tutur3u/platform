@@ -1,5 +1,6 @@
 import { resolveMeetGuestFromSession } from '@tuturuuu/apis/meet/guest-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getPlan } from '@tuturuuu/utils/plan-helpers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -60,6 +61,11 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         { error: 'Guest credentials are incomplete' },
         { status: 401 }
       );
+    }
+    // Guests only reach public, non-workspace plans, regardless of whether
+    // the request also carries a signed-in actor or a live guest session.
+    if (!(await getPlan(snapshot.plan.id, { actorUserId: null }))) {
+      return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
     }
     const admin = await createAdminClient();
     const guest = await resolveMeetGuestFromSession(

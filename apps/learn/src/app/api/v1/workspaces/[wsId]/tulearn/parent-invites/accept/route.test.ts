@@ -1,0 +1,473 @@
+import { createHash } from 'node:crypto';
+import { NextRequest } from 'next/server';
+import { beforeEach, expect, it, vi } from 'vitest';
+import { activeLinkUnique, createFakeSupabase } from '@/test/fake-supabase';
+
+const state = vi.hoisted(() => ({
+  admin: null as unknown,
+  user: null as { id: string } | null,
+}));
+vi.mock('@tuturuuu/satellite/auth', () => ({
+  getSatelliteAppSessionUser: async () => state.user,
+}));
+vi.mock('@tuturuuu/education-core/tulearn/service', () => ({
+  hasEducationEnabled: async () => true,
+}));
+vi.mock('@/lib/api-auth', () => ({
+  withSessionAuth:
+    (
+      handler: (
+        request: NextRequest,
+        context: unknown,
+        params: unknown
+      ) => unknown
+    ) =>
+    (request: NextRequest, route: { params: unknown }) =>
+      handler(request, { user: { id: 'actor' }, supabase: {} }, route.params),
+}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: async () => ({ containsPermission: () => true }),
+  normalizeWorkspaceId: async () => 'workspace-a',
+}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => state.admin,
+}));
+
+import { PATCH } from '../../parent-links/[linkId]/route';
+import { POST } from './route';
+
+const TOKEN = 'a'.repeat(64);
+const hash = (token: string) =>
+  createHash('sha256').update(token).digest('hex');
+const future = () => new Date(Date.now() + 60_000).toISOString();
+
+const invite = (overrides: Record<string, unknown> = {}) => ({
+  accepted_at: null,
+  expires_at: future(),
+  id: 'invite-1',
+  invited_by: 'teacher',
+  parent_email: 'parent@example.com',
+  parent_user_id: null,
+  status: 'pending',
+  student_workspace_user_id: 'student-ws',
+  token_hash: hash(TOKEN),
+  ws_id: 'workspace-a',
+  ...overrides,
+});
+
+function setup({
+  authUsers = {
+    parent: {
+      email: 'Parent@Example.com',
+      email_confirmed_at: '2026-01-01T00:00:00.000Z',
+    },
+  } as Record<
+    string,
+    { email: string | null; email_confirmed_at: string | null }
+  >,
+  bound = true,
+  invites = [invite()],
+  links = [] as Record<string, unknown>[],
+} = {}) {
+  const admin = createFakeSupabase(
+    {
+      tulearn_parent_invites: invites,
+      tulearn_parent_student_links: links,
+      workspace_user_linked_users: bound
+        ? [
+            {
+              platform_user_id: 'student-platform',
+              virtual_user_id: 'student-ws',
+              ws_id: 'workspace-a',
+            },
+          ]
+        : [],
+    },
+    { authUsers, unique: { tulearn_parent_student_links: activeLinkUnique } }
+  );
+  state.admin = admin;
+  return admin;
+}
+
+function accept(token: unknown = TOKEN) {
+  return POST(
+    new NextRequest('http://localhost/accept', {
+      body: JSON.stringify({ token }),
+      method: 'POST',
+    }),
+    { params: { wsId: 'workspace-a' } }
+  );
+}
+
+function patchLink(linkId: string, status: string) {
+  return PATCH(
+    new NextRequest(`http://localhost/parent-links/${linkId}`, {
+      body: JSON.stringify({ status }),
+      method: 'PATCH',
+    }),
+    { params: { linkId, wsId: 'workspace-a' } }
+  );
+}
+
+beforeEach(() => {
+  state.user = { id: 'parent' };
+});
+
+it('accepts with a matching verified email (case-insensitive) and creates the active link', async () => {
+  const admin = setup();
+  const response = await accept();
+
+  expect(response.status).toBe(200);
+  expect((await response.json()).link).toMatchObject({
+    created_by: 'teacher',
+    parent_user_id: 'parent',
+    status: 'active',
+    student_platform_user_id: 'student-platform',
+    student_workspace_user_id: 'student-ws',
+  });
+  expect(admin.rows('tulearn_parent_invites')[0]).toMatchObject({
+    accepted_at: expect.any(String),
+    parent_user_id: 'parent',
+    status: 'accepted',
+  });
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(1);
+});
+
+it('activates the parent own pending link instead of duplicating it', async () => {
+  const admin = setup({
+    links: [
+      {
+        accepted_at: null,
+        id: 'pending-link',
+        parent_user_id: 'parent',
+        status: 'pending',
+        student_platform_user_id: 'student-platform',
+        student_workspace_user_id: 'student-ws',
+        ws_id: 'workspace-a',
+      },
+    ],
+  });
+  const response = await accept();
+
+  expect((await response.json()).link).toMatchObject({
+    id: 'pending-link',
+    status: 'active',
+  });
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(1);
+});
+
+it('rejects a verified email that does not match the invited address', async () => {
+  const admin = setup({
+    authUsers: {
+      parent: {
+        email: 'other@example.com',
+        email_confirmed_at: '2026-01-01T00:00:00.000Z',
+      },
+    },
+  });
+
+  expect((await accept()).status).toBe(403);
+  expect(admin.rows('tulearn_parent_invites')[0]?.status).toBe('pending');
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(0);
+});
+
+it('rejects a matching but unverified email', async () => {
+  const admin = setup({
+    authUsers: {
+      parent: { email: 'parent@example.com', email_confirmed_at: null },
+    },
+  });
+
+  expect((await accept()).status).toBe(403);
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(0);
+});
+
+it('rejects an expired invite and marks it expired', async () => {
+  const admin = setup({
+    invites: [
+      invite({ expires_at: new Date(Date.now() - 1000).toISOString() }),
+    ],
+  });
+
+  expect((await accept()).status).toBe(410);
+  expect(admin.rows('tulearn_parent_invites')[0]?.status).toBe('expired');
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(0);
+});
+
+it('is single-use: another account cannot reuse an accepted invite', async () => {
+  const admin = setup({
+    authUsers: {
+      parent: {
+        email: 'parent@example.com',
+        email_confirmed_at: '2026-01-01T00:00:00.000Z',
+      },
+      second: {
+        email: 'parent@example.com',
+        email_confirmed_at: '2026-01-01T00:00:00.000Z',
+      },
+    },
+  });
+
+  expect((await accept()).status).toBe(200);
+  state.user = { id: 'second' };
+  expect((await accept()).status).toBe(410);
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(1);
+});
+
+it('is idempotent when the same parent repeats the acceptance', async () => {
+  const admin = setup();
+  const first = await (await accept()).json();
+  const second = await accept();
+
+  expect(second.status).toBe(200);
+  expect((await second.json()).link.id).toBe(first.link.id);
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(1);
+});
+
+it('repairs a missing link when the same parent retries after a partial failure', async () => {
+  const admin = setup({
+    invites: [
+      invite({
+        accepted_at: new Date(Date.now() - 1000).toISOString(),
+        parent_user_id: 'parent',
+        status: 'accepted',
+      }),
+    ],
+  });
+
+  expect((await accept()).status).toBe(200);
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(1);
+  expect(admin.rows('tulearn_parent_student_links')[0]?.status).toBe('active');
+});
+
+it('does not restore access an admin revoked when the same token is replayed', async () => {
+  const admin = setup();
+  const first = await (await accept()).json();
+
+  expect((await patchLink(first.link.id, 'revoked')).status).toBe(200);
+  expect((await accept()).status).toBe(410);
+
+  const links = admin.rows('tulearn_parent_student_links');
+  expect(links).toHaveLength(1);
+  expect(links.some((row) => row.status === 'active')).toBe(false);
+});
+
+const stagedLink = (createdAt: string) => ({
+  accepted_at: null,
+  created_at: createdAt,
+  id: 'staff-pending',
+  parent_user_id: 'parent',
+  revoked_at: null,
+  status: 'pending',
+  student_platform_user_id: 'student-platform',
+  student_workspace_user_id: 'student-ws',
+  ws_id: 'workspace-a',
+});
+
+// created_at is written by the database clock; neither an earlier nor a later
+// value than the app clock may reopen a revoked acceptance.
+it.each([
+  ['before', new Date(Date.now() - 24 * 3600_000).toISOString()],
+  ['after', new Date(Date.now() + 24 * 3600_000).toISOString()],
+])(
+  'does not mint a new link after a staff-pending link was activated then revoked (created_at %s the app clock)',
+  async (_label, createdAt) => {
+    const admin = setup({ links: [stagedLink(createdAt)] });
+    const first = await (await accept()).json();
+
+    expect(first.link).toMatchObject({ id: 'staff-pending', status: 'active' });
+    expect(first.link.accepted_at).toBe(
+      admin.rows('tulearn_parent_invites')[0]?.accepted_at
+    );
+
+    expect((await patchLink('staff-pending', 'revoked')).status).toBe(200);
+    expect((await accept()).status).toBe(410);
+
+    const links = admin.rows('tulearn_parent_student_links');
+    expect(links).toHaveLength(1);
+    expect(links[0]?.status).toBe('revoked');
+  }
+);
+
+it('does not activate a staff-pending link an admin revoked after acceptance and re-opened', async () => {
+  const admin = setup({
+    links: [stagedLink(new Date(Date.now() - 3600_000).toISOString())],
+  });
+  await accept();
+  await patchLink('staff-pending', 'revoked');
+  await patchLink('staff-pending', 'pending');
+
+  expect((await accept()).status).toBe(410);
+  const links = admin.rows('tulearn_parent_student_links');
+  expect(links).toHaveLength(1);
+  expect(links[0]?.status).toBe('pending');
+});
+
+it('completes an interrupted acceptance by activating the staff-pending link with the invite acceptance time', async () => {
+  const acceptedAt = new Date(Date.now() - 1000).toISOString();
+  const admin = setup({
+    invites: [
+      invite({
+        accepted_at: acceptedAt,
+        parent_user_id: 'parent',
+        status: 'accepted',
+      }),
+    ],
+    links: [stagedLink(new Date(Date.now() - 3600_000).toISOString())],
+  });
+
+  expect((await accept()).status).toBe(200);
+  const links = admin.rows('tulearn_parent_student_links');
+  expect(links).toHaveLength(1);
+  expect(links[0]).toMatchObject({
+    accepted_at: acceptedAt,
+    id: 'staff-pending',
+    status: 'active',
+  });
+});
+
+it('stamps a repaired link with the invite acceptance time so a revoked repair is not repeated', async () => {
+  const acceptedAt = new Date(Date.now() - 1000).toISOString();
+  const admin = setup({
+    invites: [
+      invite({
+        accepted_at: acceptedAt,
+        parent_user_id: 'parent',
+        status: 'accepted',
+      }),
+    ],
+  });
+
+  const repaired = await (await accept()).json();
+  expect(repaired.link.accepted_at).toBe(acceptedAt);
+
+  await patchLink(repaired.link.id, 'revoked');
+  expect((await accept()).status).toBe(410);
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(1);
+});
+
+it('leaves no pending link beside the active one when a staff-pending link meets a concurrent double submit', async () => {
+  const admin = setup({
+    links: [stagedLink(new Date(Date.now() - 3600_000).toISOString())],
+  });
+  const responses = await Promise.all([accept(), accept()]);
+
+  expect(responses.map((response) => response.status)).toEqual([200, 200]);
+  const links = admin.rows('tulearn_parent_student_links');
+  expect(links).toHaveLength(1);
+  expect(links[0]).toMatchObject({ id: 'staff-pending', status: 'active' });
+});
+
+it('does not activate a link an admin reopened as pending when the token is replayed', async () => {
+  const admin = setup();
+  const first = await (await accept()).json();
+
+  await patchLink(first.link.id, 'revoked');
+  await patchLink(first.link.id, 'pending');
+  expect((await accept()).status).toBe(410);
+
+  const links = admin.rows('tulearn_parent_student_links');
+  expect(links).toHaveLength(1);
+  expect(links[0]?.status).toBe('pending');
+});
+
+it('rejects a replay of an accepted invite once it has expired', async () => {
+  const admin = setup({
+    invites: [
+      invite({
+        accepted_at: new Date(Date.now() - 2000).toISOString(),
+        expires_at: new Date(Date.now() - 1000).toISOString(),
+        parent_user_id: 'parent',
+        status: 'accepted',
+      }),
+    ],
+  });
+
+  expect((await accept()).status).toBe(410);
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(0);
+});
+
+it('does not consume the invite when the learner is no longer bound', async () => {
+  const admin = setup({ bound: false });
+
+  expect((await accept()).status).toBe(409);
+  expect(admin.rows('tulearn_parent_invites')[0]).toMatchObject({
+    accepted_at: null,
+    status: 'pending',
+  });
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(0);
+});
+
+it('re-pins a stale pending link to the learner current binding when activating it', async () => {
+  const admin = setup({
+    links: [
+      {
+        accepted_at: null,
+        id: 'stale-link',
+        parent_user_id: 'parent',
+        status: 'pending',
+        student_platform_user_id: 'old-student-platform',
+        student_workspace_user_id: 'student-ws',
+        ws_id: 'workspace-a',
+      },
+    ],
+  });
+
+  expect((await (await accept()).json()).link).toMatchObject({
+    id: 'stale-link',
+    status: 'active',
+    student_platform_user_id: 'student-platform',
+  });
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(1);
+});
+
+it('returns the same parent link when their own concurrent submit wins the claim', async () => {
+  const admin = setup();
+  const responses = await Promise.all([accept(), accept()]);
+
+  expect(responses.map((response) => response.status)).toEqual([200, 200]);
+  const ids = await Promise.all(
+    responses.map(async (response) => (await response.json()).link.id)
+  );
+  expect(ids[0]).toBe(ids[1]);
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(1);
+});
+
+it('lets only one of two concurrent accepts win', async () => {
+  const admin = setup({
+    authUsers: {
+      parent: {
+        email: 'parent@example.com',
+        email_confirmed_at: '2026-01-01T00:00:00.000Z',
+      },
+      second: {
+        email: 'parent@example.com',
+        email_confirmed_at: '2026-01-01T00:00:00.000Z',
+      },
+    },
+  });
+  const first = accept();
+  state.user = { id: 'second' };
+  const second = accept();
+
+  const statuses = (await Promise.all([first, second]))
+    .map((response) => response.status)
+    .sort();
+  expect(statuses).toEqual([200, 410]);
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(1);
+});
+
+it('rejects unknown tokens, malformed tokens and anonymous callers', async () => {
+  setup();
+
+  expect((await accept('b'.repeat(64))).status).toBe(404);
+  expect((await accept('short')).status).toBe(400);
+  state.user = null;
+  expect((await accept()).status).toBe(401);
+});
+
+it('does not accept a token from a different workspace', async () => {
+  setup({ invites: [invite({ ws_id: 'workspace-b' })] });
+
+  expect((await accept()).status).toBe(404);
+});

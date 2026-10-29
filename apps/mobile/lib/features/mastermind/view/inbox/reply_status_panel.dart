@@ -11,6 +11,7 @@ import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
 import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// A one-line explanation of why the last attempt did not become a reply.
@@ -35,7 +36,7 @@ class ReplyIssueBanner extends StatelessWidget {
       _ => null,
     };
     if (message == null) return const SizedBox.shrink();
-    return AppGroupedSection.spaced(
+    return MastermindGroup(
       children: [
         AppGroupedRow(
           leading: const AppIconTile(
@@ -130,7 +131,7 @@ class _ReplyEntryPanelState extends State<ReplyEntryPanel> {
     final queuedAt = l10n.mastermindReplyQueuedAt(
       Gmt7.time(entry.createdAt, Localizations.localeOf(context).toString()),
     );
-    return AppGroupedSection.spaced(
+    return MastermindGroup(
       caption: l10n.mastermindReplyOptionsTitle,
       children: [
         AppGroupedRow(

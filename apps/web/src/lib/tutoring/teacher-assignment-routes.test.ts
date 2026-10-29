@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   admin: vi.fn(),
   eligibility: vi.fn(),
   scope: vi.fn(),
+  conflicts: vi.fn(),
 }));
 vi.mock('next/server', () => ({
   NextResponse: { json: Response.json },
@@ -33,7 +34,7 @@ vi.mock(
   async (original) => ({
     ...(await original<object>()),
     validateTutoringSessionScope: mocks.scope,
-    listPotentialSchedulingConflicts: async () => ({ data: [], error: null }),
+    listPotentialSchedulingConflicts: mocks.conflicts,
   })
 );
 const query = {
@@ -57,7 +58,7 @@ const query = {
   })),
   // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
   then: (resolve: (value: unknown) => unknown) =>
-    Promise.resolve({ data: [], error: null }).then(resolve),
+    mocks.conflicts().then(resolve),
 };
 beforeEach(() => {
   vi.clearAllMocks();
@@ -72,6 +73,7 @@ beforeEach(() => {
     error: null,
   });
   mocks.scope.mockResolvedValue(null);
+  mocks.conflicts.mockResolvedValue({ data: [], error: null });
 });
 async function call(method: 'POST' | 'PUT') {
   const body =
@@ -111,6 +113,41 @@ describe.each(['POST', 'PUT'] as const)(
         teacherUserIds: [teacher],
       });
     });
+    it('assigns a third learner to a teacher slot shared across groups', async () => {
+      mocks.conflicts.mockResolvedValue({
+        data: [group, 'other-group'].map((group_id, index) => ({
+          group_id,
+          session_date: '2026-10-07',
+          start_time: '17:15:00',
+          duration_minutes: 45,
+          teacher_user_id: teacher,
+          student_user_id: `learner-${index + 1}`,
+        })),
+        error: null,
+      });
+      expect((await call(method)).status).toBe(200);
+      expect(
+        method === 'POST' ? query.insert : query.update
+      ).toHaveBeenCalled();
+    });
+    it('refuses an overlapping different teacher slot before writing', async () => {
+      mocks.conflicts.mockResolvedValue({
+        data: [
+          {
+            group_id: 'other-group',
+            session_date: '2026-10-07',
+            start_time: '17:30:00',
+            duration_minutes: 45,
+            teacher_user_id: teacher,
+            student_user_id: 'other-learner',
+          },
+        ],
+        error: null,
+      });
+      expect((await call(method)).status).toBe(409);
+      expect(query.insert).not.toHaveBeenCalled();
+      expect(query.update).not.toHaveBeenCalled();
+    });
     it('rejects nonteacher or cross-workspace IDs before writing', async () => {
       mocks.eligibility.mockResolvedValue({
         teacherIds: new Set(),
@@ -146,4 +183,41 @@ it('retains student and class validation before teacher selection', async () => 
   expect((await call('POST')).status).toBe(400);
   expect(mocks.eligibility).not.toHaveBeenCalled();
   expect(query.insert).not.toHaveBeenCalled();
+});
+describe('PUT moving a session to another date or start', () => {
+  const recorded = (start_time: string) => ({
+    data: [
+      {
+        group_id: 'other-group',
+        session_date: '2026-10-08',
+        start_time,
+        duration_minutes: 45,
+        teacher_user_id: teacher,
+        student_user_id: 'other-learner',
+      },
+    ],
+    error: null,
+  });
+  async function move() {
+    const { PUT } = await import(
+      '@/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route'
+    );
+    return PUT(
+      new Request('http://localhost/tutoring', {
+        method: 'PUT',
+        body: JSON.stringify({ sessionDate: '2026-10-08', startTime: '17:15' }),
+      }),
+      { params: Promise.resolve({ wsId, id }) }
+    );
+  }
+  it('joins the teacher slot another group already holds', async () => {
+    mocks.conflicts.mockResolvedValue(recorded('17:15:00'));
+    expect((await move()).status).toBe(200);
+    expect(query.update).toHaveBeenCalled();
+  });
+  it('refuses an overlapping different teacher slot', async () => {
+    mocks.conflicts.mockResolvedValue(recorded('17:30:00'));
+    expect((await move()).status).toBe(409);
+    expect(query.update).not.toHaveBeenCalled();
+  });
 });

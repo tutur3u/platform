@@ -58,6 +58,34 @@ void main() {
     await Future<void>.delayed(Duration.zero);
   }
 
+  test('startup skips an archived saved and default workspace', () async {
+    const archived = Workspace(id: 'archived', personal: true, deleted: true);
+    when(() => repo.getWorkspaces()).thenAnswer((_) async => [archived, team]);
+    when(() => repo.getDefaultWorkspace()).thenAnswer((_) async => archived);
+    when(() => repo.loadSelectedWorkspace()).thenAnswer((_) async => archived);
+    await load();
+    expect(cubit.state.currentWorkspace, team);
+    expect(cubit.state.defaultWorkspace, team);
+    expect(cubit.state.workspaces, [archived, team]);
+  });
+
+  test(
+    'hiding the last active workspace never selects archived membership',
+    () async {
+      const archived = Workspace(id: 'archived', deleted: true);
+      when(
+        () => repo.getWorkspaces(),
+      ).thenAnswer((_) async => [personal, archived]);
+      await load();
+      await cubit.setWorkspaceHidden(personal.id, hidden: true);
+      expect(cubit.state.currentWorkspace, isNull);
+      expect(cubit.state.visibleWorkspaces, isEmpty);
+      expect(cubit.state.workspaces, [personal, archived]);
+      await cubit.setWorkspaceHidden(personal.id, hidden: false);
+      expect(cubit.state.visibleWorkspaces, [personal]);
+    },
+  );
+
   for (final status in [403, 404, 500]) {
     test(
       'preference $status keeps canonical membership and explicit selection',

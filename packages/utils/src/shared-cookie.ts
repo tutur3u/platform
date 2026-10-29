@@ -1,6 +1,6 @@
 export interface TuturuuuSharedCookieDomain {
-  cookieDomain: '.tuturuuu.com' | '.tuturuuu.localhost';
-  hostname: 'tuturuuu.com' | 'tuturuuu.localhost';
+  cookieDomain: string;
+  hostname: string;
   secure: boolean;
 }
 
@@ -40,6 +40,105 @@ export const TUTURUUU_SHARED_COOKIE_DOMAINS = [
     secure: false,
   },
 ] as const satisfies readonly TuturuuuSharedCookieDomain[];
+
+export const TUTURUUU_SHARED_COOKIE_DOMAIN_ENV_KEY =
+  'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN';
+
+/**
+ * Exact allowlist of environment-configured shared cookie domains. Anything
+ * else (a sibling such as `.foo.tutur3u.com`, a registrable domain such as
+ * `.tutur3u.com` or `.tuturuuu.com`, a lookalike on another zone) is ignored,
+ * so a mis-set variable can never widen the cookie scope or move production off
+ * `.tuturuuu.com`.
+ */
+export const CONFIGURED_SHARED_COOKIE_DOMAINS = [
+  '.staging.tutur3u.com',
+] as const;
+
+/**
+ * True on a Vercel production deployment. Server code reads `VERCEL_ENV`;
+ * browser bundles cannot see it (it is not `NEXT_PUBLIC_`-inlined), so they fall
+ * back to `NEXT_PUBLIC_VERCEL_ENV` when it is exposed to the client.
+ */
+function isProductionDeployment() {
+  return (
+    process.env.VERCEL_ENV === 'production' ||
+    process.env.NEXT_PUBLIC_VERCEL_ENV === 'production'
+  );
+}
+
+let productionOverrideErrorLogged = false;
+
+/** Test-only: lets the once-per-process production error log fire again. */
+export function resetProductionOverrideErrorLogForTests() {
+  productionOverrideErrorLogged = false;
+}
+
+const warnedSharedCookieDomainValues = new Set<string>();
+
+function warnIgnoredSharedCookieDomain(value: string, reason: string) {
+  if (warnedSharedCookieDomainValues.has(value)) return;
+
+  warnedSharedCookieDomainValues.add(value);
+  console.warn(
+    `[shared-cookie] Ignoring ${TUTURUUU_SHARED_COOKIE_DOMAIN_ENV_KEY} "${value}": ${reason}`
+  );
+}
+
+/**
+ * The accepted environment override, or `null` when the variable is unset or
+ * not on the exact allowlist (in which case the production default applies).
+ */
+export function getConfiguredSharedCookieDomainOverride(): TuturuuuSharedCookieDomain | null {
+  const normalized =
+    process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN?.trim().toLowerCase();
+
+  if (!normalized) return null;
+
+  // Fail closed: a staging override that leaks onto production is ignored.
+  if (isProductionDeployment()) {
+    if (!productionOverrideErrorLogged) {
+      productionOverrideErrorLogged = true;
+      console.error(
+        `[shared-cookie] Ignoring ${TUTURUUU_SHARED_COOKIE_DOMAIN_ENV_KEY} on a production deployment; it must never be set on production`
+      );
+    }
+    return null;
+  }
+
+  const accepted = CONFIGURED_SHARED_COOKIE_DOMAINS.find(
+    (domain) => domain === normalized
+  );
+
+  if (!accepted) {
+    warnIgnoredSharedCookieDomain(
+      normalized,
+      `only ${CONFIGURED_SHARED_COOKIE_DOMAINS.join(', ')} is accepted`
+    );
+    return null;
+  }
+
+  return { cookieDomain: accepted, hostname: accepted.slice(1), secure: true };
+}
+
+/**
+ * Shared cookie domains for this deployment. Production defaults to
+ * `.tuturuuu.com`; the staging deployment sets
+ * `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com` (the only
+ * accepted override), which replaces the production domain. The variable must
+ * never be set on production. The first entry is the primary (managed) domain.
+ */
+export function getTuturuuuSharedCookieDomains(): readonly TuturuuuSharedCookieDomain[] {
+  const configured = getConfiguredSharedCookieDomainOverride();
+
+  return configured
+    ? [configured, ...TUTURUUU_SHARED_COOKIE_DOMAINS.slice(1)]
+    : TUTURUUU_SHARED_COOKIE_DOMAINS;
+}
+
+export function getTuturuuuPrimarySharedCookieDomain(): TuturuuuSharedCookieDomain {
+  return getTuturuuuSharedCookieDomains()[0] as TuturuuuSharedCookieDomain;
+}
 
 const ENV_APP_URL_KEYS = [
   'PORTLESS_URL',
@@ -142,7 +241,7 @@ function domainForUrl(url: string | URL | null | undefined) {
   if (!hostname) return null;
 
   return (
-    TUTURUUU_SHARED_COOKIE_DOMAINS.find(
+    getTuturuuuSharedCookieDomains().find(
       (entry) =>
         hostname === entry.hostname || hostname.endsWith(`.${entry.hostname}`)
     ) ?? null

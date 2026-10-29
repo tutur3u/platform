@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// One journal decision in the Decisions list: title, category, risk as a word
@@ -35,16 +35,15 @@ class DecisionTile extends StatelessWidget {
             spacing: AppSpacing.xs,
             runSpacing: AppSpacing.xs,
             children: [
-              AppBadge(
-                child: Text(
-                  MastermindLabels.decisionCategory(l10n, decision.category),
+              MastermindStatusChip(
+                label: MastermindLabels.decisionCategory(
+                  l10n,
+                  decision.category,
                 ),
               ),
               RiskBadge(risk: decision.risk),
               if (decision.product case final product?)
-                AppBadge.outline(
-                  child: Text(MastermindLabels.product(product)),
-                ),
+                MastermindStatusChip(label: MastermindLabels.product(product)),
             ],
           ),
         ],
@@ -62,13 +61,13 @@ class RiskBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return AppBadge.outline(
-      leading: Icon(switch (risk) {
+    return MastermindStatusChip(
+      icon: switch (risk) {
         Risk.low => LucideIcons.signalLow,
         Risk.med => LucideIcons.signalMedium,
         Risk.high => LucideIcons.signalHigh,
-      }),
-      child: Text(l10n.mastermindRiskLine(MastermindLabels.risk(l10n, risk))),
+      },
+      label: l10n.mastermindRiskLine(MastermindLabels.risk(l10n, risk)),
     );
   }
 }

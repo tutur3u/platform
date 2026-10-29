@@ -8,6 +8,7 @@ import 'package:mobile/features/mastermind/view/ship/ship_ci_cadence_sections.da
 import 'package:mobile/features/mastermind/view/ship/ship_delivery_section.dart';
 import 'package:mobile/features/mastermind/view/ship/ship_product_group.dart';
 import 'package:mobile/features/mastermind/view/ship/ship_untracked_row.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// `/mastermind/ship`: environments by product (failing ones first, then the
@@ -95,7 +96,7 @@ class _MastermindShipPageState extends State<MastermindShipPage> {
                   onSelected: _select,
                 ),
               if (model.groups.isEmpty && model.untracked.isEmpty)
-                AppGroupedSection.spaced(
+                MastermindGroup(
                   caption: context.l10n.mastermindEnvironmentsTitle,
                   children: [
                     AppGroupedRow(

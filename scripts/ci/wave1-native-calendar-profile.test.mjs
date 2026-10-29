@@ -9,13 +9,13 @@ const sha = 'a'.repeat(40);
 
 test('Calendar staging profile uses its custom staging hostname', () => {
   const profile = profileFor('calendar', 'staging', 'owner-example');
-  assert.equal(profile.host, 'calendar-staging.tuturuuu.com');
+  assert.equal(profile.host, 'calendar.staging.tutur3u.com');
 });
 
 test('Calendar staging seal restores its explicit host without a provider subdomain', (t) => {
   assert.equal(
     profileFor('calendar', 'staging').host,
-    'calendar-staging.tuturuuu.com'
+    'calendar.staging.tutur3u.com'
   );
   const app = fixture(t, 'calendar');
   const receipt = prepare(app, 'calendar', 'staging', undefined, sha);
@@ -23,20 +23,28 @@ test('Calendar staging seal restores its explicit host without a provider subdom
   assert.deepEqual(restored.receipt, receipt);
   const config = JSON.parse(readFileSync(restored.config, 'utf8'));
   assertStagingIsolation(config);
+  assert.equal(
+    config.vars.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN,
+    '.staging.tutur3u.com'
+  );
+  assert.equal(
+    config.vars.NEXT_PUBLIC_WEB_APP_URL,
+    'https://web.staging.tutur3u.com'
+  );
   assert.equal(config.workers_dev, false);
   assert.equal(config.preview_urls, false);
   assert.deepEqual(config.routes, []);
   assert.equal(
     config.vars.NEXT_PUBLIC_CALENDAR_APP_URL,
-    'https://calendar-staging.tuturuuu.com'
+    'https://calendar.staging.tutur3u.com'
   );
   assert.equal(
     config.vars.GOOGLE_REDIRECT_URI,
-    'https://calendar-staging.tuturuuu.com/api/v1/calendar/auth/callback'
+    'https://calendar.staging.tutur3u.com/api/v1/calendar/auth/callback'
   );
   assert.equal(
     config.vars.MICROSOFT_REDIRECT_URI,
-    'https://calendar-staging.tuturuuu.com/api/v1/calendar/auth/microsoft/callback'
+    'https://calendar.staging.tutur3u.com/api/v1/calendar/auth/microsoft/callback'
   );
 });
 
@@ -55,4 +63,38 @@ test('production and other apps keep their existing profile identities', () => {
       /CLOUDFLARE_WORKERS_SUBDOMAIN/u
     );
   }
+});
+
+test('production Worker configs never set a shared cookie-domain override', (t) => {
+  // Cloudflare Workers have no VERCEL_ENV, so the runtime production guard
+  // cannot fire there; the published production vars must omit the override.
+  const { apps } = JSON.parse(
+    readFileSync(new URL('./wave1-native-profiles.json', import.meta.url))
+  );
+  for (const app of Object.keys(apps)) {
+    const root = fixture(t, app);
+    prepare(root, app, 'production', undefined, sha);
+    const restored = verify(root, app, 'production', sha);
+    const config = JSON.parse(readFileSync(restored.config, 'utf8'));
+    assert.equal(
+      Object.hasOwn(config.vars, 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN'),
+      false,
+      app
+    );
+  }
+  const finance = JSON.parse(
+    readFileSync(
+      new URL(
+        '../../apps/finance/cloudflare/native-profiles.json',
+        import.meta.url
+      )
+    )
+  );
+  assert.equal(
+    Object.hasOwn(
+      finance.production.vars,
+      'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN'
+    ),
+    false
+  );
 });

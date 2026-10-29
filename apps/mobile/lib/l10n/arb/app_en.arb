@@ -1,9 +1,22 @@
 {
+  "mastermindAskedBy": "From {by}",
+  "@mastermindAskedBy": {
+    "placeholders": {
+      "by": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindUnrecognisedValue": "Unrecognised value",
   "mastermindAskTruncated": "Ask truncated; full text on the Mac",
   "mastermindReplyFailedShort": "Not sent · tap to retry",
   "mastermindReplySendingOption": "Sending “{option}”",
   "@mastermindReplySendingOption": {"placeholders": {"option": {"type": "String"}}},
+  "mastermindReplyWriteOwn": "Write your own",
+  "mastermindReplySendOption": "Send “{option}”",
+  "@mastermindReplySendOption": {"placeholders": {"option": {"type": "String"}}},
+  "mastermindAskedAt": "Asked {age} · {time}",
+  "@mastermindAskedAt": {"placeholders": {"age": {"type": "String"}, "time": {"type": "String"}}},
   "mastermindReplyUndo": "Undo",
   "mastermindReplyNotSentReview": "Couldn't send · open to review",
   "mastermindAnswerExpand": "Show full answer",
@@ -426,6 +439,27 @@
     "placeholders": {
       "count": {
         "type": "int"
+      }
+    }
+  },
+  "@inventoryItemAvailable": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@inventoryItemMoreLocations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@inventoryScanMatches": {
+    "placeholders": {
+      "code": {
+        "type": "String"
       }
     }
   },
@@ -1334,6 +1368,7 @@
   "assistantAttachmentUploadFailed": "An attachment failed to upload. Remove it and try again before sending.",
   "assistantAttachmentFailureForbidden": "This chat can't accept attachments. Remove it or start a new chat.",
   "assistantAttachmentFailureNetwork": "Upload interrupted. Check your connection and tap Retry.",
+  "assistantAttachmentFailureNewChatRequired": "Start a new chat first, then attach the file again.",
   "assistantAttachmentFailureServer": "Upload didn't finish. Tap Retry.",
   "assistantAttachmentFailureTooLarge": "File is larger than 32 MB. Remove it or attach a smaller file.",
   "assistantAttachmentFailureUnsupported": "This file type isn't supported. Remove it to send.",
@@ -2891,6 +2926,25 @@
   "inventorySalesTitle": "Title",
   "inventorySaveProduct": "Save product",
   "inventorySearchProducts": "Search products",
+  "inventoryItemArchived": "Archived",
+  "inventoryItemsLoadFailed": "Couldn't load products",
+  "inventoryItemsLoadMoreFailed": "Couldn't load more products",
+  "inventoryItemAvailable": "{amount} available",
+  "inventoryItemMoreLocations": "{count, plural, =1{1 more location} other{{count} more locations}}",
+  "inventoryItemNoStock": "No stock configured",
+  "inventoryItemStockHidden": "Stock hidden",
+  "inventoryItemsEmptyTitle": "No products yet",
+  "inventoryItemsNoMatch": "No products match",
+  "inventoryItemsNoMatchMessage": "Search matches product names. Try another name or clear the search.",
+  "inventoryItemsNoneArchived": "No archived products",
+  "inventoryScanAction": "Scan code",
+  "inventoryScanHint": "Point the camera at a product QR code or barcode.",
+  "inventoryScanMatches": "Name matches for “{code}”",
+  "inventoryScanNotFound": "No product in this workspace matches this code.",
+  "inventoryScanNotProduct": "This code can't be matched to a product.",
+  "inventoryScanSearchInstead": "Search instead",
+  "inventoryScanTitle": "Scan a code",
+  "inventoryScanUnavailable": "Camera unavailable",
   "inventorySeasonHistoricalReadOnly": "Scheduled sale history is read only here. Recorded prices are preserved.",
   "inventorySeasonPriceAsOf": "Season prices · {currency} · as of {asOf} (UTC) · season dates in {timeZone}",
   "inventorySeasonPriceCached": "Offline draft using saved season prices. Prices and availability will be checked when syncing.",
@@ -4182,14 +4236,9 @@
   "taskBoardDetailParentTask": "Parent task",
   "taskBoardDetailPoints": "{count, plural, one{{count} pt} other{{count} pts}}",
   "taskBoardDetailPriority": "Priority",
-  "taskBoardDetailPriorityCritical": "Critical",
-  "taskBoardDetailPriorityHigh": "High",
-  "taskBoardDetailPriorityLow": "Low",
   "taskBoardDetailPriorityNone": "No priority",
-  "taskBoardDetailPriorityNormal": "Normal",
   "taskBoardDetailPriorityUpdated": "Priority updated.",
   "taskBoardDetailProperties": "Properties",
-  "taskBoardDetailQuickActions": "Quick actions",
   "taskBoardDetailRecycleBin": "Recycle Bin",
   "taskBoardDetailRecycleBinDescription": "Deleted tasks from this board. Select tasks to restore or permanently delete them.",
   "taskBoardDetailRecycleBinEmpty": "No deleted tasks",
@@ -4511,6 +4560,34 @@
   "taskPortfolioUpdatePlaceholder": "Share the latest progress, blockers, or wins...",
   "taskPortfolioUpdatePosted": "Update posted.",
   "taskPortfolioUpdateSaved": "Update saved.",
+  "taskQuickActionsDueDate": "Due date",
+  "taskQuickActionsNoDate": "None",
+  "taskQuickActionsNoLabels": "No labels",
+  "taskQuickActionsRemoveStartDate": "Remove start date",
+  "taskQuickActionsStatus": "Status",
+  "taskQuickActionsUnassigned": "Unassigned",
+  "taskTimelineLoadingTasks": "Loading tasks…",
+  "taskTimelineNotAllLoaded": "Some tasks aren't loaded yet",
+  "taskTimelineNothingToday": "Nothing scheduled today",
+  "taskTimelineOngoing": "Day {day} of {total}, ends {date}",
+  "@taskTimelineOngoing": {
+    "placeholders": {
+      "day": {"type": "int"},
+      "total": {"type": "int"},
+      "date": {"type": "String"}
+    }
+  },
+  "taskTimelineRangeAll": "All",
+  "taskTimelineRangeMonth": "Month",
+  "taskTimelineRangeWeek": "Week",
+  "taskTimelineShowLater": "Show later tasks",
+  "taskTimelineShowOverdue": "Show overdue",
+  "taskTimelineStarted": "Started {date}",
+  "@taskTimelineStarted": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
   "tasksAllCaughtUp": "You're all caught up!",
   "tasksAllCaughtUpSubtitle": "No pending tasks right now",
   "tasksCompleteByEndOfDay": "Complete by end of day",
@@ -4526,10 +4603,11 @@
   "tasksLoadError": "Couldn't load tasks right now",
   "tasksOverdue": "Overdue",
   "tasksPlanAhead": "Plan ahead",
-  "tasksPriorityCritical": "Critical",
   "tasksPriorityHigh": "High",
   "tasksPriorityLow": "Low",
-  "tasksPriorityNormal": "Normal",
+  "tasksPriorityMedium": "Medium",
+  "tasksPriorityNone": "None",
+  "tasksPriorityUrgent": "Urgent",
   "tasksRequiresAttention": "Requires attention",
   "tasksTitle": "Tasks",
   "tasksUntitled": "Untitled task",
@@ -4818,6 +4896,10 @@
   "workspaceHiddenDescription": "Only you can see this list. Hiding does not change membership or notifications.",
   "workspaceHiddenEmpty": "No Hidden workspaces",
   "workspaceHiddenLoadError": "Workspace visibility preferences are unavailable. Saved hidden choices are kept.",
+  "workspaceManageTitle": "Manage workspaces",
+  "workspaceVisibleTitle": "Visible workspaces",
+  "workspaceHiddenCurrentToast": "Workspace hidden. Switched to another visible workspace.",
+  "workspaceHiddenLastToast": "All workspaces are hidden. Show a workspace to continue.",
   "workspaceHiddenTitle": "Hidden workspaces",
   "workspaceHiddenUpdateError": "Unable to save this change. Try again when connected.",
   "workspaceHideAction": "Hide",
@@ -6137,7 +6219,6 @@
   "mastermindScopeModels": "Models",
   "mastermindScopeUsage": "Usage",
   "mastermindSectionWithBasis": "{section} · {basis}",
-  "mastermindSecurityFix": "Security fix",
   "mastermindSecurityGroup": "Security",
   "mastermindSecurityIssue": "Security issue",
   "mastermindSecurityLine": "{product} · security fix",
@@ -6245,7 +6326,7 @@
   "mastermindSummaryUsageLowest": "{account} has the least left: {percent}.",
   "mastermindSummaryUsageShort": "Projected SHORT at reset {time}.",
   "mastermindSummaryWeeklyNotReported": "Weekly window not reported.",
-  "mastermindTabHome": "Home",
+  "mastermindTabHome": "Today",
   "mastermindTabInbox": "Inbox",
   "mastermindTabInsights": "Insights",
   "mastermindTabShip": "Ship",
@@ -6364,6 +6445,9 @@
   "mastermindInboxNoMatchesReason": "Nothing in this view matches your search or filter.",
   "mastermindInboxClearFilters": "Clear search and filters",
   "mastermindInboxSearchAction": "Search Inbox",
+  "mastermindInboxLoadingMore": "Loading more",
+  "mastermindInboxLoadMoreFailed": "Couldn't load more asks.",
+  "mastermindInboxEndOfList": "That's every ask",
   "mastermindInboxResolvedSegment": "Resolved",
   "mastermindLastChecked": "Last checked {time}",
   "@mastermindLastChecked": {
@@ -6402,5 +6486,200 @@
         "type": "String"
       }
     }
-  }
+  },
+  "mastermindAnsweredOnPhone": "Answered on phone",
+  "mastermindAnsweredOnMac": "Answered on Mac",
+  "mastermindAnsweredInChat": "Answered in chat",
+  "mastermindAnsweredAutomatically": "Answered automatically",
+  "mastermindAnsweredElsewhere": "Answered elsewhere",
+  "mastermindAlreadyAnsweredOnPhone": "Already answered on phone",
+  "mastermindAlreadyAnsweredOnMac": "Already answered on Mac",
+  "mastermindAlreadyAnsweredInChat": "Already answered in chat",
+  "mastermindAlreadyAnsweredAutomatically": "Already answered automatically",
+  "mastermindAlreadyAnsweredElsewhere": "Already answered elsewhere",
+  "mastermindWithdrawnNoLongerNeeded": "Withdrawn · no longer needed",
+  "mastermindAnsweredByYou": "you",
+  "mastermindViaPhone": "on phone",
+  "mastermindViaMac": "on Mac",
+  "mastermindViaChat": "in chat",
+  "mastermindViaAuto": "automatically",
+  "mastermindAnsweredInBatch": "Answered in batch",
+  "mastermindAlreadyAnsweredInBatch": "Already answered in batch",
+  "mastermindViaBatch": "in batch",
+  "mastermindAskDeadlineWithinHours": "Answer within hours",
+  "mastermindAskDeadlineToday": "Answer today",
+  "mastermindAskDeadlineTonight": "Answer tonight",
+  "mastermindAskDeadlineThisWeek": "Answer this week",
+  "mastermindAskUrgencyHigh": "High priority",
+  "mastermindAskUrgencyUrgent": "Urgent",
+  "mastermindAskWhyRecommended": "Why recommended",
+  "mastermindAskIfNoAnswerTitle": "If you don't answer",
+  "mastermindAskIfNoAnswer": "If no answer: {option}",
+  "@mastermindAskIfNoAnswer": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskRisk": "Risk: {risk}",
+  "@mastermindAskRisk": {
+    "placeholders": {
+      "risk": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskReversible": "Can be undone later",
+  "mastermindAskNotReversible": "Can't be undone",
+  "mastermindAskBlocks": "{count, plural, =1{Blocks 1 lane} other{Blocks {count} lanes}}",
+  "@mastermindAskBlocks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindAskDueAt": "Due {time}",
+  "@mastermindAskDueAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskAnsweredPhone": "Answered on the phone",
+  "mastermindAskAnsweredMac": "Answered on the Mac",
+  "mastermindAskAnsweredChat": "Answered in chat",
+  "mastermindAskAnsweredAuto": "Answered automatically",
+  "mastermindAskAnsweredBatch": "Answered in a batch",
+  "mastermindAskAnsweredElsewhere": "Answered elsewhere",
+  "mastermindAskLinksTitle": "Links",
+  "mastermindAskLaneLink": "Lane ⟶",
+  "mastermindAskActionAnswer": "Answer here",
+  "mastermindAskActionRunOnMac": "Run at your Mac",
+  "mastermindAskActionPhysical": "Needs a physical step",
+  "mastermindAskActionFyi": "For your information",
+  "mastermindAskRemindAtMac": "Remind me at Mac",
+  "mastermindAskRemindAtMacSoon": "Coming soon",
+  "mastermindCatchupTitle": "Since you last looked",
+  "mastermindCatchupWindowSince": "Since your last visit",
+  "mastermindCatchupWindowDay": "Last 24 hours",
+  "mastermindCatchupWelcome": "Welcome to Mastermind. Here's what happened in the last day.",
+  "mastermindCatchupQuiet": "Quiet since you last looked",
+  "mastermindCatchupQuietFirstRun": "Nothing has happened in the last day.",
+  "mastermindCatchupPartial": "Some updates may be missing",
+  "mastermindCatchupSectionShipped": "Shipped",
+  "mastermindCatchupSectionBlocked": "Blocked",
+  "mastermindCatchupSectionChanged": "Changed",
+  "mastermindCatchupSectionUsage": "Usage & health",
+  "mastermindCatchupSectionOther": "Other updates",
+  "mastermindCatchupCountNeedsYou": "{count, plural, =1{1 needs you} other{{count} need you}}",
+  "@mastermindCatchupCountNeedsYou": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountShipped": "{count} shipped",
+  "@mastermindCatchupCountShipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountBlocked": "{count} blocked",
+  "@mastermindCatchupCountBlocked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountChanged": "{count} changed",
+  "@mastermindCatchupCountChanged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupNewDivider": "New since your last visit",
+  "mastermindCatchupShowEarlier": "Show {count} earlier",
+  "@mastermindCatchupShowEarlier": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupSecurityUpdate": "Security update",
+  "mastermindCatchupOnIt": "{name} is on it",
+  "@mastermindCatchupOnIt": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindCatchupButton": "Catch me up",
+  "mastermindCatchupRefreshing": "Catching up…",
+  "mastermindCatchupUpToDate": "You're up to date",
+  "mastermindCatchupFailed": "Couldn't catch up. Try again.",
+  "mastermindCatchupOpensLink": "Opens in your browser",
+  "mastermindCatchupGroupLabel": "{product}, {count, plural, =1{1 update} other{{count} updates}}",
+  "@mastermindCatchupGroupLabel": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelNow": "now",
+  "mastermindRelMinutes": "{count}m",
+  "@mastermindRelMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelHours": "{count}h",
+  "@mastermindRelHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelHoursMinutes": "{hours}h {minutes}m",
+  "@mastermindRelHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelDays": "{count}d",
+  "@mastermindRelDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelShowExact": "Show exact time",
+  "mastermindCatchupSettingsAction": "Catch-up settings",
+  "mastermindMorningCatchup": "Morning catch-up",
+  "mastermindMorningCatchupSubtitle": "A notification that says your catch-up is ready. Saved on this device; sent once the hub supports it.",
+  "mastermindMorningCatchupTime": "Time",
+  "mastermindCatchupPushBody": "Your catch-up is ready"
 }

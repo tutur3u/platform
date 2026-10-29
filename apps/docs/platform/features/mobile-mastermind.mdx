@@ -114,11 +114,12 @@ A 401 can come from the Worker (audience or clock skew) rather than the
 session, and signing out removes every saved account on the device, so it is
 never the primary action and only runs after the user confirms.
 
-## Home
+## Home (Today)
 
-Order: freshness strip, activity tiles, Needs you, replies waiting to send,
-Ship, Quota, Activity and, last, recent decisions. Every list is capped and
-ends in "Show all N" only when it holds more than the cap.
+The Home tab is labelled **Today**. Order: freshness strip, Catch-up, activity
+tiles, Needs you, replies waiting to send, Ship, Quota, Activity and, last,
+recent decisions. Home lists are capped and end in "Show all N" only when they
+hold more than the cap; Inbox shows every ask (see below).
 
 - **Activity tiles.** Running, Waiting, Idle and Failed, four across (two by
   two past 130% text), each at least 44 × 72 and opening Work filtered to that
@@ -138,28 +139,77 @@ ends in "Show all N" only when it holds more than the cap.
 - **Activity** and **recent decisions** show three each; decision rows push
   their detail and "See all decisions" opens the Decisions segment.
 
-**Security rows** render as a single non-tappable "`<Product>` · security fix"
-line in a trailing "Security" group with no count. They have no severity, title
-or detail anywhere, are never counted, and never reorder anything. Event
+**Security rows** render as a single non-tappable "Mastermind · security fix"
+line in a trailing "Security" group with no count. The label is the constant
+"Mastermind" (SB-100 S3): never a product name and never a product fallback, so
+the row cannot say which product is affected. Each list (Home, For you, Work,
+Backlog, the activity feed) shows at most one such line however many products
+have one, with no count. They have no severity, title or
+detail anywhere, are never counted, and never reorder anything. Event
 summaries apply the same collapse.
+
+### Catch-up
+
+Scope: Mastermind mobile, top of Today. It renders only when the snapshot
+carries a `catchup` object; no `/v1/catchup` route exists and the app calls
+none. Everything is optional on the wire, unknown enum values are tolerated and
+the parser never rejects the snapshot (`catchup/catchup_parser.dart`).
+
+- **Contract.** `catchup { generated_at, window_start, coverage
+  ok|partial|stale, products[{slug,name}], counts{needs_you,shipped,blocked,
+  changed}, sections[{key, items[{id, kind, title (80), product|null, at,
+  importance, link{label,url}|null, entity{kind,id}|null, neutral, reason?,
+  owner_name?}]}] }`, at most 20 items per section and 100 in all, enforced
+  again by the parser.
+- **Window.** Default is since the last visit (rendered-time marker kept per
+  device in local preferences); the first visit shows 24 hours. A visit ends
+  after 30 minutes without a render, so tab switches keep the window. Items are
+  filtered by `at` on the client. "Show N earlier" widens to 24 hours and draws
+  a "New since your last visit" divider where the new rows end in each product
+  group. Hub `counts` are used while nothing is filtered out; otherwise the
+  counts line is computed from the visible rows.
+- **Sections and groups.** Needs you, Shipped, Blocked, Changed, Usage & health,
+  each grouped per product (hub name, else the slug) under collapsible headers
+  whose state is remembered for the app session. Blocked rows show the reason
+  and who is on it.
+- **Taps.** `ask` opens `/mastermind/inbox/item/:id`, `lane` opens
+  `/mastermind/work/lane/:id`, `env` and `release` open Ship, `usage` opens
+  Usage. Otherwise the link opens in the system browser, only for `https`
+  `tuturuuu.com` or `*.tuturuuu.com`; any other URL is dropped at parse time. A
+  row with neither is not tappable.
+- **Neutral items** render "Security update" with no product, title or link;
+  the parser keeps only their kind, time and importance.
+- **Times.** Relative with the clock glyph (`now`, `12m`, `2h 13m`, `3d`);
+  long-press or a tap on the glyph shows the absolute time in
+  Asia/Ho_Chi_Minh.
+- **States.** First run, quiet, "Some updates may be missing" for partial or
+  stale coverage (or a hub window that starts after the view's), offline or
+  failed refresh from cache with the age line.
+- **Catch me up** and pull-to-refresh refetch the snapshot (no LLM) with
+  progress, an "up to date" confirmation and a failure message.
+- **Morning catch-up** (Today navbar, Catch-up settings): a local toggle and
+  time. The push body is the fixed line "Your catch-up is ready" with no
+  content. There is no app quiet-hours setting yet; the server must apply
+  quiet hours (`MorningCatchupSync` is the seam). Server scheduling is not part
+  of this change.
+
+Regression coverage: `apps/mobile/test/features/mastermind/catchup/`.
 
 ## Inbox
 
 The Inbox tab opens on one compact segmented control: **Needs you · Resolved ·
 Decisions**. Needs you lists the open asks grouped by kind ("Decisions for
 you", "Actions", then "For your information"), each with its count, in publisher
-order. Resolved lists the hub's `decisions_resolved` history ("Recently
-resolved", newest first). Pull to refresh.
+order. Resolved groups hub history by GMT+7 day; see [resolved rows](/platform/features/mobile-mastermind-answered-elsewhere). Pull to refresh.
 
 - **Rows** are two lines: the friendly title (`itemDisplayTitle`, so a redacted
   `Product · area · kind` title uses the first ask line), then the
-  kind badge with the state and age: "Resolved · Yes · 2 h ago" for a resolved
-  ask, "Sent · waiting for Mastermind" or "Waiting to send" for this device's
-  reply. A separate two-line preview retains the ask. No age is shown where the hub
-  publishes none (open asks). Options, "More" and the full ask live on the
-  detail. A row is one screen-reader node ("Decision. Review plan. Review the
+  kind badge with state and age for open asks, or answer attribution and time
+  for resolved asks. A separate two-line preview retains the ask. No age is shown where the hub
+  publishes none. Open asks expose one-tap option buttons on Home and Inbox;
+  "More" and the full ask live on detail. The summary is one screen-reader node ("Decision. Review plan. Review the
   plan", hint "Opens the ask").
-- **Caps:** each group shows five rows, then "Show all N" expands it in place.
+- **Every ask:** [lazy loading and paging](/platform/features/mobile-mastermind-inbox).
 - **Search** is hidden until the navbar search icon
   of the list reveals it ("Search asks"); it covers every ask segment, including
   the resolved answer. Product chips (one row, 44 pt targets) appear only while
@@ -176,12 +226,12 @@ resolved", newest first). Pull to refresh.
   the same search text and product chips (the shell pops an item location
   instead of falling back to the Inbox). The navbar title is the kind
   ("Decision"), so the title is not repeated; the page leads with the display
-  title as a heading and shows the full `ask_text` as plain text, never clamped.
+  title as a heading and shows the full `ask_text` with tappable links, never clamped.
   When the hub published only its "Open on Mac" stand-in, an info alert reads
   "Full details are on the Mac" instead. The id is looked up among the open
   asks, then the resolved history, and is only ever a route parameter; deep
   links carry tab roots only and never ids. A resolved ask shows an "Outcome"
-  panel (Resolved, "Answer: Yes", GMT+7 time) and no composer. An id in neither
+  panel with answer attribution and GMT+7 time, or withdrawn status, and no composer. An id in neither
   list shows "This item is no longer in Mastermind" (or "This was answered or
   withdrawn" when it left while open) with a way back, never an error. A changed
   `version_hash` shows "This question was updated".
@@ -245,8 +295,8 @@ switch, so it flips without a store release.
   `{schema_version: "1.4", item_id, version_hash, option_index | text}`: one of
   an option index (into the item's own `options[]`) or free text of at most 500
   characters, counted in code points, and at most 10 lines (the hub's limit; the
-  composer caps both as you type). An option button sends its index after a
-  five-second undo window (see Undo window below).
+  composer caps both as you type). An option sends its index after a five-second
+  undo window (see Undo window below).
   The text field has a placeholder and a counter; free-text sending requires
   confirmation.
 - **Idempotency:** the `Idempotency-Key` is a random v4 UUID from a secure
@@ -265,9 +315,8 @@ switch, so it flips without a store release.
   already accepted by the hub is unaffected. Logout,
   account switch and lost access erase the outbox with the snapshot cache, behind
   the same generation fences, so an in-flight send cannot revive it.
-- **409 `stale_item`:** the item is refreshed, the typed words are kept, and the
-  screen says "This question changed or was already answered. Review it again."
-  Option buttons always use the current question version. `idempotency_conflict` drops the queued entry with "Something went
+- **409 `stale_item`:** refreshes the item; see the [answered elsewhere rules](/platform/features/mobile-mastermind-answered-elsewhere).
+  Options always use the current question version. `idempotency_conflict` drops the queued entry with "Something went
   wrong with this reply. Review it and send it again."
 - **Other answers:** 400 (`unsafe_text` explains the text policy) and 413 keep
   the words to edit; 429 waits out `Retry-After` and disables the retry until
@@ -558,6 +607,28 @@ signed hub events and sends a mobile push to Mastermind owners.
   `route.delivery.test.ts` and, for the tap,
   `apps/mobile/test/features/notifications/push/mastermind_push_destination_test.dart`.
 
+## App-switcher privacy
+
+On every `/mastermind/**` route (Home, For you, Decided, Journal, item and
+decision detail, Work, Ship, Insights) the app covers its own content with a
+blur under a mostly opaque surface tint while it is not in the foreground
+(SB-100 L2). The cover is built on `inactive`, `hidden` and `paused`, so the
+OS-captured switcher thumbnail never holds hub text, and it does not depend on
+whether a screen has cards. Screenshots are deliberately not blocked: Mastermind
+is owner-only. The cover is a Flutter overlay, so a system sheet that only
+pauses the app (Control Centre, a biometric prompt) briefly covers it too.
+
+- **Deferred (SB-100 gate):** the neutral "A decision is waiting on your Mac"
+  card (S2, T7) and local "Later" notifications with a local quiet window
+  (L1/Q5, T8) wait for the hub's `display` field and S1 classification; the app
+  has no snooze notifications today.
+- **Regression coverage:**
+  `apps/mobile/test/features/mastermind/privacy/mastermind_privacy_shield_test.dart`
+  and, for the constant security label,
+  `apps/mobile/test/features/mastermind/view/mastermind_home_page_test.dart`;
+  for the single row per list,
+  `apps/mobile/test/features/mastermind/presentation/security_rows_test.dart`.
+
 ## Deferred to PR8
 
 - **Activity cursor (spec 2.10).** Home shows the latest three events from
@@ -737,7 +808,8 @@ details. A 429, a 401/403 (behind the auth-failure guard) or a dropped reply
 reads "Couldn't send · open to review" and a tap only opens the details. Grouped open rows omit the repeated kind badge. Coverage:
 `mastermind_inbox_v1_test.dart` (truncation, long answers, failed sends).
 
-Ask cards on Home and Inbox share the same row. The publisher title wins;
+Ask cards on Home and Inbox share the same row. The A2 short title wins when
+present; otherwise the publisher title wins;
 a redacted title falls back to the first ask line. Cards preview two lines,
 project, status and created-at age; detail keeps the full published ask. Only
 unique open ids appear in Needs you; a hub-answered id always wins. Home's
@@ -746,12 +818,14 @@ preview starts on the second line; screen readers hear at most 200 characters
 of the ask on a row. The recorded answer shows "Show full answer" whenever it
 overflows four lines at the current width and text size.
 
-**Undo window (Theo, 2026-10-28).** Option replies stay one tap. The tap shows
-"Sending “option” · Undo" for 5 seconds on the item detail; the reply enters the outbox only then, through the same
+**Undo window (Theo, 2026-10-28).** A Home or Inbox option is one tap; the item detail selects, then sends from the sticky Send ([decision detail](/platform/features/mobile-mastermind-decision-detail)). Either shows
+"Sending “option” · Undo" for 5 seconds; the reply enters the outbox only then, through the same
 `submit` and Idempotency-Key. One window per item; the other options lock
 meanwhile. Leaving the screen inside the window still sends; logout or an
 account switch cancels it, and so does a live snapshot where the ask changed or
 left. Coverage: `mastermind_replies_undo_test.dart`, `mastermind_option_undo_test.dart`.
+
+See [answered elsewhere and withdrawn](/platform/features/mobile-mastermind-answered-elsewhere) for cross-device answers, batch labels, undo cancellation and resolved rows.
 
 ## Read-only Threads preview
 
@@ -787,3 +861,32 @@ the 404 state with the flag on; `threads_flag_test.dart` keeps the flag-off
 navigation unchanged and checks the flag-on dock selection, redirects with
 filters kept, and the lane-gone copy. Enablement remains held for exact-commit
 mobile CI and product acceptance.
+
+### Inline decision cards
+
+Scope: open asks on mobile Home and Inbox. Schema 1.4 remains the wire
+version; the existing adapter accepts optional A2 `hub_title`, `hub_text`,
+`hub_options`, `hub_recommended`, and `by`. Short title/text take precedence
+on cards; absent, null or empty copy falls back to the canonical title/body.
+The publisher's `text` and `recommended` aliases normalize to `body` and
+`recommended_option`. Open asks still come from `now.needs_you` and the
+item-identity rows in `decisions[]`; the journal is a separate history model.
+
+Short option labels must preserve the canonical option order and count.
+A mismatched list falls back to canonical labels; mobile always sends the
+original `option_index`, item ID and version hash. Recommendation is marked
+with localized text as well as a badge. Product and publisher chips wrap;
+age appears only when `created_at` is published.
+
+A tap optimistically replaces choices with the existing five-second
+Sending/Undo window, then the existing version-bound, idempotent reply outbox
+and `POST /v1/replies` transport. Undo restores choices without a send.
+Acceptance remains “Sent · waiting for Mastermind”; only the hub may resolve
+the ask. Offline, rejected and stale replies retain existing recovery behavior.
+When capabilities do not permit replies, choices are disabled with the existing
+capability explanation. No new endpoint or inferred backend capability is added.
+Full detail continues to show canonical ask text and choices.
+
+Regression coverage: `view/decision_cards_test.dart` (English/Vietnamese,
+320px, text scale 2.0, short-copy fallback, recommendation, canonical indices,
+Undo and delayed send) plus the existing reply cubit and Inbox/Home suites.

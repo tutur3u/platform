@@ -1,33 +1,55 @@
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/open_asks.dart';
+import 'package:mobile/features/mastermind/presentation/option_labels.dart';
+import 'package:mobile/features/mastermind/presentation/security_rows.dart';
+import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
 
-/// One run of asks: open items of the same kind in publisher order, or the
-/// resolved history newest first.
+/// One run of asks: open items of the same kind in publisher order, or one
+/// GMT+7 day of resolved history newest first.
 final class InboxGroup {
   const InboxGroup({required this.kind, required this.items})
-    : resolved = false;
+    : resolved = false,
+      day = null;
 
-  const InboxGroup.resolved({required this.items})
+  const InboxGroup.resolved({required this.items, this.day})
     : kind = null,
       resolved = true;
 
-  /// Null for the resolved group, and for the rare open item the publisher
+  /// Null for resolved groups, and for the rare open item the publisher
   /// left without a kind.
   final ItemKind? kind;
   final bool resolved;
   final List<NeedsYou> items;
 
+  /// An instant inside the resolved group's GMT+7 day; null for resolved rows
+  /// without a time.
+  final DateTime? day;
+
   /// Stable across rebuilds, for remembering which groups were expanded.
-  String get key => resolved ? 'resolved' : 'open-${kind?.wireName}';
+  String get key => resolved
+      ? switch (day) {
+          final day? => 'resolved-${_dayKey(day)}',
+          null => 'resolved',
+        }
+      : 'open-${kind?.wireName}';
+}
+
+String _dayKey(DateTime at) {
+  final wall = Gmt7.wallTime(at);
+  return '${wall.year}-${wall.month}-${wall.day}';
 }
 
 /// What the Inbox ask segments render, derived from one accepted snapshot.
 ///
-/// Needs you lists open items grouped by kind; Resolved lists the hub's
-/// `decisions_resolved` history. Whether an ask is resolved is
-/// the hub's word only: a reply this device sent never moves an item.
+/// Needs you lists open items grouped by kind, plus any ask still lingering
+/// after it was answered elsewhere; Resolved lists the hub's
+/// `decisions_resolved` history (answered and withdrawn asks), one group per
+/// GMT+7 day.
+/// Whether an ask is resolved is the hub's word only: a reply this device sent
+/// never moves an item.
 ///
 /// Security rows never mix with normal items: they have no id, count, order or
 /// severity, so they stay in their own list and are never tallied, filtered or
@@ -46,10 +68,11 @@ final class MastermindInboxModel {
     InboxSegment segment = InboxSegment.needsYou,
     String query = '',
     Product? product,
+    Iterable<AnsweredElsewhere> answeredElsewhere = const [],
   }) {
     final open = segment == InboxSegment.resolved
         ? const <NeedsYou>[]
-        : openAsks(snapshot);
+        : _withLingering(openAsks(snapshot), answeredElsewhere);
     final resolved = segment == InboxSegment.needsYou
         ? const <NeedsYou>[]
         : _newestFirst(snapshot.resolvedItems);
@@ -69,11 +92,11 @@ final class MastermindInboxModel {
               ]
               case final items when items.isNotEmpty)
             InboxGroup(kind: kind, items: items),
-        if (resolvedShown.isNotEmpty) InboxGroup.resolved(items: resolvedShown),
+        ..._byDay(resolvedShown),
       ],
       security: segment == InboxSegment.resolved
           ? const []
-          : _onePerProduct(snapshot.now.needsYou),
+          : singleSecurityRow(snapshot.now.needsYou),
       total: open.length + resolved.length,
       products: {
         for (final item in [...open, ...resolved])
@@ -82,13 +105,10 @@ final class MastermindInboxModel {
     );
   }
 
-  /// Rows a group shows before "Show all N".
-  static const groupCap = 5;
-
   final InboxSegment segment;
   final List<InboxGroup> groups;
 
-  /// At most one per product, never counted, filtered or searched.
+  /// At most one row for the whole list, never counted, filtered or searched.
   final List<SecurityItem> security;
 
   /// Asks in this segment before any filter.
@@ -101,6 +121,44 @@ final class MastermindInboxModel {
       groups.fold(0, (sum, group) => sum + group.items.length);
   bool get isEmpty => total == 0;
   bool get hasNoMatches => total > 0 && shownCount == 0;
+}
+
+/// Answered-elsewhere asks keep their place for their short linger.
+List<NeedsYou> _withLingering(
+  List<NeedsYou> open,
+  Iterable<AnsweredElsewhere> lingering,
+) {
+  final ids = {for (final item in open) item.id};
+  final result = [...open];
+  for (final entry in [...lingering]..sort((a, b) => a.order - b.order)) {
+    if (!ids.add(entry.item.id)) continue;
+    result.insert(entry.order.clamp(0, result.length), entry.item);
+  }
+  return result;
+}
+
+/// Newest-first resolved rows split by GMT+7 day; undated rows come last.
+List<InboxGroup> _byDay(List<NeedsYou> items) {
+  final groups = <InboxGroup>[];
+  final undated = <NeedsYou>[];
+  String? current;
+  for (final item in items) {
+    final at = item.resolvedAt;
+    if (at == null) {
+      undated.add(item);
+      continue;
+    }
+    final key = _dayKey(at);
+    if (key != current) {
+      current = key;
+      groups.add(InboxGroup.resolved(items: [], day: at));
+    }
+    groups.last.items.add(item);
+  }
+  return [
+    ...groups,
+    if (undated.isNotEmpty) InboxGroup.resolved(items: undated),
+  ];
 }
 
 /// The hub appends history oldest first; the list reads newest first. Rows
@@ -126,20 +184,23 @@ bool _matches(NeedsYou item, String needle) =>
       item,
     ).any((option) => option.$2.toLowerCase().contains(needle));
 
-List<SecurityItem> _onePerProduct(List<NeedsYouItem> items) {
-  final seen = <Product?>{};
-  return [
-    for (final item in items)
-      if (item is SecurityItem && seen.add(item.product)) item,
-  ];
-}
-
 /// The options a person can actually pick, with their index in the item's
 /// `options[]` (the wire `option_index`). The "Reply on Mac" placeholder is
 /// guidance, not a choice.
 List<(int, String)> selectableOptions(NeedsYou item) => [
   for (final (index, option) in item.options.indexed)
-    if (option != mastermindReplyPlaceholderOption) (index, option),
+    if (option != mastermindReplyPlaceholderOption)
+      (index, plainOptionLabel(item, index)),
+];
+
+/// [options] with the recommended one moved first; the rest keep their order
+/// and every entry keeps its wire `option_index`.
+List<(int, String)> recommendedFirst(
+  NeedsYou item,
+  List<(int, String)> options,
+) => [
+  ...options.where((option) => item.optionRecommended(option.$1)),
+  ...options.where((option) => !item.optionRecommended(option.$1)),
 ];
 
 /// The item with [id] if it is still an open normal Needs-you row.
@@ -152,7 +213,15 @@ NeedsYou? openNeedsYouById(MastermindSnapshot snapshot, String id) {
   return null;
 }
 
-/// The item with [id] if the hub lists it as resolved.
+/// The lane blocked on ask [id] (`work.lanes[].waiting_on_ask_id`), if any.
+Lane? laneWaitingOn(MastermindSnapshot snapshot, String id) {
+  for (final lane in snapshot.lanes) {
+    if (lane is Lane && lane.waitingOnAskId == id) return lane;
+  }
+  return null;
+}
+
+/// The item with [id] if the hub lists it as resolved (answered or withdrawn).
 NeedsYou? resolvedNeedsYouById(MastermindSnapshot snapshot, String id) {
   for (final item in snapshot.resolvedItems) {
     if (item.id == id) return item;

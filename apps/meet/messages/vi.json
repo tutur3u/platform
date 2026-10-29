@@ -3892,6 +3892,11 @@
       "audio_minutes": "Số phút âm thanh đã gửi",
       "capturing": "Đang chép lời trực tiếp",
       "cost": "Chi phí Gemini ước tính",
+      "credits_daily_limit": "Đã đạt giới hạn tín dụng AI của hôm nay. Hãy bắt đầu lại vào ngày mai hoặc nâng cấp gói.",
+      "credits_exhausted": "Số dư tín dụng AI cá nhân của bạn đã hết. Hãy nạp thêm trong AI Hub rồi bắt đầu lại.",
+      "credits_model_not_on_plan": "Gói AI của bạn không bao gồm mô hình chép lời.",
+      "credits_stopped": "Đã dừng chép lời vì không đủ tín dụng AI.",
+      "credits_unavailable": "Hãy kiểm tra số dư AI Hub rồi bắt đầu lại.",
       "decisions": "Quyết định",
       "empty": "Chưa có bản chép lời.",
       "failed": "AI cuộc họp không thể hoàn tất yêu cầu. Bản chép lời đã lưu vẫn còn.",
@@ -4525,6 +4530,9 @@
       "sign_in": "Đăng nhập để tiếp tục",
       "transcription_hint": "Mỗi phiên chép lời kéo dài tối đa 3 giờ. Bạn có thể bắt đầu phiên mới để tiếp tục ghi chú trong cuộc họp dài hơn."
     },
+    "recording_permissions": {
+      "denied": "Chỉ người tạo bản ghi hoặc quản trị viên không gian làm việc mới có thể dừng bản ghi này. Bản ghi vẫn đang hoạt động."
+    },
     "transcription": {
       "empty": "Bản ghi này không có dữ liệu âm thanh để phiên âm. Bản ghi đã lưu vẫn còn khả dụng.",
       "too_large": "Bản ghi này quá lớn để phiên âm trực tiếp. Bản ghi đã lưu vẫn còn khả dụng.",
@@ -4582,6 +4590,8 @@
     "participants": "Người tham gia",
     "registered_users": "Người dùng đã đăng ký",
     "select-time-zone": "Chọn múi giờ",
+    "sign_in_to_create_plan": "Đăng nhập để tạo kế hoạch",
+    "sign_in_to_create_plan_desc": "Bạn cần đăng nhập tài khoản Tuturuuu để tạo kế hoạch. Bất kỳ ai có liên kết kế hoạch công khai vẫn có thể tham gia mà không cần đăng nhập.",
     "smart_scheduling": "Lập lịch thông minh",
     "something_went_wrong": "Có lỗi xảy ra",
     "soonest-time-to-meet": "Giờ sớm nhất",

@@ -49,7 +49,7 @@ export function CareersHero() {
           </ActionLink>
         </>
       }
-      description="We are building Mira, a proactive assistant for modern life, and the eighteen-app workspace it lives in. Not productivity tools — an intelligent partner that removes digital friction."
+      description="We are building Mira, an AI assistant for modern life, and the eighteen-app workspace it lives in. Not productivity tools — an intelligent partner that removes digital friction."
       eyebrow="Careers"
       eyebrowIcon={Sparkles}
       highlight="human potential"

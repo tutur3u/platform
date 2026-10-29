@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/components/app_icon_button.dart';
 import 'package:mobile/core/ui/components/app_toast.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
@@ -11,6 +10,7 @@ import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/hub_field.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The publisher's stand-in for a commit subject it will not send.
@@ -84,9 +84,9 @@ class ShipEnvironmentTile extends StatelessWidget {
     ].join(' · ');
     final badges = [
       if (failing)
-        AppBadge(
-          variant: AppBadgeVariant.destructive,
-          child: Text(l10n.mastermindShipFailing),
+        MastermindStatusChip(
+          tone: AppTone.destructive,
+          label: l10n.mastermindShipFailing,
         ),
       if (deploy != null)
         _StatusBadge(
@@ -99,10 +99,7 @@ class ShipEnvironmentTile extends StatelessWidget {
           style: _ciStyle(row.ciState),
         ),
       if (freshness != null)
-        _StatusBadge(
-          label: freshness,
-          style: (AppIcons.info, AppBadgeVariant.outline),
-        ),
+        _StatusBadge(label: freshness, style: (AppIcons.info, AppTone.neutral)),
     ];
     return AppGroupedRow(
       semanticLabel: [
@@ -162,24 +159,23 @@ class ShipEnvironmentTile extends StatelessWidget {
     return known ? word() : null;
   }
 
-  static (IconData, AppBadgeVariant) _deployStyle(DeployStatus status) =>
+  static (IconData, AppTone) _deployStyle(DeployStatus status) =>
       switch (status) {
-        DeployStatus.success => (AppIcons.check, AppBadgeVariant.success),
+        DeployStatus.success => (AppIcons.check, AppTone.success),
         DeployStatus.failure ||
-        DeployStatus.error => (AppIcons.warning, AppBadgeVariant.destructive),
+        DeployStatus.error => (AppIcons.warning, AppTone.destructive),
         DeployStatus.pending ||
-        DeployStatus.queued => (LucideIcons.hourglass, AppBadgeVariant.outline),
-        DeployStatus.inProgress => (LucideIcons.play, AppBadgeVariant.outline),
+        DeployStatus.queued => (LucideIcons.hourglass, AppTone.neutral),
+        DeployStatus.inProgress => (LucideIcons.play, AppTone.neutral),
         DeployStatus.inactive ||
-        DeployStatus.unknown => (AppIcons.info, AppBadgeVariant.outline),
+        DeployStatus.unknown => (AppIcons.info, AppTone.neutral),
       };
 
-  static (IconData, AppBadgeVariant) _ciStyle(CiState state) => switch (state) {
-    CiState.success => (AppIcons.check, AppBadgeVariant.success),
-    CiState.failure ||
-    CiState.error => (AppIcons.warning, AppBadgeVariant.destructive),
-    CiState.pending => (LucideIcons.hourglass, AppBadgeVariant.outline),
-    CiState.unknown => (AppIcons.info, AppBadgeVariant.outline),
+  static (IconData, AppTone) _ciStyle(CiState state) => switch (state) {
+    CiState.success => (AppIcons.check, AppTone.success),
+    CiState.failure || CiState.error => (AppIcons.warning, AppTone.destructive),
+    CiState.pending => (LucideIcons.hourglass, AppTone.neutral),
+    CiState.unknown => (AppIcons.info, AppTone.neutral),
   };
 }
 
@@ -187,11 +183,11 @@ class _StatusBadge extends StatelessWidget {
   const _StatusBadge({required this.label, required this.style});
 
   final String label;
-  final (IconData, AppBadgeVariant) style;
+  final (IconData, AppTone) style;
 
   @override
   Widget build(BuildContext context) =>
-      AppBadge(variant: style.$2, leading: Icon(style.$1), child: Text(label));
+      MastermindStatusChip(tone: style.$2, icon: style.$1, label: label);
 }
 
 /// `v1.2.3 · abcdef1`, the commit id in monospace and copyable. It is a

@@ -30,10 +30,12 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     Future<CapabilitiesFetch> Function()? fetchCapabilities,
     Future<void> Function()? refreshSnapshot,
     AccessLostCallback? onAccessLost,
+    bool Function(String itemId)? isAnsweredElsewhere,
     DateTime Function()? clock,
     Random? random,
     this.optionUndoWindow = defaultOptionUndoWindow,
   }) : _store = store,
+       _isAnsweredElsewhere = isAnsweredElsewhere,
        _transport = transport,
        _fetchCapabilities = fetchCapabilities,
        _refreshSnapshot = refreshSnapshot,
@@ -53,6 +55,10 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
   final Future<CapabilitiesFetch> Function()? _fetchCapabilities;
   final Future<void> Function()? _refreshSnapshot;
   final AccessLostCallback? _onAccessLost;
+
+  /// Whether the latest live snapshot shows the item answered: a 409 for it
+  /// is then that answer, never an error.
+  final bool Function(String itemId)? _isAnsweredElsewhere;
   final DateTime Function() _clock;
   final Random? _random;
   final _drafts = <String, ReplyDraft>{};
@@ -186,6 +192,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
         ],
       ),
     );
+    _scheduleHeld(entries);
   }
 
   Future<bool> _persist() {
@@ -219,45 +226,65 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
       if (other.idempotencyKey != entry.idempotencyKey) other,
   ];
 
+  void _replace(OutboxEntry next) => emit(
+    state.copyWith(
+      outbox: [
+        for (final entry in state.outbox)
+          if (entry.idempotencyKey == next.idempotencyKey) next else entry,
+      ],
+    ),
+  );
+
   // ---- sending ----
 
-  /// Starts the undo window for a one-tap option reply: nothing is queued yet.
-  /// After [optionUndoWindow] the reply is [submit]ted, unless [undoOption]
-  /// cancelled it first. Returns false when no window started (a reply or
+  /// Starts the undo window for a one-tap option reply. It is immediately
+  /// persisted with its deadline, but flush holds it until the window ends.
+  /// Returns false when no window started (a reply or
   /// window already exists for the item, replies are off, or no real option).
   ///
   /// The window belongs to the cubit, not the screen, so leaving the screen
   /// before it ends still sends; only [clear] (logout, account switch) cancels
-  /// it. At most one window exists per item, and the send still goes through
-  /// [submit], so its outbox check and Idempotency-Key are unchanged.
+  /// it. At most one window exists per item.
   bool queueOption({required NeedsYou item, required int optionIndex}) {
     final options = item.options;
     if (optionIndex < 0 ||
         optionIndex >= options.length ||
         options[optionIndex] == mastermindReplyPlaceholderOption ||
         !state.canReply ||
+        !state.loaded ||
         state.pendingOptions.containsKey(item.id) ||
         state.entryFor(item.id, item.versionHash) != null ||
         state.statusFor(item.id).sending) {
       return false;
     }
     final generation = _generation;
+    final entry = OutboxEntry(
+      idempotencyKey: newReplyIdempotencyKey(_random),
+      itemId: item.id,
+      versionHash: item.versionHash,
+      createdAt: _clock().toUtc(),
+      optionIndex: optionIndex,
+      optionLabel: item.optionLabel(optionIndex),
+      holdUntil: _clock().add(optionUndoWindow).toUtc(),
+    );
     emit(
       state.copyWith(
+        outbox: [...state.outbox, entry],
         pendingOptions: {
           ...state.pendingOptions,
           item.id: PendingOptionReply(
             versionHash: item.versionHash,
             optionIndex: optionIndex,
-            option: options[optionIndex],
+            option: item.optionLabel(optionIndex),
           ),
         },
       ),
     );
     _undoTimers[item.id] = Timer(
       optionUndoWindow,
-      () => unawaited(_commitOption(item, optionIndex, generation)),
+      () => unawaited(_commitOption(entry, generation)),
     );
+    unawaited(_persistHeldOption(entry, generation));
     return true;
   }
 
@@ -268,26 +295,80 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     if (timer == null) return;
     timer.cancel();
     _clearPending(itemId);
+    final pending = state.outbox.where(
+      (entry) => entry.itemId == itemId && entry.holdUntil != null,
+    );
+    if (pending.isNotEmpty) {
+      emit(
+        state.copyWith(
+          outbox: [
+            for (final entry in state.outbox)
+              if (!pending.any(
+                (held) => held.idempotencyKey == entry.idempotencyKey,
+              ))
+                entry,
+          ],
+        ),
+      );
+      unawaited(_persist());
+    }
   }
 
-  Future<void> _commitOption(
-    NeedsYou item,
-    int optionIndex,
-    int generation,
-  ) async {
-    _undoTimers.remove(item.id);
-    final pending = state.pendingOptions[item.id];
-    if (!_current(generation) || pending == null) return;
-    emit(
-      state.copyWith(
-        pendingOptions: {...state.pendingOptions, item.id: pending.asCommitted},
-      ),
-    );
-    try {
-      await submit(item: item, optionIndex: optionIndex);
-    } finally {
-      if (_current(generation)) _clearPending(item.id);
+  Future<void> _persistHeldOption(OutboxEntry entry, int generation) async {
+    if (await _persist() || !_current(generation)) return;
+    _undoTimers.remove(entry.itemId)?.cancel();
+    _clearPending(entry.itemId);
+    emit(state.copyWith(outbox: _without(entry)));
+    _setStatus(entry.itemId, const ReplyItemStatus(issue: ReplyIssue.notSaved));
+    unawaited(_persist());
+  }
+
+  void _scheduleHeld(Iterable<OutboxEntry> entries) {
+    final generation = _generation;
+    for (final entry in entries) {
+      final until = entry.holdUntil;
+      if (entry.status != OutboxStatus.pending || until == null) continue;
+      final delay = until.difference(_clock());
+      if (!delay.isNegative && delay != Duration.zero) {
+        _undoTimers[entry.itemId] = Timer(
+          delay,
+          () => unawaited(_commitOption(entry, generation)),
+        );
+      } else {
+        unawaited(_commitOption(entry, generation));
+      }
     }
+  }
+
+  Future<void> _commitOption(OutboxEntry held, int generation) async {
+    _undoTimers.remove(held.itemId);
+    final pending = state.pendingOptions[held.itemId];
+    if (!_current(generation)) return;
+    if (pending != null) {
+      emit(
+        state.copyWith(
+          pendingOptions: {
+            ...state.pendingOptions,
+            held.itemId: pending.asCommitted,
+          },
+        ),
+      );
+    }
+    await _storeTail;
+    if (!_current(generation)) return;
+    final current = state.outbox.where(
+      (entry) => entry.idempotencyKey == held.idempotencyKey,
+    );
+    if (current.isEmpty || current.single.status != OutboxStatus.pending) {
+      _clearPending(held.itemId);
+      return;
+    }
+    final ready = current.single.withoutHold();
+    _replace(ready);
+    await _persist();
+    if (!_current(generation)) return;
+    _clearPending(held.itemId);
+    await _dispatch(ready);
   }
 
   void _clearPending(String itemId) {
@@ -373,12 +454,29 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
   /// the device comes back online ([recheckCapabilities]: the hub may have
   /// turned replies off meanwhile). While replies are off, queued entries stay
   /// queued: neither sent nor dropped.
-  Future<void> flush({bool recheckCapabilities = false}) async {
+  Future<void> flush({
+    bool recheckCapabilities = false,
+    bool includeHeld = false,
+  }) async {
     await ensureLoaded();
     await loadCapabilities(force: recheckCapabilities);
     for (final entry in List.of(state.outbox)) {
       if (!state.canReply) return;
       if (entry.status != OutboxStatus.pending) continue;
+      if (entry.holdUntil != null &&
+          !includeHeld &&
+          entry.holdUntil!.isAfter(_clock())) {
+        continue;
+      }
+      if (entry.holdUntil != null) {
+        _undoTimers.remove(entry.itemId)?.cancel();
+        _clearPending(entry.itemId);
+        final ready = entry.withoutHold();
+        _replace(ready);
+        if (!await _persist()) continue;
+        await _dispatch(ready);
+        continue;
+      }
       final status = state.statusFor(entry.itemId);
       final blocked =
           status.issue == ReplyIssue.unauthorized ||
@@ -388,10 +486,16 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     }
   }
 
+  /// Background transition is the last reliable chance to send before the OS
+  /// suspends this process, so it releases even replies still inside Undo.
+  Future<void> flushOnBackground() => flush(includeHeld: true);
+
   /// Drops a queued reply the user no longer wants sent.
   Future<void> discard(String itemId, String versionHash) async {
     final entry = state.entryFor(itemId, versionHash);
     if (entry == null) return;
+    _undoTimers.remove(itemId)?.cancel();
+    _clearPending(itemId);
     emit(state.copyWith(outbox: _without(entry)));
     _setStatus(itemId, ReplyItemStatus.idle);
     await _persist();
@@ -408,7 +512,16 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     final key = entry.idempotencyKey;
     // The last line of defence for every path (submit, retry, flush): a reply
     // is never sent while the hub does not say replies are on.
-    if (!state.canReply || _inFlight.contains(key)) return;
+    final current = state.outbox.where(
+      (candidate) => candidate.idempotencyKey == key,
+    );
+    if (!state.canReply ||
+        _inFlight.contains(key) ||
+        current.isEmpty ||
+        current.single.status != OutboxStatus.pending ||
+        current.single.holdUntil?.isAfter(_clock()) == true) {
+      return;
+    }
     final generation = _generation;
     final before = state.statusFor(entry.itemId);
     _setStatus(
@@ -439,30 +552,30 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     switch (outcome) {
       case ReplyAccepted():
         _drafts.remove(id);
-        emit(
-          state.copyWith(
-            outbox: [
-              for (final other in state.outbox)
-                if (other.idempotencyKey == entry.idempotencyKey)
-                  other.withStatus(OutboxStatus.sent)
-                else
-                  other,
-            ],
-          ),
-        );
+        _replace(entry.withStatus(OutboxStatus.sent));
         _setStatus(id, ReplyItemStatus.idle);
         await _persist();
       case ReplyStale():
-        // The words survive: the user re-asks against the refreshed item.
-        if (!_drafts.containsKey(id)) {
-          _drafts[id] = ReplyDraft(
-            optionIndex: entry.optionIndex,
-            optionLabel: entry.optionLabel,
-            text: entry.text ?? '',
-          );
+        // Still "sending" until the refreshed snapshot says why: an ask
+        // answered elsewhere shows that answer, never an error.
+        emit(state.copyWith(outbox: _without(entry)));
+        await _persist();
+        final answered = _isAnsweredElsewhere ?? (_) => false;
+        if (_current(generation) && !answered(id)) {
+          await _refreshSnapshot?.call();
         }
-        await _drop(entry, ReplyIssue.stale);
-        if (_current(generation)) await _refreshSnapshot?.call();
+        if (!_current(generation)) return;
+        if (answered(id)) {
+          _drafts.remove(id);
+          return _setStatus(id, ReplyItemStatus.idle);
+        }
+        // The words survive: the user re-asks against the refreshed item.
+        _drafts[id] ??= ReplyDraft(
+          optionIndex: entry.optionIndex,
+          optionLabel: entry.optionLabel,
+          text: entry.text ?? '',
+        );
+        _setStatus(id, const ReplyItemStatus(issue: ReplyIssue.stale));
       case ReplyKeyConflict():
         await _drop(entry, ReplyIssue.conflict);
       case ReplyRejected(:final unsafeText):

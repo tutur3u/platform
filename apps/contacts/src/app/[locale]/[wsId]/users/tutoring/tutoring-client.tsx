@@ -21,10 +21,16 @@ import { suggestTutoringSlots } from '@tuturuuu/internal-api/tutoring-suggestion
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
+import type { MissedClassNotes } from '@tuturuuu/utils/tutoring-lesson-content';
 import { useLocale, useTranslations } from 'next-intl';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { getMissedLessonContent } from './tutoring-content';
+import {
+  buildQueueDraftContent,
+  buildQueueSlotDrafts,
+  getMissedLessonNotes,
+  sortedMissedDates,
+} from './tutoring-content';
 import {
   addDaysToIsoDate,
   buildTutoringSessionQuery,
@@ -295,7 +301,15 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
       )
     );
     let suggestions: ReturnType<typeof suggestTutoringSlots> = [];
-    let makeupContent = '';
+    // The queue already carries the notes for the missed dates; an older
+    // response without them falls back to reading the class sessions here.
+    let notes: MissedClassNotes = {
+      content: item.missed_lesson_content ?? '',
+      contentByDate: item.missed_lesson_by_date,
+      postContent: item.missed_post_content ?? '',
+      postContentByDate: item.missed_post_by_date,
+      missingDates: item.missing_lesson_dates ?? [],
+    };
     const [futureSchedule, missedLessons] = await Promise.allSettled([
       queryClient.fetchQuery({
         queryKey: [
@@ -313,7 +327,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
           }),
         staleTime: 5 * 60_000,
       }),
-      item.missed_class_dates.length
+      item.missed_class_dates.length && item.missed_lesson_content === undefined
         ? queryClient.fetchQuery({
             queryKey: [
               'tutoring-missed-lessons',
@@ -342,20 +356,33 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
       );
     }
     if (missedLessons.status === 'fulfilled' && missedLessons.value) {
-      makeupContent = getMissedLessonContent(
-        missedLessons.value.data ?? [],
-        item.missed_class_dates
-      );
+      notes = {
+        ...getMissedLessonNotes(
+          missedLessons.value.data ?? [],
+          item.missed_class_dates
+        ),
+        postContent: '',
+      };
     }
+    const labels = {
+      absent: t('content_section_absent'),
+      lessonNotes: t('content_label_lesson_notes'),
+      posts: t('content_label_posts'),
+      weak: t('content_section_weak'),
+    };
+    const draft = buildQueueDraftContent(item, notes, labels);
+    // Several sessions each teach their own missed day; one keeps the combined
+    // draft in the form-level field.
+    const slotDrafts =
+      count > 1 ? buildQueueSlotDrafts(item, notes, labels, count) : [];
     setForm((current) => ({
       ...current,
-      content:
-        item.reason_type === 'WEAK_SUPPORT'
-          ? item.feedback_content
-          : makeupContent,
+      content: count > 1 ? '' : draft.content,
       groupId: item.group_id,
-      linkedContent:
-        item.reason_type === 'WEAK_SUPPORT' ? undefined : makeupContent,
+      linkedContent: count > 1 ? undefined : draft.linkedContent,
+      missedClassDates:
+        count > 1 ? sortedMissedDates(item.missed_class_dates) : undefined,
+      missingLessonDates: draft.missingLessonDates,
       missedClassDate: oldestMissedDate(item.missed_class_dates),
       reasonDetail: item.feedback_content,
       reasonType:
@@ -368,6 +395,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
         sessionDate: suggestions[index]?.sessionDate ?? '',
         startTime: suggestions[index]?.startTime ?? '',
         teacherUserId,
+        ...(slotDrafts[index] ?? {}),
       })),
       sourceFeedbackId: item.source_feedback_id,
       studentLabel: item.student_name,

@@ -82,6 +82,13 @@ Legacy `mira_memories` rows are imported with the admin-only backfill endpoint:
 POST /api/v1/admin/ai/memory/backfill-mira
 ```
 
+The Web backfill endpoint requires both a verified staff session and the root
+workspace `manage_workspace_roles` permission. Imports honor the destination
+user and workspace memory settings by default, including Mira consent; staff
+authorization does not bypass those settings. Opted-out rows count as skipped.
+Regression coverage: `apps/web/src/legacy-api-routes/v1/admin/ai/memory/backfill-mira/route.test.ts`.
+Identity-policy coverage also lives in `apps/web/src/app/api/v1/inquiries/staff-session.test.ts`: rejected identities must not reach the role reader or memory data. Its allowed-identity fixtures grant the separate role permission explicitly.
+
 Backfill is idempotent through stable `customId` values. Rows without a legacy
 workspace are imported into the user's default or personal workspace and tagged
 with `legacy_mira` metadata.

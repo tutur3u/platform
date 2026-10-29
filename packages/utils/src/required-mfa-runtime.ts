@@ -5,6 +5,10 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { type NextRequest, NextResponse } from 'next/server';
 import { verifyAppCoordinationToken } from './app-coordination-token';
 import { guardRejection } from './guard-rejection';
+import {
+  getRequestVerifiedUser,
+  type VerifiedUserResult,
+} from './request-verified-user';
 import { accountAssuranceCredentials } from './required-mfa-credentials';
 import { isAccountAssuranceRecoveryPath } from './required-mfa-proxy';
 import { checkRequiredAccountMfa } from './required-mfa-request';
@@ -106,11 +110,13 @@ async function enforceUncachedRequiredMfaRequest(
     for (const token of credentials) {
       let userId: string;
       let providerUser: SupabaseUser | null = null;
-      let providerVerification:
-        | ReturnType<typeof admin.auth.getUser>
-        | undefined;
+      let providerVerification: Promise<VerifiedUserResult> | undefined;
+      // One server-revalidated lookup per request and credential, shared with
+      // the session refresh that ran earlier on this same request object.
       const getProviderUser = () =>
-        (providerVerification ??= admin.auth.getUser(token));
+        (providerVerification ??= getRequestVerifiedUser(request, token, () =>
+          admin.auth.getUser(token)
+        ));
       const appToken = token.startsWith('ttr_app_');
       if (appToken) {
         const verified = verifyAppCoordinationToken(token);
@@ -142,6 +148,10 @@ async function enforceUncachedRequiredMfaRequest(
               },
             }) as unknown as TypedSupabaseClient,
           nowSeconds: () => Math.floor(Date.now() / 1000),
+          getAppTokenUser: (id) =>
+            getRequestVerifiedUser(request, token, () =>
+              admin.auth.admin.getUserById(id)
+            ),
         },
         { userId, appToken: appToken ? token : undefined }
       );

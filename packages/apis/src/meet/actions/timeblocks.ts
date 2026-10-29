@@ -6,6 +6,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Timeblock } from '@tuturuuu/types/primitives/Timeblock';
+import { getPlan } from '@tuturuuu/utils/plan-helpers';
 import { revalidatePath } from 'next/cache';
 import { resolveMeetGuestFromSession } from '../guest-session';
 
@@ -65,6 +66,12 @@ export async function createTimeblocks(
 
   if (!timeblocks || timeblocks.length === 0) {
     return { error: 'Invalid request' };
+  }
+
+  // Guests only reach public, non-workspace plans, even with a live session
+  // issued before the plan stopped being public.
+  if (userType === 'guest' && !(await getPlan(planId, { actorUserId: null }))) {
+    return { error: 'Unauthorized' };
   }
 
   // Check if plan is confirmed
@@ -182,6 +189,12 @@ export async function deleteTimeblock(
 
   const guestSession = input.guest_session;
   const userType = guestSession ? 'guest' : 'user';
+
+  // Guests only reach public, non-workspace plans, even with a live session
+  // issued before the plan stopped being public.
+  if (userType === 'guest' && !(await getPlan(planId, { actorUserId: null }))) {
+    return { error: 'Unauthorized' };
+  }
 
   // Check if plan is confirmed
   const sbAdmin = await createAdminClient();

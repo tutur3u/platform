@@ -318,6 +318,28 @@ void main() {
     expect(h.port.posts.single['content'], 'Changed after cancellation');
     expect(h.chat.state.messages.where((m) => m.role == 'user'), hasLength(1));
   });
+  testWidgets('empty-state native send uses one request and the client ID', (
+    tester,
+  ) async {
+    final h = (await tester.runAsync(NativeDispatchHarness.create))!;
+    addTearDown(() => h.dispose(tester));
+    await h.mount(tester);
+    await h.prepareNewConversation(tester);
+    final clientId = h.chat.state.fallbackChatId;
+    await h.pageSend(tester, 'Atomic first turn');
+    expect(h.port.creates, isEmpty);
+    expect(h.port.posts, hasLength(1));
+    expect(h.port.settingsReads, isEmpty);
+    expect(h.port.posts.single['initialConversation'], isNotNull);
+    expect(h.chat.state.storedChatId, clientId);
+    expect(h.chat.state.creationOutcomeUnknown, isFalse);
+    final user = h.chat.state.messages.where((m) => m.role == 'user').single;
+    expect(user.clientRequestId, h.port.posts.single['clientRequestId']);
+    expect(user.id, h.port.saved.values.single['id']);
+    await h.openComposer(tester);
+    expect(h.draft(tester).text, isEmpty);
+  });
+
   testWidgets('first created turn known unsent removes its exact primed USER', (
     tester,
   ) async {
@@ -338,11 +360,26 @@ void main() {
     await h.prepareNewConversation(tester);
     expect(h.chat.state.storedChatId, isNull);
     expect(h.chat.state.messages, isEmpty);
+    // Attachment-first keeps the separately acknowledged creation path.
+    await h.attach(tester, 'initial-first-turn.txt');
     h.port.holdHeaders();
     stage('first-send-before');
     await h.pageSend(tester, 'First new conversation turn');
     stage('first-send-after');
     stage('credentials-entered-before');
+    expect(
+      h.chat.state.composerAttachments.every((a) => a.isUploaded),
+      isTrue,
+      reason: h.chat.state.error,
+    );
+    expect(
+      h.port.credentialsEntered.isCompleted,
+      isTrue,
+      reason:
+          'create=${h.port.creates.length} '
+          'settings=${h.port.settingsReads.length} '
+          'state=${h.chat.state.status} error=${h.chat.state.error}',
+    );
     await tester.runAsync(() => h.port.credentialsEntered.future);
     stage('credentials-entered-after');
     expect(h.port.creates, hasLength(1));
@@ -401,6 +438,7 @@ void main() {
       addTearDown(() => h.dispose(tester));
       await h.mount(tester);
       await h.prepareNewConversation(tester);
+      await h.attach(tester, 'initial-first-turn.txt');
       h.port.holdHeaders();
       await h.pageSend(tester, 'First primed text');
       await tester.runAsync(() => h.port.credentialsEntered.future);

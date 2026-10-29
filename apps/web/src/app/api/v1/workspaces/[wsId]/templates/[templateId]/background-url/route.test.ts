@@ -172,7 +172,12 @@ describe('first-class template background policy and HEAD', () => {
     ['existing-handle', WORKSPACE],
   ])('uses the normalized ID for %s', async (rawWsId, normalizedWsId) => {
     mocks.normalize.mockResolvedValue(normalizedWsId);
-    fixture = { ...fixture, ws_id: normalizedWsId };
+    const backgroundPath = `${normalizedWsId}/template-backgrounds/synthetic.png`;
+    fixture = {
+      ...fixture,
+      background_path: backgroundPath,
+      ws_id: normalizedWsId,
+    };
     const response = await request('GET', rawWsId);
     expect(response.status).toBe(200);
     expect(mocks.normalize).toHaveBeenCalledWith(rawWsId, {
@@ -183,7 +188,7 @@ describe('first-class template background policy and HEAD', () => {
       userId: MEMBER,
       supabase: { fixture: 'session' },
     });
-    expect(mocks.sign).toHaveBeenCalledWith(PATH, 3600);
+    expect(mocks.sign).toHaveBeenCalledWith(backgroundPath, 3600);
   });
 
   it('keeps cross-workspace template reads nondisclosing', async () => {

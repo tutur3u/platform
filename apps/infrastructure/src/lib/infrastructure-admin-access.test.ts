@@ -30,6 +30,7 @@ describe('Infrastructure admin access', () => {
 
   it('rejects a root member without the requested infrastructure permission', async () => {
     mocks.getPermissions.mockResolvedValue({
+      membershipType: 'MEMBER',
       containsPermission: vi.fn().mockReturnValue(false),
     });
     const { authorizeInfrastructureAdminRequest } = await import(
@@ -51,6 +52,7 @@ describe('Infrastructure admin access', () => {
 
   it('preserves access for root users with the requested permission', async () => {
     mocks.getPermissions.mockResolvedValue({
+      membershipType: 'MEMBER',
       containsPermission: vi.fn(
         (permission: string) => permission === 'manage_workspace_roles'
       ),
@@ -69,6 +71,7 @@ describe('Infrastructure admin access', () => {
 
   it('accepts any matching permission when multiple permissions are allowed', async () => {
     mocks.getPermissions.mockResolvedValue({
+      membershipType: 'MEMBER',
       containsPermission: vi.fn(
         (permission: string) => permission === 'manage_workspace_secrets'
       ),
@@ -88,11 +91,13 @@ describe('Infrastructure admin access', () => {
 
   it('rejects non-root workspace owners', async () => {
     const targetPermissions = {
+      membershipType: 'MEMBER',
       containsPermission: vi.fn(
         (permission: string) => permission === 'manage_workspace_secrets'
       ),
     };
     const rootPermissions = {
+      membershipType: 'MEMBER',
       containsPermission: vi.fn().mockReturnValue(false),
     };
     mocks.getPermissions.mockImplementation(async ({ wsId }) =>
@@ -116,6 +121,7 @@ describe('Infrastructure admin access', () => {
 
   it('rejects root workspace members without secret-management permissions', async () => {
     mocks.getPermissions.mockResolvedValue({
+      membershipType: 'MEMBER',
       containsPermission: vi.fn().mockReturnValue(false),
     });
     const { authorizeInfrastructureWorkspaceSecretsRequest } = await import(
@@ -130,12 +136,14 @@ describe('Infrastructure admin access', () => {
   });
 
   it.each(['manage_workspace_secrets', 'manage_workspace_roles'])(
-    'preserves cross-workspace access for root %s administrators',
+    'admits root MEMBER %s administrators under SR-385',
     async (rootPermission) => {
       const targetPermissions = {
+        membershipType: 'MEMBER',
         containsPermission: vi.fn().mockReturnValue(false),
       };
       const rootPermissions = {
+        membershipType: 'MEMBER',
         containsPermission: vi.fn(
           (permission: string) => permission === rootPermission
         ),

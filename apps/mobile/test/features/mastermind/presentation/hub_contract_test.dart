@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
@@ -19,7 +20,17 @@ void main() {
     final now = root['now'] as Map<String, dynamic>;
     final item = (now['needs_you'] as List).first as Map<String, dynamic>;
     root['decisions_resolved'] = [
-      {...item, 'status': 'resolved', 'ask_text': 'Full decision ask'},
+      {
+        ...item,
+        'status': 'resolved',
+        'ask_text': 'Full decision ask',
+        'hub_title': 'Short resolved title',
+        'hub_text': 'Short resolved text',
+        'hub_options': ['Yes', 'Later'],
+        'hub_recommended': 'Yes',
+        'by': 'T3',
+        'resolution': 'Yes',
+      },
     ];
     final parsed = parseMastermindSnapshot(
       Uint8List.fromList(utf8.encode(jsonEncode(root))),
@@ -33,6 +44,12 @@ void main() {
       isEmpty,
     );
     expect(snapshot.resolvedItems.single.body, 'Full decision ask');
+    final resolved = snapshot.resolvedItems.single;
+    expect(resolved.hubTitle, 'Short resolved title');
+    expect(resolved.hubText, 'Short resolved text');
+    expect(resolved.hubOptions, ['Yes', 'Later']);
+    expect(resolved.hubRecommended, 'Yes');
+    expect(resolved.by, 'T3');
   });
   test(
     'inferred gaps use no samples, with reset evidence taking precedence',

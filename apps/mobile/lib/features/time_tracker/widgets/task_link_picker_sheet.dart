@@ -11,6 +11,7 @@ import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
 import 'package:mobile/data/models/task_link_option.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/tasks_boards/widgets/task_priority_visuals.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
@@ -663,15 +664,8 @@ class _TaskOptionCard extends StatelessWidget {
     );
   }
 
-  static String? _priorityLabel(AppLocalizations l10n, String? priority) {
-    return switch (priority?.toLowerCase().trim()) {
-      'critical' => l10n.tasksPriorityCritical,
-      'high' => l10n.tasksPriorityHigh,
-      'normal' => l10n.tasksPriorityNormal,
-      'low' => l10n.tasksPriorityLow,
-      _ => null,
-    };
-  }
+  static String? _priorityLabel(AppLocalizations l10n, String? priority) =>
+      TaskPriorityLevel.tryParse(priority)?.label(l10n);
 
   static String? _timeHint(TaskLinkOption task, AppLocalizations l10n) {
     final endDate = task.endDate;
