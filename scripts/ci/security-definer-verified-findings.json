@@ -31,5 +31,38 @@
     "classification": "verified false positive",
     "effectiveRoles": ["service_role"],
     "reason": "Hardening loop reads oid::regprocedure from pg_proc for three named public routines, revokes PUBLIC/anon/authenticated, and grants only service_role; no caller input."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029050200_topic_teacher_deadline_notices.sql",
+    "line": 29,
+    "sourceDigest": "b2483b6b59589199115abfbe6550053570f7a2543498414dbe2689873c1d58cb",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "9e6f5301ecd66ecf036ee802e4d856dabb9bd0deaf03952a2dded70b3c30674e",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "DO block rebuilds notifications_type_check from existing values plus a fixed list; dynamic DDL with no GRANT/REVOKE/ACL change."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029050430_merge_batch_null_guards.sql",
+    "line": 9,
+    "sourceDigest": "a08dd7028596a671c64ca49c21cca330390023c571cb0dc6fd9e0df8bca726d7",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "1aaa523bb23d0441ab56ac994cb4c3e102e0a5aaad0fb0997a57e64ee2f75cec",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "public.merge_workspace_users_batch_update refuses any (table, column) outside the fixed phase-1a..1d VALUES allowlist before dynamic EXECUTE; the dynamic SQL updates rows only and never touches ACLs; same-file REVOKE ALL FROM PUBLIC, anon, authenticated (:116) and service_role-only EXECUTE (:118)."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029050430_merge_batch_null_guards.sql",
+    "line": 120,
+    "sourceDigest": "a08dd7028596a671c64ca49c21cca330390023c571cb0dc6fd9e0df8bca726d7",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "e145921d61dd5afba43ba016983021cde58eb33cd91716aab956f95208b3eeb7",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "public.merge_workspace_users_table_batch refuses any (table, column) outside the fixed phase-1a..1d VALUES allowlist before dynamic EXECUTE; the dynamic SQL updates rows only and never touches ACLs; same-file REVOKE ALL FROM PUBLIC, anon, authenticated (:262) and service_role-only EXECUTE (:264)."
   }
 ]

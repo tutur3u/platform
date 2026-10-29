@@ -33,7 +33,7 @@ test('an SQL string body cannot pretend to be a search_path option', () => {
 });
 test('verified findings remain separate from the historical debt inventory', () => {
   const historical = require('./security-definer-historical-blocks.json');
-  assert.equal(verified.length, 3);
+  assert.equal(verified.length, 6);
   for (const entry of verified) {
     assert.equal(entry.classification, 'verified false positive');
     assert.ok(!historical.some((old) => old.file === entry.file));
@@ -73,7 +73,7 @@ test('each reviewed finance finding binds file, line, rule and all source bytes'
       verifiedFindings,
     });
   assert.deepEqual(run(), []);
-  assert.equal(run([]).length, 3);
+  assert.equal(run([]).length, 6);
   for (const entry of verified) {
     for (const changed of [
       { ...entry, file: 'copied.sql' },
@@ -90,7 +90,7 @@ test('each reviewed finance finding binds file, line, rule and all source bytes'
   }
   for (const file of files)
     fs.appendFileSync(path.join(root, file), '\n-- changed source\n');
-  assert.equal(run().length, 7);
+  assert.equal(run().length, 10);
 });
 
 test('each SR-843 finding is covered by exactly one mechanism', (t) => {
