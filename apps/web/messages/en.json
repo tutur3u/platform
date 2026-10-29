@@ -10297,6 +10297,10 @@
       "description": "Bring team tasks, calendars, documents, and business tools together in one open-source workspace. Plan and collaborate with AI assistance from Mira.",
       "title": "All-in-One Workspace for Teams"
     },
+    "legal_changes": {
+      "description": "Proposed — not yet in effect",
+      "title": "Upcoming changes"
+    },
     "legal_dpa": {
       "description": "Read the Tuturuuu data processing addendum and the responsibilities that apply when processing personal data.",
       "title": "Data Processing Addendum"

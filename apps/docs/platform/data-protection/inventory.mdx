@@ -153,3 +153,26 @@ for line in text.splitlines():
 print(collections.Counter(row["schema"] for row in rows))
 print(len(rows), sum(len(row["columns"]) for row in rows))
 ```
+
+## Effective legal publications
+
+Across Next web, the active Start/Worker candidate, and applications embedding
+canonical legal URLs, live legal pages serve only the revision actually in force:
+15 August 2026 for privacy, terms, DPA, SLA and subprocessors, and 6 February
+2026 for acceptable use and community guidelines. The historical community
+documents remain English in both locale variants until an approved translation
+exists.
+
+Proposals live at /legal/changes with the full text at /legal/changes/full.
+Both are noindex, excluded from the sitemap and carry no effective date.
+The bilingual summary says the updates are not yet in effect. Canonical pages
+link to Upcoming changes beneath the effective date; restoring current text
+does not trigger a banner or an account notice. A future effective switch must
+be dated and separately approved, with the notice described on the changes page.
+
+Acceptance history is immutable. Publication fixes do not rewrite stored
+acceptances. The private legal acceptance version identifies the document
+accepted; the source getter exposes the in-force version for future consumers.
+Regression evidence: packages/legal/src/legal-revisions.test.ts pins recovered
+content hashes, and apps/web/cloudflare/legal-changes.test.tsx checks rendering,
+metadata, routing and sitemap exclusion.

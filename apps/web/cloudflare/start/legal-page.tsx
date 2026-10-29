@@ -1,4 +1,8 @@
-import { getLegalDocument, type LegalLocale } from '@tuturuuu/legal';
+import {
+  getLegalDocument,
+  type LegalLocale,
+  legalChangesCopy,
+} from '@tuturuuu/legal';
 import en from '../../messages/en.json';
 import vi from '../../messages/vi.json';
 import { LegalMarkdown } from '../../src/components/legal/legal-markdown';
@@ -50,6 +54,12 @@ export function LegalPage({
             }).format(new Date(`${document.effectiveDate}T00:00:00Z`))}
           </time>
         </p>
+        <LegalMarkdown>
+          {legalChangesCopy[locale].linkLine.replace(
+            '](/legal/changes)',
+            `](/${locale === 'vi' ? 'vi/' : ''}legal/changes)`
+          )}
+        </LegalMarkdown>
       </header>
       <section aria-labelledby="summary">
         <h2 id="summary">{document.summaryTitle}</h2>
