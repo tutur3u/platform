@@ -25696,7 +25696,7 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindTabHome.
   ///
   /// In en, this message translates to:
-  /// **'Home'**
+  /// **'Today'**
   String get mastermindTabHome;
 
   /// No description provided for @mastermindTabInbox.
@@ -26610,6 +26610,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coming soon'**
   String get mastermindAskRemindAtMacSoon;
+
+  /// No description provided for @mastermindCatchupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Since you last looked'**
+  String get mastermindCatchupTitle;
+
+  /// No description provided for @mastermindCatchupWindowSince.
+  ///
+  /// In en, this message translates to:
+  /// **'Since your last visit'**
+  String get mastermindCatchupWindowSince;
+
+  /// No description provided for @mastermindCatchupWindowDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 24 hours'**
+  String get mastermindCatchupWindowDay;
+
+  /// No description provided for @mastermindCatchupWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Mastermind. Here\'s what happened in the last day.'**
+  String get mastermindCatchupWelcome;
+
+  /// No description provided for @mastermindCatchupQuiet.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet since you last looked'**
+  String get mastermindCatchupQuiet;
+
+  /// No description provided for @mastermindCatchupQuietFirstRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing has happened in the last day.'**
+  String get mastermindCatchupQuietFirstRun;
+
+  /// No description provided for @mastermindCatchupPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Some updates may be missing'**
+  String get mastermindCatchupPartial;
+
+  /// No description provided for @mastermindCatchupSectionShipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Shipped'**
+  String get mastermindCatchupSectionShipped;
+
+  /// No description provided for @mastermindCatchupSectionBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get mastermindCatchupSectionBlocked;
+
+  /// No description provided for @mastermindCatchupSectionChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed'**
+  String get mastermindCatchupSectionChanged;
+
+  /// No description provided for @mastermindCatchupSectionUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Usage & health'**
+  String get mastermindCatchupSectionUsage;
+
+  /// No description provided for @mastermindCatchupSectionOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other updates'**
+  String get mastermindCatchupSectionOther;
+
+  /// No description provided for @mastermindCatchupCountNeedsYou.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 needs you} other{{count} need you}}'**
+  String mastermindCatchupCountNeedsYou(int count);
+
+  /// No description provided for @mastermindCatchupCountShipped.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} shipped'**
+  String mastermindCatchupCountShipped(int count);
+
+  /// No description provided for @mastermindCatchupCountBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} blocked'**
+  String mastermindCatchupCountBlocked(int count);
+
+  /// No description provided for @mastermindCatchupCountChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} changed'**
+  String mastermindCatchupCountChanged(int count);
+
+  /// No description provided for @mastermindCatchupNewDivider.
+  ///
+  /// In en, this message translates to:
+  /// **'New since your last visit'**
+  String get mastermindCatchupNewDivider;
+
+  /// No description provided for @mastermindCatchupShowEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {count} earlier'**
+  String mastermindCatchupShowEarlier(int count);
+
+  /// No description provided for @mastermindCatchupSecurityUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Security update'**
+  String get mastermindCatchupSecurityUpdate;
+
+  /// No description provided for @mastermindCatchupOnIt.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is on it'**
+  String mastermindCatchupOnIt(String name);
+
+  /// No description provided for @mastermindCatchupButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Catch me up'**
+  String get mastermindCatchupButton;
+
+  /// No description provided for @mastermindCatchupRefreshing.
+  ///
+  /// In en, this message translates to:
+  /// **'Catching up…'**
+  String get mastermindCatchupRefreshing;
+
+  /// No description provided for @mastermindCatchupUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re up to date'**
+  String get mastermindCatchupUpToDate;
+
+  /// No description provided for @mastermindCatchupFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t catch up. Try again.'**
+  String get mastermindCatchupFailed;
+
+  /// No description provided for @mastermindCatchupOpensLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens in your browser'**
+  String get mastermindCatchupOpensLink;
+
+  /// No description provided for @mastermindCatchupGroupLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{product}, {count, plural, =1{1 update} other{{count} updates}}'**
+  String mastermindCatchupGroupLabel(String product, int count);
+
+  /// No description provided for @mastermindRelNow.
+  ///
+  /// In en, this message translates to:
+  /// **'now'**
+  String get mastermindRelNow;
+
+  /// No description provided for @mastermindRelMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m'**
+  String mastermindRelMinutes(int count);
+
+  /// No description provided for @mastermindRelHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h'**
+  String mastermindRelHours(int count);
+
+  /// No description provided for @mastermindRelHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String mastermindRelHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @mastermindRelDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d'**
+  String mastermindRelDays(int count);
+
+  /// No description provided for @mastermindRelShowExact.
+  ///
+  /// In en, this message translates to:
+  /// **'Show exact time'**
+  String get mastermindRelShowExact;
+
+  /// No description provided for @mastermindCatchupSettingsAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Catch-up settings'**
+  String get mastermindCatchupSettingsAction;
+
+  /// No description provided for @mastermindMorningCatchup.
+  ///
+  /// In en, this message translates to:
+  /// **'Morning catch-up'**
+  String get mastermindMorningCatchup;
+
+  /// No description provided for @mastermindMorningCatchupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A notification that says your catch-up is ready. Saved on this device; sent once the hub supports it.'**
+  String get mastermindMorningCatchupSubtitle;
+
+  /// No description provided for @mastermindMorningCatchupTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get mastermindMorningCatchupTime;
+
+  /// No description provided for @mastermindCatchupPushBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your catch-up is ready'**
+  String get mastermindCatchupPushBody;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
