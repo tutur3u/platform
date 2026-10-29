@@ -25111,12 +25111,6 @@ abstract class AppLocalizations {
   /// **'{section} · {basis}'**
   String mastermindSectionWithBasis(String section, String basis);
 
-  /// No description provided for @mastermindSecurityFix.
-  ///
-  /// In en, this message translates to:
-  /// **'Security fix'**
-  String get mastermindSecurityFix;
-
   /// No description provided for @mastermindSecurityGroup.
   ///
   /// In en, this message translates to:
