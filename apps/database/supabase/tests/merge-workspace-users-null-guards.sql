@@ -62,11 +62,8 @@ select ok(not exists (
   select 1 from pg_proc p, lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) acl
   where p.oid = pg_temp.merge_signature(fn) and acl.grantee = 0 and acl.privilege_type = 'EXECUTE'
 ), fn || ': PUBLIC has no execute') from pg_temp.merge_functions() fn;
--- Dynamic-table helpers keep their reviewed lookup path; the rest are qualified.
-select ok((select case
-    when fn in ('merge_workspace_users_batch_update', 'merge_workspace_users_table_batch')
-      then exists (select 1 from unnest(p.proconfig) c where c like 'search_path=%, pg_temp')
-    else 'search_path=pg_catalog, pg_temp' = any(p.proconfig) end
+-- Every merge function, including the dynamic-table helpers, is pinned to the catalog.
+select ok((select 'search_path=pg_catalog, pg_temp' = any(p.proconfig)
   from pg_proc p where p.oid = pg_temp.merge_signature(fn)),
   fn || ': search path is pinned') from pg_temp.merge_functions() fn;
 
