@@ -284,3 +284,18 @@ Regression evidence: `packages/education-core/src/todo/service.test.ts`, both
 app-owned `todo/route.test.ts` files, internal API `education-todo.test.ts`, and
 shared UI `education-todo.test.tsx`. Exact app builds and authenticated runtime
 verification remain required delivery evidence.
+
+## Education read and progress boundaries
+
+Teach quiz-set APIs and each detail page segment require education access in the
+route workspace and a quiz set or module owned by that workspace. Attempt detail
+requires `view_user_groups_reports`. Attendance changes accept only students
+assigned to the course. Learn quiz resets and vocabulary reads use the same
+published, assigned, unlocked module access as lesson detail. Teachers with
+`ai_lab` retain workspace vocabulary access. Parent vocabulary requests carry
+the selected student, and parent links require that student's verified platform
+identity in the workspace.
+
+Regression coverage is in Teach's `src/test/*access.test.*` and
+`attendance-scope.test.ts`, plus Learn's parent-link, reset-access and vocabulary
+route tests. These rules apply to the active Teach and Learn surfaces.
