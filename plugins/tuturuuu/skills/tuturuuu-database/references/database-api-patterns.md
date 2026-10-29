@@ -540,3 +540,9 @@ means no finite cleanup guarantee and continued denial. See the approved
 [feature contract and scoped rollback](../../../../../apps/docs/platform/features/passwords-vault.mdx#lifecycle-recovery-and-cleanup-sla).
 Never drop the shared private schema for a feature rollback. Use the guarded
 empty-feature fixture, and retain data and audit on an activated installation.
+
+Vault rollbacks are manual and reverse chronological. Preserve main's existing
+private schema, grants and Storage policies. Refuse retained data and lifecycle
+history; bucket removal additionally requires verified pre-migration absence
+because ON CONFLICT can adopt a bucket. The executable SQL roundtrip and
+retained-data controls live under apps/database/verification/password-vault-rollback-*.sql.
