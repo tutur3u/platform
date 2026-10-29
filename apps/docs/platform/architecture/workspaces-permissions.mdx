@@ -646,8 +646,8 @@ rate-limits `workspace-secrets/route.test.ts`, and workspace secrets
 For non-personal workspaces, deletion removes workspace-owned realtime log
 aggregations, documents including their meeting-document links, and team membership
 rows. Team member user accounts and memberships in other workspaces survive.
-Migration `20261029041200` repairs those three foreign keys with `ON DELETE CASCADE NOT VALID`;
-`20261029041220` validates them separately. New writes and cascading deletes are
+Migration `20261029194000` repairs those three foreign keys with `ON DELETE CASCADE NOT VALID`;
+`20261029194020` validates them separately. New writes and cascading deletes are
 enforced immediately during the NOT VALID phase. The document `ws_id` index
 uses a plain non-concurrent create: the table is small, and writes are blocked
 while the index is created. Validation has a 15-minute statement timeout for the
