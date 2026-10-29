@@ -1,5 +1,5 @@
 -- Run with psql -v ON_ERROR_STOP=1 -f against a disposable LOCAL stack at main,
--- before applying 20261027152400. This script applies, rolls back, and reapplies it.
+-- before applying 20261029030600. This script applies, rolls back, and reapplies it.
 -- Compare complete pg_policies rows, including roles, command, permissiveness,
 -- USING and WITH CHECK, plus exact table ACLs on every affected table.
 \set ON_ERROR_STOP on
@@ -25,11 +25,11 @@ where n.nspname = 'public' and c.relname in (
 create temporary table membership_policies_before as table membership_policies;
 create temporary table membership_grants_before as table membership_grants;
 
-\ir ../supabase/migrations/20261027152400_pin_workspace_membership_rls.sql
+\ir ../supabase/migrations/20261029030600_pin_workspace_membership_rls.sql
 create temporary table membership_policies_applied as table membership_policies;
 create temporary table membership_grants_applied as table membership_grants;
 
-\ir ../rollbacks/20261027152400_pin_workspace_membership_rls.rollback.sql
+\ir ../rollbacks/20261029030600_pin_workspace_membership_rls.rollback.sql
 select results_eq(
   'select * from membership_policies order by tablename, policyname',
   'select * from membership_policies_before order by tablename, policyname',
@@ -41,7 +41,7 @@ select results_eq(
   'rollback restores exact table grants on all eight tables'
 );
 
-\ir ../supabase/migrations/20261027152400_pin_workspace_membership_rls.sql
+\ir ../supabase/migrations/20261029030600_pin_workspace_membership_rls.sql
 select results_eq(
   'select * from membership_policies order by tablename, policyname',
   'select * from membership_policies_applied order by tablename, policyname',
