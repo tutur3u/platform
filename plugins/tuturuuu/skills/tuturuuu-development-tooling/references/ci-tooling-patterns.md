@@ -1382,6 +1382,12 @@ and pre-push comparison. Generate from current main only for reviewed bootstrap;
 ordinary fixes remove entries. Follow the migrations guide for signature-scoped
 client-grant markers and statement-scoped dynamic/ALTER review markers. Test both
 real line comments and forged markers in strings, dollar bodies and block comments.
+Accept an empty-string definer path for fully qualified bodies. When this removes
+historical findings, shrink only entries no longer reproduced on the pinned source.
+Reviewed findings belong in `sql-grant-guard-verified-findings.js`, bound to path,
+line, rule, file SHA-256, finding digest and reason. Fixed-forward findings must
+name an existing hardening migration; test both its presence and its removal.
+A placeholder filename leaves the original diagnostic enforced.
 
 ## Private Meet transcription evaluation
 

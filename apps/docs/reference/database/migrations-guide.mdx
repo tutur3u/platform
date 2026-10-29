@@ -753,8 +753,9 @@ aliases such as `int` normalize to `integer`). Each target in a multi-target gra
 needs its own signature marker. A marker applies only on the statement's lines or
 its immediately preceding line. A reviewed client grant satisfies intended access
 for a CREATE, but the subsequent matching `REVOKE ALL` is still required.
-Definers require `pg_catalog` first and `pg_temp` last, with no duplicate settings,
-empty paths, user-dependent schemas or explicit temporary namespaces. Quoted
+Definers accept `search_path = ''` when their bodies fully qualify references.
+Otherwise they require `pg_catalog` first and `pg_temp` last, with no duplicate
+settings, empty schema elements, user-dependent schemas or explicit temporary namespaces. Quoted
 identifier case is significant. The live pgTAP gate remains authoritative for
 schema CREATE privileges.
 
@@ -802,3 +803,14 @@ forward fixes do not alter applied migration bytes or automatically clear entrie
 Regression evidence is in `sql-grant-guard-security.test.js` for signature review,
 escaped GUCs, reviewed statements and false positives, and in the repository suite
 for synthetic shallow history and the pre-push baseline fence.
+
+Source-bound security-review findings live separately in
+`scripts/ci/sql-grant-guard-verified-findings.js`. Each entry binds the path,
+statement line, rule, full-file SHA-256, finding digest and review reason.
+Changing any bound value leaves the diagnostic enforced; these entries do not
+expand the historical-debt baseline. A `fixed-forward` entry also requires its
+named `requiredMigration` file in the scanned tree. Missing fixes leave the
+original finding failing. Replace `HARDENING_MIGRATION_FILENAME` in that file
+with the actual migration basename after the hardening PR exists, merge its
+source, and rerun the guard. Never apply the time-tracking rollback after that
+hardening migration. Coverage: `sql-grant-guard-verified-findings.test.js`.

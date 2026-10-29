@@ -61,7 +61,9 @@ function lexSql(sql) {
         )
       )
         configurations.push({ name: literal.toLowerCase(), line });
-      if (pathLiteral && /^[a-z_][a-z0-9_]*$/i.test(literal)) {
+      if (pathLiteral && literal === '' && !escapes) {
+        emit(cursor, true);
+      } else if (pathLiteral && /^[a-z_][a-z0-9_]*$/i.test(literal)) {
         code += literal.padEnd(cursor - index, ' ');
         index = cursor;
       } else emit(Math.min(cursor, sql.length), false);

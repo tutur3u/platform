@@ -58,7 +58,7 @@ const FIX_GUIDANCE = {
   'function-acl':
     'Use an explicit signature, REVOKE ALL from PUBLIC/anon/authenticated, then grant service_role or record the documented signature review/no-grant marker.',
   'definer-search-path':
-    'Pin one search_path with pg_catalog first and pg_temp last; reviewed ALTER requires an alter-routine-review marker.',
+    "Pin one search_path to '' or with pg_catalog first and pg_temp last; reviewed ALTER requires an alter-routine-review marker.",
   'dynamic-sql-review':
     'Review DO/EXECUTE and attach a statement-adjacent reviewed(dynamic-sql-review) marker.',
   'rollback-safety':
@@ -158,6 +158,7 @@ function evaluateSqlFiles({
   files,
   readFile,
   baseline = makeBaseline('0'.repeat(40), []),
+  verifiedFindings = [],
 }) {
   const diagnostics = collectDiagnostics({ files, readFile });
   const actualEntries = numbered(diagnostics.map(baselineEntry));
@@ -193,14 +194,41 @@ function evaluateSqlFiles({
         message: `${entry.path}:1 baseline-stale: remove the stale ${entry.rule} entry`,
       });
   }
+
+  const verified = [];
+  const matchesVerified = (finding) =>
+    verifiedFindings.some(
+      (entry) =>
+        entry.path === finding.file &&
+        entry.line === finding.line &&
+        entry.rule === finding.rule &&
+        /^[a-f0-9]{64}$/.test(entry.fileDigest ?? '') &&
+        entry.fileDigest === finding.fileDigest &&
+        entry.digest === finding.digest &&
+        typeof entry.reason === 'string' &&
+        entry.reason.trim().length > 0 &&
+        (entry.class === undefined || entry.class === 'fixed-forward') &&
+        (entry.class !== 'fixed-forward' ||
+          (typeof entry.requiredMigration === 'string' &&
+            /^apps\/database\/supabase\/migrations\/[a-zA-Z0-9_]+\.sql$/.test(
+              entry.requiredMigration
+            ) &&
+            entry.requiredMigration !== entry.path &&
+            files.includes(entry.requiredMigration)))
+    );
   diagnostics.forEach((finding, i) => {
+    if (matchesVerified(finding)) {
+      verified.push(finding);
+      return;
+    }
+
     (allowed.has(entryKey(actualEntries[i])) &&
     baseline.files[finding.file] === finding.fileDigest
       ? legacy
       : violations
     ).push(finding);
   });
-  return { violations, legacy };
+  return { violations, legacy, verified };
 }
 function validateBaseline(current, previous) {
   if (
