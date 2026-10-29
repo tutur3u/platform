@@ -75,6 +75,8 @@ export function isSprintSchemaUnavailable(error: SprintQueryError | null) {
 }
 
 const RPC_ERROR_STATUS: Record<string, number> = {
+  // Before BOARD_NOT_FOUND, which its name contains.
+  SPRINT_BOARD_NOT_FOUND: 404,
   BOARD_NOT_FOUND: 404,
   SPRINT_NOT_FOUND: 404,
   SPRINT_NOT_PLANNED: 409,
@@ -205,7 +207,7 @@ const UNAVAILABLE: BoardSprintsResponse = {
 
 export async function loadBoardSprints(
   sbAdmin: TypedSupabaseClient,
-  boardId: string
+  { boardId, wsId }: { boardId: string; wsId: string }
 ): Promise<
   | { ok: true; data: BoardSprintsResponse }
   | { ok: false; error: SprintQueryError }
@@ -224,7 +226,10 @@ export async function loadBoardSprints(
         .not('deleted', 'is', true)
         .order('sequence_number', { ascending: true }),
       sbAdmin.from('task_sprint_reports').select('*').eq('board_id', boardId),
-      sbAdmin.rpc('list_board_unplanned_task_ids', { p_board_id: boardId }),
+      sbAdmin.rpc('list_board_unplanned_task_ids', {
+        p_board_id: boardId,
+        p_ws_id: wsId,
+      }),
     ]);
 
   for (const result of [
