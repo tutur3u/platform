@@ -6,6 +6,7 @@ const {
 } = require('./github-expression-test-helper');
 const {
   ADMISSION_PR_WORKFLOWS,
+  REUSABLE_GATED_WORKFLOWS,
   ALWAYS_ON_PR_WORKFLOWS,
   HEAVY_PR_WORKFLOWS,
   PAUSED_PR_WORKFLOWS,
@@ -26,7 +27,7 @@ const PROTECTED_TRIGGERS = {
   'ai-cloudflare.yaml': '1e5f4be0329251eb',
   'api-worker.yaml': '058d68d5d261d527',
   'apps-cloudflare.yaml': '5dadb22de50806df',
-  'biome-check.yaml': '47acd08d33c6cf4c',
+  'biome-check.yaml': '6c39e758f15186ed',
   'calendar-cloudflare.yaml': 'e3e096233a6e8a60',
   'calendar-generation-contract.yaml': '0a3cc2c97958f5cd',
   'cms-cloudflare.yaml': '5f4174ce584d0533',
@@ -40,12 +41,12 @@ const PROTECTED_TRIGGERS = {
   'desktop-beta.yaml': '3d1e23b37a961485',
   'devbox-control-cloudflare.yaml': 'af0d91d571550c3f',
   'discord-python-ci.yml': 'df10679b45d420bb',
-  'docs-seo-check.yaml': '6305e545b85b27e8',
+  'docs-seo-check.yaml': '78c7f5ff99020ac9',
   'external-internal-packages.yaml': '4d532cf88497bbd2',
   'external-project-storage-analytics-contract.yaml': '02e3e1d0d939ac56',
   'finance-cloudflare.yaml': 'd5dc7fa96048fd6b',
   'forms-cloudflare.yaml': '4c98fb3cb1df4d96',
-  'i18n-check.yaml': '6305e545b85b27e8',
+  'i18n-check.yaml': '78c7f5ff99020ac9',
   'inventory-cloudflare.yaml': '4558d318d6aaaba3',
   'inventory-offline-contract.yaml': '0a3cc2c97958f5cd',
   'lettin-cloudflare.yaml': 'd043498fabfde801',
@@ -99,7 +100,12 @@ function prReachable(workflow) {
   if (Object.hasOwn(on, 'pull_request_target')) return true;
   if (!Object.hasOwn(on, 'push')) return false;
   const branches = on.push?.branches;
-  return !branches || branches.some((b) => !['main', 'production'].includes(b));
+  return (
+    !branches ||
+    branches.some(
+      (b) => !['main', 'production', 'release-please--branches--**'].includes(b)
+    )
+  );
 }
 
 function pullRequest(labels, action = 'synchronize', label) {
@@ -154,10 +160,12 @@ test('every PR-reachable workflow is classified exactly once', () => {
   assert.deepEqual([...classified].sort(), reachable.sort());
 });
 
-for (const file of HEAVY_PR_WORKFLOWS) {
+for (const file of [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS]) {
   test(`${file}: every PR job carries the ready-for-ci gate`, () => {
     const workflow = workflows[file];
-    const pr = events(workflow).pull_request;
+    const pr =
+      events(workflow).pull_request ??
+      events(workflows['pr-checks.yaml']).pull_request;
     assert.ok(pr, 'heavy workflows validate PRs through pull_request');
     for (const type of [
       'opened',
@@ -249,9 +257,9 @@ for (const file of [...ALWAYS_ON_PR_WORKFLOWS, ...PAUSED_PR_WORKFLOWS]) {
 test('main, production, schedule and manual triggers are untouched', () => {
   assert.deepEqual(
     Object.keys(PROTECTED_TRIGGERS).sort(),
-    [...HEAVY_PR_WORKFLOWS].sort()
+    [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS].sort()
   );
-  for (const file of HEAVY_PR_WORKFLOWS) {
+  for (const file of [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS]) {
     assert.equal(
       protectedTriggerDigest(file, workflows[file].on),
       PROTECTED_TRIGGERS[file],

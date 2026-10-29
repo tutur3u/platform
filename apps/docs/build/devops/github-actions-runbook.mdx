@@ -472,6 +472,65 @@ reserves capacity. Keep PR load small:
   required, replace its trigger filter with a job-level `check-ci` skip that
   still reports success. A trigger-filtered required check never reports.
 
+### Consolidated cheap PR checks
+
+`pr-checks.yaml` is the sole PR entrypoint for Biome, i18n, docs/SEO,
+migration filenames and timestamps, mobile API mappings, plugin contracts,
+branch naming and CI admission. The former workflow files remain reusable;
+protected push and manual validation still use their existing entrypoints.
+Branch-name and plugin checks no longer create a separate run on each feature
+branch push. Plugin checks on protected and generated release branches remain.
+
+One SHA-pinned `dorny/paths-filter` job selects the affected callers. Biome,
+i18n and docs retain `ready-for-ci` admission; script-only checks remain ungated.
+Workflow/action changes select every category. Locale consumer source changes
+select i18n as well as bundle edits and `scripts/run-i18n-check.js`. Docs
+selection includes mobile pubspec files, Discord manifests/lockfiles and the
+safe-fs helper used by the inventory generator. Biome selects `.editorconfig`
+and `.gitignore`; plugin validation includes the Git conventions page.
+Migration guard edits select migration checks. Mobile API selection retains the original main-base restriction.
+Security Checks and its trusted base-commit scope are separate and unchanged:
+there is no path filter or readiness label on its PR trigger.
+
+The **Cheap PR Checks** gate runs with `!cancelled()`, succeeds for irrelevant
+path skips and fails for selected caller skips, failures or missing admission.
+Branch naming is an independent job, so a bad name fails the aggregate without
+hiding selected validation. CI admission stays red until this event and the
+live PR both carry `ready-for-ci`.
+Existing leaf job display names are retained; reusable calls add caller prefixes
+to GitHub check contexts. No current ruleset requires a status check. Before
+requiring a leaf in future, use an always-reporting gate or preserve that exact
+context on irrelevant paths. Recheck rulesets in the same change window.
+
+Among label events, only adding or removing `ready-for-ci` retriggers the
+consolidated validators.
+Other `labeled`/`unlabeled` events run only CI admission and its aggregate;
+each receives a unique non-cancelling group in both parent and admission callee.
+Those runs report **Cheap PR Checks (label event)**, preserving the latest
+**Cheap PR Checks** result for full validation on the same SHA. They do not
+establish a new validation pass. Unadmitted validation stays
+in a separate group and cannot cancel an admitted run. This exception applies
+to the consolidated workflow; other heavy workflows retain label-presence
+admission until separately migrated.
+
+Every selector pattern has a positive fixture in
+`scripts/ci/pr-checks-paths.test.js`, using `picomatch` with `{dot:true}` like
+dorny. Keep these fixtures aligned with actual validator inputs, including
+non-JavaScript manifests. Security Checks is also locked to the pinned PR base
+by a SHA-256 regression. New action pins must resolve to commits, not annotated
+tag objects; verify their object type with the owning repository's Git API.
+
+Called workflows inherit `github.workflow` from their caller, so each reusable
+workflow's concurrency group includes a distinct file namespace. Biome retains
+job-specific validation locks and its separate push-only mutation lock.
+
+See the [pinned workflow inventory](https://github.com/tutur3u/platform/blob/main/.github/pr-ci-inventory.md)
+for exact trigger paths, all job names, ruleset mapping and execution samples.
+Regression coverage is `scripts/ci/pr-checks.test.js` plus the admission,
+permissions, security and protected-concurrency workflow suites. Inventory
+estimates describe workflow runs; they do not establish hosted-runner priority,
+queue-latency improvement or an org concurrency reservation.
+
 ### Label-gated heavy PR CI (`ready-for-ci`)
 
 Heavy PR workflows run their jobs only when the PR carries the `ready-for-ci`
@@ -496,7 +555,9 @@ starts its reusable callee.
   rerun replays its original event, so a run started before the label was
   added is skipped again. Use `gh run rerun` only to retry an admitted run,
   for example after a flaky failure.
-- **Other labels on a ready PR rerun CI.** Admission checks only that the label
+- **Other labels on a ready PR rerun independent heavy workflows.** Cheap PR
+  Checks runs only admission and its aggregate for unrelated label changes.
+  Other heavy workflows check only that the label
   is present, so any later `labeled` event on a labelled PR is a real admitted
   run on the same SHA. It joins the same PR group and supersedes the
   in-progress run. The newest check per name is therefore always genuine
@@ -508,7 +569,7 @@ starts its reusable callee.
   merge tooling such as `watch_pr_ready` counts `SKIPPED` as passing. Once the
   label is removed, the PR has no hosted evidence. Re-add the label for a fresh
   admitted run, or rely on the exact-head local pass.
-- **CI Admitted check (`ci-admitted.yaml`, always on).** One small job per PR
+- **CI Admitted check (`pr-checks.yaml` → `ci-admitted.yaml`, always on).** One small job per PR
   event reads the PR's *current* labels with a read-only token and runs the
   admission script from the base commit. Using the base commit protects the
   *script* from PR edits, but not the workflow file: on `pull_request` the
@@ -535,14 +596,14 @@ starts its reusable callee.
   unlabelled event. Before treating the head as hosted-green, confirm that
   its heavy checks are not skipped. If any are, remove and re-add
   `ready-for-ci`.
-- **Why not a per-workflow admission job:** reading current labels in each of
-  the 57 heavy workflows would allocate a hosted job on every unlabelled PR
+- **Why not a per-workflow admission job:** reading current labels in every
+  heavy workflow would allocate a hosted job on every unlabelled PR
   push. One admission check per event keeps unlabelled pushes runner-free for
   heavy workflows.
-- **Always on for every PR push:** Branch Name Check, Check Migration
-  Timestamps, Check Database Migrations, Mobile API Mappings, Codex Plugin
-  Check, Security Checks (gitleaks, dependency review and audit) and Security
-  Review Classification. These are script-only or security checks. Paused
+- **Always on for every PR push:** Cheap PR Checks selects Branch Name Check,
+  migration checks, Mobile API Mappings and Codex Plugin Check by path without
+  readiness admission. Security Checks (gitleaks, dependency review and audit)
+  and Security Review Classification keep their separate always-on entrypoints. Paused
   Docker, Rust, TanStack and E2E workflows keep their retained policy.
 - **Unchanged:** `main`, `production` and release-please pushes,
   `workflow_dispatch`, schedules and `workflow_call`. Test, Type Check, Biome,

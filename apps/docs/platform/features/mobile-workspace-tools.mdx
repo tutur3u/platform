@@ -977,9 +977,11 @@ The check extracts Flutter `/api/*` templates from `api_config.dart` and the
 production endpoint catalog used by the `ttr` CLI SDK. It verifies that both
 legacy clients still resolve to a canonical owner in a checked-in Next
 satellite, the legacy route wrappers, or the Rust/TanStack migration manifest.
-The `Mobile API Mappings` workflow runs whenever either client catalog, an app
-API route, or the migration manifest changes. If a route is migrated or
-removed, update Flutter and the CLI SDK in the same change instead of leaving a
+For PRs targeting `main`, `Cheap PR Checks` selects the reusable
+`mobile-api-mappings.yaml` validation whenever either client catalog, an app
+API route, or the migration manifest changes. The standalone Mobile API
+Mappings workflow retains its main-push and manual entrypoints. If a route is
+migrated or removed, update Flutter and the CLI SDK in the same change instead of leaving a
 legacy client to discover the break in production.
 
 ## Mobile Inventory And Storefront Coverage

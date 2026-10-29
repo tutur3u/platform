@@ -34,7 +34,6 @@ const HEAVY_PR_WORKFLOWS = [
   'ai-cloudflare.yaml',
   'api-worker.yaml',
   'apps-cloudflare.yaml',
-  'biome-check.yaml',
   'calendar-cloudflare.yaml',
   'calendar-generation-contract.yaml',
   'cms-cloudflare.yaml',
@@ -48,12 +47,10 @@ const HEAVY_PR_WORKFLOWS = [
   'desktop-beta.yaml',
   'devbox-control-cloudflare.yaml',
   'discord-python-ci.yml',
-  'docs-seo-check.yaml',
   'external-internal-packages.yaml',
   'external-project-storage-analytics-contract.yaml',
   'finance-cloudflare.yaml',
   'forms-cloudflare.yaml',
-  'i18n-check.yaml',
   'inventory-cloudflare.yaml',
   'inventory-offline-contract.yaml',
   'lettin-cloudflare.yaml',
@@ -95,17 +92,17 @@ const HEAVY_PR_WORKFLOWS = [
 
 // Sub-minute, script-only or security checks that stay on for every PR push.
 const ALWAYS_ON_PR_WORKFLOWS = [
-  'branch-name-check.yaml',
-  'check-migration-timestamps.yml',
-  'check-migrations.yml',
-  'codex-plugin.yaml',
-  'mobile-api-mappings.yaml',
   'security-checks.yaml',
   'security-review-classifier.yaml',
 ];
 
-// Always-on admission check: red unless ready-for-ci admitted this event.
-const ADMISSION_PR_WORKFLOWS = ['ci-admitted.yaml'];
+// The mixed entrypoint always reports admission and selects its validation callers.
+const ADMISSION_PR_WORKFLOWS = ['pr-checks.yaml'];
+const REUSABLE_GATED_WORKFLOWS = [
+  'biome-check.yaml',
+  'docs-seo-check.yaml',
+  'i18n-check.yaml',
+];
 
 // Paused runtimes keep their retained policy and are neither gated nor run.
 const PAUSED_PR_WORKFLOWS = [
@@ -184,6 +181,7 @@ function protectedTriggerDigest(file, on) {
 module.exports = {
   labelExpressionToJs,
   ADMISSION_PR_WORKFLOWS,
+  REUSABLE_GATED_WORKFLOWS,
   ALWAYS_ON_PR_WORKFLOWS,
   HEAVY_PR_WORKFLOWS,
   PAUSED_PR_WORKFLOWS,
