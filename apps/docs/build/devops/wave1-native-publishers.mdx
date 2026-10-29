@@ -658,6 +658,7 @@ Run `node scripts/check-staging-hosts.js` and
 `bun check:changed` and its repository test runs in the root CI suite.
 
 These source changes do not provision DNS or modify live routes. Rex owns
-that separate cutover. Bea/Rex must remove the dead Vercel redirect domains
-`canary.tuturuuu.com` and `staging.tuturuuu.com` with a Vercel token.
+that separate cutover. Atlas confirmed the dead Vercel redirect domains
+`canary.tuturuuu.com` and `staging.tuturuuu.com` were removed at 16:55
+(GMT+7) on October 29, 2026.
 PR #6825 must rebase and use `pay.staging.tutur3u.com`.

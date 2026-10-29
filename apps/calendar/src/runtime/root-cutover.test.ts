@@ -30,7 +30,7 @@ describe('Calendar cutover boundary', () => {
   it.each([
     'calendar.tuturuuu.com',
     'calendar.staging.tutur3u.com',
-    'calendar-cutover.tuturuuu.com',
+    'calendar-cutover.staging.tutur3u.com',
   ])(
     'threads a fresh CSP nonce through the proxy and Start on %s',
     async (host) => {
@@ -92,7 +92,7 @@ describe('Calendar cutover boundary', () => {
     try {
       const response = await handleCalendarRequest(
         new Request(
-          'https://calendar-cutover.tuturuuu.com/.well-known/acme-challenge/probe'
+          'https://calendar-cutover.staging.tutur3u.com/.well-known/acme-challenge/probe'
         ),
         env,
         ctx,

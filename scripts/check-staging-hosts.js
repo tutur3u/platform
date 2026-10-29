@@ -14,7 +14,11 @@ function violations(source) {
       host
         .toLowerCase()
         .split(/[.-]/)
-        .some((part) => /^(staging|preview|canary)$/.test(part))
+        .some((part) =>
+          /^(staging|beta|cutover|dev|test|qa|next|rc|sandbox|canary|preview)$/.test(
+            part
+          )
+        )
   );
 }
 function check() {
@@ -31,7 +35,7 @@ function check() {
     for (const host of violations(readFileSync(file, 'utf8'))) {
       const deadInventory = [
         'apps/infrastructure/src/lib/infrastructure/projects.ts',
-        'apps/web/src/lib/infrastructure/projects.ts',
+        'apps/web/src/lib/infrastructure/project-model.ts',
         'scripts/watch-blue-green/projects.js',
       ].includes(file);
       if (
