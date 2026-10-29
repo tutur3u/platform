@@ -41,6 +41,7 @@ vi.mock('@tuturuuu/ui/dropdown-menu', () => ({
       {children}
     </button>
   ),
+  DropdownMenuSeparator: () => <hr />,
   DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),
@@ -188,6 +189,25 @@ describe('TaskSprintRow', () => {
     await waitFor(() =>
       expect(state.mutate).toHaveBeenCalledWith(
         { sprintId: 'sprint-3', taskIds: ['t1'] },
+        expect.any(Object)
+      )
+    );
+  });
+
+  it('takes the task out of every sprint', async () => {
+    render(
+      <TaskSprintRow
+        boardId="b"
+        canEdit
+        endDate={undefined}
+        task={task()}
+        wsId="w"
+      />
+    );
+    fireEvent.click(screen.getByRole('menuitem', { name: 'no_sprint' }));
+    await waitFor(() =>
+      expect(state.mutate).toHaveBeenCalledWith(
+        { sprintId: null, taskIds: ['t1'] },
         expect.any(Object)
       )
     );

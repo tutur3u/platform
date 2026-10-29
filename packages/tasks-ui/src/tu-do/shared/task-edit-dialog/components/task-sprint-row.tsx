@@ -6,6 +6,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -74,6 +75,23 @@ export function TaskSprintRow({
   const label = current
     ? `${current.name} · ${formatSprintDateRange(current, locale)}`
     : t('not_in_sprint');
+  // null takes the task out of every sprint, into Plan's backlog.
+  const moveTo = (sprintId: string | null, name?: string) => {
+    // The move swaps this item out of the menu, so close first.
+    setMenuOpen(false);
+    requestAnimationFrame(() =>
+      moveTasks.mutate(
+        { sprintId, taskIds: [task.id] },
+        {
+          onSuccess: () =>
+            toast.success(
+              name ? t('moved_to_sprint', { name }) : t('moved_out_of_sprints')
+            ),
+          onError: () => toast.error(t('move_failed')),
+        }
+      )
+    );
+  };
 
   return (
     <section
@@ -81,7 +99,7 @@ export function TaskSprintRow({
       className="mb-2 border-b pb-2 text-sm"
     >
       <TaskPropertyRow icon={Flag} label={t('sprint_field')}>
-        {canEdit && targets.length ? (
+        {canEdit && (targets.length || current) ? (
           <DropdownMenu onOpenChange={setMenuOpen} open={menuOpen}>
             <DropdownMenuTrigger asChild>
               <button
@@ -98,26 +116,19 @@ export function TaskSprintRow({
               {targets.map((sprint) => (
                 <DropdownMenuItem
                   key={sprint.id}
-                  onSelect={() => {
-                    // The move swaps this item out of the menu, so close first.
-                    setMenuOpen(false);
-                    requestAnimationFrame(() =>
-                      moveTasks.mutate(
-                        { sprintId: sprint.id, taskIds: [task.id] },
-                        {
-                          onSuccess: () =>
-                            toast.success(
-                              t('moved_to_sprint', { name: sprint.name })
-                            ),
-                          onError: () => toast.error(t('move_failed')),
-                        }
-                      )
-                    );
-                  }}
+                  onSelect={() => moveTo(sprint.id, sprint.name)}
                 >
                   {t('move_to_sprint', { name: sprint.name })}
                 </DropdownMenuItem>
               ))}
+              {current ? (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => moveTo(null)}>
+                    {t('no_sprint')}
+                  </DropdownMenuItem>
+                </>
+              ) : null}
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (

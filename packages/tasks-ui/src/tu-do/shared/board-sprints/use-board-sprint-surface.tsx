@@ -39,6 +39,8 @@ export function useBoardSprintSurface({
 }) {
   const [boardTab, setBoardTab] = useState<BoardTab>('board');
   const [summary, setSummary] = useState<SprintSummaryTarget | null>(null);
+  // The sprint Plan shows; null is the next one.
+  const [planSprintId, setPlanSprintId] = useState<string | null>(null);
   const planActive = sprints.sprintsOn && boardTab === 'plan';
   const running = sprints.sprints.find((sprint) => sprint.status === 'active');
 
@@ -61,6 +63,7 @@ export function useBoardSprintSurface({
           setSummary({ mode: 'report', sprintId: sprint.id });
           return;
         }
+        if (sprint.status === 'planned') setPlanSprintId(sprint.id);
         setBoardTab(sprint.status === 'planned' ? 'plan' : 'board');
       }}
       sprints={sprints}
@@ -82,7 +85,9 @@ export function useBoardSprintSurface({
           ? () => setSummary({ mode: 'live', sprintId: running.id })
           : undefined
       }
+      onSelectSprint={setPlanSprintId}
       onStarted={() => setBoardTab('board')}
+      selectedSprintId={planSprintId}
       sprints={sprints}
       wsId={wsId}
     />
