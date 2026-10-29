@@ -600,7 +600,13 @@ function checkRepository({
         routine?.args !== null &&
         routine &&
         inherited.has(
-          file + ':' + routineKey(routine.name, signatureTypes(routine.args))
+          file +
+            ':' +
+            routineKey(
+              routine.name,
+              // The lexer prints array types as `uuid [ ]`.
+              signatureTypes(routine.args.replace(/\s*\[\s*\]/g, '[]'))
+            )
         )
       )
         continue;
