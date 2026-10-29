@@ -364,7 +364,10 @@ export async function PATCH(request: Request) {
     const connectionWsId = id
       ? await getConnectionWorkspaceId(supabase, id)
       : null;
-    if (id && (!connectionWsId || (normalizedWsId && connectionWsId !== normalizedWsId))) {
+    if (
+      id &&
+      (!connectionWsId || (normalizedWsId && connectionWsId !== normalizedWsId))
+    ) {
       return NextResponse.json(
         { error: 'Calendar connection not found' },
         { status: 404 }

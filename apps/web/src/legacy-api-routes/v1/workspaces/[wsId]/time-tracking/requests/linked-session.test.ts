@@ -61,7 +61,10 @@ function createAdminClient() {
     insert: (...args: unknown[]) => {
       mocks.insert(...args);
       return {
-        select: vi.fn(async () => ({ data: [{ id: REQUEST_ID }], error: null })),
+        select: vi.fn(async () => ({
+          data: [{ id: REQUEST_ID }],
+          error: null,
+        })),
       };
     },
     maybeSingle: () => mocks.requestMaybeSingle(),
