@@ -19,6 +19,10 @@ Web redirects legacy form destinations to this app.
    require login; possession of a URL is not a universal access grant.
 5. Review responses and analytics in the private studio.
 
+Share-link creation and lookup are scoped to the workspace in the request path:
+a form that does not belong to that workspace returns `404` and no share link is
+read or created for it.
+
 The current question catalog includes text and typed inputs, choices, rating
 and scales, NPS, ranking, and presentation blocks. The precise question types,
 validation behavior, response formatting, and analytics rules are in
