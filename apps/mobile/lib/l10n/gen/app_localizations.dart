@@ -25813,6 +25813,66 @@ abstract class AppLocalizations {
   /// **'Try again'**
   String get mastermindTryAgain;
 
+  /// No description provided for @mastermindTimeDaysShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d'**
+  String mastermindTimeDaysShort(int count);
+
+  /// No description provided for @mastermindTimeHoursShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h'**
+  String mastermindTimeHoursShort(int count);
+
+  /// No description provided for @mastermindTimeMinutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m'**
+  String mastermindTimeMinutesShort(int count);
+
+  /// No description provided for @mastermindTimeNow.
+  ///
+  /// In en, this message translates to:
+  /// **'now'**
+  String get mastermindTimeNow;
+
+  /// No description provided for @mastermindAskedTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked {time}'**
+  String mastermindAskedTime(String time);
+
+  /// No description provided for @mastermindTimeSpoken.
+  ///
+  /// In en, this message translates to:
+  /// **'{relative}, {absolute}'**
+  String mastermindTimeSpoken(String relative, String absolute);
+
+  /// No description provided for @mastermindTimeSpokenDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day ago} other{{count} days ago}}'**
+  String mastermindTimeSpokenDays(int count);
+
+  /// No description provided for @mastermindTimeSpokenHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 hour ago} other{{count} hours ago}}'**
+  String mastermindTimeSpokenHours(int count);
+
+  /// No description provided for @mastermindTimeSpokenMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 minute ago} other{{count} minutes ago}}'**
+  String mastermindTimeSpokenMinutes(int count);
+
+  /// No description provided for @mastermindTimeSpokenNow.
+  ///
+  /// In en, this message translates to:
+  /// **'just now'**
+  String get mastermindTimeSpokenNow;
+
   /// No description provided for @mastermindUnavailable.
   ///
   /// In en, this message translates to:
@@ -27336,6 +27396,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your catch-up is ready'**
   String get mastermindCatchupPushBody;
+
+  /// No description provided for @mastermindSecurityFix.
+  ///
+  /// In en, this message translates to:
+  /// **'Security fix'**
+  String get mastermindSecurityFix;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

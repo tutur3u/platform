@@ -13777,6 +13777,70 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindTryAgain => 'Try again';
 
   @override
+  String mastermindTimeDaysShort(int count) {
+    return '${count}d';
+  }
+
+  @override
+  String mastermindTimeHoursShort(int count) {
+    return '${count}h';
+  }
+
+  @override
+  String mastermindTimeMinutesShort(int count) {
+    return '${count}m';
+  }
+
+  @override
+  String get mastermindTimeNow => 'now';
+
+  @override
+  String mastermindAskedTime(String time) {
+    return 'Asked $time';
+  }
+
+  @override
+  String mastermindTimeSpoken(String relative, String absolute) {
+    return '$relative, $absolute';
+  }
+
+  @override
+  String mastermindTimeSpokenDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days ago',
+      one: '1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindTimeSpokenHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hours ago',
+      one: '1 hour ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindTimeSpokenMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count minutes ago',
+      one: '1 minute ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindTimeSpokenNow => 'just now';
+
+  @override
   String get mastermindUnavailable => 'Unavailable';
 
   @override
@@ -14633,4 +14697,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindCatchupPushBody => 'Your catch-up is ready';
+
+  @override
+  String get mastermindSecurityFix => 'Security fix';
 }

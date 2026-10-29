@@ -11,18 +11,45 @@
   "mastermindAskTruncated": "Yêu cầu bị rút gọn; xem toàn văn trên máy Mac",
   "mastermindReplyFailedShort": "Chưa gửi · chạm để thử lại",
   "mastermindReplySendingOption": "Đang gửi “{option}”",
-  "@mastermindReplySendingOption": {"placeholders": {"option": {"type": "String"}}},
+  "@mastermindReplySendingOption": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindReplyWriteOwn": "Tự viết câu trả lời",
   "mastermindReplySendOption": "Gửi “{option}”",
-  "@mastermindReplySendOption": {"placeholders": {"option": {"type": "String"}}},
+  "@mastermindReplySendOption": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindAskedAt": "Đã hỏi {age} · {time}",
-  "@mastermindAskedAt": {"placeholders": {"age": {"type": "String"}, "time": {"type": "String"}}},
+  "@mastermindAskedAt": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindReplyUndo": "Hoàn tác",
   "mastermindReplyNotSentReview": "Không gửi được · mở để xem lại",
   "mastermindAnswerExpand": "Xem toàn bộ câu trả lời",
   "mastermindAnswerCollapse": "Thu gọn",
   "mastermindReplyQueuedAt": "Đã xếp hàng {time}",
-  "@mastermindReplyQueuedAt": {"placeholders": {"time": {"type": "String"}}},
+  "@mastermindReplyQueuedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "assistantDownloadPhasePending": "Đang chờ",
   "assistantDownloadPhaseQueued": "Trong hàng đợi",
   "assistantDownloadPhaseTransferring": "Đang tải xuống",
@@ -5539,6 +5566,58 @@
       }
     }
   },
+  "@mastermindTimeDaysShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeHoursShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeMinutesShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeSpoken": {
+    "placeholders": {
+      "relative": {
+        "type": "String"
+      },
+      "absolute": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindTimeSpokenDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeSpokenHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeSpokenMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "@mastermindUnitCredits": {
     "placeholders": {
       "value": {
@@ -6020,6 +6099,23 @@
   "mastermindTimeZoneCaption": "GMT+7",
   "mastermindTitle": "Mastermind",
   "mastermindTryAgain": "Thử lại",
+  "mastermindTimeDaysShort": "{count} ngày",
+  "mastermindTimeHoursShort": "{count} giờ",
+  "mastermindTimeMinutesShort": "{count} phút",
+  "mastermindTimeNow": "vừa xong",
+  "mastermindAskedTime": "Đã hỏi {time}",
+  "@mastermindAskedTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindTimeSpoken": "{relative}, {absolute}",
+  "mastermindTimeSpokenDays": "{count, plural, other{{count} ngày trước}}",
+  "mastermindTimeSpokenHours": "{count, plural, other{{count} giờ trước}}",
+  "mastermindTimeSpokenMinutes": "{count, plural, other{{count} phút trước}}",
+  "mastermindTimeSpokenNow": "vừa xong",
   "mastermindUnavailable": "Không khả dụng",
   "mastermindUnitCredits": "{value} tín dụng",
   "mastermindUnitCreditsPerDay": "{value} tín dụng/ngày",
@@ -6424,5 +6520,6 @@
   "mastermindMorningCatchup": "Bản tin buổi sáng",
   "mastermindMorningCatchupSubtitle": "Một thông báo cho biết bản tin đã sẵn sàng. Lưu trên thiết bị này; việc gửi sẽ bắt đầu khi hub hỗ trợ.",
   "mastermindMorningCatchupTime": "Giờ",
-  "mastermindCatchupPushBody": "Bản tin của bạn đã sẵn sàng"
+  "mastermindCatchupPushBody": "Bản tin của bạn đã sẵn sàng",
+  "mastermindSecurityFix": "Bản vá bảo mật"
 }
