@@ -56,6 +56,20 @@ export async function requireCapacityAccess({
   write?: boolean;
 }): Promise<CapacityManager | { error: NextResponse }> {
   const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+  const sbAdmin = (await createAdminClient({
+    noCookie: true,
+  })) as TypedSupabaseClient;
+  const boardNotFound = () => ({
+    error: NextResponse.json({ error: 'Board not found' }, { status: 404 }),
+  });
+  // A board outside the route workspace is always a 404, before any
+  // permission lookup, so its existence is not revealed across workspaces.
+  const { data: board } = await sbAdmin
+    .from('workspace_boards')
+    .select('ws_id')
+    .eq('id', boardId)
+    .maybeSingle();
+  if (board && board.ws_id !== wsId) return boardNotFound();
   if (write) {
     const membership = await verifyWorkspaceMembershipType({
       wsId,
@@ -79,18 +93,16 @@ export async function requireCapacityAccess({
       };
     }
   }
-  const sbAdmin = (await createAdminClient({
-    noCookie: true,
-  })) as TypedSupabaseClient;
   const access = await resolveTaskBoardAccess({
     boardId,
-    requiredPermission: 'view',
+    requiredPermission: write ? 'edit' : 'view',
     sbAdmin,
     supabase,
     user,
     wsId,
   });
   if ('error' in access) return access;
+  if (access.wsId !== wsId) return boardNotFound();
   return { boardId: access.boardId, sbAdmin, wsId: access.wsId };
 }
 
