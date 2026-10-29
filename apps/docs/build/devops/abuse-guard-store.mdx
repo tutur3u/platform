@@ -324,15 +324,17 @@ exhausted source.
   allowance for verified-principal families), an audited per-identity/per-family
   fairness reset and fairness-denial alerts. Measure real per-source peaks and
   the unknown-source fraction; unresolved ingress coverage remains a blocker.
-- **P2 — FAIR-R1-CONTROL-HOTSPOT (OPEN capacity hold).** Every fair cache miss
-  reaches the single global `control:v1` DO; admitted requests also check its
-  alarm. All families share this object's capacity. A fresh-identity flood can
-  overload it and make offline/proxy fence refreshes fail. Those store admissions
-  fail closed when `admit` cannot refresh the fence (`fence.ts:181-184`); callers
-  retain their documented policy, including proxy's local-counter fallback.
-  Separate family command budgets do not isolate this capacity failure. Require
-  a load test that includes non-fair refresh/fallback behavior and an
-  atomicity-preserving sharding plan before activation.
+- **P2 — FAIR-R1-CONTROL-HOTSPOT (OPEN capacity hold).** Every guarded request
+  now goes through the singleton global `control:v1` Durable Object for durable
+  admission; fair requests also check per-identity quotas there. The `fence.ts`
+  refresh path was removed, so every request reaches the global control object
+  and its serialized storage work. All families share this capacity; a high
+  request rate or fresh-identity flood can make every family unavailable with
+  503s and concentrates storage cost on one object. Separate family budgets do
+  not isolate this capacity. Keep every family unassigned until a load test
+  characterizes the global hotspot and cost, a sharding design preserves
+  cross-family stop and quota atomicity, and the HIGH Sybil drain hold above is
+  addressed. Kill-switch authority stays with designated operational roles.
 - **P3 — FAIR-R1-PEPPER-SCOPE (OPEN).** Quotas are scoped by
   `ABUSE_GUARD_KEY_PEPPER`. Different peppers on Web, Meet or Nova create separate
   allowances for the same source/principal. All callers sharing a family and
