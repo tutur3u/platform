@@ -43,10 +43,6 @@ async function getDataWithApiKey(
     );
   }
 
-  const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
-  if (!permissions || permissions.withoutPermission('ai_lab'))
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
   const sbAdmin = await createAdminClient();
 
   const apiCheckQuery = validateWorkspaceApiKey(wsId, apiKey);
