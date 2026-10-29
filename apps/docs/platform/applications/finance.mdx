@@ -228,8 +228,9 @@ workspace-wide wallet access. Recurring transactions validate their wallet and
 category ids as UUIDs, then check workspace ownership with the service-role
 client after the `manage_finance` check. Wallet creation accepts a matching
 replay without writing and rejects other uses of an existing id; editing an
-existing wallet uses its update route. Legacy wallet migration and Money Lover
-import require `manage_finance`.
+existing wallet uses its update route. Money Lover import requires
+`manage_finance`. The retired wallet migration endpoint remains disabled: it
+returns 403 outside development and 410 in development without writing wallets.
 
 Regression coverage: `finance-boundaries.test.ts`,
 `finance-write-boundaries.test.ts`, the wallets route `default-wallet.test.ts`,
