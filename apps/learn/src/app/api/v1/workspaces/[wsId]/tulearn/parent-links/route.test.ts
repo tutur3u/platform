@@ -5,7 +5,8 @@ import { activeLinkUnique, createFakeSupabase } from '@/test/fake-supabase';
 
 const state = vi.hoisted(() => ({
   admin: null as unknown,
-  sendInviteEmail: vi.fn(),
+  fromWorkspace: vi.fn(),
+  send: vi.fn(),
 }));
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth:
@@ -30,7 +31,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => state.admin,
 }));
 vi.mock('@tuturuuu/email-service', () => ({
-  sendWorkspaceInviteEmail: state.sendInviteEmail,
+  EmailService: { fromWorkspace: state.fromWorkspace },
 }));
 
 import { POST } from './route';
@@ -38,6 +39,7 @@ import { POST } from './route';
 const STUDENT_WS_USER = '00000000-0000-4000-8000-000000000001';
 const STUDENT_PLATFORM = '00000000-0000-4000-8000-000000000002';
 const PARENT = '00000000-0000-4000-8000-000000000003';
+const ROOT_WORKSPACE = '00000000-0000-0000-0000-000000000000';
 
 type Rows = Record<string, Record<string, unknown>[]>;
 
@@ -46,6 +48,7 @@ function setup(overrides: Rows = {}, { linked = true } = {}) {
     {
       tulearn_parent_invites: [],
       tulearn_parent_student_links: [],
+      workspace_email_credentials: [],
       workspace_user_linked_users: linked
         ? [
             {
@@ -82,7 +85,8 @@ function post(body: Record<string, unknown>) {
 }
 
 beforeEach(() => {
-  state.sendInviteEmail.mockReset().mockResolvedValue({ success: true });
+  state.send.mockReset().mockResolvedValue({ success: true });
+  state.fromWorkspace.mockReset().mockResolvedValue({ send: state.send });
 });
 
 it('rejects a platform identity not linked to the student in this workspace', async () => {
@@ -152,10 +156,14 @@ it('emails the invite token to the parent and never returns it', async () => {
   const bodyText = await response.text();
 
   expect(response.status).toBe(201);
-  expect(state.sendInviteEmail).toHaveBeenCalledOnce();
-  const [wsId, recipient, content] = state.sendInviteEmail.mock.calls[0] ?? [];
-  expect(wsId).toBe('workspace-a');
-  expect(recipient).toBe('Parent@Example.com');
+  expect(state.send).toHaveBeenCalledOnce();
+  const [{ content, metadata, recipients }] = state.send.mock.calls[0] ?? [];
+  expect(metadata).toMatchObject({
+    isInvite: true,
+    templateType: 'tulearn-parent-invite',
+    wsId: 'workspace-a',
+  });
+  expect(recipients).toEqual({ to: ['Parent@Example.com'] });
 
   const token = /token=([0-9a-f]{64})/.exec(content.html)?.[1];
   expect(token).toBeDefined();
@@ -172,9 +180,25 @@ it('emails the invite token to the parent and never returns it', async () => {
   expect(stored?.status).toBe('pending');
 });
 
+it('sends through the root credentials when the workspace has none of its own', async () => {
+  setup();
+
+  expect((await post({ parentEmail: 'parent@example.com' })).status).toBe(201);
+  expect(state.fromWorkspace).toHaveBeenCalledWith('workspace-a', {
+    credentialWorkspaceId: ROOT_WORKSPACE,
+  });
+});
+
+it('prefers the workspace own credentials when it has them', async () => {
+  setup({ workspace_email_credentials: [{ ws_id: 'workspace-a' }] });
+
+  expect((await post({ parentEmail: 'parent@example.com' })).status).toBe(201);
+  expect(state.fromWorkspace).toHaveBeenCalledWith('workspace-a', undefined);
+});
+
 it('revokes the invite and reports failure when the email cannot be sent', async () => {
   const admin = setup();
-  state.sendInviteEmail.mockResolvedValue({
+  state.send.mockResolvedValue({
     error: 'smtp down',
     success: false,
   });

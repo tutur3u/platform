@@ -36,10 +36,22 @@ const link = (overrides: Record<string, unknown>) => ({
   ...overrides,
 });
 
-function patch(rows: Record<string, unknown>[], status: string) {
+function patch(
+  rows: Record<string, unknown>[],
+  status: string,
+  invites: Record<string, unknown>[] = []
+) {
   const admin = createFakeSupabase(
-    { tulearn_parent_student_links: rows },
-    { unique: { tulearn_parent_student_links: activeLinkUnique } }
+    { tulearn_parent_invites: invites, tulearn_parent_student_links: rows },
+    {
+      authUsers: {
+        parent: {
+          email: 'parent@example.com',
+          email_confirmed_at: '2026-01-01T00:00:00.000Z',
+        },
+      },
+      unique: { tulearn_parent_student_links: activeLinkUnique },
+    }
   );
   state.admin = admin;
   return {
@@ -104,4 +116,30 @@ it('revokes an active link', async () => {
   const res = await response;
 
   expect((await res.json()).link).toMatchObject({ status: 'revoked' });
+});
+
+it('revokes pending invites for the same parent and learner when revoking a link', async () => {
+  const invite = (overrides: Record<string, unknown>) => ({
+    id: 'invite',
+    parent_email: 'PARENT@example.com',
+    status: 'pending',
+    student_workspace_user_id: 'student',
+    ws_id: 'workspace-a',
+    ...overrides,
+  });
+  const { admin, response } = patch([link({ status: 'active' })], 'revoked', [
+    invite({ id: 'same-parent' }),
+    invite({ id: 'other-parent', parent_email: 'other@example.com' }),
+    invite({ id: 'other-student', student_workspace_user_id: 'student-2' }),
+  ]);
+  await response;
+
+  const statusById = Object.fromEntries(
+    admin.rows('tulearn_parent_invites').map((row) => [row.id, row.status])
+  );
+  expect(statusById).toEqual({
+    'other-parent': 'pending',
+    'other-student': 'pending',
+    'same-parent': 'revoked',
+  });
 });

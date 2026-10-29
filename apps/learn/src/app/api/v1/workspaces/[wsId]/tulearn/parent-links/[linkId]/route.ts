@@ -6,6 +6,7 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { revokePendingParentInvites } from '@/lib/parent-invites';
 import { findOpenParentLinks, PG_UNIQUE_VIOLATION } from '@/lib/parent-links';
 
 type Params = {
@@ -58,20 +59,34 @@ export const PATCH = withSessionAuth<Params>(
       const now = new Date().toISOString();
 
       if (parsed.data.status === 'revoked') {
-        if (current.status === 'revoked') {
-          return NextResponse.json({ link: current });
+        let revoked = current;
+        if (current.status !== 'revoked') {
+          const { data, error } = await sbAdmin
+            .from('tulearn_parent_student_links')
+            .update({ revoked_at: now, status: 'revoked', updated_at: now })
+            .eq('id', linkId)
+            .eq('ws_id', normalizedWsId)
+            .select()
+            .maybeSingle();
+
+          if (error) throw error;
+          revoked = data ?? current;
         }
 
-        const { data, error } = await sbAdmin
-          .from('tulearn_parent_student_links')
-          .update({ revoked_at: now, status: 'revoked', updated_at: now })
-          .eq('id', linkId)
-          .eq('ws_id', normalizedWsId)
-          .select()
-          .maybeSingle();
+        // An emailed invite still in flight would otherwise let the parent
+        // restore the access that was just revoked.
+        const { data: parent, error: parentError } =
+          await sbAdmin.auth.admin.getUserById(current.parent_user_id);
+        if (parentError) throw parentError;
+        if (parent.user?.email) {
+          await revokePendingParentInvites(sbAdmin, {
+            parentEmail: parent.user.email,
+            studentWorkspaceUserId: current.student_workspace_user_id,
+            wsId: normalizedWsId,
+          });
+        }
 
-        if (error) throw error;
-        return NextResponse.json({ link: data ?? current });
+        return NextResponse.json({ link: revoked });
       }
 
       // Re-consent: an admin can reopen a revoked link but only the parent can

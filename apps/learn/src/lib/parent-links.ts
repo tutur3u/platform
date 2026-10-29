@@ -40,6 +40,28 @@ export async function findOpenParentLinks(
   };
 }
 
+/**
+ * Every link (any status, including revoked) for the parent and student that
+ * was created at or after `since`. Used to tell an interrupted acceptance
+ * apart from one an admin has since revoked.
+ */
+export async function findParentLinksCreatedSince(
+  sbAdmin: TypedSupabaseClient,
+  { parentUserId, studentWorkspaceUserId, wsId }: ParentLinkKey,
+  since: string
+) {
+  const { data, error } = await sbAdmin
+    .from('tulearn_parent_student_links')
+    .select('id')
+    .eq('ws_id', wsId)
+    .eq('parent_user_id', parentUserId)
+    .eq('student_workspace_user_id', studentWorkspaceUserId)
+    .gte('created_at', since);
+
+  if (error) throw error;
+  return (data ?? []) as Pick<ParentLinkRow, 'id'>[];
+}
+
 export async function getBoundStudentPlatformUserId(
   sbAdmin: TypedSupabaseClient,
   { studentWorkspaceUserId, wsId }: Omit<ParentLinkKey, 'parentUserId'>
@@ -76,8 +98,15 @@ async function activatePendingLink(
   {
     linkId,
     parentUserId,
+    studentPlatformUserId,
     wsId,
-  }: { linkId: string; parentUserId: string; wsId: string }
+  }: {
+    linkId: string;
+    parentUserId: string;
+    /** Re-pins the link to the student's current binding when provided. */
+    studentPlatformUserId?: string;
+    wsId: string;
+  }
 ) {
   const now = new Date().toISOString();
 
@@ -88,6 +117,9 @@ async function activatePendingLink(
       accepted_at: now,
       revoked_at: null,
       status: 'active',
+      ...(studentPlatformUserId
+        ? { student_platform_user_id: studentPlatformUserId }
+        : {}),
       updated_at: now,
     })
     .eq('id', linkId)
@@ -165,26 +197,34 @@ export async function acceptPendingParentLink(
 
 /**
  * Grants access from a consenting parent (verified invite): activates their
- * pending link for the student, or creates an active one.
+ * pending link for the student (re-pinned to the student's current binding),
+ * or creates an active one. With `activatePending: false` an existing pending
+ * link is left untouched and a fresh active link is inserted instead.
  */
 export async function grantParentLink(
   sbAdmin: TypedSupabaseClient,
   {
+    activatePending = true,
     createdBy,
     parentUserId,
     studentPlatformUserId,
     studentWorkspaceUserId,
     wsId,
-  }: ParentLinkKey & { createdBy: string | null; studentPlatformUserId: string }
+  }: ParentLinkKey & {
+    activatePending?: boolean;
+    createdBy: string | null;
+    studentPlatformUserId: string;
+  }
 ): Promise<ParentLinkRow> {
   const key = { parentUserId, studentWorkspaceUserId, wsId };
   const open = await findOpenParentLinks(sbAdmin, key);
   if (open.active) return open.active;
 
-  if (open.pending) {
+  if (open.pending && activatePending) {
     const { data, error } = await activatePendingLink(sbAdmin, {
       linkId: open.pending.id,
       parentUserId,
+      studentPlatformUserId,
       wsId,
     });
     if (error && error.code !== PG_UNIQUE_VIOLATION) throw error;

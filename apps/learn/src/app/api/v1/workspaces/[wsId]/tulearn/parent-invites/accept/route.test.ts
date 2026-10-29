@@ -13,13 +13,27 @@ vi.mock('@tuturuuu/satellite/auth', () => ({
 vi.mock('@tuturuuu/education-core/tulearn/service', () => ({
   hasEducationEnabled: async () => true,
 }));
+vi.mock('@/lib/api-auth', () => ({
+  withSessionAuth:
+    (
+      handler: (
+        request: NextRequest,
+        context: unknown,
+        params: unknown
+      ) => unknown
+    ) =>
+    (request: NextRequest, route: { params: unknown }) =>
+      handler(request, { user: { id: 'actor' }, supabase: {} }, route.params),
+}));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: async () => ({ containsPermission: () => true }),
   normalizeWorkspaceId: async () => 'workspace-a',
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => state.admin,
 }));
 
+import { PATCH } from '../../parent-links/[linkId]/route';
 import { POST } from './route';
 
 const TOKEN = 'a'.repeat(64);
@@ -51,6 +65,7 @@ function setup({
     string,
     { email: string | null; email_confirmed_at: string | null }
   >,
+  bound = true,
   invites = [invite()],
   links = [] as Record<string, unknown>[],
 } = {}) {
@@ -58,13 +73,15 @@ function setup({
     {
       tulearn_parent_invites: invites,
       tulearn_parent_student_links: links,
-      workspace_user_linked_users: [
-        {
-          platform_user_id: 'student-platform',
-          virtual_user_id: 'student-ws',
-          ws_id: 'workspace-a',
-        },
-      ],
+      workspace_user_linked_users: bound
+        ? [
+            {
+              platform_user_id: 'student-platform',
+              virtual_user_id: 'student-ws',
+              ws_id: 'workspace-a',
+            },
+          ]
+        : [],
     },
     { authUsers, unique: { tulearn_parent_student_links: activeLinkUnique } }
   );
@@ -79,6 +96,16 @@ function accept(token: unknown = TOKEN) {
       method: 'POST',
     }),
     { params: { wsId: 'workspace-a' } }
+  );
+}
+
+function patchLink(linkId: string, status: string) {
+  return PATCH(
+    new NextRequest(`http://localhost/parent-links/${linkId}`, {
+      body: JSON.stringify({ status }),
+      method: 'PATCH',
+    }),
+    { params: { linkId, wsId: 'workspace-a' } }
   );
 }
 
@@ -199,10 +226,104 @@ it('is idempotent when the same parent repeats the acceptance', async () => {
 
 it('repairs a missing link when the same parent retries after a partial failure', async () => {
   const admin = setup({
-    invites: [invite({ parent_user_id: 'parent', status: 'accepted' })],
+    invites: [
+      invite({
+        accepted_at: new Date(Date.now() - 1000).toISOString(),
+        parent_user_id: 'parent',
+        status: 'accepted',
+      }),
+    ],
   });
 
   expect((await accept()).status).toBe(200);
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(1);
+  expect(admin.rows('tulearn_parent_student_links')[0]?.status).toBe('active');
+});
+
+it('does not restore access an admin revoked when the same token is replayed', async () => {
+  const admin = setup();
+  const first = await (await accept()).json();
+
+  expect((await patchLink(first.link.id, 'revoked')).status).toBe(200);
+  expect((await accept()).status).toBe(410);
+
+  const links = admin.rows('tulearn_parent_student_links');
+  expect(links).toHaveLength(1);
+  expect(links.some((row) => row.status === 'active')).toBe(false);
+});
+
+it('does not activate a link an admin reopened as pending when the token is replayed', async () => {
+  const admin = setup();
+  const first = await (await accept()).json();
+
+  await patchLink(first.link.id, 'revoked');
+  await patchLink(first.link.id, 'pending');
+  expect((await accept()).status).toBe(410);
+
+  const links = admin.rows('tulearn_parent_student_links');
+  expect(links).toHaveLength(1);
+  expect(links[0]?.status).toBe('pending');
+});
+
+it('rejects a replay of an accepted invite once it has expired', async () => {
+  const admin = setup({
+    invites: [
+      invite({
+        accepted_at: new Date(Date.now() - 2000).toISOString(),
+        expires_at: new Date(Date.now() - 1000).toISOString(),
+        parent_user_id: 'parent',
+        status: 'accepted',
+      }),
+    ],
+  });
+
+  expect((await accept()).status).toBe(410);
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(0);
+});
+
+it('does not consume the invite when the learner is no longer bound', async () => {
+  const admin = setup({ bound: false });
+
+  expect((await accept()).status).toBe(409);
+  expect(admin.rows('tulearn_parent_invites')[0]).toMatchObject({
+    accepted_at: null,
+    status: 'pending',
+  });
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(0);
+});
+
+it('re-pins a stale pending link to the learner current binding when activating it', async () => {
+  const admin = setup({
+    links: [
+      {
+        accepted_at: null,
+        id: 'stale-link',
+        parent_user_id: 'parent',
+        status: 'pending',
+        student_platform_user_id: 'old-student-platform',
+        student_workspace_user_id: 'student-ws',
+        ws_id: 'workspace-a',
+      },
+    ],
+  });
+
+  expect((await (await accept()).json()).link).toMatchObject({
+    id: 'stale-link',
+    status: 'active',
+    student_platform_user_id: 'student-platform',
+  });
+  expect(admin.rows('tulearn_parent_student_links')).toHaveLength(1);
+});
+
+it('returns the same parent link when their own concurrent submit wins the claim', async () => {
+  const admin = setup();
+  const responses = await Promise.all([accept(), accept()]);
+
+  expect(responses.map((response) => response.status)).toEqual([200, 200]);
+  const ids = await Promise.all(
+    responses.map(async (response) => (await response.json()).link.id)
+  );
+  expect(ids[0]).toBe(ids[1]);
   expect(admin.rows('tulearn_parent_student_links')).toHaveLength(1);
 });
 

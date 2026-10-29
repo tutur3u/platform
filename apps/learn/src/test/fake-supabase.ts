@@ -106,6 +106,10 @@ export function createFakeSupabase(
         filters.push((row) => String(row[column]) > String(value));
         return query;
       },
+      gte: (column: string, value: unknown) => {
+        filters.push((row) => String(row[column]) >= String(value));
+        return query;
+      },
       in: (column: string, list: unknown[]) => {
         filters.push((row) => list.includes(row[column]));
         return query;

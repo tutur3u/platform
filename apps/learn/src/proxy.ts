@@ -57,6 +57,23 @@ function getLoginPath() {
   return '/login';
 }
 
+// The parent invite token travels in this path's query string, which is also
+// echoed into the login `next` value; keep it out of Referer headers on the
+// redirect hop and the login page.
+function withInviteReferrerPolicy(
+  request: NextRequest,
+  response: NextResponse
+) {
+  const target =
+    stripLocale(request.nextUrl.pathname) === '/login'
+      ? request.nextUrl.searchParams.get('next')
+      : request.nextUrl.pathname;
+  if (target && /^(\/[a-z]{2})?\/parent-invite(?:[/?#]|$)/i.test(target)) {
+    response.headers.set('Referrer-Policy', 'no-referrer');
+  }
+  return response;
+}
+
 function getNextValue(request: NextRequest) {
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
   if (unlocalizedPath === '/') return null;
@@ -189,7 +206,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
       if (next) url.searchParams.set('next', next);
 
-      return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
+      return clearSupabaseAuthCookies(
+        request,
+        withInviteReferrerPolicy(request, NextResponse.redirect(url))
+      );
     }
 
     const response = intlMiddleware(request);
@@ -199,7 +219,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return clearSupabaseAuthCookies(request, response);
   }
 
-  return clearSupabaseAuthCookies(request, intlMiddleware(request));
+  return clearSupabaseAuthCookies(
+    request,
+    withInviteReferrerPolicy(request, intlMiddleware(request))
+  );
 }
 
 export const config = {

@@ -1,9 +1,12 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { sendWorkspaceInviteEmail } from '@tuturuuu/email-service';
+import { EmailService } from '@tuturuuu/email-service';
 import type { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Tables } from '@tuturuuu/types/supabase';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { LEARN_APP_URL } from '@/constants/common';
 import {
+  findOpenParentLinks,
+  findParentLinksCreatedSince,
   getBoundStudentPlatformUserId,
   grantParentLink,
   type ParentLinkRow,
@@ -79,6 +82,56 @@ function buildParentInviteEmail(acceptUrl: string) {
 }
 
 /**
+ * Revokes pending invites, either by id or every pending invite for the
+ * student addressed to `parentEmail`. Failures are logged, not thrown, so a
+ * revocation hiccup never undoes the action that triggered it.
+ */
+export async function revokePendingParentInvites(
+  sbAdmin: TypedSupabaseClient,
+  target:
+    | { ids: string[] }
+    | {
+        exceptId?: string;
+        parentEmail: string;
+        studentWorkspaceUserId: string;
+        wsId: string;
+      }
+) {
+  let ids: string[];
+  if ('ids' in target) {
+    ids = target.ids;
+  } else {
+    const { data, error } = await sbAdmin
+      .from('tulearn_parent_invites')
+      .select('id, parent_email')
+      .eq('ws_id', target.wsId)
+      .eq('student_workspace_user_id', target.studentWorkspaceUserId)
+      .eq('status', 'pending');
+    if (error) {
+      console.error('Failed to list pending parent invites', error);
+      return;
+    }
+    ids = (data ?? [])
+      .filter(
+        (pending) =>
+          pending.id !== target.exceptId &&
+          emailsMatch(pending.parent_email, target.parentEmail)
+      )
+      .map((pending) => pending.id);
+  }
+
+  if (!ids.length) return;
+
+  const now = new Date().toISOString();
+  const { error } = await sbAdmin
+    .from('tulearn_parent_invites')
+    .update({ revoked_at: now, status: 'revoked', updated_at: now })
+    .in('id', ids)
+    .eq('status', 'pending');
+  if (error) console.error('Failed to revoke parent invites', error);
+}
+
+/**
  * Creates a pending invite and emails the single-use token to the invited
  * parent. The token is never returned to the caller; if delivery fails the
  * invite is revoked because no one holds its token.
@@ -116,30 +169,33 @@ export async function createAndSendParentInvite(
 
   if (error) throw error;
 
-  const revokeInvites = (ids: string[]) =>
-    sbAdmin
-      .from('tulearn_parent_invites')
-      .update({
-        revoked_at: new Date().toISOString(),
-        status: 'revoked',
-        updated_at: new Date().toISOString(),
-      })
-      .in('id', ids)
-      .eq('status', 'pending');
-
   let delivered = false;
   try {
-    const result = await sendWorkspaceInviteEmail(
+    // Workspaces without their own SES credentials send through the root
+    // account; rate limits, blocklist and audit stay attributed to `wsId`.
+    const { data: ownCredentials, error: credentialsError } = await sbAdmin
+      .from('workspace_email_credentials')
+      .select('ws_id')
+      .eq('ws_id', wsId)
+      .maybeSingle();
+    if (credentialsError) throw credentialsError;
+
+    const service = await EmailService.fromWorkspace(
       wsId,
-      parentEmail,
-      buildParentInviteEmail(buildParentInviteAcceptUrl(wsId, token)),
-      {
+      ownCredentials ? undefined : { credentialWorkspaceId: ROOT_WORKSPACE_ID }
+    );
+    const result = await service.send({
+      content: buildParentInviteEmail(buildParentInviteAcceptUrl(wsId, token)),
+      metadata: {
         entityId: invite.id,
         entityType: 'tulearn_parent_invite',
+        isInvite: true,
         templateType: 'tulearn-parent-invite',
         userId: invitedBy,
-      }
-    );
+        wsId,
+      },
+      recipients: { to: [parentEmail] },
+    });
     delivered = result.success;
     if (!delivered) {
       console.error('Failed to email Tulearn parent invite', result.error);
@@ -149,30 +205,17 @@ export async function createAndSendParentInvite(
   }
 
   if (!delivered) {
-    await revokeInvites([invite.id]);
+    await revokePendingParentInvites(sbAdmin, { ids: [invite.id] });
     return { ok: false, reason: 'delivery_failed' };
   }
 
   // A newer invite supersedes older pending tokens for the same recipient.
-  const { data: pendingInvites, error: pendingError } = await sbAdmin
-    .from('tulearn_parent_invites')
-    .select('id, parent_email')
-    .eq('ws_id', wsId)
-    .eq('student_workspace_user_id', studentWorkspaceUserId)
-    .eq('status', 'pending')
-    .neq('id', invite.id);
-  const supersededIds = (pendingInvites ?? [])
-    .filter((pending) => emailsMatch(pending.parent_email, parentEmail))
-    .map((pending) => pending.id);
-  const { error: supersedeError } = supersededIds.length
-    ? await revokeInvites(supersededIds)
-    : { error: null };
-  if (pendingError || supersedeError) {
-    console.error(
-      'Failed to supersede earlier parent invites',
-      pendingError ?? supersedeError
-    );
-  }
+  await revokePendingParentInvites(sbAdmin, {
+    exceptId: invite.id,
+    parentEmail,
+    studentWorkspaceUserId,
+    wsId,
+  });
 
   return { invite, ok: true };
 }
@@ -190,10 +233,67 @@ export type AcceptParentInviteResult =
     };
 
 /**
+ * Resumes an invite this parent already accepted. It only ever returns an
+ * ACTIVE link: it never activates a pending link and never re-grants after an
+ * admin revoked access. The one repair is an interrupted acceptance, where no
+ * link of any status has been created since the invite was accepted.
+ */
+async function resumeAcceptedParentInvite(
+  sbAdmin: TypedSupabaseClient,
+  invite: ParentInviteRow,
+  userId: string,
+  wsId: string
+): Promise<AcceptParentInviteResult> {
+  if (invite.expires_at <= new Date().toISOString()) {
+    return { ok: false, reason: 'expired' };
+  }
+
+  const key = {
+    parentUserId: userId,
+    studentWorkspaceUserId: invite.student_workspace_user_id,
+    wsId,
+  };
+  const { active } = await findOpenParentLinks(sbAdmin, key);
+  if (active) return { link: active, ok: true };
+
+  if (!invite.accepted_at) return { ok: false, reason: 'unavailable' };
+
+  const created = await findParentLinksCreatedSince(
+    sbAdmin,
+    key,
+    invite.accepted_at
+  );
+  if (created.length) {
+    // A concurrent submit may have granted the link since the read above.
+    const { active: granted } = await findOpenParentLinks(sbAdmin, key);
+    return granted
+      ? { link: granted, ok: true }
+      : { ok: false, reason: 'unavailable' };
+  }
+
+  const studentPlatformUserId = await getBoundStudentPlatformUserId(sbAdmin, {
+    studentWorkspaceUserId: invite.student_workspace_user_id,
+    wsId,
+  });
+  if (!studentPlatformUserId) return { ok: false, reason: 'student_unbound' };
+
+  const link = await grantParentLink(sbAdmin, {
+    activatePending: false,
+    createdBy: invite.invited_by,
+    parentUserId: userId,
+    studentPlatformUserId,
+    studentWorkspaceUserId: invite.student_workspace_user_id,
+    wsId,
+  });
+  return { link, ok: true };
+}
+
+/**
  * Single-use acceptance: hashes the presented token, requires the caller's
- * verified email to equal the invited email, claims the invite with a
- * conditional update on `pending`, then grants the active link.
- * Re-submitting by the same parent repairs/returns the existing link.
+ * verified email to equal the invited email, confirms the learner is still
+ * bound, claims the invite with a conditional update on `pending`, then grants
+ * the active link. Re-submitting by the same parent resumes an interrupted
+ * acceptance but never restores access an admin revoked.
  */
 export async function acceptParentInvite(
   sbAdmin: TypedSupabaseClient,
@@ -224,48 +324,60 @@ export async function acceptParentInvite(
     return { ok: false, reason: 'email_mismatch' };
   }
 
-  let claimed =
-    invite.status === 'accepted' && invite.parent_user_id === userId;
+  if (invite.status === 'accepted') {
+    return invite.parent_user_id === userId
+      ? resumeAcceptedParentInvite(sbAdmin, invite, userId, wsId)
+      : { ok: false, reason: 'unavailable' };
+  }
+  if (invite.status !== 'pending') return { ok: false, reason: 'unavailable' };
 
-  if (!claimed) {
-    if (invite.status !== 'pending')
-      return { ok: false, reason: 'unavailable' };
-
-    const now = new Date().toISOString();
-    if (invite.expires_at <= now) {
-      await sbAdmin
-        .from('tulearn_parent_invites')
-        .update({ status: 'expired', updated_at: now })
-        .eq('id', invite.id)
-        .eq('status', 'pending');
-      return { ok: false, reason: 'expired' };
-    }
-
-    const { data: claim, error: claimError } = await sbAdmin
+  const now = new Date().toISOString();
+  if (invite.expires_at <= now) {
+    await sbAdmin
       .from('tulearn_parent_invites')
-      .update({
-        accepted_at: now,
-        parent_user_id: userId,
-        status: 'accepted',
-        updated_at: now,
-      })
+      .update({ status: 'expired', updated_at: now })
       .eq('id', invite.id)
-      .eq('status', 'pending')
-      .gt('expires_at', now)
-      .select('id')
-      .maybeSingle();
-
-    if (claimError) throw claimError;
-    // Someone else consumed or expired it between our read and the claim.
-    if (!claim) return { ok: false, reason: 'unavailable' };
-    claimed = true;
+      .eq('status', 'pending');
+    return { ok: false, reason: 'expired' };
   }
 
+  // Checked before the claim so an unbound learner does not burn the invite.
   const studentPlatformUserId = await getBoundStudentPlatformUserId(sbAdmin, {
     studentWorkspaceUserId: invite.student_workspace_user_id,
     wsId,
   });
   if (!studentPlatformUserId) return { ok: false, reason: 'student_unbound' };
+
+  const { data: claim, error: claimError } = await sbAdmin
+    .from('tulearn_parent_invites')
+    .update({
+      accepted_at: now,
+      parent_user_id: userId,
+      status: 'accepted',
+      updated_at: now,
+    })
+    .eq('id', invite.id)
+    .eq('status', 'pending')
+    .gt('expires_at', now)
+    .select('id')
+    .maybeSingle();
+
+  if (claimError) throw claimError;
+  if (!claim) {
+    // Lost the race. If the winner was this same parent (a double submit),
+    // hand back their link instead of reporting the invite as spent.
+    const { data: latest, error: latestError } = await sbAdmin
+      .from('tulearn_parent_invites')
+      .select('*')
+      .eq('id', invite.id)
+      .maybeSingle();
+    if (latestError) throw latestError;
+
+    const current = latest as ParentInviteRow | null;
+    return current?.status === 'accepted' && current.parent_user_id === userId
+      ? resumeAcceptedParentInvite(sbAdmin, current, userId, wsId)
+      : { ok: false, reason: 'unavailable' };
+  }
 
   const link = await grantParentLink(sbAdmin, {
     createdBy: invite.invited_by,
