@@ -117,3 +117,18 @@ Web API or a Rust-owned migration route. See [Learn personal To do](./learn#pers
 for regression coverage and bounded source-versus-runtime evidence.
 
 Teach quiz-set and module detail reads require verified membership of the route workspace and `ai_lab`, matching the education API permission. Denied members and nonmembers receive 404 before content, counts, or private quiz answers are read. Each loader checks independently of its layout. Regression coverage: `education-page-access.test.ts` and the quiz-set/module data suites.
+
+## Quiz links and learner test access
+
+Bulk quiz creation validates all supplied module and quiz-set destinations in
+the resolved Teach workspace before creating quizzes, private answers, or links.
+Missing or foreign destinations return 404. Existing quiz updates retain their
+workspace filter.
+
+The Learn start, attempt, save-answer, and submit routes require the selected
+course in the student's assigned, published courses for the resolved workspace.
+Parent and guest subjects keep their existing read-only restrictions. Course
+access is checked before test, answer, attempt, or grading operations.
+
+Coverage lives in Teach's `quizzes/workspace-links.test.ts` and Learn's
+`tests/[testId]/access.test.ts`.
