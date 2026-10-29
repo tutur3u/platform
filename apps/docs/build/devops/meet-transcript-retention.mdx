@@ -107,7 +107,14 @@ failed or unknown days stop the job durably.
   The next batch returns `fenced` and the run ends `stopped`.
 - Remove the job id from `CRON_CONTROL_ENABLED_JOBS` to stop claims entirely.
 - `apps/database/rollbacks/20261029170000_meet_transcript_retention_purge.rollback.sql`
-  removes the schema. It cannot restore purged data.
+  drops the purge functions and the fence. It keeps the
+  `private.meet_transcript_purge_runs` audit, its rows and the
+  `transcript_purged_at` markers.
+
+**A rollback cannot restore deleted transcripts or notes.** Neither the stop
+fence nor the schema rollback brings back data that a run already removed; they
+only disable future runs. Deletion is irreversible, which is why it needs a dry
+run and a separate approval.
 
 ## Regression evidence
 
