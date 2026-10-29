@@ -1365,11 +1365,14 @@ section for runtime bounds, host-lock recovery and report-only acceptance.
 
 `sql-grant-guard.js` accepts an exact-signature EXECUTE/ALL revoke after the
 creation statement in the same or a later timestamped forward migration;
-migrations newer than the newest allowlisted file (`20261029030400`) need the
-revoke in the same file. Later EXECUTE grants invalidate that evidence, and
-manual rollbacks never count. Seven frozen definers (`sql-grant-acl.js`) may
-inherit an earlier revoke through `CREATE OR REPLACE` while no drop, rename,
-plain recreate or public/anon grant follows it; the guard prints each inherited
+migrations newer than the newest frozen file (`20261029030400`) need the
+revoke in the same file, while later migrations are still replayed so a later
+PUBLIC/anon grant fails them. Later EXECUTE grants invalidate that evidence, and
+manual rollbacks never count. Seven frozen definers (single source:
+`sql-grant-frozen-definers.js`, exporting `FROZEN_DEFINERS` and
+`FROZEN_DEFINERS_CUTOFF`; import it, never copy it) may
+inherit an earlier revoke through `CREATE OR REPLACE` while no drop, rename
+(signature-free forms cover every overload), plain recreate or public/anon grant follows it; the guard prints each inherited
 pass with its evidence. Do not extend the allowlist. Run
 `node --test scripts/ci/sql-grant-*.test.js` and the guard itself, and report
 repository-wide failures instead of exempting them. See the

@@ -11,10 +11,10 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const {
-  INHERITED_ACL_CUTOFF,
   OPEN_ROLES: DEFINER_ROLES,
   judgeDefinerAcl,
 } = require('./sql-grant-acl');
+const { FROZEN_DEFINERS_CUTOFF } = require('./sql-grant-frozen-definers');
 const {
   readRoutine,
   roleList,
@@ -214,10 +214,8 @@ function scanSql(
       key,
       history: [...priorStatements, ...tagged.slice(0, index)],
       definer: tagged[index],
-      tail: [
-        ...tagged.slice(index + 1),
-        ...(sameFileOnly ? [] : laterStatements),
-      ],
+      tail: [...tagged.slice(index + 1), ...laterStatements],
+      sameFileOnly,
     });
     if (verdict.missing.length === 0) {
       onSatisfied({
@@ -233,7 +231,7 @@ function scanSql(
         line: definer.statement.startLine,
         detail: `creates SECURITY DEFINER function ${key} without revoking EXECUTE from ${verdict.missing.join(', ')}`,
         hint: sameFileOnly
-          ? `Migrations after ${INHERITED_ACL_CUTOFF} need the revoke in the same file, after the creation; later files and inherited ACLs do not count.`
+          ? `Migrations after ${FROZEN_DEFINERS_CUTOFF} need the revoke in the same file, after the creation; revokes in later files and inherited ACLs do not count, and a later PUBLIC/anon grant reopens EXECUTE.`
           : '',
       });
     }
@@ -304,7 +302,7 @@ function evaluateSqlFiles({ files, readFile, cutoff = MIGRATION_CUTOFF }) {
       laterStatements: withHistory
         ? ordered.slice(position + 1).flatMap(statementsIn)
         : [],
-      sameFileOnly: version === null || version > INHERITED_ACL_CUTOFF,
+      sameFileOnly: version === null || version > FROZEN_DEFINERS_CUTOFF,
       onSatisfied: (entry) => {
         if (enforced) satisfied.push({ ...entry, file });
       },

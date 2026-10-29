@@ -4,9 +4,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const {
-  INHERITED_ACL_ALLOWLIST,
-  INHERITED_ACL_CUTOFF,
-} = require('./sql-grant-acl');
+  FROZEN_DEFINERS: INHERITED_ACL_ALLOWLIST,
+  FROZEN_DEFINERS_CUTOFF: INHERITED_ACL_CUTOFF,
+} = require('./sql-grant-frozen-definers');
 const {
   RULES,
   checkRepository,

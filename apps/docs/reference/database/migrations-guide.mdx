@@ -489,8 +489,11 @@ Unversioned files are always checked.
    creation. The end-state rule: the revoke may sit in the same file or in any
    later timestamped forward migration, but **a migration newer than
    `20261029030400` (the newest allowlisted file below) must carry the revoke
-   in the same file, after the creation**. An earlier revoke does not satisfy a
-   replacement. Later EXECUTE grants invalidate the corresponding revoke;
+   in the same file, after the creation**. The cutoff restricts only where the
+   qualifying revoke may come from; later migrations are still replayed, so a
+   later grant to `public` or `anon` (an `allow-anon-grant` marker does not
+   exempt the definer rule) fails the definer. An earlier revoke does not
+   satisfy a replacement. Later EXECUTE grants invalidate the corresponding revoke;
    another overload, a different signature or a manual rollback cannot supply
    proof. The guard prints every pass that rests on a revoke in another file:
 
@@ -502,8 +505,8 @@ Unversioned files are always checked.
 3. **Inherited ACL (frozen allowlist).** `CREATE OR REPLACE` keeps the ACL of
    the existing function, so seven definers already on `main` whose earlier
    revoke predates their latest replacement pass by inheritance. The allowlist
-   in `scripts/ci/sql-grant-acl.js` is frozen (never add entries; new definers
-   carry their own revoke) and each entry is tied to its migration file:
+   in `scripts/ci/sql-grant-frozen-definers.js` is the single frozen source
+   (never add entries or copy it; new definers carry their own revoke) and each entry is tied to its migration file:
 
    | Definer | Migration |
    | --- | --- |
@@ -519,7 +522,9 @@ Unversioned files are always checked.
    from `public` and `anon` (and from `authenticated`, which current policy
    requires for every entry except `transfer_workspace_ownership`, which keeps
    `authenticated` EXECUTE by design) and nothing after it drops, renames or
-   moves the function, recreates it with a plain `CREATE`, or grants it to
+   moves the function (a signature-free `DROP`, `ALTER ... RENAME TO` or
+   `SET SCHEMA` or `GRANT` names every overload of that name), recreates it
+   with a plain `CREATE`, or grants it to
    `public`/`anon` (or to `authenticated` where that is required closed). The
    guard prints the migration and line that evidence each inherited pass.
 
