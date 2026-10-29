@@ -1,11 +1,11 @@
 -- Contract for 20261029170000_meet_transcript_retention_purge.sql: service-role
 -- only entry points, a closed-by-default fence, count-only dry runs, bounded
 -- 365-day deletion that keeps newer data and everything outside the transcript
--- scope, and a static contract that ignores later M1-B columns.
+-- scope, plus explicit M1-B deadline and edited-notes adoption.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(36);
+select plan(39);
 
 insert into public.users(id) values ('00000000-0000-4000-8000-00000000e701');
 insert into public.workspaces(id, name, personal, creator_id) values
@@ -18,6 +18,7 @@ insert into public.meet_ai_sessions(id, meeting_id, user_id, created_at, ended_a
     now() - interval '401 days', now() - interval '400 days', 'completed', '{"summary":"old"}'),
   ('00000000-0000-4000-8000-00000000e732', '00000000-0000-4000-8000-00000000e721', '00000000-0000-4000-8000-00000000e701',
     now() - interval '11 days', now() - interval '10 days', 'completed', '{"summary":"new"}');
+update public.meet_ai_sessions set purge_after = coalesce(ended_at, created_at) + interval '365 days' where meeting_id = '00000000-0000-4000-8000-00000000e721';
 insert into public.meet_ai_chunks(id, session_id, sequence, start_seconds, duration_seconds, status, transcript)
 select gen_random_uuid(), '00000000-0000-4000-8000-00000000e731', n, n * 8, 8, 'completed', 'old ' || n
 from generate_series(0, 2) n;
@@ -179,22 +180,23 @@ select is((select count(*)::int from private.meet_transcript_purge_runs where st
   'a stale running run becomes abandoned');
 select is((select result ->> 'mode' from r where step = 'after_crash'), 'delete', 'a new run starts after abandonment');
 
--- Static schema contract: M1-B-style columns change nothing until the function
--- is explicitly replaced. purge_after does not move the cutoff, and
--- notes_edited is never cleared.
-alter table public.meet_ai_sessions add column purge_after timestamptz, add column notes_edited jsonb;
+-- Explicit M1-B adoption: custom expiry, forever, and edited notes.
 insert into public.meet_ai_sessions(id, meeting_id, user_id, created_at, ended_at, notes_status, notes, notes_edited, purge_after) values
   ('00000000-0000-4000-8000-00000000e733', '00000000-0000-4000-8000-00000000e721', '00000000-0000-4000-8000-00000000e701',
-    now() - interval '31 days', now() - interval '30 days', 'completed', '{"summary":"short"}', null, now() - interval '1 day'),
+    now() - interval '31 days', now() - interval '30 days', 'completed', '{"summary":"short"}', '{"summary":"edit"}', now() - interval '1 day'),
   ('00000000-0000-4000-8000-00000000e734', '00000000-0000-4000-8000-00000000e721', '00000000-0000-4000-8000-00000000e701',
     now() - interval '501 days', now() - interval '500 days', 'completed', '{"summary":"old"}', '{"summary":"user edit"}', null);
 set local role service_role;
 insert into r select 'static', private.purge_meet_transcripts_batch((select (result ->> 'run_id')::uuid from r where step = 'after_crash'), 500);
 reset role;
-select ok((select notes is not null and transcript_purged_at is null from public.meet_ai_sessions where id = '00000000-0000-4000-8000-00000000e733'),
-  'a past purge_after does not make a session due before 365 days');
-select ok((select notes is null and notes_edited ->> 'summary' = 'user edit' from public.meet_ai_sessions where id = '00000000-0000-4000-8000-00000000e734'),
-  'the 365-day cutoff applies and notes_edited is never cleared');
+select ok((select notes is null and notes_edited is null and transcript_purged_at is not null from public.meet_ai_sessions where id = '00000000-0000-4000-8000-00000000e733'),
+  'a past purge_after expires original and edited notes before 365 days');
+select ok((select notes is not null and notes_edited ->> 'summary' = 'user edit' and transcript_purged_at is null from public.meet_ai_sessions where id = '00000000-0000-4000-8000-00000000e734'),
+  'NULL purge_after retains old original and edited notes forever');
 
+select is((select result ->> 'notes' from r where step = 'static'), '1', 'delete counts match deadline predicate');
+select ok((select proconfig @> array['search_path=pg_catalog, pg_temp'] from pg_proc
+ where oid = 'private.purge_meet_transcripts_batch(uuid, integer)'::regprocedure), 'replacement retains hardened search path');
+select is((select visibility from public.meet_ai_sessions where id = '00000000-0000-4000-8000-00000000e733'), 'host', 'existing caller remains private by default');
 select * from finish();
 rollback;

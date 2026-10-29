@@ -329,3 +329,33 @@ browser hydration need independent acceptance. Preserve
 an observed hosted configuration and recoverable prior Worker version before
 traffic changes. Local workerd probes do not qualify hosted SFU/TURN, devices,
 recording or assistant stop behavior.
+
+
+### Consent evidence and retention schema (M1-B)
+
+The consent log is private server data. Neither authenticated nor anonymous
+clients can insert, update, or delete evidence; the server appends decisions and
+orders them by `created_at DESC, id DESC`. Only the service role can erase rows.
+A withdrawal cannot be removed by a client to revive an earlier allow (F7).
+Session deletion cascades its consent rows; longer legal retention remains a
+migration approval decision. This schema does not enable audio storage.
+
+Meet and Parley retain host-only visibility for existing sessions and callers
+that omit visibility. Workspace settings default new application-created sessions
+to participants, explicit per-person opt-in, an ask prompt, zero audio retention,
+and 365 days of text retention. Applying workspace overrides belongs to the
+server integration; adding settings does not bypass participant consent.
+
+The M1-B migration explicitly replaces `private.purge_meet_transcripts_batch`:
+`purge_after <= now()` selects expired sessions in both dry-run and delete;
+NULL retains a session forever. Existing deadlines are backfilled from
+`coalesce(ended_at, created_at) + 365 days`. New sessions default to 365 days
+from creation. Purging clears both original and edited notes, and transcript
+chunks; legacy recording transcripts retain their separate 365-day policy.
+The migration and rollback close the purge fence and withdraw delete approval.
+A database owner must approve fresh dry-run counts before enabling deletion.
+The existing batch, daily, terminal-state and stop-fence limits remain in force.
+
+Regression coverage: `meet-ai-consent-schema.sql` checks client denials and
+withdrawal ordering; `meet-transcript-retention-purge.sql` checks custom deadlines,
+forever retention, edited-note deletion, ACLs and bounded restart behavior.

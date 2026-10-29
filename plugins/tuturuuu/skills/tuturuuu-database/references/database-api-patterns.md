@@ -551,3 +551,16 @@ The first-message rollback restores main's prior chat_create_conversation body
 and service-only ACL. Refuse retained creation receipts: removing retry identities
 can resurrect deleted conversations. Verify actual apply/rollback/reapply and
 prior catalog equality with apps/database/verification/chat-first-message-rollback-*.sql.
+
+
+### Meet consent and retention adoption
+
+Keep consent evidence private and client mutations revoked. Exercise actual
+client DELETE/UPDATE denials and latest `(created_at, id)` ordering in
+`meet-ai-consent-schema.sql`. Retention schema adoption must explicitly replace
+the purge function and include a same-file REVOKE ALL plus service-only grant,
+with `search_path = pg_catalog, pg_temp` in forward and rollback definitions.
+Close the purge fence and withdraw deletion approval when eligibility changes;
+require fresh owner approval after dry-run counts. Preserve NULL-as-forever,
+backfilled historical deadlines, edited-note erasure and the bounded stop fence.
+See the Meet application feature page and transcript retention runbook.

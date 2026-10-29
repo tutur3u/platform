@@ -15,15 +15,20 @@ current wording until deletion is enabled in production.
 | Store | Action | Due when |
 | --- | --- | --- |
 | `public.meet_ai_chunks` (transcript text; speaker and segments in `usage`) | Row deleted | Session due |
-| `public.meet_ai_sessions.notes` | Cleared; `transcript_purged_at` set | Session due, after its chunks are gone |
+| `public.meet_ai_sessions.notes` and `notes_edited` | Cleared; `transcript_purged_at` set | Session due, after its chunks are gone |
 | `private.recording_transcripts` (legacy recording text and segments) | Row deleted | `created_at` older than 365 days |
 
-A session is due 365 days after `ended_at` (or `created_at` if it never ended).
-The purge functions are static against today's schema and never detect columns
-at run time. M1-B's `purge_after` and `notes_edited` change nothing until M1-B
-explicitly replaces `private.purge_meet_transcripts_batch` after review. That
-keeps an approved dry run identical to the delete it authorizes. Adopting either
-column needs a fresh dry run and approval.
+M1-B explicitly replaces `private.purge_meet_transcripts_batch` to use
+`purge_after <= now()` in dry-run and delete. NULL means forever. Existing
+sessions retain their previous deadlines through a backfill from
+`coalesce(ended_at, created_at) + 365 days`; new sessions default to 365 days
+from creation. The purge clears edited notes alongside the original notes.
+Workspace overrides must be applied by the trusted server integration.
+
+The schema migration closes the stop fence and withdraws delete approval.
+Opening the fence and enabling deletion require fresh reviewed dry-run counts.
+Rollback restores the original 365-day predicate with a hardened search path
+and service-only grants, and closes the fence again.
 
 Never touched: meetings, participants, session rows and their usage/cost fields,
 recording sessions, `audio_chunks` and audio storage objects, consent evidence,
@@ -152,7 +157,7 @@ run and a separate approval.
 - `apps/database/supabase/tests/meet-transcript-retention-purge.sql`: grants,
   closed fence, dry run, bounded batches, mid-run fence close, daily cap, newer
   data kept, out-of-scope data kept, idempotent re-run, abandonment, and the
-  static contract (later `purge_after`/`notes_edited` columns change nothing).
+  explicit M1-B custom deadline, NULL-as-forever, and edited-note erasure.
 - `apps/cron-control/src/meet-transcript-retention.test.ts`: default off,
   both fences mid-run, batch and run bounds, time reserve, lost-Worker
   resumption, bounded retries, terminal states and five-day durable stop.

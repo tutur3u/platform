@@ -48,5 +48,32 @@ select is((select transcript_retention_days from public.workspace_meet_settings 
 delete from public.workspace_meet_settings where ws_id = '00000000-0000-4000-8000-000000008811';
 select is((select count(*)::integer from public.workspace_meet_settings where ws_id = '00000000-0000-4000-8000-000000008811'), 1, 'ordinary member cannot delete settings');
 reset role;
+-- F7: a client must not rewind either side of the (created_at, id) order.
+insert into public.workspace_meetings(id, ws_id, creator_id, name, time) values
+ ('00000000-0000-4000-8000-000000008821', '00000000-0000-4000-8000-000000008811', '00000000-0000-4000-8000-000000008801', 'F7', now());
+insert into public.meet_ai_sessions(id, meeting_id, user_id) values
+ ('00000000-0000-4000-8000-000000008831', '00000000-0000-4000-8000-000000008821', '00000000-0000-4000-8000-000000008801');
+set local role service_role;
+insert into private.meet_ai_consents(id, session_id, user_id, decision, notice_version, created_at) values
+ ('00000000-0000-4000-8000-000000008841', '00000000-0000-4000-8000-000000008831', '00000000-0000-4000-8000-000000008801', 'allow', 'v1', now() - interval '1 minute'),
+ ('00000000-0000-4000-8000-000000008842', '00000000-0000-4000-8000-000000008831', '00000000-0000-4000-8000-000000008801', 'allow', 'v1', now()),
+ ('00000000-0000-4000-8000-000000008843', '00000000-0000-4000-8000-000000008831', '00000000-0000-4000-8000-000000008801', 'withdraw', 'v1', now());
+reset role;
+create temporary view latest_consent as select id, decision from private.meet_ai_consents
+ where session_id = '00000000-0000-4000-8000-000000008831'
+ order by created_at desc, id desc limit 1;
+select is((select id::text from latest_consent), '00000000-0000-4000-8000-000000008843', 'UUID breaks equal-time ties');
+set local role authenticated;
+select throws_ok($$delete from private.meet_ai_consents where id = '00000000-0000-4000-8000-000000008843'$$, '42501', null, 'authenticated cannot delete the latest withdrawal');
+select throws_ok($$update private.meet_ai_consents set decision = 'allow', created_at = now() - interval '2 minutes' where id = '00000000-0000-4000-8000-000000008843'$$, '42501', null, 'authenticated cannot rewrite or reorder withdrawal');
+reset role;
+select is((select decision from latest_consent), 'withdraw', 'authenticated cannot revive earlier allow');
+select is((select count(*)::int from private.meet_ai_consents where session_id = '00000000-0000-4000-8000-000000008831'), 3, 'authenticated leaves the complete log intact');
+set local role anon;
+select throws_ok($$delete from private.meet_ai_consents where id = '00000000-0000-4000-8000-000000008843'$$, '42501', null, 'anon cannot delete the latest withdrawal');
+select throws_ok($$update private.meet_ai_consents set decision = 'allow', created_at = now() - interval '2 minutes' where id = '00000000-0000-4000-8000-000000008843'$$, '42501', null, 'anon cannot rewrite or reorder withdrawal');
+reset role;
+select is((select decision from latest_consent), 'withdraw', 'anon cannot revive earlier allow');
+select is((select count(*)::int from private.meet_ai_consents where session_id = '00000000-0000-4000-8000-000000008831'), 3, 'anon leaves the complete log intact');
 select * from finish();
 rollback;
