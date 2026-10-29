@@ -71,7 +71,7 @@ Learn also exposes a learner-focused AI Chat surface at `/[wsId]/ai-chat`. The U
 
 Every Learn workspace API requires both:
 
-- the authenticated user has student access or an explicit active parent-student link; and
+- the authenticated user has student access or an explicit, parent-accepted (`active`) parent-student link; and
 - `workspace_secrets.name = ENABLE_EDUCATION` is set to the canonical value `true` for that workspace.
 
 The bootstrap route only returns eligible education workspaces and linked students:
@@ -91,13 +91,26 @@ access is checked before test, answer, attempt, or grading operations.
 
 ## Parent links
 
-Parent access is explicit and read-only in v1. The existing Tulearn schema adds:
+Parent access is explicit, parent-consented and read-only in v1. The existing Tulearn schema adds:
 
-- `tulearn_parent_student_links` for accepted parent to student links;
-- `tulearn_parent_invites` for invite-based parent linking;
-- admin-managed parent-link APIs under `/api/v1/workspaces/[wsId]/tulearn/parent-links`.
+- `tulearn_parent_student_links` for parent to student links (`pending`, `active`, `revoked`);
+- `tulearn_parent_invites` for emailed invitations;
+- staff-managed parent-link APIs under `/api/v1/workspaces/[wsId]/tulearn/parent-links`, and parent-only accept routes.
 
 Parents can switch between linked students in Learn. Parent requests may read home, courses, assignments, reports, marks, and practice context for linked students, but mutation routes reject parent writes.
+
+### Consent rule
+
+Workspace staff (`manage_users`) can only propose a parent link. Only the parent can make it `active`, and only `active` links grant a parent any learner access (`resolveTulearnSubject` and the Learn bootstrap read nothing else).
+
+- **Scope and default**: every Tulearn parent-student link in an education-enabled workspace. New links default to `pending` with no `accepted_at`.
+- **Direct link** (`POST .../parent-links` with `parentUserId`): creates a `pending` link. An existing `pending` or `active` link for the same parent and student is returned unchanged; its `student_platform_user_id` and `accepted_at` are never rewritten. The parent accepts with `POST .../parent-links/[linkId]/accept`, which succeeds only when the signed-in Learn session user is the link's `parent_user_id` and the link is `pending`, and is idempotent once `active`. Staff cannot accept on a parent's behalf, and acceptance is refused if the student's platform identity was re-linked since the proposal.
+- **Invite link** (`POST .../parent-links` with `parentEmail`): the single-use token is emailed to that address and is never returned by the API. The email uses the workspace's own email credentials when it has them and the root credentials otherwise; limits, blocklist and audit stay attributed to the workspace. If the email cannot be delivered, the invite is revoked and the request fails. A newer invite supersedes older pending invites for the same recipient and student. The parent opens the emailed Learn link (`/parent-invite`) and accepts with `POST .../parent-invites/accept`; the token's hash must match a `pending`, unexpired invite (14 days) and the caller's **verified** account email must equal the invited address (case-insensitive). The learner binding is checked before the invite is claimed, so an unbound learner does not burn it. The invite is claimed with a conditional update on `pending`, so concurrent or repeated use cannot create a second link; a repeat by the same parent returns their existing **active** link and never restores revoked access or activates a pending link (replays also respect expiry). The only repair is an interrupted acceptance, where no link of any status exists since the invite was accepted. Accepting an invite activates an existing `pending` link for that parent and student (re-pinned to the learner's current binding) instead of duplicating it. Revoking a link also revokes pending invites for that parent's email and learner.
+- **Re-consent**: reactivating a `revoked` link (`PATCH .../parent-links/[linkId]`, `active` or `pending`) returns it to `pending`, never directly to `active`, and is refused with `409` while another `pending` or `active` link exists for the same parent and student.
+- **Uniqueness**: the database allows one `active` link per workspace, parent and student. Duplicate `pending` links are prevented in code (not by an index); a rare concurrent duplicate is harmless because it grants nothing and activating it resolves to the existing `active` link.
+- **Surfaces**: Learn API routes above, the Learn `/parent-invite` page (English and Vietnamese), and the `acceptTulearnParentInvite` / `acceptTulearnParentLink` helpers in `@tuturuuu/internal-api/tulearn`. Teach and Learn have no UI that lists pending links for a parent yet; direct-link acceptance is API-only until one is added.
+
+Regression coverage: Learn `parent-links/route.test.ts`, `parent-links/[linkId]/route.test.ts`, `parent-links/[linkId]/accept/route.test.ts`, `parent-invites/accept/route.test.ts`, `packages/education-core/src/tulearn/parent-consent-access.test.ts` and internal API `tulearn-parent-consent.test.ts`.
 
 ## Gamification
 
@@ -301,7 +314,7 @@ assigned to the course. Learn quiz resets and vocabulary reads use the same
 published, assigned, unlocked module access as lesson detail. Teachers with
 `ai_lab` retain workspace vocabulary access. Parent vocabulary requests carry
 the selected student, and parent links require that student's verified platform
-identity in the workspace.
+identity in the workspace and the parent's own acceptance (see Parent links).
 
 Regression coverage is in Teach's `src/test/*access.test.*` and
 `attendance-scope.test.ts`, plus Learn's parent-link, reset-access and vocabulary
