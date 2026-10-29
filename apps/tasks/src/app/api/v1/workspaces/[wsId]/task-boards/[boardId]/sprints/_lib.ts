@@ -75,6 +75,8 @@ export function isSprintSchemaUnavailable(error: SprintQueryError | null) {
 }
 
 const RPC_ERROR_STATUS: Record<string, number> = {
+  // Before BOARD_NOT_FOUND, which its name contains.
+  SPRINT_BOARD_NOT_FOUND: 404,
   BOARD_NOT_FOUND: 404,
   SPRINT_NOT_FOUND: 404,
   SPRINT_NOT_PLANNED: 409,
@@ -86,6 +88,11 @@ const RPC_ERROR_STATUS: Record<string, number> = {
   SPRINT_GOAL_RESULT_INVALID: 400,
   SPRINT_TASK_NOT_ON_BOARD: 400,
   SPRINT_TOO_MANY_TASKS: 400,
+  SPRINT_NOT_NEXT: 409,
+  SPRINT_NOT_LAST: 409,
+  SPRINT_ONLY_PLANNED: 409,
+  SPRINT_LIMIT_REACHED: 409,
+  SPRINTS_OFF: 409,
 };
 
 export function sprintRpcErrorResponse(
@@ -195,31 +202,42 @@ const UNAVAILABLE: BoardSprintsResponse = {
   schemaAvailable: false,
   sprintLengthWeeks: null,
   sprints: [],
+  unplannedTaskIds: [],
 };
 
 export async function loadBoardSprints(
   sbAdmin: TypedSupabaseClient,
-  boardId: string
+  { boardId, wsId }: { boardId: string; wsId: string }
 ): Promise<
   | { ok: true; data: BoardSprintsResponse }
   | { ok: false; error: SprintQueryError }
 > {
-  const [boardResult, sprintsResult, reportsResult] = await Promise.all([
-    sbAdmin
-      .from('workspace_boards')
-      .select('sprint_length_weeks')
-      .eq('id', boardId)
-      .maybeSingle(),
-    sbAdmin
-      .from('task_cycles')
-      .select(SPRINT_SELECT)
-      .eq('board_id', boardId)
-      .not('deleted', 'is', true)
-      .order('sequence_number', { ascending: true }),
-    sbAdmin.from('task_sprint_reports').select('*').eq('board_id', boardId),
-  ]);
+  const [boardResult, sprintsResult, reportsResult, unplannedResult] =
+    await Promise.all([
+      sbAdmin
+        .from('workspace_boards')
+        .select('sprint_length_weeks')
+        .eq('id', boardId)
+        .maybeSingle(),
+      sbAdmin
+        .from('task_cycles')
+        .select(SPRINT_SELECT)
+        .eq('board_id', boardId)
+        .not('deleted', 'is', true)
+        .order('sequence_number', { ascending: true }),
+      sbAdmin.from('task_sprint_reports').select('*').eq('board_id', boardId),
+      sbAdmin.rpc('list_board_unplanned_task_ids', {
+        p_board_id: boardId,
+        p_ws_id: wsId,
+      }),
+    ]);
 
-  for (const result of [boardResult, sprintsResult, reportsResult]) {
+  for (const result of [
+    boardResult,
+    sprintsResult,
+    reportsResult,
+    unplannedResult,
+  ]) {
     if (result.error) {
       if (isSprintSchemaUnavailable(result.error)) {
         return { ok: true, data: UNAVAILABLE };
@@ -244,6 +262,8 @@ export async function loadBoardSprints(
       sprints: ((sprintsResult.data ?? []) as unknown as SprintRow[]).map(
         (row) => serializeSprint(row, reportsByCycleId.get(row.id))
       ),
+      // Open tasks parked outside every sprint, for Plan's backlog.
+      unplannedTaskIds: weeks ? ((unplannedResult.data ?? []) as string[]) : [],
     },
   };
 }

@@ -10,28 +10,35 @@ today's views. A workspace member who can edit the board turns sprints on from
 Board settings by picking a length of one or two weeks; Off turns them off again
 and keeps every past sprint and report.
 
-A sprint is a task cycle with a `board_id`. A board has at most one running
-sprint and one sprint being planned. Sprints run Monday to Friday of their last
-week, so the next sprint starts the Monday after the current one ends. Changing
-the length applies to the sprint being planned and every later one.
+A sprint is a task cycle with a `board_id`. A board has at most five open
+sprints: one running and the sprints planned after it. The earliest planned
+sprint is the next one. Sprints run Monday to Friday of their last week, and
+each planned sprint starts the Monday after the sprint before it ends. Changing
+the length applies to every planned sprint.
 
 ## Membership
 
 Turning sprints on puts every open task on the board into Sprint 1, the sprint
 being planned. After that, a new task, or a task moved onto the board, joins the
-running sprint (marked as added mid-sprint) or, when none is running, the sprint
-being planned. A task sits in one open sprint per board; moving a task to
-another board drops its open sprint. Done tasks stay in the sprint they
+running sprint (marked as added mid-sprint) or, when none is running, the next
+sprint. A task sits in at most one open sprint per board; moving a task to
+another board drops its open sprint. A task can also sit in no sprint: moving
+it out of every sprint, from Plan or the task panel, parks it in Plan's backlog
+as a ghost until someone plans it into a sprint. Changing the sprint length
+leaves parked tasks where they are. Done tasks stay in the sprint they
 finished in. A task that becomes open again after its sprint ended (moved back
 out of Done, un-closed, or restored from the recycle bin) rejoins the board's
 current sprint the same way, so no open task drops out of the Board view or
 Plan.
 
 Regression coverage: `apps/database/supabase/tests/task-board-sprint-transitions.sql`
-walks every way a task enters, leaves or returns to a board's sprints.
+walks every way a task enters, leaves or returns to a board's sprints, and
+`apps/database/supabase/tests/task-board-sprint-horizon.sql` covers planning
+several sprints ahead, the five-sprint cap, start order, removal and parked
+tasks.
 
-The backlog is not a separate list. It is the unassigned tasks of the sprint
-being planned.
+The backlog is not a separate list. It is the unassigned open tasks of the
+sprint Plan shows, plus every open task in no sprint.
 
 ## Due dates
 
@@ -42,7 +49,7 @@ a task rewrites nothing. Only an own due date can make a task overdue.
 The task panel shows a Sprint row on boards with sprints on: the task's open
 sprint and its dates, "Due with the sprint" and the sprint end when the task has
 no due date of its own, the sprints it went through, and, for people who can
-edit the task, a menu to move it to the running or planned sprint. Cards do not
+edit the task, a menu to move it to any other open sprint or to No sprint. Cards do not
 repeat the sprint end.
 
 Regression coverage: `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/components/task-sprint-row.test.tsx`.
@@ -51,43 +58,57 @@ Regression coverage: `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/compon
 
 Starting and ending a sprint, and changing its length, are limited to workspace
 members who can edit the board; board guests can plan (goals and membership)
-but cannot start or end. Starting the planned sprint opens the next one for
-planning. A sprint started before its planned Monday keeps its length: it
+but cannot start or end. Only the next sprint can start. Starting it keeps the
+later planned sprints, moved to follow its end, and plans a new sprint only
+when none is left. A sprint started before its planned Monday keeps its length: it
 starts that day and ends on the Friday of its last week (a weekend start counts
 from the next Monday), and the next sprint is planned after it.
 
 Ending is atomic and idempotent. Every open task gets a decision: carry it into
-the next sprint with its owner, or send it to the backlog, which removes its
+the next sprint (the earliest planned one) with its owner, or send it to the backlog, which removes its
 assignees. A missing decision carries. The end stores a report: tasks in the
 sprint, done, added mid-sprint, carried in from earlier sprints, carried on,
 sent to the backlog, the same totals in estimation points, and per-person
 totals. Ending twice returns the stored report.
 
 Board sprints change only through the service-role RPCs
-`set_board_sprint_length`, `start_board_sprint`, `end_board_sprint` and
-`move_tasks_to_board_sprint`, called by the tasks API after its board-access
+`set_board_sprint_length`, `start_board_sprint`, `end_board_sprint`,
+`move_tasks_to_board_sprint`, `add_board_sprint` and `remove_board_sprint`
+(with `list_board_unplanned_task_ids` to read parked tasks), called by the tasks API after its board-access
 checks. Anonymous and signed-in sessions cannot execute them; the catalog check
 in `apps/database/supabase/tests/20261027151200_anon-definer-execute.sql` lists
 them as service-only. Direct row writes stay available for workspace-wide cycles
 only, and the older task-cycle edit and delete routes refuse board sprints (404).
 Every sprint writer locks the board row before its sprints, so moves, starts,
 ends and task membership changes on one board run one at a time.
+`add_board_sprint`, `remove_board_sprint` and `list_board_unplanned_task_ids`
+also take the route's workspace (and `remove_board_sprint` its board) and refuse
+ids from another workspace or board with `SPRINT_BOARD_NOT_FOUND` or
+`SPRINT_NOT_FOUND`; `task-board-sprint-horizon.sql` covers the refusals.
+
+Manual rollbacks for the planning-ahead and ticket key migrations live in
+`apps/database/rollbacks/`. Run them newest first: `20261029060070`, `20261029060060`
+(after removing every planned sprint but the earliest on each board), then
+`20261029060055`, `20261029060050` and `20261029060040` (export ticket keys and
+numbers first; they are dropped).
 
 ## Board header and Board view
 
 With sprints on, the board header shows the current sprint after the board name:
 a progress ring, the sprint dates and its done count. The current sprint is the
 running one, or the sprint being planned when none runs. Its menu lists every
-sprint in order; members who can edit the board also get Start for the planned
+sprint in order, marking the running and the next one; picking a planned sprint
+opens Plan on it. Members who can edit the board also get Start for the next
 sprint (only while none runs) and a shortcut to the sprint length in Board
 settings. The Board view (Kanban, List, Timeline) shows only the current
 sprint's tasks. An open task no open sprint holds yet (just created, moved onto
 the board, restored or reopened) shows at once, since the database has put it
-in the current sprint; tasks waiting in the planned sprint and finished work
-from past sprints stay hidden. The board's sprints refresh whenever a task is
+in the current sprint; tasks waiting in a later sprint, tasks parked in no
+sprint, and finished work from past sprints stay hidden. The board's sprints refresh whenever a task is
 created, moved, finished, reopened or deleted, by this tab, another tab or
 another person, and with the header's Refresh, so the view and the sprint
-progress follow those memberships without a reload. My Tasks, Drafts and the Recycle Bin are unchanged and show no
+progress follow those memberships without a reload. My Tasks, Drafts and the
+Recycle Bin are unchanged and show no
 sprint. With sprints off, or before the migration reaches a database, the header
 and views look exactly as before.
 
@@ -98,21 +119,35 @@ Regression coverage: `packages/tasks-ui/src/tu-do/shared/__tests__/board-views-s
 ## Plan tab
 
 Boards with sprints on get Plan and Board tabs at the start of the header's
-second row; boards with sprints off show neither. Plan always works on the
-sprint being planned. On the left, the backlog lists its unassigned open tasks,
-with a search field, a priority sort and a Project filter. On the right are the
-sprint name and dates, the sprint goal, and one section per board member with
-the tasks they own in that sprint.
+second row; boards with sprints off show neither. Plan shows the next sprint
+by default. Its title is a sprint picker: the open sprints (marked Active and
+Next), the ended sprints newest first, and All sprints. On the left, the
+backlog lists the shown sprint's unassigned open tasks and, as dashed ghosts,
+the open tasks in no sprint, with a search field, a priority sort and a Project
+filter. On the right are the sprint dates, the sprint goal, and one section per
+board member with the tasks they own in that sprint. All sprints lists the
+unfinished work of every open sprint, each task tagged with its sprint, without
+a goal. An ended sprint shows read-only, so its tasks can be found and moved
+from their sprint menu or the task panel.
+
+Every task row has a sprint menu that moves it to any open sprint or to No
+sprint. People who can plan add a sprint from the picker, up to five open
+sprints with the running one, or remove the last planned sprint; its tasks move
+to the sprint before it, and one planned sprint always stays.
 
 Planning is assigning. Dragging a backlog task onto a person, or picking a
 person from the task's avatar button, makes them its owner. Dragging a task
 between people swaps that owner and keeps co-owners. Dragging it back to the
-backlog removes every owner. Add to backlog creates an unassigned task in the
-sprint being planned, even while another sprint runs. Board guests who can
-edit may plan; Start, shown only while no sprint runs, is for members who can
-edit the board and switches back to Board.
+backlog removes every owner. Giving a ghost an owner also plans it into the
+shown sprint (the next one under All sprints). Add to backlog creates an
+unassigned task in the shown sprint, even while another sprint runs, or in no
+sprint under All sprints. Board guests who can edit may plan; Start, shown only
+on the next sprint while no sprint runs, is for members who can edit the board
+and switches back to Board.
 
-Regression coverage: `packages/tasks-ui/src/tu-do/shared/board-sprints/plan/board-plan-view.test.tsx`
+Regression coverage: `packages/tasks-ui/src/tu-do/shared/board-sprints/plan/board-plan-view.test.tsx`,
+`packages/tasks-ui/src/tu-do/shared/board-sprints/plan/board-plan-view-sprints.test.tsx`,
+`packages/tasks-ui/src/tu-do/shared/board-sprints/use-board-sprints.test.tsx`
 and `packages/tasks-ui/src/tu-do/shared/__tests__/board-views-sprints.test.tsx`.
 
 ## Sprint summary and reports

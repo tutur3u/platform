@@ -72,7 +72,12 @@ export interface BoardSprintsResponse {
   schemaAvailable: boolean;
   sprintLengthWeeks: BoardSprintLengthWeeks | null;
   sprints: BoardSprint[];
+  /** Open tasks parked outside every sprint; they wait in Plan's backlog. */
+  unplannedTaskIds: string[];
 }
+
+/** A board keeps at most this many open sprints, the running one included. */
+export const MAX_OPEN_BOARD_SPRINTS = 5;
 
 export interface UpdateBoardSprintPayload {
   goal?: string | null;
@@ -173,6 +178,42 @@ export async function moveTasksToWorkspaceTaskBoardSprint(
 ) {
   return getTaskApiClient(options).json<{ moved: number }>(
     `${sprintPath(workspaceId, boardId, sprintId)}/tasks`,
+    jsonRequest('POST', { task_ids: taskIds })
+  );
+}
+
+export async function addWorkspaceTaskBoardSprint(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  return getTaskApiClient(options).json<BoardSprintsResponse>(
+    sprintsPath(workspaceId, boardId),
+    jsonRequest('POST', {})
+  );
+}
+
+export async function removeWorkspaceTaskBoardSprint(
+  workspaceId: string,
+  boardId: string,
+  sprintId: string,
+  options?: InternalApiClientOptions
+) {
+  return getTaskApiClient(options).json<BoardSprintsResponse>(
+    sprintPath(workspaceId, boardId, sprintId),
+    { method: 'DELETE', cache: 'no-store' }
+  );
+}
+
+/** Takes tasks out of every open sprint, back to Plan's backlog. */
+export async function moveTasksOutOfWorkspaceTaskBoardSprints(
+  workspaceId: string,
+  boardId: string,
+  taskIds: string[],
+  options?: InternalApiClientOptions
+) {
+  return getTaskApiClient(options).json<{ moved: number }>(
+    `${sprintsPath(workspaceId, boardId)}/unplanned`,
     jsonRequest('POST', { task_ids: taskIds })
   );
 }

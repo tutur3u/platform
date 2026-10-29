@@ -87,9 +87,9 @@ export function SprintPill({
   const activeSprint = sprints.find((sprint) => sprint.status === 'active');
   const hasActive = Boolean(activeSprint);
   const endable = onEndSprint ? activeSprint : undefined;
-  const startable = !hasActive
-    ? sprints.find((sprint) => sprint.status === 'planned')
-    : undefined;
+  // Planned sprints start in order: the earliest one is next.
+  const next = ordered.find((sprint) => sprint.status === 'planned');
+  const startable = !hasActive ? next : undefined;
 
   const rowRight = (sprint: BoardSprint) => {
     if (sprint.status === 'completed') {
@@ -173,7 +173,7 @@ export function SprintPill({
                     <span className="rounded-md bg-dynamic-green/10 px-1.5 text-dynamic-green text-xs">
                       {t('active')}
                     </span>
-                  ) : sprint.status === 'planned' ? (
+                  ) : sprint.id === next?.id ? (
                     <span className="rounded-md bg-muted px-1.5 text-muted-foreground text-xs">
                       {t('next')}
                     </span>
