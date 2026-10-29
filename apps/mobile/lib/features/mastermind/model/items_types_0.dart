@@ -27,10 +27,16 @@ final class NeedsYou implements NeedsYouItem {
     this.hubTitle,
     this.hubText,
     List<String>? hubOptions,
+    List<String>? optionKeys,
+    List<String>? hubOptionKeys,
     this.hubRecommended,
     this.by,
   }) : options = List.unmodifiable(options),
-       hubOptions = hubOptions == null ? null : List.unmodifiable(hubOptions);
+       hubOptions = hubOptions == null ? null : List.unmodifiable(hubOptions),
+       optionKeys = optionKeys == null ? null : List.unmodifiable(optionKeys),
+       hubOptionKeys = hubOptionKeys == null
+           ? null
+           : List.unmodifiable(hubOptionKeys);
 
   final String id;
   @override
@@ -55,21 +61,44 @@ final class NeedsYou implements NeedsYouItem {
 
   /// Short labels in canonical option order; never used as wire answers.
   final List<String>? hubOptions;
+  final List<String>? optionKeys;
+  final List<String>? hubOptionKeys;
   final String? hubRecommended;
   final String? by;
 
-  String optionLabel(int index) =>
-      hubOptions != null &&
-          hubOptions!.length == options.length &&
-          hubOptions![index].trim().isNotEmpty
-      ? hubOptions![index]
-      : options[index];
+  String optionLabel(int index) {
+    final labels = hubOptions;
+    if (labels == null) return options[index];
+    final canonicalKeys = optionKeys;
+    final shortKeys = hubOptionKeys;
+    if (shortKeys != null && canonicalKeys == null) return options[index];
+    if (canonicalKeys != null && shortKeys != null) {
+      if (canonicalKeys.length != options.length ||
+          shortKeys.length != labels.length) {
+        return options[index];
+      }
+      final shortIndex = shortKeys.indexOf(canonicalKeys[index]);
+      if (shortIndex < 0 || labels[shortIndex].trim().isEmpty) {
+        return options[index];
+      }
+      return labels[shortIndex];
+    }
+    if (labels.length == options.length && labels[index].trim().isNotEmpty) {
+      return labels[index];
+    }
+    return options[index];
+  }
 
-  bool optionRecommended(int index) =>
-      hubRecommended != null &&
-          List.generate(options.length, optionLabel).contains(hubRecommended)
-      ? optionLabel(index) == hubRecommended
-      : options[index] == recommendedOption;
+  bool optionRecommended(int index) {
+    final recommended = hubRecommended;
+    if (recommended != null) {
+      if (optionKeys?[index] == recommended) return true;
+      if (List.generate(options.length, optionLabel).contains(recommended)) {
+        return optionLabel(index) == recommended;
+      }
+    }
+    return options[index] == recommendedOption;
+  }
 }
 
 final class Lane implements LaneItem {

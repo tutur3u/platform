@@ -161,7 +161,7 @@ class _ReplyComposerState extends State<ReplyComposer> {
                       alignment: WrapAlignment.center,
                       children: [
                         Text(option),
-                        if (option == item.recommendedOption)
+                        if (item.optionRecommended(index))
                           AppBadge(child: Text(l10n.mastermindRecommended)),
                       ],
                     ),

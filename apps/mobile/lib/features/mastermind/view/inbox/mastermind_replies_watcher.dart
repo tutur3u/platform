@@ -42,6 +42,11 @@ class _MastermindRepliesWatcherState extends State<MastermindRepliesWatcher>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) unawaited(_wake());
+    if (state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(_replies.flushOnBackground());
+    }
   }
 
   @override

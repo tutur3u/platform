@@ -139,7 +139,8 @@ List<SecurityItem> _onePerProduct(List<NeedsYouItem> items) {
 /// guidance, not a choice.
 List<(int, String)> selectableOptions(NeedsYou item) => [
   for (final (index, option) in item.options.indexed)
-    if (option != mastermindReplyPlaceholderOption) (index, option),
+    if (option != mastermindReplyPlaceholderOption)
+      (index, item.optionLabel(index)),
 ];
 
 /// The item with [id] if it is still an open normal Needs-you row.

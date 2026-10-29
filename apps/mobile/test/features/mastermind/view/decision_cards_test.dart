@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
+import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
 
 import '../../../helpers/helpers.dart';
 import '../../../helpers/mastermind_home_fixture.dart';
@@ -55,8 +56,10 @@ Future<MastermindViewHarness> _pump(
               data: MediaQuery.of(
                 context,
               ).copyWith(textScaler: const TextScaler.linear(2)),
-              child: SingleChildScrollView(
-                child: InboxItemTile(item: item, now: testNow),
+              child: MastermindRepliesWatcher(
+                child: SingleChildScrollView(
+                  child: InboxItemTile(item: item, now: testNow),
+                ),
               ),
             ),
           ),
@@ -131,7 +134,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(transport.sent, hasLength(1));
     expect(transport.sent.single.optionIndex, 1);
-    expect(transport.sent.single.optionLabel, 'Defer');
+    expect(transport.sent.single.optionLabel, 'Later');
     expect(
       harness.runtime.replies.state.outbox.single.status,
       OutboxStatus.sent,
@@ -139,6 +142,20 @@ void main() {
     expect(find.text('Undo'), findsNothing);
     expect(find.textContaining('Sent'), findsWidgets);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('backgrounding sends an option before its Undo deadline', (
+    tester,
+  ) async {
+    final transport = FakeReplyTransport();
+    await _pump(tester, item: _item(_ask()), transport: transport);
+    await tester.tap(find.text('Ship'));
+    await tester.pump();
+    expect(transport.sent, isEmpty);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    await tester.pumpAndSettle();
+    expect(transport.sent, hasLength(1));
+    expect(transport.sent.single.optionIndex, 0);
   });
 
   testWidgets('unsupported hub shows choices without sending', (tester) async {
@@ -175,4 +192,31 @@ void main() {
       expect(item.optionRecommended(1), isTrue);
     },
   );
+
+  test('short option labels match canonical choices by key', () {
+    final row = _ask()
+      ..['option_keys'] = ['ship', 'defer']
+      ..['hub_options'] = [
+        {'key': 'defer', 'label': 'Later'},
+        {'id': 'ship', 'text': 'Ship'},
+      ]
+      ..['hub_recommended'] = 'ship';
+    final item = _item(row);
+    expect(item.optionLabel(0), 'Ship');
+    expect(item.optionLabel(1), 'Later');
+    expect(item.optionRecommended(0), isTrue);
+    expect(item.optionRecommended(1), isFalse);
+  });
+
+  test('unmatched keyed short options fall back to canonical labels', () {
+    final row = _ask()
+      ..['option_keys'] = ['ship', 'defer']
+      ..['hub_options'] = [
+        {'key': 'other-a', 'label': 'Alpha'},
+        {'key': 'other-b', 'label': 'Beta'},
+      ];
+    final item = _item(row);
+    expect(item.optionLabel(0), 'Approve');
+    expect(item.optionLabel(1), 'Defer');
+  });
 }

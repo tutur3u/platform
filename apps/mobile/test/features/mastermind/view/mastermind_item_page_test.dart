@@ -329,6 +329,31 @@ void main() {
       expect(page.transport.sent.single.optionIndex, 0);
     });
 
+    testWidgets('detail composer uses the same short labels as the card', (
+      tester,
+    ) async {
+      final page = await _pump(
+        tester,
+        items: [
+          {
+            ...inboxItem(1),
+            'hub_options': ['Ship', 'Later'],
+            'hub_recommended': 'Ship',
+          },
+        ],
+      );
+      expect(find.text('Ship'), findsOneWidget);
+      expect(find.text('Later'), findsOneWidget);
+      expect(find.text('Approve'), findsNothing);
+      expect(find.text('Defer'), findsNothing);
+      expect(find.text('Recommended'), findsOneWidget);
+      await tester.tap(find.text('Later'));
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      expect(page.transport.sent.single.optionIndex, 1);
+      expect(page.transport.sent.single.optionLabel, 'Later');
+    });
+
     testWidgets('the placeholder option is not offered', (tester) async {
       await _pump(
         tester,

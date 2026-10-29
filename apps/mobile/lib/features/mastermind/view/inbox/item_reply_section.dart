@@ -28,7 +28,8 @@ class ItemReplySection extends StatelessWidget {
       bloc: replies,
       builder: (context, state) {
         final entry = state.entryFor(item.id, item.versionHash);
-        if (entry != null) {
+        final pending = state.pendingOptionFor(item.id, item.versionHash);
+        if (entry != null && pending == null) {
           return ReplyEntryPanel(
             entry: entry,
             status: state.statusFor(item.id),
@@ -76,13 +77,13 @@ class _ReadOnlyOptions extends StatelessWidget {
           AppGroupedSection.spaced(
             caption: l10n.mastermindReplyOptionsTitle,
             children: [
-              for (final (_, option) in options)
+              for (final (index, option) in options)
                 AppGroupedRow(
                   title: Wrap(
                     children: [
                       OptionChip(
                         option: option,
-                        recommended: option == item.recommendedOption,
+                        recommended: item.optionRecommended(index),
                       ),
                     ],
                   ),
