@@ -110,10 +110,12 @@ class MastermindOptionRow extends StatelessWidget {
                           children: [
                             Icon(LucideIcons.star, size: 12, color: c.primary),
                             const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              l10n.mastermindRecommended,
-                              style: tokens.typography.label.copyWith(
-                                color: c.primary,
+                            Flexible(
+                              child: Text(
+                                l10n.mastermindRecommended,
+                                style: tokens.typography.label.copyWith(
+                                  color: c.primary,
+                                ),
                               ),
                             ),
                           ],

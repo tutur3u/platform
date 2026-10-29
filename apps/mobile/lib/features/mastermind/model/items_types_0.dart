@@ -32,6 +32,8 @@ final class NeedsYou implements NeedsYouItem {
     this.hubRecommended,
     this.by,
     this.answeredVia,
+    this.deadline,
+    this.urgency,
   }) : options = List.unmodifiable(options),
        hubOptions = hubOptions == null ? null : List.unmodifiable(hubOptions),
        optionKeys = optionKeys == null ? null : List.unmodifiable(optionKeys),
@@ -69,6 +71,10 @@ final class NeedsYou implements NeedsYouItem {
 
   /// Where the hub says the item was answered; null when it did not say.
   final AnsweredVia? answeredVia;
+
+  /// Optional publisher timing; absent when unpublished or unrecognised.
+  final AskDeadline? deadline;
+  final AskUrgency? urgency;
 
   String optionLabel(int index) {
     final labels = hubOptions;
@@ -118,9 +124,13 @@ final class Lane implements LaneItem {
     this.area,
     this.kind,
     this.fields = const {},
+    this.waitingOnAskId,
   });
 
   final Map<String, HubField> fields;
+
+  /// The open ask (`item-*` id) this lane is blocked on, when published.
+  final String? waitingOnAskId;
 
   final String id;
   @override

@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/asks/ask_detail_source.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_refresh_scheduler.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
@@ -86,6 +87,7 @@ final class MastermindViewHarness {
     FakeHubSource? source,
     MastermindRepliesCubit? replies,
     MastermindAnsweredElsewhereCubit? answered,
+    MastermindAskDetailSource? askDetails,
     Stream<bool>? onlineChanges,
   }) : source = source ?? FakeHubSource() {
     access = MastermindAccessCubit(
@@ -108,6 +110,7 @@ final class MastermindViewHarness {
       scheduler: scheduler,
       replies: replies,
       answered: answered,
+      askDetails: askDetails,
       onlineChanges: onlineChanges,
     );
   }

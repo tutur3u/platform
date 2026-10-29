@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/asks/ask_detail_source.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_refresh_scheduler.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/data/hub_capabilities.dart';
@@ -32,6 +33,7 @@ final class MastermindRuntime {
     MastermindAnsweredElsewhereCubit? answered,
     MastermindSnapshotSource? source,
     MastermindReplyTransport? replyTransport,
+    this.askDetails,
     Stream<bool>? onlineChanges,
   }) : replies = replies ?? MastermindRepliesCubit(store: MemoryOutboxStore()),
        answered = answered ?? MastermindAnsweredElsewhereCubit(),
@@ -61,6 +63,7 @@ final class MastermindRuntime {
     MastermindSnapshotStore? store,
     MastermindReplyTransport? replyTransport,
     MastermindOutboxStore? outboxStore,
+    MastermindAskDetailSource? askDetails,
     Stream<bool>? onlineChanges,
   }) {
     final resolved = source ?? createMastermindSnapshotSource();
@@ -95,6 +98,9 @@ final class MastermindRuntime {
       answered: answered,
       source: resolved,
       replyTransport: transport,
+      askDetails:
+          askDetails ??
+          (source == null ? createMastermindAskDetailSource() : null),
       onlineChanges: onlineChanges ?? mastermindOnlineChanges(),
     );
   }
@@ -106,6 +112,10 @@ final class MastermindRuntime {
 
   /// Open asks answered elsewhere, lingering on screen before they move on.
   final MastermindAnsweredElsewhereCubit answered;
+
+  /// The optional full-ask read; null unless `MASTERMIND_ASK_DETAILS` is on
+  /// and a live hub is configured.
+  final MastermindAskDetailSource? askDetails;
   final MastermindSnapshotSource? _source;
   final MastermindReplyTransport? _replyTransport;
   late final StreamSubscription<MastermindAccessState> _accessSub;
@@ -172,5 +182,6 @@ final class MastermindRuntime {
     await access.close();
     if (_source case final HubHttpSnapshotSource live) live.close();
     if (_replyTransport case final HubReplyTransport live) live.close();
+    if (askDetails case final HubAskDetailSource live) live.close();
   }
 }
