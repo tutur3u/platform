@@ -45,7 +45,8 @@ payroll.
   draft. Save, Cancel, and editor inputs are disabled during a pending save; a
   failed save retains the draft for retry. Operators can adjust session length, lead time, support
   session count, absence lookback, reassessment and follow-up intervals, scheduling horizon,
-  class-time exceptions, named shifts, scoped group-name exclusion rules,
+  class-time exceptions, named shifts, scoped group-name or group-tag exclusion rules,
+  needs-tutoring groups,
   the unchanged-content review interval, group-to-campus labels, and the parent
   message template. Only members with
   `manage_workspace_settings` can save it.
@@ -68,6 +69,40 @@ session's lesson content after creation, so teaching notes from the separate
 content sheet can be kept with the attendance record. Managers can permanently
 delete a pending or cancelled session after an in-app confirmation. Completed
 and no-show sessions stay intact for attendance and payroll history.
+
+## Who the support queue lists
+
+The support queue lists a learner only under the classes they belong to now:
+a non-teacher row in `workspace_user_groups_users` for an unarchived learner.
+A learner who moved class, or was removed from one, no longer appears under
+the former class; their absences, flagged feedback and earlier sessions stay
+recorded and are not deleted. Pending make-ups for a class the learner left
+are not carried to the new class, because each make-up belongs to the missed
+class's lessons. This applies to every workspace and has no setting.
+
+**Exclusion rules** in Settings → weak support read either the class name (the
+default) or the class's group tags. A class format such as kindergarten, DDT
+or IELTS is not a class field, so staff who tag classes by format add a
+**Class tag** rule for each excluded format. Tags are read only when a tag rule
+exists. The English center preset still ships its name rules, with no tag rules.
+
+**Needs-tutoring groups** (Settings → weak support, empty by default) list
+learners who need tutoring without an absence or flagged feedback. Every
+current learner member of such a group appears as weak support under each of
+their current classes, other than tutor and needs-tutoring groups. A learner
+with no other class appears under the needs-tutoring group itself. A class
+leaves the queue once a weak-support session is pending there. Exclusion rules
+still apply. Rows come from group membership, so they carry no source
+feedback. With no needs-tutoring group configured, the queue behaves exactly
+as before.
+
+The detailed and payroll exports page every session read and order it by
+date, start time and `id`. Sessions sharing one teacher slot therefore never
+skip or repeat across the 1,000-row PostgREST page. Group and person names are
+read in chunks of at most 200 ids. A read stops with an error after 200 pages
+instead of looping. Regression coverage:
+`queue/route.membership.test.ts`, `export/route.test.ts`, and
+`packages/internal-api/src/tutoring-group-rules.test.ts`.
 
 ## Weekly repeats in the session draft
 
