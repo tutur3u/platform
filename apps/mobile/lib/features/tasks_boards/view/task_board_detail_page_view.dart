@@ -510,10 +510,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                       TaskBoardDetailView.timeline => _TaskBoardTimelineView(
                         lists: sortedLists,
                         tasksByList: filteredByList,
-                        hasMoreTasks: _timelineHasMore(
-                          _timelineOpenLists(sortedLists),
-                          state,
-                        ),
+                        hasLoadError: _timelineHasLoadError(sortedLists, state),
+                        hasMoreTasks: _timelineHasMore(sortedLists, state),
                         isLoadingMoreTasks: state.isLoadingListTasks,
                         scrollController: _timelineVerticalScrollController,
                         onLoadMore: () {

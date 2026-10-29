@@ -10,15 +10,20 @@ extension _TimelineLoading on _TaskBoardDetailPageViewState {
       if (!_taskListDone(list)) list,
   ];
 
+  bool _timelineHasLoadError(
+    List<TaskBoardList> lists,
+    TaskBoardDetailState state,
+  ) => _timelineOpenLists(
+    lists,
+  ).any((list) => state.listLoadErrorById.containsKey(list.id));
+
   /// Whether an open list still has pages that can be loaded.
   bool _timelineHasMore(
     List<TaskBoardList> openLists,
     TaskBoardDetailState state,
-  ) => openLists.any(
-    (list) =>
-        !state.listLoadErrorById.containsKey(list.id) &&
-        (state.listHasMoreById[list.id] ?? true),
-  );
+  ) => _timelineOpenLists(
+    openLists,
+  ).any((list) => state.listHasMoreById[list.id] ?? true);
 
   /// After this frame, requests the next pages the policy allows. Each page
   /// changes the state, which rebuilds the page and schedules the next ones,

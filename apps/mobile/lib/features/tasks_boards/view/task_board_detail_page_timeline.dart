@@ -13,6 +13,7 @@ class _TaskBoardTimelineView extends StatefulWidget {
     required this.lists,
     required this.tasksByList,
     required this.hasMoreTasks,
+    required this.hasLoadError,
     required this.isLoadingMoreTasks,
     required this.scrollController,
     required this.onLoadMore,
@@ -22,6 +23,7 @@ class _TaskBoardTimelineView extends StatefulWidget {
   final List<TaskBoardList> lists;
   final Map<String, List<TaskBoardTask>> tasksByList;
   final bool hasMoreTasks;
+  final bool hasLoadError;
   final bool isLoadingMoreTasks;
   final ScrollController scrollController;
   final VoidCallback onLoadMore;
@@ -101,6 +103,24 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
                 onToday: agenda.hasScheduled ? _scrollToToday : null,
               ),
             ),
+            if (widget.hasLoadError)
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: gutter),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(context.l10n.commonSomethingWentWrong),
+                    ),
+                    AppButton.outline(
+                      key: const ValueKey('task-timeline-retry'),
+                      onPressed: widget.isLoadingMoreTasks
+                          ? null
+                          : widget.onLoadMore,
+                      child: Text(context.l10n.commonRetry),
+                    ),
+                  ],
+                ),
+              ),
             Expanded(
               child: agenda.hasScheduled || agenda.unscheduled.isNotEmpty
                   ? _scrollView(context, listNames, agenda.today.day)
@@ -108,9 +128,14 @@ class _TaskBoardTimelineViewState extends State<_TaskBoardTimelineView> {
                   ? const AppLoadingIndicator.page()
                   : AppStateMessage(
                       icon: LucideIcons.calendarRange,
-                      title: context.l10n.taskBoardDetailTimelineEmptyTitle,
-                      message:
-                          context.l10n.taskBoardDetailTimelineEmptyDescription,
+                      title: widget.hasLoadError
+                          ? context.l10n.commonSomethingWentWrong
+                          : context.l10n.taskBoardDetailTimelineEmptyTitle,
+                      message: widget.hasLoadError
+                          ? context.l10n.commonRetry
+                          : context
+                                .l10n
+                                .taskBoardDetailTimelineEmptyDescription,
                       actionLabel: widget.hasMoreTasks
                           ? context.l10n.timerHistoryLoadMore
                           : null,

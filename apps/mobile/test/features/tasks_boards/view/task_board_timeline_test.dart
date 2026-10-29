@@ -28,9 +28,14 @@ import 'task_board_row_actions_fixture.dart';
 /// Serves [tasks] in the open Todo list only through list pages, as the API
 /// does, page by page as the app asks.
 class _TimelineRepository extends RowActionsRepository {
-  _TimelineRepository(this.tasks, {this.holdAfterFirstPage = false});
+  _TimelineRepository(
+    this.tasks, {
+    this.holdAfterFirstPage = false,
+    this.failAtOffset,
+  });
 
   final List<TaskBoardTask> tasks;
+  int? failAtOffset;
 
   /// When set, every page after the first never completes.
   final bool holdAfterFirstPage;
@@ -57,6 +62,9 @@ class _TimelineRepository extends RowActionsRepository {
     List<TaskProjectSummary> projects = const <TaskProjectSummary>[],
   }) async {
     pages.add((limit: limit, offset: offset));
+    if (listId == 'list-1' && failAtOffset != null && offset >= failAtOffset!) {
+      throw Exception('Page unavailable');
+    }
     if (holdAfterFirstPage && offset > 0) {
       return await Completer<List<TaskBoardTask>>().future;
     }
@@ -124,10 +132,12 @@ Future<_TimelineRepository> _pumpTimeline(
   WidgetTester tester,
   List<TaskBoardTask> tasks, {
   bool holdAfterFirstPage = false,
+  int? failAtOffset,
 }) async {
   final repository = _TimelineRepository(
     tasks,
     holdAfterFirstPage: holdAfterFirstPage,
+    failAtOffset: failAtOffset,
   );
   await pumpRowActionsBoard(
     tester,
@@ -209,6 +219,30 @@ void main() {
       expect(_key('task-timeline-today-loading'), findsOneWidget);
       expect(find.text('Loading tasks…'), findsOneWidget);
     });
+
+    for (final offset in [0, 50]) {
+      testWidgets('failed page at $offset stays incomplete and retries', (
+        tester,
+      ) async {
+        final repository = await _pumpTimeline(tester, [
+          for (var i = 0; i < 150; i++)
+            _task('bulk-$i', 'Bulk task $i', start: 3),
+          _task('task-today', 'Due today task', end: 0),
+        ], failAtOffset: offset);
+        expect(_key('task-timeline-nothing-today'), findsNothing);
+        expect(find.text('Something went wrong'), findsWidgets);
+        expect(_key('task-timeline-retry'), findsOneWidget);
+        final attempts = repository.pages.length;
+        await tester.pump(const Duration(seconds: 1));
+        expect(repository.pages.length, attempts);
+        repository.failAtOffset = null;
+        await tester.tap(_key('task-timeline-retry'));
+        await tester.pumpAndSettle();
+        expect(_key('task-timeline-row-task-today'), findsOneWidget);
+        expect(_key('task-timeline-retry'), findsNothing);
+        expect(_key('task-timeline-nothing-today'), findsNothing);
+      });
+    }
 
     testWidgets('a start-only task is ongoing, never overdue', (tester) async {
       await _pumpTimeline(tester, [
