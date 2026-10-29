@@ -3,6 +3,10 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const boardAccessMock = vi.hoisted(() => vi.fn());
+vi.mock('../../board-access', () => ({
+  resolveTaskBoardAccess: boardAccessMock,
+}));
 const createAdminClientMock = vi.fn();
 const createClientMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
@@ -16,11 +20,8 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     createClientMock(...args),
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@tuturuuu/utils/workspace-helper')>();
+vi.mock('@tuturuuu/utils/workspace-helper', () => {
   return {
-    ...actual,
     normalizeWorkspaceId: (
       ...args: Parameters<typeof normalizeWorkspaceIdMock>
     ) => normalizeWorkspaceIdMock(...args),
@@ -35,7 +36,12 @@ vi.mock('../realtime-broadcast', () => ({
     publishTaskRealtimeMock(...args),
 }));
 
-import { handleTaskDetailRouteGET, handleTaskDetailRoutePUT } from './route';
+import {
+  handleTaskDetailRouteDELETE,
+  handleTaskDetailRouteGET,
+  handleTaskDetailRoutePATCH,
+  handleTaskDetailRoutePUT,
+} from './route';
 
 describe('task detail route CLI app-session auth', () => {
   const taskId = '00000000-0000-4000-8000-000000000777';
@@ -44,6 +50,10 @@ describe('task detail route CLI app-session auth', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    boardAccessMock.mockResolvedValue({
+      access: { mode: 'member', permission: 'edit' },
+      wsId: '00000000-0000-4000-8000-000000000123',
+    });
 
     normalizeWorkspaceIdMock.mockResolvedValue(workspaceId);
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
@@ -106,6 +116,36 @@ describe('task detail route CLI app-session auth', () => {
     } as unknown as TypedSupabaseClient;
     createAdminClientMock.mockResolvedValue(adminSupabase);
   });
+
+  it.each([
+    ['PUT', handleTaskDetailRoutePUT],
+    ['PATCH', handleTaskDetailRoutePATCH],
+    ['DELETE', handleTaskDetailRouteDELETE],
+  ] as const)(
+    'requires board edit access for member %s mutations',
+    async (method, handler) => {
+      boardAccessMock.mockResolvedValue({
+        error: new Response('{}', { status: 403 }),
+      });
+      const response = await handler(
+        new NextRequest(`http://localhost/tasks/${taskId}`, {
+          method,
+          body: JSON.stringify({ name: 'Changed', action: 'restore' }),
+        }),
+        { params: Promise.resolve({ taskId, wsId: workspaceId }) },
+        {
+          appSession: true,
+          supabase: adminSupabase,
+          user: { id: 'member' } as SupabaseUser,
+        }
+      );
+      expect(response.status).toBe(403);
+      expect(boardAccessMock).toHaveBeenCalledWith(
+        expect.objectContaining({ requiredPermission: 'edit' })
+      );
+      expect(publishTaskRealtimeMock).not.toHaveBeenCalled();
+    }
+  );
 
   it('loads personal tasks through a pre-authenticated CLI app-session context', async () => {
     const response = await handleTaskDetailRouteGET(
@@ -217,6 +257,10 @@ describe('task detail route PUT assignee validation', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    boardAccessMock.mockResolvedValue({
+      access: { mode: 'member', permission: 'edit' },
+      wsId: '00000000-0000-4000-8000-000000000123',
+    });
 
     normalizeWorkspaceIdMock.mockResolvedValue(workspaceId);
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
@@ -295,59 +339,90 @@ describe('task detail route PUT assignee validation', () => {
     createAdminClientMock.mockResolvedValue(adminSupabase);
   });
 
-  it('keeps direct board guests as valid task assignees', async () => {
+  it('denies workspace member mutation before any task write without board edit permission', async () => {
+    boardAccessMock.mockResolvedValue({
+      error: new Response('{}', { status: 403 }),
+    });
     const response = await handleTaskDetailRoutePUT(
-      new NextRequest(
-        `http://localhost/api/v1/workspaces/personal/tasks/${taskId}`,
-        {
-          body: JSON.stringify({
-            assignee_ids: [
-              workspaceMemberUserId,
-              boardGuestUserId,
-              outsideUserId,
-            ],
-          }),
-          headers: {
-            'content-type': 'application/json',
-          },
-          method: 'PUT',
-        }
-      ),
+      new NextRequest(`http://localhost/tasks/${taskId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name: 'Denied mutation' }),
+      }),
+      { params: Promise.resolve({ taskId, wsId: workspaceId }) },
       {
-        params: Promise.resolve({
-          taskId,
-          wsId: 'personal',
-        }),
-      },
-      {
-        supabase: adminSupabase!,
-        user: {
-          aud: 'authenticated',
-          email: 'owner@example.com',
-          id: '00000000-0000-4000-8000-000000000999',
-        } as SupabaseUser,
+        appSession: true,
+        supabase: adminSupabase,
+        user: { id: workspaceMemberUserId } as SupabaseUser,
       }
     );
-
-    expect(response.status).toBe(200);
-    expect(updateTaskPayload).toMatchObject({
-      p_assignee_ids: [workspaceMemberUserId, boardGuestUserId],
-      p_replace_assignees: true,
-      p_task_id: taskId,
-    });
-    await expect(response.json()).resolves.toMatchObject({
-      task: {
-        assignee_ids: [workspaceMemberUserId, boardGuestUserId],
-        id: taskId,
-      },
-    });
-    expect(publishTaskRealtimeMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        event: 'task:upsert',
-        taskIds: [taskId],
-      })
-    );
+    expect(response.status).toBe(403);
+    expect(updateTaskPayload).toBeUndefined();
+    expect(publishTaskRealtimeMock).not.toHaveBeenCalled();
   });
+
+  it.each(['member', 'guest'] as const)(
+    'keeps board guest assignees when an authorized %s edits the task',
+    async (mode) => {
+      if (mode === 'guest') {
+        verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: false });
+        boardAccessMock.mockResolvedValue({
+          access: { mode: 'guest', permission: 'edit' },
+          wsId: workspaceId,
+        });
+      }
+      const response = await handleTaskDetailRoutePUT(
+        new NextRequest(
+          `http://localhost/api/v1/workspaces/personal/tasks/${taskId}`,
+          {
+            body: JSON.stringify({
+              assignee_ids: [
+                workspaceMemberUserId,
+                boardGuestUserId,
+                outsideUserId,
+              ],
+            }),
+            headers: {
+              'content-type': 'application/json',
+            },
+            method: 'PUT',
+          }
+        ),
+        {
+          params: Promise.resolve({
+            taskId,
+            wsId: 'personal',
+          }),
+        },
+        {
+          supabase: adminSupabase!,
+          user: {
+            aud: 'authenticated',
+            email: 'owner@example.com',
+            id: '00000000-0000-4000-8000-000000000999',
+          } as SupabaseUser,
+        }
+      );
+
+      expect(response.status).toBe(200);
+      expect(updateTaskPayload).toMatchObject({
+        p_assignee_ids: [workspaceMemberUserId, boardGuestUserId],
+        p_replace_assignees: true,
+        p_task_id: taskId,
+      });
+      await expect(response.json()).resolves.toMatchObject({
+        task: {
+          assignee_ids: [workspaceMemberUserId, boardGuestUserId],
+          id: taskId,
+        },
+      });
+      expect(publishTaskRealtimeMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: 'task:upsert',
+          taskIds: [taskId],
+        })
+      );
+    }
+  );
 });
 
 describe('task detail route PUT document archive', () => {
@@ -410,6 +485,10 @@ describe('task detail route PUT document archive', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    boardAccessMock.mockResolvedValue({
+      access: { mode: 'member', permission: 'edit' },
+      wsId: '00000000-0000-4000-8000-000000000123',
+    });
 
     normalizeWorkspaceIdMock.mockResolvedValue(workspaceId);
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
