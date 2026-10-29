@@ -9,7 +9,7 @@ export type StoredBoardView =
   | 'timeline'
   | 'drafts'
   | 'recycle_bin';
-export type StoredListStatusFilter = 'all' | 'active' | 'not_started';
+export type StoredListStatusFilter = 'all' | 'active' | 'not_started' | 'open';
 
 export interface BoardViewConfig {
   currentView: StoredBoardView;
