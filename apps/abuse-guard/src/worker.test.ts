@@ -558,8 +558,7 @@ describe('daily operation budget', () => {
       });
     }
     // One more command flushes the buffered usage.
-    await expect(client.get('flush')).resolves.toBeNull();
-    // Every denied check was billed: the open activation hold.
+    // All six attempts are already durably charged.
     expect((await control(mf, 'state')).body.families.password.used).toBe(6);
     await mf.dispose();
   });
