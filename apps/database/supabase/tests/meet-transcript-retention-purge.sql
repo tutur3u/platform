@@ -1,7 +1,7 @@
 -- Contract for 20261029170000_meet_transcript_retention_purge.sql: service-role
 -- only entry points, a closed-by-default fence, count-only dry runs, bounded
 -- 365-day deletion that keeps newer data and everything outside the transcript
--- scope, and M1-B purge_after support.
+-- scope, and a static contract that ignores later M1-B columns.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
@@ -179,21 +179,22 @@ select is((select count(*)::int from private.meet_transcript_purge_runs where st
   'a stale running run becomes abandoned');
 select is((select result ->> 'mode' from r where step = 'after_crash'), 'delete', 'a new run starts after abandonment');
 
--- M1-B purge_after replaces the fallback once the column exists
-alter table public.meet_ai_sessions add column purge_after timestamptz;
-insert into public.meet_ai_sessions(id, meeting_id, user_id, created_at, ended_at, notes_status, notes, purge_after) values
+-- Static schema contract: M1-B-style columns change nothing until the function
+-- is explicitly replaced. purge_after does not move the cutoff, and
+-- notes_edited is never cleared.
+alter table public.meet_ai_sessions add column purge_after timestamptz, add column notes_edited jsonb;
+insert into public.meet_ai_sessions(id, meeting_id, user_id, created_at, ended_at, notes_status, notes, notes_edited, purge_after) values
   ('00000000-0000-4000-8000-00000000e733', '00000000-0000-4000-8000-00000000e721', '00000000-0000-4000-8000-00000000e701',
-    now() - interval '31 days', now() - interval '30 days', 'completed', '{"summary":"short"}', now() - interval '1 day'),
+    now() - interval '31 days', now() - interval '30 days', 'completed', '{"summary":"short"}', null, now() - interval '1 day'),
   ('00000000-0000-4000-8000-00000000e734', '00000000-0000-4000-8000-00000000e721', '00000000-0000-4000-8000-00000000e701',
-    now() - interval '501 days', now() - interval '500 days', 'completed', '{"summary":"forever"}', null);
+    now() - interval '501 days', now() - interval '500 days', 'completed', '{"summary":"old"}', '{"summary":"user edit"}', null);
 set local role service_role;
-insert into r select 'purge_after', private.purge_meet_transcripts_batch((select (result ->> 'run_id')::uuid from r where step = 'after_crash'), 500);
+insert into r select 'static', private.purge_meet_transcripts_batch((select (result ->> 'run_id')::uuid from r where step = 'after_crash'), 500);
 reset role;
-select ok((select notes is null from public.meet_ai_sessions where id = '00000000-0000-4000-8000-00000000e733'),
-  'purge_after in the past is due even before 365 days');
-select ok((select notes is not null from public.meet_ai_sessions where id = '00000000-0000-4000-8000-00000000e734')
-  and (select notes is not null from public.meet_ai_sessions where id = '00000000-0000-4000-8000-00000000e732'),
-  'NULL purge_after is kept forever and future deadlines are kept');
+select ok((select notes is not null and transcript_purged_at is null from public.meet_ai_sessions where id = '00000000-0000-4000-8000-00000000e733'),
+  'a past purge_after does not make a session due before 365 days');
+select ok((select notes is null and notes_edited ->> 'summary' = 'user edit' from public.meet_ai_sessions where id = '00000000-0000-4000-8000-00000000e734'),
+  'the 365-day cutoff applies and notes_edited is never cleared');
 
 select * from finish();
 rollback;

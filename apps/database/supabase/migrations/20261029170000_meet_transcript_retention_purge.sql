@@ -7,8 +7,9 @@
 -- touched.
 --
 -- Eligibility: a session is due 365 days after it ended (or was created when
--- it never ended). When public.meet_ai_sessions.purge_after exists (M1-B), it
--- replaces that fallback: purge_after <= now() is due and NULL is kept forever.
+-- it never ended). The functions are static against this schema. M1-B's
+-- purge_after and notes_edited are adopted only by an explicitly reviewed
+-- CREATE OR REPLACE of private.purge_meet_transcripts_batch.
 --
 -- Stop fence: private.meet_transcript_purge_control starts closed. With the
 -- fence open, runs are dry runs that only count; deletion additionally needs
@@ -157,8 +158,6 @@ declare
   run private.meet_transcript_purge_runs;
   now_at timestamptz := transaction_timestamp();
   cutoff timestamptz := transaction_timestamp() - interval '365 days';
-  due text;
-  clear_edited text := '';
   remaining integer;
   n_chunks integer := 0;
   n_notes integer := 0;
@@ -196,69 +195,57 @@ begin
     return jsonb_build_object('state', 'budget_exhausted');
   end if;
 
-  -- The predicates below are fixed strings chosen from the catalog, never input.
-  if exists (select 1 from pg_attribute
-             where attrelid = 'public.meet_ai_sessions'::regclass
-               and attname = 'purge_after' and not attisdropped) then
-    due := 's.purge_after <= $1';
-  else
-    due := 'coalesce(s.ended_at, s.created_at) <= $2';
-  end if;
-  if exists (select 1 from pg_attribute
-             where attrelid = 'public.meet_ai_sessions'::regclass
-               and attname = 'notes_edited' and not attisdropped) then
-    clear_edited := ', notes_edited = null';
-  end if;
-
+  -- Static against today's schema: due means ended (or created, if never
+  -- ended) at least 365 days ago, and only notes are cleared. M1-B must adopt
+  -- purge_after or notes_edited by explicitly replacing this function after
+  -- review, so the dry run approved for deletion always matches the delete.
+  -- Session order follows meet_ai_sessions_transcript_retention_idx.
   if run.mode = 'dry_run' then
-    execute format($q$
-      with due as (
-        select s.id, m.ws_id,
-          (s.notes is not null%s) as has_notes
-        from public.meet_ai_sessions s
-        join public.workspace_meetings m on m.id = s.meeting_id
-        where s.transcript_purged_at is null and %s
-      ),
-      sessions as (
-        select d.ws_id, count(*) as sessions,
-          count(*) filter (where d.has_notes) as notes,
-          coalesce(sum((select count(*) from public.meet_ai_chunks c
-            where c.session_id = d.id)), 0) as chunks
-        from due d group by d.ws_id
-      ),
-      transcripts as (
-        select m.ws_id, count(*) as recording_transcripts
-        from private.recording_transcripts t
-        join public.recording_sessions r on r.id = t.session_id
-        join public.workspace_meetings m on m.id = r.meeting_id
-        where t.created_at <= $2
-        group by m.ws_id
-      ),
-      per_ws as (
-        select coalesce(s.ws_id, t.ws_id) as ws_id,
-          coalesce(s.chunks, 0)::bigint as chunks,
-          coalesce(s.sessions, 0)::bigint as sessions,
-          coalesce(s.notes, 0)::bigint as notes,
-          coalesce(t.recording_transcripts, 0)::bigint as recording_transcripts
-        from sessions s full join transcripts t on t.ws_id = s.ws_id
-      )
-      select jsonb_build_object(
-        'chunks', coalesce(sum(chunks), 0),
-        'sessions', coalesce(sum(sessions), 0),
-        'notes', coalesce(sum(notes), 0),
-        'recording_transcripts', coalesce(sum(recording_transcripts), 0),
-        'workspaces', count(*),
-        'by_workspace', coalesce((
-          select jsonb_agg(to_jsonb(top) order by
-            top.chunks + top.sessions + top.recording_transcripts desc, top.ws_id)
-          from (select * from per_ws order by
-            chunks + sessions + recording_transcripts desc, ws_id limit 100) top
-        ), '[]'::jsonb))
-      from per_ws
-    $q$,
-      case when clear_edited <> '' then ' or s.notes_edited is not null' else '' end,
-      due)
-    into counts using now_at, cutoff;
+    with due as (
+      select s.id, m.ws_id, (s.notes is not null) as has_notes
+      from public.meet_ai_sessions s
+      join public.workspace_meetings m on m.id = s.meeting_id
+      where s.transcript_purged_at is null
+        and coalesce(s.ended_at, s.created_at) <= cutoff
+    ),
+    sessions as (
+      select d.ws_id, count(*) as sessions,
+        count(*) filter (where d.has_notes) as notes,
+        coalesce(sum((select count(*) from public.meet_ai_chunks c
+          where c.session_id = d.id)), 0) as chunks
+      from due d group by d.ws_id
+    ),
+    transcripts as (
+      select m.ws_id, count(*) as recording_transcripts
+      from private.recording_transcripts t
+      join public.recording_sessions r on r.id = t.session_id
+      join public.workspace_meetings m on m.id = r.meeting_id
+      where t.created_at <= cutoff
+      group by m.ws_id
+    ),
+    per_ws as (
+      select coalesce(s.ws_id, t.ws_id) as ws_id,
+        coalesce(s.chunks, 0)::bigint as chunks,
+        coalesce(s.sessions, 0)::bigint as sessions,
+        coalesce(s.notes, 0)::bigint as notes,
+        coalesce(t.recording_transcripts, 0)::bigint as recording_transcripts
+      from sessions s full join transcripts t on t.ws_id = s.ws_id
+    )
+    select jsonb_build_object(
+      'chunks', coalesce(sum(per_ws.chunks), 0),
+      'sessions', coalesce(sum(per_ws.sessions), 0),
+      'notes', coalesce(sum(per_ws.notes), 0),
+      'recording_transcripts', coalesce(sum(per_ws.recording_transcripts), 0),
+      'workspaces', count(*),
+      'by_workspace', coalesce((
+        select jsonb_agg(to_jsonb(top) order by
+          top.chunks + top.sessions + top.recording_transcripts desc, top.ws_id)
+        from (select * from per_ws p order by
+          p.chunks + p.sessions + p.recording_transcripts desc, p.ws_id
+          limit 100) top
+      ), '[]'::jsonb))
+    into counts
+    from per_ws;
 
     update private.meet_transcript_purge_runs
       set dry_run_counts = counts, batches = batches + 1,
@@ -275,35 +262,33 @@ begin
 
   -- Chunk reservations stop three hours after a session starts, so a due
   -- session gains no chunks after it is cleared.
-  execute format($q$
-    with doomed as (
-      select c.id from public.meet_ai_chunks c
-      join public.meet_ai_sessions s on s.id = c.session_id
-      where s.transcript_purged_at is null and %s
-      order by s.created_at, s.id, c.sequence
-      limit $3
-      for update of c skip locked
-    )
-    delete from public.meet_ai_chunks c using doomed where c.id = doomed.id
-  $q$, due) using now_at, cutoff, p_limit;
+  with doomed as (
+    select c.id from public.meet_ai_sessions s
+    join public.meet_ai_chunks c on c.session_id = s.id
+    where s.transcript_purged_at is null
+      and coalesce(s.ended_at, s.created_at) <= cutoff
+    order by coalesce(s.ended_at, s.created_at), s.id, c.sequence
+    limit p_limit
+    for update of c skip locked
+  )
+  delete from public.meet_ai_chunks c using doomed where c.id = doomed.id;
   get diagnostics n_chunks = row_count;
 
   remaining := p_limit - n_chunks;
   if remaining > 0 then
-    execute format($q$
-      with cleared as (
-        select s.id from public.meet_ai_sessions s
-        where s.transcript_purged_at is null and %s
-          and not exists (select 1 from public.meet_ai_chunks c
-                          where c.session_id = s.id)
-        order by s.created_at, s.id
-        limit $3
-        for update of s skip locked
-      )
-      update public.meet_ai_sessions s
-        set notes = null%s, transcript_purged_at = $1
-        from cleared where s.id = cleared.id
-    $q$, due, clear_edited) using now_at, cutoff, remaining;
+    with cleared as (
+      select s.id from public.meet_ai_sessions s
+      where s.transcript_purged_at is null
+        and coalesce(s.ended_at, s.created_at) <= cutoff
+        and not exists (select 1 from public.meet_ai_chunks c
+                        where c.session_id = s.id)
+      order by coalesce(s.ended_at, s.created_at), s.id
+      limit remaining
+      for update of s skip locked
+    )
+    update public.meet_ai_sessions s
+      set notes = null, transcript_purged_at = now_at
+      from cleared where s.id = cleared.id;
     get diagnostics n_notes = row_count;
   end if;
 

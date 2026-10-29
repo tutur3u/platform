@@ -15,13 +15,15 @@ current wording until deletion is enabled in production.
 | Store | Action | Due when |
 | --- | --- | --- |
 | `public.meet_ai_chunks` (transcript text; speaker and segments in `usage`) | Row deleted | Session due |
-| `public.meet_ai_sessions.notes` (and `notes_edited` once M1-B adds it) | Cleared; `transcript_purged_at` set | Session due, after its chunks are gone |
+| `public.meet_ai_sessions.notes` | Cleared; `transcript_purged_at` set | Session due, after its chunks are gone |
 | `private.recording_transcripts` (legacy recording text and segments) | Row deleted | `created_at` older than 365 days |
 
 A session is due 365 days after `ended_at` (or `created_at` if it never ended).
-When the M1-B `purge_after` column exists, it replaces that fallback:
-`purge_after <= now()` is due and `NULL` is kept forever. The function detects the
-column at run time, so no follow-up migration is needed.
+The purge functions are static against today's schema and never detect columns
+at run time. M1-B's `purge_after` and `notes_edited` change nothing until M1-B
+explicitly replaces `private.purge_meet_transcripts_batch` after review. That
+keeps an approved dry run identical to the delete it authorizes. Adopting either
+column needs a fresh dry run and approval.
 
 Never touched: meetings, participants, session rows and their usage/cost fields,
 recording sessions, `audio_chunks` and audio storage objects, consent evidence,
@@ -45,8 +47,13 @@ or change the fence.
 | Function | Role |
 | --- | --- |
 | `private.start_meet_transcript_purge_run()` | Abandons runs left running for 15 minutes, enforces one running run and two non-fenced runs per rolling 24 hours, and returns the mode |
-| `private.purge_meet_transcripts_batch(run_id, limit <= 500)` | Re-checks the fence under a row lock, then deletes at most `limit` rows, oldest sessions first, with `SKIP LOCKED` and a 20-second statement timeout. Ends the run at its 20th batch |
+| `private.purge_meet_transcripts_batch(run_id, limit <= 500)` | Re-checks the fence under a row lock, then deletes at most `limit` rows, oldest due sessions first in `meet_ai_sessions_transcript_retention_idx` order, with `SKIP LOCKED`. Ends the run at its 20th batch |
 | `private.finish_meet_transcript_purge_run(run_id, status)` | Records a Worker-side terminal status; terminal runs are unchanged |
+
+The functions declare a 20-second statement timeout, but a function-level
+`statement_timeout` does not apply to calls over the API: the API role's own
+timeout applies. Measure batch timing in the production dry run before
+approving deletion.
 
 Progress is the remaining data, so a retry or the next run after a crash
 continues safely. `private.meet_transcript_purge_runs` keeps mode, terminal status,
@@ -91,8 +98,32 @@ failed or unknown days stop the job durably.
    from private.meet_transcript_purge_runs
    where mode = 'dry_run' order by started_at desc limit 1;
    ```
-4. Only after separate approval, enable deletion with `delete_enabled = true`, then
-   update the consent notice copy in a separate change.
+4. Complete [Before the first real delete](#before-the-first-real-delete), then
+   enable deletion with `delete_enabled = true`.
+
+## Before the first real delete
+
+Deletion is irreversible. Every item needs a recorded owner sign-off before
+`delete_enabled` is set:
+
+- **Legal hold:** the owner confirms no legal hold or retention obligation
+  covers in-scope workspaces. A hold needs an exclusion mechanism first; none
+  exists today.
+- **Backups:** record the backup/PITR retention window. Deleted rows persist in
+  backups until that window passes, so the notice and data-protection inventory
+  must not promise sooner erasure.
+- **Cost and usage history:** deleting chunk rows removes their per-chunk
+  `cost_usd`, `usage` and attempt counts, so meeting cost statistics for purged
+  sessions shrink. Either add a counts-only roll-up before deleting, or record
+  that the owner accepts the loss.
+- **Dry-run sign-off:** the owner signs off the latest dry-run counts and its
+  measured batch timing on the same function version that will delete.
+- **Approver log:** record who flipped `fence_open` and `delete_enabled`, and
+  when, in `updated_by` and the release record.
+- **Consent notice:** ship the notice wording that states the 365-day retention
+  in the same release window as enabling deletion.
+- **Watched first run:** watch the first deleting run live, with the operator
+  stop and the fence-close SQL ready.
 
 ## Stop and rollback
 
@@ -120,8 +151,8 @@ run and a separate approval.
 
 - `apps/database/supabase/tests/meet-transcript-retention-purge.sql`: grants,
   closed fence, dry run, bounded batches, mid-run fence close, daily cap, newer
-  data kept, out-of-scope data kept, idempotent re-run, abandonment and
-  `purge_after`.
+  data kept, out-of-scope data kept, idempotent re-run, abandonment, and the
+  static contract (later `purge_after`/`notes_edited` columns change nothing).
 - `apps/cron-control/src/meet-transcript-retention.test.ts`: default off,
   both fences mid-run, batch and run bounds, time reserve, lost-Worker
   resumption, bounded retries, terminal states and five-day durable stop.
