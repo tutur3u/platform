@@ -72,6 +72,48 @@ describe('workspace referral settings route', () => {
     });
   });
 
+  it.each([false, true])(
+    'SR-256 admits a promotion only when it belongs to the workspace (%s)',
+    async (local) => {
+      const upsert = vi.fn(async () => ({ error: null }));
+      const query = {
+        select: vi.fn(),
+        eq: vi.fn(),
+        maybeSingle: async () => ({
+          data: local ? { id: 'promotion' } : null,
+          error: null,
+        }),
+      };
+      query.select.mockReturnValue(query);
+      query.eq.mockReturnValue(query);
+      const db = { from: () => ({ ...query, upsert }), schema: () => db };
+      mocks.getFinanceRouteContext.mockResolvedValue({
+        context: {
+          normalizedWsId: 'workspace-normalized',
+          permissions: { withoutPermission: () => false },
+          sbAdmin: db,
+        },
+      });
+      const { PUT } = await import('./route');
+      const response = await PUT(
+        new Request('http://localhost/api/settings', {
+          method: 'PUT',
+          body: JSON.stringify({
+            referral_count_cap: 3,
+            referral_increment_percent: 5,
+            referral_reward_type: 'REFERRER',
+            referral_promotion_id: '11111111-1111-4111-8111-111111111111',
+          }),
+        }),
+        { params: Promise.resolve({ wsId: 'workspace-alias' }) }
+      );
+      expect(response.status).toBe(local ? 200 : 404);
+      expect(query.eq).toHaveBeenCalledWith('ws_id', 'workspace-normalized');
+      if (local) expect(upsert).toHaveBeenCalledOnce();
+      else expect(upsert).not.toHaveBeenCalled();
+    }
+  );
+
   it('loads settings through the Inventory app-session aware route context', async () => {
     const { GET } = await import('./route');
     const request = new Request(

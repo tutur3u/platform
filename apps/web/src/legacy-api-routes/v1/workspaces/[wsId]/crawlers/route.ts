@@ -6,6 +6,7 @@ import {
 import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
@@ -41,6 +42,10 @@ async function getDataWithApiKey(
       { status: 400 }
     );
   }
+
+  const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
+  if (!permissions || permissions.withoutPermission('ai_lab'))
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const sbAdmin = await createAdminClient();
 
@@ -104,6 +109,10 @@ export async function POST(req: Request) {
   ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
+
+  const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
+  if (!permissions || permissions.withoutPermission('ai_lab'))
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const sbAdmin = await createAdminClient();
 

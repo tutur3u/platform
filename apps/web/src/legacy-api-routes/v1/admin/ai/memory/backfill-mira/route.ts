@@ -5,7 +5,9 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -48,6 +50,10 @@ export async function POST(request: NextRequest) {
   if (!user?.id || !isVerifiedTuturuuuStaffSession(user, { allowXwf: true })) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
   }
+
+  const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
+  if (!permissions?.containsPermission('manage_workspace_roles'))
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const parsed = BackfillSchema.safeParse(
     await request.json().catch(() => ({}))
