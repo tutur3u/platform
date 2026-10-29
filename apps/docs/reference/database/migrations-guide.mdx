@@ -78,25 +78,34 @@ one `repeatable read read only` transaction with `default_transaction_read_only=
 `DECLARATIVE_PARITY_DATABASE_URL` (or name another variable with
 `--database-url-env`). The URL never goes in argv, it can't carry query
 parameters, psql runs with a minimal environment (no inherited `PG*` service,
-password-file or hostaddr settings) and errors are redacted. Docker and
+password-file or hostaddr settings) and errors are redacted. The Docker path
+unsets the container's own `PG*` variables before psql starts. Docker and
 loopback targets count as local. Any other host is refused unless the run uses
 `--hashes-only` and `--ca-file` (or `DECLARATIVE_PARITY_CA_FILE`) pins a CA for
-`sslmode=verify-full`. The CA must be a regular file (not a symlink), owned and
-readable by the runner, and not world-writable. Reports carry
+`sslmode=verify-full`, with `channel_binding=require` and SCRAM-SHA-256
+authentication. The CA must be a regular file (not a symlink), owned and
+readable by the runner, and not group- or world-writable. Its directory must be
+owned by the runner or root and not group- or world-writable. Reports carry
 `target: local|remote`. The prod workflow passes `--prod-parity` (refused unless
-the target is remote and the run is `--hashes-only`), then asserts the result
-with `--assert-prod-report <report.json>`.
+the target is remote, the run is `--hashes-only` and `--expect` names a full
+report), then asserts the result with `--assert-prod-report <report.json>`.
+That assertion fails unless the report has this pack's `format`, `ok: true`,
+a `comparison` and `comparison.equal: true`. `--compare` and `--expect` refuse
+any report without this pack's `format` and well-formed SHA-256 digests.
 
 Exit 1 means a must-be-zero check failed or `--expect` found a mismatch. The
-checks cover SECURITY DEFINER functions in application schemas (Supabase-managed
-schemas are excluded): a NULL `proacl`, EXECUTE for PUBLIC or `anon`, and a
+checks cover application SECURITY DEFINER functions. A function is managed, and
+excluded, when a Supabase role (`supabase_*`) owns it, it belongs to an
+extension, or it lives in `storage` or `graphql_public`. Schema name alone does
+not exclude it, because `postgres` can create functions in schemas such as
+`extensions`. The checks flag a NULL `proacl`, EXECUTE for PUBLIC or `anon`, and a
 `search_path` that fails the `security-definer-search-paths.sql` rule.
 `--hashes-only --expect <full.json>` is the form for the one approved
 prod-parity check. It prints category digests plus the identities of
 mismatched objects only. It never reads tables, so `cron_jobs` (a `cron.job`
 read that pg_cron RLS can silently filter) is reported as skipped by design
 rather than hashed. A hashes-only run doesn't even resolve `cron.job`, so a
-role without USAGE on `cron` works. Comparisons ignore a skipped `cron_jobs`
+role without USAGE on `cron` works. Cron job identities include the owning username. Comparisons ignore a skipped `cron_jobs`
 and fail on any other skipped category. Agents must never
 point the pack at production. Fixture tests run with
 `node --test apps/database/scripts/verify-declarative-parity.test.mjs`.

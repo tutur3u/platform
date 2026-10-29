@@ -5,14 +5,23 @@
 // sha256 digests. Payloads are hashed inside PostgreSQL; the parser rejects any
 // output that is not an identity, a digest or an integer, so definitions, qual
 // text and row data never reach stdout. The same pack serves the prod-parity
-// check, so the URL is read from an environment variable and never put in argv,
-// any non-loopback target must use --hashes-only over verify-full TLS with a
-// pinned CA, and psql runs with a minimal environment.
-import { spawnSync } from 'node:child_process';
+// check; connection handling lives in verify-declarative-parity-psql.mjs.
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  createPsqlExecutor,
+  psqlInvocation,
+} from './verify-declarative-parity-psql.mjs';
+
+export {
+  assertCaFile,
+  createPsqlExecutor,
+  DOCKER_UNSET_PG_ENV,
+  psqlInvocation,
+  SESSION_OPTIONS,
+} from './verify-declarative-parity-psql.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const QUERY_DIR = path.resolve(
@@ -23,21 +32,12 @@ export const CONFIG_PATH = path.resolve(here, '../supabase/config.toml');
 export const FORMAT = 'tuturuuu-declarative-parity/v1';
 export const DEFAULT_URL_ENV = 'DECLARATIVE_PARITY_DATABASE_URL';
 export const CA_FILE_ENV = 'DECLARATIVE_PARITY_CA_FILE';
-const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
-const NO_FILE = '/nonexistent/tuturuuu-declarative-parity';
 // Every check maps a must-be-zero metric to the flag rows naming its offenders.
 export const MUST_BE_ZERO = {
   null_acl_definer_count: 'null_acl_definer',
   client_executable_definer_count: 'client_executable_definer',
   unsafe_definer_search_path_count: 'unsafe_definer_search_path',
 };
-export const SESSION_OPTIONS = [
-  'default_transaction_read_only=on',
-  'statement_timeout=60s',
-  'lock_timeout=1s',
-  'idle_in_transaction_session_timeout=120s',
-  'search_path=pg_catalog',
-];
 
 const SCHEMA_NAME = /^[a-z_][a-z0-9_]*$/;
 const CATEGORY = /^[a-z_]+$/;
@@ -231,7 +231,29 @@ export function hashesOnly(report) {
 // Returns identities (names only) of mismatched objects and metrics. Categories
 // skipped on either side are listed, never compared against an absent hash, and
 // any skip outside SKIPPABLE_CATEGORIES makes the comparison fail.
+// Refuses reports that are not this format or carry a malformed digest, so two
+// hand-written reports without digests can never compare equal.
+function assertComparableReport(report, side) {
+  const fail = () => {
+    throw new Error(`invalid-report: ${side}`);
+  };
+  if (!report || typeof report !== 'object' || report.format !== FORMAT) fail();
+  if (!DIGEST.test(report.sha256 ?? '')) fail();
+  if (!report.categories || typeof report.categories !== 'object') fail();
+  if (!report.metrics || typeof report.metrics !== 'object') fail();
+  for (const category of Object.values(report.categories)) {
+    if (
+      !DIGEST.test(category?.sha256 ?? '') ||
+      !Number.isInteger(category.count)
+    ) {
+      fail();
+    }
+  }
+}
+
 export function compareReports(expected, actual) {
+  assertComparableReport(expected, 'expected');
+  assertComparableReport(actual, 'actual');
   const categories = {};
   const skipped = new Set([
     ...Object.keys(expected.skippedCategories ?? {}),
@@ -330,127 +352,11 @@ export async function collect(
   return buildReport(rows, { apiSchemas, preflight, skipped, target });
 }
 
-// Classifies the target. Docker and loopback URLs are local. Anything else is
-// remote and must run --hashes-only over verify-full TLS with a pinned CA; URL
-// query parameters are refused so nothing can override sslmode or the host.
-export function psqlInvocation({
-  dockerContainer,
-  dockerUser,
-  databaseUrl,
-  caFile,
-  hashesOnly: hashesOnlyRun = false,
-  fsImpl = fs,
-  uid = process.getuid?.(),
-}) {
-  const psqlArgs = [
-    '-X',
-    '-q',
-    '-A',
-    '-t',
-    '-F',
-    '\t',
-    '-v',
-    'ON_ERROR_STOP=1',
-  ];
-  const pgoptions = SESSION_OPTIONS.map((option) => `-c ${option}`).join(' ');
-  if (dockerContainer) {
-    return {
-      command: 'docker',
-      args: [
-        'exec',
-        '-i',
-        '-e',
-        `PGOPTIONS=${pgoptions}`,
-        '-e',
-        'PGAPPNAME=tuturuuu-declarative-parity',
-        dockerContainer,
-        'psql',
-        ...psqlArgs,
-        '-U',
-        dockerUser || 'postgres',
-        '-d',
-        'postgres',
-        '-f',
-        '-',
-      ],
-      env: process.env,
-      local: true,
-      secrets: [],
-    };
-  }
-  if (!databaseUrl) throw new Error('missing-database-url');
-  const url = new URL(databaseUrl);
-  if (!['postgres:', 'postgresql:'].includes(url.protocol)) {
-    throw new Error('unsupported-database-url');
-  }
-  if (url.search || url.hash)
-    throw new Error('database-url-parameters-refused');
-  if (!url.hostname || /[,/]/.test(url.hostname)) {
-    throw new Error('database-url-host-refused');
-  }
-  const local = LOOPBACK_HOSTS.has(url.hostname);
-  let tls = { PGSSLMODE: 'disable' };
-  if (!local) {
-    if (!hashesOnlyRun) throw new Error('remote-target-requires-hashes-only');
-    if (!caFile) throw new Error('remote-target-requires-pinned-ca-file');
-    const ca = assertCaFile(path.resolve(caFile), { fsImpl, uid });
-    tls = { PGSSLMODE: 'verify-full', PGSSLROOTCERT: ca };
-  }
-  const user = decodeURIComponent(url.username);
-  const password = decodeURIComponent(url.password);
-  // Minimal environment: no inherited PG* variables, service files, password
-  // files, hostaddr overrides or client certificates.
-  const env = {
-    PATH: process.env.PATH ?? '/usr/bin:/bin',
-    LC_ALL: 'C',
-    PGHOST: url.hostname.replace(/^\[(.*)\]$/, '$1'),
-    PGPORT: url.port || '5432',
-    PGUSER: user,
-    PGDATABASE: decodeURIComponent(url.pathname.slice(1)) || 'postgres',
-    ...tls,
-    PGGSSENCMODE: 'disable',
-    PGSSLCERT: NO_FILE,
-    PGSSLKEY: NO_FILE,
-    PGPASSFILE: NO_FILE,
-    PGSERVICEFILE: NO_FILE,
-    PGSYSCONFDIR: NO_FILE,
-    PGCONNECT_TIMEOUT: '15',
-    PGOPTIONS: pgoptions,
-    PGAPPNAME: 'tuturuuu-declarative-parity',
-  };
-  if (password) env.PGPASSWORD = password;
-  return {
-    command: 'psql',
-    args: [...psqlArgs, '-f', '-'],
-    env,
-    local,
-    secrets: [password, user, url.hostname].filter(Boolean),
-  };
-}
-
-// The pinned CA must be a regular file (not a symlink), not world-writable,
-// owned by the runner user and readable by it.
-export function assertCaFile(
-  ca,
-  { fsImpl = fs, uid = process.getuid?.() } = {}
-) {
-  const stat = fsImpl.lstatSync(ca, { throwIfNoEntry: false });
-  if (!stat?.isFile()) throw new Error('ca-file-not-regular');
-  if (stat.mode & 0o002) throw new Error('ca-file-world-writable');
-  if (uid === undefined || stat.uid !== uid) {
-    throw new Error('ca-file-not-owned-by-runner');
-  }
-  try {
-    fsImpl.accessSync(ca, fs.constants.R_OK);
-  } catch {
-    throw new Error('ca-file-unreadable');
-  }
-  return ca;
-}
-
 // What the prod-parity workflow asserts on the emitted report.
 export function prodParityViolations(report) {
   const violations = [];
+  if (report.format !== FORMAT) violations.push('format');
+  if (report.ok !== true) violations.push('ok');
   if (report.mode !== 'hashes-only') violations.push('mode');
   if (report.target !== 'remote') violations.push('target');
   if (report.prodParity !== true) violations.push('prod-parity-flag');
@@ -463,34 +369,16 @@ export function prodParityViolations(report) {
       violations.push(`skipped:${name}`);
     }
   }
-  if (report.comparison?.disallowedSkippedCategories?.length) {
-    violations.push('comparison-skips');
+  // The prod run must have compared against an expected full report and matched.
+  if (!report.comparison || typeof report.comparison !== 'object') {
+    violations.push('comparison');
+  } else {
+    if (report.comparison.equal !== true) violations.push('comparison-equal');
+    if (report.comparison.disallowedSkippedCategories?.length) {
+      violations.push('comparison-skips');
+    }
   }
   return violations;
-}
-
-export function createPsqlExecutor(invocation, spawn = spawnSync) {
-  return {
-    async run(sql) {
-      const result = spawn(invocation.command, invocation.args, {
-        input: sql,
-        env: invocation.env,
-        encoding: 'utf8',
-        maxBuffer: 512 * 1024 * 1024,
-        timeout: 10 * 60 * 1000,
-      });
-      if (result.error || result.status !== 0) {
-        let detail = String(result.stderr ?? result.error?.message ?? '');
-        for (const secret of invocation.secrets) {
-          detail = detail.split(secret).join('<redacted>');
-        }
-        throw new Error(
-          `psql failed (${result.status ?? 'spawn'}): ${detail.trim()}`
-        );
-      }
-      return String(result.stdout).split('\n');
-    },
-  };
 }
 
 const USAGE = `Usage:
@@ -510,7 +398,8 @@ Options:
   --hashes-only      omit per-object digests and table reads (prod-parity form)
   --ca-file <file>   CA bundle pinned for verify-full TLS (regular file owned by
                      the runner, readable, not world-writable)
-  --prod-parity      refuse to run unless the target is remote and --hashes-only
+  --prod-parity      refuse to run unless the target is remote, --hashes-only and
+                     compared with --expect
   --expect <file>    compare with a full report; print mismatched identities only
   --out <file>       write the report to a file instead of stdout
 
@@ -566,6 +455,9 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
     const violations = prodParityViolations(readJson(options.assertProdReport));
     emit({ ok: !violations.length, violations }, options.out);
     return violations.length ? 1 : 0;
+  }
+  if (options.prodParity && !options.expect) {
+    throw new Error('prod-parity-requires-expect');
   }
   const apiSchemas = readApiSchemas(fs.readFileSync(CONFIG_PATH, 'utf8'));
   const invocation = psqlInvocation({

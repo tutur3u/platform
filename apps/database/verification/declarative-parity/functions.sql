@@ -1,18 +1,16 @@
 -- Function definitions plus three must-be-zero definer checks, all scoped to
--- application schemas (Supabase-managed schemas are listed in managed_ns):
--- a NULL proacl (PUBLIC can EXECUTE), EXECUTE for PUBLIC or anon, and search
--- paths failing security_definer_path_is_safe from
--- supabase/tests/security-definer-search-paths.sql (mirrored without DDL).
-with managed_ns(nspname) as (
-  values ('auth'), ('storage'), ('realtime'), ('_realtime'), ('extensions'),
-    ('graphql'), ('graphql_public'), ('vault'), ('pgsodium'), ('pgsodium_masks'),
-    ('net'), ('supabase_functions'), ('supabase_migrations'), ('cron'),
-    ('pgbouncer'), ('_analytics'), ('pgtle'), ('pgmq')
-),
-fn as (
+-- application functions. Managed functions are excluded by OWNER, not by schema
+-- name, because postgres can CREATE in schemas such as extensions: a function
+-- owned by a Supabase-managed role (supabase_*) is managed, as are storage and
+-- graphql_public, matching supabase/tests/security-definer-search-paths.sql.
+-- The checks: a NULL proacl (PUBLIC can EXECUTE), EXECUTE for PUBLIC or anon,
+-- and search paths failing security_definer_path_is_safe from that test
+-- (mirrored without DDL).
+with fn as (
   select p.oid, p.oid::regprocedure::text as identity, n.nspname, p.prokind,
     p.prosecdef, p.proacl, p.proconfig, p.proowner,
-    n.nspname not in (select nspname from managed_ns) as app
+    pg_get_userbyid(p.proowner) !~ '^supabase_'
+      and n.nspname not in ('storage', 'graphql_public') as app
   from pg_proc p
   join pg_namespace n on n.oid = p.pronamespace
   where n.nspname !~ '^pg_' and n.nspname <> 'information_schema'

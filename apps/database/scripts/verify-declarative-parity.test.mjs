@@ -6,19 +6,16 @@ import test from 'node:test';
 import { PGlite } from '@electric-sql/pglite';
 
 import {
-  assertCaFile,
   buildReport,
   CONFIG_PATH,
   collect,
   compareReports,
-  createPsqlExecutor,
   hashesOnly,
   loadQueries,
   main,
   parseLines,
   preflightSql,
   prodParityViolations,
-  psqlInvocation,
   readApiSchemas,
   wrapReadOnly,
 } from './verify-declarative-parity.mjs';
@@ -155,161 +152,6 @@ test('wraps every run in a read-only, time-bounded transaction', () => {
   assert.throws(() => wrapReadOnly('select 1;', ["public'; drop table x; --"]));
 });
 
-const REMOTE =
-  'postgresql://parity_role:s3cr3t-pass@db.internal.example:6543/postgres';
-const uid = process.getuid();
-const caStat = (overrides = {}) => ({
-  isFile: () => true,
-  mode: 0o100644,
-  uid,
-  ...overrides,
-});
-const caFs = { lstatSync: () => caStat(), accessSync: () => {} };
-const ENV_KEYS = [
-  'LC_ALL',
-  'PATH',
-  'PGAPPNAME',
-  'PGCONNECT_TIMEOUT',
-  'PGDATABASE',
-  'PGGSSENCMODE',
-  'PGHOST',
-  'PGOPTIONS',
-  'PGPASSFILE',
-  'PGPASSWORD',
-  'PGPORT',
-  'PGSERVICEFILE',
-  'PGSSLCERT',
-  'PGSSLKEY',
-  'PGSSLMODE',
-  'PGSSLROOTCERT',
-  'PGSYSCONFDIR',
-  'PGUSER',
-];
-
-test('a remote target needs --hashes-only and a pinned CA over verify-full', () => {
-  assert.throws(
-    () =>
-      psqlInvocation({ databaseUrl: REMOTE, caFile: '/ca.pem', fsImpl: caFs }),
-    /remote-target-requires-hashes-only/
-  );
-  assert.throws(
-    () => psqlInvocation({ databaseUrl: REMOTE, hashesOnly: true }),
-    /remote-target-requires-pinned-ca-file/
-  );
-  assert.throws(
-    () =>
-      psqlInvocation({
-        databaseUrl: REMOTE,
-        hashesOnly: true,
-        caFile: '/missing-ca.pem',
-        fsImpl: { lstatSync: () => undefined, accessSync: () => {} },
-      }),
-    /ca-file-not-regular/
-  );
-  for (const suffix of [
-    '?sslmode=disable',
-    '?sslmode=verify-full',
-    '?sslrootcert=system',
-    '?hostaddr=10.0.0.1',
-    '?host=evil.example',
-    '#x',
-  ]) {
-    assert.throws(
-      () =>
-        psqlInvocation({
-          databaseUrl: REMOTE + suffix,
-          hashesOnly: true,
-          caFile: '/ca.pem',
-          fsImpl: caFs,
-        }),
-      /database-url-parameters-refused/,
-      suffix
-    );
-  }
-  const invocation = psqlInvocation({
-    databaseUrl: REMOTE,
-    hashesOnly: true,
-    caFile: '/ca.pem',
-    fsImpl: caFs,
-  });
-  assert.equal(invocation.local, false);
-  assert.equal(invocation.env.PGSSLMODE, 'verify-full');
-  assert.equal(invocation.env.PGSSLROOTCERT, '/ca.pem');
-});
-
-test('psql gets a minimal env, read-only options and no secrets in argv', () => {
-  const inherited = {
-    PGSERVICE: 'prod',
-    PGHOSTADDR: '10.9.9.9',
-    PGSERVICEFILE: '/home/x/.pg_service.conf',
-    PGPASSFILE: '/home/x/.pgpass',
-    PGSSLMODE: 'disable',
-  };
-  const saved = { ...process.env };
-  Object.assign(process.env, inherited);
-  let invocation;
-  try {
-    invocation = psqlInvocation({
-      databaseUrl: REMOTE,
-      hashesOnly: true,
-      caFile: '/ca.pem',
-      fsImpl: caFs,
-    });
-  } finally {
-    for (const key of Object.keys(inherited)) {
-      if (key in saved) process.env[key] = saved[key];
-      else delete process.env[key];
-    }
-  }
-  assert.deepEqual(Object.keys(invocation.env).sort(), ENV_KEYS);
-  for (const key of ['PGPASSFILE', 'PGSERVICEFILE', 'PGSYSCONFDIR']) {
-    assert.ok(invocation.env[key].startsWith('/nonexistent/'), key);
-  }
-  const argv = invocation.args.join(' ');
-  for (const secret of ['s3cr3t-pass', 'db.internal.example', 'parity_role']) {
-    assert.ok(!argv.includes(secret), 'argv must not carry connection details');
-  }
-  assert.equal(invocation.env.PGPASSWORD, 's3cr3t-pass');
-  for (const option of [
-    'default_transaction_read_only=on',
-    'statement_timeout=60s',
-    'lock_timeout=1s',
-  ]) {
-    assert.ok(invocation.env.PGOPTIONS.includes(`-c ${option}`), option);
-  }
-  const loopback = psqlInvocation({
-    databaseUrl: 'postgresql://postgres:postgres@127.0.0.1:54322/postgres',
-  });
-  assert.equal(loopback.local, true);
-  assert.equal(loopback.env.PGSSLMODE, 'disable');
-  const docker = psqlInvocation({ dockerContainer: 'supabase_db_lane' });
-  assert.ok(
-    docker.local &&
-      docker.args.includes('-i') &&
-      docker.args.join(' ').includes('default_transaction_read_only=on')
-  );
-  assert.throws(() => psqlInvocation({ databaseUrl: 'mysql://x@y/z' }));
-  assert.throws(() => psqlInvocation({ databaseUrl: 'postgres://u@a,b/db' }));
-  assert.throws(() => psqlInvocation({}));
-});
-
-test('psql errors redact connection details', async () => {
-  const invocation = psqlInvocation({
-    databaseUrl: 'postgres://u1:pw-xyz@host-abc:5432/postgres',
-    hashesOnly: true,
-    caFile: '/ca.pem',
-    fsImpl: caFs,
-  });
-  const executor = createPsqlExecutor(invocation, () => ({
-    status: 2,
-    stderr: 'connection to host-abc failed for user u1 password pw-xyz',
-  }));
-  await assert.rejects(executor.run('select 1;'), (error) => {
-    assert.ok(!/host-abc|pw-xyz|\bu1\b/.test(error.message));
-    return true;
-  });
-});
-
 test('rejects any output that is not an identity, digest or count', () => {
   const definition = `O\tpolicies\tpublic.notes.p\t(select ${MFA_QUAL}())`;
   assert.throws(
@@ -400,16 +242,28 @@ test('EXECUTE for anon on an app definer is a must-be-zero failure', async () =>
   ]);
 });
 
-test('definer checks are scoped to application schemas', async () => {
+test('definer checks exclude managed functions by owner, not schema name', async () => {
   const variant = await report(`
+    create role supabase_auth_admin nologin;
     create schema auth;
     create function auth.managed_definer() returns integer language sql
       security definer set search_path = pg_catalog, pg_temp as $$select 1$$;
+    alter function auth.managed_definer() owner to supabase_auth_admin;
   `);
   assert.equal(variant.ok, true);
   assert.equal(variant.checks.null_acl_definer_count.count, 0);
   assert.equal(variant.checks.client_executable_definer_count.count, 0);
   assert.ok(variant.categories.functions.objects['auth.managed_definer()']);
+  // postgres can CREATE in extensions, so a postgres-owned definer there counts.
+  const planted = await report(`
+    create schema extensions;
+    create function extensions.planted_definer() returns integer language sql
+      security definer set search_path = pg_catalog, pg_temp as $$select 1$$;
+  `);
+  assert.equal(planted.ok, false);
+  assert.deepEqual(planted.checks.null_acl_definer_count.offenders, [
+    'extensions.planted_definer()',
+  ]);
 });
 
 test('--hashes-only never reads cron.job and reports it skipped by design', async () => {
@@ -471,9 +325,15 @@ test('reports carry the target and the prod workflow can assert it', async () =>
   } finally {
     await db.close();
   }
-  const prod = { ...hashesOnly(remote), prodParity: true };
+  const prod = {
+    ...hashesOnly(remote),
+    prodParity: true,
+    comparison: compareReports(local, remote),
+  };
+  assert.equal(prod.comparison.equal, true);
   assert.deepEqual(prodParityViolations(prod), []);
   assert.deepEqual(prodParityViolations({ ...local, mode: 'full' }).sort(), [
+    'comparison',
     'mode',
     'objects',
     'prod-parity-flag',
@@ -496,19 +356,54 @@ test('reports carry the target and the prod workflow can assert it', async () =>
   );
 });
 
-test('--prod-parity refuses a local target or a full run before connecting', async () => {
-  const env = {
-    DECLARATIVE_PARITY_DATABASE_URL:
-      'postgres://postgres:postgres@127.0.0.1:54322/postgres',
+test('--assert-prod-report fails a report that is not a passing match', async () => {
+  const local = await baseline;
+  const prod = {
+    ...hashesOnly(local),
+    target: 'remote',
+    prodParity: true,
+    comparison: compareReports(local, local),
   };
-  await assert.rejects(
-    main(['--prod-parity', '--hashes-only'], env),
-    /prod-parity-requires-remote-hashes-only/
-  );
-  await assert.rejects(
-    main(['--prod-parity'], { DECLARATIVE_PARITY_DATABASE_URL: REMOTE }),
-    /remote-target-requires-hashes-only/
-  );
+  delete prod.skippedCategories.cron_jobs;
+  prod.skippedCategories = {};
+  assert.deepEqual(prodParityViolations(prod), []);
+  const cases = [
+    [{ ok: false }, ['ok']],
+    [{ ok: undefined }, ['ok']],
+    [{ format: 'other/v1' }, ['format']],
+    [{ format: undefined }, ['format']],
+    [{ comparison: undefined }, ['comparison']],
+    [{ comparison: null }, ['comparison']],
+    [
+      { comparison: { ...prod.comparison, equal: false } },
+      ['comparison-equal'],
+    ],
+    [
+      { comparison: { ...prod.comparison, equal: 'true' } },
+      ['comparison-equal'],
+    ],
+  ];
+  for (const [patch, expected] of cases) {
+    assert.deepEqual(
+      prodParityViolations({ ...prod, ...patch }),
+      expected,
+      JSON.stringify(patch)
+    );
+  }
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'parity-assert-'));
+  try {
+    const file = path.join(dir, 'report.json');
+    const out = path.join(dir, 'result.json');
+    fs.writeFileSync(file, JSON.stringify({ ...prod, ok: false }));
+    assert.equal(await main(['--assert-prod-report', file, '--out', out]), 1);
+    assert.deepEqual(JSON.parse(fs.readFileSync(out, 'utf8')).violations, [
+      'ok',
+    ]);
+    fs.writeFileSync(file, JSON.stringify(prod));
+    assert.equal(await main(['--assert-prod-report', file, '--out', out]), 0);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('--compare fails on any skipped category other than cron_jobs', async () => {
@@ -530,48 +425,62 @@ test('--compare fails on any skipped category other than cron_jobs', async () =>
   assert.deepEqual(cronOnly.disallowedSkippedCategories, []);
 });
 
-test('the pinned CA must be a regular, runner-owned, readable file', () => {
-  const check = (stat, accessSync = () => {}) =>
-    assertCaFile('/ca.pem', {
-      fsImpl: { lstatSync: () => stat, accessSync },
-      uid,
+test('--compare refuses reports without this format or valid digests', async () => {
+  const full = await baseline;
+  const handWritten = {
+    format: full.format,
+    categories: { functions: { count: 1 } },
+    metrics: {},
+  };
+  assert.throws(
+    () => compareReports(handWritten, handWritten),
+    /invalid-report/
+  );
+  for (const bad of [
+    { ...full, format: undefined },
+    { ...full, format: 'other/v1' },
+    { ...full, sha256: 'not-a-digest' },
+    { ...full, categories: undefined },
+    {
+      ...full,
+      categories: { ...full.categories, functions: { count: 1, sha256: 'x' } },
+    },
+    null,
+  ]) {
+    assert.throws(() => compareReports(full, bad), /invalid-report: actual/);
+    assert.throws(() => compareReports(bad, full), /invalid-report: expected/);
+  }
+  assert.equal(compareReports(full, hashesOnly(full)).equal, true);
+});
+
+test('unannotated queries read only pg_catalog and carry no psql meta-commands', () => {
+  for (const { name, sql, tableRead } of loadQueries()) {
+    sql.split('\n').forEach((line, index) => {
+      assert.ok(
+        !/^\s*\\/.test(line),
+        `${name}:${index + 1} starts with a backslash`
+      );
     });
-  assert.equal(check(caStat()), '/ca.pem');
-  assert.throws(() => check(undefined), /ca-file-not-regular/);
-  assert.throws(
-    () => check(caStat({ isFile: () => false })),
-    /ca-file-not-regular/
-  );
-  assert.throws(
-    () => check(caStat({ mode: 0o100666 })),
-    /ca-file-world-writable/
-  );
-  assert.throws(
-    () => check(caStat({ uid: uid + 1 })),
-    /ca-file-not-owned-by-runner/
-  );
-  assert.throws(
-    () =>
-      check(caStat(), () => {
-        throw new Error('EACCES');
-      }),
-    /ca-file-unreadable/
-  );
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'parity-ca-'));
-  try {
-    const file = path.join(dir, 'ca.pem');
-    fs.writeFileSync(file, 'fixture');
-    fs.chmodSync(file, 0o600);
-    assert.equal(assertCaFile(file), file);
-    fs.symlinkSync(file, path.join(dir, 'link.pem'));
-    assert.throws(
-      () => assertCaFile(path.join(dir, 'link.pem')),
-      /not-regular/
+    if (tableRead.length) continue;
+    const code = sql.replace(/--[^\n]*/g, '').replace(/'(?:[^']|'')*'/g, "''");
+    const ctes = new Set(
+      [...code.matchAll(/\b([a-z_]+)\s*(?:\([^()]*\))?\s+as\s+\(/gi)].map(
+        (match) => match[1].toLowerCase()
+      )
     );
-    fs.chmodSync(file, 0o666);
-    assert.throws(() => assertCaFile(file), /world-writable/);
-  } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    for (const match of code.matchAll(
+      /\b(?:from|join)\s+(?!lateral\b)([a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)?)(\s*\()?/gi
+    )) {
+      const [, relation, call] = match;
+      if (call) continue; // set-returning functions such as unnest(...)
+      const lower = relation.toLowerCase();
+      if (ctes.has(lower)) continue;
+      const [schema, table] = lower.includes('.')
+        ? lower.split('.')
+        : ['pg_catalog', lower];
+      assert.equal(schema, 'pg_catalog', `${name}: reads ${relation}`);
+      assert.match(table, /^pg_/, `${name}: reads ${relation}`);
+    }
   }
 });
 
