@@ -33,8 +33,8 @@ function range(date: string, time: string, duration: number) {
     duration > 480
   )
     return null;
-  const start =
-    Date.parse(`${date}T00:00:00Z`) / 60_000 + hour * 60 + minute + second / 60;
+  // Seconds are validated but ignored, matching the server's slot comparison.
+  const start = Date.parse(`${date}T00:00:00Z`) / 60_000 + hour * 60 + minute;
   return Number.isFinite(start) &&
     new Date(start * 60_000).toISOString().slice(0, 10) === date
     ? ([start, start + duration] as const)

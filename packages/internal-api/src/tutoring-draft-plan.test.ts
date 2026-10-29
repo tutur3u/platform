@@ -159,4 +159,12 @@ describe('shared tutoring slot choices', () => {
       })
     ).toEqual([]);
   });
+  it('ignores seconds when matching a recorded slot', () => {
+    expect(
+      rankTutoringDraftChoices({
+        ...input,
+        sessions: [{ ...session, start_time: '17:15:30' }],
+      })[0]?.teachers.map((t) => t.id)
+    ).toEqual(['a', 'b']);
+  });
 });

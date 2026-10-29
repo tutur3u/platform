@@ -120,23 +120,25 @@ describe('shared tutoring slot conflicts', () => {
       )
     ).toEqual([]);
   });
-  it.each([{ startTime: '09:15' }, { durationMinutes: 60 }])(
-    'blocks a different overlapping session %j',
-    (change) => {
-      expect(
-        findConflictsWithExistingSessions(
-          [{ ...slot, ...change, studentUserId: 'student-2' }],
-          [recorded('student-1')]
-        )[0]?.conflictType
-      ).toBe('teacher');
-      expect(
-        findConflictsWithinSlots([
-          slot,
-          { ...slot, ...change, studentUserId: 'student-2' },
-        ])[0]?.conflictType
-      ).toBe('teacher');
-    }
-  );
+  it.each([
+    { startTime: '09:15' },
+    { durationMinutes: 60 },
+    { durationMinutes: 30 },
+    { startTime: '09:15', durationMinutes: 30 },
+  ])('blocks a different overlapping session %j', (change) => {
+    expect(
+      findConflictsWithExistingSessions(
+        [{ ...slot, ...change, studentUserId: 'student-2' }],
+        [recorded('student-1')]
+      )[0]?.conflictType
+    ).toBe('teacher');
+    expect(
+      findConflictsWithinSlots([
+        slot,
+        { ...slot, ...change, studentUserId: 'student-2' },
+      ])[0]?.conflictType
+    ).toBe('teacher');
+  });
   it('still blocks a learner already booked in the slot, in any group', () => {
     expect(
       findConflictsWithExistingSessions([slot], [recorded('student-1')])[0]
@@ -151,6 +153,46 @@ describe('shared tutoring slot conflicts', () => {
     expect(
       findConflictsWithinSlots([slot, { ...slot, teacherUserId: 'other' }])[0]
         ?.conflictType
+    ).toBe('student');
+  });
+  it('blocks an overlapping booking even when an identical one is shared', () => {
+    expect(
+      findConflictsWithExistingSessions(
+        [{ ...slot, studentUserId: 'student-3' }],
+        [
+          recorded('student-1'),
+          { ...recorded('student-2'), start_time: '09:15:00' },
+        ]
+      ).map((conflict) => conflict.conflictType)
+    ).toEqual(['teacher']);
+  });
+  it('allows back-to-back slots and ignores seconds when matching a slot', () => {
+    expect(
+      findConflictsWithExistingSessions(
+        [{ ...slot, startTime: '09:45', studentUserId: 'student-1' }],
+        [recorded('student-1')]
+      )
+    ).toEqual([]);
+    expect(
+      findConflictsWithExistingSessions(
+        [{ ...slot, startTime: '09:00:30', studentUserId: 'student-2' }],
+        [recorded('student-1')]
+      )
+    ).toEqual([]);
+  });
+  it('checks only the learner when no teacher is assigned', () => {
+    const unassigned = { ...slot, startTime: '09:15', teacherUserId: null };
+    expect(
+      findConflictsWithExistingSessions(
+        [{ ...unassigned, studentUserId: 'student-2' }],
+        [recorded('student-1')]
+      )
+    ).toEqual([]);
+    expect(
+      findConflictsWithExistingSessions(
+        [unassigned],
+        [recorded('student-1')]
+      )[0]?.conflictType
     ).toBe('student');
   });
 });

@@ -184,3 +184,40 @@ it('retains student and class validation before teacher selection', async () => 
   expect(mocks.eligibility).not.toHaveBeenCalled();
   expect(query.insert).not.toHaveBeenCalled();
 });
+describe('PUT moving a session to another date or start', () => {
+  const recorded = (start_time: string) => ({
+    data: [
+      {
+        group_id: 'other-group',
+        session_date: '2026-10-08',
+        start_time,
+        duration_minutes: 45,
+        teacher_user_id: teacher,
+        student_user_id: 'other-learner',
+      },
+    ],
+    error: null,
+  });
+  async function move() {
+    const { PUT } = await import(
+      '@/app/api/v1/workspaces/[wsId]/tutoring/sessions/[id]/route'
+    );
+    return PUT(
+      new Request('http://localhost/tutoring', {
+        method: 'PUT',
+        body: JSON.stringify({ sessionDate: '2026-10-08', startTime: '17:15' }),
+      }),
+      { params: Promise.resolve({ wsId, id }) }
+    );
+  }
+  it('joins the teacher slot another group already holds', async () => {
+    mocks.conflicts.mockResolvedValue(recorded('17:15:00'));
+    expect((await move()).status).toBe(200);
+    expect(query.update).toHaveBeenCalled();
+  });
+  it('refuses an overlapping different teacher slot', async () => {
+    mocks.conflicts.mockResolvedValue(recorded('17:30:00'));
+    expect((await move()).status).toBe(409);
+    expect(query.update).not.toHaveBeenCalled();
+  });
+});

@@ -928,10 +928,14 @@ draft teacher choices apply this same rule.
 Booking the teacher for an overlapping interval with a different start or
 duration still blocks the teacher. A learner cannot have overlapping
 bookings, including a second booking in the same slot under any group.
-Existing cancellation conflict handling remains conservative. The rule is
+Slots match by date, start minute and duration; seconds in a start time are
+ignored by both the APIs and draft teacher choices. Payroll exports count a
+shared slot once for its teacher: completed sessions with the same teacher,
+date, start minute and duration add one session and one duration, however many
+learners attended. Rows without a teacher are counted individually. Existing cancellation conflict handling remains conservative. The rule is
 enforced in application conflict checks only; the database has no
 per-teacher uniqueness or exclusion constraint on tutoring sessions. It does
 not imply room or contractual availability. Regression coverage lives in
 tutoring `shared.test.ts`, `apps/web/src/lib/tutoring/teacher-assignment-routes.test.ts`,
-`packages/internal-api/src/tutoring-draft-plan.test.ts` and the Contacts
+`packages/internal-api/src/tutoring-draft-plan.test.ts`, `export/route.payroll.test.ts` and the Contacts
 `use-tutoring-create.test.ts`.

@@ -184,9 +184,22 @@ async function getTutoringData(request: Request, { params }: Params) {
         total_minutes: number;
       }
     >();
+    // A teacher tutoring several learners in one slot teaches it once, so
+    // completed rows count once per teacher, date, start minute and length.
+    const paidSlots = new Set<string>();
 
     for (const row of dataWithRelations) {
       if (row.attendance_status !== 'DONE') continue;
+      if (row.teacher_user_id) {
+        const slot = [
+          row.teacher_user_id,
+          row.session_date,
+          String(row.start_time).slice(0, 5),
+          row.duration_minutes,
+        ].join(':');
+        if (paidSlots.has(slot)) continue;
+        paidSlots.add(slot);
+      }
       const teacher = row.teacher as {
         id: string;
         full_name: string | null;
