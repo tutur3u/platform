@@ -12,6 +12,7 @@ import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/config/app_flavor.dart';
+import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/deep_link_launcher.dart';
 import 'package:mobile/core/router/deep_links.dart';
@@ -261,6 +262,9 @@ class _AppState extends State<App> {
       _appTabCubit,
       mastermindAccessCubit: _mastermind.access,
       initialLocation: widget.initialRoute,
+      telemetryConsent: widget.appFlavor == AppFlavor.production
+          ? TelemetryPreference.instance
+          : null,
     );
     _unregisterAssistantActions = AssistantClientActions.register(
       AppAssistantClientActionBridge(

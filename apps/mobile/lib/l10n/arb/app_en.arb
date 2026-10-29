@@ -6666,6 +6666,9 @@
   "mastermindAskActionFyi": "For your information",
   "mastermindAskRemindAtMac": "Remind me at Mac",
   "mastermindAskRemindAtMacSoon": "Coming soon",
+  "settingsShareTelemetry": "Share analytics and crash reports",
+  "settingsPrivacy": "Privacy",
+  "settingsTelemetryError": "Could not update sharing. Tap to retry.",
   "mastermindMachineUpdated": "As of {time}",
   "@mastermindMachineUpdated": {
     "placeholders": {
@@ -6887,5 +6890,11 @@
   "mastermindMorningCatchupSubtitle": "A notification that says your catch-up is ready. Saved on this device; sent once the hub supports it.",
   "mastermindMorningCatchupTime": "Time",
   "mastermindCatchupPushBody": "Your catch-up is ready",
-  "mastermindSecurityFix": "Security fix"
+  "mastermindSecurityFix": "Security fix",
+  "telemetryConsentTitle": "Help improve Tuturuuu?",
+  "telemetryConsentBody": "Share usage data and crash reports with Google Firebase so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.",
+  "telemetryConsentAllow": "Allow",
+  "telemetryConsentDeny": "Don't allow",
+  "telemetryConsentLearnMore": "Privacy details",
+  "settingsShareTelemetryDescription": "Send usage data and crash reports to Google Firebase to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent."
 }

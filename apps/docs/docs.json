@@ -87,6 +87,7 @@
                   "platform/features/meet-together",
                   "platform/features/mobile-workspace-tools",
                   "platform/features/mobile-settings-shell",
+                  "platform/features/mobile-telemetry-privacy",
                   "platform/features/mobile-home-notifications",
                   "platform/features/mobile-profile",
                   "platform/features/hidden-workspaces",
