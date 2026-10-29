@@ -977,6 +977,7 @@
     "apps/database/supabase/migrations/20261029030200_pin_notification_trigger_vault.sql": "33e33c3bd51a71b90ef857b910f936126e6e6e79b05b5eba53db63e4062bce9c",
     "apps/database/supabase/migrations/20261029030400_align_ai_chat_and_subscription_rpc_access.sql": "a6e0a6df7e470be7f5b32f644fd48eff813d0a1a585afbe9ea37a06fb488ecd5",
     "apps/database/supabase/migrations/20261029030410_restrict_nonpublic_definers.sql": "41c53e435a275fa2ebfc2cc5997fdddbfbe90146c39bc4ca11693c3f0fb1ac92",
+    "apps/database/supabase/migrations/20261029030500_align_cross_app_token_grant_and_private_fence.sql": "c5e60836296239e4cc6d3c75dbc799b6656465de5e55322fff9724caa69f72a2",
     "apps/database/supabase/migrations/20261029030700_finance_workspace_scoping.sql": "9e42ece288d78db3626ed2d44a4966a9460177d1cedeab45fe90e345e02666ce",
     "apps/database/supabase/migrations/20261029040800_finance_workspace_boundaries.sql": "31973f08b14236f3ec1befe03897ff7787b40486d66848c7a1af8ccd499792c1",
     "apps/database/supabase/migrations/20261029050200_topic_teacher_deadline_notices.sql": "b2483b6b59589199115abfbe6550053570f7a2543498414dbe2689873c1d58cb",
@@ -30983,6 +30984,17 @@
       "path": "apps/database/supabase/migrations/20261029030410_restrict_nonpublic_definers.sql",
       "rule": "dynamic-sql-review",
       "digest": "382463084c65a51d73ea2cb47401b93542082a1f46ee179479204a5423d28848",
+      "occurrence": 1
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261029030500_align_cross_app_token_grant_and_private_fence.sql",
+      "rule": "dynamic-sql-review",
+      "digest": "0e9b4f6cea27342c775ad2a6bc31e5f643791214e467d875d98e1e9c9c4217f9"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261029030500_align_cross_app_token_grant_and_private_fence.sql",
+      "rule": "dynamic-sql-review",
+      "digest": "0e9b4f6cea27342c775ad2a6bc31e5f643791214e467d875d98e1e9c9c4217f9",
       "occurrence": 1
     },
     {

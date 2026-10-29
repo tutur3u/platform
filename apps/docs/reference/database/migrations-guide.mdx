@@ -565,9 +565,12 @@ and `service_role`, through the global default privilege that
 `20261027151200_restrict_anon_definer_execute.sql` sets for role `postgres`. The
 schema-scoped `ALTER DEFAULT PRIVILEGES ... IN SCHEMA private REVOKE EXECUTE`
 in `20261029030500_align_cross_app_token_grant_and_private_fence.sql` adds
-nothing beyond it, because schema-scoped entries can only add privileges. A
-definer in `private` that must not reach `authenticated` still needs the guard's
-explicit same-file `REVOKE`. The pgTAP test
+nothing beyond it, because schema-scoped entries can only add privileges. That
+migration is applied history and is never edited; its comments are not
+authoritative, this paragraph is. `20261027151200` closes `public` and `anon` on
+new private functions, only `authenticated` and `service_role` keep default
+`EXECUTE`, and the guard's explicit same-file `REVOKE` rule is the enforcement
+for a definer in `private` that must not reach `authenticated`. The pgTAP test
 `apps/database/supabase/tests/private-schema-default-execute-limitation.sql`
 asserts this default and must be updated if the global default changes.
 
@@ -897,14 +900,12 @@ shallow-checkout regression coverage.
 
 The single historical-debt baseline is retained, including path/rule/block digest,
 occurrence, complete-file pins, stale-entry checks, and main's pre-push comparison.
-The following seven real debt items carry a `class` field. Multiple diagnostics
+The following five real debt items carry a `class` field. The `20261029012300` and `20261029030500` rollbacks were rewritten to restore only `authenticated`/`service_role` access, so their former items left the baseline. Multiple diagnostics
 for one statement receive the same class. These tags describe historical debt;
 forward fixes do not alter applied migration bytes or automatically clear entries.
 
 | File suffix | Statement lines | Class |
 | --- | --- | --- |
-| `20261029012300_tighten_legacy_table_grants.rollback.sql` | 2 | `latent-rollback-grant` |
-| `20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql` | 6 | `latent-rollback-grant` |
 | `20261029030600_pin_workspace_membership_rls.rollback.sql` | 43 | `latent-rollback-grant` |
 | `20261029050430_merge_batch_null_guards.sql` | 9, 120 | `definer-path-hygiene` |
 | `20261029100000_chat_first_message_creation_receipts.sql` | 39, 380 | `definer-path-hygiene` |
