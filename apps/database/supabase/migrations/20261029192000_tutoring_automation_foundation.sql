@@ -11,17 +11,15 @@
 --    deletes attendance, sessions, or the follow-up itself.
 -- 3. private.tutoring_automation_events: append-only audit of every follow-up
 --    transition and settings change, written in the same transaction.
--- 4. Two notification types, appended to the current notifications_type_check
---    list read from the catalog, so this composes with any other migration
---    that redefines the constraint before or after it.
--- 5. Two receipt kinds on private.tutoring_notification_receipts: one absence
---    reminder per follow-up and recipient, one lesson report per workspace,
---    local date and recipient.
+--
+-- The notification types and receipt kinds are in
+-- 20261029192010_tutoring_automation_notifications.sql.
 --
 -- All tables are service-role only, with RLS enabled and no client policies.
 -- private.tutoring_absence_followup_apply is the only writer of follow-up
 -- state that also records the audit event; a trigger enforces the state
--- machine for any other writer.
+-- machine for any other writer. Callers derive the staff actor from the
+-- authenticated session; null is reserved for the scheduled job.
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
 
@@ -78,12 +76,14 @@ create table private.tutoring_absence_followups (
       check (state in ('reminded', 'archived', 'restored')),
   reminded_at timestamptz,
   archived_at timestamptz,
-  archived_by uuid references public.users(id) on delete set null,
+  -- Actor columns have no foreign key, like the audit: deleting an account
+  -- must not rewrite follow-up history, which the guard forbids.
+  archived_by uuid,
   archive_reason text
     constraint tutoring_absence_followups_archive_reason_check
       check (archive_reason in ('no_makeup_after_reminder', 'manual')),
   restored_at timestamptz,
-  restored_by uuid references public.users(id) on delete set null,
+  restored_by uuid,
   revision integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
@@ -111,7 +111,7 @@ create index tutoring_absence_followups_attendance_idx
   where attendance_id is not null;
 
 comment on table private.tutoring_absence_followups is
-  'Follow-up state of one unrecovered absence: reminded once, then archived from the support queue, and restorable. Never hard-deleted by the application.';
+  'Follow-up state of one unrecovered absence: reminded once, then archived from the support queue, and restorable. The application never hard-deletes it; only deleting the workspace, class or learner cascades.';
 comment on column private.tutoring_absence_followups.state is
   'reminded -> archived -> restored -> archived (staff only). A restored absence is held: only staff can archive it again.';
 
@@ -157,22 +157,78 @@ comment on table private.tutoring_automation_events is
 
 -- 4. Functions -------------------------------------------------------------------
 
--- Keeps updated_at and the *_enabled_at stamps, and audits every change.
-create function private.tutoring_automation_settings_track()
+-- The actor of a settings write is the transaction-local
+-- tutoring_automation.actor_user_id setting, which the settings writer sets
+-- from the authenticated session. A write without it is attributed to the
+-- system (null); a client-supplied updated_by is ignored.
+create function private.tutoring_automation_settings_stamp()
 returns trigger
 language plpgsql
 security definer
 set search_path = pg_catalog, pg_temp
 as $$
 begin
+  new.updated_by := nullif(
+    pg_catalog.current_setting('tutoring_automation.actor_user_id', true), ''
+  )::uuid;
   new.updated_at := pg_catalog.now();
-  if new.absence_followup_enabled
-     and (tg_op = 'INSERT' or not old.absence_followup_enabled) then
-    new.absence_followup_enabled_at := pg_catalog.now();
+  if tg_op = 'INSERT' then
+    new.created_at := pg_catalog.now();
+    new.absence_followup_enabled_at := case
+      when new.absence_followup_enabled then pg_catalog.now()
+    end;
+    new.lesson_report_enabled_at := case
+      when new.lesson_report_enabled then pg_catalog.now()
+    end;
+  else
+    if new.ws_id is distinct from old.ws_id then
+      raise exception 'Settings workspace is immutable' using errcode = '23514';
+    end if;
+    new.created_at := old.created_at;
+    -- A stamp changes only when its rule switches on, so it can never be
+    -- backdated to pull historical absences into a running rule.
+    new.absence_followup_enabled_at := case
+      when new.absence_followup_enabled and not old.absence_followup_enabled
+        then pg_catalog.now()
+      else old.absence_followup_enabled_at
+    end;
+    new.lesson_report_enabled_at := case
+      when new.lesson_report_enabled and not old.lesson_report_enabled
+        then pg_catalog.now()
+      else old.lesson_report_enabled_at
+    end;
   end if;
-  if new.lesson_report_enabled
-     and (tg_op = 'INSERT' or not old.lesson_report_enabled) then
-    new.lesson_report_enabled_at := pg_catalog.now();
+  return new;
+end;
+$$;
+
+create trigger tutoring_automation_settings_stamp
+  before insert or update on private.tutoring_automation_settings
+  for each row
+  execute function private.tutoring_automation_settings_stamp();
+
+-- Audits applied settings once per effective change. AFTER triggers do not
+-- fire for ON CONFLICT DO NOTHING, and an upsert that updates fires only the
+-- UPDATE, so neither writes a phantom or duplicate event.
+create function private.tutoring_automation_settings_audit()
+returns trigger
+language plpgsql
+security definer
+set search_path = pg_catalog, pg_temp
+as $$
+begin
+  if tg_op = 'UPDATE' and (
+    new.absence_followup_enabled, new.absence_followup_enabled_at,
+    new.reminder_after_days, new.archive_after_days,
+    new.lesson_report_enabled, new.lesson_report_enabled_at,
+    new.consecutive_sessions
+  ) is not distinct from (
+    old.absence_followup_enabled, old.absence_followup_enabled_at,
+    old.reminder_after_days, old.archive_after_days,
+    old.lesson_report_enabled, old.lesson_report_enabled_at,
+    old.consecutive_sessions
+  ) then
+    return null;
   end if;
 
   insert into private.tutoring_automation_events (
@@ -188,17 +244,18 @@ begin
       'consecutive_sessions', new.consecutive_sessions
     )
   );
-  return new;
+  return null;
 end;
 $$;
 
-create trigger tutoring_automation_settings_track
-  before insert or update on private.tutoring_automation_settings
+create trigger tutoring_automation_settings_audit
+  after insert or update on private.tutoring_automation_settings
   for each row
-  execute function private.tutoring_automation_settings_track();
+  execute function private.tutoring_automation_settings_audit();
 
--- Rejects cross-workspace rows, identity rewrites, and transitions outside the
--- state machine, for every writer.
+-- Enforces the follow-up state machine for every writer: identity and history
+-- are immutable, each transition may set only its own fields, inserts cannot
+-- forge history, and an attendance link must be the same absence.
 create function private.tutoring_absence_followups_guard()
 returns trigger
 language plpgsql
@@ -207,31 +264,67 @@ set search_path = pg_catalog, pg_temp
 as $$
 begin
   if tg_op = 'INSERT' then
-    if new.state = 'restored' then
-      raise exception 'A follow-up starts reminded or archived'
+    new.revision := 0;
+    new.created_at := pg_catalog.now();
+    new.updated_at := new.created_at;
+    if new.restored_at is not null or new.restored_by is not null or not (
+      (new.state = 'reminded'
+        and new.reminded_at is not null
+        and new.archived_at is null
+        and new.archived_by is null
+        and new.archive_reason is null)
+      -- Only staff archive without a reminder; the system archives a
+      -- reminded row through an update.
+      or (new.state = 'archived'
+        and new.reminded_at is null
+        and new.archived_at is not null
+        and new.archive_reason = 'manual'
+        and new.archived_by is not null)
+    ) then
+      raise exception 'A follow-up starts reminded, or archived by staff'
         using errcode = '23514';
     end if;
   else
-    if new.ws_id is distinct from old.ws_id
+    if new.id is distinct from old.id
+       or new.ws_id is distinct from old.ws_id
        or new.group_id is distinct from old.group_id
        or new.student_user_id is distinct from old.student_user_id
        or new.absence_date is distinct from old.absence_date
        or new.created_at is distinct from old.created_at then
       raise exception 'Follow-up identity is immutable' using errcode = '23514';
     end if;
-    -- One reminder per absence, ever.
-    if old.reminded_at is not null
-       and new.reminded_at is distinct from old.reminded_at then
+    -- One reminder per absence, ever, and only when the row is created.
+    if new.reminded_at is distinct from old.reminded_at then
       raise exception 'A follow-up is reminded at most once'
         using errcode = '23514';
     end if;
-    if new.state is distinct from old.state and not (
-      (old.state = 'reminded' and new.state = 'archived')
-      or (old.state = 'archived' and new.state = 'restored')
+    if not (
+      (new.state = old.state
+        and (new.archived_at, new.archived_by, new.archive_reason,
+             new.restored_at, new.restored_by)
+          is not distinct from
+            (old.archived_at, old.archived_by, old.archive_reason,
+             old.restored_at, old.restored_by))
+      or (old.state = 'reminded' and new.state = 'archived'
+        and (new.restored_at, new.restored_by)
+          is not distinct from (old.restored_at, old.restored_by)
+        and ((new.archive_reason = 'no_makeup_after_reminder'
+              and new.archived_by is null)
+          or (new.archive_reason = 'manual' and new.archived_by is not null)))
+      or (old.state = 'archived' and new.state = 'restored'
+        and (new.archived_at, new.archived_by, new.archive_reason)
+          is not distinct from
+            (old.archived_at, old.archived_by, old.archive_reason)
+        and new.restored_at is not null
+        and new.restored_by is not null)
       or (old.state = 'restored' and new.state = 'archived'
-          and new.archive_reason = 'manual' and new.archived_by is not null)
+        and (new.restored_at, new.restored_by)
+          is not distinct from (old.restored_at, old.restored_by)
+        and new.archive_reason = 'manual'
+        and new.archived_by is not null)
     ) then
-      raise exception 'Follow-up cannot move from % to %', old.state, new.state
+      raise exception 'Follow-up cannot move from % to % with these fields',
+        old.state, new.state
         using errcode = '23514';
     end if;
     new.revision := old.revision + 1;
@@ -246,6 +339,19 @@ begin
     where u.id = new.student_user_id and u.ws_id = new.ws_id
   ) then
     raise exception 'Class and learner must belong to the follow-up workspace'
+      using errcode = '23514';
+  end if;
+
+  if new.attendance_id is not null
+     and (tg_op = 'INSERT' or new.attendance_id is distinct from old.attendance_id)
+     and not exists (
+       select 1 from public.user_group_attendance a
+       where a.id = new.attendance_id
+         and a.group_id = new.group_id
+         and a.user_id = new.student_user_id
+         and a.date = new.absence_date
+     ) then
+    raise exception 'Attendance must be this class, learner and date'
       using errcode = '23514';
   end if;
   return new;
@@ -274,9 +380,17 @@ create trigger tutoring_automation_events_append_only
   for each row
   execute function private.tutoring_automation_events_append_only();
 
+-- Row DELETE stays privilege-only so deleting a workspace still cascades.
+create trigger tutoring_automation_events_no_truncate
+  before truncate on private.tutoring_automation_events
+  for each statement
+  execute function private.tutoring_automation_events_append_only();
+
 -- Applies one follow-up action and records its audit event atomically.
 -- p_actor_user_id null means the scheduled system actor, which is fenced by
--- the workspace setting; staff actions need a current workspace member.
+-- the workspace setting. A staff actor must be a MEMBER (not a guest) holding
+-- update_user_groups_scores. Callers must take the actor from the
+-- authenticated session and never pass null for a user request.
 -- Returns {followup_id, state, changed, skipped}. Repeating an action that
 -- already took effect returns changed=false.
 create function private.tutoring_absence_followup_apply(
@@ -325,9 +439,14 @@ begin
     end if;
     if not exists (
       select 1 from public.workspace_members m
-      where m.ws_id = p_ws_id and m.user_id = p_actor_user_id
-    ) then
-      raise exception 'Actor is not a workspace member' using errcode = '42501';
+      where m.ws_id = p_ws_id
+        and m.user_id = p_actor_user_id
+        and m.type = 'MEMBER'
+    ) or public.has_workspace_permission(
+      p_ws_id, p_actor_user_id, 'update_user_groups_scores'
+    ) is not true then
+      raise exception 'Actor cannot manage tutoring follow-ups'
+        using errcode = '42501';
     end if;
   end if;
 
@@ -444,7 +563,9 @@ comment on function private.tutoring_absence_followup_apply(
 ) is
   'Service role only. Applies remind (system), archive (system after a reminder, or staff), or restore (staff) to one absence follow-up and audits it in the same transaction.';
 
-revoke all on function private.tutoring_automation_settings_track()
+revoke all on function private.tutoring_automation_settings_stamp()
+  from public, anon, authenticated;
+revoke all on function private.tutoring_automation_settings_audit()
   from public, anon, authenticated;
 revoke all on function private.tutoring_absence_followups_guard()
   from public, anon, authenticated;
@@ -457,131 +578,7 @@ grant execute on function private.tutoring_absence_followup_apply(
   uuid, uuid, uuid, date, text, uuid, text, uuid
 ) to service_role;
 
--- 5. Notification types ----------------------------------------------------------
-
-do $$
-declare
-  current_comment text;
-  current_types text[];
-  added_types text[] := array[
-    'tutoring_absence_makeup_reminder',
-    'tutoring_lesson_incomplete_report'
-  ];
-begin
-  select array_agg(match[1] order by ordinality)
-    into current_types
-  from pg_constraint constraint_row
-  cross join lateral regexp_matches(
-    pg_get_constraintdef(constraint_row.oid),
-    '''([a-z0-9_]+)''',
-    'g'
-  ) with ordinality as matches(match, ordinality)
-  where constraint_row.conrelid = 'public.notifications'::regclass
-    and constraint_row.conname = 'notifications_type_check';
-
-  if current_types is null or cardinality(current_types) = 0 then
-    raise exception 'notifications_type_check is missing or has no types';
-  end if;
-
-  select array_agg(type_name order by position)
-    into added_types
-  from unnest(added_types) with ordinality as types(type_name, position)
-  where not type_name = any(current_types);
-
-  if added_types is null then
-    return;
-  end if;
-
-  select obj_description(constraint_row.oid, 'pg_constraint')
-    into current_comment
-  from pg_constraint constraint_row
-  where constraint_row.conrelid = 'public.notifications'::regclass
-    and constraint_row.conname = 'notifications_type_check';
-
-  alter table public.notifications
-    drop constraint notifications_type_check;
-
-  -- NOT VALID: the list is a strict superset, so existing rows already pass,
-  -- and no validation scan runs while ACCESS EXCLUSIVE is held.
-  execute format(
-    'alter table public.notifications add constraint notifications_type_check check (type in (%s)) not valid',
-    (
-      select string_agg(quote_literal(type_name), ', ' order by position)
-      from unnest(current_types || added_types) with ordinality as types(type_name, position)
-    )
-  );
-
-  execute format(
-    'comment on constraint notifications_type_check on public.notifications is %L',
-    coalesce(current_comment, 'Validates notification types.')
-  );
-end;
-$$;
-
--- 6. Receipt kinds ---------------------------------------------------------------
-
-alter table private.tutoring_notification_receipts
-  add column ws_id uuid references public.workspaces(id) on delete cascade,
-  add column absence_followup_id uuid
-    references private.tutoring_absence_followups(id) on delete cascade,
-  add column report_date date;
-
-alter table private.tutoring_notification_receipts
-  drop constraint tutoring_notification_receipts_kind_check;
-
--- No caller writes receipts yet, so validating the replacement scans no rows.
-alter table private.tutoring_notification_receipts
-  add constraint tutoring_notification_receipts_kind_check check (
-    (
-      kind = 'weak_content_review_due'
-      and group_id is not null
-      and student_user_id is not null
-      and review_cycle_started_at is not null
-      and tutoring_session_id is null
-      and absence_followup_id is null
-      and report_date is null
-    )
-    or (
-      kind = 'session_completed'
-      and tutoring_session_id is not null
-      and group_id is null
-      and student_user_id is null
-      and review_cycle_started_at is null
-      and absence_followup_id is null
-      and report_date is null
-    )
-    or (
-      kind = 'absence_reminder'
-      and ws_id is not null
-      and absence_followup_id is not null
-      and group_id is null
-      and student_user_id is null
-      and review_cycle_started_at is null
-      and tutoring_session_id is null
-      and report_date is null
-    )
-    or (
-      kind = 'lesson_report'
-      and ws_id is not null
-      and report_date is not null
-      and group_id is null
-      and student_user_id is null
-      and review_cycle_started_at is null
-      and tutoring_session_id is null
-      and absence_followup_id is null
-    )
-  );
-
--- As with the existing keys, null columns of other kinds never collide.
-alter table private.tutoring_notification_receipts
-  add constraint tutoring_notification_receipts_absence_key unique (
-    absence_followup_id, recipient_user_id
-  ),
-  add constraint tutoring_notification_receipts_report_key unique (
-    ws_id, report_date, recipient_user_id
-  );
-
--- 7. Access ---------------------------------------------------------------------
+-- 5. Access ---------------------------------------------------------------------
 
 alter table private.tutoring_automation_settings enable row level security;
 alter table private.tutoring_absence_followups enable row level security;

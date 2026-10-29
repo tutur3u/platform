@@ -112,7 +112,8 @@ select ok(
     from unnest(array['public', 'anon', 'authenticated']) as roles(role_name)
     cross join unnest(array[
       'private.tutoring_absence_followup_apply(uuid,uuid,uuid,date,text,uuid,text,uuid)',
-      'private.tutoring_automation_settings_track()',
+      'private.tutoring_automation_settings_stamp()',
+      'private.tutoring_automation_settings_audit()',
       'private.tutoring_absence_followups_guard()',
       'private.tutoring_automation_events_append_only()'
     ]) as functions(function_name)
@@ -133,13 +134,14 @@ select is(
    where pronamespace = 'private'::regnamespace
      and proname in (
        'tutoring_absence_followup_apply',
-       'tutoring_automation_settings_track',
+       'tutoring_automation_settings_stamp',
+       'tutoring_automation_settings_audit',
        'tutoring_absence_followups_guard',
        'tutoring_automation_events_append_only'
      )
      and prosecdef
      and proconfig = array['search_path=pg_catalog, pg_temp']),
-  4,
+  5,
   'every new function is SECURITY DEFINER with search_path pg_catalog, pg_temp'
 );
 
@@ -202,9 +204,12 @@ select is(
   'no follow-up is written while disabled'
 );
 
+-- The settings writer sets the actor from the session, transaction-local.
+select set_config('tutoring_automation.actor_user_id', pg_temp.fid(98001)::text, true);
 update private.tutoring_automation_settings
-set absence_followup_enabled = true, updated_by = pg_temp.fid(98001)
+set absence_followup_enabled = true
 where ws_id = pg_temp.fid(98011);
+select set_config('tutoring_automation.actor_user_id', '', true);
 
 select isnt(
   (select absence_followup_enabled_at from private.tutoring_automation_settings
@@ -219,12 +224,17 @@ select is(
   pg_temp.fid(98001),
   'enabling is audited with the staff actor'
 );
-select throws_ok(
-  $q$update private.tutoring_automation_settings
-     set absence_followup_enabled_at = null
-     where ws_id = '00000000-0000-4000-8000-000000098011'$q$,
-  '23514', null,
-  'an enabled rule always has an enablement time'
+create temporary table enabled_stamp on commit drop as
+select absence_followup_enabled_at as stamp
+from private.tutoring_automation_settings where ws_id = pg_temp.fid(98011);
+update private.tutoring_automation_settings
+set absence_followup_enabled_at = timestamptz '2000-01-01 00:00+07'
+where ws_id = pg_temp.fid(98011);
+select is(
+  (select absence_followup_enabled_at from private.tutoring_automation_settings
+   where ws_id = pg_temp.fid(98011)),
+  (select stamp from enabled_stamp),
+  'the enablement time cannot be backdated while the rule stays on'
 );
 
 -- State machine: remind once, archive, restore, hold --------------------------

@@ -17857,39 +17857,11 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'tutoring_absence_followups_archived_by_fkey';
-            columns: ['archived_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'tutoring_absence_followups_archived_by_fkey';
-            columns: ['archived_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
             foreignKeyName: 'tutoring_absence_followups_group_id_fkey';
             columns: ['group_id'];
             isOneToOne: false;
             referencedRelation: 'posts_dashboard_view';
             referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'tutoring_absence_followups_restored_by_fkey';
-            columns: ['restored_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'tutoring_absence_followups_restored_by_fkey';
-            columns: ['restored_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
           },
         ];
       };
