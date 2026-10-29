@@ -39,7 +39,7 @@ The three findings independently ruled false positives in the two finance migrat
 
 PR and push scans load the guard, parser and baseline from the trusted base commit. The initial independently reviewed introduction uses checkout files only when the base does not yet contain the guard. Migrations are read as data, never executed. Regression fixtures copy the historical session migration and the unmodified `20261027021000` fix from #6993.
 
-The SQL grant guard and definer guard import the frozen six-entry inherited-ACL policy from `scripts/ci/sql-grant-frozen-definers.js`. An inherited exception requires the earlier revokes to survive ACL replay; the list and cutoff never authorize a new definer or a later grant.
+The SQL grant end-state guard (`sql-grant-end-state-guard.js`) and the definer guard import the frozen six-entry inherited-ACL policy from `scripts/ci/sql-grant-frozen-definers.js`. An inherited exception requires the earlier revokes to survive ACL replay; the list and cutoff never authorize a new definer or a later grant.
 
 ## Daily reports
 

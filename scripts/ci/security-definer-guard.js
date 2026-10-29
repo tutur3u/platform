@@ -25,7 +25,7 @@ const {
   FROZEN_DEFINERS,
   FROZEN_DEFINERS_CUTOFF,
 } = require('./sql-grant-frozen-definers');
-const { evaluateSqlFiles } = require('./sql-grant-guard');
+const { evaluateSqlFiles } = require('./sql-grant-end-state-guard');
 const { REVIEWED_EXCEPTIONS } = require('./sql-grant-reviewed-exceptions');
 const {
   readRoutine,
