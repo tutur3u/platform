@@ -103,7 +103,29 @@ describe('tutoring payroll for shared slots', () => {
         teacher_name: 'Synthetic teacher',
         completed_sessions: 1,
         total_minutes: 45,
+        total_cong: 1,
       },
+    ]);
+  });
+
+  it.each([45, 90])(
+    'converts a %i-minute shared slot to cong',
+    async (minutes) => {
+      sessionRows = ['1', '2', '3'].map((n) =>
+        session(n, `learner-${n}`, { duration_minutes: minutes })
+      );
+      expect(await payroll()).toMatchObject([
+        { completed_sessions: 1, total_cong: minutes / 45 },
+      ]);
+    }
+  );
+
+  it('preserves a single learner and sums separate slots', async () => {
+    sessionRows = [session('1', 'learner-1')];
+    expect(await payroll()).toMatchObject([{ total_cong: 1 }]);
+    sessionRows.push(session('2', 'learner-2', { start_time: '18:00:00' }));
+    expect(await payroll()).toMatchObject([
+      { completed_sessions: 2, total_cong: 2 },
     ]);
   });
 
@@ -123,6 +145,7 @@ describe('tutoring payroll for shared slots', () => {
         teacher_name: 'Synthetic teacher',
         completed_sessions: 3,
         total_minutes: 45 + 60 + 45,
+        total_cong: 150 / 45,
       },
     ]);
   });
@@ -139,11 +162,13 @@ describe('tutoring payroll for shared slots', () => {
         teacher_name: 'Synthetic teacher',
         completed_sessions: 1,
         total_minutes: 45,
+        total_cong: 1,
       },
       {
         teacher_name: 'Synthetic teacher 2',
         completed_sessions: 1,
         total_minutes: 45,
+        total_cong: 1,
       },
     ]);
   });
@@ -154,7 +179,12 @@ describe('tutoring payroll for shared slots', () => {
       session('2', 'learner-2', { teacher_user_id: null }),
     ];
     expect(await payroll()).toEqual([
-      { teacher_name: 'N/A', completed_sessions: 2, total_minutes: 90 },
+      {
+        teacher_name: 'N/A',
+        completed_sessions: 2,
+        total_minutes: 90,
+        total_cong: 2,
+      },
     ]);
   });
 });

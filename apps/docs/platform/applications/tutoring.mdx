@@ -932,7 +932,14 @@ Slots match by date, start minute and duration; seconds in a start time are
 ignored by both the APIs and draft teacher choices. Payroll exports count a
 shared slot once for its teacher: completed sessions with the same teacher,
 date, start minute and duration add one session and one duration, however many
-learners attended. Rows without a teacher are counted individually.
+learners attended. For every workspace, teacher payroll công defaults to teaching
+time divided by 45 minutes: 45 minutes is 1 công and 90 minutes is 2 công.
+The active Web payroll API returns `total_cong`; Contacts payroll CSV and XLSX
+include `TotalCong`. Fractional công are retained without rounding, matching
+the existing exact-minute aggregation. Detailed learner exports and attendance
+remain per learner. This conversion does not calculate currency or alter pay rates.
+Regression coverage: [payroll route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/export/route.payroll.test.ts).
+Rows without a teacher are counted individually.
 Export filters apply before this count, so a slot shared across groups appears
 once in each group's payroll export, and per-group exports can add up to more
 than the unfiltered total. Re-exporting a past period that has shared slots

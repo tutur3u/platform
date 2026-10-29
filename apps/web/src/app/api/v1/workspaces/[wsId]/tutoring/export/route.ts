@@ -220,9 +220,9 @@ async function getTutoringData(request: Request, { params }: Params) {
 
     return NextResponse.json({
       mode: 'payroll',
-      data: [...byTeacher.values()].sort((a, b) =>
-        a.teacher_name.localeCompare(b.teacher_name)
-      ),
+      data: [...byTeacher.values()]
+        .map((row) => ({ ...row, total_cong: row.total_minutes / 45 }))
+        .sort((a, b) => a.teacher_name.localeCompare(b.teacher_name)),
     });
   }
 

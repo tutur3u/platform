@@ -98,6 +98,7 @@ export interface TutoringPayrollExportRow {
   teacher_name: string;
   completed_sessions: number;
   total_minutes: number;
+  total_cong: number;
 }
 
 export interface ListTutoringSessionsParams extends InternalApiQuery {
