@@ -173,15 +173,21 @@ export function BoardPlanView({
       )
     : undefined;
   // Giving a ghost an owner plans it into the shown sprint, else the next.
+  // The owner changes only once it is in a sprint, so a failed move leaves
+  // the ghost as it was.
   const plan = (task: Task, planMove: PlanMove) => {
-    if (planMove.to !== null && isGhost(task)) {
-      const target = selectedOpen ?? planning;
-      moveTasks.mutate(
-        { sprintId: target.id, taskIds: [task.id] },
-        { onError: () => toast.error(t('move_failed')) }
-      );
+    if (planMove.to === null || !isGhost(task)) {
+      move(task, planMove);
+      return;
     }
-    move(task, planMove);
+    const target = selectedOpen ?? planning;
+    moveTasks.mutate(
+      { sprintId: target.id, taskIds: [task.id] },
+      {
+        onSuccess: () => move(task, planMove),
+        onError: () => toast.error(t('move_failed')),
+      }
+    );
   };
 
   const dragOver = (key: string) => (event: DragEvent) => {
