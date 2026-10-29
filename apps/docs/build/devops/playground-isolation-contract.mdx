@@ -14,7 +14,7 @@ contracts only, with no framework or hosting change.
 
 The contract tests live in `apps/playground` and run with `bun run test` from
 that directory. They use module fakes for the API proxy guard, the AI provider
-and AI memory, so they make no network calls and need no credentials.
+and satellite staff-session dependencies, so they make no network calls and need no credentials.
 
 ### What Playground does not own
 
@@ -32,12 +32,12 @@ trust boundary that needs its own design, review and contract tests first.
 | --- | --- |
 | Pages | `/` and `/tool-calling`, both client components that fetch a same-origin `/api/ai/*` route |
 | Local route handlers | `GET /api/ai/object-generation`, `GET /api/ai/tool-calling`, `GET /api/build-info` |
-| Proxy | `src/proxy.ts` runs on `/api/:path*` and applies the shared API proxy guard with the `proxy:playground:api` bucket prefix |
+| Proxy | `src/proxy.ts` matches pages and API paths, excluding framework assets and dotted paths; API requests use the shared guard with the `proxy:playground:api` prefix; signed-out pages redirect to Web sign-in with a return URL |
 | Web API | Unmatched `/api/*` paths reach Web through a Next `fallback` rewrite, after local routes and pages |
-| Headers | Shared `createTuturuuuNextConfig`: no `X-Powered-By`, anti-framing on every path outside the platform framable list, `X-Robots-Tag` noindex on every response |
-| Session | Resolved by the shared satellite `Providers`; access-control changes are out of scope for the migration and need their own reviewed change |
+| Headers | Shared `createTuturuuuNextConfig`: no `X-Powered-By`, anti-framing on every path outside the platform framable list, explicit private `X-Robots-Tag` from `next.config.ts` on every response; unlisted from shared SEO policy and `robots.txt` disallows all crawling |
+| Session | Pages and AI routes require a satellite session with a verified staff Auth identity and root-workspace membership; AI routes return 401 when signed out and 403 for non-staff or non-root-members; the root layout rechecks access |
 | i18n | English-only request config with an empty catalog |
-| Storage | No app-owned storage, database writes or bindings; AI memory is written through `@tuturuuu/ai/memory` |
+| Storage | No app-owned storage, database writes or bindings; AI routes write no AI memory or usage under the root workspace or a placeholder user |
 
 ## Invariants and tests
 
@@ -56,20 +56,20 @@ Paths are relative to `apps/playground`.
 | 9 | No `X-Powered-By` header | `src/contracts/next-config.test.ts` → hides the framework fingerprint header |
 | 10 | `frame-ancestors 'none'` and `X-Frame-Options: DENY` on pages, local routes and proxied API paths | `src/contracts/next-config.test.ts` → denies framing of every playground path |
 | 11 | No app-specific framable exceptions beyond the platform list | `src/contracts/next-config.test.ts` → adds no app-specific framable exceptions |
-| 12 | Every response carries a noindex `X-Robots-Tag` | `src/contracts/next-config.test.ts` → marks every response noindex |
+| 12 | Every response carries the private `X-Robots-Tag` explicitly from `next.config.ts`; Playground is unlisted and crawling is disallowed | `src/contracts/next-config.test.ts` → sets the private robots header; `src/contracts/seo.test.ts` → stays out of public SEO surfaces |
 | 13 | Only unmatched `/api/*` proxies to the configured Web origin, after local routes; no `beforeFiles` or `afterFiles` rewrites | `src/contracts/next-config.test.ts` → proxies only unmatched /api paths to web |
 | 14 | Deployed builds default the Web origin to `https://tuturuuu.com` | `src/contracts/next-config.test.ts` → defaults the proxied web origin |
 | 15 | Remote image optimization is https-only | `src/contracts/next-config.test.ts` → only optimizes remote images over https |
 | 16 | No custom redirects | `src/contracts/next-config.test.ts` → declares no custom redirects |
-| 17 | The proxy runs only on `/api/:path*` | `src/proxy.test.ts` → runs only for /api paths |
+| 17 | The proxy matches pages and API paths while excluding framework assets and dotted paths | `src/proxy.test.ts` → matches pages and api but not framework assets |
 | 18 | Local and proxied API requests pass the shared guard with the `proxy:playground:api` prefix | `src/proxy.test.ts` → guards local and proxied API requests |
 | 19 | A guard rejection is returned unchanged | `src/proxy.test.ts` → returns the guard rejection unchanged |
-| 20 | Non-API paths are not guarded | `src/proxy.test.ts` → does not guard non-API paths |
+| 20 | Signed-out pages redirect to Web sign-in with the original return URL; supported session cookies pass to the server staff gate | `src/proxy.test.ts` → redirects signed-out %s to web sign-in; lets a %s through to the page |
 | 21 | A guard failure is raised, never treated as a pass | `src/proxy.test.ts` → propagates guard failures |
 | 22 | Every local route handler exposes only `GET` | `src/app/api/routes.test.ts` → exposes only GET |
-| 23 | `/api/ai/tool-calling` returns `{}` with no model call | `src/app/api/routes.test.ts` → tool-calling returns an empty JSON object |
+| 23 | `/api/ai/tool-calling` requires verified root staff and returns `{}` with no model call; both AI routes return 401 signed out and 403 for non-staff or missing root membership | `src/app/api/routes.test.ts` → tool-calling returns an empty JSON object for staff; `src/app/api/ai/routes.test.ts` → returns 401 / 403 |
 | 24 | `/api/build-info` returns uncached JSON | `src/app/api/routes.test.ts` → build-info returns uncached JSON |
-| 25 | `/api/ai/object-generation` reads no request input, uses a fixed server prompt, the pinned model and AI memory attribution, and passes no tools | `src/app/api/routes.test.ts` → object-generation takes no request input |
+| 25 | `/api/ai/object-generation` reads no request input, uses a fixed server prompt, the raw pinned model for verified root staff without AI memory writes, and passes no tools | `src/app/api/routes.test.ts` → object-generation takes no request input |
 | 26 | Object generation output is validated against the task schema | `src/app/api/routes.test.ts` → validates model output against the task schema |
 | 27 | Provider failures surface as errors | `src/app/api/routes.test.ts` → surfaces provider failures as errors |
 | 28 | i18n is English-only with an empty catalog | `src/i18n/request.test.ts` → is English-only with no message catalog |

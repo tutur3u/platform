@@ -1,3 +1,4 @@
+import { PRIVATE_ROBOTS_HEADER } from '@tuturuuu/utils/seo';
 import type { NextConfig } from 'next';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -80,14 +81,17 @@ describe('playground next.config contract', () => {
     expect(headerRulesFor(rules, 'Content-Security-Policy')).toHaveLength(1);
   });
 
-  it('marks every response noindex because playground has no public paths', async () => {
+  it('sets the private robots header in next.config for every unlisted playground path', async () => {
     const config = await loadConfig();
     const rules = (await config.headers?.()) as HeaderRule[];
     const robots = headerRulesFor(rules, 'X-Robots-Tag');
 
-    expect(robots.length).toBeGreaterThan(0);
-    expect(robots[0]?.source).toBe('/:path*');
-    expect(robots[0]?.headers[0]?.value).toMatch(/noindex/);
+    expect(robots).toEqual([
+      {
+        source: '/:path*',
+        headers: [{ key: 'X-Robots-Tag', value: PRIVATE_ROBOTS_HEADER }],
+      },
+    ]);
   });
 
   it('proxies only unmatched /api paths to web, after local routes', async () => {
