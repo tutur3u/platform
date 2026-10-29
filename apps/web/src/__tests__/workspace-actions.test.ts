@@ -1,3 +1,5 @@
+vi.mock('server-only', () => ({}));
+
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
