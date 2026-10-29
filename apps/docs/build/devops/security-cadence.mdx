@@ -1,11 +1,11 @@
 ---
 title: "Security Review Cadence"
 description: "Pull request security checks, the security review classifier, the daily findings register and the weekly deep review."
-updatedAt: '2026-10-24'
+updatedAt: '2026-10-27'
 ---
 
 Tuturuuu is open source and a high-value target, so security review is a default
-part of delivery rather than an occasional audit. Three workflows carry the
+part of delivery rather than an occasional audit. Four workflows carry the
 automated part, with two small helpers that recompute the review check when a
 review changes. People and agents carry the review part, on the cadence below.
 No automated result is a security clearance. Each run is evidence for the listed
@@ -16,6 +16,7 @@ sources at one commit.
 | Check | Workflow | Runs when | Fails on |
 | --- | --- | --- | --- |
 | Secret scan (gitleaks, checksum-verified release) | `security-checks.yaml` → **Secret scan** | Every PR and `main` push; scans the commits in the change | Any finding in those commits |
+| Definer execution policy | `security-checks.yaml` → **Definer execution policy** | Every PR and push | New or changed definer definitions without bounded execution privileges, a pinned search path, or NULL-safe auth guards |
 | Dependency review | `security-checks.yaml` → **Dependency review** | PRs that change a manifest or lockfile | New dependency with a high/critical advisory (GitHub dependency graph) |
 | Dependency audit (`bun audit`) | `security-checks.yaml` → **Dependency audit** | PRs and pushes that change a manifest or lockfile | High/critical advisory present at head but not at base |
 | Workflow trust boundaries | `security-checks.yaml` → **Workflow trust boundaries** | Changes under `.github/` or `scripts/ci/` | Any failing workflow security suite (`scripts/ci/workflow-*.test.js`, `security-*.test.js`, protected concurrency, workflow config) |
@@ -43,10 +44,10 @@ findings are tracked in the findings register instead of blocking unrelated work
 - `security-checks.yaml` and `codeql.yml` use `pull_request`, so fork runs get a
   read-only token and no secrets. Jobs install no packages and run no package
   scripts.
-- Pull request code does not select or decide a scanner verdict: no switchboard,
+- For the established secret, dependency and CodeQL scans, pull request code does not select or decide a scanner verdict: no switchboard,
   scope selector, summarizer, differ, gate script, local action or setup script
   from the checkout runs before a scan job's verdict is final.
-  `security-workflows.test.js` enforces this for every job. The scan summarizer,
+  `security-workflows.test.js` enforces this for these scanner jobs. The scan summarizer,
   the audit differ and the CodeQL new-alert gate come only from the base commit. Without them, for
   example while the PR that introduces them is open, the gate fails closed with
   an inline `jq` check: any gitleaks finding, any high/critical advisory, or any
@@ -300,7 +301,7 @@ check. Before merging, re-derive the decision from `main`:
 
 ## Daily audit and findings register
 
-The daily `security-checks.yaml` schedule (`17 2 * * *`, the only security scan timer)
+The daily `security-checks.yaml` schedule (`17 2 * * *`)
 runs CodeQL on `main` through `codeql.yml`, gitleaks over the last three days of
 history, `bun audit` on the lockfile, and the workflow trust suites. It then
 builds the findings register (`scripts/ci/security-findings-register.js`) from
@@ -380,3 +381,13 @@ owner, or an agent assigned that role by the program owner, reviews:
 
 Record the outcome in the private program backlog. Keep public notes to IDs,
 counts and remediation receipts.
+
+## Daily read-only inventory
+
+The separately approved `security-scan.yaml` workflow runs at 03:00 GMT+7 with
+only `contents: read`. It checks the last 36 hours of secret changes, migration
+definer policy and route permission-helper coverage. Each job uploads its own
+redacted report and fails on new findings. See
+[Definer guard and daily security scans](/build/devops/security-scans) for
+content-pinned historical exceptions, the two exact public demo JWT locations,
+the initial definer-guard bootstrap review and the gated staging catalog check.

@@ -1,0 +1,12 @@
+[
+  {
+    "file": "apps/database/supabase/migrations/20261029030410_restrict_nonpublic_definers.sql",
+    "blockDigest": "8dfd8c64453a0f4c4a96a5c2f7bed5e636c597d1075bea4e327850dc75c1e378",
+    "reason": "Reviewed revoke-only audit hardening: removes anon/authenticated object, schema and default privileges; no GRANT restores access."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029030500_align_cross_app_token_grant_and_private_fence.sql",
+    "blockDigest": "299b7928676d3239b07440850f402be9487d812763ca40eea0b483be90a8cde1",
+    "reason": "Reviewed revoke-only private defaults fence: removes PUBLIC EXECUTE from function defaults for existing schema creators; contains no GRANT."
+  }
+]

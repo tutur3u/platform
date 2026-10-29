@@ -200,7 +200,7 @@ local SARIF gate. Triage at the analyzed SHA and current main: trace validation
 rejections, same-descriptor reads and directory-only fsync before calling an alert real.
 Keep optional-reader defects distinct from default production reachability; test
 replacement negatives without enabling collection. The gate prints escaped rule IDs
-and locations, omits messages, and fails closed without a baseline. See [`security-cadence.mdx`](../../../../../apps/docs/build/devops/security-cadence.mdx).
+and locations, omits messages, and fails closed without a baseline. See [`security-cadence.mdx`](../../../../../apps/docs/build/devops/security-cadence.mdx). Definer policy, read-only daily inventory, historical exceptions and focused checks live in the [security scans runbook](../../../../../apps/docs/build/devops/security-scans.mdx).
 
 ## Bun runtime pins
 
@@ -1404,6 +1404,14 @@ pass with its evidence. Do not extend the allowlist. Run
 `node --test scripts/ci/sql-grant-*.test.js` and both guards (`sql-grant-guard.js`, `sql-grant-end-state-guard.js`), and report
 repository-wide failures instead of exempting them. See the
 [migrations guide](../../../../../apps/docs/reference/database/migrations-guide.mdx#sql-grant-end-state-guard).
+
+The definer guard also imports this frozen policy and checks surviving inherited
+revokes through the same ACL replay. Its dynamic-SQL check requires manual review
+for unresolved EXECUTE expressions, including split strings and format calls
+without visible privilege text. Reviewed block exceptions bind the migration
+path and raw block SHA-256 with a reason. Track role membership and EXECUTE grants
+in migration order, including transitive anon access and membership revokes.
+Report newly uncovered historical findings; never refresh a baseline to clear them.
 
 ## Private Meet transcription evaluation
 
