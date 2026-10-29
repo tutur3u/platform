@@ -1,4 +1,5 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { MAX_SHORT_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
@@ -30,7 +31,7 @@ const RemoveDiscordMemberSchema = z.object({
 // Mappings let the Discord bot and AI agent runtime act as the mapped user, so
 // writes need the same manage_workspace_integrations check that RLS enforces.
 async function canManageWorkspaceIntegrations(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: TypedSupabaseClient,
   wsId: string,
   userId: string
 ) {
