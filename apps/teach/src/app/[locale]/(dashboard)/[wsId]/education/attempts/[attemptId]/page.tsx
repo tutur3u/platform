@@ -33,7 +33,10 @@ export default async function AttemptDetailsPage({ params }: Props) {
 
   const t = await getTranslations();
   const { attemptId, wsId: routeWsId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(
+    routeWsId,
+    EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION
+  );
   const permissions = await getSatelliteWorkspacePermissions(
     'teach',
     resolvedWsId

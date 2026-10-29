@@ -38,7 +38,7 @@ export default async function WorkspaceLibraryQuizSetsPage({
 }: Props) {
   const t = await getTranslations();
   const { wsId: routeWsId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId, 'ai_lab');
 
   const { data, count } = await getData(resolvedWsId, await searchParams);
   const quizSets = data.map((quizSet) => ({
