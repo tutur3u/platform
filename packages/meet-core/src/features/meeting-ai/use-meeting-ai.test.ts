@@ -316,3 +316,34 @@ it('stops capture and reports the credit reason when billing refuses an upload',
   );
   hook.unmount();
 });
+
+it.each(['auto', 'vi', 'en', 'vi+en'] as const)(
+  'uploads normal capture with %s hints and meeting title',
+  async (language) => {
+    const hook = renderHook(
+      () =>
+        useMeetingAi('workspace', 'meeting', [], true, true, 'actor-a', {
+          language,
+          title: '  Planning meeting  ',
+        }),
+      {
+        wrapper: ({ children }: { children: ReactNode }) =>
+          createElement(WorkspaceVisibilityProvider, {
+            actorId: 'actor-a',
+            children,
+          }),
+      }
+    );
+    await act(() => hook.result.current.start());
+    await act(async () => {
+      mocks.onChunk?.(new Blob(['speech']), 0);
+      await hook.result.current.finish();
+    });
+    expect(mocks.upload).toHaveBeenCalledTimes(1);
+    const data = mocks.upload.mock.calls[0]![2];
+    expect(data.get('language')).toBe(language);
+    expect(data.get('context')).toBe('Planning meeting');
+    expect(data.get('glossary')).toBe('');
+    hook.unmount();
+  }
+);

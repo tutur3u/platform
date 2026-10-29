@@ -117,7 +117,7 @@ it('retries a transient credit check and transcribes with that admission', async
   expect(mocks.check).toHaveBeenCalledTimes(2);
   expect(rpc).toHaveBeenCalledTimes(1);
   expect(mocks.generate).toHaveBeenCalledWith(
-    { audio: expect.any(Uint8Array) },
+    { audio: expect.any(Uint8Array), hints: expect.anything() },
     expect.objectContaining({ userId: id, attemptId: id }),
     { workspaceId: 'personal-workspace', allowance }
   );

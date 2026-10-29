@@ -10,6 +10,9 @@ import { admitMeetCredits } from './credit-admission';
 import { resolveTranscriptSpeaker } from './transcript-speaker';
 
 const schema = z.object({
+  language: z.enum(['auto', 'vi', 'en', 'vi+en']).default('auto'),
+  glossary: z.string().max(800).optional(),
+  context: z.string().max(400).optional(),
   sessionId: z.uuid(),
   id: z.uuid(),
   sequence: z.coerce.number().int().min(0).max(1080),
@@ -28,6 +31,11 @@ export async function transcribeMeetChunk(
   const body = await readMeetAudioForm(request, maxBytes);
   const parsed = schema.safeParse(Object.fromEntries(body));
   if (!parsed.success) throw new MeetAiError(400, 'Invalid audio');
+  const hints = {
+    language: parsed.data.language,
+    glossary: parsed.data.glossary,
+    context: parsed.data.context,
+  };
   const parts = await readAudioParts(body, batched);
   const { sessionId, id, sequence, startSeconds } = parsed.data;
   const { data: session, error } = await db
@@ -126,8 +134,8 @@ export async function transcribeMeetChunk(
       );
     const result = await generateBilledMeetArtifact(
       batched
-        ? { audioSegments: parts.map((part) => part.bytes) }
-        : { audio: parts[0]!.bytes },
+        ? { audioSegments: parts.map((part) => part.bytes), hints }
+        : { audio: parts[0]!.bytes, hints },
       { userId: user.id, meetingId, attemptId: inserted.data.attempt_id ?? id },
       admission
     );
