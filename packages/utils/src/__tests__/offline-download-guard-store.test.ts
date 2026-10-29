@@ -154,7 +154,25 @@ describe('offline download guard on the Durable Object store', () => {
     }
     // No session window and no clearance read for an unverified bearer.
     expect(mocks.get).not.toHaveBeenCalled();
-    expect(SOURCE_DAILY_READS * 3).toBeLessThan(600_000);
+  });
+
+  it('bounds a source by observed commands, including a clearance grant', async () => {
+    // A verified caller without clearance that solves Turnstile: the most
+    // expensive admitted read.
+    await expect(
+      guard(request('real-proof', 'grant-session'))
+    ).resolves.toBeNull();
+    const commands =
+      mocks.hitWindows.mock.calls.reduce(
+        (total, [subjects]) => total + subjects.length,
+        0
+      ) +
+      mocks.get.mock.calls.length +
+      mocks.set.mock.calls.length;
+    expect(commands).toBe(4);
+    // One source at its daily read limit spends at most a third of the default
+    // 600,000-command offline share.
+    expect(commands * SOURCE_DAILY_READS).toBeLessThanOrEqual(600_000 / 3);
   });
 
   it('fails closed on a malformed reply from a real client', async () => {

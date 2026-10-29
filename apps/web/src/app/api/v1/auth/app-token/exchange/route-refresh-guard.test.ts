@@ -86,6 +86,8 @@ describe('app token exchange replay guards with the store assigned', () => {
       }
       expect(statuses.indexOf(429)).toBe(20);
       expect(mocks.redisSet).toHaveBeenCalledTimes(20);
+      // Denied attempts never read the store: 20 admitted attempts, 20 GETs.
+      expect(mocks.redisGet).toHaveBeenCalledTimes(20);
     } finally {
       vi.useRealTimers();
     }
