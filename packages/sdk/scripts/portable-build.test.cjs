@@ -100,6 +100,7 @@ for (const name of ['@tuturuuu/internal-api', '@tuturuuu/utils']) {
 for (const specifier of [
   '@tuturuuu/realtime',
   '@tuturuuu/supabase',
+  '@tuturuuu/supabase/next/common',
   'next/headers',
   'server-only',
   'unlisted',
@@ -183,7 +184,8 @@ test('stages the actual SDK closure without server dependencies or test-only fil
     repoRoot: path.resolve(__dirname, '../../..'),
     destination: path.join(destination, 'src'),
   });
-  assert.equal(sources.length, 25);
+  assert.equal(sources.length, 26);
+  assert.ok(sources.includes('packages/supabase/src/auth-cookie-policy.ts'));
   assert.equal(
     fs.existsSync(path.join(destination, 'src/cli/resources-test-fixtures.ts')),
     false
@@ -217,5 +219,43 @@ test('omits shared test fixtures that import test runners', (t) => {
   assert.equal(
     fs.existsSync(path.join(f.destination, 'cli/example-test-fixtures.ts')),
     false
+  );
+});
+
+test('embeds only the cookie-policy leaf and rejects framework expansion', (t) => {
+  const f = fixture(t);
+  f.write(
+    'packages/internal-api/src/client.ts',
+    "export {value} from '@tuturuuu/supabase/auth-cookie-policy';"
+  );
+  f.write(
+    'packages/supabase/src/auth-cookie-policy.ts',
+    'export const value = 42;'
+  );
+  const sources = stagePortableSources({
+    repoRoot: f.root,
+    destination: f.destination,
+  });
+  assert.ok(sources.includes('packages/supabase/src/auth-cookie-policy.ts'));
+  for (const dependency of ['next/headers', '@tuturuuu/supabase/next/common']) {
+    f.write(
+      'packages/supabase/src/auth-cookie-policy.ts',
+      `import '${dependency}'; export const value = 42;`
+    );
+    assert.throws(
+      () =>
+        stagePortableSources({ repoRoot: f.root, destination: f.destination }),
+      /nonportable SDK dependency/
+    );
+  }
+  f.write(
+    'packages/supabase/src/auth-cookie-policy.ts',
+    "export * from './private';"
+  );
+  f.write('packages/supabase/src/private.ts', 'export const value = 42;');
+  assert.throws(
+    () =>
+      stagePortableSources({ repoRoot: f.root, destination: f.destination }),
+    /Unapproved portable source/
   );
 });

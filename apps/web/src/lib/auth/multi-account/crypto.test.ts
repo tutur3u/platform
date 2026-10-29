@@ -282,3 +282,42 @@ describe('web multi-account crypto', () => {
     ]);
   });
 });
+
+it('isolates staging device cookies from production names and parent-domain cleanup', async () => {
+  vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX', '__Host-staging-');
+  vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_SCOPE', 'host-only');
+  vi.resetModules();
+  try {
+    const stage = await import('./crypto');
+    const request = new Request('https://staging.tuturuuu.com');
+    expect(stage.getDeviceCookieName(request)).toBe(
+      '__Host-staging-__Host-tuturuuu_web_account_device'
+    );
+    expect(stage.getDeviceCookieOptions(request).domain).toBeUndefined();
+    for (const target of stage.getAllDeviceCookieClearTargets(request)) {
+      expect(target.name.startsWith('__Host-staging-')).toBe(true);
+      expect(target.options.domain).toBeUndefined();
+    }
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});
+
+it('requires Secure for host-only staging device cookies on a public HTTP origin', async () => {
+  vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX', 'staging-');
+  vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_SCOPE', '');
+  vi.resetModules();
+  try {
+    const crypto = await import('./crypto');
+    const request = new Request('http://tuturuuu-staging.com');
+    expect(crypto.getDeviceCookieOptions(request)).toMatchObject({
+      secure: true,
+    });
+    expect(crypto.getDeviceCookieOptions(request).domain).toBeUndefined();
+    expect(crypto.getDeviceCookieName(request)).toBe(
+      crypto.WEB_ACCOUNT_DEVICE_COOKIE_NAME
+    );
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});

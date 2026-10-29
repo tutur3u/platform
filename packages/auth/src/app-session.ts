@@ -1,3 +1,8 @@
+import {
+  authCookieRequiresSecure,
+  getSupabaseAuthStorageKey,
+  hostOnlyAuthCookieRequiresSecure,
+} from '@tuturuuu/supabase/next/common';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { getTuturuuuSharedCookieDomains } from '@tuturuuu/utils/shared-cookie';
@@ -40,7 +45,14 @@ export function getAppSessionCookieOptions(
     httpOnly: true,
     path: '/',
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure:
+      process.env.NODE_ENV === 'production' ||
+      authCookieRequiresSecure() ||
+      (Boolean(
+        process.env.NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX ||
+          process.env.NEXT_PUBLIC_AUTH_COOKIE_SCOPE
+      ) &&
+        hostOnlyAuthCookieRequiresSecure()),
   };
 }
 
@@ -215,10 +227,6 @@ function getConfiguredSupabaseAuthStorageKeys() {
     .filter((value, index, values) => values.indexOf(value) === index);
 }
 
-function getSupabaseAuthStorageKey(url: string) {
-  return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
-}
-
 function isSupabaseAuthCookieChunkForStorageKey(
   cookieName: string,
   storageKey: string
@@ -297,6 +305,7 @@ export function clearSupabaseAuthCookies(
     }
 
     response.cookies.set(name, '', {
+      ...(authCookieRequiresSecure() ? { secure: true } : {}),
       expires: new Date(0),
       maxAge: 0,
       path: '/',

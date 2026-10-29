@@ -4,6 +4,10 @@
   "main": "cloudflare/gateway-worker.ts",
   "compatibility_date": "2026-10-12",
   "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX": "__Host-staging-",
+    "NEXT_PUBLIC_AUTH_COOKIE_SCOPE": "host-only"
+  },
   "workers_dev": true,
   "assets": {
     "directory": "./dist/client",

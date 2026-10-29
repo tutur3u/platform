@@ -38,6 +38,41 @@ if that boundary is missing, normalization fails instead of rewriting history.
 The generated release commit is amended using the existing exact-SHA lease.
 No package version, dependency resolution or published changelog is rewritten.
 
+## Auth cookie deployment configuration
+
+`NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX` optionally prefixes Supabase auth cookies
+(including chunks and PKCE storage names) and app access/refresh cookies.
+`NEXT_PUBLIC_AUTH_COOKIE_SCOPE` accepts `host-only` or `parent-domain`.
+Both values are public build inputs: configure the same values for the browser
+build and the server/Worker runtime. A runtime-only change cannot rename cookies
+in already-built browser code. Invalid scopes or unsafe prefixes fail closed.
+
+With both variables absent or empty, production behavior is unchanged: Supabase
+cookies retain their project-derived names and existing shared domain rules;
+app access/refresh cookies retain their existing names and host-only scope.
+`parent-domain` uses only the existing recognized Tuturuuu shared domains; it
+never infers a registrable domain from an arbitrary request host.
+
+A non-empty cookie namespace defaults to host-only scope. App access and refresh
+cookies always remain host-only, even when Supabase cookies explicitly use a
+parent-domain scope. Host-only staging cookies require Secure on non-localhost
+origins. Namespace prefixes must end in `-` or `_` and cannot start with `sb-`,
+`tuturuuu_`, or `ttr_`. Reserved `__Host-` and `__Secure-` prefixes require an
+additional namespace segment. Keep the namespace identical in each reader and issuer.
+
+For an isolated staging deployment, choose a distinct prefix and `host-only`.
+For example, `__Host-staging-` requires host-only scope and secure cookies at
+Path `/`. Keep a separate staging Supabase project and coordination signing key.
+These source controls do not provision a domain, install secrets, change redirects
+or authorize a deployment. A separate registrable staging domain is still needed
+to prevent production parent-domain cookies from reaching staging at all.
+
+Changing this configuration intentionally requires a fresh staging login. Cleanup
+and Web browser recovery target the configured namespace and avoid browser-wide
+cookie deletion when a prefix is set. Production recovery retains its existing
+header. Run the Supabase auth-cookie-policy and Auth auth-cookie-isolation tests
+for default wire bytes, scope, prefixed readers, logout and production sentinels.
+
 ## Branch-to-Environment Map
 
 | Branch or event                     | What deploys                                                                                       | Follow-up automation                                                                                                                 |
@@ -467,3 +502,9 @@ and multiplayer auth), Mail, Tasks, Infrastructure, AI, Calendar, Track, Meet,
 Parley, Lettin and Rewise. Examples list the
 name without a value; an unset setting fails closed for Azure-linked staff
 sessions. See [staff authorization](/platform/architecture/authorization#staff-session-verification).
+
+Supabase auth-cookie preservation requires a trusted request hostname in every
+cookie scope, including `host-only`. The existing local E2E bypass remains
+limited to loopback request hosts with the explicit bypass and a loopback HTTP
+Supabase URL. Prefix and scope configuration never skip this hostname boundary.
+Regression coverage: `packages/auth/src/auth-cookie-isolation.test.ts`.

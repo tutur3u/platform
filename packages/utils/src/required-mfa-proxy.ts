@@ -1,3 +1,7 @@
+import {
+  getAuthCookieName,
+  getSupabaseAuthCookiePattern,
+} from '@tuturuuu/supabase/next/common';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   type AccountAssuranceDependencies,
@@ -50,9 +54,15 @@ export async function guardRequiredAccountMfa(
   const cookies = request.headers.get('cookie') ?? '';
   const hasInteractiveCredential = Boolean(
     authorization?.match(/^Bearer\s+(?:eyJ|ttr_app_)/i) ||
-      /(?:^|;\s*)(?:sb-[^=]+-auth-token(?:\.\d+)?|tuturuuu_(?:web_)?app_session)=/.test(
-        cookies
-      )
+      cookies.split(';').some((part) => {
+        const name = part.trim().split('=', 1)[0] ?? '';
+        return (
+          getSupabaseAuthCookiePattern('i').test(name) ||
+          ['tuturuuu_app_session', 'tuturuuu_web_app_session'].some(
+            (cookie) => getAuthCookieName(cookie) === name
+          )
+        );
+      })
   );
   if (!hasInteractiveCredential) return null;
   const result = await checkRequiredAccountMfa(

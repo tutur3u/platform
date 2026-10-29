@@ -1,3 +1,7 @@
+import {
+  getAuthCookieName,
+  getSupabaseAuthCookiePattern,
+} from '@tuturuuu/supabase/next/common';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
 import {
   type AppCoordinationTokenClaims,
@@ -13,17 +17,23 @@ import {
 
 import type { MfaSessionProof } from './required-mfa-policy';
 
-export const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
-export const WEB_APP_SESSION_COOKIE_NAME = 'tuturuuu_web_app_session';
-export const APP_SESSION_REFRESH_COOKIE_NAME = 'tuturuuu_app_session_refresh';
-export const WEB_APP_SESSION_REFRESH_COOKIE_NAME =
-  'tuturuuu_web_app_session_refresh';
+export const APP_SESSION_COOKIE_NAME = getAuthCookieName(
+  'tuturuuu_app_session'
+);
+export const WEB_APP_SESSION_COOKIE_NAME = getAuthCookieName(
+  'tuturuuu_web_app_session'
+);
+export const APP_SESSION_REFRESH_COOKIE_NAME = getAuthCookieName(
+  'tuturuuu_app_session_refresh'
+);
+export const WEB_APP_SESSION_REFRESH_COOKIE_NAME = getAuthCookieName(
+  'tuturuuu_web_app_session_refresh'
+);
 export const APP_SESSION_SCOPE = 'internal-app:session';
 export const APP_SESSION_REFRESH_SCOPE = 'internal-app:refresh';
 export const APP_SESSION_REFRESH_EARLY_SCOPE_PREFIX =
   'internal-app:refresh-early:';
-export const SUPABASE_AUTH_COOKIE_PATTERN =
-  /^sb-[A-Za-z0-9-]+-auth-token(?:\.\d+)?$/u;
+export const SUPABASE_AUTH_COOKIE_PATTERN = getSupabaseAuthCookiePattern();
 
 export type AppSessionTargetApp = AppName | string;
 

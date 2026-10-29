@@ -1,3 +1,4 @@
+import { stripAuthCookiePrefix } from '@tuturuuu/supabase/next/common';
 /**
  * Framework-free CSRF check for cookie-authenticated mutations.
  *
@@ -67,7 +68,8 @@ export function parseCsrfMode(value: string | null | undefined): CsrfMode {
 }
 
 /** Supabase auth cookies (and chunks) and Tuturuuu app-session cookies. */
-export function isDefaultSessionCookieName(name: string) {
+export function isDefaultSessionCookieName(cookieName: string) {
+  const name = stripAuthCookiePrefix(cookieName) ?? cookieName;
   if (name.endsWith('-code-verifier')) return false;
 
   const supabaseName = name.startsWith('__Host-') ? name.slice(7) : name;

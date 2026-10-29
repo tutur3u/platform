@@ -1,3 +1,4 @@
+import { getAuthCookieName } from '@tuturuuu/supabase/next/common';
 import {
   createAdminClient,
   createClient,
@@ -20,7 +21,11 @@ export interface MeetActor {
 }
 
 export async function resolveOptionalMeetActor(request: NextRequest) {
-  if (request.headers.get('cookie')?.includes('tuturuuu_app_session=')) {
+  if (
+    request.headers
+      .get('cookie')
+      ?.includes(`${getAuthCookieName('tuturuuu_app_session')}=`)
+  ) {
     const resolution = await resolveSessionAuthContext(request, {
       allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
     });

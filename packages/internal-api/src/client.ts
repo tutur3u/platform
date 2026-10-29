@@ -1,3 +1,8 @@
+import {
+  getAuthCookieName,
+  getSupabaseAuthCookiePattern,
+  getSupabaseAuthStorageKey,
+} from '@tuturuuu/supabase/auth-cookie-policy';
 import { parseInternalApiError } from './internal-api-error';
 import {
   hasAppBaseResolverFor,
@@ -32,8 +37,8 @@ export type InternalApiClientOptions = {
 };
 
 type HeaderAccessor = Pick<Headers, 'get'>;
-const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
-const SUPABASE_AUTH_COOKIE_PATTERN = /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
+const APP_SESSION_COOKIE_NAME = getAuthCookieName('tuturuuu_app_session');
+const SUPABASE_AUTH_COOKIE_PATTERN = getSupabaseAuthCookiePattern('i');
 const KNOWN_CUSTOM_SATELLITE_HOSTS = new Set(['nova.ai.vn', 'rewise.me']);
 const KNOWN_NON_PLATFORM_TUTURUUU_HOSTS = new Set([
   'apps.tuturuuu.com',
@@ -507,10 +512,6 @@ function hasAppSessionCookie(cookieHeader: string) {
     .some((part) => getCookieName(part) === APP_SESSION_COOKIE_NAME);
 }
 
-function getSupabaseAuthStorageKey(url: string) {
-  return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
-}
-
 function getConfiguredSupabaseAuthStorageKeys() {
   return [
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -518,10 +519,7 @@ function getConfiguredSupabaseAuthStorageKeys() {
     process.env.SUPABASE_URL,
   ]
     .flatMap((url) => {
-      if (!url) {
-        return [];
-      }
-
+      if (!url) return [];
       try {
         return [getSupabaseAuthStorageKey(url)];
       } catch {

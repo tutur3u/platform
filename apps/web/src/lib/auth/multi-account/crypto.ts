@@ -5,6 +5,10 @@ import {
   randomBytes,
   timingSafeEqual,
 } from 'node:crypto';
+import {
+  getAuthCookieScope,
+  hostOnlyAuthCookieRequiresSecure,
+} from '@tuturuuu/supabase/next/common';
 import type { SupabaseSession } from '@tuturuuu/supabase/next/user';
 import {
   getHostOnlyCookieOptions,
@@ -241,15 +245,27 @@ export function getDeviceCookieOptions(
     request
   );
 
-  return sharedOptions satisfies DeviceCookieOptions;
+  return (
+    getAuthCookieScope() === 'host-only'
+      ? getHostOnlyCookieOptions({
+          ...sharedOptions,
+          secure: hostOnlyAuthCookieRequiresSecure(requestUrl),
+        })
+      : sharedOptions
+  ) satisfies DeviceCookieOptions;
 }
 
 export function getDeviceCookieName(request: Pick<Request, 'headers' | 'url'>) {
   const requestUrl = resolveCookieUrl(request);
 
-  return resolveTuturuuuSharedCookieDomain(request)
+  return getAuthCookieScope() !== 'host-only' &&
+    resolveTuturuuuSharedCookieDomain(request)
     ? LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME
-    : isSecureCookieScheme(requestUrl)
+    : (
+          getAuthCookieScope() === 'host-only'
+            ? hostOnlyAuthCookieRequiresSecure(requestUrl)
+            : isSecureCookieScheme(requestUrl)
+        )
       ? WEB_ACCOUNT_DEVICE_COOKIE_NAME
       : LEGACY_WEB_ACCOUNT_DEVICE_COOKIE_NAME;
 }

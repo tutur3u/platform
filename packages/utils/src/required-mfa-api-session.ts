@@ -1,3 +1,4 @@
+import { getSupabaseAuthCookiePattern } from '@tuturuuu/supabase/next/common';
 import { updateSession } from '@tuturuuu/supabase/next/proxy';
 import { type NextRequest, NextResponse } from 'next/server';
 import { discardAppCookiesForVerifiedProvider } from './required-mfa-credentials';
@@ -13,7 +14,7 @@ export async function guardBrowserApiSession(
 ) {
   const hasProviderCookie = request.cookies
     .getAll()
-    .some(({ name }) => /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i.test(name));
+    .some(({ name }) => getSupabaseAuthCookiePattern('i').test(name));
   const session =
     !request.headers.has('authorization') &&
     hasProviderCookie &&
