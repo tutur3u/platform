@@ -19,11 +19,12 @@ import 'package:mobile/features/tasks_boards/data/task_broadcast_client.dart';
 
 part 'task_board_detail_state.dart';
 part 'task_board_detail_cache_merge.dart';
+part 'task_board_detail_list_reads.dart';
 part 'task_board_detail_mutation_guard.dart';
 part 'task_board_detail_page_merge.dart';
 
 class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
-    with _TaskBoardMutationRunner {
+    with _TaskBoardMutationRunner, _TaskBoardListReadGuard {
   TaskBoardDetailCubit({
     required TaskRepository taskRepository,
     TaskBroadcastClient? taskBroadcastClient,
@@ -568,12 +569,12 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
       }
     }
 
-    final nextLoading = {...state.loadingListIds, listId};
+    final readId = _beginListRead(listId);
     final nextLoadErrors = Map<String, String>.from(state.listLoadErrorById)
       ..remove(listId);
     emit(
       state.copyWith(
-        loadingListIds: nextLoading,
+        loadingListIds: {...state.loadingListIds, listId},
         listLoadErrorById: nextLoadErrors,
       ),
     );
@@ -638,6 +639,8 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
           listLoadErrorById: nextLoadErrors,
         ),
       );
+    } finally {
+      _finishListRead(listId, readId);
     }
   }
 
