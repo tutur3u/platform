@@ -20,6 +20,7 @@ export type OverlapClass = 'claim-fenced' | 'handover' | 'idempotent';
 export type WorkerProcessorId =
   | 'checkout-expiry'
   | 'cron-history-retention'
+  | 'meet-transcript-retention'
   | 'storage-access-audit-retention';
 
 // Native database maintenance: the Worker calls this private RPC with the
@@ -28,6 +29,7 @@ export const DATABASE_MAINTENANCE_RPCS: Partial<
   Record<WorkerProcessorId, string>
 > = {
   'cron-history-retention': 'prune_cron_history',
+  'meet-transcript-retention': 'purge_meet_transcripts_batch',
   'storage-access-audit-retention': 'prune_storage_access_events',
 };
 
@@ -92,6 +94,16 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '/rest/v1/rpc/prune_storage_access_events',
     'idempotent',
     { workerProcessor: 'storage-access-audit-retention', timeoutMs: 30_000 }
+  ),
+  // Daily, sharing the media cleanup trigger. The database fence keeps it a
+  // no-op (or a count-only dry run) until deletion is separately approved.
+  job(
+    'meet-transcript-retention',
+    '17 3 * * *',
+    'web',
+    '/rest/v1/rpc/purge_meet_transcripts_batch',
+    'idempotent',
+    { workerProcessor: 'meet-transcript-retention', timeoutMs: 150_000 }
   ),
   job(
     'tasks-cleanup-media',
