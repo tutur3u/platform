@@ -485,13 +485,34 @@ Unversioned files are always checked.
    `service_role` instead.
 2. **Unrevoked `SECURITY DEFINER` functions** (migrations only). Every
    `CREATE [OR REPLACE] FUNCTION ... SECURITY DEFINER` needs a revoke for the
-   same name and argument types from both `public` and `anon` in the same
-   file, even when it replaces a function revoked earlier:
+   same name and argument types from both `public` and `anon` after the
+   definition, in the same file or any later versioned forward migration.
+   The guard compares the final explicit ACL changes for that exact signature;
+   a later grant or drop invalidates an earlier revoke. Rollbacks, earlier
+   migrations, and other overloads cannot supply the revoke:
 
    ```sql
    revoke all on function public.example(uuid, text) from public, anon;
    grant execute on function public.example(uuid, text) to service_role;
    ```
+
+The revoke must remove `EXECUTE` or `ALL` privileges. `REVOKE GRANT OPTION FOR`
+does not remove execution rights. The two required roles can be revoked in
+separate statements or migrations. Existing public/anon grant checks still
+apply, even if a later migration revokes the grant. No file or path exemptions
+are applied.
+
+For service-only functions, also revoke `authenticated` and grant execution
+only to `service_role`. Authenticated RPCs can retain `authenticated` execution;
+the guard's required roles remain `public` and `anon`. Review the intended
+callers and the authenticated ACL separately.
+
+An earlier revoke does not satisfy a new definition's guard requirement.
+PostgreSQL preserves existing privileges for `CREATE OR REPLACE FUNCTION`, so
+that diagnostic alone does not prove the function is publicly executable.
+Audit the earlier exact-signature ACL, subsequent grants and drops, and deployed
+database privileges before classifying it as an exposure. Regression coverage
+is in `scripts/ci/sql-grant-guard-end-state.test.js`.
 
 The guard ignores text in comments, string literals and dollar-quoted bodies,
 so dynamic `EXECUTE 'grant ...'` inside PL/pgSQL is not detected; review

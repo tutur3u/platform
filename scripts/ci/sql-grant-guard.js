@@ -2,7 +2,7 @@
 
 // Fails when a new migration or rollback grants privileges to PUBLIC or anon,
 // or when a new migration creates a SECURITY DEFINER function without revoking
-// EXECUTE from PUBLIC and anon in the same file. Files before the cutoff are
+// EXECUTE from PUBLIC and anon in the same or a later migration. Files before the cutoff are
 // legacy; `--report` lists them for visibility without failing.
 // Policy: apps/docs/reference/database/migrations-guide.mdx#sql-grant-guard
 
@@ -246,8 +246,6 @@ function roleList(text) {
 
 const GRANT = /^(?:alter default privileges\s.*?)?\bgrant\s(.+?)\sto\s(.+)$/;
 const CREATE_FUNCTION = /^create (?:or replace )?function\s(.+)$/;
-const REVOKE_FUNCTION =
-  /^revoke\s.+?\son (?:function|routine)s?\s(.+?)\sfrom\s(.+)$/;
 
 function openGrantees(text) {
   if (!/^(?:grant|alter default privileges)\s/.test(text)) return [];
@@ -260,15 +258,38 @@ function routineKey(name, types) {
   return types ? `${name}(${types.join(',')})` : name;
 }
 
-function scanSql(sql, { definerRule }) {
+const REVOKE_EXECUTE =
+  /^revoke\s(?:all(?: privileges)?|execute)\son (?:function|routine)s?\s(.+?)\sfrom\s(.+)$/;
+const GRANT_EXECUTE =
+  /^grant\s(?:all(?: privileges)?|execute)\son (?:function|routine)s?\s(.+?)\sto\s(.+)$/;
+const DROP_FUNCTION = /^drop function\s(?:if exists\s)?(.+)$/;
+
+function routineKeys(targets) {
+  return splitTopLevel(targets).flatMap((target) => {
+    const routine = readRoutine(target);
+    return routine && routine.args !== null
+      ? [routineKey(routine.name, signatureTypes(routine.args))]
+      : [];
+  });
+}
+
+function scanSql(sql, { definerRule, laterStatements = [] }) {
   const { statements, comments } = parseStatements(sql);
   const findings = [];
   const definers = [];
   const revoked = new Map();
 
-  for (const statement of statements) {
+  for (const [index, statement] of [
+    ...statements,
+    ...laterStatements,
+  ].entries()) {
+    const local = index < statements.length;
     const roles = openGrantees(statement.text);
-    if (roles.length > 0 && !isAllowed(statement, comments, RULES.anonGrant)) {
+    if (
+      local &&
+      roles.length > 0 &&
+      !isAllowed(statement, comments, RULES.anonGrant)
+    ) {
       findings.push({
         rule: RULES.anonGrant,
         line: statement.startLine,
@@ -276,27 +297,35 @@ function scanSql(sql, { definerRule }) {
       });
     }
 
-    const revoke = REVOKE_FUNCTION.exec(statement.text);
-    if (revoke) {
-      const fromRoles = roleList(revoke[2]);
-      for (const target of splitTopLevel(revoke[1])) {
-        const routine = readRoutine(target);
-        if (!routine) continue;
-        const types =
-          routine.args === null ? null : signatureTypes(routine.args);
-        const key = routineKey(routine.name, types);
-        const roleSet = revoked.get(key) ?? new Set();
-        for (const role of fromRoles) roleSet.add(role);
-        revoked.set(key, roleSet);
+    const revoke = REVOKE_EXECUTE.exec(statement.text);
+    const grant = GRANT_EXECUTE.exec(statement.text);
+    const drop = DROP_FUNCTION.exec(statement.text);
+    if (drop) {
+      for (const key of routineKeys(drop[1])) revoked.delete(key);
+    } else if (revoke || grant) {
+      const match = revoke ?? grant;
+      for (const key of routineKeys(match[1])) {
+        const rolePositions = revoked.get(key) ?? new Map();
+        for (const role of roleList(match[2])) {
+          if (revoke) rolePositions.set(role, index);
+          else rolePositions.delete(role);
+        }
+        revoked.set(key, rolePositions);
       }
     }
 
     const create = CREATE_FUNCTION.exec(statement.text);
-    if (definerRule && create && /\bsecurity definer\b/.test(statement.text)) {
+    if (
+      local &&
+      definerRule &&
+      create &&
+      /\bsecurity definer\b/.test(statement.text)
+    ) {
       const routine = readRoutine(create[1]);
       if (routine && routine.args !== null) {
         definers.push({
           statement,
+          index,
           name: routine.name,
           types: signatureTypes(routine.args),
         });
@@ -307,11 +336,10 @@ function scanSql(sql, { definerRule }) {
   for (const definer of definers) {
     if (isAllowed(definer.statement, comments, RULES.definerPublic)) continue;
     const key = routineKey(definer.name, definer.types);
-    const roles = new Set([
-      ...(revoked.get(key) ?? []),
-      ...(revoked.get(definer.name) ?? []),
-    ]);
-    const missing = OPEN_ROLES.filter((role) => !roles.has(role));
+    const rolePositions = revoked.get(key);
+    const missing = OPEN_ROLES.filter(
+      (role) => (rolePositions?.get(role) ?? -1) <= definer.index
+    );
     if (missing.length > 0) {
       findings.push({
         rule: RULES.definerPublic,
@@ -327,7 +355,7 @@ const GUIDANCE = {
   [RULES.anonGrant]:
     'Grant to authenticated or service_role instead, or add "-- allow-anon-grant: <reason>" on the same or preceding line.',
   [RULES.definerPublic]:
-    'Add "revoke all on function <signature> from public, anon;" in the same file, or "-- allow-definer-public: <reason>" on the same or preceding line.',
+    'Add "revoke all on function <signature> from public, anon;" in the same file or a later migration, or "-- allow-definer-public: <reason>" on the same or preceding line.',
 };
 
 // --- Repository evaluation ----------------------------------------------
@@ -351,13 +379,43 @@ function fileVersion(file) {
 function evaluateSqlFiles({ files, readFile, cutoff = MIGRATION_CUTOFF }) {
   const violations = [];
   const legacy = [];
-  for (const file of files) {
+  const sources = new Map(
+    files
+      .filter(
+        (file) =>
+          file.startsWith(`${MIGRATIONS_DIR}/`) ||
+          file.startsWith(`${ROLLBACKS_DIR}/`)
+      )
+      .map((file) => [file, readFile(file)])
+  );
+  const migrations = [...sources]
+    .filter(
+      ([file]) =>
+        file.startsWith(`${MIGRATIONS_DIR}/`) && fileVersion(file) !== null
+    )
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([file, sql]) => ({
+      version: fileVersion(file),
+      statements: parseStatements(sql).statements.filter(
+        (statement) =>
+          REVOKE_EXECUTE.test(statement.text) ||
+          GRANT_EXECUTE.test(statement.text) ||
+          DROP_FUNCTION.test(statement.text)
+      ),
+    }));
+
+  for (const [file, sql] of sources) {
     const definerRule = file.startsWith(`${MIGRATIONS_DIR}/`);
-    if (!definerRule && !file.startsWith(`${ROLLBACKS_DIR}/`)) continue;
     const version = fileVersion(file);
     // Unversioned files cannot be shown to predate the rule.
     const enforced = version === null || version >= cutoff;
-    for (const finding of scanSql(readFile(file), { definerRule })) {
+    const laterStatements =
+      definerRule && version !== null
+        ? migrations
+            .filter((migration) => migration.version > version)
+            .flatMap((migration) => migration.statements)
+        : [];
+    for (const finding of scanSql(sql, { definerRule, laterStatements })) {
       const entry = {
         ...finding,
         file,

@@ -1360,3 +1360,15 @@ the general paused commands and existing disabled jobs remain paused, including
 Rust, TanStack and the cron runner. See the GitHub Actions runbook's
 [Report-only Web E2E](/build/devops/github-actions-runbook#report-only-web-e2e)
 section for runtime bounds, host-lock recovery and report-only acceptance.
+
+## SQL grant guard
+
+The definer rule evaluates exact-signature EXECUTE/ALL revokes after the
+function definition in the same file or a later versioned forward migration.
+Keep public/anon grant checks independent, including rollback checks. Do not
+clear findings with path exemptions or assume an earlier revoke satisfies the
+new-definition rule. For replacements, audit the inherited ACL before calling a
+guard diagnostic an actual exposure; service-only functions must also deny
+`authenticated`. Run both `scripts/ci/sql-grant-guard*.test.js` suites and the
+repository guard. See the [migration guide](../../../../../apps/docs/reference/database/migrations-guide.mdx#sql-grant-guard)
+for end-state semantics and static-analysis limits.
