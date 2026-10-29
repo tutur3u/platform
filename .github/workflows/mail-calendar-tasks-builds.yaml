@@ -96,7 +96,7 @@ jobs:
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
@@ -187,7 +187,7 @@ jobs:
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
@@ -237,7 +237,7 @@ jobs:
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
@@ -271,7 +271,7 @@ jobs:
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24.22.0
       - name: Assert source and toolchain identity
@@ -495,7 +495,7 @@ jobs:
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24.22.0
       - name: Assert restored-job source and toolchain identity
