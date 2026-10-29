@@ -55,6 +55,35 @@ void main() {
       );
     });
 
+    test('ordering sorts null runs and unparsable versions lowest', () {
+      DesktopRelease release(String version, BigInt? run) => DesktopRelease(
+        tag: 'desktop-v$version',
+        version: version,
+        run: run,
+        name: 'a',
+        url: Uri.parse('https://example.com/a'),
+        size: 1,
+        digest: 'd',
+      );
+      final runFree = release('0.10.1', null);
+      final legacy = release('0.10.1', BigInt.from(5));
+      final newer = release('0.10.2', null);
+      final unknown = release('x.y', null);
+      expect(runFree.compareTo(release('0.10.1', null)), 0);
+      expect(unknown.compareTo(release('bad', null)), 0);
+      expect(legacy.compareTo(runFree), 1);
+      expect(runFree.compareTo(legacy), -1);
+      expect(newer.compareTo(legacy), 1);
+      expect(unknown.compareTo(runFree), -1);
+      expect(runFree.compareTo(unknown), 1);
+      final sorted = [runFree, unknown, newer, legacy]
+        ..sort((a, b) => b.compareTo(a));
+      expect(sorted, [newer, legacy, runFree, unknown]);
+      expect(unknown.newerThan('0.0.0', '0'), isFalse);
+      expect(runFree.newerThan('0.10.1', '1'), isFalse);
+      expect(newer.newerThan('0.10.2', ''), isFalse);
+    });
+
     test(
       'accepts independently published platforms without inventing others',
       () {

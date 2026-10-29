@@ -32,12 +32,42 @@ class DesktopRelease {
   final int size;
   final String digest;
 
+  /// Parses `major.minor.patch`; anything else is unknown (`null`).
+  static List<int>? parseVersion(String value) {
+    final parts = value.split('.').map(int.tryParse).toList();
+    if (parts.length != 3 || parts.contains(null)) return null;
+    return parts.cast<int>();
+  }
+
+  /// Orders releases by version, then by legacy run. An unknown version or a
+  /// missing run sorts lowest so it can never outrank a known release.
+  int compareTo(DesktopRelease other) {
+    final a = parseVersion(version);
+    final b = parseVersion(other.version);
+    if (a == null || b == null) {
+      if (a != null) return 1;
+      if (b != null) return -1;
+    } else {
+      for (var i = 0; i < 3; i++) {
+        if (a[i] != b[i]) return a[i].compareTo(b[i]);
+      }
+    }
+    final left = run;
+    final right = other.run;
+    if (left == null || right == null) {
+      if (left != null) return 1;
+      if (right != null) return -1;
+      return 0;
+    }
+    return left.compareTo(right);
+  }
+
   bool newerThan(String installedVersion, String installedRun) {
-    final current = installedVersion.split('.').map(int.tryParse).toList();
-    final next = version.split('.').map(int.parse).toList();
-    if (current.length != 3 || current.contains(null)) return false;
+    final current = parseVersion(installedVersion);
+    final next = parseVersion(version);
+    if (current == null || next == null) return false;
     for (var i = 0; i < 3; i++) {
-      if (next[i] != current[i]) return next[i] > current[i]!;
+      if (next[i] != current[i]) return next[i] > current[i];
     }
     final previousRun = BigInt.tryParse(installedRun);
     final run = this.run;

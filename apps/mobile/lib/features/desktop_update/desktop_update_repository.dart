@@ -42,7 +42,7 @@ class DesktopUpdateRepository {
               .map((value) => DesktopRelease.parse(value, platform))
               .whereType<DesktopRelease>()
               .toList()
-            ..sort((a, b) => b.run.compareTo(a.run));
+            ..sort((a, b) => b.compareTo(a));
       if (releases.isNotEmpty) return releases.first;
       if (data.length < pageSize) return null;
     }
