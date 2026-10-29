@@ -158,7 +158,6 @@ function runtimeImports(source, filename) {
  */
 function testRunnerOf(file, context) {
   const workspace = workspaceOf(file);
-  if (!workspace) return NODE_TEST_FILE.test(file) ? 'node' : 'vitest';
   const script = context.workspaces?.find(
     (entry) => entry.workspace === workspace
   )?.testScript;
@@ -168,6 +167,7 @@ function testRunnerOf(file, context) {
   if (imports.has('vitest')) return 'vitest';
   if (imports.has('bun:test')) return 'bun';
   if (imports.has('node:test')) return 'node';
+  if (!workspace) return NODE_TEST_FILE.test(file) ? 'node' : 'vitest';
   return /\bnode\s+--test(?:\s|$)/.test(script ?? '') ? 'node' : 'vitest';
 }
 function isNodeTest(file, context) {
@@ -335,7 +335,7 @@ function planChecks(changes, context) {
   const workflowTouched = any(/^\.github\/(workflows|actions)\//);
   const relatedTests = new Map();
   for (const file of present) {
-    if (!workspaceOf(file) || file.startsWith(MOBILE_PREFIX)) continue;
+    if (file.startsWith(MOBILE_PREFIX)) continue;
     for (const related of siblingTests(file, exists)) {
       relatedTests.set(related, testRunnerOf(related, context));
     }

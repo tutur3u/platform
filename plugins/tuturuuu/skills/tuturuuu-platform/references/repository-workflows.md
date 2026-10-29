@@ -251,3 +251,41 @@ controls must import the canonical dependency-free owner directly, use byte-chec
 isolated copies and Bun --no-install, and retain actual marker/descendant cleanup
 assertions. Diagnose root/import boundaries before attributing a control timeout
 to IPC or Web startup; a missing later artifact is secondary when the gate failed.
+
+## Wave-1 hosted staging acceptance
+
+Use the [hosted staging runbook](../../../../../apps/docs/build/devops/wave1-native-cutover.mdx#hosted-staging-acceptance-on-tutur3ucom)
+for the four exact app hosts under `staging.tutur3u.com`, cookie/HSTS boundaries,
+Supabase isolation, Release Desk provisioning and cutover-lead readiness receipts.
+The acceptance config is separate from local Web E2E setup; never use its local
+seed/dev-session helpers against hosted staging. Keep browser suites out of Vitest
+and register pure guard tests with the script collector. Profile public origins
+must be supplied before Vite builds, as well as in Worker runtime configuration.
+A listed case or source guard pass is not hosted acceptance or cutover evidence.
+
+Hosted staging uses distinct `tuturuuu-<app>-hosted-staging` Workers and
+`tuturuuu-meet-realtime-hosted-staging`; never bootstrap/reseed the existing
+route-free publishers or reuse their signed admissions. Hosted R2 names are
+`tuturuuu-mail-hosted-staging` and `tuturuuu-meet-hosted-staging-cache`;
+check Worker and bucket names against both existing publisher profiles. Inventory
+existing Workers, buckets and routes before writes, adopting present resources only with explicit owner
+approval. The four deep hostnames require a blocking, owner-approved billable
+zone-level ACM/Advanced certificate exception; the issuer's one-level hostname
+uses Universal SSL. Read back active certificate coverage before DNS and again
+before acceptance. Realtime preparation accepts the reviewed source config and
+writes its route-free derivative in private output, resolving source/alias paths;
+frontend preparation accepts prebundled emitted configs and keeps sibling paths.
+Pin emitted Supabase refs to independently validated build
+inputs and retain the public production-ref deny-list in the Worker. Route
+attachment no-ops only for the same pattern/Worker, stops on conflicts and records
+all route IDs. Calendar service workers are enabled only in the offline test;
+that case does not prove interception of service-worker egress.
+
+Hosted wave-1 staging requires the explicit accepted
+`NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com` override and
+`NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS` exact-origin registrations.
+`NEXT_PUBLIC_TUTURUUU_STAGING` alone does not grant cookie or origin trust.
+Production deployment markers ignore the override. Keep the five candidate
+apps separate from the central issuer at `https://staging.tutur3u.com`.
+Regression coverage: `staging-cookie-domain.test.ts`, `staging-cookie.test.ts`,
+`shared-cookie.test.ts`, and `e2e-wave1-staging/policy.test.ts`.

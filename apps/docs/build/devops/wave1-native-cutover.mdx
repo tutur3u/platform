@@ -65,13 +65,14 @@ and transitive supplier checks qualify that source. Keep the production publishe
 route-free; admission permits upload without moving canonical traffic. Review and
 freeze the exact promotion range before production sync.
 
-The production-first cutover sequence is:
+The per-app staging and cutover sequence is:
 
-1. Deploy the exact sealed production artifact privately with production runtime
+1. Complete the exact-source hosted staging acceptance and rollback readiness
+   checklist below. Then deploy the exact sealed production artifact privately with production runtime
    configuration. Workers.dev and version previews remain disabled. Smoke the
    candidate on an explicitly admitted temporary custom host after upload, then
-   remove that domain before the canonical switch. Staging acceptance remains
-   useful evidence but is not a flip prerequisite.
+   remove that domain before the canonical switch. Hosted staging acceptance and measured instant rollback readiness are
+   prerequisites under the standing per-app authorization below.
 2. Capture the current DNS record, proxy flag, TTL, every zone route, immutable
    Vercel fallback and old/new Worker versions. Rehearse the exact rollback and
    measure route detachment through verified fallback in under two minutes.
@@ -318,3 +319,364 @@ through `ttr resources run`.
   direct Vercel).
 - Signed-in runs take a Playwright `--storage-state` file for a synthetic account,
   created out of band. The report never includes its path.
+
+## Hosted staging acceptance on tutur3u.com
+
+The approved staging copies use **only** these exact hosts in the `tutur3u.com`
+zone. They do not serve production traffic. The Web issuer is
+`https://staging.tutur3u.com`; Release Desk must verify that isolated issuer exists
+before accepting a handoff. The four application copies do not provision it.
+
+| App | Host | Worker | Additional resources and isolation |
+| --- | --- | --- | --- |
+| Meet | `meet.staging.tutur3u.com` | `tuturuuu-meet-hosted-staging` | `tuturuuu-meet-hosted-staging-cache` R2; frontend `MEET_LIVE` DO; `tuturuuu-meet-realtime-hosted-staging` with its own three DO namespaces and disposable SFU/TURN credentials |
+| Calendar | `calendar.staging.tutur3u.com` | `tuturuuu-calendar-hosted-staging` | Staging provider registrations and Tasks/API supplier; shared publication-control D1, never an app binding |
+| Mail | `mail.staging.tutur3u.com` | `tuturuuu-mail-hosted-staging` | `tuturuuu-mail-hosted-staging` R2 and scoped S3 credentials; separate provider accounts, ingestion/webhook signing credentials |
+| Apps | `apps.staging.tutur3u.com` | `tuturuuu-apps-hosted-staging` | Isolated Web issuer/API; no D1/KV/R2/DO application binding |
+
+Hosted Worker names and the two hosted R2 buckets are distinct from existing
+wave-1 staging publishers and their buckets. DO namespaces and provider credentials
+must be independently verified as hosted-only. The Cloudflare account, zone and
+publication-control D1 remain shared; this is resource isolation, not account or
+zone isolation.
+
+Shared cookies written by these copies use **exactly** `.staging.tutur3u.com`,
+with Secure and the existing SameSite/HttpOnly flags retained. Cookies with a
+case-insensitive `__Host-` prefix remain host-only, with no Domain attribute and their existing Path preserved. Shared Supabase cookie
+resolution and the Web app-session issuer recognize only these four hosts and the
+staging issuer; arbitrary sibling hosts gain no cookie-sharing admission. No parent
+`.tutur3u.com` or wildcard host is admitted. HSTS is `max-age=31536000`, without
+zone-wide or parent-domain policy changes. Existing production cookie behavior is
+unchanged. These staging profiles are opt-in through `WAVE1_HOSTED_STAGING=1`;
+ordinary CI/publication profiles retain their current selection.
+
+The staging source profiles live in `apps/<app>/void.hosted-staging.config.ts` and
+share `scripts/wave1-staging/profiles.ts`. Each selects a staging-only Worker entry
+that checks the exact HTTPS host before invoking any app code, adds HSTS/noindex,
+and scopes response cookies. Serving defaults closed: privately supply
+`WAVE1_STAGING_SERVING_ENABLED=1` only for an admitted staging session. Missing/off
+serving state, a Supabase URL that disagrees with the reviewed staging project
+reference, or the public production project ref `nzamlzqfdwaaxdefwraj` returns 503
+before app code, even when that ref and URL agree. The flag is durable provider configuration,
+not process memory. `profiles.test.ts` covers stop behavior across fresh invocations
+and proves zero app calls for disabled/wrong-host/wrong-project requests.
+
+Staging **must use a separate Supabase project**. Build inputs require distinct
+`WAVE1_STAGING_SUPABASE_PROJECT_REF` and `WAVE1_PRODUCTION_SUPABASE_PROJECT_REF`
+(public project identifiers only) and an exact matching staging
+`NEXT_PUBLIC_SUPABASE_URL`. Release Desk independently verifies that both public
+and service keys belong to the staging project; opaque keys cannot be scoped by
+looking at their names. Route-free preparation compares the emitted ref with
+`stagingBuildInputs(env)`, independently of the emitted config, and refuses the
+production ref even if the environment mislabels it. Never make production keys available to this job. The
+per-app `hosted-staging.env.example` files list names only. Use separately protected
+staging credentials for providers, coordination, R2, SFU and TURN too.
+
+### Release Desk preparation and provisioning
+
+This is a procedure for the separately authorized Release Desk operator. Authoring
+or running the offline preparation command executes **no provider operation**.
+Do not run live browser acceptance, provisioning, uploads, DNS or route changes
+as part of PR validation. The approved copies may incur Worker, DO, R2, D1,
+Supabase, provider API and SFU/TURN charges; decision (b) now authorizes staging
+copies, while account-specific scope and finite operation admission remain required.
+No cron, queue producer, production provider callback, MX record or production
+scheduler is part of this setup. The certificate prerequisite below is an additional
+billable, zone-level exception requiring explicit owner approval; authorization for
+the staging copies alone does not approve it.
+
+The Calendar commands `calendar-staging-seed-once.mjs` and
+`calendar-rollback.mjs` are **Release Desk private tooling; request from Release
+Desk**. They are not repository scripts. The operator must obtain and review those
+exact bytes and receipts from Release Desk; absence of the private tooling is a
+blocker, not authority to recreate it or rerun a seed.
+
+1. Read back the current account, exact Worker names, buckets, D1 ledger, provider
+   registrations and staging DNS before writes. The private 27 October lead
+   inventory and #6952/#6962/#6972 receipts are historical evidence, not a current
+   absence check. Preserve the Calendar signed ledger and every pending/uncertain
+   attempt. Never run `calendar-staging-seed-once.mjs` a second time merely to retry
+   publication. If its verified seed receipt is unavailable, reconcile provider
+   state under the existing publisher runbook before proceeding. Read each new
+   `tuturuuu-<app>-hosted-staging` Worker (and Meet realtime), its routes, and
+   both hosted buckets (`tuturuuu-mail-hosted-staging` and
+   `tuturuuu-meet-hosted-staging-cache`):
+   **refuse if present unless explicitly adopted** by the owner with captured
+   deployment, routes, resources and admission receipts. The existing
+   `tuturuuu-<app>-wave1-staging` publisher Workers have signed D1 ledger history;
+   never overwrite, bootstrap or seed them again for this hosted plan.
+   **Calendar: never reseed an existing publisher; verify its seed receipt or
+   STOP.** A missing or unavailable receipt does not establish absence.
+2. Use the repository-pinned cf CLI (`1.0.0-beta.20`) on its supported Node runtime.
+   First run `cf auth whoami --json`, require `authenticated === true` and
+   `tokenValid === true`, and require the reviewed account in `accounts`.
+   Verify that account against the token's actual scoped access. Use cf for the
+   individually verified read/resource operation; inspect that pinned command's
+   help and output schema before scripting it. The
+   [parity matrix](/build/development-tools/cf-cli-wrangler-parity#operation-parity-matrix)
+   retains Wrangler for exact Void output and unrehearsed DO publication. Do not
+   use `void deploy`: it rebuilds/provisions. Do not substitute `cf deploy` without
+   prebuilt/no-provision parity for this artifact.
+
+   Scope the provider token to the reviewed account: **Workers Scripts edit**,
+   **R2 edit**, **D1 read** for signed ledger readback, and **Account Settings read**
+   for `cf auth whoami` account discovery. A user-owned token also needs
+   **User Details read** for its user lookup and **Memberships read** for membership
+   discovery; account-owned tokens use account discovery without a user identity.
+   See the [pinned whoami implementation](https://github.com/cloudflare/cf/blob/cf%401.0.0-beta.20/packages/cli/src/commands/auth/whoami.ts)
+   and [permission definitions](https://developers.cloudflare.com/fundamentals/api/reference/permissions/).
+   At zone level, select **tutur3u.com only**:
+   **Workers Routes edit** and **DNS read**. Grant DNS edit only for the separately
+   authorized exact-host records step, then remove that permission. No
+   `tuturuuu.com` zone access. No zone-settings or SSL edit unless the approved
+   certificate decision in step 5 specifically requires it; use a separate,
+   short-lived owner token for that exception.
+3. Privately inject the names in `apps/<app>/hosted-staging.env.example`. Set all
+   four app origin variables on the **staging Web issuer**, its Web origin, and
+   `NEXT_PUBLIC_TUTURUUU_STAGING=1` to select the five explicit staging
+   internal origins. In this mode production origins and arbitrary siblings are
+   excluded from the app registry. Verify the issuer's
+   auth return allowlist, staging captcha/MFA test-account policy, and Supabase
+   redirect allowlist for the exact staging callbacks. Do not disable production
+   auth controls or reuse the local dev-session bypass.
+4. Prepare one offline plan per app, using an unused private output directory:
+
+   ```sh
+   node --experimental-strip-types scripts/wave1-staging/prepare.ts calendar tmp/wave1-calendar-plan
+   ```
+
+   Repeat with `meet`, `mail` and `apps`. The script rejects missing/equal project
+   references and production Supabase URLs. It emits an ordered, cost-marked JSON
+   plan, executes no commands, and refuses to overwrite a receipt. Review it with
+   the operator before the next operation. Never source a filled env file in a
+   public shell log or copy credentials into the plan.
+5. **BLOCKING certificate prerequisite before DNS and route attachment.**
+   `tutur3u.com` is on Cloudflare FREE. In a full setup,
+   [Universal SSL covers only the apex and one subdomain level](https://developers.cloudflare.com/ssl/edge-certificates/universal-ssl/limitations/).
+   The issuer `staging.tutur3u.com` **is covered** by Universal SSL; the four
+   `<app>.staging.tutur3u.com` hosts are not. Obtain explicit owner approval for
+   the billable, zone-level **Advanced Certificate Manager (ACM) / Advanced
+   certificate pack exception**, then order coverage for exactly
+   `meet.staging.tutur3u.com`, `calendar.staging.tutur3u.com`,
+   `mail.staging.tutur3u.com` and `apps.staging.tutur3u.com`.
+   Record approval, pack/order ID, exact SANs, status and renewal/billing owner.
+   Do not enable zone-wide Total TLS or widen SANs. If the owner declines, STOP
+   and require an approved rename to first-level hosts, with profiles, issuer
+   allowlists, callbacks, cookie boundaries and tests updated before proceeding.
+   Read back active certificate coverage for all four hosts before DNS/route
+   attachment, and again before acceptance; pending/failed issuance blocks both.
+6. Create only resources confirmed absent by the prior read. The pinned cf source
+   verifies `cf r2 buckets get <bucket-name>` and `cf r2 buckets create --name
+   <bucket-name>`; for these copies the names are exactly
+   `tuturuuu-mail-hosted-staging` and `tuturuuu-meet-hosted-staging-cache`.
+   Capture the read, issue at most one creation, and read back its name/account;
+   an unknown creation outcome permits readback only. For secret maps, the pinned
+   API command is `cf workers secrets bulk --worker <staging-worker> --secrets
+   @<private-reviewed-secret-map>`. It creates a version: record that version and
+   verify names with `cf workers secrets list --worker <staging-worker>` before
+   recording the app upload baseline. The API map uses secret objects, not the
+   plain-string deploy format; values stay in the private file. Runtime SFU/TURN
+   and R2 S3 credentials are owner-issued staging credentials, never inferred from
+   a secret name. For Mail, create
+   `tuturuuu-mail-hosted-staging` R2 and staging-only S3 access. For Meet, create
+   `tuturuuu-meet-hosted-staging-cache`; bootstrap the frontend and realtime Workers
+   with their existing migration tags, isolated namespaces and separate SFU/TURN
+   app/key. Already-present Workers are adoption-only: never repeat bootstrap.
+   Existing buckets also require explicit ownership/adoption readback before reuse.
+   Preserve the existing control D1 and signed Calendar/Mail/Apps rows. Do not
+   seed them again or reuse their publication admission for the new hosted names.
+   Obtain a separately reviewed finite hosted upload admission under the
+   [publisher contract](/build/devops/wave1-native-publishers#finite-publication-admission-and-uncertain-outcomes)
+   before any hosted write; this offline plan cannot create that admission.
+   Calendar/Mail/Apps frontends need no application D1/KV/DO. Provision only the
+   names listed by their profiles. No command in the preparation script creates DNS.
+7. Build the hosted profile on admitted CI/Studio with `WAVE1_HOSTED_STAGING=1`,
+   staging public inputs and `PLATFORM_BUILD_ENVIRONMENT=staging`, preserving the
+   full source SHA. The Turbo `build` task explicitly hashes and forwards both
+   public project-ref names (`WAVE1_STAGING_SUPABASE_PROJECT_REF` and
+   `WAVE1_PRODUCTION_SUPABASE_PROJECT_REF`) in strict mode. Use the existing
+   owning app build command, not a Mac build.
+   Qualify original/restored workerd behavior, static assets and supplier identity.
+   The existing route-free staging publisher does **not** automatically select
+   this new hosted profile or grant it publication admission. Do not weaken its
+   no-route gate to make the new profile pass.
+8. For a confirmed-absent frontend Worker's first bootstrap, give `prepare.ts`
+   the emitted prebundled config as its optional third argument. It requires
+   emitted JavaScript and `no_bundle: true`, verifies the staging identity/topology,
+   and writes a `.route-free.json` sibling, preserving relative module/asset paths. Seal and
+   review that exact config with its module/assets inventory **after** derivation.
+   Under a recorded finite staging upload admission, Release Desk uses the retained
+   exact-output operation:
+
+   ```sh
+   bun --no-install wrangler deploy --config <sealed-route-free-config> --message <full-source-SHA>
+   ```
+
+   Keep staging credentials private; set account identity explicitly. Record the
+   original deployment/version or bootstrap receipt, operation identity and byte
+   digest. One upload, no application retries. An unknown result requires provider
+   reconciliation, never blind replay. Meet realtime uses its separate
+   `apps/meet-realtime/hosted-staging.cf.json`. Derive its route-free source
+   config with the same helper before its separately admitted build/seal:
+
+   ```sh
+   node --experimental-strip-types scripts/wave1-staging/prepare.ts meet-realtime tmp/wave1-meet-realtime-plan apps/meet-realtime/hosted-staging.cf.json
+   ```
+
+   For `meet-realtime` the helper accepts only that exact reviewed source
+   config, not an emitted config. It preserves the three DO bindings and all
+   migration tags, and writes `hosted-staging.cf.json.route-free.json` inside the
+   private output directory. It resolves the source entry and alias paths against
+   the original config directory, preserving their targets without writing beside
+   the source. It does not build or upload. Use that private source config for the
+   separately admitted realtime build, then qualify and seal its emitted route-free
+   Worker on admitted CI/Studio before the exact-output upload.
+   Never upload the routed source config or reuse the old realtime publisher.
+9. **DNS is outside this script.** Require the active certificate receipt from
+   step 5, then stop if the operator has not separately supplied and verified the
+   four exact records in the `tutur3u.com` zone. Do not use a Custom Domain deploy:
+   it can create DNS. After route-free upload succeeds, Release Desk can attach
+   only each exact `host/*` Worker Route from the reviewed profile to the
+   pre-existing DNS. The Meet realtime profile lists more-specific routes on
+   `meet.staging.tutur3u.com` for `/realtime*`, `/room-state*`, `/room-device*`,
+   `/room-service*`, `/channels*`, `/collaboration*` and `/health*`; attach each
+   to `tuturuuu-meet-realtime-hosted-staging`.
+
+   Before every attachment, read the zone's existing routes and compare the exact
+   pattern and Worker. **Same pattern and same Worker: no-op**, retain the existing
+   route ID. **Same pattern pointing elsewhere (including a disabled route):
+   STOP**, without replacing or deleting it. Only a confirmed-absent pattern may
+   be created once. Read back and record every route ID, pattern, Worker and zone,
+   including no-ops. An unknown write permits readback/reconciliation only.
+   Verify no wildcard hostname, production route, workers.dev or preview URL was
+   enabled. Read back active certificate SAN coverage for all four hosts and the
+   issuer's Universal SSL coverage, then verify valid HTTPS, HSTS, cookie domain
+   and exact HTTP build identity before acceptance.
+
+For stop, disable future publication admission first. Set the durable serving flag
+off to stop backend work, then detach **only the captured staging routes** to stop
+public invocation spend; verify no other route, service caller or scheduled/queue
+producer remains. A secret or serving flag alone does not cap ingress charges.
+If serving cannot be fenced, the release owner may delete only the named staging
+Worker(s), preserving D1 history and provider receipts. This PR executes none of
+these operations. Shared-account limits/billing remain a documented residual risk.
+
+### Run the signed-in suites
+
+The independent Playwright config follows the Web repository's Chromium/single
+worker conventions, with one EN project and one VI project, zero retries, valid TLS,
+no saved storageState, and no trace/video/screenshot containing disposable account
+credentials. It never starts a server or runs Docker/global seed setup. The normal
+Web E2E config does not discover this separate test directory.
+
+Privately supply these environment **names**, never their values in a PR or log:
+
+- Common: `WAVE1_STAGING_APP`, `WAVE1_STAGING_SOURCE_SHA` (full accepted app SHA),
+  `WAVE1_STAGING_EMAIL`, `WAVE1_STAGING_PASSWORD`, `WAVE1_STAGING_USER_ID`,
+  `WAVE1_STAGING_WORKSPACE_ID`, `WAVE1_STAGING_SUPABASE_PROJECT_REF`,
+  `WAVE1_PRODUCTION_SUPABASE_PROJECT_REF`, and
+  `WAVE1_STAGING_DISPOSABLE_ACCOUNT=confirmed` after verifying the account/resources.
+- `WAVE1_STAGING_BASE_URL` defaults to `https://<app>.staging.tutur3u.com`;
+  `WAVE1_STAGING_WEB_ORIGIN` defaults to `https://staging.tutur3u.com`.
+  Overrides must equal those same explicit origins. Canonical hosts, workers.dev,
+  arbitrary staging siblings, non-default ports, HTTP, userinfo, paths and query/hash are refused
+  before Chromium starts. Uppercase hosts and explicit HTTPS `:443` normalize to
+  the same origin; trailing dots and IDN lookalikes are refused. No production-host override exists.
+- Calendar: `WAVE1_STAGING_CALENDAR_CONNECTION_ID`, `WAVE1_STAGING_CALENDAR_PROVIDER`,
+  `WAVE1_STAGING_CALENDAR_EVENT_ID`, `WAVE1_STAGING_CALENDAR_EVENT_TITLE`,
+  `WAVE1_STAGING_CALENDAR_RANGE_START`, `WAVE1_STAGING_CALENDAR_RANGE_END` (ISO timestamps), and
+  `WAVE1_STAGING_TASK_BOARD_ID`. Prepare a visible current-range provider event and
+  a Tasks board for this disposable workspace before the run.
+- Meet: `WAVE1_STAGING_MEET_ROOM_CODE`, `WAVE1_STAGING_MEET_ROOM_TITLE`. Prepare a
+  private room owned by the disposable account; local fake media is never published.
+- Mail: `WAVE1_STAGING_MAIL_ACCOUNT_ID`, `WAVE1_STAGING_MAIL_PROVIDER`,
+  `WAVE1_STAGING_MAIL_PROVIDER_MESSAGE_ID`, `WAVE1_STAGING_MAIL_PROVIDER_SUBJECT`,
+  `WAVE1_STAGING_MAIL_MAILBOX_ID`, `WAVE1_STAGING_MAIL_WEBHOOK_MESSAGE_ID`,
+  `WAVE1_STAGING_MAIL_WEBHOOK_SUBJECT`, `WAVE1_STAGING_MAIL_WEBHOOK_INTERNET_MESSAGE_ID`,
+  `WAVE1_STAGING_MAIL_WEBHOOK_NOT_BEFORE` (ISO timestamp),
+  `WAVE1_STAGING_MAIL_ATTACHMENT_ID`, `WAVE1_STAGING_MAIL_ATTACHMENT_FILENAME`,
+  `WAVE1_STAGING_MAIL_ATTACHMENT_SHA256`. Before the run, the provider operator sends
+  one uniquely identified message through the **staging** webhook/ingestion path
+  with a <=1 MiB attachment. Capture delivery/event receipts separately. The suite
+  reads that message and attachment through the app proxy; it never posts a webhook,
+  sends mail, changes flags, marks read, synchronizes providers or mutates attachments.
+- Apps: `WAVE1_STAGING_APPS_CANONICAL_FENCE_RECEIPT` is the private file path to the
+  matching source's real original/restored workerd browser receipt (schema 1,
+  browser mode, canonical assertion completed, no errors). A live canonical Host
+  probe would target production and is forbidden. Catalogue redirect Location
+  values are inspected without following them. In explicit staging mode the five
+  registered staging destinations resolve to their staging hosts, including Meet.
+  Other catalogue entries retain their existing destinations and must not be
+  navigated during this acceptance.
+
+Only after the operator authorizes a live staging run, from the repository root:
+
+```sh
+WAVE1_STAGING_APP=calendar ttr resources run -- bun run --cwd apps/web playwright test --config playwright.wave1-staging.config.ts
+```
+
+Repeat the same command with `meet`, `mail` and `apps`. On Studio/i9, use that host's
+canonical `ttr resources run`; do not bypass the Mac disk latch. Credentials come
+from protected environment injection. Browser egress is allowlisted to the selected
+staging app, staging Web issuer, the independently reviewed staging Supabase
+project, and the fixed `challenges.cloudflare.com` authentication service (use a staging
+Turnstile test key). Canonical redirects/assets and domain mutations fail the run. Auth POSTs (including the fixed Turnstile service)
+and Meet's exact pre-join token endpoint are the allowed browser writes; Mail domain requests remain GET/HEAD/OPTIONS.
+API reads use browser credentials and never log bodies or tokens. Service workers
+are blocked by default, including Calendar provider/Tasks reads. Only Calendar's
+offline test enables them to install and exercise the public fallback; its
+service-worker-owned network requests are not intercepted by `context.route`, so
+that case is not evidence of full egress enforcement. Do not widen its navigation
+or add provider mutations. Run Playwright directly as above: Turbo has no blanket
+`WAVE1_STAGING_*` passthrough, so acceptance credentials never reach unrelated tasks.
+
+### Pass criteria and cutover readiness
+
+An app is ready only when **all** its required evidence is tied to the exact accepted
+source and artifact. A browser suite pass alone never means ready. Record the
+operator, timestamp, provider receipt and immutable evidence path for each item:
+
+| App | Staging acceptance | Additional required hosted proof | Instant rollback and canonical-proxy baseline |
+| --- | --- | --- | --- |
+| Meet | EN/VI Web handoff and reload, exact identity/cookies/HSTS, private lobby, local camera frames/microphone tracks, mute/camera controls and HTTP offline/recovery | Two disposable participants with actual hosted SFU, TURN-only path, signaling drop/reconnect, resumed remote audio/video and DO state; fake local media/HTTP recovery is not this evidence | Capture both frontend/realtime versions and staging route IDs; rehearse restoration of both. Capture the current canonical proxy/route topology and working pre-flip behavior |
+| Calendar | EN/VI Web handoff/reload, provider connection and seeded event, Tasks board through owning API, installed SW public offline fallback and online recovery | Provider OAuth callback/renewal, provider read/write and recurrence, Tasks interaction/supplier compatibility; record the offline fallback's intentional English copy | Rehearse the existing `calendar-rollback.mjs` pattern using captured main/ACME route IDs, preserve prior exclusions and proxied Vercel CNAME; verify uncached fallback under two minutes. Capture current canonical proxy/ACME baseline |
+| Mail | EN/VI Web handoff/reload, connected-provider read, uniquely identified recent inbound message, exact attachment hash and unchanged message state | Correlate the provider/webhook delivery receipt with that internet message ID and staging ingestion/R2 ownership. Read-only suite grants no send/retry authority | Rehearse route removal to immutable Vercel fallback and preserve ingestion/MX/storage/signing custody. Capture current canonical-proxy baseline; never replay an uncertain send |
+| Apps | EN/VI signed-in catalogue, refresh, assets/API identity, locale redirect and repeated-query/encoded-path preservation; matching workerd canonical refusal receipt | Exact artifact's canonical-host refusal (503/noindex) and separate admitted production fence qualification; inspect catalogue anchors without canonical navigation | Rehearse captured route removal/immutable Vercel fallback; capture canonical proxy/route baseline and old/new Worker versions |
+
+The owner-approved decision permits **each app's automatic cutover once its staging
+acceptance and instant rollback readiness pass**; no batch hold or second standing
+permission request is needed. Execution belongs solely to the cutover lead. That
+lead must consume the complete per-app checklist, current exact-SHA CI/security and
+supplier results, production-publication policy, immutable fallback/version capture,
+measured rollback rehearsal and canonical-proxy baseline before moving that app's
+traffic. Resolve missing/failed evidence first. Mastermind/user approval is required
+for changes outside that standing scope: broader promotion ranges, new resource or
+billing scope, unavailable rollback, auth/data exceptions, canonical topology beyond
+the reviewed plan, or scheduler/provider ownership changes. This PR performs no
+production cutover and adds no automatic production executor.
+
+Source-only checks (no network/browser launch) are:
+
+```sh
+ttr resources run -- node --experimental-strip-types --test apps/web/e2e-wave1-staging/policy.test.ts scripts/wave1-staging/profiles.test.ts
+```
+
+The guard tests cover all four production hosts, the old `staging.tuturuuu.com`
+suffix, deceptive suffix/userinfo and IDN/punycode hosts, trailing dots, HTTPS port
+normalization, cross-origin path escape, missing inputs and Mail writes. They also
+cover production-project denial despite a matching URL, independent build-ref
+pinning, host-only `__Host-` cookies and route-free realtime topology preservation.
+Certificate/Worker inventory and seed-receipt fences are represented in the
+non-executing preparation plan and tested for ordering and scope. Exact-source
+CI must also type-check/lint and build each hosted profile, retain original/restored
+runtime checks and independently review the cookie/auth changes. A source test or
+listed Playwright case is not an executed staging acceptance receipt.
+
+Hosted wave-1 staging requires the explicit accepted
+`NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com` override and
+`NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS` exact-origin registrations.
+`NEXT_PUBLIC_TUTURUUU_STAGING` alone does not grant cookie or origin trust.
+Production deployment markers ignore the override. Keep the five candidate
+apps separate from the central issuer at `https://staging.tutur3u.com`.
+Regression coverage: `staging-cookie-domain.test.ts`, `staging-cookie.test.ts`,
+`shared-cookie.test.ts`, and `e2e-wave1-staging/policy.test.ts`.

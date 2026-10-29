@@ -1,6 +1,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "plugins": [],
     "types": ["node"],
     "noEmit": true,
@@ -9,6 +10,10 @@
     "declaration": false,
     "declarationMap": false
   },
-  "include": ["vite.config.mts", "void.config.ts"],
+  "include": [
+    "vite.config.mts",
+    "void.config.ts",
+    "void.hosted-staging.config.ts"
+  ],
   "exclude": ["node_modules", "dist", ".turbo", ".typecheck"]
 }

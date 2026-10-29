@@ -30,6 +30,7 @@ describe('Calendar cutover boundary', () => {
   it.each([
     'calendar.tuturuuu.com',
     'calendar-staging.tuturuuu.com',
+    'calendar.staging.tutur3u.com',
     'calendar-cutover.tuturuuu.com',
   ])(
     'threads a fresh CSP nonce through the proxy and Start on %s',

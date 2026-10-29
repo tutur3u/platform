@@ -1,6 +1,7 @@
 import { defineConfig } from 'void/config';
+import hostedStaging from './void.hosted-staging.config';
 
-export default defineConfig({
+const standard = defineConfig({
   target: 'cloudflare',
   remote: false,
   cloudflare: {
@@ -19,3 +20,7 @@ export default defineConfig({
     observability: { enabled: true, head_sampling_rate: 0.05 },
   },
 });
+
+export default process.env.WAVE1_HOSTED_STAGING === '1'
+  ? hostedStaging()
+  : standard;

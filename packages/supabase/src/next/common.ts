@@ -1,6 +1,8 @@
 import type { CookieOptions, CookieOptionsWithName } from '@supabase/ssr';
 import { getTuturuuuSharedCookieDomains } from '../shared-cookie-domains';
 
+export { stagingCookieDomain } from './staging-cookie-domain';
+
 export type SupabaseCookie = {
   name: string;
   value: string;
