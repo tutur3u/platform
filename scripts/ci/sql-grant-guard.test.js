@@ -341,6 +341,7 @@ for (const [name, acl] of [
 }
 for (const setting of [
   'public',
+  "''",
   'pg_temp, pg_catalog',
   'pg_catalog, "$user", pg_temp',
   'pg_catalog',
@@ -635,15 +636,4 @@ test('repository SQL grant enforcement has no findings outside shrink-only allow
     checkRepository().violations.map((finding) => finding.message),
     []
   );
-});
-
-test('empty-string path is pinned while public alone and missing paths fail', () => {
-  assert.deepEqual(scanExtensions(createP2("''") + aclP2), []);
-  for (const sql of [
-    createP2('public'),
-    createP2().replace(' set search_path = pg_catalog, public, pg_temp', ''),
-  ])
-    assert.ok(
-      scanExtensions(sql + aclP2).some((f) => f.rule === 'definer-search-path')
-    );
 });

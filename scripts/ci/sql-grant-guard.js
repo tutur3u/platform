@@ -533,21 +533,20 @@ function scanExtensions(
               : ''
           ) ?? [];
       if (
-        setting?.[1].trim() !== "''" &&
-        (schemas[0] !== 'pg_catalog' ||
-          schemas.at(-1) !== 'pg_temp' ||
-          schemas.some(
-            (name, i) =>
-              !name ||
-              name === '$user' ||
-              /^pg_(?:toast_)?temp_/.test(name) ||
-              (name === 'pg_temp' && i !== schemas.length - 1)
-          ))
+        schemas[0] !== 'pg_catalog' ||
+        schemas.at(-1) !== 'pg_temp' ||
+        schemas.some(
+          (name, i) =>
+            !name ||
+            name === '$user' ||
+            /^pg_(?:toast_)?temp_/.test(name) ||
+            (name === 'pg_temp' && i !== schemas.length - 1)
+        )
       ) {
         add(
           'definer-search-path',
           statement,
-          `${key} requires an empty-string search_path or pg_catalog first, pg_temp last and no empty or user-dependent schema`
+          `${key} requires pg_catalog first, pg_temp last and no empty or user-dependent schema`
         );
       }
     }

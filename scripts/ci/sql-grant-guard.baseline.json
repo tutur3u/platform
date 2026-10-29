@@ -758,6 +758,7 @@
     "apps/database/supabase/migrations/20260713161000_expire_inventory_checkout_reservations.sql": "08412a5eff199ddc0be656fed8a3147aa547c59e06d83dda15fd98445c4e4e56",
     "apps/database/supabase/migrations/20260715101055_link_workspace_user_status_audit_records.sql": "3ca2865c3e3cb396562d94491ca65681270f6ee6020f3a3b80512cc24c39ea50",
     "apps/database/supabase/migrations/20260715231451_inventory_sales_periods.sql": "35a884c2cb4f89971e450eae85e0112e588b943cb64b4d38b60b33d5e72a50b7",
+    "apps/database/supabase/migrations/20260716141135_add_task_history_app_session_actor.sql": "69a2cc1faa7b5e10a4bc9f62f1edbe53b1cafdbf090a6d19c6f24aafa565831d",
     "apps/database/supabase/migrations/20260716144917_inventory_sales_period_product_rules.sql": "07804adc42420323b1e452250e07cc5209f65cc6e18540b4bd9134ee2b7fda0b",
     "apps/database/supabase/migrations/20260716164604_inventory_commerce_aggregates.sql": "8a0cbc0df19a2ceea4e9c988adac9701a4711376220d5c0a060de8bc82296c74",
     "apps/database/supabase/migrations/20260717010000_external_project_relations_and_entry_bundles.sql": "8a3170ff6adf6a0a5142a72dc184d8f657dbe8fa857ba5ff19e48d6da50db15a",
@@ -776,12 +777,17 @@
     "apps/database/supabase/migrations/20260727043716_ensure_workspace_creator_membership.sql": "63936a71769b75e297e097ebf15f22dad0d4747a4d189c74b81ac4dade3843e1",
     "apps/database/supabase/migrations/20260727081221_ai_studio_metering.sql": "ec61f0bac4235ff7e7df10262960b9d0db06ebe1bef18cd0d11db1d75bd0de28",
     "apps/database/supabase/migrations/20260727081222_ai_studio_exact_cost.sql": "ec5891f42ec5c69ae2c7518ae35ae477b8ac0d2913d72299813feeb946e685f8",
+    "apps/database/supabase/migrations/20260727150000_scale_reports_and_post_email_maintenance.sql": "ff16eb1b4adba0208fbf1ee8e9f0116a87857492f3a53cc177930f78e411dc45",
     "apps/database/supabase/migrations/20260727203000_external_app_unmetered_ai_usage.sql": "44f6a6824dfd14ab2e508975c84fe3f09ec43e106205f200d117785fe905bd4a",
     "apps/database/supabase/migrations/20260728013902_restore_workspace_creator_access.sql": "d7cd0193bb11886992891e74477e1bab9ddf0adddc2c8131123acd8dbd64911d",
     "apps/database/supabase/migrations/20260728233000_ai_studio_observability_key_approval.sql": "9be90ea73e179288cfba83a0ea7f3f0f95eb289de702aed32e6b14342ab11deb",
     "apps/database/supabase/migrations/20260729004121_inventory_sales_export.sql": "02f88bd64ed0f428234498e15100d798ef4c1d34e2eb7f89e030eef731e0aeac",
     "apps/database/supabase/migrations/20260729012450_inventory_finance_reconciliation.sql": "2fecb40c30f27c0dc748b8ab87c1708902ef5ce3b6f23b85589562c3ceccaa0d",
     "apps/database/supabase/migrations/20260729013236_ai_studio_credit_ledger_observability.sql": "dbbac1362af3eee51121ee754d8269d62b94ebc4fd06ac98a1e487dee457ee7a",
+    "apps/database/supabase/migrations/20260729014802_inventory_finance_reconciliation_summary.sql": "82936b29d6d0c0a8ee6a05071fa9d210fb6233d45da6058ff0c205697ad59900",
+    "apps/database/supabase/migrations/20260729020610_inventory_finance_wallet_summary_filter.sql": "1da24d1d09cbe8f31c18ae5c7e2cd99023ef361eee5bcf6e9e2e71c288f30229",
+    "apps/database/supabase/migrations/20260729021527_inventory_finance_backfill_rpc.sql": "d3fae8e11562a0aa6cfe392538fafee0f5850545f8edb16c5430acee899616fd",
+    "apps/database/supabase/migrations/20260730022705_ai_studio_policy_workspace_search.sql": "07bce5f81e55fd7d08194d4134d4777a95b1d7f5221f1b0ac9ab0c2cf42e948f",
     "apps/database/supabase/migrations/20260730040341_fix_ai_studio_zero_credit_settlement.sql": "7da7b53682acb93d143a542088821e9f7bebf9b1da9a710ade765c0e53e05289",
     "apps/database/supabase/migrations/20260730042841_reconcile_expired_ai_studio_runs.sql": "bb0f5f45f4de8348172d7288ccdc20fc4dc8e540d49b59467dc4a6dda122602e",
     "apps/database/supabase/migrations/20260801193000_inventory_bundle_revenue_cash_checkout.sql": "cf7bf85f723a922116a8bbbdd2de0ea444f1324cdb1027883ae4b73f99b2974f",
@@ -805,15 +811,19 @@
     "apps/database/supabase/migrations/20260805162000_external_chat_replay_updates.sql": "eda16e6396d0bb5b31011ec20ea73ea1ac6ba58aebcf48c48084d94c0b8a81c9",
     "apps/database/supabase/migrations/20260805170000_validate_external_chat_replay_constraints.sql": "7bb59f6e508681fcbfd305239dd02746991aa72a65ba6e5c791cc4e332c6f993",
     "apps/database/supabase/migrations/20260812184000_allow_workspace_user_links_for_incomplete_profiles.sql": "dc9d75578cefd5e935819200e52946391b5c3c2659769c37a95bbf11b4b3f7dd",
+    "apps/database/supabase/migrations/20260813024230_finalize_workspace_invitation_membership.sql": "8fac0c1628dae45a5fa268f431b8c072bca04c7ee154c352dbee7186b77318df",
     "apps/database/supabase/migrations/20260813065347_harden_workspace_member_link_trigger.sql": "4166d871b7be57416a8968c48fa796934dd618741772eb7ff22ea45a059885b0",
     "apps/database/supabase/migrations/20260813094433_repair_incomplete_invited_workspace_profiles.sql": "5eaf64ec9c455b50f71c480cdfb9df138b3fb4601dddcf73f420a35d0358fc80",
     "apps/database/supabase/migrations/20260813094732_allow_transaction_viewers_category_breakdown.sql": "1c0c97b4eaaf75aeca8b22be58ae6271bc40e0437fd69bafea7b2e5060b66710",
+    "apps/database/supabase/migrations/20260813182000_multi_role_workspace_invitations.sql": "0ca9553fe865a4f5a72675f09e0124d958e55223790c087ab4b8ed37f9a27dbb",
     "apps/database/supabase/migrations/20260823113518_restore_user_group_post_content_limits.sql": "e40ae36ca7ed9a124312d2f1c0cfd8cb1a23d2044e1921cc21b8a7dcdc97a5c9",
+    "apps/database/supabase/migrations/20260823163837_add_task_snapshot_app_session_actor.sql": "adc162592948b90867fd6cf6d607712deaeeb808867b4cda0e11f663f1560cbb",
     "apps/database/supabase/migrations/20260824022239_restore_task_history_version.sql": "9d0b15fdf85e9b6d0de9b0412b14a78ea00e55c4051c5420460c646a5521bafe",
     "apps/database/supabase/migrations/20260824033230_fix_task_snapshot_search_path.sql": "18107f912ca5e3913d3760e23079f80f5f7e02976914a22d6d255dbb464390f4",
     "apps/database/supabase/migrations/20260824035032_fix_task_history_restore_search_path.sql": "5c8e1ba6da71239e26055c84f9ef33aa99117cf7bc8aaf54de0f9dea801459ec",
     "apps/database/supabase/migrations/20260825053118_forms_realtime_collaboration.sql": "d2ef614280cd721623e22bbde76cf9c451b410299585a4fe48e4610aff7160b1",
     "apps/database/supabase/migrations/20260903114739_settle_metered_ai_generation_reservations.sql": "db32f37f9c6928da40eb93b4a6a45ac307db7ba5ca445a18a6d952d5f87d7b8d",
+    "apps/database/supabase/migrations/20260907160000_create_scheduled_workspace_meeting.sql": "fc39644697a7a365d37e3a74ea04ba8f80fa4b31d45c6cb1d50aecec9bc2ab5a",
     "apps/database/supabase/migrations/20260911100000_periodic_report_approval_delivery.sql": "cf380355e667bbca70d1103dbfd0602ac3ee4f2e539a83ccccfcd974e8411bec",
     "apps/database/supabase/migrations/20260911113000_guard_processing_report_snapshot.sql": "8e5f880ef222d284cf7f66b81eefaefadd46c1550cbd51d72a9d24faf5794742",
     "apps/database/supabase/migrations/20260912110000_periodic_report_stages.sql": "ee310ce7736182c8c54fbcf53b7b4188851fda196c834a2939c9bc2786dd0519",
@@ -848,9 +858,12 @@
     "apps/database/supabase/migrations/20261001090000_calendar_retained_generation_guard.sql": "f2495e9d9c510587439d32498afc9e093cff51bb1741a209393e191d138969e9",
     "apps/database/supabase/migrations/20261001140000_learn_programming_problem_catalog.sql": "266961494b572453f8c27859e8d4ba6be69dc4c0b0b4eeb21d31b507080207fc",
     "apps/database/supabase/migrations/20261002153000_security_egress_budgets.sql": "05e96c973b14cb21bd9f9630bf44961c00ff881fec3fe5d3afc01e0d098ab223",
+    "apps/database/supabase/migrations/20261003054000_inventory_offline_create_contract.sql": "51c22fa838074b9a02114a0378772c6cce02ab28f926b27c8118e2a274a7b88b",
     "apps/database/supabase/migrations/20261003060000_calendar_google_color_operations.sql": "235793e8f6859e753f25639e91dc210591c2d218ef20cc6b9ca8fcdf3fbb4434",
     "apps/database/supabase/migrations/20261003060100_calendar_google_import_generation.sql": "2cd22b9ee0a06ed8717ff5875524f6f2a6fbed0ebd7995fc6a931b6b64053cc1",
+    "apps/database/supabase/migrations/20261003060200_calendar_google_mutation_replay.sql": "af572a5f03d925265f41559a8400adc09a3db7171c519e6ea916aa80e3bdf7e2",
     "apps/database/supabase/migrations/20261003060300_calendar_provider_saga.sql": "bc3c27ab2f0e7054759ffae1db2262e971c610ebeee407d3603469b02a567c54",
+    "apps/database/supabase/migrations/20261003060400_calendar_native_generation.sql": "5d279273d981a96bf05d46aa8e326d48c894a86cee3813c8bfa57a6ca455b540",
     "apps/database/supabase/migrations/20261003090000_inventory_merge_identities.sql": "a4a06360ff211d54f1b69856d88e720b48c04cffe4112186b6946611ab48bbc3",
     "apps/database/supabase/migrations/20261003090100_inventory_merge_preview.sql": "64a53a16fc573e527667eab91ded9f71974ae76ecadf1e79422355347a07fdc4",
     "apps/database/supabase/migrations/20261003090200_inventory_merge_apply.sql": "50372273d96e1df470ae43e984f824a27e4c63120f2eb5b70ca2cb396a0e96a2",
@@ -860,25 +873,38 @@
     "apps/database/supabase/migrations/20261003120100_inventory_season_merge_apply.sql": "3fa524d416d625c3070829ebcbc089a3f87f4b55bd370a53f2490fea3df3f2e9",
     "apps/database/supabase/migrations/20261004004000_public_creator_identity.sql": "2b622c1cf2f4993b53326b07a7b810f939b4116c5833dfd42d2926b516726a8d",
     "apps/database/supabase/migrations/20261004141200_account_benefits.sql": "bc2b6fce901f266b9c3c75cafb01076645d6c5a57e9bf4c5e44449ee6c874c4a",
+    "apps/database/supabase/migrations/20261004141201_hosted_playgrounds.sql": "baac7081ed641cae714966be22c588ca4979d96cbfbc20db90075dd02a014a33",
     "apps/database/supabase/migrations/20261004141202_playground_runner_claiming.sql": "1024a47c4bf7e3a52da0b747b8df07a46870ae68054b9e731a3125a358905ddc",
+    "apps/database/supabase/migrations/20261004141203_programming_collaboration.sql": "e7180682453920813f78582f66df63e81161219a2ede0f39919ef4a401ddb6d7",
+    "apps/database/supabase/migrations/20261004141204_cloudflare_channel_authorization.sql": "13a18b807ee27fa6b77d1919a902ec05a9d63e4b2cc41fee9d5f41cc4b7397be",
+    "apps/database/supabase/migrations/20261004141205_meeting_documents.sql": "94e2a2b60114f8654923834630ffce1e3b94c7a7cb43d441cb9401a75782b61c",
     "apps/database/supabase/migrations/20261004171700_mobile_activity_transaction_boundary.sql": "872a3b63e578cf282d226ecc926135db4421207a2d4b05eb1b1c40091e0d7482",
     "apps/database/supabase/migrations/20261004171701_personal_banner_lifecycle.sql": "4ef102ebec293b289efb33bbaa306437dd86f4d4c477722c88e9e5bc520a83b0",
     "apps/database/supabase/migrations/20261005163000_calendar_native_recurrence.sql": "d8a68a938ebb46ad90f1a437e3b5f6c1fcb2dba8d30fdeafd2b8b4c83b8e16ef",
     "apps/database/supabase/migrations/20261005180000_calendar_provider_series_operations.sql": "dee84c65532c93a8347cb876cd923ed0c897b1994efee236d5eafefc2af00f26",
+    "apps/database/supabase/migrations/20261005193000_calendar_provider_series_reconciliation.sql": "e3f818d06564da4cae87b4673ba850b6c9c9ee64383c977b782b083aa7005a7d",
     "apps/database/supabase/migrations/20261005200000_calendar_provider_readonly.sql": "a72d0dc97b4ad4d6147909e24f2e759c14c820fcdb6a2313001c67c9e6ccee46",
+    "apps/database/supabase/migrations/20261005210000_calendar_provider_create_first.sql": "8c160f3c5cbf4420d1032b185916db32ecf1de54125371b29d1832e23640dd0a",
+    "apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql": "f6fa634012eeb50ecf5003e74c3f9db2bfe0b8aad58454c64eab016a5bd47eb9",
     "apps/database/supabase/migrations/20261006020000_desktop_deployment_admission.sql": "c99c6875c5b7af3932610600a8b26732eaf193b921344ff71ce9982e89469c91",
+    "apps/database/supabase/migrations/20261007020000_time_tracker_control_foundation.sql": "02a772633a0715209b8dfa8473c56367219a7a043dc082aa3a400f3ba7a0ddbd",
     "apps/database/supabase/migrations/20261007040000_periodic_report_unknown_outcomes.sql": "b315182c538706fa407e99a8f64efb0a7fd563f2a28b3e386e53e81697557305",
     "apps/database/supabase/migrations/20261007090000_report_review_receipt_foundation.sql": "bf4cc5ee445aee1072f2ce50c4c1dd3a94f11c74df76ad5f7d83d2140723f792",
     "apps/database/supabase/migrations/20261009120000_report_email_reply_identity.sql": "c2e9ec95388bfbae88bfb307b5c4604feb7d88aea38a813ecd8a7e805cdd0280",
+    "apps/database/supabase/migrations/20261010140100_time_tracker_replace_running.sql": "f87709c2870e8916eb01525561b2a0b2dbe84a32f65bf3c3a8d8a6ad022461e4",
     "apps/database/supabase/migrations/20261010140101_qualify_time_tracking_trigger_bindings.sql": "bd765a9f71e13eb8d77fc6ad16fddad6254c9a219d8751b126d46a3f3a0f0eb9",
     "apps/database/supabase/migrations/20261011002100_tutoring_teacher_hours.sql": "f2a49bb8f8f0399f3c332dbe782d1c99e3c717aef25c8d0cbadcbecce5a7903b",
     "apps/database/supabase/migrations/20261011002101_topic_delivery_attempt_foundation.sql": "f073a2e68639051ac52a6d806cd02b188e3f9f241d2997ba3c05fa802ef6a716",
     "apps/database/supabase/migrations/20261011002103_external_project_storage_analytics_cache.sql": "5aa038c570f33d07a8b07fc751d821551a97bc6680c0d6631faeb536d7c32050",
     "apps/database/supabase/migrations/20261011002105_tutoring_absence_credit_identity.sql": "917db56505bf44460cd391728fc516b19a87583ec584e9bbbde3559350dd6b3b",
     "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql": "0204d2ffb2b016b7e0bc4a57ece1c43538e7a3331845b1bb7fd845a38c3dbe5a",
+    "apps/database/supabase/migrations/20261011002108_employee_creation_finalization.sql": "1ef19dfbdfd5bc668c7c1767aec041e28ecb7e1352291152a108d9716382367d",
+    "apps/database/supabase/migrations/20261011002109_employee_restoration.sql": "24d8df606b1f51093f532bea2c69b1da864f6172f8bfb05285936d6210cd7f90",
     "apps/database/supabase/migrations/20261012140000_mail_inbound_notification_admission.sql": "0c493eb971d0edb4eec0f90457411e052795b6adf3cac94b8d14e2d76e9eac8e",
     "apps/database/supabase/migrations/20261014001000_normalize_employee_inbound_mailbox.sql": "9f7edf8ff87dc2e77ec5313961a8782261c4b93e4d073bed7bfa02e72492b142",
     "apps/database/supabase/migrations/20261016093001_employee_creation_operations.sql": "dcf12e21c790dcb7e32f640fe0e7306ead029065c1f7f5a30599d43a48998b24",
+    "apps/database/supabase/migrations/20261016093002_employee_creation_reserved_preflight.sql": "b9d31648abcb906509a685e02f86a1718ffaed96a6f3076f82781d9b3ce33618",
+    "apps/database/supabase/migrations/20261016104000_employee_runtime_observation.sql": "0490912c1f7bf17cf5f8091e7c6e1c45ccacab35341c15e6bcba4fd232c7d4b5",
     "apps/database/supabase/migrations/20261017000000_personal_journal.sql": "af08d2bbf5a57518a68237aa68ce2ebce9c7e0672a2295fea24e07b124130801",
     "apps/database/supabase/migrations/20261017010000_employee_address_migrations.sql": "43a70f79bc27a60e0cb9c98066805a5676a04f8b4bee65d9361a4c467e52f2ce",
     "apps/database/supabase/migrations/20261018010000_product_feedback_intake.sql": "8f24372d32f358ebe6b6e3f271994a287ba385097cf5f58119f554fb216bef33",
@@ -887,6 +913,7 @@
     "apps/database/supabase/migrations/20261018020000_chat_initial_ai_settings.sql": "ab6e2898ef1268456a812dbb7c3b0983d684144bbe8eea542a7d93aecd7e8e32",
     "apps/database/supabase/migrations/20261019010000_employee_google_destination_migration.sql": "e737cd15c2435d6dc0d63752f353c81f5455a776d36fadba9a134105009e5952",
     "apps/database/supabase/migrations/20261021010000_retained_mailbox_adoption.sql": "22083d429a2be281289e47fd910015f06af14826df4d2b71cdb4f1646a8341d0",
+    "apps/database/supabase/migrations/20261021011000_employee_creation_rejection_adjudication.sql": "7815515d495d7ae755e9768dea50ff2bf7d79aec43577b38412761993f2331ef",
     "apps/database/supabase/migrations/20261021120000_employee_managed_profile.sql": "0edfb82fc55a28b336a063b929cc56e0cd7a7dab8e98d9f4dc6a344bb0616378",
     "apps/database/supabase/migrations/20261021120001_employee_profile_observation.sql": "3a642767020bc0eefa2fa46797d792fa217ce00881c2ee01c47c5c8c904d46e5",
     "apps/database/supabase/migrations/20261022010000_employee_admin_profile_usernames.sql": "9b78fe81498d2fa7e0c0db1fe3d6a89f6533ca60347654ee9d44e09189a775f9",
@@ -895,7 +922,10 @@
     "apps/database/supabase/migrations/20261022100003_sso_keys_audit.sql": "4bbd0f64f58637a5993e22729b47ab86b58671add5b77ee59fca05fe07cc1bd9",
     "apps/database/supabase/migrations/20261022100004_sso_management_rpcs.sql": "b3549130969a6005bf642a22c2c8f2396a096071f11b002f63f996906741344a",
     "apps/database/supabase/migrations/20261022100005_sso_transaction_rpcs.sql": "a979b58f9ca6ee1259c62bc56355fbbdfe62b4f7513e03161e9401d2b846563f",
+    "apps/database/supabase/migrations/20261022110000_product_feedback_private_media.sql": "cb1ff3b7e40df2c660700106ab4824c82b3db4241bb8515c934613d8c1ab1a0c",
+    "apps/database/supabase/migrations/20261022140000_sso_issuance_adapters.sql": "76150399ceb70d61e6b1619ac9af1561c09c26b0927e694a116215a679431b5c",
     "apps/database/supabase/migrations/20261022150000_sso_starter_session.sql": "812dbc614b5c3799ac1d8ac0a507005166c52b14d3320883147d6204cce774f4",
+    "apps/database/supabase/migrations/20261022160000_sso_management_ui.sql": "c872f0eded587ad69264b6ae242c428fd56e24a53f869b2bd8fd0b22bf86b5c3",
     "apps/database/supabase/migrations/20261023100000_devbox_runner_trust_pools.sql": "de6e4093628a36c67209d86bcffb641dd47a33ce8fe410bbd94754571954f2da",
     "apps/database/supabase/migrations/20261023103000_devbox_runner_drain_hardening.sql": "5042e8529dae7fdd5b71012e0e9c2fd8391e305346a5f88b97f6ad42eead1854",
     "apps/database/supabase/migrations/20261023170000_calendar_oauth_state_nonces.sql": "d70bee303ef934c155f97cbc967e28321ab97d4408682dc103a330b052d0f612",
@@ -2528,6 +2558,11 @@
     },
     {
       "path": "apps/database/supabase/migrations/20230428053924_add_supa_audit_v0.3.1.sql",
+      "rule": "definer-search-path",
+      "digest": "46a7a45a3ec41a24ced9fb0bfc2144e94bc5a617356f1f273649cc475091d47b"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20230428053924_add_supa_audit_v0.3.1.sql",
       "rule": "function-acl",
       "digest": "47d48d13f4cdca495bc21c795f90497af8ef9cdf61fe23ac63e28b41cb7bc26b"
     },
@@ -2548,12 +2583,27 @@
     },
     {
       "path": "apps/database/supabase/migrations/20230428053924_add_supa_audit_v0.3.1.sql",
+      "rule": "definer-search-path",
+      "digest": "ac500fdf7ffd1f4a04cd942d1f205c4942d50bddc1fe7b9972c255c3a0408a31"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20230428053924_add_supa_audit_v0.3.1.sql",
       "rule": "function-acl",
       "digest": "8567b1897dcb7038d8b14df997ce6df786b8a090c618c86435252bae196f0c57"
     },
     {
       "path": "apps/database/supabase/migrations/20230428053924_add_supa_audit_v0.3.1.sql",
+      "rule": "definer-search-path",
+      "digest": "8567b1897dcb7038d8b14df997ce6df786b8a090c618c86435252bae196f0c57"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20230428053924_add_supa_audit_v0.3.1.sql",
       "rule": "function-acl",
+      "digest": "ef6105bc0c4b9c85a8f718b54a0bcfc25ffb6e58df711bbc62aacbe38cbee054"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20230428053924_add_supa_audit_v0.3.1.sql",
+      "rule": "definer-search-path",
       "digest": "ef6105bc0c4b9c85a8f718b54a0bcfc25ffb6e58df711bbc62aacbe38cbee054"
     },
     {
@@ -2758,7 +2808,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20230707135705_remote_commit.sql",
+      "rule": "definer-search-path",
+      "digest": "a5064aa974a6851191aa0878af5135c101a504c27cd98d2002f24f17a2aaf537"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20230707135705_remote_commit.sql",
       "rule": "function-acl",
+      "digest": "b481d4fdab202625a4bd2a29d6a35c2a2fdf458836220102a7d9ba47cef89586"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20230707135705_remote_commit.sql",
+      "rule": "definer-search-path",
       "digest": "b481d4fdab202625a4bd2a29d6a35c2a2fdf458836220102a7d9ba47cef89586"
     },
     {
@@ -2783,12 +2843,22 @@
     },
     {
       "path": "apps/database/supabase/migrations/20230707135705_remote_commit.sql",
+      "rule": "definer-search-path",
+      "digest": "808b95216415dbe2a5a38c9f3b482ef42171dcc3b234928689518e94722112c2"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20230707135705_remote_commit.sql",
       "rule": "function-acl",
       "digest": "6835b5d37fd24dd4c83f15b122fb85247eefdf451a365ce5f2a93c4330ac291b"
     },
     {
       "path": "apps/database/supabase/migrations/20230707135705_remote_commit.sql",
       "rule": "function-acl",
+      "digest": "00edb21cc8f3ed6f3ee7d4f7c5ad48e86be0cf291cc6aef7f7c6bd5f78fa4d1b"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20230707135705_remote_commit.sql",
+      "rule": "definer-search-path",
       "digest": "00edb21cc8f3ed6f3ee7d4f7c5ad48e86be0cf291cc6aef7f7c6bd5f78fa4d1b"
     },
     {
@@ -3678,7 +3748,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20240227020600_remote_schema.sql",
+      "rule": "definer-search-path",
+      "digest": "614fb1a74ab6bc948e42c14f6364b8820790862e97db015a72c0cd5945850f2c"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20240227020600_remote_schema.sql",
       "rule": "function-acl",
+      "digest": "a258106e8d0f24124548448aa77a827cc85c0cb953a357ad2623f9ce9ad9bc56"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20240227020600_remote_schema.sql",
+      "rule": "definer-search-path",
       "digest": "a258106e8d0f24124548448aa77a827cc85c0cb953a357ad2623f9ce9ad9bc56"
     },
     {
@@ -3703,12 +3783,22 @@
     },
     {
       "path": "apps/database/supabase/migrations/20240227020600_remote_schema.sql",
+      "rule": "definer-search-path",
+      "digest": "dd2ee1f58e4d080180e66ac3658f2bfe5fde1962ac80af14ab073d8a717f5bc9"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20240227020600_remote_schema.sql",
       "rule": "function-acl",
       "digest": "fb5133e2123355daaa400cabea35faf4727f767d16b1e363edbeaacb480b618f"
     },
     {
       "path": "apps/database/supabase/migrations/20240227020600_remote_schema.sql",
       "rule": "function-acl",
+      "digest": "a6495d991dfa87d1a027d8db9f3a1fcac5c8066e4a910a221d8759d98f0cbf0c"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20240227020600_remote_schema.sql",
+      "rule": "definer-search-path",
       "digest": "a6495d991dfa87d1a027d8db9f3a1fcac5c8066e4a910a221d8759d98f0cbf0c"
     },
     {
@@ -4438,7 +4528,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20240501095759_remote_schema.sql",
+      "rule": "definer-search-path",
+      "digest": "614fb1a74ab6bc948e42c14f6364b8820790862e97db015a72c0cd5945850f2c"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20240501095759_remote_schema.sql",
       "rule": "function-acl",
+      "digest": "a258106e8d0f24124548448aa77a827cc85c0cb953a357ad2623f9ce9ad9bc56"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20240501095759_remote_schema.sql",
+      "rule": "definer-search-path",
       "digest": "a258106e8d0f24124548448aa77a827cc85c0cb953a357ad2623f9ce9ad9bc56"
     },
     {
@@ -4463,12 +4563,22 @@
     },
     {
       "path": "apps/database/supabase/migrations/20240501095759_remote_schema.sql",
+      "rule": "definer-search-path",
+      "digest": "dd2ee1f58e4d080180e66ac3658f2bfe5fde1962ac80af14ab073d8a717f5bc9"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20240501095759_remote_schema.sql",
       "rule": "function-acl",
       "digest": "fb5133e2123355daaa400cabea35faf4727f767d16b1e363edbeaacb480b618f"
     },
     {
       "path": "apps/database/supabase/migrations/20240501095759_remote_schema.sql",
       "rule": "function-acl",
+      "digest": "a6495d991dfa87d1a027d8db9f3a1fcac5c8066e4a910a221d8759d98f0cbf0c"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20240501095759_remote_schema.sql",
+      "rule": "definer-search-path",
       "digest": "a6495d991dfa87d1a027d8db9f3a1fcac5c8066e4a910a221d8759d98f0cbf0c"
     },
     {
@@ -12595,7 +12705,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20251125054415_email_blacklist_security_definer.sql",
+      "rule": "definer-search-path",
+      "digest": "054c2e3cd0278466e2f48a20b7c290b96faf986c31569b0f1cffc5b65faaaa7d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20251125054415_email_blacklist_security_definer.sql",
       "rule": "function-acl",
+      "digest": "eb0af6b8a95f058004240bab4e79964e6cd87d3e0ee60aa36a94e3bb8ffbf761"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20251125054415_email_blacklist_security_definer.sql",
+      "rule": "definer-search-path",
       "digest": "eb0af6b8a95f058004240bab4e79964e6cd87d3e0ee60aa36a94e3bb8ffbf761"
     },
     {
@@ -21375,6 +21495,11 @@
       "digest": "21b8c09e6ea135be76367ce328415cd6b5e8f39abf90a4a1f61593f1b0481aa7"
     },
     {
+      "path": "apps/database/supabase/migrations/20260519235930_protect_workspace_member_type_updates.sql",
+      "rule": "definer-search-path",
+      "digest": "21b8c09e6ea135be76367ce328415cd6b5e8f39abf90a4a1f61593f1b0481aa7"
+    },
+    {
       "path": "apps/database/supabase/migrations/20260520003116_restore_private_nova_challenge_manager_emails.sql",
       "rule": "dynamic-sql-review",
       "digest": "949098840e4920ab0d19feb01e8956213743447b253f7e0c58db757c4d0302e5"
@@ -24596,6 +24721,11 @@
       "digest": "44f5fd0a91348585bdd451eaeec1f296bc348038baaa8949921c92f8eb50f0b1"
     },
     {
+      "path": "apps/database/supabase/migrations/20260615163510_bound_task_description_chunk_storage.sql",
+      "rule": "definer-search-path",
+      "digest": "44f5fd0a91348585bdd451eaeec1f296bc348038baaa8949921c92f8eb50f0b1"
+    },
+    {
       "path": "apps/database/supabase/migrations/20260615210900_secure_habit_tracker_latest_stats_rpc.sql",
       "rule": "definer-public",
       "digest": "aa613c7042f61e4e3a4c0cd620060f17d752755534a566d76ae359b9bd344347"
@@ -25077,7 +25207,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20260628083745_auth_recovery_email.sql",
+      "rule": "definer-search-path",
+      "digest": "1bb55566586c011b7c93e1d8b8185685d9b392a1f5812fd508353cafd338c137"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260628083745_auth_recovery_email.sql",
       "rule": "function-acl",
+      "digest": "58982da51ce4b56e2bfb86064606699f1ca95494205a172468236964617c7be6"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260628083745_auth_recovery_email.sql",
+      "rule": "definer-search-path",
       "digest": "58982da51ce4b56e2bfb86064606699f1ca95494205a172468236964617c7be6"
     },
     {
@@ -25318,6 +25458,11 @@
     {
       "path": "apps/database/supabase/migrations/20260701041327_auth_recovery_code_attempt_limits.sql",
       "rule": "function-acl",
+      "digest": "9d3981ba8274ae8c047c358807439ab5c63910058ad528bc35c47131d7b56119"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260701041327_auth_recovery_code_attempt_limits.sql",
+      "rule": "definer-search-path",
       "digest": "9d3981ba8274ae8c047c358807439ab5c63910058ad528bc35c47131d7b56119"
     },
     {
@@ -25661,6 +25806,11 @@
       "digest": "e753ae7651922760b2cb2e728ffe7cca8da03eea7bb88f08c3bb9128088d57a2"
     },
     {
+      "path": "apps/database/supabase/migrations/20260716141135_add_task_history_app_session_actor.sql",
+      "rule": "definer-search-path",
+      "digest": "20784eaf9f16df568288d25904637d5afa5ad9072e61f7c3344ff0b01ebbc0a4"
+    },
+    {
       "path": "apps/database/supabase/migrations/20260716144917_inventory_sales_period_product_rules.sql",
       "rule": "definer-search-path",
       "digest": "4e4918e34092b694bc442d480d0f34e2fb81d75abdda7f312b081f7c928db3b3"
@@ -25906,6 +26056,11 @@
       "digest": "5c8ffee63df9940be1ced06eb7a7e518491f46a9d9d1bfaf3e5001184ba5652b"
     },
     {
+      "path": "apps/database/supabase/migrations/20260722111411_inventory_pos_operator_roles.sql",
+      "rule": "definer-search-path",
+      "digest": "5c8ffee63df9940be1ced06eb7a7e518491f46a9d9d1bfaf3e5001184ba5652b"
+    },
+    {
       "path": "apps/database/supabase/migrations/20260722120000_inventory_pos_operator_invites.sql",
       "rule": "definer-public",
       "digest": "e1563bab6dfa7207966a3604626640b2bf854ff51674d7e7b6cb21f639d6b1ca"
@@ -25913,6 +26068,11 @@
     {
       "path": "apps/database/supabase/migrations/20260722120000_inventory_pos_operator_invites.sql",
       "rule": "function-acl",
+      "digest": "e1563bab6dfa7207966a3604626640b2bf854ff51674d7e7b6cb21f639d6b1ca"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260722120000_inventory_pos_operator_invites.sql",
+      "rule": "definer-search-path",
       "digest": "e1563bab6dfa7207966a3604626640b2bf854ff51674d7e7b6cb21f639d6b1ca"
     },
     {
@@ -25954,6 +26114,26 @@
       "path": "apps/database/supabase/migrations/20260723172309_first_class_periodic_reports.sql",
       "rule": "function-acl",
       "digest": "7f6adb873a6ec4ee604f56eadb67716cbea85970c9162088a643f3e5ecf759a0"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260723172309_first_class_periodic_reports.sql",
+      "rule": "definer-search-path",
+      "digest": "7f6adb873a6ec4ee604f56eadb67716cbea85970c9162088a643f3e5ecf759a0"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260723172309_first_class_periodic_reports.sql",
+      "rule": "definer-search-path",
+      "digest": "b729ceed47bc736d91ab828aa30eb0809741c5fab7e50ce406ba8f1fd7e57f29"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260723172309_first_class_periodic_reports.sql",
+      "rule": "definer-search-path",
+      "digest": "c6d78e81e6a6f765b28127b46b944edddc7df48bfb23a3279fb06404194d4573"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260723172309_first_class_periodic_reports.sql",
+      "rule": "definer-search-path",
+      "digest": "ead8af058bef1aee76babae02e55a8e74c6eddcafc139d8f7473dbaf1c724b63"
     },
     {
       "path": "apps/database/supabase/migrations/20260727043716_ensure_workspace_creator_membership.sql",
@@ -26031,6 +26211,16 @@
       "digest": "d22ef1acdd7a10ab9127fbf71c7f752dbb69bc7fc28bf5d84888c1eec7b3d39f"
     },
     {
+      "path": "apps/database/supabase/migrations/20260727150000_scale_reports_and_post_email_maintenance.sql",
+      "rule": "definer-search-path",
+      "digest": "ff8ea252ee3be42ed247fc320256f7d1ec67ef6421f162049856648f1e25d594"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260727150000_scale_reports_and_post_email_maintenance.sql",
+      "rule": "definer-search-path",
+      "digest": "b1fe97bc1bba4a9c13725412fec22c0d21808af3c9094bf2a0947f4af89386c4"
+    },
+    {
       "path": "apps/database/supabase/migrations/20260727203000_external_app_unmetered_ai_usage.sql",
       "rule": "definer-public",
       "digest": "f98f3ea5266320cee397ddef0772f1810a0c4d3f5ecbe1c2d36aa4f9f673ec7d"
@@ -26067,7 +26257,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20260728013902_restore_workspace_creator_access.sql",
+      "rule": "definer-search-path",
+      "digest": "871948a6692fa9cc9994c9101a89d26a4fd36ee80a7536a5d603e55e4efac225"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260728013902_restore_workspace_creator_access.sql",
       "rule": "function-acl",
+      "digest": "a55cc34dc301cc024fd74bb743a6e7e2b9b84a463b561fb8b9690965dd470b9f"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260728013902_restore_workspace_creator_access.sql",
+      "rule": "definer-search-path",
       "digest": "a55cc34dc301cc024fd74bb743a6e7e2b9b84a463b561fb8b9690965dd470b9f"
     },
     {
@@ -26169,6 +26369,26 @@
       "path": "apps/database/supabase/migrations/20260729013236_ai_studio_credit_ledger_observability.sql",
       "rule": "definer-search-path",
       "digest": "aceab4baf828d92c4fe6fa77a0bb8a6e68220b6519ab282478c3c16426e63eed"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260729014802_inventory_finance_reconciliation_summary.sql",
+      "rule": "definer-search-path",
+      "digest": "f3e5706be54c2eb33b3e348dfbde126ceb056164eff41284090de857afc9736b"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260729020610_inventory_finance_wallet_summary_filter.sql",
+      "rule": "definer-search-path",
+      "digest": "2e902d74db771ff873ebc7c5b958466d7ce23ff2f6e75f99522f82474bf047ad"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260729021527_inventory_finance_backfill_rpc.sql",
+      "rule": "definer-search-path",
+      "digest": "49c73c2de5c866b7bbcecda000253423baa63acd1203ff4256a8442cb13bebb3"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260730022705_ai_studio_policy_workspace_search.sql",
+      "rule": "definer-search-path",
+      "digest": "69d8b48dcb0fae263c62b9ffbd8ad523cad5c977f8c5287a9b0962b649b53be6"
     },
     {
       "path": "apps/database/supabase/migrations/20260730040341_fix_ai_studio_zero_credit_settlement.sql",
@@ -26717,6 +26937,11 @@
       "digest": "da6d9bd2a005ece05c6b6ef49ac2319625d4163ddc536be9dfe3ce84101bddea"
     },
     {
+      "path": "apps/database/supabase/migrations/20260813024230_finalize_workspace_invitation_membership.sql",
+      "rule": "definer-search-path",
+      "digest": "81da56a44a05aa59283c1e6d3df2ca5fc6992e24d494d9cc1ca55854dc445a2e"
+    },
+    {
       "path": "apps/database/supabase/migrations/20260813065347_harden_workspace_member_link_trigger.sql",
       "rule": "definer-public",
       "digest": "60cc00f2cf28bc4a99d408e540de6b3ef35e797dd55e6d5f5aa051fc6a63b60d"
@@ -26733,12 +26958,27 @@
     },
     {
       "path": "apps/database/supabase/migrations/20260813065347_harden_workspace_member_link_trigger.sql",
+      "rule": "definer-search-path",
+      "digest": "60cc00f2cf28bc4a99d408e540de6b3ef35e797dd55e6d5f5aa051fc6a63b60d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260813065347_harden_workspace_member_link_trigger.sql",
       "rule": "function-acl",
+      "digest": "9325674b5899d878a24fd84dcc2d58caac0ebcbee284fa68678d77a609a2c8a2"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260813065347_harden_workspace_member_link_trigger.sql",
+      "rule": "definer-search-path",
       "digest": "9325674b5899d878a24fd84dcc2d58caac0ebcbee284fa68678d77a609a2c8a2"
     },
     {
       "path": "apps/database/supabase/migrations/20260813094433_repair_incomplete_invited_workspace_profiles.sql",
       "rule": "function-acl",
+      "digest": "35b331b20c901ecd67f7e333813acf3aff18b60bed8b2aa4737fb0a33e4d88a4"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260813094433_repair_incomplete_invited_workspace_profiles.sql",
+      "rule": "definer-search-path",
       "digest": "35b331b20c901ecd67f7e333813acf3aff18b60bed8b2aa4737fb0a33e4d88a4"
     },
     {
@@ -26753,6 +26993,11 @@
     },
     {
       "path": "apps/database/supabase/migrations/20260813094433_repair_incomplete_invited_workspace_profiles.sql",
+      "rule": "definer-search-path",
+      "digest": "00fd30ea6c6f42a107a96f09cbb8dae1ee3405c2346338d49e7fa0fea9520623"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260813094433_repair_incomplete_invited_workspace_profiles.sql",
       "rule": "dynamic-sql-review",
       "digest": "4675b342c77fd9b1ef19d4dccdff565c730875099d2659a76cc49f06ba25db53"
     },
@@ -26762,14 +27007,64 @@
       "digest": "880d008a86e0e3010635d5c79961b75b14b1f5fc16c4cb9fd3476f757df77a8c"
     },
     {
+      "path": "apps/database/supabase/migrations/20260813182000_multi_role_workspace_invitations.sql",
+      "rule": "definer-search-path",
+      "digest": "099b1b21b3077dc53f08bf283ed43587b9f74fbdf1258059d0fc448cbf327ee5"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260813182000_multi_role_workspace_invitations.sql",
+      "rule": "definer-search-path",
+      "digest": "dbf0c6c084a7ccb7d2888071c43f10e1203b01c23994b6834adb3a796a14d3e0"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260813182000_multi_role_workspace_invitations.sql",
+      "rule": "definer-search-path",
+      "digest": "3bfa695fe9570259276d2541f9c01aee535c534def39fa245f75225426a3045d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260813182000_multi_role_workspace_invitations.sql",
+      "rule": "definer-search-path",
+      "digest": "8f8d943796147d016ecbdb8e1d5333fb446b79f56b7c8ae19eea34440e21e149"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260813182000_multi_role_workspace_invitations.sql",
+      "rule": "definer-search-path",
+      "digest": "2092ae155c04aa2b90a211f5d3d2a8259c7fbf2c6f92553b33e89e761cfd5c72"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260813182000_multi_role_workspace_invitations.sql",
+      "rule": "definer-search-path",
+      "digest": "63ccd9239d36191bc527e945635e0882d83d05e1c176a8680353d602f1777dcf"
+    },
+    {
       "path": "apps/database/supabase/migrations/20260823113518_restore_user_group_post_content_limits.sql",
       "rule": "function-acl",
       "digest": "f10e8704721948e80905a8e61185397b2ad9f6970843aa669b546ef025214401"
     },
     {
+      "path": "apps/database/supabase/migrations/20260823163837_add_task_snapshot_app_session_actor.sql",
+      "rule": "definer-search-path",
+      "digest": "85d00c45ebe2e228f426c6c74609574dda2622aedbb6159116ae119cec8400c2"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260823163837_add_task_snapshot_app_session_actor.sql",
+      "rule": "definer-search-path",
+      "digest": "4649071f3a12cede91a5c7cd747ed0b847325a705c6814bc783a18685a02973f"
+    },
+    {
       "path": "apps/database/supabase/migrations/20260824022239_restore_task_history_version.sql",
       "rule": "function-acl",
       "digest": "b52ae577286437ff5d76161f8d792e53063077ae5beff591828fd070495eebd7"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260824022239_restore_task_history_version.sql",
+      "rule": "definer-search-path",
+      "digest": "b52ae577286437ff5d76161f8d792e53063077ae5beff591828fd070495eebd7"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260824022239_restore_task_history_version.sql",
+      "rule": "definer-search-path",
+      "digest": "ba8421d3aa5a09c9a0e5fdbb2371e2b9202841b10f4394c306b82e4a3ac68265"
     },
     {
       "path": "apps/database/supabase/migrations/20260824022239_restore_task_history_version.sql",
@@ -26817,6 +27112,11 @@
       "digest": "0beebc5388cdf815a2b3787ff52a5847e56453bc5b331ce2c7f5d01eb8ab43f2"
     },
     {
+      "path": "apps/database/supabase/migrations/20260907160000_create_scheduled_workspace_meeting.sql",
+      "rule": "definer-search-path",
+      "digest": "b068dacdf157bbe7faca4ef1e903c175c512399b99b268d6e247c03b6a2aa7ec"
+    },
+    {
       "path": "apps/database/supabase/migrations/20260911100000_periodic_report_approval_delivery.sql",
       "rule": "definer-public",
       "digest": "5e73baee5f7e7d45469ae51403b34f2a3a7bedef889e4b7c0f98cc96bc6ca516"
@@ -26828,8 +27128,28 @@
     },
     {
       "path": "apps/database/supabase/migrations/20260911100000_periodic_report_approval_delivery.sql",
+      "rule": "definer-search-path",
+      "digest": "3a4948f352e79bc167e1e3c35280c4c99e1d49c76643717205b51a952c04a04a"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260911100000_periodic_report_approval_delivery.sql",
+      "rule": "definer-search-path",
+      "digest": "64bd83499716e99b9e20d61dfb9f683a1572395083885156393004a768fe590a"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260911100000_periodic_report_approval_delivery.sql",
       "rule": "function-acl",
       "digest": "5e73baee5f7e7d45469ae51403b34f2a3a7bedef889e4b7c0f98cc96bc6ca516"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260911100000_periodic_report_approval_delivery.sql",
+      "rule": "definer-search-path",
+      "digest": "5e73baee5f7e7d45469ae51403b34f2a3a7bedef889e4b7c0f98cc96bc6ca516"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260911100000_periodic_report_approval_delivery.sql",
+      "rule": "definer-search-path",
+      "digest": "5fffebee0eb0eaeebebfdcd5d6a66d600c00179a01a85c1b36b102152094a17d"
     },
     {
       "path": "apps/database/supabase/migrations/20260911113000_guard_processing_report_snapshot.sql",
@@ -26843,8 +27163,23 @@
     },
     {
       "path": "apps/database/supabase/migrations/20260912110000_periodic_report_stages.sql",
+      "rule": "definer-search-path",
+      "digest": "219027e6080d7db73e4ab7afd9f11089d2c0df059c6dac0aa7e0b4571f7adade"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260912110000_periodic_report_stages.sql",
       "rule": "function-acl",
       "digest": "85fe3eab7a291c14f9485345d22259b0cceeb2f9ab20ea7c748a69a627c668be"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260912110000_periodic_report_stages.sql",
+      "rule": "definer-search-path",
+      "digest": "85fe3eab7a291c14f9485345d22259b0cceeb2f9ab20ea7c748a69a627c668be"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260912110100_skip_easy_center_legacy_reports.sql",
+      "rule": "definer-search-path",
+      "digest": "22a1da9c8714ee21601976116839a0985266f5f1931f379be54412452a2d0a21"
     },
     {
       "path": "apps/database/supabase/migrations/20260912110100_skip_easy_center_legacy_reports.sql",
@@ -26855,6 +27190,26 @@
       "path": "apps/database/supabase/migrations/20260916130000_invoice_recovery_and_history.sql",
       "rule": "dynamic-sql-review",
       "digest": "e6df0188591ed82f5f5e1ad434f21dda52ca5801e9c4a3c0cdd4a55cba90ce0d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260916130000_invoice_recovery_and_history.sql",
+      "rule": "definer-search-path",
+      "digest": "e6df0188591ed82f5f5e1ad434f21dda52ca5801e9c4a3c0cdd4a55cba90ce0d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260916130000_invoice_recovery_and_history.sql",
+      "rule": "definer-search-path",
+      "digest": "d178070f4ada93be094133ad2ec03756da57295c9804dadfabdfcb12ab49cb8c"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260916130000_invoice_recovery_and_history.sql",
+      "rule": "definer-search-path",
+      "digest": "36c7bf0fac0319bc9e602a2565ff259f66fa76723f4e8cdf5f20cd4b19959fc6"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260916130000_invoice_recovery_and_history.sql",
+      "rule": "definer-search-path",
+      "digest": "13f15ccc8bcd6471a24c886a34c93fa02e6c1a9214c68d1961e080162084c30b"
     },
     {
       "path": "apps/database/supabase/migrations/20260916130000_invoice_recovery_and_history.sql",
@@ -26877,6 +27232,11 @@
       "digest": "373d7fa6f427883545454acc584e6d8e6fb4e10747c56ffe6f2f33cd0f830366"
     },
     {
+      "path": "apps/database/supabase/migrations/20260917010004_invoice_history_pagination_performance.sql",
+      "rule": "definer-search-path",
+      "digest": "373d7fa6f427883545454acc584e6d8e6fb4e10747c56ffe6f2f33cd0f830366"
+    },
+    {
       "path": "apps/database/supabase/migrations/20260917120000_finance_audit_request_actor.sql",
       "rule": "function-acl",
       "digest": "f7cbc55865a9e4ca7f75432fdb8f0ced342451e9a1942702991287eab15ab22c"
@@ -26892,6 +27252,11 @@
       "digest": "50c63aff7a5007b0496b3efee1bd82fa590bdf34a4a3704bdfe3900c897f81a8"
     },
     {
+      "path": "apps/database/supabase/migrations/20260917130001_invoice_history_page_before_metadata.sql",
+      "rule": "definer-search-path",
+      "digest": "50c63aff7a5007b0496b3efee1bd82fa590bdf34a4a3704bdfe3900c897f81a8"
+    },
+    {
       "path": "apps/database/supabase/migrations/20260917150001_invoice_history_legacy_payments.sql",
       "rule": "definer-public",
       "digest": "3ee6bf4bb2b375a9ff28e70a192f8c45a448f05490e42e134d57aa92f982bbe8"
@@ -26899,6 +27264,11 @@
     {
       "path": "apps/database/supabase/migrations/20260917150001_invoice_history_legacy_payments.sql",
       "rule": "function-acl",
+      "digest": "3ee6bf4bb2b375a9ff28e70a192f8c45a448f05490e42e134d57aa92f982bbe8"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260917150001_invoice_history_legacy_payments.sql",
+      "rule": "definer-search-path",
       "digest": "3ee6bf4bb2b375a9ff28e70a192f8c45a448f05490e42e134d57aa92f982bbe8"
     },
     {
@@ -26932,6 +27302,21 @@
       "digest": "2bf2bd0d58d5e2aa286601cd9e37c8fe96af47b52b9a6702cda3c1a7a9f2f285"
     },
     {
+      "path": "apps/database/supabase/migrations/20260923100000_mail_received_push.sql",
+      "rule": "definer-search-path",
+      "digest": "2bf2bd0d58d5e2aa286601cd9e37c8fe96af47b52b9a6702cda3c1a7a9f2f285"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260923100000_mail_received_push.sql",
+      "rule": "definer-search-path",
+      "digest": "df19f29872036afd3608cae10adb5aa046c13a2902b3789152cc44d2d45e9b56"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260923100000_mail_received_push.sql",
+      "rule": "definer-search-path",
+      "digest": "cf3c656f3bb7a8cf010783eb9be3fcb3e057b0bd8fae2d59e0d581bef70c191e"
+    },
+    {
       "path": "apps/database/supabase/migrations/20260923110000_mail_thread_snooze_mute.sql",
       "rule": "definer-public",
       "digest": "a82b96a2f036f594601dd38430aa0073447ba0d01124c8b12e3087f209428ecf"
@@ -26954,12 +27339,32 @@
     },
     {
       "path": "apps/database/supabase/migrations/20260923110000_mail_thread_snooze_mute.sql",
+      "rule": "definer-search-path",
+      "digest": "59873ffc2a35d93e6efe58a8b78c72eeaae947d035ed586a0b06cf29d6b909b8"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260923110000_mail_thread_snooze_mute.sql",
+      "rule": "definer-search-path",
+      "digest": "a6f5512332e7314e9c244815e94a685ca2d2fab3c07db3d001e2dd46a53dbbed"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260923110000_mail_thread_snooze_mute.sql",
       "rule": "function-acl",
       "digest": "a82b96a2f036f594601dd38430aa0073447ba0d01124c8b12e3087f209428ecf"
     },
     {
       "path": "apps/database/supabase/migrations/20260923110000_mail_thread_snooze_mute.sql",
+      "rule": "definer-search-path",
+      "digest": "a82b96a2f036f594601dd38430aa0073447ba0d01124c8b12e3087f209428ecf"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260923110000_mail_thread_snooze_mute.sql",
       "rule": "function-acl",
+      "digest": "ab9c468ee7c2b92f8b48fac64559e8af9350133137222907f90ee13a6289ffbe"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260923110000_mail_thread_snooze_mute.sql",
+      "rule": "definer-search-path",
       "digest": "ab9c468ee7c2b92f8b48fac64559e8af9350133137222907f90ee13a6289ffbe"
     },
     {
@@ -26979,7 +27384,22 @@
     },
     {
       "path": "apps/database/supabase/migrations/20260923130000_required_account_mfa.sql",
+      "rule": "definer-search-path",
+      "digest": "ce6a103f0cac81073a002fe1a7b81216bec6d8d6288f6d74d22970d16f50732a"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260923130000_required_account_mfa.sql",
+      "rule": "definer-search-path",
+      "digest": "baec2612649d6d2d80af0c021176d5ff34367f01f13aac4c08049137a4231672"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260923130000_required_account_mfa.sql",
       "rule": "function-acl",
+      "digest": "97c9bf4e3bd19a05b4673a080edc12b557c18c6f03c280102e93e05e55f7b585"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260923130000_required_account_mfa.sql",
+      "rule": "definer-search-path",
       "digest": "97c9bf4e3bd19a05b4673a080edc12b557c18c6f03c280102e93e05e55f7b585"
     },
     {
@@ -27005,6 +27425,11 @@
     },
     {
       "path": "apps/database/supabase/migrations/20260925010000_parley_research.sql",
+      "rule": "definer-search-path",
+      "digest": "5c2d4c217a53cf586fb93f9fcb27520d7c4da93c07eaa913dd811b7a2e9724b2"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260925010000_parley_research.sql",
       "rule": "function-acl",
       "digest": "d322e7aca0287716783c5a3d45c136af04bfd3cc3b6f1b0b0dcd9892838b2b5a"
     },
@@ -27012,6 +27437,11 @@
       "path": "apps/database/supabase/migrations/20260925011000_meeting_ai_attribution.sql",
       "rule": "definer-public",
       "digest": "16191c708bc0f5b7f94469ab31a1a667dfc8c4479be02defd712e371988fc859"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20260925011000_meeting_ai_attribution.sql",
+      "rule": "definer-search-path",
+      "digest": "f77334676de28d2488c3a5c60366e11c9bbfcd0e0d83f0f7bd6b214e90c4ad56"
     },
     {
       "path": "apps/database/supabase/migrations/20260925011000_meeting_ai_attribution.sql",
@@ -27239,9 +27669,34 @@
       "digest": "e7f75a6a6ed31358a802d9f3f1f0628bb7d585c4f4e126c9aa0a0043495b8bd0"
     },
     {
+      "path": "apps/database/supabase/migrations/20261001090000_calendar_retained_generation_guard.sql",
+      "rule": "definer-search-path",
+      "digest": "e7f75a6a6ed31358a802d9f3f1f0628bb7d585c4f4e126c9aa0a0043495b8bd0"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261001140000_learn_programming_problem_catalog.sql",
+      "rule": "definer-search-path",
+      "digest": "bc39af15f6d90f81ff8522aafcca9c1c75cf0b289514542c6a8c3fc4b68c1186"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261001140000_learn_programming_problem_catalog.sql",
+      "rule": "definer-search-path",
+      "digest": "af16c90de91153e7767ffa9567536340f727cf5dec556d3b70ee2f88d1848528"
+    },
+    {
       "path": "apps/database/supabase/migrations/20261001140000_learn_programming_problem_catalog.sql",
       "rule": "function-acl",
       "digest": "cfa5937fd664a873ca33a7b634bb4513da992f423ba67e725bcf4f52c01227d4"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261001140000_learn_programming_problem_catalog.sql",
+      "rule": "definer-search-path",
+      "digest": "2c213bc178c45c744839788f39b24df816eb00a68fdf2b11ae599100a353ca04"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261001140000_learn_programming_problem_catalog.sql",
+      "rule": "definer-search-path",
+      "digest": "7de1dcbceba25a17419c8dd7ba60a2747aa8c0f98c27bbceb18a1cf4b9cd9f3c"
     },
     {
       "path": "apps/database/supabase/migrations/20261002153000_security_egress_budgets.sql",
@@ -27254,6 +27709,11 @@
       "digest": "745276c7164d4a9fccb85eb09f22f516ac7009d1384f72f2ab9faff4a8cc8a83"
     },
     {
+      "path": "apps/database/supabase/migrations/20261003054000_inventory_offline_create_contract.sql",
+      "rule": "definer-search-path",
+      "digest": "9ce7fd2bb8057df89b8c3c9d9fd6c1efe695a225eac425b4e26ba349a65e7de6"
+    },
+    {
       "path": "apps/database/supabase/migrations/20261003060000_calendar_google_color_operations.sql",
       "rule": "function-acl",
       "digest": "81f8511e540ffe5e1a595121ee7889ecdaa0ec774cb45ac07cf0ae7457209a23"
@@ -27264,6 +27724,16 @@
       "digest": "f788716e3d30594d7185fe0590753721aaf1a8f647a61230c37921013cb638e0"
     },
     {
+      "path": "apps/database/supabase/migrations/20261003060000_calendar_google_color_operations.sql",
+      "rule": "definer-search-path",
+      "digest": "f788716e3d30594d7185fe0590753721aaf1a8f647a61230c37921013cb638e0"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261003060000_calendar_google_color_operations.sql",
+      "rule": "definer-search-path",
+      "digest": "ad9324eb89105c2f2f9c75bef5415acb1ba15dd89e476618e4274fce1d69c7a4"
+    },
+    {
       "path": "apps/database/supabase/migrations/20261003060100_calendar_google_import_generation.sql",
       "rule": "definer-public",
       "digest": "827692eb0688251e3b09e0396448abf90fa9d7aae3654a0a627a149ac3d7d888"
@@ -27280,8 +27750,38 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261003060100_calendar_google_import_generation.sql",
+      "rule": "definer-search-path",
+      "digest": "827692eb0688251e3b09e0396448abf90fa9d7aae3654a0a627a149ac3d7d888"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261003060100_calendar_google_import_generation.sql",
       "rule": "function-acl",
       "digest": "a24f60ee86b6f2fd5d98b3f95ce125bacb7044ebf51f0b0a1014d92df8f6f681"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261003060100_calendar_google_import_generation.sql",
+      "rule": "definer-search-path",
+      "digest": "a24f60ee86b6f2fd5d98b3f95ce125bacb7044ebf51f0b0a1014d92df8f6f681"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261003060100_calendar_google_import_generation.sql",
+      "rule": "definer-search-path",
+      "digest": "6b39c57e83ff882c26b694966a414307c7c51b3d120130257564c3d56c61c3fd"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261003060100_calendar_google_import_generation.sql",
+      "rule": "definer-search-path",
+      "digest": "7f2df76b447ff559b87a17e41d828953017d2f5a105828baa0bee51e913b15e4"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261003060100_calendar_google_import_generation.sql",
+      "rule": "definer-search-path",
+      "digest": "9d809c8ec645c0e59b7b302a94922e769f92fc617bc5642a30d597ceb57c557a"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261003060200_calendar_google_mutation_replay.sql",
+      "rule": "definer-search-path",
+      "digest": "b5c7990af1102f76e3a75033516beac801ede67375c59fa92bd2a1f64ffcdbca"
     },
     {
       "path": "apps/database/supabase/migrations/20261003060300_calendar_provider_saga.sql",
@@ -27290,8 +27790,23 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261003060300_calendar_provider_saga.sql",
+      "rule": "definer-search-path",
+      "digest": "2fe2d0628ef0bcc8546cddeaa2dc8d7710523816ca63f8f5396175fb343425bc"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261003060300_calendar_provider_saga.sql",
       "rule": "function-acl",
       "digest": "b6126d295c38c8b7e66ec2cfc0f26f4495a1df1308a4c634ac42d00f1c1e40cf"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261003060300_calendar_provider_saga.sql",
+      "rule": "definer-search-path",
+      "digest": "0d1ad42c88fa52d79c43999b098cd9fe9a62c8d55581e49269f75c3081046ea8"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261003060400_calendar_native_generation.sql",
+      "rule": "definer-search-path",
+      "digest": "c30e1592798afe957897c69aae3a610b42da0316a419b656144f6bb450da1b1d"
     },
     {
       "path": "apps/database/supabase/migrations/20261003090000_inventory_merge_identities.sql",
@@ -27397,6 +27912,11 @@
     {
       "path": "apps/database/supabase/migrations/20261003101500_inventory_merge_historical_restore.sql",
       "rule": "function-acl",
+      "digest": "cc7f8611ea3a7ea3c128409dd2f0eff392250dd0b67e823dfabec2261927631a"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261003101500_inventory_merge_historical_restore.sql",
+      "rule": "definer-search-path",
       "digest": "cc7f8611ea3a7ea3c128409dd2f0eff392250dd0b67e823dfabec2261927631a"
     },
     {
@@ -27513,8 +28033,53 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261004004000_public_creator_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "f608d1343a5401212cef1c0a503fcaa7492a95d70535805cc250d94384351bad"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004004000_public_creator_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "1db66c6a3c517702f634c0667a8ae09f7b09f760adb596923c0fd0fabff0dcd8"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004004000_public_creator_identity.sql",
       "rule": "function-acl",
       "digest": "fac800ad5efee91eb21468f0f042be99bc89ec74c941576adbaf058130f87602"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004004000_public_creator_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "fac800ad5efee91eb21468f0f042be99bc89ec74c941576adbaf058130f87602"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004004000_public_creator_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "4ec32b834366ee71921215f3fb2aa9d21a8796f7dada4d9c36bb226b7ecc5351"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141200_account_benefits.sql",
+      "rule": "definer-search-path",
+      "digest": "399dfd83938f8c4ac2b06095eee647bfd9ea27746c859572e5cd71b4358df399"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141200_account_benefits.sql",
+      "rule": "definer-search-path",
+      "digest": "5b8a3492e360c4ffeab3d356fc587df199fb4e1deb27e80324c8de19fe0c0283"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141200_account_benefits.sql",
+      "rule": "definer-search-path",
+      "digest": "b5ce92f126d281ef84e3d10aa6f3af3b804e8a05e020e535ab1d0db8b749fe48"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141200_account_benefits.sql",
+      "rule": "definer-search-path",
+      "digest": "c65801d552e251de7bc66cc1da4937c15db44ead09615a42012a3eda8f1416de"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141200_account_benefits.sql",
+      "rule": "definer-search-path",
+      "digest": "d1597e1ab6fe490f69c414385d8a6eb377c5d99f5ae58c8fcfcfc9d6aad375d8"
     },
     {
       "path": "apps/database/supabase/migrations/20261004141200_account_benefits.sql",
@@ -27522,6 +28087,51 @@
       "digest": "3908fcc49b098493d4b7a92c17accb6425c5b7aca62d7e4ae4e6589c734bebd5"
     },
     {
+      "path": "apps/database/supabase/migrations/20261004141200_account_benefits.sql",
+      "rule": "definer-search-path",
+      "digest": "7a9cbe651a102a7e1e5c3268dbdb2f7199d84963aa3e1b596da94b46d5b1aab7"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141200_account_benefits.sql",
+      "rule": "definer-search-path",
+      "digest": "d0d71d4dbce59a1ea29c4d5ca9f795d0632d05eb43681837b062d177ba955b72"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141201_hosted_playgrounds.sql",
+      "rule": "definer-search-path",
+      "digest": "f8a49504de87f10c106a09f9b37e9faa0fc484b160466abfd49584de30d9de78"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141201_hosted_playgrounds.sql",
+      "rule": "definer-search-path",
+      "digest": "87dd069c7b8807b21c0f0b8392184d8c3b16bc1f35c5f46ab96b173a7fd047d5"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141201_hosted_playgrounds.sql",
+      "rule": "definer-search-path",
+      "digest": "88bb6ae42fcd42359d2d66a47c2c423fa2292006a297516634dba7e856dde64e"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141201_hosted_playgrounds.sql",
+      "rule": "definer-search-path",
+      "digest": "9cd9e6678f8c8bca862abb8b08c9c69a66cf7965357979353ead295e5f257dca"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141201_hosted_playgrounds.sql",
+      "rule": "definer-search-path",
+      "digest": "b3f51049da869b3f5ce46056f7c6293a84b4c634c3bcfbba85e7161d41ce2701"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141201_hosted_playgrounds.sql",
+      "rule": "definer-search-path",
+      "digest": "91270a9918a8923bbb2aa37c9554b2e1b883d44357cfa58be6d134f8dc031b09"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141201_hosted_playgrounds.sql",
+      "rule": "definer-search-path",
+      "digest": "7550615ca5844adeebb2fadf646341d05e760de3227adc9bcb8a4d24647fd7a6"
+    },
+    {
       "path": "apps/database/supabase/migrations/20261004141202_playground_runner_claiming.sql",
       "rule": "definer-public",
       "digest": "7bc32927cdac3bc8dd1fce60f2bdb7bddeb4c467010fc59b33427110f1ee1d98"
@@ -27550,6 +28160,46 @@
       "path": "apps/database/supabase/migrations/20261004141202_playground_runner_claiming.sql",
       "rule": "definer-search-path",
       "digest": "27b469fbcc36f92daeacf2eb9a7a4b6703a4444526fcd7fe31cbb6630f437b88"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141202_playground_runner_claiming.sql",
+      "rule": "definer-search-path",
+      "digest": "5421a6fc15479299fc4bea8ce92c8c14efc41a087eaa5b6f0d434c5dbb95efe4"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141203_programming_collaboration.sql",
+      "rule": "definer-search-path",
+      "digest": "3dd32203fa1e5fb4aee190ea5a74d3389d0195cbf1abdd11f66da770beb8484c"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141203_programming_collaboration.sql",
+      "rule": "definer-search-path",
+      "digest": "c4930a132519883404153badf738322d12f7cd965ec41e53f077c15c1e78a7dd"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141203_programming_collaboration.sql",
+      "rule": "definer-search-path",
+      "digest": "5f1d440f5a1c2d899ed2259b85505776d388efa8c149b4becf303d1ae5be25d6"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141203_programming_collaboration.sql",
+      "rule": "definer-search-path",
+      "digest": "2c1c53b040a873a47add32ca16e5bc65ae453972d48b29a300d128e23276ba54"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141204_cloudflare_channel_authorization.sql",
+      "rule": "definer-search-path",
+      "digest": "7441605a6ad2018e23f3674c60fcf6931ab0f56f30b52e47ef9c24b9e83d547d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141205_meeting_documents.sql",
+      "rule": "definer-search-path",
+      "digest": "97a3cdfb5cb29da7978eeb8a525079caa8c9652ab7d5c7302c3192984c6845fb"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004141205_meeting_documents.sql",
+      "rule": "definer-search-path",
+      "digest": "b94e6d02614861890a79c829b3e15f23a05a965efccccdde010b6b12fa724a98"
     },
     {
       "path": "apps/database/supabase/migrations/20261004171700_mobile_activity_transaction_boundary.sql",
@@ -27574,8 +28224,68 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261004171701_personal_banner_lifecycle.sql",
+      "rule": "definer-search-path",
+      "digest": "c97586d25f61120a3678a16b0604de22ac9488aae14f89a2fd6e25fb72cfd9b5"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004171701_personal_banner_lifecycle.sql",
       "rule": "function-acl",
       "digest": "4594f61ef47e12640e019bac84f1a5c64b7c8f571baf121c0a387a0a16d03ee8"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004171701_personal_banner_lifecycle.sql",
+      "rule": "definer-search-path",
+      "digest": "4594f61ef47e12640e019bac84f1a5c64b7c8f571baf121c0a387a0a16d03ee8"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004171701_personal_banner_lifecycle.sql",
+      "rule": "definer-search-path",
+      "digest": "4435de08ae216e3e8700be361b32ee7552179a65c316ff7fec9c667e77ba0a26"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004171701_personal_banner_lifecycle.sql",
+      "rule": "definer-search-path",
+      "digest": "1f62f99d63ce0b727dcd9b0e56357d1386a0598478b50fb9f6c96e0f2f23a2c8"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004171701_personal_banner_lifecycle.sql",
+      "rule": "definer-search-path",
+      "digest": "8e3b073e3a20eca955c188a021d5ed4a0b773791bc7f7a38cfd4ad16b6859097"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004171701_personal_banner_lifecycle.sql",
+      "rule": "definer-search-path",
+      "digest": "a517df7dfb1aeaa53687cf69607bfd33064e6b4e56b66bc25c1db431e665d7c6"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004171701_personal_banner_lifecycle.sql",
+      "rule": "definer-search-path",
+      "digest": "dea40c413f3f20c12a8e0f6be906ccbe802bb79e89de980f37bff8471187b60e"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004171701_personal_banner_lifecycle.sql",
+      "rule": "definer-search-path",
+      "digest": "f2157ff439ed334ebddc0db2aa7f7704acd90198de6609fecd75ff075d7a1e8f"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004171701_personal_banner_lifecycle.sql",
+      "rule": "definer-search-path",
+      "digest": "402d23767595e6bc323bedbc658b8577752864ea44c5411468999c5b2031f1a0"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004171701_personal_banner_lifecycle.sql",
+      "rule": "definer-search-path",
+      "digest": "2eeb3bf17f4e6d35d62d1fac037e9ec755002a378fb4e99be03a1ab4c1d5451d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004171701_personal_banner_lifecycle.sql",
+      "rule": "definer-search-path",
+      "digest": "ab965abaf9f734a01ee230947e614e32693212aee5f3eae9f409eb2eb63c0ef7"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261004171701_personal_banner_lifecycle.sql",
+      "rule": "definer-search-path",
+      "digest": "6e6ef42d5a0a274a942b45eb6e8a779024fb6749e0923cce1fa526e35c76eac8"
     },
     {
       "path": "apps/database/supabase/migrations/20261005163000_calendar_native_recurrence.sql",
@@ -27589,7 +28299,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261005163000_calendar_native_recurrence.sql",
+      "rule": "definer-search-path",
+      "digest": "1a1375eb546b978cfa9e00ce537b2e0c02f1a1a0c3a6c4a58398e1b664e2bfa6"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261005163000_calendar_native_recurrence.sql",
       "rule": "function-acl",
+      "digest": "0d641b4684711838cdf818dd1abfeb50cfe72e4388bd34a6dea9dd5aff00b296"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261005163000_calendar_native_recurrence.sql",
+      "rule": "definer-search-path",
       "digest": "0d641b4684711838cdf818dd1abfeb50cfe72e4388bd34a6dea9dd5aff00b296"
     },
     {
@@ -27610,6 +28330,11 @@
     {
       "path": "apps/database/supabase/migrations/20261005180000_calendar_provider_series_operations.sql",
       "rule": "definer-search-path",
+      "digest": "28526c3262b3d6a2d304896ccac5cefb14a95a331d48659b732e30fc7199bb3e"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261005180000_calendar_provider_series_operations.sql",
+      "rule": "definer-search-path",
       "digest": "3aaf58988b24de7b4a5294bf780f28553cac244409782dee30ec46dd00ff1e92"
     },
     {
@@ -27619,8 +28344,23 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261005180000_calendar_provider_series_operations.sql",
+      "rule": "definer-search-path",
+      "digest": "f94e4f5ba4295467a951302ccd3af6de3e9a394309941c426ac5f481324b7b59"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261005180000_calendar_provider_series_operations.sql",
       "rule": "function-acl",
       "digest": "699ebe9ac6bd6d6df0b1142cf2e81ece60da5a5aa1071aab663165c216cf0f77"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261005180000_calendar_provider_series_operations.sql",
+      "rule": "definer-search-path",
+      "digest": "77b7bdab4d221e3c8e84aed86cbb09c33fb6ff5300e3d7688d599539aeb5006b"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261005193000_calendar_provider_series_reconciliation.sql",
+      "rule": "definer-search-path",
+      "digest": "481737231c40ffc628af3586b4995c907402c13bf86f8fac40993bed2ae7bcd4"
     },
     {
       "path": "apps/database/supabase/migrations/20261005200000_calendar_provider_readonly.sql",
@@ -27629,10 +28369,95 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261005200000_calendar_provider_readonly.sql",
+      "rule": "definer-search-path",
+      "digest": "6b5e1f0388a2c7677c7f7c949a04d194421b0bb3a1965fcb2b9c80392b996dbc"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261005200000_calendar_provider_readonly.sql",
+      "rule": "definer-search-path",
+      "digest": "83e8af216a6043dc7f25b82861e6002adad3a4c35198cd0454f95737352d8307"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261005200000_calendar_provider_readonly.sql",
       "rule": "function-acl",
       "digest": "1617d04fa56cd5c18cb077f29ade83aba87f7ddc0cbc5951111b9201787c3fbb"
     },
     {
+      "path": "apps/database/supabase/migrations/20261005200000_calendar_provider_readonly.sql",
+      "rule": "definer-search-path",
+      "digest": "1617d04fa56cd5c18cb077f29ade83aba87f7ddc0cbc5951111b9201787c3fbb"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261005210000_calendar_provider_create_first.sql",
+      "rule": "definer-search-path",
+      "digest": "a02a7cdf2ce0f6d1d15207f8f08583a88d0bdccc951455aaa40f0341f2a5f69e"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql",
+      "rule": "definer-search-path",
+      "digest": "3bfdb70f0c6836a5c2e4eb6825a08e5a0711b680f9452caafe5faa66ffdc923e"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql",
+      "rule": "definer-search-path",
+      "digest": "513a85979f8c176a345d7ab140f1a2f4f4559fd5a90a61839377bc2c6b718972"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql",
+      "rule": "definer-search-path",
+      "digest": "5ed519bd27254ad5578b152ab579de1d92c62d899fec9295cc87eaba5a00183f"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql",
+      "rule": "definer-search-path",
+      "digest": "3cde88216fc823e1d04dce53e0f766f83f2b45166276d8cbae9ed1ae5c148e98"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql",
+      "rule": "definer-search-path",
+      "digest": "afd71980590a60f28b312c2b467462c090c5a4837226416bd8fe9b8acb6f4f5a"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql",
+      "rule": "definer-search-path",
+      "digest": "90f4a7a6409211ea519d73f7b5ac0881a679eda52dcedd7c4be396263146a789"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql",
+      "rule": "definer-search-path",
+      "digest": "b6afb46021dbf04d0911d12547174d138c5c6e36fea6e409f19e75108527bc70"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql",
+      "rule": "definer-search-path",
+      "digest": "63a6f0a52cb1c73823eca80a5846128c41189b1969c79ba4a5e4fbb1df07d51b"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql",
+      "rule": "definer-search-path",
+      "digest": "8eb03a3d13b3bdb87404104f6076b3d01b8d40e4ddc91ccd62ce8c0a834d598a"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql",
+      "rule": "definer-search-path",
+      "digest": "267d599535e106a15f2d39faabc985521085c263c2518483ff5d732dc9b2be67"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql",
+      "rule": "definer-search-path",
+      "digest": "39b2fe94a36cabf814d2c9b3e79dccb995b55fe55e9210bb4f0619d3fa105df0"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql",
+      "rule": "definer-search-path",
+      "digest": "a407eabc6107072098fd0b3b8967511eded0d1473e99b8cac33aa61e91da24f7"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006010001_desktop_deployment_vault.sql",
+      "rule": "definer-search-path",
+      "digest": "6dc4b8b64549e2f4cd3e4b18d6aa07b8c7ba864c434c04fad8864812296d2432"
+    },
+    {
       "path": "apps/database/supabase/migrations/20261006020000_desktop_deployment_admission.sql",
       "rule": "definer-public",
       "digest": "580c2944649fbde044af921a7457596518f07a03f094baa4fbbe2848a1c62d70"
@@ -27644,13 +28469,43 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261006020000_desktop_deployment_admission.sql",
+      "rule": "definer-search-path",
+      "digest": "5f265f8ba84c41cd268e4b91bae84af2b23dccc877df48581db046e72dad84b8"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006020000_desktop_deployment_admission.sql",
+      "rule": "definer-search-path",
+      "digest": "b51973aeae74186a1f387eba4d24b3e40606a36f99e4d6ddbba8efa9fff94507"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006020000_desktop_deployment_admission.sql",
       "rule": "function-acl",
+      "digest": "580c2944649fbde044af921a7457596518f07a03f094baa4fbbe2848a1c62d70"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006020000_desktop_deployment_admission.sql",
+      "rule": "definer-search-path",
       "digest": "580c2944649fbde044af921a7457596518f07a03f094baa4fbbe2848a1c62d70"
     },
     {
       "path": "apps/database/supabase/migrations/20261006020000_desktop_deployment_admission.sql",
       "rule": "function-acl",
       "digest": "fcd4477b286d1d7bc65d509a1c9c74e32539929888134166cf733fdd84f623e9"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261006020000_desktop_deployment_admission.sql",
+      "rule": "definer-search-path",
+      "digest": "fcd4477b286d1d7bc65d509a1c9c74e32539929888134166cf733fdd84f623e9"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261007020000_time_tracker_control_foundation.sql",
+      "rule": "definer-search-path",
+      "digest": "bec198e4a918f7a01e432d46572b2def63abff095f88b1654cfb71d3c1642269"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261007020000_time_tracker_control_foundation.sql",
+      "rule": "definer-search-path",
+      "digest": "0b5946a489084593bcd983062dec558a140eb68078439dfa05672562b710b5eb"
     },
     {
       "path": "apps/database/supabase/migrations/20261007040000_periodic_report_unknown_outcomes.sql",
@@ -27661,6 +28516,21 @@
       "path": "apps/database/supabase/migrations/20261007040000_periodic_report_unknown_outcomes.sql",
       "rule": "function-acl",
       "digest": "474b93acb6646bf89165f32ca44db96f6d5aa0d3aa4f163a939177b033010faf"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261007040000_periodic_report_unknown_outcomes.sql",
+      "rule": "definer-search-path",
+      "digest": "474b93acb6646bf89165f32ca44db96f6d5aa0d3aa4f163a939177b033010faf"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261007040000_periodic_report_unknown_outcomes.sql",
+      "rule": "definer-search-path",
+      "digest": "f8b9947f3727153814209c98a21f3ea4373b38be2170b96365904edabf71c904"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261007040000_periodic_report_unknown_outcomes.sql",
+      "rule": "definer-search-path",
+      "digest": "e803bcd1a911984877ebaa2f10f99259515142e972d2407d82404399b3a0bb1b"
     },
     {
       "path": "apps/database/supabase/migrations/20261007090000_report_review_receipt_foundation.sql",
@@ -27673,9 +28543,34 @@
       "digest": "6757e996b7003ae457c0074ac029396669d494b1e47dd636f6eb89ac3ba01e14"
     },
     {
+      "path": "apps/database/supabase/migrations/20261007090000_report_review_receipt_foundation.sql",
+      "rule": "definer-search-path",
+      "digest": "71c6f77a764ed5de2f7de0dc62d5e4402a8ea3966487955707a4586407a474a5"
+    },
+    {
       "path": "apps/database/supabase/migrations/20261009120000_report_email_reply_identity.sql",
       "rule": "function-acl",
       "digest": "e5a38427449dc0427976eb1098a7ece3b0d4c6217b60091ba9ef1df13e460a0f"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261009120000_report_email_reply_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "7cc86e9d6bf9eee96b0b032009c93d6a739f15983621bfa8ceac99bad50a800c"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261009120000_report_email_reply_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "e9d45285204e76adff5df7eba3b49e38ea4819cfed554d4a007de7918726afa3"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261009120000_report_email_reply_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "5cafd03496aad245f564bbf0b39ae39c6f9a2f5b2ee3b0499f7406f7adf4de7f"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261010140100_time_tracker_replace_running.sql",
+      "rule": "definer-search-path",
+      "digest": "8bfe58615f56ae1675f412258fca9b26c6a5e1f4b9265475bab4175d4624ad3e"
     },
     {
       "path": "apps/database/supabase/migrations/20261010140101_qualify_time_tracking_trigger_bindings.sql",
@@ -27709,13 +28604,43 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261011002100_tutoring_teacher_hours.sql",
+      "rule": "definer-search-path",
+      "digest": "d21f642af7608240f9c4a1efea422e1dcaabf404ad26c6af164b36fe885f2d07"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002100_tutoring_teacher_hours.sql",
       "rule": "function-acl",
+      "digest": "3f2444a2818227eeafc4f602af4f8fd7384f834c8de9e3d3265b96e7e966b8d6"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002100_tutoring_teacher_hours.sql",
+      "rule": "definer-search-path",
       "digest": "3f2444a2818227eeafc4f602af4f8fd7384f834c8de9e3d3265b96e7e966b8d6"
     },
     {
       "path": "apps/database/supabase/migrations/20261011002100_tutoring_teacher_hours.sql",
       "rule": "function-acl",
       "digest": "3dabee3cb026c6ef653b96a50d9d58e5ec4c5844c3f5547b1564a3a3ba14db76"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002100_tutoring_teacher_hours.sql",
+      "rule": "definer-search-path",
+      "digest": "3dabee3cb026c6ef653b96a50d9d58e5ec4c5844c3f5547b1564a3a3ba14db76"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002100_tutoring_teacher_hours.sql",
+      "rule": "definer-search-path",
+      "digest": "b7d72c7f1e7628695550d2e2e3417ddf0a71a2e2a5ce2e334100233cbaabe431"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002100_tutoring_teacher_hours.sql",
+      "rule": "definer-search-path",
+      "digest": "0089bd5f8923c414187694cb8024be1687bb842a2c8e9e3ba3552faac293e1fd"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002100_tutoring_teacher_hours.sql",
+      "rule": "definer-search-path",
+      "digest": "511d741d6a7d17c69ffa45681d300e796c8fbba129b4f18e238a5dbb2c016c26"
     },
     {
       "path": "apps/database/supabase/migrations/20261011002101_topic_delivery_attempt_foundation.sql",
@@ -27726,6 +28651,16 @@
       "path": "apps/database/supabase/migrations/20261011002103_external_project_storage_analytics_cache.sql",
       "rule": "function-acl",
       "digest": "cd5130ce140ee05581735be1b5d54b208ed951c2a1cbd63b369e9d5af3a0f2b7"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002103_external_project_storage_analytics_cache.sql",
+      "rule": "definer-search-path",
+      "digest": "cd5130ce140ee05581735be1b5d54b208ed951c2a1cbd63b369e9d5af3a0f2b7"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002103_external_project_storage_analytics_cache.sql",
+      "rule": "definer-search-path",
+      "digest": "ebc2f28b08531f6c3bfd9dbf31785f0e930e34aefb2a3a06246b9cc2c712b5cf"
     },
     {
       "path": "apps/database/supabase/migrations/20261011002105_tutoring_absence_credit_identity.sql",
@@ -27739,13 +28674,38 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261011002105_tutoring_absence_credit_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "cbf24620f70b8d06c2d184ec84182e0532c4b860bdc6d2f2db8de273ddab6b5e"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002105_tutoring_absence_credit_identity.sql",
       "rule": "function-acl",
+      "digest": "9ab9046a35b464d2e5dd3cbae9c102f0214486da8977d7ed74c9f9348dc29dc0"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002105_tutoring_absence_credit_identity.sql",
+      "rule": "definer-search-path",
       "digest": "9ab9046a35b464d2e5dd3cbae9c102f0214486da8977d7ed74c9f9348dc29dc0"
     },
     {
       "path": "apps/database/supabase/migrations/20261011002105_tutoring_absence_credit_identity.sql",
       "rule": "function-acl",
       "digest": "90719b4e1127f8dec711164e074983859ecf88bf087c35905376ec3f39f522e4"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002105_tutoring_absence_credit_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "90719b4e1127f8dec711164e074983859ecf88bf087c35905376ec3f39f522e4"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002105_tutoring_absence_credit_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "81caa6717c678c742283e700962ef1f8a7b628680858c43811daf67e2fe2e975"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002105_tutoring_absence_credit_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "daeef09ab4ed7999d0f4e7cb504a70a23766503c2ed35e1301cdfae8fda85939"
     },
     {
       "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
@@ -27769,7 +28729,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "a20a234541b45bb19e4d63593ee592b29d368a99e66d363d46916a5159aa0f96"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
       "rule": "function-acl",
+      "digest": "ccd8facabf0dd4b529108e571fd1e9060cbab4a81c6acc0ebe61e4802668ce4b"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
+      "rule": "definer-search-path",
       "digest": "ccd8facabf0dd4b529108e571fd1e9060cbab4a81c6acc0ebe61e4802668ce4b"
     },
     {
@@ -27779,7 +28749,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "ae90bb35783ab2c7e49d829f4c30a44efb5ff3f622d6716ebcee94e9e1a43bc7"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
       "rule": "function-acl",
+      "digest": "7eaab7a203f7ef32383ad9a05418fda94dc63de16eed3a20b8f1ed4df38eed04"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
+      "rule": "definer-search-path",
       "digest": "7eaab7a203f7ef32383ad9a05418fda94dc63de16eed3a20b8f1ed4df38eed04"
     },
     {
@@ -27789,7 +28769,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "5dfacff3ab852767b1416ed33d2a619a8206aadfa0afbab2ef8dd6dc42735386"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
       "rule": "function-acl",
+      "digest": "d2cda04ab7b6a4930c63d14d0a710d4d96c07c46e8b311359ae875b184ad9970"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
+      "rule": "definer-search-path",
       "digest": "d2cda04ab7b6a4930c63d14d0a710d4d96c07c46e8b311359ae875b184ad9970"
     },
     {
@@ -27799,13 +28789,78 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "64d6a85781bb4ce158e26f67fbb02170a0ecf507c3dee4741e9d1565efef5d83"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
       "rule": "function-acl",
       "digest": "7fbe56bc701f1bc351311008ac98827a7f719f81150cfc718126e90d20b5f1aa"
     },
     {
       "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "7fbe56bc701f1bc351311008ac98827a7f719f81150cfc718126e90d20b5f1aa"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "d951badf3497004fca08488c39e4cb15cea2f4e2b81075dec464b23bed622cec"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
       "rule": "function-acl",
       "digest": "9dc9b67a40308e7164b9ec1b835c8b80decc215eb727fcc52514f28c175c00f2"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002107_employee_creation_identity.sql",
+      "rule": "definer-search-path",
+      "digest": "9dc9b67a40308e7164b9ec1b835c8b80decc215eb727fcc52514f28c175c00f2"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002108_employee_creation_finalization.sql",
+      "rule": "definer-search-path",
+      "digest": "397e6f463e6d4637278010b6845712deeadaa2cd2662c938b96151b6b889e450"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002108_employee_creation_finalization.sql",
+      "rule": "definer-search-path",
+      "digest": "b715f52b67e13b804123518de30ba597a87f9b7fd4248b1fbc80587f1f29ca93"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002108_employee_creation_finalization.sql",
+      "rule": "definer-search-path",
+      "digest": "f466d046fc2ccfbcd2085fceed9ea0af0e926d98c16db97ca58a4965db763959"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002108_employee_creation_finalization.sql",
+      "rule": "definer-search-path",
+      "digest": "8e507aae64a2191504f3e0c4f84eb8048e1dd96ad3f634a3a43b0460d0fd265a"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002109_employee_restoration.sql",
+      "rule": "definer-search-path",
+      "digest": "7a957904b22eb827ff79c4035034bc2da10dd721b74e1aca57ced73cefb3c6c8"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002109_employee_restoration.sql",
+      "rule": "definer-search-path",
+      "digest": "54c2cb0f41c5a7cf6c2a4e76a094a62ece0b29fd6989cbc92e0d76df4e8fb8f9"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002109_employee_restoration.sql",
+      "rule": "definer-search-path",
+      "digest": "49656d18c543f08db601df88fbac42263c640c1a10caa19836d731d55e7a9adc"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002109_employee_restoration.sql",
+      "rule": "definer-search-path",
+      "digest": "1e6a7f4bfef64cff4139b957ad74c505bfac4cb88740585beae5c72ff4d5fc2c"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261011002109_employee_restoration.sql",
+      "rule": "definer-search-path",
+      "digest": "abce35f540fd1cff90dc1f9d29256ebd34e8c3928d261540a45fe83b97613dde"
     },
     {
       "path": "apps/database/supabase/migrations/20261012140000_mail_inbound_notification_admission.sql",
@@ -27824,7 +28879,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261012140000_mail_inbound_notification_admission.sql",
+      "rule": "definer-search-path",
+      "digest": "631ccf9a29893c801d7bb3491ef6be0d901eaa898432f2199a5d0079d05d3682"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261012140000_mail_inbound_notification_admission.sql",
       "rule": "function-acl",
+      "digest": "cdefe5036eac81790e9f5835677cd011d5506f8fbb70edaf9e016da56eacbe13"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261012140000_mail_inbound_notification_admission.sql",
+      "rule": "definer-search-path",
       "digest": "cdefe5036eac81790e9f5835677cd011d5506f8fbb70edaf9e016da56eacbe13"
     },
     {
@@ -27834,7 +28899,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261012140000_mail_inbound_notification_admission.sql",
+      "rule": "definer-search-path",
+      "digest": "815379dd912342b7422e8c24669d7bdcfa1b719f3b9c3349c97f10fd0b394ec8"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261012140000_mail_inbound_notification_admission.sql",
       "rule": "function-acl",
+      "digest": "7a9bfdbd511685ef986fd442e3666c976e9b702d9affe1cc46a7de172f4abd37"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261012140000_mail_inbound_notification_admission.sql",
+      "rule": "definer-search-path",
       "digest": "7a9bfdbd511685ef986fd442e3666c976e9b702d9affe1cc46a7de172f4abd37"
     },
     {
@@ -27848,9 +28923,49 @@
       "digest": "83c58af5d88c1d20b3097ba4de7467983d1950f469f7b11592768694c77fde46"
     },
     {
+      "path": "apps/database/supabase/migrations/20261014001000_normalize_employee_inbound_mailbox.sql",
+      "rule": "definer-search-path",
+      "digest": "83c58af5d88c1d20b3097ba4de7467983d1950f469f7b11592768694c77fde46"
+    },
+    {
       "path": "apps/database/supabase/migrations/20261016093001_employee_creation_operations.sql",
       "rule": "function-acl",
       "digest": "d9698ebfddd4253bf0b35824de2f435e7058cb2f11a3b96233593b7f634e14ca"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261016093001_employee_creation_operations.sql",
+      "rule": "definer-search-path",
+      "digest": "8d04c274764508bfaf65bba6ca4ae9cefd2b5dcfc9d2dadd6c4d38f35c695dcd"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261016093001_employee_creation_operations.sql",
+      "rule": "definer-search-path",
+      "digest": "415a0ed8d21e608141d1b3fc604ffada70679bfc605003ea2a78ffb4f0d6acd2"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261016093001_employee_creation_operations.sql",
+      "rule": "definer-search-path",
+      "digest": "6158509bbb51d52104a001c91d4a6d21ff3f4b4ac04928e2ec3c58a4110e5dfa"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261016093001_employee_creation_operations.sql",
+      "rule": "definer-search-path",
+      "digest": "e7c8f33d4832c8f63fbabd17786db6df52f5ab767486c6f2c32cb3bafffb8924"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261016093002_employee_creation_reserved_preflight.sql",
+      "rule": "definer-search-path",
+      "digest": "5bd62dac32a10799cee1624a79ff4f0a2d67ba8a874f0e6862350763279506aa"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261016104000_employee_runtime_observation.sql",
+      "rule": "definer-search-path",
+      "digest": "c288c88e00eb5af77936c6deb0d1f6c160dcb220e70a7e7add7659b7eea1118d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261016104000_employee_runtime_observation.sql",
+      "rule": "definer-search-path",
+      "digest": "782ed1ecc07b7d36133e2a9cf090ad28ac4b69d2915d79b38ce0c88eb825c3b4"
     },
     {
       "path": "apps/database/supabase/migrations/20261017000000_personal_journal.sql",
@@ -27868,8 +28983,28 @@
       "digest": "04f851ec35bd363f96527e172b4fa61f489444e936a71b5dcb9dfaebd8a0d374"
     },
     {
+      "path": "apps/database/supabase/migrations/20261017000000_personal_journal.sql",
+      "rule": "definer-search-path",
+      "digest": "75bf04c2dc86c0408f8b98af68cb988443931ceca3fc0350cccbf7a73782570d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261017000000_personal_journal.sql",
+      "rule": "definer-search-path",
+      "digest": "f6847558694d0230bcc63b85e2d9284d6a2d36740b7cbdbddb85c269716eb9b2"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261017000000_personal_journal.sql",
+      "rule": "definer-search-path",
+      "digest": "6bebe933968145eea415002aac777e0f17c692dda5cc39f44576258681a2d4c1"
+    },
+    {
       "path": "apps/database/supabase/migrations/20261017010000_employee_address_migrations.sql",
       "rule": "function-acl",
+      "digest": "d1cf93419a74aba6997c863d2f6ee9e5c4d3a6f2c1d8b26b05e8c04d4c2e9bec"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261017010000_employee_address_migrations.sql",
+      "rule": "definer-search-path",
       "digest": "d1cf93419a74aba6997c863d2f6ee9e5c4d3a6f2c1d8b26b05e8c04d4c2e9bec"
     },
     {
@@ -27879,12 +29014,32 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261017010000_employee_address_migrations.sql",
+      "rule": "definer-search-path",
+      "digest": "5a02ef2708b23d67090bf69254210f98ef22d85d8d9522d27ff68fc5c60de396"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261017010000_employee_address_migrations.sql",
+      "rule": "definer-search-path",
+      "digest": "ac42d1f2a4b520f4685553ccde136f3e8da1964bd0dd3301c54cfbe1d8017a1d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261017010000_employee_address_migrations.sql",
       "rule": "function-acl",
       "digest": "deee04c6627688aef1b260e5b50e7cfded0dc22a494c1008fc8bb8aaf6de6256"
     },
     {
       "path": "apps/database/supabase/migrations/20261017010000_employee_address_migrations.sql",
+      "rule": "definer-search-path",
+      "digest": "deee04c6627688aef1b260e5b50e7cfded0dc22a494c1008fc8bb8aaf6de6256"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261017010000_employee_address_migrations.sql",
       "rule": "function-acl",
+      "digest": "096500b9b111beca2d23b1b90cd8106cd09dc7ee9489bb2d8ad4aeb5db7d363a"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261017010000_employee_address_migrations.sql",
+      "rule": "definer-search-path",
       "digest": "096500b9b111beca2d23b1b90cd8106cd09dc7ee9489bb2d8ad4aeb5db7d363a"
     },
     {
@@ -27918,9 +29073,29 @@
       "digest": "49d60b6f3a827a5249b91b0760787d840f94bb42ed64f1450b41570fa12fcc0d"
     },
     {
+      "path": "apps/database/supabase/migrations/20261018010001_product_feedback_staff_inbox.sql",
+      "rule": "definer-search-path",
+      "digest": "49d60b6f3a827a5249b91b0760787d840f94bb42ed64f1450b41570fa12fcc0d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261018010001_product_feedback_staff_inbox.sql",
+      "rule": "definer-search-path",
+      "digest": "1b8778309bc1ff9d5c2179df2344892916a1add547a6fda9e4ebfaa5688f53d7"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261018010001_product_feedback_staff_inbox.sql",
+      "rule": "definer-search-path",
+      "digest": "33e2bc233fe6f6e97fb959077c403f59bc0227f47cdf11033bd2351beb8afb57"
+    },
+    {
       "path": "apps/database/supabase/migrations/20261018010002_product_feedback_staff_eligibility.sql",
       "rule": "dynamic-sql-review",
       "digest": "dce6c67c5f5bf5ab8a03bce9a3b1aa3f5d0a2812da12ff69f068f1aec26f5155"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261018010002_product_feedback_staff_eligibility.sql",
+      "rule": "definer-search-path",
+      "digest": "5b9745e733246e0d52a297f1ef08b86285cff771f1b04ca6bbc6948b81c7e396"
     },
     {
       "path": "apps/database/supabase/migrations/20261018020000_chat_initial_ai_settings.sql",
@@ -27954,12 +29129,27 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261019010000_employee_google_destination_migration.sql",
+      "rule": "definer-search-path",
+      "digest": "e0ebc83ad070f0fa2e356c5bfe9f932cdc79d7be3029d413003173c857e8c61d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261019010000_employee_google_destination_migration.sql",
       "rule": "function-acl",
       "digest": "b548ebc12f338df87b4f5bdcf41cfa04d1d941c6a6f414e8618b617bb6a20ec8"
     },
     {
       "path": "apps/database/supabase/migrations/20261019010000_employee_google_destination_migration.sql",
+      "rule": "definer-search-path",
+      "digest": "b548ebc12f338df87b4f5bdcf41cfa04d1d941c6a6f414e8618b617bb6a20ec8"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261019010000_employee_google_destination_migration.sql",
       "rule": "function-acl",
+      "digest": "ffd791de811cb05041576d46a98b7d3f80577ded86912ee51b059e6d7ecd0d0d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261019010000_employee_google_destination_migration.sql",
+      "rule": "definer-search-path",
       "digest": "ffd791de811cb05041576d46a98b7d3f80577ded86912ee51b059e6d7ecd0d0d"
     },
     {
@@ -27979,8 +29169,33 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261021010000_retained_mailbox_adoption.sql",
+      "rule": "definer-search-path",
+      "digest": "b921a07866e75a745ef3f30d1810c49f1b6774921325d9a68a79222a273f663d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261021010000_retained_mailbox_adoption.sql",
+      "rule": "definer-search-path",
+      "digest": "70277bcdfc020b7e020733dc29ed21b3a544a5353ea47a0c6995512032dc799a"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261021010000_retained_mailbox_adoption.sql",
       "rule": "function-acl",
       "digest": "27706f8f774048e8661353bf89b40c4ce7755c4cd4898a254be6dac6da02ca95"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261021010000_retained_mailbox_adoption.sql",
+      "rule": "definer-search-path",
+      "digest": "27706f8f774048e8661353bf89b40c4ce7755c4cd4898a254be6dac6da02ca95"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261021011000_employee_creation_rejection_adjudication.sql",
+      "rule": "definer-search-path",
+      "digest": "14e1c1cd7a6a68e2b5a501b68a96fc68b6dc17504e4f22a3df7ea9890dd00667"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261021011000_employee_creation_rejection_adjudication.sql",
+      "rule": "definer-search-path",
+      "digest": "f545631dc6ddf1bbb6eab9b5d836537dfee0825c61c180d364bb6025fd01f4fe"
     },
     {
       "path": "apps/database/supabase/migrations/20261021120000_employee_managed_profile.sql",
@@ -27989,8 +29204,23 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261021120000_employee_managed_profile.sql",
+      "rule": "definer-search-path",
+      "digest": "315498079548667110d1f00a30a4873a43cf03a57a95f723db80581e0b22b562"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261021120000_employee_managed_profile.sql",
       "rule": "function-acl",
       "digest": "ffc88396cab65700b64f53a9716bb3e79fb0123c354f6b3cd3a0da934f497e7d"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261021120000_employee_managed_profile.sql",
+      "rule": "definer-search-path",
+      "digest": "23befac88b0341e199c73f57d9484cef2037af1799c41549ea4581195f67a398"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261021120000_employee_managed_profile.sql",
+      "rule": "definer-search-path",
+      "digest": "720b7956adc330a53e06176e4fae180560ec6a1d30f7f70afc0ab04adb760c1f"
     },
     {
       "path": "apps/database/supabase/migrations/20261021120001_employee_profile_observation.sql",
@@ -28004,7 +29234,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261021120001_employee_profile_observation.sql",
+      "rule": "definer-search-path",
+      "digest": "f10952dc87d643d17ef268897839dc0ae17fa8910a37781c6f4859030e5a1a4b"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261021120001_employee_profile_observation.sql",
       "rule": "function-acl",
+      "digest": "fbfcfe35d9f330be9f0610dbdd096565aa7d32269043f40c74161018aee003b5"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261021120001_employee_profile_observation.sql",
+      "rule": "definer-search-path",
       "digest": "fbfcfe35d9f330be9f0610dbdd096565aa7d32269043f40c74161018aee003b5"
     },
     {
@@ -28024,7 +29264,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261022010000_employee_admin_profile_usernames.sql",
+      "rule": "definer-search-path",
+      "digest": "862155dbb73cc73260f38070033d2cf25a37db032318b8eb90327d08a024013a"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022010000_employee_admin_profile_usernames.sql",
       "rule": "function-acl",
+      "digest": "4a562d4f28237f91689ae9c923a995608ad902c96ddb3f300a11620cb9cfa61a"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022010000_employee_admin_profile_usernames.sql",
+      "rule": "definer-search-path",
       "digest": "4a562d4f28237f91689ae9c923a995608ad902c96ddb3f300a11620cb9cfa61a"
     },
     {
@@ -28034,7 +29284,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261022010000_employee_admin_profile_usernames.sql",
+      "rule": "definer-search-path",
+      "digest": "4e4527ad3f49a90afeb4b72570037bd27bf12a3f1b9fa22d5611193a61a3cad3"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022010000_employee_admin_profile_usernames.sql",
       "rule": "function-acl",
+      "digest": "b53efc7a1e466914463af863326bb52ab641d55fe2e6e77dff7cd9c7fdaecbc0"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022010000_employee_admin_profile_usernames.sql",
+      "rule": "definer-search-path",
       "digest": "b53efc7a1e466914463af863326bb52ab641d55fe2e6e77dff7cd9c7fdaecbc0"
     },
     {
@@ -28046,6 +29306,21 @@
       "path": "apps/database/supabase/migrations/20261022010001_unmanaged_admin_profile_usernames.sql",
       "rule": "function-acl",
       "digest": "0f279e68a0432b6b3a4311ca95ca53b51a94cf4599f87ed393a797d387f6e5b5"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022010001_unmanaged_admin_profile_usernames.sql",
+      "rule": "definer-search-path",
+      "digest": "0f279e68a0432b6b3a4311ca95ca53b51a94cf4599f87ed393a797d387f6e5b5"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022010001_unmanaged_admin_profile_usernames.sql",
+      "rule": "definer-search-path",
+      "digest": "14869157efd860dc7f4e74c7bfe3272b217442ebeb2058cbe7d78875f556b92f"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022010001_unmanaged_admin_profile_usernames.sql",
+      "rule": "definer-search-path",
+      "digest": "ffda217500a890bb2ec44112d025d005ed97f765696eefaa2a90b4b7f2700269"
     },
     {
       "path": "apps/database/supabase/migrations/20261022100001_sso_clients.sql",
@@ -28063,6 +29338,11 @@
       "digest": "0d3750d1bf7a15f74d0956f6991981acbd7c533bd1e875565d0c3911679c8e4d"
     },
     {
+      "path": "apps/database/supabase/migrations/20261022100001_sso_clients.sql",
+      "rule": "definer-search-path",
+      "digest": "0d3750d1bf7a15f74d0956f6991981acbd7c533bd1e875565d0c3911679c8e4d"
+    },
+    {
       "path": "apps/database/supabase/migrations/20261022100003_sso_keys_audit.sql",
       "rule": "function-acl",
       "digest": "0c4c0422e30af4c98b7aca299e2a51e0bc650438818fa16157d86675003a27e3"
@@ -28074,12 +29354,37 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261022100004_sso_management_rpcs.sql",
+      "rule": "definer-search-path",
+      "digest": "85f566be479b52ead390a40a384e0a202773634fc8a6458ed35956cddc846c21"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022100004_sso_management_rpcs.sql",
       "rule": "function-acl",
       "digest": "af5a1b0c7aa38a7ef6efac4ffd814dcec6684059e824bf3f340fe9045c0a8a88"
     },
     {
       "path": "apps/database/supabase/migrations/20261022100004_sso_management_rpcs.sql",
+      "rule": "definer-search-path",
+      "digest": "af5a1b0c7aa38a7ef6efac4ffd814dcec6684059e824bf3f340fe9045c0a8a88"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022100004_sso_management_rpcs.sql",
+      "rule": "definer-search-path",
+      "digest": "2ccea33055b6b02ddbc265871c2a371662a454a1c930a086c10214cb01818f0c"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022100004_sso_management_rpcs.sql",
+      "rule": "definer-search-path",
+      "digest": "fe83aa7357754fcdbedfcd23173622c0a4e74e4cb0b74d08ecc56939d27c6895"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022100004_sso_management_rpcs.sql",
       "rule": "function-acl",
+      "digest": "3e28454022fad0e6f9a13cd199815172f88ff90f4ddec03a1e7bf1ff0ad675c7"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022100004_sso_management_rpcs.sql",
+      "rule": "definer-search-path",
       "digest": "3e28454022fad0e6f9a13cd199815172f88ff90f4ddec03a1e7bf1ff0ad675c7"
     },
     {
@@ -28094,13 +29399,73 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261022100005_sso_transaction_rpcs.sql",
+      "rule": "definer-search-path",
+      "digest": "7a8bacd6e7bcb75eeefd498668be4a6910d08274f47dff1dfb551401279b1919"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022100005_sso_transaction_rpcs.sql",
       "rule": "function-acl",
       "digest": "91439e2ba9f7e625f4ed0f117e7bc720f52ec9d8f4a3543f15bde559beb6832e"
     },
     {
       "path": "apps/database/supabase/migrations/20261022100005_sso_transaction_rpcs.sql",
+      "rule": "definer-search-path",
+      "digest": "91439e2ba9f7e625f4ed0f117e7bc720f52ec9d8f4a3543f15bde559beb6832e"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022100005_sso_transaction_rpcs.sql",
+      "rule": "definer-search-path",
+      "digest": "30df8825a107930507f7ae9a19d04abc20c1e7fa94619bd110ff480f610c1fb2"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022100005_sso_transaction_rpcs.sql",
       "rule": "function-acl",
       "digest": "dc5db5de0b691b29996ab38ef4b03d9c2ba5f6fe8173f0b3b3a2d71521c4761a"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022100005_sso_transaction_rpcs.sql",
+      "rule": "definer-search-path",
+      "digest": "dc5db5de0b691b29996ab38ef4b03d9c2ba5f6fe8173f0b3b3a2d71521c4761a"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022100005_sso_transaction_rpcs.sql",
+      "rule": "definer-search-path",
+      "digest": "32847bba19c668f87c7a9652da9e7988f80c120effdd7c96fcf6bf6c95e686ac"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022100005_sso_transaction_rpcs.sql",
+      "rule": "definer-search-path",
+      "digest": "d5b403f1ada4c9eeb5e4288ae290e7049afa9220afa5f09e4e191dde72fd2470"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022100005_sso_transaction_rpcs.sql",
+      "rule": "definer-search-path",
+      "digest": "dd2ac7d5aa96ead13cf970a5c3a69b7d49250c5b6bf07c3e217c4003281314c3"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022110000_product_feedback_private_media.sql",
+      "rule": "definer-search-path",
+      "digest": "b9dec7687e7eb5e6840e11dcd8a5cbe534c9e042abc860078e1d1f3fc71e8dc8"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022110000_product_feedback_private_media.sql",
+      "rule": "definer-search-path",
+      "digest": "6ae7441555111c55b715fb329d9031575e7f7f0dcac4ba224d5298d6217b34fe"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022140000_sso_issuance_adapters.sql",
+      "rule": "definer-search-path",
+      "digest": "b0aa2746c2a2bc71a39247127d7c49d0b7c18468800d2a5026182f5594646ab6"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022140000_sso_issuance_adapters.sql",
+      "rule": "definer-search-path",
+      "digest": "9485a63c24783db20bac221e5489785abf5dcd9b7606293ff34c609bb208bfac"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022140000_sso_issuance_adapters.sql",
+      "rule": "definer-search-path",
+      "digest": "9c3f80dae59b45d964b1cdf1b0c059c8cca7a73f5b28b5f388af62121127da27"
     },
     {
       "path": "apps/database/supabase/migrations/20261022150000_sso_starter_session.sql",
@@ -28109,8 +29474,43 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261022150000_sso_starter_session.sql",
+      "rule": "definer-search-path",
+      "digest": "f97eac9920ad8b7a336e1439bc4a71e4e9fb34bfbc71cd6ead2099ede80e0afe"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022150000_sso_starter_session.sql",
+      "rule": "definer-search-path",
+      "digest": "190844eb55b6f3e91b5f63cabee37497bfa45be9af4a8beba1ad62e0852cc857"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022150000_sso_starter_session.sql",
       "rule": "function-acl",
       "digest": "265b9948c754cb1b0d7303aefc935d38980055a5c8ed674879be9ab2ea88e817"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022150000_sso_starter_session.sql",
+      "rule": "definer-search-path",
+      "digest": "265b9948c754cb1b0d7303aefc935d38980055a5c8ed674879be9ab2ea88e817"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022160000_sso_management_ui.sql",
+      "rule": "definer-search-path",
+      "digest": "92759e719af68c19aa2ec5df0268472200b1002804f193e92b8199efbd26ea9f"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022160000_sso_management_ui.sql",
+      "rule": "definer-search-path",
+      "digest": "796c2de9556a29cf6c1057978369cc3f761dfe298710b8e615500e7c8f63a3bb"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022160000_sso_management_ui.sql",
+      "rule": "definer-search-path",
+      "digest": "405b7a8973ea9cbf8bfcc0a674130c2022dc57e672eadcb48146faae40f8e16f"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261022160000_sso_management_ui.sql",
+      "rule": "definer-search-path",
+      "digest": "f73a0249d019d4feccbe6270fc05b3ef7ae4d6627fa94fdcf0f3da961d6435d8"
     },
     {
       "path": "apps/database/supabase/migrations/20261023100000_devbox_runner_trust_pools.sql",
@@ -28214,6 +29614,11 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261023103000_devbox_runner_drain_hardening.sql",
+      "rule": "definer-search-path",
+      "digest": "68160852c8edc68d6872f1a6eb1b73b884d1a7d72efd78e88c1ed09d3b2921e8"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261023103000_devbox_runner_drain_hardening.sql",
       "rule": "function-acl",
       "digest": "a8f0eea2846c7bc74a8e127db66ec4f79aee8604f05ba4a227ecf493fded783a"
     },
@@ -28243,8 +29648,18 @@
       "digest": "df1a1ddeceb789c2ee621eb7849c59eecb6c3d2d36aba62caf25f2d4e3de3f3a"
     },
     {
+      "path": "apps/database/supabase/migrations/20261023170000_calendar_oauth_state_nonces.sql",
+      "rule": "definer-search-path",
+      "digest": "df1a1ddeceb789c2ee621eb7849c59eecb6c3d2d36aba62caf25f2d4e3de3f3a"
+    },
+    {
       "path": "apps/database/supabase/migrations/20261024013000_scope_user_email_helper_to_caller.sql",
       "rule": "function-acl",
+      "digest": "6f669ada1bb37a4c5364d678ca70c0f98437aa2d2a28ef21e1d554bb30249f56"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261024013000_scope_user_email_helper_to_caller.sql",
+      "rule": "definer-search-path",
       "digest": "6f669ada1bb37a4c5364d678ca70c0f98437aa2d2a28ef21e1d554bb30249f56"
     },
     {
@@ -28255,6 +29670,11 @@
     {
       "path": "apps/database/supabase/migrations/20261024013000_scope_user_email_helper_to_caller.sql",
       "rule": "function-acl",
+      "digest": "f505ff7c00e974d0f632505414133f9f528e737c1e928a6b9e58abfae178c4e2"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261024013000_scope_user_email_helper_to_caller.sql",
+      "rule": "definer-search-path",
       "digest": "f505ff7c00e974d0f632505414133f9f528e737c1e928a6b9e58abfae178c4e2"
     },
     {
@@ -28279,6 +29699,11 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261024014000_tighten_notification_email_access.sql",
+      "rule": "definer-search-path",
+      "digest": "82c6368dc3f5129c794d2d703361d149995d4b19eef52c99b035312d41a51c07"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261024014000_tighten_notification_email_access.sql",
       "rule": "function-acl",
       "digest": "4758650abd86b5d1f73e4a135e451a3eb7130be408ea8cf573b33b1dc3919617"
     },
@@ -28289,7 +29714,17 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261024014000_tighten_notification_email_access.sql",
+      "rule": "definer-search-path",
+      "digest": "28b671b9e402c91aed17d4b67384e18e65b04f9a35ba7fb9b5a3983107fba525"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261024014000_tighten_notification_email_access.sql",
       "rule": "function-acl",
+      "digest": "362cd6a866a3a3f367d81a094a4f4468d23a000b764971fa00c846a86ec514d3"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261024014000_tighten_notification_email_access.sql",
+      "rule": "definer-search-path",
       "digest": "362cd6a866a3a3f367d81a094a4f4468d23a000b764971fa00c846a86ec514d3"
     },
     {
@@ -28299,12 +29734,27 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261024014000_tighten_notification_email_access.sql",
+      "rule": "definer-search-path",
+      "digest": "250c0aad364393ef6a4a35469fc2d4f19412a175e9a27fe6abaef6f89bffab78"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261024014000_tighten_notification_email_access.sql",
       "rule": "function-acl",
       "digest": "c3ebddff2e682b347af236330de577d9af2dced42ddf6e27ed0651cadc91d500"
     },
     {
       "path": "apps/database/supabase/migrations/20261024014000_tighten_notification_email_access.sql",
+      "rule": "definer-search-path",
+      "digest": "c3ebddff2e682b347af236330de577d9af2dced42ddf6e27ed0651cadc91d500"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261024014000_tighten_notification_email_access.sql",
       "rule": "function-acl",
+      "digest": "1829ac22c97166be1b1c00f65b10967663f9df54bc27702b5315954960e4ead5"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261024014000_tighten_notification_email_access.sql",
+      "rule": "definer-search-path",
       "digest": "1829ac22c97166be1b1c00f65b10967663f9df54bc27702b5315954960e4ead5"
     },
     {
@@ -28315,6 +29765,11 @@
     {
       "path": "apps/database/supabase/migrations/20261024015500_add_mfa_verification_attempt_hook.sql",
       "rule": "function-acl",
+      "digest": "83f678c0416ad1898625b6df117e4f2da73b97e5ea62cb2dd7a1bf79987463e7"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261024015500_add_mfa_verification_attempt_hook.sql",
+      "rule": "definer-search-path",
       "digest": "83f678c0416ad1898625b6df117e4f2da73b97e5ea62cb2dd7a1bf79987463e7"
     },
     {
@@ -28355,12 +29810,27 @@
     },
     {
       "path": "apps/database/supabase/migrations/20261024023000_harden_definer_function_grants.sql",
+      "rule": "definer-search-path",
+      "digest": "a331035f61951adba1a1efe7c9a8df6d6470f64cdfcd231494685982c6d0d465"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261024023000_harden_definer_function_grants.sql",
       "rule": "function-acl",
       "digest": "7eb23c46a570d51c8c9598981b4661faad6b07c3b17a5d8b579f79f09d61c90b"
     },
     {
       "path": "apps/database/supabase/migrations/20261024023000_harden_definer_function_grants.sql",
+      "rule": "definer-search-path",
+      "digest": "7eb23c46a570d51c8c9598981b4661faad6b07c3b17a5d8b579f79f09d61c90b"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261024023000_harden_definer_function_grants.sql",
       "rule": "function-acl",
+      "digest": "d5af417995a86e2d7bf43b9adc153b155c34132dddeed1a2913428745d1fd631"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261024023000_harden_definer_function_grants.sql",
+      "rule": "definer-search-path",
       "digest": "d5af417995a86e2d7bf43b9adc153b155c34132dddeed1a2913428745d1fd631"
     },
     {
@@ -28376,6 +29846,11 @@
     {
       "path": "apps/database/supabase/migrations/20261024023000_harden_definer_function_grants.sql",
       "rule": "function-acl",
+      "digest": "7799b037107dcb142eb66a1e230cc1aa3bd7e1a9f86f11c56edfe321f5767c2f"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261024023000_harden_definer_function_grants.sql",
+      "rule": "definer-search-path",
       "digest": "7799b037107dcb142eb66a1e230cc1aa3bd7e1a9f86f11c56edfe321f5767c2f"
     },
     {
@@ -28731,8 +30206,18 @@
       "digest": "6316ddfaf81b10835bb59066775a416f98b5c53395f0f36670376e18f71ab65a"
     },
     {
+      "path": "apps/database/supabase/migrations/20261025095600_harden_nova_session_attempt_limits.sql",
+      "rule": "definer-search-path",
+      "digest": "6316ddfaf81b10835bb59066775a416f98b5c53395f0f36670376e18f71ab65a"
+    },
+    {
       "path": "apps/database/supabase/migrations/20261025102300_guard_active_nova_session_starts.sql",
       "rule": "function-acl",
+      "digest": "4c2ebc8e6cad67b9aac2d3fc57658de2442490ee3529788bedd6ecbc7dee0ef2"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261025102300_guard_active_nova_session_starts.sql",
+      "rule": "definer-search-path",
       "digest": "4c2ebc8e6cad67b9aac2d3fc57658de2442490ee3529788bedd6ecbc7dee0ef2"
     },
     {
@@ -28748,6 +30233,11 @@
     {
       "path": "apps/database/supabase/migrations/20261025164000_bind_dataset_cells_to_parent_dataset.sql",
       "rule": "function-acl",
+      "digest": "639c5eb755347b33972c55e80a24f133d42b99f863cdb045b2f72a6eecbe7b30"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20261025164000_bind_dataset_cells_to_parent_dataset.sql",
+      "rule": "definer-search-path",
       "digest": "639c5eb755347b33972c55e80a24f133d42b99f863cdb045b2f72a6eecbe7b30"
     },
     {

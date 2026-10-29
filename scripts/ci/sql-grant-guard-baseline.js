@@ -58,7 +58,7 @@ const FIX_GUIDANCE = {
   'function-acl':
     'Use an explicit signature, REVOKE ALL from PUBLIC/anon/authenticated, then grant service_role or record the documented signature review/no-grant marker.',
   'definer-search-path':
-    "Pin one search_path to '' or with pg_catalog first and pg_temp last; reviewed ALTER requires an alter-routine-review marker.",
+    'Pin one search_path with pg_catalog first and pg_temp last; reviewed ALTER requires an alter-routine-review marker.',
   'dynamic-sql-review':
     'Review DO/EXECUTE and attach a statement-adjacent reviewed(dynamic-sql-review) marker.',
   'rollback-safety':

@@ -753,9 +753,9 @@ aliases such as `int` normalize to `integer`). Each target in a multi-target gra
 needs its own signature marker. A marker applies only on the statement's lines or
 its immediately preceding line. A reviewed client grant satisfies intended access
 for a CREATE, but the subsequent matching `REVOKE ALL` is still required.
-Definers accept `search_path = ''` when their bodies fully qualify references.
-Otherwise they require `pg_catalog` first and `pg_temp` last, with no duplicate
-settings, empty schema elements, user-dependent schemas or explicit temporary namespaces. Quoted
+Definers require `pg_catalog` first and `pg_temp` last, with no duplicate settings,
+empty paths (including `search_path = ''`, which still searches `pg_temp`
+implicitly), user-dependent schemas or explicit temporary namespaces. Quoted
 identifier case is significant. The live pgTAP gate remains authoritative for
 schema CREATE privileges.
 
