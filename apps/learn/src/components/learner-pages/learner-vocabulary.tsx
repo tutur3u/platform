@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { BookOpen } from '@tuturuuu/icons';
-import { getTulearnModuleVocabulary } from '@tuturuuu/internal-api/tulearn';
+import { getTulearnModuleVocabulary } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import Image from 'next/image';
 import { useParams, useSearchParams } from 'next/navigation';

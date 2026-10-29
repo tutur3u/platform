@@ -1643,6 +1643,7 @@ export {
   getTulearnCourse,
   getTulearnCourseModule,
   getTulearnHome,
+  getTulearnModuleVocabulary,
   getTulearnPractice,
   getTulearnTestAttempt,
   listSharedCourses,
