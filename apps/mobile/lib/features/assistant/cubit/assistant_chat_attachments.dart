@@ -155,6 +155,10 @@ extension AssistantChatAttachments on AssistantChatCubit {
           failure: switch (error) {
             AssistantAttachmentUploadException(:final failure) => failure,
             ApiException() => AssistantAttachmentFailure.fromApi(error),
+            // A held creation fails on device; only New chat can clear it.
+            AssistantCreationUncertainException() ||
+            AssistantCreationSelectedException() =>
+              AssistantAttachmentFailure.newChatRequired,
             _ => AssistantAttachmentFailure.server,
           },
         ),

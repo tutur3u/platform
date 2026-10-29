@@ -1320,6 +1320,7 @@
   "assistantAttachmentUploadFailed": "Không tải được tệp đính kèm. Hãy xóa tệp và thử lại trước khi gửi.",
   "assistantAttachmentFailureForbidden": "Cuộc trò chuyện này không nhận tệp đính kèm. Hãy xóa tệp hoặc bắt đầu cuộc trò chuyện mới.",
   "assistantAttachmentFailureNetwork": "Tải lên bị gián đoạn. Kiểm tra kết nối rồi nhấn Thử lại.",
+  "assistantAttachmentFailureNewChatRequired": "Hãy bắt đầu cuộc trò chuyện mới trước, rồi đính kèm lại tệp.",
   "assistantAttachmentFailureServer": "Tải lên chưa hoàn tất. Nhấn Thử lại.",
   "assistantAttachmentFailureTooLarge": "Tệp lớn hơn 32 MB. Hãy xóa tệp hoặc đính kèm tệp nhỏ hơn.",
   "assistantAttachmentFailureUnsupported": "Không hỗ trợ loại tệp này. Hãy xóa tệp để gửi.",

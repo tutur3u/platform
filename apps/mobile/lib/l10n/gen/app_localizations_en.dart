@@ -391,6 +391,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantAttachmentFailureNetwork => 'Upload interrupted. Check your connection and tap Retry.';
 
   @override
+  String get assistantAttachmentFailureNewChatRequired => 'Start a new chat first, then attach the file again.';
+
+  @override
   String get assistantAttachmentFailureServer => 'Upload didn\'t finish. Tap Retry.';
 
   @override

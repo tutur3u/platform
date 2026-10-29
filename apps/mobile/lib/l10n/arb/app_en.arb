@@ -1347,6 +1347,7 @@
   "assistantAttachmentUploadFailed": "An attachment failed to upload. Remove it and try again before sending.",
   "assistantAttachmentFailureForbidden": "This chat can't accept attachments. Remove it or start a new chat.",
   "assistantAttachmentFailureNetwork": "Upload interrupted. Check your connection and tap Retry.",
+  "assistantAttachmentFailureNewChatRequired": "Start a new chat first, then attach the file again.",
   "assistantAttachmentFailureServer": "Upload didn't finish. Tap Retry.",
   "assistantAttachmentFailureTooLarge": "File is larger than 32 MB. Remove it or attach a smaller file.",
   "assistantAttachmentFailureUnsupported": "This file type isn't supported. Remove it to send.",

@@ -391,6 +391,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantAttachmentFailureNetwork => 'Tải lên bị gián đoạn. Kiểm tra kết nối rồi nhấn Thử lại.';
 
   @override
+  String get assistantAttachmentFailureNewChatRequired => 'Hãy bắt đầu cuộc trò chuyện mới trước, rồi đính kèm lại tệp.';
+
+  @override
   String get assistantAttachmentFailureServer => 'Tải lên chưa hoàn tất. Nhấn Thử lại.';
 
   @override
