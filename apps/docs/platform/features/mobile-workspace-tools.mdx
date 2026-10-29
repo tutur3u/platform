@@ -237,6 +237,18 @@ Other standalone markdown views remain selectable.
 
 ## Responsive Loading And Cache Verification
 
+### Push token registration and notification permission
+
+The mobile app creates and registers a push (FCM) device token only while the
+operating-system notification permission is authorized or provisional. Firebase
+Messaging auto-init is disabled in the Android manifest and iOS `Info.plist`, so
+the SDK creates no token before permission is granted. The app enables auto-init
+after permission is granted. A token refresh is sent to the server only while
+permission is still granted. If permission is later revoked, the next
+registration sync disables auto-init and deletes the local token. Sign-out still
+unregisters the device. Regression coverage:
+`push_token_permission_gate_test.dart`.
+
 ### Device task and calendar reminders
 
 Settings → Notifications & interaction → Reminders controls task and calendar alerts separately.
