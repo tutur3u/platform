@@ -1,0 +1,235 @@
+---
+title: Hive native Cloudflare migration
+description: Move Hive UI, APIs, worlds and background work off on-premise, Supabase and Vercel in verified stages.
+---
+
+## Outcome and current boundaries
+
+The target is a working Hive research application fully hosted on Cloudflare,
+with no on-premise service, Hive Postgres, Supabase or Vercel dependency in its
+accepted production request/job graph. A UI upload alone does not meet that
+outcome. Maintenance is an independent interim response; see the
+[approval-gated maintenance runbook](/build/devops/hive-cloudflare-maintenance).
+
+Current source, rather than old deployment prose, defines the starting graph:
+
+| Capability | Current owner | Cloudflare target |
+| --- | --- | --- |
+| Hidden-locale Next.js host, login handoff, editor | `apps/hive`, `packages/hive-ui` | Vite+ UI and Worker host with equivalent bilingual routes |
+| Product API | `apps/hive/src/app/api/v1/hive` | Hive Worker adapters over portable domain services |
+| Shared client contract | `packages/internal-api/src/hive.ts` | Preserve typed public exports and response/error shapes |
+| World snapshots, events, economy, research, NPCs | `apps/hive/src/lib/hive/hive-db.ts`, `HIVE_DATABASE_URL` | One authoritative transactional store per invariant; D1 and SQLite-backed DOs after contract qualification |
+| Yjs sync and presence | `apps/hive-realtime`, `packages/realtime` | One hibernating WebSocket DO per server with bounded chunked state, update log and compaction |
+| Membership, platform roles and workspace context | Hive access adapter, Supabase access authority and Hive Postgres member projection | Reconciled consent-aware Cloudflare identity/access service under its owning platform lane |
+| AI credits and model calls | Hive AI adapters and platform credit ledger | Reserve/settle against the single platform ledger with caller operation IDs; a DO budget is only an extra ceiling |
+| Simulation and workflow execution | Hive routes and optional local model origin | Bounded Worker/Queue/Workflow execution; no local inference dependency |
+| Static assets and research exports | App public assets and export handlers | Worker static assets; private R2 only where size/retention requires it |
+
+The interim maintenance Worker and DNS detachment are complete. The release
+owner also removed Hive's shared-tunnel ingress; only the main hostname and
+catch-all remain. This restores an explicit maintenance response, not the Hive
+application. Incident chronology and exact resource identities stay in the
+private coordination record. Source execution/deployed app identity and data
+freshness still require the authorized data owner's evidence.
+
+## Product decision: an interim application milestone
+
+An optional milestone is **restored on Cloudflare with a recorded Supabase
+identity bridge**: Hive UI, product APIs, realtime and product storage run on
+Cloudflare while the existing platform identity/access bridge remains explicit.
+The user must choose whether to accept that intermediate product milestone.
+It is distinct from maintenance and from the final fully Cloudflare-native
+request/job graph. Keep platform credit authority unchanged at every milestone;
+record remaining dependencies, revocation behavior, rollback and acceptance.
+This option does not authorize production cutover or new staging spend.
+
+## Contracts to preserve before changing hosts
+
+Hive servers are global research worlds. Workspace selection supplies AI context
+and billing, not a world-data filter. Enabled members can join enabled servers;
+platform admins retain explicit privileged actions. Preserve the shared editor
+between the satellite and embedded web host, access requests, session expiry,
+refresh/logout, actor attribution and server-bound realtime tokens.
+
+Extract domain and persistence interfaces from Next/Bun adapters before replacing
+them. Portable entrypoints must not import Next.js, React Router, Cloudflare
+request globals, SQL clients or framework session stores. Inject actor, storage,
+clock, model client, navigation and localization at adapters. Migrate actual
+callers together and delete legacy interfaces rather than adding an unused
+compatibility facade. Existing public package exports stay stable.
+
+The source uses Postgres transactions, JSONB, UUIDs, binary CRDT state and runtime
+schema initialization. Port these explicitly: versioned D1/DO migrations, bound
+queries, normalized indexed fields, supported JSON representation and binary
+encoding. Never carry runtime DDL into a request or pretend SQLite is Postgres.
+Source tables are not evidence that every store holds identical live data.
+
+## Authoritative state and consistency
+
+Start with a local-runtime-only D1 versus SQLite-backed DO transaction spike
+using disposable fixtures and no hosted resources or staging spend. Qualify one
+representative world/event transaction and one trade transaction before staging. Preserve atomic snapshot/event
+sequence, actor checks, duplicate operation handling, research associations,
+currency conservation and inventory ownership. Yjs convergence must not settle
+currency, AI charges or ownership.
+
+Select one authority for each invariant. A server DO orders realtime operations
+and holds Yjs state/op sequence. D1 is eligible for a relational invariant only
+when all decisions and writes fit one predeclared atomic batch using conditional
+SQL and constraints, with a provable all-or-nothing outcome. D1 has no interactive
+transaction callback: a read followed by a JavaScript decision and later writes
+is not a transaction. A batch that commits after a conditional update affects
+zero rows must not be mistaken for a rejected trade.
+
+The named fallback is a **ledger/economy DO** with SQLite
+`ctx.storage.transactionSync()`, colocating every wallet, inventory row,
+operation receipt and ledger entry needed by a settlement invariant in one
+writer scope. The callback performs synchronous SQL only. Do not split one
+atomic settlement across actor DOs; cross-server value conservation requires a
+shared economy scope or a separately proved protocol. See the
+[D1 batch contract](https://developers.cloudflare.com/d1/worker-api/d1-database/#batch)
+and [DO SQLite transactions](https://developers.cloudflare.com/durable-objects/api/sqlite-storage-api/#transactions).
+The local spike and Unit 2 must race competing spends against the same balance:
+exactly one may succeed, the other must be rejected with no partial debit,
+inventory mutation or ledger entry, and duplicate operation IDs cannot charge twice.
+
+Any atomic requirement spanning DO and D1 needs a persisted outbox and idempotent
+consumer with a defined acknowledgement point, or must be colocated. Never
+acknowledge a durable event while its required audit/ledger row can be lost in
+the other store. The persistence contract names one writer scope for each command.
+
+Yjs documents must have explicit encoded-state, update-message, chunk-size,
+log-entry-count and cumulative-log-byte ceilings before realtime is enabled.
+Persist large snapshots in bounded chunks with an atomic generation manifest;
+never store an unbounded document in one row or materialize an unbounded log.
+Compact before the log ceiling and backpressure further edits when compaction
+cannot keep up. Each compaction alarm has bounded pages, bytes, attempts and
+elapsed age, with a persisted cursor/generation and stop fence. Publish the new
+manifest before retiring old chunks; restart resumes without losing accepted
+updates. Terminal/empty compaction does not reschedule. Unit 3 tests large
+multi-chunk documents, exact-limit/over-limit inputs, concurrent updates during
+compaction and restart at each manifest/checkpoint boundary. Qualify limits
+against the largest authorized export; do not silently truncate existing worlds.
+
+Use operation IDs generated once by the caller and retained across uncertain
+retries. Persist deduplication and progress with the authoritative write.
+Unknown outcomes reconcile by the same ID; they are never replayed with a new
+ID. Revision conflicts, concurrent writers and partial failure stay explicit.
+
+## Authentication and data migration
+
+The first staging host may use the existing centralized login handoff as a
+temporary bridge, with its Supabase dependency clearly recorded. The interim
+application milestone above needs an explicit user product decision; it does not
+qualify as the fully Cloudflare-native final state. Final acceptance requires the platform owner
+to provide Cloudflare-native identity, membership, role/workspace and credit
+contracts with equivalent revocation, workspace consent and deletion fences.
+Preserve app-local cookies, audience checks, CSRF protection, bounded token
+lifetime and no raw service-secret fallback for realtime signing.
+
+Until the access service is migrated, **Supabase `public.hive_members` is the
+source of truth for enabled access**, together with platform roles. Hive Postgres
+also has `hive_members`, but its product projection cannot grant access on its
+own. `syncSupabaseHiveMember()` and the approval path write both stores without
+a cross-database transaction. Before cutover, reconcile by user ID, enabled state,
+approval/revocation revision and deletion status; report mismatches to the access
+owner and resolve them before importing access. An enabled projection must never
+resurrect a disabled, deleted or consent-revoked authoritative member. Preserve
+the resolved authority manifest through the final delta.
+
+Before any data write, the data owner inventories authoritative tables, counts,
+relationships, schema versions and latest operation sequences. Store exports in
+a private bucket with public access disabled and owner-only scoped access; never
+place exports or presigned access credentials in public repository/CI artifacts.
+A checksummed manifest binds source/store identity, schema, row ranges, chunk
+checksums, operation watermark and deletion/consent-revocation tombstones.
+Carry tombstones from export through every import and final delta so a resumed
+batch cannot restore deleted data or revoked consent. Keep source originals and
+a tested restore until acceptance. After acceptance and the owner's retention
+window, lifecycle-delete export objects/manifests and verify removal; do not
+retain extra copies outside that custody or delete originals prematurely.
+
+Import in bounded batches using the manifest, durable cursor and idempotent row
+key. Verify counts/checksums, relationships, binary CRDT round trips, ledger sums,
+member decisions and sampled authorized queries. Failed batches retain truthful
+partial progress and resume without duplicates. The data owner drains/fences
+legacy writers, exports the final data plus tombstone delta and verifies the
+fence. If the authorized source owner cannot supply this evidence, keep
+maintenance live; this lane does not gain host or credential access.
+
+## Billable work and durable stop fence
+
+The platform credit ledger remains the **single balance authority**. Hive uses
+caller-generated operation IDs to reserve and settle with that ledger, including
+unknown-outcome reconciliation. The DO run budget is only an additional ceiling;
+it never issues credits, maintains a second spendable balance or settles charges
+locally. A ledger failure/unknown reservation blocks the model call, and a retry
+retains the original reservation identity.
+
+Staging defaults to all autonomous simulation/model work disabled. Before enabling
+any scheduler, reserve a finite per-run and per-server budget durably: maximum
+ticks, NPCs, turns, requests, tokens, money, attempts and deadline. Enforce payload,
+fan-out, concurrency and WebSocket message/room limits at ingress and storage.
+Retries consume the original budget; crash/restart never resets it.
+
+A durable generation/stop record is checked before enqueue, dequeue, each model
+or storage side effect, and before scheduling the next alarm. Stopped, exhausted,
+deleted, consent-revoked and terminal runs schedule nothing further. Stale queued
+messages are acknowledged without work; deletion tombstones outlive delayed
+messages. Bounded progress checkpoints retain operation identity. A stop cannot
+recall a model call already issued: reserve its entire possible charge before
+the call, cap time/tokens and report any unsettled reservation honestly.
+
+Test operation counts on success, retries, repeated delivery, crash between
+reservation/write/ack, restart, queue delay and stop during in-flight work.
+Prove stale alarms/messages cannot restart a stopped generation and budgets
+cannot go negative or reset. Record counts and stop latency through the owning
+adoption runbook. Rate limiting, CPU caps and billing alerts supplement this
+fence; none is a total-spend guarantee. No paid service provisioning occurs
+without its separately granted spending authority.
+
+## Small PR and delivery sequence
+
+| Unit | Scope | Exit evidence and rollback |
+| --- | --- | --- |
+| 0 | Maintenance Worker and this plan | Reviewed source, focused tests, approved runtime/routing packet; delete only the new route/script or restore captured bodies |
+| 1 | Persistence interfaces only for world-event and trade/ledger paths; caller operation IDs and single-writer scopes | Tests against fakes prove atomic receipts, duplicate/conflicting retries and writer semantics; no live data writes or auth refactor |
+| 2 | Local D1/DO transaction decision, then admitted schema qualification | Concurrent double-spend is rejected atomically; no partial debit/inventory/ledger write; replay and migration restart pass; hosted work needs separate admission |
+| 3 | Hibernating realtime DO with chunked state and alarm-bounded compaction | Two clients converge; large-document and compaction-restart tests preserve op sequence; size/log ceilings and revoked-token tests pass; no empty/terminal alarm loop |
+| 4 | Vite+ UI/Worker host and full API parity | Exact-source build artifact, real Worker runtime and bilingual browser flows; staging route only |
+| 5 | Durable budgets, stop fence, scheduler/model adapters | Failure/restart/stop operation-count tests; real platform auth/credit contracts; no Supabase/Vercel/on-prem edges in accepted graph |
+| 6 | Authorized import, final delta, scoped canonical cutover | Owner-exported manifest, reconciliation, browser acceptance, exact deployment identity and rollback rehearsal |
+
+Keep independent changes in separate PRs; dependent layers use native GitHub
+stacks when supported. No PR in this lane merges itself. Review deployment,
+identity, permissions, data and spend boundaries independently before integration.
+Gates run through `ttr resources` on an admitted runner. Preserve the active
+runtime policy, build restrictions and source/data-owner custody.
+
+## Staging, cutover and rollback acceptance
+
+1. Admit staging resources/hostname and spending scope separately. Publish an
+   immutable exact-commit artifact; run the actual Worker and DO runtime, then
+   browser checks with disposable identities. Keep provenance and config/binding
+   IDs private. Require applicable exact-head CI checks and build evidence.
+2. Exercise login/refresh/logout, approved/restricted/admin identities, both
+   locales, two-client world edits, reconnect, research export, economy and
+   billing failures. Verify no cookies or API traffic reaches a retired host.
+3. Rehearse stop and rollback with the same release candidate. Set thresholds
+   from measured staging baselines before promotion: failed auth, invariant
+   mismatch, ledger discrepancy, unexpected egress or uncontrolled operation
+   count blocks cutover. Readiness requires product-owner acceptance, not only
+   healthy HTTP responses.
+4. Take a Hive-only promotion window with the integration/data owners; preserve
+   Finance's lane. Fence writers, apply final delta and verify reconciliation.
+   Route only Hive to the accepted Worker; retain the maintenance script and
+   captured DNS/tunnel states. No shared-zone wildcard or main-host change.
+5. If acceptance fails, switch Hive back to maintenance and stop new jobs using
+   the durable fence. Preserve Cloudflare writes for reconciliation. Restore a
+   previous working app only when data compatibility and writer authority are
+   proven; DNS reversal alone is insufficient once new writes are accepted.
+   Never roll back to an unverified down origin as a claim of restored service.
+6. Observe a finite owner-agreed window and record exact source/deployment,
+   migration manifests, stop tests and customer-facing results. Retire old
+   resources only after accepted data retention/deletion decisions. Completion
+   requires the whole accepted runtime graph to be Cloudflare-native.

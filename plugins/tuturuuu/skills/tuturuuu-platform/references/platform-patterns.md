@@ -60,6 +60,12 @@ and its focused regression coverage before adding a reason or changing middlewar
   preserve membership, workspace filters, visibility and creator checks.
   Expand one resource at a time with its existing error envelope and regression
   coverage. See [typed workspace boundaries](../../../../../apps/docs/build/development-tools/codex-plugin.mdx#typed-workspace-boundaries).
+- Hive product handlers live in `apps/hive/src/app/api/v1/hive` and use
+  `HIVE_DATABASE_URL`; membership/platform roles still use platform services.
+  Trace the current handler before applying a historical Supabase world-event
+  fix. A maintenance Worker is an approval-gated routing operation, not app
+  restoration. See the [Hive migration plan](../../../../../apps/docs/build/devops/hive-cloudflare-migration.mdx)
+  and [maintenance runbook](../../../../../apps/docs/build/devops/hive-cloudflare-maintenance.mdx).
 
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
