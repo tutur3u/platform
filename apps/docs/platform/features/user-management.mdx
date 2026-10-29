@@ -494,10 +494,13 @@ and the flag-off case in `send-admission.test.ts`.
   in the workspace and is still the only scope for import, contacts, templates,
   removal, and the save-and-notify action. Supervisor sending still requires
   `manage_users` plus `send_user_group_post_emails`.
-- **Assignment-scoped teachers.** Without `manage_users`, a member may list,
-  preview, upload page images for, and edit a topic only when they hold
-  `create_user_groups_posts` or `update_user_groups_posts` (edit) and the
-  topic is assigned to them: their linked workspace user is
+- **Assignment-scoped teachers.** Without `manage_users`, a member may list and
+  preview a topic with `create_user_groups_posts` or `update_user_groups_posts`,
+  and may upload page images or attachments for it and edit it only with
+  `update_user_groups_posts` (a create-only teacher cannot attach a file, so the
+  upload answers 403 as well; coverage:
+  `topic-announcements/attachments/upload/route.test.ts`). Every operation also
+  needs the topic to be assigned to them: their linked workspace user is
   `teacher_workspace_user_id`, or, only while no teacher is assigned, they are
   a `TEACHER` of the topic's class (`group_id`). A co-teacher of the class
   cannot act on a topic assigned to another teacher. The PATCH write repeats

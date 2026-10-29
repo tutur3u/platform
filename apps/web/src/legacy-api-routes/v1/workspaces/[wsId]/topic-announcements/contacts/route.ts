@@ -1,3 +1,4 @@
+import { buildPostgrestIlikeOrFilter } from '@tuturuuu/utils/postgrest-filter';
 import { NextResponse } from 'next/server';
 import {
   normalizeEmail,
@@ -30,7 +31,7 @@ export async function GET(request: Request, { params }: Params) {
     .order('name', { ascending: true });
 
   if (!includeArchived) query = query.eq('archived', false);
-  if (q) query = query.or(`name.ilike.%${q}%,email.ilike.%${q}%`);
+  if (q) query = query.or(buildPostgrestIlikeOrFilter(['name', 'email'], q));
 
   const { data, error } = await query.limit(500);
   if (error) throw error;

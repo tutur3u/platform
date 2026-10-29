@@ -9293,6 +9293,7 @@
     "conflict_teacher_slots": "Buổi {slotA} bị trùng lịch với buổi {slotB} cho giáo viên đã chọn",
     "content": "Nội dung",
     "content_placeholder": "Giáo viên cần dạy nội dung gì trong các buổi này?",
+    "content_restricted": "Chỉ người quản lý lớp mới được thay đổi nội dung kèm yếu.",
     "content_rule_absent": "Dùng ghi chú của buổi học đã nghỉ. Giữ nguyên nội dung điền sẵn để nội dung tự cập nhật theo ghi chú lớp cho đến khi hoàn thành buổi kèm.",
     "content_rule_weak": "Dùng nội dung cần kèm do giáo viên chủ nhiệm đã điền. Kiểm tra trước khi lưu.",
     "content_update_failed": "Không thể lưu nội dung buổi học. Hãy thử lại.",
