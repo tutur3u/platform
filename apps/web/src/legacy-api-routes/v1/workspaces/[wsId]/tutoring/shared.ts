@@ -65,6 +65,8 @@ export const TutoringSessionCreateSchema = z.object({
         startTime: TimeStringSchema,
         durationMinutes: z.number().int().positive().max(480).default(45),
         teacherUserId: z.string().uuid().nullable().optional(),
+        // This session's own content; absent means the payload `content`.
+        content: z.string().max(10000).optional(),
       })
     )
     .min(1)

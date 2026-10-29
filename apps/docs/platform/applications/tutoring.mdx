@@ -300,7 +300,8 @@ always on, no setting):
   homeroom teacher's note is never dropped.
 - The queue table shows the same content per row. The server derives the notes
   for the visible page in the queue response (`missed_lesson_content`,
-  `missed_post_content`, `missing_lesson_dates`, `content_feedback_id`), so the
+  `missed_post_content`, their per-date splits `missed_lesson_by_date` and
+  `missed_post_by_date`, `missing_lesson_dates`, `content_feedback_id`), so the
   list does not fetch per row.
 - A missed date with neither session notes nor a post shows the inline hint "No
   lesson notes recorded for {dates}" in the queue and the draft, instead of an
@@ -311,11 +312,77 @@ always on, no setting):
 
 Existing sessions are not rewritten; only new drafts use this rule.
 
+### Each created session has its own content
+
+Decision (Contacts → Tutoring create form, `POST .../tutoring/sessions`; always
+on, no setting):
+
+- With **more than one session** the create form shows a Content field inside
+  every session card. With one session it keeps the single Content field.
+- A learner who missed several classes gets one session per missed date, and
+  session _i_ drafts missed date _i_ (oldest first): that day's class notes and
+  posts, in the same `YYYY-MM-DD: ...` form as before. Two missed dates and two
+  sessions give each session its own date.
+- **Kèm yếu** repeats the homeroom teacher's note in every session. A row with
+  **both** reasons pairs each session's own missed-day text with that note,
+  under the same two headings.
+- A session beyond the missed dates drafts no class notes. Content stays
+  editable per session; a new weekly or blank slot starts with the form-level
+  content, never a copy of the previous session's text.
+- The API accepts an optional `content` on each `sessions[]` entry (same
+  10,000-character limit) and falls back to the payload `content` when a slot
+  omits it, so existing callers are unchanged. An explicit empty string is kept,
+  so a blank make-up session still follows its class's notes
+  ([linked content](#make-up-content-follows-the-missed-lessons-notes)) per row.
+  The form saves untouched notes empty only while a slot still follows the
+  missed date it was drafted for. The server gives each blank session, in date
+  and time order, the oldest uncovered absence on or before its date, and skips a
+  session dated before that absence. The form runs the same rule and saves a
+  slot empty only when it would receive the date it shows; slots that share a
+  date and time, or that a removed, reordered or early slot would shift, save the
+  text as shown. Pending reservations
+  already on the student can shift the pairing too; the guard covers it as far as
+  the form can know.
+
+### Parent message fields
+
+The parent message is a per-workspace template. Besides `student`, `reason`,
+`date`, `time`, `duration`, `group`, `teacher` and `campus`, it supports:
+
+| Field | Value |
+| --- | --- |
+| `{{time_range}}` | Tutoring start and end from the start time and duration, e.g. `15:15-16:00`. A range that runs past midnight renders without a day marker, e.g. `23:30-00:15`. |
+| `{{weekday}}` | Vietnamese weekday of the tutoring date: `thứ 2` to `thứ 7`, `Chủ nhật`; `Chưa xác định` for a malformed date. Templates are not locale-aware, so there is no English variant. |
+| `{{class_time}}` | The learner's official class time for that group on the tutoring date, `HH:MM-HH:MM` in the class session's own time zone, from scheduled `workspace_user_group_sessions`. With no class that day it is the next scheduled class after the tutoring time with its date, e.g. `16:00-17:30 ngày 02/11/2026`. With none, or when the class sessions cannot be read, `Chưa xác định`; the preview route only queries them when the template uses the field. |
+
+Parents often assume a learner attends only the tutoring slot and goes home, so
+the Easy Center default template also states the official class time:
+
+```text
+Trung tâm EASY xin được xếp lịch kèm cho bạn {{student}} như sau:
+• Giờ kèm: {{time_range}}
+• Ngày: {{date}} {{weekday}}
+• Cơ sở: {{campus}}
+Lịch học chính thức: {{class_time}}
+Mong phụ huynh thu xếp cho con tham gia đúng giờ. Trân trọng.
+```
+
+That is the code default only. A workspace that already saved a template keeps
+it until staff edit it in the policy card, which lists the available fields.
+The preview route (`message-preview`) computes the fields when it renders and
+stores the draft.
+
 Regression coverage:
+`tutoring-message-values.test.ts` (time range, weekdays, same-day, next and no
+class time, time zones), `tutoring-policy.test.ts` (renderer),
+[`message-preview/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/%5Bid%5D/message-preview/route.test.ts)
+(class session filters, error fallback, template values),
+`session-create-helpers.test.ts` (per-slot content and fallback),
+`tutoring-content.test.ts` (per-session split),
+`use-tutoring-create.test.ts` (stored sessions),
 [`queue/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/queue/route.test.ts)
 (absent with and without notes, posts by date and permission, both reasons,
 triggering versus latest feedback),
-[`tutoring-content.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/tutoring-content.test.ts),
 [`tutoring-queue-content.test.tsx`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/tutoring-queue-content.test.tsx)
 and the prefill cases in
 [`tutoring-handoff.test.tsx`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/tutoring-handoff.test.tsx).
