@@ -25,7 +25,7 @@ import {
   isGuardDenial,
   type ParsedGuardRpc,
 } from '@tuturuuu/utils/abuse-guard/protocol';
-import { admit, controlStub, type FenceEnv } from './fence';
+import { admit, admitFair, controlStub, type FenceEnv } from './fence';
 import type { GuardControl, GuardSubject } from './objects';
 
 export { GuardControl, GuardSubject } from './objects';
@@ -53,7 +53,7 @@ const LOCATION_HINTS = new Set([
 
 type RpcOutcome =
   | { status: 200; body: GuardRpcResponse }
-  | { status: 400 | 401 | 413 | 503; body: { error: GuardErrorCode } };
+  | { status: 400 | 401 | 413 | 429 | 503; body: { error: GuardErrorCode } };
 
 function json(outcome: RpcOutcome | { status: number; body: unknown }) {
   return new Response(JSON.stringify(outcome.body), {
@@ -66,7 +66,7 @@ function json(outcome: RpcOutcome | { status: number; body: unknown }) {
 }
 
 function failure(
-  status: 400 | 401 | 413 | 503,
+  status: 400 | 401 | 413 | 429 | 503,
   error: GuardErrorCode
 ): RpcOutcome {
   return { status, body: { error } };
@@ -88,8 +88,20 @@ export async function executeRpc(
   rpc: ParsedGuardRpc
 ): Promise<RpcOutcome> {
   const ops = rpc.steps.reduce((total, step) => total + step.cmds.length, 0);
+  const requiresFairness = rpc.family === 'replay';
+  if (
+    requiresFairness &&
+    (!rpc.fairness || (rpc.family === 'replay' && !rpc.fairness.principal))
+  ) {
+    return failure(400, 'bad_request');
+  }
+  const fair = rpc.fairness;
   try {
-    if ((await admit(env, rpc.family, ops)) === 'stopped') {
+    if (fair) {
+      const outcome = await admitFair(env, rpc.family, fair, ops);
+      if (outcome.kind === 'limited') return failure(429, 'guard_limited');
+      if (outcome.kind === 'stopped') return failure(503, 'guard_stopped');
+    } else if ((await admit(env, rpc.family, ops)) === 'stopped') {
       return failure(503, 'guard_stopped');
     }
   } catch {
@@ -115,6 +127,7 @@ export async function executeRpc(
       for (const step of rpc.steps) {
         if (denied) {
           outcomes.push(null);
+          // Durable admission conservatively charges the entire requested batch.
           continue;
         }
         const outcome = await runStep(step, outcomes.length);

@@ -5,7 +5,12 @@
  * timeout or response-shape failure throws `AbuseGuardUnavailableError`;
  * callers keep deciding whether that fails open or closed.
  */
-import { hashGuardValue, resolveGuardOrigin, signGuardRequest } from './crypto';
+import {
+  hashGuardValue,
+  isStrongGuardSecret,
+  resolveGuardOrigin,
+  signGuardRequest,
+} from './crypto';
 import {
   ABUSE_GUARD_PROTOCOL_VERSION,
   type AbuseGuardFamily,
@@ -43,6 +48,7 @@ const ERROR_CODES = new Set<GuardErrorCode>([
   'bad_request',
   'unauthorized',
   'guard_stopped',
+  'guard_limited',
   'guard_unavailable',
 ]);
 
@@ -75,7 +81,9 @@ export function createHttpGuardTransport(options: {
   now?: () => number;
 }): AbuseGuardTransport {
   const origin = resolveGuardOrigin(options.url);
-  if (!origin) throw new AbuseGuardUnavailableError('bad_request');
+  if (!origin || !isStrongGuardSecret(options.secret)) {
+    throw new AbuseGuardUnavailableError('bad_request');
+  }
   const endpoint = new URL(ABUSE_GUARD_RPC_PATH, origin);
   const fetchImpl = options.fetch ?? fetch;
   const now = options.now ?? Date.now;
@@ -171,15 +179,43 @@ export type GuardWindowSubject = {
   windows: GuardWindowInput[];
 };
 
-export type GuardWindowOutcome =
-  | { ok: true; remaining: number; resetAt: number }
-  | { ok: false; resetAt: number; subjectIndex: number };
+/** One window's state, in the order the subject listed its windows. */
+export type GuardWindowState = { remaining: number; resetAt: number };
 
-export type GuardSetOptions = {
+export type GuardWindowOutcome =
+  | {
+      ok: true;
+      remaining: number;
+      resetAt: number;
+      /** Every subject's window states, flattened in request order. */
+      windows: GuardWindowState[];
+    }
+  | {
+      ok: false;
+      resetAt: number;
+      subjectIndex: number;
+      /** The denied subject's window states; denied ones report 0 remaining. */
+      windows: GuardWindowState[];
+    };
+
+/**
+ * The client never retries. A caller that retries a mutating call after an
+ * unknown outcome (a timeout or network failure) must pass the same
+ * `operationId` again; the Worker then returns the original result instead
+ * of charging twice. Omit it for single-attempt calls: a fresh id is used.
+ */
+export type GuardCallOptions = { operationId?: string };
+
+export type GuardSetOptions = GuardCallOptions & {
   ttlMs: number;
   mode?: 'always' | 'nx' | 'xx';
   keepTtl?: boolean;
 };
+
+/** Fresh id for a caller that wants to retry one logical operation. */
+export function createGuardOperationId() {
+  return crypto.randomUUID();
+}
 
 export type GuardReservation = {
   ok: boolean;
@@ -187,33 +223,50 @@ export type GuardReservation = {
   retryAfterMs: number;
 };
 
+/** Set only by trusted server adapters, after credential/ingress validation. */
+export type GuardFairnessInput = { source: string; principal?: string };
+
 export interface AbuseGuardClient {
+  /** A request-scoped view; never mutates a shared client or its identities. */
+  withFairness(identity: GuardFairnessInput): AbuseGuardClient;
   readonly family: AbuseGuardFamily;
   /** Charges each subject in order; stops at the first denied subject. */
-  hitWindows(subjects: GuardWindowSubject[]): Promise<GuardWindowOutcome>;
+  hitWindows(
+    subjects: GuardWindowSubject[],
+    options?: GuardCallOptions
+  ): Promise<GuardWindowOutcome>;
   get(key: string): Promise<string | null>;
   mget(keys: string[]): Promise<(string | null)[]>;
   set(key: string, value: string, options: GuardSetOptions): Promise<boolean>;
-  del(keys: string[]): Promise<number>;
+  del(keys: string[], options?: GuardCallOptions): Promise<number>;
   incr(
     key: string,
     by: number,
-    ttlMsOnCreate: number
+    ttlMsOnCreate: number,
+    options?: GuardCallOptions
   ): Promise<{ n: number; ttlMs: number }>;
-  expire(key: string, ttlMs: number): Promise<boolean>;
+  expire(
+    key: string,
+    ttlMs: number,
+    options?: GuardCallOptions
+  ): Promise<boolean>;
   /** Remaining milliseconds, or -2 when absent. */
   ttl(key: string): Promise<number>;
   /** Atomic multi-budget reservation inside one partition. */
-  reserve(input: {
-    partition: string;
-    budgets: { key: string; limit: number; ttlMs: number }[];
-    receipt: string;
-  }): Promise<GuardReservation>;
-  refund(input: {
-    partition: string;
-    receipt: string;
-    target: string;
-  }): Promise<number>;
+  reserve(
+    input: GuardCallOptions & {
+      partition: string;
+      budgets: { key: string; limit: number; ttlMs: number }[];
+      receipt: string;
+    }
+  ): Promise<GuardReservation>;
+  refund(
+    input: GuardCallOptions & {
+      partition: string;
+      receipt: string;
+      target: string;
+    }
+  ): Promise<number>;
 }
 
 type StepInput = { partition: string; cmds: GuardCommand[] };
@@ -242,20 +295,43 @@ export function createAbuseGuardClient(options: {
   family: AbuseGuardFamily;
   pepper: string;
   transport: AbuseGuardTransport;
+  fairness?: GuardFairnessInput;
 }): AbuseGuardClient {
   const { family, pepper, transport } = options;
+  const fairness = options.fairness ? { ...options.fairness } : undefined;
   const partitionOf = (raw: string) =>
     hashGuardValue(pepper, `p:${family}`, raw);
   const keyOf = (raw: string) => hashGuardValue(pepper, `k:${family}`, raw);
 
   async function run(
     steps: StepInput[],
-    sequential = false
+    sequential = false,
+    operationId?: string
   ): Promise<(GuardResult[] | null)[]> {
     const rpc: GuardRpc = {
       v: ABUSE_GUARD_PROTOCOL_VERSION,
-      id: crypto.randomUUID(),
+      id: operationId ?? createGuardOperationId(),
       family,
+      ...(fairness
+        ? {
+            fairness: {
+              source: await hashGuardValue(
+                pepper,
+                `fair:source:${family}`,
+                fairness.source
+              ),
+              ...(fairness.principal
+                ? {
+                    principal: await hashGuardValue(
+                      pepper,
+                      `fair:principal:${family}`,
+                      fairness.principal
+                    ),
+                  }
+                : {}),
+            },
+          }
+        : {}),
       ...(sequential ? { sequential: true } : {}),
       steps: await Promise.all(
         steps.map(async (step) => ({
@@ -278,16 +354,24 @@ export function createAbuseGuardClient(options: {
 
   async function single<TOp extends GuardResult['op']>(
     partition: string,
-    cmd: GuardCommand & { op: TOp }
+    cmd: GuardCommand & { op: TOp },
+    operationId?: string
   ) {
-    const [results] = await run([{ partition, cmds: [cmd] }]);
+    const [results] = await run(
+      [{ partition, cmds: [cmd] }],
+      false,
+      operationId
+    );
     return results?.[0] as Extract<GuardResult, { op: TOp }>;
   }
 
   return {
     family,
+    withFairness(identity) {
+      return createAbuseGuardClient({ ...options, fairness: identity });
+    },
 
-    async hitWindows(subjects) {
+    async hitWindows(subjects, callOptions) {
       const steps = await Promise.all(
         subjects.map(async (subject) => ({
           partition: subject.partition,
@@ -306,26 +390,34 @@ export function createAbuseGuardClient(options: {
           ],
         }))
       );
-      const results = await run(steps, true);
+      const results = await run(steps, true, callOptions?.operationId);
       let remaining = Number.POSITIVE_INFINITY;
       let resetAt = 0;
+      const windows: GuardWindowState[] = [];
       for (const [index, step] of results.entries()) {
         const hit = step?.[0];
         if (hit?.op !== 'win.hit') {
           throw new AbuseGuardUnavailableError('invalid_response');
         }
         if (!hit.ok) {
-          return { ok: false, resetAt: hit.resetAt, subjectIndex: index };
+          return {
+            ok: false,
+            resetAt: hit.resetAt,
+            subjectIndex: index,
+            windows: hit.windows,
+          };
         }
         for (const window of hit.windows) {
           remaining = Math.min(remaining, window.remaining);
           resetAt = Math.max(resetAt, window.resetAt);
+          windows.push(window);
         }
       }
       return {
         ok: true,
         remaining: Number.isFinite(remaining) ? remaining : 0,
         resetAt,
+        windows,
       };
     },
 
@@ -350,18 +442,22 @@ export function createAbuseGuardClient(options: {
 
     async set(key, value, setOptions) {
       return (
-        await single(key, {
-          op: 'kv.set',
-          k: await keyOf(key),
-          v: value,
-          ttlMs: setOptions.ttlMs,
-          mode: setOptions.mode ?? 'always',
-          ...(setOptions.keepTtl ? { keepTtl: true } : {}),
-        })
+        await single(
+          key,
+          {
+            op: 'kv.set',
+            k: await keyOf(key),
+            v: value,
+            ttlMs: setOptions.ttlMs,
+            mode: setOptions.mode ?? 'always',
+            ...(setOptions.keepTtl ? { keepTtl: true } : {}),
+          },
+          setOptions.operationId
+        )
       ).set;
     },
 
-    async del(keys) {
+    async del(keys, callOptions) {
       if (keys.length === 0) return 0;
       const steps = await Promise.all(
         keys.map(async (key) => ({
@@ -369,26 +465,29 @@ export function createAbuseGuardClient(options: {
           cmds: [{ op: 'kv.del' as const, k: await keyOf(key) }],
         }))
       );
-      const results = await run(steps);
+      const results = await run(steps, false, callOptions?.operationId);
       return results.reduce((total, step) => {
         const result = step?.[0];
         return total + (result?.op === 'kv.del' ? result.n : 0);
       }, 0);
     },
 
-    async incr(key, by, ttlMsOnCreate) {
-      const result = await single(key, {
-        op: 'kv.incr',
-        k: await keyOf(key),
-        by,
-        ttlMsOnCreate,
-      });
+    async incr(key, by, ttlMsOnCreate, callOptions) {
+      const result = await single(
+        key,
+        { op: 'kv.incr', k: await keyOf(key), by, ttlMsOnCreate },
+        callOptions?.operationId
+      );
       return { n: result.n, ttlMs: result.ttlMs };
     },
 
-    async expire(key, ttlMs) {
+    async expire(key, ttlMs, callOptions) {
       return (
-        await single(key, { op: 'kv.expire', k: await keyOf(key), ttlMs })
+        await single(
+          key,
+          { op: 'kv.expire', k: await keyOf(key), ttlMs },
+          callOptions?.operationId
+        )
       ).set;
     },
 
@@ -397,17 +496,21 @@ export function createAbuseGuardClient(options: {
     },
 
     async reserve(input) {
-      const result = await single(input.partition, {
-        op: 'res.reserve',
-        budgets: await Promise.all(
-          input.budgets.map(async (budget) => ({
-            k: await keyOf(budget.key),
-            limit: budget.limit,
-            ttlMs: budget.ttlMs,
-          }))
-        ),
-        receipt: await keyOf(input.receipt),
-      });
+      const result = await single(
+        input.partition,
+        {
+          op: 'res.reserve',
+          budgets: await Promise.all(
+            input.budgets.map(async (budget) => ({
+              k: await keyOf(budget.key),
+              limit: budget.limit,
+              ttlMs: budget.ttlMs,
+            }))
+          ),
+          receipt: await keyOf(input.receipt),
+        },
+        input.operationId
+      );
       return {
         ok: result.ok,
         remaining: result.remaining,
@@ -417,11 +520,15 @@ export function createAbuseGuardClient(options: {
 
     async refund(input) {
       return (
-        await single(input.partition, {
-          op: 'res.refund',
-          receipt: await keyOf(input.receipt),
-          target: await keyOf(input.target),
-        })
+        await single(
+          input.partition,
+          {
+            op: 'res.refund',
+            receipt: await keyOf(input.receipt),
+            target: await keyOf(input.target),
+          },
+          input.operationId
+        )
       ).n;
     },
   };

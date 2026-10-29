@@ -47,6 +47,13 @@ reserving or refunding again. An id reused with different commands is rejected.
 Read-only steps record nothing. The Worker verifies the signature over the raw
 body and path before parsing JSON.
 
+Clients never retry. A caller that retries a mutating call after an unknown
+outcome, such as a timeout, must pass the same `operationId` (from
+`createGuardOperationId()`). The retry then returns the original result instead
+of charging twice. Unknown names in `ABUSE_GUARD_FAMILIES`, including
+wrong-case names, are ignored with a one-time warning. Their family stays on the
+legacy path.
+
 ### Bounds
 
 One RPC is limited to 16 steps (partitions), 8 commands per step, 32 commands,
@@ -91,19 +98,96 @@ forget consumed replay fences and spent limits.
 Native Workers call `configureAbuseGuardRuntime({ binding: env.ABUSE_GUARD,
 pepper, families })` in their adapter instead of the HTTP variables.
 
-Every store failure throws `AbuseGuardUnavailableError`. That includes a timeout,
-an auth or configuration error, a stop, and `off`. Once a family is assigned, its
-callers fail as follows:
+Every store failure throws `AbuseGuardUnavailableError`, and each caller applies
+the fail mode below. That includes a timeout, an auth or configuration error, an
+operator or budget stop, and an `off` selection. A sensitive family whose legacy
+policy failed open fails closed once it is assigned. Otherwise exhausting the
+store's budget would switch its protection off.
 
-- `offline`: the marked bulk read gets 503.
-- `replay`: all three refresh routes fail closed (503). Cross-app session refresh
-  always did. CLI refresh and app-token exchange continue on error only while
-  `replay` is unassigned.
-- `password`: the attempt is refused with `retryAfter: 30`.
-- `proxy`: fails open by design. Route limits are skipped, and IP blocks, auth and
-  edge controls still apply.
+| Family | Caller | Fail mode while assigned | While unassigned (legacy) |
+| --- | --- | --- | --- |
+| `offline` | Marked bulk reads (offline download guard) | Closed: 503 with `Retry-After: 30` | Closed: 503 |
+| `replay` | Cross-app session refresh | Closed: 503 | Closed: 503 |
+| `replay` | CLI refresh, app-token exchange | Closed: 503 with `Retry-After: 30` | Open: continue without the fence (existing policy) |
+| `proxy` | API proxy route rate limits | Per-instance limits (the same windows, enforced in memory) while the store errors, is stopped or is `off`; IP blocks, auth and edge controls still apply | Open: no route limits without Upstash |
+| `password` | Meet guest and Nova password attempts | Not routed yet (legacy Upstash path) | Open: the KDF cost is the only bound |
 
-Unassigned families keep their legacy behavior.
+The `proxy` family never fails every request closed, since that would be a
+platform-wide outage. While the store is unavailable it degrades to per-instance
+limits. `ABUSE_GUARD_BACKEND=off` affects only assigned families; unassigned
+families keep their legacy path.
+
+### Cost and denial shortcuts
+
+- **Proxy:** all of a caller's windows are charged in one `win.hit`, which is one
+  command. A denial is remembered per instance until its window resets, so blocked
+  repeats cost no store operations. While the store errors, is stopped or is
+  `off`, the same limits apply per instance as **fixed** windows, which is
+  degraded enforcement rather than the store's sliding windows. Healthy traffic
+  does not seed those counters, so a store outage starts them at zero.
+- **Offline:** on the guard store, the session windows and clearance are spent only
+  for an actor the proxy verified (`useVerifiedBearerActor`). Unverified or rotating
+  bearers cost one IP operation and get 401. Daily windows (50,000 reads per IP
+  and per session) keep any one source below the family share. A denied subject is
+  remembered per instance until its reset.
+- **Replay:** once `replay` is assigned, a token proven replayed outside its grace
+  period is answered from memory until it expires. After a lost concurrent claim,
+  the route rereads the winner's timestamp and applies grace without caching. Each
+  instance pre-limits refresh attempts to 20 per minute per principal and 60 per
+  minute per IP before any store call; excess attempts get 429 with
+  `Retry-After: 60`.
+- **Skipped steps:** the Worker refunds steps it skips after a sequential denial
+  while their usage is still buffered. If a concurrent request flushes the buffer
+  first, the skipped step stays counted. This is accepted conservative
+  overcounting: it can stop a family slightly early, never late.
+- **Cache limits:** every in-memory map (replay, denials, outage counters) holds at
+  most 10,000 entries and evicts the oldest first. All of them are per instance, so
+  restarts, new instances and eviction under pressure reset them. The zero-cost
+  claims hold only while an entry stays resident; the store, or the fixed-window
+  outage limiter, still enforces the limits.
+
+### Activation checklist (per environment)
+
+1. Publish the Worker and run its staging canary (separate admission).
+2. **Proxy:** measure staging and production API volume first. Size the `proxy`
+   share of `ABUSE_GUARD_FAMILY_BUDGETS` so a normal day uses at most 50% of it.
+   Do not assign `proxy` without that measurement.
+3. **Offline — gate:** every proxy hop that serves marked reads must run with
+   `useVerifiedBearerActor` (today Calendar and Infrastructure). On any other hop,
+   marked reads get 401 under the guard store. Do not assign `offline` in
+   production until a staging drill demonstrates per-source fairness. The drill
+   must show that admitted traffic from realistic source fan-out cannot exhaust the
+   offline share; per-source daily windows bound one source, not many.
+4. **Replay — HIGH activation hold (open finding R1-REPLAY-DRAIN, not fixed):** do
+   not assign `replay` in production until one of these holds:
+   - cross-instance per-principal fairness has landed in the Worker fence; or
+   - a staging drill with real instance fan-out, run over a full daily budget,
+     shows that one principal cannot exhaust replay's share.
+
+   The pre-limits and the replay cache mitigate this risk; they do not close it.
+   Each instance has its own counters, so N instances admit N times the
+   per-principal rate. A family budget stop then fails CLI refresh, app-token
+   exchange and cross-app refresh closed for everyone until 07:00 GMT+7 (UTC
+   midnight), or until an operator resumes.
+5. **Replay cutover:** fence keys consumed before cutover live only in the legacy
+   store, and CLI refresh tokens live 90 days. Choose one:
+   - **Read-through.** Stop every writer to the legacy fence keys first, so the
+     legacy store is frozen. Keep `UPSTASH_REDIS_REST_*` configured and set
+     `ABUSE_GUARD_REPLAY_LEGACY_UNTIL` to the cutover time plus 90 days, as a full
+     ISO-8601 timestamp. A key present in the legacy store counts as used, and a
+     legacy read error fails closed. A malformed deadline, or a future deadline
+     with either credential missing, makes the replay store unavailable, so the
+     routes return 503 instead of skipping the check.
+   - **Generation bump.** If no legacy store is configured, rotate the
+     refresh-token signing generation at cutover, so tokens issued before it no
+     longer verify. Production had no Upstash, so its fences were effectively off
+     and this applies there. Users re-authenticate once.
+   - **Rollback:** unassigning `replay` returns the routes to the legacy path,
+     which does not know fences recorded in the guard store. Either bump the
+     generation on rollback, or keep the guard store readable until its tokens
+     expire.
+6. Alerting is live (see Cost safety) and the operator stop has been exercised in
+   staging.
 
 ## Cost safety
 

@@ -1,3 +1,4 @@
+import { createExpiringMap } from '@tuturuuu/utils/abuse-guard/local-cache';
 /**
  * Per-isolate view of the durable stop fence and per-family daily budgets in
  * `GuardControl`, with durable reservation before execution.
@@ -6,6 +7,11 @@ import {
   ABUSE_GUARD_FAMILIES,
   type AbuseGuardFamily,
 } from '@tuturuuu/utils/abuse-guard/protocol';
+import {
+  type FairAdmission,
+  type FairIdentity,
+  fairIdentityKeys,
+} from './fair-admission';
 import type { GuardControl } from './objects';
 
 export interface FenceEnv {
@@ -127,3 +133,39 @@ export async function admit(
     throw new GuardConfigError('invalid abuse-guard budget configuration');
   return controlStub(env).reserve(family, ops, budgets[family]);
 }
+/** A cache miss always rechecks durable quotas; eviction/restart grants nothing. */
+export function createFairAdmissionGate(maxEntries = 10_000) {
+  const denials = createExpiringMap<number>(maxEntries);
+  return async (
+    env: FenceEnv,
+    family: AbuseGuardFamily,
+    identity: FairIdentity,
+    ops: number
+  ): Promise<FairAdmission> => {
+    const budgets = resolveFamilyBudgets(env);
+    if (!budgets)
+      throw new GuardConfigError('invalid abuse-guard budget configuration');
+    const now = Date.now();
+    const keys = fairIdentityKeys(family, identity);
+    const cached = keys.find((key) => denials.get(key, now) !== undefined);
+    if (cached)
+      return {
+        kind: 'limited',
+        keys: [cached],
+        resetAt: denials.get(cached, now) ?? now,
+      };
+    const result = await controlStub(env).admitFair(
+      family,
+      identity,
+      ops,
+      budgets[family]
+    );
+    if (result.kind === 'limited') {
+      for (const key of result.keys)
+        denials.set(key, result.resetAt, result.resetAt);
+    }
+    return result;
+  };
+}
+
+export const admitFair = createFairAdmissionGate();

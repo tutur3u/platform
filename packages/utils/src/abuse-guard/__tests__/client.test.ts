@@ -4,9 +4,10 @@ import {
   AbuseGuardUnavailableError,
   createAbuseGuardClient,
   createBindingGuardTransport,
+  createGuardOperationId,
   createHttpGuardTransport,
 } from '../client';
-import { verifyGuardRequest } from '../crypto';
+import { hashGuardValue, verifyGuardRequest } from '../crypto';
 import type { GuardRpc } from '../protocol';
 import { configureAbuseGuardRuntime, selectAbuseGuard } from '../select';
 
@@ -98,7 +99,7 @@ describe('createHttpGuardTransport', () => {
           ],
         },
       ])
-    ).resolves.toEqual({ ok: true, remaining: 4, resetAt: 120_000 });
+    ).resolves.toMatchObject({ ok: true, remaining: 4, resetAt: 120_000 });
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -193,6 +194,50 @@ describe('createHttpGuardTransport', () => {
       }),
     });
     await expect(client.get('k')).rejects.toMatchObject({ code: 'network' });
+  });
+
+  it('refuses a weak signing secret before anything is sent', () => {
+    expect(() =>
+      createHttpGuardTransport({
+        url: 'https://guard.example.test',
+        secret: 'short',
+        timeoutMs: 500,
+      })
+    ).toThrow(AbuseGuardUnavailableError);
+  });
+
+  it('reuses a caller-supplied operation id so a retry cannot double-charge', async () => {
+    const ids: string[] = [];
+    const client = createAbuseGuardClient({
+      family: 'password',
+      pepper: PEPPER,
+      transport: async (rpc) => {
+        ids.push(rpc.id);
+        return {
+          v: 1,
+          steps: [
+            {
+              results: [
+                { op: 'res.reserve', ok: true, remaining: 1, retryAfterMs: 0 },
+              ],
+            },
+          ],
+        };
+      },
+    });
+    const operationId = createGuardOperationId();
+    const input = {
+      partition: 'pwd:meet-guest',
+      budgets: [{ key: 'target', limit: 2, ttlMs: 60_000 }],
+      receipt: 'r1',
+      operationId,
+    };
+    await client.reserve(input);
+    await client.reserve(input);
+    expect(ids).toEqual([operationId, operationId]);
+    await expect(
+      client.incr('k', 1, 60_000, { operationId: 'bad id' })
+    ).rejects.toMatchObject({ code: 'bad_request' });
   });
 
   it('sends a fresh operation id with every call', async () => {
@@ -290,7 +335,7 @@ describe('hitWindows', () => {
           windows: [{ key: '1m', limit: 1, windowMs: 60_000, algo: 'fixed' }],
         },
       ])
-    ).resolves.toEqual({ ok: false, resetAt: 90_000, subjectIndex: 1 });
+    ).resolves.toMatchObject({ ok: false, resetAt: 90_000, subjectIndex: 1 });
   });
 });
 
@@ -353,6 +398,16 @@ describe('selectAbuseGuard', () => {
     expect(selectAbuseGuard('offline', {}).kind).toBe('legacy');
   });
 
+  it('warns once about unknown family names and keeps them on legacy', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const env = { ...configured, ABUSE_GUARD_FAMILIES: 'Offline,ofline' };
+    expect(selectAbuseGuard('offline', env).kind).toBe('legacy');
+    expect(selectAbuseGuard('offline', env).kind).toBe('legacy');
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(String(warn.mock.calls[0]?.[0])).toContain('"Offline"');
+    warn.mockRestore();
+  });
+
   it('serves only the families named in ABUSE_GUARD_FAMILIES', () => {
     const env = { ...configured, ABUSE_GUARD_FAMILIES: 'offline, bogus' };
     expect(selectAbuseGuard('offline', env).kind).toBe('durable-object');
@@ -368,6 +423,13 @@ describe('selectAbuseGuard', () => {
     expect(
       selectAbuseGuard('offline', { ...env, ABUSE_GUARD_BACKEND: 'off' }).kind
     ).toBe('off');
+    // `off` never touches unassigned families: they keep the legacy path.
+    expect(
+      selectAbuseGuard('replay', { ...env, ABUSE_GUARD_BACKEND: 'off' }).kind
+    ).toBe('legacy');
+    expect(selectAbuseGuard('proxy', { ABUSE_GUARD_BACKEND: 'off' }).kind).toBe(
+      'legacy'
+    );
   });
 
   it.each([
@@ -450,5 +512,48 @@ describe('selectAbuseGuard', () => {
     expect(again.kind === 'durable-object' && again.client).toBe(
       selection.client
     );
+  });
+});
+
+describe('request-scoped fairness identities', () => {
+  it('purpose-hashes source/principal independently of keys and never mutates the shared client', async () => {
+    const sent: GuardRpc[] = [];
+    const shared = createAbuseGuardClient({
+      family: 'replay',
+      pepper: PEPPER,
+      transport: async (rpc) => {
+        sent.push(rpc);
+        return { v: 1, steps: [{ results: [{ op: 'kv.get', v: null }] }] };
+      },
+    });
+    await Promise.all([
+      shared
+        .withFairness({ source: '203.0.113.4', principal: 'user-a' })
+        .get('token-a'),
+      shared
+        .withFairness({ source: '203.0.113.4', principal: 'user-b' })
+        .get('token-b'),
+    ]);
+    expect(sent[0]?.fairness?.source).toEqual(sent[1]?.fairness?.source);
+    expect(sent[0]?.fairness?.source).toMatch(/^[A-Za-z0-9_-]{43}$/u);
+    expect(sent[0]?.fairness?.principal).not.toEqual(
+      sent[1]?.fairness?.principal
+    );
+    expect(JSON.stringify(sent)).not.toContain('203.0.113.4');
+    expect(JSON.stringify(sent)).not.toContain('user-a');
+    await shared.get('unscoped');
+    expect(sent[2]?.fairness).toBeUndefined();
+    const identity = { source: '203.0.113.4', principal: 'user-a' };
+    const view = shared.withFairness(identity);
+    identity.principal = 'user-b';
+    await view.get('stable-view');
+    expect(sent[3]?.fairness).toEqual({
+      source: await hashGuardValue(PEPPER, 'fair:source:replay', '203.0.113.4'),
+      principal: await hashGuardValue(
+        PEPPER,
+        'fair:principal:replay',
+        'user-a'
+      ),
+    });
   });
 });

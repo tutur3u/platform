@@ -5,8 +5,8 @@
  *   store is configured (HTTP env, or a native Worker's injected binding).
  * - `legacy`: keep today's Upstash path (or its missing-store behavior).
  *   This is the default for every unassigned family.
- * - `off`: ABUSE_GUARD_BACKEND=off, or an assigned family whose configuration
- *   is incomplete. Callers treat the store as unavailable and apply their own
+ * - `off`: an assigned family under ABUSE_GUARD_BACKEND=off, or whose
+ *   configuration is incomplete. Callers treat the store as unavailable and apply their own
  *   fail policy, without falling back to Upstash.
  */
 import {
@@ -39,14 +39,28 @@ export type AbuseGuardSelection =
 
 export const ABUSE_GUARD_DEFAULT_TIMEOUT_MS = 750;
 
+const warnedFamilyNames = new Set<string>();
+
+/**
+ * Parses a family list. Unknown names (typos, wrong case) are ignored, so the
+ * family stays on its legacy path; each one is reported once per process.
+ */
 export function parseAbuseGuardFamilies(value: string | undefined) {
   const known = new Set<string>(ABUSE_GUARD_FAMILIES);
-  return new Set(
-    (value ?? '')
-      .split(',')
-      .map((family) => family.trim())
-      .filter((family): family is AbuseGuardFamily => known.has(family))
-  );
+  const families = new Set<AbuseGuardFamily>();
+  for (const raw of (value ?? '').split(',')) {
+    const name = raw.trim();
+    if (!name) continue;
+    if (known.has(name)) {
+      families.add(name as AbuseGuardFamily);
+    } else if (!warnedFamilyNames.has(name) && warnedFamilyNames.size < 32) {
+      warnedFamilyNames.add(name);
+      console.warn(
+        `[abuse-guard] Ignoring unknown family "${name.slice(0, 32)}"; expected one of ${ABUSE_GUARD_FAMILIES.join(', ')}`
+      );
+    }
+  }
+  return families;
 }
 
 export function parseAbuseGuardTimeout(value: string | undefined) {
@@ -136,6 +150,19 @@ function cachedClient(
 }
 
 /**
+ * Whether `family` is assigned to the Durable Object store (served, or `off`
+ * because its assigned configuration is unusable). Callers whose legacy policy
+ * fails open use this to fail closed instead once the store owns the family,
+ * so exhausting the store's budget can never switch their protection off.
+ */
+export function isAbuseGuardFamilyAssigned(
+  family: AbuseGuardFamily,
+  env?: AbuseGuardEnv
+) {
+  return selectAbuseGuard(family, env).kind !== 'legacy';
+}
+
+/**
  * Once a family is assigned to the Durable Object store, an incomplete or
  * invalid configuration reports `off` and never falls back to the legacy
  * store: a fresh legacy store would forget consumed tokens and spent limits.
@@ -146,8 +173,13 @@ export function selectAbuseGuard(
   env: AbuseGuardEnv = processEnv()
 ): AbuseGuardSelection {
   const backend = env.ABUSE_GUARD_BACKEND?.trim().toLowerCase();
-  if (backend === 'off') return { kind: 'off' };
   if (backend === 'upstash') return { kind: 'legacy' };
+  const assigned =
+    runtimeOverride?.families.has(family) === true ||
+    parseAbuseGuardFamilies(env.ABUSE_GUARD_FAMILIES).has(family);
+  // `off` switches only assigned families off; unassigned ones keep legacy.
+  if (!assigned) return { kind: 'legacy' };
+  if (backend === 'off') return { kind: 'off' };
 
   if (runtimeOverride?.families.has(family)) {
     const usable = runtimeOverride.usable;
@@ -164,9 +196,6 @@ export function selectAbuseGuard(
     };
   }
 
-  if (!parseAbuseGuardFamilies(env.ABUSE_GUARD_FAMILIES).has(family)) {
-    return { kind: 'legacy' };
-  }
   const url = resolveGuardOrigin(env.ABUSE_GUARD_URL);
   const secret = strong(env.ABUSE_GUARD_SECRET);
   const pepper = strong(env.ABUSE_GUARD_KEY_PEPPER);
