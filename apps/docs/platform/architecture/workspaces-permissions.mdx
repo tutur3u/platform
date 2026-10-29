@@ -38,7 +38,7 @@ fixed phase 1a–1d merge references.
 
 Regression coverage: `apps/database/supabase/tests/merge-phase-workspace-guards.sql`
 and `apps/database/supabase/tests/merge-workspace-users-null-guards.sql`.
-Manual reversal is in the matching `apps/database/rollbacks/20261027151030`–`150203`
+Manual reversal is in the matching `apps/database/rollbacks/20261029050400`–`20261029050430`
 rollback files. A rollback removes these guards and reopens SR-108 for
 authenticated callers of the phase functions; it never re-grants `PUBLIC` or
 `anon`, and the two helpers stay `service_role`-only.
