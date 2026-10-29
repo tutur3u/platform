@@ -1524,3 +1524,19 @@ API; room sharing remains the authority for non-host access.
 
 Database coverage: `meeting-identity-transcript-access.sql` and `meet-ai.sql`.
 Application coverage: `packages/meet-core/src/features/meeting-ai/server/access.test.ts`.
+
+### Private transcription evaluation
+
+The M1 transcription evaluation CLI lives at
+[packages/ai/src/meetings/eval](https://github.com/tutur3u/platform/tree/main/packages/ai/src/meetings/eval);
+its README defines the private manifest, environment variables, bounds and scoring
+contract. Run it only with consented clips and UTF-8 references stored outside Git.
+Reports also stay outside Git and contain aggregate counts and scores without
+transcript or glossary text.
+
+Gemini Flash-Lite and an explicitly configured Flash candidate are evaluated
+through an evaluation-local SttProvider boundary. OpenAI gpt-4o-transcribe requires
+explicit evaluation opt-in and is never wired to production traffic. The harness
+does not choose or change the production model. D1 requires real consented corpus
+results and coverage review; synthetic regression tests establish the metrics and
+privacy boundaries, not Vietnamese provider quality.
