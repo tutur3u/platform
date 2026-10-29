@@ -339,8 +339,16 @@ class HabitsCubit extends Cubit<HabitsState> {
   }) => _loadWorkspace(wsId, refresh: refresh, scopeOverride: scopeOverride);
   Future<void> loadActivity({bool refresh = false}) =>
       _loadActivity(refresh: refresh);
-  Future<void> loadTrackerDetail(String trackerId, {bool refresh = false}) =>
-      _loadTrackerDetail(trackerId, refresh: refresh);
+
+  /// [retainError] keeps a visible detail error and its message while the
+  /// pull-to-refresh gesture reloads; an explicit Retry leaves it false so
+  /// the sheet re-enters its loading state.
+  Future<void> loadTrackerDetail(
+    String trackerId, {
+    bool refresh = false,
+    bool retainError = false,
+  }) =>
+      _loadTrackerDetail(trackerId, refresh: refresh, retainError: retainError);
   Future<void> createTracker(HabitTrackerInput input) => _createTracker(input);
   Future<void> updateTracker(String trackerId, HabitTrackerInput input) =>
       _updateTracker(trackerId, input);

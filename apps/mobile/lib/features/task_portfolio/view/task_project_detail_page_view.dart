@@ -106,7 +106,10 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
 
           if (state.status == TaskPortfolioStatus.error &&
               state.projects.isEmpty) {
-            return _ErrorState(message: state.error);
+            return NovaRefreshIndicator.state(
+              onRefresh: _reload,
+              child: _ErrorState(message: state.error),
+            );
           }
 
           final project = wsId == null
@@ -119,9 +122,12 @@ class _TaskProjectDetailViewState extends State<_TaskProjectDetailView> {
                     .firstOrNull;
 
           if (project == null) {
-            return _NotFoundState(
-              title: l10n.taskPortfolioProjectNotFoundTitle,
-              description: l10n.taskPortfolioProjectNotFoundDescription,
+            return NovaRefreshIndicator.state(
+              onRefresh: _reload,
+              child: _NotFoundState(
+                title: l10n.taskPortfolioProjectNotFoundTitle,
+                description: l10n.taskPortfolioProjectNotFoundDescription,
+              ),
             );
           }
 
