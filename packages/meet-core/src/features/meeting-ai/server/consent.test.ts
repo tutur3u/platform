@@ -42,8 +42,18 @@ function post(body: unknown, origin = 'https://meet.tuturuuu.com') {
   });
 }
 
-function database(sessionRow: unknown) {
+function database(sessionRow: unknown, ownRows: unknown[] = []) {
   const insert = vi.fn().mockResolvedValue({ error: null });
+  const log = {
+    insert,
+    select: vi.fn(),
+    eq: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn().mockResolvedValue({ data: ownRows, error: null }),
+  };
+  log.select.mockReturnValue(log);
+  log.eq.mockReturnValue(log);
+  log.order.mockReturnValue(log);
   const lookup = {
     select: vi.fn(),
     eq: vi.fn(),
@@ -53,7 +63,7 @@ function database(sessionRow: unknown) {
   lookup.eq.mockReturnValue(lookup);
   const db = {
     from: vi.fn(() => lookup),
-    schema: vi.fn(() => ({ from: vi.fn(() => ({ insert })) })),
+    schema: vi.fn(() => ({ from: vi.fn(() => log) })),
   };
   mocks.admin.mockResolvedValue(db);
   return { insert, db };
@@ -132,6 +142,56 @@ describe('consent POST', () => {
     expect(insert).toHaveBeenCalledWith(
       expect.objectContaining({ decision: 'deny', user_id: participant })
     );
+  });
+
+  it('rejects a notice version other than the one this server shows (F4)', async () => {
+    const { insert } = database({
+      id: session,
+      created_at: new Date().toISOString(),
+      ended_at: null,
+    });
+    for (const noticeVersion of ['meet-transcription-v1-draft', 'forged']) {
+      const response = await meetAiResponse(() =>
+        recordMeetConsent(post({ ...allow, noticeVersion }), params)
+      );
+      expect(response.status).toBe(409);
+      expect(await response.json()).toMatchObject({
+        code: 'MEET_AI_CONSENT_NOTICE_OUTDATED',
+      });
+    }
+    expect(mocks.roomService).not.toHaveBeenCalled();
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it('does not append a repeated decision and bounds changes per session (F6)', async () => {
+    const live = {
+      id: session,
+      created_at: new Date().toISOString(),
+      ended_at: null,
+    };
+    const row = (decision: string, index: number) => ({
+      id: String(index),
+      user_id: participant,
+      decision,
+      created_at: new Date(Date.now() - 60_000 + index).toISOString(),
+    });
+    const repeated = database(live, [row('allow', 0)]);
+    expect(await recordMeetConsent(post(allow), params)).toEqual({
+      recorded: false,
+      decision: 'allow',
+    });
+    expect(repeated.insert).not.toHaveBeenCalled();
+    const flapping = database(
+      live,
+      Array.from({ length: 20 }, (_, index) =>
+        row(index % 2 ? 'allow' : 'withdraw', index)
+      ).reverse() // the log is read newest first
+    );
+    const response = await meetAiResponse(() =>
+      recordMeetConsent(post({ ...allow, decision: 'withdraw' }), params)
+    );
+    expect(response.status).toBe(429);
+    expect(flapping.insert).not.toHaveBeenCalled();
   });
 
   it('rejects a session from another meeting', async () => {

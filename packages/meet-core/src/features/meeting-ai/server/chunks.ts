@@ -6,10 +6,19 @@ import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
 import { generateBilledMeetArtifact } from './artifact-billing';
 import { readAudioParts } from './audio-input';
 import { readMeetAudioForm } from './body';
-import { consentedSourceIndexes, needsConsentRecords } from './consent-gate';
+import {
+  consentedSourceIndexes,
+  hasExtraHostTracks,
+  hasHostSharedAudio,
+  MEET_HOST_SHARED_AUDIO_MAX_AUDIENCE,
+  needsConsentRecords,
+} from './consent-gate';
 import { readMeetConsentRecords } from './consent-records';
 import { admitMeetCredits } from './credit-admission';
-import { resolveTranscriptSpeaker } from './transcript-speaker';
+import {
+  readTranscriptionAudience,
+  resolveTranscriptSpeaker,
+} from './transcript-speaker';
 
 const schema = z.object({
   language: z.enum(['auto', 'vi', 'en', 'vi+en']).default('auto'),
@@ -64,6 +73,17 @@ export async function transcribeMeetChunk(
     throw new MeetAiError(409, 'Transcription has ended');
   // Consent is enforced here, not only in the client: other speakers' audio
   // never reaches the provider without a current allow record.
+  if (hasExtraHostTracks(user.id, received))
+    throw new MeetAiError(
+      400,
+      'Too many host audio tracks',
+      'MEET_AI_HOST_TRACKS'
+    );
+  // Host screen audio can carry other people's voices; with more than one
+  // other person it is excluded (an unknown audience counts as more).
+  const audience = hasHostSharedAudio(user.id, received)
+    ? await readTranscriptionAudience(meetingId, user.id)
+    : null;
   const kept = consentedSourceIndexes({
     actorId: user.id,
     sessionStartedAt: session.created_at,
@@ -71,6 +91,8 @@ export async function transcribeMeetChunk(
     records: needsConsentRecords(user.id, received)
       ? await readMeetConsentRecords(db, sessionId)
       : [],
+    excludeHostSharedAudio:
+      audience === null || audience > MEET_HOST_SHARED_AUDIO_MAX_AUDIENCE,
   });
   if (!kept.length)
     throw new MeetAiError(

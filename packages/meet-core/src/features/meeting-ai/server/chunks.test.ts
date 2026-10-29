@@ -8,6 +8,8 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock('./transcript-speaker', () => ({
   resolveTranscriptSpeaker: mocks.speaker,
+  // Solo host: shared audio stays included.
+  readTranscriptionAudience: async () => 1,
 }));
 vi.mock('server-only', () => ({}));
 // Authorization is covered separately; avoid loading built auth packages here.

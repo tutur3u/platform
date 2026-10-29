@@ -366,6 +366,32 @@ it('distinguishes a confirmed failed personal receipt from an uncertain pending 
   ).toEqual({ started: true });
 });
 
+it('reports the admitted transcription audience only to the host', () => {
+  const command = { action: 'transcription.audience' };
+  expect(roomService(initial(), token, command).status).toBe(403);
+  const base = initial();
+  const snapshot = {
+    ...base,
+    presence: {
+      ...base.presence,
+      lobby: {
+        ...Object.values(base.presence)[0]!,
+        userId: 'lobby',
+        accountId: '22222222-2222-4222-8222-222222222222',
+      },
+    },
+    waiting: {
+      lobby: { userId: 'lobby', displayName: 'Waiting' },
+    },
+  } as typeof base;
+  const admitted = new Set(
+    Object.values(base.presence).map((p) => p.accountId ?? p.userId)
+  ).size;
+  expect(
+    roomService(snapshot, { ...token, role: 'host' }, command).body
+  ).toEqual({ participants: admitted });
+});
+
 it('limits transcript identities to signed host requests and admitted accounts', () => {
   const command = { action: 'transcription.speaker', accountId: account };
   expect(roomService(initial(), token, command).status).toBe(403);

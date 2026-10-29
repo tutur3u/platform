@@ -7,6 +7,7 @@ import type { MeetConsentDecision } from '../consent/notice';
 import { MeetAiError } from './access';
 
 export type MeetConsentRecord = {
+  id?: string;
   user_id: string | null;
   decision: MeetConsentDecision;
   created_at: string;
@@ -22,20 +23,37 @@ function consentLog(db: TypedSupabaseClient) {
     .from('meet_ai_consents');
 }
 
-/** Evidence rows for one session, oldest first; null when the log is absent. */
+/** Per-account decisions kept per session; further changes are refused. */
+export const MEET_CONSENT_MAX_DECISIONS = 20;
+// Bounds the one read per upload; a full page fails closed rather than truncating.
+const SESSION_READ_LIMIT = 2000;
+
+/**
+ * Evidence rows for one session (or one account in it), oldest first, ordered
+ * by (created_at, id). Returns null when the log is not deployed.
+ */
 export async function readMeetConsentRecords(
   db: TypedSupabaseClient,
-  sessionId: string
+  sessionId: string,
+  userId?: string
 ): Promise<MeetConsentRecord[] | null> {
-  const { data, error } = await consentLog(db)
-    .select('user_id, decision, created_at')
-    .eq('session_id', sessionId)
-    .order('created_at', { ascending: true });
+  const limit = userId ? MEET_CONSENT_MAX_DECISIONS : SESSION_READ_LIMIT;
+  let query = consentLog(db)
+    .select('id, user_id, decision, created_at')
+    .eq('session_id', sessionId);
+  if (userId) query = query.eq('user_id', userId);
+  const { data, error } = await query
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
+    .limit(limit);
   if (error) {
     if (UNAVAILABLE.has(error.code ?? '')) return null;
     throw new MeetAiError(503, 'Consent records are unavailable');
   }
-  return (data ?? []) as MeetConsentRecord[];
+  const rows = (data ?? []) as MeetConsentRecord[];
+  if (!userId && rows.length >= limit)
+    throw new MeetAiError(503, 'Consent records are unavailable');
+  return rows.reverse();
 }
 
 /** Append one decision. The log is append-only; the latest row wins. */

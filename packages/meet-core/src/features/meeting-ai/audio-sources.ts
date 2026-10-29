@@ -27,6 +27,10 @@ export function meetingAudioSources(input: {
     : undefined;
   const ownAccountId = own?.accountId ?? input.selfAccountId;
   const includeSelf = input.selfAllowed !== false;
+  // Mirrors the server: host screen audio can carry other people's voices, so
+  // it is left out once more than one other person is in the call.
+  const includeScreen =
+    includeSelf && Object.keys(input.participants).length <= 2;
   return [
     ...(input.localStream && includeSelf
       ? [
@@ -37,7 +41,7 @@ export function meetingAudioSources(input: {
           },
         ]
       : []),
-    ...(input.screenStream && includeSelf
+    ...(input.screenStream && includeScreen
       ? [
           {
             stream: input.screenStream,

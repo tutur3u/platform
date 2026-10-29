@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   access: vi.fn(),
   generate: vi.fn(),
   speaker: vi.fn(),
+  audience: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 // Authorization is covered separately; avoid loading built auth packages here.
@@ -15,6 +16,7 @@ vi.mock('@tuturuuu/ai/meetings/gemini', () => ({}));
 vi.mock('./credit-admission', () => ({ admitMeetCredits: async () => ({}) }));
 vi.mock('./transcript-speaker', () => ({
   resolveTranscriptSpeaker: mocks.speaker,
+  readTranscriptionAudience: mocks.audience,
 }));
 vi.mock('./artifact-billing', () => ({
   generateBilledMeetArtifact: mocks.generate,
@@ -40,12 +42,14 @@ function query(result: unknown) {
     select: vi.fn(),
     update: vi.fn(),
     eq: vi.fn(),
-    order: vi.fn().mockResolvedValue(result),
+    order: vi.fn(),
+    limit: vi.fn().mockResolvedValue(result),
     maybeSingle: vi.fn().mockResolvedValue(result),
   };
   value.select.mockReturnValue(value);
   value.update.mockReturnValue(value);
   value.eq.mockReturnValue(value);
+  value.order.mockReturnValue(value);
   return value;
 }
 
@@ -70,7 +74,13 @@ function storage(consents: { data: unknown; error: unknown }) {
   return { schema, rpc, persisted };
 }
 
-function upload(sources: Array<{ speakerAccountId?: string; at: number }>) {
+function upload(
+  sources: Array<{
+    speakerAccountId?: string;
+    at: number;
+    kind?: 'microphone' | 'shared_audio';
+  }>
+) {
   const body = new FormData();
   body.set('id', host);
   body.set('sessionId', host);
@@ -81,7 +91,7 @@ function upload(sources: Array<{ speakerAccountId?: string; at: number }>) {
     JSON.stringify(
       sources.map((source) => ({
         speakerAccountId: source.speakerAccountId,
-        sourceKind: 'microphone',
+        sourceKind: source.kind ?? 'microphone',
         startSeconds: source.at,
       }))
     )
@@ -203,5 +213,101 @@ describe('server-side transcription consent', () => {
     );
     expect(schema).not.toHaveBeenCalled();
     expect(mocks.generate).toHaveBeenCalledOnce();
+  });
+  it('rejects a clip that starts 1 ms before the allow and accepts one at it (F3)', async () => {
+    const consents = {
+      data: [
+        {
+          id: '1',
+          user_id: guest,
+          decision: 'allow',
+          created_at: at(30),
+        },
+      ],
+      error: null,
+    };
+    storage(consents);
+    const early = await meetAiResponse(() =>
+      transcribeMeetChunk(
+        upload([{ speakerAccountId: guest, at: 29.999 }]),
+        params
+      )
+    );
+    expect(early.status).toBe(403);
+    expect(mocks.generate).not.toHaveBeenCalled();
+    storage(consents);
+    mocks.generate.mockResolvedValue({
+      text: '',
+      transcripts: ['guest words'],
+      usage: {},
+      costUsd: 0.001,
+    });
+    await transcribeMeetChunk(
+      upload([{ speakerAccountId: guest, at: 30 }]),
+      params
+    );
+    expect(mocks.generate).toHaveBeenCalledOnce();
+  });
+
+  it('rejects a clip that overlaps a withdrawal even after a re-allow (F3)', async () => {
+    storage({
+      data: [
+        { id: '1', user_id: guest, decision: 'allow', created_at: at(1) },
+        { id: '2', user_id: guest, decision: 'withdraw', created_at: at(20.5) },
+        { id: '3', user_id: guest, decision: 'allow', created_at: at(40) },
+      ],
+      error: null,
+    });
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(upload([{ speakerAccountId: guest, at: 20 }]), params)
+    );
+    expect(response.status).toBe(403);
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+
+  it('rejects a second overlapping host microphone track before any charge (F1a)', async () => {
+    const { rpc } = storage({ data: [], error: null });
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(
+        upload([
+          { speakerAccountId: host, at: 5 },
+          { speakerAccountId: host, at: 5.5 },
+        ]),
+        params
+      )
+    );
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      code: 'MEET_AI_HOST_TRACKS',
+    });
+    expect(rpc).not.toHaveBeenCalled();
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+
+  it('drops host screen audio with more than one other person or an unknown audience (F2)', async () => {
+    const sources = [
+      { speakerAccountId: host, at: 5 },
+      { speakerAccountId: host, at: 5, kind: 'shared_audio' as const },
+    ];
+    for (const [audience, segments] of [
+      [3, 1],
+      [null, 1],
+      [2, 2],
+    ] as const) {
+      vi.clearAllMocks();
+      storage({ data: [], error: null });
+      mocks.audience.mockResolvedValue(audience);
+      mocks.generate.mockResolvedValue({
+        text: '',
+        transcripts: Array.from({ length: segments }, () => 'words'),
+        usage: {},
+        costUsd: 0.001,
+      });
+      await transcribeMeetChunk(upload(sources), params);
+      expect(mocks.audience).toHaveBeenCalledWith(host, host);
+      expect(mocks.generate.mock.calls[0]?.[0].audioSegments).toHaveLength(
+        segments
+      );
+    }
   });
 });

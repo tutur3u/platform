@@ -79,6 +79,7 @@ const command = z.union([
       action: z.literal('transcription.speaker'),
       accountId: z.uuid(),
     }),
+    z.object({ action: z.literal('transcription.audience') }),
     z.object({ action: z.literal('ai.review.list') }),
     z.object({ action: z.literal('costs') }),
     z.object({ action: z.literal('recording.list') }),
@@ -142,6 +143,16 @@ export function roomService(
     token.scopes.includes('meet:workspace-member');
   const admin = token.role === 'host';
   const message = parsed.data;
+  if (message.action === 'transcription.audience') {
+    if (!admin)
+      return fail('Only the host can read the transcription audience');
+    const people = new Set(
+      Object.values(snapshot.presence)
+        .filter((person) => !snapshot.waiting?.[person.userId])
+        .map((person) => person.accountId ?? person.userId)
+    );
+    return { state: snapshot, body: { participants: people.size } };
+  }
   if (message.action === 'transcription.speaker') {
     if (!admin) return fail('Only the host can attribute transcription');
     const known =

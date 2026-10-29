@@ -3,11 +3,15 @@ import { getMeetCallAccess } from '@tuturuuu/meet-core/features/call/lib/call-ac
 import { callRoomService } from '@tuturuuu/meet-core/features/call/server/room-service';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { z } from 'zod';
-import { MEET_CONSENT_DECISIONS } from '../consent/notice';
+import {
+  MEET_CONSENT_DECISIONS,
+  MEET_CONSENT_NOTICE_VERSION,
+} from '../consent/notice';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
 import {
   appendMeetConsentRecord,
   latestMeetConsents,
+  MEET_CONSENT_MAX_DECISIONS,
   readMeetConsentRecords,
 } from './consent-records';
 
@@ -42,6 +46,13 @@ export async function recordMeetConsent(
     throw new MeetAiError(400, 'Invalid meeting');
   const parsed = schema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) throw new MeetAiError(400, 'Invalid consent');
+  // Evidence must name the notice this server shows, never a client value.
+  if (parsed.data.noticeVersion !== MEET_CONSENT_NOTICE_VERSION)
+    throw new MeetAiError(
+      409,
+      'The consent notice has changed; reload to see the current notice',
+      'MEET_AI_CONSENT_NOTICE_OUTDATED'
+    );
   const access = await getMeetCallAccess(meetingId, 'Participant').catch(
     (error) => failure(error, 'Meeting access is unavailable')
   );
@@ -66,11 +77,23 @@ export async function recordMeetConsent(
       Date.now() - Date.parse(session.created_at) > 3 * 60 * 60 * 1000)
   )
     throw new MeetAiError(409, 'Transcription has ended');
+  const own = await readMeetConsentRecords(db, session.id, access.user.id);
+  if (own === null)
+    throw new MeetAiError(
+      503,
+      'Consent could not be recorded',
+      'MEET_AI_CONSENT_UNAVAILABLE'
+    );
+  // Repeating the current decision appends nothing; changes are bounded.
+  if (own.at(-1)?.decision === parsed.data.decision)
+    return { recorded: false, decision: parsed.data.decision };
+  if (own.length >= MEET_CONSENT_MAX_DECISIONS)
+    throw new MeetAiError(429, 'Too many consent changes for this session');
   await appendMeetConsentRecord(db, {
     sessionId: session.id,
     userId: access.user.id,
     decision: parsed.data.decision,
-    noticeVersion: parsed.data.noticeVersion,
+    noticeVersion: MEET_CONSENT_NOTICE_VERSION,
   });
   return { recorded: true, decision: parsed.data.decision };
 }

@@ -5,6 +5,26 @@ import { callRoomService } from '@tuturuuu/meet-core/features/call/server/room-s
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { MeetAiError } from './access';
 
+/**
+ * Admitted people in the live room, or null when the room cannot say (callers
+ * must treat null as the most restrictive case).
+ */
+export async function readTranscriptionAudience(
+  meetingId: string,
+  actorId: string
+): Promise<number | null> {
+  try {
+    const room = await getMeetCallAccess(meetingId, 'Participant');
+    if (room.user.id !== actorId) return null;
+    const result = await callRoomService<{ participants?: unknown }>(room, {
+      action: 'transcription.audience',
+    });
+    return typeof result.participants === 'number' ? result.participants : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Client metadata identifies a source; only admitted accounts may supply its label. */
 export async function resolveTranscriptSpeaker(input: {
   db: TypedSupabaseClient;

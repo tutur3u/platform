@@ -1631,16 +1631,36 @@ through the service role. Only then does the client mirror the decision as
 `transcription.consent`. The host roster is `GET …/consent?sessionId=` (session
 owner only) and reads the same log.
 
-Enforcement is server-side. The chunk endpoint drops every source whose speaker
-is not the uploading host unless that account's latest decision is `allow` and an
-`allow` was already in force (10 s skew) when the clip was captured. Unattributed
-sources are dropped. Dropped audio never reaches the provider, the speaker lookup
-or billing; `usage.excludedSources` counts them. If nothing remains, the upload
-fails with 403 `MEET_AI_CONSENT_REQUIRED` before credit admission or reservation.
-Uploads containing only the host's own sources skip the lookup. If the consent
-log is not deployed yet (PR #7264), other speakers fail closed. On the host
-device, `meetingAudioSources` mirrors this rule using the database roster, so
-excluded tracks are not recorded or uploaded in the first place.
+Enforcement is server-side and applies to every clip. The chunk endpoint drops
+a source whose speaker is not the uploading host unless that account's latest
+decision is `allow`, an `allow` was already in force when the clip started (no
+tolerance toward inclusion: a clip starting even 1 ms before the allow is
+dropped), and no deny or withdraw was recorded between the clip start and 10 s
+after its end. Decisions are ordered by `(created_at, id)`; a tie that includes a
+non-allow counts as not allowed. Unattributed sources are dropped. Dropped audio
+never reaches the provider, the speaker lookup or billing;
+`usage.excludedSources` counts them. If nothing remains, the upload fails with
+403 `MEET_AI_CONSENT_REQUIRED` before credit admission or reservation. Uploads
+containing only the host's own sources skip the lookup. If the consent log is
+not deployed yet (PR #7264), other speakers fail closed. On the host device,
+`meetingAudioSources` mirrors this rule using the database roster, so excluded
+tracks are not recorded or uploaded in the first place.
+
+Host sources are limited too. An upload may carry at most one host microphone
+track and one host shared-audio track: overlapping host clips of the same kind
+fail the whole upload with 400 `MEET_AI_HOST_TRACKS`. Host screen or tab audio
+can carry other people's voices, so it is excluded when more than two people are
+admitted to the room. The server asks the room (host-only room-service action
+`transcription.audience`) once per upload that contains host shared audio, and
+an unknown audience counts as more than two. A session-scoped host toggle to
+include shared audio, with an indicator for everyone, is a follow-up.
+
+Consent writes accept only the notice version the server currently shows
+(`MEET_CONSENT_NOTICE_VERSION`); any other value gets 409
+`MEET_AI_CONSENT_NOTICE_OUTDATED`, and the server stores its own constant.
+Repeating the current decision appends nothing, and each account may record at
+most 20 decisions per session (429 after that). Each upload reads the session's
+consent log once, bounded; a log too large to read fully fails closed.
 
 Limits of this check: the speaker account and the capture time of each clip come
 from the uploading participant's client. The server verifies that the speaker

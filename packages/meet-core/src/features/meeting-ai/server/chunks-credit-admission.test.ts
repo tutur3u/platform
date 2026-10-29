@@ -20,6 +20,7 @@ vi.mock('../../call/server/room-service', () => ({
 }));
 vi.mock('./transcript-speaker', () => ({
   resolveTranscriptSpeaker: async () => null,
+  readTranscriptionAudience: async () => 1,
 }));
 vi.mock('./artifact-billing', () => ({
   generateBilledMeetArtifact: mocks.generate,
