@@ -155,17 +155,31 @@ class FinanceCubit extends Cubit<FinanceState> {
   }
 
   /// Loads wallets and recent transactions for the workspace.
-  Future<void> loadFinanceData(String wsId, {bool forceRefresh = false}) async {
+  ///
+  /// [retainError] keeps a visible error state and its message while the
+  /// pull-to-refresh gesture reloads; an explicit Retry leaves it false so
+  /// the page re-enters its loading state.
+  Future<void> loadFinanceData(
+    String wsId, {
+    bool forceRefresh = false,
+    bool retainError = false,
+  }) async {
     if (isClosed) {
       return;
     }
     final generation = ++_generation;
     final userId = _currentUserId();
+    final keepError =
+        retainError &&
+        forceRefresh &&
+        _requestedWorkspaceId == wsId &&
+        _requestedUserId == userId &&
+        state.status == FinanceStatus.error;
     _requestedWorkspaceId = wsId;
     _requestedUserId = userId;
     final hasVisibleData =
         _loadedWorkspaceId == wsId && _loadedUserId == userId;
-    if (!hasVisibleData) {
+    if (!hasVisibleData && !keepError) {
       emit(const FinanceState(status: FinanceStatus.loading));
     }
     final cacheKey = CacheKey(
@@ -200,11 +214,11 @@ class FinanceCubit extends Cubit<FinanceState> {
     } else if (!hasVisibleData && !shouldShowDiskSnapshot) {
       emit(
         state.copyWith(
-          status: FinanceStatus.loading,
+          status: keepError ? FinanceStatus.error : FinanceStatus.loading,
           isFromCache: diskCached.hasValue,
-          isRefreshing: diskCached.hasValue,
+          isRefreshing: keepError || diskCached.hasValue,
           lastUpdatedAt: diskCached.fetchedAt,
-          clearError: true,
+          clearError: !keepError,
         ),
       );
     } else {

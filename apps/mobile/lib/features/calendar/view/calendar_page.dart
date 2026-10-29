@@ -355,13 +355,17 @@ class _CalendarViewState extends State<_CalendarView> {
                 },
                 builder: (context, state) {
                   if (state.status == CalendarStatus.loading &&
+                      !state.isRefreshing &&
                       state.events.isEmpty) {
                     return const AppLoadingIndicator.page();
                   }
 
                   if (state.status == CalendarStatus.error &&
                       state.events.isEmpty) {
-                    return _ErrorView(error: state.error);
+                    return NovaRefreshIndicator.state(
+                      onRefresh: () => _reload(context, retainError: true),
+                      child: _ErrorView(error: state.error),
+                    );
                   }
 
                   // Full-bleed canvas: timelines scroll beneath the dock and
@@ -369,7 +373,7 @@ class _CalendarViewState extends State<_CalendarView> {
                   return AppPageBody.fullBleed(
                     consumeBottomClearance: false,
                     child: NovaRefreshIndicator(
-                      onRefresh: () async => _reload(context),
+                      onRefresh: () => _reload(context, retainError: true),
                       child: Column(
                         children: [
                           // Month strip for agenda and schedule-style views.
@@ -476,15 +480,17 @@ class _CalendarViewState extends State<_CalendarView> {
           onSwipe: (delta) => _navigateDays(context, delta),
         );
       case CalendarViewMode.month:
-        return MonthView(
-          selectedDate: state.effectiveSelectedDate,
-          focusedMonth: state.effectiveFocusedMonth,
-          events: state.displayEvents,
-          firstDayOfWeek: firstDayOfWeek,
-          onDaySelected: (date) {
-            final cubit = context.read<CalendarCubit>()..selectDate(date);
-            unawaited(cubit.setViewMode(CalendarViewMode.day));
-          },
+        return RefreshCanvas(
+          child: MonthView(
+            selectedDate: state.effectiveSelectedDate,
+            focusedMonth: state.effectiveFocusedMonth,
+            events: state.displayEvents,
+            firstDayOfWeek: firstDayOfWeek,
+            onDaySelected: (date) {
+              final cubit = context.read<CalendarCubit>()..selectDate(date);
+              unawaited(cubit.setViewMode(CalendarViewMode.day));
+            },
+          ),
         );
       case CalendarViewMode.agenda:
         return AgendaView(
@@ -675,11 +681,13 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-void _reload(BuildContext context) {
+Future<void> _reload(BuildContext context, {bool retainError = false}) async {
   final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
   if (wsId != null) {
-    unawaited(
-      context.read<CalendarCubit>().loadEvents(wsId, forceRefresh: true),
+    await context.read<CalendarCubit>().loadEvents(
+      wsId,
+      forceRefresh: true,
+      retainError: retainError,
     );
   }
 }

@@ -202,11 +202,14 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
         if (state.status == TaskPortfolioStatus.error &&
             state.projects.isEmpty &&
             state.initiatives.isEmpty) {
-          return TaskPortfolioErrorView(error: state.error);
+          return NovaRefreshIndicator.state(
+            onRefresh: () => _reload(retainError: true),
+            child: TaskPortfolioErrorView(error: state.error),
+          );
         }
 
         return NovaRefreshIndicator(
-          onRefresh: _reload,
+          onRefresh: () => _reload(retainError: true),
           child: AppPageListView.builder(
             physics: const AlwaysScrollableScrollPhysics(),
             itemCount: _activeItemCount(state),
@@ -300,10 +303,14 @@ class _TaskPortfolioViewState extends State<TaskPortfolioView> {
     setState(() {});
   }
 
-  Future<void> _reload() async {
+  Future<void> _reload({bool retainError = false}) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
-    await context.read<TaskPortfolioCubit>().load(wsId, forceRefresh: true);
+    await context.read<TaskPortfolioCubit>().load(
+      wsId,
+      forceRefresh: true,
+      retainError: retainError,
+    );
   }
 
   Future<void> _openCreateProject() async {
