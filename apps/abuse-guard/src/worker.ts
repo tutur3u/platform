@@ -25,7 +25,13 @@ import {
   isGuardDenial,
   type ParsedGuardRpc,
 } from '@tuturuuu/utils/abuse-guard/protocol';
-import { admit, admitFair, controlStub, type FenceEnv } from './fence';
+import {
+  admit,
+  admitFair,
+  controlStub,
+  type FenceEnv,
+  GuardConfigError,
+} from './fence';
 import type { GuardControl, GuardSubject } from './objects';
 
 export { GuardControl, GuardSubject } from './objects';
@@ -50,6 +56,8 @@ const LOCATION_HINTS = new Set([
   'afr',
   'me',
 ]);
+
+let invalidBudgetConfigLogged = false;
 
 type RpcOutcome =
   | { status: 200; body: GuardRpcResponse }
@@ -104,7 +112,13 @@ export async function executeRpc(
     } else if ((await admit(env, rpc.family, ops)) === 'stopped') {
       return failure(503, 'guard_stopped');
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof GuardConfigError && !invalidBudgetConfigLogged) {
+      invalidBudgetConfigLogged = true;
+      console.error(
+        '[abuse-guard] invalid budget configuration (ABUSE_GUARD_DAILY_OP_BUDGET or ABUSE_GUARD_FAMILY_BUDGETS)'
+      );
+    }
     return failure(503, 'guard_unavailable');
   }
 
