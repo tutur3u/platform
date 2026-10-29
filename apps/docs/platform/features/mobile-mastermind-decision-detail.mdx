@@ -1,0 +1,52 @@
+---
+title: "Mastermind decision detail"
+description: "Mobile ask detail layout, plain option labels, radio semantics and the sticky reply action."
+---
+
+**Decision detail layout (2026-10-29).** Scope: the item detail
+(`/mastermind/inbox/item/:itemId`) and the shared Mastermind widgets in
+`apps/mobile/lib/features/mastermind/view/widgets/` (`mastermind_group.dart`,
+`mastermind_list_row.dart`, `mastermind_status_chip.dart`,
+`mastermind_action_bar.dart`), which Inbox, Work, Threads and Ship also use.
+
+- **One surface level.** A section is a header plus one theme-tinted surface
+  with no border. Rows are split by hairlines only, and chips are soft fills, so
+  no box is nested in another. Colours come from theme tokens only.
+- **The ask** sits flat on the page: the title, then kind, product and state
+  chips. Next comes when it was asked, both relative and in absolute GMT+7. The
+  full ask text follows, never ellipsized.
+- **Links.** http(s) links in the ask open through the app link launcher. A
+  link keeps balanced parentheses (`.../wiki/Privacy_(disambiguation)`). It
+  drops trailing sentence punctuation, and a closing parenthesis that wraps the
+  link in prose.
+- **Plain option labels.** A row shows the hub's `hub_options` label when there
+  is one. Otherwise, if the option is a ledger identifier (`entity_phuc`,
+  `ENTITY_PHUC`, `entity_Phuc`, `entityPhuc`), the row uses the ask's matching
+  `KEY: explanation` line. That match ignores case and separators. Failing both,
+  the identifier is read as words in sentence case ("Entity phuc"). A raw key is
+  never shown; written words and short initialisms ("OK") are left as written.
+  Labels are display text only; the reply still sends the canonical
+  `option_index`.
+- **Option rows are radios.** Each row is announced as checked or unchecked in
+  one mutually exclusive group. The recommended row adds a star and the word
+  "Recommended" to its label ("X · Recommended"), never colour or a border alone.
+- **Select, then send.** Tapping a row only selects it. The sticky action reads
+  "Send “option”", or "Send reply" for written words, and stays disabled until
+  something is chosen. It sits above the floating dock: it takes the shell's
+  bottom clearance, and the scroll content ends above it. Sending an option
+  starts the same five-second "Sending · Undo" window as the one-tap option
+  buttons on Home and Inbox rows. Free text still asks for confirmation.
+- **Write your own.** Free text is collapsed behind "Write your own". It starts
+  open when the ask has no real options or a draft exists. Typing clears a
+  chosen option, so the latest intent wins.
+- **Stale selection.** A refresh that changes the question's `version_hash`, or
+  changes, reorders or removes its options, clears an unsent selection. An index
+  therefore never points at a different answer.
+
+Exceptions: the snapshot has no deadline field, so only the asked time is shown.
+There are no Mastermind golden tests; the screen is covered by widget tests.
+
+Coverage: `apps/mobile/test/features/mastermind/view/`:
+`mastermind_decision_redesign_test.dart` (labels, radio states, links, sticky
+action, collapsed free text and stale selection), `mastermind_item_page_test.dart`
+and `mastermind_option_undo_test.dart`.
