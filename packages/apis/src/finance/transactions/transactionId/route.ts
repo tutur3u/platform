@@ -16,6 +16,7 @@ import {
   validateTransactionTagIdsForWorkspace,
 } from '../tag-enrichment';
 import { loadInventoryTransactionSource } from './inventory-source';
+
 // Helper function to verify transaction belongs to workspace
 async function verifyTransactionWorkspace(
   transactionId: string,
@@ -130,7 +131,6 @@ export async function GET(
       p_transaction_ids: [transactionId],
     }
   );
-
   if (error || !data || data.length === 0) {
     console.error('Error fetching transaction:', {
       transactionId,
