@@ -17380,6 +17380,71 @@ export type Database = {
           },
         ];
       };
+      topic_announcement_teacher_notices: {
+        Row: {
+          announcement_id: string;
+          attempts: number;
+          claimed_at: string;
+          delivered_at: string | null;
+          email_audit_id: string | null;
+          kind: string;
+          last_error: string | null;
+          notification_id: string | null;
+          recipient_user_id: string;
+          send_due_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          announcement_id: string;
+          attempts?: number;
+          claimed_at?: string;
+          delivered_at?: string | null;
+          email_audit_id?: string | null;
+          kind: string;
+          last_error?: string | null;
+          notification_id?: string | null;
+          recipient_user_id: string;
+          send_due_at: string;
+          ws_id: string;
+        };
+        Update: {
+          announcement_id?: string;
+          attempts?: number;
+          claimed_at?: string;
+          delivered_at?: string | null;
+          email_audit_id?: string | null;
+          kind?: string;
+          last_error?: string | null;
+          notification_id?: string | null;
+          recipient_user_id?: string;
+          send_due_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'topic_announcement_teacher_notices_announcement_scope';
+            columns: ['announcement_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'topic_announcements';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_teacher_notices_recipient_user_id_fkey';
+            columns: ['recipient_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_teacher_notices_recipient_user_id_fkey';
+            columns: ['recipient_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       topic_announcement_templates: {
         Row: {
           class_label: string | null;
