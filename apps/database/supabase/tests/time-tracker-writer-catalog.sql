@@ -12,8 +12,9 @@ select is((select array_agg(n.nspname||'.'||p.proname||'('||oidvectortypes(p.pro
  from pg_proc p join pg_namespace n on n.oid=p.pronamespace
  where n.nspname in('public','private') and p.prokind='f'
  and lower(replace(p.prosrc,'"','')) ~ '(insert[[:space:]]+into|update|delete[[:space:]]+from)[[:space:]]+(public\.)?time_tracking_sessions([[:space:](]|$)'),
- array['private.handle_request_status_change()',
- 'private.replace_running_time_tracker_session(uuid, uuid, bigint, uuid, uuid, text, text, uuid, uuid)',
+ array['private._replace_running_session_locked(uuid, uuid, uuid, text, text, uuid, uuid, text[], boolean)',
+ 'private.command_time_tracker_pomodoro(uuid, uuid, bigint, uuid, jsonb, jsonb, jsonb)',
+ 'private.handle_request_status_change()',
  'private.update_time_tracking_request(uuid, text, uuid, uuid, text, text)',
  'public.insert_time_tracking_session_bypassed(uuid, uuid, text, text, timestamp with time zone, timestamp with time zone, integer, uuid, uuid)',
  'public.insert_time_tracking_session_with_bypass(uuid, uuid, text, text, uuid, uuid, timestamp with time zone, timestamp with time zone, integer, boolean)',
