@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const m = vi.hoisted(() => ({
+  boardError: null as unknown,
   boardWsId: 'workspace-a' as string | null,
   membership: vi.fn(),
   permission: vi.fn(),
@@ -13,7 +14,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
         eq: () => ({
           maybeSingle: async () => ({
             data: m.boardWsId ? { ws_id: m.boardWsId } : null,
-            error: null,
+            error: m.boardError,
           }),
         }),
       }),
@@ -43,6 +44,7 @@ const status = (result: Awaited<ReturnType<typeof requireCapacityAccess>>) =>
 describe('capacity access', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    m.boardError = null;
     m.boardWsId = 'workspace-a';
     m.membership.mockResolvedValue({ ok: true });
     m.permission.mockReturnValue(true);
@@ -123,4 +125,12 @@ describe('capacity access', () => {
       expect(m.resolve).not.toHaveBeenCalled();
     }
   );
+
+  it('500s when the board lookup fails, before any permission lookup', async () => {
+    m.boardError = { message: 'boom' };
+    const result = await requireCapacityAccess({ ...input(), write: true });
+    expect(status(result)).toBe(500);
+    expect(m.membership).not.toHaveBeenCalled();
+    expect(m.resolve).not.toHaveBeenCalled();
+  });
 });
