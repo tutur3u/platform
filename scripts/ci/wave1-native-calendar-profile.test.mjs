@@ -9,13 +9,13 @@ const sha = 'a'.repeat(40);
 
 test('Calendar staging profile uses its custom staging hostname', () => {
   const profile = profileFor('calendar', 'staging', 'owner-example');
-  assert.equal(profile.host, 'calendar-staging.tuturuuu.com');
+  assert.equal(profile.host, 'calendar.staging.tutur3u.com');
 });
 
 test('Calendar staging seal restores its explicit host without a provider subdomain', (t) => {
   assert.equal(
     profileFor('calendar', 'staging').host,
-    'calendar-staging.tuturuuu.com'
+    'calendar.staging.tutur3u.com'
   );
   const app = fixture(t, 'calendar');
   const receipt = prepare(app, 'calendar', 'staging', undefined, sha);
@@ -23,20 +23,28 @@ test('Calendar staging seal restores its explicit host without a provider subdom
   assert.deepEqual(restored.receipt, receipt);
   const config = JSON.parse(readFileSync(restored.config, 'utf8'));
   assertStagingIsolation(config);
+  assert.equal(
+    config.vars.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN,
+    '.staging.tutur3u.com'
+  );
+  assert.equal(
+    config.vars.NEXT_PUBLIC_WEB_APP_URL,
+    'https://web.staging.tutur3u.com'
+  );
   assert.equal(config.workers_dev, false);
   assert.equal(config.preview_urls, false);
   assert.deepEqual(config.routes, []);
   assert.equal(
     config.vars.NEXT_PUBLIC_CALENDAR_APP_URL,
-    'https://calendar-staging.tuturuuu.com'
+    'https://calendar.staging.tutur3u.com'
   );
   assert.equal(
     config.vars.GOOGLE_REDIRECT_URI,
-    'https://calendar-staging.tuturuuu.com/api/v1/calendar/auth/callback'
+    'https://calendar.staging.tutur3u.com/api/v1/calendar/auth/callback'
   );
   assert.equal(
     config.vars.MICROSOFT_REDIRECT_URI,
-    'https://calendar-staging.tuturuuu.com/api/v1/calendar/auth/microsoft/callback'
+    'https://calendar.staging.tutur3u.com/api/v1/calendar/auth/microsoft/callback'
   );
 });
 

@@ -1,5 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { NovaChallenge } from '@tuturuuu/types';
+import type { Tables } from '@tuturuuu/types/supabase';
+import { redirect } from 'next/navigation';
+import { requireNovaAppSessionUser } from '@/lib/app-session';
+import { canManageNovaChallengesGlobally } from '@/lib/challenge-management-auth';
 import { SessionFilters } from './filters';
 import { SessionOverview } from './overview';
 import { SessionTable } from './session-table';
@@ -34,7 +38,10 @@ export default async function SessionsList({
     status?: string;
   }>;
 }) {
-  const sbAdmin = await createAdminClient();
+  const user = await requireNovaAppSessionUser();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  if (!(await canManageNovaChallengesGlobally(user, sbAdmin)))
+    redirect('/challenges');
   const searchParams = await futureParams;
 
   // Parse query parameters with defaults
@@ -157,7 +164,10 @@ export default async function SessionsList({
       : { data: [] };
 
   // Create email lookup map
-  const userMap = new Map(users?.map((user) => [user.id, user]));
+  const userMap = new Map<
+    string,
+    Pick<Tables<'users'>, 'id' | 'display_name' | 'avatar_url'>
+  >(users?.map((user) => [user.id, user]));
   const emailMap = new Map<string, string | null>();
   userPrivateDetails?.forEach((detail) => {
     emailMap.set(detail.user_id, detail.email);

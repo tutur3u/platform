@@ -165,6 +165,12 @@ monotonic. After a rebase, merge, or hotfix, re-list
 migration forward instead of treating `--include-all` as permission to edit or
 replay old migration history.
 
+PR CI enforces this: `scripts/check-migration-timestamps.js` fails when any
+migration a pull request adds or renames sorts at or before the newest
+migration on its base branch, and names the offending files and the base
+timestamp. Run it locally (or through `bun check:changed`) to compare against
+your local `origin/main`.
+
 ### File Template
 
 ```sql

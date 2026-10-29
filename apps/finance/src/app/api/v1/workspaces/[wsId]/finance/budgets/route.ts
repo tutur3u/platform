@@ -1,3 +1,4 @@
+import { validateFinanceReferences } from '@tuturuuu/apis/finance/workspace-references';
 import { NextResponse } from 'next/server';
 import {
   budgetPayloadSchema,
@@ -51,6 +52,13 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const { sbAdmin, wsId } = access;
+  const invalidReference = await validateFinanceReferences(
+    sbAdmin,
+    wsId,
+    parsed.data
+  );
+  if (invalidReference) return invalidReference;
+
   const { data, error } = await sbAdmin
     .from('finance_budgets')
     .insert(toBudgetMutationPayload(wsId, parsed.data))

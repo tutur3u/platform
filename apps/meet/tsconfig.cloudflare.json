@@ -41,6 +41,7 @@
     "cloudflare/security-profile.ts",
     "cloudflare/provider.ts",
     "cloudflare/worker.ts",
+    "cloudflare/worker-entrypoint.test.ts",
     "../../packages/realtime/src/channels/schema.ts",
     "../../packages/realtime/src/collaboration/document.ts",
     "../../packages/realtime/src/collaboration/server.ts",
@@ -84,6 +85,8 @@
     "../../packages/realtime/src/meet/room.ts",
     "../../packages/realtime/src/meet/sfu.ts",
     "../../packages/realtime/src/meet/token.ts",
+    "../../packages/utils/src/app-switch-rum.ts",
+    "../../packages/utils/src/app-switch-rum-ingest.ts",
     "../../packages/utils/src/one-origin-routing.ts",
     "../../packages/utils/src/playground-schema.ts",
     "../../packages/utils/src/security-headers.ts"

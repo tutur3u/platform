@@ -2,6 +2,7 @@ import { EDUCATION_ATTEMPTS_WORKSPACE_PERMISSION } from '@tuturuuu/education-cor
 import { ClipboardList, Filter } from '@tuturuuu/icons';
 import { getSatelliteWorkspacePermissions } from '@tuturuuu/satellite/workspace-access';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { Database } from '@tuturuuu/types/db';
 import { Button } from '@tuturuuu/ui/button';
 import { EducationContentSurface } from '@tuturuuu/ui/custom/education/shell/education-content-surface';
 import { EducationKpiStrip } from '@tuturuuu/ui/custom/education/shell/education-kpi-strip';
@@ -54,7 +55,10 @@ export default async function QuizAttemptsPage({
   await connection();
   const t = await getTranslations();
   const { wsId: routeWsId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(
+    routeWsId,
+    'view_user_groups_reports'
+  );
   const permissions = await getSatelliteWorkspacePermissions(
     'teach',
     resolvedWsId
@@ -131,9 +135,13 @@ export default async function QuizAttemptsPage({
   if (learnersResponse.error) throw learnersResponse.error;
   if (setsResponse.error) throw setsResponse.error;
 
-  const learnerById = new Map(
-    (learnersResponse.data ?? []).map((learner) => [learner.user_id, learner])
-  );
+  const learnerById = new Map<
+    string,
+    Pick<
+      Database['public']['Tables']['user_private_details']['Row'],
+      'full_name' | 'email'
+    >
+  >((learnersResponse.data ?? []).map((learner) => [learner.user_id, learner]));
   const totalCount = count ?? 0;
   const totalPages = Math.max(Math.ceil(totalCount / pageSize), 1);
   const completedCount =

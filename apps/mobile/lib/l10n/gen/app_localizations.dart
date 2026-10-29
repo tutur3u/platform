@@ -19501,6 +19501,66 @@ abstract class AppLocalizations {
   /// **'Unassigned'**
   String get taskQuickActionsUnassigned;
 
+  /// No description provided for @taskTimelineLoadingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading tasks…'**
+  String get taskTimelineLoadingTasks;
+
+  /// No description provided for @taskTimelineNotAllLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Some tasks aren\'t loaded yet'**
+  String get taskTimelineNotAllLoaded;
+
+  /// No description provided for @taskTimelineNothingToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing scheduled today'**
+  String get taskTimelineNothingToday;
+
+  /// No description provided for @taskTimelineOngoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} of {total}, ends {date}'**
+  String taskTimelineOngoing(int day, int total, String date);
+
+  /// No description provided for @taskTimelineRangeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get taskTimelineRangeAll;
+
+  /// No description provided for @taskTimelineRangeMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get taskTimelineRangeMonth;
+
+  /// No description provided for @taskTimelineRangeWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get taskTimelineRangeWeek;
+
+  /// No description provided for @taskTimelineShowLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Show later tasks'**
+  String get taskTimelineShowLater;
+
+  /// No description provided for @taskTimelineShowOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Show overdue'**
+  String get taskTimelineShowOverdue;
+
+  /// No description provided for @taskTimelineStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Started {date}'**
+  String taskTimelineStarted(String date);
+
   /// No description provided for @tasksAllCaughtUp.
   ///
   /// In en, this message translates to:

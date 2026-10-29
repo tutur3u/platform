@@ -4,6 +4,7 @@ import {
   isWorkspaceCreator,
   roleHasCreatorGrantPermission,
 } from '@/lib/workspace-creator-grant-permissions';
+import { addWorkspaceRoleMembers } from '@/lib/workspace-role-member-mutations';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
@@ -101,29 +102,10 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const data = (await req.json()) as {
-    memberIds: string[];
-  };
-
-  if (!data?.memberIds)
-    return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
-
-  const { error: roleError } = await supabase
-    .from('workspace_role_members')
-    .insert(
-      data.memberIds.map((memberId) => ({
-        user_id: memberId,
-        role_id: roleId,
-      }))
-    );
-
-  if (roleError) {
-    console.log(roleError);
-    return NextResponse.json(
-      { message: 'Error adding new members to role' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: 'success' });
+  return addWorkspaceRoleMembers({
+    request: req,
+    admin: supabase,
+    wsId: access.permissions.wsId,
+    roleId,
+  });
 }

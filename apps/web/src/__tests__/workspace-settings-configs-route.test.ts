@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
   const memberMaybeSingle = vi.fn();
   const workspaceConfigsIn = vi.fn();
+  const walletEq = vi.fn();
+  const walletMaybeSingle = vi.fn();
   const listWorkspaceDefaultIncludedGroupIds = vi.fn();
   const getPermissions = vi.fn();
   const normalizeWorkspaceId = vi.fn(() => Promise.resolve('normalized-ws'));
@@ -47,6 +49,22 @@ const mocks = vi.hoisted(() => {
 
       throw new Error(`Unexpected admin table: ${table}`);
     }),
+    schema: vi.fn(() => ({
+      from: vi.fn((table: string) => {
+        if (table !== 'workspace_wallets') {
+          throw new Error(`Unexpected private table: ${table}`);
+        }
+
+        const query = {
+          eq: vi.fn((column: string, value: string) => {
+            walletEq(column, value);
+            return query;
+          }),
+          maybeSingle: walletMaybeSingle,
+        };
+        return { select: vi.fn(() => query) };
+      }),
+    })),
   };
 
   return {
@@ -56,6 +74,8 @@ const mocks = vi.hoisted(() => {
     normalizeWorkspaceId,
     sessionSupabase,
     listWorkspaceDefaultIncludedGroupIds,
+    walletEq,
+    walletMaybeSingle,
     workspaceConfigsIn,
     serverLogger,
   };
@@ -447,5 +467,110 @@ describe('workspace settings configs route', () => {
       '__proto__',
     ]);
     expect(args.p_updates.REPORT_CONFIG_A).toBe('enabled');
+  });
+
+  describe('bulk default wallet updates', () => {
+    const WALLET_ID = '6f1c1c5e-2b0a-4c38-9a53-4f1f0a4c1d2e';
+
+    const putConfigs = async (body: Record<string, string>) => {
+      const { PUT } = await import(
+        '@/legacy-api-routes/v1/workspaces/[wsId]/settings/configs/route'
+      );
+
+      return PUT(
+        new NextRequest(
+          'http://localhost/api/v1/workspaces/ws-1/settings/configs',
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          }
+        ),
+        { params: Promise.resolve({ wsId: 'ws-1' }) }
+      );
+    };
+
+    beforeEach(() => {
+      mocks.walletMaybeSingle.mockResolvedValue({
+        data: { id: WALLET_ID },
+        error: null,
+      });
+      mocks.sessionSupabase.rpc.mockResolvedValue({
+        data: { posts_auto_approved: 0, reports_auto_approved: 0 },
+        error: null,
+      });
+    });
+
+    it('rejects default_wallet_id from settings managers without change_finance_wallets', async () => {
+      mocks.getPermissions.mockResolvedValue({
+        containsPermission: vi.fn(() => false),
+        withoutPermission: vi.fn(
+          (permission: string) => permission === 'change_finance_wallets'
+        ),
+      });
+
+      const response = await putConfigs({
+        default_wallet_id: WALLET_ID,
+        REPORT_CONFIG_A: 'enabled',
+      });
+
+      expect(response.status).toBe(403);
+      await expect(response.json()).resolves.toEqual({
+        error: 'Insufficient permissions to change the default wallet',
+      });
+      expect(mocks.walletMaybeSingle).not.toHaveBeenCalled();
+      expect(mocks.sessionSupabase.rpc).not.toHaveBeenCalled();
+    });
+
+    it('rejects a default wallet outside the workspace', async () => {
+      mocks.walletMaybeSingle.mockResolvedValueOnce({
+        data: null,
+        error: null,
+      });
+
+      const response = await putConfigs({ default_wallet_id: WALLET_ID });
+
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toEqual({
+        error: 'Invalid default wallet',
+      });
+      expect(mocks.walletEq).toHaveBeenCalledWith('id', WALLET_ID);
+      expect(mocks.walletEq).toHaveBeenCalledWith('ws_id', 'normalized-ws');
+      expect(mocks.sessionSupabase.rpc).not.toHaveBeenCalled();
+    });
+
+    it('rejects a malformed default wallet id without querying', async () => {
+      const response = await putConfigs({ default_wallet_id: 'not-a-uuid' });
+
+      expect(response.status).toBe(400);
+      expect(mocks.walletMaybeSingle).not.toHaveBeenCalled();
+      expect(mocks.sessionSupabase.rpc).not.toHaveBeenCalled();
+    });
+
+    it('saves a trimmed workspace wallet for wallet changers', async () => {
+      const response = await putConfigs({
+        default_wallet_id: ` ${WALLET_ID} `,
+      });
+
+      expect(response.status).toBe(200);
+      expect(mocks.sessionSupabase.rpc).toHaveBeenCalledWith(
+        'update_workspace_configs_with_approval_transitions',
+        expect.objectContaining({
+          p_updates: { default_wallet_id: WALLET_ID },
+          p_ws_id: 'normalized-ws',
+        })
+      );
+    });
+
+    it('lets wallet changers clear the default wallet', async () => {
+      const response = await putConfigs({ default_wallet_id: '' });
+
+      expect(response.status).toBe(200);
+      expect(mocks.walletMaybeSingle).not.toHaveBeenCalled();
+      expect(mocks.sessionSupabase.rpc).toHaveBeenCalledWith(
+        'update_workspace_configs_with_approval_transitions',
+        expect.objectContaining({ p_updates: { default_wallet_id: '' } })
+      );
+    });
   });
 });

@@ -10,7 +10,7 @@ import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime
 
 const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
-const hosts = ['inventory.tuturuuu.com', 'inventory-staging.tuturuuu.com'];
+const hosts = ['inventory.tuturuuu.com', 'inventory.staging.tutur3u.com'];
 const privateRobots = 'noindex, nofollow, nosnippet';
 
 function assertHeaders(response, { asset = false, publicPage = false } = {}) {
@@ -137,7 +137,7 @@ test('emitted inventory response policy and root host fences', {
       async () => {
         const root = await get(host, '/');
         assert.equal(root.status, 307);
-        assertHeaders(root, { publicPage: false && host === hosts[0] });
+        assertHeaders(root, { publicPage: false });
         const info = await get(host, '/api/build-info');
         assert.equal(info.status, 200);
         assertHeaders(info);

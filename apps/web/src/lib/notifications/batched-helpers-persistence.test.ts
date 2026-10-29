@@ -91,3 +91,50 @@ describe('batched notification persistence', () => {
     expect(query.eq).toHaveBeenCalledWith('id', 'batch-1');
   });
 });
+
+it('Cloudflare selects at most 25 pending batches and refuses a 21st notification page', async () => {
+  const { fetchPendingBatchedNotificationBatches } = await import(
+    './batched-helpers'
+  );
+  const { fetchAllPaginatedRows } = await import('./cron-helpers');
+  const { withWebCronBudget } = await import('../cron/web-cron-budget');
+  const range = vi.fn(async (_from: number, to: number) => ({
+    data: Array.from({ length: to + 1 }, (_, index) => ({
+      id: `batch-${index}`,
+    })),
+    error: null,
+  }));
+  const query = {
+    select() {
+      return this;
+    },
+    eq() {
+      return this;
+    },
+    lte() {
+      return this;
+    },
+    or() {
+      return this;
+    },
+    order() {
+      return this;
+    },
+    range,
+  };
+  await withWebCronBudget(async () => {
+    const rows = await fetchPendingBatchedNotificationBatches({
+      schema: () => ({ from: () => query }),
+    });
+    expect(rows).toHaveLength(25);
+    expect(range).toHaveBeenCalledExactlyOnceWith(0, 24);
+  });
+  await withWebCronBudget(async () => {
+    const page = vi.fn(async () => ({
+      data: Array(1000).fill('row'),
+      error: null,
+    }));
+    await expect(fetchAllPaginatedRows(page)).rejects.toThrow('page budget');
+    expect(page).toHaveBeenCalledTimes(20);
+  });
+});

@@ -4,8 +4,10 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { NextResponse } from 'next/server';
+import { authorizeCrawlerRead } from '../access-control';
 
 export async function GET(req: Request) {
   try {
@@ -14,6 +16,9 @@ export async function GET(req: Request) {
     const pageSize = parseInt(searchParams.get('pageSize') || '50', 10);
     const domain = searchParams.get('domain');
     const search = searchParams.get('search');
+
+    const denied = await authorizeCrawlerRead(req, ROOT_WORKSPACE_ID);
+    if (denied) return denied;
 
     const supabase = await createClient();
 

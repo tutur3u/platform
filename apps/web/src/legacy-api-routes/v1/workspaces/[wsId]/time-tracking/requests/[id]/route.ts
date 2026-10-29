@@ -2,6 +2,7 @@ import {
   createAdminClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
 import {
@@ -91,7 +92,7 @@ async function removeRequestImagesWithFallback({
 // A linked session must belong to the request owner in the request workspace;
 // approving or rejecting a request updates or deletes its linked session.
 async function isOwnedLinkedSession(
-  sbAdmin: Awaited<ReturnType<typeof createAdminClient>>,
+  sbAdmin: TypedSupabaseClient,
   {
     sessionId,
     userId,

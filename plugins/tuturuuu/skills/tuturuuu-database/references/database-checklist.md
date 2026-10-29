@@ -42,6 +42,11 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
   after an unmodified local reset; keep fixture SQL outside the migration chain.
 
 - Run local migration checks or focused pgTAP tests where available.
+- Inspect final-schema policies and ACLs after applying the full chain before
+  replacing RLS: dynamic migrations can remove policies without naming the table.
+  Distinguish permissive access policies from restrictive guards such as MFA;
+  retain those guards and compare function definitions, owners, ACLs and policies
+  across rollback and re-apply. Finance coverage: `finance-workspace-scoping.sql`.
 - Verify role contracts against the full migration chain, including existing
   grants. Assert intended permission denials with SQLSTATE `42501` and exercise
   supported RPCs as their caller roles; reduced schemas cannot prove this boundary.
@@ -53,6 +58,13 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
   the test extension.
 - Clear transaction-local JWT claims before privileged signup fixture inserts.
   `RESET ROLE` preserves `request.jwt.claims`, which signup/workspace triggers read.
+- For finance aggregates, use two synthetic workspaces with unequal amounts.
+  Exercise insert, update between wallets, and delete; assert both cached totals.
+  Reference checks must run before route writes and database trigger totals must
+  join wallets through the budget workspace. Run `finance-workspace-boundaries.sql`.
+- Verify effective table privileges before treating a permissive RLS policy as a
+  reachable boundary. For RPC path changes, exercise each supported overload and
+  its nested helper calls as the real caller role, in addition to catalog ACLs.
 - Run focused API/helper tests for affected code.
 - Run `bun check:changed` for TypeScript changes; `bun validate` runs in CI only.
 
