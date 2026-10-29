@@ -15,21 +15,25 @@ export type MastermindPushSignatureResult =
   | 'stale'
   | 'invalid';
 
-/** Lowercase hex HMAC-SHA256 over `<unix seconds>.<raw body>`. */
+/**
+ * Lowercase hex HMAC-SHA256 over `<unix seconds>.<raw body>`. A byte body is
+ * hashed exactly as received; a string body is hashed as its UTF-8 bytes.
+ */
 export function signMastermindPushEvent(
   secret: string,
   timestamp: string,
-  rawBody: string
+  rawBody: string | Uint8Array
 ): string {
-  return createHmac('sha256', secret)
-    .update(`${timestamp}.${rawBody}`, 'utf8')
-    .digest('hex');
+  const hmac = createHmac('sha256', secret).update(`${timestamp}.`, 'utf8');
+  if (typeof rawBody === 'string') hmac.update(rawBody, 'utf8');
+  else hmac.update(rawBody);
+  return hmac.digest('hex');
 }
 
 function matchesSecret(
   secret: string,
   timestamp: string,
-  rawBody: string,
+  rawBody: string | Uint8Array,
   actual: Buffer
 ) {
   const expected = Buffer.from(
@@ -48,7 +52,7 @@ export function verifyMastermindPushSignature(input: {
   nextSecret?: string | undefined;
   signature: string | null;
   timestamp: string | null;
-  rawBody: string;
+  rawBody: string | Uint8Array;
   nowMs?: number;
 }): MastermindPushSignatureResult {
   const secret = input.secret?.trim();
