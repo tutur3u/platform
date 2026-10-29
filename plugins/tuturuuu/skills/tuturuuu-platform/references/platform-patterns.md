@@ -14,6 +14,19 @@ shared-package changes.
   See [Drive export lifetime and revocation](../../../../../apps/docs/platform/applications/drive.mdx#export-link-lifetime-and-revocation)
   for the seven-day default, override cap, legacy-token cutover, existing private-root
   RLS prerequisite, and already-issued read URL limitation.
+- Shared JSON content validation bounds streamed bytes and structural complexity
+  before constructing and scanning leaf paths. Keep skipped emoji fields inside
+  structural bounds except for explicit machine-state exemptions. Whiteboard
+  PATCH saves strip the top-level snapshot and use an 8 MiB streamed cap; other
+  fields retain generic checks. Preserve route-specific body limits and test adversarial
+  structure with small deterministic fixtures. See [request validation bounds](../../../../../apps/docs/platform/features/mobile-workspace-tools.mdx#request-content-validation-bounds).
+- Provider execution requires a newly acquired metered reservation; an existing
+  idempotent reservation returns 409 before invoking a provider. AI-chat attachment
+  reads require the authenticated source-chat owner even when a different product
+  uses the same UUID. Prompt preparation and conversion tools share the owner
+  and workspace-membership fence before storage reads/signing; AI chats have no
+  workspace column. Keep workspace admission in each route. See [AI Studio](../../../../../apps/docs/platform/ai/ai-studio.mdx#execution-and-attachment-authorization).
+
 
 - Workspace user reads share the users-core field projection and effective
   public/private permissions. Attendance and score adapters verify every requested
@@ -47,6 +60,12 @@ and its focused regression coverage before adding a reason or changing middlewar
   preserve membership, workspace filters, visibility and creator checks.
   Expand one resource at a time with its existing error envelope and regression
   coverage. See [typed workspace boundaries](../../../../../apps/docs/build/development-tools/codex-plugin.mdx#typed-workspace-boundaries).
+- Hive product handlers live in `apps/hive/src/app/api/v1/hive` and use
+  `HIVE_DATABASE_URL`; membership/platform roles still use platform services.
+  Trace the current handler before applying a historical Supabase world-event
+  fix. A maintenance Worker is an approval-gated routing operation, not app
+  restoration. See the [Hive migration plan](../../../../../apps/docs/build/devops/hive-cloudflare-migration.mdx)
+  and [maintenance runbook](../../../../../apps/docs/build/devops/hive-cloudflare-maintenance.mdx).
 
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
@@ -271,6 +290,13 @@ protocol and its explicitly in-memory regression boundary.
   cannot be split.
 - API routes should parse JSON inside a `try/catch` before Zod validation and
   return explicit `400` for malformed JSON.
+- For secret writes that can select a service-role client, use one strict Zod
+  allowlist before choosing the client, and construct mutations from parsed
+  editable fields only. Reject caller-supplied identity, workspace and timestamp
+  columns with HTTP 400. Keep editor request bodies aligned with that contract;
+  workspace-secret edits carry the id in the URL, not the JSON body. Regression
+  tests must cover unknown fields on both client paths and workspace predicates
+  on successful elevated updates.
 - Validate UUID path params with shared Zod GUID schemas instead of ad-hoc
   regex checks.
 - Initialize Supabase with `createClient(request)` in API routes that must
@@ -1353,3 +1379,17 @@ Keep editable profile/contact emails and supplied session emails for display onl
 Direct recipient ids remain valid without a confirmed mailbox. Cross-app SQL must
 canonicalize at both minting and redemption so outstanding handoffs follow the
 same rule; preserve the signed MFA transfer and existing bearer-redemption ACL.
+
+
+### Staff-session authorization
+
+Use `@tuturuuu/utils/email/staff-session` only with a current subject-bound Auth
+user containing provider identities. App-session and profile projections require
+`getVerifiedAuthUser` first. Preserve independent workspace/role and feature gates;
+an address syntax predicate or UI visibility flag never grants staff authority.
+See the staff-session decision in `apps/docs/platform/architecture/authorization.mdx`
+and the shared helper's identity matrix and route denial regressions.
+
+For AI memory or billing attribution, resolve the request scope with
+`authorizeAiWorkspace` before provider or memory work. Temporary authentication
+does not grant workspace membership; retain a canonical authorized workspace id.

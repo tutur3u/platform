@@ -1,33 +1,33 @@
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/activity_model.dart';
+import 'package:mobile/features/mastermind/presentation/open_asks.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
+import 'package:mobile/features/mastermind/presentation/usage_model.dart';
 
 /// What Home renders, derived once from one accepted snapshot.
+///
+/// Every list is capped; the full counts are kept so a "Show all N" row can
+/// say how many more the owning tab holds.
 ///
 /// Security rows never mix with normal items: they have no count, no order and
 /// no severity, so they are kept in their own list and are never tallied.
 final class MastermindHomeModel {
   const MastermindHomeModel._({
     required this.needsYou,
+    required this.generatedAt,
     required this.security,
-    required this.laneCounts,
+    required this.lanes,
     required this.failingEnvironments,
     required this.releases,
+    required this.releaseCount,
     required this.quotaPools,
+    required this.quotaPoolCount,
     required this.decisions,
     required this.activity,
   });
 
   factory MastermindHomeModel.from(MastermindSnapshot snapshot) {
-    final needsYou = <NeedsYou>[
-      for (final item in snapshot.now.needsYou)
-        if (item is NeedsYou) item,
-    ];
-    final counts = {for (final state in laneStatesAtAGlance) state: 0};
-    for (final lane in snapshot.lanes) {
-      if (lane is Lane && counts.containsKey(lane.state)) {
-        counts[lane.state] = counts[lane.state]! + 1;
-      }
-    }
+    final needsYou = openAsks(snapshot);
     final decisions = [...snapshot.decisions]
       ..sort((a, b) => b.at.compareTo(a.at));
     final activity = [...snapshot.now.digest]
@@ -35,56 +35,65 @@ final class MastermindHomeModel {
         final byTime = b.ts.compareTo(a.ts);
         return byTime != 0 ? byTime : b.seq.compareTo(a.seq);
       });
+    final pools = MastermindUsageModel.from(snapshot).pools;
     return MastermindHomeModel._(
       needsYou: _orderNeedsYou(needsYou),
+      generatedAt: snapshot.generatedAt,
       security: _onePerProduct(snapshot.now.needsYou),
-      laneCounts: counts,
+      lanes: MastermindActivity.from(snapshot),
       failingEnvironments: [
         for (final row in snapshot.environments)
           if (environmentIsFailing(row)) row,
       ],
-      releases: snapshot.products.releases,
-      quotaPools: _quotaPools(snapshot.observability.usage),
+      releases: _mostRecent(
+        snapshot.products.releases,
+      ).take(releaseLimit).toList(growable: false),
+      releaseCount: snapshot.products.releases.length,
+      quotaPools: pools.take(quotaPoolLimit).toList(growable: false),
+      quotaPoolCount: pools.length,
       decisions: decisions.take(decisionLimit).toList(growable: false),
       activity: activity.take(activityLimit).toList(growable: false),
     );
   }
 
   static const needsYouPreview = 3;
+  static const releaseLimit = 3;
+  static const quotaPoolLimit = 3;
   static const decisionLimit = 3;
-  static const activityLimit = 5;
-  static const List<LaneState> laneStatesAtAGlance = [
-    LaneState.running,
-    LaneState.waiting,
-    LaneState.queued,
-    LaneState.failed,
-  ];
+  static const activityLimit = 3;
 
   /// Normal items only, decision then action then fyi, then publisher order.
   final List<NeedsYou> needsYou;
+  final DateTime generatedAt;
 
   /// At most one per product, never counted.
   final List<SecurityItem> security;
-  final Map<LaneState, int> laneCounts;
+
+  /// True running, waiting, idle and failed counts plus "waiting on you".
+  final MastermindActivity lanes;
   final List<EnvironmentRow> failingEnvironments;
+
+  /// The most recently released products first; a release with no age last.
   final List<ProductRelease> releases;
-  final List<QuotaPool> quotaPools;
+  final int releaseCount;
+
+  /// The most urgent pools first (the Insights order).
+  final List<UsagePool> quotaPools;
+  final int quotaPoolCount;
   final List<Decision> decisions;
   final List<SnapshotEvent> activity;
 
   int get needsYouCount => needsYou.length;
   List<NeedsYou> get needsYouShown =>
       needsYou.take(needsYouPreview).toList(growable: false);
-}
 
-/// One pool row: its latest reading plus the session series for its sparkline.
-final class QuotaPool {
-  const QuotaPool({required this.latest, required this.series});
-
-  final UsagePoint latest;
-  final List<UsagePoint> series;
-
-  String get label => latest.instance;
+  /// Every row shares one age basis, so it moves into the section caption.
+  AgeBasis? get sharedReleaseBasis {
+    final bases = {for (final release in releases) release.ageBasis};
+    return bases.length == 1 && bases.single != AgeBasis.unknown
+        ? bases.single
+        : null;
+  }
 }
 
 int _kindRank(ItemKind? kind) => switch (kind) {
@@ -104,6 +113,22 @@ List<NeedsYou> _orderNeedsYou(List<NeedsYou> items) {
   return [for (final entry in indexed) entry.$2];
 }
 
+// Youngest release first, then publisher order; no age sorts last.
+List<ProductRelease> _mostRecent(List<ProductRelease> releases) {
+  final indexed = [for (var i = 0; i < releases.length; i++) (i, releases[i])]
+    ..sort((a, b) {
+      final ageA = a.$2.prodAgeSeconds;
+      final ageB = b.$2.prodAgeSeconds;
+      if (ageA != ageB) {
+        if (ageA == null) return 1;
+        if (ageB == null) return -1;
+        return ageA.compareTo(ageB);
+      }
+      return a.$1.compareTo(b.$1);
+    });
+  return [for (final entry in indexed) entry.$2];
+}
+
 List<SecurityItem> _onePerProduct(List<NeedsYouItem> items) {
   final seen = <Product?>{};
   return [
@@ -111,14 +136,3 @@ List<SecurityItem> _onePerProduct(List<NeedsYouItem> items) {
       if (item is SecurityItem && seen.add(item.product)) item,
   ];
 }
-
-List<QuotaPool> _quotaPools(Usage usage) => [
-  for (final latest in usage.instances)
-    QuotaPool(
-      latest: latest,
-      series: [
-        for (final point in usage.series)
-          if (point.instance == latest.instance) point,
-      ],
-    ),
-];

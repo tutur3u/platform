@@ -230,6 +230,21 @@ export function createAdminClientMock(settingsError: unknown = null) {
   };
 
   return {
+    auth: {
+      admin: {
+        getUserById: async (id: string) => ({
+          data: {
+            user: {
+              id,
+              email: mocks.auth.user.email,
+              email_confirmed_at: '2026-01-01',
+              identities: [{ provider: 'email', identity_data: {} }],
+            },
+          },
+          error: null,
+        }),
+      },
+    },
     from: vi.fn(() => {
       const deleteQuery = {
         eq: vi.fn(async () => ({ error: null })),

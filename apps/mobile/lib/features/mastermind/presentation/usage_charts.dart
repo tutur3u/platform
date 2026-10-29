@@ -2,6 +2,7 @@ import 'package:mobile/core/ui/charts/charts.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/presentation/usage_gaps.dart';
 import 'package:mobile/features/mastermind/presentation/usage_model.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -28,6 +29,7 @@ final class UsageChartSpec {
     required this.summary,
     required this.series,
     required this.axis,
+    this.caption,
     this.bands = const [],
     this.coverageNote,
     this.formatValue,
@@ -37,6 +39,11 @@ final class UsageChartSpec {
   final String label;
   final String title;
   final String summary;
+
+  /// What the plot cannot show on its own (partial coverage, a window not
+  /// reported, a gap and its reason), as one muted line over the plot. The
+  /// [summary] stays the plot's text equivalent.
+  final String? caption;
   final List<ChartSeries> series;
   final ChartValueAxis axis;
   final List<ChartBand> bands;
@@ -47,6 +54,13 @@ final class UsageChartSpec {
   bool get plottable =>
       coverageNote == null &&
       series.any((s) => s.points.where((p) => p.y != null).length > 1);
+
+  /// The series with at least one reading: only these get a legend entry,
+  /// so the legend never names a line that is not drawn.
+  List<ChartSeries> get drawnSeries => [
+    for (final s in series)
+      if (s.points.any((p) => p.y != null)) s,
+  ];
 
   ChartTableData table(AppLocalizations l10n) => ChartTableData.fromSeries(
     series,
@@ -61,6 +75,17 @@ ChartLabels usageChartLabels(AppLocalizations l10n) => ChartLabels(
   table: l10n.mastermindTableLink,
   time: l10n.mastermindColumnTime,
 );
+
+/// X-axis ticks in GMT+7: the time alone ("20:30"), with the day in front
+/// only where the day changes ("Oct 28 05:45"), and never on a chart that
+/// stays within one day.
+ChartTimeLabeler usageTimeLabel(AppLocalizations l10n, List<DateTime> times) {
+  final locale = l10n.localeName;
+  final days = {for (final t in times) Gmt7.date(t, locale)};
+  return (t, {required date}) => date && days.length > 1
+      ? '${Gmt7.day(t, locale)} ${Gmt7.time(t, locale)}'
+      : Gmt7.time(t, locale);
+}
 
 /// One decimal at most, no trailing zero.
 String usageNumber(double value) => value == value.roundToDouble()
@@ -87,6 +112,14 @@ UsageChartSpec? usageChartSpec(
   // Partial and stale data still plot; the summary carries the word.
   String prefixed(String summary) =>
       model.plottable && coverage != null ? '$coverage: $summary' : summary;
+  // The caption carries the same word, then only what the plot leaves out.
+  String? caption(List<String> notes) {
+    if (!model.plottable) return null;
+    if (notes.isEmpty) return coverage;
+    final text = notes.join(' · ');
+    return coverage == null ? text : '$coverage: $text';
+  }
+
   switch (parsed.kind) {
     case UsageChartKind.budget:
       final pool = model.pool(parsed.label);
@@ -95,6 +128,15 @@ UsageChartSpec? usageChartSpec(
       final first = pool.series.isEmpty ? null : pool.series.first.t;
       final last = pool.series.isEmpty ? null : pool.series.last.t;
       final resets = latest.session.resetsAt;
+      final gaps = usageGaps(pool.series, model.gaps);
+      final gapNotes = [
+        for (final gap in gaps)
+          l10n.mastermindGapSummary(
+            Gmt7.time(gap.start, l10n.localeName),
+            Gmt7.time(gap.end, l10n.localeName),
+            gap.label(l10n),
+          ),
+      ];
       return UsageChartSpec(
         id: id,
         label: pool.label,
@@ -111,8 +153,14 @@ UsageChartSpec? usageChartSpec(
               l10n.mastermindWeeklyLeft(
                 _percent(l10n, latest.weekly.remainingPercent),
               ),
+            ...gapNotes,
           ].join(' · '),
         ),
+        caption: caption([
+          if (latest.weekly.remainingPercent == null)
+            l10n.mastermindSummaryWeeklyNotReported,
+          ...gapNotes,
+        ]),
         coverageNote: note,
         axis: ChartValueAxis.percent,
         formatValue: (value) => l10n.mastermindUnitPercent(usageNumber(value)),
@@ -140,6 +188,8 @@ UsageChartSpec? usageChartSpec(
         ],
         // The reset marker only helps when it falls inside what is drawn.
         bands: [
+          for (final gap in gaps)
+            ChartBand(label: gap.label(l10n), t: gap.start, end: gap.end),
           if (resets != null &&
               first != null &&
               !resets.isBefore(first) &&
@@ -171,6 +221,7 @@ UsageChartSpec? usageChartSpec(
             l10n.mastermindSummaryCreditsNote,
           ].join(' · '),
         ),
+        caption: caption(const []),
         coverageNote: note,
         axis: ChartValueAxis.auto(values),
         formatValue: (value) => l10n.mastermindUnitCredits(usageNumber(value)),
@@ -206,6 +257,10 @@ UsageChartSpec? usageChartSpec(
               '${l10n.mastermindSeriesTarget} ${perDay(latest.dailyTarget)}',
           ].join(' · '),
         ),
+        caption: caption([
+          if (latest.dailyTarget == null)
+            l10n.mastermindSummaryCreditsTargetMissing,
+        ]),
         coverageNote: note,
         axis: ChartValueAxis.auto([
           for (final p in pool.points) ...[p.dailyBurn, p.dailyTarget],

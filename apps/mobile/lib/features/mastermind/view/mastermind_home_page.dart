@@ -6,10 +6,11 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
+import 'package:mobile/features/mastermind/view/home/activity_strip.dart';
 import 'package:mobile/features/mastermind/view/home_activity_card.dart';
-import 'package:mobile/features/mastermind/view/home_lanes_ship_cards.dart';
 import 'package:mobile/features/mastermind/view/home_needs_you_card.dart';
 import 'package:mobile/features/mastermind/view/home_quota_decisions_cards.dart';
+import 'package:mobile/features/mastermind/view/home_ship_card.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
 import 'package:mobile/features/mastermind/view/inbox/pending_replies_section.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
@@ -19,7 +20,8 @@ import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// `/mastermind`: the overview, Needs-you first.
+/// `/mastermind`: the overview. True activity counts first, then what needs
+/// you, then Ship, Usage, recent activity and decisions, each capped.
 class MastermindHomePage extends StatelessWidget {
   const MastermindHomePage({super.key});
 
@@ -37,13 +39,16 @@ class MastermindHomePage extends StatelessWidget {
                 physics: const AlwaysScrollableScrollPhysics(),
                 slivers: [
                   SliverToBoxAdapter(
-                    child: MastermindFreshnessStrip(freshness: freshness),
+                    child: MastermindFreshnessStrip(
+                      freshness: freshness,
+                      showWhenHealthy: true,
+                    ),
                   ),
                   SliverList.list(
                     children: [
+                      MastermindActivityStrip(activity: model.lanes),
                       HomeNeedsYouCard(model: model),
                       const PendingRepliesSection(),
-                      HomeLanesCard(model: model),
                       HomeShipCard(model: model),
                       HomeQuotaCard(model: model),
                       HomeActivityCard(model: model),

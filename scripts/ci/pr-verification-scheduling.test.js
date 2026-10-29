@@ -30,6 +30,7 @@ const heavy = {
   'external-internal-packages.yaml': ['Build'],
   'external-project-storage-analytics-contract.yaml': ['contract'],
   'inventory-offline-contract.yaml': ['contract'],
+  'required-account-mfa-contract.yaml': ['contract'],
   'lettin-cloudflare.yaml': ['validate'],
   'mail-calendar-tasks-builds.yaml': [
     'build-mail',

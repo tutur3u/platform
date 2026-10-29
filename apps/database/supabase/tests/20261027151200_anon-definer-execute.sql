@@ -517,6 +517,7 @@ INSERT INTO definer_execute_expected VALUES
   ('public.sync_user_details()', true, true),
   ('public.sync_user_private_details()', true, true),
   ('public.task_reminder_already_sent(uuid,uuid,text)', false, true),
+  ('public.transfer_workspace_ownership(uuid,uuid)', true, false),
   ('public.transition_account_mfa_policy(uuid,jsonb,jsonb,boolean)', false, true),
   ('public.trigger_cleanup_expired_cross_app_tokens()', false, true),
   ('public.trigger_cleanup_qr_login_challenges()', true, true),

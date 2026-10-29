@@ -199,7 +199,8 @@ void main() {
       snapshotDigestFromHeaders(hubDigest: a, etag: '"${'b' * 64}"'),
       isNull,
     );
-    expect(snapshotDigestFromHeaders(etag: 'W/"$a"'), isNull);
+    expect(snapshotDigestFromHeaders(etag: 'W/"$a"'), a);
+    expect(snapshotDigestFromHeaders(etag: 'W/"x"'), isNull);
     expect(snapshotDigestFromHeaders(hubDigest: '$a\n'), isNull);
     expect(snapshotDigestFromHeaders(hubDigest: 'not a digest'), isNull);
   });

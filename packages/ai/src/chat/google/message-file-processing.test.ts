@@ -6,7 +6,15 @@ const mocks = vi.hoisted(() => {
   const adminDownload = vi.fn();
   const adminList = vi.fn();
 
+  const query = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    maybeSingle: vi.fn(async () => ({ data: { id: 'chat-1' }, error: null })),
+  };
+  query.select.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
   const adminSupabase = {
+    from: vi.fn(() => query),
     storage: {
       from: vi.fn(() => ({
         list: adminList,
@@ -67,7 +75,10 @@ describe('processMessagesWithFiles', () => {
     const result = await processMessagesWithFiles(
       inputMessages,
       'ws-1',
-      'chat-1'
+      'chat-1',
+      undefined,
+      false,
+      'actor'
     );
 
     expect(mocks.createClient).not.toHaveBeenCalled();
@@ -104,14 +115,18 @@ describe('processMessagesWithFiles', () => {
     const result = await processMessagesWithFiles(
       [{ role: 'user', content: 'Summarize my recording' }],
       'ws-1',
-      'chat-1'
+      'chat-1',
+      undefined,
+      false,
+      'actor'
     );
     const subscription = await processMessagesWithFiles(
       [{ role: 'user', content: 'Continue with text' }],
       'ws-1',
       'chat-1',
       undefined,
-      true
+      true,
+      'actor'
     );
     expect(subscription).toEqual([
       { role: 'user', content: 'Continue with text' },
@@ -145,7 +160,10 @@ describe('processMessagesWithFiles attachment guard', () => {
     const [message] = await processMessagesWithFiles(
       [{ role: 'user', content: 'Look' }],
       'ws-1',
-      'chat-1'
+      'chat-1',
+      undefined,
+      false,
+      'actor'
     );
     return Array.isArray(message?.content) ? message.content : [];
   }

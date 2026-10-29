@@ -977,9 +977,11 @@ The check extracts Flutter `/api/*` templates from `api_config.dart` and the
 production endpoint catalog used by the `ttr` CLI SDK. It verifies that both
 legacy clients still resolve to a canonical owner in a checked-in Next
 satellite, the legacy route wrappers, or the Rust/TanStack migration manifest.
-The `Mobile API Mappings` workflow runs whenever either client catalog, an app
-API route, or the migration manifest changes. If a route is migrated or
-removed, update Flutter and the CLI SDK in the same change instead of leaving a
+For PRs targeting `main`, `Cheap PR Checks` selects the reusable
+`mobile-api-mappings.yaml` validation whenever either client catalog, an app
+API route, or the migration manifest changes. The standalone Mobile API
+Mappings workflow retains its main-push and manual entrypoints. If a route is
+migrated or removed, update Flutter and the CLI SDK in the same change instead of leaving a
 legacy client to discover the break in production.
 
 ## Mobile Inventory And Storefront Coverage
@@ -2058,3 +2060,30 @@ assignee, label and project chips wrap under the field name, so enlarged text
 never clips them. The description accordion stays above the card, and editing
 still happens in the task editor. Back stays on the dock.
 
+
+## Request content validation bounds
+
+JSON mutations checked by the shared proxy content guard, including Tools, have
+a 2 MiB streamed validation bound, at most 10,000 visited values, nesting depth
+32, and path length 2,048 characters. Structural checks run before per-field
+emoji and text scanning. The proxy's existing route body limit still applies.
+These bounds also apply to fields exempted from emoji checks, with two
+intentional machine-state exceptions: task-description Yjs state keeps its
+existing structural exemption, and `PATCH /api/v1/workspaces/:wsId/whiteboards/:id`
+removes the top-level `snapshot` before structural and text checks. Whiteboard
+saves instead have an 8 MiB streamed body cap, allowing multi-hundred-shape
+boards and dense freehand strokes beyond the generic 2 MiB budget while
+bounding JSON parsing. Database writes independently cap `workspace_whiteboards.snapshot`
+at 25 MiB of serialized JSON bytes (26,214,400), preserving the contract from
+`20260326163000_set_whiteboard_snapshot_payload_limit_25mb.sql`. The payload
+helper and existing CHECK enforce the same cap; the HTTP route retains its
+smaller body bound. Other whiteboard fields retain the generic validation
+rules; other routes and methods keep the 2 MiB cap. Trusted server bypass
+credentials retain their existing behavior. Over-limit content returns
+HTTP 400 with `REQUEST_COMPLEXITY_EXCEEDED`; the earlier proxy body-size gate
+returns HTTP 413 when its route cap is exceeded. Existing invalid JSON handling
+remains with the route. Regression coverage:
+`packages/utils/src/__tests__/request-emoji-complexity.test.ts`,
+`packages/utils/src/__tests__/request-whiteboard-bounds.test.ts`,
+`apps/database/supabase/tests/description-table-hardening.sql`, and
+`apps/database/supabase/tests/readiness-whiteboard-contracts.sql`.

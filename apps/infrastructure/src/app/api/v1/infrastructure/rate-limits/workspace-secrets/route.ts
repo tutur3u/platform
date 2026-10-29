@@ -1,7 +1,8 @@
+import type { Database } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { authorizeInfrastructureWorkspaceSecretsRequest } from '@/lib/infrastructure-admin-access';
 import { RATE_LIMIT_SECRET_NAMES } from '@/lib/rate-limit';
-import { authorizeAbuseIntelligenceRequest } from '../../abuse-intelligence/_shared';
 
 // App-layer per-workspace rate-limit knobs (enforced by withSessionAuth /
 // withApiAuth via getEffectiveRateLimitConfig). The edge READ uplift for a
@@ -21,7 +22,7 @@ const SaveSecretsSchema = z.object({
 });
 
 export async function GET(request: Request) {
-  const authorization = await authorizeAbuseIntelligenceRequest(request);
+  const authorization = await authorizeInfrastructureWorkspaceSecretsRequest();
   if (!authorization.ok) {
     return authorization.response;
   }
@@ -63,10 +64,7 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const authorization = await authorizeAbuseIntelligenceRequest(
-    request,
-    'manage_workspace_roles'
-  );
+  const authorization = await authorizeInfrastructureWorkspaceSecretsRequest();
   if (!authorization.ok) {
     return authorization.response;
   }
@@ -97,8 +95,12 @@ export async function PUT(request: Request) {
     );
   }
 
-  const existingByName = new Map(
-    (existingRows ?? []).map((row) => [row.name, row])
+  type SecretRow = Pick<
+    Database['public']['Tables']['workspace_secrets']['Row'],
+    'id' | 'name' | 'value'
+  >;
+  const existingByName = new Map<string, SecretRow>(
+    (existingRows ?? []).map((row: SecretRow) => [row.name, row])
   );
 
   for (const [name, rawValue] of Object.entries(secrets)) {

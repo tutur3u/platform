@@ -149,6 +149,7 @@ export function TutoringDraftChoices({
           form.sessionSlots[slotIndex]?.startTime
       )
       .map((slot) => ({
+        group_id: form.groupId,
         session_date: slot.sessionDate,
         start_time: slot.startTime,
         duration_minutes: slot.durationMinutes,
@@ -162,6 +163,7 @@ export function TutoringDraftChoices({
           teachers: data.data.teachers,
           sessions: [...data.data.sessions, ...draft],
           studentId: form.studentUserId,
+          groupId: form.groupId,
           fromDate: today,
           toDate: end,
         }).slice(0, 3)

@@ -43,7 +43,7 @@ No package version, dependency resolution or published changelog is rewritten.
 | Branch or event                     | What deploys                                                                                       | Follow-up automation                                                                                                                 |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | Feature branch push                 | CI only; Vercel preview deployments require trusted manual dispatch from `main` with `preview_ref` | None by default                                                                                                                      |
-| `main` push                         | Platform Vercel preview build validation                                                           | `supabase-staging.yaml` can apply staging migrations after the preview build succeeds                                                |
+| `main` push                         | Platform Vercel preview build validation                                                           | `supabase-staging.yaml` independently applies staging migrations and records the exact main SHA                                                |
 | `production` push                   | Platform Vercel production deployment                                                              | `supabase-production.yaml` can apply production migrations after the deployment and staging prerequisites pass                       |
 | `main` push for `apps/discord`      | Discord Modal deployment after Python CI succeeds                                                  | None                                                                                                                                 |
 | Manual `workflow_dispatch`          | Depends on workflow                                                                                | Bypasses normal branch trigger timing, but not the workflow logic; production Supabase migration dispatches must select `production` |
@@ -76,15 +76,15 @@ No package version, dependency resolution or published changelog is rewritten.
 
 ### Staging Database
 
-- `supabase-staging.yaml` is tied to the `Vercel Platform Preview Deployment` workflow on `main`.
-- The staging migration runs only when the triggering platform preview build concludes successfully, or when manually dispatched from `main`.
-- `workflow_run` matches upstream workflows by name, so a fork pull request can
-  define a same-named workflow on a branch called `main`. The job gate admits only
-  a successful `push` completion from this repository's `main`; dispatched preview
-  runs do not start a staging migration. Staging secrets are scoped to the migration
-  step. Supabase Production applies the same event and head-repository checks to
-  its planner and staging triggers, and `scripts/ci/workflow-run-trust.test.js`
-  requires them for every `workflow_run` consumer.
+- `supabase-staging.yaml` runs on protected `main` pushes independently of Vercel
+  preview results. Main-only manual dispatch remains available for staging repair.
+- Before checkout, its shell gate exactly binds runner/event refs, repository name
+  and ID, and push `after` to `GITHUB_SHA`. Deleted pushes, unprotected push refs,
+  unsupported events, case variants and non-full SHAs fail closed. The verified SHA
+  must be identical to or behind fully qualified `refs/heads/main`.
+- Supabase Production retains its named-upstream proof for planner and staging
+  completions, including the new staging producer's `push` event. Other
+  `workflow_run` consumers keep their existing canonical trigger proof.
 - Expression `==` ignores case, so `head_branch == 'main'` also admits a branch
   named `Main`. Job `if` guards are only a cheap pre-filter. Every `workflow_run`
   consumer first runs the same inline **Verify trusted trigger** step. It reads
@@ -137,11 +137,23 @@ No package version, dependency resolution or published changelog is rewritten.
   current blob plus blobs from `main`'s history; drop blobs from rejected or
   intermediate branch heads. `scripts/ci/staging-contract-allowlist.test.js`
   pins the list exactly.
+  The direct-push producer blob is eligible only for `push` with
+  `run.head_sha == target`; older blobs retain their prior wrapper/dispatch rules.
+  The new workflow's manual repairs are staging-only evidence and are excluded
+  from production marker selection after their producer identity and immutable
+  source are verified. A later manual marker cannot displace an earlier eligible
+  push marker; selected evidence retains every run, attempt, status and job check.
+  Add a changed producer blob and its event-protocol classification in the same PR,
+  preserving every accepted historical blob and its admission rules.
+  Run the full `node scripts/run-script-tests.js` collector, including
+  `staging-contract-allowlist`, `production-migration-target` and
+  `staging-descendant-marker`, plus the push trigger/consumer negatives.
 - Ineligible runs (spoofed completions, dispatches from other refs) take a
   private `supabase-staging-migration-ignored-<run>` lock, so they never queue
-  with real migrations.
-- Admin hardening: move the staging Supabase secrets to an environment whose
-  deployment branch policy allows only `main` (not `supabase-staging`, which holds
+  with real migrations. Case variants can pass GitHub's case-insensitive
+  prefilter; the shell proof rejects them before checkout.
+- The source binds staging credentials to `supabase-staging-migrations`. Keep its
+  deployment branch policy restricted to `main` (not `supabase-staging`, which holds
   the deployment markers Supabase Production reads). Add a tag ruleset that blocks
   creating `main` and `production` tags; `head_branch` cannot tell a tag apart from
   a branch with the same name.
@@ -150,9 +162,10 @@ No package version, dependency resolution or published changelog is rewritten.
   history changes.
 - This means `main` is where app preview and staging schema advancement are
   meant to stay aligned.
-- If a production commit was promoted before the same-SHA staging migration run
-  existed, manually dispatch `supabase-staging.yaml` from `main`; production
-  migration re-evaluates after that staging run succeeds.
+- For historical recovery, rerun an existing eligible producer for that exact
+  target. A manual run of the new push workflow cannot unlock production. If no
+  eligible producer exists, hold promotion for release-owner recovery; do not
+  forge markers or bypass the production proof.
 
 ### Production
 
@@ -237,6 +250,121 @@ migration job still checks out the verified target commit explicitly before
 running `supabase db push --include-all`. This keeps production schema changes
 behind application deployment, staging validation, and branch promotion
 for the same commit.
+
+## Staging Host Scheme And Login Handoff
+
+Production keeps one shared cookie domain: web and every satellite live on
+`tuturuuu.com` / `*.tuturuuu.com`, share the `.tuturuuu.com` session cookie, and
+no behavior in this section changes that.
+
+Staging is a separate, cookie-isolated environment. Every staging surface
+(web, Next satellites and Workers) lives on `https://<app>.staging.tutur3u.com`,
+for example `https://web.staging.tutur3u.com` and
+`https://tasks.staging.tutur3u.com`. Its shared cookie domain is exactly
+`.staging.tutur3u.com`, never `.tutur3u.com` and never `.tuturuuu.com`.
+
+Two environment variables describe the staging host scheme. Both are
+`NEXT_PUBLIC_` values because the login form and the app-domain registry also run
+in the browser.
+
+| Variable | Format | Default |
+| --- | --- | --- |
+| `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN` | Exactly `.staging.tutur3u.com` | Unset: production `.tuturuuu.com` |
+| `NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS` | Comma or newline separated `name:https://origin` entries | Unset: no extra apps |
+
+```text
+NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com
+NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS=platform:https://web.staging.tutur3u.com,tasks:https://tasks.staging.tutur3u.com,meet:https://meet.staging.tutur3u.com
+```
+
+<Warning>
+Neither variable may be set on production. Production deployments, previews that
+serve production data and every `*.tuturuuu.com` host must leave both unset. The
+code ignores a mis-set value (see below) so a mistake cannot move production off
+`.tuturuuu.com`, but the deployment configuration must still never carry them.
+</Warning>
+
+Per-app alias template: `https://<app>.staging.tutur3u.com`, where `<app>` is the
+app name used in `PRODUCTION_INTERNAL_APP_DOMAINS` (the web app is registered as
+`platform`, for example `platform:https://web.staging.tutur3u.com`).
+
+### Shared cookie domain
+
+`packages/utils/src/shared-cookie.ts` owns the shared cookie domain. The override
+is an exact allowlist containing only `.staging.tutur3u.com`. Anything else
+(`.foo.tutur3u.com`, `.staging.tuturuuu.com`, `.tutur3u.com`, `.tuturuuu.com`, a
+wildcard, a value without a leading dot) is ignored with a `console.warn`, and
+production behavior stays in force. With no accepted override the cookie and
+deletion options are identical to production. The override replaces
+`.tuturuuu.com` for that deployment, so a staging host never sets or reads a
+production cookie; `.tuturuuu.localhost` stays for local development.
+
+`@tuturuuu/utils` depends on `@tuturuuu/supabase`, so the Supabase cookie helpers
+(`packages/supabase/src/next/common.ts`) cannot import it. They read the same
+allowlist from the dependency-free `packages/supabase/src/shared-cookie-domains.ts`,
+and a parity test in `packages/utils/src/shared-cookie.test.ts` fails if the two
+resolve a host differently. `packages/auth/src/app-session.ts` imports
+`getTuturuuuSharedCookieDomains()` directly. Production still resolves to
+`.tuturuuu.com` and `.tuturuuu.localhost` exactly.
+
+### Managed shortcut versus token handoff
+
+The tokenless "managed" return path (`apps/web/src/lib/auth/managed-tuturuuu-return-url.ts`,
+used by `/api/v1/auth/cross-app-return`, `/api/auth/callback` and the login form)
+applies only when the return host and the current web host both sit under the
+configured shared cookie domain. Any other combination is not managed, so
+cross-environment returns (production to staging or staging to production) are
+rejected rather than shortcut. With neither variable set the behavior is
+byte-for-byte the production behavior.
+
+`isRootTuturuuuHostname` keeps its production result (`tuturuuu.com` only). It
+additionally treats a registered `platform` host as the root, which on staging is
+the web host and in local development includes `tuturuuu.localhost`; no
+production hostname changes.
+
+### Internal app registry
+
+`NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS` registers staging apps as `internal`
+apps so they receive `/verify-token` (unlike
+`NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS`, which registers `external` apps).
+The registry exists only on a staging deployment:
+
+- It is empty unless the shared cookie domain is the accepted override, so a
+  production deployment never acts on it, even if the variable is set by mistake.
+- Each entry's host must equal `staging.tutur3u.com` or be a subdomain of it, with
+  no explicit port and no trailing dot.
+- Each entry name must be an existing app name from the known app map
+  (`APP_DOMAIN_MAP`); the variable cannot introduce new names.
+- Entries must be `https`, exact origins with no path, query, credentials or
+  wildcards, and are matched on the exact origin only.
+
+Rejected entries are ignored with a `console.warn`.
+
+With the staging override active the built-in production app origins
+(`PRODUCTION_INTERNAL_APP_DOMAINS`) are dropped from the registry, so a staging
+host cannot mint a token for, or redirect to, a production app. Local development
+(Portless and localhost) entries remain. External apps are not filtered: entries
+from `NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS` and DB-registered external apps
+still apply on staging, so they must never point at production hosts there.
+
+The override fails closed on production: when `VERCEL_ENV` is `production` (server)
+or `NEXT_PUBLIC_VERCEL_ENV` is `production` (browser bundles, which cannot see
+`VERCEL_ENV`), `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN` is ignored, the
+production default applies, the registry stays empty, and a single
+`console.error` is logged per process.
+
+### DNS requirement for credentialed CORS
+
+Credentialed CORS on staging trusts `*.staging.tutur3u.com`. The staging DNS zone
+must therefore contain no wildcard record and no host delegated to or controlled
+by a third party (for example a hosted-service CNAME that someone else can
+claim); every `*.staging.tutur3u.com` name must be one we operate, because any such
+host can send credentialed requests to staging.
+
+Regression coverage: `packages/utils/src/shared-cookie.test.ts`,
+`packages/utils/src/internal-domains.test.ts`,
+`apps/web/src/lib/auth/managed-tuturuuu-return-url.test.ts` and the
+`cross-app-return` and `auth/callback` route tests.
 
 ## Self-Hosted Web Release Flow
 
@@ -329,3 +457,13 @@ integrity checks. Its contract also transfers the pristine snapshot to a separat
 runner and requires a verified restore, so a safe cold fallback cannot hide a
 broken cross-runner cache. Restore failures report only their phase, without
 printing credential-bearing child-process output.
+
+
+## Staff-session configuration
+
+`TUTURUUU_AZURE_TENANT_ID` is a server-only setting for staff-session verification.
+Operators configure it in each affected server environment: web (including Colab
+and multiplayer auth), Mail, Tasks, Infrastructure, AI, Calendar, Track, Meet,
+Parley, Lettin and Rewise. Examples list the
+name without a value; an unset setting fails closed for Azure-linked staff
+sessions. See [staff authorization](/platform/architecture/authorization#staff-session-verification).

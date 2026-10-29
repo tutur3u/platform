@@ -27,7 +27,7 @@ jobs:
       workflow_name: web-start-candidate.yaml
   candidate:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -50,6 +50,7 @@ jobs:
           name: web-start-census
           path: ${{ runner.temp }}/web-start-census.json
           retention-days: 7
+          if-no-files-found: error
       - run: bun run --cwd apps/web test:candidate
       - run: node --experimental-strip-types --test apps/web/e2e-wave1-staging/policy.test.ts
       - run: bun x --no-install tsc --noEmit -p apps/web/tsconfig.wave1-staging.json

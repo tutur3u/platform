@@ -11,6 +11,8 @@ This inventory lists concrete Next page and handler files, including generated w
 
 | URL pattern | Page or HTTP methods | Source |
 | --- | --- | --- |
+| `/api/ai/chat/upload-url` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/ai/chat/upload-url/route.ts) |
+| `/api/ai/chatgpt/new` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/ai/chatgpt/new/route.ts) |
 | `/api/ai/chatgpt` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/ai/chatgpt/route.ts) |
 | `/api/ai/executions` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/ai/executions/route.ts) |
 | `/api/ai/generate` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/ai/generate/route.ts) |
@@ -155,6 +157,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/live/token` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/live/token/route.ts) |
 | `/api/v1/live/tools/execute` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/live/tools/execute/route.ts) |
 | `/api/v1/live/usage` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/live/usage/route.ts) |
+| `/api/v1/mastermind/push-events` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/mastermind/push-events/route.ts) |
 | `/api/v1/meet/plans/[planId]/availability` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meet/plans/%5BplanId%5D/availability/route.ts) |
 | `/api/v1/meet/plans/[planId]/finalization` | DELETE, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meet/plans/%5BplanId%5D/finalization/route.ts) |
 | `/api/v1/meet/plans/[planId]` | DELETE, GET, PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/meet/plans/%5BplanId%5D/route.ts) |
@@ -188,8 +191,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/nova/me/team` | GET, HEAD | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/nova/me/team/route.ts) |
 | `/api/v1/platform/users/[userId]/roles` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/platform/users/%5BuserId%5D/roles/route.ts) |
 | `/api/v1/product-feedback/[id]/media` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/product-feedback/%5Bid%5D/media/route.ts) |
-| `/api/v1/product-feedback/[id]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/product-feedback/%5Bid%5D/route.ts) |
-| `/api/v1/product-feedback/eligibility` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/product-feedback/eligibility/route.ts) |
-| `/api/v1/product-feedback/receipts/[key]` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/product-feedback/receipts/%5Bkey%5D/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

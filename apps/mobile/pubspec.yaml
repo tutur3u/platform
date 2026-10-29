@@ -40,7 +40,6 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_markdown_plus: ^1.0.12
-  flutter_native_splash: ^2.4.7
   flutter_pcm_sound: ^3.3.3
   flutter_quill: ^11.5.0
   flutter_quill_delta_from_html: ^1.5.3
@@ -58,7 +57,6 @@ dependencies:
   image_cropper: ^12.1.1
   image_picker: ^1.2.1
   intl: ^0.20.2
-  json_annotation: ^4.11.0
   local_auth: ^3.0.1
   markdown: ^7.3.1
   mime: ^2.0.0
@@ -84,13 +82,12 @@ dependencies:
 
 dev_dependencies:
   bloc_test: ^10.0.0
-  build_runner: ^2.13.1
   flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
   flutter_test:
     sdk: flutter
   integration_test:
     sdk: flutter
-  json_serializable: ^6.13.1
   leak_tracker_flutter_testing: ^3.0.10
   mocktail: ^1.0.4
   shared_preferences_platform_interface: ^2.4.2
@@ -119,16 +116,12 @@ flutter:
     - assets/audio/meet-notice.wav
     - CHANGELOG.md
     - assets/release_history.json
-    - assets/logos/light.png
-    - assets/logos/dark.png
     - assets/mermaid/mermaid.min.js
     - assets/logos/nova-transparent.png
     - assets/logos/transparent.png
     - assets/logos/apple.svg
     - assets/logos/github.svg
-    - assets/logos/google-logo.png
     - assets/logos/google.svg
-    - assets/logos/microsoft.svg
     - assets/fonts/lucide/LICENSE-lucide.txt
     - assets/fonts/lucide/LICENSE-lucide-lab.txt
   fonts:

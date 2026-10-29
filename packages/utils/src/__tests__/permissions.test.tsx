@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { describe, expect, it } from 'vitest';
 import { ROOT_WORKSPACE_ID } from '../constants';
 import { permissions } from '../permissions';
@@ -70,6 +71,18 @@ describe('workspace permission catalog', () => {
     expect(permissionIds).not.toContain('manage_git_repositories');
     expect(permissionIds).not.toContain('manage_workspace_secrets');
   });
+
+  it.each(['operator@tuturuuu.com', 'operator@example.com'])(
+    'keeps tenant catalogs scoped for %s',
+    (email) => {
+      const user = { id: 'user-1', email } as SupabaseUser;
+      expect(
+        permissions({ wsId: workspaceId, user }).map((entry) => entry.id)
+      ).toEqual(
+        permissions({ wsId: workspaceId, user: null }).map((entry) => entry.id)
+      );
+    }
+  );
 
   it('exposes internal account management only in the root workspace', () => {
     const rootPermissionIds = permissions({

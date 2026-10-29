@@ -8,10 +8,14 @@ import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/presentation/usage_model.dart';
+import 'package:mobile/features/mastermind/view/widgets/reported_text.dart';
+import 'package:mobile/features/mastermind/view/widgets/show_all_row.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Compact pool rows: opaque pool label, session budget left, pacing as word
-/// plus shape, and a sparkline of the session series.
+/// Compact pool rows, the three most urgent first: opaque pool label, session
+/// budget left, pacing as word plus shape, and a sparkline of the session
+/// series. A missing reading reads `—`, never "unknown".
 class HomeQuotaCard extends StatelessWidget {
   const HomeQuotaCard({required this.model, super.key});
 
@@ -24,14 +28,26 @@ class HomeQuotaCard extends StatelessWidget {
       caption: l10n.mastermindQuotaTitle,
       footer: l10n.mastermindReservePacing,
       children: [
-        if (model.quotaPools.isEmpty)
-          AppGroupedRow(title: Text(l10n.mastermindQuotaEmpty)),
-        for (final pool in model.quotaPools) _QuotaRow(pool: pool),
-        AppGroupedRow(
-          title: Text(l10n.mastermindUsageLink),
-          showChevron: true,
-          onTap: () => context.go(Routes.mastermindInsights),
-        ),
+        // Collapse only when every pool is known and none reports: with
+        // hidden pools a reading may sit behind "Show all".
+        if (model.quotaPoolCount == model.quotaPools.length &&
+            model.quotaPools.every(
+              (pool) => pool.latest.session.remainingPercent == null,
+            ))
+          AppGroupedRow(title: Text(l10n.mastermindQuotaEmpty))
+        else
+          for (final pool in model.quotaPools) _QuotaRow(pool: pool),
+        if (model.quotaPoolCount > model.quotaPools.length)
+          MastermindShowAllRow(
+            count: model.quotaPoolCount,
+            onTap: () => context.go(Routes.mastermindInsights),
+          )
+        else
+          AppGroupedRow(
+            title: Text(l10n.mastermindUsageLink),
+            showChevron: true,
+            onTap: () => context.go(Routes.mastermindInsights),
+          ),
       ],
     );
   }
@@ -40,7 +56,7 @@ class HomeQuotaCard extends StatelessWidget {
 class _QuotaRow extends StatelessWidget {
   const _QuotaRow({required this.pool});
 
-  final QuotaPool pool;
+  final UsagePool pool;
 
   @override
   Widget build(BuildContext context) {
@@ -57,13 +73,23 @@ class _QuotaRow extends StatelessWidget {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            remaining == null
-                ? l10n.mastermindUnavailable
-                : l10n.mastermindSessionLeft(
-                    l10n.mastermindUnitPercent(remaining.round().toString()),
-                  ),
-          ),
+          if (remaining == null)
+            Row(
+              children: [
+                Text(l10n.mastermindSession),
+                const SizedBox(width: AppSpacing.xs),
+                ReportedText(
+                  null,
+                  field: pool.latest.session.fields['remaining_percent'],
+                ),
+              ],
+            )
+          else
+            Text(
+              l10n.mastermindSessionLeft(
+                l10n.mastermindUnitPercent(remaining.round().toString()),
+              ),
+            ),
           if (points.length > 1)
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.xs),
@@ -83,17 +109,17 @@ class _QuotaRow extends StatelessWidget {
             ),
         ],
       ),
-      trailing: StatusGlyph(
-        status: switch (pacing) {
-          Pacing.short => ChartStatus.short,
-          Pacing.ok => ChartStatus.ok,
-          Pacing.surplus => ChartStatus.surplus,
-          null => ChartStatus.unknown,
-        },
-        label: pacing == null
-            ? l10n.mastermindStateUnknown
-            : MastermindLabels.pacing(pacing),
-      ),
+      // No pacing reads `—`, not the dashed glyph that looks like a spinner.
+      trailing: pacing == null
+          ? ReportedText(null, field: pool.latest.session.fields['pacing'])
+          : StatusGlyph(
+              status: switch (pacing) {
+                Pacing.short => ChartStatus.short,
+                Pacing.ok => ChartStatus.ok,
+                Pacing.surplus => ChartStatus.surplus,
+              },
+              label: MastermindLabels.pacing(pacing),
+            ),
     );
   }
 }

@@ -1,7 +1,7 @@
 ---
 title: "Workspaces & Permissions"
 description: "Complete reference for workspace identity, membership, routing, and effective permissions in apps/web"
-updatedAt: "2026-05-16"
+updatedAt: "2026-10-28"
 ---
 
 This page documents the actual workspace and permission model used by `apps/web` today.
@@ -195,6 +195,19 @@ A newly created workspace may exist before any roles or defaults are configured.
 
 The creator fallback prevents the creator from locking themselves out. The dashboard permission-setup banner exists because everyone else would otherwise have no effective permissions until defaults or roles are configured.
 
+### Ownership and personal status
+
+`workspaces.creator_id` and `workspaces.personal` are protected columns. Settings managers (including `admin`) keep table-level `UPDATE` for ordinary settings such as name, handle and avatar, but a `BEFORE UPDATE` trigger applies these rules:
+
+- `creator_id` never changes for `anon` or `authenticated` statements, including upserts. Ownership moves only through `public.transfer_workspace_ownership(ws_id, new_owner_id)`: the caller must be the current creator, the new owner must already be a `MEMBER` (not a `GUEST`), personal, root and deleted workspaces cannot be transferred, and the function is not executable by `service_role` (it has no end user to authorize).
+- Other roles may change `creator_id` only in these cases: the transaction has no end-user identity (migrations, cron and admin SQL, or `service_role`); `transfer_workspace_ownership()` set its transaction-local flag for that workspace id; or the change is the `workspaces_creator_id_fkey` `ON UPDATE CASCADE` follow-up of a `users.id` change. A `SECURITY DEFINER` function running under a user JWT is rejected unless it is the transfer function, so a future helper cannot reintroduce an ownership claim path.
+- Every `creator_id` change, whatever issued it, is recorded in `public.workspace_ownership_transfers` (readable by the service role only) with the actor, role and source. Audit rows keep the workspace id without a foreign key, so they survive workspace deletion.
+- `personal` changes only when the caller is the workspace's current creator, and marking a workspace personal also requires exactly one member (the same rule the `/api/v1/workspaces/personal` route applies, now enforced for direct data-API updates too). Turning `personal` off is not subject to the member count. The route keeps its one-personal-workspace check on top of this.
+
+Not yet covered: the new owner does not accept a transfer, and the transfer function does not check the new owner's account status.
+
+Regression coverage: `apps/database/supabase/tests/workspace-ownership-protection.sql`.
+
 ## `workspace_members.role` Is Not The Current Permission Source
 
 This is the most important corrective note for anyone reading older docs or legacy schema assumptions.
@@ -237,13 +250,55 @@ When the current workspace is the root workspace, an additional infrastructure g
 
 ### `admin` semantics
 
-`admin` is just another permission ID in the catalog, but `containsPermission()` treats it as a full bypass:
+`admin` is just another permission ID in the catalog, but `containsPermission()` treats it as a near-full bypass:
 
 - creator => all permissions
-- `admin` => all permissions
+- `admin` => all permissions except the creator-grant ones (`manage_subscription`)
 - explicit permission match => specific permission granted
 
 That means `admin` is a permission bit, not a separate role engine.
+
+#### Creator-grant permissions
+
+`manage_subscription` controls billing, so `admin` never implies it. This matches
+the SQL `has_workspace_permission()` and applies to `getPermissions()`, dashboard
+route guards and API-key permission checks. The list lives in
+`packages/utils/src/creator-grant-permissions.ts`.
+
+Only the workspace creator (or the service role) can enable a creator-grant
+permission on a role or as a default permission, or add members to a role that
+holds one. Role and default-permission routes (including the external-project
+team routes) drop these entries from non-creator payloads and keep their stored
+state; the role members routes return 403. Database triggers apply the same rule
+to direct API writes. Disabling a grant stays open to role managers.
+
+Invitations follow the same rule. Only the creator can put a role holding a
+creator-grant permission on a pending invitation; the invite routes return 403
+for anyone else. A manager editing an invitation may keep such a role when the
+invitation already has it. Pending invitation roles record who assigned them
+(`assigned_by`), and both `private.set_workspace_invitation_roles` and the
+invitation finalizers reject a creator-grant role the creator did not assign, so
+service callers cannot bypass the routes. Accepting fails with `42501` in that
+case rather than silently dropping the role.
+
+Re-saving an enabled grant through `INSERT ... ON CONFLICT DO UPDATE` preserves
+that grant. Invitation finalization and POS role preparation are service-only
+functions; API roles cannot execute them, and finalization applies the
+invitation rule above. Workspace creation seeds a fixed list
+of default permissions that excludes `manage_subscription`. A member joining
+through the service invitation flow inherits defaults explicitly enabled by the
+creator, including `manage_subscription`.
+
+Billing records (`workspace_subscriptions`, `workspace_orders`) are read-only for
+API users: `manage_subscription` holders can read them, and only the service role
+(Polar webhooks, sync jobs and server routes using the admin client) writes them.
+
+Regression coverage: `apps/database/supabase/tests/subscription-write-scope.sql`,
+`apps/database/supabase/tests/subscription-invite-scope.sql`,
+`packages/utils/src/__tests__/workspace-helper-admin-subscription.test.ts`, the
+role route tests under `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/roles/`,
+`apps/web/src/app/api/workspaces/[wsId]/members/invite/route.creator-grant.test.ts`
+and `apps/web/src/lib/external-projects/team-creator-grant.test.ts`.
 
 ## Where Permissions Affect The UI
 
@@ -319,6 +374,15 @@ The enhanced members route also merges:
 - privacy-related workspace secrets like `HIDE_MEMBER_EMAIL` and `HIDE_MEMBER_NAME`
 
 That is why the members page can show a permission breakdown per person without recomputing everything in the browser.
+
+Member-removal APIs accept canonical UUID syntax, including uppercase input, and
+normalize it to lowercase before member protection checks and scoped deletion.
+Unsupported UUID spellings return 400. Creator protection applies to the shared
+web/Tasks route; external-app removal also retains self and last-admin checks.
+Email-only invitation removal keeps its existing behavior. Regression coverage:
+`packages/apis/src/members/route.remove-authorization.test.ts` and
+`apps/web/src/lib/external-apps/workspace-members.removal.test.ts`.
+
 
 ## Where Permissions Affect API Routes
 
@@ -464,7 +528,7 @@ For a new SDK/API-key route:
 
 - A member can exist without any effective permissions.
 - The creator always has the full catalog, even if no roles/defaults exist yet.
-- `admin` is a permission bit that grants universal access through the helper.
+- `admin` is a permission bit that grants every permission except `manage_subscription` through the helper.
 - `workspace_users` is not the access-control table.
 - Browser URLs prefer `personal` and `internal`, but DB queries should use canonical UUIDs.
 - New privileged routes should reuse the shared helpers instead of reimplementing role/default joins.

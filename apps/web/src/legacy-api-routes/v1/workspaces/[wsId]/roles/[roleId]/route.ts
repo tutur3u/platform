@@ -6,6 +6,7 @@ import type {
   WorkspaceRole,
 } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
+import { filterCreatorGrantPermissions } from '@/lib/workspace-creator-grant-permissions';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
@@ -29,7 +30,11 @@ async function authorizeRoleRequest(req: Request, wsId: string) {
     };
   }
 
-  return { error: null, permissions: access.permissions };
+  return {
+    error: null,
+    permissions: access.permissions,
+    userId: access.user?.id,
+  };
 }
 
 export async function GET(req: Request, { params }: Params) {
@@ -113,10 +118,16 @@ export async function PUT(req: Request, { params }: Params) {
 
   const updatedRoleId = roleRes.data.id;
 
+  const writablePermissions = await filterCreatorGrantPermissions(supabase, {
+    permissions,
+    userId: authorization.userId,
+    wsId: resolvedWsId,
+  });
+
   const permissionsRes = await supabase
     .from('workspace_role_permissions')
     .upsert(
-      permissions.map(
+      writablePermissions.map(
         (permission): TablesInsert<'workspace_role_permissions'> => ({
           ws_id: resolvedWsId,
           role_id: updatedRoleId,

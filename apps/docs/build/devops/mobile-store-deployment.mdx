@@ -687,3 +687,27 @@ presence and multiple-ticket assertions. A five-second reply deadline remains
 in place. Failure diagnostics report only statuses and counters, never tickets
 or signing secrets. The harness closes both clients, its loopback fixture and
 the Worker; it does not validate hosted SFU or physical-device screen capture.
+
+### Device-bound secure storage and Linux development releases
+
+On iOS, auth sessions and the cache, app-lock settings, sale journal, App Attest
+metadata, voice-note access, profile timeline access and habits access stores use
+`first_unlock_this_device`. App Attest storage contains key identifiers and
+registration metadata; its private keys remain managed by the native API.
+Old `unlocked` items migrate on their first read through a durable device-bound
+staging item. Reads, writes and deletes serialize per key, and explicit deletion
+also removes staging so a later read cannot restore deleted data. Failed or
+interrupted migrations retry on the next access. Session persistence handles
+Keychain duplicate-item status -25299 by deleting the old item and retrying once;
+other errors and retry failures propagate to the caller.
+
+Device MFA and note device-lock secrets retain `unlocked_this_device`: these are
+already device-bound and intentionally require an unlocked device. Android and
+other platform storage behavior is unchanged. Regression coverage lives in
+`apps/mobile/test/data/sources/keychain_accessibility_migration_test.dart`.
+
+The Linux development-target release CI job requires repository variables
+`NEXT_PUBLIC_SUPABASE_URL` and `API_BASE_URL`. When either is absent, the build and
+bundle audit skip with a job summary. When both exist, the release URL validator
+must accept them before the build receives them as Dart defines. Production URL
+validation remains mandatory in both the build tooling and app startup.

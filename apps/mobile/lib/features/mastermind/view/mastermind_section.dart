@@ -22,9 +22,12 @@ typedef MastermindContentBuilder =
 /// scheduler for as long as the screen is mounted and maps the snapshot state
 /// to either [builder] or a whole-section state.
 class MastermindSection extends StatelessWidget {
-  const MastermindSection({required this.builder, super.key});
+  const MastermindSection({required this.builder, this.onRefresh, super.key});
 
   final MastermindContentBuilder builder;
+
+  /// Called when the person pulls down to refresh, before the refresh runs.
+  final VoidCallback? onRefresh;
 
   @override
   Widget build(BuildContext context) =>
@@ -36,15 +39,16 @@ class MastermindSection extends StatelessWidget {
                 current.enabled),
         builder: (context, access) =>
             access.status == MastermindAccessStatus.loaded && access.enabled
-            ? _AttachedSection(builder: builder)
+            ? _AttachedSection(builder: builder, onRefresh: onRefresh)
             : const MastermindSkeleton(),
       );
 }
 
 class _AttachedSection extends StatefulWidget {
-  const _AttachedSection({required this.builder});
+  const _AttachedSection({required this.builder, this.onRefresh});
 
   final MastermindContentBuilder builder;
+  final VoidCallback? onRefresh;
 
   @override
   State<_AttachedSection> createState() => _AttachedSectionState();
@@ -94,10 +98,15 @@ class _AttachedSectionState extends State<_AttachedSection>
 
   Future<void> _retry() => _runtime.scheduler.refreshNow();
 
+  Future<void> _pullToRefresh() {
+    widget.onRefresh?.call();
+    return _retry();
+  }
+
   // The strip depends on connectivity as well as the snapshot, so it listens
   // to the scheduler's online state rather than reading it at build time.
   Widget _content(MastermindSnapshotReady ready) => RefreshIndicator(
-    onRefresh: _retry,
+    onRefresh: _pullToRefresh,
     child: ValueListenableBuilder<bool>(
       valueListenable: _runtime.scheduler.online,
       builder: (context, online, _) => widget.builder(

@@ -16,6 +16,10 @@ let attendanceRows: unknown[] = [];
 let reservedRows: unknown[] = [];
 let feedbackRows: unknown[] = [];
 let configRows: unknown[] = [];
+let lessonRows: unknown[] = [];
+let postRows: unknown[] = [];
+let canViewPosts = true;
+let lessonError: unknown = null;
 
 function query(rows: () => unknown[]) {
   return {
@@ -31,10 +35,19 @@ function query(rows: () => unknown[]) {
     gte() {
       return this;
     },
+    lt() {
+      return this;
+    },
+    neq() {
+      return this;
+    },
     like() {
       return this;
     },
     order() {
+      return this;
+    },
+    limit() {
       return this;
     },
     // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are thenable.
@@ -42,7 +55,9 @@ function query(rows: () => unknown[]) {
       resolve: (value: unknown) => unknown,
       reject: (error: unknown) => unknown
     ) {
-      return Promise.resolve({ data: rows(), error: null }).then(
+      const data = rows();
+      const error = data === lessonRows ? lessonError : null;
+      return Promise.resolve({ data: error ? null : data, error }).then(
         resolve,
         reject
       );
@@ -79,9 +94,16 @@ beforeEach(() => {
   reservedRows = [];
   feedbackRows = [];
   configRows = [];
+  lessonRows = [];
+  postRows = [];
+  canViewPosts = true;
+  lessonError = null;
   mocks.resolveAccess.mockResolvedValue({
     normalizedWsId: wsId,
-    permissions: { withoutPermission: () => false },
+    permissions: {
+      withoutPermission: (permission: string) =>
+        permission === 'view_user_groups_posts' && !canViewPosts,
+    },
   });
   mocks.createAdminClient.mockResolvedValue({
     from: (name: string) => {
@@ -94,7 +116,14 @@ beforeEach(() => {
         };
       throw new Error(`Unexpected table ${name}`);
     },
-    schema: () => ({ from: () => query(() => reservedRows) }),
+    schema: () => ({
+      from: (name: string) =>
+        query(() => {
+          if (name === 'workspace_user_group_sessions') return lessonRows;
+          if (name === 'user_group_posts') return postRows;
+          return reservedRows;
+        }),
+    }),
   });
 });
 
@@ -428,5 +457,227 @@ describe('tutoring support queue', () => {
       { review_only: true, content_review_due: true },
     ]);
     expect(pending.summary).toMatchObject({ weak: 0, review_due: 1 });
+  });
+
+  describe('content to teach', () => {
+    const absence = {
+      group_id: 'group',
+      user_id: 'student',
+      date: '2026-09-20',
+      group: { name: 'English 2' },
+      user: { full_name: 'Lan' },
+    };
+    const lesson = (description: string | null) => ({
+      group_id: 'group',
+      status: 'scheduled',
+      starts_at: '2026-09-20T01:00:00Z',
+      start_timezone: 'Asia/Ho_Chi_Minh',
+      recurrence_instance_date: null,
+      description,
+      description_json: null,
+    });
+    const flagged = (id: string, content: string, created_at: string) => ({
+      id,
+      group_id: 'group',
+      user_id: 'student',
+      content,
+      created_at,
+      group: { name: 'English 2' },
+      user: { full_name: 'Lan' },
+    });
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-09-27T12:00:00Z'));
+    });
+
+    it('shows the missed lesson notes for an absent item', async () => {
+      attendanceRows = [absence];
+      lessonRows = [lesson('Unit 3 food')];
+      const body = await (await listQueue()).json();
+      expect(body.data).toMatchObject([
+        {
+          reason_type: 'ABSENT_RECOVERY',
+          feedback_content: '',
+          missed_lesson_content: '2026-09-20: Unit 3 food',
+          missed_post_content: '',
+          missing_lesson_dates: [],
+        },
+      ]);
+    });
+
+    it('adds the class posts created on the missed date, after the session notes', async () => {
+      attendanceRows = [absence];
+      lessonRows = [lesson('Unit 3 food')];
+      postRows = [
+        {
+          group_id: 'group',
+          title: 'Bài 5',
+          content: 'Phần bài viết ngày 20',
+          // 03:00 on 20/09 in the class's Asia/Ho_Chi_Minh zone.
+          created_at: '2026-09-19T20:00:00Z',
+        },
+        {
+          group_id: 'group',
+          title: 'Other day',
+          content: 'Not the missed date',
+          created_at: '2026-09-22T03:00:00Z',
+        },
+      ];
+      const body = await (await listQueue()).json();
+      expect(body.data).toMatchObject([
+        {
+          missed_lesson_content: '2026-09-20: Unit 3 food',
+          missed_post_content: '2026-09-20: Bài 5\nPhần bài viết ngày 20',
+          missing_lesson_dates: [],
+        },
+      ]);
+    });
+
+    it('counts a post as notes for the date, and skips posts without permission', async () => {
+      attendanceRows = [absence];
+      postRows = [
+        {
+          group_id: 'group',
+          title: null,
+          content: 'Ôn tập',
+          created_at: '2026-09-20T03:00:00Z',
+        },
+      ];
+      const withPost = await (await listQueue()).json();
+      expect(withPost.data).toMatchObject([
+        { missed_post_content: '2026-09-20: Ôn tập', missing_lesson_dates: [] },
+      ]);
+      canViewPosts = false;
+      const without = await (await listQueue()).json();
+      expect(without.data).toMatchObject([
+        { missed_post_content: '', missing_lesson_dates: ['2026-09-20'] },
+      ]);
+    });
+
+    it('lists the missed dates that have no recorded notes', async () => {
+      attendanceRows = [absence];
+      lessonRows = [lesson('  ')];
+      const empty = await (await listQueue()).json();
+      expect(empty.data).toMatchObject([
+        { missed_lesson_content: '', missing_lesson_dates: ['2026-09-20'] },
+      ]);
+      lessonRows = [];
+      const absent = await (await listQueue()).json();
+      expect(absent.data).toMatchObject([
+        { missed_lesson_content: '', missing_lesson_dates: ['2026-09-20'] },
+      ]);
+    });
+
+    it('carries both the lesson notes and the homeroom note for a BOTH item', async () => {
+      attendanceRows = [absence];
+      lessonRows = [lesson('Unit 3 food')];
+      feedbackRows = [
+        flagged('fb', 'Practice phonics', '2026-09-10T00:00:00Z'),
+      ];
+      const body = await (await listQueue()).json();
+      expect(body.data).toMatchObject([
+        {
+          reason_type: 'BOTH',
+          feedback_content: 'Practice phonics',
+          missed_lesson_content: '2026-09-20: Unit 3 food',
+          missing_lesson_dates: [],
+        },
+      ]);
+    });
+
+    it('leaves weak-only items without lesson notes', async () => {
+      feedbackRows = [
+        flagged('fb', 'Practice phonics', '2026-09-10T00:00:00Z'),
+      ];
+      const body = await (await listQueue()).json();
+      expect(body.data).toMatchObject([{ reason_type: 'WEAK_SUPPORT' }]);
+      expect(body.data[0].missed_lesson_content).toBeUndefined();
+      expect(body.data[0].missing_lesson_dates).toBeUndefined();
+    });
+
+    it('omits lesson fields when the lookup fails so the client reads sessions itself', async () => {
+      const consoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+      attendanceRows = [absence];
+      lessonRows = [lesson('Unit 3 food')];
+      lessonError = { message: 'boom' };
+      const body = await (await listQueue()).json();
+      expect(body.data).toMatchObject([{ reason_type: 'ABSENT_RECOVERY' }]);
+      expect(body.data[0].missed_lesson_content).toBeUndefined();
+      expect(body.data[0].missed_post_content).toBeUndefined();
+      expect(body.data[0].missing_lesson_dates).toBeUndefined();
+      consoleError.mockRestore();
+    });
+
+    it('omits lesson fields when a lookup hits the row limit', async () => {
+      const consoleError = vi
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined);
+      attendanceRows = [absence];
+      lessonRows = Array.from({ length: 1000 }, () => lesson('x'));
+      const body = await (await listQueue()).json();
+      expect(body.data[0].missing_lesson_dates).toBeUndefined();
+      consoleError.mockRestore();
+    });
+
+    it('pins weak content to the feedback a session was opened from, not the latest', async () => {
+      feedbackRows = [
+        flagged('later', 'Progress note', '2026-09-24T00:00:00Z'),
+        flagged(
+          'trigger',
+          'Moved to support: fractions',
+          '2026-09-01T00:00:00Z'
+        ),
+      ];
+      reservedRows = [
+        {
+          group_id: 'group',
+          student_user_id: 'student',
+          reason_type: 'WEAK_SUPPORT',
+          attendance_status: 'DONE',
+          source_feedback_id: 'trigger',
+          resolved_at: '2026-09-05T00:00:00Z',
+          session_date: '2026-09-05',
+        },
+      ];
+      const body = await (await listQueue()).json();
+      expect(body.data).toMatchObject([
+        {
+          reason_type: 'WEAK_SUPPORT',
+          feedback_content: 'Moved to support: fractions',
+          content_feedback_id: 'trigger',
+          // Scheduling still tracks the latest flagged feedback.
+          source_feedback_id: 'later',
+          feedback_created_at: '2026-09-24T00:00:00Z',
+        },
+      ]);
+    });
+
+    it('falls back to the latest feedback when no session is tied to one', async () => {
+      feedbackRows = [
+        flagged('later', 'Progress note', '2026-09-24T00:00:00Z'),
+        flagged('older', 'Moved to support', '2026-09-01T00:00:00Z'),
+      ];
+      reservedRows = [
+        {
+          group_id: 'group',
+          student_user_id: 'student',
+          reason_type: 'ABSENT_RECOVERY',
+          attendance_status: 'DONE',
+          source_feedback_id: null,
+          session_date: '2026-09-05',
+        },
+      ];
+      const body = await (await listQueue()).json();
+      expect(body.data).toMatchObject([
+        {
+          feedback_content: 'Progress note',
+          content_feedback_id: 'later',
+          source_feedback_id: 'later',
+        },
+      ]);
+    });
   });
 });

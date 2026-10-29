@@ -12,6 +12,55 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String mastermindAskedBy(String by) {
+    return 'From $by';
+  }
+
+  @override
+  String get mastermindUnrecognisedValue => 'Unrecognised value';
+
+  @override
+  String get mastermindAskTruncated => 'Ask truncated; full text on the Mac';
+
+  @override
+  String get mastermindReplyFailedShort => 'Not sent · tap to retry';
+
+  @override
+  String mastermindReplySendingOption(String option) {
+    return 'Sending “$option”';
+  }
+
+  @override
+  String get mastermindReplyWriteOwn => 'Write your own';
+
+  @override
+  String mastermindReplySendOption(String option) {
+    return 'Send “$option”';
+  }
+
+  @override
+  String mastermindAskedAt(String age, String time) {
+    return 'Asked $age · $time';
+  }
+
+  @override
+  String get mastermindReplyUndo => 'Undo';
+
+  @override
+  String get mastermindReplyNotSentReview => 'Couldn\'t send · open to review';
+
+  @override
+  String get mastermindAnswerExpand => 'Show full answer';
+
+  @override
+  String get mastermindAnswerCollapse => 'Show less';
+
+  @override
+  String mastermindReplyQueuedAt(String time) {
+    return 'Queued $time';
+  }
+
+  @override
   String get assistantDownloadPhasePending => 'Pending';
 
   @override
@@ -340,6 +389,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantAttachmentFailureNetwork => 'Upload interrupted. Check your connection and tap Retry.';
+
+  @override
+  String get assistantAttachmentFailureNewChatRequired => 'Start a new chat first, then attach the file again.';
 
   @override
   String get assistantAttachmentFailureServer => 'Upload didn\'t finish. Tap Retry.';
@@ -12209,7 +12261,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindActivityEmpty => 'No recent activity';
 
   @override
+  String get mastermindActivityFailed => 'Failed';
+
+  @override
+  String get mastermindActivityIdle => 'Idle';
+
+  @override
+  String get mastermindActivityRunning => 'Running';
+
+  @override
   String get mastermindActivityTitle => 'Activity';
+
+  @override
+  String get mastermindActivityWaiting => 'Waiting';
 
   @override
   String get mastermindAgeBasis => 'Age basis';
@@ -12694,6 +12758,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindFreshFresh => 'fresh';
 
   @override
+  String get mastermindFromFleet => 'From fleet reports';
+
+  @override
+  String get mastermindFromLanes => 'From lane reports';
+
+  @override
   String get mastermindGroupActions => 'Actions';
 
   @override
@@ -12706,13 +12776,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindInboxNoMatches => 'No matching items';
 
   @override
-  String get mastermindInboxSearchPlaceholder => 'Search Needs you';
+  String get mastermindInboxSearchPlaceholder => 'Search asks';
 
   @override
   String get mastermindInsightsLabel => 'Insights';
 
   @override
   String get mastermindItemAnsweredTitle => 'This was answered or withdrawn';
+
+  @override
+  String mastermindItemFor(String kind, String subject) {
+    return '$kind for $subject';
+  }
 
   @override
   String get mastermindItemGoneTitle => 'This item is no longer in Mastermind';
@@ -12763,7 +12838,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String mastermindLaneAgeUnknown(String state) {
-    return '$state · age unknown';
+    return '$state · age not published';
   }
 
   @override
@@ -12824,6 +12899,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindLess => 'Less';
 
   @override
+  String mastermindListShowAll(int count) {
+    return 'Show all $count';
+  }
+
+  @override
+  String get mastermindListShowFewer => 'Show fewer';
+
+  @override
   String mastermindLiveAgo(String age) {
     return 'Live $age';
   }
@@ -12845,7 +12928,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindModelNotReported => 'Model not reported';
+
+  @override
   String get mastermindMore => 'More';
+
+  @override
+  String mastermindNameProductArea(String product, String area) {
+    return '$product $area';
+  }
 
   @override
   String get mastermindNeedsAttention => 'Needs attention';
@@ -12877,6 +12968,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindNotConnectedTitle => 'Not connected';
 
   @override
+  String get mastermindNotReported => 'Not reported';
+
+  @override
+  String mastermindNotReportingCount(int count) {
+    return '$count not reporting';
+  }
+
+  @override
   String get mastermindNotReversible => 'Not reversible';
 
   @override
@@ -12897,6 +12996,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindOpensLanes => 'Opens the lane list';
+
+  @override
   String mastermindOptionRecommended(String option) {
     return '$option · Recommended';
   }
@@ -12914,7 +13016,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindProductsLabel => 'Products';
 
   @override
-  String get mastermindQuotaEmpty => 'No quota data';
+  String mastermindPublishedAgo(String age) {
+    return 'Published $age';
+  }
+
+  @override
+  String mastermindQueuedCount(int count) {
+    return '$count queued';
+  }
+
+  @override
+  String get mastermindQuotaEmpty => 'Quota not reported';
 
   @override
   String get mastermindQuotaTitle => 'Quota';
@@ -13130,6 +13242,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindScopeUsage => 'Usage';
 
   @override
+  String mastermindSectionWithBasis(String section, String basis) {
+    return '$section · $basis';
+  }
+
+  @override
   String get mastermindSecurityFix => 'Security fix';
 
   @override
@@ -13197,7 +13314,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindSeriesTarget => 'Target';
 
   @override
-  String get mastermindSeriesUnknown => 'unknown';
+  String get mastermindSeriesUnknown => 'Not published yet';
 
   @override
   String get mastermindSeriesUsageLimit => 'Usage limit';
@@ -13220,11 +13337,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindSessionRejectedTitle => 'Mastermind couldn\'t verify your session';
 
   @override
+  String get mastermindShipAllProducts => 'All';
+
+  @override
   String get mastermindShipCadenceTitle => 'Release cadence';
 
   @override
   String mastermindShipChecked(String dateTime) {
     return 'Checked $dateTime';
+  }
+
+  @override
+  String mastermindShipCheckedAgo(String age) {
+    return 'Checked $age';
   }
 
   @override
@@ -13257,7 +13382,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindShipEmpty => 'No releases reported';
 
   @override
+  String get mastermindShipFailing => 'Failing';
+
+  @override
   String get mastermindShipNoCadence => 'No release cadence reported';
+
+  @override
+  String get mastermindShipNoDeployments => 'No deployments observed';
 
   @override
   String get mastermindShipNoEnvironments => 'No environments reported.';
@@ -13282,13 +13413,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String mastermindShipReleasedAgo(String age) {
+    return 'Released $age';
+  }
+
+  @override
   String get mastermindShipShaCopied => 'Commit id copied';
+
+  @override
+  String get mastermindShipUntracked => 'Not tracked yet';
 
   @override
   String get mastermindShipWithheld => 'Withheld, open on Mac';
 
   @override
   String get mastermindShipWithheldTooltip => 'Details stay on the Mac';
+
+  @override
+  String mastermindShowAll(int count) {
+    return 'Show all $count';
+  }
 
   @override
   String get mastermindSignOutAction => 'Sign out and sign in again';
@@ -13387,7 +13531,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mastermindStaffUnknownModel => 'Unknown model';
+  String get mastermindStaffUnknownModel => 'Not published yet';
 
   @override
   String get mastermindStateAnswered => 'answered';
@@ -13417,7 +13561,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindStateStale => 'stale';
 
   @override
-  String get mastermindStateUnknown => 'unknown';
+  String get mastermindStateUnknown => 'Not published yet';
 
   @override
   String get mastermindStateWaiting => 'waiting';
@@ -13563,7 +13707,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mastermindUnknown => 'Unknown';
+  String get mastermindUnknown => 'Not published yet';
 
   @override
   String get mastermindUnreachableMessage => 'Retries wait a little longer after each failure.';
@@ -13585,6 +13729,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindUsageBudgetLeft => 'Budget left';
 
   @override
+  String get mastermindUsageBurnNotMeasured => 'Burn not measured yet';
+
+  @override
   String get mastermindUsageCreditsTitle => 'Codex credits';
 
   @override
@@ -13600,10 +13747,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindUsagePacing => 'Pacing';
 
   @override
+  String get mastermindUsageSessionLeft => 'Session left';
+
+  @override
+  String mastermindUsageTableFor(String chart) {
+    return '$chart table';
+  }
+
+  @override
   String get mastermindUsageTargetUnavailable => 'Target unavailable';
 
   @override
+  String get mastermindUsageVerdictNone => 'No pacing data';
+
+  @override
+  String get mastermindUsageVerdictOk => 'On pace';
+
+  @override
+  String get mastermindUsageVerdictShort => 'Running short';
+
+  @override
+  String get mastermindUsageVerdictSurplus => 'Surplus';
+
+  @override
+  String get mastermindUsageWeeklyLeft => 'Weekly left';
+
+  @override
   String get mastermindVersion => 'Version';
+
+  @override
+  String mastermindWaitingOnYou(int count) {
+    return '$count on you';
+  }
 
   @override
   String get mastermindWeekly => 'Weekly';
@@ -13711,4 +13886,260 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get classesTodayStale => 'Couldn\'t refresh. Showing the last saved classes.';
+
+  @override
+  String get mastermindNotPublished => 'Not published yet';
+
+  @override
+  String get mastermindNotConnected => 'Not connected';
+
+  @override
+  String get mastermindSourceDown => 'Source down';
+
+  @override
+  String get mastermindGapNoSamples => 'No samples published';
+
+  @override
+  String get mastermindGapAccountSwitch => 'Account switched';
+
+  @override
+  String get mastermindGapReset => 'Quota reset';
+
+  @override
+  String get mastermindRecentlyResolved => 'Recently resolved';
+
+  @override
+  String get mastermindReplyPendingShort => 'Waiting to send';
+
+  @override
+  String get mastermindAskTitle => 'Ask';
+
+  @override
+  String get mastermindOpensItem => 'Opens the ask';
+
+  @override
+  String get mastermindItemOpenOnMacReason => 'Mastermind didn\'t publish the full ask for this item. Read it in the Inbox on your Mac.';
+
+  @override
+  String get mastermindItemOpenOnMac => 'Full details are on the Mac';
+
+  @override
+  String get mastermindResolvedOutcome => 'Outcome';
+
+  @override
+  String get mastermindResolvedNoAnswer => 'Mastermind closed this ask without recording an answer.';
+
+  @override
+  String mastermindResolvedAnswer(String answer) {
+    return 'Answer: $answer';
+  }
+
+  @override
+  String mastermindResolvedWith(String answer) {
+    return 'Resolved · $answer';
+  }
+
+  @override
+  String get mastermindResolvedState => 'Resolved';
+
+  @override
+  String get mastermindNothingResolvedReason => 'Asks appear here once Mastermind records an answer.';
+
+  @override
+  String get mastermindNothingResolved => 'Nothing resolved recently';
+
+  @override
+  String get mastermindNothingNeedsYouReason => 'Mastermind lists an ask here when a lane needs your answer.';
+
+  @override
+  String get mastermindInboxNoMatchesReason => 'Nothing in this view matches your search or filter.';
+
+  @override
+  String get mastermindInboxClearFilters => 'Clear search and filters';
+
+  @override
+  String get mastermindInboxSearchAction => 'Search Inbox';
+
+  @override
+  String get mastermindInboxLoadingMore => 'Loading more';
+
+  @override
+  String get mastermindInboxLoadMoreFailed => 'Couldn\'t load more asks.';
+
+  @override
+  String get mastermindInboxEndOfList => 'That\'s every ask';
+
+  @override
+  String get mastermindInboxResolvedSegment => 'Resolved';
+
+  @override
+  String mastermindLastChecked(String time) {
+    return 'Last checked $time';
+  }
+
+  @override
+  String mastermindGapSummary(String start, String end, String reason) {
+    return 'Gap $start–$end: $reason';
+  }
+
+  @override
+  String get mastermindThreadsTitle => 'Threads';
+
+  @override
+  String get mastermindBackToThreads => 'Back to Threads';
+
+  @override
+  String get mastermindAnsweredOnPhone => 'Answered on phone';
+
+  @override
+  String get mastermindAnsweredOnMac => 'Answered on Mac';
+
+  @override
+  String get mastermindAnsweredInChat => 'Answered in chat';
+
+  @override
+  String get mastermindAnsweredAutomatically => 'Answered automatically';
+
+  @override
+  String get mastermindAnsweredElsewhere => 'Answered elsewhere';
+
+  @override
+  String get mastermindAlreadyAnsweredOnPhone => 'Already answered on phone';
+
+  @override
+  String get mastermindAlreadyAnsweredOnMac => 'Already answered on Mac';
+
+  @override
+  String get mastermindAlreadyAnsweredInChat => 'Already answered in chat';
+
+  @override
+  String get mastermindAlreadyAnsweredAutomatically => 'Already answered automatically';
+
+  @override
+  String get mastermindAlreadyAnsweredElsewhere => 'Already answered elsewhere';
+
+  @override
+  String get mastermindWithdrawnNoLongerNeeded => 'Withdrawn · no longer needed';
+
+  @override
+  String get mastermindAnsweredByYou => 'you';
+
+  @override
+  String get mastermindViaPhone => 'on phone';
+
+  @override
+  String get mastermindViaMac => 'on Mac';
+
+  @override
+  String get mastermindViaChat => 'in chat';
+
+  @override
+  String get mastermindViaAuto => 'automatically';
+
+  @override
+  String get mastermindAnsweredInBatch => 'Answered in batch';
+
+  @override
+  String get mastermindAlreadyAnsweredInBatch => 'Already answered in batch';
+
+  @override
+  String get mastermindViaBatch => 'in batch';
+
+  @override
+  String get mastermindAskDeadlineWithinHours => 'Answer within hours';
+
+  @override
+  String get mastermindAskDeadlineToday => 'Answer today';
+
+  @override
+  String get mastermindAskDeadlineTonight => 'Answer tonight';
+
+  @override
+  String get mastermindAskDeadlineThisWeek => 'Answer this week';
+
+  @override
+  String get mastermindAskUrgencyHigh => 'High priority';
+
+  @override
+  String get mastermindAskUrgencyUrgent => 'Urgent';
+
+  @override
+  String get mastermindAskWhyRecommended => 'Why recommended';
+
+  @override
+  String get mastermindAskIfNoAnswerTitle => 'If you don\'t answer';
+
+  @override
+  String mastermindAskIfNoAnswer(String option) {
+    return 'If no answer: $option';
+  }
+
+  @override
+  String mastermindAskRisk(String risk) {
+    return 'Risk: $risk';
+  }
+
+  @override
+  String get mastermindAskReversible => 'Can be undone later';
+
+  @override
+  String get mastermindAskNotReversible => 'Can\'t be undone';
+
+  @override
+  String mastermindAskBlocks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Blocks $count lanes',
+      one: 'Blocks 1 lane',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindAskDueAt(String time) {
+    return 'Due $time';
+  }
+
+  @override
+  String get mastermindAskAnsweredPhone => 'Answered on the phone';
+
+  @override
+  String get mastermindAskAnsweredMac => 'Answered on the Mac';
+
+  @override
+  String get mastermindAskAnsweredChat => 'Answered in chat';
+
+  @override
+  String get mastermindAskAnsweredAuto => 'Answered automatically';
+
+  @override
+  String get mastermindAskAnsweredBatch => 'Answered in a batch';
+
+  @override
+  String get mastermindAskAnsweredElsewhere => 'Answered elsewhere';
+
+  @override
+  String get mastermindAskLinksTitle => 'Links';
+
+  @override
+  String get mastermindAskLaneLink => 'Lane ⟶';
+
+  @override
+  String get mastermindAskActionAnswer => 'Answer here';
+
+  @override
+  String get mastermindAskActionRunOnMac => 'Run at your Mac';
+
+  @override
+  String get mastermindAskActionPhysical => 'Needs a physical step';
+
+  @override
+  String get mastermindAskActionFyi => 'For your information';
+
+  @override
+  String get mastermindAskRemindAtMac => 'Remind me at Mac';
+
+  @override
+  String get mastermindAskRemindAtMacSoon => 'Coming soon';
 }

@@ -12,6 +12,55 @@ class AppLocalizationsVi extends AppLocalizations {
   AppLocalizationsVi([String locale = 'vi']) : super(locale);
 
   @override
+  String mastermindAskedBy(String by) {
+    return 'Từ $by';
+  }
+
+  @override
+  String get mastermindUnrecognisedValue => 'Giá trị không được nhận diện';
+
+  @override
+  String get mastermindAskTruncated => 'Yêu cầu bị rút gọn; xem toàn văn trên máy Mac';
+
+  @override
+  String get mastermindReplyFailedShort => 'Chưa gửi · chạm để thử lại';
+
+  @override
+  String mastermindReplySendingOption(String option) {
+    return 'Đang gửi “$option”';
+  }
+
+  @override
+  String get mastermindReplyWriteOwn => 'Tự viết câu trả lời';
+
+  @override
+  String mastermindReplySendOption(String option) {
+    return 'Gửi “$option”';
+  }
+
+  @override
+  String mastermindAskedAt(String age, String time) {
+    return 'Đã hỏi $age · $time';
+  }
+
+  @override
+  String get mastermindReplyUndo => 'Hoàn tác';
+
+  @override
+  String get mastermindReplyNotSentReview => 'Không gửi được · mở để xem lại';
+
+  @override
+  String get mastermindAnswerExpand => 'Xem toàn bộ câu trả lời';
+
+  @override
+  String get mastermindAnswerCollapse => 'Thu gọn';
+
+  @override
+  String mastermindReplyQueuedAt(String time) {
+    return 'Đã xếp hàng $time';
+  }
+
+  @override
   String get assistantDownloadPhasePending => 'Đang chờ';
 
   @override
@@ -340,6 +389,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantAttachmentFailureNetwork => 'Tải lên bị gián đoạn. Kiểm tra kết nối rồi nhấn Thử lại.';
+
+  @override
+  String get assistantAttachmentFailureNewChatRequired => 'Hãy bắt đầu cuộc trò chuyện mới trước, rồi đính kèm lại tệp.';
 
   @override
   String get assistantAttachmentFailureServer => 'Tải lên chưa hoàn tất. Nhấn Thử lại.';
@@ -12076,7 +12128,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindActivityEmpty => 'Chưa có hoạt động gần đây';
 
   @override
+  String get mastermindActivityFailed => 'Lỗi';
+
+  @override
+  String get mastermindActivityIdle => 'Nhàn rỗi';
+
+  @override
+  String get mastermindActivityRunning => 'Đang chạy';
+
+  @override
   String get mastermindActivityTitle => 'Hoạt động';
+
+  @override
+  String get mastermindActivityWaiting => 'Đang chờ';
 
   @override
   String get mastermindAgeBasis => 'Cơ sở tính tuổi';
@@ -12557,6 +12621,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindFreshFresh => 'mới';
 
   @override
+  String get mastermindFromFleet => 'Từ báo cáo đội tác nhân';
+
+  @override
+  String get mastermindFromLanes => 'Theo báo cáo của luồng việc';
+
+  @override
   String get mastermindGroupActions => 'Hành động';
 
   @override
@@ -12569,13 +12639,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindInboxNoMatches => 'Không có mục phù hợp';
 
   @override
-  String get mastermindInboxSearchPlaceholder => 'Tìm trong Cần bạn';
+  String get mastermindInboxSearchPlaceholder => 'Tìm yêu cầu';
 
   @override
   String get mastermindInsightsLabel => 'Phân tích';
 
   @override
   String get mastermindItemAnsweredTitle => 'Mục này đã được trả lời hoặc rút lại';
+
+  @override
+  String mastermindItemFor(String kind, String subject) {
+    return '$kind cho $subject';
+  }
 
   @override
   String get mastermindItemGoneTitle => 'Mục này không còn trong Mastermind';
@@ -12626,7 +12701,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String mastermindLaneAgeUnknown(String state) {
-    return '$state · chưa rõ thời lượng';
+    return '$state · chưa công bố thời gian';
   }
 
   @override
@@ -12687,6 +12762,14 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindLess => 'Thu gọn';
 
   @override
+  String mastermindListShowAll(int count) {
+    return 'Xem tất cả $count';
+  }
+
+  @override
+  String get mastermindListShowFewer => 'Thu gọn';
+
+  @override
   String mastermindLiveAgo(String age) {
     return 'Lên production $age';
   }
@@ -12707,7 +12790,15 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindModelNotReported => 'Chưa có thông tin mô hình';
+
+  @override
   String get mastermindMore => 'Xem thêm';
+
+  @override
+  String mastermindNameProductArea(String product, String area) {
+    return '$product $area';
+  }
 
   @override
   String get mastermindNeedsAttention => 'Cần chú ý';
@@ -12739,6 +12830,14 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindNotConnectedTitle => 'Chưa kết nối';
 
   @override
+  String get mastermindNotReported => 'Chưa có dữ liệu';
+
+  @override
+  String mastermindNotReportingCount(int count) {
+    return '$count chưa báo cáo';
+  }
+
+  @override
   String get mastermindNotReversible => 'Không thể hoàn tác';
 
   @override
@@ -12759,6 +12858,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindOpensLanes => 'Mở danh sách luồng việc';
+
+  @override
   String mastermindOptionRecommended(String option) {
     return '$option · Đề xuất';
   }
@@ -12776,7 +12878,17 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindProductsLabel => 'Sản phẩm';
 
   @override
-  String get mastermindQuotaEmpty => 'Chưa có dữ liệu hạn mức';
+  String mastermindPublishedAgo(String age) {
+    return 'Cập nhật $age';
+  }
+
+  @override
+  String mastermindQueuedCount(int count) {
+    return '$count trong hàng đợi';
+  }
+
+  @override
+  String get mastermindQuotaEmpty => 'Chưa báo cáo hạn mức';
 
   @override
   String get mastermindQuotaTitle => 'Hạn mức';
@@ -12989,6 +13101,11 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindScopeUsage => 'Mức sử dụng';
 
   @override
+  String mastermindSectionWithBasis(String section, String basis) {
+    return '$section · $basis';
+  }
+
+  @override
   String get mastermindSecurityFix => 'Bản vá bảo mật';
 
   @override
@@ -13056,7 +13173,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindSeriesTarget => 'Mục tiêu';
 
   @override
-  String get mastermindSeriesUnknown => 'không rõ';
+  String get mastermindSeriesUnknown => 'Chưa được công bố';
 
   @override
   String get mastermindSeriesUsageLimit => 'Hết hạn mức';
@@ -13079,11 +13196,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindSessionRejectedTitle => 'Mastermind không xác minh được phiên của bạn';
 
   @override
+  String get mastermindShipAllProducts => 'Tất cả';
+
+  @override
   String get mastermindShipCadenceTitle => 'Nhịp phát hành';
 
   @override
   String mastermindShipChecked(String dateTime) {
     return 'Kiểm tra lúc $dateTime';
+  }
+
+  @override
+  String mastermindShipCheckedAgo(String age) {
+    return 'Kiểm tra $age';
   }
 
   @override
@@ -13116,7 +13241,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindShipEmpty => 'Chưa có bản phát hành nào';
 
   @override
+  String get mastermindShipFailing => 'Đang lỗi';
+
+  @override
   String get mastermindShipNoCadence => 'Chưa có nhịp phát hành nào được báo cáo';
+
+  @override
+  String get mastermindShipNoDeployments => 'Chưa ghi nhận lần triển khai nào';
 
   @override
   String get mastermindShipNoEnvironments => 'Chưa có môi trường nào được báo cáo.';
@@ -13141,13 +13272,26 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String mastermindShipReleasedAgo(String age) {
+    return 'Phát hành $age';
+  }
+
+  @override
   String get mastermindShipShaCopied => 'Đã sao chép mã commit';
+
+  @override
+  String get mastermindShipUntracked => 'Chưa theo dõi';
 
   @override
   String get mastermindShipWithheld => 'Đã ẩn, xem trên máy Mac';
 
   @override
   String get mastermindShipWithheldTooltip => 'Chi tiết chỉ có trên máy Mac';
+
+  @override
+  String mastermindShowAll(int count) {
+    return 'Xem tất cả $count';
+  }
 
   @override
   String get mastermindSignOutAction => 'Đăng xuất và đăng nhập lại';
@@ -13244,7 +13388,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get mastermindStaffUnknownModel => 'Mô hình không xác định';
+  String get mastermindStaffUnknownModel => 'Chưa được công bố';
 
   @override
   String get mastermindStateAnswered => 'đã trả lời';
@@ -13274,7 +13418,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindStateStale => 'đã cũ';
 
   @override
-  String get mastermindStateUnknown => 'không rõ';
+  String get mastermindStateUnknown => 'Chưa được công bố';
 
   @override
   String get mastermindStateWaiting => 'đang chờ';
@@ -13420,7 +13564,7 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get mastermindUnknown => 'Không rõ';
+  String get mastermindUnknown => 'Chưa được công bố';
 
   @override
   String get mastermindUnreachableMessage => 'Mỗi lần thất bại, thời gian chờ thử lại sẽ dài hơn.';
@@ -13442,6 +13586,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindUsageBudgetLeft => 'Hạn mức còn lại';
 
   @override
+  String get mastermindUsageBurnNotMeasured => 'Chưa đo được tốc độ tiêu hao';
+
+  @override
   String get mastermindUsageCreditsTitle => 'Tín dụng Codex';
 
   @override
@@ -13457,10 +13604,38 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindUsagePacing => 'Nhịp sử dụng';
 
   @override
+  String get mastermindUsageSessionLeft => 'Phiên còn lại';
+
+  @override
+  String mastermindUsageTableFor(String chart) {
+    return 'Bảng $chart';
+  }
+
+  @override
   String get mastermindUsageTargetUnavailable => 'Chưa có mục tiêu';
 
   @override
+  String get mastermindUsageVerdictNone => 'Chưa có dữ liệu nhịp';
+
+  @override
+  String get mastermindUsageVerdictOk => 'Đúng nhịp';
+
+  @override
+  String get mastermindUsageVerdictShort => 'Sắp thiếu';
+
+  @override
+  String get mastermindUsageVerdictSurplus => 'Dư';
+
+  @override
+  String get mastermindUsageWeeklyLeft => 'Tuần còn lại';
+
+  @override
   String get mastermindVersion => 'Phiên bản';
+
+  @override
+  String mastermindWaitingOnYou(int count) {
+    return '$count chờ bạn';
+  }
 
   @override
   String get mastermindWeekly => 'Hằng tuần';
@@ -13568,4 +13743,259 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get classesTodayStale => 'Không thể làm mới. Đang hiển thị danh sách lớp đã lưu gần nhất.';
+
+  @override
+  String get mastermindNotPublished => 'Chưa được công bố';
+
+  @override
+  String get mastermindNotConnected => 'Chưa kết nối';
+
+  @override
+  String get mastermindSourceDown => 'Nguồn không hoạt động';
+
+  @override
+  String get mastermindGapNoSamples => 'Chưa công bố mẫu dữ liệu';
+
+  @override
+  String get mastermindGapAccountSwitch => 'Đã đổi tài khoản';
+
+  @override
+  String get mastermindGapReset => 'Đặt lại hạn mức';
+
+  @override
+  String get mastermindRecentlyResolved => 'Đã xử lý gần đây';
+
+  @override
+  String get mastermindReplyPendingShort => 'Đang chờ gửi';
+
+  @override
+  String get mastermindAskTitle => 'Yêu cầu';
+
+  @override
+  String get mastermindOpensItem => 'Mở yêu cầu';
+
+  @override
+  String get mastermindItemOpenOnMacReason => 'Mastermind chưa công bố đầy đủ yêu cầu này. Hãy đọc trong Hộp thư trên máy Mac.';
+
+  @override
+  String get mastermindItemOpenOnMac => 'Chi tiết đầy đủ trên máy Mac';
+
+  @override
+  String get mastermindResolvedOutcome => 'Kết quả';
+
+  @override
+  String get mastermindResolvedNoAnswer => 'Mastermind đã đóng yêu cầu này mà không ghi lại câu trả lời.';
+
+  @override
+  String mastermindResolvedAnswer(String answer) {
+    return 'Câu trả lời: $answer';
+  }
+
+  @override
+  String mastermindResolvedWith(String answer) {
+    return 'Đã xử lý · $answer';
+  }
+
+  @override
+  String get mastermindResolvedState => 'Đã xử lý';
+
+  @override
+  String get mastermindNothingResolvedReason => 'Yêu cầu sẽ hiện ở đây khi Mastermind ghi nhận câu trả lời.';
+
+  @override
+  String get mastermindNothingResolved => 'Chưa có yêu cầu nào được xử lý gần đây';
+
+  @override
+  String get mastermindNothingNeedsYouReason => 'Mastermind sẽ hiện yêu cầu ở đây khi một luồng cần bạn trả lời.';
+
+  @override
+  String get mastermindInboxNoMatchesReason => 'Không có mục nào trong chế độ xem này khớp với tìm kiếm hoặc bộ lọc.';
+
+  @override
+  String get mastermindInboxClearFilters => 'Xóa tìm kiếm và bộ lọc';
+
+  @override
+  String get mastermindInboxSearchAction => 'Tìm trong Hộp thư';
+
+  @override
+  String get mastermindInboxLoadingMore => 'Đang tải thêm';
+
+  @override
+  String get mastermindInboxLoadMoreFailed => 'Không tải thêm được yêu cầu.';
+
+  @override
+  String get mastermindInboxEndOfList => 'Đó là tất cả yêu cầu';
+
+  @override
+  String get mastermindInboxResolvedSegment => 'Đã xử lý';
+
+  @override
+  String mastermindLastChecked(String time) {
+    return 'Kiểm tra lần cuối $time';
+  }
+
+  @override
+  String mastermindGapSummary(String start, String end, String reason) {
+    return 'Khoảng trống $start–$end: $reason';
+  }
+
+  @override
+  String get mastermindThreadsTitle => 'Hội thoại';
+
+  @override
+  String get mastermindBackToThreads => 'Về Hội thoại';
+
+  @override
+  String get mastermindAnsweredOnPhone => 'Đã trả lời trên điện thoại';
+
+  @override
+  String get mastermindAnsweredOnMac => 'Đã trả lời trên Mac';
+
+  @override
+  String get mastermindAnsweredInChat => 'Đã trả lời trong trò chuyện';
+
+  @override
+  String get mastermindAnsweredAutomatically => 'Đã trả lời tự động';
+
+  @override
+  String get mastermindAnsweredElsewhere => 'Đã trả lời ở nơi khác';
+
+  @override
+  String get mastermindAlreadyAnsweredOnPhone => 'Đã được trả lời trên điện thoại';
+
+  @override
+  String get mastermindAlreadyAnsweredOnMac => 'Đã được trả lời trên Mac';
+
+  @override
+  String get mastermindAlreadyAnsweredInChat => 'Đã được trả lời trong trò chuyện';
+
+  @override
+  String get mastermindAlreadyAnsweredAutomatically => 'Đã được trả lời tự động';
+
+  @override
+  String get mastermindAlreadyAnsweredElsewhere => 'Đã được trả lời ở nơi khác';
+
+  @override
+  String get mastermindWithdrawnNoLongerNeeded => 'Đã rút lại · không còn cần nữa';
+
+  @override
+  String get mastermindAnsweredByYou => 'bạn';
+
+  @override
+  String get mastermindViaPhone => 'trên điện thoại';
+
+  @override
+  String get mastermindViaMac => 'trên Mac';
+
+  @override
+  String get mastermindViaChat => 'trong trò chuyện';
+
+  @override
+  String get mastermindViaAuto => 'tự động';
+
+  @override
+  String get mastermindAnsweredInBatch => 'Đã trả lời theo lô';
+
+  @override
+  String get mastermindAlreadyAnsweredInBatch => 'Đã được trả lời theo lô';
+
+  @override
+  String get mastermindViaBatch => 'theo lô';
+
+  @override
+  String get mastermindAskDeadlineWithinHours => 'Cần trả lời trong vài giờ';
+
+  @override
+  String get mastermindAskDeadlineToday => 'Cần trả lời hôm nay';
+
+  @override
+  String get mastermindAskDeadlineTonight => 'Cần trả lời tối nay';
+
+  @override
+  String get mastermindAskDeadlineThisWeek => 'Cần trả lời trong tuần này';
+
+  @override
+  String get mastermindAskUrgencyHigh => 'Ưu tiên cao';
+
+  @override
+  String get mastermindAskUrgencyUrgent => 'Khẩn cấp';
+
+  @override
+  String get mastermindAskWhyRecommended => 'Vì sao được đề xuất';
+
+  @override
+  String get mastermindAskIfNoAnswerTitle => 'Nếu bạn không trả lời';
+
+  @override
+  String mastermindAskIfNoAnswer(String option) {
+    return 'Nếu không trả lời: $option';
+  }
+
+  @override
+  String mastermindAskRisk(String risk) {
+    return 'Rủi ro: $risk';
+  }
+
+  @override
+  String get mastermindAskReversible => 'Có thể hoàn tác sau';
+
+  @override
+  String get mastermindAskNotReversible => 'Không thể hoàn tác';
+
+  @override
+  String mastermindAskBlocks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đang chặn $count luồng',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindAskDueAt(String time) {
+    return 'Hạn $time';
+  }
+
+  @override
+  String get mastermindAskAnsweredPhone => 'Đã trả lời trên điện thoại';
+
+  @override
+  String get mastermindAskAnsweredMac => 'Đã trả lời trên máy Mac';
+
+  @override
+  String get mastermindAskAnsweredChat => 'Đã trả lời trong cuộc trò chuyện';
+
+  @override
+  String get mastermindAskAnsweredAuto => 'Đã trả lời tự động';
+
+  @override
+  String get mastermindAskAnsweredBatch => 'Đã trả lời theo lô';
+
+  @override
+  String get mastermindAskAnsweredElsewhere => 'Đã trả lời ở nơi khác';
+
+  @override
+  String get mastermindAskLinksTitle => 'Liên kết';
+
+  @override
+  String get mastermindAskLaneLink => 'Luồng ⟶';
+
+  @override
+  String get mastermindAskActionAnswer => 'Trả lời tại đây';
+
+  @override
+  String get mastermindAskActionRunOnMac => 'Thực hiện trên máy Mac';
+
+  @override
+  String get mastermindAskActionPhysical => 'Cần một bước thực tế';
+
+  @override
+  String get mastermindAskActionFyi => 'Để bạn biết';
+
+  @override
+  String get mastermindAskRemindAtMac => 'Nhắc tôi khi ở máy Mac';
+
+  @override
+  String get mastermindAskRemindAtMacSoon => 'Sắp ra mắt';
 }

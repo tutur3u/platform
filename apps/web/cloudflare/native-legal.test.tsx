@@ -2,6 +2,7 @@
 import { getLegalDocument } from '@tuturuuu/legal';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { toLegalPageConfig } from '../src/components/legal/canonical-legal-config';
 import { LegalMarkdown } from '../src/components/legal/legal-markdown';
 import type { Fetcher } from './fallback';
 import { createWebCandidateHandler } from './handler';
@@ -159,8 +160,9 @@ describe('native legal slice dispatch and rollback', () => {
 describe('framework adapter renders canonical legal content', () => {
   for (const locale of ['en', 'vi'] as const) {
     for (const { kind } of pages) {
-      it(`${locale}/${kind}: retains every canonical section, summary and review notice`, () => {
+      it(`${locale}/${kind}: retains every canonical section and summary with the live footer`, () => {
         const document = getLegalDocument(kind, locale);
+        expect(toLegalPageConfig(document).footerText).toBe(document.footer);
         const page = new DOMParser().parseFromString(
           renderToStaticMarkup(<LegalPage kind={kind} locale={locale} />),
           'text/html'

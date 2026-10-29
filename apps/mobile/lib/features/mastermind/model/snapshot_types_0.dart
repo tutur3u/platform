@@ -13,6 +13,8 @@ final class MastermindSnapshot {
     required this.decisionsSkipped,
     required this.observability,
     required List<Source> sources,
+    this.resolvedItems = const [],
+    this.workCounts,
   }) : lanes = List.unmodifiable(lanes),
        backlog = List.unmodifiable(backlog),
        environments = List.unmodifiable(environments),
@@ -20,6 +22,8 @@ final class MastermindSnapshot {
        sources = List.unmodifiable(sources);
 
   final String schemaVersion;
+  final List<NeedsYou> resolvedItems;
+  final Map<LaneState, int>? workCounts;
   final DateTime generatedAt;
   final SnapshotNow now;
   final List<LaneItem> lanes;

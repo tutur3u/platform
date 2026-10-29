@@ -1,78 +1,131 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
+import 'package:mobile/core/ui/components/app_icon_button.dart';
 import 'package:mobile/core/ui/components/app_toast.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
-import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/age_text.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
+import 'package:mobile/features/mastermind/presentation/hub_field.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The publisher's stand-in for a commit subject it will not send.
 const _withheldSubject = 'Withheld, open on Mac';
 
-/// One environment: deploy and CI as a glyph and a word, its own freshness
-/// chip (never the snapshot's age), the version, commit id and subject.
+/// One environment as a compact row: status badges (deploy, CI, and its own
+/// freshness only when it is not fresh), then the version and commit id, then
+/// one muted line with the subject and how long ago it was released and
+/// checked. A reading the hub did not publish is left out rather than shown
+/// as an empty word; one it could not read keeps its reason. The evidence
+/// and absolute times are in the row's semantics label.
 class ShipEnvironmentTile extends StatelessWidget {
-  const ShipEnvironmentTile({required this.row, super.key});
+  const ShipEnvironmentTile({required this.row, required this.asOf, super.key});
 
   final EnvironmentRow row;
+
+  /// The snapshot's own time, so "checked 5 min ago" is what the hub saw.
+  final DateTime asOf;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final failing = environmentIsFailing(row);
     final muted = Theme.of(context).textTheme.bodySmall;
-    final released = row.releasedAt;
-    final age = row.ageSeconds;
-    final observed = row.observedAt;
     final version = row.versionTag;
     final subject = row.commitSubject;
+    final released = row.ageSeconds != null
+        ? Duration(seconds: row.ageSeconds!)
+        : row.releasedAt == null
+        ? null
+        : asOf.difference(row.releasedAt!);
+    final observed = row.observedAt;
+    final deploy = _reading(
+      row.fields['deploy_status'],
+      known: row.deployStatus != DeployStatus.unknown,
+      l10n: l10n,
+      word: () => MastermindLabels.deployStatus(l10n, row.deployStatus),
+    );
+    final ci = _reading(
+      row.fields['ci_state'],
+      known: row.ciState != CiState.unknown,
+      l10n: l10n,
+      word: () => MastermindLabels.ciState(l10n, row.ciState),
+    );
+    // Each environment keeps the freshness the hub published for it,
+    // whatever the age of the snapshot around it; "fresh" goes without saying.
+    final freshness = _reading(
+      row.fields['freshness'],
+      known:
+          row.freshness == Freshness.cached || row.freshness == Freshness.stale,
+      l10n: l10n,
+      word: () => MastermindLabels.freshness(l10n, row.freshness),
+    );
+    final evidence = _reading(
+      row.fields['evidence'],
+      known: row.evidence != Evidence.unknown,
+      l10n: l10n,
+      word: () => MastermindLabels.evidence(l10n, row.evidence),
+    );
+    final timing = [
+      if (released != null)
+        l10n.mastermindShipReleasedAgo(mastermindAgeText(l10n, released)),
+      if (observed != null)
+        l10n.mastermindShipCheckedAgo(
+          mastermindAgeText(l10n, asOf.difference(observed)),
+        ),
+    ];
+    final line = [
+      if (subject != null && subject != _withheldSubject) subject,
+      ...timing,
+    ].join(' · ');
+    final badges = [
+      if (failing)
+        MastermindStatusChip(
+          tone: AppTone.destructive,
+          label: l10n.mastermindShipFailing,
+        ),
+      if (deploy != null)
+        _StatusBadge(
+          label: l10n.mastermindShipDeployBadge(deploy),
+          style: _deployStyle(row.deployStatus),
+        ),
+      if (ci != null)
+        _StatusBadge(
+          label: l10n.mastermindShipCiBadge(ci),
+          style: _ciStyle(row.ciState),
+        ),
+      if (freshness != null)
+        _StatusBadge(label: freshness, style: (AppIcons.info, AppTone.neutral)),
+    ];
     return AppGroupedRow(
+      semanticLabel: [
+        if (row.releasedAt case final at?)
+          l10n.mastermindShipReleased(Gmt7.dateTime(at, l10n.localeName)),
+        if (observed != null)
+          l10n.mastermindShipChecked(Gmt7.dateTime(observed, l10n.localeName)),
+        ?evidence,
+      ].join(' · '),
       leading: AppIconTile(
         icon: failing ? AppIcons.warning : LucideIcons.server,
-        tone: failing ? AppTone.warning : AppTone.neutral,
+        tone: failing ? AppTone.destructive : AppTone.neutral,
       ),
       title: Text(MastermindLabels.environment(l10n, row.environment)),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-            child: Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.xs,
-              children: [
-                if (failing)
-                  AppBadge(
-                    variant: AppBadgeVariant.warning,
-                    child: Text(l10n.mastermindNeedsAttention),
-                  ),
-                _StatusBadge(
-                  label: l10n.mastermindShipDeployBadge(
-                    MastermindLabels.deployStatus(l10n, row.deployStatus),
-                  ),
-                  style: _deployStyle(row.deployStatus),
-                ),
-                _StatusBadge(
-                  label: l10n.mastermindShipCiBadge(
-                    MastermindLabels.ciState(l10n, row.ciState),
-                  ),
-                  style: _ciStyle(row.ciState),
-                ),
-                // Each environment keeps the freshness the hub published for
-                // it, whatever the age of the snapshot around it.
-                _StatusBadge(
-                  label: MastermindLabels.freshness(l10n, row.freshness),
-                  style: (AppIcons.info, AppBadgeVariant.outline),
-                ),
-              ],
+          if (badges.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+              child: Wrap(
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
+                children: badges,
+              ),
             ),
-          ),
           if (version != null || row.sha != null)
             _VersionLine(version: version, sha: row.sha),
           if (subject == _withheldSubject)
@@ -87,54 +140,42 @@ class ShipEnvironmentTile extends StatelessWidget {
                   ),
                 ],
               ),
-            )
-          else if (subject != null)
-            Text(subject),
-          if (released != null || age != null)
-            Text(
-              [
-                if (released != null)
-                  l10n.mastermindShipReleased(
-                    Gmt7.dateTime(released, l10n.localeName),
-                  ),
-                if (age != null)
-                  mastermindAgeText(l10n, Duration(seconds: age)),
-              ].join(' · '),
-              style: muted,
             ),
-          Text(
-            [
-              MastermindLabels.evidence(l10n, row.evidence),
-              if (observed != null)
-                l10n.mastermindShipChecked(
-                  Gmt7.dateTime(observed, l10n.localeName),
-                ),
-            ].join(' · '),
-            style: muted,
-          ),
+          if (line.isNotEmpty) Text(line, style: muted),
         ],
       ),
     );
   }
 
-  static (IconData, AppBadgeVariant) _deployStyle(DeployStatus status) =>
+  /// The word for one reading: the hub's reason when it could not read it,
+  /// the value when [known], and null (left out) otherwise.
+  static String? _reading(
+    HubField? field, {
+    required bool known,
+    required AppLocalizations l10n,
+    required String Function() word,
+  }) {
+    if (field != null && field.status != 'ok') return field.reason(l10n);
+    return known ? word() : null;
+  }
+
+  static (IconData, AppTone) _deployStyle(DeployStatus status) =>
       switch (status) {
-        DeployStatus.success => (AppIcons.check, AppBadgeVariant.success),
+        DeployStatus.success => (AppIcons.check, AppTone.success),
         DeployStatus.failure ||
-        DeployStatus.error => (AppIcons.warning, AppBadgeVariant.warning),
+        DeployStatus.error => (AppIcons.warning, AppTone.destructive),
         DeployStatus.pending ||
-        DeployStatus.queued => (LucideIcons.hourglass, AppBadgeVariant.outline),
-        DeployStatus.inProgress => (LucideIcons.play, AppBadgeVariant.outline),
+        DeployStatus.queued => (LucideIcons.hourglass, AppTone.neutral),
+        DeployStatus.inProgress => (LucideIcons.play, AppTone.neutral),
         DeployStatus.inactive ||
-        DeployStatus.unknown => (AppIcons.info, AppBadgeVariant.outline),
+        DeployStatus.unknown => (AppIcons.info, AppTone.neutral),
       };
 
-  static (IconData, AppBadgeVariant) _ciStyle(CiState state) => switch (state) {
-    CiState.success => (AppIcons.check, AppBadgeVariant.success),
-    CiState.failure ||
-    CiState.error => (AppIcons.warning, AppBadgeVariant.warning),
-    CiState.pending => (LucideIcons.hourglass, AppBadgeVariant.outline),
-    CiState.unknown => (AppIcons.info, AppBadgeVariant.outline),
+  static (IconData, AppTone) _ciStyle(CiState state) => switch (state) {
+    CiState.success => (AppIcons.check, AppTone.success),
+    CiState.failure || CiState.error => (AppIcons.warning, AppTone.destructive),
+    CiState.pending => (LucideIcons.hourglass, AppTone.neutral),
+    CiState.unknown => (AppIcons.info, AppTone.neutral),
   };
 }
 
@@ -142,11 +183,11 @@ class _StatusBadge extends StatelessWidget {
   const _StatusBadge({required this.label, required this.style});
 
   final String label;
-  final (IconData, AppBadgeVariant) style;
+  final (IconData, AppTone) style;
 
   @override
   Widget build(BuildContext context) =>
-      AppBadge(variant: style.$2, leading: Icon(style.$1), child: Text(label));
+      MastermindStatusChip(tone: style.$2, icon: style.$1, label: label);
 }
 
 /// `v1.2.3 · abcdef1`, the commit id in monospace and copyable. It is a
@@ -169,12 +210,8 @@ class _VersionLine extends StatelessWidget {
         if (version != null && sha != null) const Text('·'),
         if (sha != null) ...[
           Text(sha, style: const TextStyle(fontFamily: 'monospace')),
-          IconButton(
+          AppIconButton(
             tooltip: l10n.mastermindShipCopySha,
-            constraints: const BoxConstraints(
-              minWidth: AppInterfaceTokens.minTouchTarget,
-              minHeight: AppInterfaceTokens.minTouchTarget,
-            ),
             icon: const Icon(LucideIcons.copy, size: 16),
             onPressed: () async {
               await Clipboard.setData(ClipboardData(text: sha));

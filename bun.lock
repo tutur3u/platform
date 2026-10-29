@@ -1436,6 +1436,7 @@
       "dependencies": {
         "@ai-sdk/google": "^4.0.102",
         "@tuturuuu/ai": "workspace:*",
+        "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
@@ -1458,6 +1459,7 @@
         "babel-plugin-react-compiler": "^1.0.0",
         "postcss": "^8.5.31",
         "typescript": "7.0.2",
+        "vitest": "^5.0.5",
       },
     },
     "apps/redis": {

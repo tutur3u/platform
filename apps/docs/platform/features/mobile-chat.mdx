@@ -510,6 +510,20 @@ separate reset flow. Regression coverage is in `assistant_new_chat_reset_test.da
 `assistant_reset_consent_target_test.dart`; device/provider behavior remains a
 separate delivery gate.
 
+Attachments follow the same recovery as a text send. While a new chat's creation
+outcome is uncertain, the microphone, Files, Photos & Videos Library and Capture &
+Record (photo, video, audio) first offer the same Start a new chat choice and do
+not record, pick or upload anything until that reset commits; Cancel keeps the
+draft and attachments. The remote-chat check runs before this prompt, so the
+local-model lane never reaches it. Recording or picking continues after a
+committed reset. An upload that still meets a held creation fails with the
+non-retryable `newChatRequired` reason: its preview says to start a new chat first
+and shows no Retry. Regression coverage is in
+`test/features/assistant/view/assistant_send_recovery_test.dart` (microphone and
+Files gates, recording after the reset) and
+`test/features/assistant/cubit/assistant_chat_attachment_upload_test.dart`
+(`newChatRequired` for held and selected-chat creation).
+
 A known selected chat denies new creation before any hold write or POST; its clear
 status remains truthful and its history remains usable. Empty selection is required
 independently of clear status or informed consent.

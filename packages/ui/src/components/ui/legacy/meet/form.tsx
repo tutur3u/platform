@@ -8,6 +8,7 @@ import timezones from '@tuturuuu/utils/timezones';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import CreatePlanDialog from './create-plan-dialog';
+import { CreatePlanSignInPrompt } from './create-plan-sign-in-prompt';
 import DateSelector from './date-selector';
 import { TimeSelector } from './time-selector';
 import TimezoneSelector from './timezone-selector';
@@ -106,11 +107,15 @@ export default function Form({
           </Tabs>
         </div>
         <div className="flex w-full justify-center lg:justify-start">
-          <CreatePlanDialog
-            plan={plan}
-            user={user}
-            planBasePath={planBasePath}
-          />
+          {user?.id ? (
+            <CreatePlanDialog
+              plan={plan}
+              user={user}
+              planBasePath={planBasePath}
+            />
+          ) : (
+            <CreatePlanSignInPrompt />
+          )}
         </div>
       </div>
     </div>

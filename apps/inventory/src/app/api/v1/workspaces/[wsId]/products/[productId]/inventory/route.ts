@@ -1,5 +1,9 @@
 import { authorizeInventoryWorkspace } from '@tuturuuu/inventory-core/commerce/auth';
 import { safelyRevalidateWorkspaceStorefronts } from '@tuturuuu/inventory-core/commerce/public-storefront';
+import {
+  canAdjustInventoryStock,
+  canViewInventoryStock,
+} from '@tuturuuu/inventory-core/permissions';
 import { editPricedProduct } from '@tuturuuu/inventory-core/priced-product-edit';
 import { validateInventoryItemWorkspaceRelations } from '@tuturuuu/inventory-core/relation-validation';
 import { getStockChangeAmount } from '@tuturuuu/inventory-core/stock-change';
@@ -47,8 +51,7 @@ export async function POST(req: Request, { params }: Params) {
   const inventoryClient = sbAdmin.schema('private');
 
   // Check permissions
-  const { containsPermission } = permissions;
-  if (!containsPermission('update_stock_quantity')) {
+  if (!canAdjustInventoryStock(permissions)) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update stock quantities' },
       { status: 403 }
@@ -171,8 +174,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const inventoryClient = sbAdmin.schema('private');
 
   // Check permissions
-  const { containsPermission } = permissions;
-  if (!containsPermission('update_stock_quantity')) {
+  if (!canAdjustInventoryStock(permissions)) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update stock quantities' },
       { status: 403 }
@@ -532,8 +534,7 @@ export async function GET(req: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const inventoryClient = sbAdmin.schema('private');
 
-  const { containsPermission } = permissions;
-  if (!containsPermission('view_stock_quantity')) {
+  if (!canViewInventoryStock(permissions)) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 
@@ -576,8 +577,7 @@ export async function DELETE(req: Request, { params }: Params) {
   const inventoryClient = sbAdmin.schema('private');
 
   // Check permissions
-  const { containsPermission } = permissions;
-  if (!containsPermission('update_stock_quantity')) {
+  if (!canAdjustInventoryStock(permissions)) {
     return NextResponse.json(
       { message: 'Insufficient permissions to update stock quantities' },
       { status: 403 }

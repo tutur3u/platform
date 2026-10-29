@@ -1,19 +1,6 @@
-// `azure` is generic multi-tenant Microsoft, so its `email` claim is whatever
-// the signing-in directory says it is rather than a mailbox we have verified.
-// Supabase links an OAuth identity into an existing account when the provider
-// calls the address verified, so any directory that asserts a Tuturuuu address
-// is trusted with the matching account. Keep the Supabase Azure provider pinned
-// to a single tenant; on the shared `common` issuer this is an account-takeover
-// path. Re-enabled deliberately (see `fix(auth): disable generic microsoft
-// oauth`, bbc12462ef, for the removal this reverses).
-export const AUTH_OAUTH_PROVIDERS = [
-  'apple',
-  'google',
-  'azure',
-  'github',
-] as const;
+export const AUTH_OAUTH_PROVIDERS = ['apple', 'google', 'github'] as const;
 
-export type AuthOAuthProvider = (typeof AUTH_OAUTH_PROVIDERS)[number];
+export type AuthOAuthProvider = (typeof AUTH_OAUTH_PROVIDERS)[number] | 'azure';
 
 type AuthOAuthProviderOptions = {
   name: string;

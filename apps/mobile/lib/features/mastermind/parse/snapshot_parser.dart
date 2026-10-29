@@ -3,6 +3,10 @@ import 'dart:typed_data';
 
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/parse/strict_json.dart';
+import 'package:mobile/features/mastermind/presentation/hub_companion_adapter.dart';
+import 'package:mobile/features/mastermind/presentation/hub_contract_adapter.dart';
+import 'package:mobile/features/mastermind/presentation/hub_field.dart';
+import 'package:mobile/features/mastermind/presentation/usage_gaps.dart';
 
 part 'parse_items_0.dart';
 part 'parse_items_1.dart';
@@ -18,6 +22,7 @@ part 'parse_products_0.dart';
 part 'parse_products_1.dart';
 part 'parse_products_2.dart';
 part 'parse_products_3.dart';
+part 'parse_resolved_history.dart';
 part 'parse_snapshot_0.dart';
 part 'parse_snapshot_1.dart';
 part 'parse_variants.dart';
@@ -50,9 +55,18 @@ final class ParseRejected extends ParseOutcome {
   final String path;
 }
 
+/// Largest snapshot accepted on the wire, in the cache and by this parser.
+///
+/// Schema 1.4 carries a 7-day observability window at 15-minute resolution
+/// (673 points per series). Usage points alone run about 360 bytes, so seven
+/// instances need about 1.7 MB before models, fleet and delivery series; the
+/// former 600 KB cap refused real exports. The HTTP drain stops at this cap
+/// before anything is decoded, and decoding runs off the UI isolate.
+const mastermindSnapshotMaxBytes = 4000000;
+
 /// Isolate entrypoint returning categories without external input on failure.
 ParseOutcome parseMastermindSnapshot(Uint8List bytes) {
-  if (bytes.length > 600000) {
+  if (bytes.length > mastermindSnapshotMaxBytes) {
     return const ParseOutcome.rejected(RejectionReason.tooLarge);
   }
   final Object? decoded;

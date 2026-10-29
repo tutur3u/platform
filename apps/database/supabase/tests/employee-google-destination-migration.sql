@@ -1,6 +1,8 @@
 -- Rollback-only actual SQL. Provider effects below are simulations, not GoTrue.
 begin;
 create extension if not exists pgtap with schema extensions;
+-- On non-superuser local Postgres, set test.dblink_connstr to a password-authenticated
+-- connection to this same disposable database (loopback trust cannot authenticate dblink).
 create extension if not exists dblink with schema extensions;
 set local search_path=public,extensions;
 select plan(30);
@@ -10,6 +12,10 @@ insert into auth.users(id,email,email_confirmed_at,email_change,raw_app_meta_dat
 insert into auth.identities(id,provider_id,user_id,provider,identity_data) values
 ('00000000-0000-4000-8000-000000009972','stable-google-subject','00000000-0000-4000-8000-000000009971','google',
  '{"sub":"stable-google-subject","email":"google-migration-target@tuturuuu.com","email_verified":true,"name":"Preserved fixture"}');
+-- A confirmed address alone is not a verified staff identity.
+insert into auth.identities(provider_id,user_id,provider,identity_data)
+select id::text,id,'email',jsonb_build_object('sub',id::text,'email',email)
+from auth.users where id='00000000-0000-4000-8000-000000009970';
 insert into public.workspaces(id,name,creator_id,personal) values
 ('00000000-0000-0000-0000-000000000000','Google migration root','00000000-0000-4000-8000-000000009970',false)
 on conflict(id) do update set creator_id=excluded.creator_id;
@@ -54,7 +60,7 @@ language plpgsql as $$ begin
   return false;
 exception when lock_not_available then return true; end; $$;
 do $control$ begin
-  perform dblink_connect('google_migration_fk_fixture',format('dbname=%L user=%L',current_database(),current_user));
+  perform dblink_connect('google_migration_fk_fixture',coalesce(nullif(current_setting('test.dblink_connstr', true), ''), format('dbname=%L user=%L',current_database(),current_user)));
   perform dblink_exec('google_migration_fk_fixture','begin; lock table private.mail_threads in row exclusive mode');
 end; $control$;
 select ok(exists(select 1 from pg_locks where pid=(select pid from dblink('google_migration_fk_fixture','select pg_backend_pid()') as remote(pid integer))

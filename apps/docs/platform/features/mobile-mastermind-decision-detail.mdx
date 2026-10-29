@@ -1,0 +1,107 @@
+---
+title: "Mastermind decision detail"
+description: "Mobile ask detail layout, plain option labels, radio semantics and the sticky reply action."
+---
+
+**Decision detail layout (2026-10-29).** Scope: the item detail
+(`/mastermind/inbox/item/:itemId`) and the shared Mastermind widgets in
+`apps/mobile/lib/features/mastermind/view/widgets/` (`mastermind_group.dart`,
+`mastermind_list_row.dart`, `mastermind_status_chip.dart`,
+`mastermind_action_bar.dart`), which Inbox, Work, Threads and Ship also use.
+
+- **One surface level.** A section is a header plus one theme-tinted surface
+  with no border. Rows are split by hairlines only, and chips are soft fills, so
+  no box is nested in another. Colours come from theme tokens only.
+- **The ask** sits flat on the page: the title, then kind, product and state
+  chips. Next comes when it was asked, both relative and in absolute GMT+7. The
+  full ask text follows, never ellipsized.
+- **Links.** http(s) links in the ask open through the app link launcher. A
+  link keeps balanced parentheses (`.../wiki/Privacy_(disambiguation)`). It
+  drops trailing sentence punctuation, and a closing parenthesis that wraps the
+  link in prose.
+- **Plain option labels.** A row shows the hub's `hub_options` label when there
+  is one. Otherwise, if the option is a ledger identifier (`entity_phuc`,
+  `ENTITY_PHUC`, `entity_Phuc`, `entityPhuc`), the row uses the ask's matching
+  `KEY: explanation` line. That match ignores case and separators. Failing both,
+  the identifier is read as words in sentence case ("Entity phuc"). A raw key is
+  never shown; written words and short initialisms ("OK") are left as written.
+  Labels are display text only; the reply still sends the canonical
+  `option_index`.
+- **Option rows are radios.** Each row is announced as checked or unchecked in
+  one mutually exclusive group. The recommended row adds a star and the word
+  "Recommended" to its label ("X · Recommended"), never colour or a border alone.
+- **Select, then send.** Tapping a row only selects it. The sticky action reads
+  "Send “option”", or "Send reply" for written words, and stays disabled until
+  something is chosen. It sits above the floating dock: it takes the shell's
+  bottom clearance, and the scroll content ends above it. Sending an option
+  starts the same five-second "Sending · Undo" window as the one-tap option
+  buttons on Home and Inbox rows. Free text still asks for confirmation.
+- **Write your own.** Free text is collapsed behind "Write your own". It starts
+  open when the ask has no real options or a draft exists. Typing clears a
+  chosen option, so the latest intent wins.
+- **Stale selection.** A refresh that changes the question's `version_hash`, or
+  changes, reorders or removes its options, clears an unsent selection. An index
+  therefore never points at a different answer.
+
+Optional snapshot deadline and urgency values appear when published; unknown
+values are omitted.
+There are no Mastermind golden tests; the screen is covered by widget tests.
+
+Coverage: `apps/mobile/test/features/mastermind/view/`:
+`mastermind_decision_redesign_test.dart` (labels, radio states, links, sticky
+action, collapsed free text and stale selection), `mastermind_item_page_test.dart`
+and `mastermind_option_undo_test.dart`.
+
+### Decision detail
+
+Scope: `/mastermind/inbox/item/:itemId` on mobile. The default build reads the
+screened snapshot fields only: title, ask text (selectable, never clamped),
+options with the recommended option first, option rows that select and a sticky
+Send action that starts the five-second Undo, and the optional `deadline` (`within_hours`, `today`,
+`tonight`, `this_week`) and `urgency` (`high` and `urgent` show a badge).
+Unknown timing values are absent, never a rejected snapshot. When the hub
+published only its stand-in, "Full details are on the Mac" stays. A lane whose
+`work.lanes[].waiting_on_ask_id` matches the ask shows a "Lane ⟶" row.
+
+**Full ask (flag-dark).** `MASTERMIND_ASK_DETAILS` is a Dart define, default
+`false`. When on, the page requests `GET /v1/asks/<id>` once per open ask version
+over
+the same owner-only hub origin and Supabase token provider as
+`POST /v1/replies` (one silent refresh on 401, no redirects, 64 KiB body cap,
+nothing logged). The endpoint is approved for non-sensitive items only. The
+payload is parsed non-strictly, matched to the snapshot item's id and
+`version_hash`, and held in page memory only, never on disk. Each section
+renders only when its field is present:
+
+- `action_kind`: `answer` "Answer here", `run_on_mac` "Run at your Mac" with a
+  disabled "Remind me at Mac" (coming soon), `physical` "Needs a physical step",
+  `fyi` "For your information"; `action_summary` underneath.
+- `reason` as "Why recommended"; "If you don't answer" reads
+  "If no answer: <option>" from a valid `default_option_index`, hidden otherwise.
+- `risk`, `reversible`, `blocks_count`, `deadline_at` (GMT+7) and
+  `answered_via` (`phone`, `mac`, `chat`, `auto`, `batch`; anything else reads
+  "Answered elsewhere").
+- `links[]` are `{label, url}` rows opened in the system browser. The client
+  drops any URL that is not `https` on `tuturuuu.com` or a subdomain, or that
+  carries credentials.
+
+A 404 for the requested current version means the hub withholds the ask (every
+sensitive item) and shows a
+neutral card: lock glyph, "Details are on the Mac", owner and age, with no
+title, text, options or reply. Any other failure keeps the snapshot view. An
+ask that left the snapshot keeps "This was answered or withdrawn". Sensitive
+full text, device-auth gating and a "Remind me at Mac" action are not built;
+they wait on the hub's sensitive-ask decision. Enabling the flag is held for
+the hub endpoint, exact-commit mobile CI and security review.
+
+Regression coverage: `asks/ask_detail_parser_test.dart` (full, partial,
+unknown fields and enums, allowlist), `asks/hub_ask_detail_source_test.dart`
+(flag default, request shape, 404/403/401, size cap) and
+`view/mastermind_item_detail_test.dart` (snapshot-only view, every action kind,
+link opening with a mocked opener, 404 neutral card, version mismatch, delayed outcomes across version changes, sticky Send/
+Undo, English and Vietnamese at 320px at 2.0x), driven by `test/fixtures/mastermind/ask_details.json`.
+
+Detail responses are scoped to the requested item ID and version. A snapshot
+version change resets the in-memory result and starts a new read; obsolete
+responses cannot hide the new snapshot or replace its matching detail. A matching
+withheld result suppresses both body reply controls and the sticky action.

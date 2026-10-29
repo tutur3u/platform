@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { TypedSupabaseClient } from '../types';
-import { getVerifiedAuthEmail } from './user';
+import { getVerifiedAuthEmail, getVerifiedAuthUser } from './user';
 
 function admin(user: unknown, error: unknown = null) {
   return {
@@ -50,5 +50,33 @@ describe('verified Auth email', () => {
     await expect(
       getVerifiedAuthEmail(admin(null, new Error('private error')), 'actor')
     ).rejects.toThrow('AUTH_IDENTITY_LOOKUP_FAILED');
+  });
+});
+
+describe('current Auth user', () => {
+  it('retains authoritative provider identities for the matching subject', async () => {
+    const user = {
+      id: 'actor',
+      email: 'staff@tuturuuu.com',
+      email_confirmed_at: '2026-01-01',
+      identities: [{ provider: 'azure', identity_data: { tid: 'synthetic' } }],
+    };
+    expect(await getVerifiedAuthUser(admin(user), 'actor')).toBe(user);
+  });
+  it.each([null, { id: 'other' }])(
+    'fails closed for an absent or mismatched subject',
+    async (user) => {
+      expect(await getVerifiedAuthUser(admin(user), 'actor')).toBeNull();
+    }
+  );
+  it('fails closed for a rejected lookup', async () => {
+    expect(
+      await getVerifiedAuthUser(admin(null, new Error('private')), 'actor')
+    ).toBeNull();
+    const client = admin(null);
+    client.auth.admin.getUserById = vi
+      .fn()
+      .mockRejectedValue(new Error('private'));
+    expect(await getVerifiedAuthUser(client, 'actor')).toBeNull();
   });
 });

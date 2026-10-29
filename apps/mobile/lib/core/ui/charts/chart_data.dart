@@ -48,10 +48,11 @@ class ChartSeries {
 
 @immutable
 class ChartBand {
-  const ChartBand({required this.label, this.t, this.y})
+  const ChartBand({required this.label, this.t, this.y, this.end})
     : assert((t == null) != (y == null), 'A rule has exactly one axis');
   final String label;
   final DateTime? t;
+  final DateTime? end;
   final double? y;
 }
 

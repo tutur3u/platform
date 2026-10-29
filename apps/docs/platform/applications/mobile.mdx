@@ -1,7 +1,7 @@
 ---
 title: "Mobile"
 description: "Native workspace products, defaults, account controls, and offline behavior."
-updatedAt: '2026-10-27'
+updatedAt: '2026-10-29'
 ---
 
 The Flutter app (`apps/mobile`) brings eligible Tuturuuu workspace tools into a
@@ -198,3 +198,41 @@ your PC** or **Unknown publisher**. Verify the release SHA-256 checksum before
 using **More info → Run anyway**, if Windows offers it. Use the web app when
 organization policy blocks unsigned installers. See the
 [desktop installation and signing plan](/build/devops/desktop-beta-distribution).
+
+## Startup recovery and performance inspection
+
+On Android and iOS, optional public model-download recovery starts after the
+first painted Flutter frame. This moves native transfer restoration and model
+file checks out of first-frame contention. The owning Settings flow retains
+initialization failures and retry behavior; other platforms do not schedule
+this recovery. Required authentication, appearance, encrypted cache and pending
+mutation restoration still finish before `runApp`.
+
+Regression coverage: `test/core/startup/optional_startup_test.dart` verifies
+paint-before-recovery ordering, one invocation, subsequent frame progress while
+recovery is pending, and synchronous/asynchronous failure containment.
+
+For a build-free performance pass, follow `bootstrap.dart` and
+`app/view/app.dart` separately: unawaited work can still compete with painting,
+and provider construction/locale loading happens when the root mounts. Record
+asset byte sizes and dependency/native plugin candidates as source measurements,
+not installed bundle sizes. Dynamic server icon selection references many
+constant glyphs in `core/icons/platform_icon_data.dart`; retain that contract
+when evaluating font subsets. Measure release size and startup timing separately
+in admitted CI/device workflows before claiming a numeric improvement.
+
+### Independent startup state restoration
+
+After Firebase/observability handlers and Supabase have settled, bootstrap uses
+`initializeStartupState` to overlap account appearance reads with offline state
+restoration via `Future.wait`. Keep the identity/MFA boundary before appearance,
+and keep CacheStore before OfflineMutationQueue in a single branch: a cache
+failure must skip queue restoration. Each branch retains its original fallback
+or error log with the original error/stack; both finish before routes, builder
+and `runApp`. Firebase and Supabase remain sequential to preserve platform-error
+handler coverage during session restoration.
+
+`test/core/startup/startup_state_test.dart` uses completion barriers to prove
+concurrency, both completion orders, queue ordering, sync/async cache and queue
+failure reporting, appearance fallback and unexpected-error propagation. These
+are orchestration fixtures, not native-plugin or device latency measurements.

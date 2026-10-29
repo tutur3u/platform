@@ -4,6 +4,7 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Pull requests and merges, read-only: the open count and the merge-to-live
@@ -23,7 +24,7 @@ class ShipDeliverySection extends StatelessWidget {
         delivery.coverage == Coverage.missing ||
         delivery.coverage == Coverage.unavailable;
     final empty = noSource || delivery.isEmpty;
-    return AppGroupedSection.spaced(
+    return MastermindGroup(
       caption: l10n.mastermindShipPullRequestsTitle,
       footer: delivery.coverage == Coverage.ok || empty
           ? null
@@ -49,10 +50,13 @@ class ShipDeliverySection extends StatelessWidget {
               leading: const AppIconTile(icon: LucideIcons.gitPullRequest),
               title: Text(MastermindLabels.product(pr.product)),
               subtitle: Text(l10n.mastermindChartOpenPrs),
-              trailing: Text(
-                pr.count == null
-                    ? l10n.mastermindUnavailable
-                    : l10n.mastermindShipOpenCount(pr.count!),
+              trailing: SizedBox(
+                width: 120,
+                child: Text(
+                  pr.count == null
+                      ? l10n.mastermindUnavailable
+                      : l10n.mastermindShipOpenCount(pr.count!),
+                ),
               ),
             ),
           for (final merge in delivery.mergeToLive)
@@ -63,12 +67,15 @@ class ShipDeliverySection extends StatelessWidget {
                 '${l10n.mastermindChartMergeToLive} · '
                 '${l10n.mastermindSamples(merge.samples)}',
               ),
-              trailing: Text(
-                merge.medianMinutes == null
-                    ? l10n.mastermindUnavailable
-                    : l10n.mastermindUnitMinutes(
-                        merge.medianMinutes!.round().toString(),
-                      ),
+              trailing: SizedBox(
+                width: 120,
+                child: Text(
+                  merge.medianMinutes == null
+                      ? l10n.mastermindUnavailable
+                      : l10n.mastermindUnitMinutes(
+                          merge.medianMinutes!.round().toString(),
+                        ),
+                ),
               ),
             ),
         ],

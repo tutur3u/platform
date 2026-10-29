@@ -1,5 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
+-- On non-superuser local Postgres, set test.dblink_connstr to a password-authenticated
+-- connection to this same disposable database (loopback trust cannot authenticate dblink).
 create extension if not exists dblink with schema extensions;
 set local search_path=public,extensions;
 select no_plan();
@@ -46,7 +48,7 @@ create function public.fixture_saga_create_call(action text,input jsonb) returns
  select public.calendar_provider_saga_operation(action,'00000000-0000-4000-8000-000000008711','00000000-0000-4000-8000-000000008743','00000000-0000-4000-8000-000000008701',input);
 $$;
 commit;
-select dblink_connect('saga_competitor','dbname=postgres user=postgres password=postgres host=127.0.0.1');
+select dblink_connect('saga_competitor',coalesce(nullif(current_setting('test.dblink_connstr', true), ''), 'dbname=postgres user=postgres password=postgres host=127.0.0.1'));
 begin;
 select is(public.fixture_saga_call('inspect',public.fixture_saga_input())->>'generation','0','saga captures shared initial generation before provider work');
 select is(public.fixture_saga_call('admit',public.fixture_saga_input())->>'phase','prepared','sealed dual-source intent admitted atomically');
@@ -131,11 +133,11 @@ create function public.fixture_native_stale_admit() returns text language plpgsq
  return 'unexpected'; exception when others then return sqlstate||':'||sqlerrm; end;
 $$;
 commit;
-select dblink_connect('native_writer','dbname=postgres user=postgres password=postgres host=127.0.0.1');
+select dblink_connect('native_writer',coalesce(nullif(current_setting('test.dblink_connstr', true), ''), 'dbname=postgres user=postgres password=postgres host=127.0.0.1'));
 -- The update holds the row lock before admission; generation remains zero.
 select dblink_exec('native_writer','begin');
 select dblink_exec('native_writer',$$update public.workspace_calendar_events set title='encrypted-fresh' where id='00000000-0000-4000-8000-000000008744'$$);
-select dblink_connect('native_admission','dbname=postgres user=postgres password=postgres host=127.0.0.1');
+select dblink_connect('native_admission',coalesce(nullif(current_setting('test.dblink_connstr', true), ''), 'dbname=postgres user=postgres password=postgres host=127.0.0.1'));
 select dblink_send_query('native_admission','select public.fixture_native_stale_admit()');
 do $$ declare deadline timestamptz:=clock_timestamp()+interval '3 seconds'; begin
  loop exit when exists(select 1 from pg_stat_activity where query='select public.fixture_native_stale_admit()' and wait_event_type='Lock');

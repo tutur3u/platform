@@ -51,6 +51,7 @@
                 "group": "Features",
                 "pages": [
                   "platform/features/search-indexing",
+                  "platform/features/legal-publications",
                   "platform/features/command-center-dashboard",
                   "platform/personal-journal",
                   "platform/features/assistant-live",
@@ -63,6 +64,9 @@
                   "platform/features/task-reminder-delivery",
                   "platform/features/mobile-chat",
                   "platform/features/mobile-mastermind",
+                  "platform/features/mobile-mastermind-inbox",
+                  "platform/features/mobile-mastermind-answered-elsewhere",
+                  "platform/features/mobile-mastermind-decision-detail",
                   "platform/features/mira-client-actions",
                   "platform/features/colab",
                   "platform/features/lettin",
@@ -357,6 +361,8 @@
                   "build/devops/standalone-api",
                   "build/devops/wave1-native-cutover",
                   "build/devops/native-start-migration",
+                  "build/devops/tanstack-cloudflare-migration-inventory",
+                  "build/devops/playground-isolation-contract",
                   "build/devops/contacts-start-candidate",
                   "build/devops/apps-viteplus-cloudflare",
                   "build/devops/start-bridge",
@@ -374,6 +380,8 @@
                   "build/devops/chat-realtime-runbook",
                   "build/devops/programming-realtime-runbook",
                   "build/devops/hive-realtime-runbook",
+                  "build/devops/hive-cloudflare-maintenance",
+                  "build/devops/hive-cloudflare-migration",
                   "build/devops/log-drain-observability",
                   "build/devops/adaptive-abuse-rate-limits",
                   "build/devops/storage-egress-protection",
@@ -532,6 +540,7 @@
                 "pages": [
                   "reference/api-reference/introduction",
                   "reference/api-reference/ai-studio",
+                  "reference/api-reference/mastermind-push-events",
                   "reference/api-reference/endpoint/generate"
                 ]
               },

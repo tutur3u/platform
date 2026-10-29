@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database, TablesInsert, WorkspaceRole } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
+import { filterCreatorGrantPermissions } from '@/lib/workspace-creator-grant-permissions';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
@@ -24,7 +25,11 @@ async function authorizeRolesRequest(req: Request, wsId: string) {
     };
   }
 
-  return { error: null, permissions: access.permissions };
+  return {
+    error: null,
+    permissions: access.permissions,
+    userId: access.user?.id,
+  };
 }
 
 export async function GET(req: Request, { params }: Params) {
@@ -99,7 +104,11 @@ export async function POST(req: Request, { params }: Params) {
       { status: 400 }
     );
 
-  const { permissions } = data;
+  const permissions = await filterCreatorGrantPermissions(supabase, {
+    permissions: data.permissions,
+    userId: authorization.userId,
+    wsId: resolvedWsId,
+  });
   const coreData: TablesInsert<'workspace_roles'> = {
     name: data.name,
     ws_id: resolvedWsId,

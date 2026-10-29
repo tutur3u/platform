@@ -88,11 +88,11 @@ void main() {
       expect(find.text('Implementation'), findsOneWidget);
     });
 
-    testWidgets('an unknown age says so and no ETA hides the line', (
+    testWidgets('an unpublished age gives a reason and no ETA hides the line', (
       tester,
     ) async {
       await pumpWork(tester, workJson([workLane(1, ageSeconds: null)]));
-      expect(find.text('Running · age unknown'), findsOneWidget);
+      expect(find.text('Running · age not published'), findsOneWidget);
       expect(find.textContaining('left'), findsNothing);
       expect(find.textContaining('null'), findsNothing);
     });
@@ -163,10 +163,13 @@ void main() {
       expect(find.text('Old running'), findsOneWidget);
     });
 
-    testWidgets('a Home lane chip opens Work on that state', (tester) async {
+    testWidgets('a Home activity tile opens Work on that state', (
+      tester,
+    ) async {
       final router = workRouter(Routes.mastermind);
       await pumpWork(tester, workJson(_mixed), router: router);
-      await tester.tap(find.widgetWithText(AppChip, '1 failed'));
+      // The Home Failed tile.
+      await tester.tap(find.text('Failed'));
       await tester.pumpAndSettle();
       expect(find.text('Broken lane'), findsOneWidget);
       expect(find.text('Old running'), findsNothing);
@@ -398,10 +401,7 @@ void main() {
       final json = workJson(_mixed)
         ..['generated_at'] = '2026-01-31T14:30:00+00:00';
       await pumpWork(tester, json);
-      expect(
-        find.textContaining('Mastermind last published 3 h ago'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Published 3 h ago'), findsOneWidget);
       expect(find.text('Broken lane'), findsOneWidget);
     });
 
@@ -485,12 +485,13 @@ void main() {
       expect(location(), '${Routes.mastermindWork}?product=Mastermind');
     });
 
-    testWidgets('Back from a lane keeps the Home failed-chip filter', (
+    testWidgets('Back from a lane keeps the Home Failed-tile filter', (
       tester,
     ) async {
       final router = workRouter(Routes.mastermind);
       await pumpWork(tester, workJson(_mixed), router: router);
-      await tester.tap(find.widgetWithText(AppChip, '1 failed'));
+      // The Home Failed tile.
+      await tester.tap(find.text('Failed'));
       await tester.pumpAndSettle();
       expect(find.text('Old running'), findsNothing);
 

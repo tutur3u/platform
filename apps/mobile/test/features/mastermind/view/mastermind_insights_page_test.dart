@@ -4,6 +4,8 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/charts/charts.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
+import 'package:mobile/features/mastermind/view/insights/pacing_glyph.dart';
+import 'package:mobile/features/mastermind/view/insights/usage_chart_panel.dart';
 
 import '../../../helpers/mastermind_ship_pump.dart';
 import '../../../helpers/mastermind_usage_fixture.dart';
@@ -50,6 +52,32 @@ final Map<String, dynamic> _usage = usageJson(
 );
 
 void main() {
+  testWidgets('Vietnamese at 200% keeps the final control above the dock', (
+    tester,
+  ) async {
+    await pumpInsights(
+      tester,
+      _usage,
+      locale: const Locale('vi'),
+      textScale: 2,
+      size: const Size(430, 800),
+      dockClearance: 120,
+    );
+    expect(
+      Localizations.localeOf(
+        tester.element(find.byType(CustomScrollView).first),
+      ).languageCode,
+      'vi',
+    );
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -20000));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(
+      tester.getRect(find.byType(AppGroupedRow).last).bottom,
+      lessThanOrEqualTo(680),
+    );
+  });
+
   group('pools', () {
     testWidgets('most urgent first: SHORT, unknown, OK, SURPLUS', (
       tester,
@@ -65,24 +93,37 @@ void main() {
       expect([...tops]..sort(), tops);
     });
 
-    testWidgets('pacing is always a word with a shape', (tester) async {
+    testWidgets('one verdict per pool, a word with a shape', (tester) async {
       await pumpInsights(tester, _usage);
-      for (final word in ['SHORT', 'OK', 'SURPLUS', 'unknown']) {
-        expect(find.text(word), findsWidgets, reason: word);
+      // B is SHORT. A and C (session unread, weekly OK) are on pace, and the
+      // Codex pool's worse window is OK, not its SURPLUS session.
+      expect(find.byType(PacingGlyph), findsNWidgets(4));
+      expect(find.text('Running short'), findsOneWidget);
+      expect(find.text('On pace'), findsNWidgets(3));
+      for (final word in ['SHORT', 'OK', 'SURPLUS', 'unknown', 'Pacing']) {
+        expect(find.text(word), findsNothing, reason: word);
       }
-      // One glyph per window of every pool, whatever the word.
-      expect(find.byType(StatusGlyph), findsNWidgets(8));
-      expect(find.text('Reserve pacing (chart rule)'), findsWidgets);
-      expect(
-        find.text('This is the chart reserve check, not the routing decision.'),
-        findsOneWidget,
-      );
     });
 
-    testWidgets('a null reading says Unavailable, never zero', (tester) async {
+    testWidgets('the reserve pacing note sits behind the info button', (
+      tester,
+    ) async {
       await pumpInsights(tester, _usage);
-      expect(find.text('Unavailable'), findsWidgets);
+      const info = 'This is the chart reserve check, not the routing decision.';
+      expect(find.text(info), findsNothing);
+      await tester.tap(find.byTooltip('Reserve pacing (chart rule)').first);
+      await tester.pumpAndSettle();
+      expect(find.text(info), findsOneWidget);
+      expect(find.text('Reserve pacing (chart rule)'), findsOneWidget);
+    });
+
+    testWidgets('an unread window shows a dash, never zero', (tester) async {
+      await pumpInsights(tester, _usage);
+      expect(find.text('—'), findsOneWidget);
+      expect(find.text('Not published yet'), findsOneWidget);
       expect(find.text('0%'), findsNothing);
+      expect(find.text('Session left'), findsNWidgets(4));
+      expect(find.text('Weekly left'), findsNWidgets(4));
     });
 
     testWidgets('shows burn and a signed projection', (tester) async {
@@ -91,15 +132,18 @@ void main() {
       expect(find.textContaining('Projected at reset +12 pp'), findsWidgets);
     });
 
-    testWidgets('the reset is an absolute GMT+7 time', (tester) async {
+    testWidgets('the reset is a GMT+7 time, with the day when it differs', (
+      tester,
+    ) async {
       await pumpInsights(tester, _usage);
-      expect(find.text('Resets Jan 31, 2026 18:00 GMT+7'), findsWidgets);
+      // Read at 00:30 on Feb 1 (GMT+7); the window reset at 18:00 on Jan 31.
+      expect(find.text('Resets Jan 31 18:00'), findsWidgets);
     });
 
     testWidgets('pools are never stacked: one chart each', (tester) async {
       await pumpInsights(tester, _usage);
       // Four pools, plus balance and burn for the one Codex pool with credits.
-      expect(find.byType(ChartPanel), findsNWidgets(6));
+      expect(find.byType(UsageChartPanel), findsNWidgets(6));
       expect(find.text('Claude pool A'), findsWidgets);
     });
 
@@ -171,7 +215,7 @@ void main() {
         ),
       );
       expect(find.byType(ChartPlot), findsNothing);
-      expect(find.byType(ChartPanel), findsOneWidget);
+      expect(find.byType(UsageChartPanel), findsOneWidget);
       expect(find.text('Unavailable'), findsWidgets);
     });
 
@@ -186,8 +230,13 @@ void main() {
           series: usageSeries('Claude pool A'),
         ),
       );
-      expect(find.textContaining('Partial data: Claude pool A'), findsWidgets);
+      // A muted caption says so; the plot's text equivalent leads with it.
+      expect(find.text('Partial data'), findsOneWidget);
       expect(find.byType(ChartPlot), findsOneWidget);
+      expect(
+        tester.widget<ChartPlot>(find.byType(ChartPlot)).summary,
+        startsWith('Partial data: Claude pool A'),
+      );
     });
   });
 
@@ -195,7 +244,7 @@ void main() {
     testWidgets('empty: nothing reported', (tester) async {
       await pumpInsights(tester, usageJson());
       expect(find.text('No usage data reported.'), findsOneWidget);
-      expect(find.byType(ChartPanel), findsNothing);
+      expect(find.byType(UsageChartPanel), findsNothing);
     });
 
     testWidgets('stale data reads as last published, pools still shown', (
@@ -204,10 +253,7 @@ void main() {
       final json = Map<String, dynamic>.of(_usage)
         ..['generated_at'] = '2026-01-31T14:30:00+00:00';
       await pumpInsights(tester, json);
-      expect(
-        find.textContaining('Mastermind last published 3 h ago'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Published 3 h ago'), findsOneWidget);
       expect(find.text('Claude pool B'), findsWidgets);
     });
 

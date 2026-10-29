@@ -26,7 +26,7 @@ jobs:
       workflow_name: contacts-start-candidate.yaml
   candidate:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
@@ -49,6 +49,7 @@ jobs:
           name: contacts-start-census
           path: ${{ runner.temp }}/contacts-start-census.json
           retention-days: 7
+          if-no-files-found: error
       - run: bun run --cwd apps/contacts test:candidate
       - run: bun run --cwd apps/contacts test:staging:policy
       - run: bun run --cwd apps/contacts test:candidate:controls

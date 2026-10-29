@@ -1,4 +1,28 @@
 {
+  "mastermindAskedBy": "From {by}",
+  "@mastermindAskedBy": {
+    "placeholders": {
+      "by": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindUnrecognisedValue": "Unrecognised value",
+  "mastermindAskTruncated": "Ask truncated; full text on the Mac",
+  "mastermindReplyFailedShort": "Not sent · tap to retry",
+  "mastermindReplySendingOption": "Sending “{option}”",
+  "@mastermindReplySendingOption": {"placeholders": {"option": {"type": "String"}}},
+  "mastermindReplyWriteOwn": "Write your own",
+  "mastermindReplySendOption": "Send “{option}”",
+  "@mastermindReplySendOption": {"placeholders": {"option": {"type": "String"}}},
+  "mastermindAskedAt": "Asked {age} · {time}",
+  "@mastermindAskedAt": {"placeholders": {"age": {"type": "String"}, "time": {"type": "String"}}},
+  "mastermindReplyUndo": "Undo",
+  "mastermindReplyNotSentReview": "Couldn't send · open to review",
+  "mastermindAnswerExpand": "Show full answer",
+  "mastermindAnswerCollapse": "Show less",
+  "mastermindReplyQueuedAt": "Queued {time}",
+  "@mastermindReplyQueuedAt": {"placeholders": {"time": {"type": "String"}}},
   "assistantDownloadPhasePending": "Pending",
   "assistantDownloadPhaseQueued": "Queued",
   "assistantDownloadPhaseTransferring": "Downloading",
@@ -1323,17 +1347,39 @@
   "assistantAttachmentUploadFailed": "An attachment failed to upload. Remove it and try again before sending.",
   "assistantAttachmentFailureForbidden": "This chat can't accept attachments. Remove it or start a new chat.",
   "assistantAttachmentFailureNetwork": "Upload interrupted. Check your connection and tap Retry.",
+  "assistantAttachmentFailureNewChatRequired": "Start a new chat first, then attach the file again.",
   "assistantAttachmentFailureServer": "Upload didn't finish. Tap Retry.",
   "assistantAttachmentFailureTooLarge": "File is larger than 32 MB. Remove it or attach a smaller file.",
   "assistantAttachmentFailureUnsupported": "This file type isn't supported. Remove it to send.",
   "assistantAttachmentNotSentMany": "{count} attachments didn't upload. Retry or remove them to send.",
-  "@assistantAttachmentNotSentMany": {"placeholders": {"count": {"type": "int"}}},
+  "@assistantAttachmentNotSentMany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "assistantAttachmentNotSentOne": "{name} didn't upload. {reason}",
-  "@assistantAttachmentNotSentOne": {"placeholders": {"name": {"type": "String"}, "reason": {"type": "String"}}},
+  "@assistantAttachmentNotSentOne": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
   "assistantAttachmentPreparing": "Preparing",
   "assistantAttachmentRetry": "Retry",
   "assistantAttachmentUploadingPercent": "{percent}%",
-  "@assistantAttachmentUploadingPercent": {"placeholders": {"percent": {"type": "int"}}},
+  "@assistantAttachmentUploadingPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "assistantAttachmentUploadPending": "Wait for attachment uploads to finish before sending.",
   "assistantAudioUnavailable": "Audio was interrupted. Reconnect to continue this conversation.",
   "assistantCalendarLabel": "Calendar",
@@ -5322,6 +5368,16 @@
       }
     }
   },
+  "@mastermindItemFor": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindLaneAgeLine": {
     "placeholders": {
       "state": {
@@ -5363,6 +5419,13 @@
       }
     }
   },
+  "@mastermindListShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "@mastermindLiveAgo": {
     "placeholders": {
       "age": {
@@ -5384,7 +5447,24 @@
       }
     }
   },
+  "@mastermindNameProductArea": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindNeedsYouSeeAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindNotReportingCount": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -5402,6 +5482,20 @@
     "placeholders": {
       "option": {
         "type": "String"
+      }
+    }
+  },
+  "@mastermindPublishedAgo": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindQueuedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   },
@@ -5477,6 +5571,16 @@
       }
     }
   },
+  "@mastermindSectionWithBasis": {
+    "placeholders": {
+      "section": {
+        "type": "String"
+      },
+      "basis": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindSecurityLine": {
     "placeholders": {
       "product": {
@@ -5507,6 +5611,13 @@
   "@mastermindShipChecked": {
     "placeholders": {
       "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipCheckedAgo": {
+    "placeholders": {
+      "age": {
         "type": "String"
       }
     }
@@ -5550,6 +5661,20 @@
     "placeholders": {
       "dateTime": {
         "type": "String"
+      }
+    }
+  },
+  "@mastermindShipReleasedAgo": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+        }
+      }
+    },
+  "@mastermindShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   },
@@ -5718,6 +5843,20 @@
       }
     }
   },
+  "@mastermindUsageTableFor": {
+    "placeholders": {
+      "chart": {
+        "type": "String"
+        }
+      }
+    },
+  "@mastermindWaitingOnYou": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "@mastermindWeeklyLeft": {
     "placeholders": {
       "value": {
@@ -5727,7 +5866,11 @@
   },
   "mastermindAccountFilter": "Account",
   "mastermindActivityEmpty": "No recent activity",
+  "mastermindActivityFailed": "Failed",
+  "mastermindActivityIdle": "Idle",
+  "mastermindActivityRunning": "Running",
   "mastermindActivityTitle": "Activity",
+  "mastermindActivityWaiting": "Waiting",
   "mastermindAgeBasis": "Age basis",
   "mastermindAgeDays": "{count, plural, =1{1 day ago} other{{count} days ago}}",
   "mastermindAgeHours": "{count, plural, =1{1 h ago} other{{count} h ago}}",
@@ -5871,13 +6014,16 @@
   "mastermindForecastNone": "Not projected to run out before reset",
   "mastermindFreshCached": "cached",
   "mastermindFreshFresh": "fresh",
+  "mastermindFromFleet": "From fleet reports",
+  "mastermindFromLanes": "From lane reports",
   "mastermindGroupActions": "Actions",
   "mastermindGroupDecisions": "Decisions for you",
   "mastermindGroupFyi": "For your information",
   "mastermindInboxNoMatches": "No matching items",
-  "mastermindInboxSearchPlaceholder": "Search Needs you",
+  "mastermindInboxSearchPlaceholder": "Search asks",
   "mastermindInsightsLabel": "Insights",
   "mastermindItemAnsweredTitle": "This was answered or withdrawn",
+  "mastermindItemFor": "{kind} for {subject}",
   "mastermindItemGoneTitle": "This item is no longer in Mastermind",
   "mastermindItemUpdated": "This question was updated",
   "mastermindKindAction": "Action",
@@ -5893,7 +6039,7 @@
   "mastermindKindTest": "Test",
   "mastermindLaneAge": "Age",
   "mastermindLaneAgeLine": "{state} for {duration}",
-  "mastermindLaneAgeUnknown": "{state} · age unknown",
+  "mastermindLaneAgeUnknown": "{state} · age not published",
   "mastermindLaneArea": "Area",
   "mastermindLaneEta": "ETA {duration}",
   "mastermindLaneEtaAbout": "About {duration} left",
@@ -5911,10 +6057,14 @@
   "mastermindLaneUpdated": "This lane was updated",
   "mastermindLastPublished": "Mastermind last published {age} · {time}",
   "mastermindLess": "Less",
+  "mastermindListShowAll": "Show all {count}",
+  "mastermindListShowFewer": "Show fewer",
   "mastermindLiveAgo": "Live {age}",
   "mastermindLiveFor": "live {duration}",
   "mastermindMeasuredRuns": "{count, plural, =1{1 measured run} other{{count} measured runs}}",
+  "mastermindModelNotReported": "Model not reported",
   "mastermindMore": "More",
+  "mastermindNameProductArea": "{product} {area}",
   "mastermindNeedsAttention": "Needs attention",
   "mastermindNeedsYouHint": "Answer in the Inbox on your Mac.",
   "mastermindNeedsYouSeeAll": "See all ({count})",
@@ -5924,18 +6074,23 @@
   "mastermindNoSnapshotTitle": "Mastermind hasn't published yet",
   "mastermindNotConfiguredMessage": "Mastermind isn't connected on this build.",
   "mastermindNotConnectedTitle": "Not connected",
+  "mastermindNotReported": "Not reported",
+  "mastermindNotReportingCount": "{count} not reporting",
   "mastermindNotReversible": "Not reversible",
   "mastermindNothingNeedsReply": "Nothing needs a reply",
   "mastermindNothingNeedsYou": "Nothing needs you",
   "mastermindNowLabel": "Now",
   "mastermindObservedAt": "Observed",
   "mastermindOfflineShowing": "Offline · showing {time}",
+  "mastermindOpensLanes": "Opens the lane list",
   "mastermindOptionRecommended": "{option} · Recommended",
   "mastermindOriginLabel": "Origin",
   "mastermindPartialBucket": "partial bucket",
   "mastermindProductFilter": "Product",
   "mastermindProductsLabel": "Products",
-  "mastermindQuotaEmpty": "No quota data",
+  "mastermindPublishedAgo": "Published {age}",
+  "mastermindQueuedCount": "{count} queued",
+  "mastermindQuotaEmpty": "Quota not reported",
   "mastermindQuotaTitle": "Quota",
   "mastermindRange24h": "24 h",
   "mastermindRange7d": "7 days",
@@ -5995,6 +6150,7 @@
   "mastermindScopeFleet": "Fleet",
   "mastermindScopeModels": "Models",
   "mastermindScopeUsage": "Usage",
+  "mastermindSectionWithBasis": "{section} · {basis}",
   "mastermindSecurityFix": "Security fix",
   "mastermindSecurityGroup": "Security",
   "mastermindSecurityIssue": "Security issue",
@@ -6016,15 +6172,17 @@
   "mastermindSeriesSteer": "Steer",
   "mastermindSeriesSuccess": "Success",
   "mastermindSeriesTarget": "Target",
-  "mastermindSeriesUnknown": "unknown",
+  "mastermindSeriesUnknown": "Not published yet",
   "mastermindSeriesUsageLimit": "Usage limit",
   "mastermindSeriesWaiting": "waiting",
   "mastermindSession": "Session",
   "mastermindSessionLeft": "Session {value} left",
   "mastermindSessionRejectedMessage": "Try again. If it keeps happening, sign out and sign in again.",
   "mastermindSessionRejectedTitle": "Mastermind couldn't verify your session",
+  "mastermindShipAllProducts": "All",
   "mastermindShipCadenceTitle": "Release cadence",
   "mastermindShipChecked": "Checked {dateTime}",
+  "mastermindShipCheckedAgo": "Checked {age}",
   "mastermindShipCiBadge": "CI {status}",
   "mastermindShipCiNow": "CI now",
   "mastermindShipCiQueued": "Queued {value}",
@@ -6032,16 +6190,21 @@
   "mastermindShipCopySha": "Copy commit id",
   "mastermindShipDeployBadge": "Deploy {status}",
   "mastermindShipEmpty": "No releases reported",
+  "mastermindShipFailing": "Failing",
   "mastermindShipNoCadence": "No release cadence reported",
+  "mastermindShipNoDeployments": "No deployments observed",
   "mastermindShipNoEnvironments": "No environments reported.",
   "mastermindShipNoProdRelease": "No production release observed",
   "mastermindShipNoPullRequests": "No pull request data reported.",
   "mastermindShipOpenCount": "{count} open",
   "mastermindShipPullRequestsTitle": "Pull requests and merges",
   "mastermindShipReleased": "Released {dateTime}",
+  "mastermindShipReleasedAgo": "Released {age}",
   "mastermindShipShaCopied": "Commit id copied",
+  "mastermindShipUntracked": "Not tracked yet",
   "mastermindShipWithheld": "Withheld, open on Mac",
   "mastermindShipWithheldTooltip": "Details stay on the Mac",
+  "mastermindShowAll": "Show all {count}",
   "mastermindSignOutAction": "Sign out and sign in again",
   "mastermindSignOutConfirmAction": "Sign out",
   "mastermindSignOutConfirmMessage": "This signs you out of Tuturuuu on this device, including every saved account. You'll need to sign in again.",
@@ -6068,7 +6231,7 @@
   "mastermindStaffEmpty": "No staff roles reported.",
   "mastermindStaffGroup": "Staff",
   "mastermindStaffSummary": "{count, plural, =1{1 role} other{{count} roles}} · {running} running",
-  "mastermindStaffUnknownModel": "Unknown model",
+  "mastermindStaffUnknownModel": "Not published yet",
   "mastermindStateAnswered": "answered",
   "mastermindStateCancelled": "cancelled",
   "mastermindStateCompleted": "completed",
@@ -6078,7 +6241,7 @@
   "mastermindStateQueued": "queued",
   "mastermindStateRunning": "running",
   "mastermindStateStale": "stale",
-  "mastermindStateUnknown": "unknown",
+  "mastermindStateUnknown": "Not published yet",
   "mastermindStateWaiting": "waiting",
   "mastermindStateWithdrawn": "withdrawn",
   "mastermindSummaryAsOf": "as of {time}",
@@ -6116,19 +6279,28 @@
   "mastermindUnitPpPerHour": "{value} pp/h",
   "mastermindUnitSeconds": "{value} s",
   "mastermindUnitTokens": "{value} tokens",
-  "mastermindUnknown": "Unknown",
+  "mastermindUnknown": "Not published yet",
   "mastermindUnreachableMessage": "Retries wait a little longer after each failure.",
   "mastermindUnreachableTitle": "Can't reach Mastermind",
   "mastermindUpdateAppShowing": "Update the app to read the latest Mastermind data · showing {time}",
   "mastermindUpdatedAt": "Updated {time}",
   "mastermindUsageBudgetLeft": "Budget left",
+  "mastermindUsageBurnNotMeasured": "Burn not measured yet",
   "mastermindUsageCreditsTitle": "Codex credits",
   "mastermindUsageEmpty": "No usage data reported.",
   "mastermindUsageForecastsTitle": "Forecasts",
   "mastermindUsageLink": "Usage",
   "mastermindUsagePacing": "Pacing",
+  "mastermindUsageSessionLeft": "Session left",
+  "mastermindUsageTableFor": "{chart} table",
   "mastermindUsageTargetUnavailable": "Target unavailable",
+  "mastermindUsageVerdictNone": "No pacing data",
+  "mastermindUsageVerdictOk": "On pace",
+  "mastermindUsageVerdictShort": "Running short",
+  "mastermindUsageVerdictSurplus": "Surplus",
+  "mastermindUsageWeeklyLeft": "Weekly left",
   "mastermindVersion": "Version",
+  "mastermindWaitingOnYou": "{count} on you",
   "mastermindWeekly": "Weekly",
   "mastermindWeeklyLeft": "Weekly {value} left",
   "mastermindWhy": "Why",
@@ -6182,5 +6354,145 @@
         "type": "String"
       }
     }
-  }
+  },
+  "mastermindNotPublished": "Not published yet",
+  "mastermindNotConnected": "Not connected",
+  "mastermindSourceDown": "Source down",
+  "mastermindGapNoSamples": "No samples published",
+  "mastermindGapAccountSwitch": "Account switched",
+  "mastermindGapReset": "Quota reset",
+  "mastermindRecentlyResolved": "Recently resolved",
+  "mastermindReplyPendingShort": "Waiting to send",
+  "mastermindAskTitle": "Ask",
+  "mastermindOpensItem": "Opens the ask",
+  "mastermindItemOpenOnMacReason": "Mastermind didn't publish the full ask for this item. Read it in the Inbox on your Mac.",
+  "mastermindItemOpenOnMac": "Full details are on the Mac",
+  "mastermindResolvedOutcome": "Outcome",
+  "mastermindResolvedNoAnswer": "Mastermind closed this ask without recording an answer.",
+  "mastermindResolvedAnswer": "Answer: {answer}",
+  "mastermindResolvedWith": "Resolved · {answer}",
+  "mastermindResolvedState": "Resolved",
+  "mastermindNothingResolvedReason": "Asks appear here once Mastermind records an answer.",
+  "mastermindNothingResolved": "Nothing resolved recently",
+  "mastermindNothingNeedsYouReason": "Mastermind lists an ask here when a lane needs your answer.",
+  "mastermindInboxNoMatchesReason": "Nothing in this view matches your search or filter.",
+  "mastermindInboxClearFilters": "Clear search and filters",
+  "mastermindInboxSearchAction": "Search Inbox",
+  "mastermindInboxLoadingMore": "Loading more",
+  "mastermindInboxLoadMoreFailed": "Couldn't load more asks.",
+  "mastermindInboxEndOfList": "That's every ask",
+  "mastermindInboxResolvedSegment": "Resolved",
+  "mastermindLastChecked": "Last checked {time}",
+  "@mastermindLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindGapSummary": "Gap {start}–{end}: {reason}",
+  "@mastermindGapSummary": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindThreadsTitle": "Threads",
+  "mastermindBackToThreads": "Back to Threads",
+  "@mastermindResolvedWith": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindResolvedAnswer": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAnsweredOnPhone": "Answered on phone",
+  "mastermindAnsweredOnMac": "Answered on Mac",
+  "mastermindAnsweredInChat": "Answered in chat",
+  "mastermindAnsweredAutomatically": "Answered automatically",
+  "mastermindAnsweredElsewhere": "Answered elsewhere",
+  "mastermindAlreadyAnsweredOnPhone": "Already answered on phone",
+  "mastermindAlreadyAnsweredOnMac": "Already answered on Mac",
+  "mastermindAlreadyAnsweredInChat": "Already answered in chat",
+  "mastermindAlreadyAnsweredAutomatically": "Already answered automatically",
+  "mastermindAlreadyAnsweredElsewhere": "Already answered elsewhere",
+  "mastermindWithdrawnNoLongerNeeded": "Withdrawn · no longer needed",
+  "mastermindAnsweredByYou": "you",
+  "mastermindViaPhone": "on phone",
+  "mastermindViaMac": "on Mac",
+  "mastermindViaChat": "in chat",
+  "mastermindViaAuto": "automatically",
+  "mastermindAnsweredInBatch": "Answered in batch",
+  "mastermindAlreadyAnsweredInBatch": "Already answered in batch",
+  "mastermindViaBatch": "in batch",
+  "mastermindAskDeadlineWithinHours": "Answer within hours",
+  "mastermindAskDeadlineToday": "Answer today",
+  "mastermindAskDeadlineTonight": "Answer tonight",
+  "mastermindAskDeadlineThisWeek": "Answer this week",
+  "mastermindAskUrgencyHigh": "High priority",
+  "mastermindAskUrgencyUrgent": "Urgent",
+  "mastermindAskWhyRecommended": "Why recommended",
+  "mastermindAskIfNoAnswerTitle": "If you don't answer",
+  "mastermindAskIfNoAnswer": "If no answer: {option}",
+  "@mastermindAskIfNoAnswer": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskRisk": "Risk: {risk}",
+  "@mastermindAskRisk": {
+    "placeholders": {
+      "risk": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskReversible": "Can be undone later",
+  "mastermindAskNotReversible": "Can't be undone",
+  "mastermindAskBlocks": "{count, plural, =1{Blocks 1 lane} other{Blocks {count} lanes}}",
+  "@mastermindAskBlocks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindAskDueAt": "Due {time}",
+  "@mastermindAskDueAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskAnsweredPhone": "Answered on the phone",
+  "mastermindAskAnsweredMac": "Answered on the Mac",
+  "mastermindAskAnsweredChat": "Answered in chat",
+  "mastermindAskAnsweredAuto": "Answered automatically",
+  "mastermindAskAnsweredBatch": "Answered in a batch",
+  "mastermindAskAnsweredElsewhere": "Answered elsewhere",
+  "mastermindAskLinksTitle": "Links",
+  "mastermindAskLaneLink": "Lane ⟶",
+  "mastermindAskActionAnswer": "Answer here",
+  "mastermindAskActionRunOnMac": "Run at your Mac",
+  "mastermindAskActionPhysical": "Needs a physical step",
+  "mastermindAskActionFyi": "For your information",
+  "mastermindAskRemindAtMac": "Remind me at Mac",
+  "mastermindAskRemindAtMacSoon": "Coming soon"
 }

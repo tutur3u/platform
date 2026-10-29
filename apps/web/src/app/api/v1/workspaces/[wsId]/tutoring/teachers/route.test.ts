@@ -143,7 +143,7 @@ describe('center teacher catalog', () => {
       count: 3,
       error: null,
     });
-    const body = await (await get()).json();
+    const body = await (await get('?tutorsOnly=false')).json();
     expect(
       body.data.map(
         (row: { id: string; isTutor: boolean; isClassTeacher: boolean }) => [
@@ -190,6 +190,38 @@ describe('center teacher catalog', () => {
       { id: 'both', isTutor: true, isClassTeacher: true },
     ]);
   });
+  it('defaults to configured tutor A and excludes main teacher B', async () => {
+    policyRows = serializeTutoringPolicyConfigRows({
+      ...STANDARD_TUTORING_POLICY,
+      tutorGroupIds: [tutorGroup],
+    });
+    tutorRows = [{ user_id: 'A' }];
+    query.range.mockImplementationOnce(async () => {
+      const allowed = query.in.mock.calls.find(
+        ([column]) => column === 'id'
+      )?.[1];
+      const teachers = [
+        {
+          id: 'A',
+          full_name: 'Tutor A',
+          display_name: null,
+          memberships: [{ role: 'TEACHER', group_id: tutorGroup }],
+        },
+        {
+          id: 'B',
+          full_name: 'Main B',
+          display_name: null,
+          memberships: [{ role: 'TEACHER', group_id: classGroup }],
+        },
+      ].filter((teacher) => !allowed || allowed.includes(teacher.id));
+      return { data: teachers, count: teachers.length, error: null };
+    });
+    const body = await (await get()).json();
+    expect(body.data.map((teacher: { id: string }) => teacher.id)).toEqual([
+      'A',
+    ]);
+    expect(tutorQuery.in).toHaveBeenCalledWith('group_id', [tutorGroup]);
+  });
   it('returns no tutors when no tutor group is configured', async () => {
     query.range.mockResolvedValueOnce({ data: [], count: 0, error: null });
     const body = await (await get('?tutorsOnly=true')).json();
@@ -200,8 +232,9 @@ describe('center teacher catalog', () => {
   it('still lists teachers without tutor labels when the policy fails to load', async () => {
     policyError = { message: 'boom' };
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const response = await get();
+    const response = await get('?tutorsOnly=false');
     expect(response.status).toBe(200);
+    expect((await get()).status).toBe(500);
     const tutorsOnly = await get('?tutorsOnly=true');
     expect(tutorsOnly.status).toBe(500);
     errorSpy.mockRestore();

@@ -3,6 +3,9 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
+import 'package:mobile/features/mastermind/threads/mastermind_threads_page.dart';
+import 'package:mobile/features/mastermind/threads/threads_flag.dart';
+import 'package:mobile/features/mastermind/threads/threads_location.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_decision_page.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_inbox_page.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_item_page.dart';
@@ -16,6 +19,29 @@ import 'package:mobile/features/mastermind/view/work/mastermind_work_page.dart';
 /// [Routes.mastermind], plus the pushed Needs-you, decision, lane and chart
 /// table details. Inside the shell route.
 final List<GoRoute> mastermindTabRoutes = [
+  GoRoute(
+    path: '/mastermind/threads',
+    redirect: (context, state) =>
+        mastermindThreadsEnabled ? null : Routes.mastermindWork,
+    builder: (context, state) {
+      final query = state.uri.queryParameters;
+      final router = GoRouter.of(context);
+      return MastermindThreadsPage(
+        initialSegment: workSegmentFromQuery(query['segment']),
+        initialState: laneStateFromQuery(query['state']),
+        initialProduct: productFromQuery(query['product']),
+        initialArea: areaFromQuery(query['area']),
+        onSelection: (selection) => router.go(
+          threadsLocation(
+            segment: selection.segment,
+            state: selection.state,
+            product: selection.product,
+            area: selection.area,
+          ),
+        ),
+      );
+    },
+  ),
   GoRoute(
     path: Routes.mastermindInbox,
     builder: (context, state) {
@@ -43,6 +69,9 @@ final List<GoRoute> mastermindTabRoutes = [
   ),
   GoRoute(
     path: Routes.mastermindWork,
+    redirect: (context, state) => mastermindThreadsEnabled
+        ? state.uri.replace(path: '/mastermind/threads').toString()
+        : null,
     builder: (context, state) {
       final query = state.uri.queryParameters;
       final router = GoRouter.of(context);

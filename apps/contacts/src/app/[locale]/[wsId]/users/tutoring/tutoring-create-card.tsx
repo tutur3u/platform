@@ -215,6 +215,7 @@ export function TutoringCreateCard({
                 ...form,
                 groupId: nextGroupId,
                 missedClassDate: '',
+                missingLessonDates: undefined,
                 sourceFeedbackId: null,
               });
             }}
@@ -237,6 +238,7 @@ export function TutoringCreateCard({
                 studentLabel: option?.label || form.studentLabel,
                 studentUserId: value,
                 missedClassDate: '',
+                missingLessonDates: undefined,
               })
             }
             placeholder={t('select_student')}
@@ -254,7 +256,7 @@ export function TutoringCreateCard({
               onChange({ ...form, reasonType: value as TutoringReasonType })
             }
             options={REASON_TYPES.map((reason) => ({
-              label: reasonLabels[reason],
+              label: reasonLabels[reason] ?? reason,
               value: reason,
             }))}
             placeholder={t('reason')}
@@ -390,6 +392,13 @@ export function TutoringCreateCard({
           rows={3}
           value={form.content}
         />
+        {form.missingLessonDates?.length ? (
+          <p className="text-dynamic-orange text-xs">
+            {t('lesson_notes_missing', {
+              dates: form.missingLessonDates.join(', '),
+            })}
+          </p>
+        ) : null}
       </div>
 
       {conflictMessage ? (

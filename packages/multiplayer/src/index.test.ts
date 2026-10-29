@@ -19,6 +19,7 @@ const now = Date.now();
 const owner: Identity = {
   id: 'owner',
   email: 'host@tuturuuu.com',
+  staffVerified: true,
   name: 'Host',
   expires: now + 86400000,
 };
@@ -62,7 +63,9 @@ describe('server-authoritative room policy', () => {
       null,
     ])
       expect(staff({ email })).toBe(false);
-    expect(staff({ email: 'HOST@TUTURUUU.COM' })).toBe(true);
+    expect(staff({ email: 'HOST@TUTURUUU.COM', staffVerified: true })).toBe(
+      true
+    );
     expect(() => createRoom('r', alice, input, now)).toThrow('staff_only');
   });
   it('rejects invalid limits and schedules', () => {
@@ -551,6 +554,7 @@ describe('server-authoritative room policy', () => {
       ...alice,
       id: 'colleague',
       email: 'colleague@tuturuuu.com',
+      staffVerified: true,
     };
     r.invites.push(colleague.email);
     joinRoom(r, colleague, 'team-1', false, now);

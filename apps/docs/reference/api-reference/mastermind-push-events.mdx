@@ -1,0 +1,178 @@
+---
+title: Mastermind push events
+description: Signed hub-to-web endpoint that turns Mastermind events into owner mobile push notifications.
+---
+
+`POST /api/v1/mastermind/push-events` on the web app receives one signed event
+from the Mastermind hub and fans it out synchronously to the configured owners'
+registered mobile devices through the existing FCM pipeline
+(`sendCustomPushMessageBatch`). It schedules nothing and keeps no queue; Fleet
+Tools owns retries.
+
+## Contract (versions 1 and 2, agreed with Fleet Tools)
+
+The route accepts both versions. The hub sends version 2 only for items that
+carry a valid urgency and keeps the byte-identical version 1 body otherwise, so
+mixed traffic is normal.
+
+```http
+POST /api/v1/mastermind/push-events
+Content-Type: application/json
+X-MM-Timestamp: 1798434000
+X-MM-Signature: <64 lowercase hex characters>
+
+{"v":1,"type":"needs_you.new","item_id":"item-0123456789abcdef0123","seq":41,"ts":"2026-10-28T04:59:58Z"}
+```
+
+```json
+{"item_id":"item-0123456789abcdef0123","seq":41,"ts":"2026-10-28T04:59:58Z","type":"needs_you.new","urgency":"now","v":2}
+```
+
+| Field | Rule |
+|---|---|
+| `v` | Exactly `1` or `2`; any other value is rejected |
+| `type` | `needs_you.new`, `decision.awaiting` or `pin_batch.new` |
+| `item_id` | `item-` followed by exactly 20 lowercase hex characters (`^item-[0-9a-f]{20}$`) |
+| `seq` | Non-negative integer |
+| `ts` | ISO 8601 UTC (`Z`) |
+| `urgency` | Version 2 only, required: `now`, `today`, `soon` or `whenever`. Version 1 counts as `today` |
+
+Urgency is validated but does not change delivery yet; every accepted event is
+delivered exactly as version 1. Deduplication ignores `v` and `urgency`, so a
+version 1 and a version 2 body with the same `(type, item_id, seq)` are the same
+event.
+
+**Deploy order:** the route must accept version 2 in production before the hub
+emits it, because the hub treats `400 invalid_event` as a failed delivery.
+
+Each version is strict: a title, product, body or any other field is rejected,
+including `urgency` on version 1.
+The body is capped at 8 KiB. The route reads the body as a stream and stops at
+the cap whatever `Content-Length` says, including chunked bodies without one.
+
+## Authentication
+
+- `X-MM-Signature` is the lowercase hex HMAC-SHA256 of
+  `<X-MM-Timestamp> + "." + <raw body bytes>` keyed with
+  `MASTERMIND_PUSH_HMAC_SECRET` or, during a rotation,
+  `MASTERMIND_PUSH_HMAC_SECRET_NEXT`. Both are compared in constant time.
+  The HMAC covers the bytes exactly as received, before UTF-8 decoding or JSON
+  parsing; the route never re-serializes the event, so key order and
+  whitespace must match what the hub signed. Both versions are signed the same
+  way.
+- Both secrets are trimmed of surrounding whitespace before use. The primary
+  secret must be at least 32 characters after trimming. A whitespace-only NEXT
+  secret is treated as unset. A nonempty but too-short
+  `MASTERMIND_PUSH_HMAC_SECRET_NEXT` refuses the whole configuration (503).
+- `X-MM-Timestamp` is unix seconds; more than 5 minutes of skew in either
+  direction is rejected.
+- Events are deduplicated on `(type, item_id, seq)` in Upstash Redis with a
+  two-state claim. The route writes `pending:<random UUID>` with `SET NX` and a
+  2-minute TTL, then atomically changes its own token to `done` with a 24-hour
+  TTL after successful delivery. Failure atomically deletes only the matching
+  token. Both transitions use Redis Lua compare-and-set/delete, so an expired
+  request cannot overwrite or release its successor. A duplicate that finds
+  a pending token gets 503 and should be retried; one that finds `done` gets 409. A
+  claim abandoned by a crashed request expires after 2 minutes. If the replay
+  store is unreachable or a claim write throws, the route fails closed (503).
+
+### Secret rotation
+
+1. Release Desk sets `MASTERMIND_PUSH_HMAC_SECRET_NEXT` to the new secret on
+   the web deployment. Both secrets are now accepted.
+2. Fleet Tools switches the hub to sign with the new secret.
+3. Release Desk promotes it: `MASTERMIND_PUSH_HMAC_SECRET` becomes the new
+   secret.
+4. Release Desk removes `MASTERMIND_PUSH_HMAC_SECRET_NEXT`. The old secret is
+   now rejected.
+
+## Delivery
+
+- **Recipients:** user ids in `MASTERMIND_PUSH_OWNER_IDS` (comma or whitespace
+  separated UUIDs, at most 50) that have rows in `notification_push_devices`.
+  Anyone else is never queried or sent to.
+- **Preference:** the account-level `push_notifications` preference
+  (`should_send_notification`, channel `push`). An unreadable preference counts
+  as opted out.
+- **Copy:** fixed, never derived from the event: title "Mastermind", body
+  "Open Mastermind" (vi: "Mở Mastermind" when `MASTERMIND_PUSH_LOCALE=vi`).
+  Category `tuturuuu_mastermind`, TTL 6 hours.
+- **Deep link:** `data: {openTarget: "mastermind", route}` with the tab root
+  only: `/mastermind/inbox` for `needs_you.new` and `decision.awaiting`,
+  `/mastermind` for `pin_batch.new`. The item id never leaves the server.
+- **Coalescing:** at most one push per type per owner per 60 seconds; later
+  events in the window are dropped (the snapshot carries them). An owner counts
+  as sent only when FCM reports at least one successful delivery; a send that
+  throws or delivers to zero devices is a failure. Coalescing claims also use
+  `pending:<UUID>` tokens and compare-and-delete, allowing immediate retries
+  without releasing a newer request's window. Only confirmed FCM success
+  atomically changes its matching window to `done`, retaining the remainder of
+  the 60-second window (rounded up to a whole second). A held window that is
+  still pending, or disappears before it can be read, counts as failed rather
+  than coalesced. The event therefore stays retryable while any owner outcome
+  is unknown or failed, including a retry immediately after a deadline 502.
+  Once that window expires, the sender can retry the owner.
+- **Partial retries:** successful owners receive
+  `mastermind:push:event:<eventKey>:sent:<owner>` receipts with a 24-hour TTL.
+  Every attempt skips those owners, including retries after the 60-second
+  coalescing window expires. Receipts are never deleted by failed requests.
+  A receipt write has a separate one-second bound. A Redis error or timeout is
+  warned with the event key only; the known delivery still counts as sent and
+  later owners continue while the fan-out budget remains. If a receipt cannot
+  be stored and the event later fails for another owner, a retry after the
+  coalescing window can duplicate that successful push.
+- **Deadline:** the whole fan-out has a 60-second budget, below the 2-minute
+  pending TTL. A stalled lookup or FCM call ends the fan-out; unreached owners
+  count as failed and the route returns 502. If FCM success wins the race,
+  including exactly at the deadline or when a suspended request resumes late,
+  its receipt is attempted before honouring the deadline. This may add up to
+  one second of receipt waiting after the fan-out budget; it never starts
+  another owner after the deadline. If the timeout wins first, a later FCM
+  result cannot resume the fan-out or write a receipt. The race cannot cancel
+  an FCM request already submitted or guarantee exactly-once delivery after an
+  unknown FCM outcome.
+- **Invalid tokens** reported by FCM are deleted for that owner.
+- **Logs:** native `console.*` with the reject reason, event type and counts,
+  plus for a rejected body only closed-set fields: `version` (`1`, `2` or
+  `unknown`), `type` (a known type or `unknown`) and `issue` (`invalid_encoding`,
+  `invalid_json`, `not_object`, `unsupported_version`, `missing_urgency`,
+  `invalid_urgency` or `invalid_fields`),
+  or event key for receipt/window-write warnings. Never owner/device ids,
+  device tokens, claim tokens, raw backend errors or secrets.
+
+## Responses
+
+Errors are `{"error":"<class>"}` and never echo input.
+
+| Status | Body | Meaning |
+|---|---|---|
+| 202 | `{accepted, sent, coalesced, skipped, failed}` | Processed |
+| 400 | `invalid_event` | Not UTF-8 JSON, unknown `v`, or not the v1/v2 shape (including a missing or unknown v2 `urgency`) |
+| 401 | `unauthorized` | Missing, malformed, wrong or stale signature |
+| 409 | `duplicate_event` | `(type, item_id, seq)` already delivered |
+| 413 | `payload_too_large` | Body over 8 KiB |
+| 502 | `delivery_failed` | At least one owner could not be sent to; the dedupe claim is released so the same event can be retried |
+| 503 | `event_in_flight` | The same event is still being delivered; retry later |
+| 503 | `unavailable` | Primary secret unset/short, nonempty NEXT secret too short, or replay store unreachable |
+
+## Provisioning
+
+Release Desk provisions `MASTERMIND_PUSH_HMAC_SECRET` (at least 32
+characters after trimming, shared with the hub), `MASTERMIND_PUSH_OWNER_IDS`
+and optionally `MASTERMIND_PUSH_LOCALE` on the web deployment.
+`MASTERMIND_PUSH_HMAC_SECRET_NEXT` is set only during a rotation. Until the secret is set the
+route answers 503 and sends nothing. The route also needs the existing Firebase
+Admin and Upstash Redis variables.
+
+## Regression coverage
+
+The route tests cover immediate and +61-second partial retries, observed FCM
+success at +60 and +61 seconds, rejected and hung receipt writes, retries while
+an owner remains unresolved, a suspended request failing after a successor
+completes at +121 seconds, and a stale route executing compare-and-delete
+against a successor's pending coalescing token before the deadline. They also
+cover the fan-out deadline when FCM finishes only after timeout wins. See
+`route.delivery.test.ts` and `route.race.test.ts` beside the route.
+`route.v2.test.ts` covers the version 2 contract: every urgency, rejected
+versions and urgencies with their log fields, the signature over the canonical
+hub bytes, skew boundaries and dedupe shared across versions.
