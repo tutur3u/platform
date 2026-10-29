@@ -1,11 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart' hide Scaffold;
+import 'package:flutter/material.dart';
 import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 /// Where "Privacy details" opens: the public privacy notice.
 final Uri telemetryPrivacyUri = Uri.parse('https://tuturuuu.com/privacy');
@@ -52,7 +51,8 @@ class _TelemetryConsentPageState extends State<TelemetryConsentPage> {
           unawaited(_answer(allow: false));
         }
       },
-      child: shad.Scaffold(
+      child: AppScaffold(
+        backgroundColor: AppTokens.of(context).colorScheme.background,
         child: SafeArea(
           child: ListenableBuilder(
             listenable: _preference,
