@@ -199,3 +199,13 @@ qualified contained executor; do not run this verifier there to bypass that gate
 - Prefer the root `/internal/projects` console (the root workspace's `/{wsId}/projects`) for site-template and workspace-link operations.
 - Keep bound-workspace collaborator management on the dedicated `/{wsId}/members` route, and do not surface the root projects console inside non-root workspace sidebars.
 - Update both `apps/cms/messages/en.json` and `apps/cms/messages/vi.json`, then run `bun i18n:sort` whenever CMS copy changes.
+
+## Content reference scope
+
+CMS root administration requires `manage_external_projects` in the root
+workspace. Role administration alone does not grant this capability. Content
+blocks reference entries in their own workspace, and collection-specific fields
+reference collections in that workspace. Global fields may omit a collection.
+These rules apply to the CMS satellite and Web's shared content store; regression
+coverage lives in the CMS access tests and Web's
+`store-reference-scope.test.ts`.

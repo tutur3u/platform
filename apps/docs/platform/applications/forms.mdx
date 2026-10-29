@@ -113,3 +113,10 @@ Composed bridge-and-wrapper tests cover WebGL documents, child assets and
 neighbouring paths. The ordinary `type-check` command checks both the retained
 app and `tsconfig.cloudflare.json`, so hosted native qualification covers the
 router, Start entry and generated adapters as well as emitted bindings.
+
+## Share-link management
+
+Share-link management requires `manage_forms` and membership in the form's own
+workspace, including when an existing link is returned. The share-link route
+tests cover workspace ownership and valid existing links. Public form access
+continues to follow the published form and share-link rules.
