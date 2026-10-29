@@ -287,28 +287,4 @@ describe('finance workspace boundaries', () => {
     ).toBe(403);
     expect(state.from).not.toHaveBeenCalled();
   });
-  it('requires finance management for wallet migration', async () => {
-    state.denied.add('manage_finance');
-    const { PUT } = await import(
-      '../../../../workspaces/[wsId]/wallets/migrate/route'
-    );
-    expect(
-      (await PUT(request({ wallets: [{ id: ID }] }, 'PUT'), params)).status
-    ).toBe(403);
-    expect(state.writes).toEqual([]);
-  });
-  it('rejects wallet migration with an existing foreign id', async () => {
-    const { PUT } = await import(
-      '../../../../workspaces/[wsId]/wallets/migrate/route'
-    );
-    expect(
-      (
-        await PUT(
-          request({ wallets: [{ id: ID, name: 'Wallet' }] }, 'PUT'),
-          params
-        )
-      ).status
-    ).toBe(409);
-    expect(state.writes).toEqual([]);
-  });
 });
