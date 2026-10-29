@@ -133,7 +133,9 @@ test('an allowlisted replace inherits an earlier revoke and prints its evidence'
   );
   assert.match(
     line,
-    new RegExp(`public, anon, authenticated revoked at ${escapeRegExp(EARLY)}:2`)
+    new RegExp(
+      `public, anon, authenticated revoked at ${escapeRegExp(EARLY)}:2`
+    )
   );
 });
 
