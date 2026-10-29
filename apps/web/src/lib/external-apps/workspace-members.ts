@@ -57,7 +57,7 @@ const inviteSchema = z.object({
 const removeAccessSchema = z
   .object({
     email: z.string().email().max(MAX_EMAIL_LENGTH).optional(),
-    userId: z.string().trim().min(1).max(128).optional(),
+    userId: z.string().trim().pipe(z.guid().toLowerCase()).optional(),
   })
   .refine((value) => Boolean(value.email || value.userId), {
     message: 'Missing member identifier',

@@ -375,6 +375,15 @@ The enhanced members route also merges:
 
 That is why the members page can show a permission breakdown per person without recomputing everything in the browser.
 
+Member-removal APIs accept canonical UUID syntax, including uppercase input, and
+normalize it to lowercase before member protection checks and scoped deletion.
+Unsupported UUID spellings return 400. Creator protection applies to the shared
+web/Tasks route; external-app removal also retains self and last-admin checks.
+Email-only invitation removal keeps its existing behavior. Regression coverage:
+`packages/apis/src/members/route.remove-authorization.test.ts` and
+`apps/web/src/lib/external-apps/workspace-members.removal.test.ts`.
+
+
 ## Where Permissions Affect API Routes
 
 There are two broad families in `apps/web`.
