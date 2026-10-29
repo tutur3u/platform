@@ -245,7 +245,8 @@ Messaging auto-init is disabled in the Android manifest and iOS `Info.plist`, so
 the SDK creates no token before permission is granted. The app enables auto-init
 after permission is granted. A token refresh is sent to the server only while
 permission is still granted. If permission is later revoked, the next
-registration sync disables auto-init and deletes the local token. Sign-out still
+registration sync disables auto-init and deletes the local token. If deletion
+fails, later unauthorized syncs retry until deletion succeeds. Sign-out still
 unregisters the device. Regression coverage:
 `push_token_permission_gate_test.dart`.
 

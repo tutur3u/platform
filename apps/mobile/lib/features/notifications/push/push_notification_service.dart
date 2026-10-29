@@ -97,6 +97,7 @@ class PushNotificationService {
   Future<void>? _initialization;
   Future<void>? _reminderTimezoneSetup;
   bool _isDisposed = false;
+  bool _tokenDeletionPending = false;
 
   FirebaseMessaging get _messaging =>
       _messagingOverride ?? FirebaseMessaging.instance;
@@ -540,10 +541,14 @@ class PushNotificationService {
   /// If permission was revoked after a token was issued, stop token creation
   /// and drop the local token.
   Future<void> _revokeTokenCreation() async {
-    if (!_messaging.isAutoInitEnabled) return;
-    await _messaging.setAutoInitEnabled(false);
+    if (_messaging.isAutoInitEnabled) {
+      _tokenDeletionPending = true;
+      await _messaging.setAutoInitEnabled(false);
+    }
+    if (!_tokenDeletionPending) return;
     try {
       await _messaging.deleteToken();
+      _tokenDeletionPending = false;
     } on Exception {
       // Token cleanup is best-effort; auto-init stays disabled.
     }

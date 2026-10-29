@@ -211,6 +211,35 @@ void main() {
     expect(registered, isEmpty);
   });
 
+  test('failed token deletion retries until cleanup succeeds', () async {
+    var autoInitEnabled = true;
+    var deletionAttempts = 0;
+    when(() => messaging.isAutoInitEnabled).thenAnswer((_) => autoInitEnabled);
+    when(() => messaging.setAutoInitEnabled(any())).thenAnswer((call) async {
+      autoInitEnabled = call.positionalArguments.first as bool;
+      calls.add('autoInit:$autoInitEnabled');
+    });
+    when(messaging.deleteToken).thenAnswer((_) async {
+      calls.add('deleteToken');
+      if (++deletionAttempts == 1) {
+        throw Exception('temporary deletion failure');
+      }
+    });
+    status = AuthorizationStatus.denied;
+
+    await service.startSession(_actor);
+    expect(autoInitEnabled, isFalse);
+    expect(calls, ['autoInit:false', 'deleteToken']);
+
+    await service.startSession(_actor);
+    expect(calls, ['autoInit:false', 'deleteToken', 'deleteToken']);
+
+    await service.startSession(_actor);
+    expect(deletionAttempts, 2);
+    expect(calls, ['autoInit:false', 'deleteToken', 'deleteToken']);
+    expect(registered, isEmpty);
+  });
+
   test('sign-out still unregisters the device', () async {
     status = AuthorizationStatus.authorized;
     await service.startSession(_actor);
