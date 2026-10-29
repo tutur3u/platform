@@ -1,0 +1,79 @@
+[
+  {
+    "file": "apps/database/supabase/migrations/20261029030700_finance_workspace_scoping.sql",
+    "line": 3,
+    "sourceDigest": "9e42ece288d78db3626ed2d44a4966a9460177d1cedeab45fe90e345e02666ce",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "614b4f0a27deac5e7137ab8d17137852d1c1b85e6d7b58b1821e4b97def6a61a",
+    "classification": "verified false positive",
+    "effectiveRoles": ["authenticated", "service_role"],
+    "reason": "Dynamic SELECT/COUNT uses bound caller parameters; ORDER BY text comes only from whitelisted columns and directions. No routine ACL mutation."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029030700_finance_workspace_scoping.sql",
+    "line": 3,
+    "sourceDigest": "9e42ece288d78db3626ed2d44a4966a9460177d1cedeab45fe90e345e02666ce",
+    "rule": "public-execute",
+    "signature": "public.get_wallet_transactions_with_permissions(uuid,uuid,uuid [ ],uuid [ ],uuid [ ],uuid [ ],uuid [ ],text,text,timestamp with time zone,timestamp with time zone,text,text,int4,int4,timestamp with time zone,timestamp with time zone,bool,timestamp with time zone)",
+    "digest": "7ede1abc0bf872d83df1ca6a101984e38c6751262b30faf70af49690520cbd1c",
+    "classification": "verified false positive",
+    "effectiveRoles": ["authenticated", "service_role"],
+    "reason": "Unqualified REVOKE at line 300 resolves to public during migrations and exactly matches the replaced 19-argument signature; authenticated retains its required existing grant."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029040800_finance_workspace_boundaries.sql",
+    "line": 184,
+    "sourceDigest": "31973f08b14236f3ec1befe03897ff7787b40486d66848c7a1af8ccd499792c1",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "bda6640f22e39d588b637844184e8d5d69def07221cf4c769cb22faff457aca6",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "Hardening loop reads oid::regprocedure from pg_proc for three named public routines, revokes PUBLIC/anon/authenticated, and grants only service_role; no caller input."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029040800_finance_workspace_boundaries.sql",
+    "line": 197,
+    "sourceDigest": "31973f08b14236f3ec1befe03897ff7787b40486d66848c7a1af8ccd499792c1",
+    "rule": "public-execute",
+    "signature": "public.get_daily_invoice_totals(uuid,int4,uuid [ ],uuid [ ],date,date)",
+    "digest": "29f0cc6a31f901ef725f12c52b87cc83fc6877d28f0ebc79a48101f69d999e6a",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "SR-843: identical daily six-argument signature already exists in 20260127025639; preceding loop tightens its ACL before replacement, which preserves it; body requires service_role."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029040800_finance_workspace_boundaries.sql",
+    "line": 267,
+    "sourceDigest": "31973f08b14236f3ec1befe03897ff7787b40486d66848c7a1af8ccd499792c1",
+    "rule": "public-execute",
+    "signature": "public.get_monthly_invoice_totals(uuid,int4,uuid [ ],uuid [ ],date,date)",
+    "digest": "1b4028786072e1343e0c29fdb7a6c3510696fcc0ab090498af288cc95ad58e26",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "SR-843: identical monthly six-argument signature already exists in 20260127025639; preceding loop tightens its ACL before replacement, which preserves it; body requires service_role."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029040800_finance_workspace_boundaries.sql",
+    "line": 341,
+    "sourceDigest": "31973f08b14236f3ec1befe03897ff7787b40486d66848c7a1af8ccd499792c1",
+    "rule": "public-execute",
+    "signature": "public.get_weekly_invoice_totals(uuid,int4,uuid [ ],uuid [ ],date,date)",
+    "digest": "1bd989abcc23e267112c35b21ebb0cf20971c3034f91a96cadd76d03c3bd6bf1",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "SR-843: identical weekly six-argument signature already exists in 20260127025639; preceding loop tightens its ACL before replacement, which preserves it; body requires service_role."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029040800_finance_workspace_boundaries.sql",
+    "line": 415,
+    "sourceDigest": "31973f08b14236f3ec1befe03897ff7787b40486d66848c7a1af8ccd499792c1",
+    "rule": "public-execute",
+    "signature": "public.get_weekly_invoice_totals(uuid,int4,uuid [ ],uuid [ ],date,date,int4)",
+    "digest": "808cf6205c230b0ac947d19b9320eab74cb485598640f02d67d3a3d267350de4",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "SR-843: identical weekly seven-argument signature already exists in 20260127025639; preceding loop tightens its ACL before replacement, which preserves it; body requires service_role."
+  }
+]

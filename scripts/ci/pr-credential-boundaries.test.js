@@ -103,6 +103,7 @@ function scope(row) {
       },
     },
     needs: {
+      changes: { result: 'success', outputs: { code: 'true' } },
       'check-ci': ready,
       'coverage-check-ci': ready,
       'test-shards':
@@ -243,4 +244,14 @@ test('matrix has a positive control for the former unconditional same-repo PR ex
     context.github.event.pull_request.head.repo.full_name,
     context.github.repository
   );
+});
+
+test('secret-free PR execution still requires code changes and its admission label', () => {
+  const context = scope(cases[0]);
+  context.needs.changes.outputs.code = 'false';
+  assert.equal(admitted(unit.jobs['test-shards-pr'], context), false);
+  context.needs.changes.outputs.code = 'true';
+  context.github.event.pull_request.labels = [];
+  context.github.event.pull_request.label_names = [];
+  assert.equal(admitted(unit.jobs['test-shards-pr'], context), false);
 });

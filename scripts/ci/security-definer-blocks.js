@@ -1,3 +1,5 @@
+const fs = require('node:fs');
+const path = require('node:path');
 const { tokens, statements } = require('./security-sql');
 
 function assertShrinkingBlocks(reviewed, proposed) {
@@ -73,3 +75,30 @@ module.exports = {
   assertReviewedBlocks,
   reviewedBlockMatches,
 };
+
+function readReviewedFile(root, trustedDirectory, name) {
+  const proposed = JSON.parse(
+    fs.readFileSync(path.join(root, 'scripts/ci', name), 'utf8')
+  );
+  assertReviewedBlocks(
+    JSON.parse(fs.readFileSync(path.join(trustedDirectory, name), 'utf8')),
+    proposed
+  );
+  return proposed;
+}
+
+function verifiedFindingMatches(entry, file, finding, sourceDigest) {
+  return (
+    entry.classification === 'verified false positive' &&
+    entry.file === file &&
+    entry.line === finding.line &&
+    entry.sourceDigest === sourceDigest &&
+    entry.rule === finding.rule &&
+    entry.signature === finding.signature &&
+    entry.digest === finding.digest &&
+    typeof entry.reason === 'string' &&
+    entry.reason.trim().length > 0
+  );
+}
+module.exports.readReviewedFile = readReviewedFile;
+module.exports.verifiedFindingMatches = verifiedFindingMatches;

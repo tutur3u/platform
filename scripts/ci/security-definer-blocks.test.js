@@ -162,6 +162,10 @@ test('trusted CI guard rejects inventory expansion and digest edits, permits shr
     'scripts/ci/security-definer-reviewed-blocks.json'
   );
   fs.writeFileSync(reviewFile, JSON.stringify(reviewed));
+  fs.copyFileSync(
+    path.join(__dirname, 'security-definer-verified-findings.json'),
+    path.join(candidate, 'scripts/ci/security-definer-verified-findings.json')
+  );
   const run = (entries) => {
     fs.writeFileSync(historicalFile, JSON.stringify(entries));
     return spawnSync(
@@ -194,6 +198,17 @@ test('trusted CI guard rejects inventory expansion and digest edits, permits shr
   const changedRoles = run(historical);
   assert.equal(changedRoles.status, 1);
   assert.match(changedRoles.stderr, /grant roles changed/);
+  fs.writeFileSync(reviewFile, JSON.stringify(reviewed));
+  const verified = require('./security-definer-verified-findings.json');
+  fs.writeFileSync(
+    path.join(candidate, 'scripts/ci/security-definer-verified-findings.json'),
+    JSON.stringify(
+      verified.map((entry) => ({ ...entry, effectiveRoles: ['anon'] }))
+    )
+  );
+  const changedEffectiveRoles = run(historical);
+  assert.equal(changedEffectiveRoles.status, 1);
+  assert.match(changedEffectiveRoles.stderr, /grant roles changed/);
 });
 
 test('historical inventory is explicitly debt and cannot be relabeled safe', () => {

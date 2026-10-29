@@ -13,7 +13,8 @@ const {
 
 const {
   assertShrinkingBlocks,
-  assertReviewedBlocks,
+  readReviewedFile,
+  verifiedFindingMatches,
   reviewedBlockMatches,
 } = require('./security-definer-blocks');
 
@@ -414,8 +415,15 @@ function lintMigration(sql, catalog = []) {
           line: sql.slice(0, fn.tokens[0].start).split('\n').length,
           digest,
         });
-      const options = fn.tokens.filter((t) => t.kind === 'word');
-      if (!/\bset search_path (?:=|to) [\w"]/.test(values(options)))
+      if (
+        !fn.tokens.some(
+          (token, index, ts) =>
+            keyword(token, 'set') &&
+            keyword(ts[index + 1], 'search_path') &&
+            (keyword(ts[index + 2], '=') || keyword(ts[index + 2], 'to')) &&
+            ['word', 'string'].includes(ts[index + 3]?.kind)
+        )
+      )
         add('missing-search-path');
       const revoked = new Set();
       const granted = new Set();
@@ -492,7 +500,10 @@ function checkRepository({
   files,
   reviewedBlocks,
   historicalBlocks,
+  verifiedFindings,
 } = {}) {
+  const verified =
+    verifiedFindings ?? require('./security-definer-verified-findings.json');
   const historical =
     historicalBlocks ?? require('./security-definer-historical-blocks.json');
   const blocks =
@@ -556,6 +567,12 @@ function checkRepository({
       ...roleFindings,
     ]) {
       if (
+        verified.some((entry) =>
+          verifiedFindingMatches(entry, file, finding, sourceDigest)
+        )
+      )
+        continue;
+      if (
         finding.rule === 'dynamic-execute-acl' &&
         (historical.some(
           (entry) =>
@@ -614,17 +631,20 @@ if (require.main === module) {
       ),
       JSON.parse(fs.readFileSync(path.join(root, historicalFile), 'utf8'))
     );
-    const reviewedFile = 'security-definer-reviewed-blocks.json';
-    const proposedReviews = JSON.parse(
-      fs.readFileSync(path.join(root, 'scripts/ci', reviewedFile), 'utf8')
+    const proposedReviews = readReviewedFile(
+      root,
+      __dirname,
+      'security-definer-reviewed-blocks.json'
     );
-    assertReviewedBlocks(
-      JSON.parse(fs.readFileSync(path.join(__dirname, reviewedFile), 'utf8')),
-      proposedReviews
+    const proposedVerified = readReviewedFile(
+      root,
+      __dirname,
+      'security-definer-verified-findings.json'
     );
     const findings = checkRepository({
       root,
       reviewedBlocks: proposedReviews,
+      verifiedFindings: proposedVerified,
       historicalBlocks: JSON.parse(
         fs.readFileSync(path.join(root, historicalFile), 'utf8')
       ),
