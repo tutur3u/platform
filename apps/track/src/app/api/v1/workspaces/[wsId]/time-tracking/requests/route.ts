@@ -1,3 +1,4 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import {
   createAdminClient,
   createDynamicClient,
@@ -34,7 +35,7 @@ const TimeTrackingRequestSchema = z.object({
 // A linked session must belong to the request owner in the request workspace;
 // approving or rejecting a request updates or deletes its linked session.
 async function isOwnedLinkedSession(
-  sbAdmin: Awaited<ReturnType<typeof createAdminClient>>,
+  sbAdmin: TypedSupabaseClient,
   {
     sessionId,
     userId,

@@ -1,0 +1,213 @@
+---
+title: "Mastermind Hub backend"
+description: "Private operations snapshots, gateway authorization, retention, and held Cloudflare publication."
+---
+
+## Scope and release hold
+
+P0 is a private read API for the infrastructure gateway. Environments contain both
+production and staging per product, supplied by the publisher snapshot. The Worker
+never fetches source control, deployment providers, quotas or customer data.
+Security-related subjects become **Security fix**; security items expose generic
+titles, severity and state without bodies, questions or links. The future mobile
+entry belongs in Apps, according to the approved design. No UI, replies, device
+enrollment, push, publisher installation or Supabase migration ships here.
+
+Code is public; allowlists, keys and operational data must stay out of source.
+Publication remains held. The validation workflow has no deploy job, credentials,
+DNS changes or provisioning. Release Desk needs explicit deployment authorization,
+an independent security review, exact-commit CI and an approved sanitized publisher
+sample before the first publish. The only configured hostname is workers.dev.
+
+## Configuration names
+
+| Placement | Name | Purpose |
+| --- | --- | --- |
+| Worker secret | `OPS_HUB_PUBLISHER_PUBLIC_KEY` | Base64 raw 32-byte Ed25519 verification key; never the private key |
+| Worker and infrastructure server secret | `OPS_HUB_GATEWAY_SECRET` | Shared HMAC key, 43–256 characters |
+| Worker and infrastructure server secret | `OPS_HUB_ALLOWED_USER_IDS` | Comma-separated UUIDs, at most ten; invalid configuration denies everyone |
+| Infrastructure server var | `OPS_HUB_WORKER_URL` | HTTPS workers.dev origin without path, credentials, query or fragment |
+| Worker binding (configuration) | `HUB` | SQLite-backed `OpsHub` namespace; object name `hub:<userId>` |
+
+No actual allowlist, key or live origin is committed. There is no publisher
+private-key or push-secret binding in P0. Place the same allowlist in both
+services; removing an identity blocks its routes at the Worker as well.
+
+## Publisher contract
+
+Send POST `/ingest`, Content-Type application/json, with
+`x-ops-hub-publisher-user` set to the allowlisted UUID and
+`x-ops-hub-signature` set to a standard-base64 Ed25519 signature.
+Sign the UTF-8 prefix `ops-hub-publisher-v2\nPOST\n/ingest\n<userId>\n`
+followed by the **exact request body bytes**. Use a lowercase UUID.
+The strict envelope is `{v:2, seq, sentAt, snapshot?, events:[], decisions?:[], observability?}`;
+all timestamps are Unix milliseconds. Every successful envelope advances seq.
+A retry with the same sequence gets 409 and never appends duplicate events.
+Reconcile an unknown outcome through authenticated status before advancing seq.
+
+Snapshot fields are `enabled?`, `pausedReason?`, `needsYou`, `environments`,
+`lanes` and `backlog`. The authoritative schemas are
+`apps/ops-hub/src/schema.ts`; unknown fields at any depth reject the entire
+envelope. Each event has its own strictly increasing seq across all batches.
+The signed sentAt must be within 120 seconds. Events cannot be older than 30 days
+or more than 120 seconds in the future. Item edits must advance their version.
+
+Environment rows contain `product`, `environment` (production or staging),
+`lastRelease` (timestamp or null), `version`, `shortSha`, `commitSubject`,
+`deployState` and `ciState`. State values are queued, running, success,
+failed, held or unknown. Product/environment pairs are unique.
+Secret-shaped and personal text is withheld; security text is reduced again at
+ingest. This defense does not replace the Mac publisher's fail-closed sanitizer
+or the required sanitized-sample approval.
+
+## Read and lifecycle contract (v2)
+
+GET `/status`, `/snapshot`, `/events?after=<seq>`, `/needs-you`,
+`/environments`, `/decisions?after=&category=`, `/observability?since=&series=` and `/hub/export` require a valid gateway assertion.
+The infrastructure gateway exposes these routes plus DELETE `/hub`.
+Gateway assertions use `x-ops-hub-user`, last 60 seconds, and bind the user,
+HTTP method, path and query. Publisher signatures grant ingest only.
+Authentication failures return 404. Responses are private, no-store.
+
+An hourly alarm purges events after 30 days and terminal items 30 days after
+answered/withdrawn, while open items remain. Snapshot is replaced on ingest;
+its needs-you projection comes from the retained item table. Reads independently
+filter expired records. Publisher staleness is computed after 15 minutes on every
+status read, and persisted by maintenance. With no new publisher activity,
+maintenance purges all content at the 30-day horizon and stops scheduling.
+
+A signed snapshot with `enabled:false` durably pauses ingest and read access
+while retaining the content. Every route except authenticated status returns 503,
+including ingest and DELETE /hub. Only bounded retention maintenance continues;
+it does not update staleness or emit alerts. There is no HTTP resume route in P0:
+resumption needs an explicitly authorized operator action against the DO, beyond
+this code-only delivery. Explicit erasure must run before disabling or de-allowlisting.
+DELETE `/hub` clears snapshot, events, items, decisions and observations and leaves only a disabled
+replay tombstone (sequence/counters, no content), preventing a captured signed
+ingest from recreating erased content. Erase before removing the user from both
+allowlists; a de-allowlisted identity cannot reach its object.
+
+## Type checking
+
+The Worker tsconfig loads the pinned `@cloudflare/workers-types` and the committed
+`cloudflare-env.d.ts`, derived from `cf workers types --include-runtime=false`.
+The environment declarations infer bindings from `cloudflare.config.ts`; when
+relocating generated output, keep the config import relative to the declaration
+file and prefix its helper aliases with `__OpsHub` to avoid ambient collisions.
+A clean checkout can run `ttr resources run -- bun check --no-script -p apps/ops-hub`
+without generating ignored `.cloudflare` files first. The workspace `type-check`
+script also generates provider types before running TypeScript.
+
+## Cost and test evidence
+
+Limits: 256 KiB streamed ingest, 100 events per envelope, 1,000 retained events,
+100 retained items, 100 lanes/backlog entries, 40 environment rows and 120
+successful ingests per object per hour. Reads return at most 200 events. Export is paginated by section and row cursor;
+each page contains at most 200 rows. There are no outgoing provider requests, queues,
+cron triggers, retries or fan-out. Invalid assertions do not touch the DO.
+Maintenance uses fixed-size deletion batches. Disabled hubs run only retention
+cleanup; explicit erasure and the final retention horizon stop scheduling. Stop reduces background work; it
+cannot prevent the billing of an incoming request reaching Cloudflare.
+
+On an admitted host, run from `apps/ops-hub`:
+
+```sh
+ttr resources run -- bun run test
+ttr resources run -- bun run test:runtime
+ttr resources run -- bun run type-check
+ttr resources run -- bun run lint
+```
+
+The runtime suite starts a finite loopback workerd instance through the existing
+cf/Vite harness, with ephemeral fixture keys and isolated SQLite persistence,
+then closes it. It tests forged signatures, replay/skew/size/schema rejection,
+environment redaction, isolation, persistence/restart, retention and kill/erase
+fences. Unit tests exercise real SQLite retention and bounded maintenance work.
+These commands do not run a release build or contact hosted services.
+Compatibility date is pinned to 2026-10-19, supported by the repository's
+pinned workerd. CI owns the separate release-build check.
+
+Persisted per-series row counters make cap checks constant-size;
+new rows and retention deletions update counters in the same SQLite transaction.
+
+Logical row counters and deletion batch sizes use SQL RETURNING rows. Cloudflare's
+rowsWritten metric also counts index updates and cannot serve as a logical row
+count; see the [SQLite storage API](https://developers.cloudflare.com/durable-objects/api/sqlite-storage-api/).
+The workerd regression checks counter equality after duplicate buckets, a forced
+transaction rollback and restart. Billing additionally includes maintained indexes;
+logical row/statement caps are bounds on work, not a claim of zero storage cost.
+
+## Frozen publisher contract: schema v2
+
+Version 1 is rejected. The signature domain prefix is ops-hub-publisher-v2.
+The top-level fields are exactly v, seq, sentAt, snapshot (optional), events,
+decisions (optional; defaults to an empty array) and observability (optional).
+All objects reject unknown keys. The envelope is limited to 256 KiB, a snapshot
+to 128 KiB and each needs-you item to 4 KiB, measured as UTF-8 JSON bytes.
+
+Decisions accept at most 50 rows per ingest and retain the newest 1,000 rows for
+at most 30 days. Each row has id (1–80 ASCII identifier characters), at (Unix ms),
+title (120 characters), by (mastermind, user, or role: followed by 1–32 ASCII
+letters/digits/spaces/underscores/hyphens), category (auto/delegated/user), area
+(security/release/product/infra/org/quota/cost), why (280 characters), risk
+(low/med/high), and reversible (boolean). IDs are stable and immutable: conflicting
+content for an existing ID rejects the ingest. Repeating the same ID/content is
+idempotent. Security-area rows store and return **only id, at, title, area, risk**;
+why, by, category and reversible are discarded before storage. Those four fields
+are optional for security input, so a publisher may send the five-field projection
+directly. If present, discarded fields still undergo type and length validation. Category-filtered
+reads therefore exclude security rows; unfiltered reads include them.
+
+GET /decisions accepts optional after and category. The response contains decisions
+and nextAfter; use the returned timestamp:ID cursor verbatim to avoid skipping rows
+that share a timestamp. The page limit is 200. The initial cursor is 0.
+
+When observability is present, all six arrays below are required. Numeric values
+are finite; timestamps are nonnegative safe-integer Unix milliseconds. Identifiers
+reject secret-shaped text. Per-field limits:
+
+| Array | Exact row fields and limits | Batch cap | Retention/storage |
+| --- | --- | --- | --- |
+| quota_series | instance: 1–64 ASCII identifier chars; t; pct: 0–100 | 100 | 7 days, 80,672 total rows, at most 16 instances |
+| speed_series | model: 1–80 ASCII model identifier chars; t; tok_s_p50: 0–1,000,000 | 100 | 30 days, newest 10,000 rows, at most 16 models |
+| children_series | t; provider: 1–32 ASCII identifier chars; model: 1–80 chars; running/started/finished: integers 0–1,000,000 | 100 | 30 days, newest 10,000 rows, at most 16 provider/model pairs |
+| staff | role: 1–64 ASCII identifier chars; title: 120 chars; state; last_active; model: 1–80 chars; runs_today: integer 0–1,000,000 | 100 unique roles | Snapshot, replaced on every supplied observability batch |
+| ci | repo: owner/name, at most 100 ASCII chars; t; queued/running: integers 0–1,000,000 | 100 | 30 days, newest 10,000 rows, at most 16 repos |
+| cadence | product: 1–64 ASCII identifier chars; last_prod_at: Unix ms or null | 40 unique products | Snapshot, replaced with staff |
+
+Staff states are idle, queued, running, waiting, success, failed, held, paused,
+stopped and unknown. Model identifiers may additionally contain slash and colon;
+repo names contain one slash. Rows beyond a table cap evict the oldest rows.
+Quota timestamps are floored to two-minute buckets; the last value for an
+instance/bucket replaces the earlier value. Other series upsert by dimension/t.
+Children dimensions include both provider and model. Points older than their
+retention window or more than 120 seconds in the future reject the ingest.
+
+GET /observability accepts since (Unix ms, default 0) and series (one of the six
+array names, default quota_series). It returns series, points and pointCap=500;
+time-series responses also include bucketMs. Reads select the last actual point
+in each time bucket, fairly dividing the cap across up to 16 dimensions. A bounded
+dimension registry avoids full-history dimension scans; primary-key range lookups
+select each bucket endpoint without scanning every raw point. Staff
+and cadence return their current snapshot. Historical rows are filtered by their
+retention window before downsampling. This endpoint never fetches providers.
+
+The normal hourly alarm is armed before committing accepted content and retained across heartbeats. Each maintenance pass
+purges at most eight batches of 512 rows per time series, plus bounded events,
+items and decisions. An expired-row backlog schedules a one-minute catch-up pass;
+persisted deletion progress survives retry/restart. Row caps bound the remaining
+work, and no pass starts an unbounded loop. After 30 days without ingest, all
+content, including stale snapshots and open items, is purged and scheduling ends.
+Disabled state returns 503 for every non-status route and retains data. Only
+retention-purge work continues, without staleness updates; it stops after the
+final 30-day horizon. DELETE /hub is a separate explicit purge that clears content,
+sets a durable erasure tombstone and cancels the alarm. A late erased-object alarm
+exits without scheduling more work.
+
+GET /hub/export uses section (snapshot/events/needs_you/decisions/metrics/
+observability_snapshot), after (row cursor, default 0), and optional seq. Each
+response includes v=2, seq, section, rows, nextAfter and the section list. Traverse
+each section until nextAfter is null, passing the first page's seq throughout;
+409 means the hub changed and export must restart. Every page is bounded to 200
+rows and filters expired content. This keeps the full export usable with the
+same two-MiB gateway response ceiling even at the quota storage cap.

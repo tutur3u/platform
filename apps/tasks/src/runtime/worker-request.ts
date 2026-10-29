@@ -14,14 +14,14 @@ export const TASKS_ROOT_HOSTS = ['tasks.tuturuuu.com'] as const;
 
 /** Staging Worker hostnames an operator may admit through a Worker var. */
 const STAGING_HOST =
-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:workers\.dev|tuturuuu\.com)$/u;
+  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:workers\.dev|staging\.tutur3u\.com)$/u;
 
 export interface TasksWorkerEnv {
   ASSETS?: AssetsBinding;
   /** Central Web API origin for unowned `/api/*` (default tuturuuu.com). */
   INTERNAL_WEB_API_ORIGIN?: string;
   /**
-   * Comma-separated staging hostnames (`*.workers.dev` or `*.tuturuuu.com`)
+   * Comma-separated staging hostnames (`*.workers.dev` or `*.staging.tutur3u.com`)
    * served at the root, set on the staging Worker only. Never derived from a
    * request.
    */

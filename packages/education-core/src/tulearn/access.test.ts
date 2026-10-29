@@ -1,6 +1,6 @@
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getTulearnBootstrap } from './access';
+import { getTulearnBootstrap, hasEducationEnabled } from './access';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
@@ -115,5 +115,40 @@ describe('getTulearnBootstrap', () => {
         roles: ['student'],
       },
     ]);
+  });
+});
+
+describe('hasEducationEnabled public flag contract', () => {
+  it.each([
+    { value: ' TRUE ', enabled: true },
+    { value: 'true', enabled: true },
+    { value: 'false', enabled: false },
+    { value: null, enabled: false },
+  ])(
+    'parses $value consistently with education eligibility',
+    async ({ value, enabled }) => {
+      mocks.createAdminClient.mockResolvedValue(
+        createSupabaseMock({
+          workspace_secrets: [{ data: { value }, error: null }],
+        })
+      );
+      await expect(hasEducationEnabled('workspace')).resolves.toBe(enabled);
+    }
+  );
+
+  it('preserves query errors through the existing public export', async () => {
+    const error = new Error('flag unavailable');
+    mocks.createAdminClient.mockResolvedValue({
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: { value: 'true' }, error }),
+            }),
+          }),
+        }),
+      }),
+    });
+    await expect(hasEducationEnabled('workspace')).rejects.toBe(error);
   });
 });

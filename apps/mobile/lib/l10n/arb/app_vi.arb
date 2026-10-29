@@ -4469,10 +4469,21 @@
   "taskPortfolioUpdatePosted": "Đã đăng cập nhật.",
   "taskPortfolioUpdateSaved": "Đã lưu cập nhật.",
   "taskQuickActionsDueDate": "Hạn chót",
-  "taskQuickActionsNoDueDate": "Chưa đặt hạn",
+  "taskQuickActionsNoDate": "Không có",
   "taskQuickActionsNoLabels": "Chưa có nhãn",
+  "taskQuickActionsRemoveStartDate": "Xóa ngày bắt đầu",
   "taskQuickActionsStatus": "Trạng thái",
   "taskQuickActionsUnassigned": "Chưa giao cho ai",
+  "taskTimelineLoadingTasks": "Đang tải công việc…",
+  "taskTimelineNotAllLoaded": "Một số việc chưa được tải",
+  "taskTimelineNothingToday": "Hôm nay chưa có việc nào",
+  "taskTimelineOngoing": "Ngày {day}/{total}, kết thúc {date}",
+  "taskTimelineRangeAll": "Tất cả",
+  "taskTimelineRangeMonth": "Tháng",
+  "taskTimelineRangeWeek": "Tuần",
+  "taskTimelineShowLater": "Hiện các việc về sau",
+  "taskTimelineShowOverdue": "Xem việc quá hạn",
+  "taskTimelineStarted": "Bắt đầu {date}",
   "tasksAllCaughtUp": "Đã hoàn thành tất cả!",
   "tasksAllCaughtUpSubtitle": "Không có công việc cần xử lý",
   "tasksCompleteByEndOfDay": "Hoàn thành trước cuối ngày",
@@ -6000,7 +6011,7 @@
   "mastermindSummaryUsageLowest": "{account} còn ít nhất: {percent}.",
   "mastermindSummaryUsageShort": "Dự báo SHORT khi đặt lại lúc {time}.",
   "mastermindSummaryWeeklyNotReported": "Nguồn không báo cáo hạn mức tuần.",
-  "mastermindTabHome": "Tổng quan",
+  "mastermindTabHome": "Hôm nay",
   "mastermindTabInbox": "Hộp thư",
   "mastermindTabInsights": "Phân tích",
   "mastermindTabShip": "Phát hành",
@@ -6193,5 +6204,125 @@
   "mastermindAskActionPhysical": "Cần một bước thực tế",
   "mastermindAskActionFyi": "Để bạn biết",
   "mastermindAskRemindAtMac": "Nhắc tôi khi ở máy Mac",
-  "mastermindAskRemindAtMacSoon": "Sắp ra mắt"
+  "mastermindAskRemindAtMacSoon": "Sắp ra mắt",
+  "mastermindCatchupTitle": "Từ lần bạn xem gần nhất",
+  "mastermindCatchupWindowSince": "Từ lần ghé thăm trước",
+  "mastermindCatchupWindowDay": "24 giờ qua",
+  "mastermindCatchupWelcome": "Chào mừng đến với Mastermind. Đây là những gì đã diễn ra trong ngày qua.",
+  "mastermindCatchupQuiet": "Không có gì mới từ lần bạn xem trước",
+  "mastermindCatchupQuietFirstRun": "Chưa có gì xảy ra trong ngày qua.",
+  "mastermindCatchupPartial": "Một số cập nhật có thể bị thiếu",
+  "mastermindCatchupSectionShipped": "Đã phát hành",
+  "mastermindCatchupSectionBlocked": "Bị chặn",
+  "mastermindCatchupSectionChanged": "Thay đổi",
+  "mastermindCatchupSectionUsage": "Mức dùng & sức khỏe",
+  "mastermindCatchupSectionOther": "Cập nhật khác",
+  "mastermindCatchupCountNeedsYou": "{count, plural, other{{count} cần bạn}}",
+  "@mastermindCatchupCountNeedsYou": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountShipped": "{count} đã phát hành",
+  "@mastermindCatchupCountShipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountBlocked": "{count} bị chặn",
+  "@mastermindCatchupCountBlocked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountChanged": "{count} thay đổi",
+  "@mastermindCatchupCountChanged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupNewDivider": "Mới từ lần ghé thăm trước",
+  "mastermindCatchupShowEarlier": "Hiện {count} mục cũ hơn",
+  "@mastermindCatchupShowEarlier": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupSecurityUpdate": "Cập nhật bảo mật",
+  "mastermindCatchupOnIt": "{name} đang xử lý",
+  "@mastermindCatchupOnIt": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindCatchupButton": "Cập nhật cho tôi",
+  "mastermindCatchupRefreshing": "Đang cập nhật…",
+  "mastermindCatchupUpToDate": "Bạn đã cập nhật mới nhất",
+  "mastermindCatchupFailed": "Không cập nhật được. Thử lại.",
+  "mastermindCatchupOpensLink": "Mở trong trình duyệt",
+  "mastermindCatchupGroupLabel": "{product}, {count, plural, other{{count} cập nhật}}",
+  "@mastermindCatchupGroupLabel": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelNow": "vừa xong",
+  "mastermindRelMinutes": "{count} phút",
+  "@mastermindRelMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelHours": "{count} giờ",
+  "@mastermindRelHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelHoursMinutes": "{hours} giờ {minutes} phút",
+  "@mastermindRelHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelDays": "{count} ngày",
+  "@mastermindRelDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelShowExact": "Xem giờ chính xác",
+  "mastermindCatchupSettingsAction": "Cài đặt bản tin",
+  "mastermindMorningCatchup": "Bản tin buổi sáng",
+  "mastermindMorningCatchupSubtitle": "Một thông báo cho biết bản tin đã sẵn sàng. Lưu trên thiết bị này; việc gửi sẽ bắt đầu khi hub hỗ trợ.",
+  "mastermindMorningCatchupTime": "Giờ",
+  "mastermindCatchupPushBody": "Bản tin của bạn đã sẵn sàng"
 }

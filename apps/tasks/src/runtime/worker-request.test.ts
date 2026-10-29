@@ -276,7 +276,7 @@ describe('Tasks Worker request step (root-only, fail-closed)', () => {
     const { createBridge, handle } = setup();
     const env = {
       TUTURUUU_STAGING_HOSTS:
-        'tuturuuu-tasks-vite-staging.ops.workers.dev, evil.example, tasks-staging.tuturuuu.com',
+        'tuturuuu-tasks-vite-staging.ops.workers.dev, evil.example, tasks-staging.tuturuuu.com, tasks.staging.tutur3u.com',
     };
 
     const staging = await handle(
@@ -293,7 +293,7 @@ describe('Tasks Worker request step (root-only, fail-closed)', () => {
       rootHosts: [
         'tasks.tuturuuu.com',
         'tuturuuu-tasks-vite-staging.ops.workers.dev',
-        'tasks-staging.tuturuuu.com',
+        'tasks.staging.tutur3u.com',
       ],
       mountHosts: [],
       unknownHost: 'reject',

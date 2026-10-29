@@ -881,6 +881,18 @@
     "step_try_description": "Practice in context. You can skip or close the guide at any time.",
     "title": "Guidance and learning"
   },
+  "parentInvite": {
+    "accept": "Accept invitation",
+    "accepting": "Accepting...",
+    "description": "Share access to your learner's progress in Learn. Sign in with the email address this invitation was sent to.",
+    "emailMismatch": "Sign in with the verified email address this invitation was sent to.",
+    "failed": "We could not accept this invitation. Try again.",
+    "incomplete": "This invitation link is incomplete. Open the link from your email again.",
+    "open": "Open Learn",
+    "success": "Invitation accepted. You can now follow your learner's progress.",
+    "title": "Parent invitation",
+    "unavailable": "This invitation has expired, was already used or was withdrawn. Ask the school to send a new one."
+  },
   "practice": {
     "again": "Try again",
     "correct": "Correct",

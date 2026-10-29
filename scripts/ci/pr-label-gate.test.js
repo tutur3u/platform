@@ -283,3 +283,127 @@ test('the unwrap is exact for plain, expression and missing conditions', () => {
   assert.equal(withoutPrLabelGate(PR_LABEL_GATE), undefined);
   assert.equal(withoutPrLabelGate(plain), plain);
 });
+
+test('heavy job conditions reject unlabelled events for humans, bots, fleet and stacks', () => {
+  for (const file of HEAVY_PR_WORKFLOWS) {
+    const workflow = workflows[file];
+    const needs = Object.fromEntries(
+      Object.keys(workflow.jobs).map((id) => [
+        id,
+        {
+          result: 'success',
+          outputs: {
+            should_run: 'true',
+            run_checks: 'true',
+            affected_jobs: '{}',
+          },
+        },
+      ])
+    );
+    for (const actor of [
+      'Sokora',
+      'vhpx',
+      'dependabot[bot]',
+      'claude[bot]',
+      'github-actions[bot]',
+    ]) {
+      for (const action of ['opened', 'synchronize', 'reopened', 'labeled']) {
+        for (const base of ['main', 'chore/stack-parent']) {
+          const scope = {
+            ...pullRequest([], action),
+            needs,
+            inputs: {},
+          };
+          scope.github.actor = actor;
+          scope.github.ref = 'refs/pull/42/merge';
+          scope.github.event.pull_request.draft = false;
+          scope.github.event.pull_request.base = { ref: base };
+          const ready = structuredClone(scope);
+          ready.github.event.pull_request.labels = [{ name: READY_LABEL }];
+          for (const [id, job] of Object.entries(workflow.jobs)) {
+            const context = `${file}/${id}: ${actor}, ${action}, base=${base}`;
+            assert.equal(
+              Boolean(evaluateExpression(job.if, scope)),
+              false,
+              context
+            );
+            const original = withoutPrLabelGate(job.if);
+            assert.equal(
+              Boolean(evaluateExpression(job.if, ready)),
+              original === undefined ||
+                Boolean(evaluateExpression(original, ready)),
+              `${context}: labelled runs preserve the original job condition`
+            );
+          }
+        }
+      }
+    }
+  }
+});
+
+function assertProtectedPush(file, push) {
+  assert.ok(
+    push?.branches?.length,
+    `${file}: push needs explicit protected branches`
+  );
+  assert.equal(push['branches-ignore'], undefined, file);
+  for (const branch of push.branches) {
+    assert.ok(
+      ['main', 'production', 'release-please--branches--**'].includes(branch),
+      `${file}: ${branch} admits feature-branch pushes outside PR admission`
+    );
+  }
+}
+
+test('heavy workflows cannot start feature-branch push builds', () => {
+  for (const file of HEAVY_PR_WORKFLOWS) {
+    const on = events(workflows[file]);
+    if (Object.hasOwn(on, 'push')) assertProtectedPush(file, on.push);
+  }
+  const push = events(workflows['mail-calendar-tasks-builds.yaml']).push;
+  for (const branches of [
+    undefined,
+    ['**'],
+    ['main', 'feature/**'],
+    ['main', '!production'],
+  ]) {
+    assert.throws(() =>
+      assertProtectedPush('feature-bypass', { ...push, branches })
+    );
+  }
+});
+
+test('reported build push selectors preserve protected refs and release branches', () => {
+  assert.deepEqual(
+    events(workflows['mail-calendar-tasks-builds.yaml']).push.branches,
+    ['main']
+  );
+  assert.equal(
+    events(workflows['programming-app-builds.yaml']).push,
+    undefined
+  );
+  assert.deepEqual(events(workflows['i18n-check.yaml']).push.branches, [
+    'main',
+    'production',
+  ]);
+  for (const file of [
+    'turbo-unit-tests.yaml',
+    'type-check.yaml',
+    'biome-check.yaml',
+  ]) {
+    assert.deepEqual(
+      events(workflows[file]).push.branches,
+      ['main', 'production', 'release-please--branches--**'],
+      file
+    );
+  }
+  const release = workflows['release-please.yaml'];
+  assert.match(
+    JSON.stringify(release),
+    /release-please--branches--production/u
+  );
+  assert.match(
+    JSON.stringify(release),
+    /release-please--branches--production--release-notes/u
+  );
+});

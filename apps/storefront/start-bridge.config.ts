@@ -26,7 +26,7 @@ export const selectStorefrontApiOrigin: ApiOrigin = (
 export default defineBridgeAppConfig<StorefrontApiEnvironment>({
   apiOrigin: selectStorefrontApiOrigin,
   mounts: {
-    rootHosts: ['store.tuturuuu.com', 'storefront-staging.tuturuuu.com'],
+    rootHosts: ['store.tuturuuu.com', 'storefront.staging.tutur3u.com'],
     mountHosts: [],
     unknownHost: 'reject',
   },
