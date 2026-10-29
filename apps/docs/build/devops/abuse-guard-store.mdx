@@ -404,7 +404,7 @@ Other P3 limits remain recorded:
   cost envelope; a bounded terminal loop is not free.
 - **Ingress:** when the owner attaches a hostname, add a Cloudflare WAF rate-limit
   rule for it, such as per-IP requests to `/v1/rpc` and `/control/*`. It sheds
-  unauthenticated floods before Worker billing. It is not a spend cap; the budget is.
+  unauthenticated floods before Worker billing. Family budgets cap admitted subject commands; total request billing remains an activation hold.
 - **Accounting limits / open request-cost hold:** the budget counts subject
   commands, not all billed operations. A fair admission cache miss makes a control
   DO request, even when rejected. Cache eviction, restarts and multiple instances
