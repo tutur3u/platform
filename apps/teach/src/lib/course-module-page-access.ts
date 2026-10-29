@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { notFound } from 'next/navigation';
+import { requireEducationPageAccess } from '@/lib/education-page-access';
 
 export interface CourseModulePageScope {
   wsId: string;
@@ -12,6 +13,7 @@ export async function requireCourseModulePageAccess({
   courseId,
   moduleId,
 }: CourseModulePageScope) {
+  await requireEducationPageAccess(wsId);
   const supabase = await createAdminClient();
   const { data: module, error } = await supabase
     .from('workspace_course_modules')

@@ -8,6 +8,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { requireCourseModulePageAccess } from '@/lib/course-module-page-access';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 
 export const metadata: Metadata = {
@@ -31,6 +32,11 @@ export default async function ModuleResourcesPage({ params }: Props) {
 
   const { wsId: routeWsId, courseId, moduleId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  await requireCourseModulePageAccess({
+    wsId: resolvedWsId,
+    courseId,
+    moduleId,
+  });
   const storagePath = `${resolvedWsId}/courses/${courseId}/modules/${moduleId}/resources/`;
   const resources = await getResources({ path: storagePath });
 

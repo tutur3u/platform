@@ -46,6 +46,7 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
   const scope = { wsId: resolvedWsId, courseId, moduleId };
   const data = await getData(scope);
   const resources = await getResources({
+    wsId: resolvedWsId,
     path: `${resolvedWsId}/courses/${courseId}/modules/${moduleId}/resources/`,
   });
 

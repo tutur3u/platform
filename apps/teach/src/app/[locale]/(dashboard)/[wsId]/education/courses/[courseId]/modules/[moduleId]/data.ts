@@ -3,6 +3,7 @@ import {
   type CourseModulePageScope,
   requireCourseModulePageAccess,
 } from '@/lib/course-module-page-access';
+import { requireEducationPageAccess } from '@/lib/education-page-access';
 
 export async function getData(scope: CourseModulePageScope) {
   const { module } = await requireCourseModulePageAccess(scope);
@@ -14,6 +15,7 @@ export async function getFlashcards({
   courseId,
   moduleId,
 }: CourseModulePageScope) {
+  await requireEducationPageAccess(wsId);
   const supabase = await createAdminClient();
 
   const { count, error } = await supabase
@@ -35,6 +37,7 @@ export async function getQuizzes({
   courseId,
   moduleId,
 }: CourseModulePageScope) {
+  await requireEducationPageAccess(wsId);
   const supabase = await createAdminClient();
 
   const { count, error } = await supabase
@@ -56,6 +59,7 @@ export async function getQuizSets({
   courseId,
   moduleId,
 }: CourseModulePageScope) {
+  await requireEducationPageAccess(wsId);
   const supabase = await createAdminClient();
 
   const { count, error } = await supabase
@@ -72,7 +76,14 @@ export async function getQuizSets({
   return count;
 }
 
-export async function getResources({ path }: { path: string }) {
+export async function getResources({
+  path,
+  wsId,
+}: {
+  path: string;
+  wsId: string;
+}) {
+  await requireEducationPageAccess(wsId);
   const supabase = await createAdminClient();
 
   const { data, error } = await supabase.storage.from('workspaces').list(path);

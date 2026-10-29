@@ -6,6 +6,7 @@ import {
   getQuizSets as countQuizSets,
   getQuizzes as countQuizzes,
   getData as getModule,
+  getResources as listModuleResources,
 } from '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/data';
 import { getFlashcards } from '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/flashcards/data';
 import ModulePreviewPage from '@/app/[locale]/(dashboard)/[wsId]/education/courses/[courseId]/modules/[moduleId]/page';
@@ -15,10 +16,18 @@ import ModuleYoutubeLinksPage from '@/app/[locale]/(dashboard)/[wsId]/education/
 import type { CourseModulePageScope } from '@/lib/course-module-page-access';
 
 const mocks = vi.hoisted(() => ({
+  joined: true,
+  allowed: true,
   from: vi.fn(),
   listResources: vi.fn(async () => ({ data: [], error: null })),
   notFound: vi.fn(() => {
     throw new Error('NEXT_NOT_FOUND');
+  }),
+}));
+
+vi.mock('@tuturuuu/satellite/workspace-access', () => ({
+  getSatelliteWorkspacePermissions: async () => ({
+    withoutPermission: () => !mocks.allowed,
   }),
 }));
 
@@ -37,7 +46,10 @@ vi.mock('next-intl/server', () => ({
   getTranslations: async () => (key: string) => key,
 }));
 vi.mock('@/lib/resolve-route-workspace', () => ({
-  resolveRouteWorkspace: async (wsId: string) => ({ resolvedWsId: wsId }),
+  resolveRouteWorkspace: async (wsId: string) => ({
+    resolvedWsId: wsId,
+    workspace: { joined: mocks.joined },
+  }),
 }));
 vi.mock('@tuturuuu/icons', () => ({
   BookText: 'BookText',
@@ -262,6 +274,8 @@ class Query {
 }
 
 beforeEach(() => {
+  mocks.joined = true;
+  mocks.allowed = true;
   vi.clearAllMocks();
   mocks.from.mockImplementation((table: string) => new Query(table));
 });
@@ -442,3 +456,47 @@ describe('PostgREST fixture join semantics', () => {
     expect(query.execute().data).toEqual(tables[table]);
   });
 });
+
+for (const [name, load] of [
+  [
+    'resources',
+    (s: CourseModulePageScope) =>
+      listModuleResources({
+        wsId: s.wsId,
+        path: `${s.wsId}/courses/${s.courseId}/modules/${s.moduleId}/resources/`,
+      }),
+  ],
+  ['layout', getModule],
+  ['flashcard count', countFlashcards],
+  ['quiz count', countQuizzes],
+  ['quiz set count', countQuizSets],
+  ['flashcards', getFlashcards],
+  ['quiz sets', getQuizSets],
+  ['quizzes with private answers', getQuizzes],
+  [
+    'preview',
+    (s: CourseModulePageScope) =>
+      ModulePreviewPage({ params: Promise.resolve({ ...s, locale: 'en' }) }),
+  ],
+  [
+    'content',
+    (s: CourseModulePageScope) =>
+      ModuleContentPage({ params: Promise.resolve(s) }),
+  ],
+  [
+    'YouTube',
+    (s: CourseModulePageScope) =>
+      ModuleYoutubeLinksPage({ params: Promise.resolve(s) }),
+  ],
+] as const) {
+  it.each(['denied member', 'nonmember'])(
+    `%s cannot read ${name}`,
+    async (caller) => {
+      mocks.joined = caller !== 'nonmember';
+      mocks.allowed = caller !== 'denied member';
+      await expect(load(scope)).rejects.toThrow('NEXT_NOT_FOUND');
+      expect(mocks.from).not.toHaveBeenCalled();
+      expect(mocks.listResources).not.toHaveBeenCalled();
+    }
+  );
+}
