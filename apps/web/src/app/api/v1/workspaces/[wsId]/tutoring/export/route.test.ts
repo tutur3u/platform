@@ -146,6 +146,7 @@ describe('tutoring export past the PostgREST row cap', () => {
         teacher_name: 'Synthetic teacher-1',
         completed_sessions: 2401,
         total_minutes: 2401 * 45,
+        total_cong: 2401,
       },
     ]);
   });
