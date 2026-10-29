@@ -24,6 +24,14 @@ export async function GET() {
       await resolveAuthenticatedSessionUser(supabase);
     if (sessionSupabase) supabase = sessionSupabase;
 
+    if (!user)
+      return Response.json({ message: 'Unauthorized' }, { status: 401 });
+
+    const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
+    if (!permissions?.containsPermission('ai_lab')) {
+      return Response.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
     const staffUser = user
       ? await getVerifiedAuthUser(
           await createAdminClient({ noCookie: true }),
@@ -38,11 +46,6 @@ export async function GET() {
         { message: 'Unauthorized - Tuturuuu admin access required' },
         { status: 403 }
       );
-    }
-
-    const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
-    if (!permissions?.containsPermission('ai_lab')) {
-      return Response.json({ message: 'Forbidden' }, { status: 403 });
     }
 
     const sbAdmin = await createAdminClient();
