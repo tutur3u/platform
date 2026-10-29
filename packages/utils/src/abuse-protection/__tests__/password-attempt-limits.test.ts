@@ -59,7 +59,10 @@ function fakeRedis() {
 
 const subject = (
   overrides: Partial<
-    Extract<PasswordAttemptSubject, { ip?: string | null }>
+    Extract<
+      PasswordAttemptSubject,
+      { scope: 'meet-guest' | 'meet-guest-create' }
+    >
   > = {}
 ): PasswordAttemptSubject => ({
   scope: 'meet-guest',

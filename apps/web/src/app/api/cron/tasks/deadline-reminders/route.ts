@@ -3,7 +3,13 @@ import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withWebCronLogDrain as withCronLogDrain } from '@/lib/cron/web-cron';
+import {
+  assertReminderBudget,
+  chargeWebCronPage,
+  hasWebCronBudget,
+  WEB_CRON_MAX_REMINDER_TASKS,
+} from '@/lib/cron/web-cron-budget';
 
 /**
  * Vercel Cron Job: Process Task Deadline Reminders
@@ -118,6 +124,7 @@ async function handleGET(req: NextRequest) {
     // Workspace settings override the defaults, including when reminders are disabled.
     const allSettings: ReminderSettings[] = [];
     for (let offset = 0; ; offset += PAGE_SIZE) {
+      chargeWebCronPage();
       const { data, error } = (await (sbAdmin as any)
         .from('workspace_task_reminder_settings')
         .select('ws_id, reminder_intervals, enabled')
@@ -176,6 +183,7 @@ async function handleGET(req: NextRequest) {
     // Query only the due-date windows that can produce a reminder now.
     const tasks: TaskWithDetails[] = [];
     for (let offset = 0; ; offset += PAGE_SIZE) {
+      chargeWebCronPage();
       const { data, error } = (await (sbAdmin as any)
         .from('tasks')
         .select(
@@ -219,9 +227,12 @@ async function handleGET(req: NextRequest) {
         );
       }
       tasks.push(...(data ?? []));
+      if (hasWebCronBudget() && tasks.length > WEB_CRON_MAX_REMINDER_TASKS)
+        throw new Error('Cloudflare reminder task budget exceeded');
       if (!data || data.length < PAGE_SIZE) break;
     }
 
+    assertReminderBudget(tasks);
     if (tasks.length === 0) {
       return NextResponse.json({
         message: 'No tasks with approaching deadlines',
@@ -332,6 +343,7 @@ async function handleGET(req: NextRequest) {
               });
 
             if (notifError) {
+              if (hasWebCronBudget()) throw notifError;
               console.error(
                 `Error creating notification for task ${task.id}:`,
                 notifError
@@ -339,7 +351,11 @@ async function handleGET(req: NextRequest) {
               continue;
             }
 
-            if (!notificationId) continue;
+            if (!notificationId) {
+              if (hasWebCronBudget())
+                throw new Error('Reminder creation outcome unknown');
+              continue;
+            }
 
             const { error: trackError } = await sbAdmin.rpc(
               'record_task_reminder_sent',
@@ -352,6 +368,7 @@ async function handleGET(req: NextRequest) {
             );
 
             if (trackError) {
+              if (hasWebCronBudget()) throw trackError;
               console.error(
                 `Error tracking reminder for task ${task.id}:`,
                 trackError

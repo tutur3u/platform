@@ -198,6 +198,45 @@ Web exceptions until their dependent platform callers migrate. Expose shared
 access in `packages/internal-api` and consume it through TanStack Query or
 shared server components.
 
+## Workspace boundaries for finance writes
+
+Both Finance hosts validate body-supplied wallet, category, tag and subscription
+user-group references against the resolved route workspace before writing.
+This includes budgets, recurring transactions, debts, ordinary transactions,
+transfers and checkpoint reconciliation. Subscription customer and product
+validation continues to apply. Clearing an optional reference remains supported
+where the route accepts null.
+
+Wallet role whitelists restrict transaction writes as well as reads. Writers
+without `manage_finance` need whitelist access to every current and requested
+wallet involved in a transaction create, update or delete, or a transfer
+create or update. The one exception is the workspace default wallet
+(`default_wallet_id`): it stays writable for these writers when no role
+whitelist names it. The wallets list returns that unwhitelisted default wallet
+to transaction writers and invoice creators with invoice-safe fields only (id,
+name, type, currency, icon and image) and no balance, credit, audit or viewing
+window data, even when they hold `view_transactions`. A default wallet that a
+role whitelists keeps the fields that role is permitted to read. The
+single-config and bulk workspace settings routes accept a `default_wallet_id`
+change only from holders of `change_finance_wallets`, and only for a wallet in
+the same workspace.
+Database-level enforcement of `default_wallet_id` (the `workspace_configs` RLS
+and the `update_workspace_configs_with_approval_transitions` RPC) is a tracked
+follow-up; today the API routes enforce it.
+Any other unwhitelisted wallet returns 404. Finance managers retain
+workspace-wide wallet access. Recurring transactions validate their wallet and
+category ids as UUIDs, then check workspace ownership with the service-role
+client after the `manage_finance` check. Wallet creation accepts a matching
+replay without writing and rejects other uses of an existing id; editing an
+existing wallet uses its update route. Money Lover import requires
+`manage_finance`. The retired wallet migration endpoint remains disabled: it
+returns 403 outside development and 410 in development without writing wallets.
+
+Regression coverage: `finance-boundaries.test.ts`,
+`finance-write-boundaries.test.ts`, the wallets route `default-wallet.test.ts`,
+`workspace-settings-configs-route.test.ts`, and the subscription invoice and
+role wallet route tests.
+
 ## Wallet checkpoint reconciliation submission
 
 The shared Finance checkpoint adjustment dialog submits the category and

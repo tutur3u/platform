@@ -86,6 +86,10 @@
 /apps/devbox-control/              @vhpx
 /packages/devbox/                  @vhpx
 
+# Abuse-protection store (Durable Object Worker and its clients)
+/apps/abuse-guard/                 @vhpx
+/packages/utils/src/abuse-guard/   @vhpx
+
 # Payments
 /packages/payment/                 @vhpx
 /packages/payment-core/            @vhpx

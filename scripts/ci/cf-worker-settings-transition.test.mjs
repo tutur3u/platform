@@ -285,7 +285,7 @@ for (const [label, binding, error] of [
   [
     'unreviewed binding type',
     { name: 'CACHE', type: 'kv_namespace', namespace_id: 'kv' },
-    /unreviewed kv_namespace binding <undeclared binding #13>$/,
+    /unreviewed kv_namespace binding <undeclared binding #14>$/,
   ],
   [
     'foreign Durable Object environment',
@@ -367,8 +367,8 @@ test('server-provided binding identifiers never reach output', async () => {
       }
     );
   assert.deepEqual(messages, [
-    'unreviewed <unknown type> binding <undeclared binding #13>',
-    'undeclared plain_text binding <undeclared binding #13>',
+    'unreviewed <unknown type> binding <undeclared binding #14>',
+    'undeclared plain_text binding <undeclared binding #14>',
     'unreviewed <unknown attribute> on plain_text binding WEB_ORIGIN',
     'Durable Object bindings differ',
   ]);
@@ -408,7 +408,7 @@ test('identifier-shaped credentials used as binding names are never printed', as
   assert.equal(outputs.length, 8);
   assert.ok(
     outputs.every((message) =>
-      /<undeclared binding #13>|<unknown attribute>/.test(message)
+      /<undeclared binding #14>|<unknown attribute>/.test(message)
     )
   );
 });
@@ -445,11 +445,11 @@ test('prototype-shaped binding names cannot bypass verification', async () => {
       );
     }
   assert.deepEqual(messages, [
-    'undeclared plain_text binding <undeclared binding #13>',
-    'undeclared durable_object_namespace binding <undeclared binding #13>',
-    'undeclared plain_text binding <undeclared binding #13>',
-    'undeclared durable_object_namespace binding <undeclared binding #13>',
-    'undeclared plain_text binding <undeclared binding #13>',
-    'undeclared durable_object_namespace binding <undeclared binding #13>',
+    'undeclared plain_text binding <undeclared binding #14>',
+    'undeclared durable_object_namespace binding <undeclared binding #14>',
+    'undeclared plain_text binding <undeclared binding #14>',
+    'undeclared durable_object_namespace binding <undeclared binding #14>',
+    'undeclared plain_text binding <undeclared binding #14>',
+    'undeclared durable_object_namespace binding <undeclared binding #14>',
   ]);
 });

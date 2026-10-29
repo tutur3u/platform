@@ -267,3 +267,54 @@ an app is routed onto the shared origin in any mode, `shadow` included.
 Enforcement needs a per-request script nonce passed to the Start router
 (`ssr.nonce`) through the Start bridge request context, and zero remaining
 violations for each app. Inline scripts are expected to report until then.
+
+### App-switch metrics
+
+App-switch time-to-interactive (ASI) is measured from the click on a link to
+another app until the destination's `ttr:app-ready` mark. It runs on both
+topologies, so the subdomain baseline and the shared-origin result are
+comparable.
+
+- **Source:** `AppSwitchTracker` (`@tuturuuu/satellite/app-switch-tracker`) is
+  rendered by the satellite `ClientProviders` and by Web's client providers. On a
+  click to another app it writes a 30-second `ttr_switch=<epoch-ms>.<from>` cookie
+  on `.tuturuuu.com`.
+- **Destination:** Meet and Mail read the cookie two frames after hydration on a
+  non-auth page, clear it and set `ttr:app-ready`. A sign-in handoff on the way is
+  recorded as `handoff`. 10% of switches send a beacon to `<mount>/_rum`.
+- **Payload:** app slugs, topology, duration, prerender/handoff flags, protocol,
+  connect time and effective connection type. No user, URL or workspace
+  identifiers.
+- **Ingest:** `handleAppSwitchBeacon` (`@tuturuuu/utils/app-switch-rum-ingest`)
+  turns one anonymous POST into at most one Workers Analytics Engine data point.
+  Every gate must pass, and any failure drops the beacon with a `204`:
+  - The `APP_SWITCH_RUM_INGEST` Worker variable is exactly `on`. Any other value,
+    including unset, answers without reading the body.
+  - An `APP_SWITCH_RUM` dataset binding exists.
+  - The body is at most 1 KiB in **bytes**, read as a stream that is cancelled on
+    overflow (`413`) or after a one-second deadline (`408`).
+  - The isolate's pre-filter has room: 30 points per 60 seconds per isolate.
+  - The durable admission shared by every instance has room in its window and is
+    not stopped. Admission that is missing, never started or failing admits
+    nothing. An operator stop survives restarts and redeploys, and resuming never
+    replays dropped beacons.
+
+  Failed writes are never retried. Client sampling and ingress rate limits are not
+  spend caps. `app-switch-rum-ingest.test.ts` covers concurrent instances against
+  one budget, stop after restart, storage failure and the byte bound. Meet and Mail
+  bind no admission today, so ingest cannot write. The durable admission (a Durable
+  Object store), its operator controls and the `APP_SWITCH_RUM` dataset binding
+  (`ttr_app_switch`) ship together as one reviewed Worker configuration change.
+  That change also needs exact-commit evidence that it meets the
+  [Cloudflare billable-operation rules](/build/devops/cloudflare-backend-ownership).
+
+`scripts/perf/app-switch-lab.mjs` is the lab counterpart. Run it on a Studio host
+through `ttr resources run`.
+
+- `switch` mode clicks a link from `--from` and waits for `ttr:app-ready`. It falls
+  back to `--ready-selector` or the load event on builds without the tracker. It
+  reports p50/p75/p95 over `--runs` with optional `--throttle slow4g` and `--warm`.
+- `ttfb` mode compares `--urls` for gate W1 (Web through Cloudflare compared with
+  direct Vercel).
+- Signed-in runs take a Playwright `--storage-state` file for a synthetic account,
+  created out of band. The report never includes its path.

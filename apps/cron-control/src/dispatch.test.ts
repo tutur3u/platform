@@ -10,6 +10,7 @@ import { LedgerCore, localLedger, memoryLedgerStore } from './ledger';
 
 const SECRET = 'test-cron-secret-value';
 const env = {
+  CRON_CONTROL_WEB_MODE: 'active',
   CRON_SECRET_INFRASTRUCTURE: SECRET,
   CRON_SECRET_INVENTORY: SECRET,
   CRON_SECRET_PAY: SECRET,
