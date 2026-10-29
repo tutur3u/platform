@@ -52,6 +52,8 @@ Teach proxy locale detection must sanitize `Accept-Language` before it reaches `
 
 Teach metadata and auth return URLs must resolve to absolute HTTP(S) app URLs. Prefer `TEACH_APP_URL` or `NEXT_PUBLIC_TEACH_APP_URL` for the Teach origin and `LEARN_APP_URL` or `NEXT_PUBLIC_LEARN_APP_URL` for Learn handoffs. A valid absolute `BASE_URL` can be used as a fallback for Teach, but non-URL environment values such as `development` are ignored so local development falls back to `https://teach.tuturuuu.localhost` through Portless.
 
+Teach module quiz, quiz-set, and flashcard pages and module-layout counts verify the module belongs to the URL course and resolved workspace before reading linked content or private quiz answers; foreign modules return 404 (regression: `apps/teach/src/lib/course-module-pages.test.ts`).
+
 ## Visual direction
 
 All non-`apps/web` education apps use the shared Neobrutalist design language from `apps/learn/DESIGN.md`: heavy foreground borders, offset shadows, paper-like surfaces, compact responsive grids, and theme-adaptive dynamic accents. Teach uses this language for public teacher orientation surfaces and protected dashboards.
