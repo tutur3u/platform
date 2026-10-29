@@ -527,3 +527,19 @@ owns the accepted claim forms and Auth source references; the
 grants. Replay installation and rollback as the non-superuser `postgres` role:
 Auth tables belong to `supabase_auth_admin`, so creating and dropping a trigger
 have different privilege requirements.
+
+### Atomic Assistant first-message creation
+
+The native first-message RPC binds a client UUID and request key to an immutable
+private creation snapshot. Validate actor/workspace/type before replay, compare
+initial settings against the snapshot rather than mutable settings, and keep the
+creation and user-message idempotency operation in one transaction. Retain a
+minimal tombstone after conversation deletion to deny stale resurrection.
+`verify-chat-first-message.mjs` exercises the full isolated migration chain,
+rollback cases and a two-connection advisory-lock race. Its baseline/candidate
+type generation applies only the new schema delta to the checked-in snapshot.
+
+The first-message rollback restores main's prior chat_create_conversation body
+and service-only ACL. Refuse retained creation receipts: removing retry identities
+can resurrect deleted conversations. Verify actual apply/rollback/reapply and
+prior catalog equality with apps/database/verification/chat-first-message-rollback-*.sql.
