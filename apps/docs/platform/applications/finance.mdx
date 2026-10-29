@@ -220,6 +220,9 @@ role whitelists keeps the fields that role is permitted to read. The
 single-config and bulk workspace settings routes accept a `default_wallet_id`
 change only from holders of `change_finance_wallets`, and only for a wallet in
 the same workspace.
+Database-level enforcement of `default_wallet_id` (the `workspace_configs` RLS
+and the `update_workspace_configs_with_approval_transitions` RPC) is a tracked
+follow-up; today the API routes enforce it.
 Any other unwhitelisted wallet returns 404. Finance managers retain
 workspace-wide wallet access. Recurring transactions validate their wallet and
 category ids as UUIDs, then check workspace ownership with the service-role

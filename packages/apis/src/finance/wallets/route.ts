@@ -27,6 +27,9 @@ const DEFAULT_WALLET_WRITE_PERMISSIONS = [
   'delete_transactions',
 ] as const;
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+
 interface WalletWhitelistRow {
   wallet_id: string;
   viewing_window: string | null;
@@ -129,9 +132,14 @@ export async function GET(
     hasManageFinance || !withoutPermission('view_transactions');
   // Invoice creators and transaction writers can use the workspace default
   // wallet without a whitelist entry (see validateFinanceWalletWriteAccess).
-  const defaultWalletId =
+  // A stored value that is not a UUID is ignored instead of failing the list.
+  const storedDefaultWalletId =
     hasCreateInvoices || canWriteTransactions
       ? await getWorkspaceConfig(normalizedWsId, 'default_wallet_id')
+      : null;
+  const defaultWalletId =
+    storedDefaultWalletId && UUID_PATTERN.test(storedDefaultWalletId)
+      ? storedDefaultWalletId
       : null;
   const canReadAllWalletsForInvoiceCreation =
     hasCreateInvoices &&

@@ -101,7 +101,7 @@ describe('wallets route', () => {
           limit: 5000,
           payment_date: 15,
           statement_date: 1,
-          wallet_id: 'wallet-default',
+          wallet_id: '11111111-1111-4111-8111-111111111111',
         },
       ],
       error: null,
@@ -134,7 +134,7 @@ describe('wallets route', () => {
           post_checkpoint_transaction_count: 0,
           status: 'clean',
           variance: 0,
-          wallet_id: 'wallet-default',
+          wallet_id: '11111111-1111-4111-8111-111111111111',
         },
       ],
       error: null,
@@ -156,7 +156,7 @@ describe('wallets route', () => {
                 {
                   currency: 'USD',
                   icon: null,
-                  id: 'wallet-default',
+                  id: '11111111-1111-4111-8111-111111111111',
                   image_src: null,
                   name: 'Default Wallet',
                   type: 'CASH',
@@ -166,7 +166,7 @@ describe('wallets route', () => {
                 {
                   balance: 1200,
                   currency: 'USD',
-                  id: 'wallet-default',
+                  id: '11111111-1111-4111-8111-111111111111',
                   name: 'Default Wallet',
                   type: 'CREDIT',
                 },
@@ -177,7 +177,9 @@ describe('wallets route', () => {
   });
 
   it('returns the default wallet for invoice creators without wallet roles', async () => {
-    mocks.getWorkspaceConfig.mockResolvedValue('wallet-default');
+    mocks.getWorkspaceConfig.mockResolvedValue(
+      '11111111-1111-4111-8111-111111111111'
+    );
     mocks.getFinanceRouteContext.mockResolvedValue({
       context: {
         normalizedWsId: 'ws-1',
@@ -204,7 +206,7 @@ describe('wallets route', () => {
       {
         currency: 'USD',
         icon: null,
-        id: 'wallet-default',
+        id: '11111111-1111-4111-8111-111111111111',
         image_src: null,
         name: 'Default Wallet',
         type: 'CASH',
@@ -213,7 +215,9 @@ describe('wallets route', () => {
     expect(mocks.walletSelect).toHaveBeenCalledWith(
       'id,name,type,currency,icon,image_src'
     );
-    expect(mocks.walletIn).toHaveBeenCalledWith('id', ['wallet-default']);
+    expect(mocks.walletIn).toHaveBeenCalledWith('id', [
+      '11111111-1111-4111-8111-111111111111',
+    ]);
   });
 
   it('returns all wallets for invoice creators when no default wallet is configured', async () => {
@@ -290,7 +294,7 @@ describe('wallets route', () => {
       'wallet_id, limit, statement_date, payment_date'
     );
     expect(mocks.creditWalletIn).toHaveBeenCalledWith('wallet_id', [
-      'wallet-default',
+      '11111111-1111-4111-8111-111111111111',
     ]);
   });
 

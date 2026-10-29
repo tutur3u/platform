@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   getFinanceRouteContext: vi.fn(),
   getWorkspaceConfig: vi.fn(),
+  eqCalls: [] as Array<[string, unknown]>,
   walletLoads: [] as Array<{ columns: string; ids?: string[] }>,
   whitelist: [] as Array<{
     custom_days: number | null;
@@ -22,6 +23,8 @@ vi.mock('../request-access', () => ({
   ) => mocks.getFinanceRouteContext(...args),
 }));
 
+const DEFAULT_ID = '11111111-1111-4111-8111-111111111111';
+const LISTED_ID = '22222222-2222-4222-8222-222222222222';
 const INVOICE_SAFE_COLUMNS = 'id,name,type,currency,icon,image_src';
 
 const WALLETS = [
@@ -29,7 +32,7 @@ const WALLETS = [
     balance: 900,
     currency: 'USD',
     icon: null,
-    id: 'wallet-default',
+    id: DEFAULT_ID,
     image_src: null,
     name: 'Default Wallet',
     type: 'STANDARD',
@@ -38,7 +41,7 @@ const WALLETS = [
     balance: 300,
     currency: 'USD',
     icon: null,
-    id: 'wallet-listed',
+    id: LISTED_ID,
     image_src: null,
     name: 'Listed Wallet',
     type: 'STANDARD',
@@ -61,7 +64,10 @@ function createAdminClient() {
           const load: { columns: string; ids?: string[] } = { columns };
           mocks.walletLoads.push(load);
           const query = {
-            eq: vi.fn(() => query),
+            eq: vi.fn((column: string, value: unknown) => {
+              mocks.eqCalls.push([column, value]);
+              return query;
+            }),
             in: vi.fn((_column: string, ids: string[]) => {
               load.ids = ids;
               return query;
@@ -150,8 +156,9 @@ describe('wallets route default wallet visibility', () => {
     vi.resetModules();
     vi.clearAllMocks();
     mocks.walletLoads.length = 0;
+    mocks.eqCalls.length = 0;
     mocks.whitelist = [];
-    mocks.getWorkspaceConfig.mockResolvedValue('wallet-default');
+    mocks.getWorkspaceConfig.mockResolvedValue(DEFAULT_ID);
   });
 
   it('gives transaction writers without a whitelist the default wallet without a balance', async () => {
@@ -165,7 +172,7 @@ describe('wallets route default wallet visibility', () => {
       {
         currency: 'USD',
         icon: null,
-        id: 'wallet-default',
+        id: DEFAULT_ID,
         image_src: null,
         name: 'Default Wallet',
         type: 'STANDARD',
@@ -179,7 +186,7 @@ describe('wallets route default wallet visibility', () => {
       {
         custom_days: null,
         viewing_window: '1_month',
-        wallet_id: 'wallet-listed',
+        wallet_id: LISTED_ID,
       },
     ];
 
@@ -192,21 +199,25 @@ describe('wallets route default wallet visibility', () => {
       expect.objectContaining({
         audit_balance: 300,
         balance: 300,
-        id: 'wallet-listed',
+        id: LISTED_ID,
         viewing_window: '1_month',
       }),
       {
         currency: 'USD',
         icon: null,
-        id: 'wallet-default',
+        id: DEFAULT_ID,
         image_src: null,
         name: 'Default Wallet',
         type: 'STANDARD',
       },
     ]);
     expect(mocks.walletLoads).toEqual([
-      { columns: '*', ids: ['wallet-listed'] },
-      { columns: INVOICE_SAFE_COLUMNS, ids: ['wallet-default'] },
+      { columns: '*', ids: [LISTED_ID] },
+      { columns: INVOICE_SAFE_COLUMNS, ids: [DEFAULT_ID] },
+    ]);
+    expect(mocks.eqCalls).toEqual([
+      ['ws_id', 'ws-1'],
+      ['ws_id', 'ws-1'],
     ]);
   });
 
@@ -224,7 +235,7 @@ describe('wallets route default wallet visibility', () => {
       {
         custom_days: 10,
         viewing_window: 'custom',
-        wallet_id: 'wallet-default',
+        wallet_id: DEFAULT_ID,
       },
     ];
 
@@ -238,13 +249,11 @@ describe('wallets route default wallet visibility', () => {
         audit_balance: 900,
         balance: 900,
         custom_days: 10,
-        id: 'wallet-default',
+        id: DEFAULT_ID,
         viewing_window: 'custom',
       }),
     ]);
-    expect(mocks.walletLoads).toEqual([
-      { columns: '*', ids: ['wallet-default'] },
-    ]);
+    expect(mocks.walletLoads).toEqual([{ columns: '*', ids: [DEFAULT_ID] }]);
   });
 
   it('does not load the default wallet for read-only roles', async () => {
@@ -252,5 +261,26 @@ describe('wallets route default wallet visibility', () => {
 
     expect(mocks.getWorkspaceConfig).not.toHaveBeenCalled();
     expect(wallets).toEqual([]);
+  });
+
+  it('omits a non-UUID default wallet config and still lists whitelisted wallets', async () => {
+    mocks.getWorkspaceConfig.mockResolvedValue('not-a-uuid');
+    mocks.whitelist = [
+      {
+        custom_days: null,
+        viewing_window: '1_month',
+        wallet_id: LISTED_ID,
+      },
+    ];
+
+    const wallets = await listWallets([
+      'view_transactions',
+      'create_transactions',
+    ]);
+
+    expect(wallets).toEqual([
+      expect.objectContaining({ id: LISTED_ID, viewing_window: '1_month' }),
+    ]);
+    expect(mocks.walletLoads).toEqual([{ columns: '*', ids: [LISTED_ID] }]);
   });
 });
