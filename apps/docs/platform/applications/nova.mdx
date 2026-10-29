@@ -551,3 +551,12 @@ service-role writes are never gated by app-session presence alone:
 - **Prompt history** - version control for participant submissions
 - **Advanced metrics** - token usage and latency analysis per submission
 - **Custom evaluation** - configurable, criterion-weighted scoring functions
+
+## Management page scope
+
+The global sessions overview requires an enabled global challenge manager.
+Session and problem details require management access to their owning challenge;
+assigned managers retain access to their own challenge. Manager membership
+changes require an enabled platform role. The page and route boundaries are
+covered by `apps/nova/src/test/management-page-access.test.tsx` and the challenge
+manager route tests.
