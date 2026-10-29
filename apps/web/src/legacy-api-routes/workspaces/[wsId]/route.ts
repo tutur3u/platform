@@ -256,6 +256,7 @@ export const DELETE = withSessionAuth<{ wsId: string }>(
     const { error } = await supabase.from('workspaces').delete().eq('id', wsId);
 
     if (error) {
+      console.error('Workspace deletion failed', { code: error.code });
       return NextResponse.json(
         { message: 'Error deleting workspace' },
         { status: 500 }
