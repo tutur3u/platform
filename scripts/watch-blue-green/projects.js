@@ -18,14 +18,9 @@ const {
   isSafeManagedProjectHostname,
   normalizeManagedProjectHostname,
 } = require('../../packages/utils/src/managed-project-hostnames-core.cjs');
-// Git refname subset safe to interpolate into nginx, env files and git
-// arguments: no leading dash or dot, no `..` or `//`, quotes or whitespace.
-const SAFE_PROJECT_BRANCH_PATTERN =
-  /^(?![-./])(?!.*(?:\.\.|\/\/|\/\.))[A-Za-z0-9._/-]{1,200}(?<![./])$/u;
-
-function isSafeProjectBranch(branch) {
-  return typeof branch === 'string' && SAFE_PROJECT_BRANCH_PATTERN.test(branch);
-}
+const {
+  isSafeProjectBranch,
+} = require('../../packages/utils/src/managed-project-branch-core.cjs');
 
 function assertSafeProjectBranch(project) {
   if (!isSafeProjectBranch(project.selected_branch))
@@ -281,9 +276,14 @@ async function withLogDrainSql(env, callback, postgresFactory = null) {
 }
 
 function normalizeProjectBranch(value) {
-  return typeof value === 'string' && value.trim().length > 0
-    ? value.trim()
-    : DEFAULT_PLATFORM_BRANCH;
+  if (value === undefined || value === null || value === '')
+    return DEFAULT_PLATFORM_BRANCH;
+  if (!isSafeProjectBranch(value)) {
+    throw new Error(
+      'Refusing an unsafe selected branch for the platform project.'
+    );
+  }
+  return value;
 }
 
 async function readPlatformProject({

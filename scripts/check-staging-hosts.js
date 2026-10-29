@@ -32,12 +32,39 @@ function normalizeHost(value) {
     .replace(/\.+$/, '');
 }
 
+// Preserve string contents and escapes while removing source comments in one pass.
+function stripComments(source) {
+  const result = [];
+  let quote = null;
+  for (let i = 0; i < source.length; i++) {
+    const char = source[i];
+    if (quote) {
+      result.push(char);
+      if (char === '\\') result.push(source[++i] ?? '');
+      else if (char === quote) quote = null;
+    } else if (char === '"' || char === "'" || char === '`') {
+      quote = char;
+      result.push(char);
+    } else if (char === '/' && source[i + 1] === '*') {
+      i += 2;
+      while (i < source.length && !(source[i] === '*' && source[i + 1] === '/'))
+        i++;
+      i++;
+      result.push(' ');
+    } else if (char === '/' && source[i + 1] === '/' && source[i - 1] !== ':') {
+      while (i < source.length && source[i] !== '\n') i++;
+      result.push('\n');
+    } else result.push(char);
+  }
+  return result.join('');
+}
+
 /**
  * Rewrites source so hosts hidden by case, escapes, string concatenation or
  * template interpolation of simple same-file constants read as literal text.
  */
 function normalizeSource(source) {
-  let text = source
+  let text = stripComments(source)
     // Fold fullwidth and other compatibility letters and digits to ASCII.
     .normalize('NFKC')
     .toLowerCase()

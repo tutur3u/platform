@@ -292,3 +292,16 @@ test('long backslash runs normalize in linear time', () => {
   violations(`'${'\\'.repeat(200_000)}x tuturuuu.com'`);
   assert.ok(performance.now() - started < 500);
 });
+
+test('detects hosts concatenated across comments', () => {
+  for (const comment of ['/* hidden */', '// hidden\n']) {
+    assert.ok(
+      violations(`const host = "dev." + ${comment} "tuturuuu.com";`).length
+    );
+  }
+  assert.ok(violations('const host = "https://dev.tuturuuu.com";').length);
+  assert.equal(
+    violations('const host = "https://dev.staging.tutur3u.com";').length,
+    0
+  );
+});
