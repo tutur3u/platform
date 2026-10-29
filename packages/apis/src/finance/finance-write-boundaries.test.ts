@@ -463,4 +463,35 @@ describe('finance write boundaries', () => {
     ).toBe(404);
     expect(state.writes).toEqual([]);
   });
+  it('denies a transfer between the default wallet and an unwhitelisted wallet', async () => {
+    state.denied.add('manage_finance');
+    setDefaultWallet(ID);
+    const { POST } = await import('./transfers/route.js');
+    expect(
+      (
+        await POST(
+          request({
+            origin_wallet_id: ID,
+            destination_wallet_id: W2,
+            amount: 10,
+            taken_at: '2026-01-01',
+          }),
+          params
+        )
+      ).status
+    ).toBe(404);
+    expect(state.writes).toEqual([]);
+  });
+  it.each([
+    ['foreign', [{ ws_id: FOREIGN, id: 'default_wallet_id', value: ID }]],
+    ['missing', []],
+  ])(
+    'denies an unwhitelisted wallet when the default wallet config is %s',
+    async (_label, configs) => {
+      state.denied.add('manage_finance');
+      state.rows.workspace_configs = configs;
+      expect((await deleteTransaction()).status).toBe(404);
+      expect(state.writes).toEqual([]);
+    }
+  );
 });

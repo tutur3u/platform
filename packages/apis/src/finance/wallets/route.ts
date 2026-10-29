@@ -21,6 +21,17 @@ import { parseWalletPayload } from './wallet-payload';
 const FULL_WALLET_SELECT =
   '*, credit_wallets(limit, statement_date, payment_date)';
 const INVOICE_SAFE_WALLET_SELECT = 'id,name,type,currency,icon,image_src';
+const DEFAULT_WALLET_WRITE_PERMISSIONS = [
+  'create_transactions',
+  'update_transactions',
+  'delete_transactions',
+] as const;
+
+interface WalletWhitelistRow {
+  wallet_id: string;
+  viewing_window: string | null;
+  custom_days: number | null;
+}
 
 interface Params {
   params: Promise<{
@@ -111,14 +122,20 @@ export async function GET(
   // Check if user has manage_finance permission
   const hasManageFinance = !withoutPermission('manage_finance');
   const hasCreateInvoices = !withoutPermission('create_invoices');
+  const canWriteTransactions = DEFAULT_WALLET_WRITE_PERMISSIONS.some(
+    (permission) => !withoutPermission(permission)
+  );
   const canReadWalletFinancialFields =
     hasManageFinance || !withoutPermission('view_transactions');
-  const defaultInvoiceWalletId = hasCreateInvoices
-    ? await getWorkspaceConfig(normalizedWsId, 'default_wallet_id')
-    : null;
+  // Invoice creators and transaction writers can use the workspace default
+  // wallet without a whitelist entry (see validateFinanceWalletWriteAccess).
+  const defaultWalletId =
+    hasCreateInvoices || canWriteTransactions
+      ? await getWorkspaceConfig(normalizedWsId, 'default_wallet_id')
+      : null;
   const canReadAllWalletsForInvoiceCreation =
     hasCreateInvoices &&
-    (!defaultInvoiceWalletId || canSetAnyFinanceWalletOnCreate(permissions));
+    (!defaultWalletId || canSetAnyFinanceWalletOnCreate(permissions));
 
   if (hasManageFinance) {
     const { data, error } = await loadWorkspaceWallets({
@@ -159,10 +176,6 @@ export async function GET(
   }
 
   // User doesn't have manage_finance - check wallet whitelist
-  const defaultInvoiceWalletIds = defaultInvoiceWalletId
-    ? [defaultInvoiceWalletId]
-    : [];
-
   // Get user's role IDs
   const { data: userRoles, error: rolesError } = await sbAdmin
     .from('workspace_role_members')
@@ -178,70 +191,73 @@ export async function GET(
     );
   }
 
-  if (!userRoles || userRoles.length === 0) {
-    if (defaultInvoiceWalletIds.length === 0) {
-      return NextResponse.json([]);
-    }
+  const roleIds = ((userRoles ?? []) as Array<{ role_id: string }>).map(
+    (role) => role.role_id
+  );
+  let whitelistData: WalletWhitelistRow[] = [];
 
-    const { data: wallets, error: walletsError } = await loadWorkspaceWallets({
-      invoiceSafeOnly: !canReadWalletFinancialFields,
-      normalizedWsId,
-      sbAdmin,
-      walletIds: defaultInvoiceWalletIds,
-    });
+  if (roleIds.length > 0) {
+    // Get whitelisted wallet IDs and their viewing windows
+    const { data, error: whitelistError } = await sbAdmin
+      .from('workspace_role_wallet_whitelist')
+      .select('wallet_id, viewing_window, custom_days')
+      .in('role_id', roleIds);
 
-    if (walletsError) {
-      console.log(walletsError);
+    if (whitelistError) {
+      console.log(whitelistError);
       return NextResponse.json(
-        { message: 'Error fetching wallet details' },
+        { message: 'Error fetching whitelisted wallets' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json(flattenWalletCreditList(wallets ?? []));
+    whitelistData = data ?? [];
   }
 
-  const roleIds = userRoles.map((r) => r.role_id);
+  // Get unique wallet IDs
+  const walletIds = [...new Set(whitelistData.map((item) => item.wallet_id))];
+  // A default wallet no role whitelists is usable but not viewable: it only
+  // ever gets the invoice-safe columns, never balances or audit data.
+  const unlistedDefaultWalletId =
+    defaultWalletId && !walletIds.includes(defaultWalletId)
+      ? defaultWalletId
+      : null;
 
-  // Get whitelisted wallet IDs and their viewing windows
-  const { data: whitelistData, error: whitelistError } = await sbAdmin
-    .from('workspace_role_wallet_whitelist')
-    .select('wallet_id, viewing_window, custom_days')
-    .in('role_id', roleIds);
+  if (walletIds.length === 0 && !unlistedDefaultWalletId) {
+    return NextResponse.json([]);
+  }
 
-  if (whitelistError) {
-    console.log(whitelistError);
+  // Fetch wallet details
+  const { data: wallets, error: walletsError } =
+    walletIds.length > 0
+      ? await loadWorkspaceWallets({
+          invoiceSafeOnly: !canReadWalletFinancialFields,
+          normalizedWsId,
+          sbAdmin,
+          walletIds,
+        })
+      : { data: [], error: null };
+
+  if (walletsError) {
+    console.log(walletsError);
     return NextResponse.json(
-      { message: 'Error fetching whitelisted wallets' },
+      { message: 'Error fetching wallet details' },
       { status: 500 }
     );
   }
 
-  if (
-    (!whitelistData || whitelistData.length === 0) &&
-    defaultInvoiceWalletIds.length === 0
-  ) {
-    return NextResponse.json([]);
-  }
+  const { data: defaultWallets, error: defaultWalletError } =
+    unlistedDefaultWalletId
+      ? await loadWorkspaceWallets({
+          invoiceSafeOnly: true,
+          normalizedWsId,
+          sbAdmin,
+          walletIds: [unlistedDefaultWalletId],
+        })
+      : { data: [], error: null };
 
-  // Get unique wallet IDs
-  const walletIds = [
-    ...new Set([
-      ...(whitelistData ?? []).map((item) => item.wallet_id),
-      ...defaultInvoiceWalletIds,
-    ]),
-  ];
-
-  // Fetch wallet details
-  const { data: wallets, error: walletsError } = await loadWorkspaceWallets({
-    invoiceSafeOnly: !canReadWalletFinancialFields,
-    normalizedWsId,
-    sbAdmin,
-    walletIds,
-  });
-
-  if (walletsError) {
-    console.log(walletsError);
+  if (defaultWalletError) {
+    console.log(defaultWalletError);
     return NextResponse.json(
       { message: 'Error fetching wallet details' },
       { status: 500 }
@@ -276,7 +292,7 @@ export async function GET(
     }
   };
 
-  const walletMap = (whitelistData ?? []).reduce((acc, item) => {
+  const walletMap = whitelistData.reduce((acc, item) => {
     const existing = acc.get(item.wallet_id);
     if (!existing) {
       acc.set(item.wallet_id, {
@@ -317,7 +333,7 @@ export async function GET(
       }))
     : walletRows;
 
-  return NextResponse.json(walletsWithWindow);
+  return NextResponse.json([...walletsWithWindow, ...(defaultWallets ?? [])]);
 }
 
 export async function POST(
