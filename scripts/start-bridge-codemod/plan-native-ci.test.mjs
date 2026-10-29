@@ -346,7 +346,7 @@ test('the generated Worker states its effective mounts and fails safely', (t) =>
   // Root-only: no apex mount is claimed in the generated source.
   const rootOnly = {
     mounts: {
-      rootHosts: ['demo.tuturuuu.com', 'demo-staging.tuturuuu.com'],
+      rootHosts: ['demo.tuturuuu.com', 'demo.staging.tutur3u.com'],
       mountHosts: [],
       unknownHost: 'reject',
     },

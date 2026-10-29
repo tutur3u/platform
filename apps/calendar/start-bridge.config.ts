@@ -5,7 +5,7 @@ export default defineBridgeAppConfig({
   mounts: {
     rootHosts: [
       'calendar.tuturuuu.com',
-      'calendar-staging.tuturuuu.com',
+      'calendar.staging.tutur3u.com',
       'calendar-cutover.tuturuuu.com',
     ],
     mountHosts: [],

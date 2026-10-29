@@ -9,7 +9,7 @@ const ALLOWED_API_DOMAINS = [
   'tuturuuu.com',
   'www.tuturuuu.com',
   'api.tuturuuu.com',
-  'staging.tuturuuu.com',
+  'web.staging.tutur3u.com',
   'dev.tuturuuu.com',
   // Local development
   'localhost',

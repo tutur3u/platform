@@ -29,7 +29,7 @@ beforeEach(() => vi.resetAllMocks());
 describe('Calendar cutover boundary', () => {
   it.each([
     'calendar.tuturuuu.com',
-    'calendar-staging.tuturuuu.com',
+    'calendar.staging.tutur3u.com',
     'calendar-cutover.tuturuuu.com',
   ])(
     'threads a fresh CSP nonce through the proxy and Start on %s',
@@ -66,7 +66,7 @@ describe('Calendar cutover boundary', () => {
   it.each([
     'unknown.invalid',
     'tuturuuu-calendar.workers.dev',
-    'staging.tuturuuu.com',
+    'web.staging.tutur3u.com',
   ])('rejects %s before middleware, assets or SSR', async (host) => {
     const response = await handleCalendarRequest(
       new Request(`https://${host}/`, {

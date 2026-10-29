@@ -17,7 +17,7 @@
         "CRON_SECRET",
         "MICROSOFT_TENANT_ID"
       ],
-      "stagingHost": "calendar-staging.tuturuuu.com",
+      "stagingHost": "calendar.staging.tutur3u.com",
       "optionalSecretNames": ["TUTURUUU_APP_COORDINATION_SECRET"]
     },
     "mail": {
