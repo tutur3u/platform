@@ -95,6 +95,14 @@ describe('effective legal publications', () => {
         );
       });
     }
+    it(`${locale} proposed safety policies retain all sections`, () => {
+      expect(
+        getProposedLegalDocument('acceptable-use', locale).sections
+      ).toHaveLength(8);
+      expect(
+        getProposedLegalDocument('community-guidelines', locale).sections
+      ).toHaveLength(7);
+    });
     it(`${locale} proposals have no effective date`, () => {
       for (const kind of [
         'privacy',
