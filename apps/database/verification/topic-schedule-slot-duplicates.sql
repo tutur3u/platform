@@ -1,4 +1,4 @@
--- Read-only pre-check for 20261027060200_topic_schedule_slot_unique.sql.
+-- Read-only pre-check for 20261029041000_topic_schedule_slot_unique.sql.
 -- Lists every slot (workspace, class, date, start time) holding more than
 -- one non-cancelled schedule session. The migration stops while any row is
 -- returned. Run in the rehearsal and before the production apply; report the
