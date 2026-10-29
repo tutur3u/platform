@@ -1258,6 +1258,16 @@
       },
       "digest": "066ababd236575df1327eb049f12227da1d7478509a73c8820972f51fb70e61d"
     },
+    "scripts/check-staging-hosts.test.js": {
+      "lines": 3,
+      "uses": 3,
+      "digest": "a25f60a6261307d7c023ef10b283b4857c2b98c101c55406bc845b3b573daee3",
+      "gap": "parity-tooling",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7249",
+        "reason": "test fixture strings, not invocations"
+      }
+    },
     "scripts/ci/apps-native-artifact.py": {
       "lines": 2,
       "uses": 2,
