@@ -5,6 +5,7 @@ function lexSql(sql) {
   const comments = [];
   const bodies = [];
   const bodyLines = [];
+  const configurations = [];
   const emit = (end, keep) => {
     const chunk = sql.slice(index, end);
     code += keep ? chunk : chunk.replace(/[^\n]/g, ' ');
@@ -53,6 +54,13 @@ function lexSql(sql) {
           prefix
         );
       const literal = sql.slice(index + 1, cursor - 1);
+      if (
+        /\bset_config\s*\(\s*$/i.test(prefix) &&
+        ['search_path', 'standard_conforming_strings'].includes(
+          literal.toLowerCase()
+        )
+      )
+        configurations.push({ name: literal.toLowerCase(), line });
       if (pathLiteral && /^[a-z_][a-z0-9_]*$/i.test(literal)) {
         code += literal.padEnd(cursor - index, ' ');
         index = cursor;
@@ -70,9 +78,9 @@ function lexSql(sql) {
       emit(Math.min(cursor, sql.length), true);
     } else {
       const tag =
-        char === '$' && !/[\w$]/.test(sql[index - 1] ?? '')
-          ? /^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/.exec(
-              sql.slice(index, index + 64)
+        char === '$' && !/[a-z0-9_$\u0080-\uffff]/i.test(sql[index - 1] ?? '')
+          ? /^\$(?:[A-Za-z_\u0080-\uffff][A-Za-z0-9_\u0080-\uffff]*)?\$/.exec(
+              sql.slice(index)
             )
           : null;
       if (tag) {
@@ -89,7 +97,7 @@ function lexSql(sql) {
       }
     }
   }
-  return { code, comments, bodies, bodyLines };
+  return { code, comments, bodies, bodyLines, configurations };
 }
 
 function splitStatements(code) {
@@ -114,8 +122,10 @@ function splitStatements(code) {
 }
 function foldSql(code) {
   return (code.match(/"(?:[^"]|"")*"|[^"\s]+|\s+/g) ?? [])
-    .map((token) =>
-      token.startsWith('"') ? token : token.replace(/\s+/g, ' ').toLowerCase()
+    .map((token, index, tokens) =>
+      token.startsWith('"')
+        ? (/[a-z0-9_]$/i.test(tokens[index - 1] ?? '') ? ' ' : '') + token
+        : token.replace(/\s+/g, ' ').toLowerCase()
     )
     .join('')
     .trim();

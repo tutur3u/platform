@@ -477,44 +477,12 @@ WHERE tablename = 'workspace_tasks';
 
 ## SQL grant guard
 
-`scripts/ci/sql-grant-guard.js` runs with the root script tests
-(`bun test:scripts`, CI job "Root script tests") and rejects two patterns in
-migrations and rollbacks whose version prefix is `20261028000000` or later.
-Unversioned files are always checked.
-
-1. **Public or anon grants.** Any `GRANT` (function `EXECUTE`, table or view
-   privileges, schema usage, role membership) or
-   `ALTER DEFAULT PRIVILEGES ... GRANT` whose grantees include `public` or
-   `anon`, in `apps/database/supabase/migrations/*.sql` or
-   `apps/database/rollbacks/*.sql`. Rollbacks must not restore an open grant
-   that the forward migration closed; grant to `authenticated` or
-   `service_role` instead.
-2. **Unrevoked `SECURITY DEFINER` functions** (migrations only). Every
-   `CREATE [OR REPLACE] FUNCTION ... SECURITY DEFINER` needs a revoke for the
-   same name and argument types from both `public` and `anon` in the same
-   file, even when it replaces a function revoked earlier:
-
-   ```sql
-   revoke all on function public.example(uuid, text) from public, anon;
-   grant execute on function public.example(uuid, text) to service_role;
-   ```
-
-The guard ignores text in comments, string literals and dollar-quoted bodies,
-so dynamic `EXECUTE 'grant ...'` inside PL/pgSQL is not detected; review
-those by hand. For a reviewed exception, put a comment with a reason on the
-statement's first line, any line of the statement, or the line before it:
-
-```sql
--- allow-anon-grant: public catalog read by signed-out visitors
-grant select on table public.public_catalog to anon;
-
--- allow-definer-public: called by the pre-sign-in login flow
-create or replace function public.example_login_probe() ...
-```
-
-`node scripts/ci/sql-grant-guard.js --report` lists the legacy findings in
-files before the cutoff by rule and by file. It never fails; use it to plan
-cleanup migrations.
+The guard checks all migrations, rollbacks and schema SQL against the
+[declarative grant policy](#declarative-grant-guard-p2-2). Historical findings
+are digest-bound debt, not safe exceptions; there is no date cutoff.
+Dynamic SQL requires statement-adjacent security review. Settings of
+`standard_conforming_strings` are forbidden, and `set_config('search_path', …)`
+fails closed. Dollar-quoted bodies cannot supply review markers.
 
 ## Migration Checklist
 

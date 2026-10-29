@@ -2,7 +2,7 @@
 
 // Enforces every diagnostic outside the reviewed historical-debt baseline.
 // Changed file bytes and stale baseline entries fail closed; the baseline shrinks.
-// Policy: apps/docs/reference/database/migrations-guide.mdx#sql-grant-guard
+// Policy: apps/docs/reference/database/migrations-guide.mdx#declarative-grant-guard-p2-2
 
 const fs = require('node:fs');
 const {
@@ -347,6 +347,28 @@ function scanExtensions(
       detail: 'Unicode escaped identifiers require explicit security review',
     });
   const lexed = lexSql(sql);
+  for (const configuration of lexed.configurations) {
+    findings.push({
+      rule:
+        configuration.name === 'search_path'
+          ? 'definer-search-path'
+          : 'function-acl',
+      line: configuration.line,
+      detail:
+        'set_config of search_path or standard_conforming_strings is forbidden',
+    });
+  }
+  if (
+    /\bset\s+(?:(?:local|session)\s+)?(?:"standard_conforming_strings"|standard_conforming_strings)\s*(?:=|to\b|from\b)/i.test(
+      lexed.code.replace(/\bset(?=")/gi, 'set ')
+    )
+  )
+    findings.push({
+      rule: 'function-acl',
+      line: 1,
+      detail: 'setting standard_conforming_strings is forbidden',
+    });
+
   lexed.bodies.forEach((body, index) => {
     const line = lexed.bodyLines[index];
     const owner = statements.find(

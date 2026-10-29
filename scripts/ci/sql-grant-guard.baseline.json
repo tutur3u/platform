@@ -1,6 +1,6 @@
 {
   "label": "historical debt, not safe",
-  "source": "0047e77296c6609401bd07de1fd12f4712568aaf",
+  "source": "bb6573f8f5683890c15166f5a61e2f17140c8422",
   "files": {
     "apps/database/supabase/migrations/20230202082703_remote_commit.sql": "19e4817ec50597e0d7a9aa5694263adbd8bbd5882a1ad150c3da31d1265e4502",
     "apps/database/supabase/migrations/20230216132036_add_project_documents.sql": "97b9f80ea57986f1e38f0fc06a44a73f98ffcf2280af757bf49e05c100e1c57f",
@@ -1389,6 +1389,16 @@
       "path": "apps/database/supabase/migrations/20230202082703_remote_commit.sql",
       "rule": "anon-grant",
       "digest": "5263f15ee420f088d7aa7abf0f81924936f0d85192752782aa3d355f2a1f71da"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20230202082703_remote_commit.sql",
+      "rule": "definer-search-path",
+      "digest": "ee3aba7984a0a36d1bc1e360e2d799d805fa9ccbc33c5f2c5a9aa526ee3007c8"
+    },
+    {
+      "path": "apps/database/supabase/migrations/20230202082703_remote_commit.sql",
+      "rule": "function-acl",
+      "digest": "e26f7a468a96a8ae6a8f27b9d30e8b662daeb3117da33151b97a7c876124a223"
     },
     {
       "path": "apps/database/supabase/migrations/20230202082703_remote_commit.sql",
