@@ -13815,6 +13815,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindInboxSearchAction => 'Tìm trong Hộp thư';
 
   @override
+  String get mastermindInboxLoadingMore => 'Đang tải thêm';
+
+  @override
+  String get mastermindInboxLoadMoreFailed => 'Không tải thêm được yêu cầu.';
+
+  @override
+  String get mastermindInboxEndOfList => 'Đó là tất cả yêu cầu';
+
+  @override
   String get mastermindInboxResolvedSegment => 'Đã xử lý';
 
   @override

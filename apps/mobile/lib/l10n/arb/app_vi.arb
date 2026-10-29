@@ -6052,6 +6052,9 @@
   "mastermindInboxNoMatchesReason": "Không có mục nào trong chế độ xem này khớp với tìm kiếm hoặc bộ lọc.",
   "mastermindInboxClearFilters": "Xóa tìm kiếm và bộ lọc",
   "mastermindInboxSearchAction": "Tìm trong Hộp thư",
+  "mastermindInboxLoadingMore": "Đang tải thêm",
+  "mastermindInboxLoadMoreFailed": "Không tải thêm được yêu cầu.",
+  "mastermindInboxEndOfList": "Đó là tất cả yêu cầu",
   "mastermindInboxResolvedSegment": "Đã xử lý",
   "mastermindLastChecked": "Kiểm tra lần cuối {time}",
   "@mastermindLastChecked": {

@@ -26131,6 +26131,24 @@ abstract class AppLocalizations {
   /// **'Search Inbox'**
   String get mastermindInboxSearchAction;
 
+  /// No description provided for @mastermindInboxLoadingMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading more'**
+  String get mastermindInboxLoadingMore;
+
+  /// No description provided for @mastermindInboxLoadMoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load more asks.'**
+  String get mastermindInboxLoadMoreFailed;
+
+  /// No description provided for @mastermindInboxEndOfList.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s every ask'**
+  String get mastermindInboxEndOfList;
+
   /// No description provided for @mastermindInboxResolvedSegment.
   ///
   /// In en, this message translates to:

@@ -6377,6 +6377,9 @@
   "mastermindInboxNoMatchesReason": "Nothing in this view matches your search or filter.",
   "mastermindInboxClearFilters": "Clear search and filters",
   "mastermindInboxSearchAction": "Search Inbox",
+  "mastermindInboxLoadingMore": "Loading more",
+  "mastermindInboxLoadMoreFailed": "Couldn't load more asks.",
+  "mastermindInboxEndOfList": "That's every ask",
   "mastermindInboxResolvedSegment": "Resolved",
   "mastermindLastChecked": "Last checked {time}",
   "@mastermindLastChecked": {
