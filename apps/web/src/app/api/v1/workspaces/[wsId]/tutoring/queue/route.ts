@@ -18,6 +18,7 @@ import { TutoringQueueQuerySchema } from '@/legacy-api-routes/v1/workspaces/[wsI
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 
 import { unmatchedAbsenceDates } from './absence-credits';
+import { loadQueueLessonNotes } from './queue-lesson-content';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -34,6 +35,12 @@ type QueueItem = {
   feedback_content: string;
   feedback_created_at: string | null;
   source_feedback_id: string | null;
+  content_feedback_id: string | null;
+  // Set only when the lesson-notes lookup succeeded; when omitted the client
+  // reads the class sessions itself.
+  missed_lesson_content?: string;
+  missed_post_content?: string;
+  missing_lesson_dates?: string[];
   content_review_due: boolean;
   content_unchanged_since: string | null;
   review_only: boolean;
@@ -239,6 +246,7 @@ async function getTutoringData(request: Request, { params }: Params) {
   }
 
   const reservedDatesMap = new Map<string, string[]>();
+  const sessionSourceIds = new Map<string, Set<string>>();
   const scheduledFeedbackIds = new Set<string>();
   const completedFeedbackDays = new Map<string, number>();
   for (const row of reservedRows ?? []) {
@@ -251,6 +259,11 @@ async function getTutoringData(request: Request, { params }: Params) {
         ...(reservedDatesMap.get(key) ?? []),
         row.session_date,
       ]);
+    if (row.source_feedback_id) {
+      const sources = sessionSourceIds.get(key) ?? new Set<string>();
+      sources.add(row.source_feedback_id);
+      sessionSourceIds.set(key, sources);
+    }
     if (row.attendance_status === 'PENDING' && row.source_feedback_id)
       scheduledFeedbackIds.add(row.source_feedback_id);
     if (
@@ -287,6 +300,10 @@ async function getTutoringData(request: Request, { params }: Params) {
     string,
     { id: string; content: string; createdAt: string }
   >();
+  const triggeringFeedbackMap = new Map<
+    string,
+    { id: string; content: string | null }
+  >();
   const feedbackHistoryMap = new Map<string, TutoringFeedbackSnapshot[]>();
   for (const row of feedbackRows ?? []) {
     if (!isPresentId(row.group_id) || !isPresentId(row.user_id)) {
@@ -297,6 +314,11 @@ async function getTutoringData(request: Request, { params }: Params) {
     const history = feedbackHistoryMap.get(key) ?? [];
     history.push({ content: row.content, createdAt: row.created_at });
     feedbackHistoryMap.set(key, history);
+    // Newest first, so the last hit is the oldest feedback a session was
+    // opened from: the note written when the learner entered support.
+    if (sessionSourceIds.get(key)?.has(row.id)) {
+      triggeringFeedbackMap.set(key, { id: row.id, content: row.content });
+    }
     if (!latestFeedbackMap.has(key)) {
       latestFeedbackMap.set(key, {
         id: row.id,
@@ -351,6 +373,12 @@ async function getTutoringData(request: Request, { params }: Params) {
     if (!hasAbsent && !hasWeak && !contentReviewDue) return null;
     const reviewOnly = !hasAbsent && !hasWeak;
 
+    // Scheduling and reassessment follow the latest feedback above. The text
+    // staff teach from is the feedback a session was first opened from, so a
+    // later flagged note does not replace what the homeroom teacher wrote when
+    // moving the learner into support. With none tied, the latest is used.
+    const contentFeedback = triggeringFeedbackMap.get(key) ?? feedback;
+
     const reasonType: QueueItem['reason_type'] = hasAbsent
       ? hasWeak
         ? 'BOTH'
@@ -366,10 +394,12 @@ async function getTutoringData(request: Request, { params }: Params) {
       absence_deficit: hasAbsent ? deficit : 0,
       missed_class_dates: hasAbsent ? remainingDates : [],
       feedback_content:
-        hasWeak || contentReviewDue ? (feedback?.content ?? '') : '',
+        hasWeak || contentReviewDue ? (contentFeedback?.content ?? '') : '',
       feedback_created_at:
         hasWeak || contentReviewDue ? (feedback?.createdAt ?? null) : null,
       source_feedback_id: hasWeak ? (feedback?.id ?? null) : null,
+      content_feedback_id:
+        hasWeak || contentReviewDue ? (contentFeedback?.id ?? null) : null,
       content_review_due: contentReviewDue,
       content_unchanged_since: contentUnchangedSince,
       review_only: reviewOnly,
@@ -436,8 +466,32 @@ async function getTutoringData(request: Request, { params }: Params) {
   const start = (page - 1) * pageSize;
   const pagedQueue = filteredQueue.slice(start, start + pageSize);
 
+  // Only the visible page needs lesson notes. A failed lookup leaves the rows
+  // without notes (and without a "none recorded" claim) rather than failing.
+  const lessonNotes = await loadQueueLessonNotes({
+    // Post text needs the same permission as reading the class's posts.
+    includePosts: !permissions.withoutPermission('view_user_groups_posts'),
+    sbAdmin,
+    targets: pagedQueue,
+    wsId: normalizedWsId,
+  }).catch((error) => {
+    console.error('Failed to load tutoring queue lesson notes', error);
+    return null;
+  });
+  const data = pagedQueue.map((item) => {
+    const notes = lessonNotes?.get(`${item.group_id}:${item.student_user_id}`);
+    return notes
+      ? {
+          ...item,
+          missed_lesson_content: notes.content,
+          missed_post_content: notes.postContent,
+          missing_lesson_dates: notes.missingDates,
+        }
+      : item;
+  });
+
   return NextResponse.json({
-    data: pagedQueue,
+    data,
     count: totalCount,
     page,
     pageSize,
