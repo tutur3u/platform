@@ -38,6 +38,7 @@ vi.mock('../lists/access', () => ({
     requireBoardAccessMock(...args),
 }));
 
+import { serializeSprint } from './_lib';
 import { POST as END } from './[sprintId]/end/route';
 import { PATCH } from './[sprintId]/route';
 import { POST as START } from './[sprintId]/start/route';
@@ -205,9 +206,43 @@ describe('board sprint routes', () => {
         added_after_start: false,
         carry_count: 1,
         end_decision: null,
+        done: false,
       },
     ]);
     expect(body.sprints[1].report).toBeNull();
+  });
+
+  it('marks finished members done and leaves deleted tasks out of a sprint', () => {
+    const sprint = serializeSprint({
+      ...(sprintRows[1] as Parameters<typeof serializeSprint>[0]),
+      task_cycle_tasks: [
+        {
+          task_id: TASK_A,
+          added_after_start: false,
+          carry_count: 0,
+          end_decision: null,
+          task: {
+            completed_at: '2026-10-28',
+            closed_at: null,
+            deleted_at: null,
+          },
+        },
+        {
+          task_id: TASK_B,
+          added_after_start: true,
+          carry_count: 0,
+          end_decision: null,
+          task: {
+            completed_at: null,
+            closed_at: null,
+            deleted_at: '2026-10-28',
+          },
+        },
+      ],
+    });
+    expect(sprint.tasks).toEqual([
+      expect.objectContaining({ task_id: TASK_A, done: true }),
+    ]);
   });
 
   it('reads as unavailable while the sprint migration is pending', async () => {

@@ -13,6 +13,7 @@ import {
 } from '@tuturuuu/internal-api/tasks';
 import { listWorkspaceTemplates } from '@tuturuuu/internal-api/templates';
 import { BoardShareSettingsPanel } from '@tuturuuu/tasks-ui/tu-do/boards/board-share-settings-panel';
+import { BoardSprintSettings } from '@tuturuuu/tasks-ui/tu-do/boards/board-sprint-settings';
 import { CapacityRulesSettings } from '@tuturuuu/tasks-ui/tu-do/boards/capacity-rules-settings';
 import { DraftsPage } from '@tuturuuu/tasks-ui/tu-do/drafts/drafts-page';
 import TaskEstimatesClient from '@tuturuuu/tasks-ui/tu-do/estimates/client';
@@ -159,6 +160,7 @@ export function TaskBoardSettingsPanel({
             onRefresh={() => void refetch()}
             wsId={wsId}
           />
+          <BoardSprintSettings boardId={board.id} wsId={wsId} />
           <TaskBoardBehaviorSettings />
           <CapacityRulesSettings boardId={board.id} lists={lists} wsId={wsId} />
           <TaskBoardLifecycleSettings board={board} wsId={wsId} />
