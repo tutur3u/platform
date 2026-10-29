@@ -162,9 +162,11 @@ function sprintsState(sprints: BoardSprint[]) {
 
 function renderPlan({
   canManage = true,
+  defaultListId = 'list-todo',
   sprints,
 }: {
   canManage?: boolean;
+  defaultListId?: string;
   sprints: BoardSprint[];
 }) {
   const queryClient = new QueryClient({
@@ -176,7 +178,7 @@ function renderPlan({
         boardId="board-1"
         canManage={canManage}
         canPlan
-        defaultListId="list-todo"
+        defaultListId={defaultListId}
         lists={lists}
         sprints={sprintsState(sprints)}
         ticketPrefix="DEV"
@@ -463,6 +465,24 @@ describe('BoardPlanView', () => {
       listId: 'list-todo',
       name: 'Write release notes',
     });
+  });
+
+  it('creates backlog tasks in an open list when the default list is Done', async () => {
+    api.createWorkspaceTask.mockResolvedValue({ task: task('t9') });
+    api.moveTasks.mockResolvedValue({ moved: 1 });
+    renderPlan({ defaultListId: 'list-done', sprints: [active, planned] });
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'add_to_backlog' })
+    );
+    const input = screen.getByRole('textbox', { name: 'new_backlog_task' });
+    fireEvent.change(input, { target: { value: 'Write release notes' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() =>
+      expect(api.createWorkspaceTask).toHaveBeenCalledWith('ws-1', {
+        listId: 'list-todo',
+        name: 'Write release notes',
+      })
+    );
   });
 
   it.each([
