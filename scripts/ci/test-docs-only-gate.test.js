@@ -143,7 +143,11 @@ const scope = (codeOutput, results = {}) => ({
       result: 'success',
       outputs: { should_run: 'true', run_checks: 'true' },
     },
-    'test-shards': { result: codeOutput === 'false' ? 'skipped' : 'success' },
+    // PR events run the PR shard variant; the push/dispatch variant is skipped.
+    'test-shards': { result: 'skipped' },
+    'test-shards-pr': {
+      result: codeOutput === 'false' ? 'skipped' : 'success',
+    },
     ...results,
   },
   cancelled: () => false,
@@ -193,7 +197,7 @@ test('heavy jobs skip docs-only PRs while code, admission and summary contexts s
     'production',
     'release-please--branches--**',
   ]);
-  for (const id of ['test-shards', 'coverage-shards', 'coverage-upload']) {
+  for (const id of ['test-shards-pr', 'coverage-shards', 'coverage-upload']) {
     const job = workflow.jobs[id];
     assert.ok(job.needs.includes('changes'));
     assert.equal(evaluateExpression(job.if, scope('false')), false, id);
@@ -201,6 +205,16 @@ test('heavy jobs skip docs-only PRs while code, admission and summary contexts s
     const unadmitted = scope('true');
     unadmitted.github.event.pull_request.labels = [];
     assert.equal(evaluateExpression(job.if, unadmitted), false, id);
+  }
+  const pushShards = workflow.jobs['test-shards'];
+  assert.ok(pushShards.needs.includes('changes'));
+  for (const [code, expected] of [
+    ['false', false],
+    ['true', true],
+  ]) {
+    const push = scope(code);
+    push.github.event_name = 'push';
+    assert.equal(evaluateExpression(pushShards.if, push), expected, code);
   }
   for (const [id, name] of [
     ['build', 'Unit Tests (24)'],
