@@ -1,6 +1,7 @@
 import { meetingProviderTransport } from './provider-transport';
 import 'server-only';
 import { generateMeetArtifact } from '@tuturuuu/ai/meetings/gemini';
+import { geminiSttProvider } from '@tuturuuu/ai/meetings/stt-provider';
 import { MEET_AI_MODEL, MEET_AI_PRICING } from '@tuturuuu/ai/meetings/usage';
 import {
   beginAiStudioRun,
@@ -87,10 +88,18 @@ export async function generateBilledMeetArtifact(
   const started = Date.now();
   let measured: Awaited<ReturnType<typeof generateMeetArtifact>> | undefined;
   try {
-    measured = await generateMeetArtifact(input, {
+    const options = {
       maxOutputTokens,
       provider: await meetingProviderTransport(),
-    });
+    };
+    measured =
+      'audioSegments' in input
+        ? await geminiSttProvider.transcribeBatch(
+            input.audioSegments,
+            input.hints,
+            options
+          )
+        : await generateMeetArtifact(input, options);
   } catch (error) {
     await settleAiStudioRun({
       runId: run.runId,

@@ -5,6 +5,7 @@ import {
   MEET_AUDIO_PENDING_MAX_BYTES,
   MEET_AUDIO_SESSION_MAX_BATCHES,
 } from '@tuturuuu/ai/meetings/audio-contract';
+import type { TranscriptionHints } from '@tuturuuu/ai/meetings/transcription-hints';
 import {
   getMeetAiState,
   updateMeetAiSession,
@@ -34,9 +35,20 @@ export function useMeetingAi(
   streams: MeetAudioSource[] = [],
   live = true,
   enabled = true,
-  expectedActorId?: string
+  expectedActorId?: string,
+  settings: { language?: TranscriptionHints['language']; title?: string } = {}
 ) {
   const actor = useWorkspaceActor();
+  // TODO(M1-C/F): expose the locale suggestion in the transcription language picker.
+  const suggestedLanguage =
+    typeof navigator !== 'undefined' && navigator.language.startsWith('vi')
+      ? 'vi'
+      : 'en';
+  const hints = useRef(settings);
+  useLayoutEffect(() => {
+    hints.current = settings;
+  });
+
   const runtime = useMemo(
     () =>
       createMeetCaptureRuntime({
@@ -110,7 +122,7 @@ export function useMeetingAi(
     retry: false,
   });
   const { mutateAsync: startSession } = useMutation({
-    mutationFn: (epoch: number) => {
+    mutationFn: (epoch: number): Promise<{ sessionId: string }> => {
       assertScope(epoch);
       return updateMeetAiSession(wsId, meetingId, { action: 'start' });
     },
@@ -138,7 +150,7 @@ export function useMeetingAi(
       data: FormData;
       signal: AbortSignal;
       epoch: number;
-    }) => {
+    }): Promise<{ status: string }> => {
       assertScope(epoch);
       return uploadMeetAiChunk(wsId, meetingId, data, undefined, signal);
     },
@@ -253,6 +265,11 @@ export function useMeetingAi(
         return;
       }
       const data = new FormData();
+      data.set('language', hints.current.language ?? 'auto');
+      data.set('context', (hints.current.title ?? '').trim().slice(0, 400));
+      // TODO(M1-B #7264): populate from workspace_meet_settings when available.
+      data.set('glossary', '');
+
       clips.forEach((clip, index) => {
         data.set(`audio_${index}`, clip.audio, `source-${index}.wav`);
       });
@@ -437,6 +454,7 @@ export function useMeetingAi(
     runtime.finishRef.current = finish;
   }, [runtime, finish]);
   return {
+    suggestedLanguage,
     meetingId,
     wsId,
     ...query,
