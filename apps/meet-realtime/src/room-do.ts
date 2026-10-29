@@ -20,6 +20,7 @@ import {
   releaseParticipant,
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
+import { isMeetMessageWithinLimit } from '../../../packages/realtime/src/meet/message-size';
 import {
   emptyRoomDeadline,
   expireEmptyRoom,
@@ -31,20 +32,11 @@ import {
 } from '../../../packages/realtime/src/meet/room-live';
 import { parseMeetRoomSettingsPatch } from '../../../packages/realtime/src/meet/room-options';
 import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
+import { normalizeTranscriptionConsent } from '../../../packages/realtime/src/meet/transcription';
 import { personalReceiptStorage } from './personal-receipt-storage';
 import { type RoomServiceState, roomService } from './room-service';
 import { runRoomSfuIntent } from './room-sfu-intent';
 import type { TurnEnv } from './turn-credentials';
-
-/**
- * One Durable Object per meeting room.
- *
- * The Bun server in `server.ts` keeps room state in a module-level Map, which
- * is only correct for a single replica. A Durable Object gives every room a
- * single authoritative home, which is what makes horizontal scaling safe and is
- * the same model `cloudflare/meet` uses.
- */
-
 export interface MeetRoomEnv extends TurnEnv {
   CLOUDFLARE_REALTIME_API_BASE_URL?: string;
   CLOUDFLARE_REALTIME_APP_ID: string;
@@ -52,21 +44,17 @@ export interface MeetRoomEnv extends TurnEnv {
   MEET_REALTIME_TOKEN_SECRET: string;
   MEET_ROOM: DurableObjectNamespace;
 }
-
 const SNAPSHOT_KEY = 'snapshot';
 const PRESENCE_SWEEP_MS = 10_000;
-
 type SocketAttachment = {
   token: MeetRealtimeTokenPayload;
 };
-
 export class MeetRoomDurableObject implements DurableObject {
   private readonly env: MeetRoomEnv;
   private readonly state: DurableObjectState;
   private snapshot: RoomServiceState = createMeetRoomSnapshot();
   private loading: Promise<void> | null = null;
   private commands = new MeetCommandExecutor();
-
   constructor(state: DurableObjectState, env: MeetRoomEnv) {
     this.env = env;
     this.state = state;
@@ -79,7 +67,11 @@ export class MeetRoomDurableObject implements DurableObject {
     this.loading ??= this.state.blockConcurrencyWhile(async () => {
       const stored =
         await this.state.storage.get<RoomServiceState>(SNAPSHOT_KEY);
-      if (stored) this.snapshot = { ...createMeetRoomSnapshot(), ...stored };
+      if (stored)
+        this.snapshot = normalizeTranscriptionConsent({
+          ...createMeetRoomSnapshot(),
+          ...stored,
+        });
       const counter = await this.state.storage.get<
         number | { requests: number; writes: number }
       >('usage-http-requests');
@@ -94,7 +86,8 @@ export class MeetRoomDurableObject implements DurableObject {
           typeof counter === 'number' ? counter : counter.writes
         );
       }
-      let migrated = false;
+      let migrated =
+        stored?.transcriptionConsents !== this.snapshot.transcriptionConsents;
       for (const request of Object.values(this.snapshot.aiRequests ?? {})) {
         if (request.status === 'pending' && request.startedAt === undefined) {
           request.startedAt = Date.now();
@@ -440,6 +433,10 @@ export class MeetRoomDurableObject implements DurableObject {
       return;
     }
 
+    if (!isMeetMessageWithinLimit(raw)) {
+      this.sendTo(socket, { error: 'message_too_large', type: 'error' });
+      return;
+    }
     let json: unknown;
     try {
       json = JSON.parse(
