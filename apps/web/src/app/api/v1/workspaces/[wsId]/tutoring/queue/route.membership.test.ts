@@ -312,9 +312,31 @@ describe('support group rows after review', () => {
     expect(await listQueue()).toEqual(['class-c:learner-quiet:WEAK_SUPPORT']);
   });
 
-  it('keeps members under their classes when filtered by a group', async () => {
+  it('keeps members under their classes when filtered by a support group', async () => {
     expect(await listQueue(`groupId=${supportGroup}`)).toEqual([]);
-    expect(membershipFilters.some((f) => f.startsWith('in:'))).toBe(false);
+    expect(membershipFilters).toEqual(
+      expect.arrayContaining([
+        `in:["group_id",["${supportGroup}","${supportGroup}"]]`,
+        'in:["user_id",["learner-quiet"]]',
+      ])
+    );
+  });
+
+  it('reads only the filtered class and support groups for a class filter', async () => {
+    const classB = '6a1d2c3b-4e5f-4a6b-8c7d-9e0f1a2b3c4d';
+    membershipRows = [
+      member(supportGroup, 'learner-quiet'),
+      member(classB, 'learner-quiet'),
+    ];
+    expect(await listQueue(`groupId=${classB}`)).toEqual([
+      `${classB}:learner-quiet:WEAK_SUPPORT`,
+    ]);
+    expect(membershipFilters).toContain(
+      `in:["group_id",["${classB}","${supportGroup}"]]`
+    );
+    expect(membershipFilters.some((f) => f.startsWith('in:["user_id"'))).toBe(
+      false
+    );
   });
 
   it('reads current, unarchived learners in this workspace only', async () => {

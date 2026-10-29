@@ -132,6 +132,14 @@ describe('tutoring export past the PostgREST row cap', () => {
   });
 
   it('counts every completed session in payroll', async () => {
+    // One slot per day, so the count holds whether or not payroll merges
+    // learners who share a teacher slot.
+    sessionRows = sessionRows.map((row, i) => ({
+      ...row,
+      session_date: new Date(Date.UTC(2026, 0, 1) + i * 86_400_000)
+        .toISOString()
+        .slice(0, 10),
+    }));
     const body = await exportRows('payroll');
     expect(body.data).toEqual([
       {

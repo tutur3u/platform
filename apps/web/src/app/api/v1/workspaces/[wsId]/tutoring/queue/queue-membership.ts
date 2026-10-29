@@ -1,5 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { readAllRows } from './all-rows';
+import { readAllRows, readByIds } from './all-rows';
 
 export type QueueIdentity = {
   full_name: string | null;
@@ -24,12 +24,15 @@ export function loadCurrentLearnerMemberships({
   sbAdmin,
   wsId,
   groupIds,
+  userIds,
   studentUserId,
 }: {
   sbAdmin: TypedSupabaseClient;
   wsId: string;
   /** Limits the read to these groups; omit to read the whole workspace. */
   groupIds?: string[];
+  /** Limits the read to these learners. */
+  userIds?: string[];
   studentUserId?: string;
 }) {
   return readAllRows<LearnerMembership>((from, to) => {
@@ -46,9 +49,50 @@ export function loadCurrentLearnerMemberships({
       .order('group_id', { ascending: true })
       .order('user_id', { ascending: true });
     if (groupIds) query = query.in('group_id', groupIds);
+    if (userIds) query = query.in('user_id', userIds);
     if (studentUserId) query = query.eq('user_id', studentUserId);
     return query.range(from, to);
   });
+}
+
+/**
+ * Memberships the queue needs. A group filter reads that group and the
+ * support groups. When the filter is itself a support group, its members'
+ * other classes are read too, since they decide whether a member falls back
+ * to the support group.
+ */
+export async function loadQueueMemberships({
+  sbAdmin,
+  wsId,
+  groupId,
+  studentUserId,
+  supportGroupIds,
+}: {
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+  groupId?: string;
+  studentUserId?: string;
+  supportGroupIds: string[];
+}) {
+  const first = await loadCurrentLearnerMemberships({
+    sbAdmin,
+    wsId,
+    groupIds: groupId ? [groupId, ...supportGroupIds] : undefined,
+    studentUserId,
+  });
+  const filter = groupId?.toLowerCase();
+  if (first.error || !filter || !supportGroupIds.includes(filter)) return first;
+  const members = [
+    ...new Set(
+      first.data
+        .filter((row) => row.group_id.toLowerCase() === filter)
+        .map((row) => row.user_id)
+    ),
+  ];
+  const others = await readByIds(members, (chunk) =>
+    loadCurrentLearnerMemberships({ sbAdmin, wsId, userIds: chunk })
+  );
+  return { data: [...first.data, ...others.data], error: others.error };
 }
 
 /** Tag names per class group, read only when an exclusion rule matches tags. */

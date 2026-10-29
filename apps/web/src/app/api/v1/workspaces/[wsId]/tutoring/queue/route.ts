@@ -22,8 +22,8 @@ import { unmatchedAbsenceDates } from './absence-credits';
 import { readAllRows } from './all-rows';
 import { loadQueueLessonNotes } from './queue-lesson-content';
 import {
-  loadCurrentLearnerMemberships,
   loadGroupTagNames,
+  loadQueueMemberships,
   type QueueIdentity,
   supportQueueKeys,
 } from './queue-membership';
@@ -237,18 +237,14 @@ async function getTutoringData(request: Request, { params }: Params) {
   const reservedRows = reservedResult.data;
   const feedbackRows = feedbackResult.data;
   const policy = readTutoringPolicyConfigRows(policyResult.data ?? []);
-  // Learners are listed only under the classes they belong to now. Support
-  // expansion needs every class of each member, so a group filter narrows
-  // the read only when no support group is configured.
+  // Learners are listed only under the classes they belong to now.
   const [membershipResult, tagResult] = await Promise.all([
-    loadCurrentLearnerMemberships({
+    loadQueueMemberships({
       sbAdmin,
       wsId: normalizedWsId,
-      groupIds:
-        parsed.data.groupId && policy.supportGroupIds.length === 0
-          ? [parsed.data.groupId]
-          : undefined,
+      groupId: parsed.data.groupId,
       studentUserId: parsed.data.studentUserId,
+      supportGroupIds: policy.supportGroupIds,
     }),
     hasTutoringTagExclusions(policy)
       ? loadGroupTagNames({ sbAdmin, wsId: normalizedWsId })

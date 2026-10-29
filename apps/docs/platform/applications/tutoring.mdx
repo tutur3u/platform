@@ -95,8 +95,11 @@ itself. A class leaves the queue once a weak-support session is pending there,
 and returns only after the reassessment interval following a completed
 weak-support session, as with flagged feedback. Exclusion rules still apply.
 Rows come from group membership, so they carry no source feedback. They are
-marked "In a needs-tutoring group" and do not offer **End tutoring**: staff take
-a learner off the list by removing them from the group. With no needs-tutoring group configured, the queue behaves exactly
+marked "In a needs-tutoring group". **End tutoring** is offered on them only
+to clear flagged feedback the row also carries; staff take a learner off the
+list by removing them from the group. Filtering the queue by a group reads only
+that group and the needs-tutoring groups, plus, when filtering by a
+needs-tutoring group, its members' other classes. With no needs-tutoring group configured, the queue behaves exactly
 as before.
 
 The detailed and payroll exports page every session read and order it by

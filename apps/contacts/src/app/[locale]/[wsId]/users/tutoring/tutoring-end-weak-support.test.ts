@@ -24,4 +24,21 @@ describe('ending weak support from the queue', () => {
       canEndWeakSupport(item({ support_group: true, review_only: true }))
     ).toBe(false);
   });
+
+  it('stays offered on a support row that also carries flagged feedback', () => {
+    expect(
+      canEndWeakSupport(
+        item({ support_group: true, source_feedback_id: 'feedback-1' })
+      )
+    ).toBe(true);
+    expect(
+      canEndWeakSupport(
+        item({
+          support_group: true,
+          review_only: true,
+          content_feedback_id: 'feedback-1',
+        })
+      )
+    ).toBe(true);
+  });
 });
