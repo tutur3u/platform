@@ -1,6 +1,5 @@
 import { meetingProviderTransport } from './provider-transport';
 import 'server-only';
-import { checkAiCredits } from '@tuturuuu/ai/credits/check-credits';
 import { generateMeetArtifact } from '@tuturuuu/ai/meetings/gemini';
 import { MEET_AI_MODEL, MEET_AI_PRICING } from '@tuturuuu/ai/meetings/usage';
 import {
@@ -12,8 +11,8 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Effect } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { MEETING_APP } from '../../../runtime';
-import { personalWorkspace } from '../../call/server/room-service';
 import { MeetAiError } from './access';
+import { admitMeetCredits, type MeetCreditAdmission } from './credit-admission';
 
 type Input = Parameters<typeof generateMeetArtifact>[0];
 
@@ -24,14 +23,12 @@ export async function generateBilledMeetArtifact(
     userId: string;
     meetingId: string;
     attemptId: string;
-  }
+  },
+  admission?: MeetCreditAdmission
 ) {
-  const workspaceId = await personalWorkspace(actor.userId);
+  const { workspaceId, allowance } =
+    admission ?? (await admitMeetCredits(actor.userId));
   const modelId = `google/${MEET_AI_MODEL}`;
-  const allowance = await checkAiCredits(workspaceId, modelId, 'generate', {
-    userId: actor.userId,
-  });
-  if (!allowance.allowed) throw new MeetAiError(402, 'AI credits unavailable');
   const db = await createAdminClient({ noCookie: true });
   const { data: allocation, error } = await db
     .from('ai_credit_plan_allocations')
