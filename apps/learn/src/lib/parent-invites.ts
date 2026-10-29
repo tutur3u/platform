@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { EmailService } from '@tuturuuu/email-service';
-import type { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Tables } from '@tuturuuu/types/supabase';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { LEARN_APP_URL } from '@/constants/common';
@@ -11,8 +11,6 @@ import {
   hasCompletedInviteAcceptance,
   type ParentLinkRow,
 } from './parent-links';
-
-type TypedSupabaseClient = Awaited<ReturnType<typeof createAdminClient>>;
 
 export type ParentInviteRow = Tables<'tulearn_parent_invites'>;
 
