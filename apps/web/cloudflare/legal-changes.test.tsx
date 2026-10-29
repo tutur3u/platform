@@ -55,7 +55,7 @@ describe('upcoming legal changes', () => {
         const html = renderToStaticMarkup(
           <LegalChanges locale={locale} full={full} />
         );
-        expect(html).toContain('2026-09-13-draft');
+        expect(html).not.toContain('2026-09-13');
         expect(html).toContain('data-binding-notice');
         expect(html).toContain(
           full
@@ -75,6 +75,87 @@ describe('upcoming legal changes', () => {
         });
         expect(metadata.robots).toMatchObject({ index: false });
       }
+    });
+    it(`${locale} proposal views never show the inherited legal-review footer sentences`, () => {
+      const banned =
+        /requires legal review|counsel-review draft|cần được rà soát pháp lý|chờ rà soát pháp lý/iu;
+      for (const full of [false, true]) {
+        const page = new DOMParser().parseFromString(
+          renderToStaticMarkup(<LegalChanges locale={locale} full={full} />),
+          'text/html'
+        );
+        expect(page.body.textContent).not.toMatch(banned);
+      }
+      const full = new DOMParser().parseFromString(
+        renderToStaticMarkup(<LegalChanges locale={locale} full />),
+        'text/html'
+      );
+      for (const kind of ['privacy', 'terms'] as const) {
+        const footer = full.querySelector(`article[id="${kind}"] footer p`);
+        expect(footer?.textContent).not.toMatch(banned);
+        expect(footer?.textContent?.length).toBeGreaterThan(0);
+        // The in-force footers keep their wording (pinned by the revisions tests).
+        expect(getLegalDocument(kind, locale).footer).toMatch(banned);
+      }
+      if (locale === 'en') {
+        expect(
+          full.querySelector('article[id="privacy"] footer p')?.textContent
+        ).toBe(
+          'Draft revision for review; not a newly effective agreement. Questions and rights requests may be sent to privacy@tuturuuu.com.'
+        );
+        expect(
+          full.querySelector('article[id="terms"] footer p')?.textContent
+        ).toBe(
+          'Draft revision for review; not a newly effective agreement. Enterprise order forms and mandatory consumer law may add or override terms.'
+        );
+      }
+    });
+    it(`${locale} unpublished version block shows only Proposed and Not yet in effect`, () => {
+      const copy = (locale === 'vi' ? vietnamese : en).legalRedesign;
+      const current = getLegalDocument('terms', locale);
+      const page = new DOMParser().parseFromString(
+        renderToStaticMarkup(<LegalChanges locale={locale} />),
+        'text/html'
+      );
+      expect(page.querySelector('.version-document')?.textContent).toBe(
+        `${current.title} ${current.highlightedWord}`
+      );
+      const [inForce, proposed] = page.querySelectorAll(
+        '.version-pair section'
+      );
+      expect(inForce?.textContent).toContain(current.version);
+      expect(inForce?.textContent).toContain(current.effectiveDate);
+      expect(inForce?.querySelector('strong')?.textContent).toBe(copy.from);
+      expect(proposed?.textContent).toBe(`${copy.to}${copy.notice}`);
+      expect(proposed?.querySelector('dl')).toBeNull();
+      expect(proposed?.textContent).not.toMatch(/draft|\d{4}-\d{2}-\d{2}/iu);
+      expect(page.querySelector('.change-versions')?.textContent).not.toMatch(
+        /draft/iu
+      );
+    });
+    it(`${locale} published version block shows the real version and the notice date`, () => {
+      const copy = (locale === 'vi' ? vietnamese : en).legalRedesign;
+      const page = new DOMParser().parseFromString(
+        renderToStaticMarkup(
+          <LegalChanges
+            locale={locale}
+            noticeConfig={{
+              published: true,
+              noticeDate: 'NOTICE-DATE',
+              laterDate: 'LATER-DATE',
+              archiveLinks: { [locale]: 'ARCHIVE' },
+            }}
+          />
+        ),
+        'text/html'
+      );
+      const proposed = page.querySelectorAll('.version-pair section')[1];
+      expect(proposed?.querySelector('strong')?.textContent).toBe(
+        copy.published
+      );
+      expect(proposed?.querySelector('p')?.textContent).toBe('2026-09-13');
+      expect(proposed?.textContent).toContain('NOTICE-DATE');
+      expect(proposed?.textContent).not.toMatch(/draft/iu);
     });
     it(`${locale} full proposals show the notice, original draft footers and current-version links`, () => {
       const page = new DOMParser().parseFromString(
@@ -99,13 +180,15 @@ describe('upcoming legal changes', () => {
         expect(article?.querySelector('h2')?.textContent).toBe(
           `${document.title} ${document.highlightedWord}`
         );
-        const inheritedFooter = getLegalDocument(kind, locale).footer;
-        const displayFooter =
-          /legal review|counsel-review|rà soát pháp lý|chờ rà soát/iu.test(
-            inheritedFooter
-          ) && document.footer.endsWith(inheritedFooter)
-            ? document.footer.slice(0, -inheritedFooter.length).trimEnd()
-            : document.footer;
+        const displayFooter = document.footer
+          .split(/(?<=[.!?])\s+/u)
+          .filter(
+            (sentence) =>
+              !/requires legal review|counsel-review draft|cần được rà soát pháp lý|chờ rà soát pháp lý/iu.test(
+                sentence
+              )
+          )
+          .join(' ');
         expect(article?.querySelector('footer p')?.textContent).toBe(
           displayFooter
         );

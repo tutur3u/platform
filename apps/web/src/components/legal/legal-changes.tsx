@@ -6,7 +6,6 @@ import {
   type LegalLocale,
   type LegalNoticeConfig,
   legalChangesCopy,
-  legalNoticeCopy,
 } from '@tuturuuu/legal';
 import { ChangeControls, ChangeToc } from './change-controls';
 import { changeCopy } from './change-copy';
@@ -17,15 +16,11 @@ import { ProposedLegalDocuments } from './proposed-legal-documents';
 import { RedlineView } from './redline-view';
 import './legal-changes.css';
 
-const kinds = [
-  'terms',
-  'privacy',
-  'dpa',
-  'sla',
-  'subprocessors',
-  'acceptable-use',
-  'community-guidelines',
-] as const;
+// The in-force and proposed Acceptable Use and Community Guidelines clauses do
+// not share section ids yet, so a diff would label every in-force clause as
+// "Removed". Both are left out of the change list and diff here; re-enable
+// after the clause-restore work lands and Lex OKs the wording.
+const kinds = ['terms', 'privacy', 'dpa', 'sla', 'subprocessors'] as const;
 export function LegalChanges({
   locale,
   full = false,
@@ -57,7 +52,7 @@ export function LegalChanges({
       <a className="legal-skip" href="#legal-main">
         {copy.skip}
       </a>
-      <LegalHubNav locale={locale} />
+      <LegalHubNav locale={locale} proposed={!notice} />
       <div className="change-status">
         <strong>{notice ? copy.published : copy.notice}</strong>
         {!notice && <p>{variant.notInEffect}</p>}
@@ -79,10 +74,19 @@ export function LegalChanges({
         </section>
       </header>
       <ChangeVersions locale={locale} notice={notice} />
-      <ChangeControls locale={locale} full={full} />
+      <ChangeControls
+        full={full}
+        labels={{
+          compare: copy.compare,
+          contents: copy.contents,
+          language: copy.language,
+          print: copy.print,
+        }}
+        locale={locale}
+      />
       <div className="change-layout">
         <ChangeToc
-          locale={locale}
+          label={copy.contents}
           items={groups.map((group) => ({
             id: `changes-${group.kind}`,
             title: `${group.proposed.title} ${group.proposed.highlightedWord}`,
@@ -132,21 +136,18 @@ export function LegalChanges({
                   </LegalMarkdown>
                 </>
               ) : (
-                <>
-                  {summary.map((block) => (
-                    <LegalMarkdown key={block}>
-                      {block
-                        .replace(/^## [^\n]+\n/u, '')
-                        .replace(/\n {2}/gu, ' ')
-                        .replace(/^- /gmu, '* ')
-                        .replace(
-                          /\]\((\/legal\/changes[^)]*)\)/gu,
-                          locale === 'vi' ? '](/vi$1)' : ']($1)'
-                        )}
-                    </LegalMarkdown>
-                  ))}
-                  <p>{legalNoticeCopy[locale].nonbinding}</p>
-                </>
+                summary.map((block) => (
+                  <LegalMarkdown key={block}>
+                    {block
+                      .replace(/^## [^\n]+\n/u, '')
+                      .replace(/\n {2}/gu, ' ')
+                      .replace(/^- /gmu, '* ')
+                      .replace(
+                        /\]\((\/legal\/changes[^)]*)\)/gu,
+                        locale === 'vi' ? '](/vi$1)' : ']($1)'
+                      )}
+                  </LegalMarkdown>
+                ))
               )}
             </aside>
           )}

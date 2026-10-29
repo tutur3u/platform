@@ -56,3 +56,26 @@ checks both locales/states/views, binding visibility, summary grouping, screen-r
 labels and print rules. The existing legal route tests keep indexing and full
 proposed-text/footer coverage. Hosted builds, Maya's visual/contrast sign-off and
 Lex's final publication acceptance remain separate gates.
+
+### Unpublished state, publish gates and theming
+
+While `legalNotice.published` is `false` the page is exactly the Variant 1 copy:
+no Lex notice sentence (including the non-binding line) renders, the proposed
+version block shows only "Proposed" and "Not yet in effect" (no version id, no
+date), and no draft marker is shown. When published, the block shows the real
+Terms version (without the internal draft suffix) and the notice date.
+
+The change list and diff cover Terms, Privacy, DPA, SLA and Subprocessors only.
+Acceptable Use and Community Guidelines are excluded because their in-force and
+proposed clause ids do not pair, which would label every clause "Removed";
+re-enable after the clause-restore work lands and Lex OKs the wording.
+
+Publishing also requires `archiveLinks` per locale in the notice config; the
+`{ARCHIVE_LINKS}` placeholder is never rendered literally and `getLegalNotice`
+throws when the link text is unset. Lex approves the real archive URLs first.
+The in-force footer decision (remove or keep) is still open; the proposed footers
+must match it on publication day.
+
+The scope uses the shared theme tokens directly (no local redefinition), so dark
+theme works; the navbar brand mark switches by theme, and client controls receive
+their strings as props instead of importing the message bundles.

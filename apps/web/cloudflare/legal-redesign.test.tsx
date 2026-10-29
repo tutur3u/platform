@@ -7,6 +7,7 @@ import {
   getLegalDocument,
   getLegalNotice,
   getProposedLegalDocument,
+  legalNoticeCopy,
 } from '@tuturuuu/legal';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -24,6 +25,7 @@ describe('legal notice presentation', () => {
                 published: true as const,
                 noticeDate: 'NOTICE',
                 laterDate: 'LATER',
+                archiveLinks: { [locale]: 'ARCHIVE' },
               }
             : { published: false as const, noticeDate: null, laterDate: null };
           const html = renderToStaticMarkup(
@@ -45,8 +47,24 @@ describe('legal notice presentation', () => {
             locale === 'vi' ? 'Đã thêm:' : 'Added:'
           );
           expect(
-            page.querySelector('[aria-label="Language"] a[href^="/vi/"]')
+            page.querySelector(
+              `nav[aria-label="${locale === 'vi' ? 'Ngôn ngữ' : 'Language'}"] a[href^="/vi/"]`
+            )
           ).not.toBeNull();
+          // Acceptable Use and Community Guidelines are left out of the diff
+          // until their clause ids pair; no clause may read as "Removed".
+          expect(page.querySelector('#changes-acceptable-use')).toBeNull();
+          expect(
+            page.querySelector('#changes-community-guidelines')
+          ).toBeNull();
+          expect(
+            page.querySelector('.change-toc a[href$="acceptable-use"]')
+          ).toBeNull();
+          expect(page.querySelectorAll('.change-document')).toHaveLength(5);
+          // The nav marks the proposal with a decorative dot only while unpublished.
+          expect(
+            page.querySelector('.legal-hub-nav .proposed-dot') === null
+          ).toBe(published);
           expect(page.querySelector('.lawyer-review')).toBeNull();
           expect(html).not.toMatch(
             /NOT LAWYER-REVIEWED|Summary pending Lex review|CHƯA ĐƯỢC LUẬT SƯ|đang chờ Lex|requires legal review|counsel-review draft|cần được rà soát pháp lý|chờ rà soát pháp lý/iu
@@ -62,8 +80,17 @@ describe('legal notice presentation', () => {
               expect(summary?.textContent).toContain(
                 getLegalNotice(locale, noticeConfig)?.nonbinding
               );
+              expect(summary?.textContent).toContain('ARCHIVE');
+              expect(html).not.toContain('ARCHIVE_LINKS');
             }
-          } else expect(binding?.textContent).not.toContain('NOTICE');
+          } else {
+            expect(binding?.textContent).not.toContain('NOTICE');
+            // Unpublished state is Variant 1 only: no Lex notice copy.
+            expect(html).not.toContain(legalNoticeCopy[locale].nonbinding);
+            expect(page.body.textContent).not.toContain(
+              legalNoticeCopy[locale].title
+            );
+          }
         });
       }
   for (const locale of ['en', 'vi'] as const)

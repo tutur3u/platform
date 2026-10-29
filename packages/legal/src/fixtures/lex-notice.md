@@ -32,8 +32,9 @@ This summary is a convenience. It is not part of the terms or policies and does 
 
 ### Links
 - Full updated text: /legal/changes/full
-- Previous text (in force until {N}): link to the archived 15 Aug 2026 versions (and 6 Feb 2026 for the Acceptable Use Policy and Community Guidelines)
+- Previous text (in force until {N}): {ARCHIVE_LINKS}
 - Terms of Service · Privacy Policy · Data Processing Addendum · Service Levels · Subprocessors
+<!-- Publish gate: {ARCHIVE_LINKS} stands for the archived 15 Aug 2026 versions (6 Feb 2026 for the Acceptable Use Policy and Community Guidelines). Lex approves the real archive URLs before publication; they are supplied through the notice config, never rendered literally. -->
 
 ---
 
@@ -71,5 +72,6 @@ Bản tóm tắt này chỉ để tiện theo dõi. Nó không phải là một 
 
 ### Liên kết
 - Toàn văn bản mới: /vi/legal/changes/full
-- Văn bản trước đây (có hiệu lực đến {N}): liên kết tới các bản lưu trữ ngày 15/8/2026 (và 6/2/2026 đối với Chính sách sử dụng chấp nhận được và Nguyên tắc cộng đồng)
+- Văn bản trước đây (có hiệu lực đến {N}): {ARCHIVE_LINKS}
 - Điều khoản dịch vụ · Chính sách quyền riêng tư · Phụ lục xử lý dữ liệu · Mức dịch vụ · Bên xử lý phụ
+<!-- Publish gate: {ARCHIVE_LINKS} đại diện cho các bản lưu trữ ngày 15/8/2026 (6/2/2026 đối với Chính sách sử dụng chấp nhận được và Nguyên tắc cộng đồng). Lex phê duyệt URL lưu trữ thực trước khi công bố. -->

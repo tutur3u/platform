@@ -30,6 +30,7 @@ describe('legal redesign source integrity', () => {
         published: true,
         noticeDate: 'NOTICE-DATE',
         laterDate: 'LATER-DATE',
+        archiveLinks: { [locale]: 'ARCHIVE-LINK-TEXT' },
       });
       expect(notice?.binding).toBe(
         copy.binding
@@ -37,6 +38,25 @@ describe('legal redesign source integrity', () => {
           .replaceAll('{N}', 'NOTICE-DATE')
       );
       expect(JSON.stringify(notice)).not.toMatch(/\{N(?:30)?\}/u);
+      expect(notice?.links).toContain('ARCHIVE-LINK-TEXT');
+      expect(JSON.stringify(notice)).not.toContain('ARCHIVE_LINKS');
+    });
+    it(`${locale}: publishing with unset archive links fails`, () => {
+      const base = {
+        published: true as const,
+        noticeDate: 'NOTICE-DATE',
+        laterDate: 'LATER-DATE',
+      };
+      expect(() =>
+        getLegalNotice(locale, { ...base, archiveLinks: {} })
+      ).toThrow('Archive links are required');
+      expect(() =>
+        getLegalNotice(locale, { ...base, archiveLinks: { [locale]: '  ' } })
+      ).toThrow('Archive links are required');
+      // Lex's instruction text must never reach the public notice.
+      expect(legalNoticeCopy[locale].links).not.toMatch(
+        /archived|lưu trữ ngày|link to/iu
+      );
     });
     it(`${locale}: every clause has a unique stable id and exact reversible diff`, () => {
       for (const kind of [
@@ -98,6 +118,7 @@ describe('legal redesign source integrity', () => {
       published: false,
       noticeDate: null,
       laterDate: null,
+      archiveLinks: null,
     });
   });
 });

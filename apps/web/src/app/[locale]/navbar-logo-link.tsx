@@ -32,17 +32,33 @@ export default function NavbarLogoLink({
         logoClassName
       )}
     >
-      <Image
-        src={legalChanges ? '/media/branding/brand-mark-light.svg' : logo}
-        className={
-          legalChanges
-            ? 'h-6 w-auto'
-            : 'h-8 w-8 transition-transform hover:scale-105'
-        }
-        width={legalChanges ? 111 : 32}
-        height={legalChanges ? 24 : 32}
-        alt={legalChanges ? 'Tuturuuu' : 'logo'}
-      />
+      {legalChanges ? (
+        <>
+          {/* The wordmark follows the theme: dark ink on light, white on dark. */}
+          <Image
+            src="/media/branding/brand-mark-light.svg"
+            className="h-6 w-auto dark:hidden"
+            width={111}
+            height={24}
+            alt="Tuturuuu"
+          />
+          <Image
+            src="/media/branding/brand-mark-dark.svg"
+            className="hidden h-6 w-auto dark:block"
+            width={111}
+            height={24}
+            alt="Tuturuuu"
+          />
+        </>
+      ) : (
+        <Image
+          src={logo}
+          className="h-8 w-8 transition-transform hover:scale-105"
+          width={32}
+          height={32}
+          alt="logo"
+        />
+      )}
       {legalChanges ? null : title}
     </Link>
   );

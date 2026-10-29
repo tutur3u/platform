@@ -1,4 +1,10 @@
 // Lex-owned wording. Keep synchronized with the approved notice fixture.
+//
+// Publish gate: `{ARCHIVE_LINKS}` in `links` is a placeholder for the archived
+// previous versions (15 Aug 2026; 6 Feb 2026 for the Acceptable Use Policy and
+// Community Guidelines). It is never rendered literally. `getLegalNotice`
+// substitutes `LegalNoticeConfig.archiveLinks[locale]` and throws when it is
+// unset. Lex approves the real archive URLs before publication.
 export const legalNoticeCopy = {
   en: {
     title: "What changed in Tuturuuu's legal documents",
@@ -71,7 +77,7 @@ export const legalNoticeCopy = {
       'This summary is a convenience. It is not part of the terms or policies and does not change them. If it differs from the full text, the full text applies.',
     summaryTitle: 'Summary of changes',
     links:
-      '- Full updated text: /legal/changes/full\n- Previous text (in force until {N}): link to the archived 15 Aug 2026 versions (and 6 Feb 2026 for the Acceptable Use Policy and Community Guidelines)\n- Terms of Service · Privacy Policy · Data Processing Addendum · Service Levels · Subprocessors',
+      '- Full updated text: /legal/changes/full\n- Previous text (in force until {N}): {ARCHIVE_LINKS}\n- Terms of Service · Privacy Policy · Data Processing Addendum · Service Levels · Subprocessors',
   },
   vi: {
     title: 'Những thay đổi trong các văn bản pháp lý của Tuturuuu',
@@ -144,6 +150,6 @@ export const legalNoticeCopy = {
       'Bản tóm tắt này chỉ để tiện theo dõi. Nó không phải là một phần của điều khoản hay chính sách và không làm thay đổi chúng. Nếu có khác biệt với toàn văn, thì toàn văn được áp dụng.',
     summaryTitle: 'Tóm tắt thay đổi',
     links:
-      '- Toàn văn bản mới: /vi/legal/changes/full\n- Văn bản trước đây (có hiệu lực đến {N}): liên kết tới các bản lưu trữ ngày 15/8/2026 (và 6/2/2026 đối với Chính sách sử dụng chấp nhận được và Nguyên tắc cộng đồng)\n- Điều khoản dịch vụ · Chính sách quyền riêng tư · Phụ lục xử lý dữ liệu · Mức dịch vụ · Bên xử lý phụ',
+      '- Toàn văn bản mới: /vi/legal/changes/full\n- Văn bản trước đây (có hiệu lực đến {N}): {ARCHIVE_LINKS}\n- Điều khoản dịch vụ · Chính sách quyền riêng tư · Phụ lục xử lý dữ liệu · Mức dịch vụ · Bên xử lý phụ',
   },
 } as const;

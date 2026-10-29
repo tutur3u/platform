@@ -1,10 +1,10 @@
 import {
-  getLegalDocument,
   getProposedLegalDocument,
   type LegalLocale,
   legalChangesCopy,
 } from '@tuturuuu/legal';
 import { LegalMarkdown } from './legal-markdown';
+import { stripInternalReviewSentences } from './proposal-footer';
 
 const kinds = [
   'privacy',
@@ -21,14 +21,11 @@ export function ProposedLegalDocuments({ locale }: { locale: LegalLocale }) {
     <div className="proposed-documents">
       {kinds.map((kind) => {
         const document = getProposedLegalDocument(kind, locale);
-        const inheritedFooter = getLegalDocument(kind, locale).footer;
         // Internal review annotations are excluded from proposal presentation only.
-        const footer =
-          /legal review|counsel-review|rà soát pháp lý|chờ rà soát/iu.test(
-            inheritedFooter
-          ) && document.footer.endsWith(inheritedFooter)
-            ? document.footer.slice(0, -inheritedFooter.length).trimEnd()
-            : document.footer;
+        // Open decision (user): in-force footers "remove|keep". On publication
+        // day the proposed footers must match whichever is chosen for the
+        // in-force pages; Lex confirms then. Do not change this by itself.
+        const footer = stripInternalReviewSentences(document.footer);
         return (
           <article id={kind} key={kind}>
             <p>{copy.proposed}</p>

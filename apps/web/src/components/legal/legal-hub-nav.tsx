@@ -1,6 +1,12 @@
 import { getLegalDocument, type LegalLocale } from '@tuturuuu/legal';
 import { changeCopy } from './change-copy';
-export function LegalHubNav({ locale }: { locale: LegalLocale }) {
+export function LegalHubNav({
+  locale,
+  proposed = false,
+}: {
+  locale: LegalLocale;
+  proposed?: boolean;
+}) {
   const prefix = locale === 'vi' ? '/vi' : '';
   return (
     <nav className="legal-hub-nav" aria-label={changeCopy[locale].navigation}>
@@ -27,6 +33,7 @@ export function LegalHubNav({ locale }: { locale: LegalLocale }) {
       })}
       <a href={`${prefix}/legal/changes`} aria-current="page">
         {changeCopy[locale].changes}
+        {proposed && <span className="proposed-dot" aria-hidden="true" />}
       </a>
     </nav>
   );

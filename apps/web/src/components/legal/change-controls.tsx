@@ -1,26 +1,33 @@
 'use client';
 import type { LegalLocale } from '@tuturuuu/legal';
 import { useEffect, useState } from 'react';
-import { changeCopy } from './change-copy';
+// Strings arrive as props from the server component so this client module does
+// not pull the whole message bundles into the browser.
 export function ChangeControls({
   locale,
   full,
+  labels,
 }: {
   locale: LegalLocale;
   full: boolean;
+  labels: {
+    compare: string;
+    contents: string;
+    language: string;
+    print: string;
+  };
 }) {
-  const copy = changeCopy[locale];
   return (
     <div className="change-actions">
       <a
         href={`${locale === 'vi' ? '/vi' : ''}/legal/changes${full ? '' : '/full'}`}
       >
-        {full ? copy.contents : copy.compare}
+        {full ? labels.contents : labels.compare}
       </a>
       <button type="button" onClick={() => window.print()}>
-        {copy.print}
+        {labels.print}
       </button>
-      <nav aria-label="Language">
+      <nav aria-label={labels.language}>
         <a
           href={`/en/legal/changes${full ? '/full' : ''}`}
           hrefLang="en"
@@ -46,10 +53,10 @@ export function ChangeControls({
   );
 }
 export function ChangeToc({
-  locale,
+  label,
   items,
 }: {
-  locale: LegalLocale;
+  label: string;
   items: { id: string; title: string }[];
 }) {
   const [active, setActive] = useState(items[0]?.id);
@@ -78,13 +85,13 @@ export function ChangeToc({
   ));
   return (
     <aside className="change-toc">
-      <nav aria-label={changeCopy[locale].contents}>
+      <nav aria-label={label}>
         <div className="desktop-contents">
-          <strong>{changeCopy[locale].contents}</strong>
+          <strong>{label}</strong>
           {links}
         </div>
         <details className="mobile-contents">
-          <summary>{changeCopy[locale].contents}</summary>
+          <summary>{label}</summary>
           {links}
         </details>
       </nav>

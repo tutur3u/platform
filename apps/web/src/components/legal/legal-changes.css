@@ -1,12 +1,10 @@
 .legal-changes {
-  --background: 0 0% 100%;
-  --foreground: 0 0% 4%;
-  --muted: 0 0% 96%;
-  --muted-foreground: 0 0% 40%;
-  --border: 0 0% 90%;
-  --ring: 0 0% 4%;
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
+  /* Shared theme tokens (full colours) are used as-is so dark theme works. */
+  --legal-added: color-mix(in srgb, var(--green) 65%, var(--foreground));
+  --legal-revised: var(--blue);
+  --legal-removed: var(--red);
+  background: var(--background);
+  color: var(--foreground);
   font-family: var(--font-legal-inter, Inter), "Noto Sans", sans-serif;
   line-height: 1.65;
   padding: 1rem max(1.25rem, calc((100% - 1200px) / 2));
@@ -21,7 +19,7 @@
   text-underline-offset: 3px;
 }
 .legal-changes :focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: 2px solid var(--ring);
   outline-offset: 4px;
 }
 .legal-skip {
@@ -32,7 +30,7 @@
   left: 1rem;
   top: 1rem;
   z-index: 100;
-  background: hsl(var(--background));
+  background: var(--background);
   padding: 1rem;
 }
 .legal-changes h1 {
@@ -56,8 +54,8 @@
   margin: 0.5rem 0 1rem;
 }
 .change-status {
-  background: hsl(var(--muted));
-  border-inline-start: 3px solid hsl(var(--foreground));
+  background: var(--muted);
+  border-inline-start: 3px solid var(--foreground);
   padding: 0.75rem 1rem;
   font-size: 0.875rem;
 }
@@ -76,8 +74,8 @@
   margin: 1.5rem 0;
 }
 .version-pair section {
-  background: hsl(var(--muted));
-  border: 1px solid hsl(var(--border));
+  background: var(--muted);
+  border: 1px solid var(--border);
   border-radius: 1rem;
   padding: 1rem;
 }
@@ -94,9 +92,23 @@
   gap: 2rem;
   flex-wrap: wrap;
 }
+.version-document {
+  margin: 1.5rem 0 0;
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+.version-document + .version-pair {
+  margin-top: 0.5rem;
+}
+.version-pair .version-pending {
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
 .version-pair dt {
   font-size: 0.75rem;
-  color: hsl(var(--muted-foreground));
+  color: var(--muted-foreground);
 }
 .version-pair dd {
   font-family: var(--font-mono), monospace;
@@ -114,15 +126,16 @@
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 2rem;
   padding: 0.5rem 1rem;
-  background: hsl(var(--background));
+  background: var(--background);
   font: inherit;
 }
 .change-actions > a {
-  background: hsl(var(--foreground));
-  color: hsl(var(--background));
+  background: var(--foreground);
+  color: var(--background);
+  text-decoration: none;
 }
 .change-actions nav {
   display: flex;
@@ -147,17 +160,18 @@
   top: 0;
   align-self: start;
   z-index: 10;
-  background: hsl(var(--background));
-  border-bottom: 1px solid hsl(var(--border));
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
 }
 .change-toc a {
   display: block;
+  text-decoration: none;
   min-height: 44px;
   padding: 0.5rem;
 }
 .change-toc [aria-current] {
-  border-inline-start: 3px solid #4180e9;
-  background: hsl(var(--muted));
+  border-inline-start: 3px solid var(--light-blue);
+  background: var(--muted);
   font-weight: 650;
 }
 .desktop-contents {
@@ -169,8 +183,8 @@
   cursor: pointer;
 }
 .change-summary {
-  background: hsl(var(--muted));
-  border: 1px solid hsl(var(--border));
+  background: var(--muted);
+  border: 1px solid var(--border);
   border-radius: 0.75rem;
   padding: 1rem;
   margin: 1rem 0;
@@ -193,14 +207,14 @@
   text-align: start;
   vertical-align: top;
   padding: 0.75rem;
-  border-bottom: 1px solid hsl(var(--border));
+  border-bottom: 1px solid var(--border);
 }
 .change-document {
   scroll-margin-top: 5rem;
   margin: 2rem 0;
 }
 .change-card {
-  border: 1px solid hsl(var(--border));
+  border: 1px solid var(--border);
   border-radius: 1rem;
   padding: 1.25rem;
   margin: 1rem 0;
@@ -220,13 +234,13 @@
   padding: 0.1rem 0.6rem;
 }
 .change-chip.added {
-  color: #1e7a16;
+  color: var(--legal-added);
 }
 .change-chip.revised {
-  color: #1f5fbf;
+  color: var(--legal-revised);
 }
 .change-chip.removed {
-  color: #b3261e;
+  color: var(--legal-removed);
 }
 .change-card summary {
   min-height: 44px;
@@ -255,7 +269,7 @@
   text-decoration-thickness: 2px;
 }
 .proposed-documents article {
-  border-top: 1px solid hsl(var(--border));
+  border-top: 1px solid var(--border);
   margin-top: 2rem;
   padding-top: 2rem;
 }
@@ -337,8 +351,8 @@
 
 .legal-hub-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.25rem;
-  overflow-x: auto;
   padding: 0.5rem 0 1rem;
 }
 .legal-hub-nav a {
@@ -350,13 +364,20 @@
   border-radius: 2rem;
   font-size: 0.875rem;
 }
+.legal-hub-nav .proposed-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-inline-start: 0.5rem;
+  border-radius: 50%;
+  background: var(--orange);
+}
 .legal-changes .legal-hub-nav [aria-current] {
-  background: hsl(var(--foreground));
-  color: hsl(var(--background));
+  background: var(--foreground);
+  color: var(--background);
   text-decoration: none;
 }
 .legal-changes .change-actions > a {
-  color: hsl(var(--background));
+  color: var(--background);
 }
 @media print {
   .legal-hub-nav {
