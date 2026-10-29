@@ -22,6 +22,37 @@ describe('BoardPlanView sprints', () => {
     expect(card('t1')).not.toHaveAttribute('data-plan-ghost');
   });
 
+  it.each([
+    ['assigns a ghost once it is in the sprint', true],
+    ['leaves a ghost unassigned when it cannot join the sprint', false],
+  ])('%s', async (_label, moveWorks) => {
+    if (moveWorks) api.moveTasks.mockResolvedValue({ moved: 1 });
+    else api.moveTasks.mockRejectedValue(new Error('network'));
+    renderPlan({ sprints: [planned], unplanned: ['t4'] });
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'assign:Task t4' })
+    );
+    fireEvent.click(within(card('t4')).getByRole('menuitem', { name: /Binh/ }));
+    await waitFor(() =>
+      expect(api.moveTasks).toHaveBeenCalledWith(
+        'ws-1',
+        'board-1',
+        'sprint-15',
+        ['t4']
+      )
+    );
+    if (moveWorks) {
+      await waitFor(() =>
+        expect(api.update).toHaveBeenCalledWith('ws-1', 't4', {
+          assignee_ids: ['u-binh'],
+        })
+      );
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(api.update).not.toHaveBeenCalled();
+    }
+  });
+
   it('moves a task to any open sprint or out of every sprint', async () => {
     api.moveTasks.mockResolvedValue({ moved: 1 });
     api.unplan.mockResolvedValue({ moved: 1 });
