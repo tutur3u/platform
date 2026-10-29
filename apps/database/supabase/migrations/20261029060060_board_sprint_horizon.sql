@@ -417,8 +417,7 @@ BEGIN
         AND c.status IN ('planned', 'active')
         AND c.deleted IS NOT TRUE
     )
-  ORDER BY t.created_at DESC
-  LIMIT 1000;
+  ORDER BY t.created_at DESC;
 END;
 $$;
 
