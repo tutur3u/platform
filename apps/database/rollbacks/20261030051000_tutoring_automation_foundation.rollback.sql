@@ -8,6 +8,7 @@ begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
 
+-- tuturuuu: reviewed(dynamic-sql-review): static guard block only; it raises when the receipts still reference follow-ups and executes no dynamic SQL.
 do $$
 begin
   if exists (

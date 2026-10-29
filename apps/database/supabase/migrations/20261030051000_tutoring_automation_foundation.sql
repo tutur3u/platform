@@ -20,6 +20,11 @@
 -- state that also records the audit event; a trigger enforces the state
 -- machine for any other writer. Callers derive the staff actor from the
 -- authenticated session; null is reserved for the scheduled job.
+--
+-- The four trigger functions are revoked from every client role and are never
+-- granted: only the trigger machinery runs them. The apply function is the one
+-- service_role grant.
+-- tuturuuu: no-grant (trigger)
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
 

@@ -15,6 +15,7 @@ set local statement_timeout = '30s';
 
 -- 1. Notification types ----------------------------------------------------------
 
+-- tuturuuu: reviewed(dynamic-sql-review): the only interpolated values are two fixed literals plus type names read from this constraint's own catalog definition, each passed through quote_literal.
 do $$
 declare
   current_comment text;
