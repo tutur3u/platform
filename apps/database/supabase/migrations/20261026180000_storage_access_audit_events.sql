@@ -9,8 +9,8 @@
 --
 -- Actor: a user id, or an API key id for SDK routes (`actor_kind`).
 --
--- Privacy: only the actor id is personal data. Objects are identified by
--- their workspace, lower-cased root segment and either the Storage object id
+-- Privacy: identifiers remain linkable audit data. Objects are identified by
+-- their workspace, an opaque folder marker and either the Storage object id
 -- or an HMAC-SHA256 of the full object name keyed by a server secret (no
 -- unkeyed hash is ever stored); file names are never stored.
 -- Rows are kept for 90 days.
@@ -48,7 +48,7 @@ create table private.storage_access_events (
 );
 
 comment on table private.storage_access_events is
-  'App-side access audit for the workspaces Storage bucket (best-effort, 90-day retention). No file names; objects are identified by root plus object id or a keyed HMAC-SHA256 of the name. Service role only.';
+  'App-side access audit for the workspaces Storage bucket (best-effort, 90-day retention). No file names; objects are identified by an opaque folder marker plus object id or a keyed HMAC-SHA256 of the name. Service role only.';
 
 create index storage_access_events_retention_idx
   on private.storage_access_events (occurred_at, id);

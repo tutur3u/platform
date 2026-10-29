@@ -45,7 +45,7 @@ async function hmac(value: string, key = KEY) {
 }
 
 describe('toStorageAccessAuditRow', () => {
-  it('keeps the root and a keyed hash of the full name, never the file name', async () => {
+  it('keeps an opaque folder marker and a keyed hash of the full name, never the file name', async () => {
     const row = await toStorageAccessAuditRow(event(), keyed);
     expect(row).toEqual({
       action: 'share',
@@ -55,12 +55,39 @@ describe('toStorageAccessAuditRow', () => {
       object_hash: await hmac(`${WS}/Finance/Salaries 2026.xlsx`),
       object_id: null,
       outcome: 'allowed',
-      path_root: 'finance',
+      path_root: '(folder)',
       route: ROUTE,
       ws_id: WS,
     });
     expect(JSON.stringify(row)).not.toMatch(/Salaries|xlsx/);
   });
+
+  it.each([{}, keyed, { objectHashKey: 'short' }])(
+    'omits email folder names with every key configuration: %j',
+    async (options) => {
+      for (const path of [
+        'alice@example.test/document.pdf',
+        'alice@example.test',
+      ]) {
+        const row = await toStorageAccessAuditRow(
+          event({ action: 'list', kind: 'folder', path }),
+          options
+        );
+        expect(row).toMatchObject({ action: 'list', path_root: '(folder)' });
+        expect(JSON.stringify(row)).not.toContain('alice@example.test');
+      }
+      const row = await toStorageAccessAuditRow(
+        event({ objectId: OBJECT, path: 'alice@example.test/document.pdf' }),
+        options
+      );
+      expect(row).toMatchObject({
+        object_id: OBJECT,
+        action: 'share',
+        path_root: '(folder)',
+      });
+      expect(JSON.stringify(row)).not.toContain('alice@example.test');
+    }
+  );
 
   it('never stores an unkeyed hash that guessed names could be tested against', async () => {
     const unsalted = Buffer.from(
@@ -75,7 +102,7 @@ describe('toStorageAccessAuditRow', () => {
       { objectHashKey: 'short' },
     ]) {
       const row = await toStorageAccessAuditRow(event(), options);
-      expect(row).toMatchObject({ object_hash: null, path_root: 'finance' });
+      expect(row).toMatchObject({ object_hash: null, path_root: '(folder)' });
     }
     const keyedRow = await toStorageAccessAuditRow(event(), keyed);
     expect(keyedRow?.object_hash).not.toBe(unsalted);
@@ -96,7 +123,7 @@ describe('toStorageAccessAuditRow', () => {
     expect(row).toMatchObject({
       object_hash: null,
       object_id: OBJECT,
-      path_root: 'chats',
+      path_root: '(folder)',
     });
   });
 
@@ -131,7 +158,7 @@ describe('toStorageAccessAuditRow', () => {
       event({ action: 'list', kind: 'folder', path: 'Docs' }),
       keyed
     );
-    expect(row?.path_root).toBe('docs');
+    expect(row?.path_root).toBe('(folder)');
     expect(row?.object_hash).toBe(await hmac(`${WS}/Docs/`));
   });
 
@@ -146,7 +173,7 @@ describe('toStorageAccessAuditRow', () => {
     ).toMatchObject({ actor_id: null, actor_kind: 'anonymous', ws_id: null });
   });
 
-  it('bounds item counts and root length', async () => {
+  it('bounds item counts and omits arbitrary folder text', async () => {
     expect(
       (await toStorageAccessAuditRow(event({ itemCount: 5000 })))?.item_count
     ).toBe(1000);
@@ -156,7 +183,7 @@ describe('toStorageAccessAuditRow', () => {
     expect(
       (await toStorageAccessAuditRow(event({ path: `${'r'.repeat(90)}/a` })))
         ?.path_root
-    ).toHaveLength(64);
+    ).toBe('(folder)');
   });
 
   it.each([

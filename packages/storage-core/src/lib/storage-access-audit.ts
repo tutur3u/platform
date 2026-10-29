@@ -13,11 +13,11 @@
  *   `maxPendingWrites` concurrent writes (extra events are dropped and
  *   counted), and repeated identical allowed events are de-duplicated for
  *   `dedupeWindowMs`. Denials and errors are always recorded.
- * - No PII beyond the actor id: objects are reduced to the workspace, the
- *   lower-cased root segment and the Storage object id or a keyed
+ * - Folder and file names are omitted: objects are reduced to the workspace,
+ *   an opaque folder marker and the Storage object id or a keyed
  *   HMAC-SHA256 of the full object name. Without a server key no hash is
  *   stored (an unsalted hash would let guessed names be confirmed). File
- *   names never leave this module.
+ *   names never leave this module in plaintext. Identifiers remain linkable.
  *
  * Framework-independent: the insert sink and scheduler are injected.
  */
@@ -71,7 +71,7 @@ export interface StorageAccessAuditorOptions {
   maxEventsPerRecord?: number;
   /**
    * Server secret for `object_hash` (HMAC-SHA256). When absent, rows keep
-   * only the root and object id; an unkeyed hash is never stored.
+   * only an opaque folder marker and object id; an unkeyed hash is never stored.
    */
   objectHashKey?: string | null;
   dedupeWindowMs?: number;
@@ -160,7 +160,7 @@ function splitObjectName(
   const segments = relative.split('/');
   const root =
     segments.length > 1 || kind === 'folder'
-      ? segments[0]!.toLowerCase().slice(0, 64) || ROOT_LEVEL_PATH_ROOT
+      ? '(folder)'
       : ROOT_LEVEL_PATH_ROOT;
   const name = kind === 'folder' ? `${relative}/` : relative;
   return { fullName: wsId ? `${wsId}/${name}` : name, root };

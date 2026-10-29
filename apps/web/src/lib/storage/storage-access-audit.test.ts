@@ -63,7 +63,7 @@ describe('storage access audit (web binding)', () => {
         action: 'sign',
         actor_id: USER,
         outcome: 'denied',
-        path_root: 'chats',
+        path_root: '(folder)',
         ws_id: WS,
       }),
     ]);
@@ -128,7 +128,7 @@ describe('storage access audit (web binding)', () => {
       expect.objectContaining({
         action: 'delete',
         outcome: 'denied',
-        path_root: 'docs',
+        path_root: '(folder)',
       }),
     ]);
   });

@@ -19,7 +19,7 @@ Each row is one access decision:
 | `occurred_at` | Server timestamp |
 | `actor_id`, `actor_kind` | User id (`user`), API key id (`api_key`), or none (`anonymous`) |
 | `ws_id` | Workspace of the object |
-| `path_root` | Lower-cased first folder under the workspace (`chats`, `docs`, …), or `(root)` for a root-level file |
+| `path_root` | Opaque `(folder)` marker for any folder, or `(root)` for a root-level file |
 | `object_id` / `object_hash` | Storage object id when known, otherwise an HMAC-SHA256 of the full object name keyed by `STORAGE_ACCESS_AUDIT_HMAC_KEY` (null when no key is configured) |
 | `action` | `sign`, `list`, `download`, `upload`, `delete` or `share` |
 | `route` | Route template, for example `/api/v1/workspaces/[wsId]/storage/share` |
@@ -28,7 +28,7 @@ Each row is one access decision:
 
 - File names, query strings, IP addresses, user agents, emails and signed URLs
   are **never** stored.
-- Only the actor id is personal data.
+- Folder and file names are omitted for every instrumented route, even without a hash key. Object and actor identifiers remain linkable audit data; restrict access accordingly. Regression coverage: `storage-access-audit.test.ts` includes synthetic email folder names with valid, absent and short keys.
 - To check whether a known object was touched, compute the HMAC of its full
   name (`<wsId>/<path>`) with the audit key and compare it with `object_hash`.
 
@@ -42,7 +42,7 @@ candidate names.
   `STORAGE_ACCESS_AUDIT_HMAC_KEY`. Use at least 32 random bytes and keep it in
   the deployment secret store. Never commit it, log it, or paste it into
   tickets or chat.
-- If the key is missing or shorter than 32 bytes, rows store only the root and
+- If the key is missing or shorter than 32 bytes, rows store only the opaque folder marker and
   object id. The writer never falls back to an unkeyed hash.
 - Rotating the key makes older rows unmatchable with the new key. Keep the
   previous key in the secret store for the 90-day retention window if lookups
@@ -154,3 +154,11 @@ output and in server statement and error logs.
 
 To stop writes, unset the flag. Rows already written stay until retention
 removes them.
+
+## Schema rollback
+
+Prefer disabling the writer and retention job while retaining audit evidence.
+The rollback file in `apps/database/rollbacks/20261026180000_storage_access_audit_events.rollback.sql`
+removes the table and retention function. It deletes audit history: disable both
+writers and archive required evidence before an explicitly authorized schema reversal.
+Re-applying the migration recreates an empty, service-only audit table.
