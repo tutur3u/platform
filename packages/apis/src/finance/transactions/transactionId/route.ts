@@ -16,7 +16,6 @@ import {
   validateTransactionTagIdsForWorkspace,
 } from '../tag-enrichment';
 import { loadInventoryTransactionSource } from './inventory-source';
-
 // Helper function to verify transaction belongs to workspace
 async function verifyTransactionWorkspace(
   transactionId: string,
@@ -24,13 +23,11 @@ async function verifyTransactionWorkspace(
   supabase?: TypedSupabaseClient
 ) {
   const sbClient = supabase || (await createAdminClient());
-
   const { data, error } = await sbClient
     .from('wallet_transactions')
     .select('id, wallet_id')
     .eq('id', transactionId)
     .single();
-
   if (error || !data) {
     console.error('Error verifying transaction workspace:', {
       transactionId,
@@ -39,7 +36,6 @@ async function verifyTransactionWorkspace(
     });
     return null;
   }
-
   const { data: wallet, error: walletError } = await sbClient
     .schema('private')
     .from('workspace_wallets')
@@ -47,7 +43,6 @@ async function verifyTransactionWorkspace(
     .eq('id', data.wallet_id)
     .eq('ws_id', wsId)
     .maybeSingle();
-
   if (walletError || !wallet) {
     console.error('Error verifying transaction wallet workspace:', {
       transactionId,
@@ -56,17 +51,14 @@ async function verifyTransactionWorkspace(
     });
     return null;
   }
-
   return data;
 }
-
 interface Params {
   params: Promise<{
     transactionId: string;
     wsId: string;
   }>;
 }
-
 interface DeleteTransactionOptions {
   authContext?: FinanceRouteAuthContext;
   onBeforeDeleteFiles?: (input: {
@@ -75,7 +67,6 @@ interface DeleteTransactionOptions {
     wsId: string;
   }) => Promise<void> | void;
 }
-
 const TransactionUpdateSchema = z.object({
   description: z.string().optional(),
   amount: z.number().optional(),
@@ -88,19 +79,16 @@ const TransactionUpdateSchema = z.object({
   is_description_confidential: z.boolean().optional(),
   is_category_confidential: z.boolean().optional(),
 });
-
 const TransactionRouteParamsSchema = z.object({
   transactionId: z.guid(),
   wsId: z.string().trim().min(1),
 });
-
 export async function GET(
   req: Request,
   { params }: Params,
   authContext?: FinanceRouteAuthContext
 ) {
   const paramsValidation = TransactionRouteParamsSchema.safeParse(await params);
-
   if (!paramsValidation.success) {
     return NextResponse.json(
       { message: 'Invalid transaction or workspace ID' },
@@ -109,36 +97,30 @@ export async function GET(
   }
   const { transactionId, wsId } = paramsValidation.data;
   const access = await getFinanceRouteContext(req, wsId, authContext);
-
   if (access.response) {
     return access.response;
   }
-
   const { normalizedWsId, permissions, sbAdmin, supabase, user } =
     access.context;
   const { withoutPermission } = permissions;
-
   if (withoutPermission('view_transactions')) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },
       { status: 403 }
     );
   }
-
   // Verify transaction belongs to workspace and fetch full data
   const transaction = await verifyTransactionWorkspace(
     transactionId,
     normalizedWsId,
     sbAdmin
   );
-
   if (!transaction) {
     return NextResponse.json(
       { message: 'Transaction not found' },
       { status: 404 }
     );
   }
-
   // Use redaction function to get transaction with permission-based field redaction
   const { data, error } = await supabase.rpc(
     'get_wallet_transactions_with_permissions',
