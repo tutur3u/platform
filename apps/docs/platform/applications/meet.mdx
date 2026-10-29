@@ -104,6 +104,13 @@ are unaffected.
 - **Default.** Passwordless guests keep working: the empty password is hashed
   like any other value. The saved-name auto login on reload still applies only
   to passwordless guests; the password and the session are not persisted.
+- **Plan access.** Guest login, guest poll actions and guest availability writes
+  (create and delete) follow the anonymous plan-access rule: they run
+  `getPlan(planId, { actorUserId: null })` before any session or database work,
+  so a guest, including one holding a session issued earlier, only reaches public,
+  non-workspace plans. Regression coverage:
+  `packages/apis/src/meet/actions/timeblocks.test.ts` and
+  `apps/web/src/app/api/v1/meet/plans/[planId]/availability/route.test.ts`.
 - **Expiry.** When a session expires the guest action is rejected and the guest
   signs in again from the plan page.
 - **Attempt limits.** Guest password attempts are limited per plan and guest
@@ -154,6 +161,7 @@ Regression coverage: `packages/utils/src/__tests__/crypto.test.ts`,
 `packages/utils/src/__tests__/meet-guest-session.test.ts`,
 `packages/apis/src/meet/actions/auth.test.ts`,
 `packages/apis/src/meet/actions/polls.test.ts`,
+`packages/apis/src/meet/actions/timeblocks.test.ts`,
 `apps/web/src/app/api/v1/meet/plans/[planId]/availability/route.test.ts`,
 `apps/meet/src/runtime/legacy-action-ports.test.ts` and
 `apps/database/supabase/tests/security-meet-guest-grants.sql`.
