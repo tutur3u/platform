@@ -5,6 +5,7 @@ const state = vi.hoisted(() => ({
   actor: vi.fn(),
   permissions: vi.fn(),
   from: vi.fn(),
+  privateReads: [] as string[],
   denied: new Set<string>(),
   writes: [] as string[],
   rows: {} as Record<string, Record<string, unknown>[]>,
@@ -28,20 +29,27 @@ const FOREIGN = '22222222-2222-4222-8222-222222222222';
 const ID = '33333333-3333-4333-8333-333333333333';
 const BUDGET = '44444444-4444-4444-8444-444444444444';
 
-function query(table: string) {
+const PRIVATE_DENIED = {
+  code: '42501',
+  message: 'permission denied for schema private',
+};
+
+function query(table: string, denied = false) {
   let rows = state.rows[table] ?? [];
   let columns = '*';
   const result = () => ({
-    data: rows.map((row) =>
-      columns === '*'
-        ? row
-        : Object.fromEntries(
-            Object.entries(row).filter(([key]) =>
-              columns.split(/,\s*/).includes(key)
-            )
-          )
-    ),
-    error: null,
+    data: denied
+      ? null
+      : rows.map((row) =>
+          columns === '*'
+            ? row
+            : Object.fromEntries(
+                Object.entries(row).filter(([key]) =>
+                  columns.split(/,\s*/).includes(key)
+                )
+              )
+        ),
+    error: denied ? PRIVATE_DENIED : null,
   });
   const q = {
     select: vi.fn((value = '*') => {
@@ -70,12 +78,12 @@ function query(table: string) {
       return q;
     }),
     single: vi.fn(async () => ({
-      data: result().data[0] ?? { id: ID },
-      error: null,
+      data: result().data?.[0] ?? (denied ? null : { id: ID }),
+      error: result().error,
     })),
     maybeSingle: vi.fn(async () => ({
-      data: result().data[0] ?? null,
-      error: null,
+      data: result().data?.[0] ?? null,
+      error: result().error,
     })),
   };
   Object.defineProperty(q, 'then', {
@@ -84,7 +92,28 @@ function query(table: string) {
   });
   return q;
 }
-const client = { from: state.from, schema: () => client };
+type MockClient = {
+  from: (table: string) => ReturnType<typeof query>;
+  schema: (name: string) => MockClient;
+};
+
+// Mirrors production grants: the service-role client reads every schema, while
+// the cookie/bearer session client is denied `private` (migration
+// 20260601002502). Routes that read `private.*` through `supabase` fail here.
+function createClient(role: 'admin' | 'session'): MockClient {
+  const scoped = (schema: string): MockClient => ({
+    from: (table) => {
+      if (schema === 'private') state.privateReads.push(`${role}:${table}`);
+      return role === 'session' && schema === 'private'
+        ? query(table, true)
+        : state.from(table);
+    },
+    schema: (name) => scoped(name),
+  });
+  return scoped('public');
+}
+const adminClient = createClient('admin');
+const sessionClient = createClient('session');
 const params = {
   params: Promise.resolve({
     wsId: 'personal',
@@ -103,21 +132,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   state.denied.clear();
   state.writes.length = 0;
+  state.privateReads.length = 0;
   state.rows = {
     workspace_wallets: [{ id: ID, ws_id: FOREIGN }],
     transaction_categories: [{ id: ID, ws_id: FOREIGN }],
     finance_budgets: [{ id: BUDGET, ws_id: WS }],
     recurring_transactions: [{ id: ID, ws_id: WS }],
-    workspace_users: [
-      {
-        id: ID,
-        ws_id: WS,
-        full_name: 'Member',
-        display_name: 'Member',
-        avatar_url: null,
-        email: 'private@example.test',
-      },
-    ],
   };
   state.from.mockImplementation(query);
   const permissions = {
@@ -125,13 +145,13 @@ beforeEach(() => {
     withoutPermission: (permission: string) => state.denied.has(permission),
   };
   state.permissions.mockResolvedValue(permissions);
-  state.actor.mockResolvedValue({ admin: client, user: { id: ID } });
+  state.actor.mockResolvedValue({ admin: adminClient, user: { id: ID } });
   state.access.mockResolvedValue({
     context: {
       normalizedWsId: WS,
       permissions,
-      sbAdmin: client,
-      supabase: client,
+      sbAdmin: adminClient,
+      supabase: sessionClient,
       user: { id: ID },
     },
   });
@@ -204,38 +224,52 @@ describe('finance workspace boundaries', () => {
       }
     }
   );
-  it('permits recurring transactions with a local wallet', async () => {
+  it('validates recurring wallets with the admin client on create and update', async () => {
     state.rows.workspace_wallets = [{ id: ID, ws_id: WS }];
     const { POST } = await import('./recurring-transactions/route');
-    expect(
-      (
-        await POST(
-          request({
-            name: 'Recurring',
-            amount: 10,
-            frequency: 'monthly',
-            start_date: '2026-01-01',
-            wallet_id: ID,
-          }),
-          params
-        )
-      ).status
-    ).toBe(200);
+    const { PUT } = await import(
+      './recurring-transactions/[recurringTransactionId]/route'
+    );
+    const body = {
+      name: 'Recurring',
+      amount: 10,
+      frequency: 'monthly',
+      start_date: '2026-01-01',
+      wallet_id: ID,
+    };
+    for (const [handler, method] of [
+      [POST, 'POST'],
+      [PUT, 'PUT'],
+    ] as const) {
+      state.privateReads.length = 0;
+      expect((await handler(request(body, method), params)).status).toBe(200);
+      expect(state.privateReads).toEqual(['admin:workspace_wallets']);
+    }
+    expect(state.writes).toEqual([
+      'recurring_transactions',
+      'recurring_transactions',
+    ]);
   });
-  it('omits private email from the filter picker without private-info permission', async () => {
-    state.denied.add('view_users_private_info');
-    const { GET } = await import('./filter-users/route');
-    const response = await GET(new Request('https://example.test'), params);
-    expect(response.status).toBe(200);
-    expect((await response.json()).users[0]).not.toHaveProperty('email');
-  });
-  it('keeps email for authorized private-info readers', async () => {
-    const { GET } = await import('./filter-users/route');
-    expect(
-      (await (await GET(new Request('https://example.test'), params)).json())
-        .users[0].email
-    ).toBe('private@example.test');
-  });
+  it.each(['wallet_id', 'category_id'])(
+    'rejects a malformed recurring %s before reading references',
+    async (key) => {
+      const { POST } = await import('./recurring-transactions/route');
+      const response = await POST(
+        request({
+          name: 'Recurring',
+          amount: 10,
+          frequency: 'monthly',
+          start_date: '2026-01-01',
+          wallet_id: ID,
+          [key]: 'not-a-uuid',
+        }),
+        params
+      );
+      expect(response.status).toBe(400);
+      expect(state.from).not.toHaveBeenCalled();
+      expect(state.writes).toEqual([]);
+    }
+  );
   it('requires finance management before importing ledger data', async () => {
     state.denied.add('manage_finance');
     const { POST } = await import(

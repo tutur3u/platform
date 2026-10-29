@@ -408,7 +408,6 @@ export async function PUT(
   }
 
   const deniedWallet = await validateFinanceWalletWriteAccess(
-    req,
     access.context,
     [
       existingTransaction.wallet_id,
@@ -562,6 +561,13 @@ export async function deleteTransaction(
       { status: 404 }
     );
   }
+
+  const deniedWallet = await validateFinanceWalletWriteAccess(
+    access.context,
+    [transaction.wallet_id],
+    'delete_transactions'
+  );
+  if (deniedWallet) return deniedWallet;
 
   // Check if transaction is confidential
   const { data: txData } = await sbAdmin

@@ -209,11 +209,17 @@ where the route accepts null.
 
 Wallet role whitelists restrict transaction writes as well as reads. Writers
 without `manage_finance` need whitelist access to every current and requested
-wallet involved in a transaction update or transfer. Finance managers retain
-workspace-wide wallet access. Wallet creation accepts a matching replay without writing and rejects other
-uses of an existing id; editing an existing wallet uses its update route. Legacy wallet migration and Money
-Lover import require `manage_finance`. The transaction filter picker includes
-email only for callers with `view_users_private_info`.
+wallet involved in a transaction create, update or delete, or a transfer
+create or update. The one exception is the workspace default wallet
+(`default_wallet_id`): it stays writable for these writers when no role
+whitelist names it, matching the default wallet the wallets list shows them.
+Any other unwhitelisted wallet returns 404. Finance managers retain
+workspace-wide wallet access. Recurring transactions validate their wallet and
+category ids as UUIDs, then check workspace ownership with the service-role
+client after the `manage_finance` check. Wallet creation accepts a matching
+replay without writing and rejects other uses of an existing id; editing an
+existing wallet uses its update route. Legacy wallet migration and Money Lover
+import require `manage_finance`.
 
 Regression coverage: `finance-boundaries.test.ts`,
 `finance-write-boundaries.test.ts`, and the subscription invoice and role wallet

@@ -8,8 +8,8 @@ const recurringTransactionSchema = z.object({
   name: z.string().min(1),
   description: z.string().nullable().optional(),
   amount: z.number(),
-  wallet_id: z.string().min(1),
-  category_id: z.string().nullable().optional(),
+  wallet_id: z.guid(),
+  category_id: z.guid().nullable().optional(),
   frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
   start_date: z.string().min(1),
   end_date: z.string().nullable().optional(),
@@ -31,7 +31,7 @@ export async function PUT(request: Request, { params }: Params) {
     return access.response;
   }
 
-  const { normalizedWsId, permissions, supabase } = access.context;
+  const { normalizedWsId, permissions, sbAdmin, supabase } = access.context;
   if (!permissions || permissions.withoutPermission('manage_finance')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
@@ -44,8 +44,10 @@ export async function PUT(request: Request, { params }: Params) {
     );
   }
 
+  // `private.workspace_wallets` is service-role only; this runs after the
+  // manage_finance check above.
   const invalidReference = await validateFinanceReferences(
-    supabase,
+    sbAdmin,
     normalizedWsId,
     parsed.data
   );

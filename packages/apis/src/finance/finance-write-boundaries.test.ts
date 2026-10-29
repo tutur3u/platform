@@ -5,6 +5,7 @@ const state = vi.hoisted(() => ({
   actor: vi.fn(),
   permissions: vi.fn(),
   from: vi.fn(),
+  defaultWalletId: null as string | null,
   denied: new Set<string>(),
   writes: [] as string[],
   rows: {} as Record<string, Record<string, unknown>[]>,
@@ -18,7 +19,7 @@ vi.mock('./transactions/transactionId/inventory-source', () => ({
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: state.permissions,
-  getWorkspaceConfig: vi.fn().mockResolvedValue(null),
+  getWorkspaceConfig: vi.fn(async () => state.defaultWalletId),
 }));
 
 const WS = '11111111-1111-4111-8111-111111111111';
@@ -124,6 +125,7 @@ const request = (body: unknown, method = 'POST') =>
 beforeEach(() => {
   vi.clearAllMocks();
   state.denied.clear();
+  state.defaultWalletId = null;
   client.rpc.mockClear();
   state.writes.length = 0;
   state.rows = {
@@ -329,7 +331,7 @@ describe('finance write boundaries', () => {
   );
   it('rejects a foreign category before checkpoint reconciliation', async () => {
     const { POST } = await import(
-      './wallets/walletId/checkpoints/checkpointId/reconcile/route'
+      './wallets/walletId/checkpoints/checkpointId/reconcile/route.js'
     );
     expect((await POST(request({ category_id: ID }), params)).status).toBe(400);
     expect(client.rpc).not.toHaveBeenCalled();
@@ -401,4 +403,64 @@ describe('finance write boundaries', () => {
       expect(state.writes).toContain('wallet_transaction_tags');
     }
   );
+  const whitelist = (...walletIds: string[]) => {
+    state.rows.workspace_role_members = [
+      { user_id: ID, 'workspace_roles.ws_id': WS, role_id: ID },
+    ];
+    state.rows.workspace_role_wallet_whitelist = walletIds.map((walletId) => ({
+      role_id: ID,
+      wallet_id: walletId,
+    }));
+  };
+  // Create routes read the default through getWorkspaceConfig; the shared write
+  // check reads workspace_configs itself when the route did not load it.
+  const setDefaultWallet = (walletId: string) => {
+    state.defaultWalletId = walletId;
+    state.rows.workspace_configs = [
+      { ws_id: WS, id: 'default_wallet_id', value: walletId },
+    ];
+  };
+  const deleteTransaction = async () =>
+    (await import('./transactions/transactionId/route.js')).DELETE(
+      new Request('https://example.test/api', { method: 'DELETE' }),
+      params
+    );
+  it('denies transaction delete from a wallet outside the role whitelist', async () => {
+    state.denied.add('manage_finance');
+    whitelist(W2);
+    expect((await deleteTransaction()).status).toBe(404);
+    expect(state.writes).toEqual([]);
+  });
+  it('permits transaction delete for a whitelisted writer', async () => {
+    state.denied.add('manage_finance');
+    whitelist(ID);
+    expect((await deleteTransaction()).status).toBe(200);
+    expect(state.writes).toEqual(['wallet_transactions']);
+  });
+  it('permits a non-manager writer to use the unwhitelisted default wallet', async () => {
+    state.denied.add('manage_finance');
+    setDefaultWallet(ID);
+    const body = { amount: 10, origin_wallet_id: ID, taken_at: '2026-01-01' };
+    const { POST } = await import('./transactions/route.js');
+    expect((await POST(request(body), params)).status).toBe(200);
+    expect(state.writes).toContain('wallet_transactions');
+    state.writes.length = 0;
+    expect((await deleteTransaction()).status).toBe(200);
+    expect(state.writes).toEqual(['wallet_transactions']);
+  });
+  it('denies a non-default wallet that no role whitelists', async () => {
+    state.denied.add('manage_finance');
+    setDefaultWallet(W2);
+    whitelist(W2);
+    const { POST } = await import('./transactions/route.js');
+    expect(
+      (
+        await POST(
+          request({ amount: 10, origin_wallet_id: ID, taken_at: '2026-01-01' }),
+          params
+        )
+      ).status
+    ).toBe(404);
+    expect(state.writes).toEqual([]);
+  });
 });

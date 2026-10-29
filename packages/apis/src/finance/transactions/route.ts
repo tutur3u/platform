@@ -352,10 +352,10 @@ export async function POST(
   }
 
   const deniedWallet = await validateFinanceWalletWriteAccess(
-    req,
     access.context,
     [data.origin_wallet_id],
-    'create_transactions'
+    'create_transactions',
+    { defaultWalletId }
   );
   if (deniedWallet) return deniedWallet;
   const invalidCategory = await validateFinanceReferences(

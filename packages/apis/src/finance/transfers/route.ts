@@ -196,7 +196,6 @@ export async function PATCH(
   }
 
   const wallets = await loadTransferWallets(
-    req,
     access.context,
     data,
     'update_transactions',
@@ -473,7 +472,6 @@ export async function PUT(
   }
 
   const wallets = await loadTransferWallets(
-    req,
     access.context,
     data,
     'update_transactions',
@@ -725,10 +723,11 @@ export async function POST(
 
   // Validate both wallets belong to this workspace
   const wallets = await loadTransferWallets(
-    req,
     access.context,
     data,
-    'create_transactions'
+    'create_transactions',
+    [],
+    defaultWalletId
   );
   if (wallets.response) return wallets.response;
   const { originWallet, destWallet } = wallets;

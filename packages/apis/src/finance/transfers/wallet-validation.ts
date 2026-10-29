@@ -3,18 +3,18 @@ import type { FinanceRouteContext } from '../request-access';
 import { validateFinanceWalletWriteAccess } from '../workspace-references';
 
 export async function loadTransferWallets(
-  req: Request,
   context: FinanceRouteContext,
   data: { origin_wallet_id: string; destination_wallet_id: string },
   permission: 'create_transactions' | 'update_transactions',
-  previousWalletIds: string[] = []
+  previousWalletIds: string[] = [],
+  defaultWalletId?: string | null
 ) {
   const ids = [data.origin_wallet_id, data.destination_wallet_id];
   const response = await validateFinanceWalletWriteAccess(
-    req,
     context,
     [...ids, ...previousWalletIds],
-    permission
+    permission,
+    { defaultWalletId }
   );
   if (response) return { response };
   const { data: wallets, error } = await context.sbAdmin
