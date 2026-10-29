@@ -243,7 +243,7 @@ describe('finance write boundaries', () => {
               request(body, 'PUT'),
               params
             );
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(403);
       expect(state.writes).toEqual([]);
     }
   );
