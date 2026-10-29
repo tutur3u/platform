@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 
-// Enforces SQL privilege and definer rules on every file outside the reviewed
-// digest baseline. Post-cutoff legacy rules remain enforced even if a caller
-// supplies a baseline entry. --report also lists all enforced findings for triage.
+// Enforces every diagnostic outside the reviewed historical-debt baseline.
+// Changed file bytes and stale baseline entries fail closed; the baseline shrinks.
 // Policy: apps/docs/reference/database/migrations-guide.mdx#sql-grant-guard
 
 const fs = require('node:fs');
 const {
-  digest,
   resolveBase,
-  loadBaseline,
+  baselineReference,
 } = require('./sql-grant-guard-repository');
+const {
+  evaluateSqlFiles,
+  loadBaseline,
+} = require('./sql-grant-guard-baseline');
 const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
@@ -548,7 +550,7 @@ function changedSqlFiles(rootDir, env = process.env) {
   return resolveBase(rootDir, env);
 }
 
-const GUIDANCE = {
+const _GUIDANCE = {
   [RULES.anonGrant]:
     'Grant to authenticated or service_role instead, or add "-- allow-anon-grant: <reason>" on the same or preceding line.',
   [RULES.definerPublic]:
@@ -573,73 +575,29 @@ function listSqlFiles(rootDir = ROOT_DIR) {
   });
 }
 
-function fileVersion(file) {
+function _fileVersion(file) {
   return /^(\d{14})/.exec(path.posix.basename(file))?.[1] ?? null;
-}
-
-function evaluateSqlFiles({
-  files,
-  readFile,
-  cutoff = MIGRATION_CUTOFF,
-  baseline = {},
-}) {
-  const violations = [];
-  const legacy = [];
-  for (const file of files) {
-    const definerRule = file.startsWith(`${MIGRATIONS_DIR}/`);
-    const rollback = file.startsWith(`${ROLLBACKS_DIR}/`);
-    const schema = file.startsWith('apps/database/supabase/schemas/');
-    if (!definerRule && !rollback && !schema) continue;
-    const version = fileVersion(file);
-    // Unversioned files cannot be shown to predate the rule.
-    const enforced = version === null || version >= cutoff;
-    const sql = readFile(file);
-    const findings = scanSql(sql, { definerRule });
-    const exempt = baseline[file] === digest(sql);
-    if (!exempt) {
-      findings.push(...scanExtensions(sql, { rollback }));
-      if (rollback) {
-        const name = path.posix.basename(file);
-        const stem = name.replace(
-          /\.(?:incident-rollback|rollback|containment)\.sql$/,
-          '.sql'
-        );
-        if (stem === name || !files.includes(`${MIGRATIONS_DIR}/${stem}`)) {
-          findings.push({
-            rule: 'rollback-name',
-            line: 1,
-            detail:
-              'rollback filename must match a migration and use an approved rollback suffix',
-          });
-        }
-      }
-    }
-    for (const finding of findings) {
-      const entry = {
-        ...finding,
-        file,
-        message: `${file}:${finding.line} ${finding.detail}. ${GUIDANCE[finding.rule] ?? 'See the SQL grant guard documentation.'}`,
-      };
-      (!exempt || enforced ? violations : legacy).push(entry);
-    }
-  }
-  return { violations, legacy };
 }
 
 function checkRepository(rootDir = ROOT_DIR, env = process.env) {
   const base = changedSqlFiles(rootDir, env);
   return evaluateSqlFiles({
     files: listSqlFiles(rootDir),
-    baseline: loadBaseline(rootDir, base),
+    baseline: loadBaseline(rootDir, baselineReference(rootDir, base, env)),
     readFile: (file) => fs.readFileSync(path.join(rootDir, file), 'utf8'),
   });
 }
 
-function formatLegacyReport(legacy, cutoff = MIGRATION_CUTOFF) {
+function formatLegacyReport(legacy) {
   const lines = [
-    `Legacy SQL grant findings in files before ${cutoff} (not enforced): ${legacy.length}`,
+    `Historical SQL diagnostic debt (not safe; explicitly baselined): ${legacy.length}`,
   ];
-  for (const rule of Object.values(RULES)) {
+  for (const rule of [
+    ...new Set([
+      ...Object.values(RULES),
+      ...legacy.map((finding) => finding.rule),
+    ]),
+  ]) {
     const findings = legacy.filter((finding) => finding.rule === rule);
     const files = new Set(findings.map((finding) => finding.file));
     lines.push(`  ${rule}: ${findings.length} in ${files.size} files`);
@@ -657,6 +615,21 @@ function formatLegacyReport(legacy, cutoff = MIGRATION_CUTOFF) {
   return lines.join('\n');
 }
 
+module.exports = {
+  MIGRATION_CUTOFF,
+  RULES,
+  checkRepository,
+  evaluateSqlFiles,
+  formatLegacyReport,
+  lexSql,
+  scanSql,
+  splitStatements,
+  listSqlFiles,
+  scanExtensions,
+  parseStatements,
+  changedSqlFiles,
+};
+
 if (require.main === module) {
   const { violations, legacy } = checkRepository();
   if (process.argv.includes('--report')) {
@@ -669,16 +642,3 @@ if (require.main === module) {
     console.log('SQL grant guard passed.');
   }
 }
-
-module.exports = {
-  MIGRATION_CUTOFF,
-  RULES,
-  checkRepository,
-  evaluateSqlFiles,
-  formatLegacyReport,
-  lexSql,
-  scanSql,
-  scanExtensions,
-  parseStatements,
-  changedSqlFiles,
-};

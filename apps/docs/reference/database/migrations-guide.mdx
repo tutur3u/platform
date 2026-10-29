@@ -740,26 +740,36 @@ DROP POLICY "old_policy" ON workspace_tasks;
 
 ### Declarative grant guard (P2-2)
 
-The SQL grant guard checks every migration, schema, and rollback outside the
-reviewed `scripts/ci/sql-grant-guard-legacy.json` baseline, including on main.
-Each baseline entry binds a historical path to its SHA-256 digest; changes stop
-matching, and the list may only shrink. The bootstrap covers only pre-cutoff
-bytes on the reviewed base, so existing post-cutoff findings remain enforced.
-CI explicitly fetches its base ref and deepens shallow history; unresolved
-history fails loudly. `--report` includes all non-baselined findings for triage.
+The SQL grant guard checks all migrations, schemas and rollbacks, including on
+main. `scripts/ci/sql-grant-guard.baseline.json` records **historical debt, not
+safe**: one entry per existing diagnostic, with path, rule and SHA-256 of the
+statement or block. Shared file digests bind each entry to the complete file.
+The baseline needs independent review; it never declares historical SQL safe.
 
-Created functions and procedures need a subsequent matching-signature `REVOKE
+A new diagnostic fails. Any change to a baselined file fails until its diagnostics
+are fixed and its debt entries removed. Entries that no longer match also fail
+and must be removed. The baseline can only shrink; additions, digest rewrites and
+stale metadata fail. CI resolves shallow history explicitly and checks main
+pushes against the pre-push commit. An unresolved base fails loudly.
+
+For the initial reviewed bootstrap, generate from a pinned main SHA with
+`node scripts/ci/sql-grant-guard-baseline.js --generate <full-main-SHA>`.
+The guard independently checks bootstrap entries against that source snapshot.
+Routine fixes remove debt entries rather than regenerating or growing the list.
+Use `node scripts/ci/sql-grant-guard.js --report` to inspect debt and new findings.
+
+Created functions and procedures require a subsequent matching-signature `REVOKE
 ALL` from `PUBLIC, anon, authenticated`, plus a grant to `service_role` or a
 same-file `-- tuturuuu: no-grant (internal)` or `-- tuturuuu: no-grant (trigger)`
 comment. Grants to anonymous or authenticated callers fail this fence.
 Definers require `pg_catalog` first and `pg_temp` last, with no duplicate settings,
-empty paths, user-dependent schemas, or explicit temporary namespaces. Quoted
+empty paths, user-dependent schemas or explicit temporary namespaces. Quoted
 identifier case is significant. The live pgTAP gate remains authoritative for
 schema CREATE privileges.
 
 ALTER routine security/configuration mutations, DO/EXECUTE statements, complex
-quoted identifiers, role-membership grants, and grant options require security
-review rather than static acceptance. Rollbacks additionally reject public or
-anonymous grants, TRUNCATE, MAINTAIN, and default-grant restoration; their names
-must match a migration and an approved rollback suffix. Run the two
-`sql-grant-guard*.test.js` suites for parser, baseline and shallow-checkout fixtures.
+quoted identifiers, role-membership grants and grant options require security
+review. Rollbacks also reject public/anonymous grants, TRUNCATE, MAINTAIN and
+default-grant restoration; their names must match a migration and an approved
+suffix. Run the two `sql-grant-guard*.test.js` suites for parser, baseline and
+shallow-checkout regression coverage.

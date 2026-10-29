@@ -1,8 +1,6 @@
 const { spawnSync } = require('node:child_process');
 const { createHash } = require('node:crypto');
 const fs = require('node:fs');
-const path = require('node:path');
-const BASELINE = 'scripts/ci/sql-grant-guard-legacy.json';
 const digest = (text) => createHash('sha256').update(text).digest('hex');
 function git(root, args) {
   const result = spawnSync('git', args, {
@@ -48,66 +46,28 @@ function resolveBase(root, env = process.env) {
     `SQL grant guard: cannot resolve merge-base with ${ref}; refusing to skip SQL checks`
   );
 }
-function validateBaseline(current, previous) {
-  if (!current || Array.isArray(current) || typeof current !== 'object')
-    throw new Error('Invalid SQL legacy baseline');
-  for (const [file, hash] of Object.entries(current)) {
-    if (
-      !/^apps\/database\/(?:supabase\/migrations|rollbacks)\/[^/]+\.sql$/.test(
-        file
-      ) ||
-      !/^[a-f0-9]{64}$/.test(hash)
-    )
-      throw new Error(`Invalid baseline entry: ${file}`);
-    if (previous && previous[file] !== hash)
-      throw new Error(`SQL legacy baseline is shrink-only: ${file}`);
-  }
-}
-function loadBaseline(root, base) {
-  const current = JSON.parse(
-    fs.readFileSync(path.join(root, BASELINE), 'utf8')
-  );
-  const prior = git(root, ['show', `${base}:${BASELINE}`]);
-  validateBaseline(current, prior.ok ? JSON.parse(prior.text) : null);
-  if (!prior.ok) {
-    // Bootstrap only pre-cutoff bytes already present on the independently reviewed base.
-    const directories = [
-      'apps/database/supabase/migrations',
-      'apps/database/rollbacks',
-    ];
-    const baseFiles = new Set(
+function baselineReference(root, base, env = process.env) {
+  if (required(root, ['rev-parse', 'HEAD']) !== base) return base;
+  // On main compare against the pre-push state, never against the new baseline itself.
+  let previous;
+  if (env.GITHUB_EVENT_NAME === 'push') {
+    if (!env.GITHUB_EVENT_PATH)
+      throw new Error('SQL grant guard: push event payload is required');
+    previous = JSON.parse(
+      fs.readFileSync(env.GITHUB_EVENT_PATH, 'utf8')
+    ).before;
+    if (!/^[a-f0-9]{40}$/.test(previous ?? '') || /^0+$/.test(previous))
+      throw new Error('SQL grant guard: invalid pre-push SHA');
+    if (!git(root, ['cat-file', '-e', `${previous}^{commit}`]).ok)
       required(root, [
-        'ls-tree',
-        '-r',
-        '--name-only',
-        base,
-        '--',
-        ...directories,
-      ]).split('\n')
-    );
-    const changed = new Set(
-      required(root, ['diff', '--name-only', base, '--', ...directories]).split(
-        '\n'
-      )
-    );
-    for (const [file, hash] of Object.entries(current)) {
-      const version = /\/(\d{14})_/.exec(file)?.[1];
-      if (
-        !version ||
-        version >= '20261028000000' ||
-        !baseFiles.has(file) ||
-        changed.has(file) ||
-        digest(fs.readFileSync(path.join(root, file))) !== hash
-      )
-        throw new Error(`Unreviewed baseline bootstrap: ${file}`);
-    }
-  }
-  return current;
+        'fetch',
+        '--no-tags',
+        '--quiet',
+        '--depth=1',
+        'origin',
+        previous,
+      ]);
+  } else previous = required(root, ['rev-parse', 'HEAD^1']);
+  return previous;
 }
-module.exports = {
-  BASELINE,
-  digest,
-  resolveBase,
-  loadBaseline,
-  validateBaseline,
-};
+module.exports = { digest, resolveBase, baselineReference };

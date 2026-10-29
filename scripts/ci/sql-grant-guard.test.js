@@ -3,6 +3,12 @@ const { spawnSync } = require('node:child_process');
 const path = require('node:path');
 const test = require('node:test');
 const {
+  makeBaseline,
+  baselineEntry,
+  collectDiagnostics,
+  validateBaseline,
+} = require('./sql-grant-guard-baseline');
+const {
   MIGRATION_CUTOFF,
   RULES,
   checkRepository,
@@ -15,14 +21,23 @@ const MIGRATION =
   'apps/database/supabase/migrations/20261101000000_example.sql';
 const ROLLBACK = 'apps/database/rollbacks/20261101000000_example.rollback.sql';
 
+function debt(entries) {
+  return makeBaseline('a'.repeat(40), entries);
+}
 function evaluate(fixtures) {
-  return evaluateSqlFiles({
+  // Isolate the original rule fixtures with explicit debt for extension diagnostics.
+  const input = {
     files: Object.keys(fixtures),
     readFile: (file) => fixtures[file],
-    baseline: Object.fromEntries(
-      Object.entries(fixtures).map(([file, sql]) => [file, digest(sql)])
-    ),
-  });
+  };
+  const entries = collectDiagnostics(input)
+    .filter(
+      (finding) =>
+        !Object.values(RULES).includes(finding.rule) ||
+        /\/20261027/.test(finding.file)
+    )
+    .map(baselineEntry);
+  return evaluateSqlFiles({ ...input, baseline: debt(entries) });
 }
 
 function grants(sql) {
@@ -39,37 +54,31 @@ test('the migration cutoff is pinned to the rule adoption date', () => {
   assert.equal(MIGRATION_CUTOFF, '20261028000000');
 });
 
-test('the repository keeps all non-baselined findings enforced, including unchanged post-cutoff files', () => {
+test('the repository passes only exact diagnostic debt and retains the 13 original findings', () => {
   const result = checkRepository();
-  assert.ok(
-    result.violations.length > 0,
-    'existing findings remain visible for triage'
+  assert.deepEqual(result.violations, []);
+  const original = new Set(
+    result.legacy.map((f) => `${path.basename(f.file)}:${f.line}:${f.rule}`)
   );
-  assert.ok(result.violations.some((f) => f.rule === RULES.definerPublic));
-  assert.ok(result.violations.some((f) => f.rule === 'function-acl'));
-  assert.deepEqual(
-    result.violations
-      .filter((f) => Object.values(RULES).includes(f.rule))
-      .map((f) => `${path.basename(f.file)}:${f.line}:${f.rule}`),
-    [
-      '20261029010000_restore_employee_readiness_path_contract.sql:3:definer-public',
-      '20261029012000_harden_workspace_ownership_guard.sql:143:definer-public',
-      '20261029012100_restrict_subscription_writes.sql:391:definer-public',
-      '20261029012100_restrict_subscription_writes.sql:430:definer-public',
-      '20261029012100_restrict_subscription_writes.sql:468:definer-public',
-      '20261029012100_restrict_subscription_writes.sql:581:definer-public',
-      '20261029030400_align_ai_chat_and_subscription_rpc_access.sql:45:definer-public',
-      '20261029040800_finance_workspace_boundaries.sql:197:definer-public',
-      '20261029040800_finance_workspace_boundaries.sql:267:definer-public',
-      '20261029040800_finance_workspace_boundaries.sql:341:definer-public',
-      '20261029040800_finance_workspace_boundaries.sql:415:definer-public',
-      '20261029012300_tighten_legacy_table_grants.rollback.sql:2:anon-grant',
-      '20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql:6:anon-grant',
-    ]
-  );
+  for (const expected of [
+    '20261029010000_restore_employee_readiness_path_contract.sql:3:definer-public',
+    '20261029012000_harden_workspace_ownership_guard.sql:143:definer-public',
+    '20261029012100_restrict_subscription_writes.sql:391:definer-public',
+    '20261029012100_restrict_subscription_writes.sql:430:definer-public',
+    '20261029012100_restrict_subscription_writes.sql:468:definer-public',
+    '20261029012100_restrict_subscription_writes.sql:581:definer-public',
+    '20261029030400_align_ai_chat_and_subscription_rpc_access.sql:45:definer-public',
+    '20261029040800_finance_workspace_boundaries.sql:197:definer-public',
+    '20261029040800_finance_workspace_boundaries.sql:267:definer-public',
+    '20261029040800_finance_workspace_boundaries.sql:341:definer-public',
+    '20261029040800_finance_workspace_boundaries.sql:415:definer-public',
+    '20261029012300_tighten_legacy_table_grants.rollback.sql:2:anon-grant',
+    '20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql:6:anon-grant',
+  ])
+    assert.ok(original.has(expected), expected);
 });
 
-test('the legacy report counts findings before the cutoff', () => {
+test('the historical debt report counts every explicitly baselined diagnostic', () => {
   const { legacy } = checkRepository();
   assert.ok(legacy.length > 0);
   const result = spawnSync(
@@ -80,7 +89,7 @@ test('the legacy report counts findings before the cutoff', () => {
   assert.equal(result.status, 0, result.stderr);
   assert.match(
     result.stdout,
-    new RegExp(`not enforced\\): ${legacy.length}\\n`)
+    new RegExp(`explicitly baselined\\): ${legacy.length}\\n`)
   );
   assert.match(result.stdout, /anon-grant: \d+ in \d+ files/);
   assert.match(result.stdout, /definer-public: \d+ in \d+ files/);
@@ -285,7 +294,7 @@ test('the original definer-public rule applies to migrations; extensions cover r
   );
 });
 
-test('files before the cutoff are reported as legacy, not enforced', () => {
+test('explicit historical debt is reported while unbaselined files remain enforced', () => {
   const grant = 'grant select on public.t to anon;';
   const { violations, legacy } = evaluate({
     'apps/database/supabase/migrations/20261027235959_old.sql': grant,
@@ -301,15 +310,19 @@ test('files before the cutoff are reported as legacy, not enforced', () => {
       'apps/database/rollbacks/unversioned.sql',
     ]
   );
-  assert.equal(legacy.length, 2);
+  assert.equal(legacy.length, 6);
+  assert.equal(
+    legacy.filter((f) => Object.values(RULES).includes(f.rule)).length,
+    2
+  );
   assert.match(
     formatLegacyReport(legacy),
-    /\(not enforced\): 2\n {2}anon-grant: 2 in 2 files\n {2}definer-public: 0 in 0 files/
+    /explicitly baselined\): 6\n {2}anon-grant: 2 in 2 files\n {2}definer-public: 0 in 0 files/
   );
 });
 
 const { scanExtensions } = require('./sql-grant-guard');
-const { digest, validateBaseline } = require('./sql-grant-guard-repository');
+const { digest } = require('./sql-grant-guard-repository');
 const createP2 = (path = 'pg_catalog, public, pg_temp') =>
   `create function public.p2(id uuid) returns void language sql security definer set search_path = ${path} as $$select 1$$;`;
 const aclP2 =
@@ -371,19 +384,65 @@ for (const grant of [
     );
   });
 }
-test('only exact path and digest baseline entries exempt historical SQL', () => {
-  const old = 'apps/database/supabase/migrations/20200101000000_old.sql';
-  const sql = createP2() + aclP2;
-  const run = (text, baseline) =>
-    evaluateSqlFiles({ files: [old], readFile: () => text, baseline });
-  assert.deepEqual(run(sql, { [old]: digest(sql) }).violations, []);
+test('diagnostic debt fails on new findings, changed file bytes, and stale entries', () => {
+  const file = 'apps/database/supabase/migrations/20200101000000_old.sql';
+  const sql = createP2();
+  const input = { files: [file], readFile: () => sql };
+  const baseline = debt(collectDiagnostics(input).map(baselineEntry));
+  assert.deepEqual(evaluateSqlFiles({ ...input, baseline }).violations, []);
   assert.ok(
-    run(createP2(), { [old]: digest(sql) }).violations.some(
-      (f) => f.rule === 'function-acl'
-    )
+    evaluateSqlFiles(input).violations.some((f) => f.rule === 'function-acl')
   );
   assert.ok(
-    run(createP2(), {}).violations.some((f) => f.rule === 'function-acl')
+    evaluateSqlFiles({
+      ...input,
+      baseline,
+      readFile: () => `${sql}\n-- changed`,
+    }).violations.some((f) => f.rule === 'baseline-file-changed')
+  );
+  assert.ok(
+    evaluateSqlFiles({
+      ...input,
+      baseline,
+      readFile: () => sql + aclP2,
+    }).violations.some((f) => f.rule === 'baseline-stale')
+  );
+  assert.deepEqual(
+    evaluateSqlFiles({
+      ...input,
+      baseline: debt([]),
+      readFile: () => sql + aclP2,
+    }).violations,
+    []
+  );
+  assert.ok(
+    evaluateSqlFiles({
+      files: [],
+      readFile: () => '',
+      baseline,
+    }).violations.some((f) => f.rule === 'baseline-stale')
+  );
+  const retired = {
+    ...baseline,
+    entries: baseline.entries.map((entry) => ({
+      ...entry,
+      rule: 'retired-rule',
+    })),
+  };
+  assert.ok(
+    evaluateSqlFiles({ ...input, baseline: retired }).violations.some(
+      (f) => f.rule === 'baseline-stale'
+    )
+  );
+  const additional = 'apps/database/supabase/migrations/20300101000000_new.sql';
+  assert.ok(
+    evaluateSqlFiles({
+      files: [file, additional],
+      readFile: () => sql,
+      baseline,
+    }).violations.some(
+      (f) => f.file === additional && f.rule === 'function-acl'
+    )
   );
   const bad = ROLLBACK.replace('example.rollback', 'wrong.rollback');
   assert.ok(
@@ -531,17 +590,29 @@ test('only a service_role ACL or genuine no-grant marker can satisfy intended ac
     ).some((f) => f.rule === 'function-acl')
   );
 });
-test('baseline can shrink but cannot grow or change digests', () => {
+test('baseline can shrink but cannot grow or change diagnostic or file digests', () => {
   const file = 'apps/database/supabase/migrations/20200101000000_old.sql';
-  const hash = digest('old');
-  validateBaseline({}, { [file]: hash });
-  assert.throws(() => validateBaseline({ [file]: hash }, {}), /shrink-only/);
-  assert.throws(
-    () => validateBaseline({ [file]: digest('changed') }, { [file]: hash }),
-    /shrink-only/
+  const baseline = debt(
+    collectDiagnostics({ files: [file], readFile: () => createP2() }).map(
+      baselineEntry
+    )
   );
+  validateBaseline(debt([]), baseline);
+  assert.throws(() => validateBaseline(baseline, debt([])), /shrink-only/);
+  const changed = {
+    ...baseline,
+    entries: baseline.entries.map((entry) => ({
+      ...entry,
+      digest: digest('changed'),
+    })),
+  };
+  assert.throws(() => validateBaseline(changed, baseline), /shrink-only/);
+  const changedFile = {
+    ...baseline,
+    files: { ...baseline.files, [file]: digest('changed') },
+  };
+  assert.throws(() => validateBaseline(changedFile, baseline), /shrink-only/);
 });
-
 test('dynamic EXECUTE inside a dollar-quoted routine body requires review', () => {
   const sql = createP2().replace('select 1', "execute 'select 1'") + aclP2;
   assert.ok(scanExtensions(sql).some((f) => f.rule === 'dynamic-sql-review'));

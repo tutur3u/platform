@@ -4,12 +4,16 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
-const { resolveBase } = require('./sql-grant-guard-repository');
+const {
+  resolveBase,
+  baselineReference,
+} = require('./sql-grant-guard-repository');
 const source = path.resolve(__dirname, '../..');
 const git = (cwd, ...args) =>
   execFileSync('git', args, {
     cwd,
     encoding: 'utf8',
+    maxBuffer: 4 * 1024 * 1024,
     stdio: ['ignore', 'pipe', 'pipe'],
   }).trim();
 test('CI fetches an absent named base and deepens a depth-two checkout', () => {
@@ -36,6 +40,16 @@ test('CI fetches an absent named base and deepens a depth-two checkout', () => {
     assert.throws(() =>
       git(checkout, 'rev-parse', '--verify', 'origin/guard-base')
     );
+    const shallowEvent = path.join(dir, 'shallow-push.json');
+    fs.writeFileSync(shallowEvent, JSON.stringify({ before: ancestor }));
+    assert.equal(
+      baselineReference(checkout, head, {
+        GITHUB_EVENT_NAME: 'push',
+        GITHUB_EVENT_PATH: shallowEvent,
+      }),
+      ancestor
+    );
+
     assert.equal(
       resolveBase(checkout, { CI: 'true', GITHUB_BASE_REF: 'guard-base' }),
       ancestor
@@ -46,15 +60,49 @@ test('CI fetches an absent named base and deepens a depth-two checkout', () => {
     );
     // A push-to-main checkout has an empty diff but must still enforce new SQL.
     git(checkout, 'update-ref', 'refs/remotes/origin/main', head);
-    fs.writeFileSync(
-      path.join(checkout, 'scripts/ci/sql-grant-guard-legacy.json'),
-      '{}'
+    const baselinePath = 'scripts/ci/sql-grant-guard.baseline.json';
+    const trackedBaseline = git(
+      checkout,
+      'ls-tree',
+      '--name-only',
+      head,
+      '--',
+      baselinePath
     );
+    const sourceSha = trackedBaseline
+      ? JSON.parse(git(checkout, 'show', `${head}:${baselinePath}`)).source
+      : ancestor;
+    fs.writeFileSync(
+      path.join(checkout, baselinePath),
+      JSON.stringify({
+        label: 'historical debt, not safe',
+        source: sourceSha,
+        files: {},
+        entries: [],
+      })
+    );
+    if (trackedBaseline) {
+      const { loadBaseline } = require('./sql-grant-guard-baseline');
+      assert.equal(loadBaseline(checkout, head).entries.length, 0);
+    }
     const fixture =
       'apps/database/supabase/migrations/20300101000000_guard_fixture.sql';
     fs.writeFileSync(
       path.join(checkout, fixture),
       'create function public.leak() returns int language sql as $$select 1$$;'
+    );
+    const eventPath = path.join(dir, 'push-event.json');
+    fs.writeFileSync(eventPath, JSON.stringify({ before: ancestor }));
+    assert.equal(
+      baselineReference(checkout, head, {
+        GITHUB_EVENT_NAME: 'push',
+        GITHUB_EVENT_PATH: eventPath,
+      }),
+      ancestor
+    );
+    assert.throws(
+      () => baselineReference(checkout, head, { GITHUB_EVENT_NAME: 'push' }),
+      /payload is required/
     );
     const { checkRepository } = require('./sql-grant-guard');
     assert.ok(
