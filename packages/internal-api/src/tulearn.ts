@@ -302,6 +302,19 @@ export async function getTulearnCourseModule(
   );
 }
 
+export async function getTulearnModuleVocabulary(
+  workspaceId: string,
+  moduleId: string,
+  studentId?: string | null,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
+  return client.json<{ vocabulary: unknown }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/course-modules/${encodePathSegment(moduleId)}/vocabulary`,
+    { cache: 'no-store', query: studentQuery(studentId) }
+  );
+}
+
 export async function getTulearnPractice(
   workspaceId: string,
   studentId?: string | null,

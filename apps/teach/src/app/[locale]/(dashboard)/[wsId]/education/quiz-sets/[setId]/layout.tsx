@@ -5,7 +5,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
-import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
+import { requireQuizSetPageAccess } from '@/lib/quiz-set-page-access';
 import { getQuizSetSummary } from './data';
 
 interface Props {
@@ -27,7 +27,7 @@ export default async function QuizSetDetailsLayout({
   const { wsId, setId } = await params;
   const commonHref = `/${wsId}/education/quiz-sets/${setId}`;
 
-  const { resolvedWsId } = await resolveRouteWorkspace(wsId);
+  const { resolvedWsId } = await requireQuizSetPageAccess(wsId, setId);
   const {
     set: data,
     linkedQuizzes,
