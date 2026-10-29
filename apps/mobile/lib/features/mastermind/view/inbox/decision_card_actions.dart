@@ -5,6 +5,7 @@ import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
+import 'package:mobile/features/mastermind/presentation/option_labels.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
 import 'package:mobile/features/mastermind/view/inbox/reply_status_panel.dart';
@@ -29,7 +30,7 @@ class DecisionCardActions extends StatelessWidget {
         final pending = state.pendingOptionFor(item.id, item.versionHash);
         if (pending != null) {
           return ReplyUndoBar(
-            option: item.optionLabel(pending.optionIndex),
+            option: plainOptionLabel(item, pending.optionIndex),
             onUndo: pending.committed
                 ? null
                 : () => replies.undoOption(item.id),
@@ -60,7 +61,7 @@ class DecisionCardActions extends StatelessWidget {
                     spacing: AppSpacing.sm,
                     runSpacing: AppSpacing.xs,
                     children: [
-                      Text(item.optionLabel(index)),
+                      Text(plainOptionLabel(item, index)),
                       if (item.optionRecommended(index))
                         AppBadge(child: Text(l10n.mastermindRecommended)),
                     ],

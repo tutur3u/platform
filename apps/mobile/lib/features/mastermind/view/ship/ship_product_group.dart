@@ -7,6 +7,7 @@ import 'package:mobile/features/mastermind/presentation/age_text.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/features/mastermind/view/ship/ship_environment_tile.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// One product as a compact card: a header row with its name, how long its
@@ -29,7 +30,7 @@ class ShipProductGroupSection extends StatelessWidget {
     final l10n = context.l10n;
     final age = group.release?.prodAgeSeconds;
     final release = group.release;
-    return AppGroupedSection.spaced(
+    return MastermindGroup(
       children: [
         AppGroupedRow(
           leading: AppIconTile(

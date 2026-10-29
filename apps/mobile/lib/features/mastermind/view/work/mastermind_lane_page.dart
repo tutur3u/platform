@@ -11,6 +11,7 @@ import 'package:mobile/features/mastermind/presentation/work_model.dart';
 import 'package:mobile/features/mastermind/threads/threads_flag.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
 import 'package:mobile/features/mastermind/view/mastermind_section.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/features/mastermind/view/work/lane_state_badge.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -107,7 +108,7 @@ class _Detail extends StatelessWidget {
           showLeadingBrand: false,
         ),
         if (updated)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             children: [
               AppGroupedRow(
                 leading: const AppIconTile(
@@ -119,7 +120,7 @@ class _Detail extends StatelessWidget {
             ],
           ),
         // The title is the shell's title override above; the body repeats none.
-        AppGroupedSection.spaced(
+        MastermindGroup(
           children: [
             row(
               l10n.mastermindLaneState,

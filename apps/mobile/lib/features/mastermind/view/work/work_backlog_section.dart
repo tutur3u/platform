@@ -5,6 +5,7 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/backlog_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/features/mastermind/view/work/lane_state_badge.dart';
 import 'package:mobile/features/mastermind/view/work/work_lanes_body.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -45,7 +46,7 @@ class WorkBacklogSection extends StatelessWidget {
             ),
           ),
         if (model.isEmpty)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             caption: l10n.mastermindBacklogLabel,
             children: [
               AppGroupedRow(
@@ -55,7 +56,7 @@ class WorkBacklogSection extends StatelessWidget {
             ],
           )
         else if (model.hasNoMatches)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             children: [
               AppGroupedRow(
                 leading: const AppIconTile(icon: LucideIcons.searchX),
@@ -64,7 +65,7 @@ class WorkBacklogSection extends StatelessWidget {
             ],
           ),
         for (final group in model.groups)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             caption: group.product == null
                 ? l10n.mastermindNoProduct
                 : MastermindLabels.product(group.product!),

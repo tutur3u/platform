@@ -1,106 +1,184 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/components/app_button.dart';
+import 'package:mobile/core/ui/components/app_disclosure.dart';
 import 'package:mobile/core/ui/components/app_text_field.dart';
+import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/app_dialog.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
+import 'package:mobile/features/mastermind/presentation/option_labels.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
+import 'package:mobile/features/mastermind/view/inbox/reply_choice.dart';
+import 'package:mobile/features/mastermind/view/inbox/reply_limit_formatters.dart';
 import 'package:mobile/features/mastermind/view/inbox/reply_undo_bar.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_list_row.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Caps input at [limit] code points, the unit the hub counts.
-class CodePointLimitFormatter extends TextInputFormatter {
-  const CodePointLimitFormatter(this.limit);
+export 'package:mobile/features/mastermind/view/inbox/reply_limit_formatters.dart';
 
-  final int limit;
-
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    if (newValue.text.runes.length <= limit) return newValue;
-    final kept = String.fromCharCodes(newValue.text.runes.take(limit));
-    return TextEditingValue(
-      text: kept,
-      selection: TextSelection.collapsed(offset: kept.length),
-    );
-  }
-}
-
-/// Caps input at [limit] lines, as the hub does. Text typed or pasted at the
-/// end loses its surplus lines; an edit that would push the last line out of
-/// the field from the middle is refused rather than silently eating words.
-class LineLimitFormatter extends TextInputFormatter {
-  const LineLimitFormatter(this.limit);
-
-  final int limit;
-
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final lines = newValue.text.split(RegExp(r'\r\n|\n|\r'));
-    if (lines.length <= limit) return newValue;
-    if (newValue.selection.end != newValue.text.length) return oldValue;
-    final kept = lines.take(limit).join('\n');
-    return TextEditingValue(
-      text: kept,
-      selection: TextSelection.collapsed(offset: kept.length),
-    );
-  }
-}
-
-/// One tap on an option starts a short undo window ("Sending · Undo", see
-/// [MastermindRepliesCubit.queueOption]) and then queues the reply into the
-/// outbox. Free text remains a saved draft and still asks to confirm.
-class ReplyComposer extends StatefulWidget {
-  const ReplyComposer({required this.item, required this.replies, super.key});
+/// The body half of the reply: the options as full-width rows on one surface,
+/// and "Write your own" collapsed below them. Choosing only selects; the
+/// sticky [ReplyActionBar] sends. An option still gets the short undo window
+/// ([MastermindRepliesCubit.queueOption]); free text still asks to confirm.
+class ReplyComposer extends StatelessWidget {
+  const ReplyComposer({
+    required this.item,
+    required this.replies,
+    required this.choice,
+    super.key,
+  });
 
   final NeedsYou item;
   final MastermindRepliesCubit replies;
+  final ReplyChoice choice;
 
   @override
-  State<ReplyComposer> createState() => _ReplyComposerState();
+  Widget build(BuildContext context) =>
+      BlocSelector<
+        MastermindRepliesCubit,
+        MastermindRepliesState,
+        PendingOptionReply?
+      >(
+        bloc: replies,
+        selector: (state) => state.pendingOptionFor(item.id, item.versionHash),
+        builder: (context, pending) => ListenableBuilder(
+          listenable: choice,
+          builder: (context, _) => _form(context, pending),
+        ),
+      );
+
+  Widget _form(BuildContext context, PendingOptionReply? pending) {
+    final l10n = context.l10n;
+    final options = selectableOptions(item);
+    final locked = pending != null;
+    final writer = _WriteYourOwn(
+      choice: choice,
+      // With nothing to pick, writing is the only way to answer.
+      initiallyExpanded: options.isEmpty || choice.text.text.isNotEmpty,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (pending != null && !pending.committed)
+          ReplyUndoBar(
+            option: plainOptionLabel(item, pending.optionIndex),
+            onUndo: () => replies.undoOption(item.id),
+          ),
+        MastermindGroup(
+          caption: l10n.mastermindReplyOptionsTitle,
+          dividerInset: AppLayout.rowHorizontalPadding,
+          children: [
+            for (final (index, label) in options)
+              MastermindOptionRow(
+                key: ValueKey('mastermind-option-$index'),
+                label: label,
+                recommended: item.optionRecommended(index),
+                selected: (pending?.optionIndex ?? choice.selected) == index,
+                onTap: locked ? null : () => choice.select(index),
+              ),
+            writer,
+          ],
+        ),
+      ],
+    );
+  }
 }
 
-class _ReplyComposerState extends State<ReplyComposer> {
-  final _text = TextEditingController();
+class _WriteYourOwn extends StatelessWidget {
+  const _WriteYourOwn({required this.choice, required this.initiallyExpanded});
+
+  final ReplyChoice choice;
+  final bool initiallyExpanded;
 
   @override
-  void initState() {
-    super.initState();
-    final draft = widget.replies.draftFor(widget.item.id);
-    _text.text = draft.text;
-  }
-
-  @override
-  void dispose() {
-    _text.dispose();
-    super.dispose();
-  }
-
-  void _save() =>
-      widget.replies.saveDraft(widget.item.id, ReplyDraft(text: _text.text));
-  void _typed(String value) => setState(_save);
-  bool get _canSend => isValidReplyText(_text.text);
-
-  void _sendOption(int index) =>
-      widget.replies.queueOption(item: widget.item, optionIndex: index);
-
-  Future<void> _send() async {
+  Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final item = widget.item;
-    final text = _text.text.trim();
+    final tokens = AppTokens.of(context);
+    final count = choice.text.text.runes.length;
+    return AppDisclosure(
+      key: const ValueKey('mastermind-write-own'),
+      initiallyExpanded: initiallyExpanded,
+      leading: Icon(
+        LucideIcons.pencilLine,
+        size: 20,
+        color: tokens.colorScheme.mutedForeground,
+      ),
+      title: Text(l10n.mastermindReplyWriteOwn),
+      childrenPadding: const EdgeInsets.fromLTRB(
+        AppSpacing.xs,
+        0,
+        AppSpacing.md,
+        AppSpacing.md,
+      ),
+      children: [
+        AppTextField(
+          controller: choice.text,
+          placeholder: l10n.mastermindReplyTextPlaceholder,
+          borderless: true,
+          minLines: 2,
+          maxLines: 6,
+          keyboardType: TextInputType.multiline,
+          textCapitalization: TextCapitalization.sentences,
+          inputFormatters: const [
+            LineLimitFormatter(mastermindReplyLineLimit),
+            CodePointLimitFormatter(mastermindReplyTextLimit),
+          ],
+        ),
+        Align(
+          alignment: AlignmentDirectional.centerEnd,
+          child: Semantics(
+            label: l10n.mastermindReplyCounterSemantics(
+              count,
+              mastermindReplyTextLimit,
+            ),
+            excludeSemantics: true,
+            child: Text(
+              l10n.mastermindReplyCounter(count, mastermindReplyTextLimit),
+              style: tokens.typography.xSmall.copyWith(
+                color: tokens.colorScheme.mutedForeground,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The sticky primary action: "Send “<option>”" for a chosen option, "Send
+/// reply" for written words, disabled until there is something to send.
+/// Hidden while an option's undo window runs or once a reply is on its way;
+/// the body shows those states.
+class ReplyActionBar extends StatelessWidget {
+  const ReplyActionBar({
+    required this.item,
+    required this.replies,
+    required this.choice,
+    super.key,
+  });
+
+  final NeedsYou item;
+  final MastermindRepliesCubit replies;
+  final ReplyChoice choice;
+
+  Future<void> _send(BuildContext context) async {
+    final selected = choice.selected;
+    if (selected != null) {
+      if (replies.queueOption(item: item, optionIndex: selected)) {
+        choice.clearSelection();
+      }
+      return;
+    }
+    final l10n = context.l10n;
+    final text = choice.text.text.trim();
     final confirmed = await showAppConfirmDialog(
       context: context,
       title: l10n.mastermindReplyConfirmTitle,
@@ -111,105 +189,41 @@ class _ReplyComposerState extends State<ReplyComposer> {
       confirmLabel: l10n.mastermindReplySend,
       cancelLabel: l10n.commonCancel,
     );
-    if (!confirmed || !mounted) return;
-    await widget.replies.submit(item: item, text: text);
+    if (!confirmed || !context.mounted) return;
+    await replies.submit(item: item, text: text);
   }
 
   @override
-  Widget build(BuildContext context) {
-    final options = selectableOptions(widget.item);
-    return BlocSelector<
-      MastermindRepliesCubit,
-      MastermindRepliesState,
-      PendingOptionReply?
-    >(
-      bloc: widget.replies,
-      selector: (state) =>
-          state.pendingOptionFor(widget.item.id, widget.item.versionHash),
-      builder: (context, pending) => _form(context, options, pending),
-    );
-  }
-
-  Widget _form(
-    BuildContext context,
-    List<(int, String)> options,
-    PendingOptionReply? pending,
-  ) {
-    final l10n = context.l10n;
-    final item = widget.item;
-    final choosing = pending != null;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (pending != null && !pending.committed)
-          ReplyUndoBar(
-            option: pending.option,
-            onUndo: () => widget.replies.undoOption(item.id),
-          ),
-        if (options.isNotEmpty)
-          AppGroupedSection.spaced(
-            caption: l10n.mastermindReplyOptionsTitle,
-            children: [
-              for (final (index, option) in options)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                  child: AppButton.outline(
-                    onPressed: choosing ? null : () => _sendOption(index),
-                    child: Wrap(
-                      spacing: AppSpacing.sm,
-                      runSpacing: AppSpacing.xs,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        Text(option),
-                        if (item.optionRecommended(index))
-                          AppBadge(child: Text(l10n.mastermindRecommended)),
-                      ],
-                    ),
-                  ),
+  Widget build(BuildContext context) =>
+      BlocBuilder<MastermindRepliesCubit, MastermindRepliesState>(
+        bloc: replies,
+        builder: (context, state) {
+          final busy =
+              state.pendingOptionFor(item.id, item.versionHash) != null ||
+              state.entryFor(item.id, item.versionHash) != null;
+          if (!state.canReply || busy) return const SizedBox.shrink();
+          return ListenableBuilder(
+            listenable: choice,
+            builder: (context, _) {
+              final l10n = context.l10n;
+              final selected = choice.selected;
+              return AppButton.primary(
+                size: AppButtonSize.large,
+                onPressed: choice.ready
+                    ? () => unawaited(_send(context))
+                    : null,
+                child: Text(
+                  selected == null
+                      ? l10n.mastermindReplySend
+                      : l10n.mastermindReplySendOption(
+                          plainOptionLabel(item, selected),
+                        ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-            ],
-          ),
-        AppTextField(
-          controller: _text,
-          placeholder: l10n.mastermindReplyTextPlaceholder,
-          helperText: l10n.mastermindReplyChooseOrWrite,
-          minLines: 2,
-          maxLines: 6,
-          keyboardType: TextInputType.multiline,
-          textCapitalization: TextCapitalization.sentences,
-          inputFormatters: const [
-            LineLimitFormatter(mastermindReplyLineLimit),
-            CodePointLimitFormatter(mastermindReplyTextLimit),
-          ],
-          onChanged: _typed,
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: AppSpacing.xs),
-          child: Align(
-            alignment: AlignmentDirectional.centerEnd,
-            child: Semantics(
-              label: l10n.mastermindReplyCounterSemantics(
-                _text.text.runes.length,
-                mastermindReplyTextLimit,
-              ),
-              excludeSemantics: true,
-              child: Text(
-                l10n.mastermindReplyCounter(
-                  _text.text.runes.length,
-                  mastermindReplyTextLimit,
-                ),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        AppButton.primary(
-          onPressed: !choosing && _canSend ? () => unawaited(_send()) : null,
-          child: Text(l10n.mastermindReplySend),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-      ],
-    );
-  }
+              );
+            },
+          );
+        },
+      );
 }

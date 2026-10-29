@@ -5,10 +5,13 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
-import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
+import 'package:mobile/features/mastermind/view/inbox/reply_choice.dart';
 import 'package:mobile/features/mastermind/view/inbox/reply_composer.dart';
 import 'package:mobile/features/mastermind/view/inbox/reply_status_panel.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_list_row.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The reply half of the detail page. What it shows follows the hub:
@@ -17,9 +20,12 @@ import 'package:mobile/l10n/l10n.dart';
 /// * replies on: the composer (option tiles and free text);
 /// * replies off, or not known: the options read-only and "Reply on your Mac".
 class ItemReplySection extends StatelessWidget {
-  const ItemReplySection({required this.item, super.key});
+  const ItemReplySection({required this.item, required this.choice, super.key});
 
   final NeedsYou item;
+
+  /// The selection and words the sticky action bar sends.
+  final ReplyChoice choice;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +47,7 @@ class ItemReplySection extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               ReplyIssueBanner(issue: state.statusFor(item.id).issue),
-              ReplyComposer(item: item, replies: replies),
+              ReplyComposer(item: item, replies: replies, choice: choice),
             ],
           );
         }
@@ -74,23 +80,24 @@ class _ReadOnlyOptions extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (options.isNotEmpty)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             caption: l10n.mastermindReplyOptionsTitle,
+            dividerInset: AppLayout.rowHorizontalPadding,
             children: [
               for (final (index, option) in options)
-                AppGroupedRow(
-                  title: Wrap(
-                    children: [
-                      OptionChip(
-                        option: option,
-                        recommended: item.optionRecommended(index),
-                      ),
-                    ],
-                  ),
+                MastermindListRow(
+                  title: option,
+                  trailing: item.optionRecommended(index)
+                      ? MastermindStatusChip(
+                          label: l10n.mastermindRecommended,
+                          icon: LucideIcons.star,
+                          tone: AppTone.primary,
+                        )
+                      : null,
                 ),
             ],
           ),
-        AppGroupedSection.spaced(
+        MastermindGroup(
           children: [
             switch (capability) {
               ReplyCapability.unknown ||

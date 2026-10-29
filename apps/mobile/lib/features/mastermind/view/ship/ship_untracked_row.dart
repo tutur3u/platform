@@ -3,6 +3,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The products with nothing observed, as one "Not tracked yet" row that
@@ -27,7 +28,7 @@ class _ShipUntrackedRowState extends State<ShipUntrackedRow> {
       for (final group in widget.groups)
         MastermindLabels.releaseProduct(group.product),
     ];
-    return AppGroupedSection.spaced(
+    return MastermindGroup(
       children: [
         Semantics(
           expanded: _expanded,

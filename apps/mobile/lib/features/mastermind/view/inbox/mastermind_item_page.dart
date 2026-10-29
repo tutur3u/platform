@@ -9,8 +9,12 @@ import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/view/inbox/item_question_card.dart';
 import 'package:mobile/features/mastermind/view/inbox/item_reply_section.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
+import 'package:mobile/features/mastermind/view/inbox/reply_choice.dart';
+import 'package:mobile/features/mastermind/view/inbox/reply_composer.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
 import 'package:mobile/features/mastermind/view/mastermind_section.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_action_bar.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -33,6 +37,19 @@ class _MastermindItemPageState extends State<MastermindItemPage> {
   /// The `version_hash` first shown here, to notice a question that changed.
   String? _openedVersion;
 
+  /// The chosen option or written words, shared by body and action bar.
+  ReplyChoice? _choiceOrNull;
+  ReplyChoice get _choice => _choiceOrNull ??= ReplyChoice(
+    replies: MastermindRepliesWatcher.cubitOf(context),
+    itemId: widget.itemId,
+  );
+
+  @override
+  void dispose() {
+    _choiceOrNull?.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => MastermindSection(
     builder: (context, ready, freshness) {
@@ -41,29 +58,44 @@ class _MastermindItemPageState extends State<MastermindItemPage> {
       final resolved = item == null
           ? resolvedNeedsYouById(snapshot, widget.itemId)
           : null;
-      if (item != null) _openedVersion ??= item.versionHash;
+      if (item != null) {
+        _openedVersion ??= item.versionHash;
+        _choice.bindVersion(item.versionHash);
+      }
       return MastermindRepliesWatcher(
-        child: AppPageScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: MastermindFreshnessStrip(freshness: freshness),
-            ),
-            SliverToBoxAdapter(
-              child: switch ((item, resolved)) {
-                (final item?, _) => _Detail(
+        child: MastermindStickyActionLayout(
+          // The primary action stays above the dock while the ask scrolls.
+          action: item == null || item.state == ItemState.answered
+              ? null
+              : ReplyActionBar(
                   item: item,
-                  updated: item.versionHash != _openedVersion,
-                  now: snapshot.generatedAt,
+                  replies: MastermindRepliesWatcher.cubitOf(context),
+                  choice: _choice,
                 ),
-                (_, final resolved?) => _Detail(
-                  item: resolved,
-                  now: snapshot.generatedAt,
-                ),
-                _ => _Gone(answered: _openedVersion != null),
-              },
-            ),
-          ],
+          body: AppPageScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              SliverToBoxAdapter(
+                child: MastermindFreshnessStrip(freshness: freshness),
+              ),
+              SliverToBoxAdapter(
+                child: switch ((item, resolved)) {
+                  (final item?, _) => _Detail(
+                    item: item,
+                    choice: _choice,
+                    updated: item.versionHash != _openedVersion,
+                    now: snapshot.generatedAt,
+                  ),
+                  (_, final resolved?) => _Detail(
+                    item: resolved,
+                    choice: _choice,
+                    now: snapshot.generatedAt,
+                  ),
+                  _ => _Gone(answered: _openedVersion != null),
+                },
+              ),
+            ],
+          ),
         ),
       );
     },
@@ -94,9 +126,15 @@ class _Gone extends StatelessWidget {
 }
 
 class _Detail extends StatelessWidget {
-  const _Detail({required this.item, required this.now, this.updated = false});
+  const _Detail({
+    required this.item,
+    required this.choice,
+    required this.now,
+    this.updated = false,
+  });
 
   final NeedsYou item;
+  final ReplyChoice choice;
   final bool updated;
   final DateTime now;
 
@@ -118,7 +156,7 @@ class _Detail extends StatelessWidget {
           showLeadingBrand: false,
         ),
         if (updated)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             children: [
               AppGroupedRow(
                 leading: const AppIconTile(
@@ -137,7 +175,7 @@ class _Detail extends StatelessWidget {
         if (item.state != ItemState.open)
           ItemResolvedPanel(item: item)
         else
-          ItemReplySection(item: item),
+          ItemReplySection(item: item, choice: choice),
       ],
     );
   }

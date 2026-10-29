@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/components/app_alert.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
@@ -12,10 +11,15 @@ import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/view/inbox/recorded_answer.dart';
+import 'package:mobile/features/mastermind/view/widgets/linkified_text.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// The ask itself: the display title as a heading, kind and product, then the
-/// full ask text the hub published (`ask_text`), never ellipsized.
+/// The ask itself, flat on the page background: the display title as a
+/// heading, kind and product as soft chips, when it was asked (relative and
+/// absolute GMT+7), then the full ask text the hub published (`ask_text`),
+/// never ellipsized, with tappable links.
 ///
 /// When the hub published only its "Open on Mac" stand-in, an info alert says
 /// the details are on the Mac instead of leaving the pointer as body text.
@@ -28,70 +32,86 @@ class ItemQuestionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = AppTokens.of(context);
+    final c = tokens.colorScheme;
     final l10n = context.l10n;
+    final locale = Localizations.localeOf(context).toString();
     final body = item.body.trim();
-    return AppGroupedSection.spaced(
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(AppLayout.rowHorizontalPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Semantics(
-                header: true,
-                child: Text(
-                  itemDisplayTitle(l10n, item),
-                  style: tokens.typography.h4.copyWith(
-                    color: tokens.colorScheme.foreground,
-                  ),
-                ),
+    final asked = item.createdAt;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppLayout.sectionCaptionInset,
+        AppSpacing.xs,
+        AppLayout.sectionCaptionInset,
+        AppLayout.sectionGap,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            header: true,
+            child: Text(
+              itemDisplayTitle(l10n, item),
+              style: tokens.typography.xLarge.copyWith(
+                color: c.foreground,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
               ),
-              ...[
-                const SizedBox(height: AppSpacing.sm),
-                Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xs,
-                  children: [
-                    if (item.state != ItemState.answered)
-                      Text(MastermindLabels.itemState(l10n, item.state)),
-                    if (item.createdAt != null && now != null)
-                      Text(
-                        mastermindAgeText(
-                          l10n,
-                          now!.difference(item.createdAt!),
-                        ),
-                      ),
-                    if (item.kind case final kind?)
-                      AppBadge(
-                        child: Text(MastermindLabels.itemKind(l10n, kind)),
-                      ),
-                    if (item.product case final product?)
-                      AppBadge.outline(
-                        child: Text(MastermindLabels.product(product)),
-                      ),
-                  ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              if (item.kind case final kind?)
+                MastermindStatusChip(
+                  label: MastermindLabels.itemKind(l10n, kind),
                 ),
-              ],
-              if (item.askTruncated) Text(l10n.mastermindAskTruncated),
-              const SizedBox(height: AppSpacing.md),
-              if (isOpenOnMacStandIn(body))
-                AppAlert(
-                  leading: Icon(AppIcons.info, color: tokens.colorScheme.info),
-                  title: Text(l10n.mastermindItemOpenOnMac),
-                  content: Text(l10n.mastermindItemOpenOnMacReason),
-                )
-              else
-                Text(
-                  body,
-                  style: tokens.typography.base.copyWith(
-                    color: tokens.colorScheme.foreground,
-                    height: 1.4,
-                  ),
+              if (item.product case final product?)
+                MastermindStatusChip(label: MastermindLabels.product(product)),
+              if (item.state != ItemState.answered)
+                MastermindStatusChip(
+                  label: MastermindLabels.itemState(l10n, item.state),
+                  icon: LucideIcons.circleDot,
+                  tone: AppTone.info,
                 ),
             ],
           ),
-        ),
-      ],
+          if (asked != null && now != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              l10n.mastermindAskedAt(
+                mastermindAgeText(l10n, now!.difference(asked)),
+                Gmt7.dateTime(asked, locale),
+              ),
+              style: tokens.typography.small.copyWith(color: c.mutedForeground),
+            ),
+          ],
+          if (item.askTruncated) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              l10n.mastermindAskTruncated,
+              style: tokens.typography.small.copyWith(color: c.mutedForeground),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.lg),
+          if (isOpenOnMacStandIn(body))
+            AppAlert(
+              leading: Icon(AppIcons.info, color: c.info),
+              title: Text(l10n.mastermindItemOpenOnMac),
+              content: Text(l10n.mastermindItemOpenOnMacReason),
+            )
+          else
+            LinkifiedText(
+              body,
+              style: tokens.typography.base.copyWith(
+                color: c.foreground,
+                height: 1.5,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -113,7 +133,7 @@ class ItemResolvedPanel extends StatelessWidget {
         ? null
         : '${Gmt7.day(at, locale)}, ${Gmt7.time(at, locale)}';
     final answer = item.resolution;
-    return AppGroupedSection.spaced(
+    return MastermindGroup(
       caption: l10n.mastermindResolvedOutcome,
       children: [
         AppGroupedRow(

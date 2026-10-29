@@ -6,6 +6,7 @@ import 'package:mobile/features/mastermind/presentation/age_text.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/view/ship/ship_capped_section.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Queued and running CI runs per repository. A repository the hub could not
@@ -20,7 +21,7 @@ class ShipCiSection extends StatelessWidget {
     final l10n = context.l10n;
     String count(int? value) =>
         value == null ? l10n.mastermindUnavailable : '$value';
-    return AppGroupedSection.spaced(
+    return MastermindGroup(
       caption: l10n.mastermindShipCiNow,
       children: [
         if (ci.isEmpty)
