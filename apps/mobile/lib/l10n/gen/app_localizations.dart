@@ -19477,17 +19477,23 @@ abstract class AppLocalizations {
   /// **'Due date'**
   String get taskQuickActionsDueDate;
 
-  /// No description provided for @taskQuickActionsNoDueDate.
+  /// No description provided for @taskQuickActionsNoDate.
   ///
   /// In en, this message translates to:
-  /// **'No due date'**
-  String get taskQuickActionsNoDueDate;
+  /// **'None'**
+  String get taskQuickActionsNoDate;
 
   /// No description provided for @taskQuickActionsNoLabels.
   ///
   /// In en, this message translates to:
   /// **'No labels'**
   String get taskQuickActionsNoLabels;
+
+  /// No description provided for @taskQuickActionsRemoveStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove start date'**
+  String get taskQuickActionsRemoveStartDate;
 
   /// No description provided for @taskQuickActionsStatus.
   ///

@@ -10255,10 +10255,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskQuickActionsDueDate => 'Due date';
 
   @override
-  String get taskQuickActionsNoDueDate => 'No due date';
+  String get taskQuickActionsNoDate => 'None';
 
   @override
   String get taskQuickActionsNoLabels => 'No labels';
+
+  @override
+  String get taskQuickActionsRemoveStartDate => 'Remove start date';
 
   @override
   String get taskQuickActionsStatus => 'Status';

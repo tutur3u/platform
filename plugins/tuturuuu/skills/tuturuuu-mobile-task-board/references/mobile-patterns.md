@@ -247,6 +247,13 @@ localization changes.
   optimistic mutations.
 - Overdue is one rule (`utils/task_due_dates.dart`): the due day in the
   user's timezone setting is before today. No due date, never overdue.
+- Save a picked day in the timezone setting with `taskStartOfDayIn` /
+  `taskEndOfDayIn`, and carry existing dates through `taskInZone`. The task
+  repository snaps a `tz.TZDateTime` to its own zone's day but a plain
+  `DateTime` to the device's day, so a plain date can shift a day in the
+  board's zone. A sheet opens above the page: re-provide a page-scoped
+  `TimezoneSettingsCubit` to it, as the quick sheet does, or it reads device
+  days (`task_board_quick_actions_dates_test.dart` covers both).
 - The tap quick sheet follows the cubit for its task and passes the live task
   to every edit, so consecutive edits never save a stale snapshot. Edits made
   where the saved value is visible pass `announce: false` (no success toast;
