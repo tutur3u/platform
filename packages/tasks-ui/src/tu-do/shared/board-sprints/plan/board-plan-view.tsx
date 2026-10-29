@@ -93,7 +93,14 @@ export function BoardPlanView({
     [tasks]
   );
   const createListId =
-    lists.find((list) => list.id === defaultListId && !list.deleted)?.id ??
+    // A Done or Closed default would create the task already finished.
+    lists.find(
+      (list) =>
+        list.id === defaultListId &&
+        !list.deleted &&
+        list.status !== 'done' &&
+        list.status !== 'closed'
+    )?.id ??
     lists.find((list) => list.status === 'not_started' && !list.deleted)?.id ??
     lists.find((list) => list.status === 'active' && !list.deleted)?.id;
 
