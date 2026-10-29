@@ -304,7 +304,12 @@ test('unit-test consumers accept exactly one successful shard variant', () => {
       }
     );
   for (const id of ['coverage-shards', 'coverage-result', 'build']) {
-    const expression = jobs[id].steps[0].env.TEST_RESULT;
+    // Docs-only gating (#7114) adds classification steps before the shard
+    // check, so select the step that reads the variant result.
+    const expression = jobs[id].steps.find((step) =>
+      step.env?.TEST_RESULT?.includes('test-shards-pr')
+    )?.env.TEST_RESULT;
+    assert.ok(expression, id);
     assert.ok(!expression.includes('secrets'));
     for (const result of ['success', 'failure', 'cancelled']) {
       assert.equal(resultOf(expression, 'skipped', result), result, id);
