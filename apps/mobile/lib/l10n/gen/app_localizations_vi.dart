@@ -9128,28 +9128,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailPriority => 'Độ ưu tiên';
 
   @override
-  String get taskBoardDetailPriorityCritical => 'Nghiêm trọng';
-
-  @override
-  String get taskBoardDetailPriorityHigh => 'Cao';
-
-  @override
-  String get taskBoardDetailPriorityLow => 'Thấp';
-
-  @override
   String get taskBoardDetailPriorityNone => 'Không ưu tiên';
-
-  @override
-  String get taskBoardDetailPriorityNormal => 'Bình thường';
 
   @override
   String get taskBoardDetailPriorityUpdated => 'Đã cập nhật độ ưu tiên.';
 
   @override
   String get taskBoardDetailProperties => 'Thuộc tính';
-
-  @override
-  String get taskBoardDetailQuickActions => 'Thao tác nhanh';
 
   @override
   String get taskBoardDetailRecycleBin => 'Thùng rác';
@@ -10155,6 +10140,21 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskPortfolioUpdateSaved => 'Đã lưu cập nhật.';
 
   @override
+  String get taskQuickActionsDueDate => 'Hạn chót';
+
+  @override
+  String get taskQuickActionsNoDueDate => 'Chưa đặt hạn';
+
+  @override
+  String get taskQuickActionsNoLabels => 'Chưa có nhãn';
+
+  @override
+  String get taskQuickActionsStatus => 'Trạng thái';
+
+  @override
+  String get taskQuickActionsUnassigned => 'Chưa giao cho ai';
+
+  @override
   String get tasksAllCaughtUp => 'Đã hoàn thành tất cả!';
 
   @override
@@ -10202,16 +10202,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get tasksPlanAhead => 'Lên kế hoạch sớm';
 
   @override
-  String get tasksPriorityCritical => 'Nghiêm trọng';
-
-  @override
   String get tasksPriorityHigh => 'Cao';
 
   @override
   String get tasksPriorityLow => 'Thấp';
 
   @override
-  String get tasksPriorityNormal => 'Bình thường';
+  String get tasksPriorityMedium => 'Trung bình';
+
+  @override
+  String get tasksPriorityNone => 'Không có';
+
+  @override
+  String get tasksPriorityUrgent => 'Khẩn cấp';
 
   @override
   String get tasksRequiresAttention => 'Cần xử lý ngay';

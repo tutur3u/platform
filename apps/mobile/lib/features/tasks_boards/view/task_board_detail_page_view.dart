@@ -1070,37 +1070,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     await _openTaskQuickActionsSheet(context, task, lists);
   }
 
-  Future<void> _openTaskQuickActionsSheet(
-    BuildContext context,
-    TaskBoardTask task,
-    List<TaskBoardList> lists,
-  ) async {
-    await showAdaptiveSheet<void>(
-      context: context,
-      backgroundColor: shad.Theme.of(context).colorScheme.background,
-      builder: (sheetContext) => _TaskQuickActionsSheet(
-        task: task,
-        lists: lists,
-        onMove: () {
-          Navigator.of(sheetContext).pop();
-          unawaited(_openMoveTaskPicker(context, task, lists));
-        },
-        onMarkStatus: (status) {
-          Navigator.of(sheetContext).pop();
-          unawaited(_markTaskAsStatus(context, task, lists, status));
-        },
-        onPriorityChanged: (priority) {
-          Navigator.of(sheetContext).pop();
-          unawaited(_changeTaskPriority(context, task, priority));
-        },
-        onOpenDetails: () {
-          Navigator.of(sheetContext).pop();
-          unawaited(_openTaskDetails(context, task));
-        },
-      ),
-    );
-  }
-
   Future<void> _openBulkActionsSheet(BuildContext context) async {
     final cubit = context.read<TaskBoardDetailCubit>();
     if (!cubit.state.isBulkSelectMode) {
@@ -1353,9 +1322,11 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     if (targetLists.length == 1) {
       selectedListId = targetLists.single.id;
     } else {
-      final title = normalizedStatus == 'done'
-          ? context.l10n.taskBoardDetailBulkMarkDone
-          : context.l10n.taskBoardDetailBulkMarkClosed;
+      final title = switch (normalizedStatus) {
+        'done' => context.l10n.taskBoardDetailBulkMarkDone,
+        'closed' => context.l10n.taskBoardDetailBulkMarkClosed,
+        _ => _taskBoardListStatusLabel(context, normalizedStatus),
+      };
       selectedListId = await _showBoardDialog<String>(
         context: context,
         builder: (dialogContext) =>

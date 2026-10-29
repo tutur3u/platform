@@ -226,9 +226,33 @@ localization changes.
   badges do not create stray gaps or clipping.
 - List-view task rows use `AppSwipeActions` plus a long-press
   `showAppActionSheet` menu that reuses the board cubit mutations. Selection
-  mode disables swipes. Board-page tests whose mutations invalidate caches
-  never settle in fake async, so assert on the repository call and the busy
-  dialog instead of `pumpAndSettle` after confirming.
+  mode disables swipes. Board-page mutations invalidate `CacheStore`, whose
+  file work never finishes in fake async: assert on the repository call and
+  the busy dialog instead of waiting. To chain mutations, call
+  `CacheStore.instance.init` in `setUpAll`, wait with `runAsync` plus pumps
+  until `isMutating` clears, and keep that test alone in its file. The store
+  is a process-wide singleton that serializes writes, so a write left
+  pending by an earlier test blocks every later mutation
+  (`task_board_quick_actions_edits_test.dart`). Do not add a timer-based
+  timeout there: its pending timer fails every board widget test whose
+  mutation never settles in fake async.
+- Priority visuals and labels come from `TaskPriorityLevel`
+  (`tasks_boards/widgets/task_priority_visuals.dart`): the web's order and
+  wording (Urgent, High, Medium, Low, plus None), Lucide and Lucide Lab icons
+  and dynamic colours. Do not add per-surface priority strings or hues. The
+  design render harness loads both Lucide fonts.
+- Board mutations reject a concurrent call with
+  `TaskBoardMutationInProgressException` (an `Exception`) before any
+  optimistic change; call `_ensureNoMutationInProgress` first in new
+  optimistic mutations.
+- Overdue is one rule (`utils/task_due_dates.dart`): the due day in the
+  user's timezone setting is before today. No due date, never overdue.
+- The tap quick sheet follows the cubit for its task and passes the live task
+  to every edit, so consecutive edits never save a stale snapshot. Edits made
+  where the saved value is visible pass `announce: false` (no success toast;
+  a toast there covers the next picker's footer). Drop taps while the cubit
+  `isMutating`; its single-mutation guard throws a `StateError`, not an
+  `Exception`.
 - Pass the page context, not the root navigator's context, to
   `showAppToast`; the root navigator's element sits above its overlay. Keep the
   root-navigator context only for legacy `shad.showToast` callers.
