@@ -58,6 +58,7 @@ $function$;
 
 -- Re-assert the safe path on the functions this migration pinned; a no-op on a
 -- database where the forward migration is applied, and never an unpin.
+-- tuturuuu: reviewed(alter-routine-review): rollback keeps the security-reviewed safe path pg_catalog, pg_temp (Tess B1, #7281)
 alter function private.update_time_tracking_request(
   uuid,
   text,
@@ -67,8 +68,11 @@ alter function private.update_time_tracking_request(
   text
 ) set search_path = pg_catalog, pg_temp;
 
+-- tuturuuu: reviewed(alter-routine-review): rollback keeps the security-reviewed safe path pg_catalog, pg_temp (Tess B1, #7281)
 alter function public.enforce_time_tracking_session_category_workspace()
 set search_path = pg_catalog, pg_temp;
+
+-- tuturuuu: reviewed(alter-routine-review): rollback keeps the security-reviewed safe path pg_catalog, pg_temp (Tess B1, #7281)
 alter function private.enforce_time_tracking_request_reference_workspace()
 set search_path = pg_catalog, pg_temp;
 
