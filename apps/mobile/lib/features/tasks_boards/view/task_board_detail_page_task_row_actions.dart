@@ -163,8 +163,9 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
   }
 
   Future<void> _scheduleTask(BuildContext context, TaskBoardTask task) async {
-    final now = DateTime.now();
-    final current = task.endDate?.toLocal();
+    final zone = taskTimezone(context);
+    final now = taskDay(DateTime.now(), zone);
+    final current = task.endDate == null ? null : taskDay(task.endDate!, zone);
     final picked = await showAppDatePicker(
       context: context,
       initialDate: current ?? now,
@@ -173,9 +174,7 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     );
     if (picked == null || !context.mounted) return;
 
-    // Due dates land at the end of the chosen local day, as the bulk
-    // due-date actions do.
-    final endDate = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
+    final endDate = taskEndOfDayIn(picked, zone);
     await _runTaskRowUpdate(
       context,
       task,
