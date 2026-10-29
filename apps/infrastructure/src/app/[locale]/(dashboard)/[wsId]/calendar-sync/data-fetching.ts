@@ -1,6 +1,24 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { resolveSatellitePageActor } from '@tuturuuu/satellite/workspace-access';
+import type { createClient } from '@tuturuuu/supabase/next/server';
 import type { SyncLog } from '@tuturuuu/ui/legacy/calendar/settings/types';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+
+type CalendarSyncActor = NonNullable<
+  Awaited<ReturnType<typeof resolveSatellitePageActor>>
+>;
+
+async function getCalendarSyncActor(wsId: string, actor?: CalendarSyncActor) {
+  const resolved = actor ?? (await resolveSatellitePageActor('infra'));
+  if (!resolved) throw new Error('Unauthorized');
+  const member = await verifyWorkspaceMembershipType({
+    wsId,
+    userId: resolved.user.id,
+    supabase: resolved.admin,
+  });
+  if (!member.ok) throw new Error('Workspace access denied');
+  const admin: Awaited<ReturnType<typeof createClient>> = resolved.admin;
+  return { ...resolved, admin };
+}
 
 interface SyncMetrics {
   totalSyncs24h: number;
@@ -14,8 +32,11 @@ interface SyncMetrics {
   failedSyncs24h: number;
 }
 
-export async function getSyncMetrics(wsId: string): Promise<SyncMetrics> {
-  const supabase = await createClient();
+export async function getSyncMetrics(
+  wsId: string,
+  actor?: CalendarSyncActor
+): Promise<SyncMetrics> {
+  const { admin: supabase } = await getCalendarSyncActor(wsId, actor);
 
   // Get current 24h period
   const now = new Date();
@@ -151,7 +172,8 @@ interface GetSyncLogsResult {
 
 export async function getSyncLogs(
   wsId: string,
-  options: GetSyncLogsOptions = {}
+  options: GetSyncLogsOptions = {},
+  actor?: CalendarSyncActor
 ): Promise<GetSyncLogsResult> {
   const {
     limit = 50,
@@ -161,40 +183,7 @@ export async function getSyncLogs(
     ascending = false,
   } = options;
 
-  const supabase = await createClient();
-
-  // Get user for authentication
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    console.error('[CalendarSyncData] Authentication error', authError);
-    return { logs: [], totalCount: 0, hasMore: false };
-  }
-
-  const membership = await verifyWorkspaceMembershipType({
-    wsId,
-    userId: user.id,
-    supabase,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    console.error(
-      '[CalendarSyncData] Membership lookup failed for calendar sync logs',
-      { wsId, userId: user.id }
-    );
-    return { logs: [], totalCount: 0, hasMore: false };
-  }
-
-  if (!membership.ok) {
-    console.error('[CalendarSyncData] No workspace access', {
-      wsId,
-      userId: user.id,
-    });
-    return { logs: [], totalCount: 0, hasMore: false };
-  }
+  const { admin: supabase } = await getCalendarSyncActor(wsId, actor);
 
   // First, get total count
   let countQuery = supabase
