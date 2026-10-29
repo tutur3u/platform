@@ -13,9 +13,8 @@ test('M1 adjacent quoted SET identifiers count as search_path settings', () => {
 
 test('M2 PostgreSQL dollar tags hide neither grants nor forged review markers', () => {
   for (const tag of ['é', '日本語', 'a'.repeat(100), '_é123']) {
-    const delimiter = '$' + tag + '$';
-    const sql =
-      'select ' + delimiter + "';" + delimiter + '; grant select on t to anon;';
+    const delimiter = `$${tag}$`;
+    const sql = `select ${delimiter}';${delimiter}; grant select on t to anon;`;
     assert.ok(
       scanSql(sql, { definerRule: false }).some((f) => f.rule === 'anon-grant'),
       tag
@@ -45,7 +44,7 @@ test('M3 string mode changes fail regardless of value, quoting or hidden followi
   ]) {
     assert.ok(
       scanExtensions(
-        setting + "; select 'a\\'; grant select on t to anon; --';"
+        `${setting}; select 'a\\'; grant select on t to anon; --';`
       ).some((f) => f.rule === 'function-acl'),
       setting
     );
