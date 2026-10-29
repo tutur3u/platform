@@ -484,6 +484,40 @@ void main() {
       expect(cubit.state.outbox, isEmpty);
       expect(await store.inner.read(), isEmpty);
     });
+
+    test(
+      'discard during flush prevents a stale outbox entry from sending',
+      () async {
+        final store = SpyOutboxStore();
+        final transport = FakeReplyTransport(const [ReplyAccepted()])
+          ..gate = Completer<void>();
+        final first = OutboxEntry(
+          idempotencyKey: '11111111-1111-4111-8111-111111111111',
+          itemId: inboxItemId(3),
+          versionHash: inboxHash('a'),
+          createdAt: DateTime.utc(2026, 1, 31, 17),
+          text: 'First',
+        );
+        final second = OutboxEntry(
+          idempotencyKey: '22222222-2222-4222-8222-222222222222',
+          itemId: inboxItemId(4),
+          versionHash: inboxHash('a'),
+          createdAt: DateTime.utc(2026, 1, 31, 17),
+          text: 'Second',
+        );
+        await store.inner.write([first, second]);
+        final cubit = repliesCubit(store: store, transport: transport);
+        addTearDown(cubit.close);
+        await cubit.loadCapabilities();
+        final flushing = cubit.flush();
+        await Future<void>.delayed(Duration.zero);
+        expect(transport.sent, [first]);
+        await cubit.discard(second.itemId, second.versionHash);
+        transport.gate!.complete();
+        await flushing;
+        expect(transport.sent.map((entry) => entry.itemId), [first.itemId]);
+      },
+    );
   });
 
   group('logout and account switch', () {

@@ -1,5 +1,43 @@
 part of 'snapshot_parser.dart';
 
+({List<String> labels, List<String>? keys}) _shortOptions(JsonReader r) {
+  final raw = r.value;
+  if (raw is! List || raw.length > 8) r.fail();
+  final labels = <String>[];
+  final keys = <String>[];
+  var hasKeys = false;
+  for (var index = 0; index < raw.length; index++) {
+    final option = JsonReader(raw[index], '${r.path}/$index');
+    if (option.value is String) {
+      labels.add(option.string(maxLength: 80));
+      keys.add('');
+      continue;
+    }
+    final object = option.object();
+    if (object.keys.any(
+      (key) => !const {'id', 'key', 'label', 'text', 'title'}.contains(key),
+    )) {
+      option.fail();
+    }
+    final key = object['key'] ?? object['id'];
+    final label = object['label'] ?? object['text'] ?? object['title'];
+    if (key is! String ||
+        key.isEmpty ||
+        label is! String ||
+        label.runes.length > 80) {
+      option.fail();
+    }
+    hasKeys = true;
+    keys.add(key);
+    labels.add(label);
+  }
+  if (hasKeys && keys.toSet().length != keys.length) r.fail();
+  return (
+    labels: List.unmodifiable(labels),
+    keys: hasKeys ? List.unmodifiable(keys) : null,
+  );
+}
+
 SecurityItem parseSecurityItem(JsonReader r) {
   r.keys(['title', 'state', 'product'], ['title', 'state']);
   return SecurityItem(
@@ -30,6 +68,7 @@ NeedsYou parseNeedsYou(JsonReader input) {
       'hub_title',
       'hub_text',
       'hub_options',
+      'option_keys',
       'hub_recommended',
       'by',
       'kind',
@@ -53,12 +92,22 @@ NeedsYou parseNeedsYou(JsonReader input) {
     hubText: _shortAskText(r, 'hub_text', 2000),
     hubRecommended: _shortAskText(r, 'hub_recommended', 80),
     by: _shortAskText(r, 'by', 100),
-    hubOptions: r.has('hub_options')
+    hubOptions: r.has('hub_options') && r.field('hub_options').value != null
+        ? _shortOptions(r.field('hub_options')).labels
+        : null,
+    optionKeys: r.has('option_keys')
         ? r
-              .field('hub_options')
+              .field('option_keys')
               .nullable(
-                (v) => v.list((v) => v.string(maxLength: 80), maxItems: 8),
+                (v) => v.list(
+                  (v) => v.string(maxLength: 100),
+                  maxItems: 8,
+                  unique: true,
+                ),
               )
+        : null,
+    hubOptionKeys: r.has('hub_options') && r.field('hub_options').value != null
+        ? _shortOptions(r.field('hub_options')).keys
         : null,
     askTruncated: r.object()['ask_truncated'] == true,
     createdAt: DateTime.tryParse(

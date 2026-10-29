@@ -26,13 +26,6 @@ class DecisionCardActions extends StatelessWidget {
       builder: (context, state) {
         final l10n = context.l10n;
         final entry = state.entryFor(item.id, item.versionHash);
-        if (entry != null) {
-          return ReplyEntryPanel(
-            entry: entry,
-            status: state.statusFor(item.id),
-            replies: replies,
-          );
-        }
         final pending = state.pendingOptionFor(item.id, item.versionHash);
         if (pending != null) {
           return ReplyUndoBar(
@@ -40,6 +33,13 @@ class DecisionCardActions extends StatelessWidget {
             onUndo: pending.committed
                 ? null
                 : () => replies.undoOption(item.id),
+          );
+        }
+        if (entry != null) {
+          return ReplyEntryPanel(
+            entry: entry,
+            status: state.statusFor(item.id),
+            replies: replies,
           );
         }
         return Column(
