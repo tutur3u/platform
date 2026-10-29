@@ -165,6 +165,7 @@ export function BoardPlanView({
     ? (task: Task) => (
         <PlanSprintMenu
           current={sprints.openSprintByTaskId.get(task.id) ?? null}
+          disabled={moveTasks.isPending}
           onMove={(sprintId) => moveToSprint(task, sprintId)}
           openSprints={openSprints}
           task={task}
