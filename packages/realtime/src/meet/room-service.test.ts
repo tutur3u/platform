@@ -383,7 +383,7 @@ it('reports the admitted transcription audience only to the host', () => {
     waiting: {
       lobby: { userId: 'lobby', displayName: 'Waiting' },
     },
-  } as typeof base;
+  } as unknown as typeof base;
   const admitted = new Set(
     Object.values(base.presence).map((p) => p.accountId ?? p.userId)
   ).size;
