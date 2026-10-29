@@ -49010,6 +49010,16 @@ export type Database = {
         Args: Record<PropertyKey, never>;
         Returns: boolean;
       };
+      add_board_sprint: {
+        Args: { p_actor_id?: string; p_board_id: string };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       add_platform_entity_creation_limit_table: {
         Args: {
           p_notes?: string;
@@ -52303,6 +52313,10 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      list_board_unplanned_task_ids: {
+        Args: { p_board_id: string };
+        Returns: string[];
+      };
       list_deferred_calendar_google_imports: {
         Args: {
           p_auth_token_id?: string;
@@ -52757,6 +52771,16 @@ export type Database = {
           remaining_credits: number;
           success: boolean;
         }[];
+      };
+      remove_board_sprint: {
+        Args: { p_actor_id?: string; p_cycle_id: string };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       remove_task_label_with_actor: {
         Args: {

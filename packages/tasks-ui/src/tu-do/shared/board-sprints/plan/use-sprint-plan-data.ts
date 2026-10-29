@@ -80,28 +80,47 @@ export interface PlanOwner {
 }
 
 /**
- * Splits the sprint being planned into the backlog (unassigned, open) and one
- * section per board member. A task with several assignees shows under each.
+ * Splits the shown sprints into the backlog (unassigned, open, plus open tasks
+ * parked outside every sprint) and one section per board member. A task with
+ * several assignees shows under each.
  */
 export function useSprintPlanGroups({
   currentUserId,
   members,
   sprint,
   tasks,
+  unfinishedOnly = false,
+  unplannedTaskIds,
 }: {
   currentUserId?: string;
   members: BoardMember[];
   sprint: Pick<BoardSprint, 'tasks'> | null;
   tasks: Task[];
+  /** All sprints at once lists only work still to do. */
+  unfinishedOnly?: boolean;
+  unplannedTaskIds?: ReadonlySet<string>;
 }) {
   return useMemo(() => {
     const ids = new Set(sprint?.tasks.map((task) => task.task_id));
     const sprintTasks = tasks.filter(
-      (task) => ids.has(task.id) && !task.deleted_at
+      (task) =>
+        ids.has(task.id) &&
+        !task.deleted_at &&
+        !(unfinishedOnly && isTaskFinished(task))
     );
-    const backlog = sprintTasks.filter(
-      (task) => !task.assignees?.length && !isTaskFinished(task)
+    const ghosts = tasks.filter(
+      (task) =>
+        unplannedTaskIds?.has(task.id) &&
+        !ids.has(task.id) &&
+        !task.deleted_at &&
+        !isTaskFinished(task)
     );
+    const backlog = [
+      ...sprintTasks.filter(
+        (task) => !task.assignees?.length && !isTaskFinished(task)
+      ),
+      ...ghosts,
+    ];
 
     const byMember = new Map<string, Task[]>();
     for (const task of sprintTasks) {
@@ -138,5 +157,5 @@ export function useSprintPlanGroups({
       });
 
     return { backlog, owners, sprintTasks };
-  }, [currentUserId, members, sprint, tasks]);
+  }, [currentUserId, members, sprint, tasks, unfinishedOnly, unplannedTaskIds]);
 }
