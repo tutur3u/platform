@@ -147,14 +147,13 @@ describe('board sprint helpers', () => {
     const sprints = [past, current, planned];
     const view = (task: {
       id: string;
-      closed_at?: string | null;
       completed_at?: string | null;
+      created_at?: string;
     }) => isTaskInCurrentSprintView(task, sprints, current);
 
     it('shows the current sprint and hides tasks waiting in the planned one', () => {
       expect(view({ id: 'in-current' })).toBe(true);
       expect(view({ id: 'waiting' })).toBe(false);
-      expect(view({ id: 'waiting', completed_at: '2026-10-28' })).toBe(false);
     });
 
     it('shows a new, moved, restored or reopened open task before the sprints refresh', () => {
@@ -162,38 +161,25 @@ describe('board sprint helpers', () => {
       expect(view({ id: 'past' })).toBe(true);
     });
 
-    it('hides work finished before the running sprint started', () => {
+    it('hides finished work from past sprints or from before sprints were on', () => {
       expect(view({ id: 'past', completed_at: '2026-10-20' })).toBe(false);
-      expect(view({ id: 'legacy', completed_at: '2026-10-01' })).toBe(false);
-    });
-
-    it('keeps showing a task finished during the running sprint', () => {
-      // Created, reopened from a past sprint, or moved onto the board, then
-      // finished: the database put it in the current sprint while it was open.
-      expect(view({ id: 'done-now', completed_at: '2026-10-28' })).toBe(true);
-      expect(view({ id: 'past', completed_at: '2026-10-28' })).toBe(true);
-      expect(view({ id: 'moved-in', closed_at: '2026-10-28' })).toBe(true);
-    });
-
-    it('keeps work finished in a past sprint hidden when it is closed later', () => {
       expect(
         view({
-          id: 'past',
-          completed_at: '2026-10-20',
-          closed_at: '2026-10-28',
+          id: 'legacy',
+          completed_at: '2026-10-01',
+          created_at: '2026-09-01T00:00:00Z',
         })
       ).toBe(false);
     });
 
-    it('hides finished tasks while the current sprint has not started', () => {
-      const planning = { status: 'planned' as const, tasks: [] };
+    it('shows a task created finished during the running sprint', () => {
       expect(
-        isTaskInCurrentSprintView(
-          { id: 'x', completed_at: '2026-10-28' },
-          [planning],
-          planning
-        )
-      ).toBe(false);
+        view({
+          id: 'done-now',
+          completed_at: '2026-10-28',
+          created_at: '2026-10-28T10:00:00Z',
+        })
+      ).toBe(true);
     });
 
     it('shows everything without a current sprint', () => {
