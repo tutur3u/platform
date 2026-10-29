@@ -113,3 +113,5 @@ authentication and private/no-store responses with the shared education loader a
 internal API transport. These app-owned education routes do not change the live
 Web API or a Rust-owned migration route. See [Learn personal To do](./learn#personal-to-do)
 for regression coverage and bounded source-versus-runtime evidence.
+
+Teach quiz-set and module detail reads require verified membership of the route workspace and `ai_lab`, matching the education API permission. Denied members and nonmembers receive 404 before content, counts, or private quiz answers are read. Each loader checks independently of its layout. Regression coverage: `education-page-access.test.ts` and the quiz-set/module data suites.

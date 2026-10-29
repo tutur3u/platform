@@ -10,18 +10,34 @@ import {
   getQuizSetLinkedModules,
   getQuizSetQuizzes,
   getQuizSetSummary,
+  getWorkspaceModules,
 } from './data';
 
 const LINK_TABLES = ['quiz_set_quizzes', 'course_module_quiz_sets'];
 
 const mocks = vi.hoisted(() => ({
+  joined: true,
+  allowed: true,
   admin: null as unknown as ReturnType<
     typeof import('@/lib/testing/fake-supabase').createFakeSupabase
   >,
 }));
 
+vi.mock('@tuturuuu/satellite/workspace-access', () => ({
+  getSatelliteWorkspacePermissions: async () => ({
+    withoutPermission: () => !mocks.allowed,
+  }),
+}));
+
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => mocks.admin.client,
+}));
+
+vi.mock('@/lib/resolve-route-workspace', () => ({
+  resolveRouteWorkspace: async (wsId: string) => ({
+    resolvedWsId: wsId,
+    workspace: { joined: mocks.joined },
+  }),
 }));
 
 vi.mock('@tuturuuu/education-core/education/access', () => ({
@@ -36,6 +52,8 @@ vi.mock('next/navigation', () => ({
 
 describe('quiz set dashboard data', () => {
   beforeEach(() => {
+    mocks.joined = true;
+    mocks.allowed = true;
     mocks.admin = createFakeSupabase(
       (call) =>
         resolveScopeLookup(call) ??
@@ -83,3 +101,23 @@ describe('quiz set dashboard data', () => {
     expect(mocks.admin.tables()).not.toContain('quiz_set_quizzes');
   });
 });
+
+for (const [name, load] of [
+  ['layout', () => getQuizSetSummary(OWN_WS, OWN_SET)],
+  ['quizzes', () => getQuizSetQuizzes(OWN_WS, OWN_SET)],
+  ['linked modules', () => getQuizSetLinkedModules(OWN_WS, OWN_SET)],
+  ['workspace modules', () => getWorkspaceModules(OWN_WS)],
+] as const) {
+  it.each(['denied member', 'nonmember'])(
+    `%s cannot read ${name}`,
+    async (caller) => {
+      mocks.joined = caller !== 'nonmember';
+      mocks.allowed = caller !== 'denied member';
+      mocks.admin = createFakeSupabase(() => ({
+        data: [{ answer: 'private' }],
+      }));
+      await expect(load()).rejects.toThrow('NEXT_NOT_FOUND');
+      expect(mocks.admin.tables()).toEqual([]);
+    }
+  );
+}

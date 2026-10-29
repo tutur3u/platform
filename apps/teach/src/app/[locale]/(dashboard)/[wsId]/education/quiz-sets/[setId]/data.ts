@@ -6,6 +6,7 @@ import type {
   WorkspaceQuizSet,
 } from '@tuturuuu/types';
 import { notFound } from 'next/navigation';
+import { requireEducationPageAccess } from '@/lib/education-page-access';
 import { checkWorkspaceQuizSet } from '@/lib/quiz-module-access';
 
 export interface QuizSetListParams {
@@ -41,6 +42,7 @@ async function requireQuizSetInWorkspace(
 }
 
 export async function getQuizSetSummary(wsId: string, setId: string) {
+  await requireEducationPageAccess(wsId);
   const supabase = await getAdminClient();
 
   const { data, error } = await supabase
@@ -78,6 +80,7 @@ export async function getQuizSetQuizzes(
   setId: string,
   { q, page = '1', pageSize = '10' }: QuizSetListParams = {}
 ) {
+  await requireEducationPageAccess(wsId);
   const supabase = await getAdminClient();
   await requireQuizSetInWorkspace(supabase, wsId, setId);
 
@@ -105,6 +108,7 @@ export async function getQuizSetLinkedModules(
   setId: string,
   { q, page = '1', pageSize = '10' }: QuizSetListParams = {}
 ) {
+  await requireEducationPageAccess(wsId);
   const supabase = await getAdminClient();
   await requireQuizSetInWorkspace(supabase, wsId, setId);
 
@@ -135,6 +139,7 @@ export async function getWorkspaceModules(
   wsId: string,
   { q, page = '1', pageSize = '10' }: QuizSetListParams = {}
 ) {
+  await requireEducationPageAccess(wsId);
   const supabase = await getAdminClient();
 
   const queryBuilder = supabase
