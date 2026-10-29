@@ -13,6 +13,10 @@ export async function hasLinkedProductInWorkspace({
   warehouseId: string;
   unitId: string;
 }) {
+  // Inventory tables live in the private schema (see
+  // 20260528141100_move_inventory_tables_private.sql); only workspace_products
+  // stays in public.
+  const inventory = sbAdmin.schema('private');
   const results = await Promise.all([
     sbAdmin
       .from('workspace_products')
@@ -20,19 +24,19 @@ export async function hasLinkedProductInWorkspace({
       .eq('id', productId)
       .eq('ws_id', wsId)
       .maybeSingle(),
-    sbAdmin
+    inventory
       .from('inventory_warehouses')
       .select('id')
       .eq('id', warehouseId)
       .eq('ws_id', wsId)
       .maybeSingle(),
-    sbAdmin
+    inventory
       .from('inventory_units')
       .select('id')
       .eq('id', unitId)
       .eq('ws_id', wsId)
       .maybeSingle(),
-    sbAdmin
+    inventory
       .from('inventory_products')
       .select('product_id')
       .eq('product_id', productId)

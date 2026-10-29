@@ -5,6 +5,14 @@ import { matchRoute } from '@tuturuuu/start-bridge/route-match';
 import { runtimeAppBase } from '@tuturuuu/start-bridge/start/base-path';
 import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
+import {
+  type AnalyticsEngineWriter,
+  readCountry,
+} from '@tuturuuu/utils/app-switch-rum';
+import {
+  createAppSwitchWriteBudget,
+  handleAppSwitchBeacon,
+} from '@tuturuuu/utils/app-switch-rum-ingest';
 import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import {
   applyOneOriginNoindex,
@@ -51,6 +59,8 @@ const dispatch = createBridgeHandler<MailRuntimeEnv, MailExecutionContext>({
   matches: proxyMatches,
 });
 
+const appSwitchWriteBudget = createAppSwitchWriteBudget();
+
 export async function handleMailRequest(
   incoming: Request,
   env: MailRuntimeEnv,
@@ -81,6 +91,21 @@ export async function handleMailRequest(
   const decision = decideOneOriginRequest(incoming, mailOneOriginConfig(env));
   if (decision.action !== 'serve') return finish(decision.response);
   const { request } = decision;
+  const { pathname } = new URL(request.url);
+  if (pathname === '/_rum' || pathname === '/mail/_rum')
+    return handleAppSwitchBeacon(
+      request,
+      (env as { APP_SWITCH_RUM?: AnalyticsEngineWriter }).APP_SWITCH_RUM,
+      {
+        ingest: (env as { APP_SWITCH_RUM_INGEST?: unknown })
+          .APP_SWITCH_RUM_INGEST,
+        budget: appSwitchWriteBudget,
+        // No durable admission is bound yet, so ingest cannot write. The
+        // admission and the dataset binding ship together, after review.
+        admission: undefined,
+        country: readCountry(request),
+      }
+    );
   if (path === '/api/build-info') {
     const url = new URL(request.url);
     url.pathname = path;

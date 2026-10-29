@@ -1,5 +1,6 @@
 'use client';
 
+import { AppSwitchTracker } from '@tuturuuu/satellite/app-switch-tracker';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
@@ -51,6 +52,7 @@ export function ClientProviders({ children }: { children: ReactNode }) {
       <AccountSwitcherKeyboardShortcut />
       <FetchInterceptorI18n />
       <RateLimitDetailsDialog />
+      <AppSwitchTracker currentApp="platform" />
     </>
   );
 
