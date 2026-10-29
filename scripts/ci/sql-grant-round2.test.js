@@ -15,7 +15,7 @@ const {
   routineKey,
   signatureTypes,
 } = require('./sql-grant-identifiers');
-const { RULES, evaluateSqlFiles } = require('./sql-grant-guard');
+const { RULES, evaluateSqlFiles } = require('./sql-grant-end-state-guard');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const MIGRATIONS = 'apps/database/supabase/migrations/';

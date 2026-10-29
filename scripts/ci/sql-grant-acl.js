@@ -1,7 +1,7 @@
 // EXECUTE ACL replay for SECURITY DEFINER functions in the SQL grant guard.
 //
 // Two ways a definer passes (policy:
-// apps/docs/reference/database/migrations-guide.mdx#sql-grant-guard):
+// apps/docs/reference/database/migrations-guide.mdx#sql-grant-end-state-guard):
 //   1. End state: an exact-signature REVOKE from public and anon after the
 //      creation statement, in the same file or a later forward migration.
 //   2. Inherited ACL: CREATE OR REPLACE keeps the existing ACL, so the six

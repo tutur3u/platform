@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { evaluateSqlFiles, RULES } = require('./sql-grant-guard');
+const { evaluateSqlFiles, RULES } = require('./sql-grant-end-state-guard');
 
 const directory = 'apps/database/supabase/migrations/';
 const create =

@@ -15,7 +15,7 @@ const {
   evaluateSqlFiles,
   formatSatisfied,
   lexSql,
-} = require('./sql-grant-guard');
+} = require('./sql-grant-end-state-guard');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const FILE =

@@ -1371,9 +1371,26 @@ Rust, TanStack and the cron runner. See the GitHub Actions runbook's
 [Report-only Web E2E](/build/devops/github-actions-runbook#report-only-web-e2e)
 section for runtime bounds, host-lock recovery and report-only acceptance.
 
+### SQL grant guard review exceptions
+
+Run focused guard suites with `node --test scripts/ci/sql-grant-guard*.test.js`;
+`bun test` can enter the root Turbo wrapper. Keep git history fixtures synthetic,
+including tracked SQL directories needed by baseline bootstrap. Retain the single
+historical-debt baseline and its file pins, occurrence keys, stale-entry rejection,
+and pre-push comparison. Generate from current main only for reviewed bootstrap;
+ordinary fixes remove entries. Follow the migrations guide for signature-scoped
+client-grant markers and statement-scoped dynamic/ALTER review markers. Test both
+real line comments and forged markers in strings, dollar bodies and block comments.
+Reject an empty-string definer path: `pg_temp` is still searched implicitly, so
+only `pg_catalog` first with `pg_temp` last passes.
+Reviewed findings belong in `sql-grant-guard-verified-findings.js`, bound to path,
+line, rule, file SHA-256, finding digest and reason. Fixed-forward findings must
+name an existing hardening migration; test both its presence and its removal.
+A placeholder filename leaves the original diagnostic enforced.
+
 ## SQL grant guard end-state evidence
 
-`sql-grant-guard.js` accepts an exact-signature EXECUTE/ALL revoke after the
+`sql-grant-end-state-guard.js` (the ACL-replay companion to the baseline guard; no shared entries) accepts an exact-signature EXECUTE/ALL revoke after the
 creation statement in the same or a later timestamped forward migration;
 migrations newer than the newest frozen file (`20261029030400`) need the
 revoke in the same file, while later migrations are still replayed so a later
@@ -1384,9 +1401,9 @@ manual rollbacks never count. Six frozen definers (single source:
 inherit an earlier revoke through `CREATE OR REPLACE` while no drop, rename
 (signature-free forms cover every overload), plain recreate or public/anon grant follows it; the guard prints each inherited
 pass with its evidence. Do not extend the allowlist. Run
-`node --test scripts/ci/sql-grant-*.test.js` and the guard itself, and report
+`node --test scripts/ci/sql-grant-*.test.js` and both guards (`sql-grant-guard.js`, `sql-grant-end-state-guard.js`), and report
 repository-wide failures instead of exempting them. See the
-[migrations guide](../../../../../apps/docs/reference/database/migrations-guide.mdx#sql-grant-guard).
+[migrations guide](../../../../../apps/docs/reference/database/migrations-guide.mdx#sql-grant-end-state-guard).
 
 ## Private Meet transcription evaluation
 
