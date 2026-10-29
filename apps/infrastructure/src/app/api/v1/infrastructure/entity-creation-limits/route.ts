@@ -5,7 +5,7 @@ import {
   type AvailableTableRow,
   buildTableGroups,
 } from '@/app/[locale]/(dashboard)/[wsId]/entity-creation-limits/types';
-import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
+import { authorizeInfrastructureRootMemberRequest } from '@/lib/infrastructure-admin-access';
 
 async function getLimitRows(): Promise<LimitRow[]> {
   const sbAdmin = await createAdminClient();
@@ -34,7 +34,7 @@ async function getAvailableTables(): Promise<AvailableTableRow[]> {
 export async function GET() {
   await connection();
 
-  const authorization = await authorizeInfrastructureAdminRequest();
+  const authorization = await authorizeInfrastructureRootMemberRequest();
   if (!authorization.ok) return authorization.response;
 
   const [rows, availableTables] = await Promise.all([

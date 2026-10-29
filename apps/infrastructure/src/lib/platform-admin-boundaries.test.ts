@@ -24,6 +24,12 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(async () => mocks.admin),
 }));
 vi.mock('@/lib/infrastructure-admin-access', () => ({
+  authorizeInfrastructureRootMemberRequest: vi.fn(
+    async (p = 'view_infrastructure') =>
+      mocks.permissions.has(p)
+        ? { ok: true, user: mocks.actor.user, sbAdmin: mocks.admin }
+        : { ok: false, response: Response.json({}, { status: 403 }) }
+  ),
   authorizeInfrastructureAdminRequest: vi.fn(
     async (p = 'view_infrastructure') =>
       mocks.permissions.has(p)

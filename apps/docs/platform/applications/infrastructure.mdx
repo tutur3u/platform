@@ -763,3 +763,9 @@ These rules apply to the Infrastructure app, including direct API requests and
 server-action calls. Existing CLI identity support for devbox reads is retained;
 it still requires the viewer permission. Regression coverage lives in
 `apps/infrastructure/src/lib/platform-admin-boundaries.test.ts`.
+
+Entity-limit reads and all four entity-limit server actions additionally require
+root-workspace `MEMBER` membership. Root guests are denied even when guest-default
+permissions grant the corresponding read or mutation permission. This preserves
+the previous membership fence without changing other administration endpoints.
+Regression coverage: `apps/infrastructure/src/lib/entity-limit-membership.test.ts`.

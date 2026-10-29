@@ -20,7 +20,8 @@ async function getInfrastructureSessionUser() {
 }
 
 export async function authorizeInfrastructureAdminRequest(
-  requiredPermission: PermissionId | PermissionId[] = 'view_infrastructure'
+  requiredPermission: PermissionId | PermissionId[] = 'view_infrastructure',
+  requireRootMember = false
 ) {
   const session = await getInfrastructureSessionUser();
   if (!session.ok) return session;
@@ -34,6 +35,7 @@ export async function authorizeInfrastructureAdminRequest(
     : [requiredPermission];
 
   if (
+    (requireRootMember && permissions?.membershipType !== 'MEMBER') ||
     !requiredPermissions.some((permission) =>
       permissions?.containsPermission(permission)
     )
@@ -86,4 +88,10 @@ export async function authorizeInfrastructureWorkspaceRequest(
     user: session.user,
     wsId: permissions.wsId,
   };
+}
+
+export async function authorizeInfrastructureRootMemberRequest(
+  requiredPermission: PermissionId | PermissionId[] = 'view_infrastructure'
+) {
+  return authorizeInfrastructureAdminRequest(requiredPermission, true);
 }

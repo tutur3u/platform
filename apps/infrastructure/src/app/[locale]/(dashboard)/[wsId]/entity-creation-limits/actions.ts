@@ -6,7 +6,7 @@ import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
-import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
+import { authorizeInfrastructureRootMemberRequest } from '@/lib/infrastructure-admin-access';
 
 function parseRequiredText(formData: FormData, fieldName: string) {
   const value = String(formData.get(fieldName) ?? '').trim();
@@ -69,7 +69,7 @@ export async function addPlatformEntityCreationLimitTable(
 ): Promise<{ status: 'table-added' }> {
   if (resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID)
     throw new Error('Forbidden');
-  const authorization = await authorizeInfrastructureAdminRequest(
+  const authorization = await authorizeInfrastructureRootMemberRequest(
     'manage_workspace_roles'
   );
   if (!authorization.ok) throw new Error('Forbidden');
@@ -104,7 +104,7 @@ export async function updatePlatformEntityCreationLimitMetadata(
 ): Promise<{ status: 'metadata-saved' }> {
   if (resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID)
     throw new Error('Forbidden');
-  const authorization = await authorizeInfrastructureAdminRequest(
+  const authorization = await authorizeInfrastructureRootMemberRequest(
     'manage_workspace_roles'
   );
   if (!authorization.ok) throw new Error('Forbidden');
@@ -139,7 +139,7 @@ export async function updatePlatformEntityCreationLimitTier(
 ): Promise<{ status: 'tier-saved' }> {
   if (resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID)
     throw new Error('Forbidden');
-  const authorization = await authorizeInfrastructureAdminRequest(
+  const authorization = await authorizeInfrastructureRootMemberRequest(
     'manage_workspace_roles'
   );
   if (!authorization.ok) throw new Error('Forbidden');
@@ -176,7 +176,7 @@ export async function reattachPlatformEntityCreationLimitTrigger(
 ): Promise<{ status: 'trigger-reattached' }> {
   if (resolveWorkspaceId(wsId) !== ROOT_WORKSPACE_ID)
     throw new Error('Forbidden');
-  const authorization = await authorizeInfrastructureAdminRequest(
+  const authorization = await authorizeInfrastructureRootMemberRequest(
     'manage_workspace_roles'
   );
   if (!authorization.ok) throw new Error('Forbidden');
