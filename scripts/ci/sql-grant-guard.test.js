@@ -9,7 +9,6 @@ const {
   validateBaseline,
 } = require('./sql-grant-guard-baseline');
 const {
-  MIGRATION_CUTOFF,
   RULES,
   checkRepository,
   evaluateSqlFiles,
@@ -49,10 +48,6 @@ function definers(sql) {
     (finding) => finding.rule === RULES.definerPublic
   );
 }
-
-test('the migration cutoff is pinned to the rule adoption date', () => {
-  assert.equal(MIGRATION_CUTOFF, '20261028000000');
-});
 
 test('the repository passes only exact diagnostic debt and retains the 13 original findings', () => {
   const result = checkRepository();
@@ -636,7 +631,7 @@ test('quoted and FROM CURRENT duplicate path clauses cannot replace a safe first
   }
 });
 
-test('repository SQL grant enforcement remains a zero-findings gate', () => {
+test('repository SQL grant enforcement has no findings outside shrink-only allowlist', () => {
   assert.deepEqual(
     checkRepository().violations.map((finding) => finding.message),
     []

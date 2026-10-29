@@ -1370,3 +1370,15 @@ the general paused commands and existing disabled jobs remain paused, including
 Rust, TanStack and the cron runner. See the GitHub Actions runbook's
 [Report-only Web E2E](/build/devops/github-actions-runbook#report-only-web-e2e)
 section for runtime bounds, host-lock recovery and report-only acceptance.
+
+
+### SQL grant guard review exceptions
+
+Run focused guard suites with `node --test scripts/ci/sql-grant-guard*.test.js`;
+`bun test` can enter the root Turbo wrapper. Keep git history fixtures synthetic,
+including tracked SQL directories needed by baseline bootstrap. Retain the single
+historical-debt baseline and its file pins, occurrence keys, stale-entry rejection,
+and pre-push comparison. Generate from current main only for reviewed bootstrap;
+ordinary fixes remove entries. Follow the migrations guide for signature-scoped
+client-grant markers and statement-scoped dynamic/ALTER review markers. Test both
+real line comments and forged markers in strings, dollar bodies and block comments.

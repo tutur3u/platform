@@ -19,6 +19,7 @@ function baselineEntry(finding) {
     rule: finding.rule,
     digest: finding.digest,
     fileDigest: finding.fileDigest,
+    ...(finding.class ? { class: finding.class } : {}),
   };
 }
 function numbered(entries) {
@@ -38,13 +39,53 @@ function makeBaseline(source, entries) {
     label: LABEL,
     source,
     files,
-    entries: numbered(entries).map(({ path, rule, digest, occurrence }) => ({
-      path,
-      rule,
-      digest,
-      ...(occurrence ? { occurrence } : {}),
-    })),
+    entries: numbered(entries).map(
+      ({ path, rule, digest, occurrence, class: classification }) => ({
+        path,
+        rule,
+        digest,
+        ...(classification ? { class: classification } : {}),
+        ...(occurrence ? { occurrence } : {}),
+      })
+    ),
   };
+}
+const FIX_GUIDANCE = {
+  'anon-grant':
+    'Remove the open grant; routine exceptions require the signature review marker with anon-required.',
+  'definer-public':
+    'REVOKE ALL on the exact routine signature from PUBLIC and anon in the defining file.',
+  'function-acl':
+    'Use an explicit signature, REVOKE ALL from PUBLIC/anon/authenticated, then grant service_role or record the documented signature review/no-grant marker.',
+  'definer-search-path':
+    'Pin one search_path with pg_catalog first and pg_temp last; reviewed ALTER requires an alter-routine-review marker.',
+  'dynamic-sql-review':
+    'Review DO/EXECUTE and attach a statement-adjacent reviewed(dynamic-sql-review) marker.',
+  'rollback-safety':
+    'Remove unsafe rollback grants, default privileges, membership or grant options.',
+  'rollback-name':
+    'Match the forward migration filename with an approved rollback suffix.',
+};
+function debtClass(file, diagnostic) {
+  const name = path.posix.basename(file);
+  if (
+    file.startsWith(`${SQL_DIRS[1]}/`) &&
+    ((name.startsWith('20261029012300_') && diagnostic.line === 2) ||
+      (name.startsWith('20261029030500_') && diagnostic.line === 6) ||
+      (name.startsWith('20261029030600_') && diagnostic.line === 43)) &&
+    ['anon-grant', 'rollback-safety'].includes(diagnostic.rule)
+  )
+    return 'latent-rollback-grant';
+  if (
+    file.startsWith(`${SQL_DIRS[0]}/`) &&
+    diagnostic.rule === 'definer-search-path' &&
+    ((name.startsWith('20261029050430_') &&
+      [9, 120].includes(diagnostic.line)) ||
+      (name.startsWith('20261029100000_') &&
+        [39, 380].includes(diagnostic.line)))
+  )
+    return 'definer-path-hygiene';
+  return null;
 }
 function collectDiagnostics({ files, readFile }) {
   const {
@@ -100,12 +141,14 @@ function collectDiagnostics({ files, readFile }) {
         (diagnostic.rule === 'dynamic-sql-review' && diagnostic.line === 1)
           ? sql
           : block || sql;
+      const classification = debtClass(file, diagnostic);
       findings.push({
         ...diagnostic,
+        ...(classification ? { class: classification } : {}),
         file,
         digest: digest(context),
         fileDigest: digest(sql),
-        message: `${file}:${diagnostic.line} ${diagnostic.detail}. [${diagnostic.rule}]`,
+        message: `${file}:${diagnostic.line} ${diagnostic.detail}. [${diagnostic.rule}] ${FIX_GUIDANCE[diagnostic.rule] ?? 'See the SQL grant guard documentation.'}`,
       });
     }
   }
@@ -171,7 +214,9 @@ function validateBaseline(current, previous) {
     throw new Error('Invalid historical debt baseline');
   const seen = new Set();
   const paths = new Set();
-  const prior = previous && new Set(previous.entries.map(entryKey));
+  const prior =
+    previous &&
+    new Map(previous.entries.map((entry) => [entryKey(entry), entry]));
   if (
     previous &&
     (previous.label !== current.label || previous.source !== current.source)
@@ -185,6 +230,10 @@ function validateBaseline(current, previous) {
       !/^[a-f0-9]{64}$/.test(entry.digest) ||
       !/^[a-f0-9]{64}$/.test(current.files[entry.path]) ||
       typeof entry.rule !== 'string' ||
+      (entry.class !== undefined &&
+        !['latent-rollback-grant', 'definer-path-hygiene'].includes(
+          entry.class
+        )) ||
       (entry.occurrence !== undefined &&
         (!Number.isInteger(entry.occurrence) || entry.occurrence < 1))
     )
@@ -197,7 +246,8 @@ function validateBaseline(current, previous) {
     if (
       prior &&
       (!prior.has(key) ||
-        previous.files[entry.path] !== current.files[entry.path])
+        previous.files[entry.path] !== current.files[entry.path] ||
+        prior.get(key).class !== entry.class)
     )
       throw new Error(`Historical debt baseline is shrink-only: ${entry.path}`);
   }
@@ -306,6 +356,11 @@ if (require.main === module) {
       JSON.stringify({
         source,
         count: diagnostics.length,
+        classes: baseline.entries.reduce((counts, entry) => {
+          const key = `${entry.class ?? 'unclassified-historical-debt'}/${entry.rule}`;
+          counts[key] = (counts[key] ?? 0) + 1;
+          return counts;
+        }, {}),
         counts: diagnostics.reduce((counts, finding) => {
           counts[finding.rule] = (counts[finding.rule] ?? 0) + 1;
           return counts;

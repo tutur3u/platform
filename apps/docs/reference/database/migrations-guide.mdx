@@ -761,15 +761,76 @@ Use `node scripts/ci/sql-grant-guard.js --report` to inspect debt and new findin
 Created functions and procedures require a subsequent matching-signature `REVOKE
 ALL` from `PUBLIC, anon, authenticated`, plus a grant to `service_role` or a
 same-file `-- tuturuuu: no-grant (internal)` or `-- tuturuuu: no-grant (trigger)`
-comment. Grants to anonymous or authenticated callers fail this fence.
+comment. The grant policy applies in every file, including later standalone
+migrations and schemas:
+
+- Grants without an explicit parseable argument list fail.
+- Schema-wide grants (`ON ALL ... IN SCHEMA`) and `ALTER DEFAULT PRIVILEGES`
+  grants to `PUBLIC`, `anon`, or `authenticated` always fail, even with a marker.
+- A grant to `authenticated` requires its own statement-adjacent review marker
+  naming the exact canonical signature.
+- A grant to `anon` or `PUBLIC` additionally requires `anon-required` in that
+  marker. The legacy `allow-anon-grant` marker cannot satisfy this routine fence.
+
+```sql
+-- tuturuuu: reviewed(function-grant): public.example(integer) review=<reference>
+GRANT EXECUTE ON FUNCTION public.example(integer) TO authenticated;
+
+-- tuturuuu: reviewed(function-grant): public.example(integer) anon-required review=<reference>
+GRANT EXECUTE ON FUNCTION public.example(integer) TO anon;
+```
+
+Use canonical signatures (`public` is explicit, argument names are omitted, and
+aliases such as `int` normalize to `integer`). Each target in a multi-target grant
+needs its own signature marker. A marker applies only on the statement's lines or
+its immediately preceding line. A reviewed client grant satisfies intended access
+for a CREATE, but the subsequent matching `REVOKE ALL` is still required.
 Definers require `pg_catalog` first and `pg_temp` last, with no duplicate settings,
 empty paths, user-dependent schemas or explicit temporary namespaces. Quoted
 identifier case is significant. The live pgTAP gate remains authoritative for
 schema CREATE privileges.
 
-ALTER routine security/configuration mutations, DO/EXECUTE statements, complex
-quoted identifiers, role-membership grants and grant options require security
-review. Rollbacks also reject public/anonymous grants, TRUNCATE, MAINTAIN and
+ALTER routine security/configuration/owner mutations, DO/EXECUTE statements,
+complex routine/ACL/SET identifiers, role-membership grants and grant options
+require security review. Policy names containing spaces are accepted. Separate
+plain schema literals such as `'pg_catalog', 'pg_temp'` are accepted for
+`search_path`; Unicode-escaped SET identifiers fail closed.
+
+Record reviewed statements with a real line comment on the statement or its
+immediately preceding line:
+
+```sql
+-- tuturuuu: reviewed(dynamic-sql-review): <review-reference>
+DO $$ BEGIN EXECUTE 'SELECT 1'; END $$;
+
+-- tuturuuu: reviewed(alter-routine-review): <review-reference>
+ALTER FUNCTION public.example(integer) SET search_path = pg_catalog, pg_temp;
+```
+
+`reviewed(dynamic-sql-review)` also applies to EXECUTE and routine bodies; it
+never waives required ACLs. `reviewed(quoted-identifier-review)` waives only the
+complex-identifier review diagnostic. Strings, dollar bodies, block comments,
+unrelated statements, and other files cannot supply markers. Migration, rollback,
+and schema SQL are covered by CODEOWNERS. Rollbacks also reject public/anonymous grants, TRUNCATE, MAINTAIN and
 default-grant restoration; their names must match a migration and an approved
-suffix. Run the two `sql-grant-guard*.test.js` suites for parser, baseline and
+suffix. Run the `sql-grant-guard*.test.js` suites with `node --test` for parser, baseline and
 shallow-checkout regression coverage.
+
+
+The single historical-debt baseline is retained, including path/rule/block digest,
+occurrence, complete-file pins, stale-entry checks, and main's pre-push comparison.
+The following seven real debt items carry a `class` field. Multiple diagnostics
+for one statement receive the same class. These tags describe historical debt;
+forward fixes do not alter applied migration bytes or automatically clear entries.
+
+| File suffix | Statement lines | Class |
+| --- | --- | --- |
+| `20261029012300_tighten_legacy_table_grants.rollback.sql` | 2 | `latent-rollback-grant` |
+| `20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql` | 6 | `latent-rollback-grant` |
+| `20261029030600_pin_workspace_membership_rls.rollback.sql` | 43 | `latent-rollback-grant` |
+| `20261029050430_merge_batch_null_guards.sql` | 9, 120 | `definer-path-hygiene` |
+| `20261029100000_chat_first_message_creation_receipts.sql` | 39, 380 | `definer-path-hygiene` |
+
+Regression evidence is in `sql-grant-guard-security.test.js` for signature review,
+escaped GUCs, reviewed statements and false positives, and in the repository suite
+for synthetic shallow history and the pre-push baseline fence.

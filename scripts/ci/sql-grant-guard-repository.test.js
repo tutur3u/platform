@@ -8,7 +8,6 @@ const {
   resolveBase,
   baselineReference,
 } = require('./sql-grant-guard-repository');
-const source = path.resolve(__dirname, '../..');
 const git = (cwd, ...args) =>
   execFileSync('git', args, {
     cwd,
@@ -21,9 +20,28 @@ test('CI fetches an absent named base and deepens a depth-two checkout', () => {
   try {
     const remote = path.join(dir, 'remote.git');
     const checkout = path.join(dir, 'checkout');
-    git(source, 'clone', '--bare', '--shared', source, remote);
+    const source = path.join(dir, 'source');
+    fs.mkdirSync(source);
+    git(source, 'init', '--quiet');
+    git(source, 'config', 'user.name', 'vhpx');
+    git(source, 'config', 'user.email', 'contact@vohoangphuc.com');
+    fs.mkdirSync(path.join(source, 'apps/database/supabase/migrations'), {
+      recursive: true,
+    });
+    fs.writeFileSync(
+      path.join(
+        source,
+        'apps/database/supabase/migrations/20200101000000_fixture.sql'
+      ),
+      'select 1;'
+    );
+    git(source, 'add', '.');
+    git(source, 'commit', '-m', 'fixture base');
+    const ancestor = git(source, 'rev-parse', 'HEAD');
+    for (let i = 0; i < 5; i++)
+      git(source, 'commit', '--allow-empty', '-m', `fixture ${i}`);
     const head = git(source, 'rev-parse', 'HEAD');
-    const ancestor = git(source, 'rev-parse', 'HEAD~5');
+    git(source, 'clone', '--bare', source, remote);
     git(remote, 'update-ref', 'refs/heads/guard-feature', head);
     git(remote, 'update-ref', 'refs/heads/guard-base', ancestor);
     git(
@@ -72,6 +90,10 @@ test('CI fetches an absent named base and deepens a depth-two checkout', () => {
     const sourceSha = trackedBaseline
       ? JSON.parse(git(checkout, 'show', `${head}:${baselinePath}`)).source
       : ancestor;
+    fs.mkdirSync(path.join(checkout, 'scripts/ci'), { recursive: true });
+    fs.mkdirSync(path.join(checkout, 'apps/database/supabase/migrations'), {
+      recursive: true,
+    });
     fs.writeFileSync(
       path.join(checkout, baselinePath),
       JSON.stringify({
