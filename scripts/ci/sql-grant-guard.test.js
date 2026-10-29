@@ -49,7 +49,7 @@ function definers(sql) {
   );
 }
 
-test('the repository passes only exact diagnostic debt and retains the 13 original findings', () => {
+test('the repository passes only exact diagnostic debt and retains the 11 remaining original findings', () => {
   const result = checkRepository();
   assert.deepEqual(result.violations, []);
   const original = new Set(
@@ -67,10 +67,17 @@ test('the repository passes only exact diagnostic debt and retains the 13 origin
     '20261029040800_finance_workspace_boundaries.sql:267:definer-public',
     '20261029040800_finance_workspace_boundaries.sql:341:definer-public',
     '20261029040800_finance_workspace_boundaries.sql:415:definer-public',
-    '20261029012300_tighten_legacy_table_grants.rollback.sql:2:anon-grant',
-    '20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql:6:anon-grant',
   ])
     assert.ok(original.has(expected), expected);
+  // The two rollbacks that restored anon grants were rewritten to restore only
+  // authenticated/service_role access, so their debt left the baseline.
+  assert.ok(
+    ![...original].some(
+      (entry) =>
+        /rollback\.sql:\d+:anon-grant$/.test(entry) &&
+        /20261029012300|20261029030500/.test(entry)
+    )
+  );
 });
 
 test('the historical debt report counts every explicitly baselined diagnostic', () => {
