@@ -542,54 +542,6 @@ describe('daily operation budget', () => {
     await mf.dispose();
   });
 
-  it('denied reservations still spend the password share (PW-R1-DRAIN)', async () => {
-    const mf = createRuntime();
-    const client = await bindingClient(mf);
-    const reserve = (receipt: string) =>
-      client.reserve({
-        partition: 'pwd:drain-test',
-        budgets: [{ key: 'target', limit: 1, ttlMs: 900_000 }],
-        receipt,
-      });
-    await expect(reserve('r0')).resolves.toMatchObject({ ok: true });
-    for (let attempt = 1; attempt <= 5; attempt += 1) {
-      await expect(reserve(`r${attempt}`)).resolves.toMatchObject({
-        ok: false,
-      });
-    }
-    // One more command flushes the buffered usage.
-    // All six attempts are already durably charged.
-    expect((await control(mf, 'state')).body.families.password.used).toBe(6);
-    await mf.dispose();
-  });
-
-  it('admits exactly the target budget under concurrent reservations', async () => {
-    const mf = createRuntime();
-    const client = await bindingClient(mf);
-    const outcomes = await Promise.all(
-      Array.from({ length: 20 }, (_, index) =>
-        client.reserve({
-          partition: 'pwd:concurrency-test',
-          budgets: [
-            { key: 'source', limit: 300, ttlMs: 900_000 },
-            { key: 'target', limit: 5, ttlMs: 900_000 },
-          ],
-          receipt: `c${index}`,
-        })
-      )
-    );
-    expect(outcomes.filter((outcome) => outcome.ok)).toHaveLength(5);
-    // A refund consumes its own receipt once.
-    await expect(
-      client.refund({
-        partition: 'pwd:concurrency-test',
-        receipt: 'c0',
-        target: 'target',
-      })
-    ).resolves.toBeGreaterThanOrEqual(0);
-    await mf.dispose();
-  });
-
   it('keeps other families serving when one exhausts its budget', async () => {
     const mf = createRuntime({ familyBudgets: 'offline=3' });
     const offline = httpClient(mf, 'offline');

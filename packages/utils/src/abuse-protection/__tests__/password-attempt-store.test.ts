@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   AbuseGuardUnavailableError,
   createAbuseGuardClient,
@@ -17,10 +17,16 @@ function storeSelection(overrides: Record<string, unknown> = {}) {
     refund: vi.fn(async () => 1),
     ...overrides,
   };
+  const withFairness = vi.fn();
+  const scoped = { ...client, withFairness };
+  withFairness.mockReturnValue(scoped);
   return {
-    client,
+    client: scoped,
     select: () =>
-      ({ kind: 'durable-object', client }) as unknown as AbuseGuardSelection,
+      ({
+        kind: 'durable-object',
+        client: scoped,
+      }) as unknown as AbuseGuardSelection,
   };
 }
 
@@ -29,6 +35,8 @@ const meetGuest = {
   target: 'plan-1:guest-name',
   ip: '203.0.113.9',
 };
+
+afterEach(() => vi.useRealTimers());
 
 describe('password attempts on the abuse-guard store', () => {
   it('reserves source and target budgets atomically in one scope partition', async () => {
@@ -54,6 +62,7 @@ describe('password attempts on the abuse-guard store', () => {
       ],
       receipt: expect.stringMatching(/^pwd:reservation:/u),
     });
+    expect(client.withFairness).toHaveBeenCalledWith({ source: '203.0.113.9' });
     expect(getRedis).not.toHaveBeenCalled();
 
     await result.refund?.();
@@ -73,6 +82,10 @@ describe('password attempts on the abuse-guard store', () => {
       scope: 'nova-challenge',
       target: 'challenge-1',
       userId: 'user-1',
+    });
+    expect(client.withFairness).toHaveBeenCalledWith({
+      source: 'unknown',
+      principal: 'user-1',
     });
     expect(client.reserve).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -198,5 +211,31 @@ describe('password attempts on the abuse-guard store', () => {
     );
     await expect(result.refund?.()).resolves.toBeUndefined();
     warn.mockRestore();
+  });
+  it('suppresses repeated denied reserves, expires the shortcut and bounds eviction', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(1000);
+    const { client, select } = storeSelection({
+      reserve: vi.fn(async () => ({
+        ok: false,
+        remaining: 0,
+        retryAfterMs: 900000,
+      })),
+    });
+    const limiter = createPasswordAttemptLimiter(vi.fn(), select);
+    for (let n = 0; n < 100; n++)
+      expect((await limiter.check(meetGuest)).allowed).toBe(false);
+    expect(client.reserve).toHaveBeenCalledTimes(1);
+    // A refund elsewhere may open this target; never cache its denial for the full window.
+    vi.advanceTimersByTime(1000);
+    await limiter.check(meetGuest);
+    expect(client.reserve).toHaveBeenCalledTimes(2);
+    for (let n = 0; n < 10000; n++)
+      await limiter.check({ ...meetGuest, target: `pressure:${n}` });
+    await limiter.check(meetGuest);
+    expect(client.reserve).toHaveBeenCalledTimes(10003);
+    const restarted = createPasswordAttemptLimiter(vi.fn(), select);
+    await restarted.check(meetGuest);
+    expect(client.reserve).toHaveBeenCalledTimes(10004);
   });
 });
