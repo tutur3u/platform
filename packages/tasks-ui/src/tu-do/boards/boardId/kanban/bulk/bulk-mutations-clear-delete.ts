@@ -4,7 +4,6 @@ import { type QueryClient, useMutation } from '@tanstack/react-query';
 import { bulkWorkspaceTasks } from '@tuturuuu/internal-api/tasks';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
-import { invalidateKanbanDeadlineTasks } from '../data/kanban-deadline-query';
 import type { BulkOperationI18n } from './bulk-operation-i18n';
 import {
   type BulkTaskWorkspaceGroup,
@@ -86,7 +85,6 @@ export function useBulkClearLabels(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
-        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -191,7 +189,6 @@ export function useBulkClearProjects(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
-        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -296,7 +293,6 @@ export function useBulkClearAssignees(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
-        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -402,7 +398,6 @@ export function useBulkDeleteTasks(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
-        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -413,7 +408,6 @@ export function useBulkDeleteTasks(
       for (const tid of succeededTaskIds) {
         broadcast?.('task:delete', { taskId: tid });
       }
-      void invalidateKanbanDeadlineTasks(queryClient, boardId);
 
       clearSelection();
       setBulkDeleteOpen(false);

@@ -7,12 +7,10 @@ import {
 } from '@tuturuuu/internal-api/tasks';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { calculateDaysUntilEndOfWeek } from '../../../../utils/weekDateUtils';
-import { KANBAN_DEADLINE_TASKS_QUERY_KEY } from '../data/kanban-deadline-query';
 
 type BoardTaskCacheSnapshot = {
   previousTasks: Task[] | undefined;
   previousFullTasks: [QueryKey, Task[] | undefined][];
-  previousDeadlineTasks: [QueryKey, Task[] | undefined][];
 };
 
 type CachedTaskWithWorkspace = Task & {
@@ -49,7 +47,6 @@ export function getCachedBoardTasks(queryClient: QueryClient, boardId: string) {
   const fullTaskEntries = queryClient.getQueriesData<Task[]>({
     queryKey: ['tasks-full', boardId],
   });
-  const deadlineTaskEntries = getBoardDeadlineTaskCaches(queryClient, boardId);
   const byId = new Map<string, CachedTaskWithWorkspace>();
 
   for (const task of tasks as CachedTaskWithWorkspace[]) {
@@ -64,27 +61,7 @@ export function getCachedBoardTasks(queryClient: QueryClient, boardId: string) {
     }
   }
 
-  for (const [, deadlineTasks] of deadlineTaskEntries) {
-    for (const task of (deadlineTasks ?? []) as CachedTaskWithWorkspace[]) {
-      if (!byId.has(task.id)) {
-        byId.set(task.id, task);
-      }
-    }
-  }
-
   return byId;
-}
-
-function isBoardDeadlineTaskQuery(queryKey: QueryKey, boardId: string) {
-  return (
-    queryKey[0] === KANBAN_DEADLINE_TASKS_QUERY_KEY && queryKey[2] === boardId
-  );
-}
-
-function getBoardDeadlineTaskCaches(queryClient: QueryClient, boardId: string) {
-  return queryClient.getQueriesData<Task[]>({
-    predicate: (query) => isBoardDeadlineTaskQuery(query.queryKey, boardId),
-  });
 }
 
 export function getBulkTaskWorkspaceGroups({
@@ -201,7 +178,6 @@ export function snapshotBoardTaskCaches(
     previousFullTasks: queryClient.getQueriesData<Task[]>({
       queryKey: ['tasks-full', boardId],
     }),
-    previousDeadlineTasks: getBoardDeadlineTaskCaches(queryClient, boardId),
   };
 }
 
@@ -213,10 +189,6 @@ export function restoreBoardTaskCaches(
   queryClient.setQueryData(['tasks', boardId], snapshot.previousTasks);
 
   for (const [queryKey, tasks] of snapshot.previousFullTasks) {
-    queryClient.setQueryData(queryKey, tasks);
-  }
-
-  for (const [queryKey, tasks] of snapshot.previousDeadlineTasks) {
     queryClient.setQueryData(queryKey, tasks);
   }
 }
@@ -231,12 +203,6 @@ export function updateBoardTaskCaches(
     { queryKey: ['tasks-full', boardId] },
     updater
   );
-  queryClient.setQueriesData<Task[]>(
-    {
-      predicate: (query) => isBoardDeadlineTaskQuery(query.queryKey, boardId),
-    },
-    updater
-  );
 }
 
 export function restoreFailedBoardTasks({
@@ -244,21 +210,15 @@ export function restoreFailedBoardTasks({
   boardId,
   previousTasks,
   previousFullTasks,
-  previousDeadlineTasks,
   failedTaskIds,
 }: {
   queryClient: QueryClient;
   boardId: string;
   previousTasks: Task[] | undefined;
   previousFullTasks?: [QueryKey, Task[] | undefined][];
-  previousDeadlineTasks?: [QueryKey, Task[] | undefined][];
   failedTaskIds: Iterable<string>;
 }) {
-  if (
-    !Array.isArray(previousTasks) &&
-    !previousFullTasks?.length &&
-    !previousDeadlineTasks?.length
-  ) {
+  if (!Array.isArray(previousTasks) && !previousFullTasks?.length) {
     return;
   }
 
@@ -269,10 +229,7 @@ export function restoreFailedBoardTasks({
 
   const previousTaskMap = new Map<string, Task>();
 
-  for (const [, tasks] of [
-    ...(previousFullTasks ?? []),
-    ...(previousDeadlineTasks ?? []),
-  ]) {
+  for (const [, tasks] of previousFullTasks ?? []) {
     for (const task of tasks ?? []) {
       previousTaskMap.set(task.id, task);
     }
@@ -296,21 +253,15 @@ export function restoreDeletedBoardTasks({
   boardId,
   previousTasks,
   previousFullTasks,
-  previousDeadlineTasks,
   failedTaskIds,
 }: {
   queryClient: QueryClient;
   boardId: string;
   previousTasks: Task[] | undefined;
   previousFullTasks?: [QueryKey, Task[] | undefined][];
-  previousDeadlineTasks?: [QueryKey, Task[] | undefined][];
   failedTaskIds: Iterable<string>;
 }) {
-  if (
-    !Array.isArray(previousTasks) &&
-    !previousFullTasks?.length &&
-    !previousDeadlineTasks?.length
-  ) {
+  if (!Array.isArray(previousTasks) && !previousFullTasks?.length) {
     return;
   }
 
@@ -322,10 +273,7 @@ export function restoreDeletedBoardTasks({
   const previousTaskMap = new Map<string, Task>();
   const previousOrder = new Map<string, number>();
 
-  for (const [, tasks] of [
-    ...(previousFullTasks ?? []),
-    ...(previousDeadlineTasks ?? []),
-  ]) {
+  for (const [, tasks] of previousFullTasks ?? []) {
     for (const task of tasks ?? []) {
       if (!previousOrder.has(task.id)) {
         previousOrder.set(task.id, previousOrder.size);

@@ -11,9 +11,8 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { updateWorkspaceTaskList } from '@tuturuuu/internal-api';
-import type { ListWorkspaceTasksOptions } from '@tuturuuu/internal-api/tasks';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -41,10 +40,6 @@ import { BulkActionsIsland } from './kanban/bulk/bulk-actions-island';
 import { BulkCustomDateDialog } from './kanban/bulk/bulk-custom-date-dialog';
 import { BulkDeleteDialog } from './kanban/bulk/bulk-delete-dialog';
 import { useBulkOperations } from './kanban/bulk/bulk-operations';
-import {
-  getKanbanDeadlineTasksQueryKey,
-  listKanbanDeadlineTasks,
-} from './kanban/data/kanban-deadline-query';
 import { useAppliedSets } from './kanban/data/use-applied-sets';
 import { useBulkResources } from './kanban/data/use-bulk-resources';
 import { useFilteredResources } from './kanban/data/use-filtered-resources';
@@ -56,16 +51,9 @@ import { useKanbanDnd } from './kanban/dnd/use-kanban-dnd';
 import { DRAG_ACTIVATION_DISTANCE } from './kanban/kanban-constants';
 import { ManualTaskOrderingDialog } from './kanban/manual-task-ordering-dialog';
 import { KanbanColumns } from './kanban/rendering/kanban-columns';
-import type {
-  KanbanDeadlineCollapsedState,
-  KanbanDeadlineSection,
-} from './kanban/rendering/kanban-deadline-panels';
-import { buildKanbanDeadlineSections } from './kanban/rendering/kanban-deadline-tasks';
 import { useKeyboardShortcuts } from './kanban/selection/use-keyboard-shortcuts';
 import { useMultiSelect } from './kanban/selection/use-multi-select';
 import type { TaskFilters } from './task-filter';
-
-const DEADLINE_REFRESH_INTERVAL_MS = 60_000;
 
 interface Props {
   workspace: Pick<Workspace, 'id' | 'personal'>;
@@ -79,16 +67,10 @@ interface Props {
   disableSort?: boolean;
   listStatusFilter?: ListStatusFilter;
   filters?: TaskFilters;
-  deadlineTaskQueryOptions?: ListWorkspaceTasksOptions;
   isMultiSelectMode: boolean;
   setIsMultiSelectMode: (enabled: boolean) => void;
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
   onTaskListCollapsedChange?: (listId: string, collapsed: boolean) => void;
-  deadlineSectionsCollapsed?: KanbanDeadlineCollapsedState;
-  onDeadlineSectionCollapsedChange?: (
-    section: KanbanDeadlineSection,
-    collapsed: boolean
-  ) => void;
   specialTaskListPins?: SpecialTaskListPinState;
   onSpecialTaskListPinnedChange?: (
     pin: SpecialTaskListPin,
@@ -113,13 +95,10 @@ export function KanbanBoard({
   disableSort = false,
   listStatusFilter = 'all',
   filters,
-  deadlineTaskQueryOptions,
   isMultiSelectMode,
   setIsMultiSelectMode,
   onExternalTasksCollapsedChange,
   onTaskListCollapsedChange,
-  deadlineSectionsCollapsed,
-  onDeadlineSectionCollapsedChange,
   specialTaskListPins,
   onSpecialTaskListPinnedChange,
   onBulkSelectionActiveChange,
@@ -129,8 +108,6 @@ export function KanbanBoard({
   readOnly = false,
   onFiltersChange,
 }: Props) {
-  const tCommon = useTranslations('common');
-  const tBoards = useTranslations('ws-task-boards');
   const tLayout = useTranslations('ws-task-boards.layout_settings');
   const tTasks = useTranslations('ws-tasks');
   const invalidColumnMoveMessage = tLayout.has('cannot_reorder_across_statuses')
@@ -142,7 +119,6 @@ export function KanbanBoard({
   const [bulkCustomDateOpen, setBulkCustomDateOpen] = useState(false);
   const [manualOrderingDialogOpen, setManualOrderingDialogOpen] =
     useState(false);
-  const [deadlineNow, setDeadlineNow] = useState(() => Date.now());
 
   // Search state
   const [labelSearchQuery, setLabelSearchQuery] = useState('');
@@ -171,25 +147,6 @@ export function KanbanBoard({
     readOnly ? null : boardId,
     readOnly ? null : workspaceId
   );
-  const {
-    data: deadlineTasks = [],
-    isPending: deadlineTasksPending,
-    isError: deadlineTasksError,
-  } = useQuery({
-    enabled: Boolean(boardId) && !readOnly,
-    queryFn: () =>
-      listKanbanDeadlineTasks({
-        boardId: boardId ?? '',
-        taskQueryOptions: deadlineTaskQueryOptions,
-        workspaceId,
-      }),
-    queryKey: getKanbanDeadlineTasksQueryKey(
-      workspaceId,
-      boardId,
-      deadlineTaskQueryOptions
-    ),
-    staleTime: 30_000,
-  });
   const persistListPositions = useCallback(
     async (updates: Array<{ listId: string; newPosition: number }>) => {
       if (!boardId || updates.length === 0) return;
@@ -241,39 +198,6 @@ export function KanbanBoard({
     () => orderedColumns.map((col) => col.id),
     [orderedColumns]
   );
-  const deadlineSections = useMemo(
-    () =>
-      buildKanbanDeadlineSections({
-        deadlineTasks,
-        lists: orderedColumns,
-        now: new Date(deadlineNow),
-        visibleTasks: tasks,
-      }),
-    [deadlineNow, deadlineTasks, orderedColumns, tasks]
-  );
-  const deadlineLabels = useMemo(
-    () => ({
-      collapseSection: (name: string) => tTasks('collapse_task_list', { name }),
-      expandSection: (name: string) => tTasks('expand_task_list', { name }),
-      filter: tCommon('filters'),
-      overdue: tTasks('overdue'),
-      pinSection: (name: string) => tTasks('pin_task_list', { name }),
-      reset: tCommon('reset'),
-      showDocuments: tTasks('external_tasks_show_documents'),
-      showExternalTasks: tTasks('external_tasks'),
-      sort: tCommon('sort'),
-      sortCreatedAsc: tBoards('filters.sort_options.oldest_first'),
-      sortCreatedDesc: tBoards('filters.sort_options.newest_first'),
-      sortDueAsc: tBoards('filters.sort_options.soonest_first'),
-      sortDueDesc: tBoards('filters.sort_options.latest_first'),
-      sortNameAsc: tTasks('external_tasks_sort_name_asc'),
-      sortSourceAsc: tTasks('external_tasks_sort_source_asc'),
-      unpinSection: (name: string) => tTasks('unpin_task_list', { name }),
-      upcoming: tTasks('upcoming'),
-    }),
-    [tBoards, tCommon, tTasks]
-  );
-
   // Selection Hook
   const { selectedTasks, handleTaskSelect, clearSelection } = useMultiSelect(
     tasks,
@@ -284,16 +208,6 @@ export function KanbanBoard({
   useEffect(() => {
     onBulkSelectionActiveChange?.(selectedTasks.size > 0);
   }, [onBulkSelectionActiveChange, selectedTasks.size]);
-
-  useEffect(() => {
-    if (readOnly) return;
-
-    const interval = window.setInterval(() => {
-      setDeadlineNow(Date.now());
-    }, DEADLINE_REFRESH_INTERVAL_MS);
-
-    return () => window.clearInterval(interval);
-  }, [readOnly]);
 
   useEffect(
     () => () => {
@@ -498,21 +412,17 @@ export function KanbanBoard({
   }
 
   if (
-    (Boolean(filters?.searchQuery?.trim()) &&
-      (isSearchError || deadlineTasksError)) ||
+    (Boolean(filters?.searchQuery?.trim()) && isSearchError) ||
     shouldShowTaskSearchEmpty({
       query: filters?.searchQuery,
-      taskCount:
-        tasks.length +
-        deadlineSections.overdue.length +
-        deadlineSections.upcoming.length,
-      pending: !readOnly && deadlineTasksPending,
-      failed: isSearchError || deadlineTasksError,
+      taskCount: tasks.length,
+      pending: false,
+      failed: isSearchError,
     })
   ) {
     return (
       <TaskSearchEmptyState
-        failed={isSearchError || deadlineTasksError}
+        failed={isSearchError}
         query={filters?.searchQuery ?? ''}
         onClear={
           onFiltersChange && filters
@@ -613,12 +523,6 @@ export function KanbanBoard({
             }}
             boardRef={boardRef}
             columnsId={columnsId}
-            deadlineLabels={deadlineLabels}
-            deadlineSections={deadlineSections}
-            deadlineSectionsLoading={deadlineTasksPending}
-            deadlineSectionsCollapsed={deadlineSectionsCollapsed}
-            deadlineNow={deadlineNow}
-            onDeadlineSectionCollapsedChange={onDeadlineSectionCollapsedChange}
             onExternalTasksCollapsedChange={onExternalTasksCollapsedChange}
             onTaskListCollapsedChange={onTaskListCollapsedChange}
             specialTaskListPins={specialTaskListPins}

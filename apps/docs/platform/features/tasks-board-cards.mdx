@@ -1,0 +1,41 @@
+---
+title: "Tasks board cards"
+description: "Inline task IDs on board cards and overdue tasks staying in their own list"
+---
+
+## Scope and default
+
+This applies to task cards in the shared board UI used by Web and Tasks:
+Kanban and List cards on member, project and public boards. It changes no task
+data or permissions.
+
+## Task IDs
+
+A card shows its ID before the title, as `[DEV-248] Title`, in the title's own
+color. There is no separate ID chip. The title button's accessible name reads
+the same `[DEV-248] Title`, so screen readers announce the ID.
+Cards in a Documents list keep their existing omission of the ID. The row above
+the title appears only for selection, the document badge and the external-source
+badge, and is absent otherwise.
+
+## Overdue tasks
+
+Kanban has no Overdue or Upcoming columns. An overdue task stays in its own
+list and keeps its red corner and red due date. A card on an open board
+re-checks its due date every minute, so it turns overdue without a reload.
+Done and closed tasks, and tasks with no due date, never turn overdue and do
+not re-render on that clock.
+
+Saved board layouts and pins that still list the Overdue or Upcoming columns
+are read without them; nothing needs migrating.
+
+## Exceptions
+
+Personal external task snapshots keep their source breadcrumb.
+
+Regression coverage:
+
+- `packages/tasks-ui/src/tu-do/boards/boardId/task-card/use-minute-clock.test.tsx`
+- `packages/tasks-ui/src/tu-do/boards/boardId/task-card/task-card-identifier-row.test.tsx`
+- `packages/tasks-ui/src/tu-do/boards/boardId/kanban/rendering/kanban-columns.test.tsx`
+- `packages/tasks-ui/src/tu-do/shared/use-kanban-layout-state.test.tsx`

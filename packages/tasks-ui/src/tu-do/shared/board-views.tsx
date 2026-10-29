@@ -41,7 +41,6 @@ import {
   useState,
 } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
-import type { KanbanDeadlineCollapsedState } from '../boards/boardId/kanban/rendering/kanban-deadline-panels';
 import type { TaskFilters } from '../boards/boardId/task-filter';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
 import { DraftsPage } from '../drafts/drafts-page';
@@ -323,13 +322,6 @@ export function BoardViews({
       taskQueryOptions,
     ]
   );
-  const deadlineTaskQueryOptions = useMemo<ListWorkspaceTasksOptions>(() => {
-    const { sortBy: _sortBy, ...filterOptions } = taskQueryOptions;
-    return {
-      ...filterOptions,
-      listStatuses: listStatusesForQuery,
-    };
-  }, [listStatusesForQuery, taskQueryOptions]);
   const viewHotkeyLabels = useMemo(
     () => ({
       kanban: formatHotkeySequence(HOTKEY_GO_TO_KANBAN),
@@ -432,9 +424,7 @@ export function BoardViews({
     staleTime: Infinity,
   });
   const {
-    deadlineSectionsCollapsed,
     externalTasksCollapsed,
-    handleDeadlineSectionCollapsedChange,
     handleExternalTasksCollapsedChange,
     handleTaskListCollapsedChange,
     kanbanLayoutRestored,
@@ -561,15 +551,6 @@ export function BoardViews({
       ? [externalStagingList, ...realLists]
       : realLists;
   }, [boardLists, externalStagingList, taskListsCollapsed]);
-
-  const effectiveDeadlineSectionsCollapsed =
-    useMemo<KanbanDeadlineCollapsedState>(
-      () => ({
-        overdue: deadlineSectionsCollapsed.overdue,
-        upcoming: deadlineSectionsCollapsed.upcoming,
-      }),
-      [deadlineSectionsCollapsed.overdue, deadlineSectionsCollapsed.upcoming]
-    );
 
   const {
     data: filteredListCounts,
@@ -889,17 +870,12 @@ export function BoardViews({
             isSearchError={!localTaskState && isFullTasksError}
             disableSort={!!filters.sortBy}
             onFiltersChange={setFilters}
-            deadlineTaskQueryOptions={deadlineTaskQueryOptions}
             listStatusFilter={listStatusFilter}
             filters={filters}
             isMultiSelectMode={readOnly ? false : isMultiSelectMode}
             setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
             onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
             onTaskListCollapsedChange={handleTaskListCollapsedChange}
-            deadlineSectionsCollapsed={effectiveDeadlineSectionsCollapsed}
-            onDeadlineSectionCollapsedChange={
-              handleDeadlineSectionCollapsedChange
-            }
             specialTaskListPins={specialTaskListPins}
             onSpecialTaskListPinnedChange={handleSpecialTaskListPinnedChange}
             onBulkSelectionActiveChange={setKanbanBulkSelectionActive}

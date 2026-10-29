@@ -4,7 +4,6 @@ import { type QueryClient, useMutation } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
-import { invalidateKanbanDeadlineTasks } from '../data/kanban-deadline-query';
 import type { BulkOperationI18n } from './bulk-operation-i18n';
 import {
   bulkWorkspaceTasksByEffectiveWorkspace,
@@ -98,7 +97,6 @@ export function useBulkUpdatePriority(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
-        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -215,7 +213,6 @@ export function useBulkUpdateEstimation(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
-        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -335,7 +332,6 @@ export function useBulkUpdateDueDate(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
-        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -344,7 +340,6 @@ export function useBulkUpdateDueDate(
           task: { id: tid, end_date: data.end_date },
         });
       }
-      void invalidateKanbanDeadlineTasks(queryClient, boardId);
 
       if (data.failures.length > 0) {
         toast.warning(
@@ -455,7 +450,6 @@ export function useBulkUpdateCustomDueDate(
         boardId,
         previousTasks: context?.previousTasks,
         previousFullTasks: context?.previousFullTasks,
-        previousDeadlineTasks: context?.previousDeadlineTasks,
         failedTaskIds,
       });
 
@@ -464,7 +458,6 @@ export function useBulkUpdateCustomDueDate(
           task: { id: tid, end_date: data.end_date },
         });
       }
-      void invalidateKanbanDeadlineTasks(queryClient, boardId);
 
       if (data.failures.length > 0) {
         toast.warning(
