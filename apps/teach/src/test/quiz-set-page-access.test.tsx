@@ -17,6 +17,12 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@/lib/resolve-route-workspace', () => ({
   resolveRouteWorkspace: async () => ({ resolvedWsId: 'workspace-a' }),
 }));
+vi.mock('@/lib/education-page-access', () => ({
+  requireEducationPageAccess: async () => undefined,
+}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getWorkspace: async () => ({ id: 'workspace-a' }),
+}));
 vi.mock('next/navigation', () => ({
   notFound: () => {
     throw new Error('not-found');

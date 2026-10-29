@@ -29,7 +29,12 @@ beforeEach(() => {
   state.own = false;
   state.from.mockReset().mockImplementation((_table: string) => {
     const filters: Record<string, string> = {};
+    let ids: string[] = [];
     const query = {
+      in: (_key: string, values: string[]) => {
+        ids = values;
+        return query;
+      },
       select: () => query,
       eq: (key: string, value: string) => {
         filters[key] = value;
@@ -49,7 +54,17 @@ beforeEach(() => {
       }),
       // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
       then: (resolve: (value: unknown) => void) =>
-        resolve({ data: [{ id: 'private-content' }], count: 1, error: null }),
+        resolve({
+          data:
+            _table === 'workspace_course_modules' ||
+            _table === 'workspace_user_groups'
+              ? state.own
+                ? ids.map((id) => ({ id, group_id: 'group' }))
+                : []
+              : [{ id: 'private-content' }],
+          count: 1,
+          error: null,
+        }),
     };
     return query;
   });
