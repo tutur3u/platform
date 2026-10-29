@@ -212,7 +212,14 @@ without `manage_finance` need whitelist access to every current and requested
 wallet involved in a transaction create, update or delete, or a transfer
 create or update. The one exception is the workspace default wallet
 (`default_wallet_id`): it stays writable for these writers when no role
-whitelist names it, matching the default wallet the wallets list shows them.
+whitelist names it. The wallets list returns that unwhitelisted default wallet
+to transaction writers and invoice creators with invoice-safe fields only (id,
+name, type, currency, icon and image) and no balance, credit, audit or viewing
+window data, even when they hold `view_transactions`. A default wallet that a
+role whitelists keeps the fields that role is permitted to read. The
+single-config and bulk workspace settings routes accept a `default_wallet_id`
+change only from holders of `change_finance_wallets`, and only for a wallet in
+the same workspace.
 Any other unwhitelisted wallet returns 404. Finance managers retain
 workspace-wide wallet access. Recurring transactions validate their wallet and
 category ids as UUIDs, then check workspace ownership with the service-role
@@ -222,8 +229,9 @@ existing wallet uses its update route. Legacy wallet migration and Money Lover
 import require `manage_finance`.
 
 Regression coverage: `finance-boundaries.test.ts`,
-`finance-write-boundaries.test.ts`, and the subscription invoice and role wallet
-route tests.
+`finance-write-boundaries.test.ts`, the wallets route `default-wallet.test.ts`,
+`workspace-settings-configs-route.test.ts`, and the subscription invoice and
+role wallet route tests.
 
 ## Wallet checkpoint reconciliation submission
 
