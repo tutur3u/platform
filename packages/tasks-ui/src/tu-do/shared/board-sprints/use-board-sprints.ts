@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  addWorkspaceTaskBoardSprint,
   type BoardSprint,
   type BoardSprintEndDecision,
   type BoardSprintGoalResult,
@@ -9,7 +10,9 @@ import {
   type BoardSprintsResponse,
   endWorkspaceTaskBoardSprint,
   listWorkspaceTaskBoardSprints,
+  moveTasksOutOfWorkspaceTaskBoardSprints,
   moveTasksToWorkspaceTaskBoardSprint,
+  removeWorkspaceTaskBoardSprint,
   startWorkspaceTaskBoardSprint,
   updateWorkspaceTaskBoardSprint,
   updateWorkspaceTaskBoardSprintLength,
@@ -51,6 +54,7 @@ export function useBoardSprints({
       data?.schemaAvailable && data.sprintLengthWeeks !== null
     );
     const currentSprint = sprintsOn ? getCurrentBoardSprint(sprints) : null;
+    const unplannedTaskIds = new Set(data?.unplannedTaskIds ?? []);
     return {
       schemaAvailable: data?.schemaAvailable === true,
       sprints,
@@ -62,9 +66,12 @@ export function useBoardSprints({
       currentSprintTaskIds: currentSprint
         ? new Set(currentSprint.tasks.map((task) => task.task_id))
         : null,
+      // Open tasks parked outside every sprint wait in Plan's backlog.
+      unplannedTaskIds,
       // Board view membership; null shows every task (sprints off).
       showsOnBoard: currentSprint
         ? (task: Task) =>
+            !unplannedTaskIds.has(task.id) &&
             isTaskInCurrentSprintView(task, sprints, currentSprint)
         : null,
     };
@@ -109,16 +116,24 @@ export function useBoardSprintMutations({
       sprintId,
       taskIds,
     }: {
-      sprintId: string;
+      // null takes the tasks out of every sprint.
+      sprintId: string | null;
       taskIds: string[];
-    }) => moveTasksToWorkspaceTaskBoardSprint(wsId, boardId, sprintId, taskIds),
+    }) =>
+      sprintId
+        ? moveTasksToWorkspaceTaskBoardSprint(wsId, boardId, sprintId, taskIds)
+        : moveTasksOutOfWorkspaceTaskBoardSprints(wsId, boardId, taskIds),
     onMutate: async ({ sprintId, taskIds }) => {
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<BoardSprintsResponse>(key);
       if (previous) {
         const moving = new Set(taskIds);
+        const unplanned = (previous.unplannedTaskIds ?? []).filter(
+          (taskId) => !moving.has(taskId)
+        );
         queryClient.setQueryData<BoardSprintsResponse>(key, {
           ...previous,
+          unplannedTaskIds: sprintId ? unplanned : [...unplanned, ...taskIds],
           sprints: previous.sprints.map((sprint) => {
             const open =
               sprint.status === 'planned' || sprint.status === 'active';
@@ -172,5 +187,25 @@ export function useBoardSprintMutations({
     },
   });
 
-  return { end, moveTasks, setLength, start, updateGoal };
+  const addSprint = useMutation({
+    mutationFn: () => addWorkspaceTaskBoardSprint(wsId, boardId),
+    onSuccess: store,
+  });
+
+  // Removes the last planned sprint; its tasks move to the sprint before it.
+  const removeSprint = useMutation({
+    mutationFn: (sprintId: string) =>
+      removeWorkspaceTaskBoardSprint(wsId, boardId, sprintId),
+    onSuccess: store,
+  });
+
+  return {
+    addSprint,
+    end,
+    moveTasks,
+    removeSprint,
+    setLength,
+    start,
+    updateGoal,
+  };
 }

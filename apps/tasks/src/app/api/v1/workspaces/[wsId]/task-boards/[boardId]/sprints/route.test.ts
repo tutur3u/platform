@@ -40,10 +40,11 @@ vi.mock('../lists/access', () => ({
 
 import { serializeSprint } from './_lib';
 import { POST as END } from './[sprintId]/end/route';
-import { PATCH } from './[sprintId]/route';
+import { DELETE, PATCH } from './[sprintId]/route';
 import { POST as START } from './[sprintId]/start/route';
 import { POST as MOVE } from './[sprintId]/tasks/route';
-import { GET, PUT } from './route';
+import { POST as ADD, GET, PUT } from './route';
+import { POST as UNPLAN } from './unplanned/route';
 
 const BOARD_ID = '00000000-0000-4000-8000-000000000b01';
 const SPRINT_ID = '00000000-0000-4000-8000-000000000c14';
@@ -210,6 +211,24 @@ describe('board sprint routes', () => {
       },
     ]);
     expect(body.sprints[1].report).toBeNull();
+    expect(body.unplannedTaskIds).toEqual([]);
+  });
+
+  it('lists the open tasks parked outside every sprint', async () => {
+    const sbAdmin = createAdmin({
+      workspace_boards: { data: { sprint_length_weeks: 2 }, error: null },
+      task_cycles: { data: sprintRows, error: null },
+      task_sprint_reports: { data: [], error: null },
+    });
+    sbAdmin.rpc.mockResolvedValueOnce({ data: [TASK_B], error: null } as never);
+    grantAccess(sbAdmin);
+
+    const body = await (await GET(request('GET'), params())).json();
+
+    expect(sbAdmin.rpc).toHaveBeenCalledWith('list_board_unplanned_task_ids', {
+      p_board_id: BOARD_ID,
+    });
+    expect(body.unplannedTaskIds).toEqual([TASK_B]);
   });
 
   it('marks finished members done and leaves deleted tasks out of a sprint', () => {
@@ -263,6 +282,7 @@ describe('board sprint routes', () => {
       schemaAvailable: false,
       sprintLengthWeeks: null,
       sprints: [],
+      unplannedTaskIds: [],
     });
   });
 
@@ -361,6 +381,75 @@ describe('board sprint routes', () => {
     expect(sbAdmin.rpc).toHaveBeenCalledWith('move_tasks_to_board_sprint', {
       p_board_id: BOARD_ID,
       p_cycle_id: SPRINT_ID,
+      p_task_ids: [TASK_A, TASK_B],
+    });
+  });
+
+  it('plans one more sprint and refuses past the open sprint limit', async () => {
+    const sbAdmin = createAdmin({
+      workspace_boards: { data: { sprint_length_weeks: 2 }, error: null },
+      task_cycles: { data: sprintRows, error: null },
+      task_sprint_reports: { data: [], error: null },
+    });
+    grantAccess(sbAdmin, 'guest');
+
+    const added = await ADD(request('POST', {}), params());
+    expect(added.status).toBe(200);
+    expect(sbAdmin.rpc).toHaveBeenCalledWith('add_board_sprint', {
+      p_actor_id: 'user-1',
+      p_board_id: BOARD_ID,
+    });
+
+    sbAdmin.rpc.mockResolvedValueOnce({
+      data: null,
+      error: { code: '55000', message: 'SPRINT_LIMIT_REACHED' },
+    } as never);
+    const refused = await ADD(request('POST', {}), params());
+    expect(refused.status).toBe(409);
+    expect(await refused.json()).toEqual({
+      code: 'SPRINT_LIMIT_REACHED',
+      error: 'SPRINT_LIMIT_REACHED',
+    });
+  });
+
+  it('removes a planned sprint of this board only', async () => {
+    const sbAdmin = createAdmin({
+      task_cycles: { data: { id: SPRINT_ID, status: 'planned' }, error: null },
+    });
+    sbAdmin.rpc.mockResolvedValueOnce({
+      data: null,
+      error: { code: '55000', message: 'SPRINT_NOT_LAST' },
+    } as never);
+    grantAccess(sbAdmin);
+
+    const response = await DELETE(request('DELETE'), params(SPRINT_ID));
+
+    expect(sbAdmin.rpc).toHaveBeenCalledWith('remove_board_sprint', {
+      p_actor_id: 'user-1',
+      p_cycle_id: SPRINT_ID,
+    });
+    expect(response.status).toBe(409);
+
+    const elsewhere = createAdmin({ task_cycles: { data: null, error: null } });
+    grantAccess(elsewhere);
+    const missing = await DELETE(request('DELETE'), params(SPRINT_ID));
+    expect(missing.status).toBe(404);
+    expect(elsewhere.rpc).not.toHaveBeenCalled();
+  });
+
+  it('takes unique tasks out of every sprint', async () => {
+    const sbAdmin = createAdmin({});
+    sbAdmin.rpc.mockResolvedValueOnce({ data: 2, error: null } as never);
+    grantAccess(sbAdmin, 'guest');
+
+    const response = await UNPLAN(
+      request('POST', { task_ids: [TASK_A, TASK_B, TASK_A] }),
+      params()
+    );
+
+    expect(await response.json()).toEqual({ moved: 2 });
+    expect(sbAdmin.rpc).toHaveBeenCalledWith('move_tasks_to_board_sprint', {
+      p_board_id: BOARD_ID,
       p_task_ids: [TASK_A, TASK_B],
     });
   });

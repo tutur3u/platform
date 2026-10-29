@@ -584,7 +584,11 @@ INSERT INTO definer_added_later VALUES
   ('public.start_board_sprint(uuid,uuid)'),
   -- apps/database/supabase/migrations/20261029060010_board_sprint_lifecycle.sql
   ('public.end_board_sprint(uuid,uuid,jsonb,text)'),
-  ('public.move_tasks_to_board_sprint(uuid,uuid[],uuid)');
+  ('public.move_tasks_to_board_sprint(uuid,uuid[],uuid)'),
+  -- apps/database/supabase/migrations/20261029020600_board_sprint_horizon.sql
+  ('public.add_board_sprint(uuid,uuid)'),
+  ('public.remove_board_sprint(uuid,uuid)'),
+  ('public.list_board_unplanned_task_ids(uuid)');
 SELECT is((SELECT count(*)::integer FROM definer_added_later l
   WHERE to_regprocedure(l.signature) IS NULL
     OR has_function_privilege('anon', to_regprocedure(l.signature), 'EXECUTE')

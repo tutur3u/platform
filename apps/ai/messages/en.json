@@ -3088,7 +3088,7 @@
       "length_saved": "Sprint length saved",
       "next": "Next",
       "off": "Off",
-      "settings_description": "Plan one sprint at a time on this board. Tasks without their own due date are due when the sprint ends.",
+      "settings_description": "Plan up to five sprints at a time on this board. Tasks without their own due date are due when their sprint ends.",
       "settings_title": "Sprints",
       "sprint_length": "Sprint length",
       "sprints": "Sprints",
@@ -3181,7 +3181,17 @@
       "moved_to_sprint": "Moved to {name}",
       "not_in_sprint": "Not in a sprint",
       "sprint_field": "Sprint",
-      "sprint_history": "Sprints {list}"
+      "sprint_history": "Sprints {list}",
+      "add_sprint": "Add sprint",
+      "add_sprint_failed": "Couldn't add a sprint",
+      "all_sprints": "All sprints",
+      "ended_sprints": "Ended",
+      "moved_out_of_sprints": "Moved out of sprints",
+      "no_sprint": "No sprint",
+      "remove_sprint": "Remove {name}",
+      "remove_sprint_failed": "Couldn't remove the sprint",
+      "sprint_limit": "Up to {count}",
+      "sprint_menu": "Move {name} to a sprint"
     }
   },
   "satellite-account-settings": {
