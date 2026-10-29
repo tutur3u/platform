@@ -6,10 +6,10 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "types": ["node"]
+    "types": ["@cloudflare/workers-types", "node"]
   },
   "include": [
-    ".cloudflare/types/index.d.ts",
+    "cloudflare-env.d.ts",
     "src/**/*.ts",
     "cloudflare.config.ts",
     "vite.config.ts",

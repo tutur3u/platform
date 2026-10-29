@@ -87,6 +87,17 @@ replay tombstone (sequence/counters, no content), preventing a captured signed
 ingest from recreating erased content. Erase before removing the user from both
 allowlists; a de-allowlisted identity cannot reach its object.
 
+## Type checking
+
+The Worker tsconfig loads the pinned `@cloudflare/workers-types` and the committed
+`cloudflare-env.d.ts`, derived from `cf workers types --include-runtime=false`.
+The environment declarations infer bindings from `cloudflare.config.ts`; when
+relocating generated output, keep the config import relative to the declaration
+file and prefix its helper aliases with `__OpsHub` to avoid ambient collisions.
+A clean checkout can run `ttr resources run -- bun check --no-script -p apps/ops-hub`
+without generating ignored `.cloudflare` files first. The workspace `type-check`
+script also generates provider types before running TypeScript.
+
 ## Cost and test evidence
 
 Limits: 256 KiB streamed ingest, 100 events per envelope, 1,000 retained events,
