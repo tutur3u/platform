@@ -1,6 +1,7 @@
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { verifyAppCoordinationToken } from './app-coordination-token';
+import type { VerifiedUserResult } from './request-verified-user';
 import { bindCurrentMfaFactor } from './required-mfa-lineage';
 import {
   isMfaSessionProof,
@@ -22,6 +23,8 @@ export interface AccountAssuranceDependencies {
   createUserClient(request: RequestLike): Promise<TypedSupabaseClient>;
   createAdminClient(): Promise<TypedSupabaseClient>;
   nowSeconds(): number;
+  /** Request-scoped lookup for an app token's principal; defaults to admin. */
+  getAppTokenUser?(userId: string): Promise<VerifiedUserResult>;
 }
 
 /** Enforces fresh server-owned policy, never user metadata or unverified JWTs.
@@ -47,9 +50,9 @@ export async function checkRequiredAccountMfa(
       const verification = verifyAppCoordinationToken(token);
       if (!verification.ok) return { status: 'invalid' };
       admin = await dependencies.createAdminClient();
-      const result = await admin.auth.admin.getUserById(
+      const result = await (dependencies.getAppTokenUser?.(
         verification.claims.sub
-      );
+      ) ?? admin.auth.admin.getUserById(verification.claims.sub));
       if (result.error || !result.data.user) return { status: 'unavailable' };
       user = result.data.user;
       if (user.id !== verification.claims.sub || user.id !== principal.userId) {
