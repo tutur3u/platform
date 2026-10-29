@@ -737,3 +737,16 @@ DROP POLICY "old_policy" ON workspace_tasks;
 
 - [Supabase Migrations](https://supabase.com/docs/guides/cli/local-development#database-migrations)
 - [PostgreSQL ALTER TABLE](https://www.postgresql.org/docs/current/sql-altertable.html)
+
+### Declarative grant guard (P2-2)
+
+The SQL grant guard checks new or changed migration, schema, and rollback files.
+Every created function needs a subsequent same-file, matching-signature `REVOKE ALL`
+from `PUBLIC, anon, authenticated` and an explicit `GRANT EXECUTE` to intended roles.
+Definers require `pg_catalog` first and `pg_temp` last; empty paths, bare `public`,
+and user-dependent or explicit temporary namespaces fail. The pgTAP search-path
+gate remains authoritative for effective schema CREATE privileges. Rollbacks also
+reject public or anonymous grants, TRUNCATE, MAINTAIN, and default-privilege
+restoration, and must match a migration with an approved rollback suffix.
+Untouched history remains report-only through `node scripts/ci/sql-grant-guard.js --report`.
+Run `node --test scripts/ci/sql-grant-guard.test.js` for positive and negative fixtures.

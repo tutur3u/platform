@@ -7,6 +7,7 @@
 // Policy: apps/docs/reference/database/migrations-guide.mdx#sql-grant-guard
 
 const fs = require('node:fs');
+const { execFileSync } = require('node:child_process');
 const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
@@ -323,6 +324,116 @@ function scanSql(sql, { definerRule }) {
   return findings.sort((left, right) => left.line - right.line);
 }
 
+// P2 rules deliberately have no inline exemptions.
+function scanExtensions(sql, { rollback = false } = {}) {
+  const { statements } = parseStatements(sql);
+  const findings = [];
+  const add = (rule, statement, detail) =>
+    findings.push({ rule, line: statement.startLine, detail });
+  for (const [index, statement] of statements.entries()) {
+    const text = statement.text;
+    if (
+      rollback &&
+      (/^alter default privileges\b.*\bgrant\b/.test(text) ||
+        (GRANT.test(text) &&
+          (openGrantees(text).length ||
+            /^grant\s+(?:all\b|[^;]*\b(?:truncate|maintain)\b)/.test(text))))
+    ) {
+      add(
+        'rollback-safety',
+        statement,
+        'rollback restores unsafe grants or default privileges'
+      );
+    }
+    const create = CREATE_FUNCTION.exec(text);
+    if (!create) continue;
+    const routine = readRoutine(create[1]);
+    if (!routine || routine.args === null) continue;
+    const key = routineKey(routine.name, signatureTypes(routine.args));
+    const roles = new Set();
+    let granted = false;
+    for (const later of statements.slice(index + 1)) {
+      const revoke =
+        /^revoke all(?: privileges)? on (?:function|routine)\s+(.+?) from (.+)$/.exec(
+          later.text
+        );
+      const grant =
+        /^grant execute on (?:function|routine)\s+(.+?) to (.+)$/.exec(
+          later.text
+        );
+      const match = revoke || grant;
+      if (!match) continue;
+      for (const target of splitTopLevel(match[1])) {
+        const acl = readRoutine(target);
+        if (
+          !acl ||
+          acl.args === null ||
+          routineKey(acl.name, signatureTypes(acl.args)) !== key
+        )
+          continue;
+        if (revoke) for (const role of roleList(match[2])) roles.add(role);
+        else granted = roleList(match[2]).some(Boolean);
+      }
+    }
+    if (
+      !['public', 'anon', 'authenticated'].every((role) => roles.has(role)) ||
+      !granted
+    ) {
+      add(
+        'function-acl',
+        statement,
+        `${key} requires subsequent same-file REVOKE ALL from PUBLIC, anon, authenticated and GRANT EXECUTE`
+      );
+    }
+    if (/\bsecurity definer\b/.test(text)) {
+      const setting =
+        /\bset search_path\s*(?:=|to)\s*(.*?)(?=\s+(?:as|language|set|security|immutable|stable|volatile|parallel|cost|rows|support)\b|$)/.exec(
+          text
+        );
+      const schemas =
+        setting?.[1]
+          .split(',')
+          .map((name) =>
+            /^(?:[a-z_][a-z0-9_]*|"[a-z_][a-z0-9_]*")$/.test(name.trim())
+              ? name.trim().replaceAll('"', '')
+              : ''
+          ) ?? [];
+      if (
+        schemas[0] !== 'pg_catalog' ||
+        schemas.at(-1) !== 'pg_temp' ||
+        schemas.some(
+          (name, i) =>
+            !name ||
+            name === '$user' ||
+            /^pg_(?:toast_)?temp_/.test(name) ||
+            (name === 'pg_temp' && i !== schemas.length - 1)
+        )
+      ) {
+        add(
+          'definer-search-path',
+          statement,
+          `${key} requires pg_catalog first, pg_temp last and no empty or user-dependent schema`
+        );
+      }
+    }
+  }
+  return findings;
+}
+
+function changedSqlFiles(rootDir) {
+  const git = (...args) =>
+    execFileSync('git', args, { cwd: rootDir, encoding: 'utf8' });
+  const base = git('merge-base', 'HEAD', 'origin/main').trim();
+  return new Set(
+    (
+      git('diff', '--name-only', '--diff-filter=ACMR', '-z', base) +
+      git('ls-files', '--others', '--exclude-standard', '-z')
+    )
+      .split('\0')
+      .filter(Boolean)
+  );
+}
+
 const GUIDANCE = {
   [RULES.anonGrant]:
     'Grant to authenticated or service_role instead, or add "-- allow-anon-grant: <reason>" on the same or preceding line.',
@@ -333,11 +444,15 @@ const GUIDANCE = {
 // --- Repository evaluation ----------------------------------------------
 
 function listSqlFiles(rootDir = ROOT_DIR) {
-  return [MIGRATIONS_DIR, ROLLBACKS_DIR].flatMap((directory) => {
+  return [
+    MIGRATIONS_DIR,
+    ROLLBACKS_DIR,
+    'apps/database/supabase/schemas',
+  ].flatMap((directory) => {
     const absolute = path.join(rootDir, directory);
     if (!fs.existsSync(absolute)) return [];
     return fs
-      .readdirSync(absolute)
+      .readdirSync(absolute, { recursive: true })
       .filter((name) => name.endsWith('.sql'))
       .sort()
       .map((name) => `${directory}/${name}`);
@@ -348,22 +463,53 @@ function fileVersion(file) {
   return /^(\d{14})/.exec(path.posix.basename(file))?.[1] ?? null;
 }
 
-function evaluateSqlFiles({ files, readFile, cutoff = MIGRATION_CUTOFF }) {
+function evaluateSqlFiles({
+  files,
+  readFile,
+  cutoff = MIGRATION_CUTOFF,
+  changedFiles,
+}) {
   const violations = [];
   const legacy = [];
   for (const file of files) {
     const definerRule = file.startsWith(`${MIGRATIONS_DIR}/`);
-    if (!definerRule && !file.startsWith(`${ROLLBACKS_DIR}/`)) continue;
+    const rollback = file.startsWith(`${ROLLBACKS_DIR}/`);
+    const schema = file.startsWith('apps/database/supabase/schemas/');
+    if (!definerRule && !rollback && !schema) continue;
     const version = fileVersion(file);
     // Unversioned files cannot be shown to predate the rule.
     const enforced = version === null || version >= cutoff;
-    for (const finding of scanSql(readFile(file), { definerRule })) {
+    const sql = readFile(file);
+    const findings = scanSql(sql, { definerRule });
+    const changed = changedFiles?.has(file) ?? true;
+    if (changed && changedFiles) {
+      findings.push(...scanExtensions(sql, { rollback }));
+      if (rollback) {
+        const name = path.posix.basename(file);
+        const stem = name.replace(
+          /\.(?:incident-rollback|rollback|containment)\.sql$/,
+          '.sql'
+        );
+        if (stem === name || !files.includes(`${MIGRATIONS_DIR}/${stem}`)) {
+          findings.push({
+            rule: 'rollback-name',
+            line: 1,
+            detail:
+              'rollback filename must match a migration and use an approved rollback suffix',
+          });
+        }
+      }
+    }
+    for (const finding of findings) {
       const entry = {
         ...finding,
         file,
-        message: `${file}:${finding.line} ${finding.detail}. ${GUIDANCE[finding.rule]}`,
+        message: `${file}:${finding.line} ${finding.detail}. ${GUIDANCE[finding.rule] ?? 'See the SQL grant guard documentation.'}`,
       };
-      (enforced ? violations : legacy).push(entry);
+      (changed && (enforced || !Object.values(RULES).includes(finding.rule))
+        ? violations
+        : legacy
+      ).push(entry);
     }
   }
   return { violations, legacy };
@@ -372,6 +518,7 @@ function evaluateSqlFiles({ files, readFile, cutoff = MIGRATION_CUTOFF }) {
 function checkRepository(rootDir = ROOT_DIR) {
   return evaluateSqlFiles({
     files: listSqlFiles(rootDir),
+    changedFiles: changedSqlFiles(rootDir),
     readFile: (file) => fs.readFileSync(path.join(rootDir, file), 'utf8'),
   });
 }
@@ -417,4 +564,6 @@ module.exports = {
   formatLegacyReport,
   lexSql,
   scanSql,
+  scanExtensions,
+  changedSqlFiles,
 };

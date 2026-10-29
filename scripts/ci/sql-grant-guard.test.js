@@ -281,3 +281,122 @@ test('files before the cutoff are reported as legacy, not enforced', () => {
     /\(not enforced\): 2\n {2}anon-grant: 2 in 2 files\n {2}definer-public: 0 in 0 files/
   );
 });
+
+const { scanExtensions } = require('./sql-grant-guard');
+const createP2 = (path = 'pg_catalog, public, pg_temp') =>
+  `create function public.p2(id uuid) returns void language sql security definer set search_path = ${path} as $$select 1$$;`;
+const aclP2 =
+  'revoke all on function public.p2(uuid) from PUBLIC, anon, authenticated; grant execute on function public.p2(uuid) to service_role;';
+for (const [name, acl] of [
+  [
+    'missing revoke',
+    'grant execute on function public.p2(uuid) to service_role;',
+  ],
+  ['missing authenticated', aclP2.replace(', authenticated', '')],
+  ['missing grant', `${aclP2.split(';')[0]};`],
+  ['signature mismatch', aclP2.replaceAll('p2(uuid)', 'p2(text)')],
+  ['EXECUTE revoke only', aclP2.replace('revoke all', 'revoke execute')],
+]) {
+  test(`function-acl rejects ${name} and accepts complete ACL`, () => {
+    assert.ok(
+      scanExtensions(createP2() + acl).some((f) => f.rule === 'function-acl')
+    );
+    assert.deepEqual(scanExtensions(createP2() + aclP2), []);
+  });
+}
+for (const setting of [
+  'public',
+  "''",
+  'pg_temp, pg_catalog',
+  'pg_catalog, "$user", pg_temp',
+  'pg_catalog',
+  'pg_catalog, pg_temp, pg_temp',
+]) {
+  test(`definer-search-path rejects ${setting} in migrations and rollbacks`, () => {
+    for (const rollback of [false, true]) {
+      assert.ok(
+        scanExtensions(createP2(setting) + aclP2, { rollback }).some(
+          (f) => f.rule === 'definer-search-path'
+        )
+      );
+      assert.deepEqual(scanExtensions(createP2() + aclP2, { rollback }), []);
+    }
+  });
+}
+for (const grant of [
+  'grant select on public.t to anon;',
+  'grant execute on function public.p2(uuid) to PUBLIC;',
+  'grant maintain on public.t to authenticated;',
+  'grant truncate on public.t to service_role;',
+  'alter default privileges in schema public grant select on tables to authenticated;',
+]) {
+  test(`rollback-safety rejects ${grant}`, () => {
+    assert.ok(
+      scanExtensions(grant, { rollback: true }).some(
+        (f) => f.rule === 'rollback-safety'
+      )
+    );
+    assert.deepEqual(
+      scanExtensions('grant select on public.t to authenticated;', {
+        rollback: true,
+      }),
+      []
+    );
+  });
+}
+test('new rules enforce changed files while untouched historical files remain report-only', () => {
+  const files = [MIGRATION, ROLLBACK];
+  const run = (changedFiles) =>
+    evaluateSqlFiles({
+      files,
+      readFile: () => createP2() + aclP2,
+      changedFiles,
+    });
+  assert.deepEqual(run(new Set()).violations, []);
+  assert.deepEqual(run(new Set(files)).violations, []);
+  const bad = ROLLBACK.replace('example.rollback', 'wrong.rollback');
+  const result = evaluateSqlFiles({
+    files: [MIGRATION, bad],
+    readFile: () => '',
+    changedFiles: new Set([bad]),
+  });
+  assert.equal(result.violations[0].rule, 'rollback-name');
+});
+test('ACL before CREATE cannot satisfy function-acl; comments and bodies cannot satisfy it', () => {
+  assert.ok(
+    scanExtensions(aclP2 + createP2()).some((f) => f.rule === 'function-acl')
+  );
+  assert.ok(
+    scanExtensions(`${createP2()}-- ${aclP2}`).some(
+      (f) => f.rule === 'function-acl'
+    )
+  );
+  assert.deepEqual(scanExtensions(`-- ${createP2()}`), []);
+});
+
+test('changed historical functions still need the new ACL fence', () => {
+  const old = 'apps/database/supabase/migrations/20200101000000_old.sql';
+  const result = evaluateSqlFiles({
+    files: [old],
+    readFile: () => createP2(),
+    changedFiles: new Set([old]),
+  });
+  assert.ok(result.violations.some((f) => f.rule === 'function-acl'));
+});
+test('a quoted identifier containing commas cannot masquerade as a safe path', () => {
+  assert.ok(
+    scanExtensions(createP2('"pg_catalog, pg_temp"') + aclP2).some(
+      (f) => f.rule === 'definer-search-path'
+    )
+  );
+});
+
+test('rollback may revoke default privileges', () => {
+  assert.deepEqual(
+    scanExtensions(
+      'alter default privileges in schema public revoke all on tables from authenticated;',
+      { rollback: true }
+    ),
+    []
+  );
+});
