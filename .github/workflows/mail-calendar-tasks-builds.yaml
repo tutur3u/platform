@@ -31,6 +31,7 @@ on:
       - '.github/workflows/mail-calendar-tasks-builds.yaml'
       - '!**/*.md'
       - '!**/*.mdx'
+  # Feature and stack branches use the label-gated PR jobs; retain main push builds.
   push:
     branches: [main]
     paths:

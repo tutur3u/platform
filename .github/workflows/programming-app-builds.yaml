@@ -1,5 +1,6 @@
 name: Programming application builds
 on:
+  # No push trigger: feature and stack branches use ready-for-ci PR admission.
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:

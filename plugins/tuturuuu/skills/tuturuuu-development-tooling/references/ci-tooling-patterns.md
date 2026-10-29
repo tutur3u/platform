@@ -1,7 +1,6 @@
 # CI And Tooling Patterns
 
-Load this reference when changing root scripts, CI workflows, plugin validation,
-formatting behavior, or repo-wide verification.
+For root scripts, CI workflows, plugin validation, formatting and repo verification.
 
 ## Incremental Oxc and Worker adoption
 
@@ -185,15 +184,16 @@ See `apps/docs/build/devops/active-runtime.mdx`.
   <mod>::*;`; unit tests live in `src/tests.rs` (`mod tests;`). See
   `apps/backend/AGENTS.md` for the extraction pattern.
 
+## Heavy CI admission
+Use `PR_LABEL_GATE` for all PR actors/events. Heavy push triggers allow only
+protected refs and retained `release-please--branches--**` selectors, never feature
+branches. `pr-label-gate.test.js` covers both; keep release triggers/concurrency intact.
+
 ## Workflow token permissions
 
-The repository default `GITHUB_TOKEN` is write-all, so every workflow declares
-a workflow-level `permissions:` default of `contents: read` (or `{}`) and grants
-write scopes only on the jobs that use them. `check-ci` callers grant exactly
-`{contents: read, deployments: read}`, because GitHub refuses to start a run
-whose reusable workflow requests more than its caller grants.
-`scripts/ci/workflow-permissions.test.js` enforces the default, the reviewed
-workflow-level write allowlist, and caller and callee grants in both directions.
+Declare `permissions: contents: read` (or `{}`); grant writes per job. The repo
+default token is write-all. `check-ci` callers need `{contents: read, deployments: read}`.
+`workflow-permissions.test.js` checks defaults, write allowlists and callee grants.
 
 CodeQL PR uploads are diff-filtered; zero uploaded results do not clear the
 local SARIF gate. Triage at the analyzed SHA and current main: trace validation
