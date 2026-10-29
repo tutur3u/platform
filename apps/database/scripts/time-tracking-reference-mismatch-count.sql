@@ -1,7 +1,7 @@
 -- READ ONLY: counts existing time tracking rows whose references cross a
 -- workspace (or, for linked sessions, user) boundary. Run as a read-only role
 -- against the target database after the guard migration
--- 20261029100010_guard_time_tracking_reference_workspaces.sql is applied; the
+-- 20261029100400_guard_time_tracking_reference_workspaces.sql is applied; the
 -- guards only cover new writes, so existing mismatches are only counted here.
 -- No row content, ids or user data are returned and nothing is modified.
 begin read only;
