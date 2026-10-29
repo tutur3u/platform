@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { transactionTagQuery } from '../reference.fixture';
 import type { FinanceRouteAuthContext } from '../request-access';
 
 const mocks = vi.hoisted(() => {
@@ -129,6 +130,8 @@ const mocks = vi.hoisted(() => {
         };
       }
 
+      if (table === 'transaction_tags')
+        return transactionTagQuery(['33333333-3333-4333-8333-333333333333']);
       if (table === 'wallet_transaction_tags') {
         return {
           delete: vi.fn(() => ({
@@ -168,24 +171,19 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: vi.fn(() => Promise.resolve(mocks.sessionSupabase)),
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', async () => {
-  const actual = await vi.importActual<
-    typeof import('@tuturuuu/utils/workspace-helper')
-  >('@tuturuuu/utils/workspace-helper');
+vi.mock('../wallets/wallet-access', () => ({
+  getAccessibleWallet: vi.fn().mockResolvedValue({}),
+}));
 
+vi.mock('@tuturuuu/utils/workspace-helper', () => {
   return {
-    ...actual,
-    getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
-      mocks.getPermissions(...args),
-    getWorkspaceConfig: (
-      ...args: Parameters<typeof mocks.getWorkspaceConfig>
-    ) => mocks.getWorkspaceConfig(...args),
-    normalizeWorkspaceId: (
-      ...args: Parameters<typeof mocks.normalizeWorkspaceId>
-    ) => mocks.normalizeWorkspaceId(...args),
-    verifyWorkspaceMembershipType: vi.fn(() =>
-      Promise.resolve({ ok: true, membershipType: 'MEMBER' as const })
-    ),
+    getPermissions: mocks.getPermissions,
+    getWorkspaceConfig: mocks.getWorkspaceConfig,
+    normalizeWorkspaceId: mocks.normalizeWorkspaceId,
+    verifyWorkspaceMembershipType: vi.fn(async () => ({
+      ok: true,
+      membershipType: 'MEMBER' as const,
+    })),
   };
 });
 

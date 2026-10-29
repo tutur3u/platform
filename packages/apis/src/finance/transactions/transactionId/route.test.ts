@@ -156,6 +156,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: vi.fn(() => Promise.resolve(mocks.sessionSupabase)),
 }));
 
+vi.mock('../../wallets/wallet-access', () => ({
+  getAccessibleWallet: vi.fn().mockResolvedValue({}),
+}));
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
     mocks.getPermissions(...args),

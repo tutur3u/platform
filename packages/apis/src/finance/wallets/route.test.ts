@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   creditWalletUpsert: vi.fn(),
   privateRpc: vi.fn(),
   privateWalletSingle: vi.fn(),
-  privateWalletUpsert: vi.fn(),
+  privateWalletInsert: vi.fn(),
   roleMembersEq: vi.fn(),
   roleMembersWorkspaceEq: vi.fn(),
   walletEq: vi.fn(),
@@ -52,7 +52,7 @@ describe('wallets route', () => {
                   eq: mocks.walletEq,
                 };
               }),
-              upsert: mocks.privateWalletUpsert,
+              insert: mocks.privateWalletInsert,
             };
           }
 
@@ -116,7 +116,7 @@ describe('wallets route', () => {
       },
       error: null,
     });
-    mocks.privateWalletUpsert.mockReturnValue({
+    mocks.privateWalletInsert.mockReturnValue({
       select: vi.fn(() => ({
         single: mocks.privateWalletSingle,
       })),
@@ -383,7 +383,7 @@ describe('wallets route', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(mocks.privateWalletUpsert).toHaveBeenCalledWith([
+    expect(mocks.privateWalletInsert).toHaveBeenCalledWith([
       expect.objectContaining({
         currency: 'USD',
         name: 'Cash',
@@ -428,7 +428,7 @@ describe('wallets route', () => {
       'ws-1',
       'DEFAULT_CURRENCY'
     );
-    expect(mocks.privateWalletUpsert).toHaveBeenCalledWith([
+    expect(mocks.privateWalletInsert).toHaveBeenCalledWith([
       expect.objectContaining({
         currency: 'SGD',
         name: 'Cash',
@@ -468,7 +468,7 @@ describe('wallets route', () => {
     );
 
     expect(response.status).toBe(409);
-    expect(mocks.privateWalletUpsert).not.toHaveBeenCalled();
+    expect(mocks.privateWalletInsert).not.toHaveBeenCalled();
   });
 
   it('rejects unsupported explicit wallet currencies', async () => {
@@ -505,7 +505,7 @@ describe('wallets route', () => {
       message: 'Unsupported currency',
     });
     expect(mocks.getWorkspaceConfig).not.toHaveBeenCalled();
-    expect(mocks.privateWalletUpsert).not.toHaveBeenCalled();
+    expect(mocks.privateWalletInsert).not.toHaveBeenCalled();
   });
 
   it('upserts credit metadata for credit wallet creation', async () => {

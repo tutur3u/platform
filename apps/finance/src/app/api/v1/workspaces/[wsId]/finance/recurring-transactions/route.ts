@@ -1,4 +1,5 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { validateFinanceReferences } from '@tuturuuu/apis/finance/workspace-references';
 import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -76,6 +77,13 @@ export async function POST(request: Request, { params }: Params) {
       { status: 400 }
     );
   }
+
+  const invalidReference = await validateFinanceReferences(
+    supabase,
+    normalizedWsId,
+    parsed.data
+  );
+  if (invalidReference) return invalidReference;
 
   const { data, error } = await supabase
     .from('recurring_transactions')

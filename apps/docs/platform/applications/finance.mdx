@@ -198,6 +198,27 @@ Web exceptions until their dependent platform callers migrate. Expose shared
 access in `packages/internal-api` and consume it through TanStack Query or
 shared server components.
 
+## Workspace boundaries for finance writes
+
+Both Finance hosts validate body-supplied wallet, category, tag and subscription
+user-group references against the resolved route workspace before writing.
+This includes budgets, recurring transactions, debts, ordinary transactions,
+transfers and checkpoint reconciliation. Subscription customer and product
+validation continues to apply. Clearing an optional reference remains supported
+where the route accepts null.
+
+Wallet role whitelists restrict transaction writes as well as reads. Writers
+without `manage_finance` need whitelist access to every current and requested
+wallet involved in a transaction update or transfer. Finance managers retain
+workspace-wide wallet access. Wallet creation accepts a matching replay without writing and rejects other
+uses of an existing id; editing an existing wallet uses its update route. Legacy wallet migration and Money
+Lover import require `manage_finance`. The transaction filter picker includes
+email only for callers with `view_users_private_info`.
+
+Regression coverage: `finance-boundaries.test.ts`,
+`finance-write-boundaries.test.ts`, and the subscription invoice and role wallet
+route tests.
+
 ## Wallet checkpoint reconciliation submission
 
 The shared Finance checkpoint adjustment dialog submits the category and

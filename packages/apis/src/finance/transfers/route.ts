@@ -11,30 +11,20 @@ import {
   type FinanceRouteAuthContext,
   getFinanceRouteContext,
 } from '../request-access';
+import { validateTransactionTagIdsForWorkspace } from '../transactions/tag-enrichment';
+import { notifyTransferIntegrityIncident } from './integrity';
 import {
   MigrateTransferSchema,
   TransferSchema,
   UpdateTransferSchema,
 } from './schemas';
 import { checkTransferReplay } from './transfer-replay';
+import { loadTransferWallets } from './wallet-validation';
 
 interface Params {
   params: Promise<{
     wsId: string;
   }>;
-}
-
-type TransferIntegrityIncident = {
-  wsId: string;
-  fromTransactionId: string;
-  toTransactionId: string;
-  linkError: string;
-  cleanupError?: string;
-};
-
-function notifyTransferIntegrityIncident(incident: TransferIntegrityIncident) {
-  console.error('[FinanceTransferIntegrityIncident]', incident);
-  process.emit('finance-transfer-integrity-incident', incident);
 }
 
 const CONFIDENTIAL_TRANSACTION_SELECT =
@@ -94,6 +84,18 @@ export async function PATCH(
   }
 
   const data = parsed.data;
+  const tagValidation = await validateTransactionTagIdsForWorkspace(
+    sbAdmin,
+    normalizedWsId,
+    data.tag_ids
+  );
+  if (tagValidation.error)
+    return NextResponse.json(
+      { message: tagValidation.error.message },
+      { status: tagValidation.error.status }
+    );
+  if (data.tag_ids !== undefined) data.tag_ids = tagValidation.tagIds;
+
   const takenAt =
     typeof data.taken_at === 'string'
       ? new Date(data.taken_at).toISOString()
@@ -193,27 +195,18 @@ export async function PATCH(
     );
   }
 
-  const { data: wallets, error: walletsErr } = await sbAdmin
-    .schema('private')
-    .from('workspace_wallets')
-    .select('id, currency')
-    .eq('ws_id', normalizedWsId)
-    .in('id', [data.origin_wallet_id, data.destination_wallet_id]);
-
-  if (walletsErr || !wallets || wallets.length !== 2) {
-    return NextResponse.json({ message: 'Invalid wallets' }, { status: 400 });
-  }
-
-  const originWallet = wallets.find((w) => w.id === data.origin_wallet_id);
-  const destWallet = wallets.find((w) => w.id === data.destination_wallet_id);
-
-  if (!originWallet || !destWallet) {
-    return NextResponse.json({ message: 'Invalid wallets' }, { status: 400 });
-  }
-
-  if (!originWallet.currency || !destWallet.currency) {
-    return NextResponse.json({ message: 'Invalid wallets' }, { status: 400 });
-  }
+  const wallets = await loadTransferWallets(
+    req,
+    access.context,
+    data,
+    'update_transactions',
+    [
+      existingOriginTransaction.wallet_id,
+      existingDestinationTransaction.wallet_id,
+    ]
+  );
+  if (wallets.response) return wallets.response;
+  const { originWallet, destWallet } = wallets;
 
   const isCrossCurrency =
     originWallet.currency.toUpperCase() !== destWallet.currency.toUpperCase();
@@ -374,6 +367,18 @@ export async function PUT(
   }
 
   const data = parsed.data;
+  const tagValidation = await validateTransactionTagIdsForWorkspace(
+    sbAdmin,
+    normalizedWsId,
+    data.tag_ids
+  );
+  if (tagValidation.error)
+    return NextResponse.json(
+      { message: tagValidation.error.message },
+      { status: tagValidation.error.status }
+    );
+  if (data.tag_ids !== undefined) data.tag_ids = tagValidation.tagIds;
+
   const takenAt =
     typeof data.taken_at === 'string'
       ? new Date(data.taken_at).toISOString()
@@ -467,27 +472,18 @@ export async function PUT(
     );
   }
 
-  const { data: wallets, error: walletsErr } = await sbAdmin
-    .schema('private')
-    .from('workspace_wallets')
-    .select('id, currency')
-    .eq('ws_id', normalizedWsId)
-    .in('id', [data.origin_wallet_id, data.destination_wallet_id]);
-
-  if (walletsErr || !wallets || wallets.length !== 2) {
-    return NextResponse.json({ message: 'Invalid wallets' }, { status: 400 });
-  }
-
-  const originWallet = wallets.find((w) => w.id === data.origin_wallet_id);
-  const destWallet = wallets.find((w) => w.id === data.destination_wallet_id);
-
-  if (!originWallet || !destWallet) {
-    return NextResponse.json({ message: 'Invalid wallets' }, { status: 400 });
-  }
-
-  if (!originWallet.currency || !destWallet.currency) {
-    return NextResponse.json({ message: 'Invalid wallets' }, { status: 400 });
-  }
+  const wallets = await loadTransferWallets(
+    req,
+    access.context,
+    data,
+    'update_transactions',
+    [
+      existingOriginTransaction.wallet_id,
+      existingDestinationTransaction.wallet_id,
+    ]
+  );
+  if (wallets.response) return wallets.response;
+  const { originWallet, destWallet } = wallets;
 
   const isCrossCurrency =
     originWallet.currency.toUpperCase() !== destWallet.currency.toUpperCase();
@@ -689,6 +685,18 @@ export async function POST(
   }
 
   const data = parsed.data;
+  const tagValidation = await validateTransactionTagIdsForWorkspace(
+    sbAdmin,
+    normalizedWsId,
+    data.tag_ids
+  );
+  if (tagValidation.error)
+    return NextResponse.json(
+      { message: tagValidation.error.message },
+      { status: tagValidation.error.status }
+    );
+  if (data.tag_ids !== undefined) data.tag_ids = tagValidation.tagIds;
+
   const takenAt =
     typeof data.taken_at === 'string'
       ? new Date(data.taken_at).toISOString()
@@ -716,27 +724,14 @@ export async function POST(
   }
 
   // Validate both wallets belong to this workspace
-  const { data: wallets, error: walletsErr } = await sbAdmin
-    .schema('private')
-    .from('workspace_wallets')
-    .select('id, currency')
-    .eq('ws_id', normalizedWsId)
-    .in('id', [data.origin_wallet_id, data.destination_wallet_id]);
-
-  if (walletsErr || !wallets || wallets.length !== 2) {
-    return NextResponse.json({ message: 'Invalid wallets' }, { status: 400 });
-  }
-
-  const originWallet = wallets.find((w) => w.id === data.origin_wallet_id);
-  const destWallet = wallets.find((w) => w.id === data.destination_wallet_id);
-
-  if (!originWallet || !destWallet) {
-    return NextResponse.json({ message: 'Invalid wallets' }, { status: 400 });
-  }
-
-  if (!originWallet.currency || !destWallet.currency) {
-    return NextResponse.json({ message: 'Invalid wallets' }, { status: 400 });
-  }
+  const wallets = await loadTransferWallets(
+    req,
+    access.context,
+    data,
+    'create_transactions'
+  );
+  if (wallets.response) return wallets.response;
+  const { originWallet, destWallet } = wallets;
 
   const isCrossCurrency =
     originWallet.currency.toUpperCase() !== destWallet.currency.toUpperCase();

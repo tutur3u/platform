@@ -66,7 +66,11 @@ export async function GET(request: Request, { params }: Params) {
 
   const { data, error } = await supabase
     .from('workspace_users')
-    .select('id, full_name, display_name, email, avatar_url')
+    .select(
+      permissions.withoutPermission('view_users_private_info')
+        ? 'id, full_name, display_name, avatar_url'
+        : 'id, full_name, display_name, email, avatar_url'
+    )
     .eq('ws_id', wsId)
     .order('full_name', { ascending: true });
 

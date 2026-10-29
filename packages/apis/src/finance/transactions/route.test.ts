@@ -141,18 +141,17 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: vi.fn(() => Promise.resolve(mocks.sessionSupabase)),
 }));
 
+vi.mock('../wallets/wallet-access', () => ({
+  getAccessibleWallet: vi.fn().mockResolvedValue({}),
+}));
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
-    mocks.getPermissions(...args),
-  getWorkspaceConfig: (...args: Parameters<typeof mocks.getWorkspaceConfig>) =>
-    mocks.getWorkspaceConfig(...args),
+  getPermissions: mocks.getPermissions,
+  getWorkspaceConfig: mocks.getWorkspaceConfig,
   normalizeWorkspaceId: vi.fn((id: string) =>
     Promise.resolve(
       id === 'personal' ? '00000000-0000-0000-0000-000000000000' : id
     )
-  ),
-  verifyWorkspaceMembershipType: vi.fn(() =>
-    Promise.resolve({ ok: true, membershipType: 'MEMBER' as const })
   ),
 }));
 

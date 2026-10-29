@@ -368,7 +368,9 @@ export async function POST(
     const { data: existing, error: lookupError } = await sbAdmin
       .schema('private')
       .from('workspace_wallets')
-      .select('ws_id')
+      .select(
+        'ws_id, name, type, currency, balance, description, icon, image_src, report_opt_in'
+      )
       .eq('id', data.id)
       .maybeSingle();
     if (lookupError) {
@@ -377,11 +379,53 @@ export async function POST(
         { status: 500 }
       );
     }
-    if (existing && existing.ws_id !== normalizedWsId) {
-      return NextResponse.json(
-        { message: 'Wallet ID conflict' },
-        { status: 409 }
-      );
+    if (existing) {
+      const replayFields = [
+        'balance',
+        'description',
+        'icon',
+        'image_src',
+        'report_opt_in',
+      ] as const;
+      const isReplay =
+        existing.ws_id === normalizedWsId &&
+        data.name !== undefined &&
+        data.type !== undefined &&
+        existing.name === data.name &&
+        existing.type === data.type &&
+        existing.currency === walletCurrency &&
+        replayFields.every(
+          (key) => data[key] === undefined || existing[key] === data[key]
+        );
+      if (!isReplay)
+        return NextResponse.json(
+          { message: 'Wallet ID conflict' },
+          { status: 409 }
+        );
+      if (data.type === 'CREDIT') {
+        const { data: credit, error: creditError } = await sbAdmin
+          .from('credit_wallets')
+          .select('limit, payment_date, statement_date')
+          .eq('wallet_id', data.id)
+          .maybeSingle();
+        if (creditError)
+          return NextResponse.json(
+            { message: 'Error checking wallet replay' },
+            { status: 500 }
+          );
+        if (
+          !credit ||
+          credit.limit !== data.limit ||
+          credit.payment_date !== data.payment_date ||
+          credit.statement_date !== data.statement_date
+        ) {
+          return NextResponse.json(
+            { message: 'Wallet ID conflict' },
+            { status: 409 }
+          );
+        }
+      }
+      return NextResponse.json({ message: 'success' });
     }
   }
 
@@ -404,10 +448,15 @@ export async function POST(
   const { data: upsertedWallet, error } = await sbAdmin
     .schema('private')
     .from('workspace_wallets')
-    .upsert([walletData as never])
+    .insert([walletData as never])
     .select('id')
     .single();
 
+  if (error?.code === '23505')
+    return NextResponse.json(
+      { message: 'Wallet ID conflict' },
+      { status: 409 }
+    );
   if (error) {
     console.log(error);
     return NextResponse.json(

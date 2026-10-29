@@ -3,11 +3,14 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { canReassignFinanceWallet } from '@tuturuuu/utils/finance';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-
 import {
   type FinanceRouteAuthContext,
   getFinanceRouteContext,
 } from '../../request-access';
+import {
+  validateFinanceReferences,
+  validateFinanceWalletWriteAccess,
+} from '../../workspace-references';
 import {
   enrichTransactionsWithTags,
   validateTransactionTagIdsForWorkspace,
@@ -403,6 +406,23 @@ export async function PUT(
       );
     }
   }
+
+  const deniedWallet = await validateFinanceWalletWriteAccess(
+    req,
+    access.context,
+    [
+      existingTransaction.wallet_id,
+      ...(newData.wallet_id ? [newData.wallet_id] : []),
+    ],
+    'update_transactions'
+  );
+  if (deniedWallet) return deniedWallet;
+  const invalidCategory = await validateFinanceReferences(
+    sbAdmin,
+    normalizedWsId,
+    { category_id: data.category_id }
+  );
+  if (invalidCategory) return invalidCategory;
 
   const tagValidation = await validateTransactionTagIdsForWorkspace(
     sbAdmin,
