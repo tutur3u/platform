@@ -1433,7 +1433,10 @@ function TaskCardInner({
     }
 
     // Project indicator badge
-    const badgeProjects = getTaskCardBadgeProjects(task, taskTicketIdentifier);
+    const badgeProjects = getTaskCardBadgeProjects(
+      { projects: task.projects, ticket_projects: task.ticket_projects },
+      taskTicketIdentifier
+    );
     if (badgeProjects.length > 0) {
       badges.push({
         id: 'projects',
@@ -1669,6 +1672,7 @@ function TaskCardInner({
     // to prevent recalculation when unrelated properties (like name) change
     task.priority,
     task.projects,
+    task.ticket_projects,
     taskTicketIdentifier,
     task.estimation_points,
     task.total_duration,
