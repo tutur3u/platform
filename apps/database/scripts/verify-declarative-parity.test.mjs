@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 import { PGlite } from '@electric-sql/pglite';
 
 import {
+  assertCaFile,
   buildReport,
   CONFIG_PATH,
   collect,
@@ -11,7 +14,10 @@ import {
   createPsqlExecutor,
   hashesOnly,
   loadQueries,
+  main,
   parseLines,
+  preflightSql,
+  prodParityViolations,
   psqlInvocation,
   readApiSchemas,
   wrapReadOnly,
@@ -151,7 +157,14 @@ test('wraps every run in a read-only, time-bounded transaction', () => {
 
 const REMOTE =
   'postgresql://parity_role:s3cr3t-pass@db.internal.example:6543/postgres';
-const caFs = { statSync: () => ({ isFile: () => true }) };
+const uid = process.getuid();
+const caStat = (overrides = {}) => ({
+  isFile: () => true,
+  mode: 0o100644,
+  uid,
+  ...overrides,
+});
+const caFs = { lstatSync: () => caStat(), accessSync: () => {} };
 const ENV_KEYS = [
   'LC_ALL',
   'PATH',
@@ -189,9 +202,9 @@ test('a remote target needs --hashes-only and a pinned CA over verify-full', () 
         databaseUrl: REMOTE,
         hashesOnly: true,
         caFile: '/missing-ca.pem',
-        fsImpl: { statSync: () => undefined },
+        fsImpl: { lstatSync: () => undefined, accessSync: () => {} },
       }),
-    /pinned-ca-file/
+    /ca-file-not-regular/
   );
   for (const suffix of [
     '?sslmode=disable',
@@ -413,11 +426,153 @@ test('--hashes-only never reads cron.job and reports it skipped by design', asyn
   assert.deepEqual(full.skippedCategories, {});
   const seen = [];
   const prod = await report(cron, { hashesOnly: true, seen });
-  assert.ok(seen.every((sql) => !/from cron\.job/.test(sql)));
+  assert.ok(seen.length === 2 && seen.every((sql) => !/cron\.job/.test(sql)));
   assert.match(prod.skippedCategories.cron_jobs, /^by-design:/);
   const diff = compareReports(full, prod);
   assert.equal(diff.equal, true);
   assert.deepEqual(diff.skippedCategories, ['cron_jobs']);
+});
+
+test('preflight resolves only the relations the run reads, behind USAGE', () => {
+  assert.doesNotMatch(preflightSql([]), /relation_readable|cron/);
+  const sql = preflightSql(['cron.job']);
+  assert.match(sql, /has_schema_privilege\(split_part/);
+  assert.ok(
+    sql.indexOf('has_schema_privilege') < sql.indexOf('to_regclass'),
+    'USAGE is checked before the relation is resolved'
+  );
+  assert.throws(() => preflightSql(["cron.job'); drop"]));
+});
+
+test('a reader without USAGE on cron skips cron_jobs instead of failing', async () => {
+  const full = await report(`
+    create schema cron;
+    create table cron.job (jobid bigint, jobname text, schedule text,
+      command text, database text, username text, active boolean);
+    create role parity_reader nologin;
+    set role parity_reader;
+  `);
+  assert.match(full.skippedCategories.cron_jobs, /^unavailable: cron\.job/);
+});
+
+test('reports carry the target and the prod workflow can assert it', async () => {
+  const local = await baseline;
+  assert.equal(local.target, 'local');
+  assert.equal(hashesOnly(local).target, 'local');
+  const db = await PGlite.create();
+  let remote;
+  try {
+    await db.exec(FIXTURE);
+    remote = await collect(pgliteExecutor(db), {
+      apiSchemas,
+      hashesOnly: true,
+      target: 'remote',
+    });
+  } finally {
+    await db.close();
+  }
+  const prod = { ...hashesOnly(remote), prodParity: true };
+  assert.deepEqual(prodParityViolations(prod), []);
+  assert.deepEqual(prodParityViolations({ ...local, mode: 'full' }).sort(), [
+    'mode',
+    'objects',
+    'prod-parity-flag',
+    'skipped:cron_jobs',
+    'target',
+  ]);
+  assert.deepEqual(
+    prodParityViolations({
+      ...prod,
+      skippedCategories: { functions: 'unavailable: x' },
+    }),
+    ['skipped:functions']
+  );
+  assert.deepEqual(
+    prodParityViolations({
+      ...prod,
+      skippedCategories: { cron_jobs: 'unavailable: cron.job' },
+    }),
+    ['skipped:cron_jobs']
+  );
+});
+
+test('--prod-parity refuses a local target or a full run before connecting', async () => {
+  const env = {
+    DECLARATIVE_PARITY_DATABASE_URL:
+      'postgres://postgres:postgres@127.0.0.1:54322/postgres',
+  };
+  await assert.rejects(
+    main(['--prod-parity', '--hashes-only'], env),
+    /prod-parity-requires-remote-hashes-only/
+  );
+  await assert.rejects(
+    main(['--prod-parity'], { DECLARATIVE_PARITY_DATABASE_URL: REMOTE }),
+    /remote-target-requires-hashes-only/
+  );
+});
+
+test('--compare fails on any skipped category other than cron_jobs', async () => {
+  const full = await baseline;
+  const skippedFunctions = {
+    ...full,
+    categories: { ...full.categories, functions: undefined },
+    skippedCategories: { functions: 'unavailable: x' },
+  };
+  delete skippedFunctions.categories.functions;
+  const diff = compareReports(full, skippedFunctions);
+  assert.equal(diff.equal, false);
+  assert.deepEqual(diff.disallowedSkippedCategories, ['functions']);
+  const cronOnly = compareReports(full, {
+    ...full,
+    skippedCategories: { cron_jobs: 'by-design: x' },
+  });
+  assert.equal(cronOnly.equal, true);
+  assert.deepEqual(cronOnly.disallowedSkippedCategories, []);
+});
+
+test('the pinned CA must be a regular, runner-owned, readable file', () => {
+  const check = (stat, accessSync = () => {}) =>
+    assertCaFile('/ca.pem', {
+      fsImpl: { lstatSync: () => stat, accessSync },
+      uid,
+    });
+  assert.equal(check(caStat()), '/ca.pem');
+  assert.throws(() => check(undefined), /ca-file-not-regular/);
+  assert.throws(
+    () => check(caStat({ isFile: () => false })),
+    /ca-file-not-regular/
+  );
+  assert.throws(
+    () => check(caStat({ mode: 0o100666 })),
+    /ca-file-world-writable/
+  );
+  assert.throws(
+    () => check(caStat({ uid: uid + 1 })),
+    /ca-file-not-owned-by-runner/
+  );
+  assert.throws(
+    () =>
+      check(caStat(), () => {
+        throw new Error('EACCES');
+      }),
+    /ca-file-unreadable/
+  );
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'parity-ca-'));
+  try {
+    const file = path.join(dir, 'ca.pem');
+    fs.writeFileSync(file, 'fixture');
+    fs.chmodSync(file, 0o600);
+    assert.equal(assertCaFile(file), file);
+    fs.symlinkSync(file, path.join(dir, 'link.pem'));
+    assert.throws(
+      () => assertCaFile(path.join(dir, 'link.pem')),
+      /not-regular/
+    );
+    fs.chmodSync(file, 0o666);
+    assert.throws(() => assertCaFile(file), /world-writable/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('an unsafe definer search_path is counted and named', async () => {
@@ -452,6 +607,7 @@ test('--hashes-only output carries no per-object map or definition text', async 
     'serverVersionNum',
     'sha256',
     'skippedCategories',
+    'target',
   ]);
   for (const category of Object.values(output.categories)) {
     assert.deepEqual(Object.keys(category).sort(), ['count', 'sha256']);

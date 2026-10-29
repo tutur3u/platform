@@ -81,7 +81,11 @@ parameters, psql runs with a minimal environment (no inherited `PG*` service,
 password-file or hostaddr settings) and errors are redacted. Docker and
 loopback targets count as local. Any other host is refused unless the run uses
 `--hashes-only` and `--ca-file` (or `DECLARATIVE_PARITY_CA_FILE`) pins a CA for
-`sslmode=verify-full`.
+`sslmode=verify-full`. The CA must be a regular file (not a symlink), owned and
+readable by the runner, and not world-writable. Reports carry
+`target: local|remote`. The prod workflow passes `--prod-parity` (refused unless
+the target is remote and the run is `--hashes-only`), then asserts the result
+with `--assert-prod-report <report.json>`.
 
 Exit 1 means a must-be-zero check failed or `--expect` found a mismatch. The
 checks cover SECURITY DEFINER functions in application schemas (Supabase-managed
@@ -91,7 +95,9 @@ schemas are excluded): a NULL `proacl`, EXECUTE for PUBLIC or `anon`, and a
 prod-parity check. It prints category digests plus the identities of
 mismatched objects only. It never reads tables, so `cron_jobs` (a `cron.job`
 read that pg_cron RLS can silently filter) is reported as skipped by design
-rather than hashed, and comparisons ignore skipped categories. Agents must never
+rather than hashed. A hashes-only run doesn't even resolve `cron.job`, so a
+role without USAGE on `cron` works. Comparisons ignore a skipped `cron_jobs`
+and fail on any other skipped category. Agents must never
 point the pack at production. Fixture tests run with
 `node --test apps/database/scripts/verify-declarative-parity.test.mjs`.
 

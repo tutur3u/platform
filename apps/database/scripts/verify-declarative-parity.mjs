@@ -96,13 +96,30 @@ export function wrapReadOnly(body, apiSchemas) {
   ].join('\n');
 }
 
-export const PREFLIGHT_SQL = `select 'P' as kind, 'server_version_num' as category,
-  '' as identity, current_setting('server_version_num') as value
+// Only the categories below may ever be skipped; any other skip fails --compare.
+export const SKIPPABLE_CATEGORIES = new Set(['cron_jobs']);
+const RELATION_NAME = /^[a-z_]+\.[a-z_]+$/;
+
+// Resolves only the relations the run will read. CASE guards the lookups so a
+// role without schema USAGE gets false instead of a permission error.
+export function preflightSql(relations = []) {
+  if (!relations.every((name) => RELATION_NAME.test(name))) {
+    throw new Error('Invalid preflight relation name');
+  }
+  const version = `select 'P' as kind, 'server_version_num' as category,
+  '' as identity, current_setting('server_version_num') as value`;
+  if (!relations.length) return `${version};`;
+  return `${version}
 union all
 select 'P', 'relation_readable', r.name,
-  (to_regclass(r.name) is not null
-    and has_table_privilege(to_regclass(r.name), 'SELECT'))::text
-from unnest(array['cron.job']) r(name);`;
+  (case
+    when to_regnamespace(split_part(r.name, '.', 1)) is null then false
+    when not has_schema_privilege(split_part(r.name, '.', 1), 'USAGE') then false
+    when to_regclass(r.name) is null then false
+    else has_table_privilege(to_regclass(r.name), 'SELECT')
+  end)::text
+from unnest(array[${relations.map((name) => `'${name}'`).join(', ')}]::text[]) r(name);`;
+}
 
 // Validates every line before it can reach a report. Errors carry the line
 // number only, never the offending content.
@@ -134,7 +151,7 @@ export function parseLines(lines) {
 
 export function buildReport(
   rows,
-  { apiSchemas, preflight = {}, skipped = {} }
+  { apiSchemas, preflight = {}, skipped = {}, target = 'local' }
 ) {
   const objects = {};
   const metrics = {};
@@ -177,6 +194,7 @@ export function buildReport(
   );
   return {
     format: FORMAT,
+    target,
     serverVersionNum: preflight.server_version_num ?? null,
     apiSchemas,
     skippedCategories: Object.fromEntries(
@@ -211,7 +229,8 @@ export function hashesOnly(report) {
 }
 
 // Returns identities (names only) of mismatched objects and metrics. Categories
-// skipped on either side are listed, never compared against an absent hash.
+// skipped on either side are listed, never compared against an absent hash, and
+// any skip outside SKIPPABLE_CATEGORIES makes the comparison fail.
 export function compareReports(expected, actual) {
   const categories = {};
   const skipped = new Set([
@@ -252,10 +271,17 @@ export function compareReports(expected, actual) {
       };
     }
   }
-  const equal = !Object.keys(categories).length && !Object.keys(metrics).length;
+  const disallowed = [...skipped]
+    .filter((name) => !SKIPPABLE_CATEGORIES.has(name))
+    .sort(byCodeUnit);
+  const equal =
+    !Object.keys(categories).length &&
+    !Object.keys(metrics).length &&
+    !disallowed.length;
   return {
     equal,
     skippedCategories: [...skipped].sort(byCodeUnit),
+    disallowedSkippedCategories: disallowed,
     categories,
     metrics,
   };
@@ -263,11 +289,22 @@ export function compareReports(expected, actual) {
 
 export async function collect(
   executor,
-  { apiSchemas, queries = loadQueries(), hashesOnly: hashesOnlyRun = false }
+  {
+    apiSchemas,
+    queries = loadQueries(),
+    hashesOnly: hashesOnlyRun = false,
+    target = 'local',
+  }
 ) {
+  // Hashes-only runs never read tables, so they never resolve those relations.
+  const relations = queries
+    .filter(
+      (query) => query.requires && !(hashesOnlyRun && query.tableRead.length)
+    )
+    .map((query) => query.requires);
   const preflight = {};
   for (const row of parseLines(
-    await executor.run(wrapReadOnly(PREFLIGHT_SQL, apiSchemas))
+    await executor.run(wrapReadOnly(preflightSql(relations), apiSchemas))
   )) {
     if (row.kind !== 'P') throw new Error('unexpected-preflight-row');
     preflight[row.identity || row.category] = row.value;
@@ -290,7 +327,7 @@ export async function collect(
   });
   const body = active.map((query) => query.sql.trim()).join('\n');
   const rows = parseLines(await executor.run(wrapReadOnly(body, apiSchemas)));
-  return buildReport(rows, { apiSchemas, preflight, skipped });
+  return buildReport(rows, { apiSchemas, preflight, skipped, target });
 }
 
 // Classifies the target. Docker and loopback URLs are local. Anything else is
@@ -303,6 +340,7 @@ export function psqlInvocation({
   caFile,
   hashesOnly: hashesOnlyRun = false,
   fsImpl = fs,
+  uid = process.getuid?.(),
 }) {
   const psqlArgs = [
     '-X',
@@ -354,10 +392,8 @@ export function psqlInvocation({
   let tls = { PGSSLMODE: 'disable' };
   if (!local) {
     if (!hashesOnlyRun) throw new Error('remote-target-requires-hashes-only');
-    const ca = caFile ? path.resolve(caFile) : null;
-    if (!ca || !fsImpl.statSync(ca, { throwIfNoEntry: false })?.isFile()) {
-      throw new Error('remote-target-requires-pinned-ca-file');
-    }
+    if (!caFile) throw new Error('remote-target-requires-pinned-ca-file');
+    const ca = assertCaFile(path.resolve(caFile), { fsImpl, uid });
     tls = { PGSSLMODE: 'verify-full', PGSSLROOTCERT: ca };
   }
   const user = decodeURIComponent(url.username);
@@ -392,6 +428,47 @@ export function psqlInvocation({
   };
 }
 
+// The pinned CA must be a regular file (not a symlink), not world-writable,
+// owned by the runner user and readable by it.
+export function assertCaFile(
+  ca,
+  { fsImpl = fs, uid = process.getuid?.() } = {}
+) {
+  const stat = fsImpl.lstatSync(ca, { throwIfNoEntry: false });
+  if (!stat?.isFile()) throw new Error('ca-file-not-regular');
+  if (stat.mode & 0o002) throw new Error('ca-file-world-writable');
+  if (uid === undefined || stat.uid !== uid) {
+    throw new Error('ca-file-not-owned-by-runner');
+  }
+  try {
+    fsImpl.accessSync(ca, fs.constants.R_OK);
+  } catch {
+    throw new Error('ca-file-unreadable');
+  }
+  return ca;
+}
+
+// What the prod-parity workflow asserts on the emitted report.
+export function prodParityViolations(report) {
+  const violations = [];
+  if (report.mode !== 'hashes-only') violations.push('mode');
+  if (report.target !== 'remote') violations.push('target');
+  if (report.prodParity !== true) violations.push('prod-parity-flag');
+  if (JSON.stringify(report).includes('"objects"')) violations.push('objects');
+  for (const [name, reason] of Object.entries(report.skippedCategories ?? {})) {
+    if (
+      !SKIPPABLE_CATEGORIES.has(name) ||
+      !String(reason).startsWith('by-design:')
+    ) {
+      violations.push(`skipped:${name}`);
+    }
+  }
+  if (report.comparison?.disallowedSkippedCategories?.length) {
+    violations.push('comparison-skips');
+  }
+  return violations;
+}
+
 export function createPsqlExecutor(invocation, spawn = spawnSync) {
   return {
     async run(sql) {
@@ -419,6 +496,7 @@ export function createPsqlExecutor(invocation, spawn = spawnSync) {
 const USAGE = `Usage:
   node apps/database/scripts/verify-declarative-parity.mjs [options]
   node apps/database/scripts/verify-declarative-parity.mjs --compare <a.json> <b.json>
+  node apps/database/scripts/verify-declarative-parity.mjs --assert-prod-report <report.json>
 
 Connection (one of):
   --docker-container <name>  local Supabase DB container (psql as --docker-user, default postgres)
@@ -430,7 +508,9 @@ A URL may not carry query parameters. A non-loopback host requires
 
 Options:
   --hashes-only      omit per-object digests and table reads (prod-parity form)
-  --ca-file <file>   CA bundle pinned for verify-full TLS
+  --ca-file <file>   CA bundle pinned for verify-full TLS (regular file owned by
+                     the runner, readable, not world-writable)
+  --prod-parity      refuse to run unless the target is remote and --hashes-only
   --expect <file>    compare with a full report; print mismatched identities only
   --out <file>       write the report to a file instead of stdout
 
@@ -445,10 +525,12 @@ export function parseArgs(argv) {
     '--ca-file': 'caFile',
     '--expect': 'expect',
     '--out': 'out',
+    '--assert-prod-report': 'assertProdReport',
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--hashes-only') options.hashesOnly = true;
+    else if (arg === '--prod-parity') options.prodParity = true;
     else if (arg === '--help') options.help = true;
     else if (arg === '--compare') {
       options.compare = [argv[index + 1], argv[index + 2]];
@@ -480,19 +562,26 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
     emit(result, options.out);
     return result.equal ? 0 : 1;
   }
+  if (options.assertProdReport) {
+    const violations = prodParityViolations(readJson(options.assertProdReport));
+    emit({ ok: !violations.length, violations }, options.out);
+    return violations.length ? 1 : 0;
+  }
   const apiSchemas = readApiSchemas(fs.readFileSync(CONFIG_PATH, 'utf8'));
-  const executor = createPsqlExecutor(
-    psqlInvocation({
-      dockerContainer: options.dockerContainer,
-      dockerUser: options.dockerUser,
-      databaseUrl: env[options.urlEnv],
-      caFile: options.caFile ?? env[CA_FILE_ENV],
-      hashesOnly: options.hashesOnly,
-    })
-  );
-  const report = await collect(executor, {
+  const invocation = psqlInvocation({
+    dockerContainer: options.dockerContainer,
+    dockerUser: options.dockerUser,
+    databaseUrl: env[options.urlEnv],
+    caFile: options.caFile ?? env[CA_FILE_ENV],
+    hashesOnly: options.hashesOnly,
+  });
+  if (options.prodParity && (invocation.local || !options.hashesOnly)) {
+    throw new Error('prod-parity-requires-remote-hashes-only');
+  }
+  const report = await collect(createPsqlExecutor(invocation), {
     apiSchemas,
     hashesOnly: options.hashesOnly,
+    target: invocation.local ? 'local' : 'remote',
   });
   const comparison = options.expect
     ? compareReports(readJson(options.expect), report)
@@ -500,6 +589,7 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
   const output = options.hashesOnly
     ? hashesOnly(report)
     : { ...report, mode: 'full' };
+  if (options.prodParity) output.prodParity = true;
   if (comparison) output.comparison = comparison;
   emit(output, options.out);
   return report.ok && (comparison?.equal ?? true) ? 0 : 1;
