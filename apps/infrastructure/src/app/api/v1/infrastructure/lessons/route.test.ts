@@ -9,20 +9,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: createAdminClientMock,
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', () => ({
-  getPermissions: getPermissionsMock,
+vi.mock('../migration-export-auth', () => ({
+  authorizeInfrastructureMigrationExport: getPermissionsMock,
 }));
 
 import { GET } from './route';
-
-function createPermissionsResult(permissions: string[] = []) {
-  return {
-    containsPermission: (permission: string) =>
-      permissions.includes(permission),
-    withoutPermission: (permission: string) =>
-      !permissions.includes(permission),
-  };
-}
 
 function createRequest(search = '?ws_id=workspace-1') {
   return new Request(
@@ -38,25 +29,26 @@ describe('infrastructure lessons route', () => {
     vi.clearAllMocks();
   });
 
-  it('rejects callers without infrastructure visibility before reading admin data', async () => {
-    getPermissionsMock.mockResolvedValue(createPermissionsResult());
+  it('rejects callers without target workspace migration permission before reading admin data', async () => {
+    getPermissionsMock.mockResolvedValue({
+      ok: false,
+      response: Response.json({ message: 'Forbidden' }, { status: 403 }),
+    });
 
     const request = createRequest();
     const response = await GET(request);
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
-    expect(getPermissionsMock).toHaveBeenCalledWith({
-      request,
-      wsId: '00000000-0000-0000-0000-000000000000',
-    });
+    expect(getPermissionsMock).toHaveBeenCalledWith(request, 'workspace-1');
     expect(createAdminClientMock).not.toHaveBeenCalled();
   });
 
-  it('returns private lessons for authorized infrastructure viewers', async () => {
-    getPermissionsMock.mockResolvedValue(
-      createPermissionsResult(['view_infrastructure'])
-    );
+  it('returns private lessons for authorized migration operators', async () => {
+    getPermissionsMock.mockResolvedValue({
+      ok: true,
+      value: { wsId: 'workspace-1', userId: 'actor' },
+    });
 
     const queryResult = {
       count: 1,
