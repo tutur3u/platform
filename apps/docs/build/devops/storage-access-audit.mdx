@@ -144,7 +144,7 @@ output and in server statement and error logs.
 
 ## Rollout
 
-1. Apply `20261026180000_storage_access_audit_events.sql`. It needs approval and
+1. Apply `20261029040810_storage_access_audit_events.sql`. It needs approval and
    ships in the next migration batch.
 2. Set `STORAGE_ACCESS_AUDIT_HMAC_KEY` (a secret of at least 32 random bytes),
    then `STORAGE_ACCESS_AUDIT_ENABLED=true`, for the Web deployment. Until then the
@@ -158,7 +158,7 @@ removes them.
 ## Schema rollback
 
 Prefer disabling the writer and retention job while retaining audit evidence.
-The rollback file in `apps/database/rollbacks/20261026180000_storage_access_audit_events.rollback.sql`
+The rollback file in `apps/database/rollbacks/20261029040810_storage_access_audit_events.rollback.sql`
 removes the table and retention function. It deletes audit history: disable both
 writers and archive required evidence before an explicitly authorized schema reversal.
 Re-applying the migration recreates an empty, service-only audit table.

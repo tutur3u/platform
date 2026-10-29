@@ -1,4 +1,4 @@
--- Contract for 20261026180000_storage_access_audit_events.sql: deny-all RLS,
+-- Contract for 20261029040810_storage_access_audit_events.sql: deny-all RLS,
 -- service-role-only writes and reads, bounded columns, and bounded 90-day
 -- retention.
 begin;
