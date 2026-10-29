@@ -6,6 +6,7 @@ import 'package:mobile/features/mastermind/presentation/decisions_model.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/view/inbox/decision_tile.dart';
 import 'package:mobile/features/mastermind/view/inbox/decisions_filters.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The Decisions segment: filter chips, then the journal newest first, one
@@ -43,7 +44,7 @@ class DecisionsBody extends StatelessWidget {
             onReversible: onReversible,
           ),
         if (model.isEmpty)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             children: [
               AppGroupedRow(
                 leading: const AppIconTile(icon: LucideIcons.scrollText),
@@ -52,7 +53,7 @@ class DecisionsBody extends StatelessWidget {
             ],
           )
         else if (model.hasNoMatches)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             children: [
               AppGroupedRow(
                 leading: const AppIconTile(icon: LucideIcons.searchX),
@@ -61,7 +62,7 @@ class DecisionsBody extends StatelessWidget {
             ],
           ),
         for (final day in model.days)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             caption: Gmt7.date(day.at, locale),
             captionTrailing: Text('${day.decisions.length}'),
             children: [

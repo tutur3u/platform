@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_item_page.dart';
 
 import '../../../helpers/helpers.dart';
 import '../../../helpers/mastermind_replies_fixture.dart';
 import '../../../helpers/mastermind_view_harness.dart';
+import 'mastermind_reply_test_actions.dart';
 
 Future<FakeReplyTransport> _pump(WidgetTester tester) async {
   tester.view
@@ -38,7 +38,7 @@ void main() {
     tester,
   ) async {
     final transport = await _pump(tester);
-    await tester.tap(find.text('Approve'));
+    await chooseAndSend(tester, 'Approve');
     await tester.pump();
     expect(_sending, findsOneWidget);
     expect(_undo, findsOneWidget);
@@ -57,7 +57,7 @@ void main() {
   testWidgets('Undo inside the window sends nothing and restores the '
       'options', (tester) async {
     final transport = await _pump(tester);
-    await tester.tap(find.text('Defer'));
+    await chooseAndSend(tester, 'Defer');
     await tester.pump();
     await tester.tap(_undo);
     await tester.pump();
@@ -65,14 +65,9 @@ void main() {
     await tester.pump(window * 2);
     await tester.pumpAndSettle();
     expect(transport.sent, isEmpty);
-    expect(
-      tester
-          .widget<AppButton>(find.widgetWithText(AppButton, 'Approve'))
-          .onPressed,
-      isNotNull,
-    );
+    expect(optionEnabled(tester, 'Approve'), isTrue);
     // The reply can still be sent afterwards, once.
-    await tester.tap(find.text('Approve'));
+    await chooseAndSend(tester, 'Approve');
     await tester.pump(window);
     await tester.pumpAndSettle();
     expect(transport.sent.single.optionIndex, 0);
@@ -81,14 +76,9 @@ void main() {
   testWidgets('other options are locked in the window, so one reply goes '
       'out', (tester) async {
     final transport = await _pump(tester);
-    await tester.tap(find.text('Approve'));
+    await chooseAndSend(tester, 'Approve');
     await tester.pump();
-    expect(
-      tester
-          .widget<AppButton>(find.widgetWithText(AppButton, 'Defer'))
-          .onPressed,
-      isNull,
-    );
+    expect(optionEnabled(tester, 'Defer'), isFalse);
     await tester.tap(find.text('Defer'), warnIfMissed: false);
     await tester.pump(window);
     await tester.pumpAndSettle();
@@ -100,7 +90,7 @@ void main() {
     tester,
   ) async {
     final transport = await _pump(tester);
-    await tester.tap(find.text('Approve'));
+    await chooseAndSend(tester, 'Approve');
     await tester.pump();
     await tester.pumpWidget(const SizedBox());
     expect(transport.sent, isEmpty);

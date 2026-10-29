@@ -127,6 +127,24 @@ abstract class AppLocalizations {
   /// **'Sending “{option}”'**
   String mastermindReplySendingOption(String option);
 
+  /// No description provided for @mastermindReplyWriteOwn.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your own'**
+  String get mastermindReplyWriteOwn;
+
+  /// No description provided for @mastermindReplySendOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Send “{option}”'**
+  String mastermindReplySendOption(String option);
+
+  /// No description provided for @mastermindAskedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked {age} · {time}'**
+  String mastermindAskedAt(String age, String time);
+
   /// No description provided for @mastermindReplyUndo.
   ///
   /// In en, this message translates to:

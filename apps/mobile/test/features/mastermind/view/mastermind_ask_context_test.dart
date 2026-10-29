@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
@@ -15,6 +14,7 @@ import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_inbox_page.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_item_page.dart';
 import 'package:mobile/features/mastermind/view/mastermind_home_page.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_list_row.dart';
 import 'package:mobile/l10n/gen/app_localizations_en.dart';
 
 import '../../../helpers/helpers.dart';
@@ -23,6 +23,7 @@ import '../../../helpers/mastermind_replies_fixture.dart';
 import '../../../helpers/mastermind_ship_pump.dart';
 import '../../../helpers/mastermind_view_harness.dart';
 import '../../../helpers/mastermind_work_pump.dart';
+import 'mastermind_reply_test_actions.dart';
 
 const _id = 'item-f23ae309c10a83c168e3';
 const _ask =
@@ -144,9 +145,9 @@ void main() {
       );
       expect(tester.widget<Text>(find.text(_ask)).maxLines, isNull);
       expect(find.text('Recommended'), findsOneWidget);
-      final option = find.widgetWithText(AppButton, 'Ship tonight');
+      final option = find.widgetWithText(MastermindOptionRow, 'Ship tonight');
       expect(tester.getSize(option).height, greaterThanOrEqualTo(44));
-      await tester.tap(option);
+      await chooseAndSend(tester, 'Ship tonight');
       await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(transport.sent.single.optionIndex, 0);
@@ -176,8 +177,14 @@ void main() {
         }
       }
       await pump(tester, const MastermindItemPage(itemId: _id), json);
-      expect(find.widgetWithText(AppButton, 'Ship tonight'), findsNothing);
-      expect(find.widgetWithText(AppButton, 'Reply on Mac'), findsNothing);
+      expect(
+        find.widgetWithText(MastermindOptionRow, 'Ship tonight'),
+        findsNothing,
+      );
+      expect(
+        find.widgetWithText(MastermindOptionRow, 'Reply on Mac'),
+        findsNothing,
+      );
       expect(find.byType(TextField), findsOneWidget);
     });
   }

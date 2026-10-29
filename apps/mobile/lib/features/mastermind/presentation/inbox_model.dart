@@ -2,6 +2,7 @@ import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/open_asks.dart';
+import 'package:mobile/features/mastermind/presentation/option_labels.dart';
 import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
 
@@ -199,7 +200,7 @@ List<SecurityItem> _onePerProduct(List<NeedsYouItem> items) {
 List<(int, String)> selectableOptions(NeedsYou item) => [
   for (final (index, option) in item.options.indexed)
     if (option != mastermindReplyPlaceholderOption)
-      (index, item.optionLabel(index)),
+      (index, plainOptionLabel(item, index)),
 ];
 
 /// The item with [id] if it is still an open normal Needs-you row.

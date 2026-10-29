@@ -31,6 +31,19 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get mastermindReplyWriteOwn => 'Tự viết câu trả lời';
+
+  @override
+  String mastermindReplySendOption(String option) {
+    return 'Gửi “$option”';
+  }
+
+  @override
+  String mastermindAskedAt(String age, String time) {
+    return 'Đã hỏi $age · $time';
+  }
+
+  @override
   String get mastermindReplyUndo => 'Hoàn tác';
 
   @override

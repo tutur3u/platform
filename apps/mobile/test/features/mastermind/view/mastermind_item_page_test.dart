@@ -19,6 +19,7 @@ import 'package:mocktail/mocktail.dart';
 import '../../../helpers/helpers.dart';
 import '../../../helpers/mastermind_replies_fixture.dart';
 import '../../../helpers/mastermind_view_harness.dart';
+import 'mastermind_reply_test_actions.dart';
 
 class _MockAuthCubit extends MockCubit<AuthState> implements AuthCubit {}
 
@@ -80,6 +81,7 @@ Future<_Page> _pump(
     ),
   );
   await tester.pumpAndSettle();
+  await openWriteYourOwn(tester);
   return _Page(harness, cubit, transport, auth);
 }
 
@@ -194,7 +196,7 @@ void main() {
       'a sent option for an old version does not answer the new ask',
       (tester) async {
         final page = await _pump(tester);
-        await tester.tap(find.text('Defer'));
+        await chooseAndSend(tester, 'Defer');
         await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
         await tester.pumpAndSettle();
         expect(page.transport.sent.single.versionHash, inboxHash('a'));
@@ -216,7 +218,8 @@ void main() {
       expect(find.byType(TextField), findsNothing);
       expect(_send, findsNothing);
       expect(find.text('Reply on your Mac'), findsOneWidget);
-      expect(find.text('Approve · Recommended'), findsOneWidget);
+      expect(find.text('Approve'), findsOneWidget);
+      expect(find.text('Recommended'), findsOneWidget);
     });
 
     testWidgets('replies on: the composer appears', (tester) async {
@@ -258,6 +261,7 @@ void main() {
       up = true;
       await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
+      await openWriteYourOwn(tester);
       expect(find.byType(TextField), findsOneWidget);
     });
   });
@@ -303,7 +307,7 @@ void main() {
     ) async {
       final page = await _pump(tester);
       expect(_enabled(tester, _send), isFalse);
-      await tester.tap(find.text('Defer'));
+      await chooseAndSend(tester, 'Defer');
       await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(page.transport.sent.single.optionIndex, 1);
@@ -313,7 +317,7 @@ void main() {
     testWidgets('an option sends no free text', (tester) async {
       final page = await _pump(tester);
       await tester.enterText(find.byType(TextField), 'something else');
-      await tester.tap(find.text('Approve'));
+      await chooseAndSend(tester, 'Approve');
       await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(page.transport.sent.single.optionIndex, 0);
@@ -323,7 +327,7 @@ void main() {
     testWidgets('recommended is a badge on its option button', (tester) async {
       final page = await _pump(tester);
       expect(find.text('Recommended'), findsOneWidget);
-      await tester.tap(find.text('Approve'));
+      await chooseAndSend(tester, 'Approve');
       await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(page.transport.sent.single.optionIndex, 0);
@@ -347,7 +351,7 @@ void main() {
       expect(find.text('Approve'), findsNothing);
       expect(find.text('Defer'), findsNothing);
       expect(find.text('Recommended'), findsOneWidget);
-      await tester.tap(find.text('Later'));
+      await chooseAndSend(tester, 'Later');
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
       expect(page.transport.sent.single.optionIndex, 1);
@@ -369,7 +373,7 @@ void main() {
   group('sending', () {
     testWidgets('an option button sends option_index', (tester) async {
       final page = await _pump(tester);
-      await tester.tap(find.text('Defer'));
+      await chooseAndSend(tester, 'Defer');
       await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(page.transport.sent.single.toRequestJson(), {
@@ -409,7 +413,7 @@ void main() {
 
     testWidgets('a 200 replay reads exactly like a 201', (tester) async {
       await _pump(tester, outcomes: const [ReplyAccepted(replayed: true)]);
-      await tester.tap(find.text('Defer'));
+      await chooseAndSend(tester, 'Defer');
       await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(find.text('Sent · waiting for Mastermind'), findsOneWidget);
@@ -424,7 +428,7 @@ void main() {
         tester,
         outcomes: const [ReplyUnavailable(), ReplyAccepted(replayed: true)],
       );
-      await tester.tap(find.text('Defer'));
+      await chooseAndSend(tester, 'Defer');
       await tester.pump(MastermindRepliesCubit.defaultOptionUndoWindow);
       await tester.pumpAndSettle();
       expect(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
@@ -9,6 +8,8 @@ import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/view/home_needs_you_card.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
 import 'package:mobile/features/mastermind/view/widgets/show_all_row.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -42,9 +43,9 @@ class InboxListBody extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (model.isEmpty)
-          AppGroupedSection.spaced(children: [_empty(l10n)])
+          MastermindGroup(children: [_empty(l10n)])
         else if (model.hasNoMatches)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             children: [
               AppStateMessage.inline(
                 icon: LucideIcons.searchX,
@@ -60,15 +61,15 @@ class InboxListBody extends StatelessWidget {
           ),
         for (final group in model.groups) _group(context, group),
         if (model.security.isNotEmpty)
-          AppGroupedSection.spaced(
+          MastermindGroup(
             caption: l10n.mastermindSecurityGroup,
             children: [
               for (final item in model.security)
                 AppGroupedRow(
                   leading: const AppIconTile(icon: LucideIcons.shield),
                   title: Text(securityLine(l10n, item)),
-                  trailing: AppBadge.outline(
-                    child: Text(MastermindLabels.laneState(l10n, item.state)),
+                  trailing: MastermindStatusChip(
+                    label: MastermindLabels.laneState(l10n, item.state),
                   ),
                 ),
             ],
@@ -98,7 +99,7 @@ class InboxListBody extends StatelessWidget {
     final items = capped
         ? group.items.take(MastermindInboxModel.groupCap)
         : group.items;
-    return AppGroupedSection.spaced(
+    return MastermindGroup(
       caption: _groupTitle(context, group),
       captionTrailing: Text('${group.items.length}'),
       children: [

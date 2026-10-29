@@ -31,6 +31,19 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get mastermindReplyWriteOwn => 'Write your own';
+
+  @override
+  String mastermindReplySendOption(String option) {
+    return 'Send “$option”';
+  }
+
+  @override
+  String mastermindAskedAt(String age, String time) {
+    return 'Asked $age · $time';
+  }
+
+  @override
   String get mastermindReplyUndo => 'Undo';
 
   @override

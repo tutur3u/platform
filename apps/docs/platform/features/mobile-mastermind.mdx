@@ -174,7 +174,7 @@ order. Resolved groups hub history by GMT+7 day; see [resolved rows](/platform/f
   the same search text and product chips (the shell pops an item location
   instead of falling back to the Inbox). The navbar title is the kind
   ("Decision"), so the title is not repeated; the page leads with the display
-  title as a heading and shows the full `ask_text` as plain text, never clamped.
+  title as a heading and shows the full `ask_text` with tappable links, never clamped.
   When the hub published only its "Open on Mac" stand-in, an info alert reads
   "Full details are on the Mac" instead. The id is looked up among the open
   asks, then the resolved history, and is only ever a route parameter; deep
@@ -243,8 +243,8 @@ switch, so it flips without a store release.
   `{schema_version: "1.4", item_id, version_hash, option_index | text}`: one of
   an option index (into the item's own `options[]`) or free text of at most 500
   characters, counted in code points, and at most 10 lines (the hub's limit; the
-  composer caps both as you type). An option button sends its index after a
-  five-second undo window (see Undo window below).
+  composer caps both as you type). An option sends its index after a five-second
+  undo window (see Undo window below).
   The text field has a placeholder and a counter; free-text sending requires
   confirmation.
 - **Idempotency:** the `Idempotency-Key` is a random v4 UUID from a secure
@@ -264,7 +264,7 @@ switch, so it flips without a store release.
   account switch and lost access erase the outbox with the snapshot cache, behind
   the same generation fences, so an in-flight send cannot revive it.
 - **409 `stale_item`:** refreshes the item; see the [answered elsewhere rules](/platform/features/mobile-mastermind-answered-elsewhere).
-  Option buttons always use the current question version. `idempotency_conflict` drops the queued entry with "Something went
+  Options always use the current question version. `idempotency_conflict` drops the queued entry with "Something went
   wrong with this reply. Review it and send it again."
 - **Other answers:** 400 (`unsafe_text` explains the text policy) and 413 keep
   the words to edit; 429 waits out `Retry-After` and disables the retry until
@@ -744,8 +744,8 @@ preview starts on the second line; screen readers hear at most 200 characters
 of the ask on a row. The recorded answer shows "Show full answer" whenever it
 overflows four lines at the current width and text size.
 
-**Undo window (Theo, 2026-10-28).** Option replies stay one tap. The tap shows
-"Sending “option” · Undo" for 5 seconds on Home, Inbox or item detail; the reply enters the outbox only then, through the same
+**Undo window (Theo, 2026-10-28).** A Home or Inbox option is one tap; the item detail selects, then sends from the sticky Send ([decision detail](/platform/features/mobile-mastermind-decision-detail)). Either shows
+"Sending “option” · Undo" for 5 seconds; the reply enters the outbox only then, through the same
 `submit` and Idempotency-Key. One window per item; the other options lock
 meanwhile. Leaving the screen inside the window still sends; logout or an
 account switch cancels it, and so does a live snapshot where the ask changed or

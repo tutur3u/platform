@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
@@ -20,6 +19,7 @@ import 'package:mobile/features/mastermind/replies/reply_models.dart';
 import 'package:mobile/features/mastermind/view/inbox/decision_card_actions.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
 import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// One ask with a meaningful title, metadata and a two-line ask preview.
@@ -145,13 +145,13 @@ class InboxItemTile extends StatelessWidget {
               runSpacing: AppSpacing.xs,
               children: [
                 if (showKind && kindLabel != null)
-                  AppBadge(child: Text(kindLabel)),
+                  MastermindStatusChip(label: kindLabel),
                 if (item.product case final product?)
-                  AppBadge.outline(
-                    child: Text(MastermindLabels.product(product)),
+                  MastermindStatusChip(
+                    label: MastermindLabels.product(product),
                   ),
                 if (item.by case final by?)
-                  AppBadge.outline(child: Text(l10n.mastermindAskedBy(by))),
+                  MastermindStatusChip(label: l10n.mastermindAskedBy(by)),
                 if (answeredCheck) const Icon(AppIcons.check, size: 14),
                 Text(
                   detail,
@@ -275,10 +275,11 @@ class OptionChip extends StatelessWidget {
   final bool recommended;
 
   @override
-  Widget build(BuildContext context) => AppBadge.outline(
-    leading: recommended ? const Icon(LucideIcons.star, size: 12) : null,
-    child: Text(
-      recommended ? context.l10n.mastermindOptionRecommended(option) : option,
-    ),
+  Widget build(BuildContext context) => MastermindStatusChip(
+    icon: recommended ? LucideIcons.star : null,
+    tone: recommended ? AppTone.primary : AppTone.neutral,
+    label: recommended
+        ? context.l10n.mastermindOptionRecommended(option)
+        : option,
   );
 }

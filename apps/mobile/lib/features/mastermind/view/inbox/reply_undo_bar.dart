@@ -3,6 +3,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
 import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// "Sending · Undo": shown for the few seconds between tapping an option and
@@ -30,7 +31,7 @@ class ReplyUndoBar extends StatelessWidget {
           );
     // Large text: Undo moves under the label so a long label never clips it.
     final large = mastermindLargeText(context);
-    return AppGroupedSection.spaced(
+    return MastermindGroup(
       children: [
         AppGroupedRow(
           leading: const AppIconTile(icon: LucideIcons.hourglass),
