@@ -1,0 +1,89 @@
+---
+title: "Pay native staging candidate"
+description: "Qualify Pay on the shared Start bridge without live payment activity."
+---
+
+Pay retains its Next.js publisher and adds a TanStack Start/Void candidate. It
+consumes the shared bridge, page adapter, action transport and internal API
+resolver. The conversion adds no database migration, payment job or schedule.
+A source build is not payment-provider acceptance or production cutover.
+
+## Use root-only staging
+
+The staging candidate admits only `pay-staging.tuturuuu.com` as a host root.
+It rejects `pay.tuturuuu.com`, apex mounts and unknown hosts before app code.
+The cutover-prep PR must add `pay.tuturuuu.com` together with its separately
+reviewed production profile; apex hosting remains held by the shared auth guard. Pay consumes the bridge's shared session model without a per-app cookie.
+
+`cloudflare/staging-profile.json` owns the staging values used by Void, artifact
+qualification and runtime checks. It pins Pay to `https://pay-staging.tuturuuu.com`,
+Web/API to `https://staging.tuturuuu.com`, the repository's staging Supabase
+project, and `POLAR_SANDBOX=true`. Supply only sandbox Polar credentials. The
+artifact helper rejects a missing or false sandbox flag. This staging-data
+artifact cannot be admitted as a production profile.
+
+Every response sends noindex, X-Frame-Options DENY, nosniff and the strict-origin
+referrer policy. CSP includes `frame-ancestors 'none'`. The exact shared WebGL
+asset path is the framing exception: its upstream sandbox CSP passes through
+unchanged and X-Frame-Options is removed. Exact-path, descendant and neighbouring
+framing controls run against the staging root; the production host is explicitly rejected. Personalized SSR and API
+responses use private/no-store caching and vary on Cookie, Authorization and
+Accept-Language. Only successful GET/HEAD compiled-asset responses keep their
+static caching. `global_fetch_strictly_public` is required; hosted acceptance
+must show same-zone self-fetches reach the Worker rather than retained Vercel.
+
+## Preserve route and payment authority
+
+The source inventory has six pages, one server-action module and 26 local API
+handlers. Local billing, payment, webhook and existing job routes retain their
+ownership; unmatched APIs forward to Web. Conversion does not authorize invoking
+migration/job endpoints or changing provider webhook routing.
+
+Exact GET/HEAD `/api/build-info` are public deployment identity reads. Their
+ambient credentials are removed, and the shared guard remains in place. Other
+methods and lookalike paths retain session checks. Polar webhook POSTs and the
+existing cron GETs retain their handler signature/secret checks and shared edge
+protection; no scheduler is enabled by the candidate.
+
+## Qualify the emitted artifact
+
+Run the exact-head unit, Next/Cloudflare types, lint, real `vp build`, registry
+and route-tree checks, binding harness, emitted config and Wrangler dry-run on
+Sonha through `ttr resources run`. Seal the output with
+`scripts/ci/pay-native-artifact.py`, transfer it through the M4, and run both the
+transferred and roundtrip-restored artifact on Thanh under browser admission.
+Run `bun check:changed` before publication. The M4 runs no builds or containers.
+
+The native workflow calls the shared qualification template. The generated raw
+Host suite consumes declared root/login/dashboard outcomes from
+`start-bridge.routes.json`. The app-owned runtime checks public build identity,
+negative API controls, response security, staging auth-return origin, invalid
+webhook rejection, missing cron authority, root-only host rejection and bounded
+CDP-fenced Chromium navigation. All outbound database/provider requests are
+blocked in these fixtures. This is not hosted shared-session, checkout or
+payment-provider acceptance.
+
+## Require provider sandbox acceptance
+
+Before staging sign-off, record the sandbox account, exact Worker source/version,
+profile/bindings and test identities through the release owner. Exercise:
+
+- EN/VI signed-in workspace billing and permission denial across workspaces.
+- Checkout completion and cancellation, credit packs and subscription changes.
+- Valid signed webhook delivery and invalid signature rejection.
+- Replay the same valid delivery with the same `webhook-id` and verify deduplication:
+  no duplicate credits, invoices, subscription changes or other payment side effects.
+  Webhook-id deduplication remains a sandbox acceptance gate; this migration adds no dedupe code.
+- Seat changes, invoice delivery, billing details and the customer portal.
+- Auth verification, refresh, logout and same-zone self-fetch on hosted staging.
+
+Use disposable sandbox records and the original operation identity for any
+uncertain write. Stop on an unknown outcome; do not replay blindly. No live
+payments, production Polar credentials or live webhook reconfiguration are
+admitted by these checks.
+
+After independent review and hosted acceptance, the release owner's explicit
+cutover-prep PR admits the production artifact/bindings and legacy-publisher hold.
+The direct root-mode cutover needs a captured immutable Vercel deployment, DNS
+payload and one-step rollback, followed by smoke and a 30–60 minute 5xx/auth/p95
+watch. Production stays held until those gates pass.

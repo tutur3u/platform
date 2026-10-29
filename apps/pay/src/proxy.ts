@@ -144,6 +144,15 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const isLocalAuthApi = request.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
+    const isBuildInfoRead =
+      request.nextUrl.pathname === '/api/build-info' &&
+      (request.method === 'GET' || request.method === 'HEAD');
+    if (isBuildInfoRead) {
+      for (const cookie of request.cookies.getAll())
+        request.cookies.delete(cookie.name);
+      request.headers.delete('cookie');
+      request.headers.delete('authorization');
+    }
     // Machine endpoints authenticate in their handlers: Polar signatures or the
     // cron bearer secret. A browser session would reject legitimate deliveries.
     const isMachineApi =
@@ -156,7 +165,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
           '/api/cron/payment/orders',
         ].includes(request.nextUrl.pathname));
     const appSessionRefresh =
-      isLocalAuthApi || isMachineApi
+      isLocalAuthApi || isMachineApi || isBuildInfoRead
         ? null
         : await refreshAppSessionForRequest(request, {
             sessionMode: 'supabase-first',
@@ -180,6 +189,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       }
       return preserveMfaRecoveryCookies(request, guardResponse);
     }
+
+    if (isBuildInfoRead)
+      return NextResponse.next({ request: { headers: request.headers } });
 
     return (
       appSessionRefresh?.response ??
