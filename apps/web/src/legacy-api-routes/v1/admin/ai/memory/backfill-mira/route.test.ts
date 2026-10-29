@@ -3,6 +3,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   allowed: false,
+  staff: true,
   admin: vi.fn(),
   remember: vi.fn(),
 }));
@@ -10,6 +11,9 @@ vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
   resolveAuthenticatedSessionUser: async () => ({
     user: { id: 'staff', email: 'staff@tuturuuu.com' },
   }),
+}));
+vi.mock('@tuturuuu/utils/email/staff-session', () => ({
+  isVerifiedTuturuuuStaffSession: () => mocks.staff,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: async () => ({
@@ -28,6 +32,7 @@ vi.mock('@tuturuuu/ai/memory', () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.allowed = false;
+  mocks.staff = true;
   const chain = {
     eq: vi.fn(),
     update: vi.fn(),
@@ -85,4 +90,13 @@ it('SR-270 retains memory-service consent checks during an authorized backfill',
   expect(mocks.remember).toHaveBeenCalledWith(
     expect.not.objectContaining({ ignoreSettings: true })
   );
+});
+
+it('denies an operator without a verified staff session before memory access', async () => {
+  mocks.allowed = true;
+  mocks.staff = false;
+  const { POST } = await import('./route');
+  expect((await POST(req())).status).toBe(403);
+  expect(mocks.admin).not.toHaveBeenCalled();
+  expect(mocks.remember).not.toHaveBeenCalled();
 });

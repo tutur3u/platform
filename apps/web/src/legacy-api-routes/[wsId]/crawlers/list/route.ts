@@ -17,6 +17,9 @@ export async function GET(req: Request) {
     const domain = searchParams.get('domain');
     const search = searchParams.get('search');
 
+    const denied = await authorizeCrawlerRead(req, ROOT_WORKSPACE_ID);
+    if (denied) return denied;
+
     const supabase = await createClient();
 
     const { user } = await resolveAuthenticatedSessionUser(supabase);
@@ -32,9 +35,6 @@ export async function GET(req: Request) {
     ) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-
-    const denied = await authorizeCrawlerRead(req, ROOT_WORKSPACE_ID);
-    if (denied) return denied;
 
     const sbAdmin = await createAdminClient();
 
