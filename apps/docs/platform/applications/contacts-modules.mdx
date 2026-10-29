@@ -213,3 +213,26 @@ source API serialization and persistent synthetic HTTP storage, then remounts fr
 stored rows. It covers multiple recipients, completion and explicit Save, pristine
 concurrent server updates, later edits/reverts, rejected saves/retries and explicit
 clearing. The synthetic store does not certify deployed database triggers.
+
+
+## Group data and workspace member controls
+
+Linked-product creation in Contacts and Inventory, and linked-product edits in
+Contacts, require the product, warehouse and unit to belong to the authorized
+workspace and to form an existing inventory combination. Reads also exclude
+pre-existing links to another workspace's product catalogue.
+
+Periodic report export, history and delivery diagnostics follow the same group
+access as the report list: readers need `view_user_groups_reports` and access to
+the report's group. `manage_users` permits workspace-wide group access. Both the
+report subject and group must belong to the authorized workspace. Teach course
+member lists retain student names but mask email unless the reader has
+`view_users_private_info`.
+
+Workspace role assignment through Web or the CMS team adapter accepts only
+existing workspace members. Batch onboarding invitations require
+`manage_workspace_members` and honor the workspace's `DISABLE_INVITE` setting,
+matching individual invitations. Existing seat checks still apply.
+
+Regression coverage: `packages/users-core/tests/routes/group-scope-boundaries.test.ts`
+and `apps/web/src/__tests__/member-access-boundaries.test.ts`.

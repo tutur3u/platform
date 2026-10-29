@@ -1,7 +1,19 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-auth';
+import { hasLinkedProductInWorkspace } from '@tuturuuu/inventory-core/linked-product-scope';
+import type { Tables } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { revalidateUserGroupCache } from '@/lib/user-groups/revalidate';
+
+type LinkedProductRow = Pick<
+  Tables<'user_group_linked_products'>,
+  'warehouse_id' | 'unit_id'
+> & {
+  workspace_products: Pick<
+    Tables<'workspace_products'>,
+    'id' | 'name' | 'description'
+  >;
+};
 
 interface Params {
   params: Promise<{
@@ -55,6 +67,7 @@ export async function GET(req: Request, { params }: Params) {
       { count: 'exact' }
     )
     .eq('group_id', groupId)
+    .eq('workspace_products.ws_id', wsId)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -66,7 +79,7 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   return NextResponse.json({
-    items: (data ?? []).map((row) => ({
+    items: (data ?? []).map((row: LinkedProductRow) => ({
       id: row.workspace_products.id,
       name: row.workspace_products.name,
       description: row.workspace_products.description,
@@ -122,6 +135,21 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json(
       { message: 'User group not found' },
       { status: 404 }
+    );
+  }
+
+  if (
+    !(await hasLinkedProductInWorkspace({
+      sbAdmin,
+      wsId,
+      productId: body.productId,
+      warehouseId: body.warehouseId,
+      unitId: body.unitId,
+    }))
+  ) {
+    return NextResponse.json(
+      { message: 'Invalid linked product' },
+      { status: 400 }
     );
   }
 
