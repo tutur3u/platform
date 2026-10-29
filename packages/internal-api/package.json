@@ -108,6 +108,11 @@
       "import": "./dist/programming.js",
       "require": "./dist/programming.js"
     },
+    "./tulearn": {
+      "types": "./dist/tulearn.d.ts",
+      "import": "./dist/tulearn.js",
+      "require": "./dist/tulearn.js"
+    },
     "./external-project-team": {
       "types": "./dist/external-project-team.d.ts",
       "import": "./dist/external-project-team.js",

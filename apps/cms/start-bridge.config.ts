@@ -7,7 +7,7 @@ const framablePaths = framablePathRegexes();
 
 export default defineBridgeAppConfig<CmsEnvironment>({
   mounts: {
-    rootHosts: ['cms.tuturuuu.com', 'cms-staging.tuturuuu.com'],
+    rootHosts: ['cms.tuturuuu.com', 'cms.staging.tutur3u.com'],
     mountHosts: [],
     unknownHost: 'reject',
   },

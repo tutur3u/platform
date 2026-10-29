@@ -346,6 +346,44 @@ export async function submitTulearnPractice(
   );
 }
 
+export interface TulearnParentLinkSummary {
+  id: string;
+  status: 'active' | 'pending' | 'revoked';
+  student_workspace_user_id: string;
+  ws_id: string;
+}
+
+/** Parent-only: accepts an emailed invite (token + verified email). */
+export async function acceptTulearnParentInvite(
+  workspaceId: string,
+  token: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
+  return client.json<{ link: TulearnParentLinkSummary }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/parent-invites/accept`,
+    {
+      body: JSON.stringify({ token }),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+/** Parent-only: accepts a pending link proposed by workspace staff. */
+export async function acceptTulearnParentLink(
+  workspaceId: string,
+  linkId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(withLearnApiBaseUrl(options));
+  return client.json<{ link: TulearnParentLinkSummary }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tulearn/parent-links/${encodePathSegment(linkId)}/accept`,
+    { cache: 'no-store', method: 'POST' }
+  );
+}
+
 export async function listTulearnAssignments(
   workspaceId: string,
   studentId?: string | null,

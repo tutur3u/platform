@@ -55,7 +55,7 @@ export async function GET(request: Request, { params }: Params) {
       );
     if (new URL(request.url).searchParams.get('preview') === 'true') {
       return NextResponse.json(
-        await loadReportEmailPreview(admin, wsId, reportId),
+        await loadReportEmailPreview(admin, wsId, reportId, accessibleGroupIds),
         { headers: { 'Cache-Control': 'private, no-store' } }
       );
     }
@@ -109,16 +109,25 @@ export async function POST(request: Request, { params }: Params) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
 
+    const accessibleGroupIds = await getReportReadGroupIds({
+      request,
+      wsId: permissions.wsId,
+      canManageUsers: permissions.containsPermission('manage_users'),
+    });
     const sbAdmin = await createAdminClient();
     const privateDb = sbAdmin.schema('private');
-    const reportResult = await privateDb
+    let reportQuery = privateDb
       .from('external_user_monthly_reports_workspace_view')
       .select(
         'id, title, content, feedback, user_id, user_email, user_ws_id, report_approval_status, delivery_status'
       )
       .eq('id', reportId)
       .eq('user_ws_id', wsId)
-      .maybeSingle();
+      .eq('group_ws_id', wsId);
+    if (accessibleGroupIds !== null) {
+      reportQuery = reportQuery.in('group_id', accessibleGroupIds);
+    }
+    const reportResult = await reportQuery.maybeSingle();
     if (reportResult.error) throw reportResult.error;
     const report = reportResult.data;
     if (!report) {
@@ -131,7 +140,12 @@ export async function POST(request: Request, { params }: Params) {
     if (parsed.data.action === 'preview') {
       return NextResponse.json({
         message: 'Preview ready. No email was queued.',
-        preview: await loadReportEmailPreview(sbAdmin, wsId, reportId),
+        preview: await loadReportEmailPreview(
+          sbAdmin,
+          wsId,
+          reportId,
+          accessibleGroupIds
+        ),
         queued: false,
         status: report.delivery_status,
       });

@@ -71,6 +71,7 @@ const timeblock = {
   date: '2026-08-04',
   start_time: '09:00:00+07',
   end_time: '09:15:00+07',
+  tentative: false,
 };
 
 const guestInput = () => ({

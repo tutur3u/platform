@@ -173,6 +173,15 @@ with older parameters still verify and are rehashed with an update guarded by
 the previous hash. See
 [shared-secret password reset](/platform/features/shared-secret-password-reset).
 
+The optional Durable Object password store remains default-off. Once assigned,
+each verified user and each trusted source network may spend at most 5% of the
+password family's daily command share, across challenges. Denied probes and
+successful-login refunds consume that allowance; rotating challenges or source
+addresses cannot reset the user's quota. See
+[durable command fairness](/build/devops/abuse-guard-store#durable-command-fairness).
+Real-store concurrency and restart coverage lives in
+`apps/abuse-guard/src/fairness.test.ts`.
+
 After the password verifies, `/api/auth/challenges/verify-password` sets an
 httpOnly `nova_challenge_access_<challengeId>` cookie holding a signed grant
 bound to that challenge and the signed-in user, valid for the challenge

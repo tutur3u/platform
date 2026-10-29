@@ -247,6 +247,13 @@ localization changes.
   optimistic mutations.
 - Overdue is one rule (`utils/task_due_dates.dart`): the due day in the
   user's timezone setting is before today. No due date, never overdue.
+- Save a picked day in the timezone setting with `taskStartOfDayIn` /
+  `taskEndOfDayIn`, and carry existing dates through `taskInZone`. The task
+  repository snaps a `tz.TZDateTime` to its own zone's day but a plain
+  `DateTime` to the device's day, so a plain date can shift a day in the
+  board's zone. A sheet opens above the page: re-provide a page-scoped
+  `TimezoneSettingsCubit` to it, as the quick sheet does, or it reads device
+  days (`task_board_quick_actions_dates_test.dart` covers both).
 - The tap quick sheet follows the cubit for its task and passes the live task
   to every edit, so consecutive edits never save a stale snapshot. Edits made
   where the saved value is visible pass `announce: false` (no success toast;
@@ -258,6 +265,26 @@ localization changes.
   root-navigator context only for legacy `shad.showToast` callers.
 - Optimistic `TaskBoardDetailCubit.updateTask` restores the pre-edit snapshot
   on failure before the server refresh; do not rely on the refresh alone.
+- The board timeline is an agenda (`utils/task_board_timeline_agenda.dart`):
+  a pure model plus `TaskTimelineAgendaCache`. `filteredTasksByListId`
+  regroups into new collections on every build while reusing task objects, so
+  memoize on element identity, not map identity. The view is one
+  `CustomScrollView` with `center:` on today's sliver; slivers before the
+  centre grow upward, so their items are stored bottom-up. Keep rows lazy
+  (`SliverList.builder` with per-row card segments) rather than building a
+  day's card as one widget. Date-placed views must load every page of the
+  lists they summarize (`task_board_detail_page_timeline_loading.dart`,
+  policy in `utils/task_board_timeline_paging.dart`: 100 per page, two lists
+  at a time, a 2,000-task board budget) and must not state that a day is
+  empty while pages remain. Do not page from `setView` or a scroll trigger:
+  they bypass the budget and cap, and a near-bottom trigger made the
+  all-pages tests pass without the scheduler. Prove such a test by disabling
+  the scheduler and watching it fail. `_emitListTasksPage` processes only the
+  arriving page (its descriptions and its list); keep it that way.
+  `moveTask` checks for a running mutation before bumping
+  `_loadRequestToken`; a rejected move must not orphan in-flight list reads. Test fixtures should
+  serve tasks only through `getBoardTasksForList` and honour `limit` and
+  `offset`; board-detail tasks hide paging bugs.
 
 ### Estimation recovery
 

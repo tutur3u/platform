@@ -332,6 +332,8 @@ The per-target cap remains 10. Nova's separate per-user cap allows 60 checks per
 window without making one office share an IP budget. These are policy allowances,
 not production load measurements; monitor rejection rates before changing them.
 
+When the `password` family is assigned to the [abuse-guard store](/build/devops/abuse-guard-store), the same reservation runs as `res.reserve`/`res.refund` inside one Durable Object per scope (`pwd:meet-guest`, `pwd:meet-guest-create`, `pwd:nova-challenge`). The source and target budgets therefore still commit atomically. Once assigned, a store error, a timeout, a stopped guard or an `off` selection fails closed: the attempt is refused with `retryAfter: 30`. Exhausting the store's budget therefore cannot switch the limit off. The legacy Upstash path keeps its fail-open policy. The assigned store additionally enforces durable daily source/principal command fairness before family admission, including denied checks and successful refunds. A bounded one-second denial cache suppresses immediate repeated reservations. The family stays unassigned pending independent security and hosted activation acceptance; see the [abuse-guard store runbook](/build/devops/abuse-guard-store#durable-command-fairness).
+
 A spent budget returns `retryAfter` seconds: Nova answers HTTP 429 with `Retry-After`, and the Meet
 guest-login server action returns `{ error, retryAfter }` for the localized
 form message. Like other abuse protection, the counters fail open when
