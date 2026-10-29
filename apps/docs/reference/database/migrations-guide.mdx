@@ -528,6 +528,18 @@ Unversioned files are always checked.
    `public`/`anon` (or to `authenticated` where that is required closed). The
    guard prints the migration and line that evidence each inherited pass.
 
+**Schema-scoped default privileges do not fence new functions.** `ALTER DEFAULT
+PRIVILEGES ... IN SCHEMA private REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC` (as in
+`20261029030500_align_cross_app_token_grant_and_private_fence.sql`) does not
+stop a function created in `private` afterwards from being executable by
+`public` and `anon`: schema-scoped entries can only add privileges, so
+PostgreSQL's global PUBLIC `EXECUTE` default still applies. The control is the
+guard's explicit same-file `REVOKE` rule for every new definer. Do not rely on
+that statement. No global default-privilege change is part of this rule; it is
+a separate tracked decision. The pgTAP test
+`apps/database/supabase/tests/private-schema-default-execute-limitation.sql`
+documents the behavior and must be updated when that decision lands.
+
 The guard ignores text in comments, string literals and dollar-quoted bodies,
 so dynamic `EXECUTE 'grant ...'` inside PL/pgSQL is not detected; review
 those by hand. Focused cases live in

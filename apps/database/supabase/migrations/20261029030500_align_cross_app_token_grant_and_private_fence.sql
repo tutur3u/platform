@@ -3,6 +3,12 @@ BEGIN;
 REVOKE EXECUTE ON FUNCTION public.generate_cross_app_token(uuid, text, text, integer, jsonb)
 FROM service_role;
 
+-- NOTE: this schema-scoped default-privilege revoke does NOT fence new private
+-- functions. Schema-scoped entries can only add privileges, so PostgreSQL's
+-- global PUBLIC EXECUTE default still applies to a function created in schema
+-- private afterwards. Enforcement is the SQL grant guard's explicit same-file
+-- REVOKE rule for every new SECURITY DEFINER function, not this statement.
+-- See "SQL grant guard" in apps/docs/reference/database/migrations-guide.mdx.
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA private
 REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 
@@ -23,6 +29,7 @@ BEGIN
       RAISE NOTICE 'Skipping private function defaults for non-member role %', pg_get_userbyid(creator.owner_oid);
       CONTINUE;
     END IF;
+    -- Same limitation as above: this does not remove the global PUBLIC default.
     EXECUTE format(
       'ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA private REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC',
       pg_get_userbyid(creator.owner_oid)
