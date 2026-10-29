@@ -280,7 +280,7 @@ export async function listPotentialSchedulingConflicts({
       ? tutoringSessionsClient
           .from('workspace_tutoring_sessions')
           .select(
-            'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
+            'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
           )
           .eq('ws_id', normalizedWsId)
           .in('session_date', sessionDates)
@@ -290,7 +290,7 @@ export async function listPotentialSchedulingConflicts({
   const studentQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .select(
-      'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
+      'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
     )
     .eq('ws_id', normalizedWsId)
     .in('session_date', sessionDates)

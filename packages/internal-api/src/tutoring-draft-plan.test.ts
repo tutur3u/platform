@@ -123,3 +123,39 @@ describe('bounded tutoring draft choices', () => {
     ).toEqual([]);
   });
 });
+
+describe('group tutoring choices', () => {
+  const session = {
+    ...busy,
+    group_id: 'group-a',
+    start_time: '17:15:00',
+    duration_minutes: 45,
+  };
+  it('offers the teacher for two recorded learners sharing the same group slot', () => {
+    expect(
+      rankTutoringDraftChoices({
+        ...input,
+        groupId: 'group-a',
+        sessions: [session, { ...session, student_user_id: 'another' }],
+      })[0]?.teachers.map((t) => t.id)
+    ).toEqual(['a', 'b']);
+  });
+  it('excludes a teacher assigned to another group at the same time', () => {
+    expect(
+      rankTutoringDraftChoices({
+        ...input,
+        groupId: 'group-b',
+        sessions: [session],
+      })[0]?.teachers.map((t) => t.id)
+    ).toEqual(['b']);
+  });
+  it('still excludes the learner from a matching group slot', () => {
+    expect(
+      rankTutoringDraftChoices({
+        ...input,
+        groupId: 'group-a',
+        sessions: [{ ...session, student_user_id: 'learner' }],
+      })
+    ).toEqual([]);
+  });
+});

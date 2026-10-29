@@ -148,6 +148,7 @@ export async function PUT(request: Request, { params }: Params) {
     parsed.data.teacherUserId !== undefined
   ) {
     const nextSlot: TutoringSessionSlotInput = {
+      groupId: currentSession.group_id,
       durationMinutes:
         parsed.data.durationMinutes ?? currentSession.duration_minutes,
       sessionDate: parsed.data.sessionDate ?? currentSession.session_date,
@@ -164,7 +165,7 @@ export async function PUT(request: Request, { params }: Params) {
       ? tutoringSessionsClient
           .from('workspace_tutoring_sessions')
           .select(
-            'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
+            'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
           )
           .eq('ws_id', normalizedWsId)
           .in('session_date', sessionDates)
@@ -175,7 +176,7 @@ export async function PUT(request: Request, { params }: Params) {
     const studentQuery = tutoringSessionsClient
       .from('workspace_tutoring_sessions')
       .select(
-        'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
+        'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
       )
       .eq('ws_id', normalizedWsId)
       .in('session_date', sessionDates)

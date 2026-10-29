@@ -308,6 +308,7 @@ export async function POST(request: Request, { params }: Params) {
 
   const slotsForConflictCheck: TutoringSessionSlotInput[] = sessionSlots.map(
     (slot) => ({
+      groupId: payload.groupId,
       durationMinutes: slot.durationMinutes,
       sessionDate: slot.sessionDate,
       startTime: slot.startTime,

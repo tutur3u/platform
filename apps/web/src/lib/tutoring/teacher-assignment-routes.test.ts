@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   admin: vi.fn(),
   eligibility: vi.fn(),
   scope: vi.fn(),
+  conflicts: vi.fn(),
 }));
 vi.mock('next/server', () => ({
   NextResponse: { json: Response.json },
@@ -33,7 +34,7 @@ vi.mock(
   async (original) => ({
     ...(await original<object>()),
     validateTutoringSessionScope: mocks.scope,
-    listPotentialSchedulingConflicts: async () => ({ data: [], error: null }),
+    listPotentialSchedulingConflicts: mocks.conflicts,
   })
 );
 const query = {
@@ -57,7 +58,7 @@ const query = {
   })),
   // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
   then: (resolve: (value: unknown) => unknown) =>
-    Promise.resolve({ data: [], error: null }).then(resolve),
+    mocks.conflicts().then(resolve),
 };
 beforeEach(() => {
   vi.clearAllMocks();
@@ -72,6 +73,7 @@ beforeEach(() => {
     error: null,
   });
   mocks.scope.mockResolvedValue(null);
+  mocks.conflicts.mockResolvedValue({ data: [], error: null });
 });
 async function call(method: 'POST' | 'PUT') {
   const body =
@@ -110,6 +112,41 @@ describe.each(['POST', 'PUT'] as const)(
         sbAdmin: expect.anything(),
         teacherUserIds: [teacher],
       });
+    });
+    it('assigns a third learner to the matching teacher group slot', async () => {
+      mocks.conflicts.mockResolvedValue({
+        data: ['learner-1', 'learner-2'].map((student_user_id) => ({
+          group_id: group,
+          session_date: '2026-10-07',
+          start_time: '17:15:00',
+          duration_minutes: 45,
+          teacher_user_id: teacher,
+          student_user_id,
+        })),
+        error: null,
+      });
+      expect((await call(method)).status).toBe(200);
+      expect(
+        method === 'POST' ? query.insert : query.update
+      ).toHaveBeenCalled();
+    });
+    it('refuses another group at the same time before writing', async () => {
+      mocks.conflicts.mockResolvedValue({
+        data: [
+          {
+            group_id: 'other-group',
+            session_date: '2026-10-07',
+            start_time: '17:15:00',
+            duration_minutes: 45,
+            teacher_user_id: teacher,
+            student_user_id: 'other-learner',
+          },
+        ],
+        error: null,
+      });
+      expect((await call(method)).status).toBe(409);
+      expect(query.insert).not.toHaveBeenCalled();
+      expect(query.update).not.toHaveBeenCalled();
     });
     it('rejects nonteacher or cross-workspace IDs before writing', async () => {
       mocks.eligibility.mockResolvedValue({
