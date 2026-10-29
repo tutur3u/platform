@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { resetProductionOverrideErrorLogForTests } from '../../shared-cookie-domains';
 import {
   checkEnvVariables,
   getHostOnlyCookieClearHeaders,
@@ -148,6 +149,86 @@ describe('common', () => {
         sameSite: 'lax',
         secure: true,
       });
+    });
+
+    it.each(['VERCEL_ENV', 'NEXT_PUBLIC_VERCEL_ENV'])(
+      'ignores the staging override when %s is production and logs once',
+      (envKey) => {
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        resetProductionOverrideErrorLogForTests();
+        delete process.env.VERCEL_ENV;
+        delete process.env.NEXT_PUBLIC_VERCEL_ENV;
+        process.env[envKey] = 'production';
+        process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN =
+          '.staging.tutur3u.com';
+
+        for (let i = 0; i < 2; i++) {
+          expect(
+            getSupabaseCookieOptions(
+              supabaseUrl,
+              'https://web.staging.tutur3u.com'
+            )
+          ).toEqual({
+            name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
+            path: '/',
+            sameSite: 'lax',
+          });
+          expect(
+            getSupabaseCookieOptions(supabaseUrl, 'https://tasks.tuturuuu.com')
+              .domain
+          ).toBe('.tuturuuu.com');
+        }
+
+        expect(error).toHaveBeenCalledTimes(1);
+        error.mockRestore();
+      }
+    );
+
+    it('scopes cookies to .staging.tutur3u.com on a staging host and leaves production on .tuturuuu.com', () => {
+      process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN =
+        '.staging.tutur3u.com';
+
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://web.staging.tutur3u.com')
+      ).toEqual({
+        domain: '.staging.tutur3u.com',
+        name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
+        path: '/',
+        sameSite: 'lax',
+        secure: true,
+      });
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://app.tutur3u.com')
+      ).toEqual({
+        name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
+        path: '/',
+        sameSite: 'lax',
+      });
+
+      delete process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN;
+
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://tasks.tuturuuu.com')
+      ).toMatchObject({ domain: '.tuturuuu.com', secure: true });
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://web.staging.tutur3u.com')
+      ).not.toHaveProperty('domain');
+    });
+
+    it.each([
+      '.tutur3u.com',
+      '.tuturuuu.com',
+      '.foo.tutur3u.com',
+      '.staging.tuturuuu.com',
+    ])('ignores the rejected shared cookie override %s', (value) => {
+      process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN = value;
+
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://tasks.tuturuuu.com')
+      ).toMatchObject({ domain: '.tuturuuu.com', secure: true });
+      expect(
+        getSupabaseCookieOptions(supabaseUrl, 'https://web.staging.tutur3u.com')
+      ).not.toHaveProperty('domain');
     });
 
     it('shares cookies across local Tuturuuu subdomains without secure cookies', () => {

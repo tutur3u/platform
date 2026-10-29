@@ -1,7 +1,9 @@
+import { resolveConfiguredInternalAppDomains } from './internal-domains-env';
 import {
   getTuturuuuPortlessAppOrigin,
   TUTURUUU_PORTLESS_APP_HOSTS,
 } from './portless';
+import { getConfiguredSharedCookieDomainOverride } from './shared-cookie';
 
 export const PRODUCTION_INTERNAL_APP_DOMAINS = [
   { name: 'parley', url: 'https://parley.tuturuuu.com' },
@@ -456,12 +458,28 @@ export function getConfiguredExternalAppDomains(): AppDomain[] {
     .filter((entry): entry is AppDomain => Boolean(entry));
 }
 
+export function getConfiguredInternalAppDomains(): AppDomain[] {
+  return resolveConfiguredInternalAppDomains(
+    new Set<string>(APP_DOMAIN_MAP.map((domain) => domain.name))
+  );
+}
+
 export function getAppDomainMap(): AppDomain[] {
+  // A cookie-isolated staging deployment never trusts production app origins:
+  // returns to them are cross-environment and go unresolved (rejected).
+  const isolatedFromProduction = Boolean(
+    getConfiguredSharedCookieDomainOverride()
+  );
+  const builtInDomains = isolatedFromProduction
+    ? DEV_INTERNAL_APP_DOMAINS
+    : APP_DOMAIN_MAP;
+
   return [
-    ...APP_DOMAIN_MAP.map((domain) => ({
+    ...builtInDomains.map((domain) => ({
       ...domain,
       kind: 'internal' as const,
     })),
+    ...getConfiguredInternalAppDomains(),
     ...getConfiguredExternalAppDomains(),
   ];
 }
