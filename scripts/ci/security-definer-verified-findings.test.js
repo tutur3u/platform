@@ -6,6 +6,10 @@ const test = require('node:test');
 const { lintMigration, checkRepository } = require('./security-definer-guard');
 const { assertReviewedBlocks } = require('./security-definer-blocks');
 const verified = require('./security-definer-verified-findings.json');
+const {
+  REVIEWED_EXCEPTIONS,
+  digestFinding,
+} = require('./sql-grant-reviewed-exceptions');
 
 for (const searchPath of [
   "SET search_path TO 'pg_catalog', 'pg_temp'",
@@ -29,7 +33,7 @@ test('an SQL string body cannot pretend to be a search_path option', () => {
 });
 test('verified findings remain separate from the historical debt inventory', () => {
   const historical = require('./security-definer-historical-blocks.json');
-  assert.equal(verified.length, 7);
+  assert.equal(verified.length, 3);
   for (const entry of verified) {
     assert.equal(entry.classification, 'verified false positive');
     assert.ok(!historical.some((old) => old.file === entry.file));
@@ -69,7 +73,7 @@ test('each reviewed finance finding binds file, line, rule and all source bytes'
       verifiedFindings,
     });
   assert.deepEqual(run(), []);
-  assert.equal(run([]).length, 7);
+  assert.equal(run([]).length, 3);
   for (const entry of verified) {
     for (const changed of [
       { ...entry, file: 'copied.sql' },
@@ -87,6 +91,55 @@ test('each reviewed finance finding binds file, line, rule and all source bytes'
   for (const file of files)
     fs.appendFileSync(path.join(root, file), '\n-- changed source\n');
   assert.equal(run().length, 7);
+});
+
+test('each SR-843 finding is covered by exactly one mechanism', (t) => {
+  const exception = REVIEWED_EXCEPTIONS.find((entry) =>
+    entry.id.startsWith('SR-843')
+  );
+  assert.equal(exception.findings.length, 4);
+  // The definer guard defers to the grant guard's source-bound exception, so
+  // no verified-finding record may cover the same file and line.
+  for (const entry of verified)
+    assert.ok(
+      !REVIEWED_EXCEPTIONS.some(
+        (reviewed) =>
+          reviewed.file === entry.file &&
+          reviewed.findings.some((finding) => finding.line === entry.line)
+      ),
+      `${entry.file}:${entry.line} is in both mechanisms`
+    );
+  for (const finding of exception.findings)
+    assert.equal(
+      finding.digest,
+      digestFinding({
+        rule: exception.rule,
+        file: exception.file,
+        line: finding.line,
+        signature: finding.signature,
+      })
+    );
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sr843-single-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.mkdirSync(path.dirname(path.join(root, exception.file)), {
+    recursive: true,
+  });
+  fs.copyFileSync(
+    path.resolve(__dirname, '../..', exception.file),
+    path.join(root, exception.file)
+  );
+  const run = () =>
+    checkRepository({
+      root,
+      files: [exception.file],
+      baseline: [],
+      historicalBlocks: [],
+      reviewedBlocks: [],
+      verifiedFindings: verified,
+    });
+  assert.deepEqual(run(), []);
+  fs.appendFileSync(path.join(root, exception.file), '\n-- changed source\n');
+  assert.equal(run().length, 5);
 });
 
 test('reviewed finance exceptions cannot hide a later anonymous grant', (t) => {

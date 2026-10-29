@@ -26,6 +26,7 @@ const {
   FROZEN_DEFINERS_CUTOFF,
 } = require('./sql-grant-frozen-definers');
 const { evaluateSqlFiles } = require('./sql-grant-guard');
+const { REVIEWED_EXCEPTIONS } = require('./sql-grant-reviewed-exceptions');
 const {
   readRoutine,
   routineKey,
@@ -525,10 +526,16 @@ function checkRepository({
       .trim()
       .split('\n')
       .filter(Boolean);
+  // Definers the SQL grant guard already accepts: frozen inherited ACLs and
+  // its source-bound reviewed exceptions (one mechanism per finding; never
+  // duplicate those entries in security-definer-verified-findings.json).
   const inherited = new Set();
   if (
-    paths.some((file) =>
-      FROZEN_DEFINERS.some((entry) => entry.file === path.posix.basename(file))
+    paths.some(
+      (file) =>
+        FROZEN_DEFINERS.some(
+          (entry) => entry.file === path.posix.basename(file)
+        ) || REVIEWED_EXCEPTIONS.some((entry) => entry.file === file)
     )
   ) {
     const { satisfied } = evaluateSqlFiles({
@@ -537,8 +544,10 @@ function checkRepository({
     });
     for (const entry of satisfied) {
       if (
-        entry.mode === 'inherited-acl' &&
-        path.posix.basename(entry.file).slice(0, 14) <= FROZEN_DEFINERS_CUTOFF
+        entry.mode === 'reviewed-exception' ||
+        (entry.mode === 'inherited-acl' &&
+          path.posix.basename(entry.file).slice(0, 14) <=
+            FROZEN_DEFINERS_CUTOFF)
       )
         inherited.add(entry.file + ':' + entry.signature);
     }
