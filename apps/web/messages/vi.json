@@ -4590,6 +4590,7 @@
     },
     "feature": "Tính năng và phạm vi",
     "features": {
+      "abuse-guard_0": "Kho chống lạm dụng",
       "ai_0": "Trò chuyện AI và truy cập mô hình",
       "ai_1": "Câu lệnh, tác tử và bộ dữ liệu",
       "ai_2": "Thử nghiệm và lượt chạy",

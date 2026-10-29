@@ -5,6 +5,14 @@ import {
   TUTORING_POLICY_CONFIG_ID,
 } from '@tuturuuu/internal-api/tutoring-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  formatTutoringDate,
+  formatTutoringTimeRange,
+  getTutoringWeekdayLabel,
+  selectTutoringClassTime,
+  TUTORING_VALUE_UNKNOWN,
+  type TutoringClassTimeSession,
+} from '@tuturuuu/utils/tutoring-message-values';
 import { NextResponse } from 'next/server';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 
@@ -28,10 +36,13 @@ function displayName(
   );
 }
 
-function formatDateOnly(dateString: string) {
-  const [year, month, day] = dateString.split('-');
-  if (!year || !month || !day) return dateString;
-  return `${day}/${month}/${year}`;
+/** Class sessions in the window that can hold the tutoring day or follow it. */
+const CLASS_TIME_LOOKUP_LIMIT = 60;
+
+function shiftIsoDate(date: string, days: number) {
+  const value = new Date(`${date}T00:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
 }
 
 export async function POST(request: Request, { params }: Params) {
@@ -144,16 +155,59 @@ export async function POST(request: Request, { params }: Params) {
   const studentName = displayName(student);
 
   const policy = readTutoringPolicyConfigRows(policyResult.data ?? []);
+  // The class time is optional context: a failed read or a template without
+  // the field must not stop the preview.
+  let classTime = TUTORING_VALUE_UNKNOWN;
+  if (policy.parentMessageTemplate.includes('{{class_time}}')) {
+    // Widen by a day for time zone offsets; the zoned local date decides.
+    const classSessionsResult = await tutoringSessionsClient
+      .from('workspace_user_group_sessions')
+      .select('status,starts_at,start_timezone,ends_at,end_timezone')
+      .eq('ws_id', normalizedWsId)
+      .eq('group_id', data.group_id)
+      .eq('status', 'scheduled')
+      .gte('starts_at', shiftIsoDate(data.session_date, -1))
+      .order('starts_at', { ascending: true })
+      .limit(CLASS_TIME_LOOKUP_LIMIT);
+    if (classSessionsResult.error) {
+      console.error('Failed to load class sessions for tutoring preview', {
+        error: classSessionsResult.error,
+        sessionId: id,
+        wsId: normalizedWsId,
+      });
+    } else {
+      const classSessions: TutoringClassTimeSession[] = (
+        classSessionsResult.data ?? []
+      ).map((row) => ({
+        endTimezone: row.end_timezone,
+        endsAt: row.ends_at,
+        startTimezone: row.start_timezone,
+        startsAt: row.starts_at,
+        status: row.status,
+      }));
+      classTime = selectTutoringClassTime(
+        classSessions,
+        data.session_date,
+        String(data.start_time)
+      );
+    }
+  }
   const preview = renderTutoringParentMessage(policy.parentMessageTemplate, {
     campus:
       getTutoringCampus(policy, data.group_id, group?.name) ?? 'Chưa xác định',
-    date: formatDateOnly(data.session_date),
+    class_time: classTime,
+    date: formatTutoringDate(data.session_date),
     duration: String(data.duration_minutes),
     group: group?.name ?? 'N/A',
     reason: reasonLabel,
     student: studentName,
     teacher: displayName(teacher),
     time: String(data.start_time).slice(0, 5),
+    time_range: formatTutoringTimeRange(
+      String(data.start_time),
+      data.duration_minutes
+    ),
+    weekday: getTutoringWeekdayLabel(data.session_date),
   });
 
   const { error: updateError } = await tutoringSessionsClient

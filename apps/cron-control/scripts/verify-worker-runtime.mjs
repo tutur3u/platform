@@ -23,6 +23,7 @@ const TRIGGERS = [
   '*/30 * * * *',
   '* * * * *',
 ];
+const operatorToken = randomUUID() + randomUUID();
 let worker;
 
 before(async () => {
@@ -32,7 +33,7 @@ before(async () => {
       process.env.CRON_TEST_BUILD_OUTPUT === '1' ? 'build-output' : 'source',
     secrets: {
       CRON_CONTROL_DELIVERY_TOKEN: randomUUID() + randomUUID(),
-      CRON_CONTROL_OPERATOR_TOKEN: randomUUID() + randomUUID(),
+      CRON_CONTROL_OPERATOR_TOKEN: operatorToken,
       SUPABASE_SECRET_KEY: 'isolated-cron-runtime-fixture',
       SUPABASE_URL: 'https://unreachable.example.invalid',
     },
@@ -90,4 +91,63 @@ test('HTTP callers cannot invoke processors or unauthenticated control', async (
     assert.equal(response.status, 404);
     assert.deepEqual(await response.json(), { message: 'Not found' });
   }
+});
+
+test('web execution stop, owner, active run and duplicate fences survive workerd restarts', async () => {
+  const job = 'web-deadline-reminders';
+  const slot = Math.floor(Date.now() / 300_000) * 300_000;
+  const id = randomUUID();
+  const call = async (action) => {
+    const response = await worker.fetch(`/control/web-crons/${job}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${operatorToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(action),
+      signal: AbortSignal.timeout(10_000),
+    });
+    return { status: response.status, ...(await response.json()) };
+  };
+  assert.equal(
+    (await call({ kind: 'acquire', owner: 'cloudflare', id, slot })).reason,
+    'owner'
+  );
+  assert.equal(
+    (await call({ kind: 'acquire', owner: 'vercel', id, slot })).ok,
+    true
+  );
+  await worker.restart();
+  assert.equal(
+    (await call({ kind: 'owner', owner: 'cloudflare' })).reason,
+    'unresolved-run'
+  );
+  assert.equal(
+    (await call({ kind: 'acquire', owner: 'vercel', id: randomUUID(), slot }))
+      .reason,
+    'unresolved-run'
+  );
+  assert.equal((await call({ kind: 'stop' })).ok, true);
+  await worker.restart();
+  assert.equal(
+    (await call({ kind: 'acquire', owner: 'vercel', id: randomUUID(), slot }))
+      .reason,
+    'stopped'
+  );
+  assert.equal((await call({ kind: 'complete', id })).ok, true);
+  assert.equal((await call({ kind: 'owner', owner: 'cloudflare' })).ok, true);
+  assert.equal((await call({ kind: 'resume' })).ok, true);
+  await worker.restart();
+  assert.equal(
+    (
+      await call({
+        kind: 'acquire',
+        owner: 'cloudflare',
+        id: randomUUID(),
+        slot,
+      })
+    ).reason,
+    'duplicate'
+  );
+  assert.equal((await call({ kind: 'status' })).state.owner, 'cloudflare');
 });

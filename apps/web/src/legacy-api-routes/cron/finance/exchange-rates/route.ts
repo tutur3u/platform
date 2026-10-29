@@ -26,10 +26,8 @@ async function handlePOST(req: NextRequest) {
     const authHeader = req.headers.get('authorization');
     const serviceRoleKey = process.env.SUPABASE_SECRET_KEY;
     const cronSecret = process.env.CRON_SECRET;
-    const devMode = process.env.DEV_MODE === 'true';
 
     const isAuthorized =
-      devMode ||
       (serviceRoleKey && authHeader === `Bearer ${serviceRoleKey}`) ||
       (cronSecret && authHeader === `Bearer ${cronSecret}`);
 

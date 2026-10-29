@@ -43,6 +43,9 @@ export async function POST(req: Request, { params }: Params) {
         { status: 403 }
       );
     }
+    if (permissions.withoutPermission('manage_finance')) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
     const { admin: supabase, user } = actor;
     const wsId = permissions.wsId;
     const sbAdmin = supabase;

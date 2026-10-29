@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
 import {
   checkPasswordAttemptLimit,
   type PasswordAttemptSubject,
@@ -88,6 +89,7 @@ export async function POST(request: Request) {
       scope: 'nova-challenge',
       target: `${challenge.id}:${user.id}`,
       userId: user.id,
+      ip: extractIPFromRequest(request.headers),
     };
     const limit = await checkPasswordAttemptLimit(attempt);
     if (!limit.allowed) {
