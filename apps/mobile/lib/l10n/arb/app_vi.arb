@@ -6204,6 +6204,107 @@
   "mastermindAskActionFyi": "Để bạn biết",
   "mastermindAskRemindAtMac": "Nhắc tôi khi ở máy Mac",
   "mastermindAskRemindAtMacSoon": "Sắp ra mắt",
+  "mastermindMachineUpdated": "Tính đến {time}",
+  "@mastermindMachineUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindMachineLastSeen": "Thấy lần cuối {time}",
+  "@mastermindMachineLastSeen": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindMachineSummary": "{total} máy · {online} trực tuyến · {attention} cần chú ý",
+  "@mastermindMachineSummary": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "online": {
+        "type": "int"
+      },
+      "attention": {
+        "type": "int"
+      }
+    }
+  },
+  "machineTextMachines": "Máy",
+  "machineTextAttention": "Cần chú ý",
+  "machineTextOnline": "Trực tuyến",
+  "machineTextAsleep": "Đang ngủ",
+  "machineTextOffline": "Ngoại tuyến",
+  "machineTextUnknown": "Không rõ",
+  "machineTextOfflineGroup": "Đang ngủ hoặc ngoại tuyến",
+  "machineTextNotPublished": "Dữ liệu máy chưa được công bố",
+  "machineTextEmpty": "Chưa có máy nào được báo cáo",
+  "machineTextGone": "Máy này không còn được báo cáo",
+  "machineTextUnavailable": "Không khả dụng",
+  "machineTextStale": "Dữ liệu thu thập đã cũ; hiển thị giá trị gần nhất",
+  "machineTextPartial": "Phạm vi thu thập chưa đầy đủ",
+  "machineTextNow": "Hiện tại",
+  "machineTextRunning": "Đang chạy",
+  "machineTextRules": "Quy tắc",
+  "machineTextAlerts": "Cảnh báo",
+  "machineTextHistory": "Lịch sử",
+  "machineTextKeepAwake": "Giữ máy thức",
+  "machineTextSample": "Dữ liệu MẪU",
+  "machineTextSampleToggle": "Dùng dữ liệu máy mẫu",
+  "machineTextStatus": "Trạng thái và cấu hình",
+  "machineTextCpu": "CPU",
+  "machineTextRam": "Bộ nhớ",
+  "machineTextDisk": "Đĩa còn trống",
+  "machineTextSwap": "Bộ nhớ hoán đổi",
+  "machineTextTemperature": "Nhiệt độ",
+  "machineTextBuild": "Build",
+  "machineTextStudio": "Studio",
+  "machineTextLaptop": "Máy tính xách tay",
+  "machineTextDevbox": "Máy phát triển",
+  "machineTextLane": "Luồng công việc",
+  "machineTextTest": "Kiểm thử",
+  "machineTextActive": "Lập lịch đang hoạt động",
+  "machineTextDraining": "Ngừng nhận việc",
+  "machineTextPaused": "Đã tạm dừng lập lịch",
+  "machineTextThermal": "Cảnh báo nhiệt độ",
+  "machineTextWarning": "Cảnh báo",
+  "machineTextCritical": "Nghiêm trọng",
+  "machineTextNominal": "Bình thường",
+  "machineTextFair": "Khá",
+  "machineTextSerious": "Nặng",
+  "machineTextMacos": "macOS",
+  "machineTextLinux": "Linux",
+  "machineTextWindows": "Windows",
+  "machineTextNone": "Chưa có báo cáo",
+  "machineTextLastKnown": "Giá trị gần nhất",
+  "machineTextDay": "24 giờ",
+  "machineTextWeek": "7 ngày",
+  "machineTextTable": "Bảng",
+  "machineTextTime": "Thời gian",
+  "machineTextCores": "Số nhân",
+  "machineTextLoad": "Tải (1 phút)",
+  "machineTextMacGuide": "Trong Cài đặt hệ thống, mở Năng lượng và ngăn tự động ngủ khi cắm điện. Cắm nguồn và giữ nắp máy mở. Mastermind không điều khiển máy này.",
+  "machineTextLinuxGuide": "Dùng cài đặt Nguồn của màn hình nền để ngăn tự động tạm ngưng khi cắm điện. Mastermind không điều khiển máy này.",
+  "machineTextWindowsGuide": "Trong Cài đặt, mở Hệ thống > Nguồn và pin > Màn hình và chế độ ngủ. Chọn chế độ ngủ khi cắm điện. Mastermind không điều khiển máy này.",
+  "machineTextUnknownGuide": "Dùng cài đặt nguồn của hệ điều hành để giữ máy thức khi cắm điện. Mastermind không điều khiển máy này.",
+  "machineTextOther": "Khác",
+  "machineTextProdHost": "Máy production",
+  "machineTextMergeTrain": "Hàng đợi hợp nhất",
+  "machineTextFindingsOnly": "Chỉ báo cáo phát hiện",
+  "machineTextProdReadsHereOnly": "Chỉ máy này đọc production",
+  "machineTextNeverBuilds": "Không bao giờ build",
+  "machineTextNoHeavyWork": "Không chạy việc nặng",
+  "machineTextLightWorkOnly": "Chỉ chạy việc nhẹ",
+  "machineTextProdHostReadOnly": "Máy production: chỉ đọc",
+  "machineTextDiskLow": "Dung lượng đĩa thấp",
+  "machineTextLoadHigh": "Tải vượt số nhân",
+  "machineTextSwapHigh": "Bộ nhớ hoán đổi cao",
+  "machineTextRamGb": "RAM (GB)",
+  "machineTextDiskGb": "Đĩa (GB)",
   "mastermindCatchupTitle": "Từ lần bạn xem gần nhất",
   "mastermindCatchupWindowSince": "Từ lần ghé thăm trước",
   "mastermindCatchupWindowDay": "24 giờ qua",

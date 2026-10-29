@@ -14112,6 +14112,234 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindAskRemindAtMacSoon => 'Sắp ra mắt';
 
   @override
+  String mastermindMachineUpdated(String time) {
+    return 'Tính đến $time';
+  }
+
+  @override
+  String mastermindMachineLastSeen(String time) {
+    return 'Thấy lần cuối $time';
+  }
+
+  @override
+  String mastermindMachineSummary(int total, int online, int attention) {
+    return '$total máy · $online trực tuyến · $attention cần chú ý';
+  }
+
+  @override
+  String get machineTextMachines => 'Máy';
+
+  @override
+  String get machineTextAttention => 'Cần chú ý';
+
+  @override
+  String get machineTextOnline => 'Trực tuyến';
+
+  @override
+  String get machineTextAsleep => 'Đang ngủ';
+
+  @override
+  String get machineTextOffline => 'Ngoại tuyến';
+
+  @override
+  String get machineTextUnknown => 'Không rõ';
+
+  @override
+  String get machineTextOfflineGroup => 'Đang ngủ hoặc ngoại tuyến';
+
+  @override
+  String get machineTextNotPublished => 'Dữ liệu máy chưa được công bố';
+
+  @override
+  String get machineTextEmpty => 'Chưa có máy nào được báo cáo';
+
+  @override
+  String get machineTextGone => 'Máy này không còn được báo cáo';
+
+  @override
+  String get machineTextUnavailable => 'Không khả dụng';
+
+  @override
+  String get machineTextStale => 'Dữ liệu thu thập đã cũ; hiển thị giá trị gần nhất';
+
+  @override
+  String get machineTextPartial => 'Phạm vi thu thập chưa đầy đủ';
+
+  @override
+  String get machineTextNow => 'Hiện tại';
+
+  @override
+  String get machineTextRunning => 'Đang chạy';
+
+  @override
+  String get machineTextRules => 'Quy tắc';
+
+  @override
+  String get machineTextAlerts => 'Cảnh báo';
+
+  @override
+  String get machineTextHistory => 'Lịch sử';
+
+  @override
+  String get machineTextKeepAwake => 'Giữ máy thức';
+
+  @override
+  String get machineTextSample => 'Dữ liệu MẪU';
+
+  @override
+  String get machineTextSampleToggle => 'Dùng dữ liệu máy mẫu';
+
+  @override
+  String get machineTextStatus => 'Trạng thái và cấu hình';
+
+  @override
+  String get machineTextCpu => 'CPU';
+
+  @override
+  String get machineTextRam => 'Bộ nhớ';
+
+  @override
+  String get machineTextDisk => 'Đĩa còn trống';
+
+  @override
+  String get machineTextSwap => 'Bộ nhớ hoán đổi';
+
+  @override
+  String get machineTextTemperature => 'Nhiệt độ';
+
+  @override
+  String get machineTextBuild => 'Build';
+
+  @override
+  String get machineTextStudio => 'Studio';
+
+  @override
+  String get machineTextLaptop => 'Máy tính xách tay';
+
+  @override
+  String get machineTextDevbox => 'Máy phát triển';
+
+  @override
+  String get machineTextLane => 'Luồng công việc';
+
+  @override
+  String get machineTextTest => 'Kiểm thử';
+
+  @override
+  String get machineTextActive => 'Lập lịch đang hoạt động';
+
+  @override
+  String get machineTextDraining => 'Ngừng nhận việc';
+
+  @override
+  String get machineTextPaused => 'Đã tạm dừng lập lịch';
+
+  @override
+  String get machineTextThermal => 'Cảnh báo nhiệt độ';
+
+  @override
+  String get machineTextWarning => 'Cảnh báo';
+
+  @override
+  String get machineTextCritical => 'Nghiêm trọng';
+
+  @override
+  String get machineTextNominal => 'Bình thường';
+
+  @override
+  String get machineTextFair => 'Khá';
+
+  @override
+  String get machineTextSerious => 'Nặng';
+
+  @override
+  String get machineTextMacos => 'macOS';
+
+  @override
+  String get machineTextLinux => 'Linux';
+
+  @override
+  String get machineTextWindows => 'Windows';
+
+  @override
+  String get machineTextNone => 'Chưa có báo cáo';
+
+  @override
+  String get machineTextLastKnown => 'Giá trị gần nhất';
+
+  @override
+  String get machineTextDay => '24 giờ';
+
+  @override
+  String get machineTextWeek => '7 ngày';
+
+  @override
+  String get machineTextTable => 'Bảng';
+
+  @override
+  String get machineTextTime => 'Thời gian';
+
+  @override
+  String get machineTextCores => 'Số nhân';
+
+  @override
+  String get machineTextLoad => 'Tải (1 phút)';
+
+  @override
+  String get machineTextMacGuide => 'Trong Cài đặt hệ thống, mở Năng lượng và ngăn tự động ngủ khi cắm điện. Cắm nguồn và giữ nắp máy mở. Mastermind không điều khiển máy này.';
+
+  @override
+  String get machineTextLinuxGuide => 'Dùng cài đặt Nguồn của màn hình nền để ngăn tự động tạm ngưng khi cắm điện. Mastermind không điều khiển máy này.';
+
+  @override
+  String get machineTextWindowsGuide => 'Trong Cài đặt, mở Hệ thống > Nguồn và pin > Màn hình và chế độ ngủ. Chọn chế độ ngủ khi cắm điện. Mastermind không điều khiển máy này.';
+
+  @override
+  String get machineTextUnknownGuide => 'Dùng cài đặt nguồn của hệ điều hành để giữ máy thức khi cắm điện. Mastermind không điều khiển máy này.';
+
+  @override
+  String get machineTextOther => 'Khác';
+
+  @override
+  String get machineTextProdHost => 'Máy production';
+
+  @override
+  String get machineTextMergeTrain => 'Hàng đợi hợp nhất';
+
+  @override
+  String get machineTextFindingsOnly => 'Chỉ báo cáo phát hiện';
+
+  @override
+  String get machineTextProdReadsHereOnly => 'Chỉ máy này đọc production';
+
+  @override
+  String get machineTextNeverBuilds => 'Không bao giờ build';
+
+  @override
+  String get machineTextNoHeavyWork => 'Không chạy việc nặng';
+
+  @override
+  String get machineTextLightWorkOnly => 'Chỉ chạy việc nhẹ';
+
+  @override
+  String get machineTextProdHostReadOnly => 'Máy production: chỉ đọc';
+
+  @override
+  String get machineTextDiskLow => 'Dung lượng đĩa thấp';
+
+  @override
+  String get machineTextLoadHigh => 'Tải vượt số nhân';
+
+  @override
+  String get machineTextSwapHigh => 'Bộ nhớ hoán đổi cao';
+
+  @override
+  String get machineTextRamGb => 'RAM (GB)';
+
+  @override
+  String get machineTextDiskGb => 'Đĩa (GB)';
+
+  @override
   String get mastermindCatchupTitle => 'Từ lần bạn xem gần nhất';
 
   @override
