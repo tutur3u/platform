@@ -40,10 +40,10 @@ function check() {
       ].includes(file);
       if (
         deadInventory &&
-        ['staging', 'canary'].some((label) => host === label + '.tuturuuu.com')
+        ['staging', 'canary'].some((label) => host === `${label}.tuturuuu.com`)
       )
         continue;
-      failures.push(file + ': ' + host);
+      failures.push(`${file}: ${host}`);
     }
   }
   return failures;
@@ -51,7 +51,7 @@ function check() {
 if (require.main === module) {
   const failures = check();
   if (failures.length) {
-    console.error('Use <app>.staging.tutur3u.com:\n' + failures.join('\n'));
+    console.error(`Use <app>.staging.tutur3u.com:\n${failures.join('\n')}`);
     process.exitCode = 1;
   }
 }

@@ -2,7 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import type { ReactNode } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsDialogHost } from '../../app/[locale]/settings-dialog-host';
 import UserNavClient from '../../app/[locale]/user-nav-client';
@@ -30,6 +30,26 @@ const {
     settingsTab: null as string | null,
   },
 }));
+
+vi.mock('../../app/[locale]/(dashboard)/[wsId]/workspace-list-actions', () => ({
+  fetchWorkspaces: vi.fn(async () => []),
+}));
+
+vi.mock('next/dynamic', async () => {
+  const { lazy, Suspense } = await import('react');
+  return {
+    default: (
+      loader: () => Promise<ComponentType<Record<string, unknown>>>
+    ) => {
+      const Component = lazy(async () => ({ default: await loader() }));
+      return (props: Record<string, unknown>) => (
+        <Suspense fallback={null}>
+          <Component {...props} />
+        </Suspense>
+      );
+    },
+  };
+});
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,

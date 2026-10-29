@@ -15,6 +15,10 @@ import {
   logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/storage/route-auth';
+import { storageAccessAuditScope } from '@/lib/storage/storage-access-audit';
+
+const AUDIT_ROUTE = '/api/v1/workspaces/[wsId]/storage/share';
+type AuditScope = ReturnType<typeof storageAccessAuditScope>;
 
 // Requests above 7 days are accepted for older clients but clamped by
 // clampSignedUrlTtl; the default is 1 hour. Long-lived embeds use this route's
@@ -59,7 +63,8 @@ async function resolveSignedUrl(
     path: string;
     expiresIn?: number;
     transform?: z.infer<typeof imageTransformOptionsSchema>;
-  }
+  },
+  audit: AuditScope
 ) {
   const { wsId } = await params;
   const sanitizedPath = sanitizePath(input.path);
@@ -77,6 +82,7 @@ async function resolveSignedUrl(
     return auth.response;
   }
   const { normalizedWsId, permissions, supabase, userId } = auth.context;
+  audit.set({ actorId: userId, path: sanitizedPath, wsId: normalizedWsId });
 
   if (isExcludedDrivePath(normalizedWsId, sanitizedPath)) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
@@ -137,7 +143,19 @@ async function resolveSignedUrl(
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ wsId: string }> }
+  context: { params: Promise<{ wsId: string }> }
+) {
+  const audit = storageAccessAuditScope({
+    action: 'share',
+    route: AUDIT_ROUTE,
+  });
+  return audit.finish(await createShareLink(request, context, audit));
+}
+
+async function createShareLink(
+  request: Request,
+  { params }: { params: Promise<{ wsId: string }> },
+  audit: AuditScope
 ) {
   try {
     const parsed = shareSchema.safeParse(await request.json());
@@ -148,7 +166,12 @@ export async function POST(
       );
     }
 
-    const signedUrl = await resolveSignedUrl(request, params, parsed.data);
+    const signedUrl = await resolveSignedUrl(
+      request,
+      params,
+      parsed.data,
+      audit
+    );
 
     if (signedUrl instanceof NextResponse) {
       return signedUrl;
@@ -169,9 +192,19 @@ export async function POST(
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ wsId: string }> }
+  context: { params: Promise<{ wsId: string }> }
 ) {
   await connection();
+  // The GET redirect is sign-on-read for embedded media.
+  const audit = storageAccessAuditScope({ action: 'sign', route: AUDIT_ROUTE });
+  return audit.finish(await redirectToSignedUrl(request, context, audit));
+}
+
+async function redirectToSignedUrl(
+  request: Request,
+  { params }: { params: Promise<{ wsId: string }> },
+  audit: AuditScope
+) {
   try {
     const { searchParams } = new URL(request.url);
     const parsed = shareQuerySchema.safeParse({
@@ -200,12 +233,17 @@ export async function GET(
       quality !== undefined ||
       format !== undefined;
 
-    const signedUrl = await resolveSignedUrl(request, params, {
-      ...baseInput,
-      transform: hasTransform
-        ? { width, height, resize, quality, format }
-        : undefined,
-    });
+    const signedUrl = await resolveSignedUrl(
+      request,
+      params,
+      {
+        ...baseInput,
+        transform: hasTransform
+          ? { width, height, resize, quality, format }
+          : undefined,
+      },
+      audit
+    );
 
     if (signedUrl instanceof NextResponse) {
       return signedUrl;
