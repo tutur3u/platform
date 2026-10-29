@@ -29,11 +29,12 @@ export function isPageShortcutBlocked(event: KeyboardEvent): boolean {
     )
   )
     return true;
+  // A docked side panel is non-modal: keys pressed outside it reach the page.
   return (
     typeof document !== 'undefined' &&
     Boolean(
       document.querySelector(
-        '[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]'
+        '[role="dialog"][data-state="open"]:not([data-presentation="panel"]), [role="alertdialog"][data-state="open"]'
       )
     )
   );
