@@ -13631,6 +13631,67 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindTryAgain => 'Thử lại';
 
   @override
+  String mastermindTimeDaysShort(int count) {
+    return '$count ngày';
+  }
+
+  @override
+  String mastermindTimeHoursShort(int count) {
+    return '$count giờ';
+  }
+
+  @override
+  String mastermindTimeMinutesShort(int count) {
+    return '$count phút';
+  }
+
+  @override
+  String get mastermindTimeNow => 'vừa xong';
+
+  @override
+  String mastermindAskedTime(String time) {
+    return 'Đã hỏi $time';
+  }
+
+  @override
+  String mastermindTimeSpoken(String relative, String absolute) {
+    return '$relative, $absolute';
+  }
+
+  @override
+  String mastermindTimeSpokenDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ngày trước',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindTimeSpokenHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count giờ trước',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindTimeSpokenMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count phút trước',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindTimeSpokenNow => 'vừa xong';
+
+  @override
   String get mastermindUnavailable => 'Không khả dụng';
 
   @override

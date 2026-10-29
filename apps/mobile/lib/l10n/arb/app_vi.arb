@@ -5539,6 +5539,13 @@
       }
     }
   },
+  "@mastermindTimeDaysShort": {"placeholders": {"count": {"type": "int"}}},
+  "@mastermindTimeHoursShort": {"placeholders": {"count": {"type": "int"}}},
+  "@mastermindTimeMinutesShort": {"placeholders": {"count": {"type": "int"}}},
+  "@mastermindTimeSpoken": {"placeholders": {"relative": {"type": "String"}, "absolute": {"type": "String"}}},
+  "@mastermindTimeSpokenDays": {"placeholders": {"count": {"type": "int"}}},
+  "@mastermindTimeSpokenHours": {"placeholders": {"count": {"type": "int"}}},
+  "@mastermindTimeSpokenMinutes": {"placeholders": {"count": {"type": "int"}}},
   "@mastermindUnitCredits": {
     "placeholders": {
       "value": {
@@ -6021,6 +6028,17 @@
   "mastermindTimeZoneCaption": "GMT+7",
   "mastermindTitle": "Mastermind",
   "mastermindTryAgain": "Thử lại",
+  "mastermindTimeDaysShort": "{count} ngày",
+  "mastermindTimeHoursShort": "{count} giờ",
+  "mastermindTimeMinutesShort": "{count} phút",
+  "mastermindTimeNow": "vừa xong",
+  "mastermindAskedTime": "Đã hỏi {time}",
+  "@mastermindAskedTime": {"placeholders": {"time": {"type": "String"}}},
+  "mastermindTimeSpoken": "{relative}, {absolute}",
+  "mastermindTimeSpokenDays": "{count, plural, other{{count} ngày trước}}",
+  "mastermindTimeSpokenHours": "{count, plural, other{{count} giờ trước}}",
+  "mastermindTimeSpokenMinutes": "{count, plural, other{{count} phút trước}}",
+  "mastermindTimeSpokenNow": "vừa xong",
   "mastermindUnavailable": "Không khả dụng",
   "mastermindUnitCredits": "{value} tín dụng",
   "mastermindUnitCreditsPerDay": "{value} tín dụng/ngày",

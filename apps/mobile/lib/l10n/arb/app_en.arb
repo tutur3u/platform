@@ -5834,6 +5834,13 @@
       }
     }
   },
+  "@mastermindTimeDaysShort": {"placeholders": {"count": {"type": "int"}}},
+  "@mastermindTimeHoursShort": {"placeholders": {"count": {"type": "int"}}},
+  "@mastermindTimeMinutesShort": {"placeholders": {"count": {"type": "int"}}},
+  "@mastermindTimeSpoken": {"placeholders": {"relative": {"type": "String"}, "absolute": {"type": "String"}}},
+  "@mastermindTimeSpokenDays": {"placeholders": {"count": {"type": "int"}}},
+  "@mastermindTimeSpokenHours": {"placeholders": {"count": {"type": "int"}}},
+  "@mastermindTimeSpokenMinutes": {"placeholders": {"count": {"type": "int"}}},
   "@mastermindUnitCredits": {
     "placeholders": {
       "value": {
@@ -6337,6 +6344,17 @@
   "mastermindTimeZoneCaption": "GMT+7",
   "mastermindTitle": "Mastermind",
   "mastermindTryAgain": "Try again",
+  "mastermindTimeDaysShort": "{count}d",
+  "mastermindTimeHoursShort": "{count}h",
+  "mastermindTimeMinutesShort": "{count}m",
+  "mastermindTimeNow": "now",
+  "mastermindAskedTime": "Asked {time}",
+  "@mastermindAskedTime": {"placeholders": {"time": {"type": "String"}}},
+  "mastermindTimeSpoken": "{relative}, {absolute}",
+  "mastermindTimeSpokenDays": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "mastermindTimeSpokenHours": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
+  "mastermindTimeSpokenMinutes": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
+  "mastermindTimeSpokenNow": "just now",
   "mastermindUnavailable": "Unavailable",
   "mastermindUnitCredits": "{value} credits",
   "mastermindUnitCreditsPerDay": "{value} credits/day",
