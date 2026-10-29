@@ -740,13 +740,26 @@ DROP POLICY "old_policy" ON workspace_tasks;
 
 ### Declarative grant guard (P2-2)
 
-The SQL grant guard checks new or changed migration, schema, and rollback files.
-Every created function needs a subsequent same-file, matching-signature `REVOKE ALL`
-from `PUBLIC, anon, authenticated` and an explicit `GRANT EXECUTE` to intended roles.
-Definers require `pg_catalog` first and `pg_temp` last; empty paths, bare `public`,
-and user-dependent or explicit temporary namespaces fail. The pgTAP search-path
-gate remains authoritative for effective schema CREATE privileges. Rollbacks also
-reject public or anonymous grants, TRUNCATE, MAINTAIN, and default-privilege
-restoration, and must match a migration with an approved rollback suffix.
-Untouched history remains report-only through `node scripts/ci/sql-grant-guard.js --report`.
-Run `node --test scripts/ci/sql-grant-guard.test.js` for positive and negative fixtures.
+The SQL grant guard checks every migration, schema, and rollback outside the
+reviewed `scripts/ci/sql-grant-guard-legacy.json` baseline, including on main.
+Each baseline entry binds a historical path to its SHA-256 digest; changes stop
+matching, and the list may only shrink. The bootstrap covers only pre-cutoff
+bytes on the reviewed base, so existing post-cutoff findings remain enforced.
+CI explicitly fetches its base ref and deepens shallow history; unresolved
+history fails loudly. `--report` includes all non-baselined findings for triage.
+
+Created functions and procedures need a subsequent matching-signature `REVOKE
+ALL` from `PUBLIC, anon, authenticated`, plus a grant to `service_role` or a
+same-file `-- tuturuuu: no-grant (internal)` or `-- tuturuuu: no-grant (trigger)`
+comment. Grants to anonymous or authenticated callers fail this fence.
+Definers require `pg_catalog` first and `pg_temp` last, with no duplicate settings,
+empty paths, user-dependent schemas, or explicit temporary namespaces. Quoted
+identifier case is significant. The live pgTAP gate remains authoritative for
+schema CREATE privileges.
+
+ALTER routine security/configuration mutations, DO/EXECUTE statements, complex
+quoted identifiers, role-membership grants, and grant options require security
+review rather than static acceptance. Rollbacks additionally reject public or
+anonymous grants, TRUNCATE, MAINTAIN, and default-grant restoration; their names
+must match a migration and an approved rollback suffix. Run the two
+`sql-grant-guard*.test.js` suites for parser, baseline and shallow-checkout fixtures.

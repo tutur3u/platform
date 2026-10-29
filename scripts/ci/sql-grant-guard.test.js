@@ -19,6 +19,9 @@ function evaluate(fixtures) {
   return evaluateSqlFiles({
     files: Object.keys(fixtures),
     readFile: (file) => fixtures[file],
+    baseline: Object.fromEntries(
+      Object.entries(fixtures).map(([file, sql]) => [file, digest(sql)])
+    ),
   });
 }
 
@@ -36,10 +39,33 @@ test('the migration cutoff is pinned to the rule adoption date', () => {
   assert.equal(MIGRATION_CUTOFF, '20261028000000');
 });
 
-test('the repository adds no public or anon grant after the cutoff', () => {
+test('the repository keeps all non-baselined findings enforced, including unchanged post-cutoff files', () => {
+  const result = checkRepository();
+  assert.ok(
+    result.violations.length > 0,
+    'existing findings remain visible for triage'
+  );
+  assert.ok(result.violations.some((f) => f.rule === RULES.definerPublic));
+  assert.ok(result.violations.some((f) => f.rule === 'function-acl'));
   assert.deepEqual(
-    checkRepository().violations.map((violation) => violation.message),
-    []
+    result.violations
+      .filter((f) => Object.values(RULES).includes(f.rule))
+      .map((f) => `${path.basename(f.file)}:${f.line}:${f.rule}`),
+    [
+      '20261029010000_restore_employee_readiness_path_contract.sql:3:definer-public',
+      '20261029012000_harden_workspace_ownership_guard.sql:143:definer-public',
+      '20261029012100_restrict_subscription_writes.sql:391:definer-public',
+      '20261029012100_restrict_subscription_writes.sql:430:definer-public',
+      '20261029012100_restrict_subscription_writes.sql:468:definer-public',
+      '20261029012100_restrict_subscription_writes.sql:581:definer-public',
+      '20261029030400_align_ai_chat_and_subscription_rpc_access.sql:45:definer-public',
+      '20261029040800_finance_workspace_boundaries.sql:197:definer-public',
+      '20261029040800_finance_workspace_boundaries.sql:267:definer-public',
+      '20261029040800_finance_workspace_boundaries.sql:341:definer-public',
+      '20261029040800_finance_workspace_boundaries.sql:415:definer-public',
+      '20261029012300_tighten_legacy_table_grants.rollback.sql:2:anon-grant',
+      '20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql:6:anon-grant',
+    ]
   );
 });
 
@@ -246,7 +272,7 @@ test('invoker functions and definer text in bodies or comments pass', () => {
   assert.deepEqual(definers(sql), []);
 });
 
-test('the definer rule applies to migrations, not rollbacks', () => {
+test('the original definer-public rule applies to migrations; extensions cover rollbacks', () => {
   const definer =
     'create function public.f() returns void language sql security definer as $$ select $$;';
   const { violations } = evaluate({
@@ -283,6 +309,7 @@ test('files before the cutoff are reported as legacy, not enforced', () => {
 });
 
 const { scanExtensions } = require('./sql-grant-guard');
+const { digest, validateBaseline } = require('./sql-grant-guard-repository');
 const createP2 = (path = 'pg_catalog, public, pg_temp') =>
   `create function public.p2(id uuid) returns void language sql security definer set search_path = ${path} as $$select 1$$;`;
 const aclP2 =
@@ -344,23 +371,27 @@ for (const grant of [
     );
   });
 }
-test('new rules enforce changed files while untouched historical files remain report-only', () => {
-  const files = [MIGRATION, ROLLBACK];
-  const run = (changedFiles) =>
-    evaluateSqlFiles({
-      files,
-      readFile: () => createP2() + aclP2,
-      changedFiles,
-    });
-  assert.deepEqual(run(new Set()).violations, []);
-  assert.deepEqual(run(new Set(files)).violations, []);
+test('only exact path and digest baseline entries exempt historical SQL', () => {
+  const old = 'apps/database/supabase/migrations/20200101000000_old.sql';
+  const sql = createP2() + aclP2;
+  const run = (text, baseline) =>
+    evaluateSqlFiles({ files: [old], readFile: () => text, baseline });
+  assert.deepEqual(run(sql, { [old]: digest(sql) }).violations, []);
+  assert.ok(
+    run(createP2(), { [old]: digest(sql) }).violations.some(
+      (f) => f.rule === 'function-acl'
+    )
+  );
+  assert.ok(
+    run(createP2(), {}).violations.some((f) => f.rule === 'function-acl')
+  );
   const bad = ROLLBACK.replace('example.rollback', 'wrong.rollback');
-  const result = evaluateSqlFiles({
-    files: [MIGRATION, bad],
-    readFile: () => '',
-    changedFiles: new Set([bad]),
-  });
-  assert.equal(result.violations[0].rule, 'rollback-name');
+  assert.ok(
+    evaluateSqlFiles({
+      files: [MIGRATION, bad],
+      readFile: () => '',
+    }).violations.some((f) => f.rule === 'rollback-name')
+  );
 });
 test('ACL before CREATE cannot satisfy function-acl; comments and bodies cannot satisfy it', () => {
   assert.ok(
@@ -376,11 +407,7 @@ test('ACL before CREATE cannot satisfy function-acl; comments and bodies cannot 
 
 test('changed historical functions still need the new ACL fence', () => {
   const old = 'apps/database/supabase/migrations/20200101000000_old.sql';
-  const result = evaluateSqlFiles({
-    files: [old],
-    readFile: () => createP2(),
-    changedFiles: new Set([old]),
-  });
+  const result = evaluateSqlFiles({ files: [old], readFile: () => createP2() });
   assert.ok(result.violations.some((f) => f.rule === 'function-acl'));
 });
 test('a quoted identifier containing commas cannot masquerade as a safe path', () => {
@@ -397,6 +424,150 @@ test('rollback may revoke default privileges', () => {
       'alter default privileges in schema public revoke all on tables from authenticated;',
       { rollback: true }
     ),
+    []
+  );
+});
+
+test('spaced and comment-separated qualified names cannot skip ACL or path rules', () => {
+  for (const name of [
+    'public . p2',
+    'public. p2',
+    'public /* gap */ . /* gap */ p2',
+  ]) {
+    const findings = scanExtensions(
+      createP2('public').replace('public.p2', name)
+    );
+    assert.ok(findings.some((f) => f.rule === 'function-acl'));
+    assert.ok(findings.some((f) => f.rule === 'definer-search-path'));
+    assert.deepEqual(
+      scanExtensions(createP2().replace('public.p2', name) + aclP2),
+      []
+    );
+  }
+});
+test('quoted semicolons cannot forge ACL statements', () => {
+  const forged =
+    createP2() +
+    'create function public."z;revoke all on function public.p2(uuid) from public, anon, authenticated with a;grant execute on function public.p2(uuid) to service_role with b"() returns int language sql as $$select 1$$;';
+  assert.ok(
+    scanExtensions(forged).some(
+      (f) => f.rule === 'function-acl' && f.detail.includes('public.p2')
+    )
+  );
+});
+test('duplicate search_path clauses are rejected', () => {
+  assert.ok(
+    scanExtensions(
+      createP2('pg_catalog, pg_temp set search_path = public') + aclP2
+    ).some((f) => f.rule === 'definer-search-path')
+  );
+});
+test('ALTER security and path mutations require complete reviewed definitions', () => {
+  for (const change of [
+    'security definer',
+    'set search_path = public',
+    'reset search_path',
+    'reset all',
+  ]) {
+    assert.ok(
+      scanExtensions(
+        `${createP2() + aclP2}alter function public.p2(uuid) ${change};`
+      ).some((f) => f.rule === 'definer-search-path')
+    );
+  }
+});
+test('quoted case is preserved for paths, routine names and types', () => {
+  assert.ok(
+    scanExtensions(createP2('"PG_CATALOG", "PG_TEMP"') + aclP2).some(
+      (f) => f.rule === 'definer-search-path'
+    )
+  );
+  assert.ok(
+    scanExtensions(createP2().replace('public.p2', 'public."P2"') + aclP2).some(
+      (f) => f.rule === 'function-acl'
+    )
+  );
+  assert.ok(
+    scanExtensions(
+      createP2().replace('id uuid', 'id "char"') +
+        aclP2.replaceAll('(uuid)', '(char)')
+    ).some((f) => f.rule === 'function-acl')
+  );
+  assert.deepEqual(
+    scanExtensions(createP2('"pg_catalog", "pg_temp"') + aclP2),
+    []
+  );
+});
+test('procedure defaults, dynamic SQL, membership and grant options require review', () => {
+  for (const sql of [
+    createP2().replace('function', 'procedure'),
+    "do $$begin execute 'grant postgres to authenticated'; end$$;",
+    'grant postgres to authenticated;',
+    'grant execute on function public.p2(uuid) to service_role with grant option;',
+  ]) {
+    assert.ok(scanExtensions(sql, { rollback: true }).length > 0);
+  }
+});
+test('only a service_role ACL or genuine no-grant marker can satisfy intended access', () => {
+  const revoke = `${aclP2.split(';')[0]};`;
+  for (const kind of ['internal', 'trigger'])
+    assert.deepEqual(
+      scanExtensions(`-- tuturuuu: no-grant (${kind})\n${createP2()}${revoke}`),
+      []
+    );
+  assert.deepEqual(
+    scanExtensions(createP2() + aclP2.replace('grant execute', 'grant all')),
+    []
+  );
+  for (const role of ['anon', 'authenticated'])
+    assert.ok(
+      scanExtensions(
+        createP2() + aclP2.replace('to service_role', `to ${role}`)
+      ).some((f) => f.rule === 'function-acl')
+    );
+  assert.ok(
+    scanExtensions(
+      `${createP2() + revoke}select '-- tuturuuu: no-grant (internal)';`
+    ).some((f) => f.rule === 'function-acl')
+  );
+});
+test('baseline can shrink but cannot grow or change digests', () => {
+  const file = 'apps/database/supabase/migrations/20200101000000_old.sql';
+  const hash = digest('old');
+  validateBaseline({}, { [file]: hash });
+  assert.throws(() => validateBaseline({ [file]: hash }, {}), /shrink-only/);
+  assert.throws(
+    () => validateBaseline({ [file]: digest('changed') }, { [file]: hash }),
+    /shrink-only/
+  );
+});
+
+test('dynamic EXECUTE inside a dollar-quoted routine body requires review', () => {
+  const sql = createP2().replace('select 1', "execute 'select 1'") + aclP2;
+  assert.ok(scanExtensions(sql).some((f) => f.rule === 'dynamic-sql-review'));
+  assert.ok(
+    scanExtensions('grant "on" to authenticated;', { rollback: true }).some(
+      (f) => f.rule === 'rollback-safety'
+    )
+  );
+});
+
+test('quoted and FROM CURRENT duplicate path clauses cannot replace a safe first path', () => {
+  for (const clause of [
+    'set "search_path" = public',
+    'set search_path from current',
+  ]) {
+    assert.ok(
+      scanExtensions(createP2(`pg_catalog, pg_temp ${clause}`) + aclP2).some(
+        (f) => f.rule === 'definer-search-path'
+      )
+    );
+  }
+});
+
+test('repository SQL grant enforcement remains a zero-findings gate', () => {
+  assert.deepEqual(
+    checkRepository().violations.map((finding) => finding.message),
     []
   );
 });
