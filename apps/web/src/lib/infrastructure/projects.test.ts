@@ -64,6 +64,17 @@ describe('infrastructure projects', () => {
     );
   });
 
+  it.each([
+    'dev.tuturuuu.com',
+    'DEV.Tuturuuu.com',
+    'https://dev.tuturuuu.com/',
+    'staging.tuturuuu.com',
+  ])('keeps production-zone %s reserved from managed projects', (hostname) => {
+    expect(() => normalizeInfrastructureProjectHostnames([hostname])).toThrow(
+      'Managed project hostnames cannot use reserved Tuturuuu platform hostnames.'
+    );
+  });
+
   it('reconciles queued platform status from a served deployment', () => {
     expect(
       getQueuedPlatformProjectReconciliation(

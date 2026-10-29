@@ -427,6 +427,7 @@ test('renderManagedProjectProxyServerBlocks drops reserved and invalid hostnames
         'https://docs.example.com/path',
         'tuturuuu.com',
         'hive.tuturuuu.com',
+        'DEV.tuturuuu.com',
         'bad host.example.com',
         'victim.example.com;\nreturn 200 "pwned";\n#',
       ],
@@ -439,6 +440,7 @@ test('renderManagedProjectProxyServerBlocks drops reserved and invalid hostnames
   assert.match(config, /server_name docs\.example\.com;/);
   assert.equal(config.includes('tuturuuu.com'), false);
   assert.equal(config.includes('hive.tuturuuu.com'), false);
+  assert.equal(config.includes('dev.tuturuuu.com'), false);
   assert.doesNotMatch(config, /bad host\.example\.com/);
   assert.doesNotMatch(config, /return 200 "pwned"/);
 });

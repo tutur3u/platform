@@ -1,6 +1,16 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { violations, check } = require('./check-staging-hosts.js');
+const { execFileSync } = require('node:child_process');
+const { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } =
+  require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const {
+  check,
+  normalizeHost,
+  scannedFile,
+  violations,
+} = require('./check-staging-hosts.js');
 for (const host of [
   'pay-staging',
   'contacts.staging',
@@ -56,4 +66,183 @@ test('production names containing token substrings remain allowed', () => {
     ),
     []
   );
+});
+
+test('normalizes case, whitespace, scheme, userinfo, port, path and trailing dots', () => {
+  for (const value of [
+    'STAGING.TUTURUUU.COM',
+    ' Staging.Tuturuuu.Com. ',
+    'https://staging.tuturuuu.com:8443/path?q=1',
+    'wss://user@staging.tuturuuu.com.:443',
+  ])
+    assert.equal(normalizeHost(value), 'staging.tuturuuu.com', value);
+});
+
+for (const [name, source, expected] of [
+  ['uppercase', "host: 'STAGING.TUTURUUU.COM'", 'staging.tuturuuu.com'],
+  [
+    'mixed case',
+    "host: 'Pay.Staging.Tuturuuu.Com'",
+    'pay.staging.tuturuuu.com',
+  ],
+  ['trailing dot', "host: 'staging.tuturuuu.com.'", 'staging.tuturuuu.com'],
+  ['scheme and port', 'URL=HTTPS://Dev.Tuturuuu.com:443/', 'dev.tuturuuu.com'],
+  [
+    'percent-encoded dot',
+    'url: "staging%2Etuturuuu.com"',
+    'staging.tuturuuu.com',
+  ],
+  [
+    'string concat',
+    "const h = 'staging.' +\n  'tuturuuu.com';",
+    'staging.tuturuuu.com',
+  ],
+  [
+    'template with a zone constant',
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: source text fixture
+    "const ZONE = 'tuturuuu.com';\nconst h = `preview.${ZONE}`;",
+    'preview.tuturuuu.com',
+  ],
+  [
+    'concat with a label constant',
+    "const ENV = 'qa';\nconst h = ENV + '.tuturuuu.com';",
+    'qa.tuturuuu.com',
+  ],
+  [
+    'template with a label constant',
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: source text fixture
+    "const env = 'dev';\nconst h = `https://${env}.tuturuuu.com`;",
+    'dev.tuturuuu.com',
+  ],
+  [
+    'regex escapes',
+    "new RegExp('^canary\\\\.tuturuuu\\\\.com$')",
+    'canary.tuturuuu.com',
+  ],
+])
+  test(`catches the ${name} bypass`, () =>
+    assert.deepEqual(violations(source), [expected]));
+
+test('catches non-production labels in a regex alternation', () => {
+  assert.equal(
+    violations(String.raw`const HOSTS = /^(calendar|staging)\.tuturuuu\.com$/;`)
+      .length,
+    1
+  );
+  assert.deepEqual(
+    violations(String.raw`const HOSTS = /^(calendar|pay)\.tuturuuu\.com$/;`),
+    []
+  );
+  assert.deepEqual(
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: source text fixture
+    violations('const u = `https://${app}.tuturuuu.com`;'),
+    []
+  );
+});
+
+test('staging allowlists reject the production zone in any case or name', () => {
+  for (const source of [
+    'const STAGING_HOST = /TUTURUUU\\.COM/i;',
+    "const stagingHosts = ['pay.tuturuuu.com'];",
+    "export const StagingCookieDomain = '.Tuturuuu.Com';",
+    "  stagingOrigins: ['https://tuturuuu.com'],",
+  ])
+    assert.deepEqual(
+      violations(source),
+      ['production cookie domain in staging allowlist'],
+      source
+    );
+  assert.deepEqual(
+    violations('const STAGING_HOST = /\\.staging\\.tutur3u\\.com$/;'),
+    []
+  );
+});
+
+test('scans every configuration location, not only app and script sources', () => {
+  for (const file of [
+    '.env.example',
+    '.dev.vars',
+    'Dockerfile',
+    'infra/wrangler.toml',
+    'apps/database/supabase/config.toml',
+    'tooling/deploy.sh',
+    'vercel.json',
+    'apps/mobile/lib/config.dart',
+  ])
+    assert.equal(scannedFile(file), true, file);
+  for (const file of [
+    'scripts/check-staging-hosts.test.js',
+    'apps/docs/build/devops/wave1-native-publishers.mdx',
+    'packages/x/__tests__/hosts.ts',
+    'bun.lock',
+    'apps/web/public/logo.png',
+  ])
+    assert.equal(scannedFile(file), false, file);
+});
+
+test('check reports violations outside apps, packages and scripts', (t) => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'staging-hosts-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const files = {
+    '.env.example': 'NEXT_PUBLIC_APP_URL=https://Staging.Tuturuuu.com\n',
+    'infra/wrangler.toml': 'route = "preview.tuturuuu.com/*"\n',
+    'README.md': 'staging.tuturuuu.com is gone\n',
+    'infra/hosts.test.js': "'staging.tuturuuu.com'\n",
+  };
+  for (const [file, source] of Object.entries(files)) {
+    mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+    writeFileSync(path.join(root, file), source);
+  }
+  execFileSync('git', ['init', '-q'], { cwd: root });
+  execFileSync('git', ['add', '.'], { cwd: root });
+  assert.deepEqual(check(root).sort(), [
+    '.env.example: staging.tuturuuu.com',
+    'infra/wrangler.toml: preview.tuturuuu.com',
+  ]);
+});
+
+const RESERVED_FILES = [
+  'apps/infrastructure/src/lib/infrastructure/projects.ts',
+  'apps/web/src/lib/infrastructure/project-model.ts',
+  'scripts/watch-blue-green/projects.js',
+];
+const reservedList = (...hosts) =>
+  `const RESERVED_MANAGED_PROJECT_HOSTNAMES = new Set([\n${hosts
+    .map((host) => `  '${host}',`)
+    .join('\n')}\n]);`;
+
+test('reserved deny-lists may name production dev and staging hosts only', () => {
+  for (const file of RESERVED_FILES) {
+    assert.deepEqual(
+      violations(
+        reservedList('dev.tuturuuu.com', 'staging.tuturuuu.com'),
+        file
+      ),
+      []
+    );
+    assert.deepEqual(violations(reservedList('qa.tuturuuu.com'), file), [
+      'qa.tuturuuu.com',
+    ]);
+    assert.deepEqual(
+      violations(`${reservedList()}\nconst h = 'dev.tuturuuu.com';`, file),
+      ['dev.tuturuuu.com']
+    );
+  }
+  assert.deepEqual(
+    violations(reservedList('dev.tuturuuu.com'), 'apps/web/src/other.ts'),
+    ['dev.tuturuuu.com']
+  );
+});
+
+test('every managed-project deny-list keeps dev.tuturuuu.com reserved', () => {
+  for (const file of RESERVED_FILES) {
+    const source = readFileSync(path.join(__dirname, '..', file), 'utf8');
+    const list =
+      /RESERVED_MANAGED_PROJECT_HOSTNAMES = new Set\(\[([^\]]*)\]/u.exec(
+        source
+      )?.[1];
+    assert.ok(list, file);
+    for (const host of ['dev.tuturuuu.com', 'staging.tuturuuu.com'])
+      assert.ok(list.includes(`'${host}'`), `${file} must reserve ${host}`);
+  }
 });
