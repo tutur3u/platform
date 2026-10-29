@@ -14265,6 +14265,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindAskRemindAtMacSoon => 'Coming soon';
 
   @override
+  String get settingsShareTelemetry => 'Share analytics and crash reports';
+
+  @override
+  String get settingsPrivacy => 'Privacy';
+
+  @override
+  String get settingsTelemetryError => 'Could not update sharing. Tap to retry.';
+
+  @override
   String get mastermindCatchupTitle => 'Since you last looked';
 
   @override

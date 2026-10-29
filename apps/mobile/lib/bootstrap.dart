@@ -16,6 +16,7 @@ import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/config/firebase_options_selector.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
+import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/startup/optional_startup.dart';
 import 'package:mobile/core/startup/startup_state.dart';
 import 'package:mobile/core/theme/app_theme.dart';
@@ -100,9 +101,23 @@ Future<void> bootstrap(
 
   // Initialize Supabase with secure storage
   try {
-    await Firebase.initializeApp(options: firebaseOptionsForFlavor(appFlavor));
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-    await MobileObservability.instance.initialize(appFlavor);
+    await TelemetryPreference.instance.initialize(
+      deviceCountryCode: PlatformDispatcher.instance.locale.countryCode,
+      apply: ({required enabled}) async {
+        if (Firebase.apps.isEmpty) {
+          await Firebase.initializeApp(
+            options: firebaseOptionsForFlavor(appFlavor),
+          );
+          FirebaseMessaging.onBackgroundMessage(
+            firebaseMessagingBackgroundHandler,
+          );
+        }
+        await MobileObservability.instance.initialize(
+          appFlavor,
+          collectionEnabled: enabled,
+        );
+      },
+    );
     PlatformDispatcher.instance.onError = (error, stack) =>
         MobileObservability.instance.recordFatal('platform', error, stack);
   } on Object catch (e, st) {

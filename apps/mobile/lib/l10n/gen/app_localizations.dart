@@ -26677,6 +26677,24 @@ abstract class AppLocalizations {
   /// **'Coming soon'**
   String get mastermindAskRemindAtMacSoon;
 
+  /// No description provided for @settingsShareTelemetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Share analytics and crash reports'**
+  String get settingsShareTelemetry;
+
+  /// No description provided for @settingsPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get settingsPrivacy;
+
+  /// No description provided for @settingsTelemetryError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update sharing. Tap to retry.'**
+  String get settingsTelemetryError;
+
   /// No description provided for @mastermindCatchupTitle.
   ///
   /// In en, this message translates to:

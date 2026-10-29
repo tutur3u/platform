@@ -1,0 +1,32 @@
+---
+title: Mobile analytics and crash report privacy
+description: Device consent for Firebase telemetry in the Flutter app.
+---
+
+Settings > Preferences > Privacy exposes **Share analytics and crash reports**
+on the Flutter iOS and Android apps, in English and Vietnamese. This single
+device-wide choice controls Firebase Analytics events and Crashlytics reports,
+including operational and fatal error reporting. It persists across restarts,
+sign-in, sign-out and workspace changes; it is not synchronized to an account.
+
+Without an explicit choice, sharing defaults off in the EU (AT, BE, BG, HR, CY,
+CZ, DK, EE, FI, FR, DE, GR, HU, IE, IT, LV, LT, LU, MT, NL, PL, PT, RO, SK,
+SI, ES, SE), the additional EEA countries (IS, LI, NO), Switzerland (CH) and the
+United Kingdom (GB). It defaults on elsewhere. An unavailable device region
+fails closed (off). Region comes only from the operating system's device locale,
+not the selected app language, an IP lookup or a network request. An explicit
+saved choice always takes precedence, including after a device region change.
+
+Native collection defaults are disabled. Startup reads the preference before
+Firebase initialization and explicitly configures both collection SDKs. Turning
+the toggle off revokes collection before waiting for preference persistence.
+Turning it on requires successful persistence first. A failed update shows an
+inline retry message. Non-production flavors never collect, even when the saved
+choice is on. This setting does not control push notifications, backend request
+logs or other app surfaces; it cannot retract reports already transmitted.
+
+Regression coverage: `telemetry_preference_test.dart` covers regional defaults,
+persistence and startup ordering; `telemetry_settings_tile_test.dart` covers
+label and switch activation. Native defaults are checked in the preference suite.
+Validation uses `flutter gen-l10n`, `flutter analyze`, focused `flutter test` and
+`bun check:changed` on an admitted Flutter host. No release build is required.

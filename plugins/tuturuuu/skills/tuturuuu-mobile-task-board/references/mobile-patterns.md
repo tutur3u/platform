@@ -434,3 +434,13 @@ skip the queue on cache failure. Preserve branch fallbacks, error/stack reportin
 and the pre-`runApp` join. Completion-barrier tests live in
 `test/core/startup/startup_state_test.dart`. See the Mobile application guide's
 [ordering contract](../../../../../apps/docs/platform/applications/mobile.mdx#independent-startup-state-restoration).
+
+## Analytics and crash sharing
+
+- Keep collection changes behind `TelemetryPreference` and the production-only
+  gate in `MobileObservability`. Read the persisted device choice before Firebase
+  initialization; native defaults remain disabled. Do not infer device region
+  from the app language or a network lookup.
+- See `apps/docs/platform/features/mobile-telemetry-privacy.mdx` for regional
+  defaults, unknown-region handling and exceptions. Verify startup ordering,
+  persistence, native defaults and Settings controls with the telemetry suites.

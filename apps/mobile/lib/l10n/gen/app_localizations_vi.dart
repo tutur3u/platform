@@ -14115,6 +14115,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindAskRemindAtMacSoon => 'Sắp ra mắt';
 
   @override
+  String get settingsShareTelemetry => 'Chia sẻ dữ liệu phân tích và báo cáo sự cố';
+
+  @override
+  String get settingsPrivacy => 'Quyền riêng tư';
+
+  @override
+  String get settingsTelemetryError => 'Không thể cập nhật lựa chọn chia sẻ. Nhấn để thử lại.';
+
+  @override
   String get mastermindCatchupTitle => 'Từ lần bạn xem gần nhất';
 
   @override

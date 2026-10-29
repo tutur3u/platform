@@ -31,9 +31,16 @@ class MobileObservability {
       OperationalErrorReporter(sink: _recordOperational);
   bool _enabled = false;
 
-  Future<void> initialize(AppFlavor flavor) async {
-    final enabled = flavor == AppFlavor.production;
-    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(enabled);
+  Future<void> initialize(
+    AppFlavor flavor, {
+    required bool collectionEnabled,
+  }) async {
+    final enabled = flavor == AppFlavor.production && collectionEnabled;
+    _enabled = false;
+    await Future.wait([
+      FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(enabled),
+      FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(enabled),
+    ]);
     _enabled = enabled;
     try {
       final package = await PackageInfo.fromPlatform();
@@ -44,11 +51,6 @@ class MobileObservability {
       );
     } on Object catch (_) {
       // Release metadata may be unavailable; never use plugin error contents.
-    }
-    try {
-      await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(enabled);
-    } on Object catch (error) {
-      log('Firebase Analytics setup failed: ${error.runtimeType}');
     }
   }
 
