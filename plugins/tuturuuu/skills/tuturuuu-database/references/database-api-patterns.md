@@ -537,3 +537,8 @@ minimal tombstone after conversation deletion to deny stale resurrection.
 `verify-chat-first-message.mjs` exercises the full isolated migration chain,
 rollback cases and a two-connection advisory-lock race. Its baseline/candidate
 type generation applies only the new schema delta to the checked-in snapshot.
+
+The first-message rollback restores main's prior chat_create_conversation body
+and service-only ACL. Refuse retained creation receipts: removing retry identities
+can resurrect deleted conversations. Verify actual apply/rollback/reapply and
+prior catalog equality with apps/database/verification/chat-first-message-rollback-*.sql.

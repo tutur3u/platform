@@ -582,3 +582,27 @@ with Docker. It resets an owned disposable full-chain database, applies the new
 migration locally, runs the security/creation tests and observed-lock race,
 generates only the migration's database type delta, and stops its own project.
 It never targets a linked database.
+
+## First-message migration rollback
+
+The manual rollback for `20261026145800_chat_first_message_creation_receipts`
+restores main's prior `private.chat_create_conversation` definition and its
+service-role-only execution grant, then removes the two new receipt functions
+and the receipt table. Existing conversations and messages remain.
+
+Creation receipts prevent old retries from recreating deleted conversations.
+The rollback refuses a nonempty receipt table because discarding those identities
+cannot be safely reversed. Preserve and verify recovery data before a separately
+authorized restore or disposal procedure.
+
+On an isolated database reset to main, run:
+
+```sh
+psql -X -v ON_ERROR_STOP=1 "$ROLLBACK_DATABASE_URL" -f apps/database/verification/chat-first-message-rollback-roundtrip.sql
+psql -X -v ON_ERROR_STOP=1 "$ROLLBACK_DATABASE_URL" -f apps/database/verification/chat-first-message-rollback-guards.sql
+```
+
+These tests apply the actual migration, execute its rollback, compare the
+restored function definition, owner, settings and ACL with main, assert client
+execution denial and receipt-table absence, then re-apply it. A retained-receipt
+control requires explicit failure without losing the identity.
