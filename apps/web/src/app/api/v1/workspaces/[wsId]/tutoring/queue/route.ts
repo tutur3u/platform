@@ -41,6 +41,8 @@ type QueueItem = {
   missed_lesson_content?: string;
   missed_post_content?: string;
   missing_lesson_dates?: string[];
+  missed_lesson_by_date?: Record<string, string>;
+  missed_post_by_date?: Record<string, string>;
   content_review_due: boolean;
   content_unchanged_since: string | null;
   review_only: boolean;
@@ -485,6 +487,8 @@ async function getTutoringData(request: Request, { params }: Params) {
           ...item,
           missed_lesson_content: notes.content,
           missed_post_content: notes.postContent,
+          missed_lesson_by_date: notes.contentByDate ?? {},
+          missed_post_by_date: notes.postContentByDate ?? {},
           missing_lesson_dates: notes.missingDates,
         }
       : item;

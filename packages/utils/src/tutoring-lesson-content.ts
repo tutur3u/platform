@@ -34,12 +34,21 @@ function localDate(session: TutoringLessonNoteSession) {
   return zonedDate(session.startsAt, session.startTimezone);
 }
 
+function groupLinesByDate(entries: { date: string; line: string }[]) {
+  const byDate: Record<string, string> = {};
+  for (const { date, line } of entries)
+    byDate[date] = byDate[date] ? `${byDate[date]}\n${line}` : line;
+  return byDate;
+}
+
 /** The recorded notes for missed class dates, and the dates without any. */
 export interface MissedLessonNotes {
   /** `YYYY-MM-DD: notes`, one line per date that has notes. */
   content: string;
   /** Missed dates with no notes recorded on a scheduled class session. */
   missingDates: string[];
+  /** The same `YYYY-MM-DD: notes` text split per date, for one session each. */
+  contentByDate?: Record<string, string>;
 }
 
 /** Draft make-up content from the recorded lesson on each missed class date. */
@@ -66,6 +75,12 @@ export function getMissedLessonNotes(
     content: entries
       .map(({ date, content }) => `${date}: ${content}`)
       .join('\n'),
+    contentByDate: groupLinesByDate(
+      entries.map(({ date, content }) => ({
+        date,
+        line: `${date}: ${content}`,
+      }))
+    ),
     missingDates: [...missed].filter((date) => !noted.has(date)).sort(),
   };
 }
@@ -89,6 +104,8 @@ export interface TutoringClassPost {
 export interface MissedClassNotes extends MissedLessonNotes {
   /** `YYYY-MM-DD: title` and body, one block per class post on a missed date. */
   postContent: string;
+  /** The same post text split per date, for one session each. */
+  postContentByDate?: Record<string, string>;
 }
 
 /**
@@ -123,7 +140,11 @@ export function getMissedClassNotes(
   const withPosts = new Set(entries.map((entry) => entry.date));
   return {
     content: lessons.content,
+    contentByDate: lessons.contentByDate,
     postContent: entries.map(({ date, text }) => `${date}: ${text}`).join('\n'),
+    postContentByDate: groupLinesByDate(
+      entries.map(({ date, text }) => ({ date, line: `${date}: ${text}` }))
+    ),
     missingDates: lessons.missingDates.filter((date) => !withPosts.has(date)),
   };
 }

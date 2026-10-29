@@ -131,6 +131,7 @@ export function TutoringDraftChoices({
       sessionSlots: form.sessionSlots.map((slot, slotIndex) =>
         slotIndex === index
           ? {
+              ...slot,
               durationMinutes: choice.durationMinutes ?? policy.durationMinutes,
               sessionDate: choice.sessionDate,
               startTime: choice.startTime,

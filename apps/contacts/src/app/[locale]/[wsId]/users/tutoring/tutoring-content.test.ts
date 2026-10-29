@@ -2,6 +2,7 @@ import type { WorkspaceUserGroupSession } from '@tuturuuu/internal-api';
 import { describe, expect, it } from 'vitest';
 import {
   buildQueueDraftContent,
+  buildQueueSlotDrafts,
   getMissedClassNotes,
   getMissedLessonContent,
   getMissedLessonNotes,
@@ -70,6 +71,7 @@ describe('make-up lesson content', () => {
       ])
     ).toEqual({
       content: '2026-09-20: Unit 3 food',
+      contentByDate: { '2026-09-20': '2026-09-20: Unit 3 food' },
       missingDates: ['2026-09-21', '2026-09-22'],
     });
   });
@@ -91,7 +93,11 @@ describe('missed class posts', () => {
     ];
     expect(getMissedClassNotes([], posts, ['2026-10-22'], zone)).toEqual({
       content: '',
+      contentByDate: {},
       postContent: '2026-10-22: Bài 5\nPhần bài viết ngày 22',
+      postContentByDate: {
+        '2026-10-22': '2026-10-22: Bài 5\nPhần bài viết ngày 22',
+      },
       missingDates: [],
     });
   });
@@ -108,7 +114,9 @@ describe('missed class posts', () => {
       )
     ).toEqual({
       content: '2026-10-22: Unit 3',
+      contentByDate: { '2026-10-22': '2026-10-22: Unit 3' },
       postContent: '2026-10-23: Ôn tập',
+      postContentByDate: { '2026-10-23': '2026-10-23: Ôn tập' },
       missingDates: ['2026-10-24'],
     });
   });
@@ -230,6 +238,167 @@ describe('queue draft content', () => {
       content: '',
       linkedContent: '',
       missingLessonDates: ['2026-09-21'],
+    });
+  });
+});
+
+describe('per-session content split', () => {
+  const dated = {
+    content: [
+      '2026-10-20: Unit 4',
+      '2026-10-22: Unit 5',
+      '2026-10-24: Unit 6',
+    ].join('\n'),
+    contentByDate: {
+      '2026-10-20': '2026-10-20: Unit 4',
+      '2026-10-22': '2026-10-22: Unit 5',
+      '2026-10-24': '2026-10-24: Unit 6',
+    },
+    missingDates: [],
+    postContent: '',
+    postContentByDate: {},
+  };
+  const item = (
+    reason_type: 'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'BOTH',
+    dates: string[]
+  ) => ({
+    feedback_content: 'Needs phonics practice',
+    missed_class_dates: dates,
+    reason_type,
+  });
+
+  it('splits two missed dates across two sessions, oldest first', () => {
+    const drafts = buildQueueSlotDrafts(
+      item('ABSENT_RECOVERY', ['2026-10-22', '2026-10-20']),
+      dated,
+      labels,
+      2
+    );
+    expect(drafts).toEqual([
+      {
+        content: '2026-10-20: Unit 4',
+        linkedContent: '2026-10-20: Unit 4',
+        pairedMissedDate: '2026-10-20',
+      },
+      {
+        content: '2026-10-22: Unit 5',
+        linkedContent: '2026-10-22: Unit 5',
+        pairedMissedDate: '2026-10-22',
+      },
+    ]);
+  });
+
+  it('splits three missed dates across three sessions', () => {
+    const drafts = buildQueueSlotDrafts(
+      item('ABSENT_RECOVERY', ['2026-10-20', '2026-10-22', '2026-10-24']),
+      dated,
+      labels,
+      3
+    );
+    expect(drafts.map((draft) => draft.content)).toEqual([
+      '2026-10-20: Unit 4',
+      '2026-10-22: Unit 5',
+      '2026-10-24: Unit 6',
+    ]);
+  });
+
+  it('labels a day with both notes and a post, and saves it as written', () => {
+    const [first, second] = buildQueueSlotDrafts(
+      item('ABSENT_RECOVERY', ['2026-10-20', '2026-10-22']),
+      {
+        ...dated,
+        postContent: '2026-10-20: Bài viết',
+        postContentByDate: { '2026-10-20': '2026-10-20: Bài viết' },
+      },
+      labels,
+      2
+    );
+    expect(first).toEqual({
+      content:
+        'Ghi chú buổi học:\n2026-10-20: Unit 4\n\nBài viết:\n2026-10-20: Bài viết',
+      linkedContent: undefined,
+      pairedMissedDate: '2026-10-20',
+    });
+    expect(second?.content).toBe('2026-10-22: Unit 5');
+  });
+
+  it('leaves a session beyond the missed dates without class notes', () => {
+    const drafts = buildQueueSlotDrafts(
+      item('ABSENT_RECOVERY', ['2026-10-20']),
+      dated,
+      labels,
+      2
+    );
+    expect(drafts[1]).toEqual({ content: '', linkedContent: '' });
+  });
+
+  it('repeats the homeroom teacher note for every weak-support session', () => {
+    const drafts = buildQueueSlotDrafts(
+      item('WEAK_SUPPORT', []),
+      { content: '', missingDates: [], postContent: '' },
+      labels,
+      3
+    );
+    expect(drafts).toEqual(
+      Array.from({ length: 3 }, () => ({
+        content: 'Needs phonics practice',
+        linkedContent: undefined,
+      }))
+    );
+  });
+
+  it('pairs each session own missed day with the weak note for both reasons', () => {
+    const drafts = buildQueueSlotDrafts(
+      item('BOTH', ['2026-10-20', '2026-10-22']),
+      dated,
+      labels,
+      2
+    );
+    expect(drafts.map((draft) => draft.content)).toEqual([
+      'Kèm nghỉ:\n2026-10-20: Unit 4\n\nKèm yếu:\nNeeds phonics practice',
+      'Kèm nghỉ:\n2026-10-22: Unit 5\n\nKèm yếu:\nNeeds phonics practice',
+    ]);
+    expect(drafts.every((draft) => draft.linkedContent === undefined)).toBe(
+      true
+    );
+  });
+
+  it('behaves like the single draft with one session', () => {
+    const single = item('ABSENT_RECOVERY', ['2026-10-20', '2026-10-22']);
+    expect(buildQueueSlotDrafts(single, dated, labels, 1)).toEqual([
+      {
+        content: dated.content,
+        linkedContent: dated.content,
+      },
+    ]);
+  });
+
+  it('derives the per-date split from class sessions', () => {
+    const result = getMissedLessonNotes(
+      [
+        lesson('2026-10-20T01:00:00Z', 'Unit 4'),
+        lesson('2026-10-22T01:00:00Z', 'Unit 5'),
+      ],
+      ['2026-10-20', '2026-10-22']
+    );
+    expect(result.contentByDate).toEqual({
+      '2026-10-20': '2026-10-20: Unit 4',
+      '2026-10-22': '2026-10-22: Unit 5',
+    });
+    const withPosts = getMissedClassNotes(
+      [lesson('2026-10-20T01:00:00Z', 'Unit 4')],
+      [
+        {
+          content: 'Body',
+          createdAt: '2026-10-22T03:00:00Z',
+          title: 'Title',
+        },
+      ],
+      ['2026-10-20', '2026-10-22'],
+      'Asia/Ho_Chi_Minh'
+    );
+    expect(withPosts.postContentByDate).toEqual({
+      '2026-10-22': '2026-10-22: Title\nBody',
     });
   });
 });
