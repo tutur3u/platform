@@ -31,6 +31,7 @@ final class NeedsYou implements NeedsYouItem {
     List<String>? hubOptionKeys,
     this.hubRecommended,
     this.by,
+    this.answeredVia,
   }) : options = List.unmodifiable(options),
        hubOptions = hubOptions == null ? null : List.unmodifiable(hubOptions),
        optionKeys = optionKeys == null ? null : List.unmodifiable(optionKeys),
@@ -65,6 +66,9 @@ final class NeedsYou implements NeedsYouItem {
   final List<String>? hubOptionKeys;
   final String? hubRecommended;
   final String? by;
+
+  /// Where the hub says the item was answered; null when it did not say.
+  final AnsweredVia? answeredVia;
 
   String optionLabel(int index) {
     final labels = hubOptions;

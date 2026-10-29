@@ -134,7 +134,7 @@ class _Detail extends StatelessWidget {
         ItemQuestionCard(item: item, now: now),
         // Resolved is the hub's word only; until then the reply section shows
         // this device's reply (Sent · waiting for Mastermind) or the composer.
-        if (item.state == ItemState.answered)
+        if (item.state != ItemState.open)
           ItemResolvedPanel(item: item)
         else
           ItemReplySection(item: item),
