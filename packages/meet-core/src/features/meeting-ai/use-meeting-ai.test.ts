@@ -279,3 +279,40 @@ it('waits for a delayed final worklet flush and its upload before notes finaliza
   );
   hook.unmount();
 });
+
+it('stops capture and reports the credit reason when billing refuses an upload', async () => {
+  vi.useFakeTimers();
+  mocks.upload.mockRejectedValue(
+    Object.assign(new Error('AI credits unavailable'), {
+      status: 402,
+      code: 'MEET_AI_CREDITS_DAILY_LIMIT',
+    })
+  );
+  const hook = renderHook(() => useMeetingAi('workspace', 'meeting'), {
+    wrapper: ({ children }: { children: ReactNode }) =>
+      createElement(WorkspaceVisibilityProvider, {
+        actorId: 'actor-a',
+        children,
+      }),
+  });
+  await act(() => hook.result.current.start());
+  await act(async () => {
+    mocks.onChunk?.(new Blob(['audio']), 1);
+    await vi.advanceTimersByTimeAsync(10_100);
+  });
+  expect(hook.result.current.creditFailure).toBe('credits_daily_limit');
+  expect(hook.result.current.captureError).toBe(true);
+  expect(hook.result.current.capturing).toBe(false);
+  // A refusal is final: no retry loop, and later speech is not queued.
+  await act(async () => {
+    mocks.onChunk?.(new Blob(['later']), 12);
+    await vi.advanceTimersByTimeAsync(20_000);
+  });
+  expect(mocks.upload).toHaveBeenCalledTimes(1);
+  expect(mocks.update).toHaveBeenLastCalledWith(
+    'workspace',
+    'meeting',
+    expect.objectContaining({ action: 'finish', captureIncomplete: true })
+  );
+  hook.unmount();
+});

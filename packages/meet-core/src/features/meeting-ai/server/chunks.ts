@@ -6,6 +6,7 @@ import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
 import { generateBilledMeetArtifact } from './artifact-billing';
 import { readAudioParts } from './audio-input';
 import { readMeetAudioForm } from './body';
+import { admitMeetCredits } from './credit-admission';
 import { resolveTranscriptSpeaker } from './transcript-speaker';
 
 const schema = z.object({
@@ -51,6 +52,8 @@ export async function transcribeMeetChunk(
     Date.now() - Date.parse(session.created_at) > 3 * 60 * 60 * 1000
   )
     throw new MeetAiError(409, 'Transcription has ended');
+  // A credit refusal must reject the upload before it can leave a failed row.
+  const admission = await admitMeetCredits(user.id);
   const resolved = await Effect.runPromise(
     Effect.either(
       Effect.forEach(
@@ -125,7 +128,8 @@ export async function transcribeMeetChunk(
       batched
         ? { audioSegments: parts.map((part) => part.bytes) }
         : { audio: parts[0]!.bytes },
-      { userId: user.id, meetingId, attemptId: inserted.data.attempt_id ?? id }
+      { userId: user.id, meetingId, attemptId: inserted.data.attempt_id ?? id },
+      admission
     );
     const segments = batched
       ? parts.map((part, index) => ({
