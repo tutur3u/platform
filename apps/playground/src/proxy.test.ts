@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -20,6 +20,16 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
 
 const { config, proxy } = await import('./proxy');
 
+function request(
+  path: string,
+  init?: ConstructorParameters<typeof NextRequest>[1]
+) {
+  return new NextRequest(
+    new URL(path, 'https://playground.contract.test'),
+    init
+  );
+}
+
 describe('playground proxy', () => {
   beforeEach(() => {
     for (const mock of Object.values(mocks)) mock.mockReset();
@@ -37,6 +47,7 @@ describe('playground proxy', () => {
       );
 
       expect(res.status).toBe(307);
+      expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
       const location = new URL(res.headers.get('location') ?? '');
       expect(location.origin).toBe('https://web.contract.test');
       expect(location.pathname).toBe('/login');
@@ -68,11 +79,55 @@ describe('playground proxy', () => {
   });
 
   it('matches pages and api but not framework assets', () => {
+    expect(config.matcher).toEqual(['/((?!_next|.*\\..*).*)']);
     const pattern = new RegExp(`^${config.matcher[0]}$`);
     expect(pattern.test('/')).toBe(true);
     expect(pattern.test('/tool-calling')).toBe(true);
     expect(pattern.test('/api/ai/tool-calling')).toBe(true);
     expect(pattern.test('/_next/static/chunk.js')).toBe(false);
     expect(pattern.test('/robots.txt')).toBe(false);
+  });
+  it('guards local and proxied API requests with the playground bucket prefix', async () => {
+    mocks.guardApiProxyRequest.mockResolvedValue(null);
+
+    for (const path of [
+      '/api/ai/object-generation',
+      '/api/build-info',
+      '/api/v1/users/me',
+    ]) {
+      const req = request(path);
+      const res = await proxy(req);
+
+      expect(res.headers.get('x-middleware-next')).toBe('1');
+      expect(mocks.guardApiProxyRequest).toHaveBeenLastCalledWith(req, {
+        prefixBase: 'proxy:playground:api',
+      });
+    }
+    expect(mocks.guardApiProxyRequest).toHaveBeenCalledTimes(3);
+  });
+
+  it('returns the guard rejection unchanged', async () => {
+    const rejection = NextResponse.json(
+      { error: 'Too Many Requests' },
+      { status: 429 }
+    );
+    mocks.guardApiProxyRequest.mockResolvedValue(rejection);
+
+    const res = await proxy(
+      request('/api/ai/object-generation', { method: 'POST' })
+    );
+
+    expect(res).toBe(rejection);
+    expect(res.status).toBe(429);
+  });
+
+  it('propagates guard failures instead of failing open', async () => {
+    mocks.guardApiProxyRequest.mockRejectedValue(
+      new Error('guard unavailable')
+    );
+
+    await expect(proxy(request('/api/build-info'))).rejects.toThrow(
+      'guard unavailable'
+    );
   });
 });
