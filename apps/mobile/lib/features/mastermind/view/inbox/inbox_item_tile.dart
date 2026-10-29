@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
@@ -8,18 +9,20 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
-import 'package:mobile/features/mastermind/presentation/age_text.dart';
 import 'package:mobile/features/mastermind/presentation/answered_via_labels.dart';
 import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/presentation/relative_time.dart';
 import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
 import 'package:mobile/features/mastermind/view/inbox/decision_card_actions.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
 import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_clock.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_time_label.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// One ask with a meaningful title, metadata and a two-line ask preview.
@@ -42,7 +45,7 @@ class InboxItemTile extends StatelessWidget {
   final bool showKind;
   final bool showKindIcon;
 
-  /// The section clock, for "5 min ago". Without it no age is shown.
+  /// The section clock. Without it no age is shown.
   final DateTime? now;
 
   @override
@@ -85,12 +88,18 @@ class InboxItemTile extends StatelessWidget {
     final kindLabel = kind == null
         ? null
         : MastermindLabels.itemKind(l10n, kind);
-    final detail = elsewhere != null
-        ? [answeredViaText(l10n, elsewhere.via), ?elsewhere.option].join(' · ')
-        : [?_state(l10n, entry, status), ?_age(l10n, locale)].join(' · ');
     final answeredCheck =
         elsewhere != null ||
         (item.state == ItemState.answered && item.answeredVia != null);
+    // Resolved rows sit under their GMT+7 day, so they read the time ("06:21");
+    // open ones read their age as a relative time label.
+    final resolvedTime = item.state != ItemState.open && item.resolvedAt != null
+        ? Gmt7.time(item.resolvedAt!, locale)
+        : null;
+    final state = elsewhere != null
+        ? [answeredViaText(l10n, elsewhere.via), ?elsewhere.option].join(' · ')
+        : [?_state(l10n, entry, status), ?resolvedTime].join(' · ');
+    final at = elsewhere != null || resolvedTime != null ? null : _at;
     final preview = item.hubText ?? askPreviewText(item);
     void open() {
       if (_canRetry(status, entry)) {
@@ -103,19 +112,27 @@ class InboxItemTile extends StatelessWidget {
       unawaited(context.push<void>(Routes.mastermindInboxItemPath(item.id)));
     }
 
+    final exactTime = GlobalKey<TooltipState>();
     final large = mastermindLargeText(context);
-    final row = Semantics(
+    Widget buildRow(String? spokenAge) => Semantics(
       button: true,
       label: [
         ?kindLabel,
         title,
         if (item.product case final product?) MastermindLabels.product(product),
         if (item.by case final by?) l10n.mastermindAskedBy(by),
-        if (detail.isNotEmpty) detail,
+        ?(state.isEmpty ? null : state),
+        ?spokenAge,
         if (preview.isNotEmpty) spokenAskSummary(preview),
       ].join('. '),
       hint: l10n.mastermindOpensItem,
       onTap: open,
+      customSemanticsActions: {
+        if (at != null)
+          CustomSemanticsAction(label: l10n.mastermindRelShowExact): () {
+            exactTime.currentState?.ensureTooltipVisible();
+          },
+      },
       excludeSemantics: true,
       child: AppGroupedRow(
         leading: showKindIcon
@@ -153,12 +170,14 @@ class InboxItemTile extends StatelessWidget {
                 if (item.by case final by?)
                   MastermindStatusChip(label: l10n.mastermindAskedBy(by)),
                 if (answeredCheck) const Icon(AppIcons.check, size: 14),
-                Text(
-                  detail,
-                  key: ValueKey('ask-state-${item.id}'),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                if (state.isNotEmpty)
+                  Text(
+                    state,
+                    key: ValueKey('ask-state-${item.id}'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                if (at != null) MastermindTimeLabel(at, tooltipKey: exactTime),
               ],
             ),
             if (preview.isNotEmpty)
@@ -174,6 +193,21 @@ class InboxItemTile extends StatelessWidget {
         onTap: open,
       ),
     );
+    // The spoken age is recomputed on every clock tick, not cached with the
+    // rest of the row, so a screen reader never hears a stale "5 minutes ago".
+    final row = at == null
+        ? buildRow(null)
+        : MastermindClockBuilder(
+            builder: (context, now) => buildRow(
+              mastermindSpokenTime(
+                l10n,
+                at,
+                now: now,
+                zone: mastermindTimeZoneOf(context),
+                locale: locale,
+              ),
+            ),
+          );
     if (item.state != ItemState.open) return row;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -249,17 +283,8 @@ class InboxItemTile extends StatelessWidget {
       entry.status == OutboxStatus.pending &&
       status.issue == ReplyIssue.offline;
 
-  /// Resolved rows sit under their GMT+7 day, so they read the time ("06:21");
-  /// open ones read their age.
-  String? _age(AppLocalizations l10n, String locale) {
-    if (item.state != ItemState.open && item.resolvedAt != null) {
-      return Gmt7.time(item.resolvedAt!, locale);
-    }
-    final at = item.createdAt ?? item.resolvedAt;
-    final clock = now;
-    if (at == null || clock == null) return null;
-    return mastermindAgeText(l10n, clock.difference(at));
-  }
+  /// The instant the age is for; none without the section clock.
+  DateTime? get _at => now == null ? null : item.createdAt ?? item.resolvedAt;
 }
 
 /// A read-only option. The recommended one carries a star and the word

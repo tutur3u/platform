@@ -437,8 +437,11 @@ void main() {
       expect(find.text('Outcome'), findsOneWidget);
       expect(find.text('Resolved'), findsOneWidget);
       expect(find.text('Answer: Yes'), findsOneWidget);
-      // Two hours before 17:32 UTC is 22:32 in GMT+7.
-      expect(find.text('Jan 31, 22:32'), findsOneWidget);
+      // Resolved two hours before 17:32 UTC; the full time is on long press.
+      expect(findTimeLabel('2h'), findsOneWidget);
+      await tester.longPress(findTimeLabel('2h'));
+      await tester.pump();
+      expect(find.text('31 Jan, 22:32 GMT+7'), findsOneWidget);
       expect(find.byType(TextField), findsNothing);
       expect(find.text('This was answered or withdrawn'), findsNothing);
     });

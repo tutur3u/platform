@@ -1,5 +1,4 @@
 'use client';
-
 import { useQuery } from '@tanstack/react-query';
 import {
   CalendarDays,
@@ -23,6 +22,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ComponentProps } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { canTranscribeMeet } from '../../meeting-ai/eligibility';
 import { showMeetingAiFailure } from '../../meeting-ai/failure-toast';
 import { useCallNotifications } from '../hooks/use-call-notifications';
 import { useMeetRoom } from '../hooks/use-meet-room';
@@ -140,11 +140,11 @@ function CallShellContent({
     window.location.reload();
   };
   const sharedAudio = useSharedRoomAudio(room, joined && !left);
-  const openNoticePanel = useCallback((next: 'chat' | 'participants') => {
+  const openNoticePanel = (next: 'chat' | 'participants') => {
     setPanel(next);
     setShowPersonalTools(false);
     setShowAi(false);
-  }, []);
+  };
   const notifications = useCallNotifications(
     state,
     joined && !left,
@@ -184,9 +184,10 @@ function CallShellContent({
     wsId,
     meetingId,
     transcriptionSources,
-    !left && Object.keys(state.participants).length > 1,
+    canTranscribeMeet(left, Object.keys(state.participants).length),
     canReadNotes,
-    accountId
+    accountId,
+    { title: state.title ?? meetingName }
   );
   const recording = useRoomRecording(room, meetingId, audioStreams);
   const telemetry = useQuery({
@@ -273,10 +274,9 @@ function CallShellContent({
         setSaving(false);
       }
     );
-  }, [room.leave, ai.finish, recording.stop, aiT, flushUsage]);
-  useEffect(() => {
-    if (panel === 'chat') setLastReadChatId(newestChatId);
-  }, [panel, newestChatId]);
+  }, [room, ai, recording, aiT, flushUsage]);
+  if (panel === 'chat' && lastReadChatId !== newestChatId)
+    setLastReadChatId(newestChatId);
   useEffect(() => {
     if (state.ended || state.admission === 'denied') leaveNow();
   }, [state.ended, state.admission, leaveNow]);
@@ -320,7 +320,9 @@ function CallShellContent({
         transcriptionNotice={
           !canReadNotes && !canReadWorkspace
             ? t('guest_transcription_notice')
-            : ai.data?.sessions.some((session) => !session.ended_at)
+            : ai.data?.sessions.some(
+                  (session: { ended_at: string | null }) => !session.ended_at
+                )
               ? aiT('join_notice')
               : undefined
         }
@@ -358,14 +360,13 @@ function CallShellContent({
           onSaved={room.renameMeeting}
         />
         {participants.length === 1 && !state.liveAssistant && (
-          <span
-            role="status"
+          <output
             className="inline-flex items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 py-1 text-muted-foreground text-xs"
             title={t('solo_hint')}
           >
             <Leaf className="size-3.5" />
             {t('solo_mode')}
-          </span>
+          </output>
         )}
         {canReadNotes && (
           <MeetingActionHint label={aiT('title')}>
@@ -442,10 +443,7 @@ function CallShellContent({
         <RoomCountdown expiresAt={state.roomExpiresAt} />
       </header>
       {canManage && state.waiting.length > 0 && (
-        <div
-          role="status"
-          className="flex items-center justify-between gap-3 border-b bg-muted/40 px-3 py-2"
-        >
+        <output className="flex items-center justify-between gap-3 border-b bg-muted/40 px-3 py-2">
           <span className="text-sm">
             {t('waiting_room', { count: state.waiting.length })}
           </span>
@@ -465,7 +463,7 @@ function CallShellContent({
               {t('participants', { count: participants.length })}
             </Button>
           </MeetingActionHint>
-        </div>
+        </output>
       )}
       <CallResourceNotice error={state.error} />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">

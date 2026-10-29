@@ -104,3 +104,13 @@ export type {
   RenegotiateInput,
 } from './sfu';
 export { CloudflareSfuClient } from './sfu';
+export type {
+  TranscriptionConsentMessage,
+  TranscriptionState,
+  TranscriptionStateMessage,
+} from './transcription';
+export {
+  transcriptionConsentMessageSchema,
+  transcriptionStateMessageSchema,
+  transcriptionStateSchema,
+} from './transcription';

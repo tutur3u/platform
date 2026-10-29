@@ -22,6 +22,7 @@ import {
 } from './room-controls';
 import { outcome } from './room-outcome';
 import { recordingMessage } from './room-recording';
+import { transcriptionAnnouncements } from './transcription';
 
 export function admitOrHold(
   state: MeetRoomSnapshot,
@@ -95,6 +96,7 @@ export function admitOrHold(
       { ...buildReady(next, token, 'admitted'), resumed: !!previous },
       roomSettingsMessage(next),
       recordingMessage(next),
+      ...transcriptionAnnouncements(next, token.userId),
       ...(next.chat ?? []).map((entry) => ({ ...entry, replayed: true })),
       ...(token.role === 'host' ? [approvedParticipantsMessage(next)] : []),
       ...(canMeetRealtimeManageParticipants(token)

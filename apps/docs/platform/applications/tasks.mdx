@@ -286,7 +286,7 @@ and sibling planning tabs are unchanged. Regression coverage lives in
 
 ```
 Workspaces (Top Level)
-└── Task Initiatives (Strategic grouping; retired from the Tasks UI, see below)
+└── Task Initiatives (Strategic grouping)
     └── Task Projects (Cross-board coordination)
         └── Workspace Boards (Kanban boards)
             └── Task Lists (Columns)
@@ -308,25 +308,52 @@ const { data: workspace } = await supabase
 
 ### 2. Task Initiatives
 
-Initiatives retirement, step 1, applies to the Tasks app UI only. Initiatives are
-hidden from the settings navigation and settings search by default, and the
-New/Create Initiative controls are removed. Old `task_initiatives` settings links
-open general Tasks settings instead.
+Strategic initiatives grouping related projects.
 
-Existing initiatives and their project links stay in the database, untouched,
-but no Tasks page shows them in this step. No initiative data, tables,
-relationships or APIs are deleted or migrated.
+```sql
+CREATE TABLE task_initiatives (
+  id text PRIMARY KEY,
+  ws_id text REFERENCES workspaces(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  start_date date,
+  end_date date,
+  created_at timestamptz DEFAULT now()
+);
+```
 
-Intentional exceptions until step 2: the mobile app still lists and creates
-initiatives, and the create API
-(`POST /api/v1/workspaces/{wsId}/task-initiatives`) still accepts them. Blocking
-creation there, and removing the API and data, belongs to step 2 and requires
-explicit approval.
+**Usage:**
 
-Regression coverage:
+```typescript
+"use server";
 
-- [Navigation and settings](https://github.com/tutur3u/platform/blob/main/apps/tasks/src/__tests__/initiatives-retirement.test.tsx)
-- [Existing initiative rendering and absent create controls](https://github.com/tutur3u/platform/blob/main/packages/tasks-ui/src/tu-do/initiatives/task-initiatives-client.test.tsx)
+import { createClient } from "@tuturuuu/supabase/next/server";
+
+export async function createInitiative(data: {
+  wsId: string;
+  name: string;
+  description?: string;
+  startDate?: Date;
+  endDate?: Date;
+}) {
+  const supabase = await createClient();
+
+  const { data: initiative, error } = await supabase
+    .from("task_initiatives")
+    .insert({
+      ws_id: data.wsId,
+      name: data.name,
+      description: data.description,
+      start_date: data.startDate?.toISOString().split("T")[0],
+      end_date: data.endDate?.toISOString().split("T")[0],
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return initiative;
+}
+```
 
 ### 3. Task Projects
 

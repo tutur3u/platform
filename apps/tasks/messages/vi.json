@@ -3626,6 +3626,7 @@
       "errors": {
         "convert_to_project": "Không thể chuyển thành dự án",
         "convert_to_task": "Không thể chuyển thành công việc",
+        "create_initiative": "Không thể tạo sáng kiến",
         "create_note": "Không thể tạo ghi chú",
         "create_project": "Tạo dự án thất bại",
         "delete_initiative": "Không thể xóa sáng kiến",
@@ -3666,6 +3667,7 @@
       "success": {
         "converted_to_project": "Ghi chú đã chuyển thành dự án thành công",
         "converted_to_task": "Ghi chú đã chuyển thành công việc thành công",
+        "initiative_created": "Tạo sáng kiến thành công",
         "initiative_deleted": "Xóa sáng kiến thành công",
         "initiative_updated": "Cập nhật sáng kiến thành công",
         "note_created": "Thêm ghi chú thành công",
@@ -7531,6 +7533,8 @@
       "hide_empty_task_lists": "Mặc định chỉ hiển thị danh sách có công việc",
       "hide_empty_task_lists_description": "Mặc định ẩn các danh sách không có công việc phù hợp. Bạn vẫn có thể thay đổi trong Bộ lọc của từng bảng.",
       "import_description": "Xem trước và nhập các mục tiến độ công việc",
+      "initiatives": "Sáng kiến",
+      "initiatives_description": "Tạo và quản lý các sáng kiến công việc chiến lược",
       "intelligence": {
         "ai_catchups": "Tổng kết AI hàng tuần và hàng tháng",
         "ai_catchups_description": "Tự động chuẩn bị bản tóm tắt, điểm cần lưu ý và hành động tiếp theo từ tiến độ tổng hợp. Mặc định tắt.",

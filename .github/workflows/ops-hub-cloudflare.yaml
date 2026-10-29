@@ -12,13 +12,13 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
-    if: github.event_name != 'pull_request' || (github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: ops-hub-cloudflare.yaml
   validate:
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -31,15 +31,23 @@ jobs:
         with:
           node-version: 24
       - run: bun install --frozen-lockfile
-      - run: bun run type-check
-        working-directory: apps/ops-hub
+      - uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run type-check --filter=@tuturuuu/ops-hub --concurrency=1
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - run: bun run lint
         working-directory: apps/ops-hub
-      - run: bun run test
-        working-directory: apps/ops-hub
+      - uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run test --filter=@tuturuuu/ops-hub --concurrency=1
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
       - run: bun run test:runtime
         working-directory: apps/ops-hub
-      - name: Build the Worker in CI only
-        run: bun run build
-        working-directory: apps/ops-hub
+      - uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter=@tuturuuu/ops-hub --concurrency=1
+          token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
+          team: ${{ vars.TURBO_TEAM || secrets.TURBO_TEAM }}
 # Publication is held: no deploy job, deploy credential, DNS route or provisioning step.

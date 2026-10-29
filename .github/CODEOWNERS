@@ -99,3 +99,7 @@
 
 # Code ownership itself
 /.github/CODEOWNERS                @vhpx
+
+/apps/database/rollbacks/ @vhpx
+
+/apps/database/supabase/schemas/ @vhpx
