@@ -62,6 +62,10 @@ async function publisher(t, app = 'mail') {
     assert.ok(options.signal);
     const u = new URL(url);
     if (u.hostname === 'api.github.com') {
+      assert.equal(
+        u.pathname.startsWith('/repos/fixture/repo/actions/variables/'),
+        true
+      );
       if (u.pathname.endsWith('/WAVE1_STAGING_PUBLISH_ENABLED')) {
         state.flagReads++;
         if (state.flagReads > 1 && state.stop === 'timeout')
@@ -161,6 +165,25 @@ async function publisher(t, app = 'mail') {
     throw new Error(`Unexpected test transport ${url}`);
   };
   const exec = (command, args, options) => {
+    if (args.includes('--dry-run')) {
+      assert.equal(options.env.CLOUDFLARE_API_TOKEN, undefined);
+      assert.equal(options.timeout, 60000);
+      fs.copyFileSync(
+        path.join(dir, 'dist/server/index.js'),
+        path.join(args[args.indexOf('--outdir') + 1], 'index.js')
+      );
+      emit({
+        type: 'deploy',
+        worker_name: receipt.profile.name,
+        version_id: null,
+        bundle_size: {
+          raw_bytes: fs.readFileSync(path.join(dir, 'dist/server/index.js'))
+            .length,
+          gzip_bytes: 1,
+        },
+      });
+      return;
+    }
     state.writes++;
     assert.equal(command, 'bun');
     assert.deepEqual(args.slice(0, 4), [
@@ -174,6 +197,7 @@ async function publisher(t, app = 'mail') {
       env.CLOUDFLARE_STAGING_API_TOKEN
     );
     assert.equal(options.timeout, 180000);
+    if (state.uploadError) throw state.uploadError;
     state.versions.push({
       id: newId,
       annotations: {
@@ -184,14 +208,17 @@ async function publisher(t, app = 'mail') {
     if (state.failUpload) throw new Error('timeout after upload');
     state.active = newId;
     if (!state.loseReceipt)
+      emit({
+        type: 'deploy',
+        worker_name: receipt.profile.name,
+        version_id: newId,
+      });
+    function emit(payload) {
       fs.writeFileSync(
         options.env.WRANGLER_OUTPUT_FILE_PATH,
-        JSON.stringify({
-          type: 'deploy',
-          worker_name: receipt.profile.name,
-          version_id: newId,
-        })
+        JSON.stringify(payload)
       );
+    }
   };
   const { signAttemptState } = await import('./wave1-native-attempt.mjs');
   const ledgerData = {
@@ -284,10 +311,14 @@ for (const outcome of [
     p.state.failUpload = outcome === 'timeout';
     p.state.loseReceipt = outcome === 'lost-receipt';
     p.state.loseMarkerReceipt = outcome === 'lost-marker-receipt';
-    if (outcome === 'crash-before-upload')
-      p.options.exec = () => {
+    if (outcome === 'crash-before-upload') {
+      const originalExec = p.options.exec;
+      p.options.exec = (command, args, options) => {
+        if (args.includes('--dry-run'))
+          return originalExec(command, args, options);
         throw new Error('crash');
       };
+    }
     await assert.rejects(p.run);
     const writes = p.state.writes;
     fs.rmSync(path.join(p.dir, 'mail-staging-publication.json'), {
@@ -525,7 +556,10 @@ for (const attack of [
   test(`unauthentic or missing D1 state blocks upload: ${attack}`, async (t) => {
     const p = await publisher(t);
     if (attack !== 'missing') {
-      p.options.exec = () => {
+      const originalExec = p.options.exec;
+      p.options.exec = (command, args, options) => {
+        if (args.includes('--dry-run'))
+          return originalExec(command, args, options);
         throw new Error('crash before provider upload');
       };
       await assert.rejects(p.run);
@@ -566,25 +600,43 @@ test('a PR GitHub token cannot authenticate the ledger or settle uncertainty', a
   await assert.rejects(p.run, /Invalid attempt signature/);
   assert.equal(p.state.writes, 0);
 });
+test('staging startup rejection retains sanitized diagnostics and its pending fence', async (t) => {
+  const p = await publisher(t);
+  p.state.uploadError = Object.assign(new Error('provider rejected'), {
+    status: 1,
+    stderr: Buffer.from('Script startup exceeded CPU time limit [code: 10021]'),
+  });
+  await assert.rejects(p.run(), /outcome is uncertain/u);
+  const receipt = JSON.parse(
+    fs.readFileSync(path.join(p.dir, 'mail-staging-publication.json'))
+  );
+  assert.equal(receipt.state, 'pending');
+  assert.equal(receipt.uploadFailure.cfCode, 10021);
+  assert.match(
+    receipt.uploadFailure.cfErrors[0].message,
+    /startup exceeded CPU/u
+  );
+  assert.equal(p.getLedger().entries.length, 1);
+});
 
-test('every reusable boundary forwards exactly staging credentials and public inputs', () => {
+test('only publication boundaries forward staging credentials and public inputs', () => {
   const names = [
     'CLOUDFLARE_STAGING_API_TOKEN',
     'WAVE1_CONTROL_READ_TOKEN',
     'STAGING_SUPABASE_URL',
     'STAGING_SUPABASE_PUBLISHABLE_KEY',
   ].sort();
-  for (const file of ['wave1-native-app.yaml', 'wave1-native-publish.yaml']) {
-    const workflow = readWorkflow(file);
-    assert.deepEqual(
-      Object.keys(workflow.on.workflow_call.secrets).sort(),
-      names
-    );
-  }
+  assert.equal(
+    readWorkflow('wave1-native-app.yaml').on.workflow_call.secrets,
+    undefined
+  );
+  assert.deepEqual(
+    Object.keys(
+      readWorkflow('wave1-native-publish.yaml').on.workflow_call.secrets
+    ).sort(),
+    names
+  );
   for (const [file, jobId] of [
-    ['calendar-cloudflare.yaml', 'native-profiles'],
-    ['mail-cloudflare.yaml', 'native-profiles'],
-    ['apps-cloudflare.yaml', 'native-publication-profiles'],
     ['calendar-cloudflare.yaml', 'native-publish-staging'],
     ['mail-cloudflare.yaml', 'native-publish-staging'],
     ['apps-cloudflare.yaml', 'native-publish-staging'],

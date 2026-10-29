@@ -133,6 +133,7 @@ export function publicationConfig(base, profile, { main, assets }) {
     account_id: profile.accountId,
     main,
     no_bundle: true,
+    upload_source_maps: false,
     compatibility_date: base.compatibility_date,
     compatibility_flags: base.compatibility_flags,
     rules: base.rules,

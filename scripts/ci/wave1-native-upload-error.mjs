@@ -5,9 +5,16 @@ const diagnosticLineLimit = 4096;
 const tokenSeparator =
   '[\\s\\p{C}\\p{M}│┃|]*(?:\\[code:[ \t]{0,16}[0-9]{1,9}\\][\\s\\p{C}\\p{M}│┃|]*){0,64}';
 
-function clipDiagnosticLine(line) {
-  return line.length > diagnosticLineLimit
-    ? line.slice(0, diagnosticLineLimit).replace(/[A-Za-z0-9_+/.=%-]+$/u, '')
+const tokenCharacter = /[A-Za-z0-9_+/.=%-]/u;
+function dropPartialToken(prefix, next) {
+  if (next !== undefined && !tokenCharacter.test(next)) return prefix;
+  let end = prefix.length;
+  while (end > 0 && tokenCharacter.test(prefix[end - 1])) end--;
+  return prefix.slice(0, end);
+}
+function clipDiagnosticLine(line, limit = diagnosticLineLimit) {
+  return line.length > limit
+    ? dropPartialToken(line.slice(0, limit), line[limit])
     : line;
 }
 
@@ -95,10 +102,20 @@ export class NativeUploadError extends Error {
     super(
       'Native publication outcome is uncertain; inspect the matching version and retained receipt before any retry'
     );
+    const captureLimit = 1024 * 1024;
     const rawStderr = Buffer.isBuffer(error?.stderr)
-      ? error.stderr.subarray(0, 1024 * 1024).toString('utf8')
+      ? error.stderr.length >= captureLimit
+        ? dropPartialToken(
+            error.stderr.subarray(0, captureLimit).toString('utf8'),
+            error.stderr.length > captureLimit
+              ? String.fromCharCode(error.stderr[captureLimit])
+              : undefined
+          )
+        : error.stderr.toString('utf8')
       : typeof error?.stderr === 'string'
-        ? error.stderr.slice(0, 1024 * 1024)
+        ? error.stderr.length === captureLimit
+          ? dropPartialToken(error.stderr, undefined)
+          : clipDiagnosticLine(error.stderr, captureLimit)
         : '';
     // Known values must be removed before line splitting or Unicode/space normalization.
     const stderr = redactKnown(
@@ -108,7 +125,9 @@ export class NativeUploadError extends Error {
     const codes = new Set();
     // Bound each line before any diagnostic matching regex. The full raw known-token
     // pass above remains necessary for credentials split across lines or controls.
-    const lines = stderr.split(/\r?\n/u).map(clipDiagnosticLine);
+    const lines = stderr
+      .split(/\r?\n/u)
+      .map((line) => clipDiagnosticLine(line));
     let cfErrors = [];
     for (const rawLine of lines) {
       if (!rawLine.includes('[code:')) continue;

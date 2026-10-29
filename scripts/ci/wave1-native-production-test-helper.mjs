@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  readFileSync,
+  truncateSync,
+  writeFileSync,
+} from 'node:fs';
 import { createRequire } from 'node:module';
+import { join } from 'node:path';
 import { productionPublicationPolicy } from '../../tuturuuu.ci.ts';
 import { artifactDigest, prepare } from './wave1-native-artifact.mjs';
 import { assertRouteFree, main } from './wave1-native-production.mjs';
@@ -211,6 +217,30 @@ export function setup(t, { admitted = true } = {}) {
     return Response.json({ success: true, result });
   };
   const exec = (command, args, options) => {
+    if (args.includes('--dry-run')) {
+      assert.equal(options.env.CLOUDFLARE_API_TOKEN, undefined);
+      assert.equal(options.env.GITHUB_TOKEN, undefined);
+      assert.equal(options.timeout, 60000);
+      const out = args[args.indexOf('--outdir') + 1];
+      copyFileSync(
+        join(appRoot, 'dist/server/index.js'),
+        join(out, 'index.js')
+      );
+      if (state.oversized)
+        truncateSync(join(out, 'index.js'), 64 * 1024 ** 2 + 1);
+      emit({
+        type: 'deploy',
+        worker_name: receipt.profile.name,
+        version_id: null,
+        bundle_size: {
+          raw_bytes: state.oversized
+            ? 67108865
+            : readFileSync(join(appRoot, 'dist/server/index.js')).length,
+          gzip_bytes: 1,
+        },
+      });
+      return;
+    }
     state.writes++;
     assert.equal(command, 'bun');
     assert.equal(args.includes('deploy'), true);
@@ -241,19 +271,23 @@ export function setup(t, { admitted = true } = {}) {
     if (state.duringUpload) state.attached = true;
     state.active = newId;
     state.ids = [newId];
-    writeFileSync(
-      options.env.WRANGLER_OUTPUT_FILE_PATH,
-      `${JSON.stringify({
-        type: 'deploy',
-        worker_name: receipt.profile.name,
-        version_id: newId,
-      })}\n`
-    );
+    emit({
+      type: 'deploy',
+      worker_name: receipt.profile.name,
+      version_id: newId,
+    });
+    function emit(payload) {
+      writeFileSync(
+        options.env.WRANGLER_OUTPUT_FILE_PATH,
+        `${JSON.stringify(payload)}\n`
+      );
+    }
   };
   return {
     state,
     env,
     appRoot,
+    exec,
     run: (options = {}) =>
       main({
         argv: ['calendar', sha, 'all'],
