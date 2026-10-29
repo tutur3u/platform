@@ -178,12 +178,10 @@ families keep their legacy path.
   instance pre-limits refresh attempts to 20 per minute per principal and 60 per
   minute per IP before any store call; excess attempts get 429 with
   `Retry-After: 60`.
-- **Skipped steps:** fair RPCs conservatively charge the whole requested batch,
-  including skipped steps. They never refund family or identity command usage.
-  Other RPCs refund steps skipped after a sequential denial while their usage is
-  still buffered. If a concurrent request flushes the buffer
-  first, the skipped step stays counted. This is accepted conservative
-  overcounting: it can stop a family slightly early, never late.
+- **Skipped steps:** every RPC conservatively reserves the whole requested batch,
+  including skipped steps and interrupted execution. Family and identity command
+  usage is never refunded. Reservations commit before subject execution and survive
+  isolate replacement; subject operation IDs independently deduplicate mutations.
 - **Cache limits:** every in-memory map (replay, denials, outage counters) holds at
   most 10,000 entries and evicts the oldest first. All of them are per instance, so
   restarts, new instances and eviction under pressure reset them. The zero-cost
@@ -366,26 +364,22 @@ Other P3 limits remain recorded:
 - **Stop fence:** `POST /control/stop` with `Authorization: Bearer
   $ABUSE_GUARD_OPERATOR_TOKEN` persists a stop. Every RPC then returns 503
   `guard_stopped` before any subject call. Stopped requests spend no subject
-  commands, but Worker/control requests remain billable. Fair RPCs consult the
-  durable fence on every cache miss; other RPCs cache it for at most 5 seconds. `POST /control/resume` clears
+  commands, but Worker/control requests remain billable. Every admitted RPC consults the durable fence before executing subjects. `POST /control/resume` clears
   it, and `GET /control/state` reads it. Stored data is preserved.
 - **Budget:** each family has its own daily allowance and budget-stop flag.
   Exhausting one allowance does not set another family's flag, but the shared
   control DO can still make other families' admissions unavailable under overload
   (FAIR-R1-CONTROL-HOTSPOT). Unauthenticated marked-bulk traffic spends only
   `offline`'s share.
-  Fair RPCs charge commands durably before every subject call, without isolate
-  buffering or overshoot. Other RPCs report admitted commands per family every
-  5 seconds or 200 commands. At 80% of a family's budget the control object logs a warning once.
+  All RPCs reserve commands durably before subject execution, without isolate
+  buffering or overshoot. At 80% of a family's budget the control object logs a warning once.
   When a family exhausts its budget, the control object persists a stop for that
   family only. The stop survives restarts and clears at the next UTC day, so the
   daily command cap holds without one flood becoming an open-ended outage. The cap
   applies per calendar UTC day, not per rolling 24 hours, so a burst across UTC
   midnight can admit up to about twice a family's budget within a short span. An
   operator resume clears it earlier. Admission rejections spend no commands;
-  admitted subject denials do count. A non-fair family admits its budget plus the buffered overshoot of isolates × 200
-  commands and the 5-second refresh lag. Fair RPCs cannot exceed the remaining
-  family command allowance. Each caller of a stopped family applies its own fail
+  admitted subject denials do count. No RPC can reserve beyond the remaining family command allowance. Each caller of a stopped family applies its own fail
   policy.
   An invalid budget configuration makes every RPC return 503
   `guard_unavailable`, the same as a bad secret. That covers a malformed total, an
@@ -420,9 +414,8 @@ Other P3 limits remain recorded:
   stream of Worker or control-DO requests. Admission/WAF sizing and a separately
   accepted request-cost envelope remain activation holds.
   Each accepted fair RPC writes up to two quota rows plus the control state, in
-  addition to subject/dedupe rows, deletes and alarm operations. Non-fair isolates
-  buffer fewer than 200 commands, lost on eviction.
-  Stops take up to 5 seconds per isolate to observe. Storage is bounded by
+  addition to subject/dedupe rows, deletes and alarm operations. Each accepted non-fair RPC also makes one control request and durably writes
+  the reservation before executing subjects. Stops are checked on every admission. Storage is bounded by
   2 KiB × 120 days × the daily budget. See the
   [adoption guidance](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance).
 

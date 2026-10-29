@@ -1420,3 +1420,8 @@ shortcuts whose misses recheck durable admission after eviction or restart.
 Follow the [store runbook](../../../../../apps/docs/build/devops/abuse-guard-store.mdx#durable-command-fairness)
 for defaults, canonical IP buckets, tests and remaining activation holds. Command
 allowances do not establish a total bound on Worker/control-DO request billing.
+
+All abuse-guard RPCs reserve family commands durably before subject execution.
+Retain reservations for interrupted or skipped work; never defer accounting to an
+isolate-local flush. Verify restart before the old flush threshold in workerd.
+This limits subject commands, while the request-cost activation hold remains.
