@@ -2,19 +2,32 @@
 
 // Fails when a new migration or rollback grants privileges to PUBLIC or anon,
 // or when a new migration creates a SECURITY DEFINER function without revoking
-// EXECUTE from PUBLIC and anon in the same file. Files before the cutoff are
+// EXECUTE from PUBLIC and anon after the creation (same file or a later
+// migration; see sql-grant-acl.js for the frozen inherited-ACL allowlist and
+// the same-file-only rule for newer migrations). Files before the cutoff are
 // legacy; `--report` lists them for visibility without failing.
 // Policy: apps/docs/reference/database/migrations-guide.mdx#sql-grant-guard
 
 const fs = require('node:fs');
 const path = require('node:path');
+const {
+  INHERITED_ACL_CUTOFF,
+  OPEN_ROLES: DEFINER_ROLES,
+  judgeDefinerAcl,
+} = require('./sql-grant-acl');
+const {
+  readRoutine,
+  roleList,
+  routineKey,
+  signatureTypes,
+} = require('./sql-grant-identifiers');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const MIGRATIONS_DIR = 'apps/database/supabase/migrations';
 const ROLLBACKS_DIR = 'apps/database/rollbacks';
 // Files whose version prefix is below this predate the rule.
 const MIGRATION_CUTOFF = '20261028000000';
-const OPEN_ROLES = ['public', 'anon'];
+const OPEN_ROLES = DEFINER_ROLES;
 const RULES = {
   anonGrant: 'anon-grant',
   definerPublic: 'definer-public',
@@ -141,113 +154,10 @@ function isAllowed(statement, comments, rule) {
   );
 }
 
-// --- Identifiers and signatures -----------------------------------------
-
-function splitTopLevel(text) {
-  const parts = [];
-  let depth = 0;
-  let current = '';
-  for (const char of text) {
-    if (char === '(') depth++;
-    if (char === ')') depth--;
-    if (char === ',' && depth === 0) {
-      parts.push(current.trim());
-      current = '';
-    } else current += char;
-  }
-  if (current.trim()) parts.push(current.trim());
-  return parts;
-}
-
-function normalizeName(name) {
-  const plain = name.replace(/"/g, '').trim();
-  return plain.includes('.') ? plain : `public.${plain}`;
-}
-
-const MULTI_WORD_TYPES =
-  /^(?:double precision|character varying|bit varying|time(?:stamp)?(?:\s?\(\d+\))? with(?:out)? time zone)\b/;
-const TYPE_ALIASES = {
-  bool: 'boolean',
-  decimal: 'numeric',
-  float4: 'real',
-  float8: 'double precision',
-  int: 'integer',
-  int2: 'smallint',
-  int4: 'integer',
-  int8: 'bigint',
-  timestamptz: 'timestamp with time zone',
-  timetz: 'time with time zone',
-  varchar: 'character varying',
-};
-
-function normalizeType(type) {
-  const plain = type
-    .replace(/"/g, '')
-    .replace(/\s*\([^)]*\)/g, '')
-    .replace(/\s*\[\s*\d*\s*\]/g, '[]')
-    .replace(/^public\./, '')
-    .trim();
-  const array = plain.endsWith('[]') ? '[]' : '';
-  const base = array ? plain.slice(0, -2) : plain;
-  return `${TYPE_ALIASES[base] ?? base}${array}`;
-}
-
-// Returns the identity argument types of a function argument list, which may
-// carry argument names, modes and defaults (CREATE) or types only (REVOKE).
-function signatureTypes(argumentList) {
-  const types = [];
-  for (const raw of splitTopLevel(argumentList)) {
-    let argument = raw.replace(/\s*(?:\bdefault\b|=).*$/, '').trim();
-    const mode = /^(in|out|inout|variadic)\s+/.exec(argument);
-    if (mode) {
-      if (mode[1] === 'out') continue;
-      argument = argument.slice(mode[0].length);
-    }
-    const tokens = argument.split(' ');
-    const named = tokens.length > 1 && !MULTI_WORD_TYPES.test(argument);
-    types.push(normalizeType(named ? tokens.slice(1).join(' ') : argument));
-  }
-  return types;
-}
-
-// Reads `name(args)` at the start of text; returns the name, the argument
-// list (null when absent) and the remaining text.
-function readRoutine(text) {
-  const name = /^\s*((?:"[^"]*"|[^\s(,])+)\s?/.exec(text);
-  if (!name) return null;
-  let rest = text.slice(name[0].length);
-  if (!rest.startsWith('(')) {
-    return { name: normalizeName(name[1]), args: null, rest };
-  }
-  let depth = 0;
-  let index = 0;
-  for (; index < rest.length; index++) {
-    if (rest[index] === '(') depth++;
-    if (rest[index] === ')' && --depth === 0) break;
-  }
-  const args = rest.slice(1, index);
-  rest = rest.slice(index + 1);
-  return { name: normalizeName(name[1]), args, rest };
-}
-
-function roleList(text) {
-  return text
-    .replace(/\s(?:with\s.*|granted by\s.*|cascade|restrict)$/, '')
-    .split(',')
-    .map((role) =>
-      role
-        .trim()
-        .replace(/^group\s+/, '')
-        .replace(/"/g, '')
-    );
-}
-
 // --- Rules ---------------------------------------------------------------
 
 const GRANT = /^(?:alter default privileges\s.*?)?\bgrant\s(.+?)\sto\s(.+)$/;
 const CREATE_FUNCTION = /^create (?:or replace )?function\s(.+)$/;
-const REVOKE_FUNCTION =
-  /^revoke\s.+?\son (?:function|routine)s?\s(.+?)\sfrom\s(.+)$/;
 
 function openGrantees(text) {
   if (!/^(?:grant|alter default privileges)\s/.test(text)) return [];
@@ -256,15 +166,20 @@ function openGrantees(text) {
   return roleList(match[2]).filter((role) => OPEN_ROLES.includes(role));
 }
 
-function routineKey(name, types) {
-  return types ? `${name}(${types.join(',')})` : name;
-}
-
-function scanSql(sql, { definerRule }) {
+function scanSql(
+  sql,
+  {
+    definerRule,
+    file = null,
+    priorStatements = [],
+    laterStatements = [],
+    sameFileOnly = false,
+    onSatisfied = () => {},
+  }
+) {
   const { statements, comments } = parseStatements(sql);
   const findings = [];
   const definers = [];
-  const revoked = new Map();
 
   for (const statement of statements) {
     const roles = openGrantees(statement.text);
@@ -274,21 +189,6 @@ function scanSql(sql, { definerRule }) {
         line: statement.startLine,
         detail: `grants to ${roles.join(', ')}`,
       });
-    }
-
-    const revoke = REVOKE_FUNCTION.exec(statement.text);
-    if (revoke) {
-      const fromRoles = roleList(revoke[2]);
-      for (const target of splitTopLevel(revoke[1])) {
-        const routine = readRoutine(target);
-        if (!routine) continue;
-        const types =
-          routine.args === null ? null : signatureTypes(routine.args);
-        const key = routineKey(routine.name, types);
-        const roleSet = revoked.get(key) ?? new Set();
-        for (const role of fromRoles) roleSet.add(role);
-        revoked.set(key, roleSet);
-      }
     }
 
     const create = CREATE_FUNCTION.exec(statement.text);
@@ -304,19 +204,37 @@ function scanSql(sql, { definerRule }) {
     }
   }
 
+  const tagged = statements.map((statement) => ({ ...statement, file }));
   for (const definer of definers) {
     if (isAllowed(definer.statement, comments, RULES.definerPublic)) continue;
     const key = routineKey(definer.name, definer.types);
-    const roles = new Set([
-      ...(revoked.get(key) ?? []),
-      ...(revoked.get(definer.name) ?? []),
-    ]);
-    const missing = OPEN_ROLES.filter((role) => !roles.has(role));
-    if (missing.length > 0) {
+    const index = statements.indexOf(definer.statement);
+    const verdict = judgeDefinerAcl({
+      file,
+      key,
+      history: [...priorStatements, ...tagged.slice(0, index)],
+      definer: tagged[index],
+      tail: [
+        ...tagged.slice(index + 1),
+        ...(sameFileOnly ? [] : laterStatements),
+      ],
+    });
+    if (verdict.missing.length === 0) {
+      onSatisfied({
+        line: definer.statement.startLine,
+        signature: key,
+        mode: verdict.mode,
+        evidence: verdict.evidence,
+        note: verdict.note,
+      });
+    } else {
       findings.push({
         rule: RULES.definerPublic,
         line: definer.statement.startLine,
-        detail: `creates SECURITY DEFINER function ${key} without revoking EXECUTE from ${missing.join(', ')}`,
+        detail: `creates SECURITY DEFINER function ${key} without revoking EXECUTE from ${verdict.missing.join(', ')}`,
+        hint: sameFileOnly
+          ? `Migrations after ${INHERITED_ACL_CUTOFF} need the revoke in the same file, after the creation; later files and inherited ACLs do not count.`
+          : '',
       });
     }
   }
@@ -327,7 +245,7 @@ const GUIDANCE = {
   [RULES.anonGrant]:
     'Grant to authenticated or service_role instead, or add "-- allow-anon-grant: <reason>" on the same or preceding line.',
   [RULES.definerPublic]:
-    'Add "revoke all on function <signature> from public, anon;" in the same file, or "-- allow-definer-public: <reason>" on the same or preceding line.',
+    'Add "revoke all on function <signature> from public, anon;" after the creation in the same migration (later migrations count only up to the inherited-ACL cutoff), or "-- allow-definer-public: <reason>" on the same or preceding line.',
 };
 
 // --- Repository evaluation ----------------------------------------------
@@ -351,22 +269,77 @@ function fileVersion(file) {
 function evaluateSqlFiles({ files, readFile, cutoff = MIGRATION_CUTOFF }) {
   const violations = [];
   const legacy = [];
+  const satisfied = [];
+  const tagged = (file) =>
+    parseStatements(readFile(file)).statements.map((statement) => ({
+      ...statement,
+      file,
+    }));
+  // Versioned forward migrations in apply order; only these carry ACL history.
+  const ordered = files
+    .filter(
+      (file) =>
+        file.startsWith(`${MIGRATIONS_DIR}/`) && fileVersion(file) !== null
+    )
+    .sort((left, right) => left.localeCompare(right));
+  const statementsOf = new Map();
+  const statementsIn = (file) => {
+    if (!statementsOf.has(file)) statementsOf.set(file, tagged(file));
+    return statementsOf.get(file);
+  };
   for (const file of files) {
     const definerRule = file.startsWith(`${MIGRATIONS_DIR}/`);
     if (!definerRule && !file.startsWith(`${ROLLBACKS_DIR}/`)) continue;
     const version = fileVersion(file);
     // Unversioned files cannot be shown to predate the rule.
     const enforced = version === null || version >= cutoff;
-    for (const finding of scanSql(readFile(file), { definerRule })) {
+    const position = ordered.indexOf(file);
+    const withHistory = definerRule && enforced && position >= 0;
+    for (const finding of scanSql(readFile(file), {
+      definerRule,
+      file,
+      priorStatements: withHistory
+        ? ordered.slice(0, position).flatMap(statementsIn)
+        : [],
+      laterStatements: withHistory
+        ? ordered.slice(position + 1).flatMap(statementsIn)
+        : [],
+      sameFileOnly: version === null || version > INHERITED_ACL_CUTOFF,
+      onSatisfied: (entry) => {
+        if (enforced) satisfied.push({ ...entry, file });
+      },
+    })) {
       const entry = {
         ...finding,
         file,
-        message: `${file}:${finding.line} ${finding.detail}. ${GUIDANCE[finding.rule]}`,
+        message:
+          `${file}:${finding.line} ${finding.detail}. ${GUIDANCE[finding.rule]} ${finding.hint ?? ''}`.trim(),
       };
       (enforced ? violations : legacy).push(entry);
     }
   }
-  return { violations, legacy };
+  return { violations, legacy, satisfied };
+}
+
+// Evidence worth printing: inherited passes, and passes that rest on a revoke
+// in another migration. Same-file revokes are visible in the file itself.
+function formatSatisfied(entry) {
+  // Group roles by the revoke statement that evidences them.
+  const bySource = new Map();
+  for (const { role, file, line } of entry.evidence) {
+    const source = `${file}:${line}`;
+    bySource.set(source, [...(bySource.get(source) ?? []), role]);
+  }
+  const evidence = [...bySource]
+    .map(([source, roles]) => `${roles.join(', ')} revoked at ${source}`)
+    .join('; ');
+  const subject = `${entry.file}:${entry.line} ${entry.signature}`;
+  if (entry.mode === 'inherited-acl') {
+    const note = entry.note ? `; ${entry.note}` : '';
+    return `${subject} inherited ACL (frozen allowlist): ${evidence}${note}`;
+  }
+  if (entry.evidence.every((item) => item.file === entry.file)) return null;
+  return `${subject} satisfied by a revoke outside this file: ${evidence}`;
 }
 
 function checkRepository(rootDir = ROOT_DIR) {
@@ -399,7 +372,11 @@ function formatLegacyReport(legacy, cutoff = MIGRATION_CUTOFF) {
 }
 
 if (require.main === module) {
-  const { violations, legacy } = checkRepository();
+  const { violations, legacy, satisfied } = checkRepository();
+  for (const entry of satisfied) {
+    const line = formatSatisfied(entry);
+    if (line) console.log(line);
+  }
   if (process.argv.includes('--report')) {
     console.log(formatLegacyReport(legacy));
   } else {
@@ -415,6 +392,7 @@ module.exports = {
   checkRepository,
   evaluateSqlFiles,
   formatLegacyReport,
+  formatSatisfied,
   lexSql,
   scanSql,
 };

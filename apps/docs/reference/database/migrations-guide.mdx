@@ -485,17 +485,52 @@ Unversioned files are always checked.
    `service_role` instead.
 2. **Unrevoked `SECURITY DEFINER` functions** (migrations only). Every
    `CREATE [OR REPLACE] FUNCTION ... SECURITY DEFINER` needs a revoke for the
-   same name and argument types from both `public` and `anon` in the same
-   file, even when it replaces a function revoked earlier:
+   same name and argument types from both `public` and `anon` after its
+   creation. The end-state rule: the revoke may sit in the same file or in any
+   later timestamped forward migration, but **a migration newer than
+   `20261029030400` (the newest allowlisted file below) must carry the revoke
+   in the same file, after the creation**. An earlier revoke does not satisfy a
+   replacement. Later EXECUTE grants invalidate the corresponding revoke;
+   another overload, a different signature or a manual rollback cannot supply
+   proof. The guard prints every pass that rests on a revoke in another file:
 
    ```sql
    revoke all on function public.example(uuid, text) from public, anon;
    grant execute on function public.example(uuid, text) to service_role;
    ```
 
+3. **Inherited ACL (frozen allowlist).** `CREATE OR REPLACE` keeps the ACL of
+   the existing function, so seven definers already on `main` whose earlier
+   revoke predates their latest replacement pass by inheritance. The allowlist
+   in `scripts/ci/sql-grant-acl.js` is frozen (never add entries; new definers
+   carry their own revoke) and each entry is tied to its migration file:
+
+   | Definer | Migration |
+   | --- | --- |
+   | `private.employee_creation_runtime_ready(uuid)` | `20261029010000_restore_employee_readiness_path_contract` |
+   | `public.transfer_workspace_ownership(uuid,uuid)` | `20261029012000_harden_workspace_ownership_guard` |
+   | `private.create_workspace_email_invitation_with_roles(uuid,text,uuid,public.workspace_member_type,uuid[])` | `20261029012100_restrict_subscription_writes` |
+   | `private.create_inventory_pos_operator_invite(uuid,uuid,text)` | `20261029012100_restrict_subscription_writes` |
+   | `private.finalize_workspace_invitation_membership_v2(uuid,uuid,public.workspace_member_type,uuid[])` | `20261029012100_restrict_subscription_writes` |
+   | `private.finalize_workspace_invitation_membership(uuid,uuid,public.workspace_member_type,uuid)` | `20261029012100_restrict_subscription_writes` |
+   | `public.get_user_workspace_subscription_info(uuid)` | `20261029030400_align_ai_chat_and_subscription_rpc_access` |
+
+   Inheritance holds only while the exact signature has a prior `REVOKE`
+   from `public` and `anon` (and from `authenticated`, which current policy
+   requires for every entry except `transfer_workspace_ownership`, which keeps
+   `authenticated` EXECUTE by design) and nothing after it drops, renames or
+   moves the function, recreates it with a plain `CREATE`, or grants it to
+   `public`/`anon` (or to `authenticated` where that is required closed). The
+   guard prints the migration and line that evidence each inherited pass.
+
 The guard ignores text in comments, string literals and dollar-quoted bodies,
 so dynamic `EXECUTE 'grant ...'` inside PL/pgSQL is not detected; review
-those by hand. For a reviewed exception, put a comment with a reason on the
+those by hand. Focused cases live in
+`scripts/ci/sql-grant-end-state.test.js` and
+`scripts/ci/sql-grant-inherited-acl.test.js`; the repository-wide test stays
+strict. Rollbacks are applied manually and never count toward the forward end
+state.
+For a reviewed exception, put a comment with a reason on the
 statement's first line, any line of the statement, or the line before it:
 
 ```sql
