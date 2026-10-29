@@ -15,6 +15,7 @@ const {
   judgeDefinerAcl,
 } = require('./sql-grant-acl');
 const { FROZEN_DEFINERS_CUTOFF } = require('./sql-grant-frozen-definers');
+const { matchReviewedException } = require('./sql-grant-reviewed-exceptions');
 const {
   readRoutine,
   roleList,
@@ -141,7 +142,7 @@ function parseStatements(sql) {
     }
     line += countNewlines(part);
   }
-  return { statements, comments };
+  return { statements, comments, code };
 }
 
 function isAllowed(statement, comments, rule) {
@@ -177,7 +178,7 @@ function scanSql(
     onSatisfied = () => {},
   }
 ) {
-  const { statements, comments } = parseStatements(sql);
+  const { statements, comments, code } = parseStatements(sql);
   const findings = [];
   const definers = [];
 
@@ -216,6 +217,13 @@ function scanSql(
       definer: tagged[index],
       tail: [...tagged.slice(index + 1), ...laterStatements],
       sameFileOnly,
+      reviewed: matchReviewedException({
+        file,
+        sql,
+        code,
+        key,
+        definerLine: definer.statement.startLine,
+      }),
     });
     if (verdict.missing.length === 0) {
       onSatisfied({
@@ -332,6 +340,9 @@ function formatSatisfied(entry) {
     .map(([source, roles]) => `${roles.join(', ')} revoked at ${source}`)
     .join('; ');
   const subject = `${entry.file}:${entry.line} ${entry.signature}`;
+  if (entry.mode === 'reviewed-exception') {
+    return `${subject} reviewed exception (source-bound): ${entry.note}`;
+  }
   if (entry.mode === 'inherited-acl') {
     const note = entry.note ? `; ${entry.note}` : '';
     return `${subject} inherited ACL (frozen allowlist): ${evidence}${note}`;

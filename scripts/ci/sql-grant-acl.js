@@ -144,6 +144,17 @@ function replayRoutineAcl(
   return revoked;
 }
 
+// Does any later statement grant EXECUTE on this routine to PUBLIC or anon?
+function reopensOpenRole(events, key) {
+  return events.some((event) => {
+    const effect = routineAclEffect(event.text, key);
+    return (
+      effect?.op === 'grant' &&
+      effect.roles.some((role) => OPEN_ROLES.includes(role))
+    );
+  });
+}
+
 function evidenceOf(revoked, roles) {
   return roles.map((role) => ({
     role,
@@ -173,6 +184,7 @@ function judgeDefinerAcl({
   definer,
   tail,
   sameFileOnly = false,
+  reviewed = null,
 }) {
   const forward = replayRoutineAcl(tail, key, {
     onlyFile: sameFileOnly ? file : undefined,
@@ -184,6 +196,20 @@ function judgeDefinerAcl({
       mode: 'revoke-after-creation',
       evidence: evidenceOf(forward, OPEN_ROLES),
       note: null,
+    };
+  }
+  // A reviewed exception (sql-grant-reviewed-exceptions.js) waives only the
+  // missing revoke; a later PUBLIC/anon grant still fails the definer.
+  if (reviewed && !reopensOpenRole(tail, key)) {
+    return {
+      missing: [],
+      mode: 'reviewed-exception',
+      evidence: OPEN_ROLES.map((role) => ({
+        role,
+        file,
+        line: reviewed.block.startLine,
+      })),
+      note: `${reviewed.entry.id}: ${reviewed.entry.reason}; reviewed block sha256 ${reviewed.entry.blockSha256.slice(0, 12)}`,
     };
   }
   const entry = allowlistEntry(file, key);

@@ -528,6 +528,17 @@ Unversioned files are always checked.
    `public`/`anon` (or to `authenticated` where that is required closed). The
    guard prints the migration and line that evidence each inherited pass.
 
+**Reviewed, source-bound exception.** `scripts/ci/sql-grant-reviewed-exceptions.js`
+holds the one security-reviewed exception to the definer rule: the four
+invoice-total definers in `20261029040800_finance_workspace_boundaries.sql`,
+whose revoke sits in a pre-creation dynamic `DO` block (CREATE OR REPLACE
+preserves the ACL; bodies gate on `auth.role() = 'service_role'`, SR-843). It
+applies only to that exact path, a `DO` block whose normalized content digest
+matches, and those four signatures, and a later grant to `public` or `anon`
+still fails. A changed block, another file or another signature gets nothing.
+The guard prints each covered signature as a reviewed exception. Never add
+entries without a security review.
+
 **Schema-scoped default privileges do not fence new functions.** `ALTER DEFAULT
 PRIVILEGES ... IN SCHEMA private REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC` (as in
 `20261029030500_align_cross_app_token_grant_and_private_fence.sql`) does not
