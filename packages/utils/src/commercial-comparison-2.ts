@@ -225,6 +225,13 @@ export const features2: ComparisonFeature[] = [
     detail: 'standard',
   },
   {
+    id: 'abuse-guard_0',
+    app: 'abuse-guard',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
+  {
     id: 'coordination_0',
     app: 'coordination',
     category: 'internal',

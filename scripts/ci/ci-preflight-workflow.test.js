@@ -7,6 +7,9 @@ const test = require('node:test');
 
 const root = path.resolve(__dirname, '../..');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
+const {
+  runWorkflowGate: runAggregate,
+} = require('./workflow-gate-test-helper');
 const gate = readWorkflow('ci-check.yml');
 const expression = (body) => `\${{ ${body} }}`;
 
@@ -200,7 +203,7 @@ for (const [workflowName, jobs] of [['biome-check.yaml', ['format', 'lint']]]) {
         needs['check-ci'].outputs.run_checks = 'true';
         needs['test-shards'].result = 'failure';
         assert.equal(evaluateValidationGate(workflow.jobs[id], needs), true);
-        const result = runAggregate(workflow.jobs[id].steps[0], {
+        const result = runAggregate(workflow.jobs[id], {
           TEST_RESULT: 'failure',
           ROOT_SCRIPT_RESULT: 'success',
           DUPLICATE_RESULT: 'failure',
@@ -210,14 +213,6 @@ for (const [workflowName, jobs] of [['biome-check.yaml', ['format', 'lint']]]) {
       }
     });
   }
-}
-
-function runAggregate(step, env) {
-  return spawnSync(
-    'bash',
-    ['--noprofile', '--norc', '-e', '-o', 'pipefail', '-c', step.run],
-    { env: { ...process.env, ...env }, encoding: 'utf8' }
-  );
 }
 
 test('unit aggregate requires fresh root and shard success despite legacy receipts', () => {
@@ -235,7 +230,7 @@ test('unit aggregate requires fresh root and shard success despite legacy receip
     'root-script-tests': { result: 'failure' },
   };
   assert.equal(evaluateValidationGate(job, needs), true);
-  const step = job.steps[0];
+
   for (const [duplicate, runChecks, shards, rootResult, pass] of [
     ['success', 'false', 'skipped', 'success', false],
     ['success', 'false', 'skipped', 'failure', false],
@@ -254,7 +249,9 @@ test('unit aggregate requires fresh root and shard success despite legacy receip
     ['skipped', '', 'cancelled', 'success', false],
     ['skipped', '', 'success', 'failure', false],
   ]) {
-    const result = runAggregate(step, {
+    const result = runAggregate(job, {
+      CHANGES_RESULT: 'success',
+      CODE: 'true',
       DUPLICATE_RESULT: duplicate,
       DUPLICATE_RUN_CHECKS: runChecks,
       TEST_RESULT: shards,
@@ -352,13 +349,14 @@ test('Rust source qualification is bounded and restricted to the reviewed integr
 
 test('release aggregate requires fresh Rust success despite legacy receipts', () => {
   const job = readWorkflow('turbo-unit-tests.yaml').jobs.build;
-  const step = job.steps[0];
+
   assert.equal(
-    step.env.RUST_RESULT,
+    job.steps.find((step) => step.env?.RUST_RESULT).env.RUST_RESULT,
     expression('needs.backend-source-qualification.result')
   );
   assert.equal(
-    step.env.RUST_QUALIFICATION_REQUIRED,
+    job.steps.find((step) => step.env?.RUST_QUALIFICATION_REQUIRED).env
+      .RUST_QUALIFICATION_REQUIRED,
     expression(
       "(github.ref == 'refs/heads/fix/release-5795-reconciliation' || github.ref == 'refs/heads/fix/main-production-reconciliation-20261012')"
     )
@@ -380,6 +378,8 @@ test('release aggregate requires fresh Rust success despite legacy receipts', ()
       };
       assert.equal(evaluateValidationGate(job, needs), true);
       const env = {
+        CHANGES_RESULT: 'success',
+        CODE: 'true',
         DUPLICATE_RESULT: needs['duplicate-validation'].result,
         DUPLICATE_RUN_CHECKS: needs['duplicate-validation'].outputs.run_checks,
         TEST_RESULT: needs['test-shards'].result,
@@ -388,16 +388,16 @@ test('release aggregate requires fresh Rust success despite legacy receipts', ()
         RUST_RESULT: rust,
       };
       assert.equal(
-        runAggregate(step, env).status === 0,
+        runAggregate(job, env).status === 0,
         rust === 'success',
         `${reuse}/${rust}`
       );
       assert.notEqual(
-        runAggregate(step, { ...env, ROOT_SCRIPT_RESULT: 'failure' }).status,
+        runAggregate(job, { ...env, ROOT_SCRIPT_RESULT: 'failure' }).status,
         0
       );
       assert.equal(
-        runAggregate(step, { ...env, RUST_QUALIFICATION_REQUIRED: 'false' })
+        runAggregate(job, { ...env, RUST_QUALIFICATION_REQUIRED: 'false' })
           .status,
         0
       );

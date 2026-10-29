@@ -1,3 +1,4 @@
+import { hasLinkedProductInWorkspace } from '@tuturuuu/inventory-core/linked-product-scope';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { revalidateUserGroupCache } from '@tuturuuu/users-core/lib/user-groups/revalidate';
 import { getUserGroupRoutePermissions } from '@tuturuuu/users-core/lib/user-groups/route-auth';
@@ -36,7 +37,7 @@ async function getAccess(request: Request, rawWsId: string, groupId: string) {
       ),
     } as const;
   }
-  return { admin, permissions } as const;
+  return { admin, permissions, wsId } as const;
 }
 
 export async function GET(request: Request, { params }: Params) {
@@ -81,6 +82,20 @@ export async function POST(request: Request, { params }: Params) {
   if (!parsed.success) {
     return NextResponse.json(
       { message: 'Invalid request payload', details: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+  if (
+    !(await hasLinkedProductInWorkspace({
+      sbAdmin: access.admin,
+      wsId: access.wsId,
+      productId: parsed.data.productId,
+      warehouseId: parsed.data.warehouseId,
+      unitId: parsed.data.unitId,
+    }))
+  ) {
+    return NextResponse.json(
+      { message: 'Invalid linked product' },
       { status: 400 }
     );
   }

@@ -142,6 +142,7 @@ void main() {
       List<Workspace> all,
       _Pins pins, {
       String current = 'ws-0',
+      List<String> hiddenIds = const [],
     }) async {
       whenListen(
         workspaces,
@@ -149,6 +150,7 @@ void main() {
         initialState: WorkspaceState(
           status: WorkspaceStatus.loaded,
           workspaces: all,
+          hiddenWorkspaceIds: hiddenIds,
           currentWorkspace: all.firstWhere((w) => w.id == current),
         ),
       );
@@ -170,6 +172,32 @@ void main() {
     }
 
     Finder chip(String id) => find.byKey(ValueKey('home-workspace-chip-$id'));
+
+    testWidgets('hidden and archived workspaces do not affect chips or pins', (
+      tester,
+    ) async {
+      final pins = _Pins(['ws-3', 'archived']);
+      await pump(
+        tester,
+        [
+          ..._workspaces(4),
+          const Workspace(id: 'archived', name: 'Archived', deleted: true),
+        ],
+        pins,
+        current: 'ws-3',
+        hiddenIds: ['ws-3'],
+      );
+      expect(chip('ws-0'), findsOneWidget);
+      expect(chip('ws-1'), findsOneWidget);
+      expect(chip('ws-2'), findsOneWidget);
+      expect(chip('ws-3'), findsNothing);
+      expect(chip('archived'), findsNothing);
+      expect(pins.loads, 0);
+      await tester.tap(chip('more'));
+      await tester.pumpAndSettle();
+      expect(find.text('Workspace 3'), findsNothing);
+      expect(find.text('Archived'), findsNothing);
+    });
 
     testWidgets('few workspaces: every chip, and tapping one switches', (
       tester,

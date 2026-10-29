@@ -36,6 +36,7 @@ function fixture(t, policy) {
     'scripts/ci/production-publication-policy.ts',
     'scripts/ci/wave1-native-publish.mjs',
     'scripts/ci/wave1-native-upload-error.mjs',
+    'scripts/ci/wave1-native-upload-limits.mjs',
     'scripts/ci/wave1-native-admission.mjs',
     'scripts/ci/wave1-native-attempt.mjs',
     'scripts/ci/wave1-native-profile.mjs',

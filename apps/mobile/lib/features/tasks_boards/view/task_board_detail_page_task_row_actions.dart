@@ -162,7 +162,13 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     }
   }
 
-  Future<void> _scheduleTask(BuildContext context, TaskBoardTask task) async {
+  /// [announce] false skips the success toast, for surfaces that already
+  /// show the saved value, such as the quick sheet.
+  Future<void> _scheduleTask(
+    BuildContext context,
+    TaskBoardTask task, {
+    bool announce = true,
+  }) async {
     final now = DateTime.now();
     final current = task.endDate?.toLocal();
     final picked = await showAppDatePicker(
@@ -179,7 +185,9 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     await _runTaskRowUpdate(
       context,
       task,
-      successMessage: context.l10n.taskBoardDetailDueDateUpdated,
+      successMessage: announce
+          ? context.l10n.taskBoardDetailDueDateUpdated
+          : null,
       endDate: endDate,
     );
   }
@@ -188,53 +196,68 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     BuildContext context,
     TaskBoardTask task,
   ) async {
+    // The choice sheet needs a non-null value; '' stands for None.
+    const none = '';
     final selected = await showAppChoiceSheet<String>(
       context: context,
       title: context.l10n.taskBoardDetailChangePriority,
-      selected: _normalizeTaskPriority(
-        task.priority,
-        _taskQuickActionPriorityOptions,
-      ),
+      selected: TaskPriorityLevel.tryParse(task.priority)?.value ?? none,
       choices: [
-        for (final priority in _taskQuickActionPriorityOptions)
+        AppSheetChoice(
+          key: const ValueKey('task-row-priority-none'),
+          value: none,
+          label: TaskPriorityLevel.noneLabel(context.l10n),
+          icon: TaskPriorityLevel.noneIcon,
+        ),
+        for (final level in TaskPriorityLevel.values)
           AppSheetChoice(
-            key: ValueKey('task-row-priority-$priority'),
-            value: priority,
-            label: _taskPriorityStyle(context, priority).label,
-            icon: _taskPriorityStyle(context, priority).icon,
+            key: ValueKey('task-row-priority-${level.value}'),
+            value: level.value,
+            label: level.label(context.l10n),
+            icon: level.icon,
           ),
       ],
     );
     if (selected == null || !context.mounted) return;
-    await _changeTaskPriority(context, task, selected);
+    await _changeTaskPriority(
+      context,
+      task,
+      selected == none ? null : selected,
+    );
   }
 
   Future<void> _changeTaskPriority(
     BuildContext context,
     TaskBoardTask task,
-    String priority,
-  ) async {
-    final normalizedPriority = _normalizeTaskPriority(
-      priority,
-      _taskQuickActionPriorityOptions,
-    );
-    if (task.priority == normalizedPriority) return;
+    String? priority, {
+    bool announce = true,
+  }) async {
+    // Null clears the priority (the web's None).
+    final next = TaskPriorityLevel.tryParse(priority)?.value;
+    if (TaskPriorityLevel.tryParse(task.priority)?.value == next) return;
     await _runTaskRowUpdate(
       context,
       task,
-      successMessage: context.l10n.taskBoardDetailPriorityUpdated,
-      priority: normalizedPriority,
+      successMessage: announce
+          ? context.l10n.taskBoardDetailPriorityUpdated
+          : null,
+      priority: next,
+      clearPriority: next == null,
     );
   }
 
   /// Saves one field change through [TaskBoardDetailCubit.updateTask],
-  /// carrying every other editable field over unchanged.
+  /// carrying every other editable field over unchanged. A null
+  /// [successMessage] saves quietly; failures always show a toast.
   Future<void> _runTaskRowUpdate(
     BuildContext context,
     TaskBoardTask task, {
-    required String successMessage,
+    required String? successMessage,
     String? priority,
+    bool clearPriority = false,
     DateTime? endDate,
+    bool clearEndDate = false,
+    List<String>? labelIds,
     List<String>? assigneeIds,
   }) async {
     final cubit = context.read<TaskBoardDetailCubit>();
@@ -249,16 +272,20 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
         name: task.name?.trim().isNotEmpty == true
             ? task.name!.trim()
             : context.l10n.taskBoardDetailUntitledTask,
-        priority: priority ?? task.priority,
+        priority: clearPriority ? null : priority ?? task.priority,
+        clearPriority: clearPriority,
         startDate: task.startDate,
-        endDate: endDate ?? task.endDate,
+        endDate: clearEndDate ? null : endDate ?? task.endDate,
+        clearEndDate: clearEndDate,
         estimationPoints: task.estimationPoints,
-        labelIds: task.labelIds,
+        labelIds: labelIds ?? task.labelIds,
         projectIds: task.projectIds,
         assigneeIds: assigneeIds ?? task.assigneeIds,
       );
       if (!toastContext.mounted) return;
-      showAppToast(toastContext, message: successMessage);
+      if (successMessage != null) {
+        showAppToast(toastContext, message: successMessage);
+      }
     } on ApiException catch (error) {
       if (!toastContext.mounted) return;
       showAppToast(

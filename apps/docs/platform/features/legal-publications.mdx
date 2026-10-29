@@ -19,3 +19,63 @@ Regression coverage lives in `packages/legal/src/legal-revisions.test.ts` (histo
 SHA-256 content and literal footer assertions), `apps/web/cloudflare/native-legal.test.tsx`
 (canonical rendering), and `apps/web/cloudflare/legal-changes.test.tsx` (localized notices,
 proposal footers, current-version links, headings, dates and indexing).
+
+## What changed presentation and publishing gate
+
+The EN/VI `/legal/changes` pages default to the approved Variant 1 notice that
+updates are not yet in effect. `packages/legal/src/notice.ts` keeps `legalNotice`
+unpublished with both dates unset. Only the release owner may enable the notice
+and set N and N+30 after the user's explicit go. Enabling presentation does not
+activate contracts or send email. Lex owns all legal wording; Maya owns brand and
+contrast acceptance. The Lex fixture and snapshots retain both translations,
+including the final AUP/community safety-restoration row. The separately owned
+`legal-aup-community-restore` lane must land its matching clauses before notice
+publication. Transition clauses and archived-version links also need Lex/release
+acceptance before that later publication. Never introduce a language-prevails rule.
+
+The binding notice starts at the top of the content and is never collapsible.
+The notice's audience and timing list stays with it; the summary table and its
+non-binding disclaimer share one neutral aside. No summary may replace clause
+text. Internal lawyer/Lex review annotations are omitted from proposal presentation;
+missing summaries render no placeholder. Proposed/not-yet-in-effect status and
+draft-revision footers remain. In-force text and footers are unchanged. Proposal routes retain
+noindex. This PR changes neither effective agreements nor acceptance records.
+
+All source sections have stable IDs; the pure package diff matches those IDs and
+retains exact sentences and whitespace. Redlines use strike-through removals,
+underlined additions and localized screen-reader labels. Print uses expanded
+inline redlines, link destinations and clause break protection. Mobile contents
+and desktop sticky navigation share section anchors, retained by the EN/VI switch.
+The scope uses white theme tokens, foreground headings/underlined links, Inter
+with Noto Sans fallback, neutral summaries and AA status text. Brand blue is only
+a navigation accent. The site chrome retains the official unmodified brand mark.
+
+Regression coverage: `packages/legal/src/legal-diff.test.ts` checks Lex's fixture,
+notice states, IDs and exact reconstruction; `apps/web/cloudflare/legal-redesign.test.tsx`
+checks both locales/states/views, binding visibility, summary grouping, screen-reader
+labels and print rules. The existing legal route tests keep indexing and full
+proposed-text/footer coverage. Hosted builds, Maya's visual/contrast sign-off and
+Lex's final publication acceptance remain separate gates.
+
+### Unpublished state, publish gates and theming
+
+While `legalNotice.published` is `false` the page is exactly the Variant 1 copy:
+no Lex notice sentence (including the non-binding line) renders, the proposed
+version block shows only "Proposed" and "Not yet in effect" (no version id, no
+date), and no draft marker is shown. When published, the block shows the real
+Terms version (without the internal draft suffix) and the notice date.
+
+The change list and diff cover Terms, Privacy, DPA, SLA and Subprocessors only.
+Acceptable Use and Community Guidelines are excluded because their in-force and
+proposed clause ids do not pair, which would label every clause "Removed";
+re-enable after the clause-restore work lands and Lex OKs the wording.
+
+Publishing also requires `archiveLinks` per locale in the notice config; the
+`{ARCHIVE_LINKS}` placeholder is never rendered literally and `getLegalNotice`
+throws when the link text is unset. Lex approves the real archive URLs first.
+The in-force footer decision (remove or keep) is still open; the proposed footers
+must match it on publication day.
+
+The scope uses the shared theme tokens directly (no local redefinition), so dark
+theme works; the navbar brand mark switches by theme, and client controls receive
+their strings as props instead of importing the message bundles.

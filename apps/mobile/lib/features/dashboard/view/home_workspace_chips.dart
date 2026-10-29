@@ -63,7 +63,7 @@ class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _ensurePins(context.read<WorkspaceCubit>().state.workspaces.length);
+    _ensurePins(context.read<WorkspaceCubit>().state.visibleWorkspaces.length);
   }
 
   @override
@@ -197,13 +197,17 @@ class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips>
               _loaded = false;
               _requested = false;
             });
-            _ensurePins(context.read<WorkspaceCubit>().state.workspaces.length);
+            _ensurePins(
+              context.read<WorkspaceCubit>().state.visibleWorkspaces.length,
+            );
           },
         ),
         BlocListener<WorkspaceCubit, WorkspaceState>(
           listenWhen: (previous, current) =>
-              previous.workspaces.length != current.workspaces.length,
-          listener: (context, state) => _ensurePins(state.workspaces.length),
+              previous.visibleWorkspaces.length !=
+              current.visibleWorkspaces.length,
+          listener: (context, state) =>
+              _ensurePins(state.visibleWorkspaces.length),
         ),
       ],
       child: _chips(context),
@@ -214,13 +218,14 @@ class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips>
     return BlocBuilder<WorkspaceCubit, WorkspaceState>(
       buildWhen: (previous, current) =>
           previous.workspaces != current.workspaces ||
+          previous.hiddenWorkspaceIds != current.hiddenWorkspaceIds ||
           previous.currentWorkspace != current.currentWorkspace,
       builder: (context, state) {
         final current = state.currentWorkspace;
         final canPin =
-            _loaded && state.workspaces.length >= homeChipShowAllBelow;
+            _loaded && state.visibleWorkspaces.length >= homeChipShowAllBelow;
         final chips = homeChipWorkspaces(
-          workspaces: state.workspaces,
+          workspaces: state.visibleWorkspaces,
           currentId: current?.id,
           pinnedIds: _pins,
         );
@@ -256,7 +261,7 @@ class _HomeWorkspaceChipsState extends State<HomeWorkspaceChips>
                   onTap: () => unawaited(
                     showHomeWorkspaceMore(
                       context,
-                      workspaces: state.workspaces,
+                      workspaces: state.visibleWorkspaces,
                       shown: chips,
                       pins: _pins,
                       canEditPins: canPin,

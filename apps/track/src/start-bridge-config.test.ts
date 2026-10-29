@@ -36,13 +36,13 @@ describe('Track Worker mounts (root-only, fail-closed)', () => {
     expect(
       trackMounts({
         TUTURUUU_STAGING_HOSTS:
-          ' Tuturuuu-Track-Vite-Staging.ops.workers.dev, evil.example, *.workers.dev, track-staging.tuturuuu.com:443, track-staging.tuturuuu.com',
+          ' Tuturuuu-Track-Vite-Staging.ops.workers.dev, evil.example, *.workers.dev, track.staging.tutur3u.com:443, track.staging.tutur3u.com',
       })
     ).toEqual({
       rootHosts: [
         'track.tuturuuu.com',
         'tuturuuu-track-vite-staging.ops.workers.dev',
-        'track-staging.tuturuuu.com',
+        'track.staging.tutur3u.com',
       ],
       mountHosts: [],
       unknownHost: 'reject',

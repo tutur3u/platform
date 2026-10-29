@@ -2,7 +2,8 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withWebCronLogDrain as withCronLogDrain } from '@/lib/cron/web-cron';
+import { chargeWebCronPage } from '@/lib/cron/web-cron-budget';
 import {
   autoSkipOldApprovedPostChecks,
   autoSkipOldPostEmails,
@@ -121,6 +122,7 @@ async function getQueueStatusSummary(
   let from = 0;
 
   while (true) {
+    chargeWebCronPage();
     const to = from + POST_EMAIL_SELECT_PAGE_SIZE - 1;
     const { data, error } = await sbAdmin
       .from('post_email_queue')

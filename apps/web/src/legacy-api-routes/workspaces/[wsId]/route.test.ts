@@ -1,6 +1,10 @@
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+type DeleteWorkspaceResult = {
+  error: { code: string; message: string; details: string } | null;
+};
+
 const mocks = vi.hoisted(() => ({
   createPolarClient: vi.fn(),
   getPermissions: vi.fn(),
@@ -31,7 +35,7 @@ const mocks = vi.hoisted(() => ({
   ),
   from: vi.fn(),
   deleteWorkspace: vi.fn(() => ({
-    eq: vi.fn(() => Promise.resolve({ error: null })),
+    eq: vi.fn(async (): Promise<DeleteWorkspaceResult> => ({ error: null })),
   })),
 }));
 
@@ -179,5 +183,36 @@ describe('legacy workspace detail route DELETE', () => {
       request: expect.any(NextRequest),
     });
     expect(mocks.deleteWorkspace).toHaveBeenCalled();
+  });
+  it('returns a failure and logs only the database code when deletion fails', async () => {
+    mockWorkspaceLookup(false);
+    mocks.getPermissions.mockResolvedValue({ containsPermission: () => true });
+    mocks.deleteWorkspace.mockImplementationOnce(() => ({
+      eq: vi.fn(
+        async (): Promise<DeleteWorkspaceResult> => ({
+          error: {
+            code: '23503',
+            message: 'private fixture detail',
+            details: 'private fixture record',
+          },
+        })
+      ),
+    }));
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const route = await import('./route');
+      const response = await route.DELETE(createDeleteRequest(), {
+        params: Promise.resolve({ wsId: WORKSPACE_ID }),
+      });
+      expect(response.status).toBe(500);
+      await expect(response.json()).resolves.toEqual({
+        message: 'Error deleting workspace',
+      });
+      expect(log).toHaveBeenCalledExactlyOnceWith('Workspace deletion failed', {
+        code: '23503',
+      });
+    } finally {
+      log.mockRestore();
+    }
   });
 });

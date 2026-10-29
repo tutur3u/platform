@@ -195,5 +195,36 @@ void main() {
         DateTime(2026, 4, 26, 23, 59, 59, 999),
       );
     });
+
+    test('updateBoardTask clears the priority with an explicit null', () async {
+      Map<String, dynamic>? requestBody;
+
+      when(() => apiClient.putJson(any(), any())).thenAnswer((
+        invocation,
+      ) async {
+        requestBody = invocation.positionalArguments[1] as Map<String, dynamic>;
+        return {
+          'task': {'id': 'task-1', 'list_id': 'list-1'},
+        };
+      });
+
+      await repository.updateBoardTask(
+        wsId: 'ws-1',
+        taskId: 'task-1',
+        name: 'Task',
+        clearPriority: true,
+      );
+
+      expect(requestBody, containsPair('priority', null));
+      expect(
+        () => repository.updateBoardTask(
+          wsId: 'ws-1',
+          taskId: 'task-1',
+          priority: 'high',
+          clearPriority: true,
+        ),
+        throwsArgumentError,
+      );
+    });
   });
 }

@@ -774,3 +774,28 @@ messages and restores their recorded sent state without resending.
 Guest status is derived from membership in a group marked `is_guest`; it does not
 replace the existing check association or the workspace rule. Regression coverage
 lives in the approval read, queue-core, batch history and delivery recovery tests.
+
+
+## User data access boundaries
+
+The Web and Contacts user routes apply workspace permissions before returning
+private user data. Sent-email history requires `view_users_private_info`.
+Post review lists, filter options and status require `view_user_groups_posts` or
+`approve_posts`; review rows mask email, recipient and phone fields unless the
+reader also has `view_users_private_info`. Referral lists retain public names for
+public-info readers and user editors, with email and phone masked unless the
+reader has private-info access.
+
+Post approval snapshots are read only after verifying that the post's group
+belongs to the authorized workspace. Follow-up delivery resolves its recipient
+inside that workspace before sending. Announcement contact edits validate linked
+workspace users, including when updating an existing contact. User updates retain
+the route's user ID and ignore a body-supplied identity key.
+
+Parameterized workspace summaries are a server-only helper. The Web workspace
+selector exposes only its existing zero-argument server action; authenticated
+Web and Hive API adapters can still pass their verified user identity internally.
+
+Regression coverage: `packages/users-core/tests/routes/user-privacy-boundaries.test.ts`,
+`apps/web/src/__tests__/post-review-permissions.test.ts`, and
+`scripts/workspace-summary-server-boundary.test.js`.

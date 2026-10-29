@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   resolveAuthenticatedSessionUser: vi.fn(),
   getVerifiedAuthUser: vi.fn(),
   insert: vi.fn(),
+  getPermissions: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
@@ -23,6 +24,9 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     }),
   }),
 }));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: mocks.getPermissions,
+}));
 vi.mock('next/headers', () => ({ headers: async () => new Headers() }));
 vi.mock('@/lib/workspace-api-key', () => ({
   validateWorkspaceApiKey: vi.fn(),
@@ -39,6 +43,7 @@ const request = () =>
 describe('workspace crawlers POST staff gate', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getPermissions.mockResolvedValue({ withoutPermission: () => false });
     mocks.insert.mockResolvedValue({ error: null });
   });
 
@@ -61,6 +66,21 @@ describe('workspace crawlers POST staff gate', () => {
     const response = await POST(request());
 
     expect(response.status).toBe(403);
+    expect(mocks.insert).not.toHaveBeenCalled();
+  });
+
+  it('denies a verified staff identity without the ai_lab permission', async () => {
+    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+      user: { id: 'user-1' },
+    });
+    mocks.getVerifiedAuthUser.mockResolvedValue({
+      id: 'user-1',
+      email: 'staff@tuturuuu.com',
+      email_confirmed_at: '2026-01-01',
+      identities: [{ provider: 'email', identity_data: {} }],
+    });
+    mocks.getPermissions.mockResolvedValue({ withoutPermission: () => true });
+    expect((await POST(request())).status).toBe(403);
     expect(mocks.insert).not.toHaveBeenCalled();
   });
 

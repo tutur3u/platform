@@ -15,10 +15,12 @@ import type { ClaimResult, Ledger, RunOutcome } from './ledger';
 import { WORKER_PROCESSORS } from './processors';
 import { withinDeadline } from './processors/deadline';
 import type { ProcessorEnv } from './processors/types';
+import { isWebJob } from './web-gate';
 
 export type DispatchEnv = Partial<Record<string, string>> & {
   CRON_CONTROL_ENABLED_JOBS?: string;
   CRON_CONTROL_WORKER_PROCESSORS?: string;
+  CRON_CONTROL_WEB_MODE?: string;
 };
 
 export interface DispatchDeps {
@@ -155,7 +157,8 @@ async function readOutcome(
 async function invoke(
   cronJob: CronJob,
   target: { secret: string; url: URL },
-  deps: DispatchDeps
+  deps: DispatchDeps,
+  slot: string
 ): Promise<{ result: Attempt; status?: number }> {
   let response: Response;
   try {
@@ -164,6 +167,9 @@ async function invoke(
       headers: {
         Authorization: `Bearer ${target.secret}`,
         'User-Agent': USER_AGENT,
+        ...(isWebJob(cronJob.id)
+          ? { 'X-Tuturuuu-Cron-Slot': String(Date.parse(slot)) }
+          : {}),
         ...(cronJob.method === 'POST'
           ? { 'Content-Type': 'application/json' }
           : {}),
@@ -177,7 +183,7 @@ async function invoke(
     const name = error instanceof Error ? error.name : '';
     if (name === 'TimeoutError' || name === 'AbortError')
       return { result: 'unknown' };
-    return { result: 'retryable' };
+    return { result: isWebJob(cronJob.id) ? 'unknown' : 'retryable' };
   }
   if (response.ok)
     return {
@@ -199,6 +205,13 @@ async function runJob(
   env: DispatchEnv,
   deps: DispatchDeps
 ): Promise<JobReport> {
+  if (isWebJob(cronJob.id) && env.CRON_CONTROL_WEB_MODE !== 'active')
+    return {
+      id: cronJob.id,
+      outcome: 'skipped',
+      reason:
+        env.CRON_CONTROL_WEB_MODE === 'shadow' ? 'shadow' : 'web-disabled',
+    };
   const target = resolveTarget(cronJob, env);
   if ('problem' in target) {
     console.error('Cron Control job misconfigured', {
@@ -312,8 +325,15 @@ async function runJob(
         break;
       }
     }
+    if (
+      isWebJob(cronJob.id) &&
+      !(await ledger.checkFence(cronJob.id, claim.generation))
+    ) {
+      outcome = 'stopped';
+      break;
+    }
     attempts = attempt;
-    const result = await invoke(cronJob, target, deps);
+    const result = await invoke(cronJob, target, deps, slot);
     status = result.status;
     if (result.result === 'retryable') continue;
     outcome = result.result;

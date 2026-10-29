@@ -67,7 +67,7 @@ export const DEFAULT_PARENT_MESSAGE_TEMPLATE =
   'Trung tâm xin gửi lịch kèm {{reason}} của {{student}}: {{time}} ngày {{date}} ({{duration}} phút), lớp {{group}}, giáo viên {{teacher}}. Mong phụ huynh sắp xếp cho con tham gia đúng giờ. Xin cảm ơn.';
 
 export const EASY_CENTER_PARENT_MESSAGE_TEMPLATE =
-  'Trung tâm EASY xin được xếp lịch kèm cho bạn {{student}} như sau:\n• Giờ kèm: {{time}}\n• Ngày: {{date}}\n• Cơ sở: {{campus}}\nMong phụ huynh thu xếp cho con tham gia đúng giờ. Trân trọng.';
+  'Trung tâm EASY xin được xếp lịch kèm cho bạn {{student}} như sau:\n• Giờ kèm: {{time_range}}\n• Ngày: {{date}} {{weekday}}\n• Cơ sở: {{campus}}\nLịch học chính thức: {{class_time}}\nMong phụ huynh thu xếp cho con tham gia đúng giờ. Trân trọng.';
 
 export const STANDARD_TUTORING_POLICY: TutoringPolicy = {
   preset: 'standard',
@@ -640,22 +640,36 @@ export function readTutoringPolicyConfigRows(rows: TutoringPolicyConfigRow[]) {
   return readTutoringPolicy(base);
 }
 
+/** Parent-message fields that every render supplies. */
+type TutoringMessageBaseKey =
+  | 'student'
+  | 'reason'
+  | 'date'
+  | 'time'
+  | 'duration'
+  | 'group'
+  | 'teacher'
+  | 'campus';
+
+/**
+ * Fields added later. A render that omits one shows "Chưa xác định" instead of
+ * leaving the braces in the message.
+ */
+type TutoringMessageDerivedKey = 'time_range' | 'weekday' | 'class_time';
+
+export type TutoringParentMessageValues = Record<
+  TutoringMessageBaseKey,
+  string
+> &
+  Partial<Record<TutoringMessageDerivedKey, string>>;
+
 export function renderTutoringParentMessage(
   template: string,
-  values: Record<
-    | 'student'
-    | 'reason'
-    | 'date'
-    | 'time'
-    | 'duration'
-    | 'group'
-    | 'teacher'
-    | 'campus',
-    string
-  >
+  values: TutoringParentMessageValues
 ) {
   return template.replace(
-    /\{\{(student|reason|date|time|duration|group|teacher|campus)\}\}/g,
-    (_, key: keyof typeof values) => values[key]
+    /\{\{(student|reason|date|time|duration|group|teacher|campus|time_range|weekday|class_time)\}\}/g,
+    (_, key: keyof TutoringParentMessageValues) =>
+      values[key] ?? 'Chưa xác định'
   );
 }

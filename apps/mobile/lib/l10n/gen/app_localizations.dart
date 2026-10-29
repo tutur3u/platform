@@ -9751,6 +9751,120 @@ abstract class AppLocalizations {
   /// **'Search products'**
   String get inventorySearchProducts;
 
+  /// No description provided for @inventoryItemArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get inventoryItemArchived;
+
+  /// No description provided for @inventoryItemsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load products'**
+  String get inventoryItemsLoadFailed;
+
+  /// No description provided for @inventoryItemsLoadMoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load more products'**
+  String get inventoryItemsLoadMoreFailed;
+
+  /// No description provided for @inventoryItemAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} available'**
+  String inventoryItemAvailable(String amount);
+
+  /// No description provided for @inventoryItemMoreLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 more location} other{{count} more locations}}'**
+  String inventoryItemMoreLocations(int count);
+
+  /// No description provided for @inventoryItemNoStock.
+  ///
+  /// In en, this message translates to:
+  /// **'No stock configured'**
+  String get inventoryItemNoStock;
+
+  /// No description provided for @inventoryItemStockHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock hidden'**
+  String get inventoryItemStockHidden;
+
+  /// No description provided for @inventoryItemsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No products yet'**
+  String get inventoryItemsEmptyTitle;
+
+  /// No description provided for @inventoryItemsNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No products match'**
+  String get inventoryItemsNoMatch;
+
+  /// No description provided for @inventoryItemsNoMatchMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Search matches product names. Try another name or clear the search.'**
+  String get inventoryItemsNoMatchMessage;
+
+  /// No description provided for @inventoryItemsNoneArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'No archived products'**
+  String get inventoryItemsNoneArchived;
+
+  /// No description provided for @inventoryScanAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan code'**
+  String get inventoryScanAction;
+
+  /// No description provided for @inventoryScanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at a product QR code or barcode.'**
+  String get inventoryScanHint;
+
+  /// No description provided for @inventoryScanMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'Name matches for “{code}”'**
+  String inventoryScanMatches(String code);
+
+  /// No description provided for @inventoryScanNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No product in this workspace matches this code.'**
+  String get inventoryScanNotFound;
+
+  /// No description provided for @inventoryScanNotProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'This code can\'t be matched to a product.'**
+  String get inventoryScanNotProduct;
+
+  /// No description provided for @inventoryScanSearchInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'Search instead'**
+  String get inventoryScanSearchInstead;
+
+  /// No description provided for @inventoryScanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a code'**
+  String get inventoryScanTitle;
+
+  /// No description provided for @inventoryScanUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera unavailable'**
+  String get inventoryScanUnavailable;
+
   /// No description provided for @inventorySeasonHistoricalReadOnly.
   ///
   /// In en, this message translates to:
@@ -17413,35 +17527,11 @@ abstract class AppLocalizations {
   /// **'Priority'**
   String get taskBoardDetailPriority;
 
-  /// No description provided for @taskBoardDetailPriorityCritical.
-  ///
-  /// In en, this message translates to:
-  /// **'Critical'**
-  String get taskBoardDetailPriorityCritical;
-
-  /// No description provided for @taskBoardDetailPriorityHigh.
-  ///
-  /// In en, this message translates to:
-  /// **'High'**
-  String get taskBoardDetailPriorityHigh;
-
-  /// No description provided for @taskBoardDetailPriorityLow.
-  ///
-  /// In en, this message translates to:
-  /// **'Low'**
-  String get taskBoardDetailPriorityLow;
-
   /// No description provided for @taskBoardDetailPriorityNone.
   ///
   /// In en, this message translates to:
   /// **'No priority'**
   String get taskBoardDetailPriorityNone;
-
-  /// No description provided for @taskBoardDetailPriorityNormal.
-  ///
-  /// In en, this message translates to:
-  /// **'Normal'**
-  String get taskBoardDetailPriorityNormal;
 
   /// No description provided for @taskBoardDetailPriorityUpdated.
   ///
@@ -17454,12 +17544,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Properties'**
   String get taskBoardDetailProperties;
-
-  /// No description provided for @taskBoardDetailQuickActions.
-  ///
-  /// In en, this message translates to:
-  /// **'Quick actions'**
-  String get taskBoardDetailQuickActions;
 
   /// No description provided for @taskBoardDetailRecycleBin.
   ///
@@ -19387,6 +19471,96 @@ abstract class AppLocalizations {
   /// **'Update saved.'**
   String get taskPortfolioUpdateSaved;
 
+  /// No description provided for @taskQuickActionsDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date'**
+  String get taskQuickActionsDueDate;
+
+  /// No description provided for @taskQuickActionsNoDueDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No due date'**
+  String get taskQuickActionsNoDueDate;
+
+  /// No description provided for @taskQuickActionsNoLabels.
+  ///
+  /// In en, this message translates to:
+  /// **'No labels'**
+  String get taskQuickActionsNoLabels;
+
+  /// No description provided for @taskQuickActionsStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get taskQuickActionsStatus;
+
+  /// No description provided for @taskQuickActionsUnassigned.
+  ///
+  /// In en, this message translates to:
+  /// **'Unassigned'**
+  String get taskQuickActionsUnassigned;
+
+  /// No description provided for @taskTimelineLoadingTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading tasks…'**
+  String get taskTimelineLoadingTasks;
+
+  /// No description provided for @taskTimelineNotAllLoaded.
+  ///
+  /// In en, this message translates to:
+  /// **'Some tasks aren\'t loaded yet'**
+  String get taskTimelineNotAllLoaded;
+
+  /// No description provided for @taskTimelineNothingToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing scheduled today'**
+  String get taskTimelineNothingToday;
+
+  /// No description provided for @taskTimelineOngoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} of {total}, ends {date}'**
+  String taskTimelineOngoing(int day, int total, String date);
+
+  /// No description provided for @taskTimelineRangeAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get taskTimelineRangeAll;
+
+  /// No description provided for @taskTimelineRangeMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
+  String get taskTimelineRangeMonth;
+
+  /// No description provided for @taskTimelineRangeWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Week'**
+  String get taskTimelineRangeWeek;
+
+  /// No description provided for @taskTimelineShowLater.
+  ///
+  /// In en, this message translates to:
+  /// **'Show later tasks'**
+  String get taskTimelineShowLater;
+
+  /// No description provided for @taskTimelineShowOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Show overdue'**
+  String get taskTimelineShowOverdue;
+
+  /// No description provided for @taskTimelineStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Started {date}'**
+  String taskTimelineStarted(String date);
+
   /// No description provided for @tasksAllCaughtUp.
   ///
   /// In en, this message translates to:
@@ -19477,12 +19651,6 @@ abstract class AppLocalizations {
   /// **'Plan ahead'**
   String get tasksPlanAhead;
 
-  /// No description provided for @tasksPriorityCritical.
-  ///
-  /// In en, this message translates to:
-  /// **'Critical'**
-  String get tasksPriorityCritical;
-
   /// No description provided for @tasksPriorityHigh.
   ///
   /// In en, this message translates to:
@@ -19495,11 +19663,23 @@ abstract class AppLocalizations {
   /// **'Low'**
   String get tasksPriorityLow;
 
-  /// No description provided for @tasksPriorityNormal.
+  /// No description provided for @tasksPriorityMedium.
   ///
   /// In en, this message translates to:
-  /// **'Normal'**
-  String get tasksPriorityNormal;
+  /// **'Medium'**
+  String get tasksPriorityMedium;
+
+  /// No description provided for @tasksPriorityNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get tasksPriorityNone;
+
+  /// No description provided for @tasksPriorityUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get tasksPriorityUrgent;
 
   /// No description provided for @tasksRequiresAttention.
   ///
@@ -21228,6 +21408,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Workspace visibility preferences are unavailable. Saved hidden choices are kept.'**
   String get workspaceHiddenLoadError;
+
+  /// No description provided for @workspaceManageTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage workspaces'**
+  String get workspaceManageTitle;
+
+  /// No description provided for @workspaceVisibleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible workspaces'**
+  String get workspaceVisibleTitle;
+
+  /// No description provided for @workspaceHiddenCurrentToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace hidden. Switched to another visible workspace.'**
+  String get workspaceHiddenCurrentToast;
+
+  /// No description provided for @workspaceHiddenLastToast.
+  ///
+  /// In en, this message translates to:
+  /// **'All workspaces are hidden. Show a workspace to continue.'**
+  String get workspaceHiddenLastToast;
 
   /// No description provided for @workspaceHiddenTitle.
   ///

@@ -18,6 +18,7 @@ import { TutoringQueueQuerySchema } from '@/legacy-api-routes/v1/workspaces/[wsI
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 
 import { unmatchedAbsenceDates } from './absence-credits';
+import { readAllRows } from './all-rows';
 import { loadQueueLessonNotes } from './queue-lesson-content';
 
 interface Params {
@@ -41,6 +42,8 @@ type QueueItem = {
   missed_lesson_content?: string;
   missed_post_content?: string;
   missing_lesson_dates?: string[];
+  missed_lesson_by_date?: Record<string, string>;
+  missed_post_by_date?: Record<string, string>;
   content_review_due: boolean;
   content_unchanged_since: string | null;
   review_only: boolean;
@@ -124,64 +127,81 @@ async function getTutoringData(request: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const tutoringSessionsClient = sbAdmin.schema('private');
 
-  let attendanceQuery = sbAdmin
-    .from('user_group_attendance')
-    .select(
-      `group_id,user_id,date,status,
+  // Each workspace-wide read is paged: a single select stops at max_rows and
+  // would silently drop absences of learners whose group sorts later.
+  const attendancePage = (from: number, to: number) => {
+    let attendanceQuery = sbAdmin
+      .from('user_group_attendance')
+      .select(
+        `group_id,user_id,date,status,
       group:workspace_user_groups!user_group_attendance_group_id_fkey!inner(id,ws_id,name),
       user:workspace_users!user_group_attendance_user_id_fkey!inner(id,full_name,display_name,email,archived)`
-    )
-    .eq('group.ws_id', normalizedWsId)
-    .eq('user.archived', false)
-    .gte(
-      'date',
-      new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10)
-    )
-    .in('status', ['ABSENT', 'Absent', 'absent'])
-    .order('group_id', { ascending: true })
-    .order('user_id', { ascending: true });
+      )
+      .eq('group.ws_id', normalizedWsId)
+      .eq('user.archived', false)
+      .gte(
+        'date',
+        new Date(Date.now() - 365 * 86_400_000).toISOString().slice(0, 10)
+      )
+      .in('status', ['ABSENT', 'Absent', 'absent'])
+      .order('group_id', { ascending: true })
+      .order('user_id', { ascending: true })
+      .order('id', { ascending: true });
 
-  if (parsed.data.groupId) {
-    attendanceQuery = attendanceQuery.eq('group_id', parsed.data.groupId);
-  }
-  if (parsed.data.studentUserId) {
-    attendanceQuery = attendanceQuery.eq('user_id', parsed.data.studentUserId);
-  }
+    if (parsed.data.groupId) {
+      attendanceQuery = attendanceQuery.eq('group_id', parsed.data.groupId);
+    }
+    if (parsed.data.studentUserId) {
+      attendanceQuery = attendanceQuery.eq(
+        'user_id',
+        parsed.data.studentUserId
+      );
+    }
+    return attendanceQuery.range(from, to);
+  };
 
-  let reservedQuery = tutoringSessionsClient
-    .from('workspace_tutoring_sessions')
-    .select(
-      'group_id,student_user_id,reason_type,attendance_status,source_feedback_id,resolved_at,session_date'
-    )
-    .eq('ws_id', normalizedWsId)
-    .in('attendance_status', ['DONE', 'PENDING']);
+  const reservedPage = (from: number, to: number) => {
+    let reservedQuery = tutoringSessionsClient
+      .from('workspace_tutoring_sessions')
+      .select(
+        'group_id,student_user_id,reason_type,attendance_status,source_feedback_id,resolved_at,session_date'
+      )
+      .eq('ws_id', normalizedWsId)
+      .in('attendance_status', ['DONE', 'PENDING'])
+      .order('id', { ascending: true });
 
-  if (parsed.data.groupId) {
-    reservedQuery = reservedQuery.eq('group_id', parsed.data.groupId);
-  }
-  if (parsed.data.studentUserId) {
-    reservedQuery = reservedQuery.eq(
-      'student_user_id',
-      parsed.data.studentUserId
-    );
-  }
+    if (parsed.data.groupId) {
+      reservedQuery = reservedQuery.eq('group_id', parsed.data.groupId);
+    }
+    if (parsed.data.studentUserId) {
+      reservedQuery = reservedQuery.eq(
+        'student_user_id',
+        parsed.data.studentUserId
+      );
+    }
+    return reservedQuery.range(from, to);
+  };
 
-  let feedbackQuery = sbAdmin
-    .from('user_feedbacks')
-    .select(
-      `id,content,user_id,group_id,created_at,
+  const feedbackPage = (from: number, to: number) => {
+    let feedbackQuery = sbAdmin
+      .from('user_feedbacks')
+      .select(
+        `id,content,user_id,group_id,created_at,
       user:workspace_users!user_feedbacks_user_id_fkey!inner(id,ws_id,full_name,display_name,email,archived),
       group:workspace_user_groups!user_feedbacks_group_id_fkey(id,name)`
-    )
-    .eq('require_attention', true)
-    .eq('user.ws_id', normalizedWsId)
-    .eq('user.archived', false)
-    .order('created_at', { ascending: false });
+      )
+      .eq('require_attention', true)
+      .eq('user.ws_id', normalizedWsId)
+      .eq('user.archived', false)
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
 
-  if (parsed.data.groupId)
-    feedbackQuery = feedbackQuery.eq('group_id', parsed.data.groupId);
-  if (parsed.data.studentUserId)
-    feedbackQuery = feedbackQuery.eq('user_id', parsed.data.studentUserId);
+    if (parsed.data.groupId)
+      feedbackQuery = feedbackQuery.eq('group_id', parsed.data.groupId);
+    if (parsed.data.studentUserId)
+      feedbackQuery = feedbackQuery.eq('user_id', parsed.data.studentUserId);
+    return feedbackQuery.range(from, to);
+  };
 
   const policyQuery = sbAdmin
     .from('workspace_configs')
@@ -193,9 +213,9 @@ async function getTutoringData(request: Request, { params }: Params) {
   // trip rather than stacking four round trips in series.
   const [attendanceResult, reservedResult, feedbackResult, policyResult] =
     await Promise.all([
-      attendanceQuery,
-      reservedQuery,
-      feedbackQuery,
+      readAllRows(attendancePage),
+      readAllRows(reservedPage),
+      readAllRows(feedbackPage),
       policyQuery,
     ]);
   for (const [source, error] of [
@@ -485,6 +505,8 @@ async function getTutoringData(request: Request, { params }: Params) {
           ...item,
           missed_lesson_content: notes.content,
           missed_post_content: notes.postContent,
+          missed_lesson_by_date: notes.contentByDate ?? {},
+          missed_post_by_date: notes.postContentByDate ?? {},
           missing_lesson_dates: notes.missingDates,
         }
       : item;

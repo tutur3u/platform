@@ -195,10 +195,10 @@ Public downloads use persistent GitHub Release assets, which do not require a
 repository token in the browser. The workflow attests the packages and verifies
 each signed attestation against the exact source SHA, protected `production` ref,
 desktop workflow identity, and GitHub-hosted runner policy before it uploads a
-draft `desktop-v<version>-<run-id>` prerelease, then makes the complete selected-platform prerelease
+draft `desktop-v<version>` prerelease, then makes the complete selected-platform prerelease
 visible. It never marks the desktop beta as the repository's latest stable
-release or overwrites an existing release tag. A failed draft needs inspection
-before rerunning; do not replace assets of a published tag.
+release or overwrites an existing release tag. A failed draft is cleaned up only after verifying run ownership;
+unclaimed drafts reserve their version for the next derivation to skip; do not replace assets of a published tag.
 
 Draft publication resolves the authenticated `gh release view` database ID and
 reads the release by REST ID; the release-by-tag endpoint can return 404 for an
@@ -251,56 +251,18 @@ same commit. The post-job cache upload is not evidence that the build failed.
 
 Published desktop builds include `DESKTOP_RELEASE_RUN_ID`, supplied directly by
 `desktop-beta.yaml`. Development builds and mobile store builds do not run the
-desktop updater. The version and run ID together distinguish successive beta
-builds without manually changing Release Please versions.
+desktop updater. Successive betas differ by version (see
+[Versions and release notes](#versions-and-release-notes)); the updater compares
+versions, and the run ID only orders legacy run-suffixed tags.
 
-On startup and every six hours, the app checks the public GitHub release list and
-automatically downloads a newer desktop beta for its platform. Downloads use no account
-session or repository token. Exact repository URLs, prerelease tags, every present
-platform asset, byte counts, and GitHub SHA-256 digests are required. Redirects
-are limited to GitHub's HTTPS asset hosts. Incomplete downloads never become
-installable, and cached packages are rehashed before use. After verification, older
-updater-owned release cache directories are pruned; unrelated files are preserved.
+## Versions and release notes
 
-When ready, a compact banner offers **Install and restart** or **Install on next
-launch**. Next-launch consent applies only to that exact release and can be
-cancelled. A failed installation clears the saved choice so startup cannot get
-stuck retrying it. Offline checks and download failures leave the current app
-usable and retry on the next check.
-
-- Windows verifies Authenticode on both the running executable and installer,
-  requires matching certificate subjects, waits for the old process to exit,
-  and runs the per-user Inno installer. A successful installation relaunches the
-  app. The helper rechecks the digest and signatures immediately before running.
-- macOS verifies the signed/notarized disk image, validates the replacement app's
-  signature and matching Apple team, and stages it on the destination volume
-  before exiting. The helper swaps bundles after exit and keeps the previous
-  app in one updater-owned recovery directory. An unwritable installation
-  directory or running directly from a mounted disk image blocks installation
-  while keeping the app open.
-- Linux asks the operating system's Polkit agent to authorize a packaged,
-  root-owned helper. It stages and verifies the archive in a root-owned directory,
-  then uses `apt-get install` to resolve dependencies. An unprivileged detached
-  helper waits for the previous process to exit before relaunching
-  `/opt/tuturuuu/tuturuuu`. The Flutter process never runs as root. A cancelled
-  elevation prompt leaves the current app open. Linux beta installations require
-  Ubuntu 24.04+ amd64, `pkexec`, and a desktop Polkit agent.
-
-Before enabling publication, exercise installation and at least one subsequent
-update on each actual supported OS, including cancelled elevation, damaged
-packages, next-launch consent, and relaunch. Unit tests for the metadata and
-transport boundary do not establish native installer success.
+See [Desktop Release Versioning](/build/devops/desktop-release-versioning#versions-and-release-notes)
+for version allocation, the notes template, and failed-draft recovery.
 
 ### Current provisioning prerequisites
 
-The existing Infrastructure mobile vault supports Android/iOS bundles and binds
-its OIDC audience to the mobile store workflow. Its App Store distribution P12
-is **not** a macOS Developer ID certificate, and the desktop workflow cannot use
-that bundle endpoint under the mobile workflow's identity. Provision the desktop
-credentials listed above through the separate desktop vault and protected
-environment-secret or explicit vault workflow path; do not copy a mobile CI
-token into desktop jobs or weaken that OIDC policy. A Microsoft Store developer
-account alone does not supply the Authenticode certificate used by this workflow.
+See [current provisioning prerequisites](/build/devops/desktop-release-versioning#current-provisioning-prerequisites).
 
 ## Windows Store draft channel
 

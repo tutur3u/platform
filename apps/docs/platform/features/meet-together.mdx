@@ -75,3 +75,10 @@ The shared Meet plan form and `POST /api/v1/meet/plans` use this same server
 boundary. Regression coverage: `packages/apis/src/meet/actions/plans.test.ts`,
 `apps/web/src/app/api/v1/meet/plans/route.test.ts` and
 `packages/ui/src/components/ui/legacy/meet/form.test.tsx`.
+
+## Participant removal scope
+
+Only a plan creator may remove another participant. Guest poll-vote cleanup is
+limited to the removed participant's votes on that plan. Votes on other plans
+remain intact. Coverage lives in
+`packages/apis/src/meet/actions/users.test.ts`.

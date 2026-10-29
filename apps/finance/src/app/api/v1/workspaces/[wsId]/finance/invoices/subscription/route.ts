@@ -10,6 +10,7 @@ import {
   getCalculatedInvoiceValuesFromRpc,
   validateInvoiceCustomer,
 } from '../route';
+import { validateSubscriptionReferences } from './workspace-references';
 
 interface Params {
   params: Promise<{
@@ -239,6 +240,14 @@ export async function POST(req: Request, { params }: Params) {
         { status: 403 }
       );
     }
+
+    const invalidReferences = await validateSubscriptionReferences(
+      sbAdmin,
+      wsId,
+      wallet_id,
+      groupIds
+    );
+    if (invalidReferences) return invalidReferences;
 
     // Block creating subscription invoices for groups configured as blocked
     for (const groupId of groupIds) {

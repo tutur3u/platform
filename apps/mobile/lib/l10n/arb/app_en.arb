@@ -442,6 +442,27 @@
       }
     }
   },
+  "@inventoryItemAvailable": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@inventoryItemMoreLocations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@inventoryScanMatches": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "@inventoryRedesignPendingCount": {
     "placeholders": {
       "count": {
@@ -2905,6 +2926,25 @@
   "inventorySalesTitle": "Title",
   "inventorySaveProduct": "Save product",
   "inventorySearchProducts": "Search products",
+  "inventoryItemArchived": "Archived",
+  "inventoryItemsLoadFailed": "Couldn't load products",
+  "inventoryItemsLoadMoreFailed": "Couldn't load more products",
+  "inventoryItemAvailable": "{amount} available",
+  "inventoryItemMoreLocations": "{count, plural, =1{1 more location} other{{count} more locations}}",
+  "inventoryItemNoStock": "No stock configured",
+  "inventoryItemStockHidden": "Stock hidden",
+  "inventoryItemsEmptyTitle": "No products yet",
+  "inventoryItemsNoMatch": "No products match",
+  "inventoryItemsNoMatchMessage": "Search matches product names. Try another name or clear the search.",
+  "inventoryItemsNoneArchived": "No archived products",
+  "inventoryScanAction": "Scan code",
+  "inventoryScanHint": "Point the camera at a product QR code or barcode.",
+  "inventoryScanMatches": "Name matches for “{code}”",
+  "inventoryScanNotFound": "No product in this workspace matches this code.",
+  "inventoryScanNotProduct": "This code can't be matched to a product.",
+  "inventoryScanSearchInstead": "Search instead",
+  "inventoryScanTitle": "Scan a code",
+  "inventoryScanUnavailable": "Camera unavailable",
   "inventorySeasonHistoricalReadOnly": "Scheduled sale history is read only here. Recorded prices are preserved.",
   "inventorySeasonPriceAsOf": "Season prices · {currency} · as of {asOf} (UTC) · season dates in {timeZone}",
   "inventorySeasonPriceCached": "Offline draft using saved season prices. Prices and availability will be checked when syncing.",
@@ -4196,14 +4236,9 @@
   "taskBoardDetailParentTask": "Parent task",
   "taskBoardDetailPoints": "{count, plural, one{{count} pt} other{{count} pts}}",
   "taskBoardDetailPriority": "Priority",
-  "taskBoardDetailPriorityCritical": "Critical",
-  "taskBoardDetailPriorityHigh": "High",
-  "taskBoardDetailPriorityLow": "Low",
   "taskBoardDetailPriorityNone": "No priority",
-  "taskBoardDetailPriorityNormal": "Normal",
   "taskBoardDetailPriorityUpdated": "Priority updated.",
   "taskBoardDetailProperties": "Properties",
-  "taskBoardDetailQuickActions": "Quick actions",
   "taskBoardDetailRecycleBin": "Recycle Bin",
   "taskBoardDetailRecycleBinDescription": "Deleted tasks from this board. Select tasks to restore or permanently delete them.",
   "taskBoardDetailRecycleBinEmpty": "No deleted tasks",
@@ -4525,6 +4560,33 @@
   "taskPortfolioUpdatePlaceholder": "Share the latest progress, blockers, or wins...",
   "taskPortfolioUpdatePosted": "Update posted.",
   "taskPortfolioUpdateSaved": "Update saved.",
+  "taskQuickActionsDueDate": "Due date",
+  "taskQuickActionsNoDueDate": "No due date",
+  "taskQuickActionsNoLabels": "No labels",
+  "taskQuickActionsStatus": "Status",
+  "taskQuickActionsUnassigned": "Unassigned",
+  "taskTimelineLoadingTasks": "Loading tasks…",
+  "taskTimelineNotAllLoaded": "Some tasks aren't loaded yet",
+  "taskTimelineNothingToday": "Nothing scheduled today",
+  "taskTimelineOngoing": "Day {day} of {total}, ends {date}",
+  "@taskTimelineOngoing": {
+    "placeholders": {
+      "day": {"type": "int"},
+      "total": {"type": "int"},
+      "date": {"type": "String"}
+    }
+  },
+  "taskTimelineRangeAll": "All",
+  "taskTimelineRangeMonth": "Month",
+  "taskTimelineRangeWeek": "Week",
+  "taskTimelineShowLater": "Show later tasks",
+  "taskTimelineShowOverdue": "Show overdue",
+  "taskTimelineStarted": "Started {date}",
+  "@taskTimelineStarted": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
   "tasksAllCaughtUp": "You're all caught up!",
   "tasksAllCaughtUpSubtitle": "No pending tasks right now",
   "tasksCompleteByEndOfDay": "Complete by end of day",
@@ -4540,10 +4602,11 @@
   "tasksLoadError": "Couldn't load tasks right now",
   "tasksOverdue": "Overdue",
   "tasksPlanAhead": "Plan ahead",
-  "tasksPriorityCritical": "Critical",
   "tasksPriorityHigh": "High",
   "tasksPriorityLow": "Low",
-  "tasksPriorityNormal": "Normal",
+  "tasksPriorityMedium": "Medium",
+  "tasksPriorityNone": "None",
+  "tasksPriorityUrgent": "Urgent",
   "tasksRequiresAttention": "Requires attention",
   "tasksTitle": "Tasks",
   "tasksUntitled": "Untitled task",
@@ -4832,6 +4895,10 @@
   "workspaceHiddenDescription": "Only you can see this list. Hiding does not change membership or notifications.",
   "workspaceHiddenEmpty": "No Hidden workspaces",
   "workspaceHiddenLoadError": "Workspace visibility preferences are unavailable. Saved hidden choices are kept.",
+  "workspaceManageTitle": "Manage workspaces",
+  "workspaceVisibleTitle": "Visible workspaces",
+  "workspaceHiddenCurrentToast": "Workspace hidden. Switched to another visible workspace.",
+  "workspaceHiddenLastToast": "All workspaces are hidden. Show a workspace to continue.",
   "workspaceHiddenTitle": "Hidden workspaces",
   "workspaceHiddenUpdateError": "Unable to save this change. Try again when connected.",
   "workspaceHideAction": "Hide",

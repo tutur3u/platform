@@ -8,7 +8,7 @@ import appConfig from '../../start-bridge.config';
 
 const config: BridgeAppConfig = appConfig;
 const canonical = 'inventory.tuturuuu.com';
-const staging = 'inventory-staging.tuturuuu.com';
+const staging = 'inventory.staging.tutur3u.com';
 const publicFile = '/robots.txt';
 
 function apply(path: string, method = 'GET', host = canonical) {

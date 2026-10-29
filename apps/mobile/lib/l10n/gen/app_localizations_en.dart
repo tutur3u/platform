@@ -5118,6 +5118,75 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySearchProducts => 'Search products';
 
   @override
+  String get inventoryItemArchived => 'Archived';
+
+  @override
+  String get inventoryItemsLoadFailed => 'Couldn\'t load products';
+
+  @override
+  String get inventoryItemsLoadMoreFailed => 'Couldn\'t load more products';
+
+  @override
+  String inventoryItemAvailable(String amount) {
+    return '$amount available';
+  }
+
+  @override
+  String inventoryItemMoreLocations(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more locations',
+      one: '1 more location',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inventoryItemNoStock => 'No stock configured';
+
+  @override
+  String get inventoryItemStockHidden => 'Stock hidden';
+
+  @override
+  String get inventoryItemsEmptyTitle => 'No products yet';
+
+  @override
+  String get inventoryItemsNoMatch => 'No products match';
+
+  @override
+  String get inventoryItemsNoMatchMessage => 'Search matches product names. Try another name or clear the search.';
+
+  @override
+  String get inventoryItemsNoneArchived => 'No archived products';
+
+  @override
+  String get inventoryScanAction => 'Scan code';
+
+  @override
+  String get inventoryScanHint => 'Point the camera at a product QR code or barcode.';
+
+  @override
+  String inventoryScanMatches(String code) {
+    return 'Name matches for “$code”';
+  }
+
+  @override
+  String get inventoryScanNotFound => 'No product in this workspace matches this code.';
+
+  @override
+  String get inventoryScanNotProduct => 'This code can\'t be matched to a product.';
+
+  @override
+  String get inventoryScanSearchInstead => 'Search instead';
+
+  @override
+  String get inventoryScanTitle => 'Scan a code';
+
+  @override
+  String get inventoryScanUnavailable => 'Camera unavailable';
+
+  @override
   String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
 
   @override
@@ -9171,28 +9240,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailPriority => 'Priority';
 
   @override
-  String get taskBoardDetailPriorityCritical => 'Critical';
-
-  @override
-  String get taskBoardDetailPriorityHigh => 'High';
-
-  @override
-  String get taskBoardDetailPriorityLow => 'Low';
-
-  @override
   String get taskBoardDetailPriorityNone => 'No priority';
-
-  @override
-  String get taskBoardDetailPriorityNormal => 'Normal';
 
   @override
   String get taskBoardDetailPriorityUpdated => 'Priority updated.';
 
   @override
   String get taskBoardDetailProperties => 'Properties';
-
-  @override
-  String get taskBoardDetailQuickActions => 'Quick actions';
 
   @override
   String get taskBoardDetailRecycleBin => 'Recycle Bin';
@@ -10198,6 +10252,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskPortfolioUpdateSaved => 'Update saved.';
 
   @override
+  String get taskQuickActionsDueDate => 'Due date';
+
+  @override
+  String get taskQuickActionsNoDueDate => 'No due date';
+
+  @override
+  String get taskQuickActionsNoLabels => 'No labels';
+
+  @override
+  String get taskQuickActionsStatus => 'Status';
+
+  @override
+  String get taskQuickActionsUnassigned => 'Unassigned';
+
+  @override
+  String get taskTimelineLoadingTasks => 'Loading tasks…';
+
+  @override
+  String get taskTimelineNotAllLoaded => 'Some tasks aren\'t loaded yet';
+
+  @override
+  String get taskTimelineNothingToday => 'Nothing scheduled today';
+
+  @override
+  String taskTimelineOngoing(int day, int total, String date) {
+    return 'Day $day of $total, ends $date';
+  }
+
+  @override
+  String get taskTimelineRangeAll => 'All';
+
+  @override
+  String get taskTimelineRangeMonth => 'Month';
+
+  @override
+  String get taskTimelineRangeWeek => 'Week';
+
+  @override
+  String get taskTimelineShowLater => 'Show later tasks';
+
+  @override
+  String get taskTimelineShowOverdue => 'Show overdue';
+
+  @override
+  String taskTimelineStarted(String date) {
+    return 'Started $date';
+  }
+
+  @override
   String get tasksAllCaughtUp => 'You\'re all caught up!';
 
   @override
@@ -10245,16 +10348,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tasksPlanAhead => 'Plan ahead';
 
   @override
-  String get tasksPriorityCritical => 'Critical';
-
-  @override
   String get tasksPriorityHigh => 'High';
 
   @override
   String get tasksPriorityLow => 'Low';
 
   @override
-  String get tasksPriorityNormal => 'Normal';
+  String get tasksPriorityMedium => 'Medium';
+
+  @override
+  String get tasksPriorityNone => 'None';
+
+  @override
+  String get tasksPriorityUrgent => 'Urgent';
 
   @override
   String get tasksRequiresAttention => 'Requires attention';
@@ -11212,6 +11318,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workspaceHiddenLoadError => 'Workspace visibility preferences are unavailable. Saved hidden choices are kept.';
+
+  @override
+  String get workspaceManageTitle => 'Manage workspaces';
+
+  @override
+  String get workspaceVisibleTitle => 'Visible workspaces';
+
+  @override
+  String get workspaceHiddenCurrentToast => 'Workspace hidden. Switched to another visible workspace.';
+
+  @override
+  String get workspaceHiddenLastToast => 'All workspaces are hidden. Show a workspace to continue.';
 
   @override
   String get workspaceHiddenTitle => 'Hidden workspaces';

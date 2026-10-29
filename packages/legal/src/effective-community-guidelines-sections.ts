@@ -1,6 +1,7 @@
 import type { LegalSection } from './types';
 export const communityGuidelinesSections: LegalSection[] = [
   {
+    id: 'community-85ecf323e465',
     title: 'Purpose & Values',
     icon: 'shield',
     tone: 'blue',
@@ -16,6 +17,7 @@ Our community is built on the following core values:
 These guidelines apply to all interactions within Tuturuuu's platform, including workspaces, comments, AI-generated content, contributions on GitHub, and any other community spaces.`,
   },
   {
+    id: 'community-ed3b42e98984',
     title: 'Respectful Communication',
     icon: 'shield',
     tone: 'blue',
@@ -37,6 +39,7 @@ These guidelines apply to all interactions within Tuturuuu's platform, including
    * If a discussion becomes heated, take a break and return when calm`,
   },
   {
+    id: 'community-4a53f1617b64',
     title: 'Content Standards',
     icon: 'shield',
     tone: 'blue',
@@ -59,6 +62,7 @@ These guidelines apply to all interactions within Tuturuuu's platform, including
    * Do not impersonate other individuals, organizations, or Tuturuuu staff`,
   },
   {
+    id: 'community-94d5f8c1ed63',
     title: 'Collaboration Expectations',
     icon: 'shield',
     tone: 'blue',
@@ -82,6 +86,7 @@ These guidelines apply to all interactions within Tuturuuu's platform, including
    * Handle shared data with appropriate care and confidentiality`,
   },
   {
+    id: 'community-68ba5645917e',
     title: 'AI Usage Responsibility',
     icon: 'shield',
     tone: 'blue',
@@ -106,6 +111,7 @@ These guidelines apply to all interactions within Tuturuuu's platform, including
 For more details, see our [Acceptable Use Policy](/acceptable-use).`,
   },
   {
+    id: 'community-521c23efc86f',
     title: 'Reporting Violations',
     icon: 'shield',
     tone: 'blue',
@@ -128,6 +134,7 @@ For more details, see our [Acceptable Use Policy](/acceptable-use).`,
    * Retaliation against reporters is strictly prohibited`,
   },
   {
+    id: 'community-4cdfb116ee09',
     title: 'Enforcement & Consequences',
     icon: 'shield',
     tone: 'blue',
@@ -148,6 +155,7 @@ For more details, see our [Acceptable Use Policy](/acceptable-use).`,
 > We reserve the right to take action on behavior that violates the spirit of these guidelines, even if not explicitly listed.`,
   },
   {
+    id: 'community-3af2c8df2825',
     title: 'Contact Information',
     icon: 'shield',
     tone: 'blue',

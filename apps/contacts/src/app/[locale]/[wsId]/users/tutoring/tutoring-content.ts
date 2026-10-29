@@ -71,3 +71,64 @@ export function buildQueueDraftContent(
     missingLessonDates: notes.missingDates,
   };
 }
+
+/** What one created session drafts, and the class notes it follows if any. */
+export interface QueueSlotDraft {
+  content: string;
+  linkedContent: string | undefined;
+  /** The missed date the session teaches, when it is a make-up for one. */
+  pairedMissedDate?: string;
+}
+
+/** Valid missed dates, oldest first: the order the server pairs them in. */
+export function sortedMissedDates(dates: string[]) {
+  return dates.filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date)).sort();
+}
+
+/**
+ * The Content each created session drafts. One session carries everything, as
+ * `buildQueueDraftContent` does. With several, session `i` teaches missed date
+ * `i` (oldest first); weak support repeats the homeroom teacher's note, and a
+ * row with both reasons pairs each session's own missed-day text with that
+ * note. A session beyond the missed dates drafts only what is not date-bound.
+ */
+export function buildQueueSlotDrafts(
+  item: Pick<
+    TutoringQueueItem,
+    'reason_type' | 'feedback_content' | 'missed_class_dates'
+  >,
+  notes: MissedClassNotes,
+  labels: QueueDraftLabels,
+  count: number
+): QueueSlotDraft[] {
+  if (count <= 1) {
+    const draft = buildQueueDraftContent(item, notes, labels);
+    return [{ content: draft.content, linkedContent: draft.linkedContent }];
+  }
+  const dates = sortedMissedDates(item.missed_class_dates);
+  const weakText = item.feedback_content.trim();
+  return Array.from({ length: count }, (_, index) => {
+    if (item.reason_type === 'WEAK_SUPPORT')
+      return { content: item.feedback_content, linkedContent: undefined };
+    const date = dates[index];
+    const dayNotes = {
+      content: (date && notes.contentByDate?.[date]) || '',
+      postContent: (date && notes.postContentByDate?.[date]) || '',
+    };
+    const absentText = composeMissedClassText(dayNotes, labels);
+    if (item.reason_type === 'ABSENT_RECOVERY')
+      return {
+        content: absentText,
+        linkedContent: dayNotes.postContent ? undefined : dayNotes.content,
+        pairedMissedDate: date,
+      };
+    const content = [
+      { label: labels.absent, text: absentText },
+      { label: labels.weak, text: weakText },
+    ]
+      .filter((part) => part.text)
+      .map((part) => section(part.label, part.text))
+      .join('\n\n');
+    return { content, linkedContent: undefined };
+  });
+}

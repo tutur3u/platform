@@ -606,30 +606,22 @@ class TaskRepository {
     List<String>? assigneeIds,
     bool? completed,
     bool clearDescription = false,
+    bool clearPriority = false,
     bool clearStartDate = false,
     bool clearEndDate = false,
     bool clearEstimationPoints = false,
   }) async {
-    if (description != null && clearDescription) {
-      throw ArgumentError(
-        'description and clearDescription cannot both be provided',
-      );
-    }
-
-    if (startDate != null && clearStartDate) {
-      throw ArgumentError(
-        'startDate and clearStartDate cannot both be provided',
-      );
-    }
-
-    if (endDate != null && clearEndDate) {
-      throw ArgumentError('endDate and clearEndDate cannot both be provided');
-    }
-
-    if (estimationPoints != null && clearEstimationPoints) {
-      throw ArgumentError(
-        'estimationPoints and clearEstimationPoints cannot both be provided',
-      );
+    for (final (value, clear, field) in [
+      (description, clearDescription, 'description'),
+      (priority, clearPriority, 'priority'),
+      (startDate, clearStartDate, 'startDate'),
+      (endDate, clearEndDate, 'endDate'),
+      (estimationPoints, clearEstimationPoints, 'estimationPoints'),
+    ]) {
+      if (value != null && clear) {
+        final flag = 'clear${field[0].toUpperCase()}${field.substring(1)}';
+        throw ArgumentError('$field and $flag cannot both be provided');
+      }
     }
 
     final updatePayload = <String, dynamic>{
@@ -637,6 +629,7 @@ class TaskRepository {
       if (description != null) 'description': description,
       if (clearDescription) 'description': null,
       if (priority != null) 'priority': priority,
+      if (clearPriority) 'priority': null,
       if (startDate != null) 'start_date': _taskStartDateIso(startDate),
       if (endDate != null) 'end_date': _taskEndDateIso(endDate),
       if (clearStartDate) 'start_date': null,

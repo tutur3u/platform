@@ -5067,6 +5067,69 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySearchProducts => 'Tìm sản phẩm';
 
   @override
+  String get inventoryItemArchived => 'Đã lưu trữ';
+
+  @override
+  String get inventoryItemsLoadFailed => 'Không tải được sản phẩm';
+
+  @override
+  String get inventoryItemsLoadMoreFailed => 'Không tải thêm được sản phẩm';
+
+  @override
+  String inventoryItemAvailable(String amount) {
+    return 'Còn $amount';
+  }
+
+  @override
+  String inventoryItemMoreLocations(int count) {
+    return 'Thêm $count vị trí';
+  }
+
+  @override
+  String get inventoryItemNoStock => 'Chưa thiết lập tồn kho';
+
+  @override
+  String get inventoryItemStockHidden => 'Tồn kho bị ẩn';
+
+  @override
+  String get inventoryItemsEmptyTitle => 'Chưa có sản phẩm';
+
+  @override
+  String get inventoryItemsNoMatch => 'Không có sản phẩm phù hợp';
+
+  @override
+  String get inventoryItemsNoMatchMessage => 'Tìm kiếm theo tên sản phẩm. Hãy thử tên khác hoặc xoá tìm kiếm.';
+
+  @override
+  String get inventoryItemsNoneArchived => 'Không có sản phẩm đã lưu trữ';
+
+  @override
+  String get inventoryScanAction => 'Quét mã';
+
+  @override
+  String get inventoryScanHint => 'Hướng camera vào mã QR hoặc mã vạch của sản phẩm.';
+
+  @override
+  String inventoryScanMatches(String code) {
+    return 'Tên khớp với “$code”';
+  }
+
+  @override
+  String get inventoryScanNotFound => 'Không có sản phẩm nào trong không gian làm việc này khớp với mã này.';
+
+  @override
+  String get inventoryScanNotProduct => 'Không thể dùng mã này để tìm sản phẩm.';
+
+  @override
+  String get inventoryScanSearchInstead => 'Chuyển sang tìm kiếm';
+
+  @override
+  String get inventoryScanTitle => 'Quét mã';
+
+  @override
+  String get inventoryScanUnavailable => 'Không dùng được camera';
+
+  @override
   String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
 
   @override
@@ -9065,28 +9128,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailPriority => 'Độ ưu tiên';
 
   @override
-  String get taskBoardDetailPriorityCritical => 'Nghiêm trọng';
-
-  @override
-  String get taskBoardDetailPriorityHigh => 'Cao';
-
-  @override
-  String get taskBoardDetailPriorityLow => 'Thấp';
-
-  @override
   String get taskBoardDetailPriorityNone => 'Không ưu tiên';
-
-  @override
-  String get taskBoardDetailPriorityNormal => 'Bình thường';
 
   @override
   String get taskBoardDetailPriorityUpdated => 'Đã cập nhật độ ưu tiên.';
 
   @override
   String get taskBoardDetailProperties => 'Thuộc tính';
-
-  @override
-  String get taskBoardDetailQuickActions => 'Thao tác nhanh';
 
   @override
   String get taskBoardDetailRecycleBin => 'Thùng rác';
@@ -10092,6 +10140,55 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskPortfolioUpdateSaved => 'Đã lưu cập nhật.';
 
   @override
+  String get taskQuickActionsDueDate => 'Hạn chót';
+
+  @override
+  String get taskQuickActionsNoDueDate => 'Chưa đặt hạn';
+
+  @override
+  String get taskQuickActionsNoLabels => 'Chưa có nhãn';
+
+  @override
+  String get taskQuickActionsStatus => 'Trạng thái';
+
+  @override
+  String get taskQuickActionsUnassigned => 'Chưa giao cho ai';
+
+  @override
+  String get taskTimelineLoadingTasks => 'Đang tải công việc…';
+
+  @override
+  String get taskTimelineNotAllLoaded => 'Một số việc chưa được tải';
+
+  @override
+  String get taskTimelineNothingToday => 'Hôm nay chưa có việc nào';
+
+  @override
+  String taskTimelineOngoing(int day, int total, String date) {
+    return 'Ngày $day/$total, kết thúc $date';
+  }
+
+  @override
+  String get taskTimelineRangeAll => 'Tất cả';
+
+  @override
+  String get taskTimelineRangeMonth => 'Tháng';
+
+  @override
+  String get taskTimelineRangeWeek => 'Tuần';
+
+  @override
+  String get taskTimelineShowLater => 'Hiện các việc về sau';
+
+  @override
+  String get taskTimelineShowOverdue => 'Xem việc quá hạn';
+
+  @override
+  String taskTimelineStarted(String date) {
+    return 'Bắt đầu $date';
+  }
+
+  @override
   String get tasksAllCaughtUp => 'Đã hoàn thành tất cả!';
 
   @override
@@ -10139,16 +10236,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get tasksPlanAhead => 'Lên kế hoạch sớm';
 
   @override
-  String get tasksPriorityCritical => 'Nghiêm trọng';
-
-  @override
   String get tasksPriorityHigh => 'Cao';
 
   @override
   String get tasksPriorityLow => 'Thấp';
 
   @override
-  String get tasksPriorityNormal => 'Bình thường';
+  String get tasksPriorityMedium => 'Trung bình';
+
+  @override
+  String get tasksPriorityNone => 'Không có';
+
+  @override
+  String get tasksPriorityUrgent => 'Khẩn cấp';
 
   @override
   String get tasksRequiresAttention => 'Cần xử lý ngay';
@@ -11100,6 +11200,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get workspaceHiddenLoadError => 'Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.';
+
+  @override
+  String get workspaceManageTitle => 'Quản lý không gian làm việc';
+
+  @override
+  String get workspaceVisibleTitle => 'Không gian làm việc đang hiện';
+
+  @override
+  String get workspaceHiddenCurrentToast => 'Đã ẩn không gian làm việc và chuyển sang một không gian đang hiện khác.';
+
+  @override
+  String get workspaceHiddenLastToast => 'Tất cả không gian làm việc đã bị ẩn. Hãy hiện một không gian để tiếp tục.';
 
   @override
   String get workspaceHiddenTitle => 'Không gian làm việc đã ẩn';

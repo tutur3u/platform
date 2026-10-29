@@ -20,7 +20,10 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
   await connection();
 
   const { wsId: routeWsId, courseId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(
+    routeWsId,
+    'view_user_groups'
+  );
   const data = await getData(resolvedWsId, courseId);
 
   return (

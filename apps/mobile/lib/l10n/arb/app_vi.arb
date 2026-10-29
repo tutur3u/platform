@@ -442,6 +442,27 @@
       }
     }
   },
+  "@inventoryItemAvailable": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@inventoryItemMoreLocations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@inventoryScanMatches": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "@inventoryRedesignPendingCount": {
     "placeholders": {
       "count": {
@@ -2827,6 +2848,25 @@
   "inventorySalesTitle": "Tiêu đề",
   "inventorySaveProduct": "Lưu sản phẩm",
   "inventorySearchProducts": "Tìm sản phẩm",
+  "inventoryItemArchived": "Đã lưu trữ",
+  "inventoryItemsLoadFailed": "Không tải được sản phẩm",
+  "inventoryItemsLoadMoreFailed": "Không tải thêm được sản phẩm",
+  "inventoryItemAvailable": "Còn {amount}",
+  "inventoryItemMoreLocations": "Thêm {count} vị trí",
+  "inventoryItemNoStock": "Chưa thiết lập tồn kho",
+  "inventoryItemStockHidden": "Tồn kho bị ẩn",
+  "inventoryItemsEmptyTitle": "Chưa có sản phẩm",
+  "inventoryItemsNoMatch": "Không có sản phẩm phù hợp",
+  "inventoryItemsNoMatchMessage": "Tìm kiếm theo tên sản phẩm. Hãy thử tên khác hoặc xoá tìm kiếm.",
+  "inventoryItemsNoneArchived": "Không có sản phẩm đã lưu trữ",
+  "inventoryScanAction": "Quét mã",
+  "inventoryScanHint": "Hướng camera vào mã QR hoặc mã vạch của sản phẩm.",
+  "inventoryScanMatches": "Tên khớp với “{code}”",
+  "inventoryScanNotFound": "Không có sản phẩm nào trong không gian làm việc này khớp với mã này.",
+  "inventoryScanNotProduct": "Không thể dùng mã này để tìm sản phẩm.",
+  "inventoryScanSearchInstead": "Chuyển sang tìm kiếm",
+  "inventoryScanTitle": "Quét mã",
+  "inventoryScanUnavailable": "Không dùng được camera",
   "inventorySeasonHistoricalReadOnly": "Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.",
   "inventorySeasonPriceAsOf": "Giá mùa · {currency} · tại {asOf} (UTC) · ngày mùa theo {timeZone}",
   "inventorySeasonPriceCached": "Bản nháp ngoại tuyến sử dụng giá mùa đã lưu. Giá và tình trạng hàng sẽ được kiểm tra khi đồng bộ.",
@@ -4104,14 +4144,9 @@
   "taskBoardDetailParentTask": "Công việc cha",
   "taskBoardDetailPoints": "{count} điểm",
   "taskBoardDetailPriority": "Độ ưu tiên",
-  "taskBoardDetailPriorityCritical": "Nghiêm trọng",
-  "taskBoardDetailPriorityHigh": "Cao",
-  "taskBoardDetailPriorityLow": "Thấp",
   "taskBoardDetailPriorityNone": "Không ưu tiên",
-  "taskBoardDetailPriorityNormal": "Bình thường",
   "taskBoardDetailPriorityUpdated": "Đã cập nhật độ ưu tiên.",
   "taskBoardDetailProperties": "Thuộc tính",
-  "taskBoardDetailQuickActions": "Thao tác nhanh",
   "taskBoardDetailRecycleBin": "Thùng rác",
   "taskBoardDetailRecycleBinDescription": "Các công việc đã xóa từ bảng này. Chọn công việc để khôi phục hoặc xóa vĩnh viễn.",
   "taskBoardDetailRecycleBinEmpty": "Không có công việc đã xóa",
@@ -4433,6 +4468,21 @@
   "taskPortfolioUpdatePlaceholder": "Chia sẻ tiến độ mới nhất, trở ngại hoặc kết quả nổi bật...",
   "taskPortfolioUpdatePosted": "Đã đăng cập nhật.",
   "taskPortfolioUpdateSaved": "Đã lưu cập nhật.",
+  "taskQuickActionsDueDate": "Hạn chót",
+  "taskQuickActionsNoDueDate": "Chưa đặt hạn",
+  "taskQuickActionsNoLabels": "Chưa có nhãn",
+  "taskQuickActionsStatus": "Trạng thái",
+  "taskQuickActionsUnassigned": "Chưa giao cho ai",
+  "taskTimelineLoadingTasks": "Đang tải công việc…",
+  "taskTimelineNotAllLoaded": "Một số việc chưa được tải",
+  "taskTimelineNothingToday": "Hôm nay chưa có việc nào",
+  "taskTimelineOngoing": "Ngày {day}/{total}, kết thúc {date}",
+  "taskTimelineRangeAll": "Tất cả",
+  "taskTimelineRangeMonth": "Tháng",
+  "taskTimelineRangeWeek": "Tuần",
+  "taskTimelineShowLater": "Hiện các việc về sau",
+  "taskTimelineShowOverdue": "Xem việc quá hạn",
+  "taskTimelineStarted": "Bắt đầu {date}",
   "tasksAllCaughtUp": "Đã hoàn thành tất cả!",
   "tasksAllCaughtUpSubtitle": "Không có công việc cần xử lý",
   "tasksCompleteByEndOfDay": "Hoàn thành trước cuối ngày",
@@ -4448,10 +4498,11 @@
   "tasksLoadError": "Không thể tải công việc lúc này",
   "tasksOverdue": "Quá hạn",
   "tasksPlanAhead": "Lên kế hoạch sớm",
-  "tasksPriorityCritical": "Nghiêm trọng",
   "tasksPriorityHigh": "Cao",
   "tasksPriorityLow": "Thấp",
-  "tasksPriorityNormal": "Bình thường",
+  "tasksPriorityMedium": "Trung bình",
+  "tasksPriorityNone": "Không có",
+  "tasksPriorityUrgent": "Khẩn cấp",
   "tasksRequiresAttention": "Cần xử lý ngay",
   "tasksTitle": "Công việc",
   "tasksUntitled": "Công việc chưa có tiêu đề",
@@ -4740,6 +4791,10 @@
   "workspaceHiddenDescription": "Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.",
   "workspaceHiddenEmpty": "Không có không gian làm việc đã ẩn",
   "workspaceHiddenLoadError": "Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.",
+  "workspaceManageTitle": "Quản lý không gian làm việc",
+  "workspaceVisibleTitle": "Không gian làm việc đang hiện",
+  "workspaceHiddenCurrentToast": "Đã ẩn không gian làm việc và chuyển sang một không gian đang hiện khác.",
+  "workspaceHiddenLastToast": "Tất cả không gian làm việc đã bị ẩn. Hãy hiện một không gian để tiếp tục.",
   "workspaceHiddenTitle": "Không gian làm việc đã ẩn",
   "workspaceHiddenUpdateError": "Không thể lưu thay đổi. Hãy thử lại khi có kết nối.",
   "workspaceHideAction": "Ẩn",

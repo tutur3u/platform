@@ -82,6 +82,13 @@ GET /api/v1/tulearn/bootstrap
 
 Workspace-scoped learner routes use the normalized workspace id so aliases like `personal` do not diverge between selection and final reads. Linked learners in `workspace_user_linked_users` count as eligible student access even when the platform user is not a direct workspace member, so course lists and learner dashboard bootstrap must agree on the same workspace set.
 
+## Learner test access
+
+The Learn start, attempt, save-answer, and submit routes require the selected
+course in the student's assigned, published courses for the resolved workspace.
+Parent and guest subjects keep their existing read-only restrictions. Course
+access is checked before test, answer, attempt, or grading operations.
+
 ## Parent links
 
 Parent access is explicit and read-only in v1. The existing Tulearn schema adds:
@@ -284,3 +291,18 @@ Regression evidence: `packages/education-core/src/todo/service.test.ts`, both
 app-owned `todo/route.test.ts` files, internal API `education-todo.test.ts`, and
 shared UI `education-todo.test.tsx`. Exact app builds and authenticated runtime
 verification remain required delivery evidence.
+
+## Education read and progress boundaries
+
+Teach quiz-set APIs and each detail page segment require education access in the
+route workspace and a quiz set or module owned by that workspace. Attempt detail
+requires `view_user_groups_reports`. Attendance changes accept only students
+assigned to the course. Learn quiz resets and vocabulary reads use the same
+published, assigned, unlocked module access as lesson detail. Teachers with
+`ai_lab` retain workspace vocabulary access. Parent vocabulary requests carry
+the selected student, and parent links require that student's verified platform
+identity in the workspace.
+
+Regression coverage is in Teach's `src/test/*access.test.*` and
+`attendance-scope.test.ts`, plus Learn's parent-link, reset-access and vocabulary
+route tests. These rules apply to the active Teach and Learn surfaces.
