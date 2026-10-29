@@ -5,14 +5,16 @@ const mocks = vi.hoisted(() => ({
   handle: vi.fn(async () => new Response('ok')),
 }));
 
-vi.mock('./abuse-guard', () => ({ configureMeetAbuseGuard: mocks.configure }));
-vi.mock('./handler', () => ({ handleMeetRequest: mocks.handle }));
-vi.mock('../../cloudflare/live/session', () => ({
+vi.mock('../src/runtime/abuse-guard', () => ({
+  configureMeetAbuseGuard: mocks.configure,
+}));
+vi.mock('../src/runtime/handler', () => ({ handleMeetRequest: mocks.handle }));
+vi.mock('./live/session', () => ({
   MeetLiveDurableObject: class {},
 }));
-vi.mock('../../cloudflare/provider', () => ({ MeetingAIProvider: class {} }));
+vi.mock('./provider', () => ({ MeetingAIProvider: class {} }));
 
-import worker from '../../cloudflare/worker';
+import worker from './worker';
 
 describe('Meet Worker entrypoint', () => {
   beforeEach(() => {
