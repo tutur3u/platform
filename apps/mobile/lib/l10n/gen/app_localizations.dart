@@ -26731,6 +26731,24 @@ abstract class AppLocalizations {
   /// **'Coming soon'**
   String get mastermindAskRemindAtMacSoon;
 
+  /// No description provided for @settingsShareTelemetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Share analytics and crash reports'**
+  String get settingsShareTelemetry;
+
+  /// No description provided for @settingsPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get settingsPrivacy;
+
+  /// No description provided for @settingsTelemetryError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update sharing. Tap to retry.'**
+  String get settingsTelemetryError;
+
   /// No description provided for @mastermindMachineUpdated.
   ///
   /// In en, this message translates to:
@@ -27402,6 +27420,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Security fix'**
   String get mastermindSecurityFix;
+
+  /// No description provided for @telemetryConsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Help improve Tuturuuu?'**
+  String get telemetryConsentTitle;
+
+  /// No description provided for @telemetryConsentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Share usage data and crash reports with Google Firebase so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.'**
+  String get telemetryConsentBody;
+
+  /// No description provided for @telemetryConsentAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get telemetryConsentAllow;
+
+  /// No description provided for @telemetryConsentDeny.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t allow'**
+  String get telemetryConsentDeny;
+
+  /// No description provided for @telemetryConsentLearnMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy details'**
+  String get telemetryConsentLearnMore;
+
+  /// No description provided for @settingsShareTelemetryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Send usage data and crash reports to Google Firebase to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.'**
+  String get settingsShareTelemetryDescription;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

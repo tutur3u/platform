@@ -34,7 +34,9 @@ class _TelemetrySettingsTileState extends State<TelemetrySettingsTile> {
         grouped: true,
         icon: LucideIcons.shield,
         title: l10n.settingsShareTelemetry,
-        subtitle: _failed ? l10n.settingsTelemetryError : null,
+        subtitle: _failed
+            ? l10n.settingsTelemetryError
+            : l10n.settingsShareTelemetryDescription,
         showChevron: false,
         onTap: preference.ready && !preference.busy
             ? () => _change(preference, !preference.enabled)

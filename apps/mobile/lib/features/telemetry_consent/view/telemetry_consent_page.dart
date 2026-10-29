@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' hide Scaffold;
 import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/router/mobile_link_launcher.dart';
@@ -5,14 +7,15 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
-/// Where "Learn more" opens: the public privacy notice.
-final telemetryPrivacyUri = Uri.parse('https://tuturuuu.com/privacy');
+/// Where "Privacy details" opens: the public privacy notice.
+final Uri telemetryPrivacyUri = Uri.parse('https://tuturuuu.com/privacy');
 
 /// One-time, full-screen analytics and crash report choice.
 ///
 /// Both answers carry equal weight and persist exactly like the Settings
-/// switch. The route opens above the shell and has no dismiss action: it
-/// leaves only once an explicit choice is stored.
+/// switch. The route opens above the shell. Closing it with the back gesture
+/// counts as "Don't allow", never as consent; the route leaves once an answer
+/// is stored.
 class TelemetryConsentPage extends StatefulWidget {
   const TelemetryConsentPage({super.key, this.preference, this.openLink});
 
@@ -44,6 +47,11 @@ class _TelemetryConsentPageState extends State<TelemetryConsentPage> {
     final textTheme = Theme.of(context).textTheme;
     return PopScope(
       canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _preference.ready && !_preference.busy) {
+          unawaited(_answer(allow: false));
+        }
+      },
       child: shad.Scaffold(
         child: SafeArea(
           child: ListenableBuilder(
@@ -69,10 +77,6 @@ class _TelemetryConsentPageState extends State<TelemetryConsentPage> {
                           ),
                           const SizedBox(height: AppSpacing.md),
                           Text(l10n.telemetryConsentBody),
-                          const SizedBox(height: AppSpacing.md),
-                          Text(l10n.telemetryConsentCollected),
-                          const SizedBox(height: AppSpacing.md),
-                          Text(l10n.telemetryConsentSettingsNote),
                           const SizedBox(height: AppSpacing.sm),
                           AppButton.ghost(
                             onPressed: () =>

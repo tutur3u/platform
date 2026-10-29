@@ -1,52 +1,32 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Device-wide explicit consent takes precedence over the device region.
+/// Device-wide analytics and crash report consent.
+///
+/// Collection is off until the user explicitly allows it, in every region:
+/// there is no locale or region default. The answer is stored on the device
+/// with the notice version it was given under and the time. A different notice
+/// version voids the stored answer, so collection stays off until it is asked
+/// again.
 class TelemetryPreference extends ChangeNotifier {
-  TelemetryPreference({required this.countryCode});
+  TelemetryPreference({
+    this.noticeVersion = currentNoticeVersion,
+    DateTime Function()? clock,
+  }) : _clock = clock ?? DateTime.now;
 
-  static final instance = TelemetryPreference(countryCode: null);
-  static const preferenceKey = 'share-analytics-and-crash-reports';
+  static final instance = TelemetryPreference();
 
-  /// Regions where collection stays off until an explicit Allow: the EU/EEA,
-  /// Switzerland, the United Kingdom and Vietnam. Final list pending Legal.
-  static const privateRegions = {
-    'AT',
-    'BE',
-    'BG',
-    'HR',
-    'CY',
-    'CZ',
-    'DK',
-    'EE',
-    'FI',
-    'FR',
-    'DE',
-    'GR',
-    'HU',
-    'IE',
-    'IT',
-    'LV',
-    'LT',
-    'LU',
-    'MT',
-    'NL',
-    'PL',
-    'PT',
-    'RO',
-    'SK',
-    'SI',
-    'ES',
-    'SE',
-    'IS',
-    'LI',
-    'NO',
-    'CH',
-    'GB',
-    'VN',
-  };
+  /// Bump with any wording change to the prompt or the Settings description.
+  static const currentNoticeVersion = 'telemetry-consent-v1';
+  static const choiceKey = 'telemetry-consent-choice';
+  static const noticeVersionKey = 'telemetry-consent-notice-version';
+  static const decidedAtKey = 'telemetry-consent-decided-at';
 
-  final String? countryCode;
+  /// Written by builds that defaulted by region; never trusted as consent.
+  static const legacyKey = 'share-analytics-and-crash-reports';
+
+  final String noticeVersion;
+  final DateTime Function() _clock;
   bool enabled = false;
   bool ready = false;
   bool busy = false;
@@ -54,47 +34,55 @@ class TelemetryPreference extends ChangeNotifier {
   bool _promptEligible = false;
   late Future<void> Function({required bool enabled}) _apply;
 
-  /// A one-time first-run prompt is due: production only, and only while the
-  /// device has never stored an explicit choice (Settings included).
+  /// The prompt is due: production only, and only while no answer is stored for
+  /// the current notice version.
   bool get consentPending => ready && _promptEligible && !hasExplicitChoice;
-
-  static bool defaultEnabled(String? country) =>
-      country != null &&
-      country.isNotEmpty &&
-      !privateRegions.contains(country.toUpperCase());
 
   Future<void> initialize({
     required Future<void> Function({required bool enabled}) apply,
-    String? deviceCountryCode,
     Future<bool?> Function()? read,
     bool promptEligible = false,
   }) async {
     final saved = await (read?.call() ?? _read());
     hasExplicitChoice = saved != null;
     _promptEligible = promptEligible;
-    enabled = saved ?? defaultEnabled(countryCode ?? deviceCountryCode);
+    enabled = saved ?? false;
     _apply = apply;
     await apply(enabled: enabled);
     ready = true;
     notifyListeners();
   }
 
-  Future<bool?> _read() async =>
-      (await SharedPreferences.getInstance()).getBool(preferenceKey);
+  Future<bool?> _read() async {
+    final prefs = await SharedPreferences.getInstance();
+    // Older builds could leave a regional default or an "on" here.
+    if (prefs.containsKey(legacyKey)) await prefs.remove(legacyKey);
+    if (prefs.getString(noticeVersionKey) != noticeVersion) return null;
+    return prefs.getBool(choiceKey);
+  }
 
   Future<void> setEnabled({required bool value}) async {
     if (!ready || busy) return;
     busy = true;
     notifyListeners();
     try {
-      // Revoke collection before waiting for disk. Enabling requires a durable
+      // Revoke collection before waiting for disk. Allowing requires a durable
       // choice first, so a failed write cannot turn collection on.
       if (!value) {
         enabled = false;
         await _apply(enabled: false);
       }
       final prefs = await SharedPreferences.getInstance();
-      if (!await prefs.setBool(preferenceKey, value)) {
+      // The version goes last: a partial write leaves the answer void, which
+      // keeps collection off and asks again.
+      final saved =
+          await prefs.setBool(choiceKey, value) &&
+          await prefs.setString(
+            decidedAtKey,
+            _clock().toUtc().toIso8601String(),
+          ) &&
+          await prefs.setString(noticeVersionKey, noticeVersion);
+      if (!saved) {
         throw StateError('Telemetry preference could not be saved');
       }
       if (value) await _apply(enabled: true);

@@ -84,7 +84,7 @@ void main() {
     test('opting out disables collection and deletes them', () async {
       final controls = _RecordingControls();
       final observability = MobileObservability.withControls(controls);
-      final preference = TelemetryPreference(countryCode: 'US');
+      final preference = TelemetryPreference();
       await preference.initialize(
         read: () async => null,
         apply: ({required enabled}) => observability.initialize(
@@ -92,14 +92,16 @@ void main() {
           collectionEnabled: enabled,
         ),
       );
-      expect(controls.calls, ['crash:true', 'analytics:true']);
+      expect(controls.calls, ['crash:false', 'analytics:false', 'delete']);
+      await preference.setEnabled(value: true);
+      expect(controls.calls.last, 'analytics:true');
       controls.calls.clear();
 
       await preference.setEnabled(value: false);
       expect(controls.calls, ['crash:false', 'analytics:false', 'delete']);
       expect(observability.enabled, isFalse);
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getBool(TelemetryPreference.preferenceKey), isFalse);
+      expect(prefs.getBool(TelemetryPreference.choiceKey), isFalse);
     });
 
     test('a failed deletion still leaves collection disabled', () async {

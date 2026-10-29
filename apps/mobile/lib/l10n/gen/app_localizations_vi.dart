@@ -14173,6 +14173,15 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindAskRemindAtMacSoon => 'Sắp ra mắt';
 
   @override
+  String get settingsShareTelemetry => 'Chia sẻ dữ liệu phân tích và báo cáo sự cố';
+
+  @override
+  String get settingsPrivacy => 'Quyền riêng tư';
+
+  @override
+  String get settingsTelemetryError => 'Không thể cập nhật lựa chọn chia sẻ. Nhấn để thử lại.';
+
+  @override
   String mastermindMachineUpdated(String time) {
     return 'Tính đến $time';
   }
@@ -14545,4 +14554,22 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindSecurityFix => 'Bản vá bảo mật';
+
+  @override
+  String get telemetryConsentTitle => 'Giúp cải thiện Tuturuuu?';
+
+  @override
+  String get telemetryConsentBody => 'Chia sẻ dữ liệu sử dụng và báo cáo sự cố với Google Firebase để chúng tôi sửa lỗi và cải thiện ứng dụng. Gồm mã định danh ứng dụng và thiết bị, sự kiện sử dụng, báo cáo sự cố, và thông tin thiết bị, hệ điều hành. Bạn có thể đổi lựa chọn bất cứ lúc nào tại Cài đặt > Tùy chọn > Quyền riêng tư.';
+
+  @override
+  String get telemetryConsentAllow => 'Cho phép';
+
+  @override
+  String get telemetryConsentDeny => 'Không cho phép';
+
+  @override
+  String get telemetryConsentLearnMore => 'Chi tiết về quyền riêng tư';
+
+  @override
+  String get settingsShareTelemetryDescription => 'Gửi dữ liệu sử dụng và báo cáo sự cố tới Google Firebase để giúp chúng tôi sửa lỗi và cải thiện ứng dụng. Khi tắt, việc thu thập dừng lại và các báo cáo sự cố chưa gửi sẽ bị xóa.';
 }

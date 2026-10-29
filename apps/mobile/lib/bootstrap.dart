@@ -102,7 +102,6 @@ Future<void> bootstrap(
   // Initialize Supabase with secure storage
   try {
     await TelemetryPreference.instance.initialize(
-      deviceCountryCode: PlatformDispatcher.instance.locale.countryCode,
       promptEligible: appFlavor == AppFlavor.production,
       apply: ({required enabled}) async {
         if (Firebase.apps.isEmpty) {

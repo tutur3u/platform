@@ -56,12 +56,12 @@ import 'package:mobile/features/task_portfolio/view/task_project_detail_page.dar
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
 import 'package:mobile/features/tasks_boards/view/task_boards_page.dart';
+import 'package:mobile/features/telemetry_consent/view/telemetry_consent_page.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/utils/history_anchor.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_requests_page.dart';
 import 'package:mobile/features/time_tracker/widgets/stats_tab.dart';
-import 'package:mobile/features/telemetry_consent/view/telemetry_consent_page.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/view/workspace_select_page.dart';

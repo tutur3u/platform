@@ -6891,11 +6891,10 @@
   "mastermindMorningCatchupTime": "Time",
   "mastermindCatchupPushBody": "Your catch-up is ready",
   "mastermindSecurityFix": "Security fix",
-  "telemetryConsentTitle": "Help improve Tuturuuu",
-  "telemetryConsentBody": "Tuturuuu can use Firebase Analytics and Firebase Crashlytics, services provided by Google, to see how the app is used and to find and fix crashes.",
-  "telemetryConsentCollected": "If you allow this, the app shares usage events, crash and error reports, and technical details such as your device model, operating system version and app version. Your messages, files and task content are not included.",
-  "telemetryConsentSettingsNote": "You can change this at any time in Settings > Preferences > Privacy.",
+  "telemetryConsentTitle": "Help improve Tuturuuu?",
+  "telemetryConsentBody": "Share usage data and crash reports with Google Firebase so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.",
   "telemetryConsentAllow": "Allow",
   "telemetryConsentDeny": "Don't allow",
-  "telemetryConsentLearnMore": "Learn more"
+  "telemetryConsentLearnMore": "Privacy details",
+  "settingsShareTelemetryDescription": "Send usage data and crash reports to Google Firebase to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent."
 }

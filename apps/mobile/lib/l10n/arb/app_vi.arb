@@ -6525,11 +6525,10 @@
   "mastermindMorningCatchupTime": "Giờ",
   "mastermindCatchupPushBody": "Bản tin của bạn đã sẵn sàng",
   "mastermindSecurityFix": "Bản vá bảo mật",
-  "telemetryConsentTitle": "Giúp cải thiện Tuturuuu",
-  "telemetryConsentBody": "Tuturuuu có thể dùng Firebase Analytics và Firebase Crashlytics, các dịch vụ do Google cung cấp, để biết ứng dụng được sử dụng như thế nào và tìm, sửa lỗi sự cố.",
-  "telemetryConsentCollected": "Nếu bạn cho phép, ứng dụng sẽ chia sẻ các sự kiện sử dụng, báo cáo sự cố và lỗi, cùng các thông tin kỹ thuật như mẫu thiết bị, phiên bản hệ điều hành và phiên bản ứng dụng. Tin nhắn, tệp và nội dung công việc của bạn không được đưa vào.",
-  "telemetryConsentSettingsNote": "Bạn có thể thay đổi bất cứ lúc nào trong Cài đặt > Tùy chọn > Quyền riêng tư.",
+  "telemetryConsentTitle": "Giúp cải thiện Tuturuuu?",
+  "telemetryConsentBody": "Chia sẻ dữ liệu sử dụng và báo cáo sự cố với Google Firebase để chúng tôi sửa lỗi và cải thiện ứng dụng. Gồm mã định danh ứng dụng và thiết bị, sự kiện sử dụng, báo cáo sự cố, và thông tin thiết bị, hệ điều hành. Bạn có thể đổi lựa chọn bất cứ lúc nào tại Cài đặt > Tùy chọn > Quyền riêng tư.",
   "telemetryConsentAllow": "Cho phép",
   "telemetryConsentDeny": "Không cho phép",
-  "telemetryConsentLearnMore": "Tìm hiểu thêm"
+  "telemetryConsentLearnMore": "Chi tiết về quyền riêng tư",
+  "settingsShareTelemetryDescription": "Gửi dữ liệu sử dụng và báo cáo sự cố tới Google Firebase để giúp chúng tôi sửa lỗi và cải thiện ứng dụng. Khi tắt, việc thu thập dừng lại và các báo cáo sự cố chưa gửi sẽ bị xóa."
 }
