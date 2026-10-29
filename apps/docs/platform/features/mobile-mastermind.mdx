@@ -148,18 +148,12 @@ summaries apply the same collapse.
 The Inbox tab opens on one compact segmented control: **Needs you · Resolved ·
 Decisions**. Needs you lists the open asks grouped by kind ("Decisions for
 you", "Actions", then "For your information"), each with its count, in publisher
-order. Resolved lists the hub's `decisions_resolved` history, newest first, one
-group per GMT+7 day (rows without a time trail under "Recently resolved"). Pull
-to refresh.
+order. Resolved groups hub history by GMT+7 day; see [resolved rows](/platform/features/mobile-mastermind-answered-elsewhere). Pull to refresh.
 
 - **Rows** are two lines: the friendly title (`itemDisplayTitle`, so a redacted
   `Product · area · kind` title uses the first ask line), then the
-  kind badge with the state and age: "Sent · waiting for Mastermind" or
-  "Waiting to send" for this device's reply. Resolved rows read the GMT+7 time
-  instead of an age: "✓ Yes · you · on phone · 06:21" (or "you · on Mac",
-  "you · in chat", "automatically") when the hub says where it was answered,
-  "Resolved · Yes · 06:21" when it does not, and "Withdrawn · no longer needed ·
-  06:21" for a withdrawn ask (the check is an icon, not text). A separate two-line preview retains the ask. No age is shown where the hub
+  kind badge with state and age for open asks, or answer attribution and time
+  for resolved asks. A separate two-line preview retains the ask. No age is shown where the hub
   publishes none. Open asks expose one-tap option buttons on Home and Inbox;
   "More" and the full ask live on detail. The summary is one screen-reader node ("Decision. Review plan. Review the
   plan", hint "Opens the ask").
@@ -185,8 +179,7 @@ to refresh.
   "Full details are on the Mac" instead. The id is looked up among the open
   asks, then the resolved history, and is only ever a route parameter; deep
   links carry tab roots only and never ids. A resolved ask shows an "Outcome"
-  panel (Resolved or "Answered on Mac", "Answer: Yes", GMT+7 time) and no
-  composer; a withdrawn one reads "Withdrawn · no longer needed". An id in neither
+  panel with answer attribution and GMT+7 time, or withdrawn status, and no composer. An id in neither
   list shows "This item is no longer in Mastermind" (or "This was answered or
   withdrawn" when it left while open) with a way back, never an error. A changed
   `version_hash` shows "This question was updated".
@@ -270,11 +263,7 @@ switch, so it flips without a store release.
   already accepted by the hub is unaffected. Logout,
   account switch and lost access erase the outbox with the snapshot cache, behind
   the same generation fences, so an in-flight send cannot revive it.
-- **409 `stale_item`:** the item is refreshed. If the refreshed snapshot shows
-  it answered, the card reads "Answered on Mac · Yes" like any ask answered
-  elsewhere, never an error, and the typed words are dropped. Otherwise (the
-  question changed) the typed words are kept and the screen says "This question
-  changed or was already answered. Review it again."
+- **409 `stale_item`:** refreshes the item; see the [answered elsewhere rules](/platform/features/mobile-mastermind-answered-elsewhere).
   Option buttons always use the current question version. `idempotency_conflict` drops the queued entry with "Something went
   wrong with this reply. Review it and send it again."
 - **Other answers:** 400 (`unsafe_text` explains the text policy) and 413 keep
@@ -761,30 +750,8 @@ overflows four lines at the current width and text size.
 meanwhile. Leaving the screen inside the window still sends; logout or an
 account switch cancels it, and so does a live snapshot where the ask changed or
 left. Coverage: `mastermind_replies_undo_test.dart`, `mastermind_option_undo_test.dart`.
-With large text, Undo sits under the label instead of beside it.
 
-**Answered elsewhere and withdrawn (T4, 2026-10-29).** Scope: Needs you rows on
-the Inbox, the Resolved segment and item detail. Schema 1.5 adds an optional
-`answered_via` (`phone`, `mac`, `chat`, `auto`) on item rows; the parser reads
-it tolerantly (an unknown or malformed value is left out, never a rejected
-snapshot), and a `decisions_resolved` row whose `state` or `status` is
-`withdrawn` stays withdrawn with no answer. Default: when a live snapshot shows
-an ask answered that was open on the previous snapshot and that this device did
-not answer (no accepted reply in its outbox), the open card's choices fold away
-and it reads "Answered on Mac · Yes" (or on phone, in chat, automatically,
-elsewhere when the hub does not say) for 3 seconds, then leaves Needs you; it is
-listed under Resolved. If this device held a one-tap reply to that ask inside
-its undo window, the reply is cancelled silently, its held outbox entry is
-deleted before it is ever sent, and screen readers hear "Already answered on
-Mac". A reply already sent that gets 409 shows the same answered state.
-Withdrawn asks never linger in Needs you; they appear only under Resolved.
-Exceptions: cached snapshots never trigger the transition, an ask answered by
-this device keeps the "Sent · waiting for Mastermind" flow, and logout or an
-account switch clears any lingering card. Coverage:
-`replies/answered_elsewhere_test.dart`, `parse/answered_via_test.dart`,
-`view/mastermind_answered_elsewhere_test.dart` (transition with and without an
-undoable reply, 409 after send, withdrawn, GMT+7 day groups, Vietnamese, 2.0x
-text at 320 px).
+See [answered elsewhere and withdrawn](/platform/features/mobile-mastermind-answered-elsewhere) for cross-device answers, batch labels, undo cancellation and resolved rows.
 
 ## Read-only Threads preview
 

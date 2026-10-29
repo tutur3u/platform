@@ -6426,5 +6426,8 @@
   "mastermindViaPhone": "on phone",
   "mastermindViaMac": "on Mac",
   "mastermindViaChat": "in chat",
-  "mastermindViaAuto": "automatically"
+  "mastermindViaAuto": "automatically",
+  "mastermindAnsweredInBatch": "Answered in batch",
+  "mastermindAlreadyAnsweredInBatch": "Already answered in batch",
+  "mastermindViaBatch": "in batch"
 }

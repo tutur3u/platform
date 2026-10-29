@@ -90,7 +90,8 @@ enum AnsweredVia {
   phone('phone'),
   mac('mac'),
   chat('chat'),
-  auto('auto');
+  auto('auto'),
+  batch('batch');
 
   const AnsweredVia(this.wireName);
   final String wireName;

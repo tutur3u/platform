@@ -26238,6 +26238,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'automatically'**
   String get mastermindViaAuto;
+
+  /// No description provided for @mastermindAnsweredInBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered in batch'**
+  String get mastermindAnsweredInBatch;
+
+  /// No description provided for @mastermindAlreadyAnsweredInBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Already answered in batch'**
+  String get mastermindAlreadyAnsweredInBatch;
+
+  /// No description provided for @mastermindViaBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'in batch'**
+  String get mastermindViaBatch;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -13867,4 +13867,13 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindViaAuto => 'tự động';
+
+  @override
+  String get mastermindAnsweredInBatch => 'Đã trả lời theo lô';
+
+  @override
+  String get mastermindAlreadyAnsweredInBatch => 'Đã được trả lời theo lô';
+
+  @override
+  String get mastermindViaBatch => 'theo lô';
 }

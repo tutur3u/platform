@@ -6108,5 +6108,8 @@
   "mastermindViaPhone": "trên điện thoại",
   "mastermindViaMac": "trên Mac",
   "mastermindViaChat": "trong trò chuyện",
-  "mastermindViaAuto": "tự động"
+  "mastermindViaAuto": "tự động",
+  "mastermindAnsweredInBatch": "Đã trả lời theo lô",
+  "mastermindAlreadyAnsweredInBatch": "Đã được trả lời theo lô",
+  "mastermindViaBatch": "theo lô"
 }

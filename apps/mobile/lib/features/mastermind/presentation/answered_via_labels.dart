@@ -9,6 +9,7 @@ String answeredViaText(AppLocalizations l10n, AnsweredVia? via) =>
       AnsweredVia.mac => l10n.mastermindAnsweredOnMac,
       AnsweredVia.chat => l10n.mastermindAnsweredInChat,
       AnsweredVia.auto => l10n.mastermindAnsweredAutomatically,
+      AnsweredVia.batch => l10n.mastermindAnsweredInBatch,
       null => l10n.mastermindAnsweredElsewhere,
     };
 
@@ -20,6 +21,7 @@ String alreadyAnsweredText(AppLocalizations l10n, AnsweredVia? via) =>
       AnsweredVia.mac => l10n.mastermindAlreadyAnsweredOnMac,
       AnsweredVia.chat => l10n.mastermindAlreadyAnsweredInChat,
       AnsweredVia.auto => l10n.mastermindAlreadyAnsweredAutomatically,
+      AnsweredVia.batch => l10n.mastermindAlreadyAnsweredInBatch,
       null => l10n.mastermindAlreadyAnsweredElsewhere,
     };
 
@@ -33,4 +35,5 @@ List<String> answeredByParts(
   AnsweredVia.mac => [l10n.mastermindAnsweredByYou, l10n.mastermindViaMac],
   AnsweredVia.chat => [l10n.mastermindAnsweredByYou, l10n.mastermindViaChat],
   AnsweredVia.auto => [l10n.mastermindViaAuto],
+  AnsweredVia.batch => [l10n.mastermindViaBatch],
 };

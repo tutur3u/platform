@@ -14010,4 +14010,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindViaAuto => 'automatically';
+
+  @override
+  String get mastermindAnsweredInBatch => 'Answered in batch';
+
+  @override
+  String get mastermindAlreadyAnsweredInBatch => 'Already answered in batch';
+
+  @override
+  String get mastermindViaBatch => 'in batch';
 }
