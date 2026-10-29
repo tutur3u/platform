@@ -28,7 +28,7 @@ describe('robots for a native Worker request', () => {
 
   it('keeps other hosts, staging and apps without a policy private', () => {
     for (const url of [
-      'https://forms-staging.tuturuuu.com/',
+      'https://forms.staging.tutur3u.com/',
       'https://tuturuuu.com/forms',
       'http://forms.tuturuuu.com/',
       'https://forms.tuturuuu.com.evil.test/',
