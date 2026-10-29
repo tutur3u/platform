@@ -21,10 +21,10 @@ const ROLLBACK =
 const FORWARD = `${MIGRATIONS}20261029012300_tighten_legacy_table_grants.sql`;
 
 const EARLY = `${MIGRATIONS}20261016104000_early.sql`;
-const ALLOWED_FILE =
-  '20261029010000_restore_employee_readiness_path_contract.sql';
+const ALLOWED_FILE = '20261029012100_restrict_subscription_writes.sql';
 const ALLOWED = `${MIGRATIONS}${ALLOWED_FILE}`;
-const SIGNATURE = 'private.employee_creation_runtime_ready(uuid)';
+const SIGNATURE =
+  'private.create_inventory_pos_operator_invite(uuid,uuid,text)';
 
 function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -65,7 +65,7 @@ function history({
   };
 }
 
-test('the inherited-ACL allowlist is frozen at the seven reviewed definers', () => {
+test('the inherited-ACL allowlist is frozen at the six reviewed definers', () => {
   assert.deepEqual(
     INHERITED_ACL_ALLOWLIST.map((entry) => [
       entry.key,
@@ -73,11 +73,6 @@ test('the inherited-ACL allowlist is frozen at the seven reviewed definers', () 
       entry.requiredRevoked,
     ]),
     [
-      [
-        'private.employee_creation_runtime_ready(uuid)',
-        ALLOWED_FILE,
-        ['public', 'anon', 'authenticated'],
-      ],
       [
         'public.transfer_workspace_ownership(uuid,uuid)',
         '20261029012000_harden_workspace_ownership_guard.sql',
@@ -164,7 +159,7 @@ test('an allowlisted signature outside its frozen migration gets no inheritance'
 test('a wrong signature does not count as the prior revoke', () => {
   const fixtures = history();
   fixtures[EARLY] =
-    `${definer(SIGNATURE, 'create function')}\n${revokeAll('private.employee_creation_runtime_ready(uuid, text)')}\n${revokeAll('private.employee_creation_runtime_ready')}`;
+    `${definer(SIGNATURE, 'create function')}\n${revokeAll('private.create_inventory_pos_operator_invite(uuid, uuid, text, text)')}\n${revokeAll('private.create_inventory_pos_operator_invite')}`;
   assert.equal(definerFailures(run(fixtures)).length, 1);
 });
 
@@ -271,7 +266,7 @@ test('a definer after the cutoff needs a same-file revoke, even for an allowlist
 });
 
 // main restated this definer's ACL in a later file (20261029050000), so it is
-// now evidenced directly by that revoke instead of by inheritance.
+// now evidenced directly by that revoke, so it is no longer on the frozen list.
 const DIRECTLY_EVIDENCED = new Set([
   'private.employee_creation_runtime_ready(uuid)',
 ]);
@@ -285,10 +280,10 @@ test('the repository passes with every remaining inherited pass evidenced', () =
   const inherited = satisfied.filter((entry) => entry.mode === 'inherited-acl');
   assert.deepEqual(
     inherited.map((entry) => entry.signature).sort(),
-    INHERITED_ACL_ALLOWLIST.map((entry) => entry.key)
-      .filter((key) => !DIRECTLY_EVIDENCED.has(key))
-      .sort()
+    INHERITED_ACL_ALLOWLIST.map((entry) => entry.key).sort()
   );
+  for (const key of DIRECTLY_EVIDENCED)
+    assert.ok(!INHERITED_ACL_ALLOWLIST.some((entry) => entry.key === key));
   const direct = satisfied.find((entry) =>
     DIRECTLY_EVIDENCED.has(entry.signature)
   );
@@ -311,7 +306,7 @@ test('the repository passes with every remaining inherited pass evidenced', () =
   assert.equal(result.status, 0, result.stderr);
   assert.equal(
     result.stdout.match(/inherited ACL \(frozen allowlist\)/g).length,
-    INHERITED_ACL_ALLOWLIST.length - DIRECTLY_EVIDENCED.size
+    INHERITED_ACL_ALLOWLIST.length
   );
   assert.match(result.stdout, /SQL grant guard passed\./);
 });

@@ -1378,7 +1378,7 @@ creation statement in the same or a later timestamped forward migration;
 migrations newer than the newest frozen file (`20261029030400`) need the
 revoke in the same file, while later migrations are still replayed so a later
 PUBLIC/anon grant fails them. Later EXECUTE grants invalidate that evidence, and
-manual rollbacks never count. Seven frozen definers (single source:
+manual rollbacks never count. Six frozen definers (single source:
 `sql-grant-frozen-definers.js`, exporting `FROZEN_DEFINERS` and
 `FROZEN_DEFINERS_CUTOFF`; import it, never copy it) may
 inherit an earlier revoke through `CREATE OR REPLACE` while no drop, rename

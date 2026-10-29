@@ -5,7 +5,7 @@
 // module). The list is frozen: do not add entries, a new definer carries its own
 // REVOKE in the same migration file.
 //
-// Why these seven exist: CREATE OR REPLACE FUNCTION keeps the ACL of the
+// Why these six exist: CREATE OR REPLACE FUNCTION keeps the ACL of the
 // existing function, so each definer below is closed (EXECUTE revoked from
 // PUBLIC and anon, and from authenticated where required) by an earlier
 // migration although its latest replacement carries no REVOKE of its own.
@@ -37,13 +37,6 @@ const CLOSED = ['public', 'anon', 'authenticated'];
 
 const FROZEN_DEFINERS = Object.freeze(
   [
-    {
-      signature: 'private.employee_creation_runtime_ready(uuid)',
-      key: 'private.employee_creation_runtime_ready(uuid)',
-      file: '20261029010000_restore_employee_readiness_path_contract.sql',
-      requiredRevoked: CLOSED,
-      note: null,
-    },
     {
       signature: 'public.transfer_workspace_ownership(uuid,uuid)',
       key: 'public.transfer_workspace_ownership(uuid,uuid)',

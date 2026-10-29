@@ -4,7 +4,7 @@
 // apps/docs/reference/database/migrations-guide.mdx#sql-grant-guard):
 //   1. End state: an exact-signature REVOKE from public and anon after the
 //      creation statement, in the same file or a later forward migration.
-//   2. Inherited ACL: CREATE OR REPLACE keeps the existing ACL, so the seven
+//   2. Inherited ACL: CREATE OR REPLACE keeps the existing ACL, so the six
 //      frozen definers (sql-grant-frozen-definers.js, the single source of the
 //      list) pass when an earlier REVOKE still stands at the end of the
 //      migration history. Migrations newer than the newest frozen file never

@@ -24,9 +24,9 @@ const NEXT = `${MIGRATIONS}20261030000100_next.sql`;
 const FIXTURE = `${MIGRATIONS}20261030000200_other.sql`;
 const EARLY = `${MIGRATIONS}20261016104000_early.sql`;
 const FROZEN_FILE =
-  '20261029010000_restore_employee_readiness_path_contract.sql';
+  '20261029030400_align_ai_chat_and_subscription_rpc_access.sql';
 const FROZEN = `${MIGRATIONS}${FROZEN_FILE}`;
-const NAME = 'private.employee_creation_runtime_ready';
+const NAME = 'public.get_user_workspace_subscription_info';
 const SIGNATURE = `${NAME}(uuid)`;
 
 const create = (name, body = 'create or replace function') =>
@@ -53,7 +53,7 @@ function frozen(middle = '') {
 }
 
 test('the shared frozen module is deeply frozen and self-consistent', () => {
-  assert.equal(FROZEN_DEFINERS.length, 7);
+  assert.equal(FROZEN_DEFINERS.length, 6);
   assert.equal(FROZEN_DEFINERS_CUTOFF, '20261029030400');
   assert.ok(Object.isFrozen(FROZEN_DEFINERS));
   for (const entry of FROZEN_DEFINERS) {
@@ -76,7 +76,7 @@ test('the frozen list lives in one module only', () => {
     .filter((name) =>
       fs
         .readFileSync(path.join(__dirname, name), 'utf8')
-        .includes('restore_employee_readiness_path_contract')
+        .includes('align_ai_chat_and_subscription_rpc_access')
     );
   assert.deepEqual(owners, ['sql-grant-frozen-definers.js']);
 });
@@ -148,8 +148,8 @@ test('a signature-free DROP of a frozen name, then a re-create without a revoke,
 
 test('a signature-free DROP of another name or schema keeps inheritance', () => {
   for (const drop of [
-    'drop function private.employee_creation_runtime_ready_v2;',
-    'drop function public.employee_creation_runtime_ready;',
+    'drop function public.get_user_workspace_subscription_info_v2;',
+    'drop function private.get_user_workspace_subscription_info;',
   ]) {
     assert.deepEqual(run(frozen(drop)).violations, [], drop);
   }

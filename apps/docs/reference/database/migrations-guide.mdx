@@ -509,14 +509,13 @@ Unversioned files are always checked.
    ```
 
 3. **Inherited ACL (frozen allowlist).** `CREATE OR REPLACE` keeps the ACL of
-   the existing function, so seven definers already on `main` whose earlier
+   the existing function, so six definers already on `main` whose earlier
    revoke predates their latest replacement pass by inheritance. The allowlist
    in `scripts/ci/sql-grant-frozen-definers.js` is the single frozen source
    (never add entries or copy it; new definers carry their own revoke) and each entry is tied to its migration file:
 
    | Definer | Migration |
    | --- | --- |
-   | `private.employee_creation_runtime_ready(uuid)` | `20261029010000_restore_employee_readiness_path_contract` |
    | `public.transfer_workspace_ownership(uuid,uuid)` | `20261029012000_harden_workspace_ownership_guard` |
    | `private.create_workspace_email_invitation_with_roles(uuid,text,uuid,public.workspace_member_type,uuid[])` | `20261029012100_restrict_subscription_writes` |
    | `private.create_inventory_pos_operator_invite(uuid,uuid,text)` | `20261029012100_restrict_subscription_writes` |
