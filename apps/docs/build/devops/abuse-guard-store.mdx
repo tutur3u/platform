@@ -98,6 +98,21 @@ forget consumed replay fences and spent limits.
 Native Workers call `configureAbuseGuardRuntime({ binding: env.ABUSE_GUARD,
 pepper, families })` in their adapter instead of the HTTP variables.
 
+Meet already calls its adapter (`apps/meet/src/runtime/abuse-guard.ts`) on every
+request. It stays on the legacy path until the binding exists. Activate it only
+after `tuturuuu-abuse-guard` is published for that environment, because a service
+binding to an unpublished Worker fails the Meet deploy. To activate it:
+
+1. Add `{ binding: 'ABUSE_GUARD', service: 'tuturuuu-abuse-guard', entrypoint: 'AbuseGuardEntrypoint' }`
+   to `services` in `apps/meet/void.config.ts`, or in the staging config with the
+   staging Worker's name.
+2. Set the `ABUSE_GUARD_KEY_PEPPER` secret to the environment's pepper.
+3. Set `ABUSE_GUARD_FAMILIES=password`.
+
+To roll back, remove the family or the binding and redeploy Meet. With the
+binding present and a missing pepper, the assigned family reports `off` and fails
+closed.
+
 Every store failure throws `AbuseGuardUnavailableError`, and each caller applies
 the fail mode below. That includes a timeout, an auth or configuration error, an
 operator or budget stop, and an `off` selection. A sensitive family whose legacy
