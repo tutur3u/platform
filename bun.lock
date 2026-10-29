@@ -954,6 +954,7 @@
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/education-core": "workspace:*",
+        "@tuturuuu/email-service": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/offline": "workspace:*",
