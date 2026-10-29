@@ -95,10 +95,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
   }
 
-  const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
-  if (!permissions || permissions.withoutPermission('ai_lab'))
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
   if (
     !isVerifiedTuturuuuStaffSession(
       await getVerifiedAuthUser(
@@ -109,6 +105,10 @@ export async function POST(req: Request) {
   ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
+
+  const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
+  if (!permissions || permissions.withoutPermission('ai_lab'))
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const sbAdmin = await createAdminClient();
 
