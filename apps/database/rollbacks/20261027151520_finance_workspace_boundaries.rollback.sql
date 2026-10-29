@@ -1,4 +1,6 @@
--- Rollback restores the original function definitions and grants. Cached totals remain tenant-correct.
+-- Computation rollback only: a full security reversal is unsafe.
+-- Invoice analytics remain service-role only, including the internal role guard.
+-- Transaction-stat actor checks and cached tenant-correct totals are retained.
 DROP TRIGGER validate_finance_budget_references ON public.finance_budgets;
 DROP FUNCTION public.validate_finance_budget_references();
 CREATE OR REPLACE FUNCTION public.get_daily_invoice_totals(_ws_id uuid, past_days integer DEFAULT 14, wallet_ids uuid[] DEFAULT NULL::uuid[], user_ids uuid[] DEFAULT NULL::uuid[], start_date date DEFAULT NULL::date, end_date date DEFAULT NULL::date)
@@ -11,6 +13,10 @@ DECLARE
   _start_date DATE;
   _end_date DATE;
 BEGIN
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    RAISE EXCEPTION 'service_role required' USING ERRCODE = '42501';
+  END IF;
+
   IF start_date IS NOT NULL AND end_date IS NOT NULL THEN
     _start_date := start_date;
     _end_date := end_date;
@@ -68,7 +74,7 @@ END;
 $function$
 ;
 REVOKE ALL ON FUNCTION public.get_daily_invoice_totals(uuid,integer,uuid[],uuid[],date,date) FROM PUBLIC, anon, authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_daily_invoice_totals(uuid,integer,uuid[],uuid[],date,date) TO PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_daily_invoice_totals(uuid,integer,uuid[],uuid[],date,date) TO service_role;
 CREATE OR REPLACE FUNCTION public.get_monthly_invoice_totals(_ws_id uuid, past_months integer DEFAULT 12, wallet_ids uuid[] DEFAULT NULL::uuid[], user_ids uuid[] DEFAULT NULL::uuid[], start_date date DEFAULT NULL::date, end_date date DEFAULT NULL::date)
  RETURNS TABLE(period date, wallet_id uuid, wallet_name text, total_amount numeric, invoice_count bigint)
  LANGUAGE plpgsql
@@ -79,6 +85,10 @@ DECLARE
   _start_date DATE;
   _end_date DATE;
 BEGIN
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    RAISE EXCEPTION 'service_role required' USING ERRCODE = '42501';
+  END IF;
+
   IF start_date IS NOT NULL AND end_date IS NOT NULL THEN
     _start_date := date_trunc('month', start_date::TIMESTAMP)::DATE;
     _end_date := end_date;
@@ -140,108 +150,8 @@ END;
 $function$
 ;
 REVOKE ALL ON FUNCTION public.get_monthly_invoice_totals(uuid,integer,uuid[],uuid[],date,date) FROM PUBLIC, anon, authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_monthly_invoice_totals(uuid,integer,uuid[],uuid[],date,date) TO PUBLIC, anon, authenticated, service_role;
-CREATE OR REPLACE FUNCTION public.get_transaction_stats(p_ws_id uuid, p_user_id uuid DEFAULT auth.uid(), p_wallet_ids uuid[] DEFAULT NULL::uuid[], p_category_ids uuid[] DEFAULT NULL::uuid[], p_creator_ids uuid[] DEFAULT NULL::uuid[], p_tag_ids uuid[] DEFAULT NULL::uuid[], p_transaction_type text DEFAULT NULL::text, p_search_query text DEFAULT NULL::text, p_start_date timestamp with time zone DEFAULT NULL::timestamp with time zone, p_end_date timestamp with time zone DEFAULT NULL::timestamp with time zone)
- RETURNS TABLE(total_transactions bigint, total_income numeric, total_expense numeric, net_total numeric, has_redacted_amounts boolean)
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'private', 'public', 'pg_temp'
-AS $function$
-DECLARE
-  v_can_view_transactions boolean;
-  v_can_view_expenses boolean;
-  v_can_view_incomes boolean;
-  v_can_view_amount boolean;
-  v_has_manage_finance boolean;
-  v_has_granular_permissions boolean;
-  v_allowed_wallet_ids uuid[];
-BEGIN
-  IF p_transaction_type NOT IN ('income', 'expense') THEN
-    p_transaction_type := NULL;
-  END IF;
-
-  v_can_view_transactions := public.has_workspace_permission(p_ws_id, p_user_id, 'view_transactions');
-  v_can_view_expenses := public.has_workspace_permission(p_ws_id, p_user_id, 'view_expenses');
-  v_can_view_incomes := public.has_workspace_permission(p_ws_id, p_user_id, 'view_incomes');
-  v_can_view_amount := public.has_workspace_permission(p_ws_id, p_user_id, 'view_confidential_amount');
-  v_has_manage_finance := public.has_workspace_permission(p_ws_id, p_user_id, 'manage_finance');
-  v_has_granular_permissions := v_can_view_expenses OR v_can_view_incomes;
-
-  IF NOT v_has_manage_finance THEN
-    SELECT array_agg(DISTINCT wrww.wallet_id)
-    INTO v_allowed_wallet_ids
-    FROM public.workspace_role_wallet_whitelist wrww
-    JOIN public.workspace_role_members wrm ON wrm.role_id = wrww.role_id
-    JOIN public.workspace_roles wr ON wr.id = wrww.role_id
-    WHERE wr.ws_id = p_ws_id AND wrm.user_id = p_user_id;
-
-    IF v_allowed_wallet_ids IS NULL THEN
-      RETURN QUERY SELECT 0::bigint, 0::numeric, 0::numeric, 0::numeric, false;
-      RETURN;
-    END IF;
-
-    IF p_wallet_ids IS NOT NULL THEN
-      p_wallet_ids := (
-        SELECT array_agg(u)
-        FROM unnest(p_wallet_ids) AS u
-        WHERE u = ANY(v_allowed_wallet_ids)
-      );
-      IF p_wallet_ids IS NULL OR array_length(p_wallet_ids, 1) IS NULL THEN
-        RETURN QUERY SELECT 0::bigint, 0::numeric, 0::numeric, 0::numeric, false;
-        RETURN;
-      END IF;
-    ELSE
-      p_wallet_ids := v_allowed_wallet_ids;
-    END IF;
-  END IF;
-
-  RETURN QUERY
-  WITH filtered_data AS (
-    SELECT
-      wt.amount,
-      wt.is_amount_confidential
-    FROM public.wallet_transactions wt
-    JOIN private.workspace_wallets ww ON wt.wallet_id = ww.id
-    WHERE ww.ws_id = p_ws_id
-      AND (v_has_manage_finance OR wt.wallet_id = ANY(v_allowed_wallet_ids))
-      AND (
-        (NOT v_has_granular_permissions AND v_can_view_transactions)
-        OR (v_can_view_expenses AND wt.amount < 0)
-        OR (v_can_view_incomes AND wt.amount > 0)
-      )
-      AND (
-        p_transaction_type IS NULL
-        OR (
-          (NOT wt.is_amount_confidential OR v_can_view_amount)
-          AND (
-            (p_transaction_type = 'income' AND wt.amount > 0)
-            OR (p_transaction_type = 'expense' AND wt.amount < 0)
-          )
-        )
-      )
-      AND (p_wallet_ids IS NULL OR wt.wallet_id = ANY(p_wallet_ids))
-      AND (p_category_ids IS NULL OR wt.category_id = ANY(p_category_ids))
-      AND (p_creator_ids IS NULL OR (wt.creator_id = ANY(p_creator_ids) OR wt.platform_creator_id = ANY(p_creator_ids)))
-      AND (p_start_date IS NULL OR wt.taken_at >= p_start_date)
-      AND (p_end_date IS NULL OR wt.taken_at <= p_end_date)
-      AND (p_search_query IS NULL OR wt.description ILIKE '%' || p_search_query || '%')
-      AND (p_tag_ids IS NULL OR EXISTS (
-        SELECT 1 FROM public.wallet_transaction_tags wtt
-        WHERE wtt.transaction_id = wt.id AND wtt.tag_id = ANY(p_tag_ids)
-      ))
-  )
-  SELECT
-    COUNT(*) as total_transactions,
-    COALESCE(SUM(CASE WHEN amount > 0 AND (NOT is_amount_confidential OR v_can_view_amount) THEN amount ELSE 0 END), 0) as total_income,
-    COALESCE(SUM(CASE WHEN amount < 0 AND (NOT is_amount_confidential OR v_can_view_amount) THEN amount ELSE 0 END), 0) as total_expense,
-    COALESCE(SUM(CASE WHEN NOT is_amount_confidential OR v_can_view_amount THEN amount ELSE 0 END), 0) as net_total,
-    EXISTS (SELECT 1 FROM filtered_data WHERE is_amount_confidential AND NOT v_can_view_amount) as has_redacted_amounts
-  FROM filtered_data;
-END;
-$function$
-;
-REVOKE ALL ON FUNCTION public.get_transaction_stats(uuid,uuid,uuid[],uuid[],uuid[],uuid[],text,text,timestamp with time zone,timestamp with time zone) FROM PUBLIC, anon, authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_transaction_stats(uuid,uuid,uuid[],uuid[],uuid[],uuid[],text,text,timestamp with time zone,timestamp with time zone) TO PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_monthly_invoice_totals(uuid,integer,uuid[],uuid[],date,date) TO service_role;
+-- Retain the hardened transaction-stat actor checks; reversing them permits actor spoofing.
 CREATE OR REPLACE FUNCTION public.get_weekly_invoice_totals(_ws_id uuid, past_weeks integer DEFAULT 12, wallet_ids uuid[] DEFAULT NULL::uuid[], user_ids uuid[] DEFAULT NULL::uuid[], start_date date DEFAULT NULL::date, end_date date DEFAULT NULL::date)
  RETURNS TABLE(period date, wallet_id uuid, wallet_name text, total_amount numeric, invoice_count bigint)
  LANGUAGE plpgsql
@@ -252,6 +162,10 @@ DECLARE
   _start_date DATE;
   _end_date DATE;
 BEGIN
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    RAISE EXCEPTION 'service_role required' USING ERRCODE = '42501';
+  END IF;
+
   IF start_date IS NOT NULL AND end_date IS NOT NULL THEN
     _start_date := date_trunc('week', start_date::TIMESTAMP)::DATE;
     _end_date := end_date;
@@ -313,7 +227,7 @@ END;
 $function$
 ;
 REVOKE ALL ON FUNCTION public.get_weekly_invoice_totals(uuid,integer,uuid[],uuid[],date,date) FROM PUBLIC, anon, authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_weekly_invoice_totals(uuid,integer,uuid[],uuid[],date,date) TO PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_weekly_invoice_totals(uuid,integer,uuid[],uuid[],date,date) TO service_role;
 CREATE OR REPLACE FUNCTION public.get_weekly_invoice_totals(_ws_id uuid, past_weeks integer DEFAULT 12, wallet_ids uuid[] DEFAULT NULL::uuid[], user_ids uuid[] DEFAULT NULL::uuid[], start_date date DEFAULT NULL::date, end_date date DEFAULT NULL::date, week_start_day integer DEFAULT 1)
  RETURNS TABLE(period date, wallet_id uuid, wallet_name text, total_amount numeric, invoice_count bigint)
  LANGUAGE plpgsql
@@ -324,6 +238,10 @@ DECLARE
   _start_date DATE;
   _end_date DATE;
 BEGIN
+  IF auth.role() IS DISTINCT FROM 'service_role' THEN
+    RAISE EXCEPTION 'service_role required' USING ERRCODE = '42501';
+  END IF;
+
   IF start_date IS NOT NULL AND end_date IS NOT NULL THEN
     _start_date := trunc_to_week_start(start_date::TIMESTAMPTZ, week_start_day);
     _end_date := end_date;
@@ -385,7 +303,7 @@ END;
 $function$
 ;
 REVOKE ALL ON FUNCTION public.get_weekly_invoice_totals(uuid,integer,uuid[],uuid[],date,date,integer) FROM PUBLIC, anon, authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_weekly_invoice_totals(uuid,integer,uuid[],uuid[],date,date,integer) TO PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_weekly_invoice_totals(uuid,integer,uuid[],uuid[],date,date,integer) TO service_role;
 CREATE OR REPLACE FUNCTION public.update_budget_spent()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -424,4 +342,4 @@ END;
 $function$
 ;
 REVOKE ALL ON FUNCTION public.update_budget_spent() FROM PUBLIC, anon, authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.update_budget_spent() TO PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.update_budget_spent() TO service_role;

@@ -820,3 +820,13 @@ are service-only behind the existing authorized routes. Transaction statistics
 bind authenticated calls to the current user; service calls must provide an
 actor with finance read permission.
 
+
+## Invoice analytics rollback access
+
+Invoice analytics RPCs are service-role only, including after the finance
+workspace-boundary computation rollback. Authenticated users use the authorized
+Finance analytics routes. Reverting computation does not restore PUBLIC or anon
+execution or remove the internal service-role guard. Transaction-stat actor checks
+also remain hardened because their full reversal permits actor spoofing.
+`apps/database/supabase/tests/finance-rollback-access.sql` verifies every invoice
+overload after rollback, anonymous RPC rejection and the internal role guard.
