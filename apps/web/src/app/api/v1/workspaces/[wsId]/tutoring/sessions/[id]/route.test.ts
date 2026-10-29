@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
 let deleting = false;
 let status: 'PENDING' | 'CANCELLED' | 'DONE' | null = 'PENDING';
 let deleted = true;
+let reasonType = 'WEAK_SUPPORT';
+let sourceFeedbackId: string | null = null;
 const query = {
   delete: vi.fn(() => {
     deleting = true;
@@ -20,13 +22,19 @@ const query = {
   }),
   eq: vi.fn(() => query),
   in: vi.fn(() => query),
+  is: vi.fn(() => query),
   maybeSingle: vi.fn(async () => ({
     data: deleting
       ? deleted
         ? { id: sessionId }
         : null
       : status
-        ? { id: sessionId, attendance_status: status }
+        ? {
+            id: sessionId,
+            attendance_status: status,
+            reason_type: reasonType,
+            source_feedback_id: sourceFeedbackId,
+          }
         : null,
     error: null,
   })),
@@ -34,6 +42,9 @@ const query = {
   update: vi.fn(() => query),
 };
 
+vi.mock('@/lib/tutoring/module-gate', () => ({
+  isTutoringEnabledForWorkspace: async () => true,
+}));
 vi.mock('next/server', () => ({
   NextResponse: { json: Response.json },
 }));
@@ -65,6 +76,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   deleting = false;
   deleted = true;
+  reasonType = 'WEAK_SUPPORT';
+  sourceFeedbackId = null;
   status = 'PENDING';
   mocks.getPermissions.mockResolvedValue({
     withoutPermission: () => false,
@@ -132,6 +145,33 @@ describe('DELETE tutoring session', () => {
   });
 });
 
+describe('DELETE tutoring session pins', () => {
+  it('pins the delete to the reason read and a null source feedback', async () => {
+    const response = await deleteSession();
+
+    expect(response.status).toBe(200);
+    expect(query.eq).toHaveBeenCalledWith('reason_type', 'WEAK_SUPPORT');
+    expect(query.is).toHaveBeenCalledWith('source_feedback_id', null);
+  });
+
+  it('pins the delete to the source feedback that was read', async () => {
+    sourceFeedbackId = 'feedback-1';
+
+    expect((await deleteSession()).status).toBe(200);
+    expect(query.eq).toHaveBeenCalledWith('source_feedback_id', 'feedback-1');
+    expect(query.is).not.toHaveBeenCalled();
+  });
+
+  it('returns 409 when the pinned delete matches no row', async () => {
+    deleted = false;
+
+    const response = await deleteSession();
+
+    expect(response.status).toBe(409);
+    expect(query.eq).toHaveBeenCalledWith('reason_type', 'WEAK_SUPPORT');
+  });
+});
+
 describe('PUT tutoring session completion', () => {
   async function complete(body: Record<string, unknown> = {}) {
     const { PUT } = await import('./route');
@@ -185,5 +225,36 @@ describe('PUT tutoring session completion', () => {
       expect.objectContaining({ content: 'Tutor plan' })
     );
     expect(mocks.freeze).not.toHaveBeenCalled();
+  });
+
+  it('leaves attendance-only edits unpinned', async () => {
+    expect((await complete()).status).toBe(200);
+    expect(query.eq).not.toHaveBeenCalledWith('reason_type', expect.anything());
+    expect(query.is).not.toHaveBeenCalled();
+  });
+
+  it('pins a reason equal to the stale read so it cannot undo a concurrent switch', async () => {
+    const response = await complete({ reasonType: 'WEAK_SUPPORT' });
+
+    expect(response.status).toBe(200);
+    expect(query.eq).toHaveBeenCalledWith('reason_type', 'WEAK_SUPPORT');
+    expect(query.is).toHaveBeenCalledWith('source_feedback_id', null);
+  });
+
+  it('returns 409 when the pinned update matches no row', async () => {
+    query.maybeSingle.mockResolvedValueOnce({
+      data: {
+        id: sessionId,
+        attendance_status: 'PENDING',
+        reason_type: 'WEAK_SUPPORT',
+        source_feedback_id: null,
+      },
+      error: null,
+    });
+    query.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+
+    const response = await complete({ reasonType: 'WEAK_SUPPORT' });
+
+    expect(response.status).toBe(409);
   });
 });

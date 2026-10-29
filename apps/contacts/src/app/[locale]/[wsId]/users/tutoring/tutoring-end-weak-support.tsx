@@ -18,6 +18,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { isTutoringContentRestricted } from './tutoring-errors';
 
 /** Rows whose learner is still on the weak-support list. */
 export function canEndWeakSupport(item: TutoringQueueItem) {
@@ -55,7 +56,11 @@ export function TutoringEndWeakSupport({
     },
     onError: (error) =>
       toast.error(
-        error instanceof Error ? error.message : t('end_weak_support_failed')
+        isTutoringContentRestricted(error)
+          ? t('content_restricted')
+          : error instanceof Error
+            ? error.message
+            : t('end_weak_support_failed')
       ),
   });
 
