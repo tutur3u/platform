@@ -5,7 +5,9 @@
 // sha256 digests. Payloads are hashed inside PostgreSQL; the parser rejects any
 // output that is not an identity, a digest or an integer, so definitions, qual
 // text and row data never reach stdout. The same pack serves the prod-parity
-// check, so the URL is read from an environment variable and never put in argv.
+// check, so the URL is read from an environment variable and never put in argv,
+// any non-loopback target must use --hashes-only over verify-full TLS with a
+// pinned CA, and psql runs with a minimal environment.
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
@@ -20,9 +22,13 @@ export const QUERY_DIR = path.resolve(
 export const CONFIG_PATH = path.resolve(here, '../supabase/config.toml');
 export const FORMAT = 'tuturuuu-declarative-parity/v1';
 export const DEFAULT_URL_ENV = 'DECLARATIVE_PARITY_DATABASE_URL';
+export const CA_FILE_ENV = 'DECLARATIVE_PARITY_CA_FILE';
+const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+const NO_FILE = '/nonexistent/tuturuuu-declarative-parity';
 // Every check maps a must-be-zero metric to the flag rows naming its offenders.
 export const MUST_BE_ZERO = {
   null_acl_definer_count: 'null_acl_definer',
+  client_executable_definer_count: 'client_executable_definer',
   unsafe_definer_search_path_count: 'unsafe_definer_search_path',
 };
 export const SESSION_OPTIONS = [
@@ -62,7 +68,14 @@ export function loadQueries(directory = QUERY_DIR) {
     .map((name) => {
       const sql = fs.readFileSync(path.join(directory, name), 'utf8');
       const requires = sql.match(/^-- requires: ([a-z_]+\.[a-z_]+)$/m)?.[1];
-      return { name, sql, requires: requires ?? null };
+      // Files that read tables rather than the catalog name their categories.
+      const tableRead = sql.match(/^-- table-read: ([a-z_, ]+)$/m)?.[1];
+      return {
+        name,
+        sql,
+        requires: requires ?? null,
+        tableRead: tableRead ? tableRead.split(/,\s*/) : [],
+      };
     });
 }
 
@@ -121,7 +134,7 @@ export function parseLines(lines) {
 
 export function buildReport(
   rows,
-  { apiSchemas, preflight = {}, skipped = [] }
+  { apiSchemas, preflight = {}, skipped = {} }
 ) {
   const objects = {};
   const metrics = {};
@@ -166,7 +179,11 @@ export function buildReport(
     format: FORMAT,
     serverVersionNum: preflight.server_version_num ?? null,
     apiSchemas,
-    skippedCategories: [...skipped].sort(byCodeUnit),
+    skippedCategories: Object.fromEntries(
+      Object.keys(skipped)
+        .sort(byCodeUnit)
+        .map((key) => [key, skipped[key]])
+    ),
     sha256: sha256(
       Object.entries(categories)
         .map(([name, c]) => `${name}\t${c.count}\t${c.sha256}\n`)
@@ -193,14 +210,20 @@ export function hashesOnly(report) {
   };
 }
 
-// Returns identities (names only) of mismatched objects and metrics.
+// Returns identities (names only) of mismatched objects and metrics. Categories
+// skipped on either side are listed, never compared against an absent hash.
 export function compareReports(expected, actual) {
   const categories = {};
+  const skipped = new Set([
+    ...Object.keys(expected.skippedCategories ?? {}),
+    ...Object.keys(actual.skippedCategories ?? {}),
+  ]);
   const names = new Set([
     ...Object.keys(expected.categories),
     ...Object.keys(actual.categories),
   ]);
   for (const name of [...names].sort(byCodeUnit)) {
+    if (skipped.has(name)) continue;
     const a = expected.categories[name];
     const b = actual.categories[name];
     if (a?.sha256 === b?.sha256) continue;
@@ -230,12 +253,17 @@ export function compareReports(expected, actual) {
     }
   }
   const equal = !Object.keys(categories).length && !Object.keys(metrics).length;
-  return { equal, categories, metrics };
+  return {
+    equal,
+    skippedCategories: [...skipped].sort(byCodeUnit),
+    categories,
+    metrics,
+  };
 }
 
 export async function collect(
   executor,
-  { apiSchemas, queries = loadQueries() }
+  { apiSchemas, queries = loadQueries(), hashesOnly: hashesOnlyRun = false }
 ) {
   const preflight = {};
   for (const row of parseLines(
@@ -244,10 +272,20 @@ export async function collect(
     if (row.kind !== 'P') throw new Error('unexpected-preflight-row');
     preflight[row.identity || row.category] = row.value;
   }
-  const skipped = [];
+  const skipped = {};
   const active = queries.filter((query) => {
-    if (!query.requires || preflight[query.requires] === 'true') return true;
-    skipped.push(query.name.replace(/\.sql$/, ''));
+    let reason = null;
+    if (hashesOnlyRun && query.tableRead.length) {
+      reason = 'by-design: table reads are excluded from hashes-only runs';
+    } else if (query.requires && preflight[query.requires] !== 'true') {
+      reason = `unavailable: ${query.requires} is absent or unreadable`;
+    }
+    if (!reason) return true;
+    for (const category of query.tableRead.length
+      ? query.tableRead
+      : [query.name.replace(/\.sql$/, '')]) {
+      skipped[category] = reason;
+    }
     return false;
   });
   const body = active.map((query) => query.sql.trim()).join('\n');
@@ -255,7 +293,17 @@ export async function collect(
   return buildReport(rows, { apiSchemas, preflight, skipped });
 }
 
-export function psqlInvocation({ dockerContainer, dockerUser, databaseUrl }) {
+// Classifies the target. Docker and loopback URLs are local. Anything else is
+// remote and must run --hashes-only over verify-full TLS with a pinned CA; URL
+// query parameters are refused so nothing can override sslmode or the host.
+export function psqlInvocation({
+  dockerContainer,
+  dockerUser,
+  databaseUrl,
+  caFile,
+  hashesOnly: hashesOnlyRun = false,
+  fsImpl = fs,
+}) {
   const psqlArgs = [
     '-X',
     '-q',
@@ -288,6 +336,7 @@ export function psqlInvocation({ dockerContainer, dockerUser, databaseUrl }) {
         '-',
       ],
       env: process.env,
+      local: true,
       secrets: [],
     };
   }
@@ -296,24 +345,49 @@ export function psqlInvocation({ dockerContainer, dockerUser, databaseUrl }) {
   if (!['postgres:', 'postgresql:'].includes(url.protocol)) {
     throw new Error('unsupported-database-url');
   }
+  if (url.search || url.hash)
+    throw new Error('database-url-parameters-refused');
+  if (!url.hostname || /[,/]/.test(url.hostname)) {
+    throw new Error('database-url-host-refused');
+  }
+  const local = LOOPBACK_HOSTS.has(url.hostname);
+  let tls = { PGSSLMODE: 'disable' };
+  if (!local) {
+    if (!hashesOnlyRun) throw new Error('remote-target-requires-hashes-only');
+    const ca = caFile ? path.resolve(caFile) : null;
+    if (!ca || !fsImpl.statSync(ca, { throwIfNoEntry: false })?.isFile()) {
+      throw new Error('remote-target-requires-pinned-ca-file');
+    }
+    tls = { PGSSLMODE: 'verify-full', PGSSLROOTCERT: ca };
+  }
   const user = decodeURIComponent(url.username);
   const password = decodeURIComponent(url.password);
+  // Minimal environment: no inherited PG* variables, service files, password
+  // files, hostaddr overrides or client certificates.
   const env = {
-    ...process.env,
-    PGHOST: url.hostname,
+    PATH: process.env.PATH ?? '/usr/bin:/bin',
+    LC_ALL: 'C',
+    PGHOST: url.hostname.replace(/^\[(.*)\]$/, '$1'),
     PGPORT: url.port || '5432',
     PGUSER: user,
     PGDATABASE: decodeURIComponent(url.pathname.slice(1)) || 'postgres',
-    PGSSLMODE: url.searchParams.get('sslmode') || 'prefer',
+    ...tls,
+    PGGSSENCMODE: 'disable',
+    PGSSLCERT: NO_FILE,
+    PGSSLKEY: NO_FILE,
+    PGPASSFILE: NO_FILE,
+    PGSERVICEFILE: NO_FILE,
+    PGSYSCONFDIR: NO_FILE,
+    PGCONNECT_TIMEOUT: '15',
     PGOPTIONS: pgoptions,
     PGAPPNAME: 'tuturuuu-declarative-parity',
   };
   if (password) env.PGPASSWORD = password;
-  else delete env.PGPASSWORD;
   return {
     command: 'psql',
     args: [...psqlArgs, '-f', '-'],
     env,
+    local,
     secrets: [password, user, url.hostname].filter(Boolean),
   };
 }
@@ -351,8 +425,12 @@ Connection (one of):
   ${DEFAULT_URL_ENV}         environment variable with a postgres URL
   --database-url-env <NAME>  read the URL from another environment variable
 
+A URL may not carry query parameters. A non-loopback host requires
+--hashes-only and a pinned CA (--ca-file or ${CA_FILE_ENV}); TLS is verify-full.
+
 Options:
-  --hashes-only      omit per-object digests (prod-parity form)
+  --hashes-only      omit per-object digests and table reads (prod-parity form)
+  --ca-file <file>   CA bundle pinned for verify-full TLS
   --expect <file>    compare with a full report; print mismatched identities only
   --out <file>       write the report to a file instead of stdout
 
@@ -364,6 +442,7 @@ export function parseArgs(argv) {
     '--docker-container': 'dockerContainer',
     '--docker-user': 'dockerUser',
     '--database-url-env': 'urlEnv',
+    '--ca-file': 'caFile',
     '--expect': 'expect',
     '--out': 'out',
   };
@@ -407,9 +486,14 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
       dockerContainer: options.dockerContainer,
       dockerUser: options.dockerUser,
       databaseUrl: env[options.urlEnv],
+      caFile: options.caFile ?? env[CA_FILE_ENV],
+      hashesOnly: options.hashesOnly,
     })
   );
-  const report = await collect(executor, { apiSchemas });
+  const report = await collect(executor, {
+    apiSchemas,
+    hashesOnly: options.hashesOnly,
+  });
   const comparison = options.expect
     ? compareReports(readJson(options.expect), report)
     : null;

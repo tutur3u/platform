@@ -48,9 +48,10 @@ revoke all on function private.touch_note(bigint) from public, anon, authenticat
 grant execute on function private.touch_note(bigint) to service_role;
 `;
 
-function pgliteExecutor(db) {
+function pgliteExecutor(db, seen = []) {
   return {
     async run(sql) {
+      seen.push(sql);
       const results = await db.exec(sql);
       return results
         .filter(
@@ -67,11 +68,11 @@ function pgliteExecutor(db) {
   };
 }
 
-async function report(extraSql = '') {
+async function report(extraSql = '', { hashesOnly = false, seen } = {}) {
   const db = await PGlite.create();
   try {
     await db.exec(FIXTURE + extraSql);
-    return await collect(pgliteExecutor(db), { apiSchemas });
+    return await collect(pgliteExecutor(db, seen), { apiSchemas, hashesOnly });
   } finally {
     await db.close();
   }
@@ -148,21 +149,114 @@ test('wraps every run in a read-only, time-bounded transaction', () => {
   assert.throws(() => wrapReadOnly('select 1;', ["public'; drop table x; --"]));
 });
 
-test('psql keeps the URL out of argv and forces read-only session options', () => {
-  const url =
-    'postgresql://parity_role:s3cr3t-pass@db.internal.example:6543/postgres?sslmode=require';
-  const invocation = psqlInvocation({ databaseUrl: url });
-  const argv = invocation.args.join(' ');
-  for (const secret of [
-    's3cr3t-pass',
-    'db.internal.example',
-    'parity_role',
-    url,
+const REMOTE =
+  'postgresql://parity_role:s3cr3t-pass@db.internal.example:6543/postgres';
+const caFs = { statSync: () => ({ isFile: () => true }) };
+const ENV_KEYS = [
+  'LC_ALL',
+  'PATH',
+  'PGAPPNAME',
+  'PGCONNECT_TIMEOUT',
+  'PGDATABASE',
+  'PGGSSENCMODE',
+  'PGHOST',
+  'PGOPTIONS',
+  'PGPASSFILE',
+  'PGPASSWORD',
+  'PGPORT',
+  'PGSERVICEFILE',
+  'PGSSLCERT',
+  'PGSSLKEY',
+  'PGSSLMODE',
+  'PGSSLROOTCERT',
+  'PGSYSCONFDIR',
+  'PGUSER',
+];
+
+test('a remote target needs --hashes-only and a pinned CA over verify-full', () => {
+  assert.throws(
+    () =>
+      psqlInvocation({ databaseUrl: REMOTE, caFile: '/ca.pem', fsImpl: caFs }),
+    /remote-target-requires-hashes-only/
+  );
+  assert.throws(
+    () => psqlInvocation({ databaseUrl: REMOTE, hashesOnly: true }),
+    /remote-target-requires-pinned-ca-file/
+  );
+  assert.throws(
+    () =>
+      psqlInvocation({
+        databaseUrl: REMOTE,
+        hashesOnly: true,
+        caFile: '/missing-ca.pem',
+        fsImpl: { statSync: () => undefined },
+      }),
+    /pinned-ca-file/
+  );
+  for (const suffix of [
+    '?sslmode=disable',
+    '?sslmode=verify-full',
+    '?sslrootcert=system',
+    '?hostaddr=10.0.0.1',
+    '?host=evil.example',
+    '#x',
   ]) {
+    assert.throws(
+      () =>
+        psqlInvocation({
+          databaseUrl: REMOTE + suffix,
+          hashesOnly: true,
+          caFile: '/ca.pem',
+          fsImpl: caFs,
+        }),
+      /database-url-parameters-refused/,
+      suffix
+    );
+  }
+  const invocation = psqlInvocation({
+    databaseUrl: REMOTE,
+    hashesOnly: true,
+    caFile: '/ca.pem',
+    fsImpl: caFs,
+  });
+  assert.equal(invocation.local, false);
+  assert.equal(invocation.env.PGSSLMODE, 'verify-full');
+  assert.equal(invocation.env.PGSSLROOTCERT, '/ca.pem');
+});
+
+test('psql gets a minimal env, read-only options and no secrets in argv', () => {
+  const inherited = {
+    PGSERVICE: 'prod',
+    PGHOSTADDR: '10.9.9.9',
+    PGSERVICEFILE: '/home/x/.pg_service.conf',
+    PGPASSFILE: '/home/x/.pgpass',
+    PGSSLMODE: 'disable',
+  };
+  const saved = { ...process.env };
+  Object.assign(process.env, inherited);
+  let invocation;
+  try {
+    invocation = psqlInvocation({
+      databaseUrl: REMOTE,
+      hashesOnly: true,
+      caFile: '/ca.pem',
+      fsImpl: caFs,
+    });
+  } finally {
+    for (const key of Object.keys(inherited)) {
+      if (key in saved) process.env[key] = saved[key];
+      else delete process.env[key];
+    }
+  }
+  assert.deepEqual(Object.keys(invocation.env).sort(), ENV_KEYS);
+  for (const key of ['PGPASSFILE', 'PGSERVICEFILE', 'PGSYSCONFDIR']) {
+    assert.ok(invocation.env[key].startsWith('/nonexistent/'), key);
+  }
+  const argv = invocation.args.join(' ');
+  for (const secret of ['s3cr3t-pass', 'db.internal.example', 'parity_role']) {
     assert.ok(!argv.includes(secret), 'argv must not carry connection details');
   }
   assert.equal(invocation.env.PGPASSWORD, 's3cr3t-pass');
-  assert.equal(invocation.env.PGSSLMODE, 'require');
   for (const option of [
     'default_transaction_read_only=on',
     'statement_timeout=60s',
@@ -170,18 +264,28 @@ test('psql keeps the URL out of argv and forces read-only session options', () =
   ]) {
     assert.ok(invocation.env.PGOPTIONS.includes(`-c ${option}`), option);
   }
+  const loopback = psqlInvocation({
+    databaseUrl: 'postgresql://postgres:postgres@127.0.0.1:54322/postgres',
+  });
+  assert.equal(loopback.local, true);
+  assert.equal(loopback.env.PGSSLMODE, 'disable');
   const docker = psqlInvocation({ dockerContainer: 'supabase_db_lane' });
   assert.ok(
-    docker.args.includes('-i') &&
+    docker.local &&
+      docker.args.includes('-i') &&
       docker.args.join(' ').includes('default_transaction_read_only=on')
   );
   assert.throws(() => psqlInvocation({ databaseUrl: 'mysql://x@y/z' }));
+  assert.throws(() => psqlInvocation({ databaseUrl: 'postgres://u@a,b/db' }));
   assert.throws(() => psqlInvocation({}));
 });
 
 test('psql errors redact connection details', async () => {
   const invocation = psqlInvocation({
     databaseUrl: 'postgres://u1:pw-xyz@host-abc:5432/postgres',
+    hashesOnly: true,
+    caFile: '/ca.pem',
+    fsImpl: caFs,
   });
   const executor = createPsqlExecutor(invocation, () => ({
     status: 2,
@@ -223,7 +327,8 @@ test('two runs of the same schema produce identical hashes', async () => {
   assert.equal(first.checks.null_acl_definer_count.count, 0);
   assert.equal(first.checks.unsafe_definer_search_path_count.count, 0);
   assert.equal(first.metrics.restrictive_mfa_policy_count, 1);
-  assert.deepEqual(first.skippedCategories, ['cron']);
+  assert.equal(first.checks.client_executable_definer_count.count, 0);
+  assert.match(first.skippedCategories.cron_jobs, /^unavailable: cron\.job/);
   assert.ok(first.categories.probe_columns.objects['public.notes.title']);
 });
 
@@ -239,6 +344,9 @@ test('a definer recreated with a NULL proacl fails the count and the anon probe'
   assert.equal(variant.checks.null_acl_definer_count.count, 1);
   assert.deepEqual(variant.checks.null_acl_definer_count.offenders, [fn]);
   assert.equal(variant.metrics.public_execute_definer_count, 1);
+  assert.deepEqual(variant.checks.client_executable_definer_count.offenders, [
+    fn,
+  ]);
   const diff = compareReports(await baseline, variant);
   assert.deepEqual(diff.categories.probe_functions.changed, [fn]);
   assert.deepEqual(diff.categories.acl_functions.changed, [fn]);
@@ -266,6 +374,50 @@ test('a column grant to anon fails has_column_privilege', async () => {
     'public.notes.title',
   ]);
   assert.equal(diff.metrics.anon_column_privilege_count.actual, 1);
+});
+
+test('EXECUTE for anon on an app definer is a must-be-zero failure', async () => {
+  const variant = await report(
+    'grant execute on function private.touch_note(bigint) to anon;'
+  );
+  assert.equal(variant.ok, false);
+  assert.equal(variant.checks.null_acl_definer_count.count, 0);
+  assert.deepEqual(variant.checks.client_executable_definer_count.offenders, [
+    'private.touch_note(bigint)',
+  ]);
+});
+
+test('definer checks are scoped to application schemas', async () => {
+  const variant = await report(`
+    create schema auth;
+    create function auth.managed_definer() returns integer language sql
+      security definer set search_path = pg_catalog, pg_temp as $$select 1$$;
+  `);
+  assert.equal(variant.ok, true);
+  assert.equal(variant.checks.null_acl_definer_count.count, 0);
+  assert.equal(variant.checks.client_executable_definer_count.count, 0);
+  assert.ok(variant.categories.functions.objects['auth.managed_definer()']);
+});
+
+test('--hashes-only never reads cron.job and reports it skipped by design', async () => {
+  const cron = `
+    create schema cron;
+    create table cron.job (jobid bigint primary key, jobname text,
+      schedule text, command text, database text, username text,
+      active boolean);
+    insert into cron.job values
+      (1, 'nightly', '0 3 * * *', 'select 1', 'postgres', 'postgres', true);
+  `;
+  const full = await report(cron);
+  assert.equal(full.categories.cron_jobs.count, 1);
+  assert.deepEqual(full.skippedCategories, {});
+  const seen = [];
+  const prod = await report(cron, { hashesOnly: true, seen });
+  assert.ok(seen.every((sql) => !/from cron\.job/.test(sql)));
+  assert.match(prod.skippedCategories.cron_jobs, /^by-design:/);
+  const diff = compareReports(full, prod);
+  assert.equal(diff.equal, true);
+  assert.deepEqual(diff.skippedCategories, ['cron_jobs']);
 });
 
 test('an unsafe definer search_path is counted and named', async () => {

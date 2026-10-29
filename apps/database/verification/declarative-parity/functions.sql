@@ -1,10 +1,18 @@
--- Function definitions, the SECURITY DEFINER NULL-ACL count and search-path
--- conformance. A NULL proacl means PUBLIC can EXECUTE, so the count must be 0.
--- The path rule mirrors security_definer_path_is_safe in
--- supabase/tests/security-definer-search-paths.sql without creating objects.
-with fn as (
+-- Function definitions plus three must-be-zero definer checks, all scoped to
+-- application schemas (Supabase-managed schemas are listed in managed_ns):
+-- a NULL proacl (PUBLIC can EXECUTE), EXECUTE for PUBLIC or anon, and search
+-- paths failing security_definer_path_is_safe from
+-- supabase/tests/security-definer-search-paths.sql (mirrored without DDL).
+with managed_ns(nspname) as (
+  values ('auth'), ('storage'), ('realtime'), ('_realtime'), ('extensions'),
+    ('graphql'), ('graphql_public'), ('vault'), ('pgsodium'), ('pgsodium_masks'),
+    ('net'), ('supabase_functions'), ('supabase_migrations'), ('cron'),
+    ('pgbouncer'), ('_analytics'), ('pgtle'), ('pgmq')
+),
+fn as (
   select p.oid, p.oid::regprocedure::text as identity, n.nspname, p.prokind,
-    p.prosecdef, p.proacl, p.proconfig
+    p.prosecdef, p.proacl, p.proconfig, p.proowner,
+    n.nspname not in (select nspname from managed_ns) as app
   from pg_proc p
   join pg_namespace n on n.oid = p.pronamespace
   where n.nspname !~ '^pg_' and n.nspname <> 'information_schema'
@@ -14,7 +22,17 @@ with fn as (
     )
 ),
 null_acl as (
-  select identity from fn where prosecdef and proacl is null
+  select identity from fn where app and prosecdef and proacl is null
+),
+client_definer as (
+  select identity from fn
+  where app and prosecdef and (
+    coalesce(has_function_privilege(to_regrole('anon'), oid, 'EXECUTE'), false)
+    or exists (
+      select 1 from aclexplode(coalesce(proacl, acldefault('f', proowner))) acl
+      where acl.grantee = 0 and acl.privilege_type = 'EXECUTE'
+    )
+  )
 ),
 exposed_definer as (
   select f.identity,
@@ -26,7 +44,7 @@ exposed_definer as (
       string_to_array(current_setting('parity.api_schemas'), ',')
       || array['public', 'private']
     )
-    and f.nspname not in ('storage', 'graphql_public')
+    and f.app
 ),
 path_part as (
   select e.identity, t.ord, cardinality(sp.parts) as total,
@@ -76,6 +94,11 @@ union all
 select 'M', 'null_acl_definer_count', '', count(*)::text from null_acl
 union all
 select 'F', 'null_acl_definer', identity, '' from null_acl
+union all
+select 'M', 'client_executable_definer_count', '', count(*)::text
+from client_definer
+union all
+select 'F', 'client_executable_definer', identity, '' from client_definer
 union all
 select 'M', 'unsafe_definer_search_path_count', '', count(*)::text from unsafe_path
 union all

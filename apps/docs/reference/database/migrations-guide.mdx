@@ -76,15 +76,23 @@ and digests only, never qual text, function bodies or row data. The pack runs in
 one `repeatable read read only` transaction with `default_transaction_read_only=on`,
 `statement_timeout=60s` and `lock_timeout=1s`. For a URL connection, set
 `DECLARATIVE_PARITY_DATABASE_URL` (or name another variable with
-`--database-url-env`). The URL never goes in argv, and psql errors are redacted.
+`--database-url-env`). The URL never goes in argv, it can't carry query
+parameters, psql runs with a minimal environment (no inherited `PG*` service,
+password-file or hostaddr settings) and errors are redacted. Docker and
+loopback targets count as local. Any other host is refused unless the run uses
+`--hashes-only` and `--ca-file` (or `DECLARATIVE_PARITY_CA_FILE`) pins a CA for
+`sslmode=verify-full`.
 
 Exit 1 means a must-be-zero check failed or `--expect` found a mismatch. The
-checks are SECURITY DEFINER functions with a NULL `proacl` (PUBLIC can execute
-them) and exposed definers whose `search_path` fails the
-`security-definer-search-paths.sql` rule. `--hashes-only --expect <full.json>` is
-the form for the one approved prod-parity check. It prints category digests plus
-the identities of mismatched objects only. Agents must never point the pack at
-production. Fixture tests run with
+checks cover SECURITY DEFINER functions in application schemas (Supabase-managed
+schemas are excluded): a NULL `proacl`, EXECUTE for PUBLIC or `anon`, and a
+`search_path` that fails the `security-definer-search-paths.sql` rule.
+`--hashes-only --expect <full.json>` is the form for the one approved
+prod-parity check. It prints category digests plus the identities of
+mismatched objects only. It never reads tables, so `cron_jobs` (a `cron.job`
+read that pg_cron RLS can silently filter) is reported as skipped by design
+rather than hashed, and comparisons ignore skipped categories. Agents must never
+point the pack at production. Fixture tests run with
 `node --test apps/database/scripts/verify-declarative-parity.test.mjs`.
 
 ## Migration Workflow
