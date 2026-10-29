@@ -358,6 +358,7 @@
                   "build/devops/wave1-native-cutover",
                   "build/devops/native-start-migration",
                   "build/devops/tanstack-cloudflare-migration-inventory",
+                  "build/devops/playground-isolation-contract",
                   "build/devops/contacts-start-candidate",
                   "build/devops/apps-viteplus-cloudflare",
                   "build/devops/start-bridge",
