@@ -54,6 +54,7 @@ type QueueItem = {
   content_review_due: boolean;
   content_unchanged_since: string | null;
   review_only: boolean;
+  support_group?: boolean;
 };
 
 type QueueSummary = {
@@ -237,14 +238,16 @@ async function getTutoringData(request: Request, { params }: Params) {
   const feedbackRows = feedbackResult.data;
   const policy = readTutoringPolicyConfigRows(policyResult.data ?? []);
   // Learners are listed only under the classes they belong to now. Support
-  // groups are read with a group filter so their members are still found.
+  // expansion needs every class of each member, so a group filter narrows
+  // the read only when no support group is configured.
   const [membershipResult, tagResult] = await Promise.all([
     loadCurrentLearnerMemberships({
       sbAdmin,
       wsId: normalizedWsId,
-      groupIds: parsed.data.groupId
-        ? [parsed.data.groupId, ...policy.supportGroupIds]
-        : undefined,
+      groupIds:
+        parsed.data.groupId && policy.supportGroupIds.length === 0
+          ? [parsed.data.groupId]
+          : undefined,
       studentUserId: parsed.data.studentUserId,
     }),
     hasTutoringTagExclusions(policy)
@@ -305,13 +308,20 @@ async function getTutoringData(request: Request, { params }: Params) {
   const scheduledFeedbackIds = new Set<string>();
   const completedFeedbackDays = new Map<string, number>();
   const pendingWeakKeys = new Set<string>();
+  const doneWeakDays = new Map<string, number>();
   for (const row of reservedRows ?? []) {
     const key = `${row.group_id}:${row.student_user_id}`;
-    if (
-      row.reason_type === 'WEAK_SUPPORT' &&
-      row.attendance_status === 'PENDING'
-    )
-      pendingWeakKeys.add(key);
+    if (row.reason_type === 'WEAK_SUPPORT') {
+      if (row.attendance_status === 'PENDING') pendingWeakKeys.add(key);
+      const doneDay = Math.floor(
+        Date.parse(row.resolved_at ?? row.session_date) / 86_400_000
+      );
+      if (row.attendance_status === 'DONE' && Number.isFinite(doneDay))
+        doneWeakDays.set(
+          key,
+          Math.max(doneWeakDays.get(key) ?? doneDay, doneDay)
+        );
+    }
     if (
       row.reason_type === 'ABSENT_RECOVERY' &&
       row.session_date >= absenceCutoff
@@ -435,9 +445,15 @@ async function getTutoringData(request: Request, { params }: Params) {
         (completedDay === undefined ||
           todayNumber - completedDay >= reassessmentDays)
     );
-    // A support-group learner needs weak support until a session is pending.
+    // A support-group learner needs weak support until a session is pending,
+    // and again once the reassessment interval after a completed one passes.
+    const doneWeakDay = doneWeakDays.get(key);
     const supportWeak =
-      supportKeys.has(key) && !weakExcluded && !pendingWeakKeys.has(key);
+      supportKeys.has(key) &&
+      !weakExcluded &&
+      !pendingWeakKeys.has(key) &&
+      (doneWeakDay === undefined ||
+        todayNumber - doneWeakDay >= reassessmentDays);
     const hasWeak = feedbackWeak || supportWeak;
 
     const contentUnchangedSince =
@@ -481,6 +497,7 @@ async function getTutoringData(request: Request, { params }: Params) {
       content_review_due: contentReviewDue,
       content_unchanged_since: contentUnchangedSince,
       review_only: reviewOnly,
+      ...(supportKeys.has(key) ? { support_group: true } : {}),
     };
   };
 

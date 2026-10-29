@@ -29,14 +29,14 @@ export async function readAllRows<T>(
 
 /**
  * Reads rows by id in chunks: each chunk stays under the row cap and keeps
- * the `in` filter short enough for the request URL.
+ * the `in` filter (about 3.9 KB for 100 UUIDs) under common 8 KB URL limits.
  */
 export async function readByIds<T>(
   ids: string[],
   fetchChunk: (
     chunk: string[]
   ) => PromiseLike<{ data: T[] | null; error: unknown }>,
-  chunkSize = 200
+  chunkSize = 100
 ): Promise<{ data: T[]; error: unknown }> {
   const data: T[] = [];
   for (let start = 0; start < ids.length; start += chunkSize) {

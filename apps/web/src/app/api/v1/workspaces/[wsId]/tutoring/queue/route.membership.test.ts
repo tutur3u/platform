@@ -22,16 +22,25 @@ let membershipRows: unknown[] = [];
 let tagRows: unknown[] = [];
 let configRows: unknown[] = [];
 const tables: string[] = [];
+// Filters applied to the membership read, as `method:args` strings.
+const membershipFilters: string[] = [];
+let lastBody: { data: Record<string, unknown>[] } = { data: [] };
 
-function query(rows: () => unknown[]) {
+function query(rows: () => unknown[], filters?: string[]) {
+  const record =
+    (method: string) =>
+    (...args: unknown[]) => {
+      filters?.push(`${method}:${JSON.stringify(args)}`);
+      return builder;
+    };
   const builder = {
     select: () => builder,
-    eq: () => builder,
-    in: () => builder,
+    eq: record('eq'),
+    in: record('in'),
     gte: () => builder,
     lt: () => builder,
     neq: () => builder,
-    or: () => builder,
+    or: record('or'),
     like: () => builder,
     order: () => builder,
     limit: () => builder,
@@ -88,14 +97,17 @@ const usePolicy = (policy: Partial<TutoringPolicy>) => {
   });
 };
 
-async function listQueue() {
+async function listQueue(search = '') {
   const { GET } = await import('./route');
   const response = await GET(
-    new Request(`http://localhost/api/v1/workspaces/${wsId}/tutoring/queue`),
+    new Request(
+      `http://localhost/api/v1/workspaces/${wsId}/tutoring/queue?${search}`
+    ),
     { params: Promise.resolve({ wsId }) }
   );
   if (!response) throw new Error('Tutoring queue returned no response');
   const body = await response.json();
+  lastBody = body;
   return (
     body.data as {
       group_id: string;
@@ -114,6 +126,7 @@ beforeEach(() => {
   membershipRows = [];
   tagRows = [];
   tables.length = 0;
+  membershipFilters.length = 0;
   usePolicy({});
   mocks.resolveAccess.mockResolvedValue({
     normalizedWsId: wsId,
@@ -125,7 +138,7 @@ beforeEach(() => {
       if (name === 'user_group_attendance') return query(() => attendanceRows);
       if (name === 'user_feedbacks') return query(() => feedbackRows);
       if (name === 'workspace_user_groups_users')
-        return query(() => membershipRows);
+        return query(() => membershipRows, membershipFilters);
       if (name === 'workspace_user_group_tag_groups')
         return query(() => tagRows);
       if (name === 'workspace_configs') return query(() => configRows);
@@ -245,5 +258,73 @@ describe('needs-tutoring support groups', () => {
     const queue = await listQueue();
     expect(queue).toContain('class-c:learner-quiet:WEAK_SUPPORT');
     expect(queue).not.toContain('class-b:learner-quiet:WEAK_SUPPORT');
+  });
+});
+
+describe('support group rows after review', () => {
+  const doneWeak = (resolvedAt: string) => ({
+    group_id: 'class-b',
+    student_user_id: 'learner-quiet',
+    reason_type: 'WEAK_SUPPORT',
+    attendance_status: 'DONE',
+    source_feedback_id: null,
+    resolved_at: resolvedAt,
+    session_date: resolvedAt.slice(0, 10),
+  });
+  beforeEach(() => {
+    usePolicy({ supportGroupIds: [supportGroup], reassessmentDays: 14 });
+    membershipRows = [
+      member(supportGroup, 'learner-quiet'),
+      member('class-b', 'learner-quiet'),
+      member('class-c', 'learner-quiet'),
+    ];
+  });
+
+  it('marks support rows so ending weak support is not offered', async () => {
+    await listQueue();
+    expect(lastBody.data.every((row) => row.support_group === true)).toBe(true);
+    usePolicy({});
+    attendanceRows = [absence('class-b', 'learner-quiet')];
+    await listQueue();
+    expect(lastBody.data).toHaveLength(1);
+    expect(lastBody.data[0]).not.toHaveProperty('support_group');
+  });
+
+  it('waits the reassessment interval after a completed weak-support session', async () => {
+    reservedRows = [doneWeak('2026-10-26T10:00:00Z')];
+    expect(await listQueue()).toEqual(['class-c:learner-quiet:WEAK_SUPPORT']);
+    reservedRows = [doneWeak('2026-10-01T10:00:00Z')];
+    expect((await listQueue()).sort()).toEqual([
+      'class-b:learner-quiet:WEAK_SUPPORT',
+      'class-c:learner-quiet:WEAK_SUPPORT',
+    ]);
+  });
+
+  it('skips archived classes when expanding support members', async () => {
+    membershipRows = [
+      member(supportGroup, 'learner-quiet'),
+      {
+        ...member('class-b', 'learner-quiet'),
+        group: { name: 'B', archived: true },
+      },
+      member('class-c', 'learner-quiet'),
+    ];
+    expect(await listQueue()).toEqual(['class-c:learner-quiet:WEAK_SUPPORT']);
+  });
+
+  it('keeps members under their classes when filtered by a group', async () => {
+    expect(await listQueue(`groupId=${supportGroup}`)).toEqual([]);
+    expect(membershipFilters.some((f) => f.startsWith('in:'))).toBe(false);
+  });
+
+  it('reads current, unarchived learners in this workspace only', async () => {
+    await listQueue();
+    expect(membershipFilters).toEqual(
+      expect.arrayContaining([
+        `eq:["group.ws_id","${wsId}"]`,
+        'eq:["user.archived",false]',
+        'or:["role.is.null,role.neq.TEACHER"]',
+      ])
+    );
   });
 });

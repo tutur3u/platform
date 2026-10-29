@@ -20,12 +20,17 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { isTutoringContentRestricted } from './tutoring-errors';
 
-/** Rows whose learner is still on the weak-support list. */
+/**
+ * Rows whose learner is still on the weak-support list. Needs-tutoring group
+ * members leave the queue only when removed from the group, so ending weak
+ * support is not offered for them.
+ */
 export function canEndWeakSupport(item: TutoringQueueItem) {
   return (
-    item.review_only ||
-    item.reason_type === 'WEAK_SUPPORT' ||
-    item.reason_type === 'BOTH'
+    !item.support_group &&
+    (item.review_only ||
+      item.reason_type === 'WEAK_SUPPORT' ||
+      item.reason_type === 'BOTH')
   );
 }
 

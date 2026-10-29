@@ -9583,7 +9583,8 @@
     "policy_support_groups": "Nhóm cần kèm",
     "policy_support_groups_description": "Mọi học viên hiện thuộc các nhóm này đều hiện trong hàng chờ kèm yếu, dưới từng lớp các em đang học, cho đến khi có buổi kèm yếu được xếp. Học viên không thuộc lớp nào khác được liệt kê dưới chính nhóm này.",
     "policy_select_support_groups": "Chọn nhóm cần kèm",
-    "policy_no_support_groups": "Không có"
+    "policy_no_support_groups": "Không có",
+    "queue_support_group": "Thuộc nhóm cần kèm"
   },
   "ws-user-attendance": {
     "absent": "Vắng mặt",

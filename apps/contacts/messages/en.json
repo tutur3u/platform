@@ -9583,7 +9583,8 @@
     "policy_support_groups": "Needs-tutoring groups",
     "policy_support_groups_description": "Every current learner in these groups appears in the weak-support queue under each class they belong to now, until a weak-support session is scheduled. Learners with no other class are listed under the group itself.",
     "policy_select_support_groups": "Select needs-tutoring groups",
-    "policy_no_support_groups": "None"
+    "policy_no_support_groups": "None",
+    "queue_support_group": "In a needs-tutoring group"
   },
   "ws-user-attendance": {
     "absent": "Absent",

@@ -124,7 +124,11 @@ describe('tutoring export past the PostgREST row cap', () => {
         (row: { student_name: string }) => row.student_name !== 'N/A'
       )
     ).toBe(true);
-    expect(Math.max(...chunkSizes)).toBeLessThanOrEqual(200);
+    expect(Math.max(...chunkSizes)).toBeLessThanOrEqual(100);
+    // 451 people need five chunks; every name still resolves.
+    expect(chunkSizes.filter((size) => size > 1).length).toBeGreaterThanOrEqual(
+      5
+    );
   });
 
   it('counts every completed session in payroll', async () => {

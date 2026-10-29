@@ -89,17 +89,20 @@ exists. The English center preset still ships its name rules, with no tag rules.
 **Needs-tutoring groups** (Settings → weak support, empty by default) list
 learners who need tutoring without an absence or flagged feedback. Every
 current learner member of such a group appears as weak support under each of
-their current classes, other than tutor and needs-tutoring groups. A learner
-with no other class appears under the needs-tutoring group itself. A class
-leaves the queue once a weak-support session is pending there. Exclusion rules
-still apply. Rows come from group membership, so they carry no source
-feedback. With no needs-tutoring group configured, the queue behaves exactly
+their current, unarchived classes, other than tutor and needs-tutoring
+groups. A learner with no other class appears under the needs-tutoring group
+itself. A class leaves the queue once a weak-support session is pending there,
+and returns only after the reassessment interval following a completed
+weak-support session, as with flagged feedback. Exclusion rules still apply.
+Rows come from group membership, so they carry no source feedback. They are
+marked "In a needs-tutoring group" and do not offer **End tutoring**: staff take
+a learner off the list by removing them from the group. With no needs-tutoring group configured, the queue behaves exactly
 as before.
 
 The detailed and payroll exports page every session read and order it by
 date, start time and `id`. Sessions sharing one teacher slot therefore never
 skip or repeat across the 1,000-row PostgREST page. Group and person names are
-read in chunks of at most 200 ids. A read stops with an error after 200 pages
+read in chunks of at most 100 ids. A read stops with an error after 200 pages
 instead of looping. Regression coverage:
 `queue/route.membership.test.ts`, `export/route.test.ts`, and
 `packages/internal-api/src/tutoring-group-rules.test.ts`.

@@ -10,7 +10,7 @@ export type QueueIdentity = {
 export type LearnerMembership = {
   group_id: string;
   user_id: string;
-  group: { name: string | null } | null;
+  group: { name: string | null; archived?: boolean | null } | null;
   user: QueueIdentity | null;
 };
 
@@ -37,7 +37,7 @@ export function loadCurrentLearnerMemberships({
       .from('workspace_user_groups_users')
       .select(
         `group_id,user_id,
-      group:workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(id,ws_id,name),
+      group:workspace_user_groups!workspace_user_roles_users_role_id_fkey!inner(id,ws_id,name,archived),
       user:workspace_users!workspace_user_roles_users_user_id_fkey!inner(id,full_name,display_name,email,archived)`
       )
       .eq('group.ws_id', wsId)
@@ -83,11 +83,11 @@ export async function loadGroupTagNames({
 
 /**
  * `group:learner` keys for every current learner of a support group, under
- * each current class that is not itself a support or tutor group. A member
+ * each current, unarchived class that is not a support or tutor group. A member
  * with no other class is listed under the support group so nobody is missed.
  */
 export function supportQueueKeys(
-  memberships: Pick<LearnerMembership, 'group_id' | 'user_id'>[],
+  memberships: Pick<LearnerMembership, 'group_id' | 'user_id' | 'group'>[],
   policy: { supportGroupIds: string[]; tutorGroupIds: string[] }
 ) {
   const keys = new Set<string>();
@@ -96,7 +96,9 @@ export function supportQueueKeys(
   const tutor = new Set(policy.tutorGroupIds);
   const classes = new Map<string, Set<string>>();
   const supportOf = new Map<string, Set<string>>();
-  for (const { group_id, user_id } of memberships) {
+  for (const { group_id, user_id, group } of memberships) {
+    // Archived classes and support groups no longer place anyone.
+    if (group?.archived) continue;
     const groupId = group_id.toLowerCase();
     const target = support.has(groupId)
       ? supportOf
