@@ -14,6 +14,10 @@ data or permissions.
 A card shows its ID before the title, as `[DEV-248] Title`, in the title's own
 color. There is no separate ID chip. The title button's accessible name reads
 the same `[DEV-248] Title`, so screen readers announce the ID.
+A task whose only project gives it that ID shows no project badge, since the
+ID already names the project; a task in several projects keeps its badges, and
+a project without a key keeps its badge because there is no ID. Cards in a
+Documents list show no ID, so they keep their project badge too.
 Cards in a Documents list keep their existing omission of the ID. The row above
 the title appears only for selection, the document badge and the external-source
 badge, and is absent otherwise.
@@ -37,5 +41,6 @@ Regression coverage:
 
 - `packages/tasks-ui/src/tu-do/boards/boardId/task-card/use-minute-clock.test.tsx`
 - `packages/tasks-ui/src/tu-do/boards/boardId/task-card/task-card-identifier-row.test.tsx`
+- `packages/tasks-ui/src/tu-do/boards/boardId/task-card/task-card-open-options.test.ts`
 - `packages/tasks-ui/src/tu-do/boards/boardId/kanban/rendering/kanban-columns.test.tsx`
 - `packages/tasks-ui/src/tu-do/shared/use-kanban-layout-state.test.tsx`

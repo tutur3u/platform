@@ -157,6 +157,8 @@ import { mergeTaskCardLabelOptions } from './task-card-label-options';
 import { useTaskCardMenuGuard } from './task-card-menu-guard';
 import { TaskCardMetadataTooltip } from './task-card-metadata-tooltip';
 import {
+  getShownTicketIdentifier,
+  getTaskCardBadgeProjects,
   getTaskCardHydratingOpenOptions,
   getTaskCardTicketIdentifier,
   getTaskCardTitleName,
@@ -207,7 +209,11 @@ function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
   const priorityT = useTranslations('ws-task-boards.dialog.priority');
   const locale = useLocale();
   const dateLocale = locale === 'vi' ? vi : enUS;
-  const ticketIdentifier = getTaskTicketLabel(task);
+  // Documents lists show no ticket ID, so the project badge stays there.
+  const ticketIdentifier = getShownTicketIdentifier(
+    getTaskTicketLabel(task),
+    taskList?.status
+  );
   const dueDate = task.end_date
     ? format(new Date(task.end_date), 'MMM d, yyyy', { locale: dateLocale })
     : null;
@@ -240,7 +246,7 @@ function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
               'text-muted-foreground line-through'
           )}
         >
-          {ticketIdentifier && taskList?.status !== 'documents' ? (
+          {ticketIdentifier ? (
             <span className="mr-1 whitespace-nowrap font-mono">
               [{ticketIdentifier}]
             </span>
@@ -288,7 +294,7 @@ function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
                 {label.name}
               </Badge>
             ))}
-            {task.projects?.map((project) => (
+            {getTaskCardBadgeProjects(task, ticketIdentifier).map((project) => (
               <Badge
                 key={project.id}
                 variant="outline"
@@ -929,11 +935,16 @@ function TaskCardInner({
   ].filter(
     (item): item is { href: string | undefined; label: string } => item !== null
   );
-  const taskTicketIdentifier = getTaskCardTicketIdentifier({
+  const cardTicketIdentifier = getTaskCardTicketIdentifier({
     boardConfig,
     isExternalTask: isPersonalExternalTask,
     task,
   });
+  // Documents lists show no ticket ID, so the project badge stays there.
+  const taskTicketIdentifier = getShownTicketIdentifier(
+    cardTicketIdentifier,
+    taskList?.status
+  );
   const externalSourceLabel =
     task.source_workspace_name ??
     task.source_board_name ??
@@ -1422,7 +1433,11 @@ function TaskCardInner({
     }
 
     // Project indicator badge
-    if (task.projects && task.projects.length > 0) {
+    const badgeProjects = getTaskCardBadgeProjects(
+      { projects: task.projects, ticket_projects: task.ticket_projects },
+      taskTicketIdentifier
+    );
+    if (badgeProjects.length > 0) {
       badges.push({
         id: 'projects',
         element: (
@@ -1434,7 +1449,7 @@ function TaskCardInner({
             }}
           >
             <TaskCardMetadataTooltip
-              content={`${t('projects')}: ${task.projects
+              content={`${t('projects')}: ${badgeProjects
                 .map((project) => project.name)
                 .join(', ')}`}
             >
@@ -1446,9 +1461,9 @@ function TaskCardInner({
                 )}
               >
                 <Box className="h-2.5 w-2.5" />
-                {task.projects.length === 1
-                  ? task.projects[0]?.name
-                  : t('n_projects', { count: task.projects.length })}
+                {badgeProjects.length === 1
+                  ? badgeProjects[0]?.name
+                  : t('n_projects', { count: badgeProjects.length })}
               </Badge>
             </TaskCardMetadataTooltip>
           </div>
@@ -1657,6 +1672,8 @@ function TaskCardInner({
     // to prevent recalculation when unrelated properties (like name) change
     task.priority,
     task.projects,
+    task.ticket_projects,
+    taskTicketIdentifier,
     task.estimation_points,
     task.total_duration,
     task.auto_schedule,
@@ -2025,16 +2042,11 @@ function TaskCardInner({
                     : '-mx-1 -my-0.5 rounded-sm px-1 py-0.5 text-foreground active:bg-muted/50'
                 )}
                 aria-label={t('edit_task_aria', {
-                  name: getTaskCardTitleName(
-                    task.name,
-                    taskList?.status === 'documents'
-                      ? null
-                      : taskTicketIdentifier
-                  ),
+                  name: getTaskCardTitleName(task.name, taskTicketIdentifier),
                 })}
                 title={t('click_to_edit_task')}
               >
-                {taskTicketIdentifier && taskList?.status !== 'documents' ? (
+                {taskTicketIdentifier ? (
                   <span
                     className="mr-1 whitespace-nowrap font-mono"
                     data-testid="task-card-ticket-identifier"
