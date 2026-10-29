@@ -15,6 +15,7 @@ interface RecordingSession {
   status: RecordingStatus;
   created_at: string;
   updated_at: string;
+  can_manage?: boolean;
   transcript?: RecordingTranscript | null;
 }
 
@@ -72,7 +73,7 @@ export function RecordingSessionActions({
             <EyeIcon className="mr-1 h-3 w-3" />
             View Transcript
           </Button>
-        ) : (
+        ) : session.can_manage ? (
           <Button
             variant="default"
             size="sm"
@@ -84,7 +85,7 @@ export function RecordingSessionActions({
               ? 'Transcribing...'
               : 'Transcribe'}
           </Button>
-        )}
+        ) : null}
         <Button
           variant="ghost"
           size="sm"
@@ -94,13 +95,15 @@ export function RecordingSessionActions({
           <Headphones className="mr-1 h-3 w-3" />
           {isLoadingChunks ? 'Loading...' : 'Play'}
         </Button>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={() => setDeleteDialogOpen(true)}
-        >
-          Delete
-        </Button>
+        {session.can_manage && (
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            Delete
+          </Button>
+        )}
       </div>
 
       {/* Extracted Components */}

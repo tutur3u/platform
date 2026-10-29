@@ -4,11 +4,11 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/charts/charts.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
-import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/usage_model.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_time_label.dart';
 import 'package:mobile/features/mastermind/view/widgets/reported_text.dart';
 import 'package:mobile/features/mastermind/view/widgets/show_all_row.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -135,7 +135,6 @@ class HomeDecisionsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final locale = Localizations.localeOf(context).toString();
     return AppGroupedSection.spaced(
       caption: l10n.mastermindRecentDecisionsTitle,
       children: [
@@ -144,11 +143,12 @@ class HomeDecisionsCard extends StatelessWidget {
         for (final decision in model.decisions)
           AppGroupedRow(
             title: Text(decision.title),
-            subtitle: Text(
-              [
+            subtitle: MastermindTimeLabel(
+              decision.at,
+              sentence: (time) => [
                 if (decision case JournalDecision(:final category))
                   MastermindLabels.decisionCategory(l10n, category),
-                Gmt7.dateTime(decision.at, locale),
+                time,
               ].join(' · '),
             ),
             showChevron: true,

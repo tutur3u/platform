@@ -97,6 +97,7 @@ class PushNotificationService {
   Future<void>? _initialization;
   Future<void>? _reminderTimezoneSetup;
   bool _isDisposed = false;
+  bool _tokenDeletionPending = false;
 
   FirebaseMessaging get _messaging =>
       _messagingOverride ?? FirebaseMessaging.instance;
@@ -338,7 +339,7 @@ class PushNotificationService {
         unawaited(_handleRemoteMessageOpened(message));
       });
       _tokenRefreshSubscription = _messaging.onTokenRefresh.listen((token) {
-        unawaited(_registerDeviceToken(token));
+        unawaited(_registerRefreshedToken(token));
       });
 
       final initialMessage = await _messaging.getInitialMessage();
@@ -509,16 +510,48 @@ class PushNotificationService {
       return;
     }
     final settings = await _messaging.getNotificationSettings();
-    if (!_isAuthorized(settings) || !_currentSession(epoch, userId)) {
+    if (!_currentSession(epoch, userId)) return;
+    if (!_isAuthorized(settings)) {
+      await _revokeTokenCreation();
       return;
     }
 
+    await _messaging.setAutoInitEnabled(true);
+    if (!_currentSession(epoch, userId)) return;
     final token = await _messaging.getToken();
     if (token == null || token.isEmpty || !_currentSession(epoch, userId)) {
       return;
     }
 
     await _registerDeviceToken(token);
+  }
+
+  /// A refreshed token is registered only while notification permission is
+  /// still granted; the SDK can rotate tokens independently of the settings.
+  Future<void> _registerRefreshedToken(String token) async {
+    final epoch = _sessionEpoch;
+    final userId = _currentUserId;
+    if (userId == null || _isDisposed) return;
+    final settings = await _messaging.getNotificationSettings();
+    if (!_currentSession(epoch, userId) || !_isAuthorized(settings)) return;
+    await _registerDeviceToken(token);
+  }
+
+  /// FCM auto-init is disabled natively so no token exists before permission.
+  /// If permission was revoked after a token was issued, stop token creation
+  /// and drop the local token.
+  Future<void> _revokeTokenCreation() async {
+    if (_messaging.isAutoInitEnabled) {
+      _tokenDeletionPending = true;
+      await _messaging.setAutoInitEnabled(false);
+    }
+    if (!_tokenDeletionPending) return;
+    try {
+      await _messaging.deleteToken();
+      _tokenDeletionPending = false;
+    } on Exception {
+      // Token cleanup is best-effort; auto-init stays disabled.
+    }
   }
 
   Future<void> _registerDeviceToken(String token) async {

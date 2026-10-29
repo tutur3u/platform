@@ -107,6 +107,24 @@ describe('participant capture lifecycle', () => {
       ]);
     return { nodes, stream, context };
   }
+  it('skips silence but uploads quiet brief speech without shifting its timestamp', async () => {
+    const { nodes, stream } = setup();
+    const chunk = vi.fn();
+    const capture = new MeetAudioCapture(chunk);
+    await capture.start();
+    capture.update([{ stream: stream('quiet'), kind: 'microphone' }]);
+    const silence = new Float32Array(160000);
+    const speech = silence.slice();
+    for (let i = 159680; i < speech.length; i++)
+      speech[i] = 0.002 * Math.sin((i * Math.PI) / 8);
+    nodes[0]!.port.onmessage?.({ data: { samples: silence } });
+    expect(chunk).not.toHaveBeenCalled();
+    nodes[0]!.port.onmessage?.({ data: { samples: speech } });
+    expect(chunk).toHaveBeenCalledTimes(1);
+    expect(chunk.mock.calls[0]![1]).toBe(10);
+    expect(chunk.mock.calls[0]![0].size).toBe(320044);
+    capture.dispose();
+  });
   it('keeps simultaneous sources separate and flushes their final audio on stop', async () => {
     const { nodes, stream, context } = setup();
     const chunk = vi.fn();
