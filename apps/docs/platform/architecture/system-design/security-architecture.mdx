@@ -64,7 +64,7 @@ chat, inbound mail and other notification producers. The separate exchange-rate
 cron and the Web endpoint's accepted authorization methods are outside SR-327.
 
 The manual containment rollback
-`apps/database/rollbacks/20261027151700_pin_notification_trigger_vault.rollback.sql`
+`apps/database/rollbacks/20261029030200_pin_notification_trigger_vault.rollback.sql`
 disables all trigger HTTP calls while retaining the definer, trusted search path
 and service-role-only execution. cron-control recovers pending batches; it never
 restores the legacy GUC destination, bearer or persisted settings. Its disposable

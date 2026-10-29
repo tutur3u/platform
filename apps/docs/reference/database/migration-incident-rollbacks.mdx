@@ -47,7 +47,7 @@ session or reset both timeouts if execution stopped before the file's resets.
 
 | Migration / PR | Manual artifact | Restores / limits |
 | --- | --- | --- |
-| `20261027151700` / #7113 | `20261027151700_pin_notification_trigger_vault.rollback.sql` | Containment only: disables all trigger HTTP calls, retaining the security definer, trusted search path and service-role-only execution. cron-control recovers pending batches. Never restores the legacy GUC destination or bearer. |
+| `20261029030200` / #7113 | `20261029030200_pin_notification_trigger_vault.rollback.sql` | Containment only: disables all trigger HTTP calls, retaining the security definer, trusted search path and service-role-only execution. cron-control recovers pending batches. Never restores the legacy GUC destination or bearer. |
 
 Run with release-authority approval using the manual procedure above. The file
 uses a transaction with five-second lock and thirty-second statement timeouts.
