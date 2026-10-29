@@ -78,7 +78,7 @@ retained legacy policies. It does not grant access to the private wallet table.
 Regression coverage is in
 `packages/apis/src/finance/transactions/workspace-scoping.test.ts` and
 `apps/database/supabase/tests/finance-workspace-scoping.sql`. Migration
-`20261027152800_finance_workspace_scoping.sql` has a matching rollback under
+`20261029030700_finance_workspace_scoping.sql` has a matching rollback under
 `apps/database/rollbacks/`; rollback restores the prior RPC bodies without
 granting client access.
 The rollback and re-apply are checked against function definitions, owners, grants,
