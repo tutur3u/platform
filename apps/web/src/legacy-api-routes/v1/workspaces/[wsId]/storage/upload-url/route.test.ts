@@ -161,7 +161,7 @@ describe('workspace storage upload-url route', () => {
     expect(mocks.resolveTopicAnnouncementsAccess).toHaveBeenCalledWith(
       expect.any(Request),
       'workspace-1',
-      { requireManage: true, teacherAccess: 'read' }
+      { requireManage: true, teacherAccess: 'update' }
     );
     expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(
       'workspace-1',

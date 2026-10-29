@@ -7,7 +7,6 @@ import {
   Youtube,
 } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceCourseModule } from '@tuturuuu/types';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Accordion } from '@tuturuuu/ui/accordion';
 import { CourseSection } from '@tuturuuu/ui/custom/education/modules/content-section';
@@ -18,6 +17,7 @@ import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { requireCourseModulePageAccess } from '@/lib/course-module-page-access';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import { extractYoutubeId } from '@/utils/url-helper';
 import ClientFlashcards from './flashcards/client-flashcards';
@@ -44,7 +44,11 @@ export default async function UserGroupDetailsPage({ params }: Props) {
   const t = await getTranslations();
   const { wsId: routeWsId, courseId, moduleId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
-  const data = await getModuleData(courseId, moduleId);
+  const { module: data } = await requireCourseModulePageAccess({
+    wsId: resolvedWsId,
+    courseId,
+    moduleId,
+  });
 
   const storagePath = `${resolvedWsId}/courses/${courseId}/modules/${moduleId}/resources/`;
   const resources = await getResources({ path: storagePath });
@@ -208,23 +212,6 @@ export default async function UserGroupDetailsPage({ params }: Props) {
     </Accordion>
   );
 }
-
-const getModuleData = async (courseId: string, moduleId: string) => {
-  const supabase = await createAdminClient();
-
-  const { data, error } = await supabase
-    .from('workspace_course_modules')
-    .select('*')
-    .eq('id', moduleId)
-    .eq('group_id', courseId)
-    .single();
-
-  if (error) {
-    console.error('error', error);
-  }
-
-  return data as WorkspaceCourseModule;
-};
 
 const getFlashcards = async (moduleId: string) => {
   const supabase = await createAdminClient();

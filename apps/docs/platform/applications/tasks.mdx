@@ -32,6 +32,37 @@ When validating this integration, check both locales, personal and team workspac
 links, board/task detail return paths, and mobile navigation with the sidebar
 closed. Mutations continue through the existing protected product APIs.
 
+## Recipient identity
+
+Task and board shares match either an explicit recipient user id or the
+recipient's current confirmed Auth email. Shared-task reads and edits use this
+rule, as do shared board navigation and access. Editable contact/profile email
+fields and app-session email claims do not select email shares. Public view links
+and workspace membership retain their existing access rules. Coverage lives in
+`packages/tasks-api/src/server/board-access-identity.test.ts` and the Tasks
+shared-task route tests.
+
+## Direct list and assignee access
+
+Task-list reads require a `MEMBER` workspace membership or an explicit board
+share. Creating, renaming, moving, archiving or deleting a list requires a
+`MEMBER` with `manage_projects`, or a board share with `edit` permission. A move
+must pass this check for both the source and destination boards. A workspace
+`GUEST` has no implicit list access; an explicit board share still applies.
+
+Direct assignee INSERT and DELETE use the same member permission or an explicit
+board/task `edit` share. Public view links and view shares permit no assignment
+changes. Email shares use the current confirmed Auth email, matching the share
+APIs; editable profile fields and token email claims cannot supply that identity.
+Existing view-authorized assignment reads and service-role API access remain.
+These database rules cover Web, Tasks, Calendar and AI tools wherever a user
+client accesses these tables; mobile continues through the product APIs.
+
+Task-list change subscriptions use Cloudflare, so `task_lists` is excluded from
+`supabase_realtime`. Regression coverage is
+`apps/database/supabase/tests/task-list-assignee-authorization.sql` (SR-337 and
+SR-338), alongside board access and shared-task route tests.
+
 ## Overview
 
 Tasks provides:
@@ -61,6 +92,28 @@ in task version history do not retain media after removal from the current
 description.
 The Tasks Vercel project schedules `/api/cron/tasks/cleanup-media` at 03:17 UTC;
 the route requires `CRON_SECRET` or `VERCEL_CRON_SECRET`.
+
+## Task read RPC identity
+
+`get_user_accessible_tasks` and `get_user_tasks_with_relations` accept an
+authenticated caller's own user ID or the service role. Anonymous and mismatched
+callers receive SQLSTATE `42501`. Signatures, filtering and successful self
+results remain unchanged across Tasks, Calendar, retained Web planning views
+and AI task tools. The database regression packet is
+`apps/database/supabase/tests/time-task-rpc-scoping.sql`.
+
+## Personal placement and template backgrounds
+
+Personal placement in Tasks requires current source-task access, including a
+valid board share where supported. An assignment or personal override alone does
+not authorize placement after source access is lost. Moving a task to a terminal
+status also requires source edit access. The personal-placement route scenario
+tests cover shared-board access and stale assignments or overrides.
+
+Template background keys must belong to the template's workspace under its
+`template-backgrounds` prefix. Tasks, shared template UI and retained Web routes
+apply the same rule before saving or signing a background. The helper regression
+cases live in `packages/utils/src/__tests__/template-background-path.test.ts`.
 
 ## Board And List Name Uniqueness
 

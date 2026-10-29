@@ -129,6 +129,7 @@ export const TutoringMarkSchema = z.object({
 });
 
 export interface TutoringSessionSlotInput {
+  groupId?: string;
   sessionDate: string;
   startTime: string;
   durationMinutes: number;
@@ -211,7 +212,13 @@ export function findConflictsWithinSlots(slots: TutoringSessionSlotInput[]) {
       if (
         current.teacherUserId &&
         candidate.teacherUserId &&
-        current.teacherUserId === candidate.teacherUserId
+        current.teacherUserId === candidate.teacherUserId &&
+        !(
+          current.groupId &&
+          current.groupId === candidate.groupId &&
+          current.absoluteStartMinutes === candidate.absoluteStartMinutes &&
+          current.absoluteEndMinutes === candidate.absoluteEndMinutes
+        )
       ) {
         conflicts.push({
           conflictType: 'teacher',
@@ -240,6 +247,7 @@ export function findConflictsWithinSlots(slots: TutoringSessionSlotInput[]) {
 }
 
 interface ExistingTutoringSession {
+  group_id?: string;
   session_date: string;
   start_time: string;
   duration_minutes: number;
@@ -258,6 +266,7 @@ export function findConflictsWithExistingSessions(
   const normalizedExisting = existingSessions
     .map((session) => {
       const normalized = toComparableSlot({
+        groupId: session.group_id,
         durationMinutes: session.duration_minutes,
         sessionDate: session.session_date,
         startTime: session.start_time,
@@ -291,7 +300,13 @@ export function findConflictsWithExistingSessions(
       if (
         incoming.teacherUserId &&
         existing.teacherUserId &&
-        incoming.teacherUserId === existing.teacherUserId
+        incoming.teacherUserId === existing.teacherUserId &&
+        !(
+          incoming.groupId &&
+          incoming.groupId === existing.groupId &&
+          incoming.absoluteStartMinutes === existing.absoluteStartMinutes &&
+          incoming.absoluteEndMinutes === existing.absoluteEndMinutes
+        )
       ) {
         conflicts.push({
           conflictType: 'teacher',

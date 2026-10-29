@@ -1,40 +1,49 @@
 part of 'snapshot_parser.dart';
 
-MastermindSnapshot parseRootSnapshot(JsonReader r) {
-  r.keys(
-    [
-      'schema_version',
-      'generated_at',
-      'now',
-      'lanes',
-      'backlog',
-      'products',
-      'environments',
-      'decisions',
-      'decisions_skipped',
-      'observability',
-      'sources',
-    ],
-    [
-      'schema_version',
-      'generated_at',
-      'now',
-      'lanes',
-      'backlog',
-      'products',
-      'environments',
-      'decisions',
-      'decisions_skipped',
-      'observability',
-      'sources',
-    ],
-  );
+MastermindSnapshot parseRootSnapshot(JsonReader input) {
+  final history = parseResolvedHistory([
+    if (input.object()['decisions'] case final List<dynamic> decisions)
+      for (final row in decisions)
+        if (row is Map<String, dynamic> && row['status'] == 'resolved') row,
+    if (input.object()['decisions_resolved'] case final List<dynamic> resolved)
+      ...resolved,
+  ]);
+  final r =
+      JsonReader(
+        adaptHubCompanions(
+          adaptDecisionCollections({
+            ...input.object(),
+            'decisions_resolved': history.rows,
+          }, acceptsItem: acceptsDecisionItem),
+        ),
+        input.path,
+      )..keys(
+        [...input.object().keys, 'decisions_resolved'],
+        [
+          'schema_version',
+          'generated_at',
+          'now',
+          'lanes',
+          'backlog',
+          'products',
+          'environments',
+          'decisions',
+          'decisions_skipped',
+          'observability',
+          'sources',
+        ],
+      );
   return MastermindSnapshot(
-    schemaVersion: r.field('schema_version').string(constant: '1.3'),
+    workCounts: hubWorkCounts(
+      input.object()['work'],
+      r.field('generated_at').utcTimestamp(),
+    ),
+    resolvedItems: history.items,
+    schemaVersion: r.field('schema_version').string(constant: '1.4'),
     generatedAt: r.field('generated_at').utcTimestamp(),
     now: parseSnapshotNow(r.field('now')),
-    lanes: r.field('lanes').list(parseLaneItem),
-    backlog: r.field('backlog').list(parseBacklogEntry),
+    lanes: parseLaneItems(r.field('lanes')),
+    backlog: parseBacklogEntries(r.field('backlog')),
     products: parseSnapshotProducts(r.field('products')),
     environments: r.field('environments').list(parseEnvironmentRow),
     decisions: r.field('decisions').list(parseDecision, maxItems: 1000),
@@ -54,7 +63,7 @@ SnapshotNow parseSnapshotNow(JsonReader r) {
     latestSeq: r.field('latest_seq').integer(min: 0),
     cursorGap: r.field('cursor_gap').boolean(),
     digest: r.field('digest').list(parseSnapshotEvent),
-    needsYou: r.field('needs_you').list(parseOpenNeedsYou),
+    needsYou: parseOpenNeedsYouItems(r.field('needs_you')),
   );
 }
 

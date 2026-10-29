@@ -16,6 +16,9 @@ const WS_ID = 'ws-1';
 const RECENT_POST_CREATED_AT = new Date().toISOString();
 
 type MockState = {
+  membershipRows: Array<{ user_id: string; group_id: string; ws_id: string }>;
+  groups: Array<{ id: string; ws_id: string; is_guest: boolean }>;
+  resolvedGuestStatuses: Array<{ user_id: string; is_guest: boolean }>;
   allCheckChunks: number[];
   existingQueueRows: Array<{ id: string; status: string; user_id: string }>;
   sentReceiverChunks: number[];
@@ -30,7 +33,11 @@ function createMockQueryBuilder(
   userIds: string[],
   userStatuses: Map<
     string,
-    { archived?: boolean | null; archived_until?: string | null }
+    {
+      archived?: boolean | null;
+      archived_until?: string | null;
+      ws_id?: string;
+    }
   >
 ) {
   const eqFilters = new Map<string, unknown>();
@@ -42,19 +49,39 @@ function createMockQueryBuilder(
       case 'user_group_post_checks': {
         const chunkUserIds = inFilters.get('user_id') ?? userIds;
         if (selectClause?.includes('user:workspace_users')) {
+          state.resolvedGuestStatuses.push(
+            ...chunkUserIds.map((user_id) => ({
+              user_id,
+              is_guest: state.membershipRows.some(
+                (membership) =>
+                  membership.user_id === user_id &&
+                  state.groups.some(
+                    (group) =>
+                      group.id === membership.group_id &&
+                      group.ws_id === WS_ID &&
+                      group.is_guest
+                  )
+              ),
+            }))
+          );
           return {
             data: chunkUserIds.map((userId) => ({
               approved_by: APPROVER_ID,
               approval_status: 'APPROVED',
               is_completed: true,
-              user: {
-                archived: userStatuses.get(userId)?.archived ?? false,
-                archived_until:
-                  userStatuses.get(userId)?.archived_until ?? null,
-                email: `${userId}@example.com`,
-                id: userId,
-                ws_id: WS_ID,
-              },
+              user:
+                eqFilters.has('user.ws_id') &&
+                eqFilters.get('user.ws_id') !==
+                  (userStatuses.get(userId)?.ws_id ?? WS_ID)
+                  ? null
+                  : {
+                      archived: userStatuses.get(userId)?.archived ?? false,
+                      archived_until:
+                        userStatuses.get(userId)?.archived_until ?? null,
+                      email: `${userId}@example.com`,
+                      id: userId,
+                      ws_id: userStatuses.get(userId)?.ws_id ?? WS_ID,
+                    },
               user_id: userId,
             })),
             error: null,
@@ -168,10 +195,9 @@ function createMockQueryBuilder(
   Object.defineProperty(builder, 'then', {
     value<TResult1 = unknown, TResult2 = never>(
       onfulfilled?:
-        | ((value: {
-            data: unknown;
-            error: null;
-          }) => TResult1 | PromiseLike<TResult1>)
+        | ((
+            value: ReturnType<typeof execute>
+          ) => TResult1 | PromiseLike<TResult1>)
         | null,
       onrejected?:
         | ((reason: unknown) => TResult2 | PromiseLike<TResult2>)
@@ -189,16 +215,35 @@ function createMockAdminClient(
   {
     userStatuses = new Map<
       string,
-      { archived?: boolean | null; archived_until?: string | null }
+      {
+        archived?: boolean | null;
+        archived_until?: string | null;
+        ws_id?: string;
+      }
     >(),
   }: {
     userStatuses?: Map<
       string,
-      { archived?: boolean | null; archived_until?: string | null }
+      {
+        archived?: boolean | null;
+        archived_until?: string | null;
+        ws_id?: string;
+      }
     >;
   } = {}
 ) {
   const state: MockState = {
+    membershipRows: userIds.map((user_id) => ({
+      user_id,
+      group_id: GROUP_ID,
+      ws_id: WS_ID,
+    })),
+    groups: [
+      { id: GROUP_ID, ws_id: WS_ID, is_guest: false },
+      { id: 'guest-group', ws_id: WS_ID, is_guest: true },
+      { id: 'other-group', ws_id: WS_ID, is_guest: false },
+    ],
+    resolvedGuestStatuses: [],
     allCheckChunks: [],
     existingQueueRows: [],
     sentReceiverIds: [],
@@ -221,6 +266,48 @@ function createMockAdminClient(
 }
 
 describe('enqueueApprovedPostEmails', () => {
+  it('enqueues existing moved recipients but refuses foreign-workspace users', async () => {
+    const ids = ['member', 'nonmember', 'guest', 'foreign'];
+    const { sbAdmin, state } = createMockAdminClient(ids, {
+      userStatuses: new Map([['foreign', { ws_id: 'other-workspace' }]]),
+    });
+    state.membershipRows = [
+      { user_id: 'member', group_id: GROUP_ID, ws_id: WS_ID },
+      { user_id: 'nonmember', group_id: 'other-group', ws_id: WS_ID },
+      { user_id: 'guest', group_id: 'guest-group', ws_id: WS_ID },
+      { user_id: 'foreign', group_id: GROUP_ID, ws_id: 'other-workspace' },
+    ];
+    const result = await enqueueApprovedPostEmails(sbAdmin as never, {
+      wsId: WS_ID,
+      postId: POST_ID,
+    });
+    expect(state.resolvedGuestStatuses).toContainEqual({
+      user_id: 'guest',
+      is_guest: true,
+    });
+    expect(result.queued).toBe(3);
+    expect(state.upsertRows.map((row) => row.user_id)).toEqual([
+      'member',
+      'nonmember',
+      'guest',
+    ]);
+  });
+
+  it('queues a same-workspace guest recipient regardless of group membership', async () => {
+    const { sbAdmin, state } = createMockAdminClient(['guest']);
+    state.membershipRows.push({
+      user_id: 'guest',
+      group_id: 'guest-group',
+      ws_id: WS_ID,
+    });
+    const result = await enqueueApprovedPostEmails(sbAdmin as never, {
+      wsId: WS_ID,
+      postId: POST_ID,
+    });
+    expect(result.queued).toBe(1);
+    expect(state.upsertRows.map((row) => row.user_id)).toEqual(['guest']);
+  });
+
   it('collects paginated select results beyond the first 1000 rows', async () => {
     const rows = await fetchAllPaginatedRows<number>(async (from, to) => ({
       data: Array.from(

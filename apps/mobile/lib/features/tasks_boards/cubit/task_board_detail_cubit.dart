@@ -19,8 +19,10 @@ import 'package:mobile/features/tasks_boards/data/task_broadcast_client.dart';
 
 part 'task_board_detail_state.dart';
 part 'task_board_detail_cache_merge.dart';
+part 'task_board_detail_mutation_guard.dart';
 
-class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
+class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
+    with _TaskBoardMutationRunner {
   TaskBoardDetailCubit({
     required TaskRepository taskRepository,
     TaskBroadcastClient? taskBroadcastClient,
@@ -261,6 +263,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     );
   }
 
+  @override
   Future<void> loadBoardDetail({
     required String wsId,
     required String boardId,
@@ -740,6 +743,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     List<String>? projectIds,
     List<String>? assigneeIds,
     bool clearDescription = false,
+    bool clearPriority = false,
     bool clearStartDate = false,
     bool clearEndDate = false,
     bool clearEstimationPoints = false,
@@ -752,6 +756,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     if (board == null) {
       throw StateError('Board detail is not initialized');
     }
+    _ensureNoMutationInProgress();
 
     final affectedListId = listId?.trim().isNotEmpty == true
         ? listId!.trim()
@@ -774,6 +779,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
       startDate: startDate,
       endDate: endDate,
       estimationPoints: estimationPoints,
+      clearPriority: clearPriority,
       clearStartDate: clearStartDate,
       clearEndDate: clearEndDate,
       clearEstimationPoints: clearEstimationPoints,
@@ -796,6 +802,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
           labelIds: labelIds,
           projectIds: projectIds,
           assigneeIds: sanitizedAssigneeIds,
+          clearPriority: clearPriority,
           clearStartDate: clearStartDate,
           clearEndDate: clearEndDate,
           clearEstimationPoints: clearEstimationPoints,
@@ -852,6 +859,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     DateTime? startDate,
     DateTime? endDate,
     int? estimationPoints,
+    bool clearPriority = false,
     bool clearStartDate = false,
     bool clearEndDate = false,
     bool clearEstimationPoints = false,
@@ -876,7 +884,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
         description: identical(description, _taskUpdateDescriptionUnset)
             ? task.description
             : description as String?,
-        priority: priority ?? task.priority,
+        priority: clearPriority ? null : priority ?? task.priority,
         completed: task.completed,
         startDate: clearStartDate ? null : startDate ?? task.startDate,
         endDate: clearEndDate ? null : endDate ?? task.endDate,
@@ -1177,6 +1185,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     // Ignore list reads started before the optimistic move. A stale cached
     // revalidation can otherwise put the task back in its previous list.
     _loadRequestToken++;
+    _ensureNoMutationInProgress();
     _optimisticallyMoveTaskToList(taskId: taskId, listId: listId);
 
     try {
@@ -2103,77 +2112,6 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     );
   }
 
-  Future<void> _runMutation(
-    Future<Object?> Function() action, {
-    bool reloadBoard = true,
-  }) async {
-    final wsId = state.workspaceId;
-    final boardId = state.boardId;
-
-    if (wsId == null || boardId == null) {
-      throw StateError('Board detail is not initialized');
-    }
-
-    if (state.isMutating) {
-      throw StateError('Another mutation is already in progress');
-    }
-
-    emit(
-      state.copyWith(
-        isMutating: true,
-        clearMutationError: true,
-        clearError: true,
-      ),
-    );
-
-    try {
-      await action();
-
-      if (isClosed) {
-        return;
-      }
-
-      if (state.workspaceId != wsId || state.boardId != boardId) {
-        emit(
-          state.copyWith(
-            isMutating: false,
-            clearMutationError: true,
-            clearError: true,
-          ),
-        );
-        return;
-      }
-
-      await _invalidateBoardCaches(wsId: wsId);
-
-      emit(
-        state.copyWith(
-          isMutating: false,
-          clearMutationError: true,
-          clearError: true,
-        ),
-      );
-
-      if (reloadBoard) {
-        await loadBoardDetail(wsId: wsId, boardId: boardId, forceRefresh: true);
-      }
-    } on Exception catch (error) {
-      if (isClosed) {
-        rethrow;
-      }
-      final isSameBoard = state.workspaceId == wsId && state.boardId == boardId;
-      emit(
-        state.copyWith(
-          isMutating: false,
-          clearError: true,
-          mutationError: isSameBoard ? error.toString() : null,
-          clearMutationError: !isSameBoard,
-        ),
-      );
-      rethrow;
-    }
-  }
-
   Future<TaskBulkResult> _runBulkOperation(TaskBulkOperation operation) async {
     final wsId = state.workspaceId;
     final boardId = state.boardId;
@@ -2181,9 +2119,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     if (wsId == null || boardId == null) {
       throw StateError('Board detail is not initialized');
     }
-    if (state.isMutating) {
-      throw StateError('Another mutation is already in progress');
-    }
+    _ensureNoMutationInProgress();
 
     final selectedTaskIds = state.selectedTaskIds.toList(growable: false);
     if (selectedTaskIds.isEmpty) {
@@ -2727,6 +2663,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState> {
     }
   }
 
+  @override
   Future<void> _invalidateBoardCaches({required String wsId}) {
     return CacheStore.instance.invalidateTags([
       _detailCacheTag,

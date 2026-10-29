@@ -15,7 +15,7 @@ export interface ForwardOptions {
    * URL's normalized `search` is used.
    */
   search?: string;
-  fetcher?: typeof fetch;
+  fetcher?: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
   /**
    * Whether this app serves `pathname` on the request origin. A same-origin
    * central API is a loop only for paths the app itself owns; omitted, any
@@ -79,6 +79,7 @@ export async function forwardToCentralApi(
     headers,
     body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
     redirect: 'manual',
+    signal: request.signal,
     duplex: 'half',
   };
   const upstream = await (options.fetcher ?? fetch)(new Request(target, init));

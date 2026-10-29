@@ -1,46 +1,39 @@
-import { resolveSatelliteRequestActor } from '@tuturuuu/satellite/workspace-access';
-import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
-interface Params {
-  params: Promise<{
-    wsId: string;
-  }>;
-}
-
-export async function PUT(req: Request, { params }: Params) {
-  const data = await req.json();
-  const { wsId: id } = await params;
-  const actor = await resolveSatelliteRequestActor(req, 'finance');
-  if (!actor) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-  const permissions = await getPermissions({ user: actor.user, wsId: id });
-  if (!permissions) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-  }
-  const { admin: sbAdmin } = actor;
-  const wsId = permissions.wsId;
-
-  const { error } = await sbAdmin
-    .schema('private')
-    .from('workspace_wallets')
-    .upsert(
-      (data?.wallets || []).map((p: Wallet) => ({
-        ...p,
-        ws_id: wsId,
-      }))
-    )
-    .eq('id', data.id);
-
-  if (error) {
-    console.error('Error migrating workspace wallets:', error);
+export async function PUT() {
+  // SR-362: this retired migration must never create a client or write wallets.
+  if (process.env.NODE_ENV !== 'development') {
     return NextResponse.json(
-      { message: 'Error migrating workspace wallets' },
-      { status: 500 }
+      {
+        error: 'Forbidden',
+        message:
+          'Infrastructure migration routes are only accessible in development mode',
+        hint: 'These routes are intended for internal data migration and should not be used in production.',
+      },
+      { status: 403 }
     );
   }
 
-  return NextResponse.json({ message: 'success' });
+  return NextResponse.json(
+    {
+      error: 'MIGRATION_DISABLED',
+      message:
+        'This workspace migration endpoint is no longer available. Use maintained database migrations or local backfill scripts instead.',
+    },
+    { status: 410 }
+  );
 }
+
+async function methodNotAllowed() {
+  return NextResponse.json(
+    { error: 'method not allowed' },
+    { status: 405, headers: { Allow: 'PUT' } }
+  );
+}
+
+export const GET = methodNotAllowed;
+export const HEAD = methodNotAllowed;
+export const POST = methodNotAllowed;
+export const PATCH = methodNotAllowed;
+export const DELETE = methodNotAllowed;
+export const OPTIONS = methodNotAllowed;

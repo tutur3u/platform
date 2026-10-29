@@ -6,6 +6,7 @@ const {
 } = require('./github-expression-test-helper');
 const {
   ADMISSION_PR_WORKFLOWS,
+  REUSABLE_GATED_WORKFLOWS,
   ALWAYS_ON_PR_WORKFLOWS,
   HEAVY_PR_WORKFLOWS,
   PAUSED_PR_WORKFLOWS,
@@ -26,25 +27,26 @@ const PROTECTED_TRIGGERS = {
   'ai-cloudflare.yaml': '1e5f4be0329251eb',
   'api-worker.yaml': '058d68d5d261d527',
   'apps-cloudflare.yaml': '5dadb22de50806df',
-  'biome-check.yaml': '47acd08d33c6cf4c',
+  'biome-check.yaml': '6c39e758f15186ed',
   'calendar-cloudflare.yaml': 'e3e096233a6e8a60',
   'calendar-generation-contract.yaml': '0a3cc2c97958f5cd',
   'cms-cloudflare.yaml': '5f4174ce584d0533',
   'codeql.yml': '4a4a1b519370f1bc',
   'colab-cloudflare.yaml': 'dce28d216351f5af',
   'connected-mail-accounts-contract.yaml': '36344b32dd7e88da',
+  'contacts-start-candidate.yaml': '0a3cc2c97958f5cd',
   'coordination-cloudflare.yaml': '5d9dda0ceaa00a84',
   'creator-identity-contract.yaml': '0a3cc2c97958f5cd',
   'cron-control-cloudflare.yaml': 'f9a9bce5ac1972dd',
   'desktop-beta.yaml': '3d1e23b37a961485',
   'devbox-control-cloudflare.yaml': 'af0d91d571550c3f',
   'discord-python-ci.yml': 'df10679b45d420bb',
-  'docs-seo-check.yaml': '6305e545b85b27e8',
+  'docs-seo-check.yaml': '78c7f5ff99020ac9',
   'external-internal-packages.yaml': '4d532cf88497bbd2',
   'external-project-storage-analytics-contract.yaml': '02e3e1d0d939ac56',
-  'finance-cloudflare.yaml': '892ac95ed04e14f7',
+  'finance-cloudflare.yaml': 'd5dc7fa96048fd6b',
   'forms-cloudflare.yaml': '4c98fb3cb1df4d96',
-  'i18n-check.yaml': '6305e545b85b27e8',
+  'i18n-check.yaml': '78c7f5ff99020ac9',
   'inventory-cloudflare.yaml': '4558d318d6aaaba3',
   'inventory-offline-contract.yaml': '0a3cc2c97958f5cd',
   'lettin-cloudflare.yaml': 'd043498fabfde801',
@@ -65,6 +67,7 @@ const PROTECTED_TRIGGERS = {
   'programming-app-builds.yaml': '0a3cc2c97958f5cd',
   'programming-database-contract.yaml': '0a3cc2c97958f5cd',
   'report-review-receipts-contract.yaml': '433352a4fb0e56e6',
+  'required-account-mfa-contract.yaml': 'f803778bc2859492',
   'sdk-package-qualification.yaml': '0a3cc2c97958f5cd',
   'security-egress-contract.yaml': '0a3cc2c97958f5cd',
   'shortener-cloudflare.yaml': '95e0a84a4fdf354e',
@@ -80,6 +83,7 @@ const PROTECTED_TRIGGERS = {
   'tutoring-absence-credit-contract.yaml': 'f0f9259c069d33ec',
   'tutoring-teacher-hours-contract.yaml': 'cb666f22d4bbdc8f',
   'type-check.yaml': '47acd08d33c6cf4c',
+  'web-start-candidate.yaml': '0a3cc2c97958f5cd',
 };
 
 function events(workflow) {
@@ -96,7 +100,12 @@ function prReachable(workflow) {
   if (Object.hasOwn(on, 'pull_request_target')) return true;
   if (!Object.hasOwn(on, 'push')) return false;
   const branches = on.push?.branches;
-  return !branches || branches.some((b) => !['main', 'production'].includes(b));
+  return (
+    !branches ||
+    branches.some(
+      (b) => !['main', 'production', 'release-please--branches--**'].includes(b)
+    )
+  );
 }
 
 function pullRequest(labels, action = 'synchronize', label) {
@@ -151,10 +160,12 @@ test('every PR-reachable workflow is classified exactly once', () => {
   assert.deepEqual([...classified].sort(), reachable.sort());
 });
 
-for (const file of HEAVY_PR_WORKFLOWS) {
+for (const file of [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS]) {
   test(`${file}: every PR job carries the ready-for-ci gate`, () => {
     const workflow = workflows[file];
-    const pr = events(workflow).pull_request;
+    const pr =
+      events(workflow).pull_request ??
+      events(workflows['pr-checks.yaml']).pull_request;
     assert.ok(pr, 'heavy workflows validate PRs through pull_request');
     for (const type of [
       'opened',
@@ -246,9 +257,9 @@ for (const file of [...ALWAYS_ON_PR_WORKFLOWS, ...PAUSED_PR_WORKFLOWS]) {
 test('main, production, schedule and manual triggers are untouched', () => {
   assert.deepEqual(
     Object.keys(PROTECTED_TRIGGERS).sort(),
-    [...HEAVY_PR_WORKFLOWS].sort()
+    [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS].sort()
   );
-  for (const file of HEAVY_PR_WORKFLOWS) {
+  for (const file of [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS]) {
     assert.equal(
       protectedTriggerDigest(file, workflows[file].on),
       PROTECTED_TRIGGERS[file],

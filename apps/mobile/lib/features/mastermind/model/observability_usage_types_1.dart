@@ -3,7 +3,6 @@ part of 'snapshot.dart';
 final class CreditPoint {
   const CreditPoint({
     required this.instance,
-    required this.displayName,
     required this.t,
     required this.remaining,
     required this.dailyBurn,
@@ -12,7 +11,6 @@ final class CreditPoint {
   });
 
   final String instance;
-  final CreditDisplayName displayName;
   final DateTime t;
   final double? remaining;
   final double? dailyBurn;

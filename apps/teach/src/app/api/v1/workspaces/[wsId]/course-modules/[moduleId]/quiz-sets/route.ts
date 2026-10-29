@@ -2,6 +2,7 @@ import { requireEducationWorkspaceAccess } from '@tuturuuu/education-core/educat
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { requireWorkspaceModules } from '@/lib/quiz-module-access';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -15,7 +16,8 @@ const RouteParamsSchema = z.object({
  * Lists the quiz sets linked to a single course module. Mirrors the legacy
  * server-component `getData` (admin read of `course_module_quiz_sets` spreading
  * `workspace_quiz_sets`), gated through `requireEducationWorkspaceAccess` so the
- * caller must hold education access to the workspace.
+ * caller must hold education access to the workspace. The module and every
+ * returned set must belong to this workspace.
  */
 export const GET = withSessionAuth(
   async (
@@ -38,7 +40,14 @@ export const GET = withSessionAuth(
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
-    const { sbAdmin } = access;
+    const { normalizedWsId, sbAdmin } = access;
+
+    const moduleFailure = await requireWorkspaceModules(
+      sbAdmin,
+      normalizedWsId,
+      [parsedParams.data.moduleId]
+    );
+    if (moduleFailure) return moduleFailure;
 
     const q = request.nextUrl.searchParams.get('q')?.trim();
     const page = Math.max(
@@ -59,12 +68,13 @@ export const GET = withSessionAuth(
 
     const queryBuilder = sbAdmin
       .from('course_module_quiz_sets')
-      .select('...workspace_quiz_sets(*)', { count: 'exact' })
+      .select('...workspace_quiz_sets!inner(*)', { count: 'exact' })
       .eq('module_id', parsedParams.data.moduleId)
+      .eq('workspace_quiz_sets.ws_id', normalizedWsId)
       .order('created_at', { ascending: false });
 
     if ((q?.length ?? 0) > 0) {
-      queryBuilder.ilike('name', `%${q}%`);
+      queryBuilder.ilike('workspace_quiz_sets.name', `%${q}%`);
     }
 
     const from = (page - 1) * pageSize;

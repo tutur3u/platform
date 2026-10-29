@@ -333,7 +333,7 @@ before editing source.
 | 317 | [Retire Duplicate Web External-AI Execution](./317-retire-duplicate-web-external-ai-execution.md) | P1 | M | Medium-High | BLOCKED | Plans 167/293/299/303/314 plus AI/G22 transfer and consumer disposition |
 | 318 | [Reconcile Hive Access Across Both Member Stores](./318-reconcile-hive-access-stores.md) | P0 | M | Medium | TODO | Hive runtime/cron operator coordination |
 | 319 | [Single-Source Governed npm Package Releases](./319-single-source-npm-release-workflows.md) | P1 | L | Medium-High | BLOCKED | Plans 236/292/298 plus Forms/release/CI transfer |
-| 320 | [Require Expiry for Drive Export Capabilities](./320-expire-drive-export-capabilities.md) | P0 | M | Medium | BLOCKED | backend migration ownership transfer |
+| 320 | [Require Expiry for Drive Export Capabilities](./320-expire-drive-export-capabilities.md) | P0 | M | Medium | SUPERSEDED | Active Web policy is documented in Drive; Rust remains paused |
 | 321 | [Retire Crawler-Backed Pipelines and Queues](./321-retire-crawler-backed-pipelines-queues.md) | P1 | M | Low | BLOCKED | G22 TanStack migration-artifact transfer |
 | 322 | [Preserve a Mailbox Owner During Membership Mutations](./322-preserve-mailbox-owner.md) | P0 | M | Medium | BLOCKED | Plan 154 green, Plan 163, and Mail/database/type transfer |
 | 323 | [Aggregate Mail Bootstrap Unread Counts Set-Wise](./323-aggregate-mail-unread-counts.md) | P1 | M | Medium | BLOCKED | Plan 322 plus Plan 154/163 and Mail/database/type transfer |
@@ -876,9 +876,8 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
   credential, and immutable-action contracts rather than refactoring stale
   copies. It also needs exact transfer of the Forms-owned shared release test
   and every affected release/CI workflow.
-- Plan 320 changes the prepared Rust parity handler as well as the live shared
-  TypeScript authority, so it waits for exact backend migration transfer; it
-  must not imply that Rust currently serves production traffic.
+- Plan 320's active Web scope is superseded by the Drive export lifetime and
+  revocation policy. The prepared Rust runtime remains paused.
 - Plan 321 keeps both legacy URLs as redirects and requires G22 transfer before
   regenerating coordinator-owned TanStack overrides, manifest, or route tree.
 - Plan 322 waits for the exact-base database gate and Mail/database/type
@@ -949,9 +948,10 @@ are `TODO`, `IN PROGRESS`, `BLOCKED`, `DONE`, `REJECTED`, and `SUPERSEDED`.
 - **Mailbox member directory scaling:** Plan 326 cursor-pages membership rows,
   bulk-loads both profile tables, and changes the settings UI to bounded manual
   page loading.
-- **Drive export capability expiry:** Plan 320 replaces the TypeScript/Rust
-  fail-open TTL with one finite default and strict bounded configuration while
-  preserving the bearer token and downstream signed-URL formats.
+- **Drive export capability expiry:** Active Web uses the documented seven-day
+  default, 30-day override cap, version-two tokens, and folder revocation.
+  See [Drive](../apps/docs/platform/applications/drive.mdx#export-link-lifetime-and-revocation).
+  Plan 320's shared Rust proposal remains historical; Rust is paused.
 - **False workflow products:** Plan 321 removes Pipelines/Queues navigation and
   redirects their crawler-backed copies to canonical Crawlers instead of
   inventing unsupported semantics.

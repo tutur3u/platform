@@ -45,26 +45,3 @@ final class JournalDecision extends Decision {
   @override
   final Product? product;
 }
-
-final class SecurityDecision extends Decision {
-  const SecurityDecision({
-    required this.id,
-    required this.at,
-    required this.title,
-    required this.area,
-    required this.risk,
-    this.product,
-  });
-
-  @override
-  final String id;
-  @override
-  final DateTime at;
-  @override
-  final String title;
-  final String area;
-  @override
-  final Risk risk;
-  @override
-  final Product? product;
-}

@@ -6,6 +6,28 @@ shared-package changes.
 
 ## Web And Shared UI
 
+- Drive export links use versioned, expiring tokens plus a service-only folder
+  revocation marker in the Supabase `.tuturuuu/drive-export-revocations` namespace.
+  Read markers uncached on every fetch and fail closed on missing markers or
+  storage errors. Initialize with insert-only writes; never reset a version during
+  issuance or provider migration. Require `manage_drive` before rotating it.
+  See [Drive export lifetime and revocation](../../../../../apps/docs/platform/applications/drive.mdx#export-link-lifetime-and-revocation)
+  for the seven-day default, override cap, legacy-token cutover, existing private-root
+  RLS prerequisite, and already-issued read URL limitation.
+- Shared JSON content validation bounds streamed bytes and structural complexity
+  before constructing and scanning leaf paths. Keep skipped emoji fields inside
+  structural bounds except for explicit machine-state exemptions. Whiteboard
+  PATCH saves strip the top-level snapshot and use an 8 MiB streamed cap; other
+  fields retain generic checks. Preserve route-specific body limits and test adversarial
+  structure with small deterministic fixtures. See [request validation bounds](../../../../../apps/docs/platform/features/mobile-workspace-tools.mdx#request-content-validation-bounds).
+- Provider execution requires a newly acquired metered reservation; an existing
+  idempotent reservation returns 409 before invoking a provider. AI-chat attachment
+  reads require the authenticated source-chat owner even when a different product
+  uses the same UUID. Prompt preparation and conversion tools share the owner
+  and workspace-membership fence before storage reads/signing; AI chats have no
+  workspace column. Keep workspace admission in each route. See [AI Studio](../../../../../apps/docs/platform/ai/ai-studio.mdx#execution-and-attachment-authorization).
+
+
 - Workspace user reads share the users-core field projection and effective
   public/private permissions. Attendance and score adapters verify every requested
   user/class against the permission workspace. Preserve app-session actors and
@@ -38,6 +60,12 @@ and its focused regression coverage before adding a reason or changing middlewar
   preserve membership, workspace filters, visibility and creator checks.
   Expand one resource at a time with its existing error envelope and regression
   coverage. See [typed workspace boundaries](../../../../../apps/docs/build/development-tools/codex-plugin.mdx#typed-workspace-boundaries).
+- Hive product handlers live in `apps/hive/src/app/api/v1/hive` and use
+  `HIVE_DATABASE_URL`; membership/platform roles still use platform services.
+  Trace the current handler before applying a historical Supabase world-event
+  fix. A maintenance Worker is an approval-gated routing operation, not app
+  restoration. See the [Hive migration plan](../../../../../apps/docs/build/devops/hive-cloudflare-migration.mdx)
+  and [maintenance runbook](../../../../../apps/docs/build/devops/hive-cloudflare-maintenance.mdx).
 
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
@@ -124,14 +152,18 @@ and its focused regression coverage before adding a reason or changing middlewar
   `useEffect`.
 - Client/shared UI app API calls should go through `packages/internal-api/src/*`
   helpers instead of scattered raw `fetch('/api/...')` calls.
-- Mounted app adapters register `registerDefaultAppBaseResolver` from
-  `@tuturuuu/internal-api/client` once at startup for helpers without options.
-  Read request-local context inside the callback and return an absolute URL on
-  SSR; never capture an incoming request in the registered closure. Select
-  app-owned routes when the adapter also calls central APIs. See the
+- Mounted app adapters register `registerDefaultAppBaseResolver` from `@tuturuuu/internal-api/client`
+  once for helpers without options. Read request context in the callback; SSR returns an absolute URL.
+  Never capture a request. Select app-owned routes when central APIs are also used.
+  API helpers take raw validated `/api/...` inputs; the resolver applies the mount.
+  Prefix rendered href/src separately, including CID image replacements. See the
   [bridge resolver contract](../../../../../apps/docs/build/devops/start-bridge.mdx#internal-api-resolver-registration)
   for browser setup, teardown and regression coverage.
 - Every `fetch` inside a query function should include `{ cache: 'no-store' }`.
+- Web mounts the Sonner toaster. Client mutations should import `toast` from
+  `@tuturuuu/ui/sonner`; the legacy `hooks/use-toast` store has no mounted Web
+  consumer and can silently hide failures. Preserve safe API errors, pending
+  confirmation and mutation retry policy; see the workspace deletion regressions.
 - Use `@tuturuuu/icons`, `@tuturuuu/ui/dialog`, and dynamic design tokens.
   Native browser dialogs, emojis in UI code, and hard-coded hue classes are not
   acceptable.
@@ -262,6 +294,13 @@ protocol and its explicitly in-memory regression boundary.
   cannot be split.
 - API routes should parse JSON inside a `try/catch` before Zod validation and
   return explicit `400` for malformed JSON.
+- For secret writes that can select a service-role client, use one strict Zod
+  allowlist before choosing the client, and construct mutations from parsed
+  editable fields only. Reject caller-supplied identity, workspace and timestamp
+  columns with HTTP 400. Keep editor request bodies aligned with that contract;
+  workspace-secret edits carry the id in the URL, not the JSON body. Regression
+  tests must cover unknown fields on both client paths and workspace predicates
+  on successful elevated updates.
 - Validate UUID path params with shared Zod GUID schemas instead of ad-hoc
   regex checks.
 - Initialize Supabase with `createClient(request)` in API routes that must
@@ -1332,3 +1371,29 @@ provider whose entire nonempty sample failed transiently. Keep the bounded
 reader and durable ledger. Degraded runs reset the fatal streak without
 advancing the last productive completion; holds and revocations remain nonfatal.
 See `apps/docs/platform/applications/calendar.mdx` and the scheduler contract tests.
+
+
+### Verified mailbox identity
+
+Use `getVerifiedAuthEmail(admin, userId)` from `@tuturuuu/supabase/next/user`
+for recipient-email authorization. It reads Auth by the authenticated subject,
+requires a matching id, and returns no mailbox unless `email_confirmed_at` is set.
+If Auth was already fetched and subject-bound, use `getConfirmedAuthEmail(user)`.
+Keep editable profile/contact emails and supplied session emails for display only.
+Direct recipient ids remain valid without a confirmed mailbox. Cross-app SQL must
+canonicalize at both minting and redemption so outstanding handoffs follow the
+same rule; preserve the signed MFA transfer and existing bearer-redemption ACL.
+
+
+### Staff-session authorization
+
+Use `@tuturuuu/utils/email/staff-session` only with a current subject-bound Auth
+user containing provider identities. App-session and profile projections require
+`getVerifiedAuthUser` first. Preserve independent workspace/role and feature gates;
+an address syntax predicate or UI visibility flag never grants staff authority.
+See the staff-session decision in `apps/docs/platform/architecture/authorization.mdx`
+and the shared helper's identity matrix and route denial regressions.
+
+For AI memory or billing attribution, resolve the request scope with
+`authorizeAiWorkspace` before provider or memory work. Temporary authentication
+does not grant workspace membership; retain a canonical authorized workspace id.

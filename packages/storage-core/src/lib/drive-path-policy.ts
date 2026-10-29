@@ -3,6 +3,10 @@ import {
   filterReservedMobileDeploymentDriveEntries,
   isReservedMobileDeploymentDrivePath,
 } from './mobile-deployment/storage-policy';
+import {
+  isServiceOnlyWorkspaceStorageRoot,
+  normalizeWorkspaceStorageRoot,
+} from './workspace-storage-roots';
 
 /** Private resources require their owning application API, never Drive permissions. */
 function isPrivateAppStoragePath(path: string): boolean {
@@ -19,17 +23,12 @@ function isPrivateAppStoragePath(path: string): boolean {
     if (decoded === namespace) break;
     namespace = decoded;
   }
-  const [root, child] = namespace.split('/');
+  const [root = '', child] = namespace.split('/');
+  const normalizedRoot = normalizeWorkspaceStorageRoot(root);
   return (
-    [
-      'chat',
-      'chats',
-      'external-apps',
-      'AI Agent Imports',
-      'recordings',
-      'topic-announcements',
-    ].includes(root ?? '') ||
-    (root === 'mira' && child === 'images')
+    normalizedRoot === 'chat' ||
+    normalizedRoot === 'chats' ||
+    isServiceOnlyWorkspaceStorageRoot(root, child)
   );
 }
 

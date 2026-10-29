@@ -25,7 +25,6 @@ void main() {
         s.observability.fleet.series.length,
         s.observability.coordination.messages.length,
         s.observability.delivery.ships.length,
-        s.observability.security.series.length,
       ];
       stdout.writeln('accepted; lengths: ${lengths.join(',')}');
     }

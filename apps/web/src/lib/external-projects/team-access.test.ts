@@ -110,6 +110,14 @@ function createAccess({ roleExists }: { roleExists: boolean }) {
 
       if (table === 'workspace_role_permissions') {
         return {
+          select() {
+            const query: Record<string, unknown> = {};
+            for (const op of ['eq', 'in']) query[op] = () => query;
+            // biome-ignore lint/suspicious/noThenProperty: mimics the awaitable query builder.
+            query.then = (resolve: (value: unknown) => unknown) =>
+              Promise.resolve({ data: [], error: null }).then(resolve);
+            return query;
+          },
           upsert(rows: unknown) {
             calls.upsertedRolePermissions = rows;
             return Promise.resolve({ error: null });
@@ -125,6 +133,7 @@ function createAccess({ roleExists }: { roleExists: boolean }) {
     access: {
       admin,
       normalizedWorkspaceId: 'workspace-1',
+      user: { id: 'actor-1' },
     },
     calls,
   };

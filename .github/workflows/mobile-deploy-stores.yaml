@@ -452,6 +452,9 @@ jobs:
       - name: Omit Live screen broadcast from TestFlight beta
         run: ruby ../../scripts/mobile-deployment/omit-broadcast-extension.rb ios/Runner.xcodeproj
 
+      - name: Verify release backend URLs are https
+        run: node ../../scripts/mobile-validate-dart-defines.js .env.github
+
       - name: Build iOS IPA
         run: flutter build ipa --release --flavor production --target lib/main_production.dart --dart-define-from-file=.env.github --dart-define=IOS_LIVE_SCREEN_BROADCAST_ENABLED=false --build-name=${{ needs.mobile-credentials-preflight.outputs.build_name }} --build-number=${{ needs.mobile-credentials-preflight.outputs.build_number }} --export-options-plist=ios/ExportOptions.plist
 

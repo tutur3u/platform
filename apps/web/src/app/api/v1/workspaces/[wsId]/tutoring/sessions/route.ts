@@ -27,6 +27,10 @@ import {
   resolveTutoringRouteAccess,
 } from '@/lib/tutoring/route-access';
 import { listWorkspaceTeacherIds } from '@/lib/tutoring/teachers';
+import {
+  denyWeakContentEdit,
+  isWeakSupportSession,
+} from '@/lib/tutoring/weak-content-access';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -235,6 +239,16 @@ export async function POST(request: Request, { params }: Params) {
   const supabase = await createTutoringRequestClient(request, user);
   const sbAdmin = await createAdminClient();
   const tutoringSessionsClient = sbAdmin.schema('private');
+  const deniedWeakContent = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent: isWeakSupportSession({
+      reasonType: parsed.data.reasonType,
+      sourceFeedbackId: parsed.data.sourceFeedbackId,
+    }),
+    wsId: normalizedWsId,
+  });
+  if (deniedWeakContent) return deniedWeakContent;
   const actor = user ?? (await resolveAuthenticatedSessionUser(supabase)).user;
 
   if (!actor) {
@@ -308,6 +322,7 @@ export async function POST(request: Request, { params }: Params) {
 
   const slotsForConflictCheck: TutoringSessionSlotInput[] = sessionSlots.map(
     (slot) => ({
+      groupId: payload.groupId,
       durationMinutes: slot.durationMinutes,
       sessionDate: slot.sessionDate,
       startTime: slot.startTime,

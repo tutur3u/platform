@@ -44,3 +44,28 @@ describe('native action body bound inherited from Next server actions', () => {
     expect(await wrong.text()).toBe('untouched');
   });
 });
+
+import { prepareMailFunctionRequest } from './native-function-body';
+
+it.each(['https://mail.tuturuuu.com', 'https://tuturuuu.com/mail'])(
+  'serves legacy RPC bytes at the new function base without redirect on %s',
+  async (base) => {
+    const body = '{ "operation": "original" }\n';
+    const prepared = await prepareMailFunctionRequest(
+      new Request(`${base}/_mail/functions/id?revision=original`, {
+        method: 'POST',
+        body,
+        headers: {
+          'content-type': 'application/json',
+          'x-original': 'fixture',
+        },
+      })
+    );
+    expect(prepared).toBeInstanceOf(Request);
+    if (!(prepared instanceof Request))
+      throw new Error('Legacy function request rejected');
+    expect(prepared.url).toBe(`${base}/_fn/id?revision=original`);
+    expect(prepared.headers.get('x-original')).toBe('fixture');
+    expect(await prepared.text()).toBe(body);
+  }
+);

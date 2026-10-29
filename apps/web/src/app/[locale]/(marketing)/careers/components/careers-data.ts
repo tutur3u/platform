@@ -131,15 +131,10 @@ export const aiSystems: AiSystem[] = [
   {
     name: 'Mira',
     subtitle: 'The companion',
-    description:
-      'A proactive assistant that plans, reasons, and acts on your behalf.',
+    description: 'An AI assistant that plans, reasons, and acts when you ask.',
     icon: Bot,
     accent: 'pink',
-    features: [
-      'Natural conversations',
-      'Proactive planning',
-      'Cross-app context',
-    ],
+    features: ['Natural conversations', 'Planning help', 'Cross-app context'],
   },
   {
     name: 'Aurora',

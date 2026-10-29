@@ -152,7 +152,7 @@ function runtimeImports(source, filename) {
 }
 
 /**
- * Which runner owns a test file: 'vitest', 'node' (node --test) or 'bun'
+ * Which runner owns a test file: 'playwright', 'vitest', 'node' (node --test) or 'bun'
  * (`bun test`, for Worker/Durable Object suites that CI runs with Bun and that
  * Node cannot load because of extensionless workspace imports).
  */
@@ -164,6 +164,7 @@ function testRunnerOf(file, context) {
   )?.testScript;
   const source = context.readSource?.(file) ?? '';
   const imports = runtimeImports(source, file);
+  if (imports.has('@playwright/test')) return 'playwright';
   if (imports.has('vitest')) return 'vitest';
   if (imports.has('bun:test')) return 'bun';
   if (imports.has('node:test')) return 'node';
@@ -338,6 +339,12 @@ function planChecks(changes, context) {
     for (const related of siblingTests(file, exists)) {
       relatedTests.set(related, testRunnerOf(related, context));
     }
+  }
+  if ([...relatedTests.values()].includes('playwright')) {
+    skipped.push([
+      'playwright',
+      'browser specs require separate E2E runtime verification',
+    ]);
   }
   const scriptTests = nodeScriptTests(
     all.filter((file) => !isPausedPath(file)),

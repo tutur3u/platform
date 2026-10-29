@@ -41,6 +41,16 @@ Use the [Track route reference](/reference/repository/routes/track) to locate
 handlers, and [Data fetching](/platform/architecture/data-fetching) to extend a
 shared client contract rather than adding app-local raw browser API calls.
 
+Time-tracking bypass writers, both break-pause overloads and the workspace
+aggregate statistics RPC accept only the service role. Product routes retain
+actor, workspace and permission checks before invoking these RPCs. The database
+packet is `apps/database/supabase/tests/time-task-rpc-scoping.sql`.
+
+Linked sessions on time requests must belong to the request owner and the
+request workspace. Track and the retained Web handlers reject mismatched links
+before approval or rejection. Route coverage lives in each app's
+`time-tracking/requests/linked-session.test.ts`.
+
 ## Native Start candidate
 
 Track's retained App Router pages compile through the shared Start bridge RSC

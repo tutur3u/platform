@@ -36,6 +36,14 @@ function createAccess() {
           },
         };
       }
+      if (table === 'workspace_role_permissions') {
+        const query: Record<string, unknown> = {};
+        for (const op of ['eq', 'in', 'select']) query[op] = () => query;
+        // biome-ignore lint/suspicious/noThenProperty: mimics the awaitable query builder.
+        query.then = (resolve: (value: unknown) => unknown) =>
+          Promise.resolve({ data: [], error: null }).then(resolve);
+        return query;
+      }
       if (table === 'workspace_email_invites') {
         return {
           select() {
@@ -135,6 +143,7 @@ describe('external-project member invitations', () => {
     expect(response.status).toBe(200);
     expect(calls.rpcs).toContainEqual({
       args: {
+        p_actor_id: 'actor-1',
         p_email: 'editor@example.com',
         p_role_ids: [],
         p_user_id: null,

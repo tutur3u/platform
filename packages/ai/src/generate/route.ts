@@ -129,6 +129,23 @@ export function createPOST(
         return new Response('Missing prompt', { status: 400 });
       }
 
+      const { data: apiKeyData, error: apiKeyError } = await sbAdmin
+        .from('workspace_api_keys')
+        .select('id, created_by, scopes, key_hash')
+        .eq('ws_id', configs.wsId)
+        .eq('id', accessKey.id)
+        .single();
+
+      const isValidAccessKey =
+        !apiKeyError &&
+        !!apiKeyData?.key_hash &&
+        (await validateApiKeyHash(accessKey.value, apiKeyData.key_hash));
+
+      if (!isValidAccessKey || !apiKeyData) {
+        console.error('Invalid accessId or accessKey', apiKeyError);
+        return new Response('Invalid accessId or accessKey', { status: 400 });
+      }
+
       let effectiveModel = configs.model;
       try {
         const resolvedModel = await resolvePlanModel({
@@ -184,23 +201,6 @@ export function createPOST(
       if (!configs.wsId) {
         console.error('Missing workspace ID');
         return new Response('Missing workspace ID', { status: 400 });
-      }
-
-      const { data: apiKeyData, error: apiKeyError } = await sbAdmin
-        .from('workspace_api_keys')
-        .select('id, created_by, scopes, key_hash')
-        .eq('ws_id', configs.wsId)
-        .eq('id', accessKey.id)
-        .single();
-
-      const isValidAccessKey =
-        !apiKeyError &&
-        !!apiKeyData?.key_hash &&
-        (await validateApiKeyHash(accessKey.value, apiKeyData.key_hash));
-
-      if (!isValidAccessKey || !apiKeyData) {
-        console.error('Invalid accessId or accessKey', apiKeyError);
-        return new Response('Invalid accessId or accessKey', { status: 400 });
       }
 
       if (!apiKeyData.scopes.includes(effectiveModel)) {

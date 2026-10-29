@@ -18,7 +18,7 @@ select has_table(
 select has_function(
   'private',
   'set_workspace_invitation_roles',
-  array['uuid', 'uuid[]', 'uuid', 'text'],
+  array['uuid', 'uuid[]', 'uuid', 'text', 'uuid'],
   'pending invitation roles can be replaced atomically'
 );
 select has_function(

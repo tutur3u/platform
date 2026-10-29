@@ -78,6 +78,7 @@ beforeEach(() => {
   });
   mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
     adapter: 'richfield',
+    canonical_project: { adapter: 'richfield', id: 'richfield' },
     enabled: true,
     settings: {
       outboundEmail: {
@@ -110,6 +111,7 @@ describe('POST external-project emails', () => {
   it('refuses an app that is not the one bound to the workspace', async () => {
     mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
       adapter: 'yashie',
+      canonical_project: { adapter: 'yashie', id: 'yashie' },
       enabled: true,
     });
     const { POST } = await import('./route');
@@ -123,6 +125,7 @@ describe('POST external-project emails', () => {
   it('denies outbound email when the binding has no explicit grant', async () => {
     mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
       adapter: 'richfield',
+      canonical_project: { adapter: 'richfield', id: 'richfield' },
       enabled: true,
       settings: {},
     });
@@ -184,6 +187,7 @@ describe('POST external-project emails', () => {
   it('uses root credentials only when the workspace policy opts in', async () => {
     mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
       adapter: 'richfield',
+      canonical_project: { adapter: 'richfield', id: 'richfield' },
       enabled: true,
       settings: {
         outboundEmail: {

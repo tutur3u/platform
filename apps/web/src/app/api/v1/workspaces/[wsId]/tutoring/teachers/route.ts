@@ -1,13 +1,26 @@
+import {
+  readTutoringPolicyConfigRows,
+  TUTORING_POLICY_CONFIG_ID,
+} from '@tuturuuu/internal-api/tutoring-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { buildPostgrestIlikeOrFilter } from '@tuturuuu/utils/postgrest-filter';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
-import { workspaceTeachersQuery } from '@/lib/tutoring/teachers';
+import {
+  classifyWorkspaceTeacher,
+  listWorkspaceTutorIds,
+  workspaceTeachersQuery,
+} from '@/lib/tutoring/teachers';
 
 const querySchema = z.object({
   page: z.coerce.number().int().min(1).max(1000000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   q: z.string().trim().max(200).default(''),
+  tutorsOnly: z
+    .enum(['true', 'false'])
+    .optional()
+    .transform((value) => (value === undefined ? undefined : value === 'true')),
 });
 
 export async function GET(
@@ -32,15 +45,53 @@ export async function GET(
   );
   if (!parsed.success)
     return NextResponse.json({ message: 'Invalid query' }, { status: 400 });
-  const { page, pageSize, q } = parsed.data;
+  const { page, pageSize, q, tutorsOnly } = parsed.data;
   const sbAdmin = await createAdminClient();
+  const { data: policyRows, error: policyError } = await sbAdmin
+    .from('workspace_configs')
+    .select('id,value')
+    .eq('ws_id', normalizedWsId)
+    .like('id', `${TUTORING_POLICY_CONFIG_ID}%`);
+  if (policyError) {
+    console.error('Failed to load tutoring policy for teachers', {
+      error: policyError,
+      wsId: normalizedWsId,
+    });
+    // Default listings depend on policy to determine eligibility.
+    if (tutorsOnly !== false)
+      return NextResponse.json(
+        { message: 'Failed to load teachers' },
+        { status: 500 }
+      );
+  }
+  const { tutorGroupIds } = readTutoringPolicyConfigRows(
+    policyError ? [] : (policyRows ?? [])
+  );
   let query = workspaceTeachersQuery(sbAdmin, normalizedWsId);
+  if (tutorsOnly ?? tutorGroupIds.length > 0) {
+    const { tutorIds, error } = await listWorkspaceTutorIds({
+      normalizedWsId,
+      sbAdmin,
+      tutorGroupIds,
+    });
+    if (error) {
+      console.error('Failed to list tutoring tutors', {
+        error,
+        wsId: normalizedWsId,
+      });
+      return NextResponse.json(
+        { message: 'Failed to load teachers' },
+        { status: 500 }
+      );
+    }
+    // Filtering by group would also trim each person's embedded memberships,
+    // hiding their class roles, so narrow by user id instead.
+    query = query.in('id', tutorIds);
+  }
   if (q) {
     // Quoted PostgREST literals keep punctuation inside the search operand.
-    const pattern = `%${q.replace(/\\/g, '\\\\').replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
-    const literal = `"${pattern.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
     query = query.or(
-      `full_name.ilike.${literal},display_name.ilike.${literal}`
+      buildPostgrestIlikeOrFilter(['full_name', 'display_name'], q)
     );
   }
   const { data, error, count } = await query
@@ -59,11 +110,14 @@ export async function GET(
   }
   return NextResponse.json(
     {
-      data: (data ?? []).map(({ id, full_name, display_name }) => ({
-        id,
-        full_name,
-        display_name,
-      })),
+      data: (data ?? []).map(
+        ({ id, full_name, display_name, memberships }) => ({
+          id,
+          full_name,
+          display_name,
+          ...classifyWorkspaceTeacher(memberships ?? [], tutorGroupIds),
+        })
+      ),
       count: count ?? 0,
       page,
       pageSize,

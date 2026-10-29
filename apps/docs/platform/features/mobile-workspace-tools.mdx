@@ -977,9 +977,11 @@ The check extracts Flutter `/api/*` templates from `api_config.dart` and the
 production endpoint catalog used by the `ttr` CLI SDK. It verifies that both
 legacy clients still resolve to a canonical owner in a checked-in Next
 satellite, the legacy route wrappers, or the Rust/TanStack migration manifest.
-The `Mobile API Mappings` workflow runs whenever either client catalog, an app
-API route, or the migration manifest changes. If a route is migrated or
-removed, update Flutter and the CLI SDK in the same change instead of leaving a
+For PRs targeting `main`, `Cheap PR Checks` selects the reusable
+`mobile-api-mappings.yaml` validation whenever either client catalog, an app
+API route, or the migration manifest changes. The standalone Mobile API
+Mappings workflow retains its main-push and manual entrypoints. If a route is
+migrated or removed, update Flutter and the CLI SDK in the same change instead of leaving a
 legacy client to discover the break in production.
 
 ## Mobile Inventory And Storefront Coverage
@@ -1964,7 +1966,8 @@ gestures. The same behavior applies on Android and iOS.
   **Select task** enters bulk selection. Earlier, a long press entered bulk
   selection directly. In bulk selection, swipes are off and a long press
   toggles the row, as before.
-- Tapping a row still opens its quick actions. Every swipe action is also
+- Tapping a row opens the [quick actions sheet](#task-quick-actions-sheet).
+  Every swipe action is also
   exposed as a screen-reader action.
 
 Kanban cards keep their earlier long-press selection behavior; this decision
@@ -1975,6 +1978,47 @@ toasts, the Schedule picker, Start focus), `task_board_bulk_selection_test.dart`
 and `app_swipe_actions_test.dart` (thresholds, the fling minimum, reveal,
 right-to-left, semantics, enlarged text). Widget tests do
 not establish gesture feel on devices.
+
+### Task quick actions sheet
+
+Tapping a task on a board (List, Kanban or Timeline) opens the quick actions
+sheet. It replaces the earlier button grid; the long-press menu is unchanged.
+
+- **Status**: one large tile per status that has a list on the board (Not
+  started, Active, Review, Done, Closed; Documents lists are not a target).
+  The current status is selected. Another status moves the task to that
+  status's list, asking which list when there are several, and closes the
+  sheet.
+- **Priority**: None, Urgent, High, Medium and Low, the web's task priority
+  menu wording (Vietnamese: Không có, Khẩn cấp, Cao, Trung bình, Thấp). The
+  four levels use the web's icons and colours: unicorn head (red), horse head
+  (orange), rabbit (yellow) and turtle (blue), from Lucide and Lucide Lab.
+  None clears the priority. Every mobile task surface (cards, filters, bulk
+  edit, row menu, recycle bin, My tasks and the timer task picker) uses the
+  same labels and icons.
+- **Fields**: Assignees (team workspaces with members), Due date (with a clear
+  button), Labels (boards with labels) and Move task. Each row shows its
+  current value and opens its picker. A task is overdue once its due day,
+  in the user's timezone setting, is before today; a task without a due date
+  is never overdue.
+- **Open full details** closes the sheet and opens the task.
+- Priority and field edits keep the sheet open and update it in place, so
+  several can be made in a row. They save without a success toast because the
+  sheet shows the saved value; failures still roll back and show the error.
+  While one edit saves, every control dims and ignores taps, because the
+  board runs one mutation at a time. A mutation started anyway is rejected
+  before any optimistic change, so nothing needs rolling back.
+- No count chips: assignee and label names replace overflow counts.
+
+Regression coverage: `task_priority_visuals_test.dart` (web order, icons,
+colours, English and Vietnamese labels including None),
+`task_board_quick_actions_test.dart` (icons, labels and order, selected
+semantics, statuses offered, None clears, dropped concurrent edit with every
+control disabled, status move, due-date clear, 320dp at 2x text,
+light/dark/blob renders), `task_board_detail_cubit_mutation_guard_test.dart`
+(a rejected concurrent update or move changes nothing)
+and `task_board_quick_actions_edits_test.dart` (consecutive edits save from
+the live task). Widget tests do not establish touch feel on devices.
 
 ### Root tabs and dock search
 
@@ -2058,3 +2102,30 @@ assignee, label and project chips wrap under the field name, so enlarged text
 never clips them. The description accordion stays above the card, and editing
 still happens in the task editor. Back stays on the dock.
 
+
+## Request content validation bounds
+
+JSON mutations checked by the shared proxy content guard, including Tools, have
+a 2 MiB streamed validation bound, at most 10,000 visited values, nesting depth
+32, and path length 2,048 characters. Structural checks run before per-field
+emoji and text scanning. The proxy's existing route body limit still applies.
+These bounds also apply to fields exempted from emoji checks, with two
+intentional machine-state exceptions: task-description Yjs state keeps its
+existing structural exemption, and `PATCH /api/v1/workspaces/:wsId/whiteboards/:id`
+removes the top-level `snapshot` before structural and text checks. Whiteboard
+saves instead have an 8 MiB streamed body cap, allowing multi-hundred-shape
+boards and dense freehand strokes beyond the generic 2 MiB budget while
+bounding JSON parsing. Database writes independently cap `workspace_whiteboards.snapshot`
+at 25 MiB of serialized JSON bytes (26,214,400), preserving the contract from
+`20260326163000_set_whiteboard_snapshot_payload_limit_25mb.sql`. The payload
+helper and existing CHECK enforce the same cap; the HTTP route retains its
+smaller body bound. Other whiteboard fields retain the generic validation
+rules; other routes and methods keep the 2 MiB cap. Trusted server bypass
+credentials retain their existing behavior. Over-limit content returns
+HTTP 400 with `REQUEST_COMPLEXITY_EXCEEDED`; the earlier proxy body-size gate
+returns HTTP 413 when its route cap is exceeded. Existing invalid JSON handling
+remains with the route. Regression coverage:
+`packages/utils/src/__tests__/request-emoji-complexity.test.ts`,
+`packages/utils/src/__tests__/request-whiteboard-bounds.test.ts`,
+`apps/database/supabase/tests/description-table-hardening.sql`, and
+`apps/database/supabase/tests/readiness-whiteboard-contracts.sql`.

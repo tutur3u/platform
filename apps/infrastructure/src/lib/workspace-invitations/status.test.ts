@@ -151,6 +151,20 @@ function createAdminClientMock(state: TestState = {}) {
   }
 
   return {
+    auth: {
+      admin: {
+        getUserById: async (id: string) => ({
+          data: {
+            user: {
+              id,
+              email: 'user@example.com',
+              email_confirmed_at: '2026-01-01',
+            },
+          },
+          error: null,
+        }),
+      },
+    },
     from: vi.fn((table: string) => createBuilder(table)),
   };
 }
@@ -207,7 +221,7 @@ describe('workspace invitation status helpers', () => {
     }
   });
 
-  it('matches pending email invites against the private email', async () => {
+  it('rejects invites matched only by editable profile email', async () => {
     const admin = createAdminClientMock({
       emailInvites: [
         {
@@ -226,10 +240,7 @@ describe('workspace invitation status helpers', () => {
       workspaceId,
     });
 
-    expect(result.status).toBe('pending_invite');
-    if (result.status === 'pending_invite') {
-      expect(result.invitation.matchedEmail).toBe('private@example.com');
-    }
+    expect(result.status).toBe('none');
   });
 
   it('returns member before pending invite when membership already exists', async () => {

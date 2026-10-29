@@ -9,6 +9,7 @@ const STORED_HASH =
 
 const mocks = vi.hoisted(() => ({
   callPrivateMeetRpc: vi.fn(),
+  getPlan: vi.fn(),
   guestLookup: vi.fn(),
   guestFilters: [] as Array<[string, unknown]>,
   loadMeetPlanSnapshot: vi.fn(),
@@ -21,6 +22,10 @@ vi.mock('../_lib/snapshot', () => ({
     mocks.loadMeetPlanSnapshot(...args),
   resolveOptionalMeetActor: (...args: unknown[]) =>
     mocks.resolveOptionalMeetActor(...args),
+}));
+
+vi.mock('@tuturuuu/utils/plan-helpers', () => ({
+  getPlan: (...args: unknown[]) => mocks.getPlan(...args),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -64,6 +69,7 @@ describe('Meet availability guest credentials', () => {
       plan: { id: PLAN_ID, is_confirmed: false },
     });
     mocks.callPrivateMeetRpc.mockResolvedValue({ error: null });
+    mocks.getPlan.mockResolvedValue({ id: PLAN_ID, is_public: true });
     mocks.guestLookup.mockResolvedValue({
       data: { id: GUEST_ID },
       error: null,
@@ -151,6 +157,30 @@ describe('Meet availability guest credentials', () => {
     });
 
     expect(response.status).toBe(401);
+    expect(mocks.callPrivateMeetRpc).not.toHaveBeenCalled();
+  });
+
+  it('denies a guest session on a plan that is not anonymously accessible', async () => {
+    mocks.getPlan.mockImplementation(
+      async (_planId: string, options: { actorUserId?: string | null }) =>
+        options.actorUserId === null ? null : { id: PLAN_ID }
+    );
+    // Even a signed-in caller who can open the plan must not write as a guest.
+    mocks.resolveOptionalMeetActor.mockResolvedValue({ id: 'creator-1' });
+    const { token } = createMeetGuestSession({
+      guestId: GUEST_ID,
+      planId: PLAN_ID,
+    });
+
+    const response = await request({
+      guestId: GUEST_ID,
+      guestSession: token,
+      timeblocks,
+    });
+
+    expect(response.status).toBe(404);
+    expect(mocks.getPlan).toHaveBeenCalledWith(PLAN_ID, { actorUserId: null });
+    expect(mocks.guestLookup).not.toHaveBeenCalled();
     expect(mocks.callPrivateMeetRpc).not.toHaveBeenCalled();
   });
 });

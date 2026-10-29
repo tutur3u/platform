@@ -57,6 +57,15 @@ final class MastermindSnapshotNotConfigured extends MastermindSnapshotState {
   const MastermindSnapshotNotConfigured();
 }
 
+/// No snapshot and the source said why: access lost ([SnapshotUnavailableKind
+/// .unauthorized]/[SnapshotUnavailableKind.forbidden]), nothing published yet,
+/// or the network/Worker is down. A refresh failure with data on hand is
+/// [UnavailableRefresh] on [MastermindSnapshotReady] instead.
+final class MastermindSnapshotUnavailable extends MastermindSnapshotState {
+  const MastermindSnapshotUnavailable(this.kind);
+  final SnapshotUnavailableKind kind;
+}
+
 final class MastermindSnapshotRejected extends MastermindSnapshotState {
   const MastermindSnapshotRejected(this.reason, {this.previous});
   final RejectionReason reason;

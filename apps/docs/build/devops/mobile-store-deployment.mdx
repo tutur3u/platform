@@ -24,8 +24,10 @@ the runner, DLLs and `data` directory with Inno Setup. The installer is per-user
 and does not require administrator privileges.
 
 Release Please owns `apps/mobile/pubspec.yaml` (currently the common version
-source). Desktop tags use `desktop-v<pubspec-version>-<run-id>` to identify
-immutable GitHub Releases. Production pushes affecting the mobile app trigger
+source). Mobile and desktop both publish the next unused patch of that
+`major.minor` from their own release history; desktop tags are
+`desktop-v<version>` with the run ID kept in the release body (see
+[desktop versions](/build/devops/desktop-beta-distribution#versions-and-release-notes)). Production pushes affecting the mobile app trigger
 both store delivery and the existing desktop release flow; desktop publication
 retains `DESKTOP_BETA_ENABLED`, platform selection, protected environment, bundle
 audit and provenance gates. Manual `desktop-beta.yaml` dispatch with
@@ -233,6 +235,33 @@ have no built-in guidance.
 | `GOOGLE_IOS_CLIENT_ID` | Google OAuth 2.0 iOS client ID. | Same Credentials page (iOS client). |
 | `MOBILE_TASK_DESCRIPTION_EDITING_ENABLED` | Feature flag for rich task-description editing (`true`/`false`). | Set manually (internal). |
 | `MOBILE_CALENDAR_INTEGRATIONS_ENABLED` | Feature flag for calendar integrations (`true`/`false`). | Set manually (internal). |
+
+### Release builds require https backends
+
+`NEXT_PUBLIC_SUPABASE_URL` and `API_BASE_URL` must be `https://` URLs in every
+release build, and any `*_API_BASE_URL` service override must be `https://` when
+set. Release builds carry credentials and bearer tokens, so there is no
+cleartext localhost fallback. This is enforced in three places:
+
+- `scripts/mobile-validate-dart-defines.js` fails the Android build
+  (`bun build:android`) and the iOS job before `flutter build` when a define is
+  missing or not https.
+- Release builds compile the URL defaults to an empty string instead of
+  `http://localhost`.
+- `bootstrap()` calls `Env.assertSecureForRelease()` and throws at startup in
+  release. Debug and profile builds keep localhost http for local development.
+
+### Auth token storage hardening
+
+- iOS auth items use the `first_unlock_this_device` keychain class (excluded from
+  backups and never restored onto another device). Existing installs are moved
+  by `migrateAuthKeychainAccessibility`, which stages each value under
+  `<key>.migrating` before replacing the old item so a kill mid-migration cannot
+  sign the user out; leftovers are recovered on the next launch.
+- Android: `allowBackup="false"` does not stop Android 12+ device-to-device
+  transfer. `res/xml/data_extraction_rules.xml` excludes app data from both
+  `<cloud-backup>` and `<device-transfer>`, and `res/xml/backup_rules.xml`
+  (`android:fullBackupContent`) does the same for older versions.
 
 ## CI Tokens
 
@@ -658,3 +687,27 @@ presence and multiple-ticket assertions. A five-second reply deadline remains
 in place. Failure diagnostics report only statuses and counters, never tickets
 or signing secrets. The harness closes both clients, its loopback fixture and
 the Worker; it does not validate hosted SFU or physical-device screen capture.
+
+### Device-bound secure storage and Linux development releases
+
+On iOS, auth sessions and the cache, app-lock settings, sale journal, App Attest
+metadata, voice-note access, profile timeline access and habits access stores use
+`first_unlock_this_device`. App Attest storage contains key identifiers and
+registration metadata; its private keys remain managed by the native API.
+Old `unlocked` items migrate on their first read through a durable device-bound
+staging item. Reads, writes and deletes serialize per key, and explicit deletion
+also removes staging so a later read cannot restore deleted data. Failed or
+interrupted migrations retry on the next access. Session persistence handles
+Keychain duplicate-item status -25299 by deleting the old item and retrying once;
+other errors and retry failures propagate to the caller.
+
+Device MFA and note device-lock secrets retain `unlocked_this_device`: these are
+already device-bound and intentionally require an unlocked device. Android and
+other platform storage behavior is unchanged. Regression coverage lives in
+`apps/mobile/test/data/sources/keychain_accessibility_migration_test.dart`.
+
+The Linux development-target release CI job requires repository variables
+`NEXT_PUBLIC_SUPABASE_URL` and `API_BASE_URL`. When either is absent, the build and
+bundle audit skip with a job summary. When both exist, the release URL validator
+must accept them before the build receives them as Dart defines. Production URL
+validation remains mandatory in both the build tooling and app startup.

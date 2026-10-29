@@ -5889,6 +5889,8 @@
     "participants": "Participants",
     "registered_users": "Registered users",
     "select-time-zone": "Select time zone",
+    "sign_in_to_create_plan": "Sign in to create a plan",
+    "sign_in_to_create_plan_desc": "Creating a plan requires a signed-in Tuturuuu account. Anyone with a public plan link can still join without signing in.",
     "smart_scheduling": "Smart Scheduling",
     "something_went_wrong": "Something went wrong",
     "soonest-time-to-meet": "Soonest time",
@@ -13380,7 +13382,9 @@
         "asset_map_copied": "Asset map copied",
         "copy_failed": "Failed to copy export link",
         "entry_copied": "Entry URL copied",
-        "manifest_copied": "Loader manifest copied"
+        "manifest_copied": "Loader manifest copied",
+        "revoke_failed": "Could not revoke export links.",
+        "revoked": "Previous export links revoked."
       },
       "load_failed": "Failed to load export links",
       "loader_manifest": "Loader Manifest",
@@ -13389,6 +13393,7 @@
       "mode": "Mode",
       "no_index_html": "No root index.html",
       "no_index_html_description": "This folder does not contain an index.html file at its root, but all asset links are still available below.",
+      "revoke_and_replace": "Revoke and replace links",
       "rotating_badge": "Rotating",
       "rotating_mode": "Stable app links with automatic signed URL refresh",
       "title": "Export Package Links",

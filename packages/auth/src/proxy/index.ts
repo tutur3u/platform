@@ -1,8 +1,5 @@
 import { updateSession } from '@tuturuuu/supabase/next/proxy';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   AuthenticatorAssuranceLevels,
   SupabaseUser,
@@ -43,6 +40,10 @@ import {
   resolveSignedAppSessionForRequest,
 } from './signed-refresh';
 import { createAppSessionClaimsFromSupabaseClaims } from './supabase-app-claims';
+import {
+  bindRequestAppToken,
+  hasVerifiedTotpFactor,
+} from './verified-request-user';
 import {
   readVerifyTokenResponse,
   redirectToNormalizedVerifyTarget,
@@ -363,6 +364,7 @@ function createSupabaseBackedAppSessionResponse(
     },
     { now: options.now }
   );
+  bindRequestAppToken(req, token, claims.sub);
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set('authorization', `Bearer ${token}`);
   req.headers.set('authorization', `Bearer ${token}`);
@@ -404,10 +406,7 @@ async function resolveAppSessionForRequest(
       discardAppCookiesForVerifiedProvider(req);
     const appSessionClaims = await createAppSessionClaimsFromSupabaseClaims(
       claims,
-      {
-        now,
-        targetApp: options.targetApp,
-      }
+      { now, request: req, targetApp: options.targetApp }
     );
 
     if (claims && !appSessionClaims)
@@ -541,11 +540,7 @@ async function requiresMfaVerification(
   if (assurance?.status === 503)
     throw new Error('Account assurance unavailable');
   if (assurance) return true;
-  const supabase = await createClient();
-
-  const { data: factors } = await supabase.auth.mfa.listFactors();
-  const hasVerifiedMFA =
-    factors?.totp?.some((factor) => factor.status === 'verified') || false;
+  const hasVerifiedMFA = await hasVerifiedTotpFactor(req, userId);
 
   if (!(hasVerifiedMFA && aal === 'aal1')) {
     return false;
@@ -781,6 +776,7 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
             const appSessionClaims =
               await createAppSessionClaimsFromSupabaseClaims(claims, {
                 now,
+                request: req,
                 targetApp: appSession.targetApp,
               });
 

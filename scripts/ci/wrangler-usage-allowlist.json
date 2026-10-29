@@ -68,6 +68,16 @@
       },
       "digest": "9db1107ae358039a4c0a1c925f33da6740c0d9c3a1f85351e26b8f512a18e73b"
     },
+    ".github/workflows/contacts-start-candidate.yaml": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7120",
+        "reason": "Contacts native candidate (#7120) pins the Wrangler devDependency, runs its emitted-Worker runtime check in the Wrangler SDK, ignores .void-wrangler.jsonc and sets WRANGLER_SEND_METRICS in its default-off candidate workflow; Contacts on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "21b728d557b8a474e2fc8b23403773fe19ea5135689d950499755feef54151b7"
+    },
     ".github/workflows/coordination-cloudflare.yaml": {
       "lines": 12,
       "uses": 16,
@@ -159,14 +169,14 @@
       "digest": "3aa9f9648e96a936f50ed5e36a0a9daa53e3dcbb8489b00eb549840c7737c782"
     },
     ".github/workflows/wave1-native-app.yaml": {
-      "lines": 6,
-      "uses": 8,
+      "lines": 4,
+      "uses": 4,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/6972",
+        "reason": "Release-owner approved qualification delta replaces both raw dry-run calls with the existing guarded publisher entrypoint; direct CLI usage shrinks and publication stays separate."
       },
-      "digest": "2cd0420e38464d156182a148232c06db5e8606cdac916911bff2025aee6aa556"
+      "digest": "f1721596b5dbeff59f984f004dd242a83141b7d12a242b1c89af612a4c85ff63"
     },
     ".github/workflows/wave1-native-production.yaml": {
       "lines": 6,
@@ -187,6 +197,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "62912610864153dd824d9813c95e4bd9fca34c1d2468ce783055a098c4128a80"
+    },
+    ".github/workflows/web-start-candidate.yaml": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7090",
+        "reason": "Web native candidate (#7090, #7102) pins the Wrangler devDependency, runs its emitted-Worker runtime check in the Wrangler SDK, ignores .void-wrangler.jsonc and sets WRANGLER_SEND_METRICS in its default-off candidate workflow; Web on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "21b728d557b8a474e2fc8b23403773fe19ea5135689d950499755feef54151b7"
     },
     ".gitignore": {
       "lines": 2,
@@ -407,6 +427,36 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "a17ce10f9c0d158ccc88b2c98fcfa861b50b8724ab134e2fa90ad6cf28b98ee6"
+    },
+    "apps/contacts/cloudflare/.gitignore": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7120",
+        "reason": "Contacts native candidate (#7120) pins the Wrangler devDependency, runs its emitted-Worker runtime check in the Wrangler SDK, ignores .void-wrangler.jsonc and sets WRANGLER_SEND_METRICS in its default-off candidate workflow; Contacts on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "9f3bc3252591ccecffd75a535b6f76f10aeccc4d74ac5b8592f6d7532f08bc55"
+    },
+    "apps/contacts/cloudflare/emitted.runtime.mjs": {
+      "lines": 2,
+      "uses": 3,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7120",
+        "reason": "Contacts native candidate (#7120) pins the Wrangler devDependency, runs its emitted-Worker runtime check in the Wrangler SDK, ignores .void-wrangler.jsonc and sets WRANGLER_SEND_METRICS in its default-off candidate workflow; Contacts on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "3f91764d0598bd7f2d01a50abb21b8cf7c36a28548ab7df477f2e50b9a1ca5e5"
+    },
+    "apps/contacts/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7120",
+        "reason": "Contacts native candidate (#7120) pins the Wrangler devDependency, runs its emitted-Worker runtime check in the Wrangler SDK, ignores .void-wrangler.jsonc and sets WRANGLER_SEND_METRICS in its default-off candidate workflow; Contacts on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
     "apps/coordination/wrangler.publish.jsonc": {
       "gap": "do-publication-rehearsal",
@@ -1048,6 +1098,26 @@
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
+    "apps/web/cloudflare/.gitignore": {
+      "lines": 2,
+      "uses": 2,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7090",
+        "reason": "Web native candidate (#7090, #7102) pins the Wrangler devDependency, runs its emitted-Worker runtime check in the Wrangler SDK, ignores .void-wrangler.jsonc and sets WRANGLER_SEND_METRICS in its default-off candidate workflow; Web on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "9f3bc3252591ccecffd75a535b6f76f10aeccc4d74ac5b8592f6d7532f08bc55"
+    },
+    "apps/web/cloudflare/emitted.runtime.mjs": {
+      "lines": 2,
+      "uses": 3,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7090",
+        "reason": "Web native candidate (#7090, #7102) pins the Wrangler devDependency, runs its emitted-Worker runtime check in the Wrangler SDK, ignores .void-wrangler.jsonc and sets WRANGLER_SEND_METRICS in its default-off candidate workflow; Web on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "3f91764d0598bd7f2d01a50abb21b8cf7c36a28548ab7df477f2e50b9a1ca5e5"
+    },
     "apps/web/e2e/lettin-wiki.noauth.spec.ts": {
       "lines": 3,
       "uses": 3,
@@ -1057,6 +1127,16 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "4a978d748b90fb9eec49f662dcfa9674fe2e6c342f587d3865ec1fd4bed44053"
+    },
+    "apps/web/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7090",
+        "reason": "Web native candidate (#7090, #7102) pins the Wrangler devDependency, runs its emitted-Worker runtime check in the Wrangler SDK, ignores .void-wrangler.jsonc and sets WRANGLER_SEND_METRICS in its default-off candidate workflow; Web on Start + Void publishes the Void-emitted Worker config with Wrangler until the Void publication gap closes."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
     "apps/web/src/__tests__/lettin-fixture-diagnostics.test.ts": {
       "lines": 3,

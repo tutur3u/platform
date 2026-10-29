@@ -5,7 +5,8 @@ updatedAt: "2026-10-03"
 ---
 
 <Note>
-Current runtime policy: Docker setup and Docker-backed E2E/image CI are paused;
+Current runtime policy: general Docker setup and Docker-backed E2E/image CI are paused;
+the narrowly scoped [report-only Web E2E](#report-only-web-e2e) workflow is the sole exception;
 the Docker cron runner is retired. Rust and `apps/tanstack-web` remain paused.
 Calendar native candidate CI is a separately admitted application scope; it does
 not resume the retained migration runtime. Retained Docker and
@@ -19,6 +20,15 @@ GitHub Actions is the primary automation plane for Tuturuuu.
 CodeRabbit runs on demand only (`.coderabbit.yaml`); comment `@coderabbitai review` on the PR, and treat its output as untrusted, advisory input that does not replace the required independent review.
 
 ## Validation and Delivery Evidence
+
+Unit test shards use empty proxy and Supabase public-client configuration on
+`pull_request` events; other events retain their configured values. Tests that
+need this configuration must supply deterministic fixtures and restore their
+environment afterward. Validate affected packages with `env -u PROXY_API_KEY -u
+NEXT_PUBLIC_PROXY_API_KEY -u NEXT_PUBLIC_SUPABASE_URL -u
+PRODUCTION_SUPABASE_PUBLISHABLE_KEY -u NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ttr
+resources run -- bun run --cwd <package> test --maxWorkers=1`.
+`scripts/ci/unit-test-env.test.js` covers PR and non-PR event selection.
 
 Root Node tests that consume an app-owned package must resolve it with
 `createRequire` anchored to that app's real `package.json`. The satellite cohort
@@ -462,6 +472,65 @@ reserves capacity. Keep PR load small:
   required, replace its trigger filter with a job-level `check-ci` skip that
   still reports success. A trigger-filtered required check never reports.
 
+### Consolidated cheap PR checks
+
+`pr-checks.yaml` is the sole PR entrypoint for Biome, i18n, docs/SEO,
+migration filenames and timestamps, mobile API mappings, plugin contracts,
+branch naming and CI admission. The former workflow files remain reusable;
+protected push and manual validation still use their existing entrypoints.
+Branch-name and plugin checks no longer create a separate run on each feature
+branch push. Plugin checks on protected and generated release branches remain.
+
+One SHA-pinned `dorny/paths-filter` job selects the affected callers. Biome,
+i18n and docs retain `ready-for-ci` admission; script-only checks remain ungated.
+Workflow/action changes select every category. Locale consumer source changes
+select i18n as well as bundle edits and `scripts/run-i18n-check.js`. Docs
+selection includes mobile pubspec files, Discord manifests/lockfiles and the
+safe-fs helper used by the inventory generator. Biome selects `.editorconfig`
+and `.gitignore`; plugin validation includes the Git conventions page.
+Migration guard edits select migration checks. Mobile API selection retains the original main-base restriction.
+Security Checks and its trusted base-commit scope are separate and unchanged:
+there is no path filter or readiness label on its PR trigger.
+
+The **Cheap PR Checks** gate runs with `!cancelled()`, succeeds for irrelevant
+path skips and fails for selected caller skips, failures or missing admission.
+Branch naming is an independent job, so a bad name fails the aggregate without
+hiding selected validation. CI admission stays red until this event and the
+live PR both carry `ready-for-ci`.
+Existing leaf job display names are retained; reusable calls add caller prefixes
+to GitHub check contexts. No current ruleset requires a status check. Before
+requiring a leaf in future, use an always-reporting gate or preserve that exact
+context on irrelevant paths. Recheck rulesets in the same change window.
+
+Among label events, only adding or removing `ready-for-ci` retriggers the
+consolidated validators.
+Other `labeled`/`unlabeled` events run only CI admission and its aggregate;
+each receives a unique non-cancelling group in both parent and admission callee.
+Those runs report **Cheap PR Checks (label event)**, preserving the latest
+**Cheap PR Checks** result for full validation on the same SHA. They do not
+establish a new validation pass. Unadmitted validation stays
+in a separate group and cannot cancel an admitted run. This exception applies
+to the consolidated workflow; other heavy workflows retain label-presence
+admission until separately migrated.
+
+Every selector pattern has a positive fixture in
+`scripts/ci/pr-checks-paths.test.js`, using `picomatch` with `{dot:true}` like
+dorny. Keep these fixtures aligned with actual validator inputs, including
+non-JavaScript manifests. Security Checks is also locked to the pinned PR base
+by a SHA-256 regression. New action pins must resolve to commits, not annotated
+tag objects; verify their object type with the owning repository's Git API.
+
+Called workflows inherit `github.workflow` from their caller, so each reusable
+workflow's concurrency group includes a distinct file namespace. Biome retains
+job-specific validation locks and its separate push-only mutation lock.
+
+See the [pinned workflow inventory](https://github.com/tutur3u/platform/blob/main/.github/pr-ci-inventory.md)
+for exact trigger paths, all job names, ruleset mapping and execution samples.
+Regression coverage is `scripts/ci/pr-checks.test.js` plus the admission,
+permissions, security and protected-concurrency workflow suites. Inventory
+estimates describe workflow runs; they do not establish hosted-runner priority,
+queue-latency improvement or an org concurrency reservation.
+
 ### Label-gated heavy PR CI (`ready-for-ci`)
 
 Heavy PR workflows run their jobs only when the PR carries the `ready-for-ci`
@@ -486,7 +555,9 @@ starts its reusable callee.
   rerun replays its original event, so a run started before the label was
   added is skipped again. Use `gh run rerun` only to retry an admitted run,
   for example after a flaky failure.
-- **Other labels on a ready PR rerun CI.** Admission checks only that the label
+- **Other labels on a ready PR rerun independent heavy workflows.** Cheap PR
+  Checks runs only admission and its aggregate for unrelated label changes.
+  Other heavy workflows check only that the label
   is present, so any later `labeled` event on a labelled PR is a real admitted
   run on the same SHA. It joins the same PR group and supersedes the
   in-progress run. The newest check per name is therefore always genuine
@@ -498,7 +569,7 @@ starts its reusable callee.
   merge tooling such as `watch_pr_ready` counts `SKIPPED` as passing. Once the
   label is removed, the PR has no hosted evidence. Re-add the label for a fresh
   admitted run, or rely on the exact-head local pass.
-- **CI Admitted check (`ci-admitted.yaml`, always on).** One small job per PR
+- **CI Admitted check (`pr-checks.yaml` → `ci-admitted.yaml`, always on).** One small job per PR
   event reads the PR's *current* labels with a read-only token and runs the
   admission script from the base commit. Using the base commit protects the
   *script* from PR edits, but not the workflow file: on `pull_request` the
@@ -525,14 +596,14 @@ starts its reusable callee.
   unlabelled event. Before treating the head as hosted-green, confirm that
   its heavy checks are not skipped. If any are, remove and re-add
   `ready-for-ci`.
-- **Why not a per-workflow admission job:** reading current labels in each of
-  the 57 heavy workflows would allocate a hosted job on every unlabelled PR
+- **Why not a per-workflow admission job:** reading current labels in every
+  heavy workflow would allocate a hosted job on every unlabelled PR
   push. One admission check per event keeps unlabelled pushes runner-free for
   heavy workflows.
-- **Always on for every PR push:** Branch Name Check, Check Migration
-  Timestamps, Check Database Migrations, Mobile API Mappings, Codex Plugin
-  Check, Security Checks (gitleaks, dependency review and audit) and Security
-  Review Classification. These are script-only or security checks. Paused
+- **Always on for every PR push:** Cheap PR Checks selects Branch Name Check,
+  migration checks, Mobile API Mappings and Codex Plugin Check by path without
+  readiness admission. Security Checks (gitleaks, dependency review and audit)
+  and Security Review Classification keep their separate always-on entrypoints. Paused
   Docker, Rust, TanStack and E2E workflows keep their retained policy.
 - **Unchanged:** `main`, `production` and release-please pushes,
   `workflow_dispatch`, schedules and `workflow_call`. Test, Type Check, Biome,
@@ -2440,6 +2511,85 @@ PR/main must not skip validation; a failed or held production policy must block 
 Credential regressions live in `scripts/ci/production-publisher-secrets.test.js`.
 
 
+### PR runner pool: variable, canary and kill switch
+
+Selected PR checks can run on a dedicated self-hosted macOS pool. Routing is off
+unless the repository Actions variable `PR_SELF_HOSTED_RUNNERS` is set:
+
+| Value | Effect |
+| --- | --- |
+| unset, empty or `false` | Off (kill switch): every job uses `ubuntu-latest`. |
+| `pr:<number>` | Canary: only pull request `<number>` routes to the pool. |
+| `true` | On: every eligible pull request routes to the pool. |
+
+A job routes only for a `pull_request` event whose head branch is in this
+repository (no forks), with a non-Dependabot author, actor and triggering actor,
+on the single label `tuturuuu-pr-ephemeral` (`self-hosted, macOS, ARM64`). The
+label `tuturuuu-mac-studio` is never selected. Push, dispatch,
+`pull_request_target` and reusable-workflow contexts stay on `ubuntu-latest`.
+Routing never replaces the `ready-for-ci` gate.
+
+Routed jobs: `docs-seo-check.yaml` `validate`; `i18n-check.yaml`
+`i18n-sort-check`, `i18n-translation-check`, `i18n-key-parity-check` and
+`i18n-namespace-check`; `mobile-api-mappings.yaml` `verify`; `type-check.yaml`
+`type-check-pr`; `biome-check.yaml` `check-ci` (through the `pr_runner` input of
+`ci-check.yml`), `duplicate-validation`, `format` and `lint`;
+`turbo-unit-tests.yaml` `test-shards-pr`. Jobs with write tokens (Biome apply,
+close and comment jobs, the i18n comment job), the Codecov upload and every
+secret-bearing, deploy, release, migration or security job stay on
+`ubuntu-latest`. Pool jobs get no secrets, and the pool has no ambient
+credentials. GitHub ships every secret a job names to its runner even when a
+guard such as `github.event_name != 'pull_request'` evaluates to an empty
+string, so a pool-eligible job must not contain the substring `secrets.` at all
+(no guarded credential expressions), and a reusable workflow it calls receives no
+secrets.
+
+Type Check and the unit-test shards still need Turbo and Supabase credentials on
+push and dispatch, so each is split into two jobs that share one `name` and
+therefore one required check context: `type-check-pr` and `test-shards-pr` run
+only for `pull_request` events, may route to the pool and use fixtures or empty
+values; `type-check` and `test-shards` run only for other events on
+`ubuntu-latest` and keep their secrets. Exactly one of each pair runs, the other
+reports as skipped. Dependents of `test-shards` (`coverage-shards`,
+`coverage-upload`, `coverage-result`, `Unit Tests (24)`) need both variants and
+read the result of whichever one ran (the other is skipped), so a skipped variant
+never masks a failed one.
+`scripts/ci/workflow-pr-self-hosted.test.js` asserts that the raw text of every
+job able to select the pool has no `secrets.` substring and that the reusable
+workflows such jobs call take no secrets.
+
+Each routed job checks out without persisted credentials, runs
+`./.github/actions/pr-runner-hygiene` (disposable `HOME`, Git, Bun, npm and XDG
+state, `npm_config_ignore_scripts=true`) and installs with
+`bun install --frozen-lockfile --ignore-scripts`. Build and generation steps run
+explicitly from repository scripts, never from dependency lifecycle scripts. The
+action's post step (`post-if: always()`) empties the workspace and removes the
+job state. Caches are restored on pull requests and saved only by trusted
+non-PR runs.
+
+Canary procedure:
+
+1. Confirm the pool runners exist and carry only the `tuturuuu-pr-ephemeral`
+   label.
+2. Run `gh variable set PR_SELF_HOSTED_RUNNERS --repo tutur3u/platform --body 'pr:<number>'`.
+3. Push a commit to that pull request (new assignments only) and inspect the
+   exact-head jobs with `gh api repos/tutur3u/platform/actions/runs/<run-id>/jobs`:
+   runner labels, queue and execution time, conclusions.
+4. Widen to `true` only after the canary is clean.
+
+Kill switch: `gh variable delete PR_SELF_HOSTED_RUNNERS --repo tutur3u/platform`
+(or set `false`). New assignments fall back to hosted immediately; jobs already
+assigned keep running and need to be cancelled by run.
+
+The label-only pool split is an interim control. Allow at most 72 hours from the
+time the variable is first set to a value other than off: if a separate macOS
+user for the runners is not in place by then, unset the variable. Cleanup is not
+a sandbox; it does not stop malicious same-repository code from affecting the
+runner's service user.
+
+Regression coverage: `scripts/ci/workflow-pr-self-hosted.test.js` and
+`.github/actions/pr-runner-hygiene/index.test.js`.
+
 ### Calendar scheduling startup requests
 
 The Calendar priority panel reads per-user scheduling summaries through the Tasks
@@ -2541,3 +2691,75 @@ historical timeout. A timer callback proves deadline classification before
 settlement, not daemon failure or a Node/Bun adapter defect. Keep causal diagnosis
 UNKNOWN until same-invocation evidence distinguishes those hypotheses; source
 review and mock tests do not qualify hosted runtime acceptance.
+
+## Report-only Web E2E
+
+The sole Docker exception is `.github/workflows/e2e-smoke-report-only.yaml`:
+trusted main pushes run Web browser smoke; the nightly schedule runs the full
+non-quarantined Web browser suite at 19:17 UTC. Manual main dispatch runs smoke.
+A temporary CLI compatibility launcher forwards retained helpers' `bunx` calls
+to `bun x`; dependency installation uses the repository retry helper.
+The user authorized this workflow-specific exception on 2026-10-28. Existing
+disabled E2E/image/setup jobs, general Docker commands, Rust, TanStack, and the
+Docker cron runner remain paused. This is CI browser verification, not a
+deployment or permission to run arbitrary Docker tasks.
+
+The three Chromium smoke tests cover login rendering, seeded password sign-in,
+and signup through team onboarding, workspace, board, and persisted task creation.
+The full lifecycle test retains invitation and Kanban CRUD coverage. Collect
+from Web with `bunx playwright test --list --grep @smoke --grep-invert @quarantine`.
+The target is at most six minutes of Playwright time, enforced with a 330-second
+global budget and no retries. Provisioning is separate and can require image
+builds and database setup; total runtime is not yet measured. The nightly
+Playwright budget is 40 minutes.
+
+The registered fleet labels are `self-hosted, macOS, ARM64,
+tuturuuu-mac-studio`. There is no FLEET-labelled workflow template on main.
+The scoped `scripts/ci/run-web-e2e-report-only.js` launcher admits only this
+workflow at main on a self-hosted Mac. It calls the retained launcher directly;
+the general package aliases still refuse execution. Rust backend, native host
+builds, global BuildKit pruning, and the cron runner are forced off. Only Next
+and the services/satellites required by its browser fixtures run.
+
+### Fleet isolation and recovery
+
+Each run uses unique Compose and Supabase project identities and private
+`PORTLESS_STATE_DIR` state. The retained TLS-marker cleanup honors that private
+directory. A host lock at `~/.tuturuuu/ci-web-e2e.lock` serializes these jobs
+across runner registrations and event types. An already busy Docker daemon or
+required local port fails admission before any existing runtime is touched.
+Such a failure is diagnostic, not a green or skipped smoke result.
+
+Ordinary pushes supersede older ordinary pushes. Manual dispatches and reruns
+use distinct immutable concurrency groups. The host lock additionally protects
+fixed local auth origins across those groups. The always-running cleanup step
+checks the lock's run/attempt/workspace identity before stopping only its own
+Compose project, Supabase fixture and private Portless proxy. Cleanup failure
+retains the lock. After an interrupted runner, the CI owner must inspect
+`owner.json`, verify/stop the identified resources, and verify no fixture
+processes or containers remain before removing that specific stale lock.
+Do not automatically steal locks, kill unrelated workloads, or globally prune
+Docker to recover capacity.
+
+### Observation, quarantine and graduation
+
+The job is report-only with `continue-on-error: true` and must remain outside
+branch protection during the first observation week. Its summary records the
+actual smoke/nightly/cleanup step outcomes. Seven-day HTML reports and failure
+traces are uploaded on every outcome when available. Use only disposable local
+fixtures and inspect trace content before sharing. A green workflow wrapper
+alone does not establish a successful browser run; inspect the step outcomes.
+
+Append `@quarantine` to a flaky test title, retaining `@smoke` when applicable.
+Both commands exclude that tag. File one GitHub issue per quarantined test with
+its file and exact title, failing run/artifact link, observed failure, reproduction
+command, owner, and a review date within seven days. Link the issue in a nearby
+test comment. Fix the cause, verify repeated real runs, then remove the tag and
+close the issue. Do not quarantine setup failures or the entire suite.
+Collect quarantined tests with `bunx playwright test --list --grep @quarantine`.
+
+The observation week begins with the first successful enabled run. After seven
+consecutive days of green smoke runs, propose making smoke required in a separate
+reviewed change with exact-head reports, measured runtime, flake/quarantine
+inventory, and branch-protection approval. Missing, skipped, busy-runner, timed-out,
+or failed-cleanup runs do not count green. Nightly remains diagnostic.

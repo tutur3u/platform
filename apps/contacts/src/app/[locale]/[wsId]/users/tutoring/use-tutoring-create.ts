@@ -5,6 +5,7 @@ import { createTutoringSession } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useLayoutEffect, useRef } from 'react';
+import { isTutoringContentRestricted } from './tutoring-errors';
 import {
   findSessionSlotConflicts,
   type TutoringFormValues,
@@ -104,7 +105,10 @@ export function useTutoringCreate({
       intent.onSaved();
     },
     onError: (error, intent) => {
-      if (current(intent))
+      if (!current(intent)) return;
+      if (isTutoringContentRestricted(error))
+        toast.error(t('content_restricted'));
+      else
         toast.error(
           error instanceof Error ? error.message : t('create_failed')
         );

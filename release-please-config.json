@@ -103,7 +103,13 @@
     "apps/mobile": {
       "component": "mobile",
       "package-name": "mobile",
-      "release-type": "dart"
+      "release-type": "dart",
+      "changelog-sections": [
+        { "type": "feat", "section": "Highlights" },
+        { "type": "fix", "section": "Fixes" },
+        { "type": "perf", "section": "Fixes" },
+        { "type": "revert", "section": "Fixes" }
+      ]
     },
     "apps/nova": {
       "component": "nova",

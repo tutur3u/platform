@@ -25,6 +25,7 @@ class Workspace extends Equatable {
     this.name,
     this.avatarUrl,
     this.personal = false,
+    this.deleted = false,
     this.tier = workspaceTierFree,
     this.createdAt,
   });
@@ -34,6 +35,7 @@ class Workspace extends Equatable {
     name: json['name'] as String?,
     avatarUrl: json['avatar_url'] as String?,
     personal: json['personal'] as bool? ?? false,
+    deleted: json['deleted'] as bool? ?? false,
     tier: json['tier'] == null
         ? workspaceTierFree
         : normalizeWorkspaceTier(json['tier'] as String?),
@@ -46,6 +48,7 @@ class Workspace extends Equatable {
   final String? name;
   final String? avatarUrl;
   final bool personal;
+  final bool deleted;
   final String tier;
   final DateTime? createdAt;
 
@@ -54,10 +57,19 @@ class Workspace extends Equatable {
     'name': name,
     'avatar_url': avatarUrl,
     'personal': personal,
+    'deleted': deleted,
     'tier': tier,
     'created_at': createdAt?.toIso8601String(),
   };
 
   @override
-  List<Object?> get props => [id, name, avatarUrl, personal, tier, createdAt];
+  List<Object?> get props => [
+    id,
+    name,
+    avatarUrl,
+    personal,
+    deleted,
+    tier,
+    createdAt,
+  ];
 }

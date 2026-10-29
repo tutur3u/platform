@@ -217,8 +217,10 @@ jobs:
       - name: Install runtime prerequisites
         if: env.RUNTIME_SETUP_COMMAND != ''
         timeout-minutes: 10
-        working-directory: apps/${{ inputs.app }}
-        run: bash -c "$RUNTIME_SETUP_COMMAND"
+        uses: ./.github/actions/install-native-runtime-prerequisites
+        with:
+          working-directory: apps/${{ inputs.app }}
+          command: ${{ env.RUNTIME_SETUP_COMMAND }}
       - name: Exercise emitted runtime contracts in workerd
         timeout-minutes: 4
         working-directory: apps/${{ inputs.app }}
@@ -293,8 +295,10 @@ jobs:
       - name: Install runtime prerequisites
         if: env.RUNTIME_SETUP_COMMAND != ''
         timeout-minutes: 10
-        working-directory: apps/${{ inputs.app }}
-        run: bash -c "$RUNTIME_SETUP_COMMAND"
+        uses: ./.github/actions/install-native-runtime-prerequisites
+        with:
+          working-directory: apps/${{ inputs.app }}
+          command: ${{ env.RUNTIME_SETUP_COMMAND }}
       - name: Repeat emitted runtime acceptance on restored output
         timeout-minutes: 4
         working-directory: apps/${{ inputs.app }}

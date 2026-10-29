@@ -193,6 +193,12 @@ export async function GET(request: Request) {
     // Construct the base API URL using origin (scheme + host + optional port).
     const baseOrigin = `${base.protocol}//${base.host}`;
     const urlObject = new URL(path, baseOrigin);
+    if (urlObject.origin !== base.origin) {
+      return NextResponse.json(
+        { message: 'Invalid API destination' },
+        { status: 400, headers: rateLimitHeaders }
+      );
+    }
 
     // Forward any additional query parameters (except 'path', 'wsId', and 'apiUrl')
     const forwardParams = new URLSearchParams();

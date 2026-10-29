@@ -3,6 +3,15 @@ title: Hive world event troubleshooting
 description: Fix ambiguous server_id errors when applying Hive world events.
 ---
 
+## Current source boundary
+
+This page covers the historical Supabase `apply_hive_world_event()` path.
+Current checked-in Hive event handlers call `createHiveWorldEvent()` against
+`HIVE_DATABASE_URL` inside the satellite. Confirm deployed source and database
+authority before applying a legacy-function fix; see the
+[Hive data model](/platform/applications/hive#data-model) and
+[Cloudflare migration plan](/build/devops/hive-cloudflare-migration).
+
 ## Symptoms
 
 When creating a Hive world event, the API can return:
@@ -36,8 +45,8 @@ Apply the migration and re-run Hive event creation after the updated function is
 
 The actor-accepting `apply_hive_world_event(uuid, uuid, bigint, text, jsonb,
 jsonb)` overload should not be exposed to browser roles. Keep direct execution
-revoked from `public`, `anon`, and `authenticated`; server-side API and realtime
-paths call it with `service_role` after validating the user session or signed
+revoked from `public`, `anon`, and `authenticated`; legacy server-side API and
+realtime paths call it with `service_role` after validating the user session or signed
 Hive realtime token. If a non-service role ever reaches the function, it must
 derive the actor from `auth.uid()` and reject mismatched `p_actor_user_id`
 values with `hive_actor_mismatch`.

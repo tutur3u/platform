@@ -32,10 +32,16 @@ class WorkspaceState extends Equatable {
 
   /// UI-only list. Keep workspaces canonical for reminders and access.
   List<Workspace> get visibleWorkspaces => workspaces
-      .where((workspace) => !hiddenWorkspaceIds.contains(workspace.id))
+      .where(
+        (workspace) =>
+            !workspace.deleted && !hiddenWorkspaceIds.contains(workspace.id),
+      )
       .toList(growable: false);
   List<Workspace> get hiddenWorkspaces => workspaces
-      .where((workspace) => hiddenWorkspaceIds.contains(workspace.id))
+      .where(
+        (workspace) =>
+            !workspace.deleted && hiddenWorkspaceIds.contains(workspace.id),
+      )
       .toList(growable: false);
 
   final WorkspaceStatus status;

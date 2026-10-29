@@ -61,6 +61,40 @@ void main() {
       }
     }
   }
+  for (final grant in {
+    'unrelated permissions': (
+      const WorkspacePermissions(
+        permissions: {'manage_workspace_roles', 'view_users_private_info'},
+        isCreator: false,
+      ),
+      false,
+    ),
+    'no permissions': (
+      const WorkspacePermissions(permissions: {}, isCreator: false),
+      false,
+    ),
+    'the root admin permission': (
+      const WorkspacePermissions(permissions: {'admin'}, isCreator: false),
+      true,
+    ),
+  }.entries) {
+    test('configured hub, ${grant.key}: enabled=${grant.value.$2}', () async {
+      final repository = _Permissions();
+      final source = _Source();
+      when(() => source.isConfigured).thenReturn(true);
+      when(
+        () => repository.getPermissions(wsId: rootWorkspaceId),
+      ).thenAnswer((_) async => grant.value.$1);
+      final cubit = MastermindAccessCubit(
+        repository: repository,
+        source: source,
+      );
+      await cubit.sync(rootWorkspaceId);
+      expect(cubit.state.enabled, grant.value.$2);
+      await cubit.close();
+    });
+  }
+
   test('workspace ABA cannot resurrect an older permission grant', () async {
     final repository = _Permissions();
     final source = _Source();

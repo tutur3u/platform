@@ -13,15 +13,14 @@ export type TutoringLessonNoteSession = Pick<
   | 'status'
 >;
 
-function localDate(session: TutoringLessonNoteSession) {
-  if (session.recurrenceInstanceDate) return session.recurrenceInstanceDate;
+function zonedDate(timestamp: string, timeZone: string) {
   try {
     const parts = new Intl.DateTimeFormat('en-US', {
       day: '2-digit',
       month: '2-digit',
-      timeZone: session.startTimezone,
+      timeZone,
       year: 'numeric',
-    }).formatToParts(new Date(session.startsAt));
+    }).formatToParts(new Date(timestamp));
     const part = (type: string) =>
       parts.find((item) => item.type === type)?.value;
     return `${part('year')}-${part('month')}-${part('day')}`;
@@ -30,13 +29,26 @@ function localDate(session: TutoringLessonNoteSession) {
   }
 }
 
+function localDate(session: TutoringLessonNoteSession) {
+  if (session.recurrenceInstanceDate) return session.recurrenceInstanceDate;
+  return zonedDate(session.startsAt, session.startTimezone);
+}
+
+/** The recorded notes for missed class dates, and the dates without any. */
+export interface MissedLessonNotes {
+  /** `YYYY-MM-DD: notes`, one line per date that has notes. */
+  content: string;
+  /** Missed dates with no notes recorded on a scheduled class session. */
+  missingDates: string[];
+}
+
 /** Draft make-up content from the recorded lesson on each missed class date. */
-export function getMissedLessonContent(
+export function getMissedLessonNotes(
   sessions: TutoringLessonNoteSession[],
   missedDates: string[]
-) {
+): MissedLessonNotes {
   const missed = new Set(missedDates);
-  return sessions
+  const entries = sessions
     .filter((session) => session.status === 'scheduled')
     .map((session) => {
       const date = localDate(session);
@@ -48,7 +60,70 @@ export function getMissedLessonContent(
       return content ? { date, content } : null;
     })
     .filter((item): item is { date: string; content: string } => Boolean(item))
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .map(({ date, content }) => `${date}: ${content}`)
-    .join('\n');
+    .sort((a, b) => a.date.localeCompare(b.date));
+  const noted = new Set(entries.map((entry) => entry.date));
+  return {
+    content: entries
+      .map(({ date, content }) => `${date}: ${content}`)
+      .join('\n'),
+    missingDates: [...missed].filter((date) => !noted.has(date)).sort(),
+  };
+}
+
+/** Draft make-up content from the recorded lesson on each missed class date. */
+export function getMissedLessonContent(
+  sessions: TutoringLessonNoteSession[],
+  missedDates: string[]
+) {
+  return getMissedLessonNotes(sessions, missedDates).content;
+}
+
+/** The group-post fields that carry a class's written-up lesson. */
+export interface TutoringClassPost {
+  content: string | null;
+  createdAt: string;
+  title: string | null;
+}
+
+/** Class notes for missed dates from both sources, kept apart for labelling. */
+export interface MissedClassNotes extends MissedLessonNotes {
+  /** `YYYY-MM-DD: title` and body, one block per class post on a missed date. */
+  postContent: string;
+}
+
+/**
+ * Posts have no date of their own, so a post belongs to the missed date it was
+ * created on, read in `timeZone` (the class's own zone). `missingDates` lists
+ * missed dates with neither session notes nor a post.
+ */
+export function getMissedClassNotes(
+  sessions: TutoringLessonNoteSession[],
+  posts: TutoringClassPost[],
+  missedDates: string[],
+  timeZone: string
+): MissedClassNotes {
+  const lessons = getMissedLessonNotes(sessions, missedDates);
+  const missed = new Set(missedDates);
+  const entries = posts
+    .map((post) => {
+      const date = zonedDate(post.createdAt, timeZone);
+      if (!date || !missed.has(date)) return null;
+      const text = [post.title?.trim(), post.content?.trim()]
+        .filter(Boolean)
+        .join('\n');
+      return text ? { createdAt: post.createdAt, date, text } : null;
+    })
+    .filter((item): item is { createdAt: string; date: string; text: string } =>
+      Boolean(item)
+    )
+    .sort(
+      (a, b) =>
+        a.date.localeCompare(b.date) || a.createdAt.localeCompare(b.createdAt)
+    );
+  const withPosts = new Set(entries.map((entry) => entry.date));
+  return {
+    content: lessons.content,
+    postContent: entries.map(({ date, text }) => `${date}: ${text}`).join('\n'),
+    missingDates: lessons.missingDates.filter((date) => !withPosts.has(date)),
+  };
 }

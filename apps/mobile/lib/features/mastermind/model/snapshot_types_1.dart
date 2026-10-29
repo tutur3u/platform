@@ -14,7 +14,6 @@ final class Observability {
     required this.fleet,
     required this.coordination,
     required this.delivery,
-    required this.security,
   }) : quotaSeries = List.unmodifiable(quotaSeries),
        quotaForecasts = List.unmodifiable(quotaForecasts),
        speedSeries = List.unmodifiable(speedSeries),
@@ -35,7 +34,6 @@ final class Observability {
   final Fleet fleet;
   final Coordination coordination;
   final Delivery delivery;
-  final Security security;
 }
 
 final class Source {

@@ -2,6 +2,8 @@ import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { authorizeInfrastructureWorkspaceSecretsRequest } from '@/lib/infrastructure-admin-access';
 
+import { canMutateInfrastructureSecret } from '@/lib/managed-cron-secret';
+
 interface Params {
   params: Promise<{ wsId: string }>;
 }
@@ -14,7 +16,7 @@ const secretSchema = z.object({
 export async function GET(_: Request, { params }: Params) {
   await connection();
   const { wsId } = await params;
-  const auth = await authorizeInfrastructureWorkspaceSecretsRequest(wsId);
+  const auth = await authorizeInfrastructureWorkspaceSecretsRequest();
   if (!auth.ok) return auth.response;
 
   const { data, error } = await auth.sbAdmin
@@ -36,7 +38,7 @@ export async function GET(_: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
-  const auth = await authorizeInfrastructureWorkspaceSecretsRequest(wsId);
+  const auth = await authorizeInfrastructureWorkspaceSecretsRequest();
   if (!auth.ok) return auth.response;
 
   const parsed = secretSchema.safeParse(await req.json().catch(() => null));
@@ -44,6 +46,13 @@ export async function POST(req: Request, { params }: Params) {
     return NextResponse.json(
       { errors: parsed.error.flatten(), message: 'Invalid input' },
       { status: 400 }
+    );
+  }
+
+  if (!(await canMutateInfrastructureSecret(auth, parsed.data.name))) {
+    return NextResponse.json(
+      { message: 'Only Tuturuuu employees can enable managed cron jobs.' },
+      { status: 403 }
     );
   }
 

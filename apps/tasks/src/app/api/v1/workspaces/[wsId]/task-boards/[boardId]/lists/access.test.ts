@@ -123,7 +123,19 @@ describe('task board list access', () => {
       from: fromMock,
     } as unknown as SessionAuthContext['supabase'];
 
-    createAdminClientMock.mockResolvedValue({ from: fromMock });
+    createAdminClientMock.mockResolvedValue({
+      from: fromMock,
+      auth: {
+        admin: {
+          getUserById: vi.fn(async () => ({
+            data: {
+              user: { ...authUser, email_confirmed_at: authUser.created_at },
+            },
+            error: null,
+          })),
+        },
+      },
+    });
   });
 
   it('resolves personal board access from a pre-authenticated app-session context', async () => {

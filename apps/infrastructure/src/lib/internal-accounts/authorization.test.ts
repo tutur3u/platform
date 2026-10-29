@@ -86,7 +86,10 @@ describe('internal account authorization', () => {
   it.each([
     { email: 'operator@example.com' },
     { email: 'operator@tuturuuu.com.evil.test' },
-    { email_confirmed_at: null },
+    {
+      email_confirmed_at: null,
+      identities: [{ provider: 'email', identity_data: {} }],
+    },
     { banned_until: '2999-01-01' },
     { id: 'different-user' },
   ])('denies stale or invalid administrative identity: %j', async (changes) => {
@@ -96,6 +99,7 @@ describe('internal account authorization', () => {
           id: 'operator-1',
           email: 'operator@tuturuuu.com',
           email_confirmed_at: '2026-01-01',
+          identities: [{ provider: 'email', identity_data: {} }],
           ...changes,
         },
       },
@@ -151,6 +155,7 @@ describe('internal account authorization', () => {
           id: 'operator-1',
           email: 'operator@tuturuuu.com',
           email_confirmed_at: '2026-01-01',
+          identities: [{ provider: 'email', identity_data: {} }],
         },
       },
       error: null,

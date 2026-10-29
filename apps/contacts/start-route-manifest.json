@@ -1,0 +1,946 @@
+{
+  "schemaVersion": 2,
+  "generatedBy": "bun apps/contacts/cloudflare/generate-inventory.ts",
+  "locale": {
+    "supported": ["en", "vi"],
+    "prefix": "never",
+    "explicitPrefix": "Next redirects and sets NEXT_LOCALE"
+  },
+  "apiOwnership": {
+    "precedence": "Contacts local feedback/payment/auth handlers win; remaining workspace APIs and /api/* stay with Web via Contacts Next rewrites",
+    "source": "apps/contacts/next.config.ts"
+  },
+  "crons": [],
+  "summary": {
+    "total": 131,
+    "categories": {
+      "api": 85,
+      "api-proxy": 1,
+      "api-rewrite": 2,
+      "candidate-probe": 1,
+      "page": 40,
+      "public-asset": 1,
+      "workspace-redirect": 1
+    },
+    "dispositions": { "native-Start": 1, "Next-fallback": 130 }
+  },
+  "routes": [
+    {
+      "pattern": "/[locale]/[wsId]",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/posts",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/posts/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/reports",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/reports/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/[userId]/follow-up",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/[userId]/follow-up/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/approvals",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/approvals/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/attendance",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/attendance/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/database/[userId]",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/database/[userId]/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/database",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/database/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/feedbacks",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/feedbacks/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/group-tags/[tagId]",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/group-tags/[tagId]/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/group-tags",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/group-tags/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/groups/[groupId]/attendance",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/groups/[groupId]/attendance/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/groups/[groupId]/content",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/groups/[groupId]/content/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/groups/[groupId]/indicators",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/groups/[groupId]/indicators/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/groups/[groupId]",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/groups/[groupId]/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/groups/[groupId]/posts/[postId]",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/groups/[groupId]/posts/[postId]/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/groups/[groupId]/reports",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/groups/[groupId]/reports/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/groups/[groupId]/requests",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/groups/[groupId]/requests/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/groups/[groupId]/schedule",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/groups/[groupId]/schedule/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/groups/calendar",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/groups/calendar/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/groups/indicators",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/groups/indicators/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/groups",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/groups/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/guest-leads",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/guest-leads/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/reports/[reportId]",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/reports/[reportId]/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/reports",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/reports/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/structure",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/structure/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/topic-announcements/announcements",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/announcements/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/topic-announcements/contacts",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/contacts/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/topic-announcements/delivery",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/delivery/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/topic-announcements/import",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/import/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/topic-announcements",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/topic-announcements/schedule",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/schedule/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/topic-announcements/templates",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/topic-announcements/templates/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/users/tutoring",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/users/tutoring/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/[wsId]/workforce",
+      "source": "apps/contacts/src/app/[locale]/[wsId]/workforce/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/dashboard",
+      "source": "apps/contacts/src/app/[locale]/dashboard/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/login",
+      "source": "apps/contacts/src/app/[locale]/login/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]",
+      "source": "apps/contacts/src/app/[locale]/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[locale]/verify-token",
+      "source": "apps/contacts/src/app/[locale]/verify-token/page.tsx",
+      "category": "page",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/auth/logout",
+      "source": "apps/contacts/src/app/api/auth/logout/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/auth/refresh-app-session",
+      "source": "apps/contacts/src/app/api/auth/refresh-app-session/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/auth/verify-app-token",
+      "source": "apps/contacts/src/app/api/auth/verify-app-token/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/build-info",
+      "source": "apps/contacts/src/app/api/build-info/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/notifications/[id]/metadata",
+      "source": "apps/contacts/src/app/api/v1/notifications/[id]/metadata/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/notifications/[id]",
+      "source": "apps/contacts/src/app/api/v1/notifications/[id]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/notifications",
+      "source": "apps/contacts/src/app/api/v1/notifications/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/notifications/unread-count",
+      "source": "apps/contacts/src/app/api/v1/notifications/unread-count/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/users/me/profile",
+      "source": "apps/contacts/src/app/api/v1/users/me/profile/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/ai/credits",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/ai/credits/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/avatar",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/avatar/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/avatar/upload-url",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/avatar/upload-url/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/group-tags/[tagId]",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/group-tags/[tagId]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/group-tags/[tagId]/user-groups/[groupId]",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/group-tags/[tagId]/user-groups/[groupId]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/group-tags/[tagId]/user-groups",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/group-tags/[tagId]/user-groups/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/group-tags",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/group-tags/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/posts/bootstrap",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/posts/bootstrap/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/posts/filter-options",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/posts/filter-options/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/posts/permissions",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/posts/permissions/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/posts",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/posts/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/products/options",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/products/options/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/promotions",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/promotions/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/settings/[configId]",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/settings/[configId]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/settings/approvals/pending-summary",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/settings/approvals/pending-summary/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/settings/configs",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/settings/configs/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/settings/feature-secrets/[secretName]",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/settings/feature-secrets/[secretName]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/topic-announcements/preview",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/topic-announcements/preview/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/topic-announcements",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/topic-announcements/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/attendance",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/attendance/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/email",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/email/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/logs",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/logs/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/[postId]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/group-checks/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/[indicatorId]",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/[indicatorId]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/categories/[categoryId]",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/categories/[categoryId]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/categories",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/categories/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/indicators",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/indicators/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/[productId]",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/[productId]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/linked-products/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/members/[userId]/feedbacks",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/members/[userId]/feedbacks/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/members/[userId]",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/members/[userId]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/members",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/members/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/posts/[postId]",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/posts/[postId]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/posts/[postId]/status",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/posts/[postId]/status/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]/posts",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/posts/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/[groupId]",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/activity-logs",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/activity-logs/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/sessions/[sessionId]/reconcile",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/sessions/[sessionId]/reconcile/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/sessions/[sessionId]/restore",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/sessions/[sessionId]/restore/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/sessions/[sessionId]",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/sessions/[sessionId]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/sessions/group-summaries",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/sessions/group-summaries/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/sessions/occurrences",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/sessions/occurrences/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/user-groups/sessions",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/user-groups/sessions/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/[userId]/attendance",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/[userId]/attendance/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/[userId]/emails",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/[userId]/emails/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/[userId]/linked-promotions",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/[userId]/linked-promotions/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/[userId]/referral-discounts",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/[userId]/referral-discounts/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/[userId]",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/[userId]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/approvals/logs",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/approvals/logs/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/approvals",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/approvals/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/audit-logs/backfill",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/audit-logs/backfill/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/audit-logs",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/audit-logs/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/avatar",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/avatar/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/bulk-import",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/bulk-import/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/database",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/database/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/duplicates/detect",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/duplicates/detect/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/feedbacks",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/feedbacks/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/fields",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/fields/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/groups/featured-counts",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/groups/featured-counts/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/groups/possible-excluded",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/groups/possible-excluded/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/groups",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/groups/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/links/manual",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/links/manual/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/merge/bulk",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/merge/bulk/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/merge",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/merge/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/reports/[reportId]/delivery",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/delivery/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/reports/[reportId]/logs",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/logs/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/reports/[reportId]",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/reports/[reportId]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/reports/groups/[groupId]/bulk-export",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/reports/groups/[groupId]/bulk-export/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/reports/groups/[groupId]/dashboard",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/reports/groups/[groupId]/dashboard/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/reports/groups",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/reports/groups/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/reports",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/reports/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/reports/schedules",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/reports/schedules/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/workspaces/[wsId]",
+      "source": "apps/contacts/src/app/api/workspaces/[wsId]/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/robots.txt",
+      "source": "apps/contacts/public/robots.txt",
+      "category": "public-asset",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/workspaces/invitations",
+      "source": "apps/contacts/next.config.ts",
+      "category": "api-rewrite",
+      "owner": "web-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/:wsId/settings/permissions",
+      "source": "apps/contacts/next.config.ts",
+      "category": "api-rewrite",
+      "owner": "web-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/:path*",
+      "source": "apps/contacts/next.config.ts",
+      "category": "api-proxy",
+      "owner": "web-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/[[locale]]/[wsId]/[[...nonContactsPath]]",
+      "source": "apps/contacts/src/proxy.ts",
+      "category": "workspace-redirect",
+      "owner": "web-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/__contacts1",
+      "source": "apps/contacts/cloudflare/start/routes/[__contacts1].ts",
+      "category": "candidate-probe",
+      "owner": "contacts-start",
+      "disposition": "native-Start"
+    }
+  ]
+}

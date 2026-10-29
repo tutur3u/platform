@@ -663,7 +663,7 @@ For better performance in your RLS policies:
 
 Tuturuuu ships a large suite of database tests in
 `apps/database/supabase/tests/`. These are [pgTAP](https://pgtap.org/) test files
-(each one wraps its assertions in a transaction and rolls back), and they run
+(most wrap their assertions in a transaction and roll back), and they run
 against the local Supabase instance through the Supabase CLI.
 
 To run the database test suite locally:
@@ -681,6 +681,23 @@ To run the database test suite locally:
    `supabase test db`, which executes every `tests/*.sql` file against the local
    database. There is no dedicated `bun sb:test` alias — the test runner is the
    Supabase CLI itself.
+
+Concurrency fixtures can commit data in independent connections. Reset the isolated
+database before repeating the full suite; assertions about provenance must filter
+by the fixture actor or target rather than count unrelated committed rows.
+
+The calendar and employee concurrency tests accept the database setting
+`test.dblink_connstr`. On local images where `postgres` is not a superuser, set it
+after reset, using the disposable database administrator, to a password-authenticated
+connection to that same database. A Docker-network address uses SCRAM; loopback
+trust does not satisfy `dblink`'s password requirement even when a password is
+supplied. Supply only disposable local credentials, never a linked project DSN.
+Stop the uniquely named project with `supabase stop --no-backup` after validation.
+
+When updating security tests, distinguish restrictive MFA policies from permissive
+access grants. Preserve denied-role assertions and seed real Auth identities for
+verified staff fixtures. A runtime contract rejecting its own migrated function
+metadata is a product regression, not a reason to relax the test.
 
 Each test file begins by enabling pgTAP, then uses helpers like `plan()`,
 `is()`, and `throws_ok()` to assert behavior. A trimmed example:
@@ -1290,3 +1307,23 @@ definition, unchanged name, `convalidated = false`, and rejection of a new
 oversized insert. Also compare constraint OIDs on the safe-only path. The batch
 regression is `apps/database/supabase/tests/notification-email-payload-cleanup.sql`;
 run the other notification pgTAP suites after applying the remaining migrations.
+
+
+### Task RPC user-client admission
+
+`apps/database/supabase/tests/time-task-rpc-scoping.sql` checks caller admission
+and service-only writer grants. Apply the migration snapshot to an isolated
+local stack before testing the actual Tasks dashboard and Mira Tasks handlers:
+
+```sh
+ttr resources run -- node apps/database/scripts/verify-task-rpc-user-callers.mjs --root <disposable-root>
+```
+
+The runner accepts only a disposable local root and loopback API URL. It obtains
+that stack's test credentials in memory and passes them only to the test process.
+The fixture creates disposable Auth users and tasks, invokes the real handlers
+with a real authenticated Supabase client, checks anonymous and different-user
+RPC denial through PostgREST, and removes its synthetic team workspace and user.
+Personal workspace cleanup remains owned by the Auth deletion lifecycle.
+The integration test skips unless the runner supplies its three `TEST_SUPABASE_*`
+variables; the ordinary unit suite does not require a running database.

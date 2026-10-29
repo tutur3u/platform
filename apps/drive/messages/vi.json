@@ -5889,6 +5889,8 @@
     "participants": "Người tham gia",
     "registered_users": "Người dùng đã đăng ký",
     "select-time-zone": "Chọn múi giờ",
+    "sign_in_to_create_plan": "Đăng nhập để tạo kế hoạch",
+    "sign_in_to_create_plan_desc": "Bạn cần đăng nhập tài khoản Tuturuuu để tạo kế hoạch. Bất kỳ ai có liên kết kế hoạch công khai vẫn có thể tham gia mà không cần đăng nhập.",
     "smart_scheduling": "Lập lịch thông minh",
     "something_went_wrong": "Có lỗi xảy ra",
     "soonest-time-to-meet": "Giờ sớm nhất",
@@ -13380,7 +13382,9 @@
         "asset_map_copied": "Đã sao chép bản đồ tài nguyên",
         "copy_failed": "Không thể sao chép liên kết xuất",
         "entry_copied": "Đã sao chép URL điểm vào",
-        "manifest_copied": "Đã sao chép loader manifest"
+        "manifest_copied": "Đã sao chép loader manifest",
+        "revoke_failed": "Không thể thu hồi liên kết xuất.",
+        "revoked": "Đã thu hồi các liên kết xuất trước đó."
       },
       "load_failed": "Không thể tải liên kết xuất",
       "loader_manifest": "Loader Manifest",
@@ -13389,6 +13393,7 @@
       "mode": "Chế độ",
       "no_index_html": "Không có index.html ở thư mục gốc",
       "no_index_html_description": "Thư mục này không chứa tệp index.html ở cấp gốc, nhưng tất cả liên kết tài nguyên vẫn có sẵn bên dưới.",
+      "revoke_and_replace": "Thu hồi và tạo lại liên kết",
       "rotating_badge": "Xoay vòng",
       "rotating_mode": "Liên kết ứng dụng ổn định với khả năng tự làm mới signed URL",
       "title": "Xuất liên kết gói",

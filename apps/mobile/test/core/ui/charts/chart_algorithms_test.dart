@@ -118,6 +118,22 @@ void main() {
       0xFF56B4E9,
     ]);
   });
+  test('a labeler formats ticks and is told where the day changes', () {
+    final times = List.generate(25, (i) => chartEpoch.add(Duration(hours: i)));
+    final dates = <bool>[];
+    final ticks = chartTimeTicks(
+      times,
+      1000,
+      style: const TextStyle(fontSize: 10),
+      labeler: (t, {required date}) {
+        dates.add(date);
+        return date ? 'day' : 'time';
+      },
+    );
+    expect(ticks.first.label, 'day');
+    expect(ticks.where((t) => t.label == 'day'), hasLength(2));
+    expect(dates.first, isTrue);
+  });
   for (final scale in [1.0, 2.0]) {
     test('GMT+7 midnight and nonoverlapping ticks at $scale', () {
       final times = List.generate(

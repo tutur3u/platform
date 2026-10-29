@@ -16,7 +16,7 @@ ChildrenPoint parseChildrenPoint(JsonReader r) {
   );
   return ChildrenPoint(
     t: r.field('t').utcTimestamp(),
-    provider: r.field('provider').string(maxLength: 60),
+    provider: r.field('provider').stringIn(ChildrenProviders.all),
     model: r.field('model').string(maxLength: 100),
     running: r.field('running').integer(min: 0),
     started: r.field('started').integer(min: 0),
@@ -24,19 +24,18 @@ ChildrenPoint parseChildrenPoint(JsonReader r) {
   );
 }
 
-Staff parseStaff(JsonReader r) {
-  r.keys(
-    ['role', 'title', 'state', 'last_active', 'model', 'runs_today'],
-    ['role', 'title', 'state', 'last_active', 'model', 'runs_today'],
-  );
+Staff parseStaff(JsonReader input) {
+  final r = JsonReader(adaptThread(input.object()), input.path)
+    ..keys(
+      ['role', 'title', 'state', 'model'],
+      ['role', 'title', 'state', 'model'],
+    );
   return Staff(
     role: r.field('role').string(maxLength: 80),
     title: r.field('title').string(maxLength: 80),
     state: r
         .field('state')
         .enumOf<LaneState>(LaneState.values, (v) => v.wireName),
-    lastActive: r.field('last_active').nullable((v) => v.utcTimestamp()),
     model: r.field('model').string(maxLength: 100),
-    runsToday: r.field('runs_today').integer(min: 0),
   );
 }

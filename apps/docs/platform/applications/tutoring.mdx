@@ -1,7 +1,7 @@
 ---
 title: 'Tutoring'
 description: 'Schedule make-up and remedial sessions, work the support queue, and enable the module per workspace.'
-updatedAt: '2026-10-26'
+updatedAt: '2026-10-28'
 ---
 
 Tutoring lives in the Contacts satellite at `/{wsId}/users/tutoring`. It turns
@@ -64,6 +64,35 @@ content sheet can be kept with the attendance record. Managers can permanently
 delete a pending or cancelled session after an in-app confirmation. Completed
 and no-show sessions stay intact for attendance and payroll history.
 
+## Weekly repeats in the session draft
+
+In Contacts tutoring creation, **Repeat weekly** adds the next occurrence of
+every selected weekday and start time after the latest dated session in the
+draft. Saturday plus Sunday repeats both days; a Saturday–Sunday–Monday pattern
+also stays intact across the calendar week boundary. Each occurrence keeps its
+own teacher, duration and local start time. When a weekday/time appears in
+several weeks, its latest row supplies those details. Clicking again adds one
+more occurrence of each pattern, without copying earlier weeks again.
+
+The rule applies to all tutoring reasons and workspaces, with no preset-specific
+exception. It uses the selected civil date and local time. For a GMT+7 center,
+the basis is Asia/Ho_Chi_Minh, including 22:30 and 00:30 sessions. Tutoring stores
+`session_date` as a SQL date and `start_time` as a time, rather than deriving
+weekdays from a UTC timestamp or the browser timezone. An imported UTC instant
+must first be interpreted in the center timezone.
+
+Repeat changes only the unsaved draft; the existing create action submits the
+explicit `sessions[]` array. Rows without a date do not seed repeats. The button
+is disabled if no dated rows exist or the entire repeated pattern would exceed
+the existing 50-session request limit; it never silently drops weekdays to fit.
+Existing server conflict and permission checks still apply.
+
+Regression coverage:
+[`tutoring-repeat.test.tsx`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/tutoring-repeat.test.tsx)
+drives the real draft editor for weekend, three-day, four-day and seven-day
+patterns, week/year boundaries, GMT+7 midnight conversion, repeated clicks,
+distinct timeframes and the request limit.
+
 ## Enablement
 
 Tutoring is gated by the `ENABLE_TUTORING` workspace config:
@@ -73,7 +102,25 @@ Tutoring is gated by the `ENABLE_TUTORING` workspace config:
 | Shared | Enabled | Enabled | Disabled |
 | Personal | Disabled | Enabled | Disabled |
 
-A disabled workspace renders an enable screen rather than a 404. Members with
+The API enforces the same table: `resolveTutoringRouteAccess`
+(`apps/web/src/lib/tutoring/route-access.ts`) reads `ENABLE_TUTORING` from
+`workspace_configs` (the source the Contacts page reads, not a workspace secret)
+and, when the module is off, every tutoring route (sessions, queue, policy,
+teachers, export, mark, message preview, weak-support end) answers `404` like an
+unknown workspace, before any tutoring data is read. A missing value follows the
+UI default (on for shared workspaces, off for personal ones), the value is
+trimmed and case-insensitive, and an unreadable toggle fails closed. The
+Teach and Learn to-do lists (`teach/todo`, `tulearn/todo`) read the same toggle
+through `@tuturuuu/education-core/todo/tutoring-module`: with `kind=tutoring`
+they return an empty list while the module is off, so session content is not
+served there either. Coverage:
+[`module-gate.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/module-gate.test.ts),
+[`module-gate-routes.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/module-gate-routes.test.ts)
+(which also asserts every tutoring route handler goes through
+`resolveTutoringRouteAccess`), and
+[`todo/service.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/education-core/src/todo/service.test.ts).
+
+In the UI, a disabled workspace renders an enable screen rather than a 404. Members with
 `manage_workspace_settings` get an **Enable tutoring** button that writes
 `ENABLE_TUTORING=true` through
 `PUT /api/v1/workspaces/{wsId}/settings/ENABLE_TUTORING`; everyone else is told
@@ -116,8 +163,8 @@ same teacher on both slots; a learner conflict needs only the same learner.
 
 The class managers are displayed as **Homeroom teacher** for context. The
 **Tutoring teacher** is chosen separately for every slot from a paginated,
-searchable catalog of verified teacher memberships anywhere in the same center
-(workspace). Changing the learner’s class does not erase a selected tutoring
+searchable catalog of verified teacher memberships in the same center
+(workspace), restricted to configured tutor groups by default when present. Changing the learner’s class does not erase a selected tutoring
 teacher. Students and people without a teacher role are not teacher options;
 the create and edit APIs enforce the same workspace eligibility boundary.
 See [teacher assignment](#tutoring-teacher-assignment) for the API boundary.
@@ -223,12 +270,55 @@ names are built in or seeded; each center enters its own. Coverage:
 center's tuition remains free to
 learners; payroll exports count completed teaching time.
 
-When scheduling from **Needs support**, a make-up draft copies the recorded
-lesson description from the missed class date. If that class has no recorded
-content, the field stays empty for staff to fill. A weak-support draft uses the
-teacher's flagged feedback content. Staff can review and edit either draft
-before saving; content is never invented from a class title or an unrelated
-lesson.
+When scheduling from **Needs support**, the draft's content follows the
+[content-to-teach rule](#content-to-teach-follows-the-reason). Staff can review
+and edit any draft before saving; content is never invented from a class title
+or an unrelated lesson.
+
+### Content to teach follows the reason
+
+Decision (applies to every row of **Needs support** in Contacts → Tutoring;
+always on, no setting):
+
+- **Kèm nghỉ (absent make-up)** teaches what the class covered on the day the
+  learner was absent: the class session's notes for that date, then the class's
+  **posts** (bài viết) created that day. When both exist the draft labels
+  them "Lesson notes" and "Class posts". Posts have no date field of their own,
+  so a post belongs to the missed date it was created on, in the class's time
+  zone (the class session's own zone, falling back to Asia/Ho_Chi_Minh when the
+  group has no session in range). Rejected posts are skipped, and only the
+  post's title and content are read, not its internal notes. Post text is
+  included only for viewers who may read group posts
+  (`view_user_groups_posts`).
+- **Kèm yếu (weak support)** teaches what the homeroom teacher (GVCN) wrote when
+  moving the learner into support: the flagged feedback a support session was
+  first opened from. Later flagged notes do not replace it; with no session yet
+  tied to a flagged note, the latest one is used. Scheduling and reassessment
+  still follow the latest flagged feedback, so queue membership is unchanged.
+- **Both reasons** put both texts in one draft under the headings "Kèm nghỉ"
+  and "Kèm yếu" (English: "Absent make-up" and "Weak support"), so the
+  homeroom teacher's note is never dropped.
+- The queue table shows the same content per row. The server derives the notes
+  for the visible page in the queue response (`missed_lesson_content`,
+  `missed_post_content`, `missing_lesson_dates`, `content_feedback_id`), so the
+  list does not fetch per row.
+- A missed date with neither session notes nor a post shows the inline hint "No
+  lesson notes recorded for {dates}" in the queue and the draft, instead of an
+  empty field.
+- A make-up draft that is only session notes still follows the class notes while
+  pending ([linked content](#make-up-content-follows-the-missed-lessons-notes)).
+  A draft that includes a post, or a homeroom note, is saved as written.
+
+Existing sessions are not rewritten; only new drafts use this rule.
+
+Regression coverage:
+[`queue/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/queue/route.test.ts)
+(absent with and without notes, posts by date and permission, both reasons,
+triggering versus latest feedback),
+[`tutoring-content.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/tutoring-content.test.ts),
+[`tutoring-queue-content.test.tsx`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/tutoring-queue-content.test.tsx)
+and the prefill cases in
+[`tutoring-handoff.test.tsx`](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/%5Blocale%5D/%5BwsId%5D/users/tutoring/tutoring-handoff.test.tsx).
 
 ### Weak-support content comes from the homeroom teacher
 
@@ -249,6 +339,24 @@ off by default):
   server for every feedback write path: the Contacts feedback API
   (`apps/contacts/src/lib/user-feedbacks.ts`, used by both its workspace and
   group-member feedback routes) and the web feedback and tutoring routes.
+- **Sessions are weak-support content too.** A tutoring session counts as weak
+  content when its `reasonType` is `WEAK_SUPPORT` or it has a
+  `sourceFeedbackId` (it came from a flagged feedback). With the policy on,
+  `POST /tutoring/sessions` for such a session,
+  `PUT /tutoring/sessions/{id}` that changes its `content`, `reasonDetail` or
+  `reasonType` (or turns a session into weak support), and
+  `DELETE /tutoring/sessions/{id}` also need `update_user_groups` and
+  otherwise answer `403` with `TUTORING_CONTENT_RESTRICTED`. The Contacts UI
+  shows a specific "only class managers can change weak-support content"
+  message for that code instead of the generic failure toast. A content edit
+  is applied only while the session still has the reason and source feedback
+  the check read; if they changed in between, the write answers `409`.
+  A queue row that has both an absence and flagged feedback creates an
+  `ABSENT_RECOVERY` session with a `sourceFeedbackId`. Because of that
+  `sourceFeedbackId` it counts as weak content and is restricted like a
+  `WEAK_SUPPORT` session. Plain `ABSENT_RECOVERY` content (no
+  `sourceFeedbackId`), and attendance or schedule changes on weak-support
+  sessions, are unaffected.
 - **End tutoring** (Thoát kèm) is an explicit queue action for weak-support and
   office-review rows, confirmed in an in-app dialog. It calls
   `POST /api/v1/workspaces/{wsId}/tutoring/weak-support/end`, which clears the
@@ -256,8 +364,15 @@ off by default):
   stays as history, and sessions already scheduled remain for staff to complete
   or cancel. Flagging the learner again puts them back on the list.
 
+Group-member feedback uses the authorized workspace for both the learner and
+class. Teachers retain feedback history after a learner leaves the class; current
+class membership is not required. This matches Contacts. The usual view/edit
+permissions and weak-content policy still apply. The web group-member feedback
+`route.test.ts` covers scoping, former-member history and weak-content denial.
+
 Regression coverage:
 [`weak-content-access.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/weak-content-access.test.ts),
+[`sessions/weak-content.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/weak-content.test.ts),
 [`weak-support/end/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/weak-support/end/route.test.ts),
 the Contacts route cases in
 [`users/feedbacks/route.test.ts` (Contacts)](https://github.com/tutur3u/platform/blob/main/apps/contacts/src/app/api/v1/workspaces/%5BwsId%5D/users/feedbacks/route.test.ts),
@@ -463,6 +578,44 @@ Regression coverage: `apps/web/src/lib/tutoring/teachers.test.ts`,
 `apps/web/src/lib/tutoring/teacher-assignment-routes.test.ts`, and the tutoring
 teacher catalog's colocated `route.test.ts` cover workspace boundaries, teacher
 eligibility, permission denial, error handling, pagination, and session writes.
+
+### Tutor groups
+
+Tutors are usually students outside the class, so they have no title of their
+own: a tutor is a workspace user with `TEACHER` membership in a group that staff
+mark as a **tutor group**.
+
+- **Scope and default.** The `tutorGroupIds` list in the tutoring policy
+  (Contacts, Tutoring policy, Tutor groups) is workspace-wide and defaults to
+  empty. Policies saved before the setting existed read as no tutor groups, and
+  every policy field round-trips on save. Presets keep the chosen groups.
+- **Roles combine.** The teacher catalog returns `isTutor` (`TEACHER` in any
+  tutor group) and `isClassTeacher` (`TEACHER` in any other group). Both can be
+  true, so a homeroom lecturer who also tutors keeps both. No role or permission
+  is added and tutor-group teachers stay valid tutoring teachers.
+- **Picker.** The tutoring teacher picker shows **Tutor** and **Teacher** labels
+  beside the name, both when both apply, and a **Tutors only** toggle that
+  starts on and sends `tutorsOnly=true`. Switching it off explicitly sends
+  `tutorsOnly=false` to show all workspace teachers. The plan always requests
+  `tutorsOnly=false` so existing main-teacher sessions retain their names.
+  When an API request omits the flag, configured tutor groups
+  now restrict the server catalog to their `TEACHER` members. Main teachers
+  outside those groups are excluded. With no configured groups, the default
+  remains the workspace teacher catalog. An explicit `tutorsOnly=false` API
+  request retains the broader catalog. Policy read failures fail closed for
+  default and tutors-only requests; assignment permissions are unchanged.
+  The teacher catalog route regression covers configured tutor A and main
+  teacher B. Group names are not used for matching.
+- **Queues.** Tutor groups have no real students, so they are excluded from the
+  make-up and weak-support queues by group id, in addition to the name-based
+  exclusion rules.
+- **Setup is configuration.** Staff create a group such as "Giáo viên kèm", add
+  each tutor as `TEACHER`, and select it in the policy. Nothing is seeded.
+
+Regression coverage: `tutoring-policy.test.ts` (parser, round trip, exclusion by
+id), the policy, queue and teacher catalog `route.test.ts` files, `teachers.test.ts`
+(tutor-only, class-only, both), and the Contacts `tutoring-teacher-picker.test.tsx`
+and `tutoring-tutor-groups.test.tsx`.
 
 
 ### Queue handoff and missed-date defaults
@@ -688,3 +841,19 @@ to avoid ambiguous SQL references before admission. Regression evidence lives in
 `apps/database/supabase/tests/tutoring-absence-credit-contract.sql` and
 `apps/database/supabase/tests/tutoring-absence-credit-lifecycle.sql`; the exact-head
 database contract must pass before this foundation is considered verified.
+
+## Group tutoring slots
+
+Every workspace allows multiple learners with one teacher in the same group,
+date, start time and duration by default. Each learner keeps a separate session
+row for attendance, absence recovery, lesson notes and payroll history; there is
+no shared-session identifier or capacity limit. Staff schedule each learner
+through the Contacts schedule or support queue. The create and edit APIs and
+draft teacher choices apply this same rule.
+
+A different group or any overlapping interval with a different start or duration
+still blocks the teacher. A learner cannot have overlapping bookings, including
+a duplicate booking in the same group slot. Existing cancellation conflict
+handling remains conservative. This rule does not imply room or contractual
+availability. Regression coverage lives in tutoring `shared.test.ts` and
+`packages/internal-api/src/tutoring-draft-plan.test.ts`.

@@ -170,11 +170,12 @@ async function resolveTopicAnnouncementAttachmentUploadAccess({
     };
   }
 
-  // Assigned teachers (create/update user group posts) upload topic page
-  // images too; files stay unattached until an assignment-checked write.
+  // Assigned teachers with update_user_groups_posts (the permission that
+  // attaching needs) upload topic page images too; files stay unattached
+  // until an assignment-checked write.
   const access = await resolveTopicAnnouncementsAccess(request, wsId, {
     requireManage: true,
-    teacherAccess: 'read',
+    teacherAccess: 'update',
   });
   if (access.response) {
     return { allowed: false, response: access.response };

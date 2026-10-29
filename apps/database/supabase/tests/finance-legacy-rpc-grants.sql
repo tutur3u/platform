@@ -8,6 +8,8 @@ select plan(24);
 create function pg_temp.flr_id(n integer) returns uuid
 language sql immutable
 as $$ select ('00009033-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid $$;
+-- Anonymous assertions must reach the RPC rather than fail in the ID fixture.
+grant execute on function pg_temp.flr_id(integer) to anon;
 
 insert into auth.users (id) values (pg_temp.flr_id(1)) on conflict (id) do nothing;
 insert into public.users (id) values (pg_temp.flr_id(1)) on conflict (id) do nothing;

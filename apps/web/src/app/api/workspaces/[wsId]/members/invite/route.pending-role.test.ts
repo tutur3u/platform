@@ -30,6 +30,9 @@ function resultFor(
           error: null,
         };
   }
+  if (table === 'workspace_role_permissions') {
+    return { data: [], error: null };
+  }
   if (table === 'workspace_roles') {
     return mode === 'single'
       ? { data: filters.id === ROLE_ID ? { id: ROLE_ID } : null, error: null }
@@ -110,6 +113,7 @@ describe('pending workspace invitation roles', () => {
         withoutPermission: vi.fn(() => false),
         wsId: 'workspace-1',
       },
+      user: { id: USER_ID },
     });
   });
 
@@ -158,6 +162,7 @@ describe('pending workspace invitation roles', () => {
     expect(response.status).toBe(200);
     expect(mocks.rpcCalls).toContainEqual({
       args: {
+        p_actor_id: USER_ID,
         p_email: 'pending@example.com',
         p_role_ids: [ROLE_ID, REVIEWER_ROLE_ID],
         p_user_id: null,

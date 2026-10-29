@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PUBLIC_MARKETING_ALIAS_CASES } from './public-marketing-alias-cases';
 import { AUTH_COOKIE_HEADER } from './required-mfa-proxy-fixture';
+import { createAuthenticatedSupabaseClient } from './staff-session-proxy-fixture';
 
 const mocks = vi.hoisted(() => ({
   authProxy: vi.fn(),
@@ -112,33 +113,14 @@ vi.mock('../lib/workspace-invitations/status', () => ({
   ) => mocks.listPendingWorkspaceInvitations(...args),
 }));
 
-vi.mock('@tuturuuu/utils/email/client', () => ({
+vi.mock('@tuturuuu/utils/email/client', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/utils/email/client')>()),
   isExactTuturuuuDotComEmail: (
     ...args: Parameters<typeof mocks.isExactTuturuuuDotComEmail>
   ) => mocks.isExactTuturuuuDotComEmail(...args),
 }));
 
 describe('web proxy api handling', () => {
-  function createAuthenticatedSupabaseClient(
-    user: { email?: string; id: string } = {
-      email: 'member@example.com',
-      id: 'user-1',
-    }
-  ) {
-    const emptyMaybeSingleBuilder = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
-    };
-
-    return {
-      auth: {
-        getUser: vi.fn().mockResolvedValue({ data: { user } }),
-      },
-      from: vi.fn(() => emptyMaybeSingleBuilder),
-    };
-  }
-
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date());
@@ -226,10 +208,28 @@ describe('web proxy api handling', () => {
     mocks.verifyCliAccessToken.mockReturnValue({
       claims: {
         email: 'member@tuturuuu.com',
+        sub: 'cli-staff',
       },
       ok: true,
     });
     mocks.isExactTuturuuuDotComEmail.mockReturnValue(true);
+    mocks.createAdminClient.mockResolvedValue({
+      auth: {
+        admin: {
+          getUserById: async () => ({
+            data: {
+              user: {
+                id: 'cli-staff',
+                email: 'member@tuturuuu.com',
+                email_confirmed_at: '2026-01-01',
+                identities: [{ provider: 'email', identity_data: {} }],
+              },
+            },
+            error: null,
+          }),
+        },
+      },
+    });
 
     const { proxy } = await import('../proxy');
     await proxy(

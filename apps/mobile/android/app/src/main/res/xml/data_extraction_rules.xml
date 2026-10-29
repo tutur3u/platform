@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  `allowBackup="false"` does not stop Android 12+ (targetSdk 31+) device-to-device
+  transfer, which is governed by this file. Auth tokens live in the
+  flutter_secure_storage shared preferences (and the app database/files), so
+  exclude all app data from both cloud backup and device transfer.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="root" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="." />
+        <exclude domain="database" path="." />
+        <exclude domain="file" path="." />
+        <exclude domain="root" path="." />
+        <exclude domain="external" path="." />
+        <exclude domain="sharedpref" path="FlutterSecureStorage.xml" />
+    </device-transfer>
+</data-extraction-rules>
