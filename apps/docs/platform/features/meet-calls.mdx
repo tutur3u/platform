@@ -1,6 +1,6 @@
 ---
 title: Meet calls
-updatedAt: '2026-10-02'
+updatedAt: '2026-10-29'
 description: Run Tuturuuu Meet video calls on Cloudflare Realtime SFU, including room signaling, host controls, and in-call recording.
 ---
 
@@ -1510,3 +1510,29 @@ Regression evidence: `channel-retry-budget.test.ts` counts operations and tests
 failure/clock/restart/recovery boundaries; `test-fixtures/channel-retry` verifies
 reservation persistence against real local Worker SQLite with controlled callback
 failures. Hosted alarm delivery and actual workspace storage remain separate gates.
+
+## Transcription room protocol
+
+Meet and Parley share the transcription protocol in `packages/realtime/src/meet`.
+This protocol milestone adds no capture or UI behavior. A host sends
+`transcription.state {state: {active, sessionId, startedBy, language, consentRequired}}`.
+Language is `auto | vi | en | vi+en`; consent is required. Active state requires
+a session UUID and the initiating host's participant UUID. Only admitted hosts
+may change it, regardless of delegated recording or participant-management scopes.
+
+An admitted participant sends `transcription.consent {userId, allowed}` using
+their own participant/device UUID, including for guests. Account IDs and other
+participants' IDs cannot stand in for that identity. Missing consent means
+excluded; `false` withdraws consent. A new session clears the prior roster.
+Only that participant and admitted hosts receive live consent decisions. Client snapshots contain only the participant's own decision and aggregate counts, including for hosts. Transcription
+state reaches admitted participants and replays on admission or reconnection.
+Waiting sockets receive neither state nor consent.
+
+The existing room Durable Object validates these messages and executes the shared
+reducer through its serialized command executor. Its broadcast path excludes
+unadmitted sockets; consent uses direct delivery to admitted hosts rather than
+the broader participant-manager audience. Existing clients ignore unknown server
+types in the call reducer's default branch, so realtime can ship first.
+Regression coverage lives in `transcription.test.ts`,
+`transcription-routing.test.ts`, and `transcription-compat.test.ts`.
+In-room consent survives DO hibernation only under the active session UUID and is cleared on session or room end. This is not the legal consent record; private.meet_ai_consents belongs to M1-B/M1-C. WebSocket messages over 256 KiB (UTF-8 bytes for text) are rejected before JSON parsing. Legal consent persistence, audio filtering and notices belong to subsequent milestones.
