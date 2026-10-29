@@ -1,4 +1,4 @@
--- READ ONLY: post-apply check for 20261027151510_scope_discord_guild_member_access.
+-- READ ONLY: post-apply check for 20261029100020_scope_discord_guild_member_access.
 -- Run with psql on staging and production after the migration, and send the
 -- result to Security and Mastermind. No row means the unique mapping index was
 -- skipped for duplicates and the finding stays OPEN until a Mastermind-approved
