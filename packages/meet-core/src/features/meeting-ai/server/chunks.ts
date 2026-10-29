@@ -10,7 +10,7 @@ import {
   consentedSourceIndexes,
   hasExtraHostTracks,
   hasHostSharedAudio,
-  MEET_HOST_SHARED_AUDIO_MAX_AUDIENCE,
+  MEET_HOST_SHARED_AUDIO_MAX_ADMITTED,
   needsConsentRecords,
 } from './consent-gate';
 import { readMeetConsentRecords } from './consent-records';
@@ -79,8 +79,8 @@ export async function transcribeMeetChunk(
       'Too many host audio tracks',
       'MEET_AI_HOST_TRACKS'
     );
-  // Host screen audio can carry other people's voices; with more than one
-  // other person it is excluded (an unknown audience counts as more).
+  // Host screen audio can carry other people's voices; with anyone else in the
+  // room it is excluded (an unknown audience counts as someone else).
   const audience = hasHostSharedAudio(user.id, received)
     ? await readTranscriptionAudience(meetingId, user.id)
     : null;
@@ -92,7 +92,7 @@ export async function transcribeMeetChunk(
       ? await readMeetConsentRecords(db, sessionId)
       : [],
     excludeHostSharedAudio:
-      audience === null || audience > MEET_HOST_SHARED_AUDIO_MAX_AUDIENCE,
+      audience === null || audience > MEET_HOST_SHARED_AUDIO_MAX_ADMITTED,
   });
   if (!kept.length)
     throw new MeetAiError(

@@ -284,15 +284,16 @@ describe('server-side transcription consent', () => {
     expect(mocks.generate).not.toHaveBeenCalled();
   });
 
-  it('drops host screen audio with more than one other person or an unknown audience (F2)', async () => {
+  it('keeps host screen audio only when the host is alone; anyone else or an unknown audience drops it (F2)', async () => {
     const sources = [
       { speakerAccountId: host, at: 5 },
       { speakerAccountId: host, at: 5, kind: 'shared_audio' as const },
     ];
     for (const [audience, segments] of [
+      [1, 2],
+      [2, 1],
       [3, 1],
       [null, 1],
-      [2, 2],
     ] as const) {
       vi.clearAllMocks();
       storage({ data: [], error: null });

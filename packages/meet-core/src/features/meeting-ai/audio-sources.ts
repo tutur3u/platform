@@ -27,10 +27,11 @@ export function meetingAudioSources(input: {
     : undefined;
   const ownAccountId = own?.accountId ?? input.selfAccountId;
   const includeSelf = input.selfAllowed !== false;
-  // Mirrors the server: host screen audio can carry other people's voices, so
-  // it is left out once more than one other person is in the call.
+  // Mirrors the server (MEET_HOST_SHARED_AUDIO_MAX_ADMITTED): host screen audio
+  // can carry other people's voices, so it is captured only while the host is
+  // the only person in the call.
   const includeScreen =
-    includeSelf && Object.keys(input.participants).length <= 2;
+    includeSelf && Object.keys(input.participants).length <= 1;
   return [
     ...(input.localStream && includeSelf
       ? [

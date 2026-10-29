@@ -60,9 +60,7 @@ describe('transcription consent dialog', () => {
   });
 
   it('records a final, dated notice version', () => {
-    expect(MEET_CONSENT_NOTICE_VERSION).toBe(
-      'meet-transcription-v2-2026-10-30'
-    );
+    expect(MEET_CONSENT_NOTICE_VERSION).toBe('meet-transcription-v3-2026-10-30');
     expect(MEET_CONSENT_NOTICE_VERSION).not.toContain('draft');
   });
 });

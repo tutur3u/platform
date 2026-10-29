@@ -135,5 +135,9 @@ export function hasHostSharedAudio(
   );
 }
 
-/** Host shared audio is transcribed by default only with at most one other person. */
-export const MEET_HOST_SHARED_AUDIO_MAX_AUDIENCE = 2;
+/**
+ * Host shared audio is transcribed only while the host is alone (admitted
+ * people include the host). With anyone else present, or an unknown audience,
+ * it is excluded.
+ */
+export const MEET_HOST_SHARED_AUDIO_MAX_ADMITTED = 1;

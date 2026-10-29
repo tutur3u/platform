@@ -1650,11 +1650,14 @@ tracks are not recorded or uploaded in the first place.
 Host sources are limited too. An upload may carry at most one host microphone
 track and one host shared-audio track: overlapping host clips of the same kind
 fail the whole upload with 400 `MEET_AI_HOST_TRACKS`. Host screen or tab audio
-can carry other people's voices, so it is excluded when more than two people are
-admitted to the room. The server asks the room (host-only room-service action
-`transcription.audience`) once per upload that contains host shared audio, and
-an unknown audience counts as more than two. A session-scoped host toggle to
-include shared audio, with an indicator for everyone, is a follow-up.
+can carry other people's voices, so it is excluded whenever anyone besides the
+host is admitted to the room; it is transcribed only while the host is alone.
+The server asks the room (host-only room-service action
+`transcription.audience`, which counts admitted people including the host) once
+per upload that contains host shared audio, and an unknown audience counts as
+someone else being present. The host device mirrors this and does not capture
+screen audio with more than one person in the call. A session-scoped host toggle
+to include shared audio, with an indicator for everyone, is a follow-up.
 
 Consent writes accept only the notice version the server currently shows
 (`MEET_CONSENT_NOTICE_VERSION`); any other value gets 409
@@ -1673,12 +1676,18 @@ modifies their client to mislabel audio. Self-capture mode (M2), where each
 participant uploads only their own microphone and the server binds the speaker
 to the authenticated actor, removes the speaker part of this limit.
 
+Put plainly: a host who runs a modified app can capture audio that includes a
+participant, for example by recording the room outside the app or by mislabeling
+clips, and Tuturuuu cannot fully prevent that. The consent record and the server
+gate govern what Tuturuuu transcribes, not what a host's own device records.
+Participants with concerns about this can write to privacy@tuturuuu.com.
+
 Consent copy lives in the `meet.consent` message namespace (en and vi, Meet and
 Parley bundles) and is versioned by `MEET_CONSENT_NOTICE_VERSION` in
-`meeting-ai/consent/notice.ts` (currently `meet-transcription-v2-2026-10-30`,
+`meeting-ai/consent/notice.ts` (currently `meet-transcription-v3-2026-10-30`,
 legal-approved wording); bump it whenever the copy changes so each record names
 the notice it accepted. The notice states that the voice is sent to Google's
-Gemini through Mira, that people who do not allow stay out of the transcript, and
+Gemini through Mira, that people who do not allow are left out of the transcript, and
 that withdrawal is forward-only: text already written stays until it is deleted.
 
 Transcripts are kept until they are deleted: there is no automatic retention

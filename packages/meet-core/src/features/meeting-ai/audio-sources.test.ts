@@ -94,7 +94,7 @@ it('keeps the host microphone in a solo meeting and honours a host decline', () 
   ).toEqual([]);
 });
 
-it('leaves host screen audio out once more than one other person joins', () => {
+it('captures host screen audio only while the host is alone', () => {
   const local = { id: 'local' } as unknown as MediaStream;
   const screen = { id: 'screen' } as unknown as MediaStream;
   const person = { media: { screenEnabled: false } };
@@ -104,15 +104,18 @@ it('leaves host screen audio out once more than one other person joins', () => {
     selfUserId: 'me',
     selfAccountId: 'host-account',
     remoteMedia: {},
-    participants: { me: person, a: person },
+    participants: { me: person },
   };
   expect(
     meetingAudioSources(input as never).map((source) => source.kind)
   ).toEqual(['microphone', 'shared_audio']);
-  expect(
-    meetingAudioSources({
-      ...input,
-      participants: { me: person, a: person, b: person },
-    } as never).map((source) => source.kind)
-  ).toEqual(['microphone']);
+  for (const participants of [
+    { me: person, a: person },
+    { me: person, a: person, b: person },
+  ])
+    expect(
+      meetingAudioSources({ ...input, participants } as never).map(
+        (source) => source.kind
+      )
+    ).toEqual(['microphone']);
 });
