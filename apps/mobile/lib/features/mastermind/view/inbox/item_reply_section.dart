@@ -11,7 +11,6 @@ import 'package:mobile/features/mastermind/view/inbox/reply_composer.dart';
 import 'package:mobile/features/mastermind/view/inbox/reply_status_panel.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_list_row.dart';
-import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The reply half of the detail page. What it shows follows the hub:
@@ -87,12 +86,8 @@ class _ReadOnlyOptions extends StatelessWidget {
               for (final (index, option) in options)
                 MastermindListRow(
                   title: option,
-                  trailing: item.optionRecommended(index)
-                      ? MastermindStatusChip(
-                          label: l10n.mastermindRecommended,
-                          icon: LucideIcons.star,
-                          tone: AppTone.primary,
-                        )
+                  subtitle: item.optionRecommended(index)
+                      ? l10n.mastermindRecommended
                       : null,
                 ),
             ],

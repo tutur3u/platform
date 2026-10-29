@@ -6434,5 +6434,61 @@
   "mastermindViaAuto": "automatically",
   "mastermindAnsweredInBatch": "Answered in batch",
   "mastermindAlreadyAnsweredInBatch": "Already answered in batch",
-  "mastermindViaBatch": "in batch"
+  "mastermindViaBatch": "in batch",
+  "mastermindAskDeadlineWithinHours": "Answer within hours",
+  "mastermindAskDeadlineToday": "Answer today",
+  "mastermindAskDeadlineTonight": "Answer tonight",
+  "mastermindAskDeadlineThisWeek": "Answer this week",
+  "mastermindAskUrgencyHigh": "High priority",
+  "mastermindAskUrgencyUrgent": "Urgent",
+  "mastermindAskWhyRecommended": "Why recommended",
+  "mastermindAskIfNoAnswerTitle": "If you don't answer",
+  "mastermindAskIfNoAnswer": "If no answer: {option}",
+  "@mastermindAskIfNoAnswer": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskRisk": "Risk: {risk}",
+  "@mastermindAskRisk": {
+    "placeholders": {
+      "risk": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskReversible": "Can be undone later",
+  "mastermindAskNotReversible": "Can't be undone",
+  "mastermindAskBlocks": "{count, plural, =1{Blocks 1 lane} other{Blocks {count} lanes}}",
+  "@mastermindAskBlocks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindAskDueAt": "Due {time}",
+  "@mastermindAskDueAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskAnsweredPhone": "Answered on the phone",
+  "mastermindAskAnsweredMac": "Answered on the Mac",
+  "mastermindAskAnsweredChat": "Answered in chat",
+  "mastermindAskAnsweredAuto": "Answered automatically",
+  "mastermindAskAnsweredBatch": "Answered in a batch",
+  "mastermindAskAnsweredElsewhere": "Answered elsewhere",
+  "mastermindAskLinksTitle": "Links",
+  "mastermindAskLaneLink": "Lane ⟶",
+  "mastermindAskActionAnswer": "Answer here",
+  "mastermindAskActionRunOnMac": "Run at your Mac",
+  "mastermindAskActionPhysical": "Needs a physical step",
+  "mastermindAskActionFyi": "For your information",
+  "mastermindAskRemindAtMac": "Remind me at Mac",
+  "mastermindAskRemindAtMacSoon": "Coming soon"
 }

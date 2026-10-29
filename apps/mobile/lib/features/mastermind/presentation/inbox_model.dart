@@ -203,6 +203,16 @@ List<(int, String)> selectableOptions(NeedsYou item) => [
       (index, plainOptionLabel(item, index)),
 ];
 
+/// [options] with the recommended one moved first; the rest keep their order
+/// and every entry keeps its wire `option_index`.
+List<(int, String)> recommendedFirst(
+  NeedsYou item,
+  List<(int, String)> options,
+) => [
+  ...options.where((option) => item.optionRecommended(option.$1)),
+  ...options.where((option) => !item.optionRecommended(option.$1)),
+];
+
 /// The item with [id] if it is still an open normal Needs-you row.
 NeedsYou? openNeedsYouById(MastermindSnapshot snapshot, String id) {
   for (final item in openAsks(snapshot)) {
@@ -213,8 +223,15 @@ NeedsYou? openNeedsYouById(MastermindSnapshot snapshot, String id) {
   return null;
 }
 
-/// The item with [id] if the hub lists it as resolved (answered or
-/// withdrawn).
+/// The lane blocked on ask [id] (`work.lanes[].waiting_on_ask_id`), if any.
+Lane? laneWaitingOn(MastermindSnapshot snapshot, String id) {
+  for (final lane in snapshot.lanes) {
+    if (lane is Lane && lane.waitingOnAskId == id) return lane;
+  }
+  return null;
+}
+
+/// The item with [id] if the hub lists it as resolved (answered or withdrawn).
 NeedsYou? resolvedNeedsYouById(MastermindSnapshot snapshot, String id) {
   for (final item in snapshot.resolvedItems) {
     if (item.id == id) return item;

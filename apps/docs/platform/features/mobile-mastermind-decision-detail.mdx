@@ -43,10 +43,65 @@ description: "Mobile ask detail layout, plain option labels, radio semantics and
   changes, reorders or removes its options, clears an unsent selection. An index
   therefore never points at a different answer.
 
-Exceptions: the snapshot has no deadline field, so only the asked time is shown.
+Optional snapshot deadline and urgency values appear when published; unknown
+values are omitted.
 There are no Mastermind golden tests; the screen is covered by widget tests.
 
 Coverage: `apps/mobile/test/features/mastermind/view/`:
 `mastermind_decision_redesign_test.dart` (labels, radio states, links, sticky
 action, collapsed free text and stale selection), `mastermind_item_page_test.dart`
 and `mastermind_option_undo_test.dart`.
+
+### Decision detail
+
+Scope: `/mastermind/inbox/item/:itemId` on mobile. The default build reads the
+screened snapshot fields only: title, ask text (selectable, never clamped),
+options with the recommended option first, option rows that select and a sticky
+Send action that starts the five-second Undo, and the optional `deadline` (`within_hours`, `today`,
+`tonight`, `this_week`) and `urgency` (`high` and `urgent` show a badge).
+Unknown timing values are absent, never a rejected snapshot. When the hub
+published only its stand-in, "Full details are on the Mac" stays. A lane whose
+`work.lanes[].waiting_on_ask_id` matches the ask shows a "Lane ⟶" row.
+
+**Full ask (flag-dark).** `MASTERMIND_ASK_DETAILS` is a Dart define, default
+`false`. When on, the page requests `GET /v1/asks/<id>` once per open ask version
+over
+the same owner-only hub origin and Supabase token provider as
+`POST /v1/replies` (one silent refresh on 401, no redirects, 64 KiB body cap,
+nothing logged). The endpoint is approved for non-sensitive items only. The
+payload is parsed non-strictly, matched to the snapshot item's id and
+`version_hash`, and held in page memory only, never on disk. Each section
+renders only when its field is present:
+
+- `action_kind`: `answer` "Answer here", `run_on_mac` "Run at your Mac" with a
+  disabled "Remind me at Mac" (coming soon), `physical` "Needs a physical step",
+  `fyi` "For your information"; `action_summary` underneath.
+- `reason` as "Why recommended"; "If you don't answer" reads
+  "If no answer: <option>" from a valid `default_option_index`, hidden otherwise.
+- `risk`, `reversible`, `blocks_count`, `deadline_at` (GMT+7) and
+  `answered_via` (`phone`, `mac`, `chat`, `auto`, `batch`; anything else reads
+  "Answered elsewhere").
+- `links[]` are `{label, url}` rows opened in the system browser. The client
+  drops any URL that is not `https` on `tuturuuu.com` or a subdomain, or that
+  carries credentials.
+
+A 404 for the requested current version means the hub withholds the ask (every
+sensitive item) and shows a
+neutral card: lock glyph, "Details are on the Mac", owner and age, with no
+title, text, options or reply. Any other failure keeps the snapshot view. An
+ask that left the snapshot keeps "This was answered or withdrawn". Sensitive
+full text, device-auth gating and a "Remind me at Mac" action are not built;
+they wait on the hub's sensitive-ask decision. Enabling the flag is held for
+the hub endpoint, exact-commit mobile CI and security review.
+
+Regression coverage: `asks/ask_detail_parser_test.dart` (full, partial,
+unknown fields and enums, allowlist), `asks/hub_ask_detail_source_test.dart`
+(flag default, request shape, 404/403/401, size cap) and
+`view/mastermind_item_detail_test.dart` (snapshot-only view, every action kind,
+link opening with a mocked opener, 404 neutral card, version mismatch, delayed outcomes across version changes, sticky Send/
+Undo, English and Vietnamese at 320px at 2.0x), driven by `test/fixtures/mastermind/ask_details.json`.
+
+Detail responses are scoped to the requested item ID and version. A snapshot
+version change resets the in-memory result and starts a new read; obsolete
+responses cannot hide the new snapshot or replace its matching detail. A matching
+withheld result suppresses both body reply controls and the sticky action.

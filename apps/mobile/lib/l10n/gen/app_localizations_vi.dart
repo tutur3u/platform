@@ -13889,4 +13889,101 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindViaBatch => 'theo lô';
+
+  @override
+  String get mastermindAskDeadlineWithinHours => 'Cần trả lời trong vài giờ';
+
+  @override
+  String get mastermindAskDeadlineToday => 'Cần trả lời hôm nay';
+
+  @override
+  String get mastermindAskDeadlineTonight => 'Cần trả lời tối nay';
+
+  @override
+  String get mastermindAskDeadlineThisWeek => 'Cần trả lời trong tuần này';
+
+  @override
+  String get mastermindAskUrgencyHigh => 'Ưu tiên cao';
+
+  @override
+  String get mastermindAskUrgencyUrgent => 'Khẩn cấp';
+
+  @override
+  String get mastermindAskWhyRecommended => 'Vì sao được đề xuất';
+
+  @override
+  String get mastermindAskIfNoAnswerTitle => 'Nếu bạn không trả lời';
+
+  @override
+  String mastermindAskIfNoAnswer(String option) {
+    return 'Nếu không trả lời: $option';
+  }
+
+  @override
+  String mastermindAskRisk(String risk) {
+    return 'Rủi ro: $risk';
+  }
+
+  @override
+  String get mastermindAskReversible => 'Có thể hoàn tác sau';
+
+  @override
+  String get mastermindAskNotReversible => 'Không thể hoàn tác';
+
+  @override
+  String mastermindAskBlocks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đang chặn $count luồng',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindAskDueAt(String time) {
+    return 'Hạn $time';
+  }
+
+  @override
+  String get mastermindAskAnsweredPhone => 'Đã trả lời trên điện thoại';
+
+  @override
+  String get mastermindAskAnsweredMac => 'Đã trả lời trên máy Mac';
+
+  @override
+  String get mastermindAskAnsweredChat => 'Đã trả lời trong cuộc trò chuyện';
+
+  @override
+  String get mastermindAskAnsweredAuto => 'Đã trả lời tự động';
+
+  @override
+  String get mastermindAskAnsweredBatch => 'Đã trả lời theo lô';
+
+  @override
+  String get mastermindAskAnsweredElsewhere => 'Đã trả lời ở nơi khác';
+
+  @override
+  String get mastermindAskLinksTitle => 'Liên kết';
+
+  @override
+  String get mastermindAskLaneLink => 'Luồng ⟶';
+
+  @override
+  String get mastermindAskActionAnswer => 'Trả lời tại đây';
+
+  @override
+  String get mastermindAskActionRunOnMac => 'Thực hiện trên máy Mac';
+
+  @override
+  String get mastermindAskActionPhysical => 'Cần một bước thực tế';
+
+  @override
+  String get mastermindAskActionFyi => 'Để bạn biết';
+
+  @override
+  String get mastermindAskRemindAtMac => 'Nhắc tôi khi ở máy Mac';
+
+  @override
+  String get mastermindAskRemindAtMacSoon => 'Sắp ra mắt';
 }

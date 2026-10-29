@@ -14032,4 +14032,102 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindViaBatch => 'in batch';
+
+  @override
+  String get mastermindAskDeadlineWithinHours => 'Answer within hours';
+
+  @override
+  String get mastermindAskDeadlineToday => 'Answer today';
+
+  @override
+  String get mastermindAskDeadlineTonight => 'Answer tonight';
+
+  @override
+  String get mastermindAskDeadlineThisWeek => 'Answer this week';
+
+  @override
+  String get mastermindAskUrgencyHigh => 'High priority';
+
+  @override
+  String get mastermindAskUrgencyUrgent => 'Urgent';
+
+  @override
+  String get mastermindAskWhyRecommended => 'Why recommended';
+
+  @override
+  String get mastermindAskIfNoAnswerTitle => 'If you don\'t answer';
+
+  @override
+  String mastermindAskIfNoAnswer(String option) {
+    return 'If no answer: $option';
+  }
+
+  @override
+  String mastermindAskRisk(String risk) {
+    return 'Risk: $risk';
+  }
+
+  @override
+  String get mastermindAskReversible => 'Can be undone later';
+
+  @override
+  String get mastermindAskNotReversible => 'Can\'t be undone';
+
+  @override
+  String mastermindAskBlocks(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Blocks $count lanes',
+      one: 'Blocks 1 lane',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindAskDueAt(String time) {
+    return 'Due $time';
+  }
+
+  @override
+  String get mastermindAskAnsweredPhone => 'Answered on the phone';
+
+  @override
+  String get mastermindAskAnsweredMac => 'Answered on the Mac';
+
+  @override
+  String get mastermindAskAnsweredChat => 'Answered in chat';
+
+  @override
+  String get mastermindAskAnsweredAuto => 'Answered automatically';
+
+  @override
+  String get mastermindAskAnsweredBatch => 'Answered in a batch';
+
+  @override
+  String get mastermindAskAnsweredElsewhere => 'Answered elsewhere';
+
+  @override
+  String get mastermindAskLinksTitle => 'Links';
+
+  @override
+  String get mastermindAskLaneLink => 'Lane ⟶';
+
+  @override
+  String get mastermindAskActionAnswer => 'Answer here';
+
+  @override
+  String get mastermindAskActionRunOnMac => 'Run at your Mac';
+
+  @override
+  String get mastermindAskActionPhysical => 'Needs a physical step';
+
+  @override
+  String get mastermindAskActionFyi => 'For your information';
+
+  @override
+  String get mastermindAskRemindAtMac => 'Remind me at Mac';
+
+  @override
+  String get mastermindAskRemindAtMacSoon => 'Coming soon';
 }

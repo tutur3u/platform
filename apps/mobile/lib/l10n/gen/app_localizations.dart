@@ -26274,6 +26274,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'in batch'**
   String get mastermindViaBatch;
+
+  /// No description provided for @mastermindAskDeadlineWithinHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer within hours'**
+  String get mastermindAskDeadlineWithinHours;
+
+  /// No description provided for @mastermindAskDeadlineToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer today'**
+  String get mastermindAskDeadlineToday;
+
+  /// No description provided for @mastermindAskDeadlineTonight.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer tonight'**
+  String get mastermindAskDeadlineTonight;
+
+  /// No description provided for @mastermindAskDeadlineThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer this week'**
+  String get mastermindAskDeadlineThisWeek;
+
+  /// No description provided for @mastermindAskUrgencyHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High priority'**
+  String get mastermindAskUrgencyHigh;
+
+  /// No description provided for @mastermindAskUrgencyUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get mastermindAskUrgencyUrgent;
+
+  /// No description provided for @mastermindAskWhyRecommended.
+  ///
+  /// In en, this message translates to:
+  /// **'Why recommended'**
+  String get mastermindAskWhyRecommended;
+
+  /// No description provided for @mastermindAskIfNoAnswerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'If you don\'t answer'**
+  String get mastermindAskIfNoAnswerTitle;
+
+  /// No description provided for @mastermindAskIfNoAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'If no answer: {option}'**
+  String mastermindAskIfNoAnswer(String option);
+
+  /// No description provided for @mastermindAskRisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Risk: {risk}'**
+  String mastermindAskRisk(String risk);
+
+  /// No description provided for @mastermindAskReversible.
+  ///
+  /// In en, this message translates to:
+  /// **'Can be undone later'**
+  String get mastermindAskReversible;
+
+  /// No description provided for @mastermindAskNotReversible.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t be undone'**
+  String get mastermindAskNotReversible;
+
+  /// No description provided for @mastermindAskBlocks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Blocks 1 lane} other{Blocks {count} lanes}}'**
+  String mastermindAskBlocks(int count);
+
+  /// No description provided for @mastermindAskDueAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {time}'**
+  String mastermindAskDueAt(String time);
+
+  /// No description provided for @mastermindAskAnsweredPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on the phone'**
+  String get mastermindAskAnsweredPhone;
+
+  /// No description provided for @mastermindAskAnsweredMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on the Mac'**
+  String get mastermindAskAnsweredMac;
+
+  /// No description provided for @mastermindAskAnsweredChat.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered in chat'**
+  String get mastermindAskAnsweredChat;
+
+  /// No description provided for @mastermindAskAnsweredAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered automatically'**
+  String get mastermindAskAnsweredAuto;
+
+  /// No description provided for @mastermindAskAnsweredBatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered in a batch'**
+  String get mastermindAskAnsweredBatch;
+
+  /// No description provided for @mastermindAskAnsweredElsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered elsewhere'**
+  String get mastermindAskAnsweredElsewhere;
+
+  /// No description provided for @mastermindAskLinksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Links'**
+  String get mastermindAskLinksTitle;
+
+  /// No description provided for @mastermindAskLaneLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Lane ⟶'**
+  String get mastermindAskLaneLink;
+
+  /// No description provided for @mastermindAskActionAnswer.
+  ///
+  /// In en, this message translates to:
+  /// **'Answer here'**
+  String get mastermindAskActionAnswer;
+
+  /// No description provided for @mastermindAskActionRunOnMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Run at your Mac'**
+  String get mastermindAskActionRunOnMac;
+
+  /// No description provided for @mastermindAskActionPhysical.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a physical step'**
+  String get mastermindAskActionPhysical;
+
+  /// No description provided for @mastermindAskActionFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'For your information'**
+  String get mastermindAskActionFyi;
+
+  /// No description provided for @mastermindAskRemindAtMac.
+  ///
+  /// In en, this message translates to:
+  /// **'Remind me at Mac'**
+  String get mastermindAskRemindAtMac;
+
+  /// No description provided for @mastermindAskRemindAtMacSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get mastermindAskRemindAtMacSoon;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -24,10 +24,18 @@ import 'package:mobile/l10n/l10n.dart';
 /// When the hub published only its "Open on Mac" stand-in, an info alert says
 /// the details are on the Mac instead of leaving the pointer as body text.
 class ItemQuestionCard extends StatelessWidget {
-  const ItemQuestionCard({required this.item, this.now, super.key});
+  const ItemQuestionCard({
+    required this.item,
+    this.now,
+    this.fullText,
+    this.deadline,
+    super.key,
+  });
 
   final NeedsYou item;
   final DateTime? now;
+  final String? fullText;
+  final AskDeadline? deadline;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +43,13 @@ class ItemQuestionCard extends StatelessWidget {
     final c = tokens.colorScheme;
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).toString();
-    final body = item.body.trim();
+    final body = (fullText ?? item.body).trim();
+    final deadline = item.deadline ?? this.deadline;
+    final urgency = switch (item.urgency) {
+      AskUrgency.high => l10n.mastermindAskUrgencyHigh,
+      AskUrgency.urgent => l10n.mastermindAskUrgencyUrgent,
+      _ => null,
+    };
     final asked = item.createdAt;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -64,6 +78,10 @@ class ItemQuestionCard extends StatelessWidget {
             runSpacing: AppSpacing.xs,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
+              if (urgency != null)
+                MastermindStatusChip(label: urgency, tone: AppTone.warning),
+              if (deadline != null)
+                MastermindStatusChip(label: _deadlineLabel(context, deadline)),
               if (item.kind case final kind?)
                 MastermindStatusChip(
                   label: MastermindLabels.itemKind(l10n, kind),
@@ -88,7 +106,7 @@ class ItemQuestionCard extends StatelessWidget {
               style: tokens.typography.small.copyWith(color: c.mutedForeground),
             ),
           ],
-          if (item.askTruncated) ...[
+          if (item.askTruncated && fullText == null) ...[
             const SizedBox(height: AppSpacing.xs),
             Text(
               l10n.mastermindAskTruncated,
@@ -103,17 +121,37 @@ class ItemQuestionCard extends StatelessWidget {
               content: Text(l10n.mastermindItemOpenOnMacReason),
             )
           else
-            LinkifiedText(
-              body,
-              style: tokens.typography.base.copyWith(
-                color: c.foreground,
-                height: 1.5,
-              ),
+            SelectionArea(
+              child: fullText == null
+                  ? LinkifiedText(
+                      body,
+                      style: tokens.typography.base.copyWith(
+                        color: c.foreground,
+                        height: 1.5,
+                      ),
+                    )
+                  : Text(
+                      body,
+                      style: tokens.typography.base.copyWith(
+                        color: c.foreground,
+                        height: 1.5,
+                      ),
+                    ),
             ),
         ],
       ),
     );
   }
+}
+
+String _deadlineLabel(BuildContext context, AskDeadline deadline) {
+  final l10n = context.l10n;
+  return switch (deadline) {
+    AskDeadline.withinHours => l10n.mastermindAskDeadlineWithinHours,
+    AskDeadline.today => l10n.mastermindAskDeadlineToday,
+    AskDeadline.tonight => l10n.mastermindAskDeadlineTonight,
+    AskDeadline.thisWeek => l10n.mastermindAskDeadlineThisWeek,
+  };
 }
 
 /// The outcome of an ask the hub lists as resolved: the hub's word, the answer

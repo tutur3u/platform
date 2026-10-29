@@ -71,6 +71,8 @@ NeedsYou parseNeedsYou(JsonReader input) {
       'option_keys',
       'hub_recommended',
       'by',
+      'deadline',
+      'urgency',
       'kind',
       'product',
       'answered_via',
@@ -95,6 +97,9 @@ NeedsYou parseNeedsYou(JsonReader input) {
     by: _shortAskText(r, 'by', 100),
     // Tolerant: an unknown or malformed value is left out, never fatal.
     answeredVia: AnsweredVia.fromWire(r.object()['answered_via']),
+    // Additive timing: an unknown or malformed value is absent, never fatal.
+    deadline: AskDeadline.fromWire(r.object()['deadline']),
+    urgency: AskUrgency.fromWire(r.object()['urgency']),
     hubOptions: r.has('hub_options') && r.field('hub_options').value != null
         ? _shortOptions(r.field('hub_options')).labels
         : null,
@@ -139,6 +144,12 @@ NeedsYou parseNeedsYou(JsonReader input) {
 
 Lane parseLane(JsonReader input) {
   var r = input;
+  // Additive: the open ask this lane waits on, or absent.
+  final waiting = r.object()['waiting_on_ask_id'];
+  final waitingOnAskId =
+      waiting is String && RegExp(r'^item-[a-f0-9]{20}$').hasMatch(waiting)
+      ? waiting
+      : null;
   r = JsonReader(
     adaptThread(
       r.object(),
@@ -189,6 +200,7 @@ Lane parseLane(JsonReader input) {
   );
   return Lane(
     fields: fields,
+    waitingOnAskId: waitingOnAskId,
     id: r.field('id').string(pattern: RegExp(r'^item-[a-f0-9]{20}$')),
     title: r.field('title').string(maxLength: 100),
     role: r.field('role').string(maxLength: 60),

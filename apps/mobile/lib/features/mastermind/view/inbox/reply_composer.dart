@@ -57,7 +57,7 @@ class ReplyComposer extends StatelessWidget {
 
   Widget _form(BuildContext context, PendingOptionReply? pending) {
     final l10n = context.l10n;
-    final options = selectableOptions(item);
+    final options = recommendedFirst(item, selectableOptions(item));
     final locked = pending != null;
     final writer = _WriteYourOwn(
       choice: choice,
