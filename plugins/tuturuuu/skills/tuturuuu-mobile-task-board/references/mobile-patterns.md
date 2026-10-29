@@ -443,7 +443,7 @@ and the pre-`runApp` join. Completion-barrier tests live in
   explicit Allow in every region: add no locale, region or network-based default.
   The stored answer carries a notice version; bump it with any consent wording
   change so users are asked again.
-- Keep no advertising identifier: the Android AD_ID permission stays removed and
+- Keep no advertising identifier: the Android AD_ID and ACCESS_ADSERVICES_AD_ID permissions stay removed and
   iOS keeps `$FirebaseAnalyticsWithoutAdIdSupport` and the ADID Info.plist key.
 - Older builds persisted SDK collection-on, which beats manifest/Info.plist
   defaults. Keep the native gates (Android `TelemetryConsentGateProvider`

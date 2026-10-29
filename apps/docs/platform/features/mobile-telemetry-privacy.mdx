@@ -38,7 +38,8 @@ answer. Development and staging builds never show the prompt and never collect.
 ## Advertising identifiers
 
 No advertising identifier (Android AD_ID, iOS IDFA) is collected. Android removes
-the merged `com.google.android.gms.permission.AD_ID` permission and sets
+the merged `com.google.android.gms.permission.AD_ID` and
+`android.permission.ACCESS_ADSERVICES_AD_ID` permissions and sets
 `google_analytics_adid_collection_enabled` to false. iOS sets
 `GOOGLE_ANALYTICS_ADID_COLLECTION_ENABLED` to NO and links Firebase Analytics
 without ad-ID support (`$FirebaseAnalyticsWithoutAdIdSupport` in the Podfile, so

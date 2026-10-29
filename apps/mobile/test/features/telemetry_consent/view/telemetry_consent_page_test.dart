@@ -50,7 +50,8 @@ Future<_Started> _start({
     promptEligible: flavor == AppFlavor.production,
     apply: ({required enabled}) async {
       if (!direct) {
-        return observability.initialize(flavor, collectionEnabled: enabled);
+        await observability.initialize(flavor, collectionEnabled: enabled);
+        return;
       }
       await controls.setCrashCollection(enabled: enabled);
       await controls.setAnalyticsCollection(enabled: enabled);
@@ -72,7 +73,8 @@ String? _redirect(TelemetryPreference? preference, String location) {
 
 Map<String, Object> get _answered => {
   TelemetryPreference.choiceKey: false,
-  TelemetryPreference.noticeVersionKey: TelemetryPreference.currentNoticeVersion,
+  TelemetryPreference.noticeVersionKey:
+      TelemetryPreference.currentNoticeVersion,
 };
 
 void main() {
@@ -104,17 +106,20 @@ void main() {
       expect(TelemetryPreference().consentPending, isFalse);
     });
 
-    test('a changed notice version prompts again; the same one does not', () async {
-      final (same, _, _) = await _start(saved: _answered);
-      expect(same.consentPending, isFalse);
-      final (next, controls, observability) = await _start(
-        saved: _answered..[TelemetryPreference.choiceKey] = true,
-        noticeVersion: 'telemetry-consent-v2',
-      );
-      expect(next.consentPending, isTrue);
-      expect(observability.enabled, isFalse);
-      expect(controls.calls, isNot(contains('analytics:true')));
-    });
+    test(
+      'a changed notice version prompts again; the same one does not',
+      () async {
+        final (same, _, _) = await _start(saved: _answered);
+        expect(same.consentPending, isFalse);
+        final (next, controls, observability) = await _start(
+          saved: _answered..[TelemetryPreference.choiceKey] = true,
+          noticeVersion: 'telemetry-consent-v2',
+        );
+        expect(next.consentPending, isTrue);
+        expect(observability.enabled, isFalse);
+        expect(controls.calls, isNot(contains('analytics:true')));
+      },
+    );
   });
 
   group('no collection before an explicit Allow', () {
@@ -225,8 +230,9 @@ void main() {
         direct: true,
         saved: {
           TelemetryPreference.choiceKey: false,
-          TelemetryPreference.noticeVersionKey:
-              prefs.getString(TelemetryPreference.noticeVersionKey)!,
+          TelemetryPreference.noticeVersionKey: prefs.getString(
+            TelemetryPreference.noticeVersionKey,
+          )!,
         },
       );
       expect(relaunched.consentPending, isFalse);
@@ -295,8 +301,16 @@ void main() {
       expect(vi.telemetryConsentAllow, 'Cho phép');
       expect(vi.telemetryConsentDeny, 'Không cho phép');
       expect(vi.telemetryConsentLearnMore, 'Chi tiết về quyền riêng tư');
-      expect(vi.settingsShareTelemetry, 'Chia sẻ dữ liệu phân tích và báo cáo sự cố');
-      expect(vi.telemetryConsentBody, startsWith('Chia sẻ dữ liệu sử dụng và báo cáo sự cố với Google Firebase'));
+      expect(
+        vi.settingsShareTelemetry,
+        'Chia sẻ dữ liệu phân tích và báo cáo sự cố',
+      );
+      expect(
+        vi.telemetryConsentBody,
+        startsWith(
+          'Chia sẻ dữ liệu sử dụng và báo cáo sự cố với Google Firebase',
+        ),
+      );
     });
 
     testWidgets('answers stay disabled until the preference is ready', (

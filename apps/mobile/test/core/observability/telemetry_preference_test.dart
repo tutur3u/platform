@@ -10,27 +10,30 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  test('nothing is collected before an explicit answer, in any locale', () async {
-    for (final locale in [
-      const Locale('de', 'DE'),
-      const Locale('vi', 'VN'),
-      const Locale('en', 'US'),
-      const Locale('en'),
-    ]) {
-      TestWidgetsFlutterBinding.instance.platformDispatcher.localeTestValue =
-          locale;
-      final applied = <bool>[];
-      final preference = TelemetryPreference();
-      await preference.initialize(
-        apply: ({required enabled}) async => applied.add(enabled),
-      );
-      expect(preference.enabled, isFalse, reason: '$locale');
-      expect(applied, [false], reason: '$locale');
-      expect(preference.hasExplicitChoice, isFalse);
-    }
-    TestWidgetsFlutterBinding.instance.platformDispatcher
-        .clearLocaleTestValue();
-  });
+  test(
+    'nothing is collected before an explicit answer, in any locale',
+    () async {
+      for (final locale in [
+        const Locale('de', 'DE'),
+        const Locale('vi', 'VN'),
+        const Locale('en', 'US'),
+        const Locale('en'),
+      ]) {
+        TestWidgetsFlutterBinding.instance.platformDispatcher.localeTestValue =
+            locale;
+        final applied = <bool>[];
+        final preference = TelemetryPreference();
+        await preference.initialize(
+          apply: ({required enabled}) async => applied.add(enabled),
+        );
+        expect(preference.enabled, isFalse, reason: '$locale');
+        expect(applied, [false], reason: '$locale');
+        expect(preference.hasExplicitChoice, isFalse);
+      }
+      TestWidgetsFlutterBinding.instance.platformDispatcher
+          .clearLocaleTestValue();
+    },
+  );
 
   test('the region and locale logic is gone from the source', () {
     final source = File(
@@ -81,7 +84,8 @@ void main() {
     final denied = await start();
     expect(denied.enabled, isFalse);
     expect(denied.hasExplicitChoice, isTrue);
-    expect(applied, [false, false, true, true, false, false]);
+    // Start, allow, restart, deny (revokes first), restart.
+    expect(applied, [false, true, true, false, false]);
   });
 
   test('a changed notice version voids the answer and asks again', () async {
@@ -108,7 +112,9 @@ void main() {
   });
 
   test('an older persisted on is never trusted as consent', () async {
-    SharedPreferences.setMockInitialValues({TelemetryPreference.legacyKey: true});
+    SharedPreferences.setMockInitialValues({
+      TelemetryPreference.legacyKey: true,
+    });
     final applied = <bool>[];
     final preference = TelemetryPreference();
     await preference.initialize(
@@ -165,7 +171,8 @@ void main() {
   test('off revokes collection before the saved value changes', () async {
     SharedPreferences.setMockInitialValues({
       TelemetryPreference.choiceKey: true,
-      TelemetryPreference.noticeVersionKey: TelemetryPreference.currentNoticeVersion,
+      TelemetryPreference.noticeVersionKey:
+          TelemetryPreference.currentNoticeVersion,
     });
     final preference = TelemetryPreference();
     final applied = <bool>[];
@@ -224,6 +231,15 @@ void main() {
       matches(
         RegExp(
           r'<uses-permission\s+android:name="com\.google\.android\.gms\.permission\.AD_ID"'
+          r'\s+tools:node="remove"',
+        ),
+      ),
+    );
+    expect(
+      manifest,
+      matches(
+        RegExp(
+          r'<uses-permission\s+android:name="android\.permission\.ACCESS_ADSERVICES_AD_ID"'
           r'\s+tools:node="remove"',
         ),
       ),
