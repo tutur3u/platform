@@ -914,18 +914,24 @@ to avoid ambiguous SQL references before admission. Regression evidence lives in
 `apps/database/supabase/tests/tutoring-absence-credit-lifecycle.sql`; the exact-head
 database contract must pass before this foundation is considered verified.
 
-## Group tutoring slots
+## Shared tutoring slots
 
-Every workspace allows multiple learners with one teacher in the same group,
-date, start time and duration by default. Each learner keeps a separate session
-row for attendance, absence recovery, lesson notes and payroll history; there is
-no shared-session identifier or capacity limit. Staff schedule each learner
+One teacher tutors many learners in the same session. Every workspace allows
+any number of learners with one teacher at the same date, start time and
+duration by default, whether the learners come from the same class group or
+from different ones. Each learner keeps a separate session row for attendance,
+absence recovery, lesson notes and payroll history; there is no
+shared-session identifier or capacity limit. Staff schedule each learner
 through the Contacts schedule or support queue. The create and edit APIs and
 draft teacher choices apply this same rule.
 
-A different group or any overlapping interval with a different start or duration
-still blocks the teacher. A learner cannot have overlapping bookings, including
-a duplicate booking in the same group slot. Existing cancellation conflict
-handling remains conservative. This rule does not imply room or contractual
-availability. Regression coverage lives in tutoring `shared.test.ts` and
-`packages/internal-api/src/tutoring-draft-plan.test.ts`.
+Booking the teacher for an overlapping interval with a different start or
+duration still blocks the teacher. A learner cannot have overlapping
+bookings, including a second booking in the same slot under any group.
+Existing cancellation conflict handling remains conservative. The rule is
+enforced in application conflict checks only; the database has no
+per-teacher uniqueness or exclusion constraint on tutoring sessions. It does
+not imply room or contractual availability. Regression coverage lives in
+tutoring `shared.test.ts`, `apps/web/src/lib/tutoring/teacher-assignment-routes.test.ts`,
+`packages/internal-api/src/tutoring-draft-plan.test.ts` and the Contacts
+`use-tutoring-create.test.ts`.

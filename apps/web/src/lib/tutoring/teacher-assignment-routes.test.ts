@@ -113,15 +113,15 @@ describe.each(['POST', 'PUT'] as const)(
         teacherUserIds: [teacher],
       });
     });
-    it('assigns a third learner to the matching teacher group slot', async () => {
+    it('assigns a third learner to a teacher slot shared across groups', async () => {
       mocks.conflicts.mockResolvedValue({
-        data: ['learner-1', 'learner-2'].map((student_user_id) => ({
-          group_id: group,
+        data: [group, 'other-group'].map((group_id, index) => ({
+          group_id,
           session_date: '2026-10-07',
           start_time: '17:15:00',
           duration_minutes: 45,
           teacher_user_id: teacher,
-          student_user_id,
+          student_user_id: `learner-${index + 1}`,
         })),
         error: null,
       });
@@ -130,13 +130,13 @@ describe.each(['POST', 'PUT'] as const)(
         method === 'POST' ? query.insert : query.update
       ).toHaveBeenCalled();
     });
-    it('refuses another group at the same time before writing', async () => {
+    it('refuses an overlapping different teacher slot before writing', async () => {
       mocks.conflicts.mockResolvedValue({
         data: [
           {
             group_id: 'other-group',
             session_date: '2026-10-07',
-            start_time: '17:15:00',
+            start_time: '17:30:00',
             duration_minutes: 45,
             teacher_user_id: teacher,
             student_user_id: 'other-learner',
