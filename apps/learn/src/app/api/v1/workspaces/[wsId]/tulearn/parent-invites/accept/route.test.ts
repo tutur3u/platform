@@ -7,9 +7,6 @@ const state = vi.hoisted(() => ({
   admin: null as unknown,
   user: null as { id: string } | null,
 }));
-vi.mock('@tuturuuu/auth/app-session', () => ({
-  attachSupabaseAuthUser: (client: unknown) => client,
-}));
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSessionUser: async () => state.user,
 }));

@@ -1634,8 +1634,6 @@ export {
   uploadTopicAnnouncementAttachment,
 } from './topic-announcements';
 export {
-  acceptTulearnParentInvite,
-  acceptTulearnParentLink,
   type CompleteTulearnAssignmentPayload,
   type CourseListItem,
   type CourseListResponse,
@@ -1670,7 +1668,6 @@ export {
   type TulearnHomeResponse,
   type TulearnLearnerState,
   type TulearnMarkSummary,
-  type TulearnParentLinkSummary,
   type TulearnPracticeItem,
   type TulearnPracticeResult,
   type TulearnQuiz,

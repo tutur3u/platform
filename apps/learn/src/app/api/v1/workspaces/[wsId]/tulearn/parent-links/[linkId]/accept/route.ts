@@ -1,7 +1,5 @@
-import { attachSupabaseAuthUser } from '@tuturuuu/auth/app-session';
 import { hasEducationEnabled } from '@tuturuuu/education-core/tulearn/service';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
@@ -39,13 +37,7 @@ export async function POST(
     }
 
     const sbAdmin = await createAdminClient();
-    const normalizedWsId = await normalizeWorkspaceId(
-      wsId,
-      attachSupabaseAuthUser(
-        (await createAdminClient({ noCookie: true })) as TypedSupabaseClient,
-        user
-      )
-    );
+    const normalizedWsId = await normalizeWorkspaceId(wsId, sbAdmin);
     if (!(await hasEducationEnabled(normalizedWsId, sbAdmin))) {
       return NextResponse.json(
         { message: 'Tulearn is not enabled for this workspace' },

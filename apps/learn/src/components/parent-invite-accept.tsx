@@ -1,14 +1,20 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import {
-  acceptTulearnParentInvite,
-  InternalApiError,
-} from '@tuturuuu/internal-api';
+import { acceptTulearnParentInvite } from '@tuturuuu/internal-api/tulearn';
 import { Button } from '@tuturuuu/ui/button';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+
+function getErrorStatus(error: unknown) {
+  return typeof error === 'object' &&
+    error !== null &&
+    'status' in error &&
+    typeof error.status === 'number'
+    ? error.status
+    : null;
+}
 
 export function ParentInviteAccept() {
   const t = useTranslations('parentInvite');
@@ -19,8 +25,7 @@ export function ParentInviteAccept() {
     mutationFn: () => acceptTulearnParentInvite(wsId ?? '', token ?? ''),
   });
 
-  const errorStatus =
-    accept.error instanceof InternalApiError ? accept.error.status : null;
+  const errorStatus = getErrorStatus(accept.error);
   const errorKey =
     errorStatus === 403
       ? 'emailMismatch'
