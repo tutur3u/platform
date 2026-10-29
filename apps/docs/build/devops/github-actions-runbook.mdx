@@ -21,6 +21,15 @@ CodeRabbit runs on demand only (`.coderabbit.yaml`); comment `@coderabbitai revi
 
 ## Validation and Delivery Evidence
 
+Unit test shards use empty proxy and Supabase public-client configuration on
+`pull_request` events; other events retain their configured values. Tests that
+need this configuration must supply deterministic fixtures and restore their
+environment afterward. Validate affected packages with `env -u PROXY_API_KEY -u
+NEXT_PUBLIC_PROXY_API_KEY -u NEXT_PUBLIC_SUPABASE_URL -u
+PRODUCTION_SUPABASE_PUBLISHABLE_KEY -u NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ttr
+resources run -- bun run --cwd <package> test --maxWorkers=1`.
+`scripts/ci/unit-test-env.test.js` covers PR and non-PR event selection.
+
 Root Node tests that consume an app-owned package must resolve it with
 `createRequire` anchored to that app's real `package.json`. The satellite cohort
 tests resolve Playwright from Web; the Lettin config-loader tests load Next SWC
@@ -205,19 +214,30 @@ when updating the installer; do not enable caching explicitly for `workflow_run`
 
 ## Workflow Gatekeeping
 
-Every major workflow can be disabled centrally through
-`tuturuuu.ts`.
-
-The reusable workflow
-`ci-check.yml`
-reads that config and emits `should_run`, which downstream jobs use before doing
-real work.
-
-For rollback or mixed-version recovery, use `$tuturuuu-rollout-recovery` from the
-[Codex plugin](../development-tools/codex-plugin) and the
-[critical rollout gates](./critical-app-rollout). Audit canonical alias identities
-and API upstreams: a Git branch or successful deployment marker can disagree
-with the artifact selected by Instant Rollback.
+`ci-check.yml` reads `tuturuuu.ts` and emits `should_run` before real work.
+`Test` additionally classifies the complete PR merge-base diff in a `changes` job.
+Only Markdown/MDX under `apps/docs` or outside `apps/` and `packages/` can skip
+unit/coverage shards and upload. Root script tests run for every admitted PR
+and their success is always required by the unit summary, because they validate
+documentation links, content and the `AGENTS.md` allocation marker. Executable docs tooling,
+assets, workflows, manifests, lockfiles, source, mixed or unknown/empty diffs run; both rename endpoints participate. Push validation and ready-for-ci admission stay intact.
+`Unit Tests (24)` and `Run tests and collect coverage` retain successful summaries
+for docs-only PRs only after classification succeeds, root script tests succeed
+for the unit summary, and the gated shards/upload report `skipped`. Failed,
+cancelled, missing or unexpectedly successful heavy results cannot pass as docs
+skips. Code changes retain every original failure assertion. Only these two
+summary contexts may ever be made required in branch protection or rulesets. A skipped matrix job reports its
+unexpanded `(${{ matrix.shard }})` name, so expanded shard contexts must never be
+required.
+Never use workflow-level path filters for required checks: they can remain pending.
+Security, CodeQL, secret scanning, i18n and deployment/release gates are unchanged.
+Regression coverage: `node --test scripts/ci/test-docs-only-gate.test.js` plus the
+complete root script suite discovered by `scripts/run-script-tests.js`. Summary
+contracts execute every applicable assertion step, including classification and
+root success; testing only the first step can miss shard failures.
+For rollback, use `$tuturuuu-rollout-recovery` from the [Codex plugin](../development-tools/codex-plugin)
+and [critical rollout gates](./critical-app-rollout). Audit canonical aliases and API upstreams:
+a branch or deployment marker can disagree with the artifact selected by Instant Rollback.
 
 For Vercel deployments, the production planner and platform preview perform
 affected-app gating before any install, build, or deploy step starts. They check
@@ -463,10 +483,71 @@ reserves capacity. Keep PR load small:
   required, replace its trigger filter with a job-level `check-ci` skip that
   still reports success. A trigger-filtered required check never reports.
 
+### Consolidated cheap PR checks
+
+`pr-checks.yaml` is the sole PR entrypoint for Biome, i18n, docs/SEO,
+migration filenames and timestamps, mobile API mappings, plugin contracts,
+branch naming and CI admission. The former workflow files remain reusable;
+protected push and manual validation still use their existing entrypoints.
+Branch-name and plugin checks no longer create a separate run on each feature
+branch push. Plugin checks on protected and generated release branches remain.
+
+One SHA-pinned `dorny/paths-filter` job selects the affected callers. Biome,
+i18n and docs retain `ready-for-ci` admission; script-only checks remain ungated.
+Workflow/action changes select every category. Locale consumer source changes
+select i18n as well as bundle edits and `scripts/run-i18n-check.js`. Docs
+selection includes mobile pubspec files, Discord manifests/lockfiles and the
+safe-fs helper used by the inventory generator. Biome selects `.editorconfig`
+and `.gitignore`; plugin validation includes the Git conventions page.
+Migration guard edits select migration checks. Mobile API selection retains the original main-base restriction.
+Security Checks and its trusted base-commit scope are separate and unchanged:
+there is no path filter or readiness label on its PR trigger.
+
+The **Cheap PR Checks** gate runs with `!cancelled()`, succeeds for irrelevant
+path skips and fails for selected caller skips, failures or missing admission.
+Branch naming is an independent job, so a bad name fails the aggregate without
+hiding selected validation. CI admission stays red until this event and the
+live PR both carry `ready-for-ci`.
+Existing leaf job display names are retained; reusable calls add caller prefixes
+to GitHub check contexts. No current ruleset requires a status check. Before
+requiring a leaf in future, use an always-reporting gate or preserve that exact
+context on irrelevant paths. Recheck rulesets in the same change window.
+
+Among label events, only adding or removing `ready-for-ci` retriggers the
+consolidated validators.
+Other `labeled`/`unlabeled` events run only CI admission and its aggregate;
+each receives a unique non-cancelling group in both parent and admission callee.
+Those runs report **Cheap PR Checks (label event)**, preserving the latest
+**Cheap PR Checks** result for full validation on the same SHA. They do not
+establish a new validation pass. Unadmitted validation stays
+in a separate group and cannot cancel an admitted run. This exception applies
+to the consolidated workflow; other heavy workflows retain label-presence
+admission until separately migrated.
+
+Every selector pattern has a positive fixture in
+`scripts/ci/pr-checks-paths.test.js`, using `picomatch` with `{dot:true}` like
+dorny. Keep these fixtures aligned with actual validator inputs, including
+non-JavaScript manifests. Security Checks is also locked to the pinned PR base
+by a SHA-256 regression. New action pins must resolve to commits, not annotated
+tag objects; verify their object type with the owning repository's Git API.
+
+Called workflows inherit `github.workflow` from their caller, so each reusable
+workflow's concurrency group includes a distinct file namespace. Biome retains
+job-specific validation locks and its separate push-only mutation lock.
+
+See the [pinned workflow inventory](https://github.com/tutur3u/platform/blob/main/.github/pr-ci-inventory.md)
+for exact trigger paths, all job names, ruleset mapping and execution samples.
+Regression coverage is `scripts/ci/pr-checks.test.js` plus the admission,
+permissions, security and protected-concurrency workflow suites. Inventory
+estimates describe workflow runs; they do not establish hosted-runner priority,
+queue-latency improvement or an org concurrency reservation.
+
 ### Label-gated heavy PR CI (`ready-for-ci`)
 
 Heavy PR workflows run their jobs only when the PR carries the `ready-for-ci`
-label. These include Test, Type Check, Biome, CodeQL, i18n, docs/SEO, coverage,
+label for every human, bot and fleet actor, including stack layers. This covers
+`opened`, `synchronize`, `reopened` and `labeled`. These include Test, Type Check,
+Biome, CodeQL, i18n, docs/SEO and coverage,
 the per-app and Cloudflare Source builds, mobile builds and database contracts.
 `scripts/ci/pr-label-gate.js` is the inventory of record. On an unlabelled PR,
 every job is skipped by a job-level `if:`. The checks show as skipped rather
@@ -487,7 +568,9 @@ starts its reusable callee.
   rerun replays its original event, so a run started before the label was
   added is skipped again. Use `gh run rerun` only to retry an admitted run,
   for example after a flaky failure.
-- **Other labels on a ready PR rerun CI.** Admission checks only that the label
+- **Other labels on a ready PR rerun independent heavy workflows.** Cheap PR
+  Checks runs only admission and its aggregate for unrelated label changes.
+  Other heavy workflows check only that the label
   is present, so any later `labeled` event on a labelled PR is a real admitted
   run on the same SHA. It joins the same PR group and supersedes the
   in-progress run. The newest check per name is therefore always genuine
@@ -499,7 +582,7 @@ starts its reusable callee.
   merge tooling such as `watch_pr_ready` counts `SKIPPED` as passing. Once the
   label is removed, the PR has no hosted evidence. Re-add the label for a fresh
   admitted run, or rely on the exact-head local pass.
-- **CI Admitted check (`ci-admitted.yaml`, always on).** One small job per PR
+- **CI Admitted check (`pr-checks.yaml` → `ci-admitted.yaml`, always on).** One small job per PR
   event reads the PR's *current* labels with a read-only token and runs the
   admission script from the base commit. Using the base commit protects the
   *script* from PR edits, but not the workflow file: on `pull_request` the
@@ -526,31 +609,31 @@ starts its reusable callee.
   unlabelled event. Before treating the head as hosted-green, confirm that
   its heavy checks are not skipped. If any are, remove and re-add
   `ready-for-ci`.
-- **Why not a per-workflow admission job:** reading current labels in each of
-  the 57 heavy workflows would allocate a hosted job on every unlabelled PR
+- **Why not a per-workflow admission job:** reading current labels in every
+  heavy workflow would allocate a hosted job on every unlabelled PR
   push. One admission check per event keeps unlabelled pushes runner-free for
   heavy workflows.
-- **Always on for every PR push:** Branch Name Check, Check Migration
-  Timestamps, Check Database Migrations, Mobile API Mappings, Codex Plugin
-  Check, Security Checks (gitleaks, dependency review and audit) and Security
-  Review Classification. These are script-only or security checks. Paused
+- **Always on for every PR push:** Cheap PR Checks selects Branch Name Check,
+  migration checks, Mobile API Mappings and Codex Plugin Check by path without
+  readiness admission. Security Checks (gitleaks, dependency review and audit)
+  and Security Review Classification keep their separate always-on entrypoints. Paused
   Docker, Rust, TanStack and E2E workflows keep their retained policy.
-- **Unchanged:** `main`, `production` and release-please pushes,
-  `workflow_dispatch`, schedules and `workflow_call`. Test, Type Check, Biome,
-  Discord Python CI and the Supabase baseline previously validated every branch
+- **Push admission:** heavy workflows have no feature-branch push trigger.
+  Mail/Calendar/Tasks pushes target only `main`; Programming has no push trigger;
+  i18n targets `main` and `production`. Keep these protected-ref triggers intact.
+  Test, Type Check, Biome, Discord Python CI and the Supabase baseline validated
+  every branch
   push. They now push-validate only protected and generated refs, and validate
-  feature branches through the gated `pull_request` trigger. Biome's
+  feature branches through gated PR events. The `release-please--branches--**`
+  selector includes production and release-notes branches. Manual, schedule and
+  reusable triggers remain independent of PR labels. Biome's
   auto-format PR and outdated-PR cleanup stay push-only. Its PR comment is
   limited to same-repository PRs.
 - `scripts/ci/pr-label-gate.test.js` enforces this. It checks that every heavy
-  job is gated, that always-on and paused checks carry no gate, and that every
-  PR-reachable workflow is classified. It also pins digests of each heavy
+  job is gated for all actors/events, feature pushes cannot bypass admission,
+  always-on/paused checks carry no gate, and every PR workflow is classified. It also pins digests of each heavy
   workflow's push, schedule, manual and reusable triggers. When adding a PR
   workflow, classify it there and gate every job with `PR_LABEL_GATE`.
-
-A possible follow-up is to move PR CI onto self-hosted fleet runners so hosted
-capacity serves only protected refs. That needs runner custody, untrusted-fork
-isolation and secret-scoping review first, and is not implemented.
 
 ## Authorized CI Queue Cleanup
 
@@ -2440,6 +2523,85 @@ policy admission before production credentials can be used. A skipped policy on
 PR/main must not skip validation; a failed or held production policy must block it.
 Credential regressions live in `scripts/ci/production-publisher-secrets.test.js`.
 
+
+### PR runner pool: variable, canary and kill switch
+
+Selected PR checks can run on a dedicated self-hosted macOS pool. Routing is off
+unless the repository Actions variable `PR_SELF_HOSTED_RUNNERS` is set:
+
+| Value | Effect |
+| --- | --- |
+| unset, empty or `false` | Off (kill switch): every job uses `ubuntu-latest`. |
+| `pr:<number>` | Canary: only pull request `<number>` routes to the pool. |
+| `true` | On: every eligible pull request routes to the pool. |
+
+A job routes only for a `pull_request` event whose head branch is in this
+repository (no forks), with a non-Dependabot author, actor and triggering actor,
+on the single label `tuturuuu-pr-ephemeral` (`self-hosted, macOS, ARM64`). The
+label `tuturuuu-mac-studio` is never selected. Push, dispatch,
+`pull_request_target` and reusable-workflow contexts stay on `ubuntu-latest`.
+Routing never replaces the `ready-for-ci` gate.
+
+Routed jobs: `docs-seo-check.yaml` `validate`; `i18n-check.yaml`
+`i18n-sort-check`, `i18n-translation-check`, `i18n-key-parity-check` and
+`i18n-namespace-check`; `mobile-api-mappings.yaml` `verify`; `type-check.yaml`
+`type-check-pr`; `biome-check.yaml` `check-ci` (through the `pr_runner` input of
+`ci-check.yml`), `duplicate-validation`, `format` and `lint`;
+`turbo-unit-tests.yaml` `test-shards-pr`. Jobs with write tokens (Biome apply,
+close and comment jobs, the i18n comment job), the Codecov upload and every
+secret-bearing, deploy, release, migration or security job stay on
+`ubuntu-latest`. Pool jobs get no secrets, and the pool has no ambient
+credentials. GitHub ships every secret a job names to its runner even when a
+guard such as `github.event_name != 'pull_request'` evaluates to an empty
+string, so a pool-eligible job must not contain the substring `secrets.` at all
+(no guarded credential expressions), and a reusable workflow it calls receives no
+secrets.
+
+Type Check and the unit-test shards still need Turbo and Supabase credentials on
+push and dispatch, so each is split into two jobs that share one `name` and
+therefore one required check context: `type-check-pr` and `test-shards-pr` run
+only for `pull_request` events, may route to the pool and use fixtures or empty
+values; `type-check` and `test-shards` run only for other events on
+`ubuntu-latest` and keep their secrets. Exactly one of each pair runs, the other
+reports as skipped. Dependents of `test-shards` (`coverage-shards`,
+`coverage-upload`, `coverage-result`, `Unit Tests (24)`) need both variants and
+read the result of whichever one ran (the other is skipped), so a skipped variant
+never masks a failed one.
+`scripts/ci/workflow-pr-self-hosted.test.js` asserts that the raw text of every
+job able to select the pool has no `secrets.` substring and that the reusable
+workflows such jobs call take no secrets.
+
+Each routed job checks out without persisted credentials, runs
+`./.github/actions/pr-runner-hygiene` (disposable `HOME`, Git, Bun, npm and XDG
+state, `npm_config_ignore_scripts=true`) and installs with
+`bun install --frozen-lockfile --ignore-scripts`. Build and generation steps run
+explicitly from repository scripts, never from dependency lifecycle scripts. The
+action's post step (`post-if: always()`) empties the workspace and removes the
+job state. Caches are restored on pull requests and saved only by trusted
+non-PR runs.
+
+Canary procedure:
+
+1. Confirm the pool runners exist and carry only the `tuturuuu-pr-ephemeral`
+   label.
+2. Run `gh variable set PR_SELF_HOSTED_RUNNERS --repo tutur3u/platform --body 'pr:<number>'`.
+3. Push a commit to that pull request (new assignments only) and inspect the
+   exact-head jobs with `gh api repos/tutur3u/platform/actions/runs/<run-id>/jobs`:
+   runner labels, queue and execution time, conclusions.
+4. Widen to `true` only after the canary is clean.
+
+Kill switch: `gh variable delete PR_SELF_HOSTED_RUNNERS --repo tutur3u/platform`
+(or set `false`). New assignments fall back to hosted immediately; jobs already
+assigned keep running and need to be cancelled by run.
+
+The label-only pool split is an interim control. Allow at most 72 hours from the
+time the variable is first set to a value other than off: if a separate macOS
+user for the runners is not in place by then, unset the variable. Cleanup is not
+a sandbox; it does not stop malicious same-repository code from affecting the
+runner's service user.
+
+Regression coverage: `scripts/ci/workflow-pr-self-hosted.test.js` and
+`.github/actions/pr-runner-hygiene/index.test.js`.
 
 ### Calendar scheduling startup requests
 

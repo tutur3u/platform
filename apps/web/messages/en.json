@@ -4590,6 +4590,7 @@
     },
     "feature": "Feature and scope",
     "features": {
+      "abuse-guard_0": "Abuse protection store",
       "ai_0": "AI chat and model access",
       "ai_1": "Prompts, agents and datasets",
       "ai_2": "Playground and runs",
@@ -8872,9 +8873,9 @@
         "capabilities": {
           "contextAware": "Context-Aware",
           "learning": "Always Learning",
-          "proactive": "Proactive AI"
+          "proactive": "Takes action"
         },
-        "description": "Mira is your proactive AI companion. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, and communications to surface proactive recommendations.",
+        "description": "Mira is your AI assistant inside Tuturuuu. Ask her to plan your day, schedule tasks into your calendar, draft email replies or log your spending, all from what's already in your workspace.",
         "prompts": [
           "Schedule my standup for tomorrow at 9am",
           "Summarize my tasks for this week",
@@ -8943,7 +8944,7 @@
         "role": "Bridge to Humanity"
       },
       "mira": {
-        "description": "Mira is your proactive AI companion—the JARVIS we envisioned. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, finances, and communications to surface proactive recommendations instead of passive reminders.",
+        "description": "Mira is your AI assistant inside Tuturuuu. She works with your tasks, calendar, mail, finances and time tracking: ask, and she plans, schedules, drafts and logs for you.",
         "title": "Mira: Your AI Partner"
       },
       "nova": {
@@ -8995,7 +8996,7 @@
           "tasks": "Show my tasks"
         },
         "status": "Online",
-        "subtitle": "Your proactive AI companion",
+        "subtitle": "Your AI assistant for work",
         "title": "AI Assistant (Mira)",
         "toolCall": {
           "checking": "Checking 3 calendars",
@@ -9030,9 +9031,9 @@
         "mira": {
           "badges": {
             "learning": "Always Learning",
-            "proactive": "Proactive AI"
+            "proactive": "Takes action"
           },
-          "description": "Mira is your proactive AI companion—the JARVIS we envisioned. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, finances, and communications to surface proactive recommendations instead of passive reminders.",
+          "description": "Mira is your AI assistant inside Tuturuuu. She works with your tasks, calendar, mail, finances and time tracking: ask, and she plans, schedules, drafts and logs for you.",
           "title": "Mira: Your AI Partner"
         },
         "subtitle": "Meet Mira and the AI core that makes Tuturuuu truly intelligent",
@@ -9663,6 +9664,28 @@
       },
       "title": "Find the right workspace for your team"
     }
+  },
+  "legalRedesign": {
+    "added": "Added",
+    "all": "All documents",
+    "changes": "What changed",
+    "compare": "Open the full redline",
+    "contents": "Contents",
+    "effective": "Effective",
+    "exact": "Show the exact wording change",
+    "from": "In force",
+    "language": "Language",
+    "navigation": "Legal documents",
+    "notice": "Not yet in effect",
+    "print": "Print or save as PDF",
+    "published": "Published",
+    "removed": "Removed",
+    "revised": "Revised",
+    "skip": "Skip to legal content",
+    "summary": "Summary, not legal text",
+    "to": "Proposed",
+    "unchanged": "Unchanged",
+    "version": "Version"
   },
   "link-shortener": {
     "access_denied": "Access Denied",
@@ -10297,6 +10320,10 @@
       "description": "Bring team tasks, calendars, documents, and business tools together in one open-source workspace. Plan and collaborate with AI assistance from Mira.",
       "title": "All-in-One Workspace for Teams"
     },
+    "legal_changes": {
+      "description": "Proposed — not yet in effect",
+      "title": "Upcoming changes"
+    },
     "legal_dpa": {
       "description": "Read the Tuturuuu data processing addendum and the responsibilities that apply when processing personal data.",
       "title": "Data Processing Addendum"
@@ -10461,6 +10488,8 @@
     "participants": "Participants",
     "registered_users": "Registered users",
     "select-time-zone": "Select time zone",
+    "sign_in_to_create_plan": "Sign in to create a plan",
+    "sign_in_to_create_plan_desc": "Creating a plan requires a signed-in Tuturuuu account. Anyone with a public plan link can still join without signing in.",
     "smart_scheduling": "Smart Scheduling",
     "something_went_wrong": "Something went wrong",
     "soonest-time-to-meet": "Soonest time",
@@ -13751,7 +13780,7 @@
         },
         "eyebrow": "The AI core",
         "mira": {
-          "description": "The assistant you talk to. She plans, reasons and acts on your behalf across calendar, goals, finances and communications, surfacing proactive recommendations rather than passive reminders.",
+          "description": "The assistant you talk to. Ask, and she plans, schedules, drafts and logs across your tasks, calendar, mail and finances.",
           "title": "Mira, your AI partner"
         },
         "nova": {
@@ -24510,6 +24539,10 @@
     "created_at": "This workspace was created ",
     "danger_zone": "Danger Zone",
     "delete": "Delete Workspace",
+    "delete_confirmation_description": "This action <strong>cannot be undone</strong>. This will permanently delete the <strong>{name}</strong> workspace and all of its data.",
+    "delete_confirmation_prompt": "Please type <strong>{name}</strong> to confirm.",
+    "delete_failed": "Failed to delete workspace",
+    "delete_failed_description": "The deletion could not be confirmed. Check the workspace before trying again, or contact support.",
     "delete_workspace_warning": "Once you delete a workspace, there is no going back. Please be certain.",
     "deleting": "Deleting Workspace",
     "description": "Manage the settings of your workspace.",

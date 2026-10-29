@@ -13,7 +13,7 @@ type RecordedSession = Pick<
   | 'teacher_user_id'
   | 'student_user_id'
   | 'attendance_status'
->;
+> & { group_id?: string };
 
 function range(date: string, time: string, duration: number) {
   if (
@@ -47,6 +47,7 @@ export function rankTutoringDraftChoices({
   teachers,
   sessions,
   studentId,
+  groupId,
   fromDate,
   toDate,
 }: {
@@ -54,6 +55,7 @@ export function rankTutoringDraftChoices({
   teachers: TutoringTeacher[];
   sessions: RecordedSession[];
   studentId: string;
+  groupId?: string;
   fromDate: string;
   toDate: string;
 }): TutoringDraftChoice[] {
@@ -94,7 +96,17 @@ export function rankTutoringDraftChoices({
       if (overlaps.some((s) => s.session.student_user_id === studentId))
         return [];
       const choices = catalog.filter(
-        (t) => !overlaps.some((s) => s.session.teacher_user_id === t.id)
+        (t) =>
+          !overlaps.some(
+            (s) =>
+              s.session.teacher_user_id === t.id &&
+              !(
+                groupId &&
+                s.session.group_id === groupId &&
+                s.range?.[0] === slot[0] &&
+                s.range?.[1] === slot[1]
+              )
+          )
       );
       return choices.length ? [{ ...suggestion, teachers: choices }] : [];
     })

@@ -4,6 +4,13 @@ This Next.js application demonstrates how to securely integrate the Tuturuuu SDK
 
 ## Architecture
 
+### Development storage demo
+
+The storage API routes are available only with `NODE_ENV=development`. Hosted
+production builds deny `/api/storage/*` before SDK access. Use a disposable
+workspace and sandbox API key for the local demo. A hosted integration must add
+its own authenticated user authorization before exposing these SDK operations.
+
 ### Security-First Design
 
 The API key is **never exposed to the client**. Instead, we use a proxy pattern:

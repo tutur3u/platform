@@ -18,6 +18,12 @@ export async function GET(
   if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
+  if (
+    !permissions.containsPermission('view_user_groups_posts') &&
+    !permissions.containsPermission('approve_posts')
+  ) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  }
 
   const { searchParams } = req.nextUrl;
 
@@ -56,7 +62,7 @@ export async function GET(
   }
 
   const postIds = [
-    ...new Set(
+    ...new Set<string>(
       (data ?? [])
         .map((row: any) => row.user_group_posts?.id)
         .filter((value: unknown): value is string => typeof value === 'string')

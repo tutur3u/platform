@@ -6,7 +6,6 @@ import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/presentation/freshness.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
-import 'package:mobile/features/mastermind/view/mastermind_scroll_clearance.dart';
 import 'package:mobile/features/mastermind/view/mastermind_states.dart';
 
 typedef MastermindContentBuilder =
@@ -16,6 +15,14 @@ typedef MastermindContentBuilder =
       MastermindFreshness freshness,
     );
 
+/// Refetches the snapshot now and reports whether it was accepted: false when
+/// the refresh failed or the hub answered with something unreadable.
+Future<bool> refreshMastermindSnapshot(MastermindRuntime runtime) async {
+  await runtime.scheduler.refreshNow();
+  final state = runtime.snapshot.state;
+  return state is MastermindSnapshotReady && state.refreshFailure == null;
+}
+
 /// The body of every Mastermind tab.
 ///
 /// Holds the route while the access check runs (a neutral skeleton, so a deep
@@ -23,30 +30,50 @@ typedef MastermindContentBuilder =
 /// scheduler for as long as the screen is mounted and maps the snapshot state
 /// to either [builder] or a whole-section state.
 class MastermindSection extends StatelessWidget {
-  const MastermindSection({required this.builder, super.key});
+  const MastermindSection({
+    required this.builder,
+    this.onRefresh,
+    this.onPullRefresh,
+    super.key,
+  });
 
   final MastermindContentBuilder builder;
 
+  /// Called when the person pulls down to refresh, before the refresh runs.
+  final VoidCallback? onRefresh;
+
+  /// Told about every pull-to-refresh, with whether it succeeded.
+  final ValueChanged<Future<bool>>? onPullRefresh;
+
   @override
-  Widget build(BuildContext context) => MastermindScrollClearance(
-    bottom: MediaQuery.paddingOf(context).bottom,
-    child: BlocBuilder<MastermindAccessCubit, MastermindAccessState>(
-      buildWhen: (previous, current) =>
-          (previous.status == MastermindAccessStatus.loaded &&
-              previous.enabled) !=
-          (current.status == MastermindAccessStatus.loaded && current.enabled),
-      builder: (context, access) =>
-          access.status == MastermindAccessStatus.loaded && access.enabled
-          ? _AttachedSection(builder: builder)
-          : const MastermindSkeleton(),
-    ),
-  );
+  Widget build(BuildContext context) =>
+      BlocBuilder<MastermindAccessCubit, MastermindAccessState>(
+        buildWhen: (previous, current) =>
+            (previous.status == MastermindAccessStatus.loaded &&
+                previous.enabled) !=
+            (current.status == MastermindAccessStatus.loaded &&
+                current.enabled),
+        builder: (context, access) =>
+            access.status == MastermindAccessStatus.loaded && access.enabled
+            ? _AttachedSection(
+                builder: builder,
+                onRefresh: onRefresh,
+                onPullRefresh: onPullRefresh,
+              )
+            : const MastermindSkeleton(),
+      );
 }
 
 class _AttachedSection extends StatefulWidget {
-  const _AttachedSection({required this.builder});
+  const _AttachedSection({
+    required this.builder,
+    this.onRefresh,
+    this.onPullRefresh,
+  });
 
   final MastermindContentBuilder builder;
+  final VoidCallback? onRefresh;
+  final ValueChanged<Future<bool>>? onPullRefresh;
 
   @override
   State<_AttachedSection> createState() => _AttachedSectionState();
@@ -96,10 +123,17 @@ class _AttachedSectionState extends State<_AttachedSection>
 
   Future<void> _retry() => _runtime.scheduler.refreshNow();
 
+  Future<void> _pull() {
+    widget.onRefresh?.call();
+    final outcome = refreshMastermindSnapshot(_runtime);
+    widget.onPullRefresh?.call(outcome);
+    return outcome;
+  }
+
   // The strip depends on connectivity as well as the snapshot, so it listens
   // to the scheduler's online state rather than reading it at build time.
   Widget _content(MastermindSnapshotReady ready) => RefreshIndicator(
-    onRefresh: _retry,
+    onRefresh: _pull,
     child: ValueListenableBuilder<bool>(
       valueListenable: _runtime.scheduler.online,
       builder: (context, online, _) => widget.builder(

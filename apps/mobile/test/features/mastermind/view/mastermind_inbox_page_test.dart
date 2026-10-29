@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/deep_links.dart';
@@ -8,6 +9,7 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_outcome.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_inbox_page.dart';
+import 'package:mobile/features/shell/cubit/shell_chrome_actions_cubit.dart';
 
 import '../../../helpers/helpers.dart';
 import '../../../helpers/mastermind_replies_fixture.dart';
@@ -54,10 +56,14 @@ Future<MastermindViewHarness> _pump(
   );
   addTearDown(harness.dispose);
   await harness.setAccess(TestAccess.enabled);
+  Widget wrap(Widget child) => BlocProvider(
+    create: (_) => ShellChromeActionsCubit(),
+    child: harness.wrap(child),
+  );
   if (router == null) {
-    await tester.pumpApp(harness.wrap(const MastermindInboxPage()));
+    await tester.pumpApp(wrap(const MastermindInboxPage()));
   } else {
-    await tester.pumpAppRouter(router, wrap: harness.wrap);
+    await tester.pumpAppRouter(router, wrap: wrap);
   }
   await tester.pumpAndSettle();
   return harness;
@@ -65,6 +71,19 @@ Future<MastermindViewHarness> _pump(
 
 double _top(WidgetTester tester, String text) =>
     tester.getTopLeft(find.text(text)).dy;
+
+/// Reveal search through the same controller as the navbar action.
+Future<void> _revealSearch(WidgetTester tester) async {
+  tester
+      .element(find.byType(MastermindInboxPage))
+      .read<ShellChromeActionsCubit>()
+      .state
+      .resolveForLocation(Routes.mastermindInbox)
+      .singleWhere((action) => action.id == 'mastermind-inbox-search')
+      .onPressed!();
+  await tester.pumpAndSettle();
+  expect(find.byType(TextField), findsOneWidget);
+}
 
 Iterable<String> _allText(WidgetTester tester) =>
     tester.widgetList<Text>(find.byType(Text)).map((t) => t.data ?? '');
@@ -100,48 +119,26 @@ void main() {
       expect(find.text('1'), findsNWidgets(2)); // one action, one fyi
     });
 
-    testWidgets('an item with a long body offers More, then Less', (
+    testWidgets('a long body is a two-line preview, with no More', (
       tester,
     ) async {
       final body = List.filled(30, 'word').join(' ');
       await _pump(tester, inboxJson([inboxItem(1, body: body)]));
-      expect(find.text('More'), findsOneWidget);
-      await tester.tap(find.text('More'));
-      await tester.pumpAndSettle();
-      expect(find.text('Less'), findsOneWidget);
-      expect(find.text('More'), findsNothing);
-    });
-
-    testWidgets('More and Less are 44 dp hit areas', (tester) async {
-      final body = List.filled(30, 'word').join(' ');
-      await _pump(tester, inboxJson([inboxItem(1, body: body)]));
-      Size target(String label) => tester.getSize(
-        find
-            .ancestor(of: find.text(label), matching: find.byType(InkWell))
-            .first,
-      );
-      expect(target('More').height, greaterThanOrEqualTo(44));
-      expect(target('More').width, greaterThanOrEqualTo(44));
-      await tester.tap(find.text('More'));
-      await tester.pumpAndSettle();
-      expect(target('Less').height, greaterThanOrEqualTo(44));
-    });
-
-    testWidgets('a short body has no More', (tester) async {
-      await _pump(tester, inboxJson([inboxItem(1)]));
+      final preview = tester.widget<Text>(find.text(body));
+      expect(preview.maxLines, 2);
+      expect(preview.overflow, TextOverflow.ellipsis);
+      // The full ask lives on the detail page.
       expect(find.text('More'), findsNothing);
     });
   });
 
   group('options', () {
-    testWidgets('are read-only chips, the recommended one labelled', (
-      tester,
-    ) async {
+    testWidgets('appear inline with the recommendation marked', (tester) async {
       await _pump(tester, inboxJson([inboxItem(1)]));
-      expect(find.text('Approve · Recommended'), findsOneWidget);
+      expect(find.text('Approve'), findsOneWidget);
+      expect(find.text('Recommended'), findsOneWidget);
       expect(find.text('Defer'), findsOneWidget);
-      // A text label and a glyph, never colour alone.
-      expect(find.byIcon(LucideIcons.star), findsOneWidget);
+      expect(find.byIcon(LucideIcons.star), findsNothing);
     });
 
     testWidgets('the Reply on Mac placeholder is not shown as an option', (
@@ -183,6 +180,7 @@ void main() {
       await _pump(tester, inboxJson(_mixed));
       // 2 + 1 + 1 = 4 normal items; the security row adds nothing.
       expect(find.text('2'), findsOneWidget);
+      await _revealSearch(tester);
       await tester.enterText(find.byType(TextField), 'zzz-no-match');
       await tester.pumpAndSettle();
       expect(find.text('No matching items'), findsOneWidget);
@@ -200,13 +198,16 @@ void main() {
   });
 
   group('search and filters', () {
-    testWidgets('the search field has a placeholder', (tester) async {
+    testWidgets('the search field is hidden until requested', (tester) async {
       await _pump(tester, inboxJson(_mixed));
-      expect(find.text('Search Needs you'), findsOneWidget);
+      expect(find.byType(TextField), findsNothing);
+      await _revealSearch(tester);
+      expect(find.text('Search asks'), findsOneWidget);
     });
 
     testWidgets('search narrows the list by title', (tester) async {
       await _pump(tester, inboxJson(_mixed));
+      await _revealSearch(tester);
       await tester.enterText(find.byType(TextField), 'first dec');
       await tester.pumpAndSettle();
       expect(find.text('First decision'), findsOneWidget);
@@ -229,6 +230,7 @@ void main() {
       tester,
     ) async {
       await _pump(tester, inboxJson(_mixed));
+      await _revealSearch(tester);
       await tester.enterText(find.byType(TextField), 'reply on');
       await tester.pumpAndSettle();
       expect(find.text('Fyi note'), findsNothing);
@@ -370,6 +372,7 @@ void main() {
       await _pump(tester, inboxJson(_mixed), router: router);
       await tester.tap(find.widgetWithText(AppChip, 'Mastermind'));
       await tester.pumpAndSettle();
+      await _revealSearch(tester);
       await tester.enterText(find.byType(TextField), 'second');
       await tester.pumpAndSettle();
 

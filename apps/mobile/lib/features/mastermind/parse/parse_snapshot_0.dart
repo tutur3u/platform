@@ -34,8 +34,12 @@ MastermindSnapshot parseRootSnapshot(JsonReader input) {
         ],
       );
   return MastermindSnapshot(
-    workCounts: hubWorkCounts(input.object()['work']),
+    workCounts: hubWorkCounts(
+      input.object()['work'],
+      r.field('generated_at').utcTimestamp(),
+    ),
     resolvedItems: history.items,
+    catchup: parseCatchup(input.object()['catchup']),
     schemaVersion: r.field('schema_version').string(constant: '1.4'),
     generatedAt: r.field('generated_at').utcTimestamp(),
     now: parseSnapshotNow(r.field('now')),

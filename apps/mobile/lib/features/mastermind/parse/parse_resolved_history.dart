@@ -20,7 +20,7 @@ bool acceptsDecisionItem(Map<String, dynamic> row) {
       if (row is! Map<String, dynamic>) continue;
       final resolved = {...row, 'status': 'resolved'};
       try {
-        final item = parseNeedsYou(JsonReader(resolved));
+        final item = _withResolution(parseNeedsYou(JsonReader(resolved)), row);
         // The latest occurrence owns both ordering and content.
         items.remove(item.id);
         rows.remove(item.id);
@@ -35,5 +35,41 @@ bool acceptsDecisionItem(Map<String, dynamic> row) {
   return (
     items: items.values.skip(skip).toList(growable: false),
     rows: rows.values.toList(growable: false),
+  );
+}
+
+/// The strict item parser drops `resolved_at` and `resolution`; history rows
+/// keep them so the Inbox can say when and how an ask was closed. A malformed
+/// value is left out rather than rejecting the row. A row whose `state` or
+/// `status` says `withdrawn` stays withdrawn: it closed without an answer.
+NeedsYou _withResolution(NeedsYou item, Map<String, dynamic> row) {
+  final at = row['resolved_at'];
+  final answer = row['resolution'];
+  final withdrawn =
+      row['state'] == ItemState.withdrawn.wireName ||
+      row['status'] == ItemState.withdrawn.wireName;
+  final resolution = answer is String && !withdrawn ? answer.trim() : '';
+  return NeedsYou(
+    id: item.id,
+    title: item.title,
+    body: item.body,
+    askTruncated: item.askTruncated,
+    createdAt: item.createdAt,
+    options: item.options,
+    recommendedOption: item.recommendedOption,
+    hubTitle: item.hubTitle,
+    hubText: item.hubText,
+    hubOptions: item.hubOptions,
+    optionKeys: item.optionKeys,
+    hubOptionKeys: item.hubOptionKeys,
+    hubRecommended: item.hubRecommended,
+    by: item.by,
+    answeredVia: withdrawn ? null : item.answeredVia,
+    state: withdrawn ? ItemState.withdrawn : item.state,
+    versionHash: item.versionHash,
+    kind: item.kind,
+    product: item.product,
+    resolvedAt: at is String ? DateTime.tryParse(at)?.toUtc() : null,
+    resolution: resolution.isEmpty ? null : resolution,
   );
 }

@@ -24,7 +24,7 @@ describe('verified provider session handoff', () => {
         targetApp: 'mail',
       })
     ).toMatchObject({ sub: 'actor', mfa: proof });
-    expect(resolve).toHaveBeenCalledWith(claims);
+    expect(resolve).toHaveBeenCalledWith(claims, undefined);
   });
   it('does not mint a token when the current policy requires verification', async () => {
     resolve.mockResolvedValue({ status: 'required' });

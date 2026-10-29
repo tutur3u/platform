@@ -42,6 +42,7 @@ import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { TutoringCreateCard } from './tutoring-create-card';
+import { isTutoringContentRestricted } from './tutoring-errors';
 import {
   runTutoringExport,
   type TutoringExportFormat,
@@ -187,7 +188,12 @@ export function TutoringSessionsCard({
         queryKey: ['tutoring-sessions', wsId],
       });
     },
-    onError: () => toast.error(t('content_update_failed')),
+    onError: (error) =>
+      toast.error(
+        isTutoringContentRestricted(error)
+          ? t('content_restricted')
+          : t('content_update_failed')
+      ),
   });
   const deleteSession = useMutation({
     mutationFn: (id: string) => deleteTutoringSession(wsId, id),
@@ -205,7 +211,12 @@ export function TutoringSessionsCard({
         void queryClient.invalidateQueries({ queryKey: [key, wsId] });
       }
     },
-    onError: () => toast.error(t('session_delete_failed')),
+    onError: (error) =>
+      toast.error(
+        isTutoringContentRestricted(error)
+          ? t('content_restricted')
+          : t('session_delete_failed')
+      ),
   });
 
   const handleExport = async (format: TutoringExportFormat) => {

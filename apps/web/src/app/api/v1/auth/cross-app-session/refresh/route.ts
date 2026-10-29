@@ -6,6 +6,7 @@ import { resolveInternalAppSessionPolicy } from '@tuturuuu/auth/app-session-poli
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getConfirmedAuthEmail } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
 import {
   type AppName,
   getAppDomainMap,
@@ -14,9 +15,9 @@ import {
   readRequiredMfaPolicy,
   satisfiesRequiredMfaPolicy,
 } from '@tuturuuu/utils/required-mfa-policy';
-import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { consumeRefreshTokenWithGrace } from '@/lib/app-coordination/refresh-replay';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
@@ -27,7 +28,6 @@ const refreshSchema = z.object({
   targetApp: z.string().trim().toLowerCase().min(1).max(64),
 });
 
-type RefreshConsumeResult = 'consumed' | 'grace' | 'replayed' | 'unavailable';
 type RefreshVerificationResult =
   | {
       kind: 'verified';
@@ -37,6 +37,7 @@ type RefreshVerificationResult =
       >['claims'];
     }
   | { kind: 'invalid' }
+  | { kind: 'limited' }
   | { kind: 'unavailable' };
 
 function isRegisteredAppName(value: string): value is AppName {
@@ -53,61 +54,13 @@ function jsonNoStore(body: unknown, init?: ResponseInit) {
   });
 }
 
-async function consumeRefreshTokenWithGrace({
-  exp,
-  graceSeconds,
-  jti,
-  sub,
-}: {
-  exp: number;
-  graceSeconds: number;
-  jti: string;
-  sub: string;
-}): Promise<RefreshConsumeResult> {
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  const ttlSeconds = exp - nowSeconds;
-
-  if (ttlSeconds <= 0 || !jti.trim() || !sub.trim()) {
-    return 'replayed';
-  }
-
-  const redis = await getUpstashRestRedisClient().catch(() => null);
-  if (!redis) {
-    return 'unavailable';
-  }
-
-  const key = `${REFRESH_REPLAY_KEY_PREFIX}:${sub}:${jti}`;
-
-  try {
-    const firstUsedAt = await redis.get<number | string>(key);
-    const firstUsedAtSeconds =
-      typeof firstUsedAt === 'number'
-        ? firstUsedAt
-        : Number.parseInt(firstUsedAt ?? '', 10);
-
-    if (Number.isFinite(firstUsedAtSeconds)) {
-      return firstUsedAtSeconds + graceSeconds >= nowSeconds
-        ? 'grace'
-        : 'replayed';
-    }
-
-    const consumed = await redis.set(key, String(nowSeconds), {
-      ex: ttlSeconds,
-      nx: true,
-    });
-
-    return consumed === 'OK' ? 'consumed' : 'replayed';
-  } catch {
-    console.warn('App-session refresh replay check failed');
-    return 'unavailable';
-  }
-}
-
 async function verifyRefreshToken({
+  ip,
   refreshToken,
   replayGraceSeconds,
   targetApp,
 }: {
+  ip: string;
   refreshToken: string;
   replayGraceSeconds: number;
   targetApp: AppName;
@@ -121,8 +74,11 @@ async function verifyRefreshToken({
   }
 
   const consumeResult = await consumeRefreshTokenWithGrace({
+    keyPrefix: REFRESH_REPLAY_KEY_PREFIX,
+    onError: () => console.warn('App-session refresh replay check failed'),
     exp: verification.claims.exp,
     graceSeconds: replayGraceSeconds,
+    ip,
     jti: verification.claims.jti,
     sub: verification.claims.sub,
   });
@@ -133,6 +89,8 @@ async function verifyRefreshToken({
       return { kind: 'verified', claims: verification.claims };
     case 'replayed':
       return { kind: 'invalid' };
+    case 'limited':
+      return { kind: 'limited' };
     case 'unavailable':
       return { kind: 'unavailable' };
     default: {
@@ -164,6 +122,7 @@ async function refreshCrossAppSession(request: NextRequest) {
 
   const { policy } = await getAppCoordinationSessionPolicy();
   const verification = await verifyRefreshToken({
+    ip: extractIPFromRequest(request.headers),
     refreshToken,
     replayGraceSeconds: policy.browserRefreshReplayGraceSeconds,
     targetApp,
@@ -174,6 +133,11 @@ async function refreshCrossAppSession(request: NextRequest) {
       return jsonNoStore(
         { error: 'Invalid or expired app session refresh credentials' },
         { status: 401 }
+      );
+    case 'limited':
+      return jsonNoStore(
+        { error: 'Too many refresh attempts' },
+        { status: 429, headers: { 'Retry-After': '60' } }
       );
     case 'unavailable':
       return jsonNoStore(

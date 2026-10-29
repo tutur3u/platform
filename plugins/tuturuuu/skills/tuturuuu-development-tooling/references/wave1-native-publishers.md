@@ -99,5 +99,53 @@ under one deadline, filter attachments to the Worker across all account zones,
 and pass only the CLI environment it needs. Dry-run output belongs outside the
 sealed artifact; preserve archive rejection of hidden output. No canonical
 marker is emitted before the later routing flip and hosted acceptance.
+Native upload configs explicitly disable source maps in both profiles. Before
+uploading, measure actual token-free dry-run output and retain the sanitized
+measurements in the receipt. Enforce documented Paid limits pinned to the checked
+date/URLs in `wave1-native-upload-limits.mjs`; gzip size is informational, and
+startup CPU still needs hosted native acceptance. Keep maps sealed for later
+external tooling. A bootstrap upload never qualifies the native payload.
+Original and restored qualification must call `wave1-native-publish.mjs dry-run`
+so both enforce the upload limits. Qualification has no environment membership or
+forwarded credentials; trusted-main staging builds read the two public repository
+variables. Keep protected environments and deploy/control tokens on publication only.
+Use a backward scan for partial-token removal at line and capture boundaries;
+do not reintroduce an unanchored trailing-run regex. Keep both exact no-write
+resolutions append-only and run all 21 predicate mutations against each entry.
 Run `scripts/ci/wave1-native-production.test.mjs` for counting transport/CLI,
 no-route profile, held-policy, unknown-outcome and workflow-secret regressions.
+
+## Ops Hub (P0, publication held)
+
+Ops Hub uses the cf/Vite native Worker template with a SQLite OpsHub namespace.
+Its dedicated validation workflow has no deploy job or deployment credentials.
+Run source acceptance with apps/ops-hub/scripts/verify-worker-runtime.mjs; it
+uses isolated persistence and disposable fixture keys. The gateway shares only
+the portable protocol export. See the [ops runbook](../../../../../apps/docs/build/devops/ops-hub.mdx)
+for strict signed envelopes, request/storage budgets, retention, tombstone erasure
+and the disabled-state alarm fence. Hosted acceptance and publisher sample approval
+remain independent release gates. Do not infer deployment authority from CI wiring.
+
+The initial publisher contract is v2: decisions have stable IDs and a five-field
+security projection; quota history uses two-minute buckets with seven-day retention.
+Use the bounded dimension registry and indexed bucket-endpoint reads rather than
+full-history DISTINCT/GROUP BY scans. Preserve the hourly alarm across heartbeats;
+batched catch-up cleanup must make persisted progress and stop after content erasure.
+The workerd suite and real-SQLite maintenance tests cover these boundaries.
+
+For SQLite DO counters and purge batches, count SQL RETURNING rows, never cursor
+rowsWritten: workerd counts index writes in that billing metric. Node SQLite can
+mask the difference. Retain the real workerd regression for duplicate buckets,
+transaction rollback and restart alongside statement-bound SQLite tests.
+
+Disable is not erasure: retain content, reject every non-status route with 503,
+and continue only bounded retention cleanup without staleness updates. Explicit
+DELETE erasure clears content and stops alarms; it must run before disable under
+the strict non-status 503 contract. Arm maintenance before accepting durable data
+and preserve the existing deadline across heartbeats. Export must honor the same
+30-day idle horizon as ordinary reads, independently of when the alarm runs.
+
+When adding a Worker to CODEOWNERS, register its folder in
+`scripts/ci/security-paths.js` and run `security-codeowners-sync.test.js` plus
+`security-paths.test.js`. The cross-check guards native ownership against security
+classification drift; the changed-file planner may not select it for a CODEOWNERS edit.

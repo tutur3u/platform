@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/decisions_model.dart';
@@ -12,6 +11,8 @@ import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/view/inbox/decision_tile.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
 import 'package:mobile/features/mastermind/view/mastermind_section.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -114,7 +115,7 @@ class _Detail extends StatelessWidget {
           Semantics(
             container: true,
             liveRegion: true,
-            child: AppGroupedSection.spaced(
+            child: MastermindGroup(
               children: [
                 AppGroupedRow(
                   leading: const AppIconTile(
@@ -127,7 +128,7 @@ class _Detail extends StatelessWidget {
             ),
           ),
         // The title is the shell's title override above; the body repeats none.
-        AppGroupedSection.spaced(
+        MastermindGroup(
           caption: l10n.mastermindWhy,
           children: [
             AppGroupedRow(
@@ -139,7 +140,7 @@ class _Detail extends StatelessWidget {
             ),
           ],
         ),
-        AppGroupedSection.spaced(
+        MastermindGroup(
           children: [
             _Fact(
               label: l10n.mastermindDecidedBy,
@@ -166,8 +167,8 @@ class _Detail extends StatelessWidget {
             if (decision.product case final product?)
               AppGroupedRow(
                 title: Text(l10n.mastermindProductFilter),
-                trailing: AppBadge.outline(
-                  child: Text(MastermindLabels.product(product)),
+                trailing: MastermindStatusChip(
+                  label: MastermindLabels.product(product),
                 ),
               ),
             _Fact(

@@ -78,10 +78,18 @@
 
 # Database schema, migrations and RLS
 /apps/database/supabase/migrations/ @vhpx
+/apps/database/supabase/config.toml @vhpx
+/apps/database/supabase/tests/required-account-mfa.sql @vhpx
+/apps/database/scripts/verify-required-account-mfa-contract.mjs @vhpx
 
 # Code-execution infrastructure (devbox and Judge runners)
 /apps/devbox-control/              @vhpx
+/apps/ops-hub/                     @vhpx
 /packages/devbox/                  @vhpx
+
+# Abuse-protection store (Durable Object Worker and its clients)
+/apps/abuse-guard/                 @vhpx
+/packages/utils/src/abuse-guard/   @vhpx
 
 # Payments
 /packages/payment/                 @vhpx

@@ -3,6 +3,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/staff_model.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/features/mastermind/view/work/lane_state_badge.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -19,7 +20,7 @@ class WorkStaffSection extends StatelessWidget {
     final l10n = context.l10n;
     final model = MastermindStaffModel.from(snapshot);
     if (model.isEmpty) {
-      return AppGroupedSection.spaced(
+      return MastermindGroup(
         caption: l10n.mastermindStaffGroup,
         children: [
           AppGroupedRow(
@@ -30,7 +31,7 @@ class WorkStaffSection extends StatelessWidget {
       );
     }
     final style = Theme.of(context).textTheme.bodySmall;
-    return AppGroupedSection.spaced(
+    return MastermindGroup(
       caption: l10n.mastermindStaffSummary(model.rows.length, model.running),
       children: [
         for (final staff in model.rows)

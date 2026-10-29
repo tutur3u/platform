@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsc-build.js --build",
+    "test": "vitest run",
     "dev": "node ../../scripts/portless-safe-dev.js",
     "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-3003} --turbopack",
     "devx": "bun sb:stop && bun sb:start && bun dev",
@@ -27,6 +28,7 @@
   "dependencies": {
     "@ai-sdk/google": "^4.0.102",
     "@tuturuuu/ai": "workspace:*",
+    "@tuturuuu/auth": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
@@ -48,7 +50,8 @@
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "postcss": "^8.5.31",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "^5.0.5"
   },
   "packageManager": "bun@1.4.4",
   "portless": {

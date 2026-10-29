@@ -1,5 +1,6 @@
 name: Programming application builds
 on:
+  # No push trigger: feature and stack branches use ready-for-ci PR admission.
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
@@ -55,7 +56,7 @@ jobs:
       - uses: ./.github/actions/setup-bun-with-retry
         with:
           bun-version: 1.4.4
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile

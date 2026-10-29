@@ -1,0 +1,32 @@
+---
+title: "Mastermind answers across devices"
+description: "Mobile answered-elsewhere transitions, batch attribution and withdrawn decisions."
+---
+
+**Answered elsewhere and withdrawn (T4, 2026-10-29).** Scope: Needs you rows on
+the Inbox, the Resolved segment and item detail. Schema 1.5 adds an optional
+`answered_via` (`phone`, `mac`, `chat`, `auto`, `batch`) on item rows; the parser reads
+it tolerantly (an unknown or malformed value is left out, never a rejected
+snapshot), and a `decisions_resolved` row whose `state` or `status` is
+`withdrawn` stays withdrawn with no answer. Default: when a live snapshot shows
+an ask answered that was open on the previous snapshot and that this device did
+not answer (no accepted reply in its outbox), the open card's choices fold away
+and it reads "Answered on Mac · Yes" (or on phone, in chat, automatically, in batch,
+elsewhere when the hub does not say) for 3 seconds, then leaves Needs you; it is
+listed under Resolved. If this device held a one-tap reply to that ask inside
+its undo window, the reply is cancelled silently, its held outbox entry is
+deleted before it is ever sent, and screen readers hear "Already answered on
+Mac". A reply already sent that gets 409 shows the same answered state.
+Withdrawn asks never linger in Needs you; they appear only under Resolved.
+Exceptions: cached snapshots never trigger the transition, an ask answered by
+this device keeps the "Sent · waiting for Mastermind" flow, and logout or an
+account switch clears any lingering card. Coverage:
+`replies/answered_elsewhere_test.dart`, `parse/answered_via_test.dart`,
+`view/mastermind_answered_elsewhere_test.dart` (transition with and without an
+undoable reply, 409 after send, withdrawn, GMT+7 day groups, Vietnamese, 2.0x
+text at 320 px).
+
+Resolved rows group by GMT+7 day and show the recorded answer, attribution and time.
+Batch answers show "Answered in batch" and use "in batch" attribution without claiming an individual actor. Unknown values retain the localized elsewhere fallback.
+With large text, Undo sits under the label instead of beside it.
+A 409 whose refreshed question remains open preserves the draft and stale-question recovery.

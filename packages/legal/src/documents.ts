@@ -1,5 +1,4 @@
-import { reviseLegalDocument } from './commercial-revisions';
-import { getCommunityPolicy } from './community-policies';
+import { getEffectiveCommunityPolicy } from './effective-community';
 import type { LegalDocument, LegalDocumentKind, LegalLocale } from './types';
 
 const EFFECTIVE_DATE = '2026-08-15';
@@ -18,6 +17,7 @@ const privacyEn: LegalDocument = {
   reviewRequired: true,
   sections: [
     {
+      id: 'privacy-section-1',
       content: `This Privacy Policy applies to the public Tuturuuu service portfolio: workspace collaboration; tasks and projects; calendars; contacts, CRM, attendance, reports and posts; chat, mail, meetings and drive; documents, CMS, forms and short links; finance, billing and payments; inventory, storefront, POS and promotions; time tracking; teaching and learning; AI products; APIs, CLI, integrations and developer tooling. Internal administration systems support service operations and are not separately offered products.
 
 **Tuturuuu JSC** acts as controller for account, billing, security, product analytics and direct commercial relationship data. For customer content processed under a workspace administrator's instructions, Tuturuuu ordinarily acts as processor or service provider. Workspace administrators determine who may join, what data is uploaded, access roles, integrations, retention settings and lawful notices to their users.`,
@@ -26,6 +26,7 @@ const privacyEn: LegalDocument = {
       tone: 'purple',
     },
     {
+      id: 'privacy-section-2',
       content: `We may process account and profile details; workspace membership, roles and invitations; customer content and files; communications; contacts and attendance; financial, inventory, transaction and billing records; calendar and integration data; device, IP, cookie and security signals; support messages; API and key metadata; AI prompts, outputs, embeddings, images, agent steps, evaluation data and usage records.
 
 Purposes include providing and securing the Services, authenticating users, completing transactions, operating integrations, customer support, reliability, fraud prevention, legal compliance and product improvement. Legal bases depend on context and jurisdiction and may include contract performance, legitimate interests, consent, legal obligation, and protection of vital or legal interests.`,
@@ -34,6 +35,7 @@ Purposes include providing and securing the Services, authenticating users, comp
       tone: 'blue',
     },
     {
+      id: 'privacy-section-3',
       content: `Customer content is retained while the workspace or account is active and as configured by the customer. Deleted service data may persist in encrypted backups for a limited rotation period. Security and abuse logs are retained according to risk and operational need. Billing and tax records may be retained for statutory periods. Legal holds override ordinary deletion.
 
 AI request metadata is retained for **365 days by default**. Prompt, output, tool-argument and tool-result capture is **off by default**; when a workspace explicitly enables it, captured AI content is retained for **30 days by default**. Workspace controls or enterprise terms may shorten or extend applicable periods. Aggregated or de-identified statistics may be retained where they no longer identify a person.`,
@@ -42,6 +44,7 @@ AI request metadata is retained for **365 days by default**. Prompt, output, too
       tone: 'amber',
     },
     {
+      id: 'privacy-section-4',
       content: `Tuturuuu uses access controls, encryption in transit, secret hashing, audit trails, tenant isolation, least-privilege operations, monitoring, incident response and secure development practices. No system is perfectly secure.
 
 Data may be processed in countries where Tuturuuu or subprocessors operate. Where required, Tuturuuu uses recognized transfer mechanisms and supplementary safeguards. The maintained [Subprocessor Registry](/legal/subprocessors) lists purpose, data categories, regions and privacy information.`,
@@ -50,6 +53,7 @@ Data may be processed in countries where Tuturuuu or subprocessors operate. Wher
       tone: 'emerald',
     },
     {
+      id: 'privacy-section-5',
       content: `Tuturuuu does **not** use customer prompts, outputs, files or evaluation datasets for general-purpose model training by default. Applicable no-training or data-control settings are propagated to supported providers. AI features can produce inaccurate, incomplete or biased output and may involve automated processing, but customers remain responsible for consequential decisions and appropriate human review.
 
 We do not sell personal information or share it for cross-context behavioral advertising, subject to final provider and advertising-technology audit before publication. Optional integrations process data under their own terms and are enabled by users or workspace administrators.`,
@@ -105,6 +109,7 @@ const termsEn: LegalDocument = {
   reviewRequired: true,
   sections: [
     {
+      id: 'terms-section-1',
       content: `These Terms govern the complete public Tuturuuu service portfolio described in the [Privacy Policy](/privacy). You represent that you can accept them for yourself or your organization. Workspace administrators control invitations, roles, member defaults, guest access and customer content, and must have authority and a lawful basis to administer their workspace.
 
 You retain ownership of customer content and grant Tuturuuu a limited license to host, process, transmit, back up and display it only as needed to provide, secure and improve the Services. You are responsible for content, permissions, notices, exports and the conduct of users you invite.`,
@@ -113,6 +118,7 @@ You retain ownership of customer content and grant Tuturuuu a limited license to
       tone: 'purple',
     },
     {
+      id: 'terms-section-2',
       content: `You must protect credentials, API keys and devices; follow published limits and acceptable-use rules; and not attempt unauthorized access, unlawful surveillance, spam, abuse, malware, credential harvesting, safety-control bypass, model extraction or interference with the Services. AI-only \`ttr_ai_\` keys authorize only documented AI endpoints and never non-AI Tuturuuu APIs.
 
 Integrations and curated agent tools access only capabilities explicitly approved by the user or administrator. Arbitrary HTTP requests, undeclared workspace access and unapproved code execution are prohibited. Third-party services remain subject to their own terms.`,
@@ -130,6 +136,7 @@ AI credits are usage units, not currency, and may expire or be limited by plan. 
       tone: 'emerald',
     },
     {
+      id: 'terms-section-4',
       content: `AI and generated output may be inaccurate, incomplete, offensive, non-unique or unsuitable. You must evaluate outputs, preserve human oversight and obtain rights needed for inputs and intended uses. Tuturuuu does not guarantee ownership, non-infringement or fitness of generated output.
 
 Prompt, agent and evaluation versions may be immutable for reproducibility. Agent tools must be reviewed before activation. Evaluation graders consume credits like other model calls. High-impact decisions require qualified human review and compliance with applicable law.`,
@@ -138,6 +145,7 @@ Prompt, agent and evaluation versions may be immutable for reproducibility. Agen
       tone: 'cyan',
     },
     {
+      id: 'terms-section-5',
       content: `Tuturuuu may suspend or limit access to address security threats, abuse, non-payment, legal requirements, material breach or risk to the Services. Where practicable, notice and an opportunity to cure will be provided. Customers should export data before termination; export and deletion remain subject to technical limits, backup rotation, legal holds and the DPA.
 
 Each party retains its pre-existing intellectual property. Confidential information must be protected with reasonable care and used only for the relationship. Feedback may be used without restriction if it does not identify confidential customer information.`,
@@ -146,6 +154,7 @@ Each party retains its pre-existing intellectual property. Confidential informat
       tone: 'orange',
     },
     {
+      id: 'terms-section-6',
       content: `To the maximum extent permitted by law, Services are provided “as is” and “as available”; implied warranties are disclaimed. Neither party is liable for indirect, special, incidental, punitive or consequential damages, and aggregate liability is limited to amounts paid for the affected Services during the prior twelve months, except where a different limit is required by law or an enterprise order.
 
 You will indemnify Tuturuuu for third-party claims arising from unlawful customer content, misuse or breach, subject to control-of-defense and cooperation procedures. Nothing excludes liability that cannot lawfully be excluded, limits mandatory consumer rights, or prevents remedies for fraud, wilful misconduct, death, personal injury or other protected claims.`,
@@ -191,18 +200,21 @@ const dpaEn: LegalDocument = {
   reviewRequired: true,
   sections: [
     {
+      id: 'dpa-section-1',
       content: `The customer is controller and Tuturuuu is processor for personal data submitted to a workspace, except where each acts as an independent controller. Tuturuuu processes data only on documented instructions in the agreement, product configuration, support requests and lawful customer directions. Processing supports the service categories disclosed in the Privacy Policy for the agreement term and applicable retention period.`,
       icon: 'file',
       title: 'Scope, roles, and instructions',
       tone: 'purple',
     },
     {
+      id: 'dpa-section-2',
       content: `Personnel authorized to process personal data are bound by confidentiality. Tuturuuu maintains safeguards appropriate to risk, including access control, encryption, tenant isolation, monitoring, secure development, incident response, resilience and recovery measures. The customer remains responsible for lawful collection, notices, permissions, endpoint security and configuration.`,
       icon: 'lock',
       title: 'Confidentiality and safeguards',
       tone: 'emerald',
     },
     {
+      id: 'dpa-section-3',
       content: `The customer generally authorizes the subprocessors in the maintained [registry](/legal/subprocessors). Tuturuuu will provide notice of material additions where contractually required and a reasonable objection process. International transfers use applicable legal mechanisms, including recognized contractual clauses and supplementary measures where required.`,
       icon: 'globe',
       title: 'Subprocessors and international transfers',
@@ -216,6 +228,7 @@ const dpaEn: LegalDocument = {
       tone: 'orange',
     },
     {
+      id: 'dpa-section-5',
       content: `Upon reasonable request, Tuturuuu will provide information needed to demonstrate compliance. Audits must protect other customers, security and confidentiality and ordinarily begin with independent reports or written evidence. On termination, customer data is returned or deleted according to product export capabilities, backup rotation, legal retention and documented instructions.`,
       icon: 'scale',
       title: 'Audits, return, and deletion',
@@ -256,6 +269,7 @@ const slaEn: LegalDocument = {
   reviewRequired: true,
   sections: [
     {
+      id: 'sla-section-1',
       content: `This SLA is contractual-only. “Available” means the covered production service can accept and process ordinary requests, excluding scheduled maintenance and exclusions below. Measurement method, covered services, uptime target and credit schedule apply only when an enterprise order form expressly activates them.`,
       icon: 'server',
       title: 'Definitions and activation',
@@ -307,6 +321,7 @@ const subprocessorsEn: LegalDocument = {
   reviewRequired: true,
   sections: [
     {
+      id: 'subprocessors-section-1',
       content: `Tuturuuu uses vetted providers to host, secure, communicate, bill, observe and optionally power integrations or AI. A provider receives only data appropriate to the enabled purpose. The current registry includes **Supabase, Vercel, Cloudflare, OpenAI, Google Cloud, Microsoft, Polar, Resend, and Sentry**.
 
 For each provider, Tuturuuu maintains its purpose, data categories, operating regions, privacy link and change date in the canonical registry used by product and legal coverage tests. Provider use varies by customer configuration and selected integrations.`,
@@ -315,6 +330,7 @@ For each provider, Tuturuuu maintains its purpose, data categories, operating re
       tone: 'blue',
     },
     {
+      id: 'subprocessors-section-2',
       content: `AI model providers are engaged only when a workspace uses an enabled model. Integration providers are engaged only when users connect or invoke the integration. Tuturuuu evaluates contractual, privacy and security controls and propagates supported no-training and retention options. Customers may contact privacy@tuturuuu.com for current transfer information or contractual objection procedures.`,
       icon: 'shield',
       title: 'Conditional providers and changes',
@@ -650,11 +666,11 @@ Với mỗi nhà cung cấp, Tuturuuu duy trì mục đích, loại dữ liệu,
 }
 
 const englishDocuments = {
-  dpa: reviseLegalDocument(dpaEn),
-  privacy: reviseLegalDocument(privacyEn),
-  sla: reviseLegalDocument(slaEn),
-  subprocessors: reviseLegalDocument(subprocessorsEn),
-  terms: reviseLegalDocument(termsEn),
+  dpa: dpaEn,
+  privacy: privacyEn,
+  sla: slaEn,
+  subprocessors: subprocessorsEn,
+  terms: termsEn,
 } as const satisfies Record<LegalDocumentKind, LegalDocument>;
 
 export const LEGAL_DOCUMENTS: Record<
@@ -663,11 +679,11 @@ export const LEGAL_DOCUMENTS: Record<
 > = {
   en: englishDocuments,
   vi: {
-    dpa: reviseLegalDocument(translateDocument(dpaEn)),
-    privacy: reviseLegalDocument(translateDocument(privacyEn)),
-    sla: reviseLegalDocument(translateDocument(slaEn)),
-    subprocessors: reviseLegalDocument(translateDocument(subprocessorsEn)),
-    terms: reviseLegalDocument(translateDocument(termsEn)),
+    dpa: translateDocument(dpaEn),
+    privacy: translateDocument(privacyEn),
+    sla: translateDocument(slaEn),
+    subprocessors: translateDocument(subprocessorsEn),
+    terms: translateDocument(termsEn),
   },
 };
 
@@ -678,6 +694,6 @@ export function getLegalDocument(
   locale: string
 ): LegalDocument {
   if (kind === 'acceptable-use' || kind === 'community-guidelines')
-    return getCommunityPolicy(kind, locale);
+    return getEffectiveCommunityPolicy(kind, locale);
   return LEGAL_DOCUMENTS[locale === 'vi' ? 'vi' : 'en'][kind];
 }

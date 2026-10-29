@@ -1,6 +1,8 @@
 import '@tanstack/react-start/server-only';
 import { notFound, redirect } from '@tanstack/react-router';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { createBasePath } from '@tuturuuu/start-bridge/base-path';
+import { appBasePath } from '@tuturuuu/start-bridge/start/base-path';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import LoginPage from '../app/[locale]/(auth)/login/page';
 import { proxy } from '../proxy';
@@ -62,15 +64,23 @@ export async function loadPageModel(path: string) {
 async function loadResolvedPage(url: URL) {
   let page: ReturnType<typeof resolveMailPage>;
   try {
-    page = resolveMailPage(url.pathname);
+    const path = createBasePath({ app: 'mail', basePath: appBasePath() }).strip(
+      url.pathname
+    );
+    if (path === null) throw notFound();
+    page = resolveMailPage(path);
   } catch (error) {
     if (error instanceof URIError) throw notFound();
     throw error;
   }
-  const locale = /^\/(?:en|vi)(?:\/|$)/u.test(url.pathname)
+  const locale = /^\/(?:en|vi)(?:\/|$)/u.test(
+    createBasePath({ app: 'mail', basePath: appBasePath() }).strip(
+      url.pathname
+    ) ?? ''
+  )
     ? page.locale
     : await getLocale();
-  const prefix = locale === 'vi' ? '/vi' : '';
+  const prefix = `${appBasePath()}${locale === 'vi' ? '/vi' : ''}`;
   const actor = await getSatelliteAppSessionUser('mail');
   const params: Record<string, string> = { locale };
   const common = {

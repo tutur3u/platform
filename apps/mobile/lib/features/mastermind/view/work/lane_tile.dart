@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
-import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/hub_field.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/lane_text.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
 import 'package:mobile/features/mastermind/view/work/lane_state_badge.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -53,15 +53,13 @@ class LaneTile extends StatelessWidget {
             runSpacing: AppSpacing.xs,
             children: [
               if (lane.product case final product?)
-                AppBadge.outline(
-                  child: Text(MastermindLabels.product(product)),
-                ),
+                MastermindStatusChip(label: MastermindLabels.product(product)),
               if (lane.area case final area?)
-                AppBadge.outline(
-                  child: Text(MastermindLabels.area(l10n, area)),
-                ),
+                MastermindStatusChip(label: MastermindLabels.area(l10n, area)),
               if (lane.kind case final kind?)
-                AppBadge(child: Text(MastermindLabels.laneKind(l10n, kind))),
+                MastermindStatusChip(
+                  label: MastermindLabels.laneKind(l10n, kind),
+                ),
             ],
           ),
         ],

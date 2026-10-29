@@ -226,14 +226,65 @@ localization changes.
   badges do not create stray gaps or clipping.
 - List-view task rows use `AppSwipeActions` plus a long-press
   `showAppActionSheet` menu that reuses the board cubit mutations. Selection
-  mode disables swipes. Board-page tests whose mutations invalidate caches
-  never settle in fake async, so assert on the repository call and the busy
-  dialog instead of `pumpAndSettle` after confirming.
+  mode disables swipes. Board-page mutations invalidate `CacheStore`, whose
+  file work never finishes in fake async: assert on the repository call and
+  the busy dialog instead of waiting. To chain mutations, call
+  `CacheStore.instance.init` in `setUpAll`, wait with `runAsync` plus pumps
+  until `isMutating` clears, and keep that test alone in its file. The store
+  is a process-wide singleton that serializes writes, so a write left
+  pending by an earlier test blocks every later mutation
+  (`task_board_quick_actions_edits_test.dart`). Do not add a timer-based
+  timeout there: its pending timer fails every board widget test whose
+  mutation never settles in fake async.
+- Priority visuals and labels come from `TaskPriorityLevel`
+  (`tasks_boards/widgets/task_priority_visuals.dart`): the web's order and
+  wording (Urgent, High, Medium, Low, plus None), Lucide and Lucide Lab icons
+  and dynamic colours. Do not add per-surface priority strings or hues. The
+  design render harness loads both Lucide fonts.
+- Board mutations reject a concurrent call with
+  `TaskBoardMutationInProgressException` (an `Exception`) before any
+  optimistic change; call `_ensureNoMutationInProgress` first in new
+  optimistic mutations.
+- Overdue is one rule (`utils/task_due_dates.dart`): the due day in the
+  user's timezone setting is before today. No due date, never overdue.
+- Save a picked day in the timezone setting with `taskStartOfDayIn` /
+  `taskEndOfDayIn`, and carry existing dates through `taskInZone`. The task
+  repository snaps a `tz.TZDateTime` to its own zone's day but a plain
+  `DateTime` to the device's day, so a plain date can shift a day in the
+  board's zone. A sheet opens above the page: re-provide a page-scoped
+  `TimezoneSettingsCubit` to it, as the quick sheet does, or it reads device
+  days (`task_board_quick_actions_dates_test.dart` covers both).
+- The tap quick sheet follows the cubit for its task and passes the live task
+  to every edit, so consecutive edits never save a stale snapshot. Edits made
+  where the saved value is visible pass `announce: false` (no success toast;
+  a toast there covers the next picker's footer). Drop taps while the cubit
+  `isMutating`; its single-mutation guard throws a `StateError`, not an
+  `Exception`.
 - Pass the page context, not the root navigator's context, to
   `showAppToast`; the root navigator's element sits above its overlay. Keep the
   root-navigator context only for legacy `shad.showToast` callers.
 - Optimistic `TaskBoardDetailCubit.updateTask` restores the pre-edit snapshot
   on failure before the server refresh; do not rely on the refresh alone.
+- The board timeline is an agenda (`utils/task_board_timeline_agenda.dart`):
+  a pure model plus `TaskTimelineAgendaCache`. `filteredTasksByListId`
+  regroups into new collections on every build while reusing task objects, so
+  memoize on element identity, not map identity. The view is one
+  `CustomScrollView` with `center:` on today's sliver; slivers before the
+  centre grow upward, so their items are stored bottom-up. Keep rows lazy
+  (`SliverList.builder` with per-row card segments) rather than building a
+  day's card as one widget. Date-placed views must load every page of the
+  lists they summarize (`task_board_detail_page_timeline_loading.dart`,
+  policy in `utils/task_board_timeline_paging.dart`: 100 per page, two lists
+  at a time, a 2,000-task board budget) and must not state that a day is
+  empty while pages remain. Do not page from `setView` or a scroll trigger:
+  they bypass the budget and cap, and a near-bottom trigger made the
+  all-pages tests pass without the scheduler. Prove such a test by disabling
+  the scheduler and watching it fail. `_emitListTasksPage` processes only the
+  arriving page (its descriptions and its list); keep it that way.
+  `moveTask` checks for a running mutation before bumping
+  `_loadRequestToken`; a rejected move must not orphan in-flight list reads. Test fixtures should
+  serve tasks only through `getBoardTasksForList` and honour `limit` and
+  `offset`; board-detail tasks hide paging bugs.
 
 ### Estimation recovery
 
@@ -351,3 +402,35 @@ A covered ancestor can pause a nested navigator's exit animation. Scope
 invalidation removes the exact owned settings route instead of waiting for a pop
 animation; it must preserve an unrelated covering route. The settings shell ABA
 checks cover this cancellation while the editor is covered.
+
+## Build-free Startup Inspection
+
+Trace pre-`runApp` awaits in `lib/bootstrap.dart` separately from root-provider
+construction and unawaited locale/product loads in `lib/app/view/app.dart`.
+Optional public model-transfer restoration uses `scheduleOptionalStartup` after
+first paint; keep required identity, appearance, encrypted cache and mutation
+recovery before the root mounts. Preserve feature-owned retry/error handling.
+Use `test/core/startup/optional_startup_test.dart` for paint ordering and failure
+containment; run `test/core` and `test/features/shell` for bootstrap-adjacent
+regressions. Asset bytes/dependency lists are static candidates, not release
+bundle or device startup measurements. See the Mobile application guide's
+startup recovery section for the default and platform scope.
+
+### Mastermind inline answers
+
+Home/Inbox cards and item detail must share `MastermindRepliesCubit.queueOption`
+and its five-second Undo window. A2 `hub_options` are display labels in canonical
+option order; preserve the original `option_index`, version hash and outbox
+label. Fall back to canonical options when short-label counts differ. Never
+infer hub resolution from a local tap or accepted reply. Exercise the real
+reply cubit with fake transport in `decision_cards_test.dart`; English/Vietnamese
+at 320px and 2x text catch wrapping regressions without a device build.
+
+### Independent startup state restoration
+
+Use `initializeStartupState` only after Firebase/observability and Supabase settle.
+Appearance may overlap offline restoration; keep CacheStore before the queue and
+skip the queue on cache failure. Preserve branch fallbacks, error/stack reporting
+and the pre-`runApp` join. Completion-barrier tests live in
+`test/core/startup/startup_state_test.dart`. See the Mobile application guide's
+[ordering contract](../../../../../apps/docs/platform/applications/mobile.mdx#independent-startup-state-restoration).

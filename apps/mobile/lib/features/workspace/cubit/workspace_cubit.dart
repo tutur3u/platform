@@ -194,16 +194,17 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
     final visibilityAtResolution = _visibilityStateRevision;
     final selectionAtResolution = _selectionRevision;
     // Resolve from the latest private list after awaits.
-    final visible = workspaces
+    final active = workspaces.where((workspace) => !workspace.deleted).toList();
+    final visible = active
         .where((workspace) => !state.hiddenWorkspaceIds.contains(workspace.id))
         .toList(growable: false);
-    var defaultWorkspace = workspaces
+    var defaultWorkspace = active
         .where((workspace) => workspace.id == serverDefault?.id)
         .firstOrNull;
-    defaultWorkspace ??= workspaces
+    defaultWorkspace ??= active
         .where((workspace) => workspace.id == localDefaultId)
         .firstOrNull;
-    defaultWorkspace ??= workspaces
+    defaultWorkspace ??= active
         .where((workspace) => workspace.personal)
         .firstOrNull;
     var current = workspaces
@@ -328,7 +329,9 @@ class WorkspaceCubit extends Cubit<WorkspaceState> {
 
   void _applyHidden(List<String> ids) {
     _visibilityStateRevision++;
-    final visible = state.workspaces.where((w) => !ids.contains(w.id)).toList();
+    final visible = state.workspaces
+        .where((w) => !w.deleted && !ids.contains(w.id))
+        .toList();
     var current = state.currentWorkspace;
     if (current == null &&
         state.status == WorkspaceStatus.loaded &&

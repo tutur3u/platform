@@ -2,12 +2,15 @@ import { canUseRequestedFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-
 import {
   type FinanceRouteAuthContext,
   getFinanceRouteContext,
   hasAnyFinancePermission,
 } from '../request-access';
+import {
+  validateFinanceReferences,
+  validateFinanceWalletWriteAccess,
+} from '../workspace-references';
 import {
   enrichTransactionsWithTags,
   validateTransactionTagIdsForWorkspace,
@@ -147,11 +150,13 @@ export async function GET(
   // The RPC function should ideally handle sorting.
   // If not, sorting here will only sort the current page of results.
   // This preserves existing behavior of sorting the returned data.
-  const sortedData = (data ?? []).sort((a, b) => {
-    const dateA = new Date(a.taken_at).getTime();
-    const dateB = new Date(b.taken_at).getTime();
-    return dateB - dateA;
-  });
+  const sortedData = (data ?? []).sort(
+    (a: { taken_at: string }, b: { taken_at: string }) => {
+      const dateA = new Date(a.taken_at).getTime();
+      const dateB = new Date(b.taken_at).getTime();
+      return dateB - dateA;
+    }
+  );
 
   const { data: enrichedData, error: tagError } =
     await enrichTransactionsWithTags(sbAdmin, sortedData, normalizedWsId);
@@ -264,8 +269,14 @@ export async function POST(
     .eq('ws_id', normalizedWsId)
     .maybeSingle();
 
-  if (walletErr || !walletCheck) {
-    return NextResponse.json({ message: 'Invalid wallet' }, { status: 400 });
+  if (walletErr) {
+    return NextResponse.json(
+      { message: 'Error checking wallet' },
+      { status: 500 }
+    );
+  }
+  if (!walletCheck) {
+    return NextResponse.json({ message: 'Invalid wallet' }, { status: 403 });
   }
 
   if (data.client_transaction_id) {
@@ -317,6 +328,42 @@ export async function POST(
       { status: 403 }
     );
   }
+
+  if (data.category_id) {
+    const { data: category, error: categoryError } = await sbAdmin
+      .from('transaction_categories')
+      .select('id')
+      .eq('id', data.category_id)
+      .eq('ws_id', normalizedWsId)
+      .maybeSingle();
+
+    if (categoryError) {
+      return NextResponse.json(
+        { message: 'Error checking transaction category' },
+        { status: 500 }
+      );
+    }
+    if (!category) {
+      return NextResponse.json(
+        { message: 'Invalid category' },
+        { status: 403 }
+      );
+    }
+  }
+
+  const deniedWallet = await validateFinanceWalletWriteAccess(
+    access.context,
+    [data.origin_wallet_id],
+    'create_transactions',
+    { defaultWalletId }
+  );
+  if (deniedWallet) return deniedWallet;
+  const invalidCategory = await validateFinanceReferences(
+    sbAdmin,
+    normalizedWsId,
+    { category_id: data.category_id }
+  );
+  if (invalidCategory) return invalidCategory;
 
   const tagValidation = await validateTransactionTagIdsForWorkspace(
     sbAdmin,

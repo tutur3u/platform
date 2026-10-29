@@ -3271,6 +3271,51 @@ export type Database = {
           },
         ];
       };
+      chat_creation_requests: {
+        Row: {
+          actor_user_id: string;
+          conversation_id: string;
+          conversation_type: string;
+          created_at: string;
+          initial_settings: Json;
+          request_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          actor_user_id: string;
+          conversation_id: string;
+          conversation_type: string;
+          created_at?: string;
+          initial_settings: Json;
+          request_id: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_user_id?: string;
+          conversation_id?: string;
+          conversation_type?: string;
+          created_at?: string;
+          initial_settings?: Json;
+          request_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'chat_creation_requests_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'chat_creation_requests_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       chat_friend_requests: {
         Row: {
           created_at: string;
@@ -17335,6 +17380,71 @@ export type Database = {
           },
         ];
       };
+      topic_announcement_teacher_notices: {
+        Row: {
+          announcement_id: string;
+          attempts: number;
+          claimed_at: string;
+          delivered_at: string | null;
+          email_audit_id: string | null;
+          kind: string;
+          last_error: string | null;
+          notification_id: string | null;
+          recipient_user_id: string;
+          send_due_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          announcement_id: string;
+          attempts?: number;
+          claimed_at?: string;
+          delivered_at?: string | null;
+          email_audit_id?: string | null;
+          kind: string;
+          last_error?: string | null;
+          notification_id?: string | null;
+          recipient_user_id: string;
+          send_due_at: string;
+          ws_id: string;
+        };
+        Update: {
+          announcement_id?: string;
+          attempts?: number;
+          claimed_at?: string;
+          delivered_at?: string | null;
+          email_audit_id?: string | null;
+          kind?: string;
+          last_error?: string | null;
+          notification_id?: string | null;
+          recipient_user_id?: string;
+          send_due_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'topic_announcement_teacher_notices_announcement_scope';
+            columns: ['announcement_id', 'ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'topic_announcements';
+            referencedColumns: ['id', 'ws_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_teacher_notices_recipient_user_id_fkey';
+            columns: ['recipient_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_teacher_notices_recipient_user_id_fkey';
+            columns: ['recipient_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
       topic_announcement_templates: {
         Row: {
           class_label: string | null;
@@ -21085,12 +21195,25 @@ export type Database = {
         Args: { p_actor_user_id: string; p_conversation_id: string };
         Returns: Json;
       };
+      chat_create_ai_first_message: {
+        Args: {
+          p_actor_user_id: string;
+          p_content: string;
+          p_input: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       chat_create_conversation: {
         Args: { p_actor_user_id: string; p_input: Json; p_ws_id: string };
         Returns: Json;
       };
       chat_create_friend_request_by_email: {
         Args: { p_actor_user_id: string; p_email: string; p_ws_id: string };
+        Returns: Json;
+      };
+      chat_creation_receipt_json: {
+        Args: { p_conversation_id: string };
         Returns: Json;
       };
       chat_delete_conversation: {
@@ -24692,6 +24815,7 @@ export type Database = {
       };
       set_workspace_invitation_roles: {
         Args: {
+          p_actor_id?: string;
           p_email?: string;
           p_role_ids?: string[];
           p_user_id?: string;
@@ -25282,6 +25406,10 @@ export type Database = {
           _start_date: string;
         };
         Returns: Json;
+      };
+      workspace_role_has_creator_grant: {
+        Args: { p_role_id: string };
+        Returns: boolean;
       };
       workspace_user_groups: {
         Args: { '': Database['private']['Tables']['user_group_posts']['Row'] };
@@ -41307,6 +41435,7 @@ export type Database = {
       };
       workspace_email_invite_roles: {
         Row: {
+          assigned_by: string | null;
           created_at: string;
           email: string;
           role_id: string;
@@ -41314,12 +41443,14 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          assigned_by?: string | null;
           created_at?: string;
           email: string;
           role_id: string;
           ws_id: string;
         };
         Update: {
+          assigned_by?: string | null;
           created_at?: string;
           email?: string;
           role_id?: string;
@@ -44025,6 +44156,7 @@ export type Database = {
       };
       workspace_invite_roles: {
         Row: {
+          assigned_by: string | null;
           created_at: string;
           role_id: string;
           user_id: string;
@@ -44032,12 +44164,14 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          assigned_by?: string | null;
           created_at?: string;
           role_id: string;
           user_id: string;
           ws_id: string;
         };
         Update: {
+          assigned_by?: string | null;
           created_at?: string;
           role_id?: string;
           user_id?: string;

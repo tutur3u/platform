@@ -1,0 +1,273 @@
+---
+title: Hive Cloudflare maintenance
+description: Approval-gated maintenance Worker, tunnel removal, verification and rollback.
+---
+
+## Scope and approval
+
+The interim experience replaces Hive's origin error with a bilingual English and
+Vietnamese maintenance response. Every path, API call and WebSocket handshake
+returns HTTP 503 with `Retry-After: 300`, `Cache-Control: no-store` and `noindex`.
+There are no external assets, scripts, upstream requests, bindings or jobs.
+It does not restore the research application or promise a restoration time.
+
+This describes the Worker source. Existing zone-wide edge features can append
+Cloudflare challenge-platform script/iframe code and a `speculation-rules`
+header to the public response. Record these as edge-injected, zone-wide and
+CSP-blocked; the Worker's `default-src 'none'` stays intact. Do not change shared
+zone settings or silently edit an approved module to remove those additions.
+The edge also rewrites the Worker's `Referrer-Policy: no-referrer` to
+`same-origin` and adds `X-Frame-Options: SAMEORIGIN`; record the effective headers
+separately from source headers. The Worker's CSP `frame-ancestors 'none'`
+remains intact and is stricter than that framing header.
+
+Source: `apps/hive/maintenance/worker.mjs`. The upload metadata is beside it.
+Tests cover all paths/methods, HEAD, WebSocket rejection, unreflected input and
+zero upstream/binding/background work.
+
+**Interim completed.** The approved Worker, subdomain disablement, hostname route
+and proxied discard DNS record are live. The release owner completed step 5 by
+removing Hive's tunnel ingress; the main hostname rule and catch-all remain.
+The calls below are retained for reproducibility and rollback review, not replay.
+
+For future changes, the integration owner relays the user's approval of the exact
+Worker source, DNS body, route pattern and tunnel diff, and names the token file
+before execution. Normal commits and PR pushes do not grant infrastructure
+write authority. Keep Finance's hostname, DNS, Workers, routes, rules and
+credentials outside this operation. Never connect to the former origin host.
+Take the shared tunnel configuration write window from its current owner.
+
+## Routing and DNS
+
+The original Hive record was an orange-clouded CNAME to the shared tunnel; the
+approved operation replaced it with proxied AAAA `100::`. A
+proxied DNS record already satisfies the Worker route prerequisite: **no DNS
+change is necessary to invoke `hive.tuturuuu.com/*` once that route exists**.
+The Worker returns its own response and never calls the tunnel origin.
+See [Cloudflare routing requirements](https://developers.cloudflare.com/workers/configuration/routing/routes/).
+
+After verifying the route, replace only Hive's CNAME with a proxied AAAA record
+to `100::` (the discard prefix). Keep the same record ID, name, TTL and proxy
+state. This detaches DNS from the tunnel and prevents origin fallback from
+reaching an on-premise service. A missing/failed Worker will produce an edge
+error, not the maintenance page. Removing the DNS record or turning proxying off
+would prevent normal Worker route invocation. A later native application may use
+a Worker Custom Domain; changing routing models is outside this interim patch.
+
+## Private preparation
+
+Run from the reviewed checkout. The owner supplies the actual account, zone,
+tunnel and DNS record IDs from fresh GET results; never infer account identity
+from a token's filename. All paths below are private absolute paths. Use a fresh
+mode-700 evidence directory and `umask 077`. Do not enable shell tracing.
+
+```bash
+export HIVE_API=https://api.cloudflare.com/client/v4
+export HIVE_SCRIPT=tuturuuu-hive-maintenance
+# HIVE_ACCOUNT_ID, HIVE_ZONE_ID, HIVE_TUNNEL_ID, HIVE_DNS_ID:
+# verified IDs supplied in the private approval packet.
+# HIVE_EVIDENCE, HIVE_HEADER_FILE, HIVE_APPROVED_TOKEN_FILE:
+# private paths supplied by the operator; the last is the NAMED approved token.
+python3 - <<'PY'
+import os
+from pathlib import Path
+token = Path(os.environ['HIVE_APPROVED_TOKEN_FILE']).read_text().strip()
+path = Path(os.environ['HIVE_HEADER_FILE'])
+fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+with os.fdopen(fd, 'w') as stream:
+    stream.write('Authorization: Bearer ' + token + '\n')
+PY
+```
+
+Required permissions: Workers Scripts Write on the account, Workers Routes Write
+and DNS Write on the zone, plus Cloudflare Tunnel Write for the tunnel. GET
+preflight needs corresponding read access. Do not broaden a token silently.
+The maintenance upload adds no storage, queues or paid AI bindings.
+
+```bash
+curl -fsS --max-time 30 -H @"$HIVE_HEADER_FILE" \
+  "$HIVE_API/accounts/$HIVE_ACCOUNT_ID/cfd_tunnel/$HIVE_TUNNEL_ID/configurations" \
+  -o "$HIVE_EVIDENCE/tunnel-get.json"
+curl -fsS --max-time 30 -H @"$HIVE_HEADER_FILE" \
+  "$HIVE_API/zones/$HIVE_ZONE_ID/dns_records?name=hive.tuturuuu.com" \
+  -o "$HIVE_EVIDENCE/dns-get.json"
+curl -fsS --max-time 30 -H @"$HIVE_HEADER_FILE" \
+  "$HIVE_API/zones/$HIVE_ZONE_ID/workers/routes" \
+  -o "$HIVE_EVIDENCE/routes-get.json"
+```
+
+Require API `success: true`. Check the exact hostname, no competing/more-specific
+Hive routes, DNS ID/type/target/proxy, and tunnel ID/source/version. Require that
+the proposed new script name is unused (`GET /accounts/{account}/workers/scripts`);
+an existing script requires a separate version/rollback review, never overwrite it.
+Keep the baseline private. Do not print unrelated routes or credentials.
+
+Generate the two full configuration PUT bodies from the GET response:
+
+```bash
+node apps/hive/maintenance/prepare-tunnel.mjs \
+  "$HIVE_EVIDENCE/tunnel-get.json" "$HIVE_EVIDENCE" 18
+diff -u "$HIVE_EVIDENCE/tunnel-before-body.json" \
+  "$HIVE_EVIDENCE/tunnel-after-body.json"
+jq '.result[0] | {type,name,content,ttl,proxied,comment,tags,settings}' \
+  "$HIVE_EVIDENCE/dns-get.json" > "$HIVE_EVIDENCE/dns-before-body.json"
+```
+
+The tunnel UUID in `prepare-tunnel.mjs` is a public resource identifier, not a
+credential; retaining it provides an explicit identity fence. It is intentionally
+unchanged. Version 18 is the original baseline, not the current post-removal
+version or a permanent version assumption.
+Any drift requires a refreshed diff and renewed approval. The helper checks the
+tunnel, source, version, main hostname/port, Hive hostname/port and catch-all.
+It removes exactly one Hive rule and retains every surviving rule's JSON bytes
+(including property order), global options and order. API response whitespace is
+normalized once for both bodies; no surviving rule value is rewritten.
+
+The only approved ingress change is:
+
+```diff
+ { "service": "http://localhost:7803", "hostname": "tuturuuu.com" },
+-{ "service": "http://localhost:7814", "hostname": "hive.tuturuuu.com" },
+ { "service": "http_status:404" }
+```
+
+Retain `"warp-routing": {"enabled": false}` and every other configuration
+field. The full PUT body contains `config`, not the GET envelope or version.
+The API has no documented atomic version precondition here. Re-read immediately
+before PUT, compare with the approved baseline, serialize through the tunnel
+owner, and stop on any change. A GET/version check alone cannot prevent a race.
+
+## Approved execution, one operation at a time
+
+The following calls are a reviewable draft, not an instruction to execute before
+approval. Keep every response file, check both HTTP success and JSON `success`,
+and record deployed version/route IDs. No automatic retries on writes.
+An unknown result requires GET reconciliation under the same operation identity.
+
+1. Upload the reviewed module to a new script with no routes or triggers.
+   [Upload API](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/methods/update/):
+
+```bash
+curl -fsS --max-time 30 -X PUT -H @"$HIVE_HEADER_FILE" \
+  "$HIVE_API/accounts/$HIVE_ACCOUNT_ID/workers/scripts/$HIVE_SCRIPT" \
+  -F 'metadata=@apps/hive/maintenance/metadata.json;type=application/json' \
+  -F 'worker.mjs=@apps/hive/maintenance/worker.mjs;type=application/javascript+module' \
+  -o "$HIVE_EVIDENCE/upload.json"
+```
+
+Disable public workers.dev and version preview URLs before adding any route;
+GET the script subdomain setting and require both flags to be false. This is
+part of the approved new-script operation, not an account-wide setting.
+
+```bash
+curl -fsS --max-time 30 -X POST -H @"$HIVE_HEADER_FILE" \
+  -H 'Content-Type: application/json' \
+  "$HIVE_API/accounts/$HIVE_ACCOUNT_ID/workers/scripts/$HIVE_SCRIPT/subdomain" \
+  --data '{"enabled":false,"previews_enabled":false}' \
+  -o "$HIVE_EVIDENCE/subdomain-disabled.json"
+```
+
+2. Add only the exact hostname route. This pattern covers HTTP and HTTPS.
+   [Route API](https://developers.cloudflare.com/api/resources/workers/subresources/routes/methods/create/):
+
+```bash
+curl -fsS --max-time 30 -X POST -H @"$HIVE_HEADER_FILE" \
+  -H 'Content-Type: application/json' \
+  "$HIVE_API/zones/$HIVE_ZONE_ID/workers/routes" \
+  --data '{"pattern":"hive.tuturuuu.com/*","script":"tuturuuu-hive-maintenance"}' \
+  -o "$HIVE_EVIDENCE/route-created.json"
+```
+
+Verify the branded 503 before detaching anything. If it fails, leave DNS and the
+tunnel unchanged and remove only this newly created route/script.
+
+3. Replace Hive DNS only. Preserve any freshly observed comment and tags in the
+   reviewed body. The investigated record has `comment: null`, `tags: []`.
+
+```bash
+curl -fsS --max-time 30 -X PATCH -H @"$HIVE_HEADER_FILE" \
+  -H 'Content-Type: application/json' \
+  "$HIVE_API/zones/$HIVE_ZONE_ID/dns_records/$HIVE_DNS_ID" \
+  --data '{"type":"AAAA","name":"hive.tuturuuu.com","content":"100::","ttl":1,"proxied":true}' \
+  -o "$HIVE_EVIDENCE/dns-updated.json"
+```
+
+GET the record to prove AAAA/`100::`/proxied and verify the maintenance page again.
+
+4. In the shared tunnel owner's write window, GET and compare the entire config
+   and version with the reviewed baseline, then PUT the exact approved body.
+   [Tunnel API](https://developers.cloudflare.com/api/resources/zero_trust/subresources/tunnels/subresources/cloudflared/subresources/configurations/methods/update/):
+
+```bash
+curl -fsS --max-time 30 -X PUT -H @"$HIVE_HEADER_FILE" \
+  -H 'Content-Type: application/json' \
+  "$HIVE_API/accounts/$HIVE_ACCOUNT_ID/cfd_tunnel/$HIVE_TUNNEL_ID/configurations" \
+  --data-binary @"$HIVE_EVIDENCE/tunnel-after-body.json" \
+  -o "$HIVE_EVIDENCE/tunnel-updated.json"
+```
+
+GET again. Require no Hive ingress and byte-identical serialized surviving rules
+and global options. Record the new config version. No origin restart, tunnel
+restart, token rotation or other hostname mutation is part of this operation.
+
+## Verification and stop fence
+
+```bash
+curl -sS --max-time 15 -D "$HIVE_EVIDENCE/hive-headers.txt" \
+  https://hive.tuturuuu.com/ -o "$HIVE_EVIDENCE/hive-page.html"
+curl -sS --max-time 15 -I https://hive.tuturuuu.com/vi
+curl -sS --max-time 15 -i https://hive.tuturuuu.com/api/v1/hive/servers
+curl -sS --max-time 15 -i -H 'Connection: Upgrade' -H 'Upgrade: websocket' \
+  -H 'Sec-WebSocket-Version: 13' -H 'Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==' \
+  https://hive.tuturuuu.com/realtime
+curl -sS --max-time 15 -o /dev/null -w '%{http_code}\n' https://tuturuuu.com/
+```
+
+Require 503, the maintenance marker, both languages, no-store/noindex and
+Retry-After on Hive; no 101 handshake; no new regression on the main hostname
+relative to its recorded baseline. Verify DNS and the full tunnel config through
+GET, not flattened public DNS alone. No probe targets Finance.
+
+Per request, this module returns one fixed-size response, reads no body and
+performs zero subrequests/storage operations. It creates no retry loop, alarm,
+queue or scheduled job. New ingress can still incur request charges; this is not
+a total-spend cap. The durable control-plane stop is deletion of the exact Hive
+route with DNS left at the discard address, followed by script deletion after
+route absence is verified. Test the deletion/absence sequence on the separately
+approved staging hostname before production activation. Local response tests
+cannot prove hosted stop propagation. Record that evidence in
+[Oxc/Cloudflare adoption](/build/development-tools/oxc-cloudflare-adoption).
+
+## Rollback by completed step
+
+Rollback restores the previous routing state, which may return the original
+502. Prefer keeping a functioning maintenance route when reversing a later step.
+Only change resources created or changed by this operation.
+
+| Completed step | Bounded rollback |
+| --- | --- |
+| Upload only | DELETE the new unreferenced script after verifying no routes/triggers |
+| Route only | DELETE its returned route ID; verify absence, then delete script if unused |
+| DNS changed | PUT the captured DNS body to the same record ID; keep maintenance route active |
+| Tunnel changed | GET current config; if it equals our after-body, PUT captured before-body; if it drifted, reconcile with the owner instead of overwriting |
+| Full reversal | Restore Hive ingress first, restore its CNAME second, delete exact route last, then delete unused script |
+
+```bash
+# Restore tunnel ONLY after confirming it still equals our after-body.
+curl -fsS --max-time 30 -X PUT -H @"$HIVE_HEADER_FILE" -H 'Content-Type: application/json' \
+  "$HIVE_API/accounts/$HIVE_ACCOUNT_ID/cfd_tunnel/$HIVE_TUNNEL_ID/configurations" \
+  --data-binary @"$HIVE_EVIDENCE/tunnel-before-body.json"
+curl -fsS --max-time 30 -X PUT -H @"$HIVE_HEADER_FILE" -H 'Content-Type: application/json' \
+  "$HIVE_API/zones/$HIVE_ZONE_ID/dns_records/$HIVE_DNS_ID" \
+  --data-binary @"$HIVE_EVIDENCE/dns-before-body.json"
+# HIVE_ROUTE_ID is ONLY the ID returned by this operation's route POST.
+curl -fsS --max-time 30 -X DELETE -H @"$HIVE_HEADER_FILE" \
+  "$HIVE_API/zones/$HIVE_ZONE_ID/workers/routes/$HIVE_ROUTE_ID"
+# After GET confirms route absence and script has no other references:
+curl -fsS --max-time 30 -X DELETE -H @"$HIVE_HEADER_FILE" \
+  "$HIVE_API/accounts/$HIVE_ACCOUNT_ID/workers/scripts/$HIVE_SCRIPT"
+```
+
+No rollback call is automatically executed. Reconcile unknown outcomes through
+GET before retrying. Keep the private baseline and results until the owner
+accepts the receipt; remove the private header file after the operation ends.

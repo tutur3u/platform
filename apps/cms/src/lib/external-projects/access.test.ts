@@ -6,8 +6,20 @@ import {
   hasCmsCommerceStorefrontPublishPermission,
   hasCmsCommerceStorefrontReadPermission,
   hasCmsConnectedChatReadPermission,
+  hasRootExternalProjectsAdminPermission,
   sanitizeCmsBindingSettings,
 } from './access';
+
+vi.mock('@tuturuuu/satellite/auth', () => ({
+  getSatelliteAppSessionUser: vi.fn(),
+}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: vi.fn(),
+}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: vi.fn(),
+  normalizeWorkspaceId: vi.fn(),
+}));
 
 function permissionsWith(values: string[]) {
   return {
@@ -115,5 +127,21 @@ describe('CMS connected chat permissions', () => {
         permissionsWith(['publish_external_projects'])
       )
     ).toBe(false);
+  });
+});
+
+describe('CMS root administration', () => {
+  it('requires the CMS permission rather than role administration', () => {
+    expect(
+      hasRootExternalProjectsAdminPermission(
+        permissionsWith(['manage_workspace_roles'])
+      )
+    ).toBe(false);
+    expect(
+      hasRootExternalProjectsAdminPermission(
+        permissionsWith(['manage_external_projects'])
+      )
+    ).toBe(true);
+    expect(hasRootExternalProjectsAdminPermission(null)).toBe(false);
   });
 });

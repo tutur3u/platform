@@ -67,7 +67,7 @@ describe('Forms root-only admission', () => {
     }
   });
 
-  it.each(['forms.tuturuuu.com', 'forms-staging.tuturuuu.com'])(
+  it.each(['forms.tuturuuu.com', 'forms.staging.tutur3u.com'])(
     'admits %s at its root',
     async (host) => {
       const ctx = { waitUntil: vi.fn() };

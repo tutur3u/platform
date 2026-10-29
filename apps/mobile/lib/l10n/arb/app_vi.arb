@@ -1,5 +1,28 @@
 {
+  "mastermindAskedBy": "Từ {by}",
+  "@mastermindAskedBy": {
+    "placeholders": {
+      "by": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindUnrecognisedValue": "Giá trị không được nhận diện",
+  "mastermindAskTruncated": "Yêu cầu bị rút gọn; xem toàn văn trên máy Mac",
+  "mastermindReplyFailedShort": "Chưa gửi · chạm để thử lại",
+  "mastermindReplySendingOption": "Đang gửi “{option}”",
+  "@mastermindReplySendingOption": {"placeholders": {"option": {"type": "String"}}},
+  "mastermindReplyWriteOwn": "Tự viết câu trả lời",
+  "mastermindReplySendOption": "Gửi “{option}”",
+  "@mastermindReplySendOption": {"placeholders": {"option": {"type": "String"}}},
+  "mastermindAskedAt": "Đã hỏi {age} · {time}",
+  "@mastermindAskedAt": {"placeholders": {"age": {"type": "String"}, "time": {"type": "String"}}},
+  "mastermindReplyUndo": "Hoàn tác",
+  "mastermindReplyNotSentReview": "Không gửi được · mở để xem lại",
+  "mastermindAnswerExpand": "Xem toàn bộ câu trả lời",
+  "mastermindAnswerCollapse": "Thu gọn",
+  "mastermindReplyQueuedAt": "Đã xếp hàng {time}",
+  "@mastermindReplyQueuedAt": {"placeholders": {"time": {"type": "String"}}},
   "assistantDownloadPhasePending": "Đang chờ",
   "assistantDownloadPhaseQueued": "Trong hàng đợi",
   "assistantDownloadPhaseTransferring": "Đang tải xuống",
@@ -416,6 +439,27 @@
     "placeholders": {
       "count": {
         "type": "int"
+      }
+    }
+  },
+  "@inventoryItemAvailable": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@inventoryItemMoreLocations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@inventoryScanMatches": {
+    "placeholders": {
+      "code": {
+        "type": "String"
       }
     }
   },
@@ -1297,6 +1341,7 @@
   "assistantAttachmentUploadFailed": "Không tải được tệp đính kèm. Hãy xóa tệp và thử lại trước khi gửi.",
   "assistantAttachmentFailureForbidden": "Cuộc trò chuyện này không nhận tệp đính kèm. Hãy xóa tệp hoặc bắt đầu cuộc trò chuyện mới.",
   "assistantAttachmentFailureNetwork": "Tải lên bị gián đoạn. Kiểm tra kết nối rồi nhấn Thử lại.",
+  "assistantAttachmentFailureNewChatRequired": "Hãy bắt đầu cuộc trò chuyện mới trước, rồi đính kèm lại tệp.",
   "assistantAttachmentFailureServer": "Tải lên chưa hoàn tất. Nhấn Thử lại.",
   "assistantAttachmentFailureTooLarge": "Tệp lớn hơn 32 MB. Hãy xóa tệp hoặc đính kèm tệp nhỏ hơn.",
   "assistantAttachmentFailureUnsupported": "Không hỗ trợ loại tệp này. Hãy xóa tệp để gửi.",
@@ -2803,6 +2848,25 @@
   "inventorySalesTitle": "Tiêu đề",
   "inventorySaveProduct": "Lưu sản phẩm",
   "inventorySearchProducts": "Tìm sản phẩm",
+  "inventoryItemArchived": "Đã lưu trữ",
+  "inventoryItemsLoadFailed": "Không tải được sản phẩm",
+  "inventoryItemsLoadMoreFailed": "Không tải thêm được sản phẩm",
+  "inventoryItemAvailable": "Còn {amount}",
+  "inventoryItemMoreLocations": "Thêm {count} vị trí",
+  "inventoryItemNoStock": "Chưa thiết lập tồn kho",
+  "inventoryItemStockHidden": "Tồn kho bị ẩn",
+  "inventoryItemsEmptyTitle": "Chưa có sản phẩm",
+  "inventoryItemsNoMatch": "Không có sản phẩm phù hợp",
+  "inventoryItemsNoMatchMessage": "Tìm kiếm theo tên sản phẩm. Hãy thử tên khác hoặc xoá tìm kiếm.",
+  "inventoryItemsNoneArchived": "Không có sản phẩm đã lưu trữ",
+  "inventoryScanAction": "Quét mã",
+  "inventoryScanHint": "Hướng camera vào mã QR hoặc mã vạch của sản phẩm.",
+  "inventoryScanMatches": "Tên khớp với “{code}”",
+  "inventoryScanNotFound": "Không có sản phẩm nào trong không gian làm việc này khớp với mã này.",
+  "inventoryScanNotProduct": "Không thể dùng mã này để tìm sản phẩm.",
+  "inventoryScanSearchInstead": "Chuyển sang tìm kiếm",
+  "inventoryScanTitle": "Quét mã",
+  "inventoryScanUnavailable": "Không dùng được camera",
   "inventorySeasonHistoricalReadOnly": "Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.",
   "inventorySeasonPriceAsOf": "Giá mùa · {currency} · tại {asOf} (UTC) · ngày mùa theo {timeZone}",
   "inventorySeasonPriceCached": "Bản nháp ngoại tuyến sử dụng giá mùa đã lưu. Giá và tình trạng hàng sẽ được kiểm tra khi đồng bộ.",
@@ -4080,14 +4144,9 @@
   "taskBoardDetailParentTask": "Công việc cha",
   "taskBoardDetailPoints": "{count} điểm",
   "taskBoardDetailPriority": "Độ ưu tiên",
-  "taskBoardDetailPriorityCritical": "Nghiêm trọng",
-  "taskBoardDetailPriorityHigh": "Cao",
-  "taskBoardDetailPriorityLow": "Thấp",
   "taskBoardDetailPriorityNone": "Không ưu tiên",
-  "taskBoardDetailPriorityNormal": "Bình thường",
   "taskBoardDetailPriorityUpdated": "Đã cập nhật độ ưu tiên.",
   "taskBoardDetailProperties": "Thuộc tính",
-  "taskBoardDetailQuickActions": "Thao tác nhanh",
   "taskBoardDetailRecycleBin": "Thùng rác",
   "taskBoardDetailRecycleBinDescription": "Các công việc đã xóa từ bảng này. Chọn công việc để khôi phục hoặc xóa vĩnh viễn.",
   "taskBoardDetailRecycleBinEmpty": "Không có công việc đã xóa",
@@ -4409,6 +4468,22 @@
   "taskPortfolioUpdatePlaceholder": "Chia sẻ tiến độ mới nhất, trở ngại hoặc kết quả nổi bật...",
   "taskPortfolioUpdatePosted": "Đã đăng cập nhật.",
   "taskPortfolioUpdateSaved": "Đã lưu cập nhật.",
+  "taskQuickActionsDueDate": "Hạn chót",
+  "taskQuickActionsNoDate": "Không có",
+  "taskQuickActionsNoLabels": "Chưa có nhãn",
+  "taskQuickActionsRemoveStartDate": "Xóa ngày bắt đầu",
+  "taskQuickActionsStatus": "Trạng thái",
+  "taskQuickActionsUnassigned": "Chưa giao cho ai",
+  "taskTimelineLoadingTasks": "Đang tải công việc…",
+  "taskTimelineNotAllLoaded": "Một số việc chưa được tải",
+  "taskTimelineNothingToday": "Hôm nay chưa có việc nào",
+  "taskTimelineOngoing": "Ngày {day}/{total}, kết thúc {date}",
+  "taskTimelineRangeAll": "Tất cả",
+  "taskTimelineRangeMonth": "Tháng",
+  "taskTimelineRangeWeek": "Tuần",
+  "taskTimelineShowLater": "Hiện các việc về sau",
+  "taskTimelineShowOverdue": "Xem việc quá hạn",
+  "taskTimelineStarted": "Bắt đầu {date}",
   "tasksAllCaughtUp": "Đã hoàn thành tất cả!",
   "tasksAllCaughtUpSubtitle": "Không có công việc cần xử lý",
   "tasksCompleteByEndOfDay": "Hoàn thành trước cuối ngày",
@@ -4424,10 +4499,11 @@
   "tasksLoadError": "Không thể tải công việc lúc này",
   "tasksOverdue": "Quá hạn",
   "tasksPlanAhead": "Lên kế hoạch sớm",
-  "tasksPriorityCritical": "Nghiêm trọng",
   "tasksPriorityHigh": "Cao",
   "tasksPriorityLow": "Thấp",
-  "tasksPriorityNormal": "Bình thường",
+  "tasksPriorityMedium": "Trung bình",
+  "tasksPriorityNone": "Không có",
+  "tasksPriorityUrgent": "Khẩn cấp",
   "tasksRequiresAttention": "Cần xử lý ngay",
   "tasksTitle": "Công việc",
   "tasksUntitled": "Công việc chưa có tiêu đề",
@@ -4716,6 +4792,10 @@
   "workspaceHiddenDescription": "Chỉ bạn thấy danh sách này. Ẩn không thay đổi tư cách thành viên hay thông báo.",
   "workspaceHiddenEmpty": "Không có không gian làm việc đã ẩn",
   "workspaceHiddenLoadError": "Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.",
+  "workspaceManageTitle": "Quản lý không gian làm việc",
+  "workspaceVisibleTitle": "Không gian làm việc đang hiện",
+  "workspaceHiddenCurrentToast": "Đã ẩn không gian làm việc và chuyển sang một không gian đang hiện khác.",
+  "workspaceHiddenLastToast": "Tất cả không gian làm việc đã bị ẩn. Hãy hiện một không gian để tiếp tục.",
   "workspaceHiddenTitle": "Không gian làm việc đã ẩn",
   "workspaceHiddenUpdateError": "Không thể lưu thay đổi. Hãy thử lại khi có kết nối.",
   "workspaceHideAction": "Ẩn",
@@ -5138,6 +5218,16 @@
       }
     }
   },
+  "@mastermindItemFor": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindLaneAgeLine": {
     "placeholders": {
       "state": {
@@ -5200,7 +5290,24 @@
       }
     }
   },
+  "@mastermindNameProductArea": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindNeedsYouSeeAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindNotReportingCount": {
     "placeholders": {
       "count": {
         "type": "int"
@@ -5218,6 +5325,20 @@
     "placeholders": {
       "option": {
         "type": "String"
+      }
+    }
+  },
+  "@mastermindPublishedAgo": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindQueuedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   },
@@ -5286,6 +5407,16 @@
       }
     }
   },
+  "@mastermindSectionWithBasis": {
+    "placeholders": {
+      "section": {
+        "type": "String"
+      },
+      "basis": {
+        "type": "String"
+      }
+    }
+  },
   "@mastermindSecurityLine": {
     "placeholders": {
       "product": {
@@ -5310,6 +5441,13 @@
     "placeholders": {
       "value": {
         "type": "String"
+      }
+    }
+  },
+  "@mastermindShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
       }
     }
   },
@@ -5480,7 +5618,11 @@
   },
   "mastermindAccountFilter": "Tài khoản",
   "mastermindActivityEmpty": "Chưa có hoạt động gần đây",
+  "mastermindActivityFailed": "Lỗi",
+  "mastermindActivityIdle": "Nhàn rỗi",
+  "mastermindActivityRunning": "Đang chạy",
   "mastermindActivityTitle": "Hoạt động",
+  "mastermindActivityWaiting": "Đang chờ",
   "mastermindAgeBasis": "Cơ sở tính tuổi",
   "mastermindAgeDays": "{count, plural, other{{count} ngày trước}}",
   "mastermindAgeHours": "{count, plural, other{{count} giờ trước}}",
@@ -5624,13 +5766,16 @@
   "mastermindForecastNone": "Không dự kiến hết trước khi đặt lại",
   "mastermindFreshCached": "từ bộ đệm",
   "mastermindFreshFresh": "mới",
+  "mastermindFromFleet": "Từ báo cáo đội tác nhân",
+  "mastermindFromLanes": "Theo báo cáo của luồng việc",
   "mastermindGroupActions": "Hành động",
   "mastermindGroupDecisions": "Quyết định dành cho bạn",
   "mastermindGroupFyi": "Để bạn nắm thông tin",
   "mastermindInboxNoMatches": "Không có mục phù hợp",
-  "mastermindInboxSearchPlaceholder": "Tìm trong Cần bạn",
+  "mastermindInboxSearchPlaceholder": "Tìm yêu cầu",
   "mastermindInsightsLabel": "Phân tích",
   "mastermindItemAnsweredTitle": "Mục này đã được trả lời hoặc rút lại",
+  "mastermindItemFor": "{kind} cho {subject}",
   "mastermindItemGoneTitle": "Mục này không còn trong Mastermind",
   "mastermindItemUpdated": "Câu hỏi này đã được cập nhật",
   "mastermindKindAction": "Hành động",
@@ -5669,7 +5814,9 @@
   "mastermindLiveAgo": "Lên production {age}",
   "mastermindLiveFor": "đã chạy {duration}",
   "mastermindMeasuredRuns": "{count, plural, other{{count} lượt chạy có đo}}",
+  "mastermindModelNotReported": "Chưa có thông tin mô hình",
   "mastermindMore": "Xem thêm",
+  "mastermindNameProductArea": "{product} {area}",
   "mastermindNeedsAttention": "Cần chú ý",
   "mastermindNeedsYouHint": "Trả lời trong Inbox trên máy Mac.",
   "mastermindNeedsYouSeeAll": "Xem tất cả ({count})",
@@ -5679,18 +5826,23 @@
   "mastermindNoSnapshotTitle": "Mastermind chưa phát hành dữ liệu nào",
   "mastermindNotConfiguredMessage": "Bản dựng này chưa kết nối Mastermind.",
   "mastermindNotConnectedTitle": "Chưa kết nối",
+  "mastermindNotReported": "Chưa có dữ liệu",
+  "mastermindNotReportingCount": "{count} chưa báo cáo",
   "mastermindNotReversible": "Không thể hoàn tác",
   "mastermindNothingNeedsReply": "Không có gì cần trả lời",
   "mastermindNothingNeedsYou": "Không có việc cần bạn",
   "mastermindNowLabel": "Hiện tại",
   "mastermindObservedAt": "Thời điểm ghi nhận",
   "mastermindOfflineShowing": "Ngoại tuyến · đang hiển thị {time}",
+  "mastermindOpensLanes": "Mở danh sách luồng việc",
   "mastermindOptionRecommended": "{option} · Đề xuất",
   "mastermindOriginLabel": "Nguồn gốc",
   "mastermindPartialBucket": "khoảng chưa trọn",
   "mastermindProductFilter": "Sản phẩm",
   "mastermindProductsLabel": "Sản phẩm",
-  "mastermindQuotaEmpty": "Chưa có dữ liệu hạn mức",
+  "mastermindPublishedAgo": "Cập nhật {age}",
+  "mastermindQueuedCount": "{count} trong hàng đợi",
+  "mastermindQuotaEmpty": "Chưa báo cáo hạn mức",
   "mastermindQuotaTitle": "Hạn mức",
   "mastermindRange24h": "24 giờ",
   "mastermindRange7d": "7 ngày",
@@ -5750,6 +5902,7 @@
   "mastermindScopeFleet": "Đội ngũ",
   "mastermindScopeModels": "Mô hình",
   "mastermindScopeUsage": "Mức sử dụng",
+  "mastermindSectionWithBasis": "{section} · {basis}",
   "mastermindSecurityFix": "Bản vá bảo mật",
   "mastermindSecurityGroup": "Bảo mật",
   "mastermindSecurityIssue": "Vấn đề bảo mật",
@@ -5803,6 +5956,7 @@
   "mastermindShipUntracked": "Chưa theo dõi",
   "mastermindShipWithheld": "Đã ẩn, xem trên máy Mac",
   "mastermindShipWithheldTooltip": "Chi tiết chỉ có trên máy Mac",
+  "mastermindShowAll": "Xem tất cả {count}",
   "mastermindSignOutAction": "Đăng xuất và đăng nhập lại",
   "mastermindSignOutConfirmAction": "Đăng xuất",
   "mastermindSignOutConfirmMessage": "Thao tác này đăng xuất bạn khỏi Tuturuuu trên thiết bị này, gồm mọi tài khoản đã lưu. Bạn sẽ cần đăng nhập lại.",
@@ -5857,7 +6011,7 @@
   "mastermindSummaryUsageLowest": "{account} còn ít nhất: {percent}.",
   "mastermindSummaryUsageShort": "Dự báo SHORT khi đặt lại lúc {time}.",
   "mastermindSummaryWeeklyNotReported": "Nguồn không báo cáo hạn mức tuần.",
-  "mastermindTabHome": "Tổng quan",
+  "mastermindTabHome": "Hôm nay",
   "mastermindTabInbox": "Hộp thư",
   "mastermindTabInsights": "Phân tích",
   "mastermindTabShip": "Phát hành",
@@ -5898,6 +6052,7 @@
   "mastermindUsageVerdictSurplus": "Dư",
   "mastermindUsageWeeklyLeft": "Tuần còn lại",
   "mastermindVersion": "Phiên bản",
+  "mastermindWaitingOnYou": "{count} chờ bạn",
   "mastermindWeekly": "Hằng tuần",
   "mastermindWeeklyLeft": "Tuần còn {value}",
   "mastermindWhy": "Lý do",
@@ -5937,8 +6092,27 @@
   "mastermindGapNoSamples": "Chưa công bố mẫu dữ liệu",
   "mastermindGapAccountSwitch": "Đã đổi tài khoản",
   "mastermindGapReset": "Đặt lại hạn mức",
-  "mastermindAskMissing": "Chưa công bố nội dung yêu cầu đầy đủ",
-  "mastermindRecentlyResolved": "Đã giải quyết gần đây",
+  "mastermindRecentlyResolved": "Đã xử lý gần đây",
+  "mastermindReplyPendingShort": "Đang chờ gửi",
+  "mastermindAskTitle": "Yêu cầu",
+  "mastermindOpensItem": "Mở yêu cầu",
+  "mastermindItemOpenOnMacReason": "Mastermind chưa công bố đầy đủ yêu cầu này. Hãy đọc trong Hộp thư trên máy Mac.",
+  "mastermindItemOpenOnMac": "Chi tiết đầy đủ trên máy Mac",
+  "mastermindResolvedOutcome": "Kết quả",
+  "mastermindResolvedNoAnswer": "Mastermind đã đóng yêu cầu này mà không ghi lại câu trả lời.",
+  "mastermindResolvedAnswer": "Câu trả lời: {answer}",
+  "mastermindResolvedWith": "Đã xử lý · {answer}",
+  "mastermindResolvedState": "Đã xử lý",
+  "mastermindNothingResolvedReason": "Yêu cầu sẽ hiện ở đây khi Mastermind ghi nhận câu trả lời.",
+  "mastermindNothingResolved": "Chưa có yêu cầu nào được xử lý gần đây",
+  "mastermindNothingNeedsYouReason": "Mastermind sẽ hiện yêu cầu ở đây khi một luồng cần bạn trả lời.",
+  "mastermindInboxNoMatchesReason": "Không có mục nào trong chế độ xem này khớp với tìm kiếm hoặc bộ lọc.",
+  "mastermindInboxClearFilters": "Xóa tìm kiếm và bộ lọc",
+  "mastermindInboxSearchAction": "Tìm trong Hộp thư",
+  "mastermindInboxLoadingMore": "Đang tải thêm",
+  "mastermindInboxLoadMoreFailed": "Không tải thêm được yêu cầu.",
+  "mastermindInboxEndOfList": "Đó là tất cả yêu cầu",
+  "mastermindInboxResolvedSegment": "Đã xử lý",
   "mastermindLastChecked": "Kiểm tra lần cuối {time}",
   "@mastermindLastChecked": {
     "placeholders": {
@@ -5962,5 +6136,193 @@
     }
   },
   "mastermindThreadsTitle": "Hội thoại",
-  "mastermindBackToThreads": "Về Hội thoại"
+  "mastermindBackToThreads": "Về Hội thoại",
+  "@mastermindWaitingOnYou": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindResolvedWith": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindResolvedAnswer": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAnsweredOnPhone": "Đã trả lời trên điện thoại",
+  "mastermindAnsweredOnMac": "Đã trả lời trên Mac",
+  "mastermindAnsweredInChat": "Đã trả lời trong trò chuyện",
+  "mastermindAnsweredAutomatically": "Đã trả lời tự động",
+  "mastermindAnsweredElsewhere": "Đã trả lời ở nơi khác",
+  "mastermindAlreadyAnsweredOnPhone": "Đã được trả lời trên điện thoại",
+  "mastermindAlreadyAnsweredOnMac": "Đã được trả lời trên Mac",
+  "mastermindAlreadyAnsweredInChat": "Đã được trả lời trong trò chuyện",
+  "mastermindAlreadyAnsweredAutomatically": "Đã được trả lời tự động",
+  "mastermindAlreadyAnsweredElsewhere": "Đã được trả lời ở nơi khác",
+  "mastermindWithdrawnNoLongerNeeded": "Đã rút lại · không còn cần nữa",
+  "mastermindAnsweredByYou": "bạn",
+  "mastermindViaPhone": "trên điện thoại",
+  "mastermindViaMac": "trên Mac",
+  "mastermindViaChat": "trong trò chuyện",
+  "mastermindViaAuto": "tự động",
+  "mastermindAnsweredInBatch": "Đã trả lời theo lô",
+  "mastermindAlreadyAnsweredInBatch": "Đã được trả lời theo lô",
+  "mastermindViaBatch": "theo lô",
+  "mastermindAskDeadlineWithinHours": "Cần trả lời trong vài giờ",
+  "mastermindAskDeadlineToday": "Cần trả lời hôm nay",
+  "mastermindAskDeadlineTonight": "Cần trả lời tối nay",
+  "mastermindAskDeadlineThisWeek": "Cần trả lời trong tuần này",
+  "mastermindAskUrgencyHigh": "Ưu tiên cao",
+  "mastermindAskUrgencyUrgent": "Khẩn cấp",
+  "mastermindAskWhyRecommended": "Vì sao được đề xuất",
+  "mastermindAskIfNoAnswerTitle": "Nếu bạn không trả lời",
+  "mastermindAskIfNoAnswer": "Nếu không trả lời: {option}",
+  "mastermindAskRisk": "Rủi ro: {risk}",
+  "mastermindAskReversible": "Có thể hoàn tác sau",
+  "mastermindAskNotReversible": "Không thể hoàn tác",
+  "mastermindAskBlocks": "{count, plural, other{Đang chặn {count} luồng}}",
+  "mastermindAskDueAt": "Hạn {time}",
+  "mastermindAskAnsweredPhone": "Đã trả lời trên điện thoại",
+  "mastermindAskAnsweredMac": "Đã trả lời trên máy Mac",
+  "mastermindAskAnsweredChat": "Đã trả lời trong cuộc trò chuyện",
+  "mastermindAskAnsweredAuto": "Đã trả lời tự động",
+  "mastermindAskAnsweredBatch": "Đã trả lời theo lô",
+  "mastermindAskAnsweredElsewhere": "Đã trả lời ở nơi khác",
+  "mastermindAskLinksTitle": "Liên kết",
+  "mastermindAskLaneLink": "Luồng ⟶",
+  "mastermindAskActionAnswer": "Trả lời tại đây",
+  "mastermindAskActionRunOnMac": "Thực hiện trên máy Mac",
+  "mastermindAskActionPhysical": "Cần một bước thực tế",
+  "mastermindAskActionFyi": "Để bạn biết",
+  "mastermindAskRemindAtMac": "Nhắc tôi khi ở máy Mac",
+  "mastermindAskRemindAtMacSoon": "Sắp ra mắt",
+  "mastermindCatchupTitle": "Từ lần bạn xem gần nhất",
+  "mastermindCatchupWindowSince": "Từ lần ghé thăm trước",
+  "mastermindCatchupWindowDay": "24 giờ qua",
+  "mastermindCatchupWelcome": "Chào mừng đến với Mastermind. Đây là những gì đã diễn ra trong ngày qua.",
+  "mastermindCatchupQuiet": "Không có gì mới từ lần bạn xem trước",
+  "mastermindCatchupQuietFirstRun": "Chưa có gì xảy ra trong ngày qua.",
+  "mastermindCatchupPartial": "Một số cập nhật có thể bị thiếu",
+  "mastermindCatchupSectionShipped": "Đã phát hành",
+  "mastermindCatchupSectionBlocked": "Bị chặn",
+  "mastermindCatchupSectionChanged": "Thay đổi",
+  "mastermindCatchupSectionUsage": "Mức dùng & sức khỏe",
+  "mastermindCatchupSectionOther": "Cập nhật khác",
+  "mastermindCatchupCountNeedsYou": "{count, plural, other{{count} cần bạn}}",
+  "@mastermindCatchupCountNeedsYou": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountShipped": "{count} đã phát hành",
+  "@mastermindCatchupCountShipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountBlocked": "{count} bị chặn",
+  "@mastermindCatchupCountBlocked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountChanged": "{count} thay đổi",
+  "@mastermindCatchupCountChanged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupNewDivider": "Mới từ lần ghé thăm trước",
+  "mastermindCatchupShowEarlier": "Hiện {count} mục cũ hơn",
+  "@mastermindCatchupShowEarlier": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupSecurityUpdate": "Cập nhật bảo mật",
+  "mastermindCatchupOnIt": "{name} đang xử lý",
+  "@mastermindCatchupOnIt": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindCatchupButton": "Cập nhật cho tôi",
+  "mastermindCatchupRefreshing": "Đang cập nhật…",
+  "mastermindCatchupUpToDate": "Bạn đã cập nhật mới nhất",
+  "mastermindCatchupFailed": "Không cập nhật được. Thử lại.",
+  "mastermindCatchupOpensLink": "Mở trong trình duyệt",
+  "mastermindCatchupGroupLabel": "{product}, {count, plural, other{{count} cập nhật}}",
+  "@mastermindCatchupGroupLabel": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelNow": "vừa xong",
+  "mastermindRelMinutes": "{count} phút",
+  "@mastermindRelMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelHours": "{count} giờ",
+  "@mastermindRelHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelHoursMinutes": "{hours} giờ {minutes} phút",
+  "@mastermindRelHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelDays": "{count} ngày",
+  "@mastermindRelDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelShowExact": "Xem giờ chính xác",
+  "mastermindCatchupSettingsAction": "Cài đặt bản tin",
+  "mastermindMorningCatchup": "Bản tin buổi sáng",
+  "mastermindMorningCatchupSubtitle": "Một thông báo cho biết bản tin đã sẵn sàng. Lưu trên thiết bị này; việc gửi sẽ bắt đầu khi hub hỗ trợ.",
+  "mastermindMorningCatchupTime": "Giờ",
+  "mastermindCatchupPushBody": "Bản tin của bạn đã sẵn sàng"
 }

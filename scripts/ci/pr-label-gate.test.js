@@ -6,6 +6,7 @@ const {
 } = require('./github-expression-test-helper');
 const {
   ADMISSION_PR_WORKFLOWS,
+  REUSABLE_GATED_WORKFLOWS,
   ALWAYS_ON_PR_WORKFLOWS,
   HEAVY_PR_WORKFLOWS,
   PAUSED_PR_WORKFLOWS,
@@ -26,7 +27,7 @@ const PROTECTED_TRIGGERS = {
   'ai-cloudflare.yaml': '1e5f4be0329251eb',
   'api-worker.yaml': '058d68d5d261d527',
   'apps-cloudflare.yaml': '5dadb22de50806df',
-  'biome-check.yaml': '47acd08d33c6cf4c',
+  'biome-check.yaml': '6c39e758f15186ed',
   'calendar-cloudflare.yaml': 'e3e096233a6e8a60',
   'calendar-generation-contract.yaml': '0a3cc2c97958f5cd',
   'cms-cloudflare.yaml': '5f4174ce584d0533',
@@ -40,12 +41,12 @@ const PROTECTED_TRIGGERS = {
   'desktop-beta.yaml': '3d1e23b37a961485',
   'devbox-control-cloudflare.yaml': 'af0d91d571550c3f',
   'discord-python-ci.yml': 'df10679b45d420bb',
-  'docs-seo-check.yaml': '6305e545b85b27e8',
+  'docs-seo-check.yaml': '78c7f5ff99020ac9',
   'external-internal-packages.yaml': '4d532cf88497bbd2',
   'external-project-storage-analytics-contract.yaml': '02e3e1d0d939ac56',
   'finance-cloudflare.yaml': 'd5dc7fa96048fd6b',
   'forms-cloudflare.yaml': '4c98fb3cb1df4d96',
-  'i18n-check.yaml': '6305e545b85b27e8',
+  'i18n-check.yaml': '78c7f5ff99020ac9',
   'inventory-cloudflare.yaml': '4558d318d6aaaba3',
   'inventory-offline-contract.yaml': '0a3cc2c97958f5cd',
   'lettin-cloudflare.yaml': 'd043498fabfde801',
@@ -66,6 +67,7 @@ const PROTECTED_TRIGGERS = {
   'programming-app-builds.yaml': '0a3cc2c97958f5cd',
   'programming-database-contract.yaml': '0a3cc2c97958f5cd',
   'report-review-receipts-contract.yaml': '433352a4fb0e56e6',
+  'required-account-mfa-contract.yaml': 'f803778bc2859492',
   'sdk-package-qualification.yaml': '0a3cc2c97958f5cd',
   'security-egress-contract.yaml': '0a3cc2c97958f5cd',
   'shortener-cloudflare.yaml': '95e0a84a4fdf354e',
@@ -98,7 +100,12 @@ function prReachable(workflow) {
   if (Object.hasOwn(on, 'pull_request_target')) return true;
   if (!Object.hasOwn(on, 'push')) return false;
   const branches = on.push?.branches;
-  return !branches || branches.some((b) => !['main', 'production'].includes(b));
+  return (
+    !branches ||
+    branches.some(
+      (b) => !['main', 'production', 'release-please--branches--**'].includes(b)
+    )
+  );
 }
 
 function pullRequest(labels, action = 'synchronize', label) {
@@ -153,10 +160,12 @@ test('every PR-reachable workflow is classified exactly once', () => {
   assert.deepEqual([...classified].sort(), reachable.sort());
 });
 
-for (const file of HEAVY_PR_WORKFLOWS) {
+for (const file of [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS]) {
   test(`${file}: every PR job carries the ready-for-ci gate`, () => {
     const workflow = workflows[file];
-    const pr = events(workflow).pull_request;
+    const pr =
+      events(workflow).pull_request ??
+      events(workflows['pr-checks.yaml']).pull_request;
     assert.ok(pr, 'heavy workflows validate PRs through pull_request');
     for (const type of [
       'opened',
@@ -248,9 +257,9 @@ for (const file of [...ALWAYS_ON_PR_WORKFLOWS, ...PAUSED_PR_WORKFLOWS]) {
 test('main, production, schedule and manual triggers are untouched', () => {
   assert.deepEqual(
     Object.keys(PROTECTED_TRIGGERS).sort(),
-    [...HEAVY_PR_WORKFLOWS].sort()
+    [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS].sort()
   );
-  for (const file of HEAVY_PR_WORKFLOWS) {
+  for (const file of [...HEAVY_PR_WORKFLOWS, ...REUSABLE_GATED_WORKFLOWS]) {
     assert.equal(
       protectedTriggerDigest(file, workflows[file].on),
       PROTECTED_TRIGGERS[file],
@@ -273,4 +282,128 @@ test('the unwrap is exact for plain, expression and missing conditions', () => {
   );
   assert.equal(withoutPrLabelGate(PR_LABEL_GATE), undefined);
   assert.equal(withoutPrLabelGate(plain), plain);
+});
+
+test('heavy job conditions reject unlabelled events for humans, bots, fleet and stacks', () => {
+  for (const file of HEAVY_PR_WORKFLOWS) {
+    const workflow = workflows[file];
+    const needs = Object.fromEntries(
+      Object.keys(workflow.jobs).map((id) => [
+        id,
+        {
+          result: 'success',
+          outputs: {
+            should_run: 'true',
+            run_checks: 'true',
+            affected_jobs: '{}',
+          },
+        },
+      ])
+    );
+    for (const actor of [
+      'Sokora',
+      'vhpx',
+      'dependabot[bot]',
+      'claude[bot]',
+      'github-actions[bot]',
+    ]) {
+      for (const action of ['opened', 'synchronize', 'reopened', 'labeled']) {
+        for (const base of ['main', 'chore/stack-parent']) {
+          const scope = {
+            ...pullRequest([], action),
+            needs,
+            inputs: {},
+          };
+          scope.github.actor = actor;
+          scope.github.ref = 'refs/pull/42/merge';
+          scope.github.event.pull_request.draft = false;
+          scope.github.event.pull_request.base = { ref: base };
+          const ready = structuredClone(scope);
+          ready.github.event.pull_request.labels = [{ name: READY_LABEL }];
+          for (const [id, job] of Object.entries(workflow.jobs)) {
+            const context = `${file}/${id}: ${actor}, ${action}, base=${base}`;
+            assert.equal(
+              Boolean(evaluateExpression(job.if, scope)),
+              false,
+              context
+            );
+            const original = withoutPrLabelGate(job.if);
+            assert.equal(
+              Boolean(evaluateExpression(job.if, ready)),
+              original === undefined ||
+                Boolean(evaluateExpression(original, ready)),
+              `${context}: labelled runs preserve the original job condition`
+            );
+          }
+        }
+      }
+    }
+  }
+});
+
+function assertProtectedPush(file, push) {
+  assert.ok(
+    push?.branches?.length,
+    `${file}: push needs explicit protected branches`
+  );
+  assert.equal(push['branches-ignore'], undefined, file);
+  for (const branch of push.branches) {
+    assert.ok(
+      ['main', 'production', 'release-please--branches--**'].includes(branch),
+      `${file}: ${branch} admits feature-branch pushes outside PR admission`
+    );
+  }
+}
+
+test('heavy workflows cannot start feature-branch push builds', () => {
+  for (const file of HEAVY_PR_WORKFLOWS) {
+    const on = events(workflows[file]);
+    if (Object.hasOwn(on, 'push')) assertProtectedPush(file, on.push);
+  }
+  const push = events(workflows['mail-calendar-tasks-builds.yaml']).push;
+  for (const branches of [
+    undefined,
+    ['**'],
+    ['main', 'feature/**'],
+    ['main', '!production'],
+  ]) {
+    assert.throws(() =>
+      assertProtectedPush('feature-bypass', { ...push, branches })
+    );
+  }
+});
+
+test('reported build push selectors preserve protected refs and release branches', () => {
+  assert.deepEqual(
+    events(workflows['mail-calendar-tasks-builds.yaml']).push.branches,
+    ['main']
+  );
+  assert.equal(
+    events(workflows['programming-app-builds.yaml']).push,
+    undefined
+  );
+  assert.deepEqual(events(workflows['i18n-check.yaml']).push.branches, [
+    'main',
+    'production',
+  ]);
+  for (const file of [
+    'turbo-unit-tests.yaml',
+    'type-check.yaml',
+    'biome-check.yaml',
+  ]) {
+    assert.deepEqual(
+      events(workflows[file]).push.branches,
+      ['main', 'production', 'release-please--branches--**'],
+      file
+    );
+  }
+  const release = workflows['release-please.yaml'];
+  assert.match(
+    JSON.stringify(release),
+    /release-please--branches--production/u
+  );
+  assert.match(
+    JSON.stringify(release),
+    /release-please--branches--production--release-notes/u
+  );
 });

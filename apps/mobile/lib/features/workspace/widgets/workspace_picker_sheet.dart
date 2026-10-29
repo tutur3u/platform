@@ -8,6 +8,7 @@ import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/features/workspace/widgets/create_workspace_dialog.dart';
 import 'package:mobile/features/workspace/widgets/workspace_picker_slivers.dart';
+import 'package:mobile/features/workspace/widgets/workspace_visibility_sheet.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -103,6 +104,20 @@ class _WorkspacePickerSheetState extends State<WorkspacePickerSheet> {
     }
   }
 
+  Future<void> _manage() async {
+    final cubit = context.read<WorkspaceCubit>();
+    await _close();
+    if (!widget.parentContext.mounted) return;
+    await showAppSheet<void>(
+      context: widget.parentContext,
+      size: AppSheetSize.large,
+      builder: (_) => BlocProvider.value(
+        value: cubit,
+        child: const WorkspaceVisibilitySheet(),
+      ),
+    );
+  }
+
   Future<void> _create() async {
     await _close();
     if (!widget.parentContext.mounted) return;
@@ -174,7 +189,7 @@ class _WorkspacePickerSheetState extends State<WorkspacePickerSheet> {
                 ? l10n.workspaceHiddenDescription
                 : widget.mode == WorkspacePickerMode.defaultWorkspace
                 ? l10n.workspacePickerDefaultDescription
-                : l10n.workspacePickerCount(choices.length),
+                : null,
             search: AppSheetSearch(
               controller: _search,
               hint: l10n.workspacePickerSearchHint,
@@ -189,17 +204,28 @@ class _WorkspacePickerSheetState extends State<WorkspacePickerSheet> {
                   child: Text(l10n.workspaceCreateSubmit),
                 ),
             ],
-            slivers: buildWorkspacePickerSlivers(
-              context,
-              data,
-              WorkspacePickerCallbacks(
-                onSelect: _select,
-                onSetHidden: _setHidden,
-                onRetryVisibility: cubit.refreshHiddenWorkspaces,
-                onClearSearch: _clearSearch,
-                onCreate: canCreate && !hiddenOnly ? _create : null,
+            slivers: [
+              if (!hiddenOnly && widget.mode == WorkspacePickerMode.current)
+                SliverToBoxAdapter(
+                  child: AppButton.outline(
+                    key: const ValueKey('workspace-picker-manage'),
+                    leading: const Icon(LucideIcons.eye, size: 16),
+                    onPressed: _manage,
+                    child: Text(l10n.workspaceManageTitle),
+                  ),
+                ),
+              ...buildWorkspacePickerSlivers(
+                context,
+                data,
+                WorkspacePickerCallbacks(
+                  onSelect: _select,
+                  onSetHidden: _setHidden,
+                  onRetryVisibility: cubit.refreshHiddenWorkspaces,
+                  onClearSearch: _clearSearch,
+                  onCreate: canCreate && !hiddenOnly ? _create : null,
+                ),
               ),
-            ),
+            ],
           );
         },
       );

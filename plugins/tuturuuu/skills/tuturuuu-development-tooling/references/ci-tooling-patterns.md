@@ -1,7 +1,6 @@
 # CI And Tooling Patterns
 
-Load this reference when changing root scripts, CI workflows, plugin validation,
-formatting behavior, or repo-wide verification.
+For root scripts, CI workflows, plugin validation, formatting and repo verification.
 
 ## Incremental Oxc and Worker adoption
 
@@ -185,15 +184,16 @@ See `apps/docs/build/devops/active-runtime.mdx`.
   <mod>::*;`; unit tests live in `src/tests.rs` (`mod tests;`). See
   `apps/backend/AGENTS.md` for the extraction pattern.
 
+## Heavy CI admission
+Use `PR_LABEL_GATE` for all PR actors/events. Heavy push triggers allow only
+protected refs and retained `release-please--branches--**` selectors, never feature
+branches. `pr-label-gate.test.js` covers both; keep release triggers/concurrency intact.
+
 ## Workflow token permissions
 
-The repository default `GITHUB_TOKEN` is write-all, so every workflow declares
-a workflow-level `permissions:` default of `contents: read` (or `{}`) and grants
-write scopes only on the jobs that use them. `check-ci` callers grant exactly
-`{contents: read, deployments: read}`, because GitHub refuses to start a run
-whose reusable workflow requests more than its caller grants.
-`scripts/ci/workflow-permissions.test.js` enforces the default, the reviewed
-workflow-level write allowlist, and caller and callee grants in both directions.
+Declare `permissions: contents: read` (or `{}`); grant writes per job. The repo
+default token is write-all. `check-ci` callers need `{contents: read, deployments: read}`.
+`workflow-permissions.test.js` checks defaults, write allowlists and callee grants.
 
 CodeQL PR uploads are diff-filtered; zero uploaded results do not clear the
 local SARIF gate. Triage at the analyzed SHA and current main: trace validation
@@ -248,12 +248,24 @@ destination paths in rename diffs (`--no-renames`), and preserve failed-prefligh
 propagation. Run `scripts/ci/mail-calendar-tasks-affected.test.js`, changed-file
 resolver, Calendar workflow contracts and the protected concurrency/config tests.
 
-Rank CI changes from timestamped run/job API inventories with sampling coverage
-and incomplete/cancelled runs stated. Separate job scheduling, prerequisite wait,
-runner execution, archive restores and actual Turbo task hits. Replay historical
-change ranges before estimating skipped allocations; final PR file lists can
-differ from the run's head. Report projected savings separately from observed
-exact-head hosted improvement; never weaken a gate to improve a timing figure.
+Rank CI changes from timestamped run/job inventories; state sampling and incomplete runs.
+Separate scheduling, prerequisites, execution, archive restores and Turbo task hits.
+Replay historical ranges; final PR files may differ. Keep projected and observed savings separate.
+For required checks use job-level gates, never workflow paths/paths-ignore. Test's
+`test-docs-only-gate.js` defaults to code on unknown ranges and every push; docs-only
+PRs skip only test/coverage shards and coverage upload. Root script tests remain
+ungated by the classifier and their failures always fail the unit summary, including
+for docs-only diffs. Docs-only summaries require successful classification and
+`skipped` heavy dependencies; failed, cancelled or missing results are not skips.
+Only the unit/coverage summary contexts may become required; skipped matrix jobs
+report unexpanded matrix names. Preserve security, admission and concurrency.
+Run the complete root suite using the discovery and Node flags in
+`turbo-unit-tests.yaml`, including supplemental action/database contracts, when
+changing this gate. Classifier tests alone miss existing summary contracts. Test
+every applicable summary shell step with explicit classification fixtures;
+retain all fresh root/shard/Rust, switchboard and stable-name failure cases.
+
+Self-hosted PR routing is default-off and limited to same-repository, non-bot `pull_request` jobs without secrets, installing with a frozen lockfile and no lifecycle scripts, with isolated state and an always-run workspace wipe. The variable values, canary and kill switch live in the [CI runbook](../../../../apps/docs/build/devops/github-actions-runbook.mdx#pr-runner-pool-variable-canary-and-kill-switch). When inventorying action steps, JavaScript actions have no `runs.steps`.
 
 Mobile PR selection lives in `scripts/ci/mobile-build-selection.ts`, called by the
 switchboard after explicit disable handling. Android remains the portable smoke;
@@ -744,11 +756,15 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   pass still counts as green under the speed grant. A new push to a labelled PR
   reruns CI and supersedes the old run. Retrigger without a push by removing and
   re-adding the label; `gh run rerun` replays the original event, so a
-  pre-label run stays skipped. Admission checks only label presence: any later
-  label event on a ready PR is a real admitted run in the same group, so a
-  skipped run can never mask a red one on a labelled PR. Skipped checks are not
+  pre-label run stays skipped. Most heavy workflows admit by label presence.
+  In the consolidated `pr-checks.yaml`, only `ready-for-ci` label changes rerun
+  selected validators; other label changes run CI admission and its aggregate
+  in unique non-cancelling groups, including the admission callee. Their gate
+  is named `Cheap PR Checks (label event)` so it cannot replace full validation
+  evidence under `Cheap PR Checks` on the same SHA. They provide admission
+  evidence only, not a new validation pass. Skipped checks are not
   evidence once the label is removed. The always-on CI Admitted check
-  (`ci-admitted.yaml`) reads current labels from a base-commit script. It is red
+  (`pr-checks.yaml` → `ci-admitted.yaml`) reads current labels from a base-commit script. It is red
   without the label, and on the push/label race, which it reports with re-add
   guidance. It is advisory: the base commit protects the script, not the
   PR-supplied workflow file. A missing base script fails red, never green. A
@@ -759,13 +775,18 @@ Preserve primary errors; receipts or observed errors alone never establish closu
   cancelling group. Do not add per-workflow admission jobs: they would allocate
   a hosted job on every unlabelled push. Gate every job of a new heavy PR workflow
   with `PR_LABEL_GATE` from `scripts/ci/pr-label-gate.js`, ANDed at the top
-  level. Add `labeled` to `pull_request.types`, keep label events in the
-  ordinary cancelling PR group, and classify the workflow there. Gate callers, never reusable callees; never use workflow-level
-  filters. Leave paused `if: false` jobs alone. Branch-push validators keep
+  level. Add `labeled` to `pull_request.types`; readiness label events share
+  the ordinary validation group, while metadata-only label events must use a
+  unique non-cancelling group. Classify the workflow there. Gate callers, never
+  reusable callees; never use workflow-level filters. Leave paused `if: false` jobs alone. Branch-push validators keep
   push only for `main`, `production` and `release-please--branches--**`; keep
   mutating jobs (Biome auto-format) push-only. Cheap script-only and security
   checks stay ungated. See the
   [runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx#label-gated-heavy-pr-ci-ready-for-ci).
+- Verify new third-party action pins through the owning repository's
+  `git/commits/<sha>` API. Annotated tag objects are also 40 hex digits; use the
+  tag's peeled commit. The offline pin suite rejects observed tag objects but
+  cannot establish arbitrary object types from syntax alone.
 - Consolidate PR-only release checks into the reusable CI config job with
   `check_pr_release_only: true`. Meet, Lettin and Parley compare the same PR base
   and head as before; production/manual events always return `run_checks=true`.

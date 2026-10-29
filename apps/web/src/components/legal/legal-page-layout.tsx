@@ -2,6 +2,7 @@ import { Code2, Mail } from '@tuturuuu/icons/lucide';
 import { ActionLink } from '@/components/marketing/action-link';
 import { PageHero } from '@/components/marketing/page-hero';
 import { AnimateInView } from './animate-in-view';
+import { LegalMarkdown } from './legal-markdown';
 import { LegalSectionCard } from './legal-section-card';
 import { LegalSummaryCard } from './legal-summary-card';
 import type { LegalPageConfig } from './legal-types';
@@ -28,8 +29,8 @@ export function LegalPageLayout({ config }: { config: LegalPageConfig }) {
   }));
 
   const effectiveDate = new Date(config.effectiveDate).toLocaleDateString(
-    'en-US',
-    { year: 'numeric', month: 'long', day: 'numeric' }
+    config.locale === 'vi' ? 'vi-VN' : 'en-US',
+    { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }
   );
 
   return (
@@ -52,13 +53,25 @@ export function LegalPageLayout({ config }: { config: LegalPageConfig }) {
             </ActionLink>
           </>
         }
-        description={`Effective ${effectiveDate}`}
+        description={`${config.locale === 'vi' ? 'Có hiệu lực từ' : 'Effective'} ${effectiveDate}`}
         eyebrow={config.badgeText}
         eyebrowIcon={config.badgeIcon}
         highlight={config.highlightedWord}
         title={config.title}
       />
 
+      {config.upcomingChanges && (
+        <div className="mx-auto max-w-6xl px-6 pb-6 text-sm">
+          <LegalMarkdown>
+            {config.locale === 'vi'
+              ? config.upcomingChanges.replace(
+                  '](/legal/changes)',
+                  '](/vi/legal/changes)'
+                )
+              : config.upcomingChanges}
+          </LegalMarkdown>
+        </div>
+      )}
       <section className="relative px-4 pb-24 sm:px-6 lg:px-8">
         <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
           <aside className="hidden lg:block">

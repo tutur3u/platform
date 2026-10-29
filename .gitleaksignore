@@ -1,0 +1,6 @@
+# RFC 6455 §1.3: published WebSocket handshake sample nonce (Tess-confirmed false positive).
+00f107166aab3428cc97e84e5284ec13ff127447:apps/docs/build/devops/hive-cloudflare-maintenance.mdx:generic-api-key:221
+# SR-327 rollback-test sentinels: hostile-session-bearer TEST values in the notification-trigger vault containment tests (#7113). Not real secrets (security triage 2026-10-29). Exact fingerprints only.
+1c8fdf9c9fdd85824f31d1fe562bb9b3c001f4dd:apps/database/verification/notification-trigger-vault-containment.sql:generic-api-key:53
+1c8fdf9c9fdd85824f31d1fe562bb9b3c001f4dd:apps/database/supabase/tests/notification-trigger-vault.sql:generic-api-key:25
+1c8fdf9c9fdd85824f31d1fe562bb9b3c001f4dd:apps/database/supabase/tests/notification-trigger-vault.sql:generic-api-key:100

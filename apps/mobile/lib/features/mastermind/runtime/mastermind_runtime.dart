@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/asks/ask_detail_source.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_refresh_scheduler.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/data/hub_capabilities.dart';
@@ -11,6 +12,7 @@ import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart'
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
 import 'package:mobile/features/mastermind/data/snapshot_source_factory.dart';
 import 'package:mobile/features/mastermind/data/snapshot_store_factory.dart';
+import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/hub_reply_transport.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_factories.dart';
@@ -28,10 +30,13 @@ final class MastermindRuntime {
     required this.snapshot,
     required this.scheduler,
     MastermindRepliesCubit? replies,
+    MastermindAnsweredElsewhereCubit? answered,
     MastermindSnapshotSource? source,
     MastermindReplyTransport? replyTransport,
+    this.askDetails,
     Stream<bool>? onlineChanges,
   }) : replies = replies ?? MastermindRepliesCubit(store: MemoryOutboxStore()),
+       answered = answered ?? MastermindAnsweredElsewhereCubit(),
        _source = source,
        _replyTransport = replyTransport {
     _accessSub = access.stream.listen(_onAccess);
@@ -58,6 +63,7 @@ final class MastermindRuntime {
     MastermindSnapshotStore? store,
     MastermindReplyTransport? replyTransport,
     MastermindOutboxStore? outboxStore,
+    MastermindAskDetailSource? askDetails,
     Stream<bool>? onlineChanges,
   }) {
     final resolved = source ?? createMastermindSnapshotSource();
@@ -69,6 +75,7 @@ final class MastermindRuntime {
     final transport =
         replyTransport ??
         (source == null ? createMastermindReplyTransport() : null);
+    final answered = MastermindAnsweredElsewhereCubit();
     return MastermindRuntime(
       access: MastermindAccessCubit(
         repository: permissions ?? WorkspacePermissionsRepository(),
@@ -86,9 +93,14 @@ final class MastermindRuntime {
         onAccessLost: (kind) => cubit.handleCapabilitiesUnavailable(
           CapabilitiesFetchUnavailable(kind),
         ),
+        isAnsweredElsewhere: answered.isAnswered,
       ),
+      answered: answered,
       source: resolved,
       replyTransport: transport,
+      askDetails:
+          askDetails ??
+          (source == null ? createMastermindAskDetailSource() : null),
       onlineChanges: onlineChanges ?? mastermindOnlineChanges(),
     );
   }
@@ -97,6 +109,13 @@ final class MastermindRuntime {
   final MastermindSnapshotCubit snapshot;
   final MastermindRefreshScheduler scheduler;
   final MastermindRepliesCubit replies;
+
+  /// Open asks answered elsewhere, lingering on screen before they move on.
+  final MastermindAnsweredElsewhereCubit answered;
+
+  /// The optional full-ask read; null unless `MASTERMIND_ASK_DETAILS` is on
+  /// and a live hub is configured.
+  final MastermindAskDetailSource? askDetails;
   final MastermindSnapshotSource? _source;
   final MastermindReplyTransport? _replyTransport;
   late final StreamSubscription<MastermindAccessState> _accessSub;
@@ -118,10 +137,14 @@ final class MastermindRuntime {
   void _onSnapshot(MastermindSnapshotState state) {
     switch (state) {
       case MastermindSnapshotReady():
+        // First: syncing replies cancels the undo window this reads.
+        answered.observe(state, replies.state);
         replies.syncSnapshot(state);
       case MastermindSnapshotInitial():
+        answered.clear();
         unawaited(replies.clear());
       case MastermindSnapshotUnavailable(:final kind) when kind.isAccessLost:
+        answered.clear();
         unawaited(replies.clear());
         if (kind == SnapshotUnavailableKind.forbidden) access.markForbidden();
       default:
@@ -135,6 +158,7 @@ final class MastermindRuntime {
     // Sync first: for the root workspace it emits `loading` synchronously, so a
     // deep link on screen is held rather than redirected during the switch.
     final synced = access.sync(wsId);
+    answered.clear();
     await Future.wait([snapshot.clear(), replies.clear()]);
     await synced;
   }
@@ -153,9 +177,11 @@ final class MastermindRuntime {
     await _snapshotSub.cancel();
     scheduler.dispose();
     await replies.close();
+    await answered.close();
     await snapshot.close();
     await access.close();
     if (_source case final HubHttpSnapshotSource live) live.close();
     if (_replyTransport case final HubReplyTransport live) live.close();
+    if (askDetails case final HubAskDetailSource live) live.close();
   }
 }

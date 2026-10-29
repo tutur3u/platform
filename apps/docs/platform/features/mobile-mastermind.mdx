@@ -58,29 +58,45 @@ connectivity alone changes.
 
 Home, Inbox, Work, Ship and Insights share one mini-app shell: the top navbar
 shows the destination title and no Back button, and the floating dock owns Back.
-Every tab sits behind the same access gate and freshness strip.
+Every tab sits behind the same access gate and freshness strip. Work is planned
+to become Threads (Home · Inbox · Threads · Ship · Insights); until the hub
+serves threads it shows today's lane list.
+
+In-screen views (Needs you | Decisions, Lanes | Backlog | Staff) use the compact
+`MastermindSegmentedControl`: a 32 pt track whose segments each own a 44 pt hit
+area, instead of the tall pill. When the segments cannot fit across at the
+current text size they stack into full-width 44 pt rows with a check on the
+selected one; the control never becomes a hidden horizontal scroller and labels
+are never truncated. List search uses `MastermindCollapsibleSearch`:
+hidden until the navbar search icon is tapped, kept
+open while a query is applied, folded away once cleared and unfocused. Every
+sheet opens on the root navigator so the floating dock never covers it.
 
 ## Freshness strip
 
-Every tab starts with one line, inside the scroll view. Data age is
+Each tab starts with one short line inside the scroll view. Data age is
 informational because publishing is manual at first; only a failed refresh or a
-degraded source is a warning. Times are absolute GMT+7.
+degraded source is a warning. The visible line carries an age or a short GMT+7
+time (with the day once the data is 20 hours old); screen readers hear the full
+sentence with the absolute GMT+7 date and time.
 
-| Condition | Strip |
+| Condition | Visible line |
 |---|---|
-| Published within 5 minutes | Updated `<time>` |
-| Older | Mastermind last published `<age>` · `<time>` |
+| Published within 5 minutes | Updated `<HH:mm>`, on Home only |
+| Older | Published `<age>` |
 | Refresh failed and the device has no connection | Offline · showing `<time>` |
 | Refresh failed while the device is online | Couldn't refresh · showing `<time>` |
 | Hub schema newer than the app | Update the app to read the latest Mastermind data · showing `<time>` |
 | Hub answered something unreadable | Couldn't read the latest update · showing `<time>` |
 | Any source not ok | appended: `<n>` sources degraded |
 
-The line is a live region, so a refresh that turns it into a warning is
-announced. With degraded sources it is tappable (44 dp tall) and opens the
-"Sources" bottom sheet: every source the snapshot reports, degraded ones first,
-each as a glyph, a name and a state word. Home also has a "Data sources" navbar
-action that opens the same sheet, whether or not a source is degraded.
+Healthy, fresh data hides the strip on every tab but Home. A warning tints only
+the glyph and a 3 pt leading bar; the text stays foreground so it keeps 4.5:1
+contrast in light mode. The line ellipsizes at normal text sizes and wraps past
+130%. It is a live region only while it is a warning. With degraded sources it
+is a 44 dp row with a chevron that opens the "Sources" sheet: every source the
+snapshot reports, degraded first, each as a glyph, a name and a state word.
+Home also has a "Data sources" navbar action that opens the same sheet.
 
 ## Before data arrives
 
@@ -98,61 +114,132 @@ A 401 can come from the Worker (audience or clock skew) rather than the
 session, and signing out removes every saved account on the device, so it is
 never the primary action and only runs after the user confirms.
 
-## Home
+## Home (Today)
 
-Needs you comes first, then lanes at a glance, ship, quota, activity and, last,
-recent decisions. Needs you lists up to three normal items (decision, then
-action, then FYI, then publisher order); "See all (N)" counts normal items
-only. Each Needs-you row opens its item detail with a push, so Back returns to
-Home. Replies queued on the device show as "N replies waiting to send"
-directly under Needs you, the same row as in the Inbox.
+The Home tab is labelled **Today**. Order: freshness strip, Catch-up, activity
+tiles, Needs you, replies waiting to send, Ship, Quota, Activity and, last,
+recent decisions. Home lists are capped and end in "Show all N" only when they
+hold more than the cap; Inbox shows every ask (see below).
 
-Each recent-decision row opens its decision detail with a push, so Back returns
-to Home, and "See all decisions" opens the Decisions segment of the Inbox.
-"See all", the lane chips, the Ship rows and "Usage" link to their tabs: a lane
-chip opens Work already filtered to that state, and a Ship row (a failing
-environment or a release) opens `/mastermind/ship?product=<product>`. A lane
-state with no lanes ("0 failed") uses the neutral list glyph; only a non-zero
-failed count carries the warning glyph.
+- **Activity tiles.** Running, Waiting, Idle and Failed, four across (two by
+  two past 130% text), each at least 44 × 72 and opening Work filtered to that
+  state. Waiting shows "`<n>` on you" when open decisions or actions wait on
+  the owner. A muted footnote reads "`<n>` queued · `<n>` not reporting" and
+  opens Work on queued lanes. Failed > 0 tints its glyph destructive; "0
+  failed" keeps a neutral glyph.
+- **Needs you.** Up to three normal items (decision, then action, then FYI,
+  then publisher order) with the count in the caption. The kind is a leading
+  glyph, the title is the display title, and the product is the second line
+  unless the title names it. Rows push the item detail, so Back returns Home.
+- **Ship.** Failing environments first, then the three most recent releases;
+  a release with no age reads `—` and sorts last. A basis shared by every row
+  moves into the caption ("Ship · GitHub deployment").
+- **Quota.** The three most urgent pools (the Insights order) with a sparkline;
+  a missing session budget or pacing reads `—`.
+- **Activity** and **recent decisions** show three each; decision rows push
+  their detail and "See all decisions" opens the Decisions segment.
 
 **Security rows** render as a single non-tappable "`<Product>` · security fix"
 line in a trailing "Security" group with no count. They have no severity, title
 or detail anywhere, are never counted, and never reorder anything. Event
 summaries apply the same collapse.
 
+### Catch-up
+
+Scope: Mastermind mobile, top of Today. It renders only when the snapshot
+carries a `catchup` object; no `/v1/catchup` route exists and the app calls
+none. Everything is optional on the wire, unknown enum values are tolerated and
+the parser never rejects the snapshot (`catchup/catchup_parser.dart`).
+
+- **Contract.** `catchup { generated_at, window_start, coverage
+  ok|partial|stale, products[{slug,name}], counts{needs_you,shipped,blocked,
+  changed}, sections[{key, items[{id, kind, title (80), product|null, at,
+  importance, link{label,url}|null, entity{kind,id}|null, neutral, reason?,
+  owner_name?}]}] }`, at most 20 items per section and 100 in all, enforced
+  again by the parser.
+- **Window.** Default is since the last visit (rendered-time marker kept per
+  device in local preferences); the first visit shows 24 hours. A visit ends
+  after 30 minutes without a render, so tab switches keep the window. Items are
+  filtered by `at` on the client. "Show N earlier" widens to 24 hours and draws
+  a "New since your last visit" divider where the new rows end in each product
+  group. Hub `counts` are used while nothing is filtered out; otherwise the
+  counts line is computed from the visible rows.
+- **Sections and groups.** Needs you, Shipped, Blocked, Changed, Usage & health,
+  each grouped per product (hub name, else the slug) under collapsible headers
+  whose state is remembered for the app session. Blocked rows show the reason
+  and who is on it.
+- **Taps.** `ask` opens `/mastermind/inbox/item/:id`, `lane` opens
+  `/mastermind/work/lane/:id`, `env` and `release` open Ship, `usage` opens
+  Usage. Otherwise the link opens in the system browser, only for `https`
+  `tuturuuu.com` or `*.tuturuuu.com`; any other URL is dropped at parse time. A
+  row with neither is not tappable.
+- **Neutral items** render "Security update" with no product, title or link;
+  the parser keeps only their kind, time and importance.
+- **Times.** Relative with the clock glyph (`now`, `12m`, `2h 13m`, `3d`);
+  long-press or a tap on the glyph shows the absolute time in
+  Asia/Ho_Chi_Minh.
+- **States.** First run, quiet, "Some updates may be missing" for partial or
+  stale coverage (or a hub window that starts after the view's), offline or
+  failed refresh from cache with the age line.
+- **Catch me up** and pull-to-refresh refetch the snapshot (no LLM) with
+  progress, an "up to date" confirmation and a failure message.
+- **Morning catch-up** (Today navbar, Catch-up settings): a local toggle and
+  time. The push body is the fixed line "Your catch-up is ready" with no
+  content. There is no app quiet-hours setting yet; the server must apply
+  quiet hours (`MorningCatchupSync` is the seam). Server scheduling is not part
+  of this change.
+
+Regression coverage: `apps/mobile/test/features/mastermind/catchup/`.
+
 ## Inbox
 
-The Inbox tab lists the open Needs-you items grouped by kind: "Decisions for
-you", "Actions", then "For your information", each with its count, in publisher
-order. Each card shows the title, the body (three lines until "More", a 44 dp target),
-kind and product chips and the options as read-only chips; the recommended option carries
-the word "Recommended" and a star, never colour alone. A search field
-("Search Needs you") and product chips narrow the list. Pull to refresh.
+The Inbox tab opens on one compact segmented control: **Needs you · Resolved ·
+Decisions**. Needs you lists the open asks grouped by kind ("Decisions for
+you", "Actions", then "For your information"), each with its count, in publisher
+order. Resolved groups hub history by GMT+7 day; see [resolved rows](/platform/features/mobile-mastermind-answered-elsewhere). Pull to refresh.
 
-- **Scope:** the Needs you segment lists normal Needs-you items only; the
-  Decisions segment is the journal (below).
+- **Rows** are two lines: the friendly title (`itemDisplayTitle`, so a redacted
+  `Product · area · kind` title uses the first ask line), then the
+  kind badge with state and age for open asks, or answer attribution and time
+  for resolved asks. A separate two-line preview retains the ask. No age is shown where the hub
+  publishes none. Open asks expose one-tap option buttons on Home and Inbox;
+  "More" and the full ask live on detail. The summary is one screen-reader node ("Decision. Review plan. Review the
+  plan", hint "Opens the ask").
+- **Every ask:** [lazy loading and paging](/platform/features/mobile-mastermind-inbox).
+- **Search** is hidden until the navbar search icon
+  of the list reveals it ("Search asks"); it covers every ask segment, including
+  the resolved answer. Product chips (one row, 44 pt targets) appear only while
+  two or more products are present.
+- **Empty and no-match states say why:** "Nothing needs you" (Mastermind lists
+  an ask here when a lane needs your answer), "Nothing resolved recently" (asks
+  appear once Mastermind records an answer), and
+  "No matching items" with a "Clear search and filters" row.
 - **Security rows** keep the Home rule: one non-tappable line in a trailing
   "Security" group with no count, never counted, searched or filtered, with no
-  severity, id or detail.
-- **Detail:** `/mastermind/inbox/item/:itemId` opens one item in full, pushed
+  severity, id or detail. Resolved does not show them.
+- **Detail:** `/mastermind/inbox/item/:itemId` opens one ask in full, pushed
   from the Inbox and from Home, so Back returns to whichever opened it, with
   the same search text and product chips (the shell pops an item location
-  instead of falling back to the Inbox). The page leads with the full title as a heading and shows the
-  full question as plain text, never clamped. The id is
-  an opaque snapshot id and only ever a route parameter; deep links carry tab
-  roots only and never ids. An id that is not an open item shows "This item is
-  no longer in Mastermind" (or "This was answered or withdrawn" when it left
-  while open) with a way back, never an error. A changed `version_hash` shows
-  "This question was updated".
+  instead of falling back to the Inbox). The navbar title is the kind
+  ("Decision"), so the title is not repeated; the page leads with the display
+  title as a heading and shows the full `ask_text` with tappable links, never clamped.
+  When the hub published only its "Open on Mac" stand-in, an info alert reads
+  "Full details are on the Mac" instead. The id is looked up among the open
+  asks, then the resolved history, and is only ever a route parameter; deep
+  links carry tab roots only and never ids. A resolved ask shows an "Outcome"
+  panel with answer attribution and GMT+7 time, or withdrawn status, and no composer. An id in neither
+  list shows "This item is no longer in Mastermind" (or "This was answered or
+  withdrawn" when it left while open) with a way back, never an error. A changed
+  `version_hash` shows "This question was updated".
 - **The "Reply on Mac" option** is a placeholder the publisher adds when an item
   has nothing to pick. It is never offered as a choice and the app never sends
   it.
 
 ### Decisions
 
-The Inbox opens on a "Needs you / Decisions" segmented control. The segment
-lives in the URL: Needs you is the bare `/mastermind/inbox` and Decisions is
-`/mastermind/inbox?segment=decisions` (an unknown value is Needs you).
+The segment lives in the URL: Needs you is the bare `/mastermind/inbox`, and
+Resolved and Decisions are `?segment=resolved|decisions`; old `all` maps to Needs you (an unknown
+value is Needs you).
 Switching is a `go`, never a push, so Back does not walk the segments. Home
 links straight to the Decisions segment.
 
@@ -204,9 +291,10 @@ switch, so it flips without a store release.
   `{schema_version: "1.4", item_id, version_hash, option_index | text}`: one of
   an option index (into the item's own `options[]`) or free text of at most 500
   characters, counted in code points, and at most 10 lines (the hub's limit; the
-  composer caps both as you type). Choosing an option clears the text and
-  typing clears the option. The text field has a placeholder and a counter. A
-  confirmation asks before anything is sent.
+  composer caps both as you type). An option sends its index after a five-second
+  undo window (see Undo window below).
+  The text field has a placeholder and a counter; free-text sending requires
+  confirmation.
 - **Idempotency:** the `Idempotency-Key` is a random v4 UUID from a secure
   generator, made once per reply and stored in the outbox before the first send.
   Every retry reuses it, so an unknown outcome never becomes a second reply. A
@@ -223,10 +311,8 @@ switch, so it flips without a store release.
   already accepted by the hub is unaffected. Logout,
   account switch and lost access erase the outbox with the snapshot cache, behind
   the same generation fences, so an in-flight send cannot revive it.
-- **409 `stale_item`:** the item is refreshed, the typed words are kept, and the
-  screen says "This question changed or was already answered. Review it again."
-  An option stays selected only if it is still the same option at the same
-  place. `idempotency_conflict` drops the queued entry with "Something went
+- **409 `stale_item`:** refreshes the item; see the [answered elsewhere rules](/platform/features/mobile-mastermind-answered-elsewhere).
+  Options always use the current question version. `idempotency_conflict` drops the queued entry with "Something went
   wrong with this reply. Review it and send it again."
 - **Other answers:** 400 (`unsafe_text` explains the text policy) and 413 keep
   the words to edit; 429 waits out `Retry-After` and disables the retry until
@@ -419,9 +505,40 @@ Delivery sections arrive later and reuse the table route below).
 
 ## Product decisions
 
+- **True activity counts.** Scope: Home tiles now; the lane list header and a
+  Threads badge read the same `MastermindActivity` model. Default: running,
+  waiting and idle come from the hub's `work.counts` only when its status is
+  `ok` and `checked_at` is within 15 minutes of the snapshot; stale/down
+  readings fall back to the latest `observability.fleet.series` point when
+  coverage is ok or partial and it is at most 15 minutes older than
+  `generated_at`, else from lane states, captioned "From lane reports". Queued
+  and failed always come from lanes; unknown or stale lanes are a "not
+  reporting" footnote, never a headline. "On you" counts open decisions and
+  actions, never FYI. Coverage: `presentation/activity_model_test.dart`,
+  `view/mastermind_home_v1_test.dart`.
+- **Friendly names.** Scope: every row and detail title. Default: the hub's
+  `[Name] Role` title shows verbatim; a redacted `Product · area · kind` title
+  is never shown: a lane uses its standing role, or "`<Product>` `<area>`" for
+  a child lane; an item uses its real title or first ask line. Models shorten
+  to "Sonnet 5.5" or "GPT-6.1 sol"; an unknown model reads "Model not
+  reported". Coverage: `presentation/display_names_test.dart`.
+- **No bare unknown.** Scope: Home now, Ship and Insights next. Default: a
+  missing, blank or "unknown" reading renders a muted `—` (`ReportedText`)
+  announced as "Not reported" plus the hub's reason; the word "unknown" never
+  stands alone. Coverage: `view/mastermind_home_v1_test.dart`,
+  `view/forge_v1_fixture_test.dart`.
+
+- **Resolved is the hub's word.** Scope: Inbox rows, the item detail, the
+  Resolved segment. Default: an ask reads "Resolved" only once the hub
+  lists it in `decisions_resolved`; a reply this device sent reads "Sent ·
+  waiting for Mastermind" (with its GMT+7 queued time on the detail) until then,
+  never Resolved. Exceptions: an ask that leaves the snapshot without a history
+  row reads "This was answered or withdrawn". Coverage:
+  `view/mastermind_inbox_v1_test.dart` ("a sent reply reads Sent · waiting until
+  the hub resolves", "a resolved ask shows the hub outcome").
 - **Decisions journal.** Scope: the Inbox Decisions segment, the decision
-  detail and Home's recent-decisions card. Default: the Inbox has a Needs you /
-  Decisions segmented control with the segment in the URL; Home rows open the
+  detail and Home's recent-decisions card. Default: the Inbox segmented control
+  ends with Decisions, its segment in the URL; Home rows open the
   detail and "See all decisions" opens the segment. Exceptions: the journal is
   history and is not answerable; search and risk/area filters are not offered
   yet. Coverage: `mastermind_decisions_test.dart`,
@@ -488,7 +605,7 @@ signed hub events and sends a mobile push to Mastermind owners.
 
 ## Deferred to PR8
 
-- **Activity cursor (spec 2.10).** Home shows the latest five events from
+- **Activity cursor (spec 2.10).** Home shows the latest three events from
   `now.digest` as display only. The "new since you last looked" cursor and the
   full Activity feed arrive with PR8.
 
@@ -520,12 +637,16 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   links, redaction.
 - `mastermind_decision_page_test.dart`: decision fields, the gone and updated
   states, no reply controls.
-- `mastermind_freshness_test.dart`: strip states, the live region and the
-  sources sheet opened from the strip.
-- `mastermind_sources_sheet_test.dart`: the Home navbar action opens the same
-  sheet, degraded sources first.
-- `mastermind_home_page_test.dart` and `home_model_test.dart`: ordering,
-  security redaction, dock clearance, tab links.
+- `mastermind_freshness_test.dart`: short line and full spoken sentence,
+  hidden-when-healthy off Home, glyph-only tint, the live region, the sheet.
+- `mastermind_sources_sheet_test.dart` and
+  `mastermind_sources_root_overlay_test.dart`: the Home action opens the sheet,
+  degraded first, on the root navigator above the dock.
+- `mastermind_home_page_test.dart`, `home_model_test.dart` and
+  `mastermind_home_v1_test.dart`: order, tiles and links, caps, names, `—`,
+  security redaction, last-row dock clearance at 1.0 and 2.0 text.
+- `widgets/mastermind_segmented_control_test.dart` (44 pt targets, semantics)
+  and `widgets/collapsible_search_test.dart` (icon, refresh isolation, fold-away).
 - `mastermind_work_page_test.dart`: grouping, the state, product and area
   filters and their URL, chip counts following the filters, Clear filters,
   Back from a lane keeping the Home chip filter, security redaction,
@@ -594,6 +715,10 @@ shared capability request, a send waiting on the first check) and
 the outbox). `runtime/mastermind_runtime_online_test.dart` covers the
 connectivity stream (reaches the scheduler, de-duplicated, cancelled on close).
 The screens are in `view/mastermind_inbox_page_test.dart`,
+`view/mastermind_inbox_v1_test.dart` (the Forge v1 fixture: Needs you /
+Resolved, navbar search, caps, row semantics, the full ask,
+the Open on Mac alert, resolved history, Sent then Resolved, 44 pt targets and
+last-row dock clearance at 1.0 and 2.0 text),
 `view/mastermind_item_page_test.dart` and
 `view/reply_line_limit_formatter_test.dart` (the 10-line cap and its refusals).
 
@@ -620,11 +745,8 @@ without the legacy `state`. Checked field timestamps and spoken chart gap bounds
 use the same GMT+7 wall time as the rest of Mastermind.
 
 Pages consume the shell's published bottom clearance through `AppPageScrollView`.
-The Sources sheet retains that clearance before the page scrollable consumes it,
-then carries it across the modal navigator boundary. It uses the shared sheet
-scaffold's trailing space; the feature does not estimate dock dimensions. The
-source-sheet regression verifies that its last row stays above the dock and can
-be hit-tested after scrolling to the end.
+The Sources sheet opens on the root navigator, above the floating dock, so the
+system safe area pads its end and no dock estimate is needed.
 
 Forge v1 publishes field health beside the legacy arrays: `ship[]` supplies
 `deploy`, `ci`, and `released_at`; `work.lanes[]` supplies age/ETA observations;
@@ -651,6 +773,33 @@ An unreported pacing value retains its dashed status glyph beside the explicit
 reason. The label wraps within the row's content area so checked timestamps do
 not overflow narrow screens. `mastermind_insights_page_test.dart` preserves the
 one-glyph-per-window assertion for reported and unreported values.
+
+Truncated asks carry a visible Mac continuation notice. Recorded answers remain
+available regardless of length, with an expandable preview. Failed replies say
+"Not sent · tap to retry" while the reply is still queued and a retry can go
+out (offline); tapping retries the existing reply and opens its recovery
+details. A 429, a 401/403 (behind the auth-failure guard) or a dropped reply
+reads "Couldn't send · open to review" and a tap only opens the details. Grouped open rows omit the repeated kind badge. Coverage:
+`mastermind_inbox_v1_test.dart` (truncation, long answers, failed sends).
+
+Ask cards on Home and Inbox share the same row. The A2 short title wins when
+present; otherwise the publisher title wins;
+a redacted title falls back to the first ask line. Cards preview two lines,
+project, status and created-at age; detail keeps the full published ask. Only
+unique open ids appear in Needs you; a hub-answered id always wins. Home's
+See-all link opens Needs you. A redacted title is the first ask line, so the
+preview starts on the second line; screen readers hear at most 200 characters
+of the ask on a row. The recorded answer shows "Show full answer" whenever it
+overflows four lines at the current width and text size.
+
+**Undo window (Theo, 2026-10-28).** A Home or Inbox option is one tap; the item detail selects, then sends from the sticky Send ([decision detail](/platform/features/mobile-mastermind-decision-detail)). Either shows
+"Sending “option” · Undo" for 5 seconds; the reply enters the outbox only then, through the same
+`submit` and Idempotency-Key. One window per item; the other options lock
+meanwhile. Leaving the screen inside the window still sends; logout or an
+account switch cancels it, and so does a live snapshot where the ask changed or
+left. Coverage: `mastermind_replies_undo_test.dart`, `mastermind_option_undo_test.dart`.
+
+See [answered elsewhere and withdrawn](/platform/features/mobile-mastermind-answered-elsewhere) for cross-device answers, batch labels, undo cancellation and resolved rows.
 
 ## Read-only Threads preview
 
@@ -686,3 +835,32 @@ the 404 state with the flag on; `threads_flag_test.dart` keeps the flag-off
 navigation unchanged and checks the flag-on dock selection, redirects with
 filters kept, and the lane-gone copy. Enablement remains held for exact-commit
 mobile CI and product acceptance.
+
+### Inline decision cards
+
+Scope: open asks on mobile Home and Inbox. Schema 1.4 remains the wire
+version; the existing adapter accepts optional A2 `hub_title`, `hub_text`,
+`hub_options`, `hub_recommended`, and `by`. Short title/text take precedence
+on cards; absent, null or empty copy falls back to the canonical title/body.
+The publisher's `text` and `recommended` aliases normalize to `body` and
+`recommended_option`. Open asks still come from `now.needs_you` and the
+item-identity rows in `decisions[]`; the journal is a separate history model.
+
+Short option labels must preserve the canonical option order and count.
+A mismatched list falls back to canonical labels; mobile always sends the
+original `option_index`, item ID and version hash. Recommendation is marked
+with localized text as well as a badge. Product and publisher chips wrap;
+age appears only when `created_at` is published.
+
+A tap optimistically replaces choices with the existing five-second
+Sending/Undo window, then the existing version-bound, idempotent reply outbox
+and `POST /v1/replies` transport. Undo restores choices without a send.
+Acceptance remains “Sent · waiting for Mastermind”; only the hub may resolve
+the ask. Offline, rejected and stale replies retain existing recovery behavior.
+When capabilities do not permit replies, choices are disabled with the existing
+capability explanation. No new endpoint or inferred backend capability is added.
+Full detail continues to show canonical ask text and choices.
+
+Regression coverage: `view/decision_cards_test.dart` (English/Vietnamese,
+320px, text scale 2.0, short-copy fallback, recommendation, canonical indices,
+Undo and delayed send) plus the existing reply cubit and Inbox/Home suites.

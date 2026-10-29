@@ -13,12 +13,28 @@ export interface TutoringFormValues {
     startTime: string;
     durationMinutes: number;
     teacherUserId: string;
+    /**
+     * This session's own content. Unset, the session takes the form-level
+     * `content`; a split make-up draft sets one per missed class date.
+     */
+    content?: string;
+    /** The class notes `content` was drafted from; unchanged text stays linked. */
+    linkedContent?: string;
+    /** The missed class date this session was drafted to teach. */
+    pairedMissedDate?: string;
   }[];
   reasonType: TutoringReasonType;
   reasonDetail: string;
   content: string;
   /** Lesson notes drafted from the missed class; unchanged drafts stay linked. */
   linkedContent?: string;
+  /**
+   * The student's uncovered missed dates, oldest first, when sessions were
+   * drafted per date. The server pairs blank make-up sessions with them in order.
+   */
+  missedClassDates?: string[];
+  /** Missed dates whose class has no recorded notes, shown as an inline hint. */
+  missingLessonDates?: string[];
   sourceFeedbackId?: string | null;
 }
 

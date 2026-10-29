@@ -89,13 +89,44 @@ Manage keeps every setup collection and its permitted add action visible without
 a second counter dashboard. Season selection, creation, editing and archiving
 remain visible on Sales.
 
-Product summaries show metadata once and keep each quantity and price beside its
-warehouse and unit. Quantities across different units are not summed. A null
-quantity means unlimited stock and must never display as zero or a low-stock
-warning. An absent stock row is shown as unconfigured. The Products low-stock
-count covers loaded search results, not the entire catalog. Native presentation
-does not change server permissions, mutation authorization, or canonical workspace
-membership. Existing pending-sync indicators remain attached to their owning rows.
+Products is a scan-and-search item list. The shell navbar owns search (server
+`q`, which matches product names) and, on iOS and Android, a scan action. Each
+row shows the name, the category, an Archived label when relevant, and up to three
+locations as "warehouse · unit" with the quantity at the trailing edge, then
+"N more locations". Prices, manufacturer, owner and Finance category stay in the
+item editor. Quantities across different units are not summed. A null quantity
+means unlimited stock and must never display as zero or a low-stock warning.
+Low stock (`amount <= min_amount`) uses the warning tone and zero or less uses
+the destructive tone. An absent stock row is shown as "No stock configured" only
+when the actor may view stock; otherwise the row says "Stock hidden", because
+the products API omits stock without view-stock or create-sales permission.
+Active, Archived and All pills map to the API `status` parameter. There are no
+count chips: totals and loaded-page low-stock counts were removed as noise.
+Catalog managers open the editor on tap and get Edit and Delete on long-press;
+other actors have no row action until read-only item detail ships.
+
+Products have no barcode or SKU field. A scanned Tuturuuu product link
+(`https://tuturuuu.com/{ws}/inventory/products/{uuid}`) is fetched in the current
+workspace under normal server authorization. It opens the item editor only for
+catalog managers; other actors get a name search for that product, widened to
+all statuses when the product is archived. A plain code without a URI scheme, up
+to the API's 500-character search limit, becomes the name search, shown as
+"Name matches for ..." with a Clear action. Every other payload, including other
+links, product links without a UUID, Wi-Fi credentials, `otpauth:`, `mailto:`,
+`tel:`, app intents and custom schemes, is reported as an unusable code and is
+never sent to the server or shown as a query. Barcode lookup needs a schema
+field and API filter and is not implied by this scanner.
+
+Switching the status filter or query never shows rows from the previous filter:
+a slow or failed load starts empty. A failed first load shows an error with
+Retry rather than an empty catalog, and a failed next page shows a retry footer
+instead of retrying on every scroll.
+
+Native presentation does not change server permissions, mutation authorization,
+or canonical workspace membership. Existing pending-sync indicators remain
+attached to their owning rows. Regression evidence: `inventory_items_page_test.dart`,
+`inventory_items_states_test.dart`, `inventory_scan_test.dart`, and the
+compact/fractional stock widget tests.
 
 Native Overview analytics describe the loaded sample, not workspace-wide totals.
 Receipt activity groups unique dated receipts by device-local day for the selected

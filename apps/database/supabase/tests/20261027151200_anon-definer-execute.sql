@@ -9,7 +9,6 @@ INSERT INTO anon_definer_allowlist VALUES
   ('public.has_workspace_permission(uuid,uuid,text)'),
   ('public.check_request()'),
   ('public.validate_cross_app_token_with_session(text,text)'),
-  ('public.validate_cross_app_token(text,text)'),
   ('public.get_workspace_storage_limit(uuid)');
 
 CREATE FUNCTION pg_temp.anon_definer_violations() RETURNS text[]
@@ -517,7 +516,7 @@ INSERT INTO definer_execute_expected VALUES
   ('public.sync_user_details()', true, true),
   ('public.sync_user_private_details()', true, true),
   ('public.task_reminder_already_sent(uuid,uuid,text)', false, true),
-  ('public.transfer_workspace_ownership(uuid,uuid)', true, true),
+  ('public.transfer_workspace_ownership(uuid,uuid)', true, false),
   ('public.transition_account_mfa_policy(uuid,jsonb,jsonb,boolean)', false, true),
   ('public.trigger_cleanup_expired_cross_app_tokens()', false, true),
   ('public.trigger_cleanup_qr_login_challenges()', true, true),

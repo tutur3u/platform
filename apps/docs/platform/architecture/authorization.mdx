@@ -343,3 +343,24 @@ workspace and require MEMBER membership before memory or provider work. Memory
 attribution uses the canonical authorized workspace id, including default scopes;
 membership lookup failures stop the operation. The route scope regressions cover
 nonmembers, guests, lookup failures and canonical workspace attribution.
+## Workspace resource access
+
+### Boards
+
+Capacity rules are scoped to the board's own workspace. A board that belongs to
+another workspace than the route's `wsId`, or that does not exist, returns 404
+for reads and writes before any permission lookup, so callers cannot tell the
+two apart. Configuring rules also requires `manage_projects` in the route
+workspace and edit access to the board; reading keeps view access.
+
+Creating or disabling a board's public link requires a workspace member with
+`manage_projects` (the board resolver's member edit access). A guest share, even
+with edit permission, cannot create or disable the link. Reading the link keeps
+view access, so a guest can still read it.
+
+Adding, changing or removing a board's guest shares follows the same rule: a
+workspace member with `manage_projects`, never a guest share with edit
+permission. Listing shares keeps view access.
+
+Regression coverage: the Tasks board `capacity-rules/access.test.ts`,
+`public-link/access.test.ts` and `shares/access.test.ts`.

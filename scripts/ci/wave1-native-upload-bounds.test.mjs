@@ -112,6 +112,33 @@ test('escaped JSON credential-key wrappers hide short values', () => {
   assert.equal(retained(error).includes('short-value'), false);
 });
 
+for (const input of ['string', 'Buffer'])
+  for (const known of [true, false])
+    test(`${input} capture boundary drops a partial ${known ? 'known' : 'unknown'} token`, () => {
+      const value = ['abcdefgh', '12345678', 'ABCDEFGH', '90123456'].join('');
+      const count = 1024 * 1024 - '[ERROR] '.length - 20;
+      const prefix =
+        ' \n'.repeat(Math.floor(count / 2)) + ' '.repeat(count % 2);
+      const text = `${prefix}[ERROR] ${value}`;
+      for (const size of [text.length, 1024 * 1024]) {
+        const stderr =
+          input === 'Buffer'
+            ? Buffer.from(text).subarray(0, size)
+            : text.slice(0, size);
+        const error = new NativeUploadError({ stderr }, known ? [value] : []);
+        assert.equal(retained(error).includes(value.slice(0, 12)), false);
+        assert.equal(error.uploadFailure.headline.trim(), '[ERROR]');
+      }
+    });
+
+test('line clipping preserves a complete token when the following character is a delimiter', () => {
+  const message = `visible${' '.repeat(4084)}whole trailing`;
+  const error = new NativeUploadError({
+    stderr: JSON.stringify({ errors: [{ code: 10021, message }] }),
+  });
+  assert.equal(error.uploadFailure.cfErrors[0].message.trim(), 'visible whole');
+});
+
 test('one MiB with code markers and hostile space runs stays below one second', () => {
   const moduleUrl = new URL('./wave1-native-upload-error.mjs', import.meta.url)
     .href;
@@ -122,6 +149,7 @@ test('one MiB with code markers and hostile space runs stays below one second', 
       ' '.repeat(4080) + '[code: 1]x\\n',
       'a' + ' '.repeat(4070) + '[code: 1]x\\n',
       'accepted' + ' '.repeat(4070) + '[code: 1]\\n',
+      'a'.repeat(4095) + ' x\\n',
     ];
     const reports = [];
     for (const [variant, line] of variants.entries()) {
@@ -136,8 +164,8 @@ test('one MiB with code markers and hostile space runs stays below one second', 
         const receipt = JSON.stringify(error);
         const log = productionFailureMessage(error);
         const elapsed = performance.now() - start;
-        assert.equal(error.uploadFailure.cfCode, 1);
-        if (variant < 2) {
+        assert.equal(error.uploadFailure.cfCode, variant === 3 ? null : 1);
+        if (variant < 2 || variant === 3) {
           assert.equal(error.uploadFailure.cfErrors, undefined);
           assert.equal(error.uploadFailure.headline, '[ERROR] visible');
         } else {
@@ -173,7 +201,7 @@ test('one MiB with code markers and hostile space runs stays below one second', 
   );
   assert.equal(result.status, 0, result.stderr);
   const reports = JSON.parse(result.stdout);
-  assert.equal(reports.length, 3);
+  assert.equal(reports.length, 4);
   assert.ok(
     reports.every((report) => report.elapsedMs.every((ms) => ms < 1000))
   );

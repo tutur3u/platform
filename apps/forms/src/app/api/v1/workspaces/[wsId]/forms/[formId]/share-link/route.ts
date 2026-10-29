@@ -30,6 +30,17 @@ export async function GET(
 
     const formId = parseFormIdParam(formIdParam, 'form ID');
     const formsClient = getPrivateFormsClient(context.adminClient);
+    const { data: form, error: formError } = await formsClient
+      .from('forms')
+      .select('id')
+      .eq('id', formId)
+      .eq('ws_id', context.wsId)
+      .maybeSingle();
+    if (formError) throw new Error(formError.message);
+    if (!form) {
+      return NextResponse.json({ error: 'Form not found' }, { status: 404 });
+    }
+
     const existing = await formsClient
       .from('form_share_links')
       .select('code, active')

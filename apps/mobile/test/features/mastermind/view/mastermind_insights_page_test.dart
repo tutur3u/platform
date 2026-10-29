@@ -253,10 +253,7 @@ void main() {
       final json = Map<String, dynamic>.of(_usage)
         ..['generated_at'] = '2026-01-31T14:30:00+00:00';
       await pumpInsights(tester, json);
-      expect(
-        find.textContaining('Mastermind last published 3 h ago'),
-        findsOneWidget,
-      );
+      expect(find.textContaining('Published 3 h ago'), findsOneWidget);
       expect(find.text('Claude pool B'), findsWidgets);
     });
 

@@ -8,11 +8,12 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { isAbuseGuardFamilyAssigned } from '@tuturuuu/utils/abuse-guard/select';
+import { extractIPFromRequest } from '@tuturuuu/utils/abuse-protection/edge';
 import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
 import { isRequiredMfaProofAllowed } from '@tuturuuu/utils/required-mfa-app-session';
 import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
 import { readMfaTransfer } from '@tuturuuu/utils/required-mfa-transfer';
-import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { BASE_URL } from '@/constants/common';
@@ -25,6 +26,7 @@ import {
   INVITATION_ACTION_TOKEN_TTL_SECONDS,
   invitationWorkspaceScope,
 } from '@/lib/app-coordination/invitation-action-token';
+import { consumeRefreshTokenWithGrace } from '@/lib/app-coordination/refresh-replay';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
 import { authorizeWorkspaceSessionAppTokenExchange } from '@/lib/app-coordination/workspace-session';
 import {
@@ -68,8 +70,6 @@ type CrossAppValidationRow = {
   } | null;
   user_id?: string | null;
 };
-
-type RefreshConsumeResult = 'consumed' | 'grace' | 'replayed' | 'unavailable';
 
 function getValidationRow(value: unknown): CrossAppValidationRow | null {
   if (Array.isArray(value)) {
@@ -316,67 +316,17 @@ function createPendingInvitationResponse({
   );
 }
 
-async function consumeRefreshTokenWithGrace({
-  exp,
-  graceSeconds,
-  jti,
-  sub,
-}: {
-  exp: number;
-  graceSeconds: number;
-  jti: string;
-  sub: string;
-}): Promise<RefreshConsumeResult> {
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  const ttlSeconds = exp - nowSeconds;
-
-  if (ttlSeconds <= 0 || !jti.trim() || !sub.trim()) {
-    return 'replayed';
-  }
-
-  const redis = await getUpstashRestRedisClient().catch(() => null);
-  if (!redis) {
-    return 'unavailable';
-  }
-
-  const key = `${APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX}:${sub}:${jti}`;
-
-  try {
-    const firstUsedAt = await redis.get<number | string>(key);
-    const firstUsedAtSeconds =
-      typeof firstUsedAt === 'number'
-        ? firstUsedAt
-        : Number.parseInt(firstUsedAt ?? '', 10);
-
-    if (Number.isFinite(firstUsedAtSeconds)) {
-      return firstUsedAtSeconds + graceSeconds >= nowSeconds
-        ? 'grace'
-        : 'replayed';
-    }
-
-    const consumed = await redis.set(key, String(nowSeconds), {
-      ex: ttlSeconds,
-      nx: true,
-    });
-
-    return consumed === 'OK' ? 'consumed' : 'replayed';
-  } catch (error) {
-    console.warn('External app refresh replay check failed', {
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return 'unavailable';
-  }
-}
-
 async function verifyExchangeRefreshToken({
+  ip,
   replayGraceSeconds,
   refreshToken,
   targetApp,
 }: {
+  ip: string;
   replayGraceSeconds: number;
   refreshToken: string;
   targetApp: string;
-}): Promise<AppCoordinationTokenClaims | null> {
+}): Promise<AppCoordinationTokenClaims | 'limited' | 'unavailable' | null> {
   let verification: ReturnType<typeof verifyAppCoordinationToken>;
 
   try {
@@ -399,14 +349,28 @@ async function verifyExchangeRefreshToken({
   }
 
   const consumeResult = await consumeRefreshTokenWithGrace({
+    keyPrefix: APP_TOKEN_REFRESH_REPLAY_KEY_PREFIX,
+    onError: (error) =>
+      console.warn('External app refresh replay check failed', {
+        error: error instanceof Error ? error.message : String(error),
+      }),
     exp: claims.exp,
     graceSeconds: replayGraceSeconds,
+    ip,
     jti: claims.jti,
     sub: claims.sub,
   });
 
   if (consumeResult === 'replayed') {
     return null;
+  }
+  if (consumeResult === 'limited') {
+    return 'limited';
+  }
+  // Legacy policy continues without the fence; once the guard store owns
+  // replay fences, an unavailable store fails closed.
+  if (consumeResult === 'unavailable' && isAbuseGuardFamilyAssigned('replay')) {
+    return 'unavailable';
   }
 
   return claims;
@@ -476,11 +440,24 @@ async function exchangeAppToken(request: NextRequest) {
 
   if (refreshToken) {
     const refreshClaims = await verifyExchangeRefreshToken({
+      ip: extractIPFromRequest(request.headers),
       replayGraceSeconds: policy.externalAppRefreshReplayGraceSeconds,
       refreshToken,
       targetApp: resolvedTarget.targetApp,
     });
 
+    if (refreshClaims === 'limited') {
+      return NextResponse.json(
+        { error: 'Too many refresh attempts' },
+        { status: 429, headers: { 'Retry-After': '60' } }
+      );
+    }
+    if (refreshClaims === 'unavailable') {
+      return NextResponse.json(
+        { error: 'Refresh temporarily unavailable' },
+        { status: 503, headers: { 'Retry-After': '30' } }
+      );
+    }
     if (!refreshClaims) {
       return NextResponse.json(
         { error: 'Invalid or expired refresh token' },

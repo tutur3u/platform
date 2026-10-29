@@ -7,8 +7,11 @@ import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/app_dialog.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
+import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// A one-line explanation of why the last attempt did not become a reply.
@@ -33,7 +36,7 @@ class ReplyIssueBanner extends StatelessWidget {
       _ => null,
     };
     if (message == null) return const SizedBox.shrink();
-    return AppGroupedSection.spaced(
+    return MastermindGroup(
       children: [
         AppGroupedRow(
           leading: const AppIconTile(
@@ -124,7 +127,11 @@ class _ReplyEntryPanelState extends State<ReplyEntryPanel> {
     final reply = entry.optionLabel ?? entry.text ?? '';
     final sent = entry.status == OutboxStatus.sent;
     final (icon, tone, title) = _headline(context, sent);
-    return AppGroupedSection.spaced(
+    final large = mastermindLargeText(context);
+    final queuedAt = l10n.mastermindReplyQueuedAt(
+      Gmt7.time(entry.createdAt, Localizations.localeOf(context).toString()),
+    );
+    return MastermindGroup(
       caption: l10n.mastermindReplyOptionsTitle,
       children: [
         AppGroupedRow(
@@ -132,7 +139,28 @@ class _ReplyEntryPanelState extends State<ReplyEntryPanel> {
           // A live region, so a screen reader announces sending, queued, rate
           // limited and sent as they change.
           title: Semantics(liveRegion: true, child: Text(title)),
-          subtitle: Text(l10n.mastermindReplyYourReply(reply)),
+          subtitle: large
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.mastermindReplyYourReply(reply)),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(queuedAt),
+                  ],
+                )
+              : Text(l10n.mastermindReplyYourReply(reply)),
+          // Creation records queue time, including after hub acceptance. At
+          // large text sizes it moves under the reply instead of squeezing it.
+          trailing: large
+              ? null
+              : ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 120),
+                  child: Text(
+                    queuedAt,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
         ),
         if (!sent && !status.sending) _actions(context),
       ],

@@ -4,6 +4,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TablesUpdate } from '@tuturuuu/types';
+import { isWorkspaceTemplateBackgroundPath } from '@tuturuuu/utils/template-background-path';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -258,6 +259,15 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     }
 
     if (backgroundPath !== undefined) {
+      if (
+        backgroundPath !== null &&
+        !isWorkspaceTemplateBackgroundPath(backgroundPath, wsId)
+      ) {
+        return NextResponse.json(
+          { error: 'Invalid background path' },
+          { status: 400 }
+        );
+      }
       updateData.background_path = backgroundPath;
     }
 

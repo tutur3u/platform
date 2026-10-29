@@ -42,18 +42,18 @@
     }
   ],
   "summary": {
-    "total": 839,
+    "total": 841,
     "categories": {
       "api": 647,
       "api-rewrite": 4,
       "candidate-probe": 1,
       "metadata": 9,
-      "page": 161,
+      "page": 163,
       "route": 4,
       "satellite-bridge": 12,
       "service-worker": 1
     },
-    "dispositions": { "native-Start": 10, "Next-fallback": 829 }
+    "dispositions": { "native-Start": 12, "Next-fallback": 829 }
   },
   "routes": [
     {
@@ -881,6 +881,24 @@
       "owner": "web-next",
       "disposition": "Next-fallback",
       "cronOwner": null
+    },
+    {
+      "pattern": "/[locale]/legal/changes/full",
+      "source": "apps/web/src/app/[locale]/(marketing)/legal/changes/full/page.tsx",
+      "category": "page",
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/src/components/legal/legal-changes.tsx"
+    },
+    {
+      "pattern": "/[locale]/legal/changes",
+      "source": "apps/web/src/app/[locale]/(marketing)/legal/changes/page.tsx",
+      "category": "page",
+      "owner": "web-start",
+      "disposition": "native-Start",
+      "cronOwner": null,
+      "nativeSource": "apps/web/src/components/legal/legal-changes.tsx"
     },
     {
       "pattern": "/[locale]/legal/dpa",

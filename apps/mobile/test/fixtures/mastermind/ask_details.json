@@ -1,0 +1,75 @@
+{
+  "_comment": "Synthetic GET /v1/asks/<id> payloads. No real data. 'responses' maps an item id to the hub status and body.",
+  "responses": {
+    "item-00000000000000000001": {
+      "status": 200,
+      "body": {
+        "id": "item-00000000000000000001",
+        "version_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "kind": "decision",
+        "state": "open",
+        "title": "Choose a plan",
+        "body": "A short question for the owner.",
+        "ask_text": "Full synthetic ask: should the plan go ahead this week?",
+        "options": ["Approve", "Defer"],
+        "recommended_option": "Approve",
+        "reason": "Synthetic reason: the plan is ready.",
+        "default_option_index": 1,
+        "urgency": "high",
+        "deadline": "today",
+        "deadline_at": "2026-01-31T12:00:00Z",
+        "reversible": true,
+        "category": "release",
+        "blocks_count": 2,
+        "owner_name": "Synthetic owner",
+        "product": "Tuturuuu",
+        "created_at": "2026-01-31T10:00:00Z",
+        "action_kind": "answer",
+        "action_summary": "Pick an option here.",
+        "risk": "Low",
+        "links": [
+          {"label": "Synthetic plan", "url": "https://tuturuuu.com/synthetic/plan"},
+          {"label": "Synthetic run", "url": "https://ci.tuturuuu.com/synthetic/run"},
+          {"label": "Off allowlist", "url": "https://example.com/not-allowed"},
+          {"label": "Lookalike", "url": "https://tuturuuu.com.example.com/x"},
+          {"label": "Cleartext", "url": "http://tuturuuu.com/x"}
+        ],
+        "answered_via": null,
+        "future_field": {"ignored": true}
+      }
+    },
+    "item-00000000000000000002": {
+      "status": 200,
+      "body": {
+        "id": "item-00000000000000000002",
+        "version_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "ask_text": "Synthetic ask that needs the Mac.",
+        "options": ["Done"],
+        "action_kind": "run_on_mac",
+        "action_summary": "Run the synthetic script on the Mac."
+      }
+    },
+    "item-00000000000000000003": {
+      "status": 200,
+      "body": {
+        "id": "item-00000000000000000003",
+        "version_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "action_kind": "physical",
+        "reversible": false
+      }
+    },
+    "item-00000000000000000004": {
+      "status": 200,
+      "body": {
+        "id": "item-00000000000000000004",
+        "version_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "action_kind": "fyi",
+        "answered_via": "carrier_pigeon"
+      }
+    },
+    "item-00000000000000000005": {
+      "status": 404,
+      "body": {"error": "not_found"}
+    }
+  }
+}

@@ -3,6 +3,8 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MAX_EMAIL_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { canAssignInvitationRoles } from '@/lib/workspace-creator-grant-permissions';
+import { getPendingWorkspaceInvitationRoleIds } from '@/lib/workspace-invitations/get-pending-role-ids';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
@@ -69,6 +71,7 @@ type SetInvitationRolesRpcClient = {
   rpc: (
     functionName: 'set_workspace_invitation_roles',
     args: {
+      p_actor_id: string;
       p_email: null | string;
       p_role_ids: string[];
       p_user_id: null | string;
@@ -113,6 +116,9 @@ type PosOperatorSetupClient = {
     error: { code?: string; message?: string } | null;
   }>;
 };
+
+const CREATOR_GRANT_ROLE_MESSAGE =
+  'Only the workspace creator can assign a role that manages billing.';
 
 const DUPLICATE_INVITE_MESSAGE =
   'User is already a member of this workspace or has a pending invite.';
@@ -294,12 +300,32 @@ export async function PATCH(req: Request, { params }: Params) {
         { status: roleError ? 500 : 400 }
       );
     }
+
+    const canAssignRoles = await canAssignInvitationRoles(sbAdmin, {
+      loadAssignedRoleIds: () =>
+        getPendingWorkspaceInvitationRoleIds({
+          admin: sbAdmin,
+          email,
+          userId,
+          workspaceId: wsId,
+        }),
+      roleIds,
+      userId: access.user.id,
+      wsId,
+    });
+    if (!canAssignRoles) {
+      return NextResponse.json(
+        { message: CREATOR_GRANT_ROLE_MESSAGE },
+        { status: 403 }
+      );
+    }
   }
 
   const privateDb = sbAdmin.schema(
     'private'
   ) as unknown as SetInvitationRolesRpcClient;
   const updateResult = await privateDb.rpc('set_workspace_invitation_roles', {
+    p_actor_id: access.user.id,
     p_email: email,
     p_role_ids: roleIds,
     p_user_id: userId,
@@ -484,6 +510,19 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json(
         { message: 'One or more selected workspace roles are not available.' },
         { status: 400 }
+      );
+    }
+
+    if (
+      !(await canAssignInvitationRoles(sbAdmin, {
+        roleIds,
+        userId: user.id,
+        wsId,
+      }))
+    ) {
+      return NextResponse.json(
+        { message: CREATOR_GRANT_ROLE_MESSAGE },
+        { status: 403 }
       );
     }
   }
