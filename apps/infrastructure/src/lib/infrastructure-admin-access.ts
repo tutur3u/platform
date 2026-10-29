@@ -21,7 +21,7 @@ async function getInfrastructureSessionUser() {
 
 export async function authorizeInfrastructureAdminRequest(
   requiredPermission: PermissionId | PermissionId[] = 'view_infrastructure',
-  requireRootMember = false
+  requireRootMember = true
 ) {
   const session = await getInfrastructureSessionUser();
   if (!session.ok) return session;

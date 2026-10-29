@@ -16,7 +16,12 @@ export async function getManagedCronAdminUser(request?: Request) {
     : await resolveSatellitePageActor('infra');
 
   if (!actor) return null;
-  if (!isVerifiedTuturuuuStaffSession(await getVerifiedAuthUser(actor.admin, actor.user.id))) return null;
+  if (
+    !isVerifiedTuturuuuStaffSession(
+      await getVerifiedAuthUser(actor.admin, actor.user.id)
+    )
+  )
+    return null;
   const permissions = await getPermissions({
     user: actor.user,
     wsId: ROOT_WORKSPACE_ID,

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  membershipType: 'MEMBER' as string | undefined,
   permissions: new Set<string>(),
   actor: { user: { id: 'staff', email: 'staff@tuturuuu.com' }, admin: {} },
   admin: { rpc: vi.fn().mockResolvedValue({ error: null }) },
@@ -9,12 +10,19 @@ const mocks = vi.hoisted(() => ({
   sync: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
+vi.mock('@tuturuuu/supabase/next/user', () => ({
+  getVerifiedAuthUser: vi.fn(async () => mocks.actor.user),
+}));
+vi.mock('@tuturuuu/utils/email/staff-session', () => ({
+  isVerifiedTuturuuuStaffSession: vi.fn(() => true),
+}));
 vi.mock('@tuturuuu/satellite/workspace-access', () => ({
   resolveSatelliteRequestActor: vi.fn(async () => mocks.actor),
   resolveSatellitePageActor: vi.fn(async () => mocks.actor),
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: vi.fn(async () => ({
+    membershipType: mocks.membershipType,
     containsPermission: (p: string) => mocks.permissions.has(p),
     withoutPermission: (p: string) => !mocks.permissions.has(p),
   })),
@@ -74,6 +82,7 @@ const req = () =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.membershipType = 'MEMBER';
   mocks.permissions.clear();
   mocks.permissions.add('view_infrastructure');
   mocks.actor.admin = {
@@ -204,4 +213,20 @@ it('SR-228 retains root alias admission for authorized entity-limit operators', 
     addPlatformEntityCreationLimitTable('internal', form)
   ).resolves.toEqual({ status: 'table-added' });
   expect(mocks.admin.rpc).toHaveBeenCalledOnce();
+});
+
+describe.each(['GUEST', undefined])('root membership %s', (membershipType) => {
+  it('denies whitelist and cron even with permissions', async () => {
+    mocks.membershipType = membershipType;
+    mocks.permissions.add('manage_workspace_roles');
+    mocks.permissions.add('manage_workspace_secrets');
+    const { hasAIWhitelistAccess } = await import(
+      './ai-whitelist/authorization'
+    );
+    const { getManagedCronAdminUser } = await import(
+      './managed-cron/authorization'
+    );
+    expect(await hasAIWhitelistAccess(req())).toBe(false);
+    expect(await getManagedCronAdminUser(req())).toBeNull();
+  });
 });

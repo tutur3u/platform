@@ -17,7 +17,10 @@ export async function requirePostEmailQueueRootAdmin(
     user: actor.user,
     wsId: ROOT_WORKSPACE_ID,
   });
-  if (!permissions?.containsPermission(permission)) {
+  if (
+    permissions?.membershipType !== 'MEMBER' ||
+    !permissions?.containsPermission(permission)
+  ) {
     return {
       error: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
     };

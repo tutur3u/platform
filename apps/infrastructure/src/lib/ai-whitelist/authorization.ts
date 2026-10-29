@@ -16,11 +16,20 @@ export async function hasAIWhitelistAccess(request?: Request) {
     : await resolveSatellitePageActor('infra');
 
   if (!actor) return false;
-  if (!isVerifiedTuturuuuStaffSession(await getVerifiedAuthUser(actor.admin, actor.user.id))) return false;
+  if (
+    !isVerifiedTuturuuuStaffSession(
+      await getVerifiedAuthUser(actor.admin, actor.user.id)
+    )
+  )
+    return false;
   const permissions = await getPermissions({
     user: actor.user,
     wsId: ROOT_WORKSPACE_ID,
   });
-  if (permissions?.membershipType !== 'MEMBER' || !permissions?.containsPermission('manage_workspace_roles')) return false;
+  if (
+    permissions?.membershipType !== 'MEMBER' ||
+    !permissions?.containsPermission('manage_workspace_roles')
+  )
+    return false;
   return Boolean(actor);
 }
