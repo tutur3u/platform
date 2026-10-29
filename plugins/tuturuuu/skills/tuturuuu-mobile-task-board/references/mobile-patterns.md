@@ -426,6 +426,17 @@ infer hub resolution from a local tap or accepted reply. Exercise the real
 reply cubit with fake transport in `decision_cards_test.dart`; English/Vietnamese
 at 320px and 2x text catch wrapping regressions without a device build.
 
+### First-frame critical path
+
+Overlap the local preference reads with `TelemetryPreference.initialize` via
+`initializeBootstrapServices`; start Supabase after both. Never initialize
+Firebase outside `FirebaseAdmission` (signed in AND push/telemetry allowed): a
+signed-out launch must create no Firebase app and no FCM token. Push setup
+(`initialize`/`startSession`) runs after first paint through
+`scheduleOptionalStartup` and `startPushForCurrentAccount`, which reads auth at
+run time. Tests: `test/core/startup/startup_state_test.dart` and
+`cold_start_firebase_contract_test.dart`.
+
 ### Independent startup state restoration
 
 Use `initializeStartupState` only after Firebase/observability and Supabase settle.
