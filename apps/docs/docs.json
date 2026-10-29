@@ -64,6 +64,7 @@
                   "platform/features/task-reminder-delivery",
                   "platform/features/tasks-board-header",
                   "platform/features/tasks-board-cards",
+                  "platform/features/task-board-sprints",
                   "platform/features/mobile-chat",
                   "platform/features/mobile-mastermind",
                   "platform/features/mobile-mastermind-inbox",
