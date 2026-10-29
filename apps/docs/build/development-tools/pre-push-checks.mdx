@@ -35,6 +35,7 @@ alias still fails closed; a workspace binary is never used as a fallback. A dang
 | --- | --- |
 | Any | Branch name (same pattern as `branch-name-check.yaml`), source-size ceiling, docs inventory and app SEO `--check` |
 | JS/TS/JSON/CSS outside `apps/mobile` | Biome `check --error-on-warnings` on those files (pinned 2.5.13); Oxlint on JS/TS files as an **advisory** step |
+| `packages/internal-api/**`, `packages/sdk/**`, `packages/utils/**`, `packages/types/**` | SDK portable source approval (`sdk-portable`): resolves the source closure and checks its allowlist without emitting files or running TypeScript. Utils and types are conservatively scoped to cover portable imports. |
 | `apps/*` or `packages/*` source | App-session, satellite cookie and server-console guards |
 | A workspace's source, `tsconfig*.json` or `package.json` | Type-check of the projects its `type-check` script checks |
 | A workspace's related tests | Changed and colocated tests use `node --test` when they import `node:test` or their package's `test` script uses `node --test`; explicit Vitest imports retain Vitest; files that import `bun:test` run with `bun test` from their workspace directory (the Meet realtime Durable Object suites, which Node cannot load). Other related tests use the owning workspace's Vitest config. Each file runs under one runner. |
