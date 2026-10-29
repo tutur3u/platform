@@ -1,7 +1,7 @@
 ---
 title: "Finance"
 description: "Shared Finance product surface across apps/web and apps/finance."
-updatedAt: "2026-10-26"
+updatedAt: "2026-10-28"
 ---
 
 ## Overview
@@ -44,6 +44,45 @@ fallback. Root hosting has no mount prefix. A `/finance` mount stays inside
 `/finance`; this rule does not activate that hosting mode. Authentication cookie
 propagation remains unchanged. Regression coverage lives in
 `apps/finance/src/proxy-base-path.test.ts`.
+
+## Transaction workspace boundaries
+
+Transaction creation and updates in Web and standalone Finance validate wallet and
+category references against the resolved route workspace before an admin write.
+Foreign or unavailable references return 403. Omitted categories retain their
+existing behavior; explicit null remains invalid. Database lookup errors return
+500 rather than an authorization denial.
+
+Transaction list RPC category joins match the wallet workspace. Category rollups
+sum and count only transactions whose wallet belongs to the category workspace.
+Historical cross-workspace references therefore cannot expose another workspace's
+category metadata or alter its category totals. Categories with no matching
+transactions remain visible with zero totals.
+
+Direct client reads and writes to `wallet_transactions` remain closed. Migration
+`20260312113000_lock_description_tables_to_server_apis.sql` already removed its
+permissive client policies and revoked client table grants through the
+description-table lockdown.
+The restrictive account MFA policy remains intact.
+Guests, members without finance permissions, and permissioned members must use
+the application APIs. Transaction POST/PUT use admin clients after application
+membership and action-specific permission checks; service-role access bypasses
+RLS intentionally. Transaction read APIs use the permission/redaction RPC.
+The older Mobile direct-reader methods and the Web Live assistant tools using
+an authenticated session client still have this existing restriction. Mobile
+uses the API-backed infinite transaction reader for its maintained path; Live
+temporary-auth tools use an admin client. This change does not reopen client grants.
+
+The workspace-scoping migration retains the client-write revoke and removes any
+retained legacy policies. It does not grant access to the private wallet table.
+Regression coverage is in
+`packages/apis/src/finance/transactions/workspace-scoping.test.ts` and
+`apps/database/supabase/tests/finance-workspace-scoping.sql`. Migration
+`20261029030700_finance_workspace_scoping.sql` has a matching rollback under
+`apps/database/rollbacks/`; rollback restores the prior RPC bodies without
+granting client access.
+The rollback and re-apply are checked against function definitions, owners, grants,
+settings, transaction policies, and wallet/transaction table grants.
 
 ## API Ownership
 
@@ -158,6 +197,45 @@ then wire both host wrappers in the same change. Add or extend the route in
 Web exceptions until their dependent platform callers migrate. Expose shared
 access in `packages/internal-api` and consume it through TanStack Query or
 shared server components.
+
+## Workspace boundaries for finance writes
+
+Both Finance hosts validate body-supplied wallet, category, tag and subscription
+user-group references against the resolved route workspace before writing.
+This includes budgets, recurring transactions, debts, ordinary transactions,
+transfers and checkpoint reconciliation. Subscription customer and product
+validation continues to apply. Clearing an optional reference remains supported
+where the route accepts null.
+
+Wallet role whitelists restrict transaction writes as well as reads. Writers
+without `manage_finance` need whitelist access to every current and requested
+wallet involved in a transaction create, update or delete, or a transfer
+create or update. The one exception is the workspace default wallet
+(`default_wallet_id`): it stays writable for these writers when no role
+whitelist names it. The wallets list returns that unwhitelisted default wallet
+to transaction writers and invoice creators with invoice-safe fields only (id,
+name, type, currency, icon and image) and no balance, credit, audit or viewing
+window data, even when they hold `view_transactions`. A default wallet that a
+role whitelists keeps the fields that role is permitted to read. The
+single-config and bulk workspace settings routes accept a `default_wallet_id`
+change only from holders of `change_finance_wallets`, and only for a wallet in
+the same workspace.
+Database-level enforcement of `default_wallet_id` (the `workspace_configs` RLS
+and the `update_workspace_configs_with_approval_transitions` RPC) is a tracked
+follow-up; today the API routes enforce it.
+Any other unwhitelisted wallet returns 404. Finance managers retain
+workspace-wide wallet access. Recurring transactions validate their wallet and
+category ids as UUIDs, then check workspace ownership with the service-role
+client after the `manage_finance` check. Wallet creation accepts a matching
+replay without writing and rejects other uses of an existing id; editing an
+existing wallet uses its update route. Money Lover import requires
+`manage_finance`. The retired wallet migration endpoint remains disabled: it
+returns 403 outside development and 410 in development without writing wallets.
+
+Regression coverage: `finance-boundaries.test.ts`,
+`finance-write-boundaries.test.ts`, the wallets route `default-wallet.test.ts`,
+`workspace-settings-configs-route.test.ts`, and the subscription invoice and
+role wallet route tests.
 
 ## Wallet checkpoint reconciliation submission
 
@@ -812,3 +890,29 @@ presence of malformed customer timestamps remain unproven.
 `invoice-card-date.test.tsx` covers actual card/template transitions in both
 locales and preview modes, malformed date boundaries, missing dates, and valid
 formatting. Source checks do not establish a live customer export or deployment.
+
+## Finance aggregate access and budget calculations
+
+Budget spending sums expenses only through wallets in the budget workspace.
+Moving a transaction refreshes the budgets for both its old and new wallets;
+deleting it refreshes the old workspace. Budget reference changes recompute
+spending, and database triggers reject foreign wallet/category references.
+Cached totals are corrected during migration without deleting budget rows or
+changing their configured references. Historical invalid references require
+explicit repair before those budgets can be edited.
+
+Regression coverage: `finance-workspace-boundaries.sql`. Invoice analytics sibling RPCs
+are service-only behind the existing authorized routes. Transaction statistics
+bind authenticated calls to the current user; service calls must provide an
+actor with finance read permission.
+
+
+## Invoice analytics rollback access
+
+Invoice analytics RPCs are service-role only, including after the finance
+workspace-boundary computation rollback. Authenticated users use the authorized
+Finance analytics routes. Reverting computation does not restore PUBLIC or anon
+execution or remove the internal service-role guard. Transaction-stat actor checks
+also remain hardened because their full reversal permits actor spoofing.
+`apps/database/supabase/tests/finance-rollback-access.sql` verifies every invoice
+overload after rollback, anonymous RPC rejection and the internal role guard.

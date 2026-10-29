@@ -295,6 +295,8 @@
                   "platform/applications/overview",
                   "platform/applications/apps",
                   "platform/applications/calendar",
+                  "platform/applications/calendar-details-1",
+                  "platform/applications/calendar-details-2",
                   "platform/features/calendar-scheduling-summary",
                   "platform/features/shared-secret-password-reset",
                   "platform/applications/chat",
@@ -398,8 +400,10 @@
                   "build/devops/cloudflare-cron-control",
                   "build/devops/turbo-remote-cache",
                   "build/devops/cloudflare-backend-ownership",
+                  "build/devops/abuse-guard-store",
                   "build/devops/background-work-inventory",
                   "build/devops/cloudflare-processor-migration",
+                  "build/devops/web-cloudflare-migration",
                   "build/devops/mobile-store-deployment",
                   "build/devops/calendar-native-api-protection",
                   "build/devops/desktop-beta-distribution",
@@ -567,6 +571,7 @@
                   {
                     "group": "Routes by app",
                     "pages": [
+                      "reference/repository/routes/abuse-guard",
                       "reference/repository/routes/ai",
                       "reference/repository/routes/api",
                       "reference/repository/routes/apps",

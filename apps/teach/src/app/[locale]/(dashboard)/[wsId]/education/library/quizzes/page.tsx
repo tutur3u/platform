@@ -38,7 +38,10 @@ export default async function WorkspaceLibraryQuizzesPage({
 }: Props) {
   const t = await getTranslations();
   const { wsId: routeWsId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(
+    routeWsId,
+    'update_user_groups'
+  );
   const { data, count } = await getData(resolvedWsId, await searchParams);
 
   return (

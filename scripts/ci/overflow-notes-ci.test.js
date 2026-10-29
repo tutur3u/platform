@@ -128,7 +128,10 @@ test('shared, inline and E2E preflights validate notes rather than trusting ref 
   ]) {
     const workflow = readWorkflow(name);
     const policy = workflow.concurrency || workflow.jobs.format.concurrency;
-    const policyName = name === 'biome-check.yaml' ? `${name}-format` : name;
+    // Reusable callees carry a workflow prefix so their groups cannot collide
+    // with the caller's group; Biome validates in per-job groups.
+    const policyName =
+      name === 'biome-check.yaml' ? `biome-check-${name}-format` : name;
     const base = {
       workflow: name,
       event: { pull_request: {} },

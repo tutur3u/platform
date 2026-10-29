@@ -92,6 +92,7 @@ review prove baseline equivalence. Existing migration history stays immutable.
   defaults require their owner. See the RPC hardening runbook and
   `20261027151200_anon-definer-execute.sql` for the catalog and privilege snapshot.
 - Admin-only report RPCs can retain an internal workspace-permission guard without granting authenticated EXECUTE. Test ACLs first, then grant authenticated only inside the rolled-back pgTAP transaction to prove both denial and permitted-member behavior. Before removing an obsolete overload, inspect `pg_get_functiondef` and final SQL/trigger callers on a fresh full replay; historical callers may have been replaced. See the RPC hardening runbook and `anon-definer-migration-c.sql`.
+- Audit definer revokes must name PUBLIC and both client roles explicitly. Re-verify app/package callers before denying schema USAGE; preserve service/owner access and each audit creator's schema-local defaults. Verify the migration as plain postgres, separately from provider-owned objects. Capture ACL grantors and grant options for exact rollback; schema-local function defaults cannot subtract a global authenticated grant, so verify effective schema access too. See `sb25-nonpublic-definers.sql` and the RPC hardening runbook.
 - Views over RLS-protected tables need `security_invoker` before broad grants.
 
 ## Outbound SSO persistence

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { FinanceRouteAuthContext } from '../../../../../request-access';
+import { validateFinanceReferences } from '../../../../../workspace-references';
 import {
   checkpointDatabaseErrorResponse,
   isCheckpointStorageMissing,
@@ -75,6 +76,13 @@ export async function POST(
   if (access.response) {
     return access.response;
   }
+
+  const invalidCategory = await validateFinanceReferences(
+    access.context.sbAdmin,
+    access.context.normalizedWsId,
+    payloadResult.data
+  );
+  if (invalidCategory) return invalidCategory;
 
   const { data, error } = await access.context.sbAdmin
     .schema('private')

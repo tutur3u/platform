@@ -87,7 +87,8 @@ jobs:
           import { appendFileSync } from 'node:fs';
           import { profileFor } from './scripts/ci/wave1-native-profile.mjs';
           const p = profileFor(process.env.APP, process.env.PROFILE, process.env.CLOUDFLARE_WORKERS_SUBDOMAIN);
-          appendFileSync(process.env.GITHUB_ENV, `NEXT_PUBLIC_APP_URL=https://${p.host}\nNEXT_PUBLIC_${p.app.toUpperCase()}_APP_URL=https://${p.host}\nNEXT_PUBLIC_WEB_APP_URL=${p.environment === 'production' ? 'https://tuturuuu.com' : 'https://staging.tuturuuu.com'}\n`);
+          if (p.environment !== 'production') appendFileSync(process.env.GITHUB_ENV, 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com\n');
+          appendFileSync(process.env.GITHUB_ENV, `NEXT_PUBLIC_APP_URL=https://${p.host}\nNEXT_PUBLIC_${p.app.toUpperCase()}_APP_URL=https://${p.host}\nNEXT_PUBLIC_WEB_APP_URL=${p.environment === 'production' ? 'https://tuturuuu.com' : 'https://web.staging.tutur3u.com'}\n`);
           JS
       - name: Generate canonical bundled build metadata
         env:

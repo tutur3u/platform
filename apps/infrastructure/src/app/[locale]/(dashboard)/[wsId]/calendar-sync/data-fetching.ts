@@ -1,5 +1,5 @@
 import { resolveSatellitePageActor } from '@tuturuuu/satellite/workspace-access';
-import type { createClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { SyncLog } from '@tuturuuu/ui/legacy/calendar/settings/types';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 
@@ -16,7 +16,7 @@ async function getCalendarSyncActor(wsId: string, actor?: CalendarSyncActor) {
     supabase: resolved.admin,
   });
   if (!member.ok) throw new Error('Workspace access denied');
-  const admin: Awaited<ReturnType<typeof createClient>> = resolved.admin;
+  const admin: TypedSupabaseClient = resolved.admin;
   return { ...resolved, admin };
 }
 

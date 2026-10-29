@@ -10,7 +10,7 @@ import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime
 
 const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
-const hosts = ['nova.ai.vn', 'nova-staging.tuturuuu.com'];
+const hosts = ['nova.ai.vn', 'nova.staging.tutur3u.com'];
 const privateRobots = 'noindex, nofollow, nosnippet';
 
 function assertHeaders(response, { asset = false, publicPage = false } = {}) {
@@ -137,7 +137,7 @@ test('emitted nova response policy and root host fences', {
       async () => {
         const root = await get(host, '/');
         assert.equal(root.status, 200);
-        assertHeaders(root, { publicPage: true && host === hosts[0] });
+        assertHeaders(root, { publicPage: host === hosts[0] });
         const info = await get(host, '/api/build-info');
         assert.equal(info.status, 200);
         assertHeaders(info);

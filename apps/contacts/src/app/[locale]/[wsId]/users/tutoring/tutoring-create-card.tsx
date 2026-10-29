@@ -194,6 +194,14 @@ export function TutoringCreateCard({
     );
   }, [form]);
 
+  const singleSlot = form.sessionSlots.length === 1;
+  const contentHelp = t(
+    form.reasonType === 'WEAK_SUPPORT'
+      ? 'content_rule_weak'
+      : 'content_rule_absent'
+  );
+  const firstSlot = form.sessionSlots[0];
+
   const reasonLabels: Record<TutoringReasonType, string> = {
     ABSENT_RECOVERY: t('absent_recovery'),
     CUSTOM: t('custom_reason'),
@@ -215,6 +223,7 @@ export function TutoringCreateCard({
                 ...form,
                 groupId: nextGroupId,
                 missedClassDate: '',
+                missedClassDates: undefined,
                 missingLessonDates: undefined,
                 sourceFeedbackId: null,
               });
@@ -238,6 +247,7 @@ export function TutoringCreateCard({
                 studentLabel: option?.label || form.studentLabel,
                 studentUserId: value,
                 missedClassDate: '',
+                missedClassDates: undefined,
                 missingLessonDates: undefined,
               })
             }
@@ -368,6 +378,7 @@ export function TutoringCreateCard({
 
       <TutoringCreateSlots
         conflictingIndexes={conflictingIndexes}
+        contentHelp={contentHelp}
         form={form}
         onChange={onChange}
         teacherOptions={teacherOptions}
@@ -375,23 +386,34 @@ export function TutoringCreateCard({
       />
 
       <div className="space-y-2">
-        <Label htmlFor="content">{t('content')}</Label>
-        <p className="text-muted-foreground text-xs">
-          {t(
-            form.reasonType === 'WEAK_SUPPORT'
-              ? 'content_rule_weak'
-              : 'content_rule_absent'
-          )}
-        </p>
-        <Textarea
-          id="content"
-          onChange={(event) =>
-            onChange({ ...form, content: event.target.value })
-          }
-          placeholder={t('content_placeholder')}
-          rows={3}
-          value={form.content}
-        />
+        {singleSlot ? <Label htmlFor="content">{t('content')}</Label> : null}
+        {singleSlot ? (
+          <p className="text-muted-foreground text-xs" id="content-help">
+            {contentHelp}
+          </p>
+        ) : null}
+        {singleSlot ? (
+          <Textarea
+            aria-describedby="content-help"
+            id="content"
+            onChange={(event) =>
+              onChange(
+                firstSlot?.content !== undefined
+                  ? {
+                      ...form,
+                      sessionSlots: form.sessionSlots.map((slot) => ({
+                        ...slot,
+                        content: event.target.value,
+                      })),
+                    }
+                  : { ...form, content: event.target.value }
+              )
+            }
+            placeholder={t('content_placeholder')}
+            rows={3}
+            value={firstSlot?.content ?? form.content}
+          />
+        ) : null}
         {form.missingLessonDates?.length ? (
           <p className="text-dynamic-orange text-xs">
             {t('lesson_notes_missing', {

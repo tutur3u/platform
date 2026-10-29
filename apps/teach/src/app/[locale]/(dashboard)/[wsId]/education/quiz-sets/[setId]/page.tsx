@@ -3,7 +3,7 @@ import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
-import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
+import { requireQuizSetPageAccess } from '@/lib/quiz-set-page-access';
 import { getWorkspaceQuizColumns } from './columns';
 import { getQuizSetQuizzes } from './data';
 import QuizForm from './form';
@@ -36,7 +36,7 @@ export default async function WorkspaceQuizzesPage({
 }: Props) {
   const t = await getTranslations();
   const { wsId: routeWsId, setId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await requireQuizSetPageAccess(routeWsId, setId);
 
   const { data, count } = await getQuizSetQuizzes(
     resolvedWsId,

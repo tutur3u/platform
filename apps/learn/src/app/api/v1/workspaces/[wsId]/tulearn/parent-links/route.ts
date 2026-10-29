@@ -108,6 +108,21 @@ export const POST = withSessionAuth<Params>(
         );
       }
 
+      const { data: linkedStudent, error: linkedStudentError } = await sbAdmin
+        .from('workspace_user_linked_users')
+        .select('platform_user_id')
+        .eq('ws_id', normalizedWsId)
+        .eq('virtual_user_id', parsed.data.studentWorkspaceUserId)
+        .eq('platform_user_id', parsed.data.studentPlatformUserId)
+        .maybeSingle();
+      if (linkedStudentError) throw linkedStudentError;
+      if (!linkedStudent) {
+        return NextResponse.json(
+          { message: 'Student not found' },
+          { status: 404 }
+        );
+      }
+
       if (parsed.data.parentUserId) {
         const { data: existingLink, error: existingLinkError } = await sbAdmin
           .from('tulearn_parent_student_links')

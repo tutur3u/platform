@@ -1,5 +1,6 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { connection, NextResponse } from 'next/server';
 
@@ -17,7 +18,10 @@ export async function authorizeCrawlerRead(request: Request, wsId: string) {
 
   const permissions = await getPermissions({ user, wsId });
 
-  if (!permissions || permissions.withoutPermission(CRAWLER_PERMISSION)) {
+  if (
+    permissions?.wsId !== ROOT_WORKSPACE_ID ||
+    permissions.withoutPermission(CRAWLER_PERMISSION)
+  ) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getReportReadGroupIds } from '@tuturuuu/users-core/routes/users/reports/group-read-access';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -22,15 +23,25 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 
+  const accessibleGroupIds = await getReportReadGroupIds({
+    request: req,
+    wsId: permissions.wsId,
+    canManageUsers: permissions.containsPermission('manage_users'),
+  });
   const sbAdmin = await createAdminClient();
   const privateDb = sbAdmin.schema('private');
 
-  const { data, error } = await privateDb
+  let query = privateDb
     .from('external_user_monthly_report_logs_workspace_view')
     .select('*')
     .eq('report_id', reportId)
-    .eq('user_ws_id', wsId)
+    .eq('user_ws_id', permissions.wsId)
+    .eq('group_ws_id', permissions.wsId)
     .order('created_at', { ascending: false });
+  if (accessibleGroupIds !== null) {
+    query = query.in('group_id', accessibleGroupIds);
+  }
+  const { data, error } = await query;
 
   if (error) {
     console.error(error);
