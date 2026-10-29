@@ -201,48 +201,58 @@ test('check reports violations outside apps, packages and scripts', (t) => {
   ]);
 });
 
-const RESERVED_FILES = [
+const MANAGED_PROJECT_FILES = [
   'apps/infrastructure/src/lib/infrastructure/projects.ts',
   'apps/web/src/lib/infrastructure/project-model.ts',
   'scripts/watch-blue-green/projects.js',
 ];
-const reservedList = (...hosts) =>
-  `const RESERVED_MANAGED_PROJECT_HOSTNAMES = new Set([\n${hosts
-    .map((host) => `  '${host}',`)
-    .join('\n')}\n]);`;
 
-test('reserved deny-lists may name production dev and staging hosts only', () => {
-  for (const file of RESERVED_FILES) {
-    assert.deepEqual(
-      violations(
-        reservedList('dev.tuturuuu.com', 'staging.tuturuuu.com'),
-        file
-      ),
-      []
-    );
-    assert.deepEqual(violations(reservedList('qa.tuturuuu.com'), file), [
-      'qa.tuturuuu.com',
-    ]);
-    assert.deepEqual(
-      violations(`${reservedList()}\nconst h = 'dev.tuturuuu.com';`, file),
-      ['dev.tuturuuu.com']
-    );
-  }
-  assert.deepEqual(
-    violations(reservedList('dev.tuturuuu.com'), 'apps/web/src/other.ts'),
-    ['dev.tuturuuu.com']
-  );
+test('no file is exempt: a labeled production host fails even in a deny-list', () => {
+  const list =
+    "const RESERVED_MANAGED_PROJECT_HOSTNAMES = new Set(['dev.tuturuuu.com']);";
+  for (const file of MANAGED_PROJECT_FILES)
+    assert.deepEqual(violations(list), ['dev.tuturuuu.com'], file);
 });
 
-test('every managed-project deny-list keeps dev.tuturuuu.com reserved', () => {
-  for (const file of RESERVED_FILES) {
+test('managed-project consumers use the shared zone rule, not local lists', () => {
+  for (const file of MANAGED_PROJECT_FILES) {
     const source = readFileSync(path.join(__dirname, '..', file), 'utf8');
-    const list =
-      /RESERVED_MANAGED_PROJECT_HOSTNAMES = new Set\(\[([^\]]*)\]/u.exec(
-        source
-      )?.[1];
-    assert.ok(list, file);
-    for (const host of ['dev.tuturuuu.com', 'staging.tuturuuu.com'])
-      assert.ok(list.includes(`'${host}'`), `${file} must reserve ${host}`);
+    assert.doesNotMatch(source, /RESERVED_MANAGED_PROJECT_HOSTNAMES/u, file);
+    assert.match(source, /isReservedManagedProjectHostname\(hostname\)/u, file);
+    assert.match(
+      source,
+      /@tuturuuu\/utils\/managed-project-hostnames|packages\/utils\/src\/managed-project-hostnames-core\.cjs/u,
+      file
+    );
   }
+});
+
+for (const [name, source] of [
+  ['fullwidth dot', "host: 'staging．tuturuuu．com'"],
+  ['ideographic dot', "host: 'staging。tuturuuu。com'"],
+  ['octal escape', String.raw`host: 'staging\056tuturuuu\56com'`],
+  ['decimal entity', 'href="https://staging&#46;tuturuuu&#046;com"'],
+  ['hex entity', 'href="https://staging&#x2E;tuturuuu&#x2e;com"'],
+  ['named entity', 'href="https://staging&period;tuturuuu&period;com"'],
+  ['unicode escape', String.raw`host: 'staging\u{2E}tuturuuu.com'`],
+])
+  test(`catches the ${name} bypass`, () =>
+    assert.deepEqual(violations(source), ['staging.tuturuuu.com']));
+
+test('a production-zone label inside a longer foreign host is not a match', () => {
+  for (const source of [
+    "host: 'evil-staging.tuturuuu.com.attacker.net'",
+    "host: 'staging.tuturuuu.com-evil.net'",
+    "host: 'staging.eviltuturuuu.com'",
+    "host: 'staging-tuturuuu.com'",
+    "const stagingHosts = ['eviltuturuuu.com', 'tuturuuu.com.attacker.net'];",
+  ])
+    assert.deepEqual(violations(source), [], source);
+  assert.deepEqual(
+    violations("const stagingHosts = ['eviltuturuuu.com', '.tuturuuu.com'];"),
+    ['production cookie domain in staging allowlist']
+  );
+  assert.deepEqual(violations("host: 'xn--evil.staging.tuturuuu.com'"), [
+    'xn--evil.staging.tuturuuu.com',
+  ]);
 });

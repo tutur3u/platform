@@ -660,18 +660,26 @@ Worker, production hosts fall back to host-only cookies; they never take the
 `.staging.tutur3u.com` scope. `packages/utils/src/shared-cookie.test.ts` and
 `scripts/ci/wave1-native-calendar-profile.test.mjs` cover both cases.
 
-`dev.tuturuuu.com` and `staging.tuturuuu.com` stay in all three
-managed-project reserved hostname lists (`apps/web`, `apps/infrastructure` and
-`scripts/watch-blue-green`), so a managed project cannot claim a
-production-zone name and receive production cookies. Only those deny-list
-entries in those three files are exempt from the guard.
+Managed projects can never serve a platform cookie-zone hostname. One shared
+rule, `@tuturuuu/utils/managed-project-hostnames` (plain-Node core
+`packages/utils/src/managed-project-hostnames-core.cjs`), rejects
+`tuturuuu.com`, every `*.tuturuuu.com` name, and `staging.tutur3u.com` and its
+subdomains. It also keeps the exact non-zone reservations (`localhost`,
+`nova.ai.vn`, `rewise.me`). It compares after lowercasing and stripping the
+scheme, path and trailing dots. The web API, the infrastructure app and the
+blue/green watcher all import this rule, so the three surfaces cannot drift
+apart, and no file needs a guard exemption.
 
 The guard (`scripts/check-staging-hosts.js`) scans every tracked source and
 configuration file, including root files such as `.env.*`, `wrangler.toml`
 and Dockerfiles. Tests, Markdown and lockfiles are skipped. Before matching, it
-lowercases text, decodes escaped dots, joins string concatenations and inlines
-simple same-file string constants used in templates. Hosts are compared after
-stripping the scheme, port and trailing dot. Any variable or property whose
+lowercases text and decodes escaped dots: percent, hex, unicode, octal and HTML
+entities, plus fullwidth and ideographic dots. It also joins string
+concatenations and inlines simple same-file string constants used in
+templates. It then extracts whole dotted hostnames, bounded on both sides so
+`tuturuuu.com.attacker.net` stays one foreign host. After stripping the
+scheme, port and trailing dot, each hostname is compared exactly against the
+production zone. Any variable or property whose
 name contains `staging` followed by host, domain, origin, zone, pattern or
 allow fails if it names the production zone. Non-production labels in a regex
 alternation in front of the zone also fail. Values that only exist at runtime,

@@ -4,25 +4,15 @@ const path = require('node:path');
 
 const NON_PRODUCTION_LABEL =
   /^(staging|beta|cutover|dev|test|qa|next|rc|sandbox|canary|preview)$/;
-// Ends at the zone, not inside a longer label or a lookalike parent zone.
-const ZONE_HOST = /(?:[a-z0-9_*-]+\.)*tuturuuu\.com(?![a-z0-9-]|\.[a-z0-9])/g;
+const PRODUCTION_ZONE = 'tuturuuu.com';
+// A whole dotted hostname: it never starts or ends inside a longer label, so
+// `tuturuuu.com.attacker.net` and `eviltuturuuu.com` are single foreign hosts.
+const HOST_TOKEN =
+  /(?<![a-z0-9_*-])(?:[a-z0-9_*-]+\.)+[a-z0-9-]+(?![a-z0-9_*-]|\.[a-z0-9])/g;
 const STAGING_ALLOWLIST =
   /\b[\w$]*staging[\w$]*(?:host|domain|origin|zone|pattern|allow)[\w$]*\s*(?::[^=\n]*)?(?:=|:)[\s\S]*?(?:;|\n\s*\n|$)/g;
 const SIMPLE_STRING_CONSTANT =
   /\b(?:const|let|var)\s+([a-z_$][\w$]*)\s*=\s*(['"`])([a-z0-9.*_-]+)\2/g;
-// Deny-lists that stop managed projects from claiming production names.
-const RESERVED_LIST_FILES = [
-  'apps/infrastructure/src/lib/infrastructure/projects.ts',
-  'apps/web/src/lib/infrastructure/project-model.ts',
-  'scripts/watch-blue-green/projects.js',
-];
-const RESERVED_LIST =
-  /const reserved_managed_project_hostnames = new set\(\[[^\]]*\]\)/g;
-const RESERVED_LABELS = ['dev', 'staging'];
-const RESERVED_LIST_ENTRY = new RegExp(
-  `(['"])(?:${RESERVED_LABELS.join('|')})\\.tuturuuu\\.com\\1`,
-  'g'
-);
 const SCANNED_FILE =
   /(?:\.(?:[cm]?[jt]sx?|jsonc?|json5|toml|ya?ml|env|vars|sh|bash|py|sql|html?|tf|conf|ini|properties|rs|dart|go|swift|kt)|(?:^|\/)(?:dockerfile[^/]*|\.env[^/]*|\.dev\.vars[^/]*))$/i;
 const SKIPPED_FILE =
@@ -47,7 +37,12 @@ function normalizeHost(value) {
 function normalizeSource(source) {
   let text = source
     .toLowerCase()
-    .replace(/%2e|\\x2e|\\u002e|\\u\{2e\}|\[\.\]/g, '.')
+    // Percent, hex, unicode, octal and HTML-entity escapes, bracketed dots,
+    // and the fullwidth/ideographic dots that IDNA maps to a full stop.
+    .replace(
+      /%2e|\\x2e|\\u0*2e|\\u\{0*2e\}|\\0?56(?![0-7])|&#0*46;|&#x0*2e;|&period;|\[\.\]|[\uff0e\u3002\uff61]/g,
+      '.'
+    )
     .replace(/\\+\./g, '.');
   const constants = new Map(
     [...text.matchAll(SIMPLE_STRING_CONSTANT)].map(([, name, , value]) => [
@@ -70,8 +65,19 @@ function normalizeSource(source) {
   return joinLiterals(text);
 }
 
+/** Exact comparison of a parsed hostname against the production cookie zone. */
+function inProductionZone(host) {
+  return host === PRODUCTION_ZONE || host.endsWith(`.${PRODUCTION_ZONE}`);
+}
+
+function productionZoneHosts(text) {
+  return [...text.matchAll(HOST_TOKEN)]
+    .map((match) => ({ host: normalizeHost(match[0]), index: match.index }))
+    .filter(({ host }) => inProductionZone(host));
+}
+
 function nonProductionHost(host) {
-  const labels = normalizeHost(host).slice(0, -'tuturuuu.com'.length);
+  const labels = host.slice(0, -PRODUCTION_ZONE.length);
   return labels.split(/[.-]/).some((label) => NON_PRODUCTION_LABEL.test(label));
 }
 
@@ -86,23 +92,20 @@ function dynamicPrefix(text, index) {
   return text.slice(start + 1, index).replace(/[.-]+$/, '');
 }
 
-function violations(source, file = '') {
-  let text = normalizeSource(source);
-  if (RESERVED_LIST_FILES.includes(file))
-    text = text.replace(RESERVED_LIST, (list) =>
-      list.replace(RESERVED_LIST_ENTRY, "''")
-    );
+function violations(source) {
+  const text = normalizeSource(source);
   const found = [];
+  if (!text.includes('tuturuuu')) return found;
   for (const [declaration] of text.matchAll(STAGING_ALLOWLIST))
-    if (/tuturuuu\.com(?![a-z0-9-])/.test(declaration))
+    if (productionZoneHosts(declaration).length)
       found.push('production cookie domain in staging allowlist');
-  for (const match of text.matchAll(ZONE_HOST)) {
-    const host = normalizeHost(match[0]);
+  for (const { host, index } of productionZoneHosts(text)) {
     if (nonProductionHost(host)) {
       found.push(host);
       continue;
     }
-    const prefix = dynamicPrefix(text, match.index);
+    if (host !== PRODUCTION_ZONE) continue;
+    const prefix = dynamicPrefix(text, index);
     if (
       /[)\]}|*+]$/.test(prefix) &&
       prefix
@@ -133,8 +136,7 @@ function check(root = process.cwd()) {
     } catch {
       continue;
     }
-    for (const host of violations(source, file))
-      failures.push(`${file}: ${host}`);
+    for (const host of violations(source)) failures.push(`${file}: ${host}`);
   }
   return failures;
 }

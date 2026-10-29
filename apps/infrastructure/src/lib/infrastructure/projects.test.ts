@@ -65,14 +65,28 @@ describe('infrastructure projects', () => {
   });
 
   it.each([
-    'dev.tuturuuu.com',
-    'DEV.Tuturuuu.com',
+    'calendar-staging.tuturuuu.com',
+    'forms.tuturuuu.com',
+    'meet.tuturuuu.com',
+    'Docs.Tuturuuu.COM.',
     'https://dev.tuturuuu.com/',
-    'staging.tuturuuu.com',
-  ])('keeps production-zone %s reserved from managed projects', (hostname) => {
-    expect(() => normalizeInfrastructureProjectHostnames([hostname])).toThrow(
-      'Managed project hostnames cannot use reserved Tuturuuu platform hostnames.'
-    );
+    'web.staging.tutur3u.com',
+  ])(
+    'keeps platform zone host %s reserved from managed projects',
+    (hostname) => {
+      expect(() => normalizeInfrastructureProjectHostnames([hostname])).toThrow(
+        'Managed project hostnames cannot use reserved Tuturuuu platform hostnames.'
+      );
+    }
+  );
+
+  it('still accepts customer hostnames outside the platform zones', () => {
+    expect(
+      normalizeInfrastructureProjectHostnames([
+        'Docs.Example.com.',
+        'tuturuuu.com.example.org',
+      ])
+    ).toEqual(['docs.example.com', 'tuturuuu.com.example.org']);
   });
 
   it('reconciles queued platform status from a served deployment', () => {
