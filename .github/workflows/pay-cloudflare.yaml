@@ -138,8 +138,9 @@ jobs:
       public-env: |
         NEXT_PUBLIC_SUPABASE_URL=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_URL || 'https://pay-ci.supabase.invalid' }}
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_pay_ci_placeholder' }}
-        NEXT_PUBLIC_APP_URL=https://pay-staging.tuturuuu.com
-        NEXT_PUBLIC_WEB_APP_URL=https://staging.tuturuuu.com
+        NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com
+        NEXT_PUBLIC_APP_URL=https://pay.staging.tutur3u.com
+        NEXT_PUBLIC_WEB_APP_URL=https://web.staging.tutur3u.com
         TUTURUUU_NOINDEX=1
       format-paths: >-
         apps/pay/src/start-bridge apps/pay/src/routes apps/pay/src/router.tsx apps/pay/src/start.ts apps/pay/cloudflare apps/pay/vite.config.mts apps/pay/void.config.ts apps/pay/tsconfig.json apps/pay/package.json apps/pay/start-bridge.routes.json apps/pay/start-bridge.config.ts apps/pay/tsconfig.cloudflare.json apps/pay/src/proxy.ts apps/pay/src/proxy-build-info.test.ts

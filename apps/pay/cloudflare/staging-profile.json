@@ -1,9 +1,10 @@
 {
+  "NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN": ".staging.tutur3u.com",
   "TUTURUUU_NOINDEX": "1",
-  "INTERNAL_WEB_API_ORIGIN": "https://staging.tuturuuu.com",
-  "NEXT_PUBLIC_WEB_APP_URL": "https://staging.tuturuuu.com",
-  "NEXT_PUBLIC_APP_URL": "https://pay-staging.tuturuuu.com",
-  "PAY_APP_URL": "https://pay-staging.tuturuuu.com",
+  "INTERNAL_WEB_API_ORIGIN": "https://web.staging.tutur3u.com",
+  "NEXT_PUBLIC_WEB_APP_URL": "https://web.staging.tutur3u.com",
+  "NEXT_PUBLIC_APP_URL": "https://pay.staging.tutur3u.com",
+  "PAY_APP_URL": "https://pay.staging.tutur3u.com",
   "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co",
   "POLAR_SANDBOX": "true"
 }

@@ -19,7 +19,7 @@ import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime
 export const app = await realpath(
   fileURLToPath(new URL('../', import.meta.url))
 );
-export const modes = [{ origin: 'https://pay-staging.tuturuuu.com', base: '' }];
+export const modes = [{ origin: 'https://pay.staging.tutur3u.com', base: '' }];
 
 export async function payRuntime(t, options = {}) {
   assert.equal(process.env.CI, 'true', 'Requires an emitted native build');

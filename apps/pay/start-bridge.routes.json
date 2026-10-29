@@ -20,7 +20,7 @@
       "redirect": "/dashboard"
     },
     "/login": {
-      "redirect": "https://staging.tuturuuu.com/login"
+      "redirect": "https://web.staging.tutur3u.com/login"
     },
     "/dashboard": {
       "redirect": "/login?next="

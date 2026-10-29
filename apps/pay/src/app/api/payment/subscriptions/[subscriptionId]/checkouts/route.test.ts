@@ -140,7 +140,7 @@ describe('workspace checkout boundary', () => {
     expect(mocks.create).not.toHaveBeenCalled();
   });
   it('returns sandbox checkouts to the staging Pay origin in production mode', async () => {
-    const origin = 'https://pay-staging.tuturuuu.com';
+    const origin = 'https://pay.staging.tutur3u.com';
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('PAY_APP_URL', origin);
     vi.resetModules();

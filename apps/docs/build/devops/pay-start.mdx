@@ -10,14 +10,14 @@ A source build is not payment-provider acceptance or production cutover.
 
 ## Use root-only staging
 
-The staging candidate admits only `pay-staging.tuturuuu.com` as a host root.
+The staging candidate admits only `pay.staging.tutur3u.com` as a host root.
 It rejects `pay.tuturuuu.com`, apex mounts and unknown hosts before app code.
 The cutover-prep PR must add `pay.tuturuuu.com` together with its separately
 reviewed production profile; apex hosting remains held by the shared auth guard. Pay consumes the bridge's shared session model without a per-app cookie.
 
 `cloudflare/staging-profile.json` owns the staging values used by Void, artifact
-qualification and runtime checks. It pins Pay to `https://pay-staging.tuturuuu.com`,
-Web/API to `https://staging.tuturuuu.com`, the repository's staging Supabase
+qualification and runtime checks. It pins Pay to `https://pay.staging.tutur3u.com`,
+Web/API to `https://web.staging.tutur3u.com`, the repository's staging Supabase
 project, and `POLAR_SANDBOX=true`. Supply only sandbox Polar credentials. The
 artifact helper rejects a missing or false sandbox flag. This staging-data
 artifact cannot be admitted as a production profile.

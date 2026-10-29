@@ -31,7 +31,7 @@ const PUBLIC_FILES = ['robots.txt'];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
 const EXPECTED = {
   '/': { redirect: '/dashboard' },
-  '/login': { redirect: 'https://staging.tuturuuu.com/login' },
+  '/login': { redirect: 'https://web.staging.tutur3u.com/login' },
   '/dashboard': { redirect: '/login?next=' },
 };
 // The Worker's mounts: the generated defaults plus the app-owned

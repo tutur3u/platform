@@ -22,11 +22,15 @@ it('selects only Polar sandbox for the declared Pay staging profile', async () =
     await readFile(new URL('./staging-profile.json', import.meta.url), 'utf8')
   );
   expect(profile.POLAR_SANDBOX).toBe('true');
-  expect(appConfig.mounts.rootHosts).toEqual(['pay-staging.tuturuuu.com']);
+  expect(appConfig.mounts.rootHosts).toEqual(['pay.staging.tutur3u.com']);
   expect(appConfig.mounts.unknownHost).toBe('reject');
-  expect(profile.PAY_APP_URL).toBe('https://pay-staging.tuturuuu.com');
-  expect(profile.INTERNAL_WEB_API_ORIGIN).toBe('https://staging.tuturuuu.com');
-  expect(profile.NEXT_PUBLIC_WEB_APP_URL).toBe('https://staging.tuturuuu.com');
+  expect(profile.PAY_APP_URL).toBe('https://pay.staging.tutur3u.com');
+  expect(profile.INTERNAL_WEB_API_ORIGIN).toBe(
+    'https://web.staging.tutur3u.com'
+  );
+  expect(profile.NEXT_PUBLIC_WEB_APP_URL).toBe(
+    'https://web.staging.tutur3u.com'
+  );
   vi.stubEnv('POLAR_SANDBOX', profile.POLAR_SANDBOX);
   vi.stubEnv('POLAR_ACCESS_TOKEN', 'disposable-sandbox-token');
   createPolarClient();
