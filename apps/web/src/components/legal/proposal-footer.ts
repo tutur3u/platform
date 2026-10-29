@@ -5,6 +5,14 @@ const INTERNAL_REVIEW_SENTENCE =
 
 export function stripInternalReviewSentences(footer: string) {
   return footer
+    .replace(
+      'Draft revision for review; not a newly effective agreement.',
+      'Not yet in effect.'
+    )
+    .replace(
+      'Bản sửa đổi để rà soát; chưa phải thỏa thuận mới có hiệu lực.',
+      'Chưa có hiệu lực.'
+    )
     .split(/(?<=[.!?])\s+/u)
     .filter((sentence) => !INTERNAL_REVIEW_SENTENCE.test(sentence))
     .join(' ');

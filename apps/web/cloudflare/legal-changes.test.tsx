@@ -97,16 +97,23 @@ describe('upcoming legal changes', () => {
         // The in-force footers keep their wording (pinned by the revisions tests).
         expect(getLegalDocument(kind, locale).footer).toMatch(banned);
       }
+      expect(
+        full.querySelector('article[id="privacy"] footer p')?.textContent
+      ).toBe(
+        locale === 'en'
+          ? 'Not yet in effect. Questions and rights requests may be sent to privacy@tuturuuu.com.'
+          : 'Chưa có hiệu lực. Gửi câu hỏi hoặc yêu cầu về quyền dữ liệu đến privacy@tuturuuu.com.'
+      );
       if (locale === 'en') {
         expect(
           full.querySelector('article[id="privacy"] footer p')?.textContent
         ).toBe(
-          'Draft revision for review; not a newly effective agreement. Questions and rights requests may be sent to privacy@tuturuuu.com.'
+          'Not yet in effect. Questions and rights requests may be sent to privacy@tuturuuu.com.'
         );
         expect(
           full.querySelector('article[id="terms"] footer p')?.textContent
         ).toBe(
-          'Draft revision for review; not a newly effective agreement. Enterprise order forms and mandatory consumer law may add or override terms.'
+          'Not yet in effect. Enterprise order forms and mandatory consumer law may add or override terms.'
         );
       }
     });
@@ -157,7 +164,7 @@ describe('upcoming legal changes', () => {
       expect(proposed?.textContent).toContain('NOTICE-DATE');
       expect(proposed?.textContent).not.toMatch(/draft/iu);
     });
-    it(`${locale} full proposals show the notice, original draft footers and current-version links`, () => {
+    it(`${locale} full proposals show the notice, proposal status footers and current-version links`, () => {
       const page = new DOMParser().parseFromString(
         renderToStaticMarkup(<LegalChanges locale={locale} full />),
         'text/html'
@@ -181,6 +188,14 @@ describe('upcoming legal changes', () => {
           `${document.title} ${document.highlightedWord}`
         );
         const displayFooter = document.footer
+          .replace(
+            'Draft revision for review; not a newly effective agreement.',
+            'Not yet in effect.'
+          )
+          .replace(
+            'Bản sửa đổi để rà soát; chưa phải thỏa thuận mới có hiệu lực.',
+            'Chưa có hiệu lực.'
+          )
           .split(/(?<=[.!?])\s+/u)
           .filter(
             (sentence) =>
