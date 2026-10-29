@@ -6410,5 +6410,24 @@
         "type": "String"
       }
     }
-  }
+  },
+  "mastermindAnsweredOnPhone": "Answered on phone",
+  "mastermindAnsweredOnMac": "Answered on Mac",
+  "mastermindAnsweredInChat": "Answered in chat",
+  "mastermindAnsweredAutomatically": "Answered automatically",
+  "mastermindAnsweredElsewhere": "Answered elsewhere",
+  "mastermindAlreadyAnsweredOnPhone": "Already answered on phone",
+  "mastermindAlreadyAnsweredOnMac": "Already answered on Mac",
+  "mastermindAlreadyAnsweredInChat": "Already answered in chat",
+  "mastermindAlreadyAnsweredAutomatically": "Already answered automatically",
+  "mastermindAlreadyAnsweredElsewhere": "Already answered elsewhere",
+  "mastermindWithdrawnNoLongerNeeded": "Withdrawn · no longer needed",
+  "mastermindAnsweredByYou": "you",
+  "mastermindViaPhone": "on phone",
+  "mastermindViaMac": "on Mac",
+  "mastermindViaChat": "in chat",
+  "mastermindViaAuto": "automatically",
+  "mastermindAnsweredInBatch": "Answered in batch",
+  "mastermindAlreadyAnsweredInBatch": "Already answered in batch",
+  "mastermindViaBatch": "in batch"
 }

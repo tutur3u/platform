@@ -7,10 +7,14 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/age_text.dart';
+import 'package:mobile/features/mastermind/presentation/answered_via_labels.dart';
 import 'package:mobile/features/mastermind/presentation/display_names.dart';
+import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
 import 'package:mobile/features/mastermind/view/inbox/decision_card_actions.dart';
@@ -20,10 +24,11 @@ import 'package:mobile/l10n/l10n.dart';
 
 /// One ask with a meaningful title, metadata and a two-line ask preview.
 ///
-/// The state line is the hub's word first (Resolved), then this device's
-/// reply (Sent · waiting for Mastermind). The preview stays visible separately.
-/// Open asks expose inline choices; a summary tap pushes the full ask and
-/// composer, so Back returns to this list with its filters intact.
+/// The state line is the hub's word first (Resolved, Answered on Mac,
+/// Withdrawn), then this device's reply (Sent · waiting for Mastermind). The
+/// preview stays visible separately. Open asks expose inline choices, which
+/// animate out when the ask is answered elsewhere; a summary tap pushes the
+/// full ask and composer, so Back returns to this list with its filters intact.
 class InboxItemTile extends StatelessWidget {
   const InboxItemTile({
     required this.item,
@@ -44,14 +49,26 @@ class InboxItemTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final replies = MastermindRepliesWatcher.cubitOf(context);
     return BlocSelector<
-      MastermindRepliesCubit,
-      MastermindRepliesState,
-      (OutboxEntry?, ReplyItemStatus)
+      MastermindAnsweredElsewhereCubit,
+      Map<String, AnsweredElsewhere>,
+      AnsweredElsewhere?
     >(
-      bloc: replies,
-      selector: (state) =>
-          (state.entryFor(item.id, item.versionHash), state.statusFor(item.id)),
-      builder: (context, value) => _row(context, value.$1, value.$2),
+      bloc: MastermindRepliesWatcher.answeredOf(context),
+      selector: (state) => state[item.id],
+      builder: (context, elsewhere) =>
+          BlocSelector<
+            MastermindRepliesCubit,
+            MastermindRepliesState,
+            (OutboxEntry?, ReplyItemStatus)
+          >(
+            bloc: replies,
+            selector: (state) => (
+              state.entryFor(item.id, item.versionHash),
+              state.statusFor(item.id),
+            ),
+            builder: (context, value) =>
+                _row(context, value.$1, value.$2, elsewhere),
+          ),
     );
   }
 
@@ -59,14 +76,21 @@ class InboxItemTile extends StatelessWidget {
     BuildContext context,
     OutboxEntry? entry,
     ReplyItemStatus status,
+    AnsweredElsewhere? elsewhere,
   ) {
     final l10n = context.l10n;
+    final locale = Localizations.localeOf(context).toString();
     final title = item.hubTitle ?? itemDisplayTitle(l10n, item);
     final kind = item.kind;
     final kindLabel = kind == null
         ? null
         : MastermindLabels.itemKind(l10n, kind);
-    final detail = [?_state(l10n, entry, status), ?_age(l10n)].join(' · ');
+    final detail = elsewhere != null
+        ? [answeredViaText(l10n, elsewhere.via), ?elsewhere.option].join(' · ')
+        : [?_state(l10n, entry, status), ?_age(l10n, locale)].join(' · ');
+    final answeredCheck =
+        elsewhere != null ||
+        (item.state == ItemState.answered && item.answeredVia != null);
     final preview = item.hubText ?? askPreviewText(item);
     void open() {
       if (_canRetry(status, entry)) {
@@ -128,7 +152,13 @@ class InboxItemTile extends StatelessWidget {
                   ),
                 if (item.by case final by?)
                   AppBadge.outline(child: Text(l10n.mastermindAskedBy(by))),
-                Text(detail, maxLines: 2, overflow: TextOverflow.ellipsis),
+                if (answeredCheck) const Icon(AppIcons.check, size: 14),
+                Text(
+                  detail,
+                  key: ValueKey('ask-state-${item.id}'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
             if (preview.isNotEmpty)
@@ -144,14 +174,36 @@ class InboxItemTile extends StatelessWidget {
         onTap: open,
       ),
     );
-    if (item.state == ItemState.answered) return row;
+    if (item.state != ItemState.open) return row;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         row,
-        Padding(
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          child: DecisionCardActions(item: item),
+        // Answered elsewhere: the choices fold away rather than vanish.
+        AnimatedSwitcher(
+          duration: MediaQuery.disableAnimationsOf(context)
+              ? Duration.zero
+              : AppMotion.normal,
+          switchInCurve: AppMotion.standard,
+          switchOutCurve: AppMotion.standard,
+          transitionBuilder: (child, animation) => FadeTransition(
+            opacity: animation,
+            child: SizeTransition(
+              sizeFactor: animation,
+              alignment: Alignment.topCenter,
+              child: child,
+            ),
+          ),
+          child: elsewhere != null
+              ? const SizedBox(
+                  key: ValueKey('answered'),
+                  width: double.infinity,
+                )
+              : Padding(
+                  key: const ValueKey('actions'),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  child: DecisionCardActions(item: item),
+                ),
         ),
       ],
     );
@@ -162,7 +214,13 @@ class InboxItemTile extends StatelessWidget {
     OutboxEntry? entry,
     ReplyItemStatus status,
   ) {
+    if (item.state == ItemState.withdrawn) {
+      return l10n.mastermindWithdrawnNoLongerNeeded;
+    }
     if (item.state == ItemState.answered) {
+      if (item.answeredVia case final via?) {
+        return [?item.resolution, ...answeredByParts(l10n, via)].join(' · ');
+      }
       return switch (item.resolution) {
         final answer? => l10n.mastermindResolvedWith(answer),
         null => l10n.mastermindResolvedState,
@@ -191,7 +249,12 @@ class InboxItemTile extends StatelessWidget {
       entry.status == OutboxStatus.pending &&
       status.issue == ReplyIssue.offline;
 
-  String? _age(AppLocalizations l10n) {
+  /// Resolved rows sit under their GMT+7 day, so they read the time ("06:21");
+  /// open ones read their age.
+  String? _age(AppLocalizations l10n, String locale) {
+    if (item.state != ItemState.open && item.resolvedAt != null) {
+      return Gmt7.time(item.resolvedAt!, locale);
+    }
     final at = item.createdAt ?? item.resolvedAt;
     final clock = now;
     if (at == null || clock == null) return null;

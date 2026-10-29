@@ -63,6 +63,7 @@
                   "platform/features/task-reminder-delivery",
                   "platform/features/mobile-chat",
                   "platform/features/mobile-mastermind",
+                  "platform/features/mobile-mastermind-answered-elsewhere",
                   "platform/features/mira-client-actions",
                   "platform/features/colab",
                   "platform/features/lettin",

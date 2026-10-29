@@ -73,6 +73,7 @@ NeedsYou parseNeedsYou(JsonReader input) {
       'by',
       'kind',
       'product',
+      'answered_via',
     ],
     [
       'id',
@@ -92,6 +93,8 @@ NeedsYou parseNeedsYou(JsonReader input) {
     hubText: _shortAskText(r, 'hub_text', 2000),
     hubRecommended: _shortAskText(r, 'hub_recommended', 80),
     by: _shortAskText(r, 'by', 100),
+    // Tolerant: an unknown or malformed value is left out, never fatal.
+    answeredVia: AnsweredVia.fromWire(r.object()['answered_via']),
     hubOptions: r.has('hub_options') && r.field('hub_options').value != null
         ? _shortOptions(r.field('hub_options')).labels
         : null,

@@ -148,14 +148,12 @@ summaries apply the same collapse.
 The Inbox tab opens on one compact segmented control: **Needs you · Resolved ·
 Decisions**. Needs you lists the open asks grouped by kind ("Decisions for
 you", "Actions", then "For your information"), each with its count, in publisher
-order. Resolved lists the hub's `decisions_resolved` history ("Recently
-resolved", newest first). Pull to refresh.
+order. Resolved groups hub history by GMT+7 day; see [resolved rows](/platform/features/mobile-mastermind-answered-elsewhere). Pull to refresh.
 
 - **Rows** are two lines: the friendly title (`itemDisplayTitle`, so a redacted
   `Product · area · kind` title uses the first ask line), then the
-  kind badge with the state and age: "Resolved · Yes · 2 h ago" for a resolved
-  ask, "Sent · waiting for Mastermind" or "Waiting to send" for this device's
-  reply. A separate two-line preview retains the ask. No age is shown where the hub
+  kind badge with state and age for open asks, or answer attribution and time
+  for resolved asks. A separate two-line preview retains the ask. No age is shown where the hub
   publishes none. Open asks expose one-tap option buttons on Home and Inbox;
   "More" and the full ask live on detail. The summary is one screen-reader node ("Decision. Review plan. Review the
   plan", hint "Opens the ask").
@@ -181,7 +179,7 @@ resolved", newest first). Pull to refresh.
   "Full details are on the Mac" instead. The id is looked up among the open
   asks, then the resolved history, and is only ever a route parameter; deep
   links carry tab roots only and never ids. A resolved ask shows an "Outcome"
-  panel (Resolved, "Answer: Yes", GMT+7 time) and no composer. An id in neither
+  panel with answer attribution and GMT+7 time, or withdrawn status, and no composer. An id in neither
   list shows "This item is no longer in Mastermind" (or "This was answered or
   withdrawn" when it left while open) with a way back, never an error. A changed
   `version_hash` shows "This question was updated".
@@ -265,8 +263,7 @@ switch, so it flips without a store release.
   already accepted by the hub is unaffected. Logout,
   account switch and lost access erase the outbox with the snapshot cache, behind
   the same generation fences, so an in-flight send cannot revive it.
-- **409 `stale_item`:** the item is refreshed, the typed words are kept, and the
-  screen says "This question changed or was already answered. Review it again."
+- **409 `stale_item`:** refreshes the item; see the [answered elsewhere rules](/platform/features/mobile-mastermind-answered-elsewhere).
   Option buttons always use the current question version. `idempotency_conflict` drops the queued entry with "Something went
   wrong with this reply. Review it and send it again."
 - **Other answers:** 400 (`unsafe_text` explains the text policy) and 413 keep
@@ -753,6 +750,8 @@ overflows four lines at the current width and text size.
 meanwhile. Leaving the screen inside the window still sends; logout or an
 account switch cancels it, and so does a live snapshot where the ask changed or
 left. Coverage: `mastermind_replies_undo_test.dart`, `mastermind_option_undo_test.dart`.
+
+See [answered elsewhere and withdrawn](/platform/features/mobile-mastermind-answered-elsewhere) for cross-device answers, batch labels, undo cancellation and resolved rows.
 
 ## Read-only Threads preview
 

@@ -3,6 +3,7 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
@@ -57,7 +58,7 @@ class InboxListBody extends StatelessWidget {
               ),
             ],
           ),
-        for (final group in model.groups) _group(l10n, group),
+        for (final group in model.groups) _group(context, group),
         if (model.security.isNotEmpty)
           AppGroupedSection.spaced(
             caption: l10n.mastermindSecurityGroup,
@@ -91,18 +92,23 @@ class InboxListBody extends StatelessWidget {
     ),
   };
 
-  Widget _group(AppLocalizations l10n, InboxGroup group) {
+  Widget _group(BuildContext context, InboxGroup group) {
     final open = expanded.contains(group.key);
     final capped = !open && group.items.length > MastermindInboxModel.groupCap;
     final items = capped
         ? group.items.take(MastermindInboxModel.groupCap)
         : group.items;
     return AppGroupedSection.spaced(
-      caption: _groupTitle(l10n, group),
+      caption: _groupTitle(context, group),
       captionTrailing: Text('${group.items.length}'),
       children: [
         for (final item in items)
-          InboxItemTile(item: item, now: now, showKind: group.resolved),
+          InboxItemTile(
+            key: ValueKey('ask-${item.id}'),
+            item: item,
+            now: now,
+            showKind: group.resolved,
+          ),
         if (capped)
           MastermindShowAllRow(
             count: group.items.length,
@@ -112,8 +118,17 @@ class InboxListBody extends StatelessWidget {
     );
   }
 
-  static String _groupTitle(AppLocalizations l10n, InboxGroup group) {
-    if (group.resolved) return l10n.mastermindRecentlyResolved;
+  static String _groupTitle(BuildContext context, InboxGroup group) {
+    final l10n = context.l10n;
+    if (group.resolved) {
+      return switch (group.day) {
+        final day? => Gmt7.date(
+          day,
+          Localizations.localeOf(context).toString(),
+        ),
+        null => l10n.mastermindRecentlyResolved,
+      };
+    }
     return switch (group.kind) {
       ItemKind.decision => l10n.mastermindGroupDecisions,
       ItemKind.action => l10n.mastermindGroupActions,

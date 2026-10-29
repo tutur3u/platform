@@ -148,8 +148,9 @@ void main() {
 
       await _segment(tester, 'Resolved');
       expect(find.byType(InboxItemTile), findsNWidgets(2));
-      expect(find.text('Recently resolved'), findsOneWidget);
-      expect(find.text('Resolved · Yes · 2 h ago'), findsNWidgets(2));
+      // Resolved rows group under their GMT+7 day and read the time.
+      expect(find.text('Jan 31, 2026'), findsOneWidget);
+      expect(find.text('Resolved · Yes · 22:32'), findsNWidgets(2));
 
       expect(inboxSegmentFromQuery('all'), InboxSegment.needsYou);
       expect(find.text('All'), findsNothing);
@@ -252,7 +253,7 @@ void main() {
       await tester.enterText(find.byType(TextField), 'ship it');
       await tester.pumpAndSettle();
       expect(find.byType(InboxItemTile), findsOneWidget);
-      expect(find.text('Resolved · Ship it · 2 h ago'), findsOneWidget);
+      expect(find.text('Resolved · Ship it · 22:32'), findsOneWidget);
 
       // Decisions has its own filters: no ask search there.
       await _segment(tester, 'Decisions');

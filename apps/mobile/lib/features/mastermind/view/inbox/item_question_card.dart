@@ -6,6 +6,7 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/age_text.dart';
+import 'package:mobile/features/mastermind/presentation/answered_via_labels.dart';
 import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
@@ -116,15 +117,21 @@ class ItemResolvedPanel extends StatelessWidget {
       caption: l10n.mastermindResolvedOutcome,
       children: [
         AppGroupedRow(
-          leading: const AppIconTile(
-            icon: AppIcons.check,
-            tone: AppTone.success,
-          ),
+          leading: item.state == ItemState.withdrawn
+              ? const AppIconTile(icon: AppIcons.close)
+              : const AppIconTile(icon: AppIcons.check, tone: AppTone.success),
           title: Semantics(
             liveRegion: true,
-            child: Text(l10n.mastermindResolvedState),
+            child: Text(switch ((item.state, item.answeredVia)) {
+              (ItemState.withdrawn, _) =>
+                l10n.mastermindWithdrawnNoLongerNeeded,
+              (_, final via?) => answeredViaText(l10n, via),
+              _ => l10n.mastermindResolvedState,
+            }),
           ),
-          subtitle: answer == null
+          subtitle: item.state == ItemState.withdrawn
+              ? null
+              : answer == null
               ? Text(l10n.mastermindResolvedNoAnswer)
               : RecordedAnswer(answer: answer),
           trailing: when == null ? null : Text(when),

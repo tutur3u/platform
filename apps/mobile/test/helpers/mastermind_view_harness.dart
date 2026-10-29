@@ -11,6 +11,7 @@ import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart'
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
+import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
@@ -84,6 +85,7 @@ final class MastermindViewHarness {
   MastermindViewHarness({
     FakeHubSource? source,
     MastermindRepliesCubit? replies,
+    MastermindAnsweredElsewhereCubit? answered,
     Stream<bool>? onlineChanges,
   }) : source = source ?? FakeHubSource() {
     access = MastermindAccessCubit(
@@ -105,6 +107,7 @@ final class MastermindViewHarness {
       snapshot: snapshot,
       scheduler: scheduler,
       replies: replies,
+      answered: answered,
       onlineChanges: onlineChanges,
     );
   }

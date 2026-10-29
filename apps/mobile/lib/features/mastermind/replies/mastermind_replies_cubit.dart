@@ -30,10 +30,12 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     Future<CapabilitiesFetch> Function()? fetchCapabilities,
     Future<void> Function()? refreshSnapshot,
     AccessLostCallback? onAccessLost,
+    bool Function(String itemId)? isAnsweredElsewhere,
     DateTime Function()? clock,
     Random? random,
     this.optionUndoWindow = defaultOptionUndoWindow,
   }) : _store = store,
+       _isAnsweredElsewhere = isAnsweredElsewhere,
        _transport = transport,
        _fetchCapabilities = fetchCapabilities,
        _refreshSnapshot = refreshSnapshot,
@@ -53,6 +55,10 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
   final Future<CapabilitiesFetch> Function()? _fetchCapabilities;
   final Future<void> Function()? _refreshSnapshot;
   final AccessLostCallback? _onAccessLost;
+
+  /// Whether the latest live snapshot shows the item answered: a 409 for it
+  /// is then that answer, never an error.
+  final bool Function(String itemId)? _isAnsweredElsewhere;
   final DateTime Function() _clock;
   final Random? _random;
   final _drafts = <String, ReplyDraft>{};
@@ -220,6 +226,15 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
       if (other.idempotencyKey != entry.idempotencyKey) other,
   ];
 
+  void _replace(OutboxEntry next) => emit(
+    state.copyWith(
+      outbox: [
+        for (final entry in state.outbox)
+          if (entry.idempotencyKey == next.idempotencyKey) next else entry,
+      ],
+    ),
+  );
+
   // ---- sending ----
 
   /// Starts the undo window for a one-tap option reply. It is immediately
@@ -349,14 +364,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
       return;
     }
     final ready = current.single.withoutHold();
-    emit(
-      state.copyWith(
-        outbox: [
-          for (final entry in state.outbox)
-            if (entry.idempotencyKey == ready.idempotencyKey) ready else entry,
-        ],
-      ),
-    );
+    _replace(ready);
     await _persist();
     if (!_current(generation)) return;
     _clearPending(held.itemId);
@@ -464,17 +472,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
         _undoTimers.remove(entry.itemId)?.cancel();
         _clearPending(entry.itemId);
         final ready = entry.withoutHold();
-        emit(
-          state.copyWith(
-            outbox: [
-              for (final current in state.outbox)
-                if (current.idempotencyKey == ready.idempotencyKey)
-                  ready
-                else
-                  current,
-            ],
-          ),
-        );
+        _replace(ready);
         if (!await _persist()) continue;
         await _dispatch(ready);
         continue;
@@ -554,30 +552,30 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     switch (outcome) {
       case ReplyAccepted():
         _drafts.remove(id);
-        emit(
-          state.copyWith(
-            outbox: [
-              for (final other in state.outbox)
-                if (other.idempotencyKey == entry.idempotencyKey)
-                  other.withStatus(OutboxStatus.sent)
-                else
-                  other,
-            ],
-          ),
-        );
+        _replace(entry.withStatus(OutboxStatus.sent));
         _setStatus(id, ReplyItemStatus.idle);
         await _persist();
       case ReplyStale():
-        // The words survive: the user re-asks against the refreshed item.
-        if (!_drafts.containsKey(id)) {
-          _drafts[id] = ReplyDraft(
-            optionIndex: entry.optionIndex,
-            optionLabel: entry.optionLabel,
-            text: entry.text ?? '',
-          );
+        // Still "sending" until the refreshed snapshot says why: an ask
+        // answered elsewhere shows that answer, never an error.
+        emit(state.copyWith(outbox: _without(entry)));
+        await _persist();
+        final answered = _isAnsweredElsewhere ?? (_) => false;
+        if (_current(generation) && !answered(id)) {
+          await _refreshSnapshot?.call();
         }
-        await _drop(entry, ReplyIssue.stale);
-        if (_current(generation)) await _refreshSnapshot?.call();
+        if (!_current(generation)) return;
+        if (answered(id)) {
+          _drafts.remove(id);
+          return _setStatus(id, ReplyItemStatus.idle);
+        }
+        // The words survive: the user re-asks against the refreshed item.
+        _drafts[id] ??= ReplyDraft(
+          optionIndex: entry.optionIndex,
+          optionLabel: entry.optionLabel,
+          text: entry.text ?? '',
+        );
+        _setStatus(id, const ReplyItemStatus(issue: ReplyIssue.stale));
       case ReplyKeyConflict():
         await _drop(entry, ReplyIssue.conflict);
       case ReplyRejected(:final unsafeText):

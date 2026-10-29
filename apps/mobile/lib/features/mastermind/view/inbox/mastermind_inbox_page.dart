@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/decisions_model.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
+import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/view/inbox/decisions_body.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_filters.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_list_body.dart';
@@ -98,7 +100,21 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
                 ),
               InboxSegmentBar(selected: _segment, onChanged: _selectSegment),
               if (asks)
-                ..._asks(ready.snapshot, freshness.time.add(freshness.age))
+                // An ask answered elsewhere lingers here for a moment.
+                BlocBuilder<
+                  MastermindAnsweredElsewhereCubit,
+                  Map<String, AnsweredElsewhere>
+                >(
+                  bloc: MastermindRepliesWatcher.answeredOf(context),
+                  builder: (context, lingering) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: _asks(
+                      ready.snapshot,
+                      freshness.time.add(freshness.age),
+                      lingering.values,
+                    ),
+                  ),
+                )
               else
                 _decisions(ready.snapshot),
             ],
@@ -118,12 +134,17 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
     },
   );
 
-  List<Widget> _asks(MastermindSnapshot snapshot, DateTime now) {
+  List<Widget> _asks(
+    MastermindSnapshot snapshot,
+    DateTime now,
+    Iterable<AnsweredElsewhere> lingering,
+  ) {
     var model = MastermindInboxModel.from(
       snapshot,
       segment: _segment,
       query: _query,
       product: _product,
+      answeredElsewhere: lingering,
     );
     // The chips only exist while two products are present: a filter whose
     // chip is gone could never be cleared and would strand the list.
@@ -134,6 +155,7 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
         snapshot,
         segment: _segment,
         query: _query,
+        answeredElsewhere: lingering,
       );
     }
     return [

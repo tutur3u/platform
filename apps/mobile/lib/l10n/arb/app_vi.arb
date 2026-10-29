@@ -6092,5 +6092,24 @@
         "type": "String"
       }
     }
-  }
+  },
+  "mastermindAnsweredOnPhone": "Đã trả lời trên điện thoại",
+  "mastermindAnsweredOnMac": "Đã trả lời trên Mac",
+  "mastermindAnsweredInChat": "Đã trả lời trong trò chuyện",
+  "mastermindAnsweredAutomatically": "Đã trả lời tự động",
+  "mastermindAnsweredElsewhere": "Đã trả lời ở nơi khác",
+  "mastermindAlreadyAnsweredOnPhone": "Đã được trả lời trên điện thoại",
+  "mastermindAlreadyAnsweredOnMac": "Đã được trả lời trên Mac",
+  "mastermindAlreadyAnsweredInChat": "Đã được trả lời trong trò chuyện",
+  "mastermindAlreadyAnsweredAutomatically": "Đã được trả lời tự động",
+  "mastermindAlreadyAnsweredElsewhere": "Đã được trả lời ở nơi khác",
+  "mastermindWithdrawnNoLongerNeeded": "Đã rút lại · không còn cần nữa",
+  "mastermindAnsweredByYou": "bạn",
+  "mastermindViaPhone": "trên điện thoại",
+  "mastermindViaMac": "trên Mac",
+  "mastermindViaChat": "trong trò chuyện",
+  "mastermindViaAuto": "tự động",
+  "mastermindAnsweredInBatch": "Đã trả lời theo lô",
+  "mastermindAlreadyAnsweredInBatch": "Đã được trả lời theo lô",
+  "mastermindViaBatch": "theo lô"
 }
