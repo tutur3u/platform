@@ -31,7 +31,10 @@ const user = {
     full_name: 'Verified name',
   },
 };
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+});
 it('renews near-expiry sessions only from the verified central identity and forwards rotated auth cookies', async () => {
   const headers = new Headers();
   headers.append(
@@ -184,3 +187,35 @@ it('reports outages as retryable errors without clearing the session', async () 
     expect(cookies).toEqual([]);
   }
 });
+
+it.each([
+  ['', 'sb-project-auth-token.0'],
+  ['staging-', 'staging-sb-project-auth-token.0'],
+])(
+  'filters incoming and renewed central cookies in namespace %s',
+  async (prefix, name) => {
+    vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX', prefix);
+    vi.resetModules();
+    const { centralAuthCookies, renewedCentralCookies } = await import(
+      './session'
+    );
+    const foreign = prefix
+      ? 'sb-project-auth-token'
+      : 'staging-sb-project-auth-token';
+    expect(
+      centralAuthCookies(
+        new Request(env.APP_ORIGIN, {
+          headers: {
+            cookie: `${name}=active; ${foreign}=foreign; unrelated=private`,
+          },
+        })
+      )
+    ).toBe(`${name}=active`);
+    const headers = new Headers();
+    headers.append('set-cookie', `${name}=rotated; Path=/; Secure`);
+    headers.append('set-cookie', `${foreign}=foreign; Path=/`);
+    expect(renewedCentralCookies(new Response(null, { headers }))).toEqual([
+      `${name}=rotated; Path=/; Secure`,
+    ]);
+  }
+);

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { GET, POST } from './route';
 
 describe('browser state recovery route', () => {
@@ -59,4 +59,37 @@ describe('browser state recovery route', () => {
       response.cookies.get('sb-resolved-kingfish-21146-auth-token.0')
     ).toBeUndefined();
   });
+});
+
+it('staging recovery preserves production cookie sentinels and avoids site-wide cookie deletion', async () => {
+  vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX', '__Host-staging-');
+  vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_SCOPE', 'host-only');
+  vi.resetModules();
+  try {
+    const { POST: stagingPost } = await import('./route');
+    const response = await stagingPost(
+      new NextRequest('https://staging.tuturuuu.com/~recover-browser-state', {
+        headers: {
+          origin: 'https://staging.tuturuuu.com',
+          cookie:
+            'tuturuuu_app_session=production-sentinel; sb-prod-auth-token=production-sentinel; __Host-staging-tuturuuu_app_session=stage; __Host-staging-sb-stage-auth-token.0=stage',
+        },
+      })
+    );
+    expect(response.status).toBe(307);
+    expect(response.headers.get('Clear-Site-Data')).toBe(
+      '"cache", "storage", "executionContexts"'
+    );
+    expect(response.cookies.getAll().map(({ name }) => name)).toEqual([
+      '__Host-staging-tuturuuu_app_session',
+      '__Host-staging-sb-stage-auth-token.0',
+    ]);
+    expect(response.cookies.get('tuturuuu_app_session')).toBeUndefined();
+    expect(response.cookies.get('sb-prod-auth-token')).toBeUndefined();
+    expect(response.headers.getSetCookie().join('\n')).not.toContain(
+      'Domain=.tuturuuu.com'
+    );
+  } finally {
+    vi.unstubAllEnvs();
+  }
 });

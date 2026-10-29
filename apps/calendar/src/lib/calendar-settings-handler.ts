@@ -3,6 +3,7 @@ import {
   personalCalendarSettings,
   workspaceCalendarSettings,
 } from '@tuturuuu/internal-api/calendar-settings-server';
+import { getAuthCookieName } from '@tuturuuu/supabase/next/common';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   INTERNAL_WORKSPACE_SLUG,
@@ -27,8 +28,8 @@ export async function handleCalendarSettings(
     const auth = authenticatedContext
       ? { ok: true as const, ...authenticatedContext }
       : verifiedUser &&
-          !request.cookies.has('tuturuuu_app_session') &&
-          !request.cookies.has('tuturuuu_web_app_session')
+          !request.cookies.has(getAuthCookieName('tuturuuu_app_session')) &&
+          !request.cookies.has(getAuthCookieName('tuturuuu_web_app_session'))
         ? {
             ok: true as const,
             user: verifiedUser,

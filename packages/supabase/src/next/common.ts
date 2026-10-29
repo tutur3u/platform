@@ -1,5 +1,19 @@
 import type { CookieOptions, CookieOptionsWithName } from '@supabase/ssr';
+import {
+  authCookieRequiresSecure,
+  getAuthCookieScope,
+  getSupabaseAuthStorageKey,
+} from '../auth-cookie-policy';
 import { getTuturuuuSharedCookieDomains } from '../shared-cookie-domains';
+
+export {
+  authCookieRequiresSecure,
+  getAuthCookieName,
+  getAuthCookieScope,
+  getSupabaseAuthCookiePattern,
+  getSupabaseAuthStorageKey,
+  stripAuthCookiePrefix,
+} from '../auth-cookie-policy';
 
 export type SupabaseCookie = {
   name: string;
@@ -138,10 +152,6 @@ function resolveSharedCookieDomain(url: string | URL | null | undefined) {
   }
 
   return null;
-}
-
-export function getSupabaseAuthStorageKey(url: string): string {
-  return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
 }
 
 function getSupabaseCookieNameUrl(supabaseUrl: string) {
@@ -305,6 +315,19 @@ export function getHostOnlyCookieClearHeaders(cookiesToSet: SupabaseCookie[]) {
   return [...headers];
 }
 
+export function hostOnlyAuthCookieRequiresSecure(
+  requestUrl?: string | URL | null
+) {
+  const url = normalizeUrlLike(requestUrl ?? getConfiguredAppUrl());
+  const host = url?.hostname;
+  const local =
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '[::1]' ||
+    host?.endsWith('.localhost');
+  return authCookieRequiresSecure() || !local || url?.protocol === 'https:';
+}
+
 export function getSupabaseCookieOptions(
   supabaseUrl: string,
   requestUrl?: string | URL | null
@@ -316,10 +339,13 @@ export function getSupabaseCookieOptions(
     sameSite: 'lax',
   };
 
-  if (sharedCookieDomain) {
+  if (getAuthCookieScope() === 'parent-domain' && sharedCookieDomain) {
     options.domain = sharedCookieDomain.cookieDomain;
     options.secure = sharedCookieDomain.secure;
+  } else if (getAuthCookieScope() === 'host-only') {
+    options.secure = hostOnlyAuthCookieRequiresSecure(requestUrl);
   }
+  if (authCookieRequiresSecure()) options.secure = true;
 
   return options;
 }

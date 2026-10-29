@@ -33,6 +33,11 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./auth-cookie-policy": {
+      "types": "./dist/auth-cookie-policy.d.ts",
+      "bun": "./src/auth-cookie-policy.ts",
+      "default": "./dist/auth-cookie-policy.js"
+    },
     "./auth-errors": {
       "types": "./dist/auth-errors.d.ts",
       "bun": "./src/auth-errors.ts",

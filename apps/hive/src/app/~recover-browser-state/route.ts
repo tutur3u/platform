@@ -1,9 +1,13 @@
+import {
+  authCookieRequiresSecure,
+  getSupabaseAuthCookiePattern,
+} from '@tuturuuu/supabase/next/common';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import { type Locale, routing } from '@/i18n/routing';
 import { createHivePublicUrl } from '@/lib/hive-public-url';
 
-const SUPABASE_AUTH_COOKIE_PATTERN = /^sb-[A-Za-z0-9-]+-auth-token(?:\.\d+)?$/u;
+const SUPABASE_AUTH_COOKIE_PATTERN = getSupabaseAuthCookiePattern();
 const CLEAR_SITE_DATA_VALUE = '"cache", "storage", "executionContexts"';
 
 function getAuthCookieNames(request: NextRequest): string[] {
@@ -133,6 +137,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       expires: new Date(0),
       maxAge: 0,
       path: '/',
+      ...(authCookieRequiresSecure() ? { secure: true } : {}),
     });
   }
 

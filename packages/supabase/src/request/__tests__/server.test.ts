@@ -8,7 +8,8 @@ vi.mock('@supabase/ssr', () => ({
   createServerClient: vi.fn(),
 }));
 
-vi.mock('../../next/common', () => ({
+vi.mock('../../next/common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../next/common.js')>()),
   checkEnvVariables: ({ useSecretKey }: { useSecretKey: boolean }) => ({
     key: useSecretKey ? 'test-secret-key' : 'test-publishable-key',
     url: 'https://test.supabase.co',

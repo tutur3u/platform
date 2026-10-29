@@ -1,5 +1,9 @@
+import { getAuthCookieName } from '@tuturuuu/supabase/next/common';
+
 export const MFA_MOBILE_APPROVAL_KIND = 'mfa_mobile_approval';
-export const MFA_MOBILE_APPROVAL_COOKIE_NAME = 'ttr_mfa_mobile_approval';
+export const MFA_MOBILE_APPROVAL_COOKIE_NAME = getAuthCookieName(
+  'ttr_mfa_mobile_approval'
+);
 export const MFA_MOBILE_APPROVAL_CHALLENGE_TTL_SECONDS = 5 * 60;
 export const MFA_MOBILE_APPROVAL_SESSION_TTL_SECONDS = 12 * 60 * 60;
 export const MFA_MOBILE_APPROVAL_COOKIE_MAX_AGE_SECONDS =

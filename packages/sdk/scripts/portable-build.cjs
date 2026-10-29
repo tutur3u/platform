@@ -7,6 +7,7 @@ const { parse } = require('@babel/parser');
 const embeddedPackages = new Set(['@tuturuuu/internal-api', '@tuturuuu/utils']);
 const portableEntries = new Set([
   '@tuturuuu/internal-api/client',
+  '@tuturuuu/supabase/auth-cookie-policy',
   '@tuturuuu/internal-api/external-projects',
   '@tuturuuu/internal-api/product-feedback',
   '@tuturuuu/internal-api/tasks',
@@ -18,6 +19,7 @@ const portableEntries = new Set([
 ]);
 const portableFiles = new Set([
   'internal-api/client.ts',
+  'supabase/auth-cookie-policy.ts',
   'internal-api/external-projects.ts',
   'internal-api/hidden-workspaces.ts',
   'internal-api/internal-api-error.ts',
@@ -144,7 +146,7 @@ function stagePortableSources({ repoRoot, destination }) {
     const relative = path.relative(path.join(repoRoot, 'packages'), file);
     if (
       relative.startsWith('..') ||
-      !/^(internal-api|utils)\/src\//.test(relative)
+      !/^(internal-api|utils|supabase)\/src\//.test(relative)
     ) {
       throw new Error(
         `Portable source escaped its public package: ${relative}`
@@ -173,7 +175,10 @@ function stagePortableSources({ repoRoot, destination }) {
       let dependency;
       if (specifier.startsWith('.')) {
         dependency = resolveSource(path.resolve(path.dirname(file), specifier));
-      } else if (embeddedPackages.has(name)) {
+      } else if (
+        embeddedPackages.has(name) ||
+        specifier === '@tuturuuu/supabase/auth-cookie-policy'
+      ) {
         if (!portableEntries.has(specifier))
           throw new Error(`Unapproved public module: ${specifier}`);
         dependency = resolveSource(
