@@ -1387,3 +1387,13 @@ pass with its evidence. Do not extend the allowlist. Run
 `node --test scripts/ci/sql-grant-*.test.js` and the guard itself, and report
 repository-wide failures instead of exempting them. See the
 [migrations guide](../../../../../apps/docs/reference/database/migrations-guide.mdx#sql-grant-guard).
+
+## Private Meet transcription evaluation
+
+The evaluation-only CLI and manifest/scoring contract live in
+[the AI package eval README](../../../../../packages/ai/src/meetings/eval/README.md).
+Keep consented audio, reference transcripts and reports outside every Git checkout.
+Run synthetic metrics, dataset-boundary and runner tests with the AI workspace's
+Vitest config before the build-free changed-files gate. Provider calls are a
+separate consented-data experiment; synthetic green does not confirm D1 or enable
+a production provider. Never attach content-bearing provider errors to evidence.

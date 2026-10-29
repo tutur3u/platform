@@ -3,6 +3,7 @@ part of 'snapshot_parser.dart';
 Observability parseObservability(JsonReader r) {
   r.keys(
     [
+      'machine_series',
       'quota_series',
       'quota_forecasts',
       'speed_series',

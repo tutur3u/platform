@@ -3,9 +3,10 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(16);
+select plan(20);
 
--- End-state EXECUTE ACL of the four invoice-total definers replaced in
+-- End-state EXECUTE ACL (SR-843 verified: service_role-only) of the four
+-- invoice-total definers replaced in
 -- 20261029040800_finance_workspace_boundaries.sql. The migration revokes
 -- PUBLIC, anon and authenticated and grants service_role in a DO block before
 -- the CREATE OR REPLACE statements, which preserve the ACL; the function bodies
@@ -19,6 +20,21 @@ values
   ('public.get_monthly_invoice_totals(uuid,integer,uuid[],uuid[],date,date)'),
   ('public.get_weekly_invoice_totals(uuid,integer,uuid[],uuid[],date,date)'),
   ('public.get_weekly_invoice_totals(uuid,integer,uuid[],uuid[],date,date,integer)');
+
+-- Exact end-state ACL: only the owner and service_role hold EXECUTE, so anon,
+-- authenticated and PUBLIC (the empty grantee) are absent.
+select is(
+  (
+    select array(
+      select acl::text from unnest(p.proacl) as acl order by acl::text
+    )
+  ),
+  array['postgres=X/postgres', 'service_role=X/postgres']::text[],
+  s.signature || ' proacl is exactly postgres and service_role'
+)
+from invoice_total_signatures s
+join pg_proc p on p.oid = s.signature::regprocedure
+order by s.signature;
 
 select ok(
   not exists (

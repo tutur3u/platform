@@ -1,11 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  auditStorageAccess: vi.fn(),
   createDynamicAdminClient: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
 }));
 
+vi.mock('@/lib/storage/storage-access-audit', () => ({
+  auditStorageAccess: mocks.auditStorageAccess,
+}));
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth: (handler: unknown) => handler,
 }));
@@ -232,5 +236,68 @@ describe('POST /api/ai/chat/file-urls', () => {
 
     expect(response.status).toBe(500);
     expect(storage.list).not.toHaveBeenCalled();
+  });
+});
+
+describe('storage access audit events', () => {
+  it('records one denied sign row per object when a batch is refused', async () => {
+    const foreign = `${WS}/chats/ai/resources/temp/${MEMBER}/mine.png`;
+    const response = await signedReadUrl(MEMBER, [foreign, ownChatFile]);
+
+    expect(response.status).toBe(403);
+    expect(mocks.auditStorageAccess).toHaveBeenCalledExactlyOnceWith([
+      expect.objectContaining({
+        action: 'sign',
+        actorId: MEMBER,
+        outcome: 'denied',
+        path: foreign,
+        route: '/api/ai/chat/signed-read-url',
+        wsId: WS,
+      }),
+      expect.objectContaining({ outcome: 'denied', path: ownChatFile }),
+    ]);
+  });
+
+  it('records allowed sign rows after signing', async () => {
+    await signedReadUrl(OWNER, [ownChatFile]);
+
+    expect(mocks.auditStorageAccess).toHaveBeenCalledExactlyOnceWith([
+      expect.objectContaining({ actorId: OWNER, outcome: 'allowed' }),
+    ]);
+  });
+
+  it('records the folder listing and the signing for file-urls', async () => {
+    await fileUrls(OWNER, CHAT);
+
+    expect(mocks.auditStorageAccess).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        action: 'list',
+        itemCount: 1,
+        outcome: 'allowed',
+        path: `${WS}/chats/ai/resources/${CHAT}`,
+        route: '/api/ai/chat/file-urls',
+      })
+    );
+    expect(mocks.auditStorageAccess).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        action: 'sign',
+        itemCount: 1,
+        outcome: 'allowed',
+      })
+    );
+  });
+
+  it('records denied listings', async () => {
+    await fileUrls(MEMBER, CHAT);
+
+    expect(mocks.auditStorageAccess).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({
+        action: 'list',
+        actorId: MEMBER,
+        outcome: 'denied',
+      })
+    );
   });
 });

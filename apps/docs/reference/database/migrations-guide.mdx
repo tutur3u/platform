@@ -539,9 +539,13 @@ holds the one security-reviewed exception to the definer rule: the four
 invoice-total definers in `20261029040800_finance_workspace_boundaries.sql`,
 whose revoke sits in a pre-creation dynamic `DO` block (CREATE OR REPLACE
 preserves the ACL; bodies gate on `auth.role() = 'service_role'`, SR-843). It
-applies only to that exact path, a `DO` block whose normalized content digest
-matches, and those four signatures, and a later grant to `public` or `anon`
-still fails. A changed block, another file or another signature gets nothing.
+applies only while the exact path, the file's sha256, a per-finding digest
+(rule, creation line and signature, for each of the four findings) and a `DO`
+block whose normalized content digest matches all hold, so any byte change to the
+file, another file, another line or another signature gets nothing, and a later
+grant to `public` or `anon` still fails. SR-843 verified the end state is
+`service_role`-only (`proacl` of exactly `postgres` and `service_role`), covered
+by `supabase/tests/finance-invoice-totals-definer-acl.sql`.
 The guard prints each covered signature as a reviewed exception. Never add
 entries without a security review.
 

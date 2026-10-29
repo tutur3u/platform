@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
@@ -8,15 +9,18 @@ import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart'
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
 import 'package:mobile/features/mastermind/presentation/freshness.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_clock.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_time_label.dart';
 
 import '../../../helpers/helpers.dart';
 import '../../../helpers/mastermind_home_fixture.dart';
 import '../../../helpers/mastermind_snapshot_builder.dart';
 
 // generated_at is 2026-01-31T17:30Z, which is 00:30 on 1 Feb in GMT+7. The
-// visible line shows the short time; the full date is in the semantics.
-const _time = 'Feb 1, 2026 00:30 GMT+7';
-const _short = '00:30';
+// visible line shows the relative age; the spoken age and the full time are
+// in the semantics, and the GMT+7 time is the long-press tooltip.
+const _tooltip = '1 Feb, 00:30 GMT+7';
+String _spoken(String age) => '$age, 1 February 00:30 GMT+7';
 
 MastermindSnapshotReady _ready({
   SnapshotRefreshFailure? failure,
@@ -129,25 +133,111 @@ void main() {
       bool online = true,
       bool showWhenHealthy = true,
     }) => tester.pumpApp(
-      Align(
-        alignment: Alignment.topLeft,
-        child: MastermindFreshnessStrip(
-          showWhenHealthy: showWhenHealthy,
-          freshness: MastermindFreshness.of(
-            ready,
-            clock: () => generatedAt.add(age),
-            online: online,
+      MastermindClockScope(
+        now: () => generatedAt.add(age),
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: MastermindFreshnessStrip(
+            showWhenHealthy: showWhenHealthy,
+            freshness: MastermindFreshness.of(
+              ready,
+              clock: () => generatedAt.add(age),
+              online: online,
+            ),
           ),
         ),
       ),
     );
 
-    testWidgets('fresh data reads Updated with the GMT+7 time', (tester) async {
+    testWidgets('fresh data reads Updated with the relative time', (
+      tester,
+    ) async {
       final handle = tester.ensureSemantics();
       await pumpStrip(tester, _ready(), const Duration(minutes: 2));
-      expect(find.text('Updated $_short'), findsOneWidget);
-      expect(find.bySemanticsLabel('Updated $_time'), findsOneWidget);
+      expect(findTimeLabel('Updated 2m'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Updated ${_spoken('2 minutes ago')}'),
+        findsOneWidget,
+      );
       handle.dispose();
+    });
+
+    testWidgets('the spoken age follows the clock, never a stale cache', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      var age = const Duration(minutes: 2);
+      await tester.pumpApp(
+        MastermindClockScope(
+          now: () => generatedAt.add(age),
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: MastermindFreshnessStrip(
+              showWhenHealthy: true,
+              freshness: MastermindFreshness.of(
+                _ready(),
+                clock: () => generatedAt.add(const Duration(minutes: 2)),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(
+        find.bySemanticsLabel('Updated ${_spoken('2 minutes ago')}'),
+        findsOneWidget,
+      );
+      // Only the shared tick passes: the parent is not rebuilt.
+      age = const Duration(minutes: 7);
+      await tester.pump(MastermindClock.period);
+      expect(
+        find.bySemanticsLabel('Updated ${_spoken('7 minutes ago')}'),
+        findsOneWidget,
+      );
+      handle.dispose();
+    });
+
+    testWidgets('exact-time custom action preserves the sources action', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pumpStrip(
+        tester,
+        _ready(
+          sources: [
+            {'source': 'ci', 'state': 'stale'},
+          ],
+        ),
+        const Duration(minutes: 2),
+      );
+      final node = tester.getSemantics(
+        find.bySemanticsLabel(
+          'Updated ${_spoken('2 minutes ago')} · 1 source degraded',
+        ),
+      );
+      expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+      final actions = node.getSemanticsData().customSemanticsActionIds!;
+      expect(actions, hasLength(1));
+      expect(
+        CustomSemanticsAction.getAction(actions.single)?.label,
+        'Show exact time',
+      );
+      node.owner!.performAction(
+        node.id,
+        SemanticsAction.customAction,
+        actions.single,
+      );
+      await tester.pump();
+      expect(find.text(_tooltip), findsOneWidget);
+      expect(find.text('Sources'), findsNothing);
+      expect(find.bySemanticsLabel(RegExp('2 minutes ago')), findsOneWidget);
+      handle.dispose();
+    });
+
+    testWidgets('a long press shows the GMT+7 time', (tester) async {
+      await pumpStrip(tester, _ready(), const Duration(minutes: 2));
+      await tester.longPress(find.byType(MastermindTimeLabel));
+      await tester.pump();
+      expect(find.text(_tooltip), findsOneWidget);
     });
 
     testWidgets('healthy and fresh data hides the strip off Home', (
@@ -183,7 +273,7 @@ void main() {
         const Duration(hours: 3),
         showWhenHealthy: false,
       );
-      expect(find.text('Published 3 h ago'), findsOneWidget);
+      expect(findTimeLabel('Published 3h'), findsOneWidget);
     });
 
     testWidgets('a warning tints the glyph and bar, never the text', (
@@ -200,8 +290,10 @@ void main() {
       );
       final context = tester.element(find.byType(MastermindFreshnessStrip));
       final colors = AppTokens.of(context).colorScheme;
-      final text = tester.widget<Text>(find.textContaining('degraded'));
+      final text = tester.widget<Text>(findTimeLabel('Updated 2m'));
       expect(text.style?.color, colors.foreground);
+      final suffix = tester.widget<Text>(find.textContaining('degraded'));
+      expect(suffix.style?.color, colors.foreground);
       final glyph = tester.widget<Icon>(find.byIcon(AppIcons.warning));
       expect(glyph.color, AppTone.warning.foreground(colors));
       expect(text.maxLines, 1);
@@ -211,7 +303,7 @@ void main() {
       tester,
     ) async {
       await pumpStrip(tester, _ready(), const Duration(hours: 3));
-      expect(find.text('Published 3 h ago'), findsOneWidget);
+      expect(findTimeLabel('Published 3h'), findsOneWidget);
       expect(find.byIcon(AppIcons.warning), findsNothing);
     });
 
@@ -226,7 +318,7 @@ void main() {
         const Duration(hours: 3),
         online: false,
       );
-      expect(find.text('Offline · showing $_short'), findsOneWidget);
+      expect(findTimeLabel('Offline · showing 3h'), findsOneWidget);
       expect(find.byIcon(AppIcons.warning), findsOneWidget);
     });
 
@@ -242,7 +334,7 @@ void main() {
         ),
         const Duration(hours: 3),
       );
-      expect(find.text("Couldn't refresh · showing $_short"), findsOneWidget);
+      expect(findTimeLabel("Couldn't refresh · showing 3h"), findsOneWidget);
       expect(find.textContaining('Offline'), findsNothing);
       expect(find.byIcon(AppIcons.warning), findsOneWidget);
     });
@@ -256,8 +348,8 @@ void main() {
         const Duration(minutes: 1),
       );
       expect(
-        find.text(
-          'Update the app to read the latest Mastermind data · showing $_short',
+        findTimeLabel(
+          'Update the app to read the latest Mastermind data · showing 1m',
         ),
         findsOneWidget,
       );
@@ -270,7 +362,7 @@ void main() {
         const Duration(minutes: 1),
       );
       expect(
-        find.text("Couldn't read the latest update · showing $_short"),
+        findTimeLabel("Couldn't read the latest update · showing 1m"),
         findsOneWidget,
       );
     });
@@ -287,9 +379,12 @@ void main() {
         ),
         const Duration(minutes: 1),
       );
-      expect(find.text('Updated $_short · 2 sources degraded'), findsOneWidget);
+      expect(findTimeLabel('Updated 1m'), findsOneWidget);
+      expect(find.text('· 2 sources degraded'), findsOneWidget);
       expect(
-        find.bySemanticsLabel('Updated $_time · 2 sources degraded'),
+        find.bySemanticsLabel(
+          'Updated ${_spoken('1 minute ago')} · 2 sources degraded',
+        ),
         findsOneWidget,
       );
       handle.dispose();
@@ -299,7 +394,9 @@ void main() {
       final handle = tester.ensureSemantics();
       await pumpStrip(tester, _ready(), const Duration(minutes: 1));
       expect(
-        tester.getSemantics(find.bySemanticsLabel('Updated $_time')),
+        tester.getSemantics(
+          find.bySemanticsLabel('Updated ${_spoken('1 minute ago')}'),
+        ),
         isSemantics(isLiveRegion: false),
       );
 
@@ -315,7 +412,9 @@ void main() {
       );
       await tester.pump();
       expect(
-        tester.getSemantics(find.bySemanticsLabel('Offline · showing $_time')),
+        tester.getSemantics(
+          find.bySemanticsLabel('Offline · showing ${_spoken('3 hours ago')}'),
+        ),
         isSemantics(isLiveRegion: true),
       );
       handle.dispose();
@@ -353,7 +452,7 @@ void main() {
 
     testWidgets('a healthy strip has nothing to open', (tester) async {
       await pumpStrip(tester, _ready(), const Duration(minutes: 1));
-      await tester.tap(find.text('Updated $_short'));
+      await tester.tap(findTimeLabel('Updated 1m'));
       await tester.pumpAndSettle();
       expect(find.text('Sources'), findsNothing);
     });

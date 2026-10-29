@@ -1,4 +1,5 @@
 import 'package:mobile/features/mastermind/catchup/catchup_models.dart';
+import 'package:mobile/features/mastermind/machines/machine_snapshot.dart';
 import 'package:mobile/features/mastermind/model/enums.dart';
 import 'package:mobile/features/mastermind/presentation/hub_field.dart';
 import 'package:mobile/features/mastermind/presentation/usage_gaps.dart';
