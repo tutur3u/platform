@@ -4530,6 +4530,9 @@
       "sign_in": "Đăng nhập để tiếp tục",
       "transcription_hint": "Mỗi phiên chép lời kéo dài tối đa 3 giờ. Bạn có thể bắt đầu phiên mới để tiếp tục ghi chú trong cuộc họp dài hơn."
     },
+    "recording_permissions": {
+      "denied": "Chỉ người tạo bản ghi hoặc quản trị viên không gian làm việc mới có thể dừng bản ghi này. Bản ghi vẫn đang hoạt động."
+    },
     "transcription": {
       "empty": "Bản ghi này không có dữ liệu âm thanh để phiên âm. Bản ghi đã lưu vẫn còn khả dụng.",
       "too_large": "Bản ghi này quá lớn để phiên âm trực tiếp. Bản ghi đã lưu vẫn còn khả dụng.",

@@ -1540,3 +1540,38 @@ explicit evaluation opt-in and is never wired to production traffic. The harness
 does not choose or change the production model. D1 requires real consented corpus
 results and coverage review; synthetic regression tests establish the metrics and
 privacy boundaries, not Vietnamese provider quality.
+
+## Legacy meeting and recording access
+
+Legacy meeting lists, recording metadata and audio chunks remain readable by full
+workspace members. Anonymous users have no direct privileges on these legacy
+tables; guests and removed members do not gain access through ownership. Private
+recording transcripts continue through the existing service-role API boundary.
+
+Meeting UPDATE and DELETE require the meeting creator or the existing workspace
+`admin` permission. Recording session INSERT, UPDATE and DELETE require the
+recording creator (`user_id`) or that workspace permission. This recording admin
+exception is intentional; ownership does not grant writes after membership ends.
+Existing sessions cannot change their creator or parent meeting. In-call room
+recordings in Drive and Meet AI sharing rules use their existing access gates.
+
+The legacy recording controls show Stop only for a creator or admin. Both the
+recording toggle and direct status/delete APIs verify permission before writing
+and require a returned row. A denied or zero-row update returns HTTP 403; the UI
+keeps the active recording and explains that it has not stopped. Active-session
+queries include the creator/admin capability rather than inferring it from
+workspace membership. Web and mobile consumers keep the existing read response
+fields; `can_manage` is additive.
+
+Regression coverage: `legacy-meet-rls.sql`, the meeting identity/transcript pgTAP
+suite, the recording route unit tests and `meeting-actions.test.tsx`. Rollbacks
+drop only the five meeting/session write policies, the recording identity trigger
+and its function. Privilege revokes, the authenticated audio policy target and
+creator/admin audio write fences remain in place, including during rollback.
+
+Legacy audio chunk INSERT, UPDATE and DELETE require the parent recording creator
+or the workspace `admin` permission; member SELECT/playback remains available.
+The chunk and complete-recording upload APIs check that capability before parsing
+or storing audio. Meet mounts recording capture only for that capability. A viewer
+can still play existing audio and read permitted recording metadata. Coverage is
+in `legacy-meet-rls.sql`, upload route unit tests and the Meet control tests.
