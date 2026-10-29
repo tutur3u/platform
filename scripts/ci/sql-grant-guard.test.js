@@ -637,3 +637,11 @@ test('repository SQL grant enforcement has no findings outside shrink-only allow
     []
   );
 });
+
+test('empty-string search_path is not a pinned definer path', () => {
+  assert.ok(
+    scanExtensions(createP2("''") + aclP2).some(
+      (f) => f.rule === 'definer-search-path'
+    )
+  );
+});

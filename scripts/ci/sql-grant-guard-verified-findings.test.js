@@ -66,3 +66,30 @@ test('fixed-forward finding requires the named hardening migration in the tree',
       1
     );
 });
+
+test('committed 100400 entries are inactive until the 030000 hardening file exists', () => {
+  const fs = require('node:fs');
+  const verifiedFindings = require('./sql-grant-guard-verified-findings');
+  const hardening =
+    'apps/database/supabase/migrations/20261030030000_pin_time_tracking_definer_search_path.sql';
+  const bound = verifiedFindings.filter((e) => e.path.includes('20261029100400'));
+  assert.equal(bound.length, 8);
+  for (const e of bound) {
+    assert.equal(e.class, 'fixed-forward');
+    assert.equal(e.requiredMigration, hardening);
+    assert.match(e.reason, /^fixed forward by 20261030030000_pin_time/);
+  }
+  const files = [...new Set(verifiedFindings.map((e) => e.path))];
+  const readFile = (f) => (f === hardening ? '' : fs.readFileSync(f, 'utf8'));
+  const run = (list) =>
+    evaluateSqlFiles({ files: list, readFile, verifiedFindings });
+  const failing = (list) =>
+    run(list).violations.filter((f) => f.file.includes('20261029100400'));
+  assert.equal(failing(files).length, bound.length);
+  const present = run([...files, hardening]);
+  assert.deepEqual(
+    present.violations.filter((f) => f.file.includes('20261029100400')),
+    []
+  );
+  assert.equal(present.verified.length, verifiedFindings.length);
+});
