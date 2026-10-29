@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
 set local role service_role;
-select plan(28);
+select plan(33);
 
 -- Returns the error a statement raises, or null when it succeeds.
 create function pg_temp.error_of(statement text)
@@ -24,8 +24,13 @@ on conflict (id) do nothing;
 insert into public.workspaces (id, name, creator_id, personal) values
   ('00000000-0000-4000-8000-0000000e6010', 'Horizon Workspace', '00000000-0000-4000-8000-0000000e6001', false)
 on conflict (id) do nothing;
+insert into public.workspaces (id, name, creator_id, personal) values
+  ('00000000-0000-4000-8000-0000000e6011', 'Other Workspace', '00000000-0000-4000-8000-0000000e6001', false)
+on conflict (id) do nothing;
 insert into public.workspace_boards (id, ws_id, name, creator_id) values
-  ('00000000-0000-4000-8000-0000000e6020', '00000000-0000-4000-8000-0000000e6010', 'Horizon Board', '00000000-0000-4000-8000-0000000e6001')
+  ('00000000-0000-4000-8000-0000000e6020', '00000000-0000-4000-8000-0000000e6010', 'Horizon Board', '00000000-0000-4000-8000-0000000e6001'),
+  ('00000000-0000-4000-8000-0000000e6021', '00000000-0000-4000-8000-0000000e6010', 'No Sprints Board', '00000000-0000-4000-8000-0000000e6001'),
+  ('00000000-0000-4000-8000-0000000e6022', '00000000-0000-4000-8000-0000000e6011', 'Other Board', '00000000-0000-4000-8000-0000000e6001')
 on conflict (id) do nothing;
 
 create temp view horizon as
@@ -56,9 +61,9 @@ $$;
 
 -- Turning sprints on gives one planned sprint; more can be planned ahead.
 select public.set_board_sprint_length('00000000-0000-4000-8000-0000000e6020', 2::smallint, '00000000-0000-4000-8000-0000000e6001');
-select public.add_board_sprint('00000000-0000-4000-8000-0000000e6020', null);
-select public.add_board_sprint('00000000-0000-4000-8000-0000000e6020', null);
-select public.add_board_sprint('00000000-0000-4000-8000-0000000e6020', null);
+select public.add_board_sprint('00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020', null);
+select public.add_board_sprint('00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020', null);
+select public.add_board_sprint('00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020', null);
 select is(
   (select string_agg(seq || ':' || status, ',' order by seq) from horizon),
   '1:planned,2:planned,3:planned,4:planned',
@@ -102,11 +107,11 @@ select is(
 
 -- Five open sprints at most, the running one included.
 select lives_ok(
-  $$select public.add_board_sprint('00000000-0000-4000-8000-0000000e6020', null)$$,
+  $$select public.add_board_sprint('00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020', null)$$,
   'a fifth open sprint can be added'
 );
 select is(
-  pg_temp.error_of($$select public.add_board_sprint('00000000-0000-4000-8000-0000000e6020', null)$$),
+  pg_temp.error_of($$select public.add_board_sprint('00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020', null)$$),
   'SPRINT_LIMIT_REACHED',
   'a sixth open sprint is refused'
 );
@@ -133,7 +138,7 @@ select is(
   'a task can sit in no sprint'
 );
 select is(
-  (select array_agg(id) from public.list_board_unplanned_task_ids('00000000-0000-4000-8000-0000000e6020') as id),
+  (select array_agg(id) from public.list_board_unplanned_task_ids('00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020') as id),
   array['00000000-0000-4000-8000-0000000e6102']::uuid[],
   'the board lists its open tasks that sit in no sprint'
 );
@@ -153,21 +158,21 @@ select is(
 
 -- Removing: only the last planned sprint, and one planned sprint stays.
 select is(
-  pg_temp.error_of(format('select public.remove_board_sprint(%L, null)', pg_temp.sprint(3))),
+  pg_temp.error_of(format('select public.remove_board_sprint(%L, %L, %L, null)', '00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020', pg_temp.sprint(3))),
   'SPRINT_NOT_LAST',
   'a planned sprint with later ones cannot be removed'
 );
 select is(
-  pg_temp.error_of(format('select public.remove_board_sprint(%L, null)', pg_temp.sprint(1))),
+  pg_temp.error_of(format('select public.remove_board_sprint(%L, %L, %L, null)', '00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020', pg_temp.sprint(1))),
   'SPRINT_NOT_PLANNED',
   'the running sprint cannot be removed'
 );
 select lives_ok(
-  format('select public.remove_board_sprint(%L, null)', pg_temp.sprint(5)),
+  format('select public.remove_board_sprint(%L, %L, %L, null)', '00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020', pg_temp.sprint(5)),
   'the last planned sprint is removed'
 );
 select lives_ok(
-  format('select public.remove_board_sprint(%L, null)', pg_temp.sprint(4)),
+  format('select public.remove_board_sprint(%L, %L, %L, null)', '00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020', pg_temp.sprint(4)),
   'and the one before it'
 );
 select is(
@@ -175,7 +180,7 @@ select is(
   '3',
   'a removed sprint''s tasks move to the sprint before it'
 );
-select public.add_board_sprint('00000000-0000-4000-8000-0000000e6020', null);
+select public.add_board_sprint('00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020', null);
 select is(
   (select max(seq) from horizon),
   4,
@@ -217,10 +222,10 @@ select is(
 );
 
 -- One planned sprint always stays.
-select public.remove_board_sprint(pg_temp.sprint(4), null);
-select public.remove_board_sprint(pg_temp.sprint(3), null);
+select public.remove_board_sprint('00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020', pg_temp.sprint(4), null);
+select public.remove_board_sprint('00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020', pg_temp.sprint(3), null);
 select is(
-  pg_temp.error_of(format('select public.remove_board_sprint(%L, null)', pg_temp.sprint(2))),
+  pg_temp.error_of(format('select public.remove_board_sprint(%L, %L, %L, null)', '00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020', pg_temp.sprint(2))),
   'SPRINT_ONLY_PLANNED',
   'the only planned sprint cannot be removed'
 );
@@ -230,9 +235,40 @@ select is(
   'removed sprints hand their tasks down to the next sprint'
 );
 select is(
-  pg_temp.error_of($$select public.add_board_sprint('00000000-0000-4000-8000-0000000e6021', null)$$),
+  pg_temp.error_of($$select public.add_board_sprint('00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6021', null)$$),
   'SPRINTS_OFF',
   'a board without sprints cannot add one'
+);
+
+-- Ids from another workspace or board are refused, and change nothing.
+select public.set_board_sprint_length('00000000-0000-4000-8000-0000000e6022', 2::smallint, null);
+create temp table horizon_before as
+  select string_agg(seq || ':' || status, ',' order by seq) as sprints from horizon;
+grant select on horizon_before to service_role;
+select is(
+  pg_temp.error_of($$select public.add_board_sprint('00000000-0000-4000-8000-0000000e6011', '00000000-0000-4000-8000-0000000e6020', null)$$),
+  'SPRINT_BOARD_NOT_FOUND',
+  'adding a sprint refuses a board from another workspace'
+);
+select is(
+  pg_temp.error_of(format('select public.remove_board_sprint(%L, %L, %L, null)', '00000000-0000-4000-8000-0000000e6011', '00000000-0000-4000-8000-0000000e6020', pg_temp.sprint(2))),
+  'SPRINT_BOARD_NOT_FOUND',
+  'removing a sprint refuses a board from another workspace'
+);
+select is(
+  pg_temp.error_of(format('select public.remove_board_sprint(%L, %L, %L, null)', '00000000-0000-4000-8000-0000000e6011', '00000000-0000-4000-8000-0000000e6022', pg_temp.sprint(2))),
+  'SPRINT_NOT_FOUND',
+  'removing a sprint refuses a sprint from another board'
+);
+select is(
+  pg_temp.error_of($$select public.list_board_unplanned_task_ids('00000000-0000-4000-8000-0000000e6011', '00000000-0000-4000-8000-0000000e6020')$$),
+  'SPRINT_BOARD_NOT_FOUND',
+  'listing parked tasks refuses a board from another workspace'
+);
+select is(
+  (select string_agg(seq || ':' || status, ',' order by seq) from horizon),
+  (select sprints from horizon_before),
+  'refused calls leave the board''s sprints as they were'
 );
 
 select * from finish();

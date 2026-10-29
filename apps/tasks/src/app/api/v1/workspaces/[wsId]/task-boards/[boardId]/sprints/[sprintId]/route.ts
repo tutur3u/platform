@@ -64,7 +64,7 @@ export const PATCH = withSessionAuth<SprintRouteParams>(
         return sprintRpcErrorResponse(error, 'Failed to update sprint');
       }
 
-      const loaded = await loadBoardSprints(access.sbAdmin, access.boardId);
+      const loaded = await loadBoardSprints(access.sbAdmin, access);
       if (!loaded.ok) {
         return sprintRpcErrorResponse(loaded.error, 'Failed to load sprints');
       }
@@ -97,13 +97,15 @@ export const DELETE = withSessionAuth<SprintRouteParams>(
 
       const { error } = await access.sbAdmin.rpc('remove_board_sprint', {
         p_actor_id: access.user.id,
+        p_board_id: access.boardId,
         p_cycle_id: sprintId,
+        p_ws_id: access.wsId,
       });
       if (error) {
         return sprintRpcErrorResponse(error, 'Failed to remove sprint');
       }
 
-      const loaded = await loadBoardSprints(access.sbAdmin, access.boardId);
+      const loaded = await loadBoardSprints(access.sbAdmin, access);
       if (!loaded.ok) {
         return sprintRpcErrorResponse(loaded.error, 'Failed to load sprints');
       }

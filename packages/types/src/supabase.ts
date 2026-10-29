@@ -48269,7 +48269,7 @@ export type Database = {
         Returns: boolean;
       };
       add_board_sprint: {
-        Args: { p_actor_id?: string; p_board_id: string };
+        Args: { p_actor_id?: string; p_board_id: string; p_ws_id: string };
         Returns: Database['public']['Tables']['task_cycles']['Row'];
         SetofOptions: {
           from: '*';
@@ -51536,7 +51536,7 @@ export type Database = {
         };
       };
       list_board_unplanned_task_ids: {
-        Args: { p_board_id: string };
+        Args: { p_board_id: string; p_ws_id: string };
         Returns: string[];
       };
       list_deferred_calendar_google_imports: {
@@ -51995,7 +51995,12 @@ export type Database = {
         }[];
       };
       remove_board_sprint: {
-        Args: { p_actor_id?: string; p_cycle_id: string };
+        Args: {
+          p_actor_id?: string;
+          p_board_id: string;
+          p_cycle_id: string;
+          p_ws_id: string;
+        };
         Returns: Database['public']['Tables']['task_cycles']['Row'];
         SetofOptions: {
           from: '*';

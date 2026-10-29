@@ -227,6 +227,7 @@ describe('board sprint routes', () => {
 
     expect(sbAdmin.rpc).toHaveBeenCalledWith('list_board_unplanned_task_ids', {
       p_board_id: BOARD_ID,
+      p_ws_id: 'ws-1',
     });
     expect(body.unplannedTaskIds).toEqual([TASK_B]);
   });
@@ -398,6 +399,7 @@ describe('board sprint routes', () => {
     expect(sbAdmin.rpc).toHaveBeenCalledWith('add_board_sprint', {
       p_actor_id: 'user-1',
       p_board_id: BOARD_ID,
+      p_ws_id: 'ws-1',
     });
 
     sbAdmin.rpc.mockResolvedValueOnce({
@@ -426,7 +428,9 @@ describe('board sprint routes', () => {
 
     expect(sbAdmin.rpc).toHaveBeenCalledWith('remove_board_sprint', {
       p_actor_id: 'user-1',
+      p_board_id: BOARD_ID,
       p_cycle_id: SPRINT_ID,
+      p_ws_id: 'ws-1',
     });
     expect(response.status).toBe(409);
 

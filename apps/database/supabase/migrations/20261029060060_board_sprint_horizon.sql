@@ -1,10 +1,10 @@
 -- Board sprints: planning several sprints ahead. A board keeps up to five open
 -- sprints, the running one and the planned ones after it. Planned sprints chain
 -- one after another, and only the earliest one, the next sprint, can start
--- (20261029020700_board_sprint_next_first.sql sends carried and rejoining work
+-- (20261029060070_board_sprint_next_first.sql sends carried and rejoining work
 -- to it). A task can also sit in no sprint, parked in Plan's backlog until
--- someone plans it. Builds on 20261029020000_board_sprints.sql through
--- 20261029020300_board_sprint_early_start.sql.
+-- someone plans it. Builds on 20261029060000_board_sprints.sql through
+-- 20261029060030_board_sprint_early_start.sql.
 
 -- 1. More than one planned sprint per board.
 DROP INDEX IF EXISTS public.task_cycles_one_planned_per_board;
@@ -261,25 +261,32 @@ $$;
 
 -- 5. Planning further ahead. A board keeps up to five open sprints: the
 -- running one and the planned ones after it. A new sprint follows the last.
+-- These three take the route's workspace and board, and refuse ids from any
+-- other workspace or board even though only the service role can call them.
 CREATE OR REPLACE FUNCTION public.add_board_sprint(
+  p_ws_id UUID,
   p_board_id UUID,
   p_actor_id UUID DEFAULT NULL
 )
 RETURNS public.task_cycles
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
+  v_weeks SMALLINT;
   v_open INTEGER;
   v_last_end DATE;
 BEGIN
   -- Board row first, like every sprint writer.
-  PERFORM 1
+  SELECT sprint_length_weeks INTO v_weeks
   FROM public.workspace_boards
-  WHERE id = p_board_id AND sprint_length_weeks IS NOT NULL
+  WHERE id = p_board_id AND ws_id = p_ws_id
   FOR UPDATE;
   IF NOT FOUND THEN
+    RAISE EXCEPTION 'SPRINT_BOARD_NOT_FOUND' USING ERRCODE = 'P0002';
+  END IF;
+  IF v_weeks IS NULL THEN
     RAISE EXCEPTION 'SPRINTS_OFF' USING ERRCODE = '55000';
   END IF;
 
@@ -301,27 +308,31 @@ $$;
 -- Removes the last planned sprint. Its tasks move to the sprint before it,
 -- and one planned sprint always stays, so the board has a next sprint.
 CREATE OR REPLACE FUNCTION public.remove_board_sprint(
+  p_ws_id UUID,
+  p_board_id UUID,
   p_cycle_id UUID,
   p_actor_id UUID DEFAULT NULL
 )
 RETURNS public.task_cycles
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
   v_cycle public.task_cycles%ROWTYPE;
   v_previous public.task_cycles%ROWTYPE;
 BEGIN
   PERFORM 1
-  FROM public.workspace_boards wb
-  JOIN public.task_cycles c ON c.board_id = wb.id
-  WHERE c.id = p_cycle_id
-  FOR UPDATE OF wb;
+  FROM public.workspace_boards
+  WHERE id = p_board_id AND ws_id = p_ws_id
+  FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'SPRINT_BOARD_NOT_FOUND' USING ERRCODE = 'P0002';
+  END IF;
 
   SELECT * INTO v_cycle
   FROM public.task_cycles
-  WHERE id = p_cycle_id AND board_id IS NOT NULL AND deleted IS NOT TRUE
+  WHERE id = p_cycle_id AND board_id = p_board_id AND deleted IS NOT TRUE
   FOR UPDATE;
 
   IF v_cycle.id IS NULL THEN
@@ -372,13 +383,25 @@ $$;
 
 -- Open tasks of a board that sit in no open sprint: parked outside sprints,
 -- shown in the Plan backlog and left off the Board view.
-CREATE OR REPLACE FUNCTION public.list_board_unplanned_task_ids(p_board_id UUID)
+CREATE OR REPLACE FUNCTION public.list_board_unplanned_task_ids(
+  p_ws_id UUID,
+  p_board_id UUID
+)
 RETURNS SETOF UUID
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, pg_temp
 AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.workspace_boards
+    WHERE id = p_board_id AND ws_id = p_ws_id
+  ) THEN
+    RAISE EXCEPTION 'SPRINT_BOARD_NOT_FOUND' USING ERRCODE = 'P0002';
+  END IF;
+
+  RETURN QUERY
   SELECT t.id
   FROM public.tasks t
   WHERE t.board_id = p_board_id
@@ -396,14 +419,15 @@ AS $$
     )
   ORDER BY t.created_at DESC
   LIMIT 1000;
+END;
 $$;
 
-REVOKE ALL ON FUNCTION public.add_board_sprint(UUID, UUID) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.remove_board_sprint(UUID, UUID) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION public.list_board_unplanned_task_ids(UUID) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.add_board_sprint(UUID, UUID) TO service_role;
-GRANT EXECUTE ON FUNCTION public.remove_board_sprint(UUID, UUID) TO service_role;
-GRANT EXECUTE ON FUNCTION public.list_board_unplanned_task_ids(UUID) TO service_role;
+REVOKE ALL ON FUNCTION public.add_board_sprint(UUID, UUID, UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.remove_board_sprint(UUID, UUID, UUID, UUID) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.list_board_unplanned_task_ids(UUID, UUID) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.add_board_sprint(UUID, UUID, UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.remove_board_sprint(UUID, UUID, UUID, UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.list_board_unplanned_task_ids(UUID, UUID) TO service_role;
 
 REVOKE ALL ON FUNCTION public.set_board_sprint_length(UUID, SMALLINT, UUID) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.start_board_sprint(UUID, UUID) FROM PUBLIC, anon, authenticated;

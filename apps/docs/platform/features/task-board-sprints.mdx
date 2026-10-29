@@ -81,6 +81,16 @@ them as service-only. Direct row writes stay available for workspace-wide cycles
 only, and the older task-cycle edit and delete routes refuse board sprints (404).
 Every sprint writer locks the board row before its sprints, so moves, starts,
 ends and task membership changes on one board run one at a time.
+`add_board_sprint`, `remove_board_sprint` and `list_board_unplanned_task_ids`
+also take the route's workspace (and `remove_board_sprint` its board) and refuse
+ids from another workspace or board with `SPRINT_BOARD_NOT_FOUND` or
+`SPRINT_NOT_FOUND`; `task-board-sprint-horizon.sql` covers the refusals.
+
+Manual rollbacks for the planning-ahead and ticket key migrations live in
+`apps/database/rollbacks/`. Run them newest first: `20261029060070`, `20261029060060`
+(after removing every planned sprint but the earliest on each board), then
+`20261029060055`, `20261029060050` and `20261029060040` (export ticket keys and
+numbers first; they are dropped).
 
 ## Board header and Board view
 
