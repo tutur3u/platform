@@ -1,5 +1,5 @@
 -- Not a migration: release-authority approval only.
--- Reverts 20261029100500: drops the AFTER UPDATE trigger that deletes the
+-- Reverts 20261030030000: drops the AFTER UPDATE trigger that deletes the
 -- session linked to a rejected time-tracking request, restores the 20261029100400
 -- body of private.handle_request_status_change (the BEFORE UPDATE trigger
 -- deletes the linked session itself, which reintroduces the SQLSTATE 27000
