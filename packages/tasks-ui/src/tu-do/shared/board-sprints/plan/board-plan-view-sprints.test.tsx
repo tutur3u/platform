@@ -53,6 +53,31 @@ describe('BoardPlanView sprints', () => {
     }
   });
 
+  it('assigns each ghost when two join the sprint at once', async () => {
+    const pending: Array<() => void> = [];
+    api.moveTasks.mockImplementation(
+      () => new Promise((resolve) => pending.push(() => resolve({ moved: 1 })))
+    );
+    api.listBoardTasksForSearch.mockResolvedValue([task('t4'), task('t5')]);
+    renderPlan({ sprints: [planned], unplanned: ['t4', 't5'] });
+    for (const id of ['t4', 't5']) {
+      fireEvent.click(
+        await screen.findByRole('button', { name: `assign:Task ${id}` })
+      );
+      fireEvent.click(within(card(id)).getByRole('menuitem', { name: /Binh/ }));
+    }
+    await waitFor(() => expect(pending).toHaveLength(2));
+    for (const resolve of pending) resolve();
+    await waitFor(() => {
+      expect(api.update).toHaveBeenCalledWith('ws-1', 't4', {
+        assignee_ids: ['u-binh'],
+      });
+      expect(api.update).toHaveBeenCalledWith('ws-1', 't5', {
+        assignee_ids: ['u-binh'],
+      });
+    });
+  });
+
   it('moves a task to any open sprint or out of every sprint', async () => {
     api.moveTasks.mockResolvedValue({ moved: 1 });
     api.unplan.mockResolvedValue({ moved: 1 });

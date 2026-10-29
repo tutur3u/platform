@@ -181,12 +181,11 @@ export function BoardPlanView({
       return;
     }
     const target = selectedOpen ?? planning;
-    moveTasks.mutate(
-      { sprintId: target.id, taskIds: [task.id] },
-      {
-        onSuccess: () => move(task, planMove),
-        onError: () => toast.error(t('move_failed')),
-      }
+    // mutateAsync, not mutate: overlapping mutate calls run only the
+    // latest onSuccess, which would drop an earlier ghost's owner.
+    moveTasks.mutateAsync({ sprintId: target.id, taskIds: [task.id] }).then(
+      () => move(task, planMove),
+      () => toast.error(t('move_failed'))
     );
   };
 
