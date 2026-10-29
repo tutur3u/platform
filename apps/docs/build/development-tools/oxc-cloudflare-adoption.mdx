@@ -339,6 +339,30 @@ pgTAP cover the bounds and seven-day cutoff. The
 records the daily operation envelope and stop procedure. Hosted scheduled execution,
 independent operator-stop acceptance and billed usage remain rollout evidence.
 
+The abuse-guard store Worker (`apps/abuse-guard`) keeps its bounded-work and
+stop-fence evidence in the [abuse-guard store runbook](/build/devops/abuse-guard-store).
+It carries a few accounting limits:
+- Its daily budget counts admitted commands, not billed rows. One `win.hit` writes
+  up to four window rows plus a dedupe record, and one `res.reserve` writes up to
+  three rows plus a dedupe record.
+- Replay/password command admission now checks durable source/principal quotas
+  and charges family usage in one control-object transaction. Each identity gets
+  at most 5% of the family share per UTC day. Denied subject commands and success
+  refunds count; cache eviction/restart never resets the quota.
+- Fair admission adds one control DO request per cache miss and up to two quota
+  rows plus a control-state write on admission. Rejected probes do not spend
+  subject commands, but their request billing remains unbounded without accepted
+  ingress controls. The command budget is not a total dollar cap. Hosted request
+  sizing and partition capacity remain activation holds.
+- Other families reserve the entire batch in a durable control transaction before
+  executing subjects. Each admitted batch adds a control request and a control-state
+  row read/write. Interrupted and skipped work remains charged. The workerd
+  restart-before-flush regression replaces the runtime between admissions and
+  verifies that reservations survive and the family budget cannot be bypassed.
+  Operator stops reject new admissions; request billing remains an activation hold.
+- The theoretical storage ceiling is 2 KiB × 120-day retention × the daily budget.
+  Only replay fences use long TTLs, and their values are tiny.
+
 CPU limits constrain an invocation, not the number of invocations or all billable
 services. Usage notifications are detection, not an automatic spending cutoff.
 Choose service-specific limits with measured workloads; do not silently apply an
