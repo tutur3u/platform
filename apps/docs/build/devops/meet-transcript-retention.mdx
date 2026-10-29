@@ -33,6 +33,10 @@ and service-only grants, and closes the fence again.
 Never touched: meetings, participants, session rows and their usage/cost fields,
 recording sessions, `audio_chunks` and audio storage objects, consent evidence,
 Meet AI memories (a separately consented store) and Durable Object state.
+Consent rows restrict session deletion. A separate service-role erasure flow must
+delete consent rows explicitly before deleting a session or meeting. The transcript
+purge keeps both and requires no erasure-order change. Account deletion clears the
+consent user FK and retains a random session-scoped participant pseudonym.
 
 ## Design
 

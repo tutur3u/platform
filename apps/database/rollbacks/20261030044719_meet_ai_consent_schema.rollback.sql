@@ -1,4 +1,6 @@
 begin;
+set local lock_timeout = '5s';
+set local statement_timeout = '30s';
 -- Restore the M0 predicate explicitly, retaining the hardened path and ACL.
 update private.meet_transcript_purge_control
   set fence_open = false, delete_enabled = false, updated_at = now(),
@@ -200,7 +202,11 @@ grant execute on function private.purge_meet_transcripts_batch(uuid, integer)
   to service_role;
 
 drop table public.workspace_meet_settings;
+drop trigger anonymize_meet_ai_consents on auth.users;
+drop function private.anonymize_meet_ai_consents();
 drop table private.meet_ai_consents;
+drop function private.prepare_meet_ai_consent();
+drop function private.protect_meet_ai_consent();
 alter table public.meet_ai_sessions
   drop column visibility, drop column language_hint, drop column source,
   drop column notes_model, drop column notes_prompt_version,

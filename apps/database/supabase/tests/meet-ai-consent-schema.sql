@@ -18,14 +18,21 @@ select ok(not has_table_privilege('anon', 'public.workspace_meet_settings', 'UPD
 select ok(not has_table_privilege('anon', 'public.workspace_meet_settings', 'DELETE'), 'anon cannot DELETE workspace_meet_settings');
 select ok(not has_table_privilege('service_role', 'private.meet_ai_consents', 'UPDATE'), 'consent evidence cannot be overwritten');
 select ok(has_table_privilege('service_role', 'private.meet_ai_consents', 'INSERT'), 'service can append consent');
-insert into public.users(id) values ('00000000-0000-4000-8000-000000008801');
+insert into auth.users(id) values ('00000000-0000-4000-8000-000000008801'),('00000000-0000-4000-8000-000000008802'),('00000000-0000-4000-8000-000000008803');
+insert into public.users(id) values ('00000000-0000-4000-8000-000000008801') on conflict do nothing;
 insert into public.workspaces(id, name, personal, creator_id) values ('00000000-0000-4000-8000-000000008811', 'Consent test', false, '00000000-0000-4000-8000-000000008801');
 update public.workspace_default_permissions set enabled = false where ws_id = '00000000-0000-4000-8000-000000008811' and permission = 'admin';
 insert into public.workspace_meet_settings(ws_id) values ('00000000-0000-4000-8000-000000008811');
 select is((select transcript_retention_days from public.workspace_meet_settings where ws_id = '00000000-0000-4000-8000-000000008811'), 365, '365 day default');
 select ok((select per_person_opt_in and audio_retention_hours = 0 and transcription_default = 'ask' from public.workspace_meet_settings where ws_id = '00000000-0000-4000-8000-000000008811'), 'opt-in with no audio');
+-- A real authenticated outsider belongs to a different workspace.
+insert into public.users(id) values ('00000000-0000-4000-8000-000000008803') on conflict do nothing;
+insert into public.workspaces(id, name, personal, creator_id) values
+ ('00000000-0000-4000-8000-000000008812', 'Other workspace', false, '00000000-0000-4000-8000-000000008803');
+select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000008803', true);
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000008803","role":"authenticated"}', true);
 set local role authenticated;
-select is((select count(*)::integer from public.workspace_meet_settings), 0, 'outsider sees no settings');
+select is((select count(*)::integer from public.workspace_meet_settings where ws_id = '00000000-0000-4000-8000-000000008811'), 0, 'outsider sees no settings');
 select throws_ok($$insert into public.workspace_meet_settings(ws_id) values ('00000000-0000-4000-8000-000000008811')$$, '42501', null, 'outsider cannot insert settings');
 reset role;
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000008801', true);
@@ -37,7 +44,7 @@ select is((select transcript_retention_days from public.workspace_meet_settings 
 reset role;
 select set_config('request.jwt.claims', '{}', true);
 select set_config('request.jwt.claim.sub', '', true);
-insert into public.users(id) values ('00000000-0000-4000-8000-000000008802');
+insert into public.users(id) values ('00000000-0000-4000-8000-000000008802') on conflict do nothing;
 insert into public.workspace_members(ws_id, user_id, type) values ('00000000-0000-4000-8000-000000008811', '00000000-0000-4000-8000-000000008802', 'MEMBER');
 select set_config('request.jwt.claim.sub', '00000000-0000-4000-8000-000000008802', true);
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000008802","role":"authenticated"}', true);

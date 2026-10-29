@@ -21,33 +21,117 @@ alter table public.meet_ai_sessions
 
 create table private.meet_ai_consents (
   id uuid primary key default gen_random_uuid(),
-  session_id uuid not null references public.meet_ai_sessions(id) on delete cascade,
-  user_id uuid references public.users(id) on delete cascade,
+  session_id uuid not null references public.meet_ai_sessions(id) on delete restrict,
+  user_id uuid references public.users(id) on delete set null,
+  participant_ref uuid not null,
   guest_label text,
   decision text not null check (decision in ('allow', 'deny', 'withdraw')),
-  notice_version text not null check (length(notice_version) > 0),
+  notice_version text not null check (length(notice_version) between 1 and 80),
   created_at timestamptz not null default now(),
-  check (user_id is not null or guest_label is not null)
+  check (user_id is not null or participant_ref is not null)
 );
 create index meet_ai_consents_session on private.meet_ai_consents(session_id, created_at desc, id desc);
+create index meet_ai_consents_user on private.meet_ai_consents(user_id)
+  where user_id is not null;
 alter table private.meet_ai_consents enable row level security;
 revoke all on private.meet_ai_consents from public, anon, authenticated, service_role;
 -- Clients have no mutation grants: F7 cannot rewind a withdrawal.
 -- Only the trusted server may append evidence or delete it for erasure.
 grant select, insert, delete on private.meet_ai_consents to service_role;
 
+-- Mint a random, session-scoped pseudonym only on consent rows. Serializing
+-- on the session row makes concurrent first decisions reuse the same UUID.
+create function private.prepare_meet_ai_consent()
+returns trigger language plpgsql security definer
+set search_path = pg_catalog, pg_temp
+as $$
+declare
+  existing_ref uuid;
+begin
+  perform 1 from public.meet_ai_sessions where id = new.session_id for update;
+  if new.user_id is not null then
+    -- An account decision must not retain an identifying guest label.
+    new.guest_label := null;
+    select c.participant_ref into existing_ref from private.meet_ai_consents c
+      where c.session_id = new.session_id and c.user_id = new.user_id
+      order by c.created_at, c.id limit 1;
+  elsif new.guest_label is not null then
+    select c.participant_ref into existing_ref from private.meet_ai_consents c
+      where c.session_id = new.session_id and c.user_id is null
+        and c.guest_label = new.guest_label
+      order by c.created_at, c.id limit 1;
+  else
+    -- An anonymous participant can reuse only an already minted session UUID.
+    select c.participant_ref into existing_ref from private.meet_ai_consents c
+      where c.session_id = new.session_id and c.user_id is null
+        and c.guest_label is null and c.participant_ref = new.participant_ref
+      limit 1;
+  end if;
+  new.participant_ref := coalesce(existing_ref, gen_random_uuid());
+  return new;
+end;
+$$;
+revoke all on function private.prepare_meet_ai_consent() from public, anon, authenticated;
+grant execute on function private.prepare_meet_ai_consent() to service_role;
+create trigger prepare_meet_ai_consent before insert on private.meet_ai_consents
+  for each row execute function private.prepare_meet_ai_consent();
+
+-- Immutable even for privileged UPDATE. The sole exception is the FK action
+-- during server/Auth account deletion, after its Auth or profile row is gone.
+create function private.protect_meet_ai_consent()
+returns trigger language plpgsql
+set search_path = pg_catalog, pg_temp
+as $$
+begin
+  if current_setting('role', true) not in ('anon', 'authenticated')
+    and pg_trigger_depth() > 1
+    and old.user_id is not null and new.user_id is null
+    and (to_jsonb(new) - 'user_id') = (to_jsonb(old) - 'user_id')
+    and (not exists (select 1 from public.users where id = old.user_id)
+      or not exists (select 1 from auth.users where id = old.user_id)) then
+    return new;
+  end if;
+  raise exception 'Consent evidence is immutable' using errcode = '55000';
+end;
+$$;
+revoke all on function private.protect_meet_ai_consent() from public, anon, authenticated;
+grant execute on function private.protect_meet_ai_consent() to service_role;
+create trigger protect_meet_ai_consent before update on private.meet_ai_consents
+  for each row execute function private.protect_meet_ai_consent();
+
+-- Auth deletion retains a soft-deleted public profile in this repository.
+-- Anonymize evidence at the actual Auth boundary, rather than waiting for a
+-- later profile erasure to invoke the SET NULL FK.
+create function private.anonymize_meet_ai_consents()
+returns trigger language plpgsql security definer
+set search_path = pg_catalog, pg_temp
+as $$
+begin
+  update private.meet_ai_consents set user_id = null where user_id = old.id;
+  return old;
+end;
+$$;
+revoke all on function private.anonymize_meet_ai_consents() from public, anon, authenticated;
+grant execute on function private.anonymize_meet_ai_consents() to service_role;
+create trigger anonymize_meet_ai_consents after delete on auth.users
+  for each row execute function private.anonymize_meet_ai_consents();
+
 create table public.workspace_meet_settings (
   ws_id uuid primary key references public.workspaces(id) on delete cascade,
   transcription_default text not null default 'ask' check (transcription_default in ('off', 'ask', 'automatic')),
   default_language text not null default 'auto' check (default_language in ('auto', 'vi', 'en', 'vi+en')),
   notes_visibility_default text not null default 'participants' check (notes_visibility_default in ('host', 'participants', 'workspace')),
-  transcript_retention_days integer default 365 check (transcript_retention_days > 0),
-  audio_retention_hours integer not null default 0 check (audio_retention_hours >= 0),
+  transcript_retention_days integer default 365 check (transcript_retention_days between 1 and 365),
+  audio_retention_hours integer not null default 0 check (audio_retention_hours = 0),
   per_person_opt_in boolean not null default true
 );
 alter table public.workspace_meet_settings enable row level security;
 revoke all on public.workspace_meet_settings from public, anon, authenticated;
 grant select, insert, update, delete on public.workspace_meet_settings to authenticated, service_role;
+create policy account_required_mfa on public.workspace_meet_settings
+  as restrictive for all to authenticated
+  using ((select public.account_required_mfa_satisfied()))
+  with check ((select public.account_required_mfa_satisfied()));
 create policy workspace_meet_settings_read on public.workspace_meet_settings
   for select to authenticated using (public.is_org_member(auth.uid(), ws_id));
 create policy workspace_meet_settings_admin on public.workspace_meet_settings

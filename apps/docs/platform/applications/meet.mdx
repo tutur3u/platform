@@ -337,14 +337,36 @@ The consent log is private server data. Neither authenticated nor anonymous
 clients can insert, update, or delete evidence; the server appends decisions and
 orders them by `created_at DESC, id DESC`. Only the service role can erase rows.
 A withdrawal cannot be removed by a client to revive an earlier allow (F7).
-Session deletion cascades its consent rows; longer legal retention remains a
-migration approval decision. This schema does not enable audio storage.
+A BEFORE UPDATE trigger also refuses privileged evidence edits; only nested server/Auth account-deletion actions
+can clear `user_id`, retaining all other fields.
+A random UUID `participant_ref` is minted on first consent per session/participant,
+reused for later decisions in that pair, and stored only on consent rows. It is
+neither a user-ID digest nor an email/name hash. Deleting an account sets the
+consent `user_id` to NULL while retaining that random pseudonym and the evidence.
+Clients cannot delete Auth accounts or trigger this anonymization. Auth account
+deletion clears consent identity immediately, even though the legacy Auth trigger
+retains the public profile. Later service profile erasure removes its personal
+workspace after Auth deletion; consent evidence survives both steps.
+
+These decisions apply by default to Meet and Parley session consent, including
+live and recording sources, with no client-role exception. Meeting deletion and
+account deletion are distinct from an explicitly authorized evidence erasure.
+They do not expand transcript purge into evidence deletion. Guardian/legal
+retention policy remains an independent product/legal decision.
+Meeting/session deletion is refused while consent rows exist (`ON DELETE
+RESTRICT`). Only a trusted service erasure flow explicitly deletes consent rows
+before deleting the session or meeting. Transcript retention purges text in place
+and retains the session and consent evidence; it needs no consent erasure.
+This schema does not enable audio storage.
 
 Meet and Parley retain host-only visibility for existing sessions and callers
 that omit visibility. Workspace settings default new application-created sessions
 to participants, explicit per-person opt-in, an ask prompt, zero audio retention,
-and 365 days of text retention. Applying workspace overrides belongs to the
-server integration; adding settings does not bypass participant consent.
+and 365 days of text retention. Retention is bounded to 1–365 days or NULL
+(forever); audio retention is enforced at zero until audio storage is implemented.
+Notice versions are capped at 80 characters. Workspace settings enforce required
+account MFA in addition to membership/admin RLS. Applying workspace overrides
+belongs to the server integration; adding settings does not bypass participant consent.
 
 The M1-B migration explicitly replaces `private.purge_meet_transcripts_batch`:
 `purge_after <= now()` selects expired sessions in both dry-run and delete;
@@ -357,5 +379,9 @@ A database owner must approve fresh dry-run counts before enabling deletion.
 The existing batch, daily, terminal-state and stop-fence limits remain in force.
 
 Regression coverage: `meet-ai-consent-schema.sql` checks client denials and
-withdrawal ordering; `meet-transcript-retention-purge.sql` checks custom deadlines,
+withdrawal ordering;
+[`meet-ai-consent-retention.sql`](https://github.com/tutur3u/platform/blob/feat/meet-ai-consent-schema/apps/database/supabase/tests/meet-ai-consent-retention.sql)
+checks creator/admin deletion refusal, server erasure ordering, random pseudonym
+reuse and account anonymization; `required-account-mfa.sql` checks MFA policy.
+`meet-transcript-retention-purge.sql` checks custom deadlines,
 forever retention, edited-note deletion, ACLs and bounded restart behavior.

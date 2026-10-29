@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(39);
+select plan(40);
 
 insert into public.users(id) values ('00000000-0000-4000-8000-00000000e701');
 insert into public.workspaces(id, name, personal, creator_id) values
@@ -34,6 +34,8 @@ insert into private.recording_transcripts(session_id, text, created_at) values
   ('00000000-0000-4000-8000-00000000e741', 'old recording', now() - interval '400 days'),
   ('00000000-0000-4000-8000-00000000e742', 'new recording', now() - interval '10 days');
 
+insert into private.meet_ai_consents(session_id,user_id,decision,notice_version)
+ values ('00000000-0000-4000-8000-00000000e731','00000000-0000-4000-8000-00000000e701','allow','v1');
 create temporary table snapshot as select
   (select count(*) from public.meet_ai_chunks where session_id in ('00000000-0000-4000-8000-00000000e731', '00000000-0000-4000-8000-00000000e732')) as chunks,
   (select count(*) from public.meet_ai_sessions where notes is not null and meeting_id = '00000000-0000-4000-8000-00000000e721') as notes,
@@ -198,5 +200,6 @@ select is((select result ->> 'notes' from r where step = 'static'), '1', 'delete
 select ok((select proconfig @> array['search_path=pg_catalog, pg_temp'] from pg_proc
  where oid = 'private.purge_meet_transcripts_batch(uuid, integer)'::regprocedure), 'replacement retains hardened search path');
 select is((select visibility from public.meet_ai_sessions where id = '00000000-0000-4000-8000-00000000e733'), 'host', 'existing caller remains private by default');
+select is((select count(*)::int from private.meet_ai_consents where session_id='00000000-0000-4000-8000-00000000e731'),1,'transcript purge preserves session and consent evidence');
 select * from finish();
 rollback;
