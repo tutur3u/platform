@@ -32,6 +32,7 @@ class MastermindTimeLabel extends StatefulWidget {
   const MastermindTimeLabel(
     this.at, {
     this.sentence,
+    this.tooltipKey,
     this.style,
     this.maxLines,
     this.overflow,
@@ -39,6 +40,7 @@ class MastermindTimeLabel extends StatefulWidget {
   });
 
   final DateTime at;
+  final GlobalKey<TooltipState>? tooltipKey;
   final String Function(String time)? sentence;
   final TextStyle? style;
   final int? maxLines;
@@ -68,7 +70,15 @@ class _MastermindTimeLabelState extends State<MastermindTimeLabel> {
     if (mounted) setState(() {});
   }
 
-  void _showAbsolute() => _tooltip.currentState?.ensureTooltipVisible();
+  GlobalKey<TooltipState> get _tooltipKey => widget.tooltipKey ?? _tooltip;
+
+  void _showAbsolute() => _tooltipKey.currentState?.ensureTooltipVisible();
+
+  void _toggleAbsolute() {
+    if (_tooltipKey.currentState?.ensureTooltipVisible() == false) {
+      Tooltip.dismissAllToolTips();
+    }
+  }
 
   void _focusChanged(bool focused) {
     setState(() => _focused = focused);
@@ -114,7 +124,7 @@ class _MastermindTimeLabelState extends State<MastermindTimeLabel> {
       onLongPress: _showAbsolute,
       excludeSemantics: true,
       child: Tooltip(
-        key: _tooltip,
+        key: _tooltipKey,
         message: absolute,
         showDuration: const Duration(seconds: 4),
         excludeFromSemantics: true,
@@ -129,7 +139,7 @@ class _MastermindTimeLabelState extends State<MastermindTimeLabel> {
                   actions: {
                     ActivateIntent: CallbackAction<ActivateIntent>(
                       onInvoke: (_) {
-                        _showAbsolute();
+                        _toggleAbsolute();
                         return null;
                       },
                     ),

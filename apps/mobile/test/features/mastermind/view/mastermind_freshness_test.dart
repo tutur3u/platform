@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
@@ -192,6 +193,43 @@ void main() {
         find.bySemanticsLabel('Updated ${_spoken('7 minutes ago')}'),
         findsOneWidget,
       );
+      handle.dispose();
+    });
+
+    testWidgets('exact-time custom action preserves the sources action', (
+      tester,
+    ) async {
+      final handle = tester.ensureSemantics();
+      await pumpStrip(
+        tester,
+        _ready(
+          sources: [
+            {'source': 'ci', 'state': 'stale'},
+          ],
+        ),
+        const Duration(minutes: 2),
+      );
+      final node = tester.getSemantics(
+        find.bySemanticsLabel(
+          'Updated ${_spoken('2 minutes ago')} · 1 source degraded',
+        ),
+      );
+      expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isTrue);
+      final actions = node.getSemanticsData().customSemanticsActionIds!;
+      expect(actions, hasLength(1));
+      expect(
+        CustomSemanticsAction.getAction(actions.single)?.label,
+        'Show exact time',
+      );
+      node.owner!.performAction(
+        node.id,
+        SemanticsAction.customAction,
+        actions.single,
+      );
+      await tester.pump();
+      expect(find.text(_tooltip), findsOneWidget);
+      expect(find.text('Sources'), findsNothing);
+      expect(find.bySemanticsLabel(RegExp('2 minutes ago')), findsOneWidget);
       handle.dispose();
     });
 

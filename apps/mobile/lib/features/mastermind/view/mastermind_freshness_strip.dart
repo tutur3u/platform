@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_interface_tokens.dart';
@@ -99,6 +100,7 @@ class MastermindFreshnessStrip extends StatelessWidget {
         : () => unawaited(
             showMastermindSourcesSheet(context, sources: freshness.sources),
           );
+    final exactTime = GlobalKey<TooltipState>();
     final content = Row(
       children: [
         if (warning) ...[
@@ -112,6 +114,7 @@ class MastermindFreshnessStrip extends StatelessWidget {
             children: [
               MastermindTimeLabel(
                 freshness.time,
+                tooltipKey: exactTime,
                 sentence: (time) => line(l10n, time),
                 maxLines: wraps ? null : 1,
                 overflow: wraps ? null : TextOverflow.ellipsis,
@@ -164,6 +167,11 @@ class MastermindFreshnessStrip extends StatelessWidget {
           ),
           button: onTap != null,
           onTap: onTap,
+          customSemanticsActions: {
+            CustomSemanticsAction(label: l10n.mastermindRelShowExact): () {
+              exactTime.currentState?.ensureTooltipVisible();
+            },
+          },
           child: ExcludeSemantics(
             child: onTap == null ? strip : InkWell(onTap: onTap, child: strip),
           ),

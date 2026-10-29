@@ -137,7 +137,17 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
     await tester.pump();
     expect(find.text('29 Oct, 09:21 GMT+7'), findsOneWidget);
-    await tester.pump(const Duration(seconds: 5));
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('29 Oct, 09:21 GMT+7'), findsNothing);
+    for (final visible in [true, false]) {
+      await tester.sendKeyEvent(LogicalKeyboardKey.space);
+      await tester.pump(const Duration(seconds: 1));
+      expect(
+        find.text('29 Oct, 09:21 GMT+7'),
+        visible ? findsOneWidget : findsNothing,
+      );
+    }
   });
 
   testWidgets('screen readers can activate the label to show the time', (

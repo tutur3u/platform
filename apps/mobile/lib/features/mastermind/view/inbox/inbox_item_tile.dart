@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
@@ -111,6 +112,7 @@ class InboxItemTile extends StatelessWidget {
       unawaited(context.push<void>(Routes.mastermindInboxItemPath(item.id)));
     }
 
+    final exactTime = GlobalKey<TooltipState>();
     final large = mastermindLargeText(context);
     Widget buildRow(String? spokenAge) => Semantics(
       button: true,
@@ -125,6 +127,12 @@ class InboxItemTile extends StatelessWidget {
       ].join('. '),
       hint: l10n.mastermindOpensItem,
       onTap: open,
+      customSemanticsActions: {
+        if (at != null)
+          CustomSemanticsAction(label: l10n.mastermindRelShowExact): () {
+            exactTime.currentState?.ensureTooltipVisible();
+          },
+      },
       excludeSemantics: true,
       child: AppGroupedRow(
         leading: showKindIcon
@@ -169,7 +177,7 @@ class InboxItemTile extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                if (at != null) MastermindTimeLabel(at),
+                if (at != null) MastermindTimeLabel(at, tooltipKey: exactTime),
               ],
             ),
             if (preview.isNotEmpty)
