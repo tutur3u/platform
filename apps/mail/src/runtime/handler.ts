@@ -7,10 +7,12 @@ import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import {
   type AnalyticsEngineWriter,
-  createAppSwitchWriteBudget,
-  handleAppSwitchBeacon,
   readCountry,
 } from '@tuturuuu/utils/app-switch-rum';
+import {
+  createAppSwitchWriteBudget,
+  handleAppSwitchBeacon,
+} from '@tuturuuu/utils/app-switch-rum-ingest';
 import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import {
   applyOneOriginNoindex,
@@ -98,6 +100,9 @@ export async function handleMailRequest(
         ingest: (env as { APP_SWITCH_RUM_INGEST?: unknown })
           .APP_SWITCH_RUM_INGEST,
         budget: appSwitchWriteBudget,
+        // No durable admission is bound yet, so ingest cannot write. The
+        // admission and the dataset binding ship together, after review.
+        admission: undefined,
         country: readCountry(request),
       }
     );

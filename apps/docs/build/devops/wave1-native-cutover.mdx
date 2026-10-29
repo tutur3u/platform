@@ -285,25 +285,28 @@ comparable.
 - **Payload:** app slugs, topology, duration, prerender/handoff flags, protocol,
   connect time and effective connection type. No user, URL or workspace
   identifiers.
-- **Ingest:** `handleAppSwitchBeacon` (`@tuturuuu/utils/app-switch-rum`) accepts one
-  POST of at most 1 KiB and writes at most one Workers Analytics Engine data point.
-  It writes only when all of these hold:
-  - The `APP_SWITCH_RUM_INGEST` Worker variable is exactly `on`. This is the
-    operator stop fence. Any other value, including unset, answers 204 without
-    reading the body. Changing it needs no rebuild, and it survives isolate
-    restarts because it is part of the deployed version.
+- **Ingest:** `handleAppSwitchBeacon` (`@tuturuuu/utils/app-switch-rum-ingest`)
+  turns one anonymous POST into at most one Workers Analytics Engine data point.
+  Every gate must pass, and any failure drops the beacon with a `204`:
+  - The `APP_SWITCH_RUM_INGEST` Worker variable is exactly `on`. Any other value,
+    including unset, answers without reading the body.
   - An `APP_SWITCH_RUM` dataset binding exists.
-  - The isolate's write budget has room: 30 points per 60 seconds per isolate.
-    Beacons over budget are dropped, never queued, so re-enabling never replays
-    a backlog.
+  - The body is at most 1 KiB in **bytes**, read as a stream that is cancelled on
+    overflow (`413`) or after a one-second deadline (`408`).
+  - The isolate's pre-filter has room: 30 points per 60 seconds per isolate.
+  - The durable admission shared by every instance has room in its window and is
+    not stopped. Admission that is missing, never started or failing admits
+    nothing. An operator stop survives restarts and redeploys, and resuming never
+    replays dropped beacons.
 
-  A failed write is dropped and never retried. The operation-count, fence and
-  stop/restart behavior is covered in `packages/utils/src/__tests__/app-switch-rum.test.ts`.
-  Adding the binding (dataset `ttr_app_switch`) is a reviewed Worker configuration
-  change. It also waits for the one-origin design's ingestion cost and stop gate
-  evidence at the exact commit (see the
-  [Cloudflare billable-operation rules](/build/devops/cloudflare-backend-ownership)).
-  Client sampling and ingress rate limits are not spend caps.
+  Failed writes are never retried. Client sampling and ingress rate limits are not
+  spend caps. `app-switch-rum-ingest.test.ts` covers concurrent instances against
+  one budget, stop after restart, storage failure and the byte bound. Meet and Mail
+  bind no admission today, so ingest cannot write. The durable admission (a Durable
+  Object store), its operator controls and the `APP_SWITCH_RUM` dataset binding
+  (`ttr_app_switch`) ship together as one reviewed Worker configuration change.
+  That change also needs exact-commit evidence that it meets the
+  [Cloudflare billable-operation rules](/build/devops/cloudflare-backend-ownership).
 
 `scripts/perf/app-switch-lab.mjs` is the lab counterpart. Run it on a Studio host
 through `ttr resources run`.

@@ -1,9 +1,11 @@
 import {
   type AnalyticsEngineWriter,
-  createAppSwitchWriteBudget,
-  handleAppSwitchBeacon,
   readCountry,
 } from '@tuturuuu/utils/app-switch-rum';
+import {
+  createAppSwitchWriteBudget,
+  handleAppSwitchBeacon,
+} from '@tuturuuu/utils/app-switch-rum-ingest';
 import {
   applyOneOriginNoindex,
   decideOneOriginRequest,
@@ -45,6 +47,9 @@ async function serveMeet(
         ingest: (env as { APP_SWITCH_RUM_INGEST?: unknown })
           .APP_SWITCH_RUM_INGEST,
         budget: appSwitchWriteBudget,
+        // No durable admission is bound yet, so ingest cannot write. The
+        // admission and the dataset binding ship together, after review.
+        admission: undefined,
         country: readCountry(request),
       }
     );
