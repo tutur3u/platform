@@ -82,6 +82,7 @@ async function requireBoardShareManager({
   boardId,
   rawWsId,
   requiredPermission,
+  requireMember = false,
   supabase,
   user,
 }: {
@@ -92,6 +93,12 @@ async function requireBoardShareManager({
    * listing its members. Only changing the sharing needs manage rights.
    */
   requiredPermission: TaskBoardGuestPermission;
+  /**
+   * Adding, changing or removing a share changes who can open the board, so it
+   * is restricted to workspace members. A guest share, even with edit, never
+   * grants it.
+   */
+  requireMember?: boolean;
   supabase: TypedSupabaseClient;
   user: { id: string };
 }): Promise<BoardShareManagerResult> {
@@ -116,6 +123,14 @@ async function requireBoardShareManager({
   });
 
   if ('error' in access) return access;
+  if (requireMember && access.access.mode !== 'member') {
+    return {
+      error: NextResponse.json(
+        { error: 'Workspace membership required' },
+        { status: 403 }
+      ),
+    };
+  }
 
   return { boardId: access.boardId, sbAdmin, wsId: access.wsId } as const;
 }
@@ -191,6 +206,7 @@ export const POST = withSessionAuth<{ wsId: string; boardId: string }>(
       const manager = await requireBoardShareManager({
         boardId: params.boardId,
         requiredPermission: 'edit',
+        requireMember: true,
         rawWsId: params.wsId,
         supabase,
         user,
@@ -296,6 +312,7 @@ export const PATCH = withSessionAuth<{ wsId: string; boardId: string }>(
       const manager = await requireBoardShareManager({
         boardId: params.boardId,
         requiredPermission: 'edit',
+        requireMember: true,
         rawWsId: params.wsId,
         supabase,
         user,
@@ -347,6 +364,7 @@ export const DELETE = withSessionAuth<{ wsId: string; boardId: string }>(
       const manager = await requireBoardShareManager({
         boardId: params.boardId,
         requiredPermission: 'edit',
+        requireMember: true,
         rawWsId: params.wsId,
         supabase,
         user,

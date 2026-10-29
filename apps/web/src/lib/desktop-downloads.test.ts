@@ -30,6 +30,22 @@ describe('public desktop downloads', () => {
       findDesktopRelease([{ ...release(), draft: true }, release()])?.tag
     ).toBe(tag);
   });
+  it('accepts run-free tags ahead of legacy run-suffixed tags', () => {
+    const next = 'desktop-v0.9.3';
+    const current = {
+      ...release(),
+      tag_name: next,
+      html_url: `${base}/tag/${next}`,
+      assets: release().assets.map((asset) => ({
+        ...asset,
+        browser_download_url: `${base}/download/${next}/${asset.name}`,
+      })),
+    };
+    expect(findDesktopRelease([current, release()])?.tag).toBe(next);
+    expect(
+      parseDesktopRelease({ ...current, tag_name: 'desktop-v0.9.3-rc1' })
+    ).toBeNull();
+  });
   it('preserves the latest available package per platform across independent releases', () => {
     const linux = { ...release(), assets: release().assets.slice(2) };
     expect(

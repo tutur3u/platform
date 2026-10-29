@@ -133,7 +133,9 @@ try {
         const target = new URL(page.headers.get('location'));
         assert.equal(
           target.hostname,
-          environment === 'production' ? 'tuturuuu.com' : 'staging.tuturuuu.com'
+          environment === 'production'
+            ? 'tuturuuu.com'
+            : 'web.staging.tutur3u.com'
         );
         assert.ok(target.pathname.includes('login'));
       }

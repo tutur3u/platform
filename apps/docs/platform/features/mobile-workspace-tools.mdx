@@ -594,8 +594,9 @@ cached data must never grant mutation permissions.
 Use the available window width, including split-screen windows, when choosing
 columns. Home uses a full-width workspace selector and independently flowing card columns;
 the Apps hub uses content-sized rows so larger text can grow.
-Drive and CMS allow their grids to use the wider workspace. Kanban and timeline
-are work surfaces: do not wrap them in the reading-column width constraint.
+Drive and CMS allow their grids to use the wider workspace. Kanban is a work
+surface: do not wrap it in the reading-column width constraint. The board
+timeline is a day-grouped agenda at the detail page width.
 Tablet Kanban fills the available height and puts dock clearance inside each
 scrolling task list. It shows multiple independently scrolling lists; compact windows keep
 the swipe-between-lists interaction. Leave room for the shell dock and task actions.
@@ -1170,11 +1171,11 @@ data remain usable. Regression coverage is in
 `offline_preparation_service_pause_test.dart` and
 `offline_preparation_intent_test.dart`.
 
-Before enabling offline prefetch, provision `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` on every gateway and owning-app replica that can handle these reads. Verify distributed limiter operations, shared clearance storage, Turnstile configuration, and authenticated ordinary-read and marked-bulk canaries on the exact deployment. Enable the activation flag only after those checks pass, consistently across the request path; available Redis or elevated account trust never implicitly activates the feature. Keep the flag inactive during initial provisioning. Once activated, Redis/configuration/runtime failures still return 503; there is no automatic outage bypass or process-local substitute.
+Before enabling offline prefetch, configure the shared guard store on every gateway and owning-app replica that can handle these reads. Use the [abuse-guard store](/build/devops/abuse-guard-store): `ABUSE_GUARD_FAMILIES` must include `offline`, alongside `ABUSE_GUARD_URL`, `ABUSE_GUARD_SECRET` and `ABUSE_GUARD_KEY_PEPPER`, or a native Worker's `ABUSE_GUARD` binding. Every hop shares one store per environment. The legacy `UPSTASH_REDIS_REST_*` pair remains a back-compatible alternative only while the family is unassigned. Verify distributed limiter operations, shared clearance storage, Turnstile configuration, and authenticated ordinary-read and marked-bulk canaries on the exact deployment. Enable the activation flag only after those checks pass, consistently across the request path. An available store or elevated account trust never implicitly activates the feature. Keep the flag inactive during initial provisioning. Once activated, every store, configuration or runtime failure still returns 503. That includes a timeout, the guard's stop fence or budget stop, an incomplete assigned configuration, and `ABUSE_GUARD_BACKEND=off`. There is no automatic outage bypass, process-local substitute or fallback to another store.
 
 When activated, the shared proxy enforces explicitly marked eligible bulk reads: 1,200/minute and 30,000/hour per IP, plus 600/minute and 12,000/hour per session when present. Gateway and owning-app enforcement may both count a marked request. Bulk requests require Turnstile clearance unless the server has verified elevated trust; clearance lasts 15 minutes and never bypasses authentication, permissions, MFA, blocks, or quotas. Ordinary unmarked requests do not spend these additional offline-download allowances.
 Regular reconnect refreshes are paced without the bulk marker; optional history fills use silent bulk mode. Background work never opens a verification modal and pauses when challenged. Verification-required 403 responses preserve existing authorized snapshots; authorization-denied responses purge the denied resource. A 429 stops downloads and delays queued replay according to Retry-After, with at least a minute's wait.
-Regression coverage in [offline-download-guard.test.ts](https://github.com/tutur3u/platform/blob/main/packages/utils/src/__tests__/offline-download-guard.test.ts) proves unmarked ordinary reads avoid Redis, offline quotas and CAPTCHA with activation on or off, inactive bulk remains blocked, and activated bulk storage failures, quotas and CAPTCHA remain enforced.
+Regression coverage in [offline-download-guard.test.ts](https://github.com/tutur3u/platform/blob/main/packages/utils/src/__tests__/offline-download-guard.test.ts) proves unmarked ordinary reads avoid Redis, offline quotas and CAPTCHA with activation on or off, inactive bulk remains blocked, and activated bulk storage failures, quotas and CAPTCHA remain enforced. [offline-download-guard-store.test.ts](https://github.com/tutur3u/platform/blob/main/packages/utils/src/__tests__/offline-download-guard-store.test.ts) covers the Durable Object store. It checks the window shapes and limits in one sequential call, 429 with Retry-After, and the reusable 15-minute clearance. It also checks that a timeout, a stopped guard, an auth failure, a clearance write failure and `off` all return 503.
 
 Local Inventory search mirrors name-only SQL ILIKE, trimmed whole query, case
 insensitivity, preserved accents, `%`/`_` wildcards, and backslash escaping.
@@ -1930,6 +1931,61 @@ content/dock padding are unchanged. Actual-shell regression coverage in
 large text, including denial visibility and dock Back. This scoped correction
 does not establish the cause of the reported Assistant Settings TestFlight issue.
 
+### Board timeline agenda
+
+The board **Timeline** view is a vertical, day-grouped agenda for phones,
+replacing the horizontal Gantt chart that needed sideways scrolling and
+dragging on a 68dp-per-day grid. It applies to every device size.
+
+- It opens on **Today**. Overdue days sit above Today, nearest first, with an
+  Overdue label; upcoming days follow below. When there is overdue work,
+  **Show overdue** at the top of Today jumps up to it, and **Today** in the
+  toolbar scrolls back to the anchor.
+- Each task appears once: an overdue task on its due day, a task running
+  today on Today (multi-day tasks show "Day 3 of 6, ends Oct 30"), and a later
+  task on its first day with its date span. A task with only a start date
+  has nothing due, so it is never overdue: once started it stays on Today as
+  "Started Oct 21". Done and closed lists are left out, as before. Rows show
+  the priority, name, span and list.
+- Overdue uses the board's one rule, shared with the quick actions sheet: the
+  due day is before today. Days and "today" follow the user's timezone
+  setting, as Calendar does, and the agenda re-anchors at midnight.
+- The agenda needs every open task, not the first page the List view starts
+  from, so the Timeline loads every page of each open list by itself, with
+  no scrolling needed: 100 tasks per page whichever view loaded the list
+  first, at most two lists at a time, and up to 2,000 tasks across the board
+  unattended (beyond that it offers Load more). Done and Closed lists are not
+  paged. While pages remain it never says "Nothing scheduled today": Today
+  shows that tasks are still loading, or that some are not loaded yet.
+- Each arriving page is processed on its own: only its tasks' descriptions
+  are parsed for search and only its list is rebuilt, so loading a large
+  board stays linear.
+- **Week**, **Month** (the default) and **All** limit how far ahead the agenda
+  lists work. Overdue work always shows. When the range hides later tasks,
+  **Show later tasks** switches to All.
+- Undated tasks are listed under **Unscheduled tasks** with a hint to add
+  dates; the earlier cap of eight with a "+N" count is gone.
+- Tapping a row opens the task quick actions. Rescheduling moves from dragging
+  bars to the sheet's [Dates rows](#task-quick-actions-sheet), which set and
+  clear the start and due dates; the drag and resize handles are removed.
+- No count chips: the range chip, the "N tasks" chips and the per-list task
+  totals are gone. The day header names the day instead of counting tasks.
+- Rows build lazily in both directions from Today, and the agenda is rebuilt
+  only when tasks, the day or the range change.
+
+Regression coverage: `task_board_timeline_agenda_test.dart` (placement,
+start-only tasks, the timezone setting and next-midnight delay, ranges,
+ordering, a 20,000-task board, rebuild memoization) and
+`task_board_timeline_paging_test.dart` (two lists at a time, board budget),
+`task_board_detail_cubit_paging_test.dart` (a page re-processes only its own
+list, page size growth, a rejected move leaves loads able to finish) and
+`task_board_timeline_test.dart` (Today anchor and button, Show overdue, every
+page loaded without scrolling with today's task on page five, no empty claim
+while a page is pending,
+start-only rows, range and Show later, tap to open, lazy building with 1,500
+tasks, the empty state, 320dp at 2x text, light/dark/blob renders). The
+midnight re-anchor is covered by the delay calculation, not a widget clock.
+
 ### Task board row gestures
 
 In the board **List** view, task rows take native swipe and long-press
@@ -1966,7 +2022,8 @@ gestures. The same behavior applies on Android and iOS.
   **Select task** enters bulk selection. Earlier, a long press entered bulk
   selection directly. In bulk selection, swipes are off and a long press
   toggles the row, as before.
-- Tapping a row still opens its quick actions. Every swipe action is also
+- Tapping a row opens the [quick actions sheet](#task-quick-actions-sheet).
+  Every swipe action is also
   exposed as a screen-reader action.
 
 Kanban cards keep their earlier long-press selection behavior; this decision
@@ -1977,6 +2034,59 @@ toasts, the Schedule picker, Start focus), `task_board_bulk_selection_test.dart`
 and `app_swipe_actions_test.dart` (thresholds, the fling minimum, reveal,
 right-to-left, semantics, enlarged text). Widget tests do
 not establish gesture feel on devices.
+
+### Task quick actions sheet
+
+Tapping a task on a board (List, Kanban or Timeline) opens the quick actions
+sheet. It replaces the earlier button grid; the long-press menu is unchanged.
+
+- **Status**: one large tile per status that has a list on the board (Not
+  started, Active, Review, Done, Closed; Documents lists are not a target).
+  The current status is selected. Another status moves the task to that
+  status's list, asking which list when there are several, and closes the
+  sheet.
+- **Priority**: None, Urgent, High, Medium and Low, the web's task priority
+  menu wording (Vietnamese: Không có, Khẩn cấp, Cao, Trung bình, Thấp). The
+  four levels use the web's icons and colours: unicorn head (red), horse head
+  (orange), rabbit (yellow) and turtle (blue), from Lucide and Lucide Lab.
+  None clears the priority. Every mobile task surface (cards, filters, bulk
+  edit, row menu, recycle bin, My tasks and the timer task picker) uses the
+  same labels and icons.
+- **Dates**: Start date and Due date rows show the day, or None, and open the
+  task editor's date picker; each set date has a clear button. Days are read
+  and saved in the user's timezone setting: a start date at the first instant
+  of the picked day, a due date at its last second, so the task lands on that
+  day in the Timeline. As in the editor, a start after the due day moves the
+  due date onto it, and a due date before the start moves the start onto it.
+  Picking the current day saves nothing. These rows replace Timeline
+  drag-to-reschedule. A task is overdue once its due day, in the user's
+  timezone setting, is before today; a task without a due date is never
+  overdue.
+- **Fields**: Assignees (team workspaces with members), Labels (boards with
+  labels) and Move task. Each row shows its current value and opens its
+  picker.
+- **Open full details** closes the sheet and opens the task.
+- Priority and field edits keep the sheet open and update it in place, so
+  several can be made in a row. They save without a success toast because the
+  sheet shows the saved value; failures still roll back and show the error.
+  While one edit saves, every control dims and ignores taps, because the
+  board runs one mutation at a time. A mutation started anyway is rejected
+  before any optimistic change, so nothing needs rolling back.
+- No count chips: assignee and label names replace overflow counts.
+
+Regression coverage: `task_priority_visuals_test.dart` (web order, icons,
+colours, English and Vietnamese labels including None),
+`task_board_quick_actions_test.dart` (icons, labels and order, selected
+semantics, statuses offered, None clears, dropped concurrent edit with every
+control disabled, status move, due-date clear, 320dp at 2x text,
+light/dark/blob renders), `task_board_quick_actions_dates_test.dart` (both
+dates or None, a picked start or due day, the range pull, an unchanged day,
+start-date clear, rollback with an error toast, the timezone setting),
+`task_repository_test.dart` (a zoned date saves as that zone's day),
+`task_board_detail_cubit_mutation_guard_test.dart`
+(a rejected concurrent update or move changes nothing)
+and `task_board_quick_actions_edits_test.dart` (consecutive edits save from
+the live task). Widget tests do not establish touch feel on devices.
 
 ### Root tabs and dock search
 

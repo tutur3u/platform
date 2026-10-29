@@ -58,9 +58,26 @@ export interface TutoringQueueItem {
   feedback_content: string;
   feedback_created_at: string | null;
   source_feedback_id: string | null;
+  /** The flagged feedback `feedback_content` was read from (the triggering one). */
+  content_feedback_id?: string | null;
+  /** Class notes (`YYYY-MM-DD: notes`) on the missed dates; empty when none. */
+  missed_lesson_content?: string;
+  /** Class posts (`YYYY-MM-DD: title` and body) created on the missed dates. */
+  missed_post_content?: string;
+  /** `missed_lesson_content` split per missed date (one make-up session each). */
+  missed_lesson_by_date?: Record<string, string>;
+  /** `missed_post_content` split per missed date. */
+  missed_post_by_date?: Record<string, string>;
+  /** Missed dates with neither class session notes nor a class post. */
+  missing_lesson_dates?: string[];
   content_review_due: boolean;
   content_unchanged_since: string | null;
   review_only: boolean;
+  /**
+   * The learner is in a needs-tutoring group. Ending weak support cannot take
+   * them off the queue; staff remove them from the group instead.
+   */
+  support_group?: boolean;
 }
 
 export interface TutoringQueueSummary {
@@ -86,6 +103,7 @@ export interface TutoringPayrollExportRow {
   teacher_name: string;
   completed_sessions: number;
   total_minutes: number;
+  total_cong: number;
 }
 
 export interface ListTutoringSessionsParams extends InternalApiQuery {
@@ -111,6 +129,8 @@ export interface CreateTutoringSessionPayload {
     startTime: string;
     durationMinutes: number;
     teacherUserId?: string | null;
+    /** This session's own content; falls back to the payload `content`. */
+    content?: string;
   }[];
   sessionDate?: string;
   startTime?: string;

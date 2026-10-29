@@ -17,6 +17,8 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({}));
 vi.mock('./artifact-billing', () => ({
   generateBilledMeetArtifact: mocks.generate,
 }));
+// Credit admission ordering is covered in chunks-credit-admission.test.ts.
+vi.mock('./credit-admission', () => ({ admitMeetCredits: async () => ({}) }));
 vi.mock('@tuturuuu/ai/meetings/gemini', () => ({}));
 vi.mock('./access', async (original) => ({
   ...(await original<object>()),

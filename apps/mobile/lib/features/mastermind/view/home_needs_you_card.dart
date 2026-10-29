@@ -73,8 +73,9 @@ class HomeNeedsYouCard extends StatelessWidget {
   }
 }
 
-/// `<Product> · security fix`, or just "Security fix" with no product.
+/// The fixed "Mastermind · security fix" line (SB-100 S3).
+///
+/// The label is a constant: a security row never names a product, and there is
+/// no product fallback, so the line cannot reveal which product is affected.
 String securityLine(AppLocalizations l10n, SecurityItem item) =>
-    item.product == null
-    ? l10n.mastermindSecurityFix
-    : l10n.mastermindSecurityLine(MastermindLabels.product(item.product!));
+    l10n.mastermindSecurityLine(MastermindLabels.product(Product.mastermind));

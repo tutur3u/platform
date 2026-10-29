@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 const f = vi.hoisted(() => ({
   resolve: vi.fn(),
+  permissions: vi.fn(),
   admin: vi.fn(),
   from: vi.fn(),
   getUserById: vi.fn(),
@@ -14,6 +15,9 @@ vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: vi.fn(async () => ({})),
   createAdminClient: f.admin,
+}));
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: f.permissions,
 }));
 vi.mock('@tuturuuu/ai/memory', () => ({
   rememberAiMemory: vi.fn(),
@@ -77,6 +81,7 @@ const cases = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  f.permissions.mockResolvedValue({ containsPermission: () => true });
   const query = Object.assign(
     Promise.resolve({ data: [], count: 0, error: null }),
     {
@@ -136,6 +141,7 @@ for (const [name, handler] of [
       );
       expect(response.status).toBe(allowed ? 200 : 403);
       if (!allowed) {
+        expect(f.permissions).not.toHaveBeenCalled();
         expect(f.from).not.toHaveBeenCalled();
         expect(await response.json()).not.toHaveProperty('data');
       }

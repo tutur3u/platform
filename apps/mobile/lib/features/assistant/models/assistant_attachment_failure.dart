@@ -7,7 +7,11 @@ enum AssistantAttachmentFailure {
   unsupported,
   forbidden,
   network,
-  server;
+  server,
+
+  /// The composer has no chat and a new one needs the user's informed
+  /// confirmation first; retrying the upload alone can never succeed.
+  newChatRequired;
 
   bool get retryable => this == network || this == server;
 

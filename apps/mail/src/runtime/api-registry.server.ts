@@ -1,10 +1,12 @@
 import '@tanstack/react-start/server-only';
+import { dispatchEndpoint } from '@tuturuuu/start-bridge/endpoints';
 import type { NextRequest } from 'next/server';
-import { dispatchEndpoint } from './api-dispatch';
-import { mailRoutes0 } from './api-routes-0.server';
-import { mailRoutes1 } from './api-routes-1.server';
-import { mailRoutes2 } from './api-routes-2.server';
-export const mailEndpoints = [...mailRoutes0, ...mailRoutes1, ...mailRoutes2];
+import { endpoints } from './api-registry.bridge.gen';
+
+export { endpoints as mailEndpoints } from './api-registry.bridge.gen';
+
 export function dispatchMailEndpoint(request: NextRequest) {
-  return dispatchEndpoint(request, mailEndpoints);
+  return dispatchEndpoint(endpoints, request, {
+    pathname: request.nextUrl.pathname,
+  });
 }

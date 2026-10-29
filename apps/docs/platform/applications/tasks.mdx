@@ -102,6 +102,19 @@ results remain unchanged across Tasks, Calendar, retained Web planning views
 and AI task tools. The database regression packet is
 `apps/database/supabase/tests/time-task-rpc-scoping.sql`.
 
+## Personal placement and template backgrounds
+
+Personal placement in Tasks requires current source-task access, including a
+valid board share where supported. An assignment or personal override alone does
+not authorize placement after source access is lost. Moving a task to a terminal
+status also requires source edit access. The personal-placement route scenario
+tests cover shared-board access and stale assignments or overrides.
+
+Template background keys must belong to the template's workspace under its
+`template-backgrounds` prefix. Tasks, shared template UI and retained Web routes
+apply the same rule before saving or signing a background. The helper regression
+cases live in `packages/utils/src/__tests__/template-background-path.test.ts`.
+
 ## Board And List Name Uniqueness
 
 - Active and archived task board names are unique per workspace using `lower(btrim(name))`; only trashed boards with `deleted_at` set release the name.

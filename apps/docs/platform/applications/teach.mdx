@@ -10,6 +10,12 @@ workspace details, use the Web fallback with their paths and queries intact.
 Local Teach API handlers retain precedence. Regression coverage lives in
 `apps/teach/src/next-config.test.ts`.
 
+Every Teach workspace data page and server loader must verify Teach app-session membership and its applicable workspace permission before reading data; layout redirects alone are insufficient (regression coverage: `apps/teach/src/lib/teach-page-membership.test.ts`).
+
+Education page and statistic-card gates require full (`MEMBER`) membership and the workspace's `ENABLE_EDUCATION` flag, matching the education API. Guests are denied even when their default permissions include `ai_lab`. Each page also requires its specific permission. The overview remains available to `ai_lab` members; statistic cards whose individual permissions are missing render nothing. Direct page requests enforce these rules without relying on a parent layout. Membership and flag lookup failures fail closed with a sanitized server error and reach the error boundary; missing membership or a disabled flag still returns not found. The overview resolves membership and the flag once, passes the resolved permissions to its cards, and each card enforces its own permission before reading its count. This result is reused only within that render. Teach and Tulearn share the framework-free flag parser.
+
+Coverage: `teach-page-membership.test.ts`, `require-teach-workspace-member.test.ts`, `teach-overview-membership.test.ts` (streamed renders and one gate resolution per request), and `education/access.test.ts`.
+
 ## Ownership model
 
 Teach owns teacher authoring, administration, and shared education v1 API
@@ -132,3 +138,18 @@ access is checked before test, answer, attempt, or grading operations.
 
 Coverage lives in Teach's `quizzes/workspace-links.test.ts` and Learn's
 `tests/[testId]/access.test.ts`.
+
+## Quiz set module links
+
+Creating a quiz set with a `moduleId` links it to that course module only when
+the module's course group belongs to the resolved Teach workspace. Row-level
+security on `course_module_quiz_sets` only proves the module is visible to the
+caller, so a member of two workspaces could otherwise attach a quiz set to the
+other workspace's module. The route checks the module's workspace with the
+service client before any write; a missing or foreign module returns 404, a
+failed lookup returns 500, and neither creates the quiz set or the link. The
+created quiz set must also carry the resolved workspace id before it is linked.
+The `quiz-sets/[setId]/modules` link and unlink routes already apply the same
+rule through `requireQuizModuleAccess`.
+
+Coverage lives in Teach's `quiz-sets/route.test.ts`.

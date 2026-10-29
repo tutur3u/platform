@@ -156,6 +156,12 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: vi.fn(() => Promise.resolve(mocks.sessionSupabase)),
 }));
 
+// Role whitelist enforcement is covered by finance-write-boundaries.test.ts.
+vi.mock('../../workspace-references', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../workspace-references')>()),
+  validateFinanceWalletWriteAccess: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
     mocks.getPermissions(...args),

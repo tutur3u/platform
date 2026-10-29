@@ -61,6 +61,14 @@ review prove baseline equivalence. Existing migration history stays immutable.
   optional arguments only after verifying their SQL defaults preserve behavior.
 - Public `SECURITY DEFINER` RPCs must enforce `auth.uid()` and workspace/RBAC
   checks internally, then revoke broad execution and grant only required roles.
+- For resumable multi-phase RPCs, authorize every phase before any early success
+  return. Treat permission results `IS DISTINCT FROM TRUE` as denial. Recreate
+  replacements and manual rollbacks from the full-chain catalog definition and
+  ACLs, including later private-schema moves; qualify relations before narrowing
+  the path. Keep private-schema regression checks for explicit qualified access.
+  Lock rows in a fixed order before a check-then-delete, and never let a manual
+  rollback re-grant `PUBLIC` or `anon`. Definer helpers that take table or column
+  identifiers stay `service_role`-only and raise outside an exact allowlist.
 - Public functions created before `20260522172925` inherited EXECUTE for
   `PUBLIC`, `anon` and `authenticated`. When touching one, revoke from all three,
   grant only the roles its callers use, and check RLS policies and invoker
@@ -92,6 +100,7 @@ review prove baseline equivalence. Existing migration history stays immutable.
   defaults require their owner. See the RPC hardening runbook and
   `20261027151200_anon-definer-execute.sql` for the catalog and privilege snapshot.
 - Admin-only report RPCs can retain an internal workspace-permission guard without granting authenticated EXECUTE. Test ACLs first, then grant authenticated only inside the rolled-back pgTAP transaction to prove both denial and permitted-member behavior. Before removing an obsolete overload, inspect `pg_get_functiondef` and final SQL/trigger callers on a fresh full replay; historical callers may have been replaced. See the RPC hardening runbook and `anon-definer-migration-c.sql`.
+- Audit definer revokes must name PUBLIC and both client roles explicitly. Re-verify app/package callers before denying schema USAGE; preserve service/owner access and each audit creator's schema-local defaults. Verify the migration as plain postgres, separately from provider-owned objects. Capture ACL grantors and grant options for exact rollback; schema-local function defaults cannot subtract a global authenticated grant, so verify effective schema access too. See `sb25-nonpublic-definers.sql` and the RPC hardening runbook.
 - Views over RLS-protected tables need `security_invoker` before broad grants.
 
 ## Outbound SSO persistence
@@ -526,3 +535,19 @@ owns the accepted claim forms and Auth source references; the
 grants. Replay installation and rollback as the non-superuser `postgres` role:
 Auth tables belong to `supabase_auth_admin`, so creating and dropping a trigger
 have different privilege requirements.
+
+### Atomic Assistant first-message creation
+
+The native first-message RPC binds a client UUID and request key to an immutable
+private creation snapshot. Validate actor/workspace/type before replay, compare
+initial settings against the snapshot rather than mutable settings, and keep the
+creation and user-message idempotency operation in one transaction. Retain a
+minimal tombstone after conversation deletion to deny stale resurrection.
+`verify-chat-first-message.mjs` exercises the full isolated migration chain,
+rollback cases and a two-connection advisory-lock race. Its baseline/candidate
+type generation applies only the new schema delta to the checked-in snapshot.
+
+The first-message rollback restores main's prior chat_create_conversation body
+and service-only ACL. Refuse retained creation receipts: removing retry identities
+can resurrect deleted conversations. Verify actual apply/rollback/reapply and
+prior catalog equality with apps/database/verification/chat-first-message-rollback-*.sql.

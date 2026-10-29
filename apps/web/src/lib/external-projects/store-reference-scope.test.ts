@@ -48,8 +48,8 @@ const field = {
   workspaceId: 'workspace-a',
   actorId: 'actor',
   key: 'field',
-  field_scope: 'entry',
-  field_type: 'text',
+  field_scope: 'metadata',
+  field_type: 'string',
   collection_id: 'reference',
 } as const;
 const block = {

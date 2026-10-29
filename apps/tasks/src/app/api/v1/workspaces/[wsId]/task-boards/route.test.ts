@@ -343,6 +343,20 @@ describe('task boards route GET', () => {
     });
 
     createAdminClientMock.mockResolvedValue({
+      auth: {
+        admin: {
+          getUserById: vi.fn().mockResolvedValue({
+            data: {
+              user: {
+                email: 'guest@example.com',
+                email_confirmed_at: '2026-01-01T00:00:00Z',
+                id: '00000000-0000-4000-8000-000000000999',
+              },
+            },
+            error: null,
+          }),
+        },
+      },
       from: fromMock,
     });
   });

@@ -141,6 +141,39 @@ delay notifications do not produce automatic blacklist suggestions.
 
 ## Architecture
 
+### Native Start runtime
+
+The Mail candidate uses `@tuturuuu/start-bridge` for request context, middleware,
+route dispatch, function authentication, navigation and locale adapters. Mail
+keeps its own function-body bounds, API middleware matcher, action ports and
+response policy, including signed webhook exemptions and attachment framing.
+The Email Routing Worker remains a separate service.
+
+`apps/mail/start-bridge.routes.json` generates the API registry and page manifest.
+Run `bun run --cwd apps/mail bridge:generate` after adding or moving routes, then
+`bun run --cwd apps/mail bridge:check`. The owning Mail build runs the check
+before `vp build`; stale or unregistered routes fail closed. The page policy
+covers every generated `PagePattern`, so a new page also requires an explicit
+view policy. API regressions retain all 41 original routes and assert the
+authenticated request and decoded params reaching each handler.
+
+The bridge resolves the app base per request: the subdomain serves the root,
+while the apex serves `/mail`. Its head script hands the resolved base to the
+browser before hydration; asset, navigation and function URLs follow that base.
+Both hosts use one compiled artifact. Mount support is source readiness, not
+canonical-route admission. Keep production publication held until the release owner records
+the exact artifact, independent review, provider/webhook/attachment acceptance,
+mount/session acceptance and rollback evidence.
+
+Under `/mail`, Web owns shared-session writes: Mail rejects logout, token
+verification and session refresh before middleware or endpoint dispatch. The
+fence uses the bridge's route matcher, so trailing and repeated slash variants
+receive the same rejection without calling handlers or providers or emitting
+session cookies. Subdomain endpoints retain their existing methods and cookie
+behavior. `mounted-session-endpoints.test.ts` exercises this boundary through the
+real bridge dispatcher, including canonical paths and subdomain controls.
+
+
 - `apps/mail` owns the mailbox UI and protected app-local APIs under
   `/api/v1/workspaces/:wsId/mail/*`.
 - The mailbox mirror is stored in service-only `private.mail_*` tables. Browser
@@ -235,6 +268,14 @@ editable. Inline quoted images retain their attachment metadata. Selecting
 text exposes Enhance selection. AI previews replace only that passage after review;
 a document change invalidates the captured selection. Plain-text reading caps runs
 of blank lines without changing stored text or meaningful indentation.
+
+Draft attachment images are stored with raw `/api/v1/...` paths. The editor mounts
+them only for display, so a draft saved at `tuturuuu.com/mail` can reopen at
+`mail.tuturuuu.com` and vice versa. Previously saved `/mail/api/...` draft image
+references are normalized when the editor loads them. External image URLs retain
+their original value. The composer regression in
+`apps/mail/src/app/[locale]/(dashboard)/[wsId]/mail-composer-editor.test.ts`
+covers both directions and the legacy reference.
 
 ## SES Receiving Setup
 
@@ -1135,3 +1176,18 @@ After TAP succeeds, it generates actual `public`, `private` and `storage` schema
 Scope: Mail's native frontend defaults to strict noncomposite noemit app checking, then genuine Mail-only declarations, then the actual noDOM Worker check. Both app programs retain all current roots and imported-source checking; shared package export/build/check owners remain authoritative. `bun run type-check` sequences app, boundary and Worker. The boundary emits into `.typecheck/app` with rootDir `.`, noEmitOnError and incremental false. The Worker resolves only emitted `#mail-handler` declarations; Vite resolves that exact alias to the real source. Inherited Turbo prerequisites and `.typecheck/**` outputs are preserved. Direct Mail production/test imports use package exports: the narrow Supabase realtime-log-actions entry follows its existing dist-types/source-Bun/dist-JS convention and build roots; Satellite workspace/invitation entries already exist. The app-local resolver exempts server suppliers when porting client calls, avoiding recursive transport aliases. No supplier or shared producer is changed. Static edge regressions remain authored UNRUN; real compiler external-source classification still requires exact-source CI.
 
 Limits: generated binding-only declarations must come from the qualified emitted deployment config. Pinned compiler workspace-external classification/rootDir behavior, declaration closure and clean/restored-cache acceptance remain unproven. Missing bridge/ambient isolation regressions are authored UNRUN in `apps/mail/src/runtime/type-programs.test.ts`; source assertions do not establish compiler or workerd acceptance. Unexpected foreign emission or incompatible contracts stop qualification without source exclusions. Logger timer/buffer lifetime and all provider/runtime delivery gates remain parent-owned; this decision adds no scheduler or resource.
+
+Mounted Mail API helpers receive raw `/api/...` paths; the shared resolver adds `/mail`
+for Mail routes and leaves Web routes at root. Browser and server adapters register
+once and read request context at call time. Rendered attachment href/src values use
+the base helper; text/DOCX helpers receive raw protected URLs. CID images get the
+mount when serialized into preview HTML. See `mail-api-options.test.ts`,
+`mail-attachment-card.test.ts` and `mail-message-preview-utils.test.ts`.
+
+Mounted page, API and function middleware relies on the shared apex Supabase
+session. It skips cross-app token consumption, satellite session refresh and
+Supabase cookie clearing; OAuth state cookies remain scoped to their flow.
+Root-mode Mail keeps its existing satellite session behavior. The required
+`NEXT_PUBLIC_SUPABASE_URL` Worker secret is declared in the native artifact
+profile and remains separate from browser build-time configuration. See
+`proxy-auth.test.ts` for the no-session-cookie-write regression.

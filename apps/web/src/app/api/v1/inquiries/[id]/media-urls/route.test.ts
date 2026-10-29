@@ -51,7 +51,7 @@ beforeEach(() => {
 async function sign(path: string) {
   state.images = [path];
   const response = await POST(
-    new NextRequest('http://localhost/api/v1/inquiries/' + id + '/media-urls', {
+    new NextRequest(`http://localhost/api/v1/inquiries/${id}/media-urls`, {
       method: 'POST',
       body: JSON.stringify({ mediaPaths: [path] }),
     }),
@@ -62,18 +62,18 @@ async function sign(path: string) {
 it.each(['%2e%2e', '%252e%252e', '..', '%2f..', '%5c..'])(
   'rejects unsafe stored path segment %s before signing',
   async (segment) => {
-    const path = actor + '/' + segment + '/foreign.png';
+    const path = `${actor}/${segment}/foreign.png`;
     expect(await sign(path)).toEqual({ urls: {} });
     expect(state.sign).not.toHaveBeenCalled();
   }
 );
 it('encodes each segment for the signing transport', async () => {
-  const path = actor + '/café photo.png';
+  const path = `${actor}/café photo.png`;
   expect(await sign(path)).toEqual({
     urls: { [path]: 'https://example.test/signed' },
   });
   expect(state.sign).toHaveBeenCalledWith(
-    actor + '/caf%C3%A9%20photo.png',
+    `${actor}/caf%C3%A9%20photo.png`,
     300
   );
 });
@@ -82,7 +82,7 @@ it('retains the inquiry-prefixed legacy fallback with encoded segments', async (
     data: null,
     error: { message: 'missing' },
   });
-  const path = id + '/photo name.png';
+  const path = `${id}/photo name.png`;
   await sign(path);
-  expect(state.sign).toHaveBeenLastCalledWith(id + '/photo%20name.png', 300);
+  expect(state.sign).toHaveBeenLastCalledWith(`${id}/photo%20name.png`, 300);
 });

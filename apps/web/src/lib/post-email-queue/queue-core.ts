@@ -4,6 +4,7 @@ import type {
   GroupPostCheck,
   WorkspaceUser,
 } from '@tuturuuu/types/db';
+import { chargeWebCronPage } from '@/lib/cron/web-cron-budget';
 import {
   buildPostEmailAgeSkipReason,
   getPostEmailMaxAgeCutoff,
@@ -109,10 +110,9 @@ export async function fetchAllPaginatedRows<T>(
     const remainingRows = boundedMaxRows - rows.length;
     const pageSize = Math.min(POST_EMAIL_SELECT_PAGE_SIZE, remainingRows);
     const to = from + pageSize - 1;
+    chargeWebCronPage();
     const { data, error } = await fetchPage(from, to);
-
     if (error) throw error;
-
     const pageRows = data ?? [];
     rows.push(...pageRows);
 

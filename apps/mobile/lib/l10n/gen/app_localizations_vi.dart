@@ -391,6 +391,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get assistantAttachmentFailureNetwork => 'Tải lên bị gián đoạn. Kiểm tra kết nối rồi nhấn Thử lại.';
 
   @override
+  String get assistantAttachmentFailureNewChatRequired => 'Hãy bắt đầu cuộc trò chuyện mới trước, rồi đính kèm lại tệp.';
+
+  @override
   String get assistantAttachmentFailureServer => 'Tải lên chưa hoàn tất. Nhấn Thử lại.';
 
   @override
@@ -5064,6 +5067,69 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventorySearchProducts => 'Tìm sản phẩm';
 
   @override
+  String get inventoryItemArchived => 'Đã lưu trữ';
+
+  @override
+  String get inventoryItemsLoadFailed => 'Không tải được sản phẩm';
+
+  @override
+  String get inventoryItemsLoadMoreFailed => 'Không tải thêm được sản phẩm';
+
+  @override
+  String inventoryItemAvailable(String amount) {
+    return 'Còn $amount';
+  }
+
+  @override
+  String inventoryItemMoreLocations(int count) {
+    return 'Thêm $count vị trí';
+  }
+
+  @override
+  String get inventoryItemNoStock => 'Chưa thiết lập tồn kho';
+
+  @override
+  String get inventoryItemStockHidden => 'Tồn kho bị ẩn';
+
+  @override
+  String get inventoryItemsEmptyTitle => 'Chưa có sản phẩm';
+
+  @override
+  String get inventoryItemsNoMatch => 'Không có sản phẩm phù hợp';
+
+  @override
+  String get inventoryItemsNoMatchMessage => 'Tìm kiếm theo tên sản phẩm. Hãy thử tên khác hoặc xoá tìm kiếm.';
+
+  @override
+  String get inventoryItemsNoneArchived => 'Không có sản phẩm đã lưu trữ';
+
+  @override
+  String get inventoryScanAction => 'Quét mã';
+
+  @override
+  String get inventoryScanHint => 'Hướng camera vào mã QR hoặc mã vạch của sản phẩm.';
+
+  @override
+  String inventoryScanMatches(String code) {
+    return 'Tên khớp với “$code”';
+  }
+
+  @override
+  String get inventoryScanNotFound => 'Không có sản phẩm nào trong không gian làm việc này khớp với mã này.';
+
+  @override
+  String get inventoryScanNotProduct => 'Không thể dùng mã này để tìm sản phẩm.';
+
+  @override
+  String get inventoryScanSearchInstead => 'Chuyển sang tìm kiếm';
+
+  @override
+  String get inventoryScanTitle => 'Quét mã';
+
+  @override
+  String get inventoryScanUnavailable => 'Không dùng được camera';
+
+  @override
   String get inventorySeasonHistoricalReadOnly => 'Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.';
 
   @override
@@ -9062,28 +9128,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskBoardDetailPriority => 'Độ ưu tiên';
 
   @override
-  String get taskBoardDetailPriorityCritical => 'Nghiêm trọng';
-
-  @override
-  String get taskBoardDetailPriorityHigh => 'Cao';
-
-  @override
-  String get taskBoardDetailPriorityLow => 'Thấp';
-
-  @override
   String get taskBoardDetailPriorityNone => 'Không ưu tiên';
-
-  @override
-  String get taskBoardDetailPriorityNormal => 'Bình thường';
 
   @override
   String get taskBoardDetailPriorityUpdated => 'Đã cập nhật độ ưu tiên.';
 
   @override
   String get taskBoardDetailProperties => 'Thuộc tính';
-
-  @override
-  String get taskBoardDetailQuickActions => 'Thao tác nhanh';
 
   @override
   String get taskBoardDetailRecycleBin => 'Thùng rác';
@@ -10089,6 +10140,58 @@ class AppLocalizationsVi extends AppLocalizations {
   String get taskPortfolioUpdateSaved => 'Đã lưu cập nhật.';
 
   @override
+  String get taskQuickActionsDueDate => 'Hạn chót';
+
+  @override
+  String get taskQuickActionsNoDate => 'Không có';
+
+  @override
+  String get taskQuickActionsNoLabels => 'Chưa có nhãn';
+
+  @override
+  String get taskQuickActionsRemoveStartDate => 'Xóa ngày bắt đầu';
+
+  @override
+  String get taskQuickActionsStatus => 'Trạng thái';
+
+  @override
+  String get taskQuickActionsUnassigned => 'Chưa giao cho ai';
+
+  @override
+  String get taskTimelineLoadingTasks => 'Đang tải công việc…';
+
+  @override
+  String get taskTimelineNotAllLoaded => 'Một số việc chưa được tải';
+
+  @override
+  String get taskTimelineNothingToday => 'Hôm nay chưa có việc nào';
+
+  @override
+  String taskTimelineOngoing(int day, int total, String date) {
+    return 'Ngày $day/$total, kết thúc $date';
+  }
+
+  @override
+  String get taskTimelineRangeAll => 'Tất cả';
+
+  @override
+  String get taskTimelineRangeMonth => 'Tháng';
+
+  @override
+  String get taskTimelineRangeWeek => 'Tuần';
+
+  @override
+  String get taskTimelineShowLater => 'Hiện các việc về sau';
+
+  @override
+  String get taskTimelineShowOverdue => 'Xem việc quá hạn';
+
+  @override
+  String taskTimelineStarted(String date) {
+    return 'Bắt đầu $date';
+  }
+
+  @override
   String get tasksAllCaughtUp => 'Đã hoàn thành tất cả!';
 
   @override
@@ -10136,16 +10239,19 @@ class AppLocalizationsVi extends AppLocalizations {
   String get tasksPlanAhead => 'Lên kế hoạch sớm';
 
   @override
-  String get tasksPriorityCritical => 'Nghiêm trọng';
-
-  @override
   String get tasksPriorityHigh => 'Cao';
 
   @override
   String get tasksPriorityLow => 'Thấp';
 
   @override
-  String get tasksPriorityNormal => 'Bình thường';
+  String get tasksPriorityMedium => 'Trung bình';
+
+  @override
+  String get tasksPriorityNone => 'Không có';
+
+  @override
+  String get tasksPriorityUrgent => 'Khẩn cấp';
 
   @override
   String get tasksRequiresAttention => 'Cần xử lý ngay';
@@ -11097,6 +11203,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get workspaceHiddenLoadError => 'Không thể tải tùy chọn hiển thị. Các lựa chọn ẩn đã lưu được giữ lại.';
+
+  @override
+  String get workspaceManageTitle => 'Quản lý không gian làm việc';
+
+  @override
+  String get workspaceVisibleTitle => 'Không gian làm việc đang hiện';
+
+  @override
+  String get workspaceHiddenCurrentToast => 'Đã ẩn không gian làm việc và chuyển sang một không gian đang hiện khác.';
+
+  @override
+  String get workspaceHiddenLastToast => 'Tất cả không gian làm việc đã bị ẩn. Hãy hiện một không gian để tiếp tục.';
 
   @override
   String get workspaceHiddenTitle => 'Không gian làm việc đã ẩn';
@@ -13103,9 +13221,6 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get mastermindSecurityFix => 'Bản vá bảo mật';
-
-  @override
   String get mastermindSecurityGroup => 'Bảo mật';
 
   @override
@@ -13483,7 +13598,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindSummaryWeeklyNotReported => 'Nguồn không báo cáo hạn mức tuần.';
 
   @override
-  String get mastermindTabHome => 'Tổng quan';
+  String get mastermindTabHome => 'Hôm nay';
 
   @override
   String get mastermindTabInbox => 'Hộp thư';
@@ -13995,4 +14110,147 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindAskRemindAtMacSoon => 'Sắp ra mắt';
+
+  @override
+  String get mastermindCatchupTitle => 'Từ lần bạn xem gần nhất';
+
+  @override
+  String get mastermindCatchupWindowSince => 'Từ lần ghé thăm trước';
+
+  @override
+  String get mastermindCatchupWindowDay => '24 giờ qua';
+
+  @override
+  String get mastermindCatchupWelcome => 'Chào mừng đến với Mastermind. Đây là những gì đã diễn ra trong ngày qua.';
+
+  @override
+  String get mastermindCatchupQuiet => 'Không có gì mới từ lần bạn xem trước';
+
+  @override
+  String get mastermindCatchupQuietFirstRun => 'Chưa có gì xảy ra trong ngày qua.';
+
+  @override
+  String get mastermindCatchupPartial => 'Một số cập nhật có thể bị thiếu';
+
+  @override
+  String get mastermindCatchupSectionShipped => 'Đã phát hành';
+
+  @override
+  String get mastermindCatchupSectionBlocked => 'Bị chặn';
+
+  @override
+  String get mastermindCatchupSectionChanged => 'Thay đổi';
+
+  @override
+  String get mastermindCatchupSectionUsage => 'Mức dùng & sức khỏe';
+
+  @override
+  String get mastermindCatchupSectionOther => 'Cập nhật khác';
+
+  @override
+  String mastermindCatchupCountNeedsYou(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cần bạn',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindCatchupCountShipped(int count) {
+    return '$count đã phát hành';
+  }
+
+  @override
+  String mastermindCatchupCountBlocked(int count) {
+    return '$count bị chặn';
+  }
+
+  @override
+  String mastermindCatchupCountChanged(int count) {
+    return '$count thay đổi';
+  }
+
+  @override
+  String get mastermindCatchupNewDivider => 'Mới từ lần ghé thăm trước';
+
+  @override
+  String mastermindCatchupShowEarlier(int count) {
+    return 'Hiện $count mục cũ hơn';
+  }
+
+  @override
+  String get mastermindCatchupSecurityUpdate => 'Cập nhật bảo mật';
+
+  @override
+  String mastermindCatchupOnIt(String name) {
+    return '$name đang xử lý';
+  }
+
+  @override
+  String get mastermindCatchupButton => 'Cập nhật cho tôi';
+
+  @override
+  String get mastermindCatchupRefreshing => 'Đang cập nhật…';
+
+  @override
+  String get mastermindCatchupUpToDate => 'Bạn đã cập nhật mới nhất';
+
+  @override
+  String get mastermindCatchupFailed => 'Không cập nhật được. Thử lại.';
+
+  @override
+  String get mastermindCatchupOpensLink => 'Mở trong trình duyệt';
+
+  @override
+  String mastermindCatchupGroupLabel(String product, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count cập nhật',
+    );
+    return '$product, $_temp0';
+  }
+
+  @override
+  String get mastermindRelNow => 'vừa xong';
+
+  @override
+  String mastermindRelMinutes(int count) {
+    return '$count phút';
+  }
+
+  @override
+  String mastermindRelHours(int count) {
+    return '$count giờ';
+  }
+
+  @override
+  String mastermindRelHoursMinutes(int hours, int minutes) {
+    return '$hours giờ $minutes phút';
+  }
+
+  @override
+  String mastermindRelDays(int count) {
+    return '$count ngày';
+  }
+
+  @override
+  String get mastermindRelShowExact => 'Xem giờ chính xác';
+
+  @override
+  String get mastermindCatchupSettingsAction => 'Cài đặt bản tin';
+
+  @override
+  String get mastermindMorningCatchup => 'Bản tin buổi sáng';
+
+  @override
+  String get mastermindMorningCatchupSubtitle => 'Một thông báo cho biết bản tin đã sẵn sàng. Lưu trên thiết bị này; việc gửi sẽ bắt đầu khi hub hỗ trợ.';
+
+  @override
+  String get mastermindMorningCatchupTime => 'Giờ';
+
+  @override
+  String get mastermindCatchupPushBody => 'Bản tin của bạn đã sẵn sàng';
 }

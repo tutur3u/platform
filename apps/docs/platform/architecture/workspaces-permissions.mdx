@@ -14,6 +14,35 @@ It focuses on the implementation that page components, route handlers, and the i
 - `packages/utils/src/permissions.tsx`
 - `apps/web/src/lib/api-middleware.ts`
 
+## Workspace user merge phases
+
+Every resumable workspace-user merge phase requires a signed-in actor with both
+`delete_users` and `update_users` in the selected workspace. The target profile
+must belong to that workspace, and source and target must differ. A completed
+merge remains resumable for an authorized caller. The web and Contacts shared
+merge route uses the request-scoped user client for these RPCs; privileged clients
+without an authenticated subject do not bypass the actor check.
+
+The same rule covers the single-call merge, phase 1/1a, the phased orchestrator
+and the batched phase 1 helpers: a missing actor or a permission result that is
+not `TRUE` (including `NULL`) returns the existing `success: false` denial.
+Phase 5 locks the source and target rows in id order before merging, so a
+concurrent or swapped merge cannot delete both profiles. Phase 4 locks both
+platform-link rows before transferring a link.
+
+The two dynamic-identifier helpers the batched phases call,
+`merge_workspace_users_batch_update` and `merge_workspace_users_table_batch`,
+are not client entry points: only `service_role` and the definer phase functions
+may execute them, and both raise `22023` for any (table, column) outside the
+fixed phase 1a–1d merge references.
+
+Regression coverage: `apps/database/supabase/tests/merge-phase-workspace-guards.sql`
+and `apps/database/supabase/tests/merge-workspace-users-null-guards.sql`.
+Manual reversal is in the matching `apps/database/rollbacks/20261029050400`–`20261029050430`
+rollback files. A rollback removes these guards and reopens SR-108 for
+authenticated callers of the phase functions; it never re-grants `PUBLIC` or
+`anon`, and the two helpers stay `service_role`-only.
+
 ## Mental Model
 
 There are four layers, and most bugs come from mixing them together:
@@ -560,3 +589,54 @@ provider ownership and runtime qualification. Keep creation unavailable until th
 durable journal and bounded transport satisfy those gates. No blind provider
 create retry, compensation deletion, mailbox change or named-account creation is
 authorized by the preparation form.
+
+## Workspace deletion failures
+
+The Web settings UI disables deletion for personal and root workspaces and requires
+an exact workspace-name confirmation for other workspaces. A failed request uses
+the mounted Sonner toaster, preserves the confirmation, and leaves navigation
+unchanged. Pending requests disable the confirmation action and do not retry
+automatically. HTTP errors retain the API message; transport failures use a
+localized message that asks the user to check the workspace before another attempt.
+
+The DELETE handler keeps its permission and prevention-secret checks. A returned
+database error produces HTTP 500 and logs only its code under
+`Workspace deletion failed`; raw database messages, row details and identifiers
+must not be added to that log or response. Use that code to distinguish constraint
+failures from other causes before proposing schema changes.
+
+Two retained schema definitions can block deletion when their child rows exist:
+`realtime_log_aggregations.ws_id` is `NOT NULL` while its workspace FK uses
+`ON DELETE SET NULL` (23502), and `workspace_documents_ws_id_fkey` has no cascade
+(23503). Correcting these requires a separately authorized migration. Do not
+work around them with client-side child deletions or weaken their constraints.
+
+Regression coverage: settings `security.test.tsx`, the workspace detail API's
+`route.test.ts`, and internal-api `workspaces-delete.test.ts` cover error display,
+confirmation state, one pending dispatch, HTTP propagation and safe diagnostics.
+
+## Role permission workspace binding
+
+Permission readers that join `workspace_role_permissions` through a role scope
+both the role and its permission rows to the requested workspace
+(`workspace_roles.ws_id` and `workspace_roles.workspace_role_permissions.ws_id`).
+This includes the encryption `manage_e2ee` check, the web and Tasks member-role
+summaries, and the Mira time-tracking approval-bypass check. Role-management
+listings that embed a role's permissions under a `ws_id`-filtered
+`workspace_roles` query are display-only and are not covered by this rule.
+`workspace-role-reader-scoping.test.ts` (web), `workspace-members.test.ts`
+(Tasks) and `timer-helpers.test.ts` (AI) cover foreign and local permission rows.
+
+## Infrastructure workspace secrets
+
+Infrastructure workspace-secret APIs require root MEMBER membership and either
+`manage_workspace_secrets` or `manage_workspace_roles` before using an admin client
+(SR-385). Tenant permissions alone do not
+grant infrastructure access. Creating, renaming, updating, or deleting
+`MANAGED_CRON_ENABLED` also requires a current subject-bound verified Auth user and verified Tuturuuu staff session.
+A matching email alone does not grant access.
+
+Regression coverage: infrastructure's `infrastructure-admin-access.test.ts`,
+rate-limits `workspace-secrets/route.test.ts`, and workspace secrets
+`managed-cron.test.ts` (which also covers renaming a normal secret into
+`MANAGED_CRON_ENABLED` and the workspace and id binding of the lookup).

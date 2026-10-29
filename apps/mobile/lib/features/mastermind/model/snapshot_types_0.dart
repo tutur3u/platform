@@ -15,6 +15,7 @@ final class MastermindSnapshot {
     required List<Source> sources,
     this.resolvedItems = const [],
     this.workCounts,
+    this.catchup,
   }) : lanes = List.unmodifiable(lanes),
        backlog = List.unmodifiable(backlog),
        environments = List.unmodifiable(environments),
@@ -24,6 +25,9 @@ final class MastermindSnapshot {
   final String schemaVersion;
   final List<NeedsYou> resolvedItems;
   final Map<LaneState, int>? workCounts;
+
+  /// The additive Catch-up digest; null when the hub does not publish one.
+  final CatchupDigest? catchup;
   final DateTime generatedAt;
   final SnapshotNow now;
   final List<LaneItem> lanes;

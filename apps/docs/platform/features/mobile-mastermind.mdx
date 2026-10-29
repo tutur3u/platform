@@ -114,11 +114,12 @@ A 401 can come from the Worker (audience or clock skew) rather than the
 session, and signing out removes every saved account on the device, so it is
 never the primary action and only runs after the user confirms.
 
-## Home
+## Home (Today)
 
-Order: freshness strip, activity tiles, Needs you, replies waiting to send,
-Ship, Quota, Activity and, last, recent decisions. Home lists are capped and
-end in "Show all N" above the cap; Inbox shows every ask (see below).
+The Home tab is labelled **Today**. Order: freshness strip, Catch-up, activity
+tiles, Needs you, replies waiting to send, Ship, Quota, Activity and, last,
+recent decisions. Home lists are capped and end in "Show all N" only when they
+hold more than the cap; Inbox shows every ask (see below).
 
 - **Activity tiles.** Running, Waiting, Idle and Failed, four across (two by
   two past 130% text), each at least 44 × 72 and opening Work filtered to that
@@ -138,10 +139,61 @@ end in "Show all N" above the cap; Inbox shows every ask (see below).
 - **Activity** and **recent decisions** show three each; decision rows push
   their detail and "See all decisions" opens the Decisions segment.
 
-**Security rows** render as a single non-tappable "`<Product>` · security fix"
-line in a trailing "Security" group with no count. They have no severity, title
-or detail anywhere, are never counted, and never reorder anything. Event
+**Security rows** render as a single non-tappable "Mastermind · security fix"
+line in a trailing "Security" group with no count. The label is the constant
+"Mastermind" (SB-100 S3): never a product name and never a product fallback, so
+the row cannot say which product is affected. Each list (Home, For you, Work,
+Backlog, the activity feed) shows at most one such line however many products
+have one, with no count. They have no severity, title or
+detail anywhere, are never counted, and never reorder anything. Event
 summaries apply the same collapse.
+
+### Catch-up
+
+Scope: Mastermind mobile, top of Today. It renders only when the snapshot
+carries a `catchup` object; no `/v1/catchup` route exists and the app calls
+none. Everything is optional on the wire, unknown enum values are tolerated and
+the parser never rejects the snapshot (`catchup/catchup_parser.dart`).
+
+- **Contract.** `catchup { generated_at, window_start, coverage
+  ok|partial|stale, products[{slug,name}], counts{needs_you,shipped,blocked,
+  changed}, sections[{key, items[{id, kind, title (80), product|null, at,
+  importance, link{label,url}|null, entity{kind,id}|null, neutral, reason?,
+  owner_name?}]}] }`, at most 20 items per section and 100 in all, enforced
+  again by the parser.
+- **Window.** Default is since the last visit (rendered-time marker kept per
+  device in local preferences); the first visit shows 24 hours. A visit ends
+  after 30 minutes without a render, so tab switches keep the window. Items are
+  filtered by `at` on the client. "Show N earlier" widens to 24 hours and draws
+  a "New since your last visit" divider where the new rows end in each product
+  group. Hub `counts` are used while nothing is filtered out; otherwise the
+  counts line is computed from the visible rows.
+- **Sections and groups.** Needs you, Shipped, Blocked, Changed, Usage & health,
+  each grouped per product (hub name, else the slug) under collapsible headers
+  whose state is remembered for the app session. Blocked rows show the reason
+  and who is on it.
+- **Taps.** `ask` opens `/mastermind/inbox/item/:id`, `lane` opens
+  `/mastermind/work/lane/:id`, `env` and `release` open Ship, `usage` opens
+  Usage. Otherwise the link opens in the system browser, only for `https`
+  `tuturuuu.com` or `*.tuturuuu.com`; any other URL is dropped at parse time. A
+  row with neither is not tappable.
+- **Neutral items** render "Security update" with no product, title or link;
+  the parser keeps only their kind, time and importance.
+- **Times.** Relative with the clock glyph (`now`, `12m`, `2h 13m`, `3d`);
+  long-press or a tap on the glyph shows the absolute time in
+  Asia/Ho_Chi_Minh.
+- **States.** First run, quiet, "Some updates may be missing" for partial or
+  stale coverage (or a hub window that starts after the view's), offline or
+  failed refresh from cache with the age line.
+- **Catch me up** and pull-to-refresh refetch the snapshot (no LLM) with
+  progress, an "up to date" confirmation and a failure message.
+- **Morning catch-up** (Today navbar, Catch-up settings): a local toggle and
+  time. The push body is the fixed line "Your catch-up is ready" with no
+  content. There is no app quiet-hours setting yet; the server must apply
+  quiet hours (`MorningCatchupSync` is the seam). Server scheduling is not part
+  of this change.
+
+Regression coverage: `apps/mobile/test/features/mastermind/catchup/`.
 
 ## Inbox
 
@@ -554,6 +606,28 @@ signed hub events and sends a mobile push to Mastermind owners.
   `apps/web/src/app/api/v1/mastermind/push-events/route.race.test.ts`,
   `route.delivery.test.ts` and, for the tap,
   `apps/mobile/test/features/notifications/push/mastermind_push_destination_test.dart`.
+
+## App-switcher privacy
+
+On every `/mastermind/**` route (Home, For you, Decided, Journal, item and
+decision detail, Work, Ship, Insights) the app covers its own content with a
+blur under a mostly opaque surface tint while it is not in the foreground
+(SB-100 L2). The cover is built on `inactive`, `hidden` and `paused`, so the
+OS-captured switcher thumbnail never holds hub text, and it does not depend on
+whether a screen has cards. Screenshots are deliberately not blocked: Mastermind
+is owner-only. The cover is a Flutter overlay, so a system sheet that only
+pauses the app (Control Centre, a biometric prompt) briefly covers it too.
+
+- **Deferred (SB-100 gate):** the neutral "A decision is waiting on your Mac"
+  card (S2, T7) and local "Later" notifications with a local quiet window
+  (L1/Q5, T8) wait for the hub's `display` field and S1 classification; the app
+  has no snooze notifications today.
+- **Regression coverage:**
+  `apps/mobile/test/features/mastermind/privacy/mastermind_privacy_shield_test.dart`
+  and, for the constant security label,
+  `apps/mobile/test/features/mastermind/view/mastermind_home_page_test.dart`;
+  for the single row per list,
+  `apps/mobile/test/features/mastermind/presentation/security_rows_test.dart`.
 
 ## Deferred to PR8
 

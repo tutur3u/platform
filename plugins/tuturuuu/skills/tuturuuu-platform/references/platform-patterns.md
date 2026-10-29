@@ -152,14 +152,18 @@ and its focused regression coverage before adding a reason or changing middlewar
   `useEffect`.
 - Client/shared UI app API calls should go through `packages/internal-api/src/*`
   helpers instead of scattered raw `fetch('/api/...')` calls.
-- Mounted app adapters register `registerDefaultAppBaseResolver` from
-  `@tuturuuu/internal-api/client` once at startup for helpers without options.
-  Read request-local context inside the callback and return an absolute URL on
-  SSR; never capture an incoming request in the registered closure. Select
-  app-owned routes when the adapter also calls central APIs. See the
+- Mounted app adapters register `registerDefaultAppBaseResolver` from `@tuturuuu/internal-api/client`
+  once for helpers without options. Read request context in the callback; SSR returns an absolute URL.
+  Never capture a request. Select app-owned routes when central APIs are also used.
+  API helpers take raw validated `/api/...` inputs; the resolver applies the mount.
+  Prefix rendered href/src separately, including CID image replacements. See the
   [bridge resolver contract](../../../../../apps/docs/build/devops/start-bridge.mdx#internal-api-resolver-registration)
   for browser setup, teardown and regression coverage.
 - Every `fetch` inside a query function should include `{ cache: 'no-store' }`.
+- Web mounts the Sonner toaster. Client mutations should import `toast` from
+  `@tuturuuu/ui/sonner`; the legacy `hooks/use-toast` store has no mounted Web
+  consumer and can silently hide failures. Preserve safe API errors, pending
+  confirmation and mutation retry policy; see the workspace deletion regressions.
 - Use `@tuturuuu/icons`, `@tuturuuu/ui/dialog`, and dynamic design tokens.
   Native browser dialogs, emojis in UI code, and hard-coded hue classes are not
   acceptable.
@@ -1393,3 +1397,41 @@ and the shared helper's identity matrix and route denial regressions.
 For AI memory or billing attribution, resolve the request scope with
 `authorizeAiWorkspace` before provider or memory work. Temporary authentication
 does not grant workspace membership; retain a canonical authorized workspace id.
+### Web cron scheduler handover
+
+The five web Vercel schedules have a dormant candidate in the existing Cron
+Control Worker. Follow [the web cron migration runbook](../../../../../apps/docs/build/devops/web-cloudflare-migration.mdx)
+for the shared execution gate, default-off/shadow modes, operation bounds and
+stop/drain/owner-switch sequence. A dispatch slot claim alone does not fence a
+Vercel invocation. Retain the web boundary gate through rollback; an expired or
+unknown operation requires reconciliation with its original identity. Validate
+the real local workerd SQLite stop and restart test as well as the pure ledger
+tests before enabling a job. This preparation grants no deployment authority.
+
+
+## Abuse-guard command fairness
+
+For assigned replay/password callers, pass trusted source and verified principal
+identity through a request-scoped `client.withFairness` view. Never mutate a shared
+client, key quotas by token/target, or replace durable quotas with a local cache.
+The control object checks identity quotas and family spend in one transaction;
+subject denials, retries and successful refunds still count. Bounded caches are
+shortcuts whose misses recheck durable admission after eviction or restart.
+Follow the [store runbook](../../../../../apps/docs/build/devops/abuse-guard-store.mdx#durable-command-fairness)
+for defaults, canonical IP buckets, tests and remaining activation holds. Command
+allowances do not establish a total bound on Worker/control-DO request billing.
+
+All abuse-guard RPCs reserve family commands durably before subject execution.
+Retain reservations for interrupted or skipped work; never defer accounting to an
+isolate-local flush. Verify the budget across isolate replacement in workerd.
+This limits subject commands, while the request-cost activation hold remains.
+
+### Staff identity checks before permission reads
+
+For staff-only routes, reject unverified, foreign-tenant and disallowed-domain
+identities before calling workspace permission readers: those readers query data.
+Keep role permissions as an additional gate after verified identity checks.
+The export and crawler denial matrix is covered by
+`apps/web/src/lib/staff-session.test.ts` and `staff-exact-domain.test.ts`.
+When a role gate is added to an identity-policy test, mock its permission boundary
+and assert denied identities never call it; keep role-reader coverage separate.

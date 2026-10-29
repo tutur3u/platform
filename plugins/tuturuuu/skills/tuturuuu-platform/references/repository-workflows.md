@@ -251,3 +251,13 @@ controls must import the canonical dependency-free owner directly, use byte-chec
 isolated copies and Bun --no-install, and retain actual marker/descendant cleanup
 assertions. Diagnose root/import boundaries before attributing a control timeout
 to IPC or Web startup; a missing later artifact is secondary when the gate failed.
+
+## Focused route tests with unbuilt packages
+
+When a test partially imports route utilities to keep a pure parameter parser
+real, mock the unused satellite actor and workspace access dependencies. Otherwise
+loading the module can import package distributions before the mocked request
+context is used. The Forms form-ID route test preserves its seeded-ID parser
+assertion while mocking those unused boundaries; it runs without building
+`internal-api`. Keep resource authorization tests on the real mutation helper
+with fixture clients, and check that denials happen before any writes.

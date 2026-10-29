@@ -40,6 +40,7 @@ describe('authorizeAiCreditsAdminRequest', () => {
     });
     createAdminClient.mockResolvedValue(sbAdmin);
     getPermissions.mockResolvedValue({
+      membershipType: 'MEMBER',
       containsPermission: vi.fn().mockReturnValue(false),
     });
     const { authorizeAiCreditsAdminRequest } = await import('./access');
@@ -51,12 +52,26 @@ describe('authorizeAiCreditsAdminRequest', () => {
     expect(createAdminClient).not.toHaveBeenCalled();
   });
 
+  it('denies a non-member even with infrastructure permission', async () => {
+    getSatelliteAppSessionUser.mockResolvedValue({ id: 'user-1' });
+    getPermissions.mockResolvedValue({
+      membershipType: 'GUEST',
+      containsPermission: () => true,
+    });
+    const { authorizeAiCreditsAdminRequest } = await import('./access');
+    const result = await authorizeAiCreditsAdminRequest();
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.response.status).toBe(403);
+    expect(createAdminClient).not.toHaveBeenCalled();
+  });
+
   it('returns a no-cookie admin client for infrastructure viewers', async () => {
     const sbAdmin = { from: vi.fn() };
     const user = { email: 'admin@tuturuuu.com', id: 'user-1' };
     getSatelliteAppSessionUser.mockResolvedValue(user);
     createAdminClient.mockResolvedValue(sbAdmin);
     getPermissions.mockResolvedValue({
+      membershipType: 'MEMBER',
       containsPermission: vi.fn(
         (permission: string) => permission === 'view_infrastructure'
       ),

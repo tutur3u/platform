@@ -510,6 +510,20 @@ separate reset flow. Regression coverage is in `assistant_new_chat_reset_test.da
 `assistant_reset_consent_target_test.dart`; device/provider behavior remains a
 separate delivery gate.
 
+Attachments follow the same recovery as a text send. While a new chat's creation
+outcome is uncertain, the microphone, Files, Photos & Videos Library and Capture &
+Record (photo, video, audio) first offer the same Start a new chat choice and do
+not record, pick or upload anything until that reset commits; Cancel keeps the
+draft and attachments. The remote-chat check runs before this prompt, so the
+local-model lane never reaches it. Recording or picking continues after a
+committed reset. An upload that still meets a held creation fails with the
+non-retryable `newChatRequired` reason: its preview says to start a new chat first
+and shows no Retry. Regression coverage is in
+`test/features/assistant/view/assistant_send_recovery_test.dart` (microphone and
+Files gates, recording after the reset) and
+`test/features/assistant/cubit/assistant_chat_attachment_upload_test.dart`
+(`newChatRequired` for held and selected-chat creation).
+
 A known selected chat denies new creation before any hold write or POST; its clear
 status remains truthful and its history remains usable. Empty selection is required
 independently of clear status or informed consent.
@@ -545,3 +559,64 @@ and cancellation separately. Delivery deadlines begin after bounded readiness;
 primary phase failures retain their error and stack when cleanup also fails.
 Synthetic held-mock controls exercise the never-listened body path. These controls
 do not identify an earlier incident's blocked await without its readiness evidence.
+
+### First remote Assistant message
+
+For an empty remote Assistant chat with captured initial settings and no
+attachments, mobile sends its fallback conversation UUID and the original user
+request key directly to the native message stream. The server validates the
+actor, workspace membership and selected model/credit source, then creates the
+conversation and deduplicated user message in one database transaction. Creation
+replays must match the original actor, workspace, AI type and initial settings.
+Later settings edits do not change that immutable creation snapshot. Deletion
+retains a minimal identity tombstone until account/workspace erasure so an old
+request cannot recreate a deleted conversation.
+
+The `x-mira-chat-creation` response header contains a bounded, encoded creation
+receipt. Mobile validates its identity/settings and durably selects the chat
+before consuming message receipts. Losing this acknowledgement retains the
+creation hold; it never causes a fresh key or replacement UUID to be sent.
+Leaving the scope before creation acknowledgement does not wait for the pending
+HTTP response. That bounded operation remains observed with a permanent origin
+fence, so a late receipt cannot select a chat or publish messages. Cancellation
+after creation acknowledgement keeps the existing stream cleanup semantics.
+Conversation/message realtime publication runs alongside generation inside the
+request lifecycle. A replay suppresses duplicate creation announcements and
+recipient notifications; supplementary delivery failure cannot invalidate a
+committed creation acknowledgement.
+Attachment-first sends and adapters without a captured settings plan retain the
+separate creation path. Live keeps its existing transport and turn fences.
+
+Coverage: `first-ai-message.test.ts`, `chat-first-message-creation.sql`, the
+independent-connection race in `chat-first-message-concurrency.mjs`, and
+`assistant_first_message_test.dart` / `assistant_first_send_pipeline_test.dart`.
+Run the isolated database verifier from the repository root with
+`node apps/database/scripts/verify-chat-first-message.mjs` on an admitted host
+with Docker. It resets an owned disposable full-chain database, applies the new
+migration locally, runs the security/creation tests and observed-lock race,
+generates only the migration's database type delta, and stops its own project.
+It never targets a linked database.
+
+## First-message migration rollback
+
+The manual rollback for `20261029100000_chat_first_message_creation_receipts`
+restores main's prior `private.chat_create_conversation` definition and its
+service-role-only execution grant, then removes the two new receipt functions
+and the receipt table. Existing conversations and messages remain.
+
+Creation receipts prevent old retries from recreating deleted conversations.
+The rollback refuses a nonempty receipt table because discarding those identities
+cannot be safely reversed. Preserve and verify recovery data before a separately
+authorized restore or disposal procedure.
+
+On an isolated database reset to main, run:
+
+```sh
+psql -X -v ON_ERROR_STOP=1 "$ROLLBACK_DATABASE_URL" -f apps/database/verification/chat-first-message-rollback-roundtrip.sql
+psql -X -v ON_ERROR_STOP=1 "$ROLLBACK_DATABASE_URL" -f apps/database/verification/chat-first-message-rollback-guards.sql
+```
+
+These tests apply the actual migration, execute its rollback, compare the
+restored function definition, owner, settings and ACL with main, assert client
+execution denial and receipt-table absence, then re-apply it. A retained-receipt
+control requires explicit failure without losing the identity.

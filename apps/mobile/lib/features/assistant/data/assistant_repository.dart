@@ -16,8 +16,10 @@ import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
+import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
+import 'package:mobile/features/chat/data/chat_stream_completion.dart';
 import 'package:mobile/features/chat/data/chat_stream_parser.dart';
 import 'package:mobile/features/chat/models/chat_initial_ai_settings.dart';
 import 'package:mobile/features/chat/models/chat_models.dart';
@@ -28,6 +30,7 @@ import 'assistant_attachment_upload.dart';
 import 'assistant_calendar_insight.dart';
 import 'assistant_chat_persistence_contract.dart';
 import 'assistant_created_chat.dart';
+import 'assistant_first_message_creation.dart';
 import 'assistant_history_message.dart';
 import 'assistant_history_parts.dart';
 import 'assistant_reaction_journal.dart';
@@ -41,6 +44,8 @@ part 'assistant_repository_cache.dart';
 part 'assistant_repository_settings.dart';
 part 'assistant_repository_chat.dart';
 part 'assistant_repository_native_receipt.dart';
+part 'assistant_repository_native_stream.dart';
+part 'assistant_repository_first_message.dart';
 part 'assistant_repository_reactions.dart';
 part 'assistant_repository_creation.dart';
 part 'assistant_repository_legacy_stream.dart';
@@ -89,6 +94,21 @@ class AssistantRepository
   @override
   final String? Function() _currentUserId;
   String? get currentActorId => _currentUserId();
+  Stream<AssistantStreamEvent> streamFirstChat({
+    required AssistantFirstMessageCreation creation,
+    required String chatId,
+    required String wsId,
+    required List<AssistantMessage> messages,
+    required String timezone,
+    required ApiMutationAdmission admission,
+  }) => _firstChatDispatchStream(
+    creation: creation,
+    chatId: chatId,
+    wsId: wsId,
+    messages: messages,
+    timezone: timezone,
+    admission: admission,
+  );
 
   @override
   final CacheStore _chatCacheStore;

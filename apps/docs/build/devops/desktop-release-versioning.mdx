@@ -1,0 +1,106 @@
+---
+title: "Desktop Release Versioning"
+description: "Allocate desktop versions, recover failed drafts, and generate release notes."
+---
+
+## Versions and release notes
+
+Desktop and mobile use one scheme without manual version bumps. Release Please
+owns `major.minor` (and a patch floor) in `apps/mobile/pubspec.yaml`; CI
+publishes the next unused patch from each channel's own history through the
+shared `nextBuildName` rule. Mobile reads App Store Connect TestFlight versions;
+desktop reads `desktop-v*` GitHub releases, including drafts. The version
+derivation job has `contents: write`, the minimum GitHub token permission that
+allows draft listing.
+
+- The `release-status` job runs `scripts/desktop-deployment/release-version.mjs`
+  and every platform builds with `--build-name=<version>`, so the installed app,
+  the Windows installer and the Linux package report the published version.
+- The tag is `desktop-v<version>` with no run ID. Legacy
+  `desktop-v<version>-<run-id>` tags still count as used, so the first release
+  after them takes the next patch (for example `0.26.0-<run>` -> `0.26.1`).
+- `publish.mjs` recomputes the version with draft visibility and refuses to
+  publish when the build version is no longer next. A draft left by a failed
+  run reserves its version and the next derivation skips it.
+- The run ID, source commit and previous beta appear in the release body's
+  Build details table and in a `tuturuuu-desktop-release` HTML comment. The
+  Debian package revision also keeps the run ID.
+
+`scripts/desktop-deployment/release-notes.mjs` renders the body: Highlights
+(`feat`) and Fixes (other product changes) from `apps/mobile` commits since the
+previous desktop beta, using the mobile store-notes normalizer; Known issues
+derived from package verification; a Downloads table (platform, file, size,
+SHA-256) computed from the verified packages, with the platform names, size unit
+and rounding used by `tuturuuu.com/download`; and checksum plus provenance
+verification commands. Release Please uses the same Highlights/Fixes headings for
+the mobile changelog.
+
+Desktop builds published before run-free tags only recognize
+`desktop-v<version>-<run-id>`, so they cannot see newer betas in the in-app
+updater. The first run-free release notes say so; affected users reinstall once
+from `/download`. The download page and Infrastructure status accept both forms.
+
+On startup and every six hours, the app checks the public GitHub release list and
+automatically downloads a newer desktop beta for its platform. Downloads use no account
+session or repository token. Exact repository URLs, prerelease tags, every present
+platform asset, byte counts, and GitHub SHA-256 digests are required. Redirects
+are limited to GitHub's HTTPS asset hosts. Incomplete downloads never become
+installable, and cached packages are rehashed before use. After verification, older
+updater-owned release cache directories are pruned; unrelated files are preserved.
+
+When ready, a compact banner offers **Install and restart** or **Install on next
+launch**. Next-launch consent applies only to that exact release and can be
+cancelled. A failed installation clears the saved choice so startup cannot get
+stuck retrying it. Offline checks and download failures leave the current app
+usable and retry on the next check.
+
+- Windows verifies Authenticode on both the running executable and installer,
+  requires matching certificate subjects, waits for the old process to exit,
+  and runs the per-user Inno installer. A successful installation relaunches the
+  app. The helper rechecks the digest and signatures immediately before running.
+- macOS verifies the signed/notarized disk image, validates the replacement app's
+  signature and matching Apple team, and stages it on the destination volume
+  before exiting. The helper swaps bundles after exit and keeps the previous
+  app in one updater-owned recovery directory. An unwritable installation
+  directory or running directly from a mounted disk image blocks installation
+  while keeping the app open.
+- Linux asks the operating system's Polkit agent to authorize a packaged,
+  root-owned helper. It stages and verifies the archive in a root-owned directory,
+  then uses `apt-get install` to resolve dependencies. An unprivileged detached
+  helper waits for the previous process to exit before relaunching
+  `/opt/tuturuuu/tuturuuu`. The Flutter process never runs as root. A cancelled
+  elevation prompt leaves the current app open. Linux beta installations require
+  Ubuntu 24.04+ amd64, `pkexec`, and a desktop Polkit agent.
+
+Before enabling publication, exercise installation and at least one subsequent
+update on each actual supported OS, including cancelled elevation, damaged
+packages, next-launch consent, and relaunch. Unit tests for the metadata and
+transport boundary do not establish native installer success.
+
+### Current provisioning prerequisites
+
+The existing Infrastructure mobile vault supports Android/iOS bundles and binds
+its OIDC audience to the mobile store workflow. Its App Store distribution P12
+is **not** a macOS Developer ID certificate, and the desktop workflow cannot use
+that bundle endpoint under the mobile workflow's identity. Provision the desktop
+[desktop credentials](/build/devops/desktop-beta-distribution#protected-desktop-signing-bundle) through the separate desktop vault and protected
+environment-secret or explicit vault workflow path; do not copy a mobile CI
+token into desktop jobs or weaken that OIDC policy. A Microsoft Store developer
+account alone does not supply the Authenticode certificate used by this workflow.
+
+## Failed-draft recovery
+
+After successful draft creation, the publisher records its exact tag as a step
+output. An `if: failure()` cleanup step resolves that tag and deletes by database
+ID only while it is still a draft with matching tag, source SHA, and this run's
+release-notes metadata. It never deletes a published release or another run's
+draft. If creation fails before recording the output, or cleanup cannot verify
+ownership, the draft remains reserved and the next run skips its version.
+
+Workflow concurrency queues runs per ref without cancellation. The publish-time
+version recheck remains mandatory: a stale build refuses publication before any
+release creation. Coverage: `release-version.test.mjs`, `publish.test.mjs`,
+`cleanup-draft.test.mjs`, and `desktop-beta-workflow.test.mjs`.
+
+See [Desktop Beta Distribution](/build/devops/desktop-beta-distribution) for
+package verification and signing requirements.

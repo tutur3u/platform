@@ -29,7 +29,6 @@ export interface WorkspaceUserMutationActor {
 }
 
 const WorkspaceUserUpdateSchema = z.object({
-  id: z.string().max(MAX_NAME_LENGTH).optional(),
   full_name: z.string().max(MAX_LONG_TEXT_LENGTH).nullable().optional(),
   display_name: z.string().max(MAX_NAME_LENGTH).nullable().optional(),
   email: z.string().max(MAX_LONG_TEXT_LENGTH).nullable().optional(),

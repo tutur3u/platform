@@ -7,7 +7,7 @@ import {
   getPrivateSchemaClient,
   type TopicAnnouncementsSupabaseClient,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/topic-announcements/shared';
-import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
+import { withWebCronLogDrain as withCronLogDrain } from '@/lib/cron/web-cron';
 import {
   failScheduleSendWithoutRecipients,
   failStaleScheduleClaims,

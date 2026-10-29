@@ -391,6 +391,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantAttachmentFailureNetwork => 'Upload interrupted. Check your connection and tap Retry.';
 
   @override
+  String get assistantAttachmentFailureNewChatRequired => 'Start a new chat first, then attach the file again.';
+
+  @override
   String get assistantAttachmentFailureServer => 'Upload didn\'t finish. Tap Retry.';
 
   @override
@@ -5115,6 +5118,75 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySearchProducts => 'Search products';
 
   @override
+  String get inventoryItemArchived => 'Archived';
+
+  @override
+  String get inventoryItemsLoadFailed => 'Couldn\'t load products';
+
+  @override
+  String get inventoryItemsLoadMoreFailed => 'Couldn\'t load more products';
+
+  @override
+  String inventoryItemAvailable(String amount) {
+    return '$amount available';
+  }
+
+  @override
+  String inventoryItemMoreLocations(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more locations',
+      one: '1 more location',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inventoryItemNoStock => 'No stock configured';
+
+  @override
+  String get inventoryItemStockHidden => 'Stock hidden';
+
+  @override
+  String get inventoryItemsEmptyTitle => 'No products yet';
+
+  @override
+  String get inventoryItemsNoMatch => 'No products match';
+
+  @override
+  String get inventoryItemsNoMatchMessage => 'Search matches product names. Try another name or clear the search.';
+
+  @override
+  String get inventoryItemsNoneArchived => 'No archived products';
+
+  @override
+  String get inventoryScanAction => 'Scan code';
+
+  @override
+  String get inventoryScanHint => 'Point the camera at a product QR code or barcode.';
+
+  @override
+  String inventoryScanMatches(String code) {
+    return 'Name matches for “$code”';
+  }
+
+  @override
+  String get inventoryScanNotFound => 'No product in this workspace matches this code.';
+
+  @override
+  String get inventoryScanNotProduct => 'This code can\'t be matched to a product.';
+
+  @override
+  String get inventoryScanSearchInstead => 'Search instead';
+
+  @override
+  String get inventoryScanTitle => 'Scan a code';
+
+  @override
+  String get inventoryScanUnavailable => 'Camera unavailable';
+
+  @override
   String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
 
   @override
@@ -9168,28 +9240,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskBoardDetailPriority => 'Priority';
 
   @override
-  String get taskBoardDetailPriorityCritical => 'Critical';
-
-  @override
-  String get taskBoardDetailPriorityHigh => 'High';
-
-  @override
-  String get taskBoardDetailPriorityLow => 'Low';
-
-  @override
   String get taskBoardDetailPriorityNone => 'No priority';
-
-  @override
-  String get taskBoardDetailPriorityNormal => 'Normal';
 
   @override
   String get taskBoardDetailPriorityUpdated => 'Priority updated.';
 
   @override
   String get taskBoardDetailProperties => 'Properties';
-
-  @override
-  String get taskBoardDetailQuickActions => 'Quick actions';
 
   @override
   String get taskBoardDetailRecycleBin => 'Recycle Bin';
@@ -10195,6 +10252,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String get taskPortfolioUpdateSaved => 'Update saved.';
 
   @override
+  String get taskQuickActionsDueDate => 'Due date';
+
+  @override
+  String get taskQuickActionsNoDate => 'None';
+
+  @override
+  String get taskQuickActionsNoLabels => 'No labels';
+
+  @override
+  String get taskQuickActionsRemoveStartDate => 'Remove start date';
+
+  @override
+  String get taskQuickActionsStatus => 'Status';
+
+  @override
+  String get taskQuickActionsUnassigned => 'Unassigned';
+
+  @override
+  String get taskTimelineLoadingTasks => 'Loading tasks…';
+
+  @override
+  String get taskTimelineNotAllLoaded => 'Some tasks aren\'t loaded yet';
+
+  @override
+  String get taskTimelineNothingToday => 'Nothing scheduled today';
+
+  @override
+  String taskTimelineOngoing(int day, int total, String date) {
+    return 'Day $day of $total, ends $date';
+  }
+
+  @override
+  String get taskTimelineRangeAll => 'All';
+
+  @override
+  String get taskTimelineRangeMonth => 'Month';
+
+  @override
+  String get taskTimelineRangeWeek => 'Week';
+
+  @override
+  String get taskTimelineShowLater => 'Show later tasks';
+
+  @override
+  String get taskTimelineShowOverdue => 'Show overdue';
+
+  @override
+  String taskTimelineStarted(String date) {
+    return 'Started $date';
+  }
+
+  @override
   String get tasksAllCaughtUp => 'You\'re all caught up!';
 
   @override
@@ -10242,16 +10351,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tasksPlanAhead => 'Plan ahead';
 
   @override
-  String get tasksPriorityCritical => 'Critical';
-
-  @override
   String get tasksPriorityHigh => 'High';
 
   @override
   String get tasksPriorityLow => 'Low';
 
   @override
-  String get tasksPriorityNormal => 'Normal';
+  String get tasksPriorityMedium => 'Medium';
+
+  @override
+  String get tasksPriorityNone => 'None';
+
+  @override
+  String get tasksPriorityUrgent => 'Urgent';
 
   @override
   String get tasksRequiresAttention => 'Requires attention';
@@ -11209,6 +11321,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workspaceHiddenLoadError => 'Workspace visibility preferences are unavailable. Saved hidden choices are kept.';
+
+  @override
+  String get workspaceManageTitle => 'Manage workspaces';
+
+  @override
+  String get workspaceVisibleTitle => 'Visible workspaces';
+
+  @override
+  String get workspaceHiddenCurrentToast => 'Workspace hidden. Switched to another visible workspace.';
+
+  @override
+  String get workspaceHiddenLastToast => 'All workspaces are hidden. Show a workspace to continue.';
 
   @override
   String get workspaceHiddenTitle => 'Hidden workspaces';
@@ -13244,9 +13368,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mastermindSecurityFix => 'Security fix';
-
-  @override
   String get mastermindSecurityGroup => 'Security';
 
   @override
@@ -13626,7 +13747,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindSummaryWeeklyNotReported => 'Weekly window not reported.';
 
   @override
-  String get mastermindTabHome => 'Home';
+  String get mastermindTabHome => 'Today';
 
   @override
   String get mastermindTabInbox => 'Inbox';
@@ -14139,4 +14260,149 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindAskRemindAtMacSoon => 'Coming soon';
+
+  @override
+  String get mastermindCatchupTitle => 'Since you last looked';
+
+  @override
+  String get mastermindCatchupWindowSince => 'Since your last visit';
+
+  @override
+  String get mastermindCatchupWindowDay => 'Last 24 hours';
+
+  @override
+  String get mastermindCatchupWelcome => 'Welcome to Mastermind. Here\'s what happened in the last day.';
+
+  @override
+  String get mastermindCatchupQuiet => 'Quiet since you last looked';
+
+  @override
+  String get mastermindCatchupQuietFirstRun => 'Nothing has happened in the last day.';
+
+  @override
+  String get mastermindCatchupPartial => 'Some updates may be missing';
+
+  @override
+  String get mastermindCatchupSectionShipped => 'Shipped';
+
+  @override
+  String get mastermindCatchupSectionBlocked => 'Blocked';
+
+  @override
+  String get mastermindCatchupSectionChanged => 'Changed';
+
+  @override
+  String get mastermindCatchupSectionUsage => 'Usage & health';
+
+  @override
+  String get mastermindCatchupSectionOther => 'Other updates';
+
+  @override
+  String mastermindCatchupCountNeedsYou(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count need you',
+      one: '1 needs you',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindCatchupCountShipped(int count) {
+    return '$count shipped';
+  }
+
+  @override
+  String mastermindCatchupCountBlocked(int count) {
+    return '$count blocked';
+  }
+
+  @override
+  String mastermindCatchupCountChanged(int count) {
+    return '$count changed';
+  }
+
+  @override
+  String get mastermindCatchupNewDivider => 'New since your last visit';
+
+  @override
+  String mastermindCatchupShowEarlier(int count) {
+    return 'Show $count earlier';
+  }
+
+  @override
+  String get mastermindCatchupSecurityUpdate => 'Security update';
+
+  @override
+  String mastermindCatchupOnIt(String name) {
+    return '$name is on it';
+  }
+
+  @override
+  String get mastermindCatchupButton => 'Catch me up';
+
+  @override
+  String get mastermindCatchupRefreshing => 'Catching up…';
+
+  @override
+  String get mastermindCatchupUpToDate => 'You\'re up to date';
+
+  @override
+  String get mastermindCatchupFailed => 'Couldn\'t catch up. Try again.';
+
+  @override
+  String get mastermindCatchupOpensLink => 'Opens in your browser';
+
+  @override
+  String mastermindCatchupGroupLabel(String product, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count updates',
+      one: '1 update',
+    );
+    return '$product, $_temp0';
+  }
+
+  @override
+  String get mastermindRelNow => 'now';
+
+  @override
+  String mastermindRelMinutes(int count) {
+    return '${count}m';
+  }
+
+  @override
+  String mastermindRelHours(int count) {
+    return '${count}h';
+  }
+
+  @override
+  String mastermindRelHoursMinutes(int hours, int minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
+  String mastermindRelDays(int count) {
+    return '${count}d';
+  }
+
+  @override
+  String get mastermindRelShowExact => 'Show exact time';
+
+  @override
+  String get mastermindCatchupSettingsAction => 'Catch-up settings';
+
+  @override
+  String get mastermindMorningCatchup => 'Morning catch-up';
+
+  @override
+  String get mastermindMorningCatchupSubtitle => 'A notification that says your catch-up is ready. Saved on this device; sent once the hub supports it.';
+
+  @override
+  String get mastermindMorningCatchupTime => 'Time';
+
+  @override
+  String get mastermindCatchupPushBody => 'Your catch-up is ready';
 }

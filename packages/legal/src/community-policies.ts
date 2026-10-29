@@ -152,12 +152,15 @@ export function getCommunityPolicy(
       : vi
         ? 'Nguyên tắc'
         : 'Community';
-  const sections = policies[language][kind].map(([heading, content]) => ({
-    title: heading,
-    content,
-    icon: 'shield' as const,
-    tone: 'blue' as const,
-  }));
+  const sections = policies[language][kind].map(
+    ([heading, content], index) => ({
+      id: `${kind}-proposal-${index + 1}`,
+      title: heading,
+      content,
+      icon: 'shield' as const,
+      tone: 'blue' as const,
+    })
+  );
   return {
     kind,
     locale: language,

@@ -8,7 +8,7 @@ export const TRACK_ROOT_HOSTS = ['track.tuturuuu.com'] as const;
 
 /** Staging Worker hostnames an operator may admit through a Worker var. */
 const STAGING_HOST =
-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:workers\.dev|tuturuuu\.com)$/u;
+  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:workers\.dev|staging\.tutur3u\.com)$/u;
 
 /** `PRIVATE_ROBOTS_HEADER`: Track's SEO policy has no public paths. */
 const ROBOTS = 'noindex, nofollow, nosnippet';
@@ -19,7 +19,7 @@ const FRAMABLE =
 
 export interface TrackPolicyEnv {
   /**
-   * Comma-separated staging hostnames (`*.workers.dev` or `*.tuturuuu.com`)
+   * Comma-separated staging hostnames (`*.workers.dev` or `*.staging.tutur3u.com`)
    * served at the root, set on the staging Worker only. Never derived from a
    * request.
    */

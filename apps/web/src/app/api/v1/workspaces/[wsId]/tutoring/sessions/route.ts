@@ -7,6 +7,7 @@ import {
   createLegacyHeadHandler,
 } from '@/legacy-api-routes/head';
 import {
+  buildTutoringSessionRows,
   buildTutoringSessionSlots,
   listPotentialSchedulingConflicts,
   validateTutoringSessionScope,
@@ -27,6 +28,10 @@ import {
   resolveTutoringRouteAccess,
 } from '@/lib/tutoring/route-access';
 import { listWorkspaceTeacherIds } from '@/lib/tutoring/teachers';
+import {
+  denyWeakContentEdit,
+  isWeakSupportSession,
+} from '@/lib/tutoring/weak-content-access';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -235,6 +240,16 @@ export async function POST(request: Request, { params }: Params) {
   const supabase = await createTutoringRequestClient(request, user);
   const sbAdmin = await createAdminClient();
   const tutoringSessionsClient = sbAdmin.schema('private');
+  const deniedWeakContent = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent: isWeakSupportSession({
+      reasonType: parsed.data.reasonType,
+      sourceFeedbackId: parsed.data.sourceFeedbackId,
+    }),
+    wsId: normalizedWsId,
+  });
+  if (deniedWeakContent) return deniedWeakContent;
   const actor = user ?? (await resolveAuthenticatedSessionUser(supabase)).user;
 
   if (!actor) {
@@ -365,21 +380,12 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const rows = sessionSlots.map((slot) => ({
-    ws_id: normalizedWsId,
-    group_id: payload.groupId,
-    student_user_id: payload.studentUserId,
-    teacher_user_id: slot.teacherUserId ?? payload.teacherUserId ?? null,
-    session_date: slot.sessionDate,
-    start_time: slot.startTime,
-    duration_minutes: slot.durationMinutes,
-    reason_type: payload.reasonType,
-    reason_detail: payload.reasonDetail,
-    content: payload.content,
-    attendance_status: payload.attendanceStatus,
-    source_feedback_id: payload.sourceFeedbackId ?? null,
-    created_by: actor.id,
-  }));
+  const rows = buildTutoringSessionRows({
+    actorId: actor.id,
+    payload,
+    slots: sessionSlots,
+    wsId: normalizedWsId,
+  });
 
   const { data, error } = await tutoringSessionsClient
     .from('workspace_tutoring_sessions')
