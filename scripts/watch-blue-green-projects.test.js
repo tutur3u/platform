@@ -23,7 +23,7 @@ const {
 
 test('normalizeProjectBranch defaults platform to production', () => {
   assert.equal(normalizeProjectBranch(''), DEFAULT_PLATFORM_BRANCH);
-  assert.equal(normalizeProjectBranch(' staging '), 'staging');
+  assert.throws(() => normalizeProjectBranch(' staging '), /unsafe/);
 });
 
 test('resolvePlatformProjectTarget blocks a dirty branch mismatch', async () => {
@@ -490,3 +490,33 @@ test('managed project branches must be safe refnames before interpolation', () =
     /unsafe selected branch/u
   );
 });
+
+for (const selected_branch of [
+  '--upload-pack=evil',
+  '..',
+  '-main',
+  ' ',
+  'main branch',
+  ' main',
+]) {
+  test(`refuses unsafe platform branch ${JSON.stringify(selected_branch)} before git`, async () => {
+    const sql = async () => [{ selected_branch }];
+    sql.end = async () => {};
+    let calls = 0;
+    await assert.rejects(
+      resolvePlatformProjectTarget(
+        { branch: 'main', remote: 'origin' },
+        {
+          env: { PLATFORM_LOG_DRAIN_DATABASE_URL: 'postgres://local/test' },
+          postgresFactory: () => sql,
+          runCommand: async () => {
+            calls++;
+            return { code: 0 };
+          },
+        }
+      ),
+      /Refusing an unsafe selected branch/
+    );
+    assert.equal(calls, 0);
+  });
+}
