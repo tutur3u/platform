@@ -1,7 +1,7 @@
 ---
 title: 'Database Migrations Guide'
 description: 'Best practices for creating, testing, and deploying Supabase migrations'
-updatedAt: '2026-10-09'
+updatedAt: '2026-10-29'
 ---
 
 The Tuturuuu platform uses Supabase migrations to manage database schema changes with version control and reproducibility.
@@ -54,6 +54,38 @@ Until those independently reviewed receipts exist, adoption remains preparation.
 After approval, use the qualified engine to propose forward migrations, review
 all generated SQL, replay and test security, then run typegen on the applied
 schema. Production application remains separately authorized.
+
+## Declarative parity pack
+
+The parity pack hashes schema state so two databases can be compared without
+exporting definitions. It covers relations, columns, constraints, indexes,
+functions, policies (with restrictive `account_required_mfa` policies in their own
+category), raw ACLs, default privileges, triggers, extensions, publications,
+types and `cron.job`. It also runs `has_*_privilege` probes for `anon`,
+`authenticated`, `service_role` and PUBLIC over the API schemas plus `private`.
+
+```sh
+node apps/database/scripts/verify-declarative-parity.mjs --docker-container <supabase_db_container> --out a.json
+node apps/database/scripts/verify-declarative-parity.mjs --compare a.json b.json
+```
+
+Each category query lives in `apps/database/verification/declarative-parity/`.
+PostgreSQL hashes the payloads, and the runner rejects any output row that isn't
+an identity, a SHA-256 digest or a count. Reports therefore hold names, counts
+and digests only, never qual text, function bodies or row data. The pack runs in
+one `repeatable read read only` transaction with `default_transaction_read_only=on`,
+`statement_timeout=60s` and `lock_timeout=1s`. For a URL connection, set
+`DECLARATIVE_PARITY_DATABASE_URL` (or name another variable with
+`--database-url-env`). The URL never goes in argv, and psql errors are redacted.
+
+Exit 1 means a must-be-zero check failed or `--expect` found a mismatch. The
+checks are SECURITY DEFINER functions with a NULL `proacl` (PUBLIC can execute
+them) and exposed definers whose `search_path` fails the
+`security-definer-search-paths.sql` rule. `--hashes-only --expect <full.json>` is
+the form for the one approved prod-parity check. It prints category digests plus
+the identities of mismatched objects only. Agents must never point the pack at
+production. Fixture tests run with
+`node --test apps/database/scripts/verify-declarative-parity.test.mjs`.
 
 ## Migration Workflow
 
