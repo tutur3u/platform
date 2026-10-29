@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   findConflictsWithExistingSessions,
+  findConflictsWithinSlots,
   TutoringSessionListQuerySchema,
 } from './shared';
 
@@ -61,5 +62,75 @@ describe('findConflictsWithExistingSessions', () => {
       },
     ]);
     expect(conflicts[0]).not.toHaveProperty('conflictWithId');
+  });
+});
+
+describe('group tutoring conflicts', () => {
+  const slot = {
+    groupId: 'group-a',
+    sessionDate: '2030-01-07',
+    startTime: '09:00',
+    durationMinutes: 45,
+    teacherUserId: 'teacher',
+    studentUserId: 'student-1',
+  };
+  const recorded = (student: string) => ({
+    group_id: slot.groupId,
+    session_date: slot.sessionDate,
+    start_time: '09:00:00',
+    duration_minutes: 45,
+    teacher_user_id: slot.teacherUserId,
+    student_user_id: student,
+  });
+  it('accepts three learners sequentially and within one group slot batch', () => {
+    const existing = [recorded('student-1')];
+    expect(
+      findConflictsWithExistingSessions(
+        [{ ...slot, studentUserId: 'student-2' }],
+        existing
+      )
+    ).toEqual([]);
+    existing.push(recorded('student-2'));
+    expect(
+      findConflictsWithExistingSessions(
+        [{ ...slot, studentUserId: 'student-3' }],
+        existing
+      )
+    ).toEqual([]);
+    expect(
+      findConflictsWithinSlots(
+        ['1', '2', '3'].map((studentUserId) => ({ ...slot, studentUserId }))
+      )
+    ).toEqual([]);
+  });
+  it.each([
+    { groupId: 'group-b' },
+    { startTime: '09:15' },
+    { durationMinutes: 60 },
+  ])('blocks a different overlapping session %j', (change) => {
+    expect(
+      findConflictsWithExistingSessions(
+        [{ ...slot, ...change, studentUserId: 'student-2' }],
+        [recorded('student-1')]
+      )[0]?.conflictType
+    ).toBe('teacher');
+    expect(
+      findConflictsWithinSlots([
+        slot,
+        { ...slot, ...change, studentUserId: 'student-2' },
+      ])[0]?.conflictType
+    ).toBe('teacher');
+  });
+  it('still blocks a duplicate learner and fails closed without group identity', () => {
+    expect(
+      findConflictsWithExistingSessions([slot], [recorded('student-1')])[0]
+        ?.conflictType
+    ).toBe('student');
+    expect(
+      findConflictsWithExistingSessions(
+        [{ ...slot, groupId: undefined, studentUserId: 'student-2' }],
+        [recorded('student-1')]
+      )[0]?.conflictType
+    ).toBe('teacher');
   });
 });
