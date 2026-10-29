@@ -79,7 +79,7 @@ try {
 const excluded =
   'gotrue,realtime,storage-api,imgproxy,kong,mailpit,postgrest,postgres-meta,studio,edge-runtime,logflare,vector,supavisor';
 const migration =
-  'supabase/migrations/20261026145800_chat_first_message_creation_receipts.sql';
+  'supabase/migrations/20261029100000_chat_first_message_creation_receipts.sql';
 const stagedMigration = path.join(metadata.disposableRoot, migration);
 const heldMigration = path.join(
   metadata.disposableRoot,

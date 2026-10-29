@@ -585,7 +585,7 @@ It never targets a linked database.
 
 ## First-message migration rollback
 
-The manual rollback for `20261026145800_chat_first_message_creation_receipts`
+The manual rollback for `20261029100000_chat_first_message_creation_receipts`
 restores main's prior `private.chat_create_conversation` definition and its
 service-role-only execution grant, then removes the two new receipt functions
 and the receipt table. Existing conversations and messages remain.

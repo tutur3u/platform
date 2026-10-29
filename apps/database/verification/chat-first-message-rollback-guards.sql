@@ -19,8 +19,8 @@ INSERT INTO public.workspaces(id,name,creator_id) VALUES ('a6743000-0000-4000-80
 INSERT INTO private.chat_creation_requests(conversation_id,actor_user_id,ws_id,request_id,conversation_type,initial_settings)
 VALUES(gen_random_uuid(),'a6743000-0000-4000-8000-000000000001','a6743000-0000-4000-8000-000000000011',gen_random_uuid(),'ai','{}');
 
-\set rollback_sql `sed '/^BEGIN;$/d; /^COMMIT;$/d' apps/database/rollbacks/20261026145800_chat_first_message_creation_receipts.rollback.sql`
+\set rollback_sql `sed '/^BEGIN;$/d; /^COMMIT;$/d' apps/database/rollbacks/20261029100000_chat_first_message_creation_receipts.rollback.sql`
 SELECT pg_temp.expect_rollback_refusal(:'rollback_sql', 'Rollback refused:');
 DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM private.chat_creation_requests) THEN RAISE EXCEPTION 'Rollback lost retained fixture'; END IF; END $$;
 ROLLBACK;
-\echo PASS retained-data guard 20261026145800_chat_first_message_creation_receipts.rollback
+\echo PASS retained-data guard 20261029100000_chat_first_message_creation_receipts.rollback

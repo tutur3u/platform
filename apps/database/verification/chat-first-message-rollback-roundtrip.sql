@@ -6,8 +6,8 @@ SELECT jsonb_build_object(
  'receipt',(SELECT coalesce(jsonb_agg(jsonb_build_array(c.relname,c.relowner,c.relacl,c.relrowsecurity,c.relforcerowsecurity)),'[]') FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='private' AND c.relname='chat_creation_requests')
 ) AS value;
 CREATE TEMP TABLE rollback_baseline AS SELECT value FROM rollback_catalog;
-\ir ../supabase/migrations/20261026145800_chat_first_message_creation_receipts.sql
-\ir ../rollbacks/20261026145800_chat_first_message_creation_receipts.rollback.sql
+\ir ../supabase/migrations/20261029100000_chat_first_message_creation_receipts.sql
+\ir ../rollbacks/20261029100000_chat_first_message_creation_receipts.rollback.sql
 DO $$ BEGIN
  IF (SELECT value FROM rollback_catalog) IS DISTINCT FROM (SELECT value FROM rollback_baseline) THEN
  RAISE EXCEPTION 'Chat rollback did not restore main function definition, owner, ACL and settings'; END IF;
@@ -20,5 +20,5 @@ DO $$ BEGIN
  RAISE EXCEPTION 'Chat receipt SELECT surface remains after rollback'; END IF;
 END $$;
 \echo PASS chat rollback restored prior definitions and service-only ACL
-\ir ../supabase/migrations/20261026145800_chat_first_message_creation_receipts.sql
+\ir ../supabase/migrations/20261029100000_chat_first_message_creation_receipts.sql
 \echo PASS chat reapply
