@@ -4590,6 +4590,7 @@
     },
     "feature": "Feature and scope",
     "features": {
+      "abuse-guard_0": "Abuse protection store",
       "ai_0": "AI chat and model access",
       "ai_1": "Prompts, agents and datasets",
       "ai_2": "Playground and runs",
