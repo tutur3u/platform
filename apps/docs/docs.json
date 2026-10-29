@@ -400,6 +400,7 @@
                   "build/devops/cloudflare-backend-ownership",
                   "build/devops/background-work-inventory",
                   "build/devops/cloudflare-processor-migration",
+                  "build/devops/web-cloudflare-migration",
                   "build/devops/mobile-store-deployment",
                   "build/devops/calendar-native-api-protection",
                   "build/devops/desktop-beta-distribution",

@@ -1393,3 +1393,13 @@ and the shared helper's identity matrix and route denial regressions.
 For AI memory or billing attribution, resolve the request scope with
 `authorizeAiWorkspace` before provider or memory work. Temporary authentication
 does not grant workspace membership; retain a canonical authorized workspace id.
+### Web cron scheduler handover
+
+The five web Vercel schedules have a dormant candidate in the existing Cron
+Control Worker. Follow [the web cron migration runbook](../../../../../apps/docs/build/devops/web-cloudflare-migration.mdx)
+for the shared execution gate, default-off/shadow modes, operation bounds and
+stop/drain/owner-switch sequence. A dispatch slot claim alone does not fence a
+Vercel invocation. Retain the web boundary gate through rollback; an expired or
+unknown operation requires reconciliation with its original identity. Validate
+the real local workerd SQLite stop and restart test as well as the pure ledger
+tests before enabling a job. This preparation grants no deployment authority.

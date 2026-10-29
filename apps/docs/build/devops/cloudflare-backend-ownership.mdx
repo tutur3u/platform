@@ -95,6 +95,29 @@ To retire an entry: move the schedule or processor to Cloudflare behind its
 default-off flag, complete the cutover, delete the legacy definition in its own
 reviewed change, then delete the allowlist entry. Never run both owners unfenced.
 
+## Web's five Vercel crons
+
+The [web migration runbook](/build/devops/web-cloudflare-migration#cron-migration)
+prepares the five web schedules in the existing Cron Control Worker. Their
+Vercel definitions stay active. `CRON_CONTROL_WEB_MODE=off` and the per-job
+allowlist keep Cloudflare dormant; `shadow` compares due slots without processor
+or ledger work. Active requests use the existing authenticated web endpoints.
+
+Before cutover, wire the shared SQLite execution gate into both scheduler paths
+at the web processor boundary. It defaults to Vercel ownership, persists active
+operation identity and completed slots, and blocks owner changes while a run is
+unresolved. Expiry does not authorize replay. Operator stop is durable across
+restarts; failed or abandoned runs require identity-preserving reconciliation.
+Do not clear the gate environment to roll back. Switch owners only after drain,
+then disable the Vercel definition in a separately reviewed change.
+
+Web has one attempt per job per slot, five failed slots before durable dispatch
+stop, and no alarm/retry chains. Cloudflare notification batches are capped at
+25, notification pagination at 20 page reads, and deadline reminders at 500 tasks
+and 1,000 watcher entries with pre-write validation. Other processors retain their
+existing finite claims and drain limits. See the runbook for exact gate operation
+counts, stop/restart tests, retained receipt limitations and acceptance evidence.
+
 ## Retained Postgres exceptions
 
 pg_cron may keep a job only when it is **pure in-database maintenance**: a single
