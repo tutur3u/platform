@@ -80,6 +80,16 @@ describe('infrastructure projects', () => {
     }
   );
 
+  it('rejects a 100k-dot hostname quickly', () => {
+    const started = performance.now();
+    expect(() =>
+      normalizeInfrastructureProjectHostnames([`${'.'.repeat(100_000)}x`])
+    ).toThrow(
+      'Enter managed project hostnames as DNS names without ports, wildcards, whitespace, or nginx syntax.'
+    );
+    expect(performance.now() - started).toBeLessThan(100);
+  });
+
   it('still accepts customer hostnames outside the platform zones', () => {
     expect(
       normalizeInfrastructureProjectHostnames([

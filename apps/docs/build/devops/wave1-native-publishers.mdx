@@ -666,15 +666,20 @@ rule, `@tuturuuu/utils/managed-project-hostnames` (plain-Node core
 `tuturuuu.com`, every `*.tuturuuu.com` name, and `staging.tutur3u.com` and its
 subdomains. It also keeps the exact non-zone reservations (`localhost`,
 `nova.ai.vn`, `rewise.me`). It compares after lowercasing and stripping the
-scheme, path and trailing dots. The web API, the infrastructure app and the
+scheme, path and trailing dots. It fails closed: anything that is not an ASCII
+DNS name (253 characters, 63 per label) counts as reserved. Input longer than
+512 characters is rejected before any regex runs, so oversized request bodies
+cannot stall the event loop. The web API, the infrastructure app and the
 blue/green watcher all import this rule, so the three surfaces cannot drift
 apart, and no file needs a guard exemption.
 
 The guard (`scripts/check-staging-hosts.js`) scans every tracked source and
 configuration file, including root files such as `.env.*`, `wrangler.toml`
 and Dockerfiles. Tests, Markdown and lockfiles are skipped. Before matching, it
-lowercases text and decodes escaped dots: percent, hex, unicode, octal and HTML
-entities, plus fullwidth and ideographic dots. It also joins string
+applies NFKC (folding fullwidth letters), lowercases text, and decodes hex,
+unicode, octal and numeric-entity escapes of hostname characters. It also
+decodes escaped dots (including `&period;` and percent-encoding) and
+fullwidth and ideographic dots. It also joins string
 concatenations and inlines simple same-file string constants used in
 templates. It then extracts whole dotted hostnames, bounded on both sides so
 `tuturuuu.com.attacker.net` stays one foreign host. After stripping the
@@ -682,7 +687,8 @@ scheme, port and trailing dot, each hostname is compared exactly against the
 production zone. Any variable or property whose
 name contains `staging` followed by host, domain, origin, zone, pattern or
 allow fails if it names the production zone. Non-production labels in a regex
-alternation in front of the zone also fail. Values that only exist at runtime,
+alternation in front of the zone or any production subdomain also fail, for
+example `(staging|preview)\.calendar\.tuturuuu\.com`. Values that only exist at runtime,
 such as `${env}.tuturuuu.com` with `env` read from configuration, are outside
 what a static guard can see.
 

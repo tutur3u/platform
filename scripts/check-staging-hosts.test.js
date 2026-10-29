@@ -256,3 +256,39 @@ test('a production-zone label inside a longer foreign host is not a match', () =
     'xn--evil.staging.tuturuuu.com',
   ]);
 });
+
+test('catches non-production alternations in front of a production subdomain', () => {
+  for (const source of [
+    String.raw`const HOSTS = /^(staging|preview)\.calendar\.tuturuuu\.com$/;`,
+    String.raw`new RegExp('(dev|staging)\\.mail\\.tuturuuu\\.com')`,
+    "pattern: '(staging|beta).api.tuturuuu.com/*'",
+    '/(staging|beta)*.tuturuuu.com/',
+    String.raw`/^(?:[a-z]+-)?(staging|canary)\.app\.tuturuuu\.com$/`,
+  ])
+    assert.equal(violations(source).length, 1, source);
+  assert.deepEqual(
+    violations(String.raw`/^(calendar|mail)\.app\.tuturuuu\.com$/`),
+    []
+  );
+});
+
+for (const [name, source] of [
+  [
+    'fullwidth letters',
+    "host: 'calendar-staging.\uff34\uff35\uff34\uff35\uff32\uff35\uff35\uff35.com'",
+  ],
+  ['hex letter escape', "host: 'st\\x61ging.tuturuuu.com'"],
+  ['unicode letter escape', "host: '\\u0053taging.tuturuuu.com'"],
+  ['octal letter escape', "host: '\\163taging.tuturuuu.com'"],
+  ['numeric entity letters', 'href="https://&#83;TAGING.tuturuuu.com"'],
+  ['escaped ideographic dot', "host: 'staging\\u3002tuturuuu.com'"],
+  ['escaped fullwidth letter', "host: 'staging.\\uff54uturuuu.com'"],
+])
+  test(`catches the ${name} bypass`, () =>
+    assert.equal(violations(source).length, 1, source));
+
+test('long backslash runs normalize in linear time', () => {
+  const started = performance.now();
+  violations(`'${'\\'.repeat(200_000)}x tuturuuu.com'`);
+  assert.ok(performance.now() - started < 500);
+});

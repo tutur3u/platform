@@ -11,6 +11,8 @@ const HOST_TOKEN =
   /(?<![a-z0-9_*-])(?:[a-z0-9_*-]+\.)+[a-z0-9-]+(?![a-z0-9_*-]|\.[a-z0-9])/g;
 const STAGING_ALLOWLIST =
   /\b[\w$]*staging[\w$]*(?:host|domain|origin|zone|pattern|allow)[\w$]*\s*(?::[^=\n]*)?(?:=|:)[\s\S]*?(?:;|\n\s*\n|$)/g;
+const ESCAPED_CHARACTER =
+  /\\x([0-9a-f]{2})|\\u\{([0-9a-f]{1,6})\}|\\u([0-9a-f]{4})|\\([0-3]?[0-7]{1,2})(?![0-7])|&#0*(\d{1,7});|&#x0*([0-9a-f]{1,6});/g;
 const SIMPLE_STRING_CONSTANT =
   /\b(?:const|let|var)\s+([a-z_$][\w$]*)\s*=\s*(['"`])([a-z0-9.*_-]+)\2/g;
 const SCANNED_FILE =
@@ -36,14 +38,37 @@ function normalizeHost(value) {
  */
 function normalizeSource(source) {
   let text = source
+    // Fold fullwidth and other compatibility letters and digits to ASCII.
+    .normalize('NFKC')
     .toLowerCase()
+    // Hex, unicode, octal and numeric-entity escapes of hostname characters.
+    .replace(
+      ESCAPED_CHARACTER,
+      (match, hex, braced, unicode, octal, dec, hexEntity) => {
+        const code =
+          octal !== undefined
+            ? Number.parseInt(octal, 8)
+            : dec !== undefined
+              ? Number(dec)
+              : Number.parseInt(hex ?? braced ?? unicode ?? hexEntity, 16);
+        const character =
+          code <= 0x10ffff
+            ? String.fromCodePoint(code)
+                .normalize('NFKC')
+                .toLowerCase()
+                .replace(/[\u3002\uff61]/, '.')
+            : '';
+        return /^[a-z0-9.-]$/.test(character) ? character : match;
+      }
+    )
     // Percent, hex, unicode, octal and HTML-entity escapes, bracketed dots,
     // and the fullwidth/ideographic dots that IDNA maps to a full stop.
     .replace(
       /%2e|\\x2e|\\u0*2e|\\u\{0*2e\}|\\0?56(?![0-7])|&#0*46;|&#x0*2e;|&period;|\[\.\]|[\uff0e\u3002\uff61]/g,
       '.'
     )
-    .replace(/\\+\./g, '.');
+    // Starts only at a run of backslashes, so long runs stay linear.
+    .replace(/(?<!\\)\\+(?=\.)/g, '');
   const constants = new Map(
     [...text.matchAll(SIMPLE_STRING_CONSTANT)].map(([, name, , value]) => [
       name,
@@ -104,7 +129,6 @@ function violations(source) {
       found.push(host);
       continue;
     }
-    if (host !== PRODUCTION_ZONE) continue;
     const prefix = dynamicPrefix(text, index);
     if (
       /[)\]}|*+]$/.test(prefix) &&

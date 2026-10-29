@@ -1,8 +1,6 @@
 const DEFAULT_PLATFORM_PROJECT_ID = 'platform';
 const DEFAULT_PLATFORM_BRANCH = 'production';
 const LOG_DRAIN_DATABASE_URL_KEY = 'PLATFORM_LOG_DRAIN_DATABASE_URL';
-const SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN =
-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$/u;
 const fs = require('node:fs');
 const path = require('node:path');
 const {
@@ -17,8 +15,24 @@ const {
 } = require('../docker-web/blue-green.js');
 const {
   isReservedManagedProjectHostname,
+  isSafeManagedProjectHostname,
   normalizeManagedProjectHostname,
 } = require('../../packages/utils/src/managed-project-hostnames-core.cjs');
+// Git refname subset safe to interpolate into nginx, env files and git
+// arguments: no leading dash or dot, no `..` or `//`, quotes or whitespace.
+const SAFE_PROJECT_BRANCH_PATTERN =
+  /^(?![-./])(?!.*(?:\.\.|\/\/|\/\.))[A-Za-z0-9._/-]{1,200}(?<![./])$/u;
+
+function isSafeProjectBranch(branch) {
+  return typeof branch === 'string' && SAFE_PROJECT_BRANCH_PATTERN.test(branch);
+}
+
+function assertSafeProjectBranch(project) {
+  if (!isSafeProjectBranch(project.selected_branch))
+    throw new Error(
+      'Refusing an unsafe selected branch for a managed project.'
+    );
+}
 const {
   getComposeCommandArgs,
   getComposeFile,
@@ -84,9 +98,7 @@ function sanitizeHostnames(hostnames) {
       hostnames
         .map(normalizeManagedProjectHostname)
         .filter((hostname) => hostname.length > 0)
-        .filter((hostname) =>
-          SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN.test(hostname)
-        )
+        .filter((hostname) => isSafeManagedProjectHostname(hostname))
         .filter((hostname) => !isReservedManagedProjectHostname(hostname))
     ),
   ];
@@ -144,6 +156,7 @@ function renderManagedProjectCompose(
   project,
   { env = process.env, rootDir = process.cwd() } = {}
 ) {
+  assertSafeProjectBranch(project);
   const safeProjectId = normalizeProjectId(project.id);
   const serviceName = getProjectServiceName(project.id);
   const paths = getProjectRuntimePaths(project.id, rootDir);
@@ -190,7 +203,10 @@ function renderManagedProjectProxyServerBlocks(projects) {
   return projects
     .flatMap((project) => {
       const hostnames = sanitizeHostnames(project.hostnames);
-      if (hostnames.length === 0) {
+      if (
+        hostnames.length === 0 ||
+        !isSafeProjectBranch(project.selected_branch)
+      ) {
         return [];
       }
 
@@ -589,6 +605,7 @@ async function syncManagedProjectCheckout(
   project,
   { env, rootDir, runCommand }
 ) {
+  assertSafeProjectBranch(project);
   const paths = getProjectRuntimePaths(project.id, rootDir);
   fs.mkdirSync(paths.projectDir, { recursive: true });
 
@@ -970,6 +987,7 @@ module.exports = {
   getProjectRuntimePaths,
   getProjectServiceName,
   getManagedProjectDeploymentEnv,
+  isSafeProjectBranch,
   normalizeProjectBranch,
   processManagedInfrastructureProjects,
   readPlatformProject,

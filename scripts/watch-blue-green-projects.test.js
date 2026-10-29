@@ -15,6 +15,7 @@ const {
   getManagedProjectDeploymentEnv,
   normalizeProjectBranch,
   processManagedInfrastructureProjects,
+  isSafeProjectBranch,
   renderManagedProjectCompose,
   renderManagedProjectProxyServerBlocks,
   resolvePlatformProjectTarget,
@@ -451,4 +452,41 @@ test('renderManagedProjectProxyServerBlocks drops reserved and invalid hostnames
   assert.equal(served.some(isReservedManagedProjectHostname), false);
   assert.doesNotMatch(config, /bad host\.example\.com/);
   assert.doesNotMatch(config, /return 200 "pwned"/);
+});
+
+test('managed project branches must be safe refnames before interpolation', () => {
+  for (const branch of ['main', 'production', 'feature/x-1', 'release/1.2'])
+    assert.equal(isSafeProjectBranch(branch), true, branch);
+  for (const branch of [
+    '',
+    '--upload-pack=touch /tmp/pwned',
+    'main"; return 200 "pwned',
+    'main;',
+    'a b',
+    'a..b',
+    'a//b',
+    'a/',
+    '.hidden',
+    'x'.repeat(201),
+    null,
+  ])
+    assert.equal(isSafeProjectBranch(branch), false, String(branch));
+
+  const config = renderManagedProjectProxyServerBlocks([
+    {
+      hostnames: ['docs.example.com'],
+      id: 'docs-app',
+      port: 3000,
+      selected_branch: 'main" always; return 200 "pwned',
+    },
+  ]);
+  assert.equal(config, '');
+  assert.throws(
+    () =>
+      renderManagedProjectCompose({
+        id: 'docs-app',
+        selected_branch: '--upload-pack=x',
+      }),
+    /unsafe selected branch/u
+  );
 });

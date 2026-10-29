@@ -5,6 +5,7 @@ import type {
 } from '@tuturuuu/internal-api/infrastructure/monitoring';
 import {
   isReservedManagedProjectHostname,
+  isSafeManagedProjectHostname,
   normalizeManagedProjectHostname,
 } from '@tuturuuu/utils/managed-project-hostnames';
 import { readBlueGreenMonitoringSnapshot } from './blue-green-monitoring';
@@ -66,9 +67,6 @@ interface QueuedPlatformProjectRow {
   updated_at: Date | string | null;
 }
 
-const SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN =
-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
-
 export interface CreateInfrastructureProjectInput {
   appRoot?: string | null;
   hostnames?: string[] | null;
@@ -100,7 +98,7 @@ export function normalizeInfrastructureProjectHostnames(
 
   if (
     normalizedHostnames.some(
-      (hostname) => !SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN.test(hostname)
+      (hostname) => !isSafeManagedProjectHostname(hostname)
     )
   ) {
     throw new Error(

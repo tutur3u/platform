@@ -1,5 +1,6 @@
 import {
   isReservedManagedProjectHostname,
+  isSafeManagedProjectHostname,
   normalizeManagedProjectHostname,
 } from '@tuturuuu/utils/managed-project-hostnames';
 
@@ -148,9 +149,6 @@ export function normalizeAppRoot(value: string | null | undefined) {
   return (value ?? '').trim().replace(/^\/+|\/+$/g, '');
 }
 
-const SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN =
-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
-
 export function normalizeInfrastructureProjectHostnames(
   hostnames: string[] | null | undefined
 ) {
@@ -164,7 +162,7 @@ export function normalizeInfrastructureProjectHostnames(
 
   if (
     normalizedHostnames.some(
-      (hostname) => !SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN.test(hostname)
+      (hostname) => !isSafeManagedProjectHostname(hostname)
     )
   ) {
     throw new Error(
