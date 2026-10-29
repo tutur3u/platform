@@ -214,7 +214,12 @@ members and anonymous clients cannot read or change integrations or mappings.
 These rules apply to direct Data API access as well as the web handlers. The
 Discord bot and the AI agent runtime read as `service_role`; the agent runtime
 resolves a Discord user only when the channel's configured guild is the one
-bound to the channel's workspace.
+bound to the channel's workspace. Both web and infrastructure resolve the
+mapping and binding in one inner-joined statement, filtered by the channel's
+workspace, guild and Discord user. A concurrent disconnect/reconnect cannot
+substitute the new workspace's mapping between an authorization read and an
+identity read. A reconnect to the same workspace can resolve newly created
+mappings normally; missing bindings or mappings resolve no identity.
 
 Disconnecting a guild deletes all of its mappings in the same transaction,
 through the `discord_guild_members_discord_guild_id_fkey` foreign key to
