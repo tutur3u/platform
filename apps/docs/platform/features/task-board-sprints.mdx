@@ -107,6 +107,23 @@ edit the board and switches back to Board.
 Regression coverage: `packages/tasks-ui/src/tu-do/shared/board-sprints/plan/board-plan-view.test.tsx`
 and `packages/tasks-ui/src/tu-do/shared/__tests__/board-views-sprints.test.tsx`.
 
+## Sprint summary and reports
+
+Ending happens from a summary, opened by End in the sprint menu or by "End
+Sprint N first" on the Plan tab. It shows the goal with Met, Partly or Missed,
+four totals (delivered against committed, tasks done, added mid-sprint and
+carried in), done against assigned per person, and every open task with Carry
+to the next sprint or Backlog. Totals read in estimation points when the
+sprint has any, and in tasks otherwise. The End button stays disabled until
+each open task has a decision; Carry all and All to backlog set them in one
+click, and a task already carried twice is flagged. Ending switches the board
+to Plan. Choosing an ended sprint in the sprint menu opens its stored report
+with the same totals, read-only.
+
+Regression coverage: `packages/tasks-ui/src/tu-do/shared/board-sprints/summary/sprint-summary-dialog.test.tsx`,
+`packages/tasks-ui/src/tu-do/shared/board-sprints/summary/sprint-summary-model.test.ts`
+and `packages/tasks-ui/src/tu-do/shared/board-sprints/sprint-pill.test.tsx`.
+
 ## Exceptions
 
 Workspace-wide cycles without a board keep their existing behavior. The

@@ -5,6 +5,7 @@ import {
   ChevronDown,
   CircleCheck,
   CircleDashed,
+  Flag,
   Play,
   Settings,
 } from '@tuturuuu/icons';
@@ -52,6 +53,7 @@ export function SprintPill({
   canManage,
   currentSprint,
   getProgress,
+  onEndSprint,
   onOpenSettings,
   onSelectSprint,
   onStartSprint,
@@ -61,6 +63,7 @@ export function SprintPill({
   canManage: boolean;
   currentSprint: BoardSprint;
   getProgress: (sprint: BoardSprint) => SprintProgress;
+  onEndSprint?: (sprint: BoardSprint) => void;
   onOpenSettings?: () => void;
   onSelectSprint?: (sprint: BoardSprint) => void;
   onStartSprint?: (sprint: BoardSprint) => void;
@@ -81,7 +84,9 @@ export function SprintPill({
   const ordered = [...sprints]
     .filter((sprint) => sprint.status !== 'cancelled')
     .sort((a, b) => a.sequence_number - b.sequence_number);
-  const hasActive = sprints.some((sprint) => sprint.status === 'active');
+  const activeSprint = sprints.find((sprint) => sprint.status === 'active');
+  const hasActive = Boolean(activeSprint);
+  const endable = onEndSprint ? activeSprint : undefined;
   const startable = !hasActive
     ? sprints.find((sprint) => sprint.status === 'planned')
     : undefined;
@@ -189,10 +194,19 @@ export function SprintPill({
             </DropdownMenuItem>
           );
         })}
-        {canManage && (startable || onOpenSettings) ? (
+        {canManage && (startable || endable || onOpenSettings) ? (
           <>
             <DropdownMenuSeparator />
             <div className="flex items-center gap-2 p-1">
+              {endable && onEndSprint ? (
+                <ToneButton
+                  onClick={closeThen(() => onEndSprint(endable))}
+                  tone="green"
+                >
+                  <Flag />
+                  {t('end_sprint', { name: endable.name })}
+                </ToneButton>
+              ) : null}
               {startable && onStartSprint ? (
                 <ToneButton
                   disabled={starting}
