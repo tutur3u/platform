@@ -26,7 +26,8 @@ function context(existing = [], overrides = {}) {
   };
 }
 
-const ids = (plan) => plan.steps.map((step) => step.id);
+const ids = (plan) =>
+  plan.steps.map((step) => step.id).filter((id) => id !== 'staging-hosts');
 const changed = (...files) => files.map((file) => ({ status: 'M', file }));
 
 test('branch-name pattern mirrors the branch-name-check workflow', () => {
@@ -370,5 +371,13 @@ test('Playwright suites never run through Vitest, while root TypeScript node tes
   assert.equal(
     node.args.includes('apps/web/e2e-wave1-staging/mail.spec.ts'),
     false
+  );
+});
+
+test('staging host isolation always runs', () => {
+  const plan = planChecks(changed('README.md'), context());
+  assert.deepEqual(
+    plan.steps.find((step) => step.id === 'staging-hosts').args,
+    ['scripts/check-staging-hosts.js']
   );
 });

@@ -136,7 +136,7 @@ describe('Infrastructure admin access', () => {
   });
 
   it.each(['manage_workspace_secrets', 'manage_workspace_roles'])(
-    'preserves cross-workspace access for root %s administrators',
+    'admits root MEMBER %s administrators under SR-385',
     async (rootPermission) => {
       const targetPermissions = {
         membershipType: 'MEMBER',

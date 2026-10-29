@@ -11,6 +11,7 @@ import {
   decideOneOriginRequest,
 } from '@tuturuuu/utils/one-origin-routing';
 import { verifyLiveSession } from '../src/features/live-assistant/token';
+import { configureMeetAbuseGuard } from '../src/runtime/abuse-guard';
 import { handleMeetRequest } from '../src/runtime/handler';
 import { meetOneOriginConfig } from './one-origin';
 import { applyMeetDocumentHeaders } from './security-profile';
@@ -24,6 +25,7 @@ export default {
   async fetch(incoming: Request, env: CloudflareEnv, ctx: ExecutionContext) {
     const decision = decideOneOriginRequest(incoming, meetOneOriginConfig(env));
     if (decision.action !== 'serve') return decision.response;
+    configureMeetAbuseGuard(env);
     const response = applyMeetDocumentHeaders(
       incoming,
       await serveMeet(decision.request, env, ctx),

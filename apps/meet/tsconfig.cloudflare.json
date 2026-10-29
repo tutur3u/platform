@@ -45,6 +45,7 @@
     "cloudflare/security-profile.ts",
     "cloudflare/provider.ts",
     "cloudflare/worker.ts",
+    "cloudflare/worker-entrypoint.test.ts",
     "../../packages/realtime/src/channels/schema.ts",
     "../../packages/realtime/src/collaboration/document.ts",
     "../../packages/realtime/src/collaboration/server.ts",

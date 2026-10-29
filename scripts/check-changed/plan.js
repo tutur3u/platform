@@ -488,6 +488,11 @@ function planChecks(changes, context) {
   if (!present.some((file) => SCRIPT_FILE.test(file) || TS_SOURCE.test(file))) {
     skipped.push(['vitest/type-check', 'no TypeScript or JavaScript changes']);
   }
+  steps.push(
+    nodeStep('staging-hosts', 'Staging cookie-domain isolation', [
+      'scripts/check-staging-hosts.js',
+    ])
+  );
   return { steps, skipped };
 }
 

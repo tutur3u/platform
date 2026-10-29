@@ -4,6 +4,7 @@ const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
 const { execFileSync } = require('node:child_process');
+const { runWorkflowGate } = require('./workflow-gate-test-helper');
 const {
   commandForShard,
   discoverPackages,
@@ -105,14 +106,19 @@ test('all matrix failures propagate through stable required check names', () => 
       workflow.jobs[workers].strategy.matrix.shard,
       [0, 1, 2, 3]
     );
-    const check = job.steps.find((step) => step.env?.TEST_RESULT);
+    const check = job.steps.find(
+      (step) =>
+        step.env?.TEST_RESULT && !step.name.startsWith('Documentation-only')
+    );
     assert.match(
       check.env.TEST_RESULT,
       new RegExp(`needs\\.${workers}\\.result`)
     );
     // Run Actions' fail-fast shell with every unrelated prerequisite satisfied.
     const successful = {
-      ...process.env,
+      CHANGES_RESULT: 'success',
+      CODE: 'true',
+      RUST_QUALIFICATION_REQUIRED: 'false',
       TEST_RESULT: 'success',
       QUALITY_RESULT: 'success',
       REALTIME_RESULT: 'success',
@@ -132,29 +138,20 @@ test('all matrix failures propagate through stable required check names', () => 
     if (file === 'turbo-unit-tests.yaml') {
       assert.ok(job.needs.includes('root-script-tests'));
       assert.match(
-        check.env.ROOT_SCRIPT_RESULT,
+        job.steps.find((step) => step.env?.ROOT_SCRIPT_RESULT).env
+          .ROOT_SCRIPT_RESULT,
         /needs\.root-script-tests\.result/
       );
     }
-    const shell = [
-      '--noprofile',
-      '--norc',
-      '-e',
-      '-o',
-      'pipefail',
-      '-c',
-      check.run,
-    ];
     for (const dependency of required) {
       for (const state of ['failure', 'cancelled', 'skipped', '']) {
-        assert.throws(() =>
-          execFileSync('bash', shell, {
-            env: { ...successful, [dependency]: state },
-          })
+        assert.notEqual(
+          runWorkflowGate(job, { ...successful, [dependency]: state }).status,
+          0
         );
       }
     }
-    execFileSync('bash', shell, { env: successful });
+    assert.equal(runWorkflowGate(job, successful).status, 0);
     assert.match(
       workflow.concurrency['cancel-in-progress'],
       /github\.event_name == 'push'/

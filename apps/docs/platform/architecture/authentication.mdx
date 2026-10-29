@@ -1388,3 +1388,15 @@ Regression coverage:
 [callback tenant guard](https://github.com/tutur3u/platform/blob/main/apps/web/src/__tests__/auth-callback-route.test.ts),
 [mobile login](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/features/auth/view/login_page_test.dart), and
 [mobile signup](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/features/auth/view/signup_page_test.dart).
+
+## Optional replay-store fairness
+
+CLI refresh, cross-app refresh and registered app-token refresh keep their legacy
+store behavior by default. When the Durable Object `replay` family is assigned,
+trusted adapters send the verified token principal and resolved source network.
+Each may spend at most 5% of replay's daily command share, across token keys and
+instances. Missing IPs share an unknown-source bucket. A spent quota fails the
+refresh closed while other principals on other sources retain their allowance.
+This does not activate the unpublished Worker or replace cutover generation and
+legacy-read fences. See [durable command fairness](/build/devops/abuse-guard-store#durable-command-fairness)
+and `apps/abuse-guard/src/fairness.test.ts` for concurrency/restart coverage.

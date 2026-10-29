@@ -143,17 +143,20 @@ export function publicationConfig(base, profile, { main, assets }) {
     routes: [],
     secrets: { required: profile.secrets },
     vars: {
+      ...(!production
+        ? { NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN: '.staging.tutur3u.com' }
+        : {}),
       NEXT_PUBLIC_APP_URL: `https://${profile.host}`,
       [`NEXT_PUBLIC_${profile.app.toUpperCase()}_APP_URL`]: `https://${profile.host}`,
       NEXT_PUBLIC_WEB_APP_URL: production
         ? 'https://tuturuuu.com'
-        : 'https://staging.tuturuuu.com',
+        : 'https://web.staging.tutur3u.com',
       ...(profile.app === 'apps'
         ? {
             APPS_CANONICAL_HOST_ENABLED: production ? '1' : '0',
             INTERNAL_WEB_API_ORIGIN: production
               ? 'https://tuturuuu.com'
-              : 'https://staging.tuturuuu.com',
+              : 'https://web.staging.tutur3u.com',
           }
         : {}),
       ...(profile.app === 'calendar'
