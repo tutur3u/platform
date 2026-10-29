@@ -1,5 +1,5 @@
 -- Approved pre-activation, empty-feature rollback only. Never drop shared private.
--- Reverses the 20261026190000/190100/190200/190300 Passwords sequence below.
+-- Reverses the 20261029100030/100040/100050/100060 Passwords sequence below.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '30s';

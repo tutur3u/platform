@@ -1,4 +1,4 @@
--- Rollback: 20261026190000_password_vault_tables.sql
+-- Rollback: 20261029100030_password_vault_tables.sql
 -- Manual reverse-order rollback. Unexpected dependencies fail without CASCADE.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
