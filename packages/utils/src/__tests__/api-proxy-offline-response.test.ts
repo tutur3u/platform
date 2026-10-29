@@ -25,7 +25,7 @@ describe('offline guard proxy integration', () => {
     expect(
       await guardApiProxyRequest(request, { prefixBase: 'test:offline' })
     ).toBe(challenge);
-    expect(guard).toHaveBeenCalledWith(request);
+    expect(guard).toHaveBeenCalledWith(request, { verifiedActor: null });
   });
   it.each(['permissions', 'members'])(
     'excludes static settings/%s from invoice reads',

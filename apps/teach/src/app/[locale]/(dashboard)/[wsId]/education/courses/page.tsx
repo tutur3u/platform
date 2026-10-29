@@ -41,7 +41,10 @@ export default async function WorkspaceCoursesPage({
 }: Props) {
   const t = await getTranslations();
   const { wsId: routeWsId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(
+    routeWsId,
+    'view_user_groups'
+  );
   const searchParamsResolved = await searchParams;
   const { page = '1', pageSize = '10' } = searchParamsResolved;
 

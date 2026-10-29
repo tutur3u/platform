@@ -1,3 +1,5 @@
+import { isWebJob } from './web-gate';
+
 // Scheduled jobs owned by Cron Control. Every job is disabled until its id is
 // listed in CRON_CONTROL_ENABLED_JOBS; see the Cron Control runbook for the
 // per-job cutover sequence away from the legacy Vercel/pg_cron owner.
@@ -32,7 +34,7 @@ export const IMMEDIATE_NOTIFICATIONS_CRON = '*/5 * * * *';
 export const MAX_CONCURRENT_DISPATCHES = 4;
 export const MAX_CONSECUTIVE_FAILURES = 5;
 const DEFAULT_TIMEOUT_MS = 120_000;
-// Processors declaring maxDuration = 300 get the full window plus margin.
+// Long-running processors get a five-minute window plus completion margin.
 const LONG_TIMEOUT_MS = 310_000;
 
 function job(
@@ -112,7 +114,8 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '*/15 * * * *',
     'web',
     '/api/cron/process-notification-batches',
-    'claim-fenced'
+    'claim-fenced',
+    { timeoutMs: LONG_TIMEOUT_MS }
   ),
   job(
     'web-report-automation',
@@ -141,7 +144,8 @@ export const CRON_JOBS: readonly CronJob[] = Object.freeze([
     '*/30 * * * *',
     'web',
     '/api/cron/process-post-email-queue',
-    'claim-fenced'
+    'claim-fenced',
+    { timeoutMs: LONG_TIMEOUT_MS }
   ),
   job(
     'inventory-checkout-expiry',
@@ -197,7 +201,7 @@ export const TARGET_SECRET_VARS = {
 } as const satisfies Record<ProcessorTarget, string>;
 
 export function maxAttempts(cronJob: CronJob) {
-  return cronJob.overlap === 'handover' ? 1 : 2;
+  return isWebJob(cronJob.id) || cronJob.overlap === 'handover' ? 1 : 2;
 }
 
 // Long enough for every attempt and backoff; an expired lease lets a later

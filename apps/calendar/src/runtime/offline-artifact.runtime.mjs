@@ -164,7 +164,7 @@ test('emitted activation migrates legacy caches only on the Calendar subdomain',
   for (const [origin, base, migrated] of [
     ['https://calendar.tuturuuu.com', '', true],
     ['https://tuturuuu.com', '/calendar', false],
-    ['https://staging.tuturuuu.com', '/calendar', false],
+    ['https://web.staging.tutur3u.com', '/calendar', false],
   ]) {
     const app = worker(base, origin);
     for (const name of [

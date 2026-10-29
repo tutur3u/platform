@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const MEMBER_ID = '11111111-1111-4111-8111-111111111111';
+
 const mocks = vi.hoisted(() => ({
   calls: [] as Array<{ table: string; op: string; args: unknown[] }>,
   creatorId: 'owner-user',
@@ -34,7 +36,9 @@ function createQuery(table: string) {
     Promise.resolve(
       table === 'workspace_role_permissions'
         ? { data: mocks.rolePermissions, error: null }
-        : { data: null, error: null }
+        : table === 'workspace_members'
+          ? { data: [{ user_id: MEMBER_ID }], error: null }
+          : { data: null, error: null }
     ).then(resolve);
   return query;
 }
@@ -50,7 +54,7 @@ import { POST } from './route';
 function addMembers() {
   return POST(
     new Request('http://localhost/roles/role-id/members', {
-      body: JSON.stringify({ memberIds: ['member-user'] }),
+      body: JSON.stringify({ memberIds: [MEMBER_ID] }),
       method: 'POST',
     }),
     { params: Promise.resolve({ roleId: 'role-id', wsId: 'workspace-id' }) }

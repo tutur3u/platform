@@ -118,6 +118,25 @@ const noNotesItem = {
   missed_post_content: '',
   missing_lesson_dates: ['2030-01-01'],
 };
+// Two missed classes and two sessions: each session teaches its own day.
+const splitItem = {
+  ...item('E'),
+  absence_deficit: 2,
+  missed_lesson_content: '2030-01-01: Unit 3 food\n2030-01-03: Unit 4 pets',
+  missed_lesson_by_date: {
+    '2030-01-01': '2030-01-01: Unit 3 food',
+    '2030-01-03': '2030-01-03: Unit 4 pets',
+  },
+  missed_post_content: '',
+  missing_lesson_dates: [],
+};
+const splitBothItem = {
+  ...splitItem,
+  ...item('F'),
+  absence_deficit: 2,
+  reason_type: 'BOTH',
+  feedback_content: 'Homeroom note',
+};
 vi.mock('./tutoring-queue-card', () => ({
   TutoringQueueCard: ({
     actions,
@@ -133,6 +152,12 @@ vi.mock('./tutoring-queue-card', () => ({
       </button>
       <button type="button" onClick={() => actions.onSchedule(bothItem)}>
         queue both
+      </button>
+      <button type="button" onClick={() => actions.onSchedule(splitItem)}>
+        queue split
+      </button>
+      <button type="button" onClick={() => actions.onSchedule(splitBothItem)}>
+        queue split both
       </button>
       <button type="button" onClick={() => actions.onSchedule(noNotesItem)}>
         queue no notes
@@ -264,6 +289,35 @@ describe('actual tutoring queue handoff', () => {
       'content_section_absent:\n2030-01-01: Unit 3 food\n\ncontent_section_weak:\nHomeroom note'
     );
     expect(screen.getByText('lesson_notes_missing')).toBeInTheDocument();
+  });
+  it('drafts each session from its own missed date', async () => {
+    mount();
+    fireEvent.click(screen.getByText('queue split'));
+    await screen.findByRole('dialog');
+    const slots = JSON.parse(
+      screen.getByLabelText('suggested slots').textContent!
+    );
+    expect(slots.map((slot: { content: string }) => slot.content)).toEqual([
+      '2030-01-01: Unit 3 food',
+      '2030-01-03: Unit 4 pets',
+    ]);
+    expect(
+      slots.map((slot: { linkedContent: string }) => slot.linkedContent)
+    ).toEqual(['2030-01-01: Unit 3 food', '2030-01-03: Unit 4 pets']);
+    // No shared field: each session owns its content.
+    expect(screen.queryByLabelText('content')).not.toBeInTheDocument();
+  });
+  it('pairs each session own missed day with the homeroom note for both reasons', async () => {
+    mount();
+    fireEvent.click(screen.getByText('queue split both'));
+    await screen.findByRole('dialog');
+    const slots = JSON.parse(
+      screen.getByLabelText('suggested slots').textContent!
+    );
+    expect(slots.map((slot: { content: string }) => slot.content)).toEqual([
+      'content_section_absent:\n2030-01-01: Unit 3 food\n\ncontent_section_weak:\nHomeroom note',
+      'content_section_absent:\n2030-01-03: Unit 4 pets\n\ncontent_section_weak:\nHomeroom note',
+    ]);
   });
   it('shows an inline hint instead of silent empty content when no notes exist', async () => {
     mount();

@@ -4565,6 +4565,28 @@
   "taskQuickActionsNoLabels": "No labels",
   "taskQuickActionsStatus": "Status",
   "taskQuickActionsUnassigned": "Unassigned",
+  "taskTimelineLoadingTasks": "Loading tasks…",
+  "taskTimelineNotAllLoaded": "Some tasks aren't loaded yet",
+  "taskTimelineNothingToday": "Nothing scheduled today",
+  "taskTimelineOngoing": "Day {day} of {total}, ends {date}",
+  "@taskTimelineOngoing": {
+    "placeholders": {
+      "day": {"type": "int"},
+      "total": {"type": "int"},
+      "date": {"type": "String"}
+    }
+  },
+  "taskTimelineRangeAll": "All",
+  "taskTimelineRangeMonth": "Month",
+  "taskTimelineRangeWeek": "Week",
+  "taskTimelineShowLater": "Show later tasks",
+  "taskTimelineShowOverdue": "Show overdue",
+  "taskTimelineStarted": "Started {date}",
+  "@taskTimelineStarted": {
+    "placeholders": {
+      "date": {"type": "String"}
+    }
+  },
   "tasksAllCaughtUp": "You're all caught up!",
   "tasksAllCaughtUpSubtitle": "No pending tasks right now",
   "tasksCompleteByEndOfDay": "Complete by end of day",

@@ -2,6 +2,7 @@ import type { SendEmailResult } from '@tuturuuu/email-service';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { isEmail } from '@tuturuuu/utils/email/client';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { chargeWebCronPage } from '@/lib/cron/web-cron-budget';
 import { isEmailBlacklisted } from '@/lib/email-blacklist';
 
 import {
@@ -295,6 +296,7 @@ export async function fetchAllPaginatedRows<T>(
 
   while (true) {
     const to = from + pageSize - 1;
+    chargeWebCronPage();
     const { data, error } = await fetchPage(from, to);
 
     if (error) {

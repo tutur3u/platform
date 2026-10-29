@@ -2,12 +2,15 @@ import { canUseRequestedFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
 import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-
 import {
   type FinanceRouteAuthContext,
   getFinanceRouteContext,
   hasAnyFinancePermission,
 } from '../request-access';
+import {
+  validateFinanceReferences,
+  validateFinanceWalletWriteAccess,
+} from '../workspace-references';
 import {
   enrichTransactionsWithTags,
   validateTransactionTagIdsForWorkspace,
@@ -347,6 +350,20 @@ export async function POST(
       );
     }
   }
+
+  const deniedWallet = await validateFinanceWalletWriteAccess(
+    access.context,
+    [data.origin_wallet_id],
+    'create_transactions',
+    { defaultWalletId }
+  );
+  if (deniedWallet) return deniedWallet;
+  const invalidCategory = await validateFinanceReferences(
+    sbAdmin,
+    normalizedWsId,
+    { category_id: data.category_id }
+  );
+  if (invalidCategory) return invalidCategory;
 
   const tagValidation = await validateTransactionTagIdsForWorkspace(
     sbAdmin,

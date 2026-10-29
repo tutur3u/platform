@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getReportReadGroupIds } from '@tuturuuu/users-core/routes/users/reports/group-read-access';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -46,6 +47,11 @@ export async function GET(request: Request, { params }: Params) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
 
+    const accessibleGroupIds = await getReportReadGroupIds({
+      request: request,
+      wsId: permissions.wsId,
+      canManageUsers: permissions.containsPermission('manage_users'),
+    });
     const sbAdmin = await createAdminClient();
     const privateDb = sbAdmin.schema('private');
 
@@ -53,9 +59,13 @@ export async function GET(request: Request, { params }: Params) {
       .from('external_user_monthly_reports_workspace_view')
       .select('*')
       .eq('group_id', groupId)
-      .eq('user_ws_id', wsId)
+      .eq('user_ws_id', permissions.wsId)
+      .eq('group_ws_id', permissions.wsId)
       .eq('title', title);
 
+    if (accessibleGroupIds !== null) {
+      query = query.in('group_id', accessibleGroupIds);
+    }
     if (status === 'APPROVED') {
       query = query.eq('report_approval_status', 'APPROVED');
     }
