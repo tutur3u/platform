@@ -16,6 +16,8 @@ import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/deep_link_launcher.dart';
 import 'package:mobile/core/router/deep_links.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/startup/optional_startup.dart';
+import 'package:mobile/core/startup/startup_state.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
@@ -189,7 +191,9 @@ class _AppState extends State<App> {
       settingsRepository: _settingsRepo,
       onOpen: _handlePushNavigation,
     );
-    unawaited(PushNotificationService.instance.initialize());
+    // Local-notification, FCM and token setup is not needed to paint; it runs
+    // once the first frame is out. Sign-in changes still start sessions now.
+    scheduleOptionalStartup(_startPushAfterFirstFrame);
     _authCubit = AuthCubit(
       authRepository: _authRepo,
       onBeforeSignOut: () async {
@@ -286,11 +290,6 @@ class _AppState extends State<App> {
     unawaited(_appVersionCubit.checkVersion());
     // BlocListener misses initial auth; load synchronously resolved workspaces.
     if (_authCubit.state.status == AuthStatus.authenticated) {
-      unawaited(
-        PushNotificationService.instance.startSession(
-          _authCubit.state.user!.id,
-        ),
-      );
       unawaited(_pomodoroController.restore(_authCubit.state.user!.id));
       _shellProfileCubit.primeFromAuthenticatedUser(_authCubit.state.user!);
       unawaited(
@@ -299,6 +298,19 @@ class _AppState extends State<App> {
       unawaited(_loadWorkspacesWithReminders());
     }
     _bindAudienceMode();
+  }
+
+  /// Initializes push, and starts the session if still signed in.
+  ///
+  /// Reads auth when it runs, so a sign-out or account switch before the first
+  /// frame never registers a stale token.
+  Future<void> _startPushAfterFirstFrame() async {
+    if (!mounted) return;
+    await startPushForCurrentAccount(
+      currentUserId: () => _appearanceAccountId(_authCubit.state),
+      initialize: PushNotificationService.instance.initialize,
+      startSession: PushNotificationService.instance.startSession,
+    );
   }
 
   /// The mode belongs to one account in one workspace.

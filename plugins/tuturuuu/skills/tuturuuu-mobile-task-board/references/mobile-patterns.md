@@ -426,6 +426,16 @@ infer hub resolution from a local tap or accepted reply. Exercise the real
 reply cubit with fake transport in `decision_cards_test.dart`; English/Vietnamese
 at 320px and 2x text catch wrapping regressions without a device build.
 
+### First-frame critical path
+
+Run Firebase/observability and local preference reads together via
+`initializeBootstrapServices`; start Supabase only after the platform error
+handler exists. Push setup (`PushNotificationService.initialize`/`startSession`)
+runs after first paint through `scheduleOptionalStartup` and
+`startPushForCurrentAccount`, which reads auth at run time. Do not defer
+analytics enablement (manifest default is off). Tests:
+`test/core/startup/startup_state_test.dart`.
+
 ### Independent startup state restoration
 
 Use `initializeStartupState` only after Firebase/observability and Supabase settle.

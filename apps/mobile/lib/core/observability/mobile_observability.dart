@@ -33,8 +33,17 @@ class MobileObservability {
 
   Future<void> initialize(AppFlavor flavor) async {
     final enabled = flavor == AppFlavor.production;
-    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(enabled);
+    // The three platform calls are independent; running them together removes
+    // two sequential channel round trips from the pre-first-frame path.
+    await Future.wait<void>([
+      FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(enabled),
+      _loadOperationalReporter(),
+      _configureAnalytics(enabled),
+    ]);
     _enabled = enabled;
+  }
+
+  Future<void> _loadOperationalReporter() async {
     try {
       final package = await PackageInfo.fromPlatform();
       _operationalReporter = OperationalErrorReporter(
@@ -45,6 +54,9 @@ class MobileObservability {
     } on Object catch (_) {
       // Release metadata may be unavailable; never use plugin error contents.
     }
+  }
+
+  Future<void> _configureAnalytics(bool enabled) async {
     try {
       await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(enabled);
     } on Object catch (error) {
