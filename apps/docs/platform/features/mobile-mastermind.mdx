@@ -138,9 +138,13 @@ end in "Show all N" above the cap; Inbox shows every ask (see below).
 - **Activity** and **recent decisions** show three each; decision rows push
   their detail and "See all decisions" opens the Decisions segment.
 
-**Security rows** render as a single non-tappable "`<Product>` · security fix"
-line in a trailing "Security" group with no count. They have no severity, title
-or detail anywhere, are never counted, and never reorder anything. Event
+**Security rows** render as a single non-tappable "Mastermind · security fix"
+line in a trailing "Security" group with no count. The label is the constant
+"Mastermind" (SB-100 S3): never a product name and never a product fallback, so
+the row cannot say which product is affected. Each list (Home, For you, Work,
+Backlog, the activity feed) shows at most one such line however many products
+have one, with no count. They have no severity, title or
+detail anywhere, are never counted, and never reorder anything. Event
 summaries apply the same collapse.
 
 ## Inbox
@@ -554,6 +558,28 @@ signed hub events and sends a mobile push to Mastermind owners.
   `apps/web/src/app/api/v1/mastermind/push-events/route.race.test.ts`,
   `route.delivery.test.ts` and, for the tap,
   `apps/mobile/test/features/notifications/push/mastermind_push_destination_test.dart`.
+
+## App-switcher privacy
+
+On every `/mastermind/**` route (Home, For you, Decided, Journal, item and
+decision detail, Work, Ship, Insights) the app covers its own content with a
+blur under a mostly opaque surface tint while it is not in the foreground
+(SB-100 L2). The cover is built on `inactive`, `hidden` and `paused`, so the
+OS-captured switcher thumbnail never holds hub text, and it does not depend on
+whether a screen has cards. Screenshots are deliberately not blocked: Mastermind
+is owner-only. The cover is a Flutter overlay, so a system sheet that only
+pauses the app (Control Centre, a biometric prompt) briefly covers it too.
+
+- **Deferred (SB-100 gate):** the neutral "A decision is waiting on your Mac"
+  card (S2, T7) and local "Later" notifications with a local quiet window
+  (L1/Q5, T8) wait for the hub's `display` field and S1 classification; the app
+  has no snooze notifications today.
+- **Regression coverage:**
+  `apps/mobile/test/features/mastermind/privacy/mastermind_privacy_shield_test.dart`
+  and, for the constant security label,
+  `apps/mobile/test/features/mastermind/view/mastermind_home_page_test.dart`;
+  for the single row per list,
+  `apps/mobile/test/features/mastermind/presentation/security_rows_test.dart`.
 
 ## Deferred to PR8
 

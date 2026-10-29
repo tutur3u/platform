@@ -10,6 +10,7 @@ import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart
 import 'package:mobile/features/mastermind/replies/reply_outcome.dart';
 import 'package:mobile/features/mastermind/view/home/activity_strip.dart';
 import 'package:mobile/features/mastermind/view/home_activity_card.dart';
+import 'package:mobile/features/mastermind/view/home_needs_you_card.dart';
 import 'package:mobile/features/mastermind/view/home_ship_card.dart';
 import 'package:mobile/features/mastermind/view/mastermind_home_page.dart';
 import 'package:mobile/l10n/gen/app_localizations_en.dart';
@@ -508,7 +509,7 @@ void main() {
       payload: payload,
     );
 
-    test('collapses a security payload to the fixed line', () {
+    test('collapses a security payload to the constant-label line', () {
       expect(
         eventSummary(
           l10n,
@@ -520,7 +521,7 @@ void main() {
             ),
           ),
         ),
-        'Upskii · security fix',
+        'Mastermind · security fix',
       );
       expect(
         eventSummary(
@@ -529,8 +530,22 @@ void main() {
             const SecurityItem(title: 'Security issue', state: LaneState.open),
           ),
         ),
-        'Security fix',
+        'Mastermind · security fix',
       );
+    });
+
+    test('security lines carry the constant label for every product (S3)', () {
+      for (final product in [null, ...Product.values]) {
+        final line = securityLine(
+          l10n,
+          SecurityItem(
+            title: 'Security issue',
+            state: LaneState.open,
+            product: product,
+          ),
+        );
+        expect(line, 'Mastermind · security fix', reason: '$product');
+      }
     });
   });
 }

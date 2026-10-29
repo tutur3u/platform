@@ -13184,9 +13184,6 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get mastermindSecurityFix => 'Bản vá bảo mật';
-
-  @override
   String get mastermindSecurityGroup => 'Bảo mật';
 
   @override
