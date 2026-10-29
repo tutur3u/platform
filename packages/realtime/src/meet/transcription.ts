@@ -42,7 +42,11 @@ export type TranscriptionConsentMessage = z.infer<
 >;
 export interface TranscriptionRoomState {
   transcription?: TranscriptionState;
-  transcriptionConsents?: Record<string, boolean>;
+  // Ephemeral room state, not the legal consent record in private.meet_ai_consents.
+  transcriptionConsents?: {
+    sessionId: string;
+    decisions: Record<string, boolean>;
+  };
 }
 export function transcriptionAnnouncements(
   state: MeetRoomSnapshot,
@@ -54,8 +58,8 @@ export function transcriptionAnnouncements(
     ...(state.transcription
       ? [{ type: 'transcription.state' as const, state: state.transcription }]
       : []),
-    ...Object.entries(state.transcriptionConsents ?? {})
-      .filter(([id]) => person.role === 'host' || id === userId)
+    ...Object.entries(currentTranscriptionConsents(state))
+      .filter(([id]) => id === userId)
       .map(([id, allowed]) => ({
         type: 'transcription.consent' as const,
         userId: id,
@@ -86,7 +90,14 @@ export function applyTranscription(
     const next = {
       ...state,
       transcription: message.state,
-      transcriptionConsents: changedSession ? {} : state.transcriptionConsents,
+      transcriptionConsents: message.state.active
+        ? {
+            sessionId: message.state.sessionId,
+            decisions: changedSession
+              ? {}
+              : currentTranscriptionConsents(state),
+          }
+        : undefined,
     };
     return outcome(next, {
       broadcast: [{ type: 'transcription.state', state: message.state }],
@@ -94,11 +105,16 @@ export function applyTranscription(
   }
   if (message.userId !== token.userId)
     return denied(state, 'permission_denied', message.requestId);
+  if (!state.transcription?.active || state.ended)
+    return denied(state, 'transcription_not_active', message.requestId);
   const next = {
     ...state,
     transcriptionConsents: {
-      ...state.transcriptionConsents,
-      [token.userId]: message.allowed,
+      sessionId: state.transcription.sessionId,
+      decisions: {
+        ...currentTranscriptionConsents(state),
+        [token.userId]: message.allowed,
+      },
     },
   };
   return outcome(next, {
@@ -112,4 +128,46 @@ export function applyTranscription(
       )
       .map((person) => ({ userId: person.userId, message })),
   });
+}
+
+export function currentTranscriptionConsents(
+  state: MeetRoomSnapshot
+): Record<string, boolean> {
+  return !state.ended &&
+    state.transcription?.active &&
+    state.transcriptionConsents?.sessionId === state.transcription.sessionId
+    ? state.transcriptionConsents.decisions
+    : {};
+}
+export function transcriptionClientSnapshot(
+  state: MeetRoomSnapshot,
+  userId: string
+) {
+  if (!state.presence[userId] || state.waiting[userId]) return {};
+  const decisions = currentTranscriptionConsents(state);
+  const values = Object.values(decisions);
+  return {
+    transcription: state.transcription,
+    transcriptionConsent: {
+      sessionId: state.transcription?.sessionId ?? null,
+      allowed: decisions[userId],
+      counts: {
+        allowed: values.filter(Boolean).length,
+        declined: values.filter((v) => !v).length,
+      },
+    },
+  };
+}
+export function normalizeTranscriptionConsent(
+  state: MeetRoomSnapshot
+): MeetRoomSnapshot {
+  return {
+    ...state,
+    transcriptionConsents:
+      !state.ended &&
+      state.transcription?.active &&
+      state.transcriptionConsents?.sessionId === state.transcription.sessionId
+        ? state.transcriptionConsents
+        : undefined,
+  };
 }

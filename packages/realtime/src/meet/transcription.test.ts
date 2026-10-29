@@ -7,6 +7,10 @@ import {
   meetRealtimeClientMessageSchema,
   meetRealtimeTokenPayloadSchema,
 } from './index';
+import {
+  normalizeTranscriptionConsent,
+  transcriptionClientSnapshot,
+} from './transcription';
 
 const now = '2026-09-09T00:00:00Z';
 const account = '11111111-1111-4111-8111-111111111111';
@@ -123,14 +127,17 @@ it('binds consent to the participant device, including withdrawal; host cannot o
     userId: device,
     allowed: true,
   };
-  const result = run(initial(), message, guest);
-  expect(result.state.transcriptionConsents).toEqual({ [device]: true });
+  const result = run(run(initial(), start).state, message, guest);
+  expect(result.state.transcriptionConsents).toEqual({
+    sessionId,
+    decisions: { [device]: true },
+  });
   expect(result.broadcast).toEqual([]);
   expect(result.toManagers).toEqual([]);
   expect(result.direct).toEqual([{ userId: host.userId, message }]);
   expect(result.reply).toEqual([message]);
   const withdrawn = run(result.state, { ...message, allowed: false }, guest);
-  expect(withdrawn.state.transcriptionConsents?.[device]).toBe(false);
+  expect(withdrawn.state.transcriptionConsents?.decisions[device]).toBe(false);
   for (const actor of [host, { ...guest, userId: account }]) {
     const denied = run(result.state, message, actor);
     expect(denied.state.transcriptionConsents).toEqual(
@@ -168,11 +175,9 @@ it('replays active state on admission, but the consent roster only to its host',
   ).state;
   const hostReplay = admitOrHold(state, host, now).reply;
   expect(hostReplay).toContainEqual(start);
-  expect(hostReplay).toContainEqual({
-    type: 'transcription.consent',
-    userId: device,
-    allowed: false,
-  });
+  expect(hostReplay.filter((m) => m.type === 'transcription.consent')).toEqual(
+    []
+  );
   const guestReplay = admitOrHold(state, guest, now).reply;
   expect(guestReplay).toContainEqual(start);
   const outsider = {
@@ -202,6 +207,7 @@ it('resets consent for a new session and supports host stop', () => {
   const stop = { ...start, state: { ...start.state, active: false } };
   state = run(state, stop).state;
   expect(state.transcription?.active).toBe(false);
+  expect(state.transcriptionConsents).toBeUndefined();
   state = run(state, {
     ...start,
     state: {
@@ -209,5 +215,52 @@ it('resets consent for a new session and supports host stop', () => {
       sessionId: '66666666-6666-4666-8666-666666666666',
     },
   }).state;
-  expect(state.transcriptionConsents).toEqual({});
+  expect(state.transcriptionConsents).toEqual({
+    sessionId: state.transcription?.sessionId,
+    decisions: {},
+  });
+});
+
+it('room end clears session consent and disables transcription', () => {
+  let state = run(initial(), start).state;
+  state = run(
+    state,
+    { type: 'transcription.consent', userId: device, allowed: true },
+    guest
+  ).state;
+  state = run(state, { type: 'room.end' }).state;
+  expect(state.transcriptionConsents).toBeUndefined();
+  expect(state.transcription?.active).toBe(false);
+});
+
+it('client snapshots expose only self consent and counts, even for the host', () => {
+  let state = run(initial(), start).state;
+  state = run(
+    state,
+    { type: 'transcription.consent', userId: device, allowed: true },
+    guest
+  ).state;
+  const view = transcriptionClientSnapshot(state, host.userId);
+  expect(view).toMatchObject({
+    transcriptionConsent: { counts: { allowed: 1, declined: 0 } },
+  });
+  expect(JSON.stringify(view)).not.toContain(device);
+  expect(transcriptionClientSnapshot(state, device)).toMatchObject({
+    transcriptionConsent: { allowed: true },
+  });
+  expect(transcriptionClientSnapshot(state, 'outsider')).toEqual({});
+});
+it('drops unscoped legacy consent and mismatched sessions on restoration', () => {
+  const state = run(initial(), start).state;
+  state.transcriptionConsents = {
+    sessionId: '66666666-6666-4666-8666-666666666666',
+    decisions: { [device]: true },
+  };
+  expect(
+    normalizeTranscriptionConsent(state).transcriptionConsents
+  ).toBeUndefined();
+  expect(
+    normalizeTranscriptionConsent({ ...state, ended: true })
+      .transcriptionConsents
+  ).toBeUndefined();
 });

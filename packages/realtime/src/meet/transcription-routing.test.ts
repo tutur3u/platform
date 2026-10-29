@@ -28,14 +28,17 @@ const lobby = {
   userId: '55555555-5555-4555-8555-555555555555',
   admission: 'lobby' as const,
 };
-async function fixture() {
+async function fixture(stored?: Map<string, unknown>) {
   // Load the app at runtime so package type-checking stays inside its source root.
   const { MeetRoomDurableObject } = await vi.importActual<{
     MeetRoomDurableObject: new (
       state: unknown,
       env: object
     ) => {
-      webSocketMessage(socket: unknown, raw: string): Promise<void>;
+      webSocketMessage(
+        socket: unknown,
+        raw: string | ArrayBuffer
+      ): Promise<void>;
     };
   }>('../../../../apps/meet-realtime/src/room-do');
 
@@ -44,9 +47,10 @@ async function fixture() {
   let snapshot = createMeetRoomSnapshot();
   for (const token of [host, guest, lobby])
     snapshot = admitOrHold(snapshot, token, new Date().toISOString()).state;
-  const values = new Map<string, unknown>([['snapshot', snapshot]]);
+  const values = stored ?? new Map<string, unknown>([['snapshot', snapshot]]);
   const sockets = [host, guest, lobby].map((token) => ({
     readyState: 1,
+    close() {},
     deserializeAttachment: () => ({ token }),
     sent: [] as string[],
     send(value: string) {
@@ -115,4 +119,136 @@ test('DO broadcasts state only to admitted sockets and delivers consent only to 
   );
   assert.ok(g.sent.some((m) => m.includes('permission_denied')));
   assert.equal(h.sent.length, 0);
+});
+
+test('DO storage retains only current-session consent, restores it, and clears it on stop and room end', async () => {
+  const first = await fixture();
+  const h = first.sockets[0]!;
+  const g = first.sockets[1]!;
+  const sessionId = '44444444-4444-4444-8444-444444444444';
+  const start = {
+    type: 'transcription.state',
+    state: {
+      active: true,
+      sessionId,
+      startedBy: host.userId,
+      language: 'vi',
+      consentRequired: true,
+    },
+  };
+  await first.room.webSocketMessage(h, JSON.stringify(start));
+  await first.room.webSocketMessage(
+    g,
+    JSON.stringify({
+      type: 'transcription.consent',
+      userId: guest.userId,
+      allowed: true,
+    })
+  );
+  const saved = first.values.get('snapshot');
+  assert.ok(JSON.stringify(saved).includes('"decisions"'));
+  const second = await fixture(first.values);
+  await second.room.webSocketMessage(
+    second.sockets[1]!,
+    JSON.stringify({
+      type: 'transcription.consent',
+      userId: guest.userId,
+      allowed: false,
+    })
+  );
+  assert.ok(
+    JSON.stringify(first.values.get('snapshot')).includes(
+      `"${guest.userId}":false`
+    )
+  );
+  await second.room.webSocketMessage(
+    second.sockets[0]!,
+    JSON.stringify({ ...start, state: { ...start.state, active: false } })
+  );
+  assert.ok(
+    !JSON.stringify(first.values.get('snapshot')).includes(
+      '"transcriptionConsents":{'
+    )
+  );
+  const next = {
+    ...start,
+    state: {
+      ...start.state,
+      sessionId: '66666666-6666-4666-8666-666666666666',
+    },
+  };
+  await second.room.webSocketMessage(second.sockets[0]!, JSON.stringify(next));
+  assert.ok(
+    JSON.stringify(first.values.get('snapshot')).includes('"decisions":{}')
+  );
+  await second.room.webSocketMessage(
+    second.sockets[1]!,
+    JSON.stringify({
+      type: 'transcription.consent',
+      userId: guest.userId,
+      allowed: true,
+    })
+  );
+  await second.room.webSocketMessage(
+    second.sockets[0]!,
+    JSON.stringify({ type: 'room.end' })
+  );
+  assert.ok(
+    !JSON.stringify(first.values.get('snapshot')).includes(
+      '"transcriptionConsents":{'
+    )
+  );
+});
+test('DO rejects oversized UTF-8 strings and binary payloads before JSON parsing or persistence', async () => {
+  const { room, sockets, values } = await fixture();
+  const before = values.get('snapshot');
+  const h = sockets[0]!;
+  for (const raw of [
+    `{${'é'.repeat(150_000)}`,
+    new Uint8Array(300_000).buffer,
+    JSON.stringify({
+      type: 'transcription.consent',
+      userId: host.userId,
+      allowed: true,
+      extra: 'x'.repeat(300_000),
+    }),
+  ]) {
+    h.sent.length = 0;
+    await room.webSocketMessage(h, raw);
+    assert.deepEqual(h.sent, [
+      JSON.stringify({ error: 'message_too_large', type: 'error' }),
+    ]);
+    assert.equal(values.get('snapshot'), before);
+  }
+});
+
+test('DO restoration durably removes unscoped legacy consent before processing a message', async () => {
+  const base = admitOrHold(
+    createMeetRoomSnapshot(),
+    host,
+    new Date().toISOString()
+  ).state;
+  const values = new Map<string, unknown>([
+    [
+      'snapshot',
+      {
+        ...base,
+        transcription: {
+          active: true,
+          sessionId: '44444444-4444-4444-8444-444444444444',
+          startedBy: host.userId,
+          language: 'vi',
+          consentRequired: true,
+        },
+        transcriptionConsents: { [guest.userId]: true },
+      },
+    ],
+  ]);
+  const { room, sockets } = await fixture(values);
+  await room.webSocketMessage(sockets[0]!, '{');
+  assert.ok(
+    !JSON.stringify(values.get('snapshot')).includes(
+      '"transcriptionConsents":{'
+    )
+  );
 });
