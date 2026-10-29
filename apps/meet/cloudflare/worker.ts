@@ -1,5 +1,6 @@
 import {
   type AnalyticsEngineWriter,
+  createAppSwitchWriteBudget,
   handleAppSwitchBeacon,
   readCountry,
 } from '@tuturuuu/utils/app-switch-rum';
@@ -11,6 +12,9 @@ import { verifyLiveSession } from '../src/features/live-assistant/token';
 import { handleMeetRequest } from '../src/runtime/handler';
 import { meetOneOriginConfig } from './one-origin';
 import { applyMeetDocumentHeaders } from './security-profile';
+
+/** Per-isolate app-switch metrics write budget (see app-switch-rum). */
+const appSwitchWriteBudget = createAppSwitchWriteBudget();
 
 export { MeetLiveDurableObject } from './live/session';
 export { MeetingAIProvider } from './provider';
@@ -37,7 +41,12 @@ async function serveMeet(
     return handleAppSwitchBeacon(
       request,
       (env as { APP_SWITCH_RUM?: AnalyticsEngineWriter }).APP_SWITCH_RUM,
-      readCountry(request)
+      {
+        ingest: (env as { APP_SWITCH_RUM_INGEST?: unknown })
+          .APP_SWITCH_RUM_INGEST,
+        budget: appSwitchWriteBudget,
+        country: readCountry(request),
+      }
     );
   if (url.pathname === '/.well-known/meeting-runtime')
     return Response.json(

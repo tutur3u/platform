@@ -286,10 +286,24 @@ comparable.
   connect time and effective connection type. No user, URL or workspace
   identifiers.
 - **Ingest:** `handleAppSwitchBeacon` (`@tuturuuu/utils/app-switch-rum`) accepts one
-  POST of at most 1 KiB and writes one Workers Analytics Engine data point. It does
-  this only when the Worker has an `APP_SWITCH_RUM` dataset binding. Without the
-  binding it answers 204 and drops the beacon. Adding the binding (dataset
-  `ttr_app_switch`) is a reviewed Worker configuration change.
+  POST of at most 1 KiB and writes at most one Workers Analytics Engine data point.
+  It writes only when all of these hold:
+  - The `APP_SWITCH_RUM_INGEST` Worker variable is exactly `on`. This is the
+    operator stop fence. Any other value, including unset, answers 204 without
+    reading the body. Changing it needs no rebuild, and it survives isolate
+    restarts because it is part of the deployed version.
+  - An `APP_SWITCH_RUM` dataset binding exists.
+  - The isolate's write budget has room: 30 points per 60 seconds per isolate.
+    Beacons over budget are dropped, never queued, so re-enabling never replays
+    a backlog.
+
+  A failed write is dropped and never retried. The operation-count, fence and
+  stop/restart behavior is covered in `packages/utils/src/__tests__/app-switch-rum.test.ts`.
+  Adding the binding (dataset `ttr_app_switch`) is a reviewed Worker configuration
+  change. It also waits for the one-origin design's ingestion cost and stop gate
+  evidence at the exact commit (see the
+  [Cloudflare billable-operation rules](/build/devops/cloudflare-backend-ownership)).
+  Client sampling and ingress rate limits are not spend caps.
 
 `scripts/perf/app-switch-lab.mjs` is the lab counterpart. Run it on a Studio host
 through `ttr resources run`.

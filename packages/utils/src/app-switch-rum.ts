@@ -163,18 +163,80 @@ export interface AnalyticsEngineWriter {
   writeDataPoint(point: ReturnType<typeof appSwitchDataPoint>): void;
 }
 
+/** Worker variable holding the operator stop fence for beacon ingest. */
+export const APP_SWITCH_RUM_INGEST_ENV = 'APP_SWITCH_RUM_INGEST';
+/** Default per-isolate write budget: data points per window. */
+export const APP_SWITCH_WRITE_LIMIT = 30;
+export const APP_SWITCH_WRITE_WINDOW_MS = 60_000;
+
+/**
+ * Stop fence. Only the literal `on` lets beacons write; a missing, empty or
+ * unknown value keeps ingest stopped. The value is part of the deployed Worker
+ * version, so it survives isolate restarts, and an operator changes it as a
+ * variable or secret without rebuilding.
+ */
+export function isAppSwitchIngestEnabled(value: unknown): boolean {
+  return typeof value === 'string' && value.trim().toLowerCase() === 'on';
+}
+
+export interface AppSwitchWriteBudget {
+  /** Take one write from the current window; `false` means drop. */
+  tryTake(nowMs: number): boolean;
+}
+
+/**
+ * Fixed-window write budget for one isolate. Beacons over budget are dropped,
+ * never queued, so a restart or a re-enabled fence never replays a backlog.
+ */
+export function createAppSwitchWriteBudget(
+  limit = APP_SWITCH_WRITE_LIMIT,
+  windowMs = APP_SWITCH_WRITE_WINDOW_MS
+): AppSwitchWriteBudget {
+  let windowStart = Number.NEGATIVE_INFINITY;
+  let used = 0;
+  return {
+    tryTake(nowMs) {
+      if (nowMs - windowStart >= windowMs) {
+        windowStart = nowMs;
+        used = 0;
+      }
+      if (used >= limit) return false;
+      used += 1;
+      return true;
+    },
+  };
+}
+
+export interface AppSwitchIngestOptions {
+  /** Raw {@link APP_SWITCH_RUM_INGEST_ENV} value; see {@link isAppSwitchIngestEnabled}. */
+  ingest: unknown;
+  /** The isolate's budget; create it once at module scope. */
+  budget: AppSwitchWriteBudget;
+  country?: string;
+  now?: () => number;
+}
+
+const accepted = () =>
+  new Response(null, {
+    status: 204,
+    headers: { 'Cache-Control': 'no-store' },
+  });
+
 /**
  * Bounded ingest: one POST with a JSON body of at most
- * {@link APP_SWITCH_MAX_BODY_BYTES} bytes becomes at most one data point. A
- * missing dataset binding accepts and drops the beacon.
+ * {@link APP_SWITCH_MAX_BODY_BYTES} bytes becomes at most one data point, and
+ * only while the stop fence is `on`, a dataset is bound and the isolate's write
+ * budget has room. A stopped fence or missing binding answers 204 without
+ * reading the body. Failed writes are dropped, never retried.
  */
 export async function handleAppSwitchBeacon(
   request: Request,
   dataset: AnalyticsEngineWriter | undefined,
-  country?: string
+  options: AppSwitchIngestOptions
 ): Promise<Response> {
   if (request.method !== 'POST')
     return new Response(null, { status: 405, headers: { Allow: 'POST' } });
+  if (!dataset || !isAppSwitchIngestEnabled(options.ingest)) return accepted();
   const declared = Number(request.headers.get('content-length') ?? '0');
   if (declared > APP_SWITCH_MAX_BODY_BYTES)
     return new Response(null, { status: 413 });
@@ -189,11 +251,13 @@ export async function handleAppSwitchBeacon(
   }
   const sample = parseAppSwitchSample(parsed);
   if (!sample) return new Response(null, { status: 400 });
-  dataset?.writeDataPoint(appSwitchDataPoint(sample, country));
-  return new Response(null, {
-    status: 204,
-    headers: { 'Cache-Control': 'no-store' },
-  });
+  if (!options.budget.tryTake((options.now ?? Date.now)())) return accepted();
+  try {
+    dataset.writeDataPoint(appSwitchDataPoint(sample, options.country));
+  } catch {
+    // Metrics are best effort: drop rather than retry.
+  }
+  return accepted();
 }
 
 /** Apps served under a path on the shared origin. */

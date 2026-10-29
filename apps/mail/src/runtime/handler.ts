@@ -7,6 +7,7 @@ import { createBridgeHandler } from '@tuturuuu/start-bridge/start/handler';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
 import {
   type AnalyticsEngineWriter,
+  createAppSwitchWriteBudget,
   handleAppSwitchBeacon,
   readCountry,
 } from '@tuturuuu/utils/app-switch-rum';
@@ -56,6 +57,8 @@ const dispatch = createBridgeHandler<MailRuntimeEnv, MailExecutionContext>({
   matches: proxyMatches,
 });
 
+const appSwitchWriteBudget = createAppSwitchWriteBudget();
+
 export async function handleMailRequest(
   incoming: Request,
   env: MailRuntimeEnv,
@@ -91,7 +94,12 @@ export async function handleMailRequest(
     return handleAppSwitchBeacon(
       request,
       (env as { APP_SWITCH_RUM?: AnalyticsEngineWriter }).APP_SWITCH_RUM,
-      readCountry(request)
+      {
+        ingest: (env as { APP_SWITCH_RUM_INGEST?: unknown })
+          .APP_SWITCH_RUM_INGEST,
+        budget: appSwitchWriteBudget,
+        country: readCountry(request),
+      }
     );
   if (path === '/api/build-info') {
     const url = new URL(request.url);
