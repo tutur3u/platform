@@ -1,6 +1,7 @@
 {
   "extends": "@tuturuuu/typescript-config/react-library.json",
   "compilerOptions": {
+    "allowImportingTsExtensions": true,
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
@@ -26,6 +27,9 @@
   ],
   "include": [
     "cloudflare-env.d.ts",
+    "cloudflare/hosted-staging-worker.ts",
+    "../../scripts/wave1-staging/profiles.ts",
+    "../../scripts/wave1-staging/response.ts",
     "../meet-realtime/src/channel-room-do.ts",
     "../meet-realtime/src/channel-worker.ts",
     "../meet-realtime/src/collaboration-room-do.ts",

@@ -1,3 +1,4 @@
+import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
 import {
   getLaunchableApp,
   getLaunchableAppOrigin,
@@ -21,6 +22,12 @@ export function getGatewayApp(slug: string) {
 }
 
 export function getGatewayAppOrigin(app: GatewayApp) {
+  if (process.env.NEXT_PUBLIC_TUTURUUU_STAGING === '1') {
+    const staging = getAppDomainMap().find(
+      (domain) => domain.name === app.slug && domain.requiresExactOrigin
+    );
+    if (staging) return staging.url;
+  }
   return getLaunchableAppOrigin(app);
 }
 

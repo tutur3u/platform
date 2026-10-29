@@ -1,4 +1,5 @@
 import { defineConfig } from 'void/config';
+import hostedStaging from './void.hosted-staging.config';
 import { meetStagingConfig } from './void.staging.config';
 
 const production = defineConfig({
@@ -81,6 +82,8 @@ const production = defineConfig({
   },
 });
 
-export default process.env.MEET_DEPLOYMENT_PROFILE === 'staging'
-  ? meetStagingConfig()
-  : production;
+export default process.env.WAVE1_HOSTED_STAGING === '1'
+  ? hostedStaging()
+  : process.env.MEET_DEPLOYMENT_PROFILE === 'staging'
+    ? meetStagingConfig()
+    : production;

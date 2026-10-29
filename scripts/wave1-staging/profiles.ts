@@ -52,7 +52,8 @@ export function stagingBuildInputs(
   if (
     env.NEXT_PUBLIC_APP_URL !== `https://${stagingHost(app)}` ||
     env.NEXT_PUBLIC_WEB_APP_URL !== stagingWebOrigin ||
-    env.NEXT_PUBLIC_TUTURUUU_STAGING !== '1'
+    env.NEXT_PUBLIC_TUTURUUU_STAGING !== '1' ||
+    env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN !== stagingCookieDomain
   ) {
     throw new Error(
       'Require exact staging public origins and staging registry at build time'
@@ -118,6 +119,12 @@ export function hostedStagingProfile(app: StagingApp, inputs: { ref: string }) {
         NEXT_PUBLIC_WEB_APP_URL: stagingWebOrigin,
         INTERNAL_WEB_API_ORIGIN: stagingWebOrigin,
         AUTH_COOKIE_DOMAIN: stagingCookieDomain,
+        NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN: stagingCookieDomain,
+        NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS: [
+          `platform:${stagingWebOrigin}`,
+          'platform:https://web.staging.tutur3u.com',
+          ...stagingApps.map((name) => `${name}:https://${stagingHost(name)}`),
+        ].join(','),
         NEXT_PUBLIC_TUTURUUU_STAGING: '1',
         WAVE1_STAGING_SUPABASE_PROJECT_REF: inputs.ref,
         TUTURUUU_NOINDEX: '1',

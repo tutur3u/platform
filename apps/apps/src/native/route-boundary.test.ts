@@ -23,6 +23,36 @@ describe('Apps native route parity', () => {
       expect(target.searchParams.get('source')).toBe('apps');
     }
   });
+  it('selects exact hosted staging origins only in explicit staging mode', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_STAGING', '1');
+    vi.stubEnv('VERCEL_ENV', 'preview');
+    vi.stubEnv('NEXT_PUBLIC_VERCEL_ENV', '');
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
+      '.staging.tutur3u.com'
+    );
+    vi.stubEnv(
+      'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
+      'platform:https://staging.tutur3u.com,' +
+        ['meet', 'calendar', 'mail', 'apps']
+          .map((name) => `${name}:https://${name}.staging.tutur3u.com`)
+          .join(',')
+    );
+    for (const app of ['meet', 'calendar', 'mail', 'apps', 'platform']) {
+      const result = gatewayDestination(
+        new URL(`https://apps.staging.tutur3u.com/${app}/a%2Fb?tag=1&tag=2`)
+      );
+      const origin =
+        app === 'platform'
+          ? 'https://staging.tutur3u.com'
+          : `https://${app}.staging.tutur3u.com`;
+      expect(result).toEqual({
+        kind: 'redirect',
+        href: `${origin}/a%2Fb?tag=1&tag=2&source=apps`,
+      });
+    }
+  });
   it('never selects an origin from untrusted query or slug', () => {
     vi.stubEnv('NODE_ENV', 'production');
     expect(

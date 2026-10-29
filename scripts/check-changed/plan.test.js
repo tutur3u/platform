@@ -354,6 +354,26 @@ test('REV-6467-6: Git app dash route directories remain valid tool arguments', (
   assert.ok(plan.steps.find((step) => step.id === 'biome').args.includes(file));
 });
 
+test('Playwright suites never run through Vitest, while root TypeScript node tests stay admitted', () => {
+  const source = {
+    'apps/web/e2e-wave1-staging/mail.spec.ts':
+      "import { expect } from '@playwright/test';",
+    'scripts/wave1-staging/profiles.test.ts': "import test from 'node:test';",
+  };
+  const files = Object.keys(source);
+  const plan = planChecks(
+    changed(...files),
+    context(files, { readSource: (file) => source[file] ?? '' })
+  );
+  assert.equal(ids(plan).includes('vitest:apps/web'), false);
+  const node = plan.steps.find((step) => step.id === 'script-tests');
+  assert.ok(node.args.includes('scripts/wave1-staging/profiles.test.ts'));
+  assert.equal(
+    node.args.includes('apps/web/e2e-wave1-staging/mail.spec.ts'),
+    false
+  );
+});
+
 test('staging host isolation always runs', () => {
   const plan = planChecks(changed('README.md'), context());
   assert.deepEqual(

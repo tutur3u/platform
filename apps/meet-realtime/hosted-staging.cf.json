@@ -1,0 +1,96 @@
+{
+  "name": "tuturuuu-meet-realtime-hosted-staging",
+  "main": "src/hosted-staging-worker.ts",
+  "compatibility_date": "2026-06-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "alias": {
+    "@tuturuuu/types/primitives/playgrounds": "../../packages/types/src/primitives/playgrounds.ts"
+  },
+  "dev": {
+    "port": 8786,
+    "local_protocol": "http"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.05
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "CHANNEL_ROOM",
+        "class_name": "ChannelRoomDurableObject"
+      },
+      {
+        "name": "COLLABORATION_ROOM",
+        "class_name": "CollaborationRoomDurableObject"
+      },
+      {
+        "name": "MEET_ROOM",
+        "class_name": "MeetRoomDurableObject"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["MeetRoomDurableObject"]
+    },
+    {
+      "tag": "v2-collaboration",
+      "new_sqlite_classes": ["CollaborationRoomDurableObject"]
+    },
+    {
+      "tag": "v3-channels",
+      "new_sqlite_classes": ["ChannelRoomDurableObject"]
+    }
+  ],
+  "secrets": {
+    "required": [
+      "MEET_REALTIME_TOKEN_SECRET",
+      "CLOUDFLARE_REALTIME_APP_ID",
+      "CLOUDFLARE_REALTIME_APP_SECRET",
+      "CLOUDFLARE_TURN_KEY_ID",
+      "CLOUDFLARE_TURN_API_TOKEN",
+      "WAVE1_STAGING_SUPABASE_PROJECT_REF",
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "WAVE1_STAGING_SERVING_ENABLED"
+    ]
+  },
+  "routes": [
+    {
+      "pattern": "meet.staging.tutur3u.com/realtime*",
+      "zone_name": "tutur3u.com"
+    },
+    {
+      "pattern": "meet.staging.tutur3u.com/room-state*",
+      "zone_name": "tutur3u.com"
+    },
+    {
+      "pattern": "meet.staging.tutur3u.com/room-device*",
+      "zone_name": "tutur3u.com"
+    },
+    {
+      "pattern": "meet.staging.tutur3u.com/room-service*",
+      "zone_name": "tutur3u.com"
+    },
+    {
+      "pattern": "meet.staging.tutur3u.com/channels*",
+      "zone_name": "tutur3u.com"
+    },
+    {
+      "pattern": "meet.staging.tutur3u.com/collaboration*",
+      "zone_name": "tutur3u.com"
+    },
+    {
+      "pattern": "meet.staging.tutur3u.com/health*",
+      "zone_name": "tutur3u.com"
+    }
+  ],
+  "workers_dev": false,
+  "preview_urls": false,
+  "vars": {
+    "NEXT_PUBLIC_APP_URL": "https://meet.staging.tutur3u.com",
+    "NEXT_PUBLIC_WEB_APP_URL": "https://staging.tutur3u.com",
+    "AUTH_COOKIE_DOMAIN": ".staging.tutur3u.com"
+  }
+}
