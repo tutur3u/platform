@@ -619,12 +619,19 @@ enables them.
   archived absence. A restored absence is held: the job will not archive it
   again, but staff can. Staff can also archive an absence manually. The state
   machine (`reminded`, `archived`, `restored`) is enforced in the database for
-  every writer, and follow-ups cannot be hard-deleted.
+  every writer, and follow-ups cannot be hard-deleted. Reminder, archive and
+  restore times are always the database's `now()`; a caller cannot supply or
+  backdate them.
 - **Audit.** Every effective transition and settings change writes one row to
   `private.tutoring_automation_events`, with the staff actor or null for the
   scheduled job. No-op writes and upserts that change nothing write no event.
-  The settings actor comes from the transaction-local
-  `tutoring_automation.actor_user_id` setting, never a stored `updated_by`. The
+  The settings actor comes from the `tutoring_automation.actor_user_id`
+  setting, never a stored `updated_by`. Required for the settings route: all
+  writes go through a service-role-only
+  `private.tutoring_automation_settings_save(...)` that checks the actor is a
+  member of that workspace and sets the setting with `is_local = true`; direct
+  table writes are then revoked. Until then, a session-level value could leave
+  a stale or unvalidated actor. The
   audit is append-only: no role can update or truncate it, and the service role
   cannot delete it.
 - **Actors.** Routes take the staff actor from the authenticated session and

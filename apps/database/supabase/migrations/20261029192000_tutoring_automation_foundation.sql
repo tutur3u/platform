@@ -254,8 +254,10 @@ create trigger tutoring_automation_settings_audit
   execute function private.tutoring_automation_settings_audit();
 
 -- Enforces the follow-up state machine for every writer: identity and history
--- are immutable, each transition may set only its own fields, inserts cannot
--- forge history, and an attendance link must be the same absence.
+-- are immutable, each transition may set only its own fields, transition
+-- times are the database's now() (a caller may only omit them or pass now()),
+-- inserts cannot forge history, and an attendance link must be the same
+-- absence.
 create function private.tutoring_absence_followups_guard()
 returns trigger
 language plpgsql
@@ -267,6 +269,16 @@ begin
     new.revision := 0;
     new.created_at := pg_catalog.now();
     new.updated_at := new.created_at;
+    if (new.reminded_at is not null and new.reminded_at <> pg_catalog.now())
+       or (new.archived_at is not null and new.archived_at <> pg_catalog.now()) then
+      raise exception 'Follow-up transition times are set by the database'
+        using errcode = '23514';
+    end if;
+    if new.state = 'reminded' then
+      new.reminded_at := pg_catalog.now();
+    elsif new.state = 'archived' then
+      new.archived_at := pg_catalog.now();
+    end if;
     if new.restored_at is not null or new.restored_by is not null or not (
       (new.state = 'reminded'
         and new.reminded_at is not null
@@ -297,6 +309,23 @@ begin
     if new.reminded_at is distinct from old.reminded_at then
       raise exception 'A follow-up is reminded at most once'
         using errcode = '23514';
+    end if;
+    -- A transition stamps its own time; a caller may leave it unchanged or
+    -- pass now(), never another value.
+    if new.state = 'archived' and old.state <> 'archived' then
+      if new.archived_at is distinct from old.archived_at
+         and new.archived_at is distinct from pg_catalog.now() then
+        raise exception 'Follow-up transition times are set by the database'
+          using errcode = '23514';
+      end if;
+      new.archived_at := pg_catalog.now();
+    elsif new.state = 'restored' and old.state = 'archived' then
+      if new.restored_at is distinct from old.restored_at
+         and new.restored_at is distinct from pg_catalog.now() then
+        raise exception 'Follow-up transition times are set by the database'
+          using errcode = '23514';
+      end if;
+      new.restored_at := pg_catalog.now();
     end if;
     if not (
       (new.state = old.state

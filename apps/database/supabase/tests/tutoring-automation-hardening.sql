@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(31);
+select plan(36);
 
 create function pg_temp.fid(n integer) returns uuid language sql as $$
   select ('00000000-0000-4000-8000-' || lpad(n::text, 12, '0'))::uuid;
@@ -274,6 +274,57 @@ select is(
    where absence_date = date '2026-10-03' and student_user_id = pg_temp.fid(98121)),
   'system:no_makeup_after_reminder',
   'the automatic archive keeps the system actor and reason'
+);
+
+-- N-L2: transition times are the database's ---------------------------------------
+
+select throws_ok(
+  $q$insert into private.tutoring_absence_followups(
+       ws_id, group_id, student_user_id, absence_date, state, reminded_at)
+     values ('00000000-0000-4000-8000-000000098111', '00000000-0000-4000-8000-000000098131',
+       '00000000-0000-4000-8000-000000098121', date '2026-10-05', 'reminded',
+       timestamptz '1990-01-01')$q$,
+  '23514', null,
+  'an insert cannot backdate its reminder, so nothing is auto-archived unreminded'
+);
+insert into private.tutoring_absence_followups(
+  ws_id, group_id, student_user_id, absence_date, state
+)
+values (
+  pg_temp.fid(98111), pg_temp.fid(98131), pg_temp.fid(98121), date '2026-10-05', 'reminded'
+);
+select is(
+  (select reminded_at from private.tutoring_absence_followups
+   where absence_date = date '2026-10-05' and student_user_id = pg_temp.fid(98121)),
+  now(),
+  'an omitted reminder time is stamped now()'
+);
+select throws_ok(
+  $q$update private.tutoring_absence_followups
+     set state = 'archived', archive_reason = 'no_makeup_after_reminder',
+       archived_at = timestamptz '1990-01-01'
+     where absence_date = date '2026-10-05'
+       and student_user_id = '00000000-0000-4000-8000-000000098121'$q$,
+  '23514', null,
+  'an archive cannot supply its own time'
+);
+update private.tutoring_absence_followups
+set state = 'archived', archive_reason = 'no_makeup_after_reminder'
+where absence_date = date '2026-10-05' and student_user_id = pg_temp.fid(98121);
+select is(
+  (select archived_at from private.tutoring_absence_followups
+   where absence_date = date '2026-10-05' and student_user_id = pg_temp.fid(98121)),
+  now(),
+  'an archive is stamped now()'
+);
+select throws_ok(
+  $q$update private.tutoring_absence_followups
+     set state = 'restored', restored_at = timestamptz '1990-01-01',
+       restored_by = '00000000-0000-4000-8000-000000098101'
+     where absence_date = date '2026-10-05'
+       and student_user_id = '00000000-0000-4000-8000-000000098121'$q$,
+  '23514', null,
+  'a restore cannot supply its own time'
 );
 
 -- I2: audit truncate fence -----------------------------------------------------------
