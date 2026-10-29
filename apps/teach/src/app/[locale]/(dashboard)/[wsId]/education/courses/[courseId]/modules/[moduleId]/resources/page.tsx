@@ -31,7 +31,7 @@ export default async function ModuleResourcesPage({ params }: Props) {
   const t = await getTranslations();
 
   const { wsId: routeWsId, courseId, moduleId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId, 'update_user_groups');
   await requireCourseModulePageAccess({
     wsId: resolvedWsId,
     courseId,

@@ -40,7 +40,10 @@ export default async function CourseDetailsLayout({ children, params }: Props) {
 
   const t = await getTranslations();
   const { wsId: routeWsId, courseId, moduleId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(
+    routeWsId,
+    'update_user_groups'
+  );
   const commonHref = `/${routeWsId}/education/courses/${courseId}/modules/${moduleId}`;
 
   const scope = { wsId: resolvedWsId, courseId, moduleId };
