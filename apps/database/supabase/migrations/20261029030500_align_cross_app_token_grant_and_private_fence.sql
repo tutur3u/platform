@@ -31,7 +31,7 @@ BEGIN
       RAISE NOTICE 'Skipping private function defaults for non-member role %', pg_get_userbyid(creator.owner_oid);
       CONTINUE;
     END IF;
-    -- Same as above: the global default of 20261027151200 closes PUBLIC and anon.
+    -- Same limitation as above: this does not remove the global PUBLIC default.
     EXECUTE format(
       'ALTER DEFAULT PRIVILEGES FOR ROLE %I IN SCHEMA private REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC',
       pg_get_userbyid(creator.owner_oid)
