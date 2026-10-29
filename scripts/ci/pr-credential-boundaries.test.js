@@ -5,7 +5,7 @@ const {
   evaluateExpression,
   renderTemplate,
 } = require('./github-expression-test-helper');
-const workflows = readAllWorkflows();
+const workflows = readAllWorkflows(undefined, { raw: true });
 const unit = workflows['turbo-unit-tests.yaml'];
 const coverage = workflows['codecov.yaml'];
 const discord = workflows['discord-python-ci.yml'];
