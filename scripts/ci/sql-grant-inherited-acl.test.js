@@ -26,6 +26,10 @@ const ALLOWED_FILE =
 const ALLOWED = `${MIGRATIONS}${ALLOWED_FILE}`;
 const SIGNATURE = 'private.employee_creation_runtime_ready(uuid)';
 
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function definer(signature, body = 'create or replace function') {
   const [name, args] = /^(.+?)\((.*)\)$/.exec(signature).slice(1);
   const params = args
@@ -124,12 +128,12 @@ test('an allowlisted replace inherits an earlier revoke and prints its evidence'
   assert.match(
     line,
     new RegExp(
-      `${ALLOWED}:1 ${SIGNATURE.replace(/[()]/g, '\\$&')} inherited ACL`
+      `${escapeRegExp(ALLOWED)}:1 ${escapeRegExp(SIGNATURE)} inherited ACL`
     )
   );
   assert.match(
     line,
-    new RegExp(`public, anon, authenticated revoked at ${EARLY}:2`)
+    new RegExp(`public, anon, authenticated revoked at ${escapeRegExp(EARLY)}:2`)
   );
 });
 
@@ -296,7 +300,7 @@ function privileges(sql, verb) {
   return [
     ...code.matchAll(
       new RegExp(
-        `${verb}\\s+([\\w, ]+?)\\s+on table\\s+([\\s\\S]+?)\\s+(?:to|from)\\s+([\\w, ]+?);`,
+        `${escapeRegExp(verb)}\\s+([\\w, ]+?)\\s+on table\\s+([\\s\\S]+?)\\s+(?:to|from)\\s+([\\w, ]+?);`,
         'gi'
       )
     ),
