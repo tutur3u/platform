@@ -5,6 +5,7 @@ import {
   createDynamicAdminClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Tables } from '@tuturuuu/types';
+import { isWorkspaceTemplateBackgroundPath } from '@tuturuuu/utils/template-background-path';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -121,7 +122,12 @@ export async function GET(req: NextRequest, { params }: Params) {
       );
     }
 
-    if (!template.background_path) {
+    if (
+      !isWorkspaceTemplateBackgroundPath(
+        template.background_path,
+        normalizedWsId
+      )
+    ) {
       return NextResponse.json({ signedUrl: null });
     }
 

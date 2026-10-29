@@ -1,6 +1,7 @@
 'use server';
 
 import type { BoardTemplate } from '@tuturuuu/tasks-ui/tu-do/templates/types';
+import { isWorkspaceTemplateBackgroundPath } from '@tuturuuu/utils/template-background-path';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
 
 export async function listPublicBoardTemplates(): Promise<BoardTemplate[]> {
@@ -29,7 +30,12 @@ export async function listPublicBoardTemplates(): Promise<BoardTemplate[]> {
       };
 
       let backgroundUrl: string | null = null;
-      if (template.background_path) {
+      if (
+        isWorkspaceTemplateBackgroundPath(
+          template.background_path,
+          template.ws_id
+        )
+      ) {
         try {
           const { data: signedUrlData } = await supabase.storage
             .from('workspaces')

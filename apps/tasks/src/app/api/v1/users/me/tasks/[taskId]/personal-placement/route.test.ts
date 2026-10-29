@@ -822,7 +822,7 @@ describe('current-user task personal-placement route', () => {
     );
   });
 
-  it('places an assignment-visible external task without source workspace membership', async () => {
+  it('places a board-shared external task without source workspace membership', async () => {
     mocks.sourceTaskMaybeSingle.mockResolvedValue({
       data: sourceTaskRow(),
       error: null,
@@ -830,13 +830,15 @@ describe('current-user task personal-placement route', () => {
     mocks.verifyWorkspaceMembershipType
       .mockResolvedValueOnce({ ok: false, error: 'membership_missing' })
       .mockResolvedValueOnce({ ok: true });
-    mocks.sourceAssignmentMaybeSingle.mockResolvedValue({
-      data: { task_id: TASK_ID },
-      error: null,
-    });
-    mocks.userOverrideMaybeSingle.mockResolvedValue({
-      data: null,
-      error: null,
+    mocks.resolveTaskBoardAccess.mockResolvedValueOnce({
+      access: { mode: 'guest', permission: 'view' },
+      board: { id: SOURCE_BOARD_ID, ws_id: SOURCE_WS_ID },
+      boardId: SOURCE_BOARD_ID,
+      sbAdmin: mocks.adminClient,
+      supabase: {},
+      taskId: TASK_ID,
+      user: { id: 'user-1' },
+      wsId: SOURCE_WS_ID,
     });
     mocks.targetListMaybeSingle.mockResolvedValue({
       data: targetListRow(),
@@ -877,7 +879,14 @@ describe('current-user task personal-placement route', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(mocks.sourceAssignmentMaybeSingle).toHaveBeenCalled();
+    expect(mocks.resolveTaskBoardAccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requiredPermission: 'view',
+        taskId: TASK_ID,
+        wsId: SOURCE_WS_ID,
+      })
+    );
+    expect(mocks.sourceAssignmentMaybeSingle).not.toHaveBeenCalled();
     expect(mocks.adminRpc).toHaveBeenCalledWith(
       'upsert_personal_task_placement',
       expect.objectContaining({
@@ -888,6 +897,65 @@ describe('current-user task personal-placement route', () => {
       })
     );
   });
+
+  it.each([
+    ['an override row', { terminal_status: undefined }, 'view'],
+    ['a stale assignment', { terminal_status: 'done' }, 'edit'],
+  ])(
+    'rejects a non-member whose only link to the task is %s',
+    async (_label, extraBody, requiredPermission) => {
+      mocks.sourceTaskMaybeSingle.mockResolvedValue({
+        data: sourceTaskRow(),
+        error: null,
+      });
+      mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+        ok: false,
+        error: 'membership_missing',
+      });
+      mocks.sourceAssignmentMaybeSingle.mockResolvedValue({
+        data: { task_id: TASK_ID },
+        error: null,
+      });
+      mocks.userOverrideMaybeSingle.mockResolvedValue({
+        data: { task_id: TASK_ID },
+        error: null,
+      });
+      mocks.resolveTaskBoardAccess.mockResolvedValueOnce({
+        error: NextResponse.json(
+          { error: 'Workspace access denied' },
+          { status: 403 }
+        ),
+      });
+
+      const { PUT } = await import(
+        '@/app/api/v1/users/me/tasks/[taskId]/personal-placement/route'
+      );
+      const response = await (PUT as PlacementRouteHandler)(
+        new NextRequest(
+          `http://localhost/api/v1/users/me/tasks/${TASK_ID}/personal-placement`,
+          {
+            method: 'PUT',
+            body: JSON.stringify({
+              personal_board_id: PERSONAL_BOARD_ID,
+              personal_list_id: PERSONAL_LIST_ID,
+              ...extraBody,
+            }),
+          }
+        ),
+        {
+          user: { id: 'user-1' },
+          supabase: {},
+        },
+        { taskId: TASK_ID }
+      );
+
+      expect(response.status).toBe(404);
+      expect(mocks.resolveTaskBoardAccess).toHaveBeenCalledWith(
+        expect.objectContaining({ requiredPermission, taskId: TASK_ID })
+      );
+      expect(mocks.adminRpc).not.toHaveBeenCalled();
+    }
+  );
 
   it('rejects native same-board personal tasks on the placement route', async () => {
     mocks.sourceTaskMaybeSingle.mockResolvedValue({

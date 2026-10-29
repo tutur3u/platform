@@ -31,6 +31,28 @@ const TimeTrackingRequestSchema = z.object({
   imagePaths: z.array(z.string().min(1)).max(5).optional().default([]),
 });
 
+// A linked session must belong to the request owner in the request workspace;
+// approving or rejecting a request updates or deletes its linked session.
+async function isOwnedLinkedSession(
+  sbAdmin: Awaited<ReturnType<typeof createAdminClient>>,
+  {
+    sessionId,
+    userId,
+    wsId,
+  }: { sessionId: string; userId: string; wsId: string }
+): Promise<{ error: boolean; ok: boolean }> {
+  const { data, error } = await sbAdmin
+    .from('time_tracking_sessions')
+    .select('id')
+    .eq('id', sessionId)
+    .eq('ws_id', wsId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) return { error: true, ok: false };
+  return { error: false, ok: Boolean(data) };
+}
+
 function validateImagePaths(
   imagePaths: string[],
   requestId: string
@@ -118,6 +140,28 @@ export async function POST(
         { error: pathValidation.error },
         { status: 400 }
       );
+    }
+
+    if (parsed.linkedSessionId) {
+      const linkedSession = await isOwnedLinkedSession(sbAdmin, {
+        sessionId: parsed.linkedSessionId,
+        userId: user.id,
+        wsId: normalizedWsId,
+      });
+
+      if (linkedSession.error) {
+        return NextResponse.json(
+          { error: 'Failed to verify linked session' },
+          { status: 500 }
+        );
+      }
+
+      if (!linkedSession.ok) {
+        return NextResponse.json(
+          { error: 'Linked session not found' },
+          { status: 400 }
+        );
+      }
     }
 
     const storageClient = await createDynamicClient(request);
