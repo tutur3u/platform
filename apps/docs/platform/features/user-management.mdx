@@ -582,7 +582,7 @@ proven by
 
 ### Teacher deadline notices (schema only)
 
-Migration `20261029025300_topic_teacher_deadline_notices` prepares the GVCN
+Migration `20261029050200_topic_teacher_deadline_notices` prepares the GVCN
 deadline notices; no sender is wired yet, so nothing changes for users.
 
 - **Types.** `topic_due_soon` (one reminder before the 24-hour deadline,
@@ -599,7 +599,7 @@ deadline notices; no sender is wired yet, so nothing changes for users.
   receipt, and a new `send_due_at` (the session moved) re-arms both notices.
   Receipts are service-role only, belong to their announcement's workspace
   (composite foreign key on announcement and workspace) and cascade with it.
-- **Rollback.** `apps/database/rollbacks/20261029025300_topic_teacher_deadline_notices.rollback.sql`,
+- **Rollback.** `apps/database/rollbacks/20261029050200_topic_teacher_deadline_notices.rollback.sql`,
   proved by `apps/database/verification/topic-teacher-deadline-notices-rollback-roundtrip.sql`.
 
 Regression coverage: `apps/database/supabase/tests/topic-teacher-deadline-notices.sql`.
