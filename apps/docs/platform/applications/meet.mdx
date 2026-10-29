@@ -29,6 +29,22 @@ Afterward, review notes and proposed follow-ups before writing to Tasks or
 Calendar. A proposal is not an executed action, and a room URL is not broad
 workspace authority.
 
+## Transcription credit admission
+
+Live transcription bills Gemini usage to the host's personal workspace. Each
+upload window is admitted against AI credits before its transcript row is
+reserved, so a refusal never leaves a "[Missing audio segment]" gap. A failed
+credit check (RPC error or unreadable result) is retried at most three times
+with backoff, then returns a retryable 503 that stays within the client's
+five-minute recovery window. A real refusal (credits used up, daily limit, model
+not on the plan, or another plan restriction) is a non-retryable 402 with a
+client-safe reason code. Meet then stops capture, finalizes the session, and
+shows the specific reason in English and Vietnamese instead of the generic
+partial-transcript alert. Notes generation keeps its own admission check.
+Regression controls: `server/credit-admission.test.ts`,
+`server/chunks-credit-admission.test.ts` and `use-meeting-ai.test.ts` under
+`packages/meet-core/src/features/meeting-ai`.
+
 ## Public authentication callback
 
 Meet's native app renders the tokenless `/verify-token` and `/vi/verify-token`

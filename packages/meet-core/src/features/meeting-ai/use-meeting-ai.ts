@@ -23,6 +23,10 @@ import { MeetAudioCapture, type MeetAudioSource } from './audio';
 import { MeetAudioBatcher } from './audio-batches';
 import { createMeetCaptureRuntime } from './capture-runtime';
 import { recoverMeetChunk } from './chunk-recovery';
+import {
+  type MeetingAiCreditReason,
+  meetingAiCreditReason,
+} from './request-failure';
 
 export function useMeetingAi(
   wsId: string,
@@ -144,6 +148,8 @@ export function useMeetingAi(
   const [ownsSession, setOwnsSession] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [captureError, setCaptureError] = useState(false);
+  const [creditFailure, setCreditFailure] =
+    useState<MeetingAiCreditReason | null>(null);
   const [recovering, setRecovering] = useState(false);
   const [pendingChunks, setPendingChunks] = useState(0);
   useLayoutEffect(() => {
@@ -175,6 +181,7 @@ export function useMeetingAi(
     setOwnsSession(false);
     setCapturing(false);
     setCaptureError(false);
+    setCreditFailure(null);
     setRecovering(false);
     setPendingChunks(0);
     return () => {
@@ -213,6 +220,7 @@ export function useMeetingAi(
     });
     setBusy(true);
     setCaptureError(false);
+    setCreditFailure(null);
     runtime.errorRef.current = false;
     runtime.autoFinishRequested.current = false;
     const overflow = () => {
@@ -283,9 +291,15 @@ export function useMeetingAi(
               },
             }
           );
-        } catch {
-          if (current() && runtime.mounted.current) setCaptureError(true);
+        } catch (error) {
+          const credits = meetingAiCreditReason(error);
+          if (current() && runtime.mounted.current) {
+            setCaptureError(true);
+            if (credits) setCreditFailure(credits);
+          }
           if (current()) runtime.errorRef.current = true;
+          // Billing refuses every later window too; stop instead of queueing more.
+          if (credits) overflow();
         } finally {
           if (current()) {
             runtime.pending.current--;
@@ -429,6 +443,7 @@ export function useMeetingAi(
     busy,
     capturing,
     captureError,
+    creditFailure,
     recovering,
     pendingChunks,
     start,
