@@ -38,6 +38,9 @@ Future<_Started> _start({
   AppFlavor flavor = AppFlavor.production,
   Map<String, Object> saved = const {},
   String noticeVersion = TelemetryPreference.currentNoticeVersion,
+  // Widget tests cannot await MobileObservability's PackageInfo channel call,
+  // so they drive the same SDK controls directly.
+  bool direct = false,
 }) async {
   SharedPreferences.setMockInitialValues(saved);
   final controls = _RecordingControls();
@@ -45,8 +48,14 @@ Future<_Started> _start({
   final preference = TelemetryPreference(noticeVersion: noticeVersion);
   await preference.initialize(
     promptEligible: flavor == AppFlavor.production,
-    apply: ({required enabled}) =>
-        observability.initialize(flavor, collectionEnabled: enabled),
+    apply: ({required enabled}) async {
+      if (!direct) {
+        return observability.initialize(flavor, collectionEnabled: enabled);
+      }
+      await controls.setCrashCollection(enabled: enabled);
+      await controls.setAnalyticsCollection(enabled: enabled);
+      if (!enabled) await controls.deleteUnsentCrashReports();
+    },
   );
   return (preference, controls, observability);
 }
@@ -178,7 +187,7 @@ void main() {
 
   group('page', () {
     testWidgets('Allow persists and configures both SDKs', (tester) async {
-      final (preference, controls, _) = await _start();
+      final (preference, controls, _) = await _start(direct: true);
       await tester.pumpApp(TelemetryConsentPage(preference: preference));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Allow'));
@@ -198,7 +207,7 @@ void main() {
     testWidgets("Don't allow revokes, persists and is not shown again", (
       tester,
     ) async {
-      final (preference, controls, _) = await _start();
+      final (preference, controls, _) = await _start(direct: true);
       await tester.pumpApp(TelemetryConsentPage(preference: preference));
       await tester.pumpAndSettle();
       controls.calls.clear();
@@ -213,6 +222,7 @@ void main() {
 
       // A fresh launch reads the stored answer and does not prompt again.
       final (relaunched, _, _) = await _start(
+        direct: true,
         saved: {
           TelemetryPreference.choiceKey: false,
           TelemetryPreference.noticeVersionKey:
@@ -225,7 +235,7 @@ void main() {
     testWidgets('the back gesture declines and never grants consent', (
       tester,
     ) async {
-      final (preference, controls, _) = await _start();
+      final (preference, controls, _) = await _start(direct: true);
       await tester.pumpApp(TelemetryConsentPage(preference: preference));
       await tester.pumpAndSettle();
       controls.calls.clear();
@@ -241,7 +251,7 @@ void main() {
     testWidgets('names Firebase, offers equal choices and a privacy link', (
       tester,
     ) async {
-      final (preference, _, _) = await _start();
+      final (preference, _, _) = await _start(direct: true);
       final opened = <Uri>[];
       await tester.pumpApp(
         TelemetryConsentPage(
