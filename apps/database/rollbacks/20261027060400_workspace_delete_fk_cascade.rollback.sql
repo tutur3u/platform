@@ -24,8 +24,7 @@ alter table private.team_members
     foreign key (team_id) references public.workspace_teams(id) not valid;
 
 -- D introduces this index on the main baseline. If it predated D on a target,
--- preserve that pre-existing index instead of executing this DROP during rollback.
-drop index if exists public.workspace_documents_ws_id_idx;
+-- preserve it when running the separate concurrent index rollback after commit.
 
 notify pgrst, 'reload schema';
 commit;

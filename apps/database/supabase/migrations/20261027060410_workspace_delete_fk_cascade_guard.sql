@@ -1,3 +1,17 @@
+-- IF NOT EXISTS must not accept an invalid index from an interrupted build.
+do $$
+begin
+  if not exists (
+    select 1 from pg_catalog.pg_index
+    where indexrelid = pg_catalog.to_regclass('public.workspace_documents_ws_id_idx')
+      and indrelid = 'public.workspace_documents'::regclass and indisvalid
+  ) then
+    raise exception using errcode = '55000',
+      message = 'Required index workspace_documents_ws_id_idx is missing or invalid',
+      hint = 'Drop the invalid index concurrently outside a transaction, resolve duplicates if applicable, rebuild, and retry.';
+  end if;
+end;
+$$;
 -- Part D: repair approved workspace document/log/team-membership delete blockers.
 -- Catalog audit on the full main migration chain (through 20261026193000):
 -- 465 reachable tables; 51 candidate blocking FKs, including transitive parents.
@@ -114,11 +128,7 @@
 set local lock_timeout = '5s';
 set local statement_timeout = '120s';
 
--- Workspace deletion needs an index on the referencing document column.
--- Plain CREATE INDEX takes a SHARE lock and blocks writes while it runs. The
--- document table is small; keep this explicit, bounded non-concurrent operation.
-create index if not exists workspace_documents_ws_id_idx
-  on public.workspace_documents (ws_id);
+
 
 alter table public.realtime_log_aggregations
   drop constraint realtime_log_aggregations_ws_id_fkey,
