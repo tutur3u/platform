@@ -200,3 +200,5 @@ production, the admitted staging publication must record each of these:
 - p50/p95/p99 latency from `sin1`, measured with a bounded number of RPCs;
 - a hosted stop and resume;
 - the observed request and row-write counts.
+
+Each non-fair RPC reserves its full command count in GuardControl before subject execution. Reservations survive isolate replacement and are conservatively retained for interrupted or skipped work. Subject operation IDs continue to deduplicate mutations; an unknown transport outcome must not be blindly retried. The restart-before-flush Worker regression verifies that isolate churn cannot exceed the daily allowance.

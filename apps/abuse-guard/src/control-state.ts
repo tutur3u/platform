@@ -92,9 +92,7 @@ export function recordUsage(
       `[abuse-guard] ${family} daily operation budget at ${usage.used}/${budget}`
     );
   }
-  // `used` counts only admitted operations, so stopping at the budget admits
-  // exactly `budget` commands per family per day, plus the overshoot of
-  // buffered isolate usage (isolates × 200 commands + 5 s refresh lag).
+  // Usage is reserved durably before execution, including interrupted work.
   if (!usage.stopped && usage.used >= budget) {
     usage.stopped = true;
     state.changedAt = now;

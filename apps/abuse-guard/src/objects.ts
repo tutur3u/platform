@@ -7,6 +7,7 @@ import type {
 import {
   type ControlState,
   createControlState,
+  familyOpen,
   recordUsage,
   rollover,
   setOperatorStop,
@@ -150,6 +151,30 @@ export class GuardControl extends DurableObject {
         JSON.stringify(state)
       )
       .toArray();
+  }
+
+  /** Commit the entire allowance before any subject operation can run. */
+  async reserve(
+    family: AbuseGuardFamily,
+    ops: number,
+    budget: number
+  ): Promise<'open' | 'stopped'> {
+    return this.ctx.storage.transactionSync(() => {
+      const now = Date.now();
+      const { state, changed } = this.load(now);
+      if (
+        !Number.isSafeInteger(ops) ||
+        ops < 1 ||
+        !familyOpen(state, family) ||
+        (state.families[family]?.used ?? 0) + ops > budget
+      ) {
+        if (changed) this.save(state);
+        return 'stopped';
+      }
+      recordUsage(state, family, ops, budget, now);
+      this.save(state);
+      return 'open';
+    });
   }
 
   /** Records a family's admitted operations and returns the fence state. */

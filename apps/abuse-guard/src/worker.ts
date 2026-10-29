@@ -25,7 +25,7 @@ import {
   isGuardDenial,
   type ParsedGuardRpc,
 } from '@tuturuuu/utils/abuse-guard/protocol';
-import { admit, applyOperatorStop, controlStub, type FenceEnv } from './fence';
+import { admit, controlStub, type FenceEnv } from './fence';
 import type { GuardControl, GuardSubject } from './objects';
 
 export { GuardControl, GuardSubject } from './objects';
@@ -253,12 +253,10 @@ async function handleControl(request: Request, env: Env, pathname: string) {
     }
     if (request.method === 'POST' && pathname === '/control/stop') {
       const state = await stub.setStopped(true);
-      applyOperatorStop(true);
       return json({ status: 200, body: state });
     }
     if (request.method === 'POST' && pathname === '/control/resume') {
       const state = await stub.setStopped(false);
-      applyOperatorStop(false);
       return json({ status: 200, body: state });
     }
   } catch (error) {

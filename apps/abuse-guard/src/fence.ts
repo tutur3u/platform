@@ -1,12 +1,11 @@
 /**
  * Per-isolate view of the durable stop fence and per-family daily budgets in
- * `GuardControl`, with buffered usage reporting.
+ * `GuardControl`, with durable reservation before execution.
  */
 import {
   ABUSE_GUARD_FAMILIES,
   type AbuseGuardFamily,
 } from '@tuturuuu/utils/abuse-guard/protocol';
-import { familyOpen } from './control-state';
 import type { GuardControl } from './objects';
 
 export interface FenceEnv {
@@ -15,15 +14,12 @@ export interface FenceEnv {
   ABUSE_GUARD_DAILY_OP_BUDGET?: string;
   /** Optional explicit split, e.g. `offline=600000,replay=100000`. */
   ABUSE_GUARD_FAMILY_BUDGETS?: string;
-  /** Per-isolate fence cache; tests set 0 for immediate stops. */
+  /** Legacy setting; admission now always reserves durably. */
   ABUSE_GUARD_CONTROL_CACHE_MS?: string;
 }
 
 const DEFAULT_DAILY_BUDGET = 1_000_000;
 const MAX_BUDGET = 1_000_000_000;
-const MAX_CONTROL_CACHE_MS = 5000;
-/** Flush buffered usage to the control object after this many operations. */
-const USAGE_FLUSH_OPS = 200;
 
 /**
  * Default split of the total budget. Unauthenticated offline traffic gets the
@@ -38,8 +34,6 @@ export const FAMILY_BUDGET_SHARES: Record<AbuseGuardFamily, number> = {
 
 /** Thrown when the budget configuration is invalid; RPCs return 503. */
 export class GuardConfigError extends Error {}
-
-let configErrorLogged = false;
 
 function strictPositiveInteger(value: string) {
   if (!/^\d{1,10}$/u.test(value)) return null;
@@ -118,95 +112,18 @@ export function resolveFamilyBudgets(
   return budgets;
 }
 
-function controlCacheMs(env: FenceEnv) {
-  const parsed = Number(env.ABUSE_GUARD_CONTROL_CACHE_MS);
-  return env.ABUSE_GUARD_CONTROL_CACHE_MS?.trim() && Number.isFinite(parsed)
-    ? Math.min(MAX_CONTROL_CACHE_MS, Math.max(0, parsed))
-    : MAX_CONTROL_CACHE_MS;
-}
-
 export function controlStub(env: FenceEnv) {
   return env.GUARD_CONTROL.get(env.GUARD_CONTROL.idFromName('control:v1'));
 }
 
-type FamilyFence = {
-  stopped: boolean;
-  checkedAt: number;
-  pending: number;
-  refreshing: Promise<void> | null;
-};
-
-const fences = new Map<AbuseGuardFamily, FamilyFence>();
-
-function fenceOf(family: AbuseGuardFamily) {
-  let fence = fences.get(family);
-  if (!fence) {
-    fence = {
-      stopped: false,
-      checkedAt: Number.NEGATIVE_INFINITY,
-      pending: 0,
-      refreshing: null,
-    };
-    fences.set(family, fence);
-  }
-  return fence;
-}
-
-async function refreshFence(env: FenceEnv, family: AbuseGuardFamily) {
-  const fence = fenceOf(family);
-  const delta = fence.pending;
-  fence.pending = 0;
-  try {
-    const budgets = resolveFamilyBudgets(env);
-    if (!budgets) {
-      if (!configErrorLogged) {
-        configErrorLogged = true;
-        // Fixed text: the configuration values are never logged.
-        console.error(
-          '[abuse-guard] invalid budget configuration; every RPC returns 503'
-        );
-      }
-      throw new GuardConfigError('invalid abuse-guard budget configuration');
-    }
-    const state = await controlStub(env).report(family, delta, budgets[family]);
-    fence.stopped = !familyOpen(state, family);
-    fence.checkedAt = Date.now();
-  } catch (error) {
-    fence.pending += delta;
-    // Unknown fence state is treated as stopped until a refresh succeeds.
-    fence.checkedAt = Number.NEGATIVE_INFINITY;
-    throw error;
-  }
-}
-
-/**
- * Returns whether `ops` may run for `family`. Previously admitted usage is
- * flushed before deciding, and this request's operations are counted only
- * once admitted, so rejected requests are never billed.
- */
+/** Reserve before execution. Interrupted or skipped work remains charged. */
 export async function admit(
   env: FenceEnv,
   family: AbuseGuardFamily,
   ops: number
 ): Promise<'open' | 'stopped'> {
-  const fence = fenceOf(family);
-  const stale = Date.now() - fence.checkedAt >= controlCacheMs(env);
-  if (stale || fence.pending + ops >= USAGE_FLUSH_OPS) {
-    fence.refreshing ??= refreshFence(env, family).finally(() => {
-      fence.refreshing = null;
-    });
-    await fence.refreshing;
-  }
-  if (fence.stopped) return 'stopped';
-  fence.pending += ops;
-  return 'open';
-}
-
-/** Applies an operator stop or resume to this isolate immediately. */
-export function applyOperatorStop(stopped: boolean) {
-  for (const family of ABUSE_GUARD_FAMILIES) {
-    const fence = fenceOf(family);
-    fence.stopped = stopped;
-    fence.checkedAt = Date.now();
-  }
+  const budgets = resolveFamilyBudgets(env);
+  if (!budgets)
+    throw new GuardConfigError('invalid abuse-guard budget configuration');
+  return controlStub(env).reserve(family, ops, budgets[family]);
 }

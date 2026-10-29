@@ -44,6 +44,7 @@ afterAll(async () => {
 function createRuntime(
   options: {
     familyBudgets?: string;
+    cacheMs?: string;
     persist?: string;
     secrets?: string;
     operator?: string;
@@ -66,7 +67,7 @@ function createRuntime(
           ABUSE_GUARD_SECRETS:
             options.secrets ?? `${SECRET},${'old-secret-'.padEnd(48, 'o')}`,
           ABUSE_GUARD_OPERATOR_TOKEN: options.operator ?? OPERATOR,
-          ABUSE_GUARD_CONTROL_CACHE_MS: '0',
+          ABUSE_GUARD_CONTROL_CACHE_MS: options.cacheMs ?? '0',
           ABUSE_GUARD_DAILY_OP_BUDGET: '100000',
           ABUSE_GUARD_FAMILY_BUDGETS: options.familyBudgets ?? '',
         },
@@ -396,6 +397,33 @@ describe('budget configuration', () => {
 });
 
 describe('daily operation budget', () => {
+  it('retains reservations when an isolate restarts before a cache flush', async () => {
+    const persist = join(workDir, 'reservation-restart');
+    for (let index = 0; index < 3; index++) {
+      const instance = createRuntime({
+        familyBudgets: 'offline=3',
+        persist,
+        cacheMs: '5000',
+      });
+      await expect(
+        httpClient(instance, 'offline').get(`restart:${index}`)
+      ).resolves.toBeNull();
+      expect((await control(instance, 'state')).body).toMatchObject({
+        families: { offline: { used: index + 1 } },
+      });
+      await instance.dispose();
+    }
+    const replacement = createRuntime({
+      familyBudgets: 'offline=3',
+      persist,
+      cacheMs: '5000',
+    });
+    await expect(
+      httpClient(replacement, 'offline').get('restart:over')
+    ).rejects.toMatchObject({ code: 'guard_stopped' });
+    await replacement.dispose();
+  });
+
   it('persists a budget stop across restarts until an operator resumes', async () => {
     const persist = join(workDir, 'budget-state');
     const first = createRuntime({ familyBudgets: 'replay=5', persist });
