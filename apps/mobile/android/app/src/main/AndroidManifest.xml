@@ -16,14 +16,18 @@
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:networkSecurityConfig="@xml/network_security_config">
-        <meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />
-        <meta-data android:name="firebase_crashlytics_collection_enabled" android:value="false" />
         <meta-data
             android:name="firebase_crashlytics_collection_enabled"
             android:value="false" />
         <meta-data
             android:name="firebase_analytics_collection_enabled"
             android:value="false" />
+        <!-- Runs before FirebaseInitProvider (initOrder 100); see the class. -->
+        <provider
+            android:name=".telemetry.TelemetryConsentGateProvider"
+            android:authorities="${applicationId}.telemetryconsentgate"
+            android:exported="false"
+            android:initOrder="200" />
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
             android:exported="false" />

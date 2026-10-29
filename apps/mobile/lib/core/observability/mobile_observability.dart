@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/observability/operational_error_reporter.dart';
@@ -18,9 +19,26 @@ String mobileCrashSignature(Object error) {
   return 'PlatformException:$code';
 }
 
+/// Native collection switches, replaceable so consent paths are testable.
+class TelemetryCollectionControls {
+  const TelemetryCollectionControls();
+
+  Future<void> setCrashCollection({required bool enabled}) =>
+      FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(enabled);
+
+  Future<void> setAnalyticsCollection({required bool enabled}) =>
+      FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(enabled);
+
+  Future<void> deleteUnsentCrashReports() =>
+      FirebaseCrashlytics.instance.deleteUnsentReports();
+}
+
 /// Reports production failures without user content or room identifiers.
 class MobileObservability {
-  MobileObservability._();
+  MobileObservability._() : _controls = const TelemetryCollectionControls();
+
+  @visibleForTesting
+  MobileObservability.withControls(this._controls);
 
   static final instance = MobileObservability._();
 
@@ -29,7 +47,10 @@ class MobileObservability {
   OperationalErrorReporter? _operationalReporter;
   OperationalErrorReporter get operationalReporter => _operationalReporter ??=
       OperationalErrorReporter(sink: _recordOperational);
+  final TelemetryCollectionControls _controls;
   bool _enabled = false;
+
+  bool get enabled => _enabled;
 
   Future<void> initialize(
     AppFlavor flavor, {
@@ -38,9 +59,18 @@ class MobileObservability {
     final enabled = flavor == AppFlavor.production && collectionEnabled;
     _enabled = false;
     await Future.wait([
-      FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(enabled),
-      FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(enabled),
+      _controls.setCrashCollection(enabled: enabled),
+      _controls.setAnalyticsCollection(enabled: enabled),
     ]);
+    if (!enabled) {
+      // Native startup holds reports until Dart reads consent. Without
+      // consent, crashes recorded meanwhile must never upload later.
+      try {
+        await _controls.deleteUnsentCrashReports();
+      } on Object catch (error) {
+        log('Unsent crash report deletion failed: ${error.runtimeType}');
+      }
+    }
     _enabled = enabled;
     try {
       final package = await PackageInfo.fromPlatform();

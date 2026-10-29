@@ -441,6 +441,10 @@ and the pre-`runApp` join. Completion-barrier tests live in
   gate in `MobileObservability`. Read the persisted device choice before Firebase
   initialization; native defaults remain disabled. Do not infer device region
   from the app language or a network lookup.
+- Older builds persisted SDK collection-on, which beats manifest/Info.plist
+  defaults. Keep the native gates (Android `TelemetryConsentGateProvider`
+  above `FirebaseInitProvider`, iOS `willFinishLaunching`) and Dart's unsent-
+  report deletion when collection is off; recheck the gate keys on SDK upgrades.
 - See `apps/docs/platform/features/mobile-telemetry-privacy.mdx` for regional
   defaults, unknown-region handling and exceptions. Verify startup ordering,
   persistence, native defaults and Settings controls with the telemetry suites.

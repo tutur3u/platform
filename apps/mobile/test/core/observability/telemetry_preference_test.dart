@@ -108,12 +108,14 @@ void main() {
     );
   });
 
-  test('native defaults are disabled and bootstrap uses the read gate', () {
+  test('native defaults stay disabled until Dart reads consent', () {
     final plist = File('ios/Runner/Info.plist').readAsStringSync();
     for (final key in [
       'FIREBASE_ANALYTICS_COLLECTION_ENABLED',
       'FirebaseCrashlyticsCollectionEnabled',
     ]) {
+      // Exactly one entry each: duplicate plist keys are invalid.
+      expect(plist.split('<key>$key</key>'), hasLength(2));
       expect(plist, matches(RegExp('<key>$key</key>\\s*<false/>')));
     }
     final manifest = File(
@@ -123,8 +125,29 @@ void main() {
       'firebase_analytics_collection_enabled',
       'firebase_crashlytics_collection_enabled',
     ]) {
-      expect(manifest, contains('android:name="$key" android:value="false"'));
+      // Duplicate meta-data names break the manifest merge.
+      expect(manifest.split('android:name="$key"'), hasLength(2));
+      expect(
+        manifest,
+        matches(RegExp('android:name="$key"\\s+android:value="false"')),
+      );
     }
+    // Stale SDK overrides from older builds are cleared before Firebase starts.
+    final gate = RegExp(
+      r'android:name="\.telemetry\.TelemetryConsentGateProvider"'
+      r'[^>]*android:initOrder="(\d+)"',
+    ).firstMatch(manifest);
+    expect(gate, isNotNull);
+    // FirebaseInitProvider uses 100; higher orders are created first.
+    expect(int.parse(gate!.group(1)!), greaterThan(100));
+    final delegate = File('ios/Runner/AppDelegate.swift').readAsStringSync();
+    expect(
+      delegate.indexOf('TelemetryConsentGate.clearPersistedCrashCollection()'),
+      allOf(
+        greaterThan(-1),
+        lessThan(delegate.indexOf('FirebaseApp.configure()')),
+      ),
+    );
     final bootstrap = File('lib/bootstrap.dart').readAsStringSync();
     expect(
       bootstrap.indexOf('TelemetryPreference.instance.initialize('),
