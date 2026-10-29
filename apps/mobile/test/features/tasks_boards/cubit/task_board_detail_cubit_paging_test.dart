@@ -1,6 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/core/cache/cache_context.dart';
+import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
+import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/data/models/task_board_detail.dart';
 import 'package:mobile/data/models/task_board_list.dart';
 import 'package:mobile/data/models/task_board_task.dart';
@@ -42,6 +46,7 @@ void main() {
   };
 
   setUp(() async {
+    await CacheStore.instance.clearScope(workspaceId: 'ws-1');
     requests.clear();
     held.clear();
     repository = _MockTaskRepository();
@@ -77,6 +82,43 @@ void main() {
   });
 
   tearDown(() => cubit.close());
+
+  test(
+    'cached revalidation serializes overlapping loadMore requests',
+    () async {
+      final cachedPage = tasksByList['a']!.take(50).toList();
+      await CacheStore.instance.write(
+        key: CacheKey(
+          namespace: 'tasks.board_list_tasks',
+          userId: currentCacheUserId(),
+          workspaceId: 'ws-1',
+          locale: currentCacheLocaleTag(),
+          schemaVersion: 2,
+          params: const {
+            'boardId': 'board-1',
+            'listId': 'a',
+            'limit': '50',
+            'offset': '0',
+          },
+        ),
+        policy: CachePolicies.moduleData,
+        payload: cachedPage.map((task) => task.toJson()).toList(),
+      );
+      requests.clear();
+      final pending = Completer<List<TaskBoardTask>>();
+      held['a'] = pending;
+      final refresh = cubit.loadListTasks(listId: 'a');
+      final overlapping = cubit.loadListTasks(listId: 'a', loadMore: true);
+      final duringRefresh = requests.toList();
+      pending.complete(cachedPage);
+      await Future.wait([refresh, overlapping]);
+      expect(duringRefresh.map((request) => request.offset), [0]);
+      held.remove('a');
+      await cubit.loadListTasks(listId: 'a', loadMore: true);
+      expect(cubit.state.listTasksByListId['a'], hasLength(100));
+      expect(requests.last.offset, 50);
+    },
+  );
 
   test('a page arrival re-processes only its own list', () async {
     // Loading the board fetched the first page (50) of every list.

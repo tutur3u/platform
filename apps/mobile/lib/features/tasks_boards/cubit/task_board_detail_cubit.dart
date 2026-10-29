@@ -545,7 +545,6 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
       limit: pageSize,
       offset: offset,
     );
-    var hasCachedPage = false;
 
     if (!forceRefresh) {
       final cached = CacheStore.instance.peek<List<TaskBoardTask>>(
@@ -554,7 +553,6 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
       );
       final cachedPage = cached.data;
       if (cached.hasValue && cachedPage != null) {
-        hasCachedPage = true;
         final applied = _emitListTasksPage(
           requestToken: requestToken,
           wsId: wsId,
@@ -570,17 +568,15 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
       }
     }
 
-    if (!hasCachedPage) {
-      final nextLoading = {...state.loadingListIds, listId};
-      final nextLoadErrors = Map<String, String>.from(state.listLoadErrorById)
-        ..remove(listId);
-      emit(
-        state.copyWith(
-          loadingListIds: nextLoading,
-          listLoadErrorById: nextLoadErrors,
-        ),
-      );
-    }
+    final nextLoading = {...state.loadingListIds, listId};
+    final nextLoadErrors = Map<String, String>.from(state.listLoadErrorById)
+      ..remove(listId);
+    emit(
+      state.copyWith(
+        loadingListIds: nextLoading,
+        listLoadErrorById: nextLoadErrors,
+      ),
+    );
 
     try {
       final page = await _taskRepository.getBoardTasksForList(
