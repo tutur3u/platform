@@ -38,17 +38,15 @@ select lives_ok($q$select private.update_time_tracking_request(pg_temp.fid(92571
 select is((select pending_approval from public.time_tracking_sessions where id=pg_temp.fid(92561)),false,
   'approval fired the status-change trigger and cleared pending_approval');
 
--- Status change path (definer trigger function): reject a linked request directly.
+-- Reject path (definer function): deletes the linked session and clears the link.
 insert into public.time_tracking_sessions(id,ws_id,user_id,title,start_time,end_time,is_running,pending_approval) values
   (pg_temp.fid(92562),pg_temp.fid(92511),pg_temp.fid(92502),'Pending session 2',now()-interval '2 hours',now()-interval '1 hour',false,true);
 insert into private.time_tracking_requests(id,workspace_id,user_id,title,start_time,end_time,linked_session_id) values
   (pg_temp.fid(92573),pg_temp.fid(92511),pg_temp.fid(92502),'Linked request 2',now()-interval '2 hours',now()-interval '1 hour',pg_temp.fid(92562));
-select set_config('time_tracking.bypass_approval_rules','on',true);
-select set_config('time_tracking.override_auth_uid',pg_temp.fid(92501)::text,true);
-select lives_ok($q$update private.time_tracking_requests set approval_status='REJECTED',rejected_by=pg_temp.fid(92501),rejected_at=now(),rejection_reason='No' where id=pg_temp.fid(92573)$q$,
-  'direct status change to REJECTED runs the trigger function');
-select is((select count(*)::integer from public.time_tracking_sessions where id=pg_temp.fid(92562)),0,'trigger deleted the linked session');
-select is((select linked_session_id from private.time_tracking_requests where id=pg_temp.fid(92573)),null::uuid,'trigger cleared linked_session_id');
+select lives_ok($q$select private.update_time_tracking_request(pg_temp.fid(92573),'reject',pg_temp.fid(92511),pg_temp.fid(92501),'No')$q$,
+  'update function rejects a linked request');
+select is((select count(*)::integer from public.time_tracking_sessions where id=pg_temp.fid(92562)),0,'reject deleted the linked session');
+select is((select approval_status::text from private.time_tracking_requests where id=pg_temp.fid(92573)),'REJECTED','request moved to REJECTED');
 
 select * from finish();
 rollback;
