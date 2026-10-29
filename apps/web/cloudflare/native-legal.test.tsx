@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { getLegalDocument } from '@tuturuuu/legal';
+import { getLegalDocument, liveLegalFooter } from '@tuturuuu/legal';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { LegalMarkdown } from '../src/components/legal/legal-markdown';
@@ -159,7 +159,7 @@ describe('native legal slice dispatch and rollback', () => {
 describe('framework adapter renders canonical legal content', () => {
   for (const locale of ['en', 'vi'] as const) {
     for (const { kind } of pages) {
-      it(`${locale}/${kind}: retains every canonical section, summary and review notice`, () => {
+      it(`${locale}/${kind}: retains every canonical section and summary with the live footer`, () => {
         const document = getLegalDocument(kind, locale);
         const page = new DOMParser().parseFromString(
           renderToStaticMarkup(<LegalPage kind={kind} locale={locale} />),
@@ -178,7 +178,7 @@ describe('framework adapter renders canonical legal content', () => {
           document.summaryRows.length
         );
         expect(page.querySelector('footer')?.textContent).toContain(
-          document.footer
+          liveLegalFooter(document.footer)
         );
         expect(
           page.querySelector('section[aria-labelledby="summary"] p')

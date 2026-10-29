@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { createSatelliteApiRewrites } from '../src/lib/satellite-api-rewrites';
 import { createSourceGraph } from './inventory-source';
-import { nativeLegalPages } from './native-legal';
+import { nativeLegalChangesPages, nativeLegalPages } from './native-legal';
 import { nativeSecurityPages } from './native-security';
 
 export function filesUnder(root: string): string[] {
@@ -69,11 +69,15 @@ export function generateInventory(repo: string) {
                 : name;
       pattern = `${pattern === '/' ? '' : pattern}/${endpoint}`;
     }
-    const nativeSource = nativeLegalPages.some((page) => page.source === source)
-      ? 'apps/web/cloudflare/start/legal-page.tsx'
-      : nativeSecurityPages.some((page) => page.source === source)
-        ? 'apps/web/cloudflare/start/security-page.tsx'
-        : null;
+    const nativeSource = nativeLegalChangesPages.some(
+      (page) => page.source === source
+    )
+      ? 'apps/web/src/components/legal/legal-changes.tsx'
+      : nativeLegalPages.some((page) => page.source === source)
+        ? 'apps/web/cloudflare/start/legal-page.tsx'
+        : nativeSecurityPages.some((page) => page.source === source)
+          ? 'apps/web/cloudflare/start/security-page.tsx'
+          : null;
     const serviceWorker = local === 'serwist/[path]/route.ts';
     return [
       {

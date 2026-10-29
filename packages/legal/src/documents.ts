@@ -1,5 +1,4 @@
-import { reviseLegalDocument } from './commercial-revisions';
-import { getCommunityPolicy } from './community-policies';
+import { getEffectiveCommunityPolicy } from './effective-community';
 import type { LegalDocument, LegalDocumentKind, LegalLocale } from './types';
 
 const EFFECTIVE_DATE = '2026-08-15';
@@ -650,11 +649,11 @@ Với mỗi nhà cung cấp, Tuturuuu duy trì mục đích, loại dữ liệu,
 }
 
 const englishDocuments = {
-  dpa: reviseLegalDocument(dpaEn),
-  privacy: reviseLegalDocument(privacyEn),
-  sla: reviseLegalDocument(slaEn),
-  subprocessors: reviseLegalDocument(subprocessorsEn),
-  terms: reviseLegalDocument(termsEn),
+  dpa: dpaEn,
+  privacy: privacyEn,
+  sla: slaEn,
+  subprocessors: subprocessorsEn,
+  terms: termsEn,
 } as const satisfies Record<LegalDocumentKind, LegalDocument>;
 
 export const LEGAL_DOCUMENTS: Record<
@@ -663,11 +662,11 @@ export const LEGAL_DOCUMENTS: Record<
 > = {
   en: englishDocuments,
   vi: {
-    dpa: reviseLegalDocument(translateDocument(dpaEn)),
-    privacy: reviseLegalDocument(translateDocument(privacyEn)),
-    sla: reviseLegalDocument(translateDocument(slaEn)),
-    subprocessors: reviseLegalDocument(translateDocument(subprocessorsEn)),
-    terms: reviseLegalDocument(translateDocument(termsEn)),
+    dpa: translateDocument(dpaEn),
+    privacy: translateDocument(privacyEn),
+    sla: translateDocument(slaEn),
+    subprocessors: translateDocument(subprocessorsEn),
+    terms: translateDocument(termsEn),
   },
 };
 
@@ -678,6 +677,6 @@ export function getLegalDocument(
   locale: string
 ): LegalDocument {
   if (kind === 'acceptable-use' || kind === 'community-guidelines')
-    return getCommunityPolicy(kind, locale);
+    return getEffectiveCommunityPolicy(kind, locale);
   return LEGAL_DOCUMENTS[locale === 'vi' ? 'vi' : 'en'][kind];
 }

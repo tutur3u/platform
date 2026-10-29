@@ -10297,6 +10297,10 @@
       "description": "Kết nối công việc, lịch, tài liệu và công cụ kinh doanh trong một không gian làm việc mã nguồn mở. Lập kế hoạch và cộng tác với trợ lý AI Mira.",
       "title": "Không gian làm việc tất cả trong một cho đội nhóm"
     },
+    "legal_changes": {
+      "description": "Dự kiến — chưa có hiệu lực",
+      "title": "Thay đổi sắp tới"
+    },
     "legal_dpa": {
       "description": "Đọc phụ lục xử lý dữ liệu Tuturuuu và các trách nhiệm áp dụng khi xử lý dữ liệu cá nhân.",
       "title": "Phụ lục xử lý dữ liệu"
