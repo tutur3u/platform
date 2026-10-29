@@ -46,7 +46,13 @@ class TelemetryPreference extends ChangeNotifier {
   bool enabled = false;
   bool ready = false;
   bool busy = false;
+  bool hasExplicitChoice = false;
+  bool _promptEligible = false;
   late Future<void> Function({required bool enabled}) _apply;
+
+  /// A one-time first-run prompt is due: production only, and only while the
+  /// device has never stored an explicit choice (Settings included).
+  bool get consentPending => ready && _promptEligible && !hasExplicitChoice;
 
   static bool defaultEnabled(String? country) =>
       country != null &&
@@ -57,8 +63,11 @@ class TelemetryPreference extends ChangeNotifier {
     required Future<void> Function({required bool enabled}) apply,
     String? deviceCountryCode,
     Future<bool?> Function()? read,
+    bool promptEligible = false,
   }) async {
     final saved = await (read?.call() ?? _read());
+    hasExplicitChoice = saved != null;
+    _promptEligible = promptEligible;
     enabled = saved ?? defaultEnabled(countryCode ?? deviceCountryCode);
     _apply = apply;
     await apply(enabled: enabled);
@@ -86,6 +95,7 @@ class TelemetryPreference extends ChangeNotifier {
       }
       if (value) await _apply(enabled: true);
       enabled = value;
+      hasExplicitChoice = true;
     } finally {
       busy = false;
       notifyListeners();

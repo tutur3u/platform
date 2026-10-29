@@ -17,6 +17,21 @@ fails closed (off). Region comes only from the operating system's device locale,
 not the selected app language, an IP lookup or a network request. An explicit
 saved choice always takes precedence, including after a device region change.
 
+## First-run prompt
+
+Production builds show a one-time, full-screen prompt (route
+`/telemetry-consent`, above the shell) once a signed-in user has a workspace and
+the device has no explicit stored choice. **Allow** and **Don't allow** have
+equal weight, nothing is preselected, and **Learn more** opens the public
+privacy notice. Until the user answers, collection follows the regional default,
+so nothing is collected before an explicit Allow in the EU/EEA, Switzerland, the
+United Kingdom or an unknown region. An answer persists exactly like the
+Settings switch (declining revokes before persisting), is never asked again, and
+the Settings switch stays the place to change it. Choosing in Settings first also
+ends the prompt. Settings routes are never interrupted, and a deep link is
+restored after the answer. Development and staging builds never show the prompt
+and never collect. The prompt copy is placeholder wording pending legal review.
+
 Native collection defaults are disabled. Startup reads the preference before
 Firebase initialization and explicitly configures both collection SDKs. Turning
 the toggle off revokes collection before waiting for preference persistence.
@@ -38,7 +53,9 @@ Analytics also persists its collection flag, and no native gate clears it. On
 the first launch after upgrading, Analytics may record automatic events before
 Dart disables collection.
 
-Regression coverage: `telemetry_preference_test.dart` covers regional defaults,
+Regression coverage: `telemetry_consent_page_test.dart` covers prompt
+eligibility, no collection before Allow, redirect and both answers;
+`telemetry_preference_test.dart` covers regional defaults,
 persistence and startup ordering; `telemetry_settings_tile_test.dart` covers
 label and switch activation; `mobile_observability_test.dart` covers deletion of
 unsent reports at startup and on opt-out. The preference suite checks native
