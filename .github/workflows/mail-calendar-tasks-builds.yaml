@@ -504,12 +504,12 @@ jobs:
           test "$(bun --version)" = 1.4.4
           test "$(node --version)" = v24.22.0
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: calendar-worker-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/calendar-restore
       - name: Download same-run cf comparison archive
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: calendar-cf-output-${{ env.SOURCE_SHA }}
           path: ${{ runner.temp }}/calendar-cf-output-download
