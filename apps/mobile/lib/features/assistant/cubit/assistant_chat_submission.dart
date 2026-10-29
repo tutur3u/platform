@@ -391,55 +391,31 @@ extension _AssistantChatSubmission on AssistantChatCubit {
         ),
       );
 
+      AssistantFirstMessageCreation? firstCreation;
       if (chat == null || state.storedChatId == null) {
-        final settingsPlan = _prepareCreationSettings?.call(
-          wsId,
-          modelId,
-          current,
-        );
-        if (_prepareCreationSettings != null && settingsPlan == null) {
-          _unknownSubmission(clientRequestId, denied: true);
-          _emitIfOpen(state.copyWith(status: AssistantChatStatus.idle));
-          return;
-        }
-        _emitIfOpen(state.copyWith(creationOutcomeUnknown: true));
-        final created = await _repository.createChat(
-          id: chatId,
+        final prepared = await _prepareChatSubmission(
+          chatId: chatId,
           wsId: wsId,
           modelId: modelId,
           message: combined,
           timezone: timezone,
-          initialSettings: settingsPlan?.take(),
-          isCurrent: settingsPlan?.isCurrent,
+          hasAttachments: attachments.isNotEmpty,
+          current: current,
+          onPersisting: () =>
+              phase = OperationalPhase.assistantPreferencePersist,
         );
         if (!current()) {
           _staleSubmission(clientRequestId);
           return;
         }
-        chat = created;
-        chatId = created.id;
-        if (created is! AssistantCreatedChat) {
-          phase = OperationalPhase.assistantPreferencePersist;
-          await _preferences.saveChatId(wsId, chatId, shouldWrite: current);
+        if (prepared == null) return;
+        switch (prepared) {
+          case _SeparateCreatedChat(:final record):
+            chat = record;
+            chatId = record.id;
+          case _FirstMessagePreparedChat(:final creation):
+            firstCreation = creation;
         }
-        if (!current()) {
-          _staleSubmission(clientRequestId);
-          return;
-        }
-        _emitIfOpen(
-          state.copyWith(
-            chat: created,
-            storedChatId: chatId,
-            creationOutcomeUnknown: false,
-          ),
-        );
-        if (!current()) {
-          _staleSubmission(clientRequestId);
-          return;
-        }
-        // History is secondary to the first response. Refresh it without
-        // delaying the stream after a conversation is created.
-        unawaited(refreshHistory());
       }
 
       final shouldAppendUserMessage =
@@ -535,81 +511,50 @@ extension _AssistantChatSubmission on AssistantChatCubit {
       phase = OperationalPhase.assistantReply;
       _streamAdmission = admission;
       _streamSubscription = _AssistantReplySubscription(
-        _repository
-            .streamChat(
-              chatId: chatId,
-              wsId: wsId,
-              workspaceContextId: workspaceContextId,
-              modelId: modelId,
-              messages: nextMessages,
-              thinkingMode: thinkingMode,
-              creditSource: creditSource,
-              timezone: timezone,
-              attachments: attachments,
-              creditWsId: creditWsId,
-              admission: admission,
-            )
-            .listen(
-              (event) {
-                if (event is AssistantJsonStreamEvent &&
-                    event.payload['type'] == 'native-dispatch-admitted') {
-                  nativePending?.admitted = true;
-                }
-                if (!current()) {
-                  _staleSubmission(clientRequestId);
-                  return;
-                }
-                if (current()) {
-                  // Protocol errors lack a trustworthy persistence/status code.
-                  // Report the reply phase without interpreting server text.
-                  if (!reportedFailure &&
-                      event is AssistantJsonStreamEvent &&
-                      event.payload['type'] == 'error') {
-                    _unknownSubmission(clientRequestId);
-                    reportedFailure = true;
-                    _operationalReporter.reportStreamFailure();
-                  }
-                  try {
-                    _handleStreamEvent(
-                      event,
-                      isCurrent: current,
-                      handledToolEffects: handledToolEffects,
-                    );
-                  } on Object catch (error) {
-                    _unknownSubmission(clientRequestId);
-                    reportFailure(error);
-                    _emitIfOpen(
-                      state.copyWith(
-                        status: AssistantChatStatus.error,
-                        error: error.toString(),
-                        diagnostics: SafeErrorDiagnostics.capture(
-                          error,
-                          DiagnosticStage.assistantReply,
-                        ),
-                      ),
-                    );
-                  }
-                }
-              },
-              onError: (Object error, StackTrace stackTrace) {
-                _releaseDefinitelyUnsentNativePending(
-                  nativePending,
-                  admission,
-                  error,
+        _replyForSubmission(
+          firstCreation: firstCreation,
+          chatId: chatId,
+          wsId: wsId,
+          workspaceContextId: workspaceContextId,
+          modelId: modelId,
+          messages: nextMessages,
+          thinkingMode: thinkingMode,
+          creditSource: creditSource,
+          timezone: timezone,
+          attachments: attachments,
+          creditWsId: creditWsId,
+          admission: admission,
+        ).listen(
+          (event) {
+            if (event is AssistantJsonStreamEvent &&
+                event.payload['type'] == 'native-dispatch-admitted') {
+              nativePending?.admitted = true;
+            }
+            if (!current()) {
+              _staleSubmission(clientRequestId);
+              return;
+            }
+            if (current()) {
+              // Protocol errors lack a trustworthy persistence/status code.
+              // Report the reply phase without interpreting server text.
+              if (!reportedFailure &&
+                  event is AssistantJsonStreamEvent &&
+                  event.payload['type'] == 'error') {
+                _unknownSubmission(clientRequestId);
+                reportedFailure = true;
+                _operationalReporter.reportStreamFailure();
+              }
+              try {
+                _handleStreamEvent(
+                  event,
+                  isCurrent: current,
+                  handledToolEffects: handledToolEffects,
                 );
-                _forgetUnsentNativePending(nativePending);
-                if (!current()) {
-                  _staleSubmission(clientRequestId);
-                  return;
-                }
+              } on Object catch (error) {
                 _unknownSubmission(clientRequestId);
                 reportFailure(error);
                 _emitIfOpen(
                   state.copyWith(
-                    messages: _withoutEmptyAssistantReply(
-                      state.messages,
-                      _activeAssistantMessageId,
-                    ),
                     status: AssistantChatStatus.error,
                     error: error.toString(),
                     diagnostics: SafeErrorDiagnostics.capture(
@@ -618,25 +563,55 @@ extension _AssistantChatSubmission on AssistantChatCubit {
                     ),
                   ),
                 );
-              },
-              onDone: () async {
-                _forgetUnsentNativePending(nativePending);
-                if (!current()) {
-                  _staleSubmission(clientRequestId);
-                  return;
-                }
-                _unknownSubmission(clientRequestId);
-                _streamSubscription = null;
-                _streamAdmission = null;
-                _finalizeToolParts();
-                if (isClosed || state.status == AssistantChatStatus.error) {
-                  return;
-                }
-                _emitIfOpen(state.copyWith(status: AssistantChatStatus.idle));
-                _persistAssistantChatCache();
-              },
-              cancelOnError: false,
-            ),
+              }
+            }
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            _releaseDefinitelyUnsentNativePending(
+              nativePending,
+              admission,
+              error,
+            );
+            _forgetUnsentNativePending(nativePending);
+            if (!current()) {
+              _staleSubmission(clientRequestId);
+              return;
+            }
+            _unknownSubmission(clientRequestId);
+            reportFailure(error);
+            _emitIfOpen(
+              state.copyWith(
+                messages: _withoutEmptyAssistantReply(
+                  state.messages,
+                  _activeAssistantMessageId,
+                ),
+                status: AssistantChatStatus.error,
+                error: error.toString(),
+                diagnostics: SafeErrorDiagnostics.capture(
+                  error,
+                  DiagnosticStage.assistantReply,
+                ),
+              ),
+            );
+          },
+          onDone: () async {
+            _forgetUnsentNativePending(nativePending);
+            if (!current()) {
+              _staleSubmission(clientRequestId);
+              return;
+            }
+            _unknownSubmission(clientRequestId);
+            _streamSubscription = null;
+            _streamAdmission = null;
+            _finalizeToolParts();
+            if (isClosed || state.status == AssistantChatStatus.error) {
+              return;
+            }
+            _emitIfOpen(state.copyWith(status: AssistantChatStatus.idle));
+            _persistAssistantChatCache();
+          },
+          cancelOnError: false,
+        ),
       );
     } on Object catch (error) {
       if (!current()) {

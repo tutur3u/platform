@@ -3,6 +3,7 @@ import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/open_asks.dart';
 import 'package:mobile/features/mastermind/presentation/option_labels.dart';
+import 'package:mobile/features/mastermind/presentation/security_rows.dart';
 import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
 
@@ -95,7 +96,7 @@ final class MastermindInboxModel {
       ],
       security: segment == InboxSegment.resolved
           ? const []
-          : _onePerProduct(snapshot.now.needsYou),
+          : singleSecurityRow(snapshot.now.needsYou),
       total: open.length + resolved.length,
       products: {
         for (final item in [...open, ...resolved])
@@ -107,7 +108,7 @@ final class MastermindInboxModel {
   final InboxSegment segment;
   final List<InboxGroup> groups;
 
-  /// At most one per product, never counted, filtered or searched.
+  /// At most one row for the whole list, never counted, filtered or searched.
   final List<SecurityItem> security;
 
   /// Asks in this segment before any filter.
@@ -182,14 +183,6 @@ bool _matches(NeedsYou item, String needle) =>
     selectableOptions(
       item,
     ).any((option) => option.$2.toLowerCase().contains(needle));
-
-List<SecurityItem> _onePerProduct(List<NeedsYouItem> items) {
-  final seen = <Product?>{};
-  return [
-    for (final item in items)
-      if (item is SecurityItem && seen.add(item.product)) item,
-  ];
-}
 
 /// The options a person can actually pick, with their index in the item's
 /// `options[]` (the wire `option_index`). The "Reply on Mac" placeholder is

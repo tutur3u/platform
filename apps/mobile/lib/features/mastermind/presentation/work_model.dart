@@ -1,5 +1,6 @@
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/security_rows.dart';
 
 /// Lane states in the order Work lists them: what needs attention first.
 const List<LaneState> laneStatePriority = [
@@ -146,7 +147,7 @@ final class MastermindWorkModel {
               case final lanes when lanes.isNotEmpty)
             LaneGroup(state: group, lanes: lanes),
       ],
-      security: _onePerProduct(snapshot.lanes),
+      security: singleSecurityRow(snapshot.lanes),
       total: normal.length,
       stateCounts: counts,
       products: {
@@ -162,7 +163,7 @@ final class MastermindWorkModel {
 
   final List<LaneGroup> groups;
 
-  /// At most one per product, never counted, filtered or searched.
+  /// At most one row for the whole list, never counted, filtered or searched.
   final List<SecurityItem> security;
 
   /// Normal lanes before any filter.
@@ -212,14 +213,6 @@ bool _matches(Lane lane, String needle) =>
     lane.role.toLowerCase().contains(needle) ||
     lane.providerModel.toLowerCase().contains(needle) ||
     (lane.product?.wireName.toLowerCase().contains(needle) ?? false);
-
-List<SecurityItem> _onePerProduct(List<LaneItem> items) {
-  final seen = <Product?>{};
-  return [
-    for (final item in items)
-      if (item is SecurityItem && seen.add(item.product)) item,
-  ];
-}
 
 /// The lane with [id], or null if it is no longer in the snapshot. Security
 /// rows have no id and are never found.

@@ -13221,9 +13221,6 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
-  String get mastermindSecurityFix => 'Bản vá bảo mật';
-
-  @override
   String get mastermindSecurityGroup => 'Bảo mật';
 
   @override
@@ -14317,4 +14314,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindCatchupPushBody => 'Bản tin của bạn đã sẵn sàng';
+
+  @override
+  String get mastermindSecurityFix => 'Bản vá bảo mật';
 }

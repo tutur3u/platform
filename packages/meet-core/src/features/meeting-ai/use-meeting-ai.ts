@@ -5,6 +5,7 @@ import {
   MEET_AUDIO_PENDING_MAX_BYTES,
   MEET_AUDIO_SESSION_MAX_BATCHES,
 } from '@tuturuuu/ai/meetings/audio-contract';
+import type { TranscriptionHints } from '@tuturuuu/ai/meetings/transcription-hints';
 import {
   getMeetAiState,
   updateMeetAiSession,
@@ -23,6 +24,10 @@ import { MeetAudioCapture, type MeetAudioSource } from './audio';
 import { MeetAudioBatcher } from './audio-batches';
 import { createMeetCaptureRuntime } from './capture-runtime';
 import { recoverMeetChunk } from './chunk-recovery';
+import {
+  type MeetingAiCreditReason,
+  meetingAiCreditReason,
+} from './request-failure';
 
 export function useMeetingAi(
   wsId: string,
@@ -30,9 +35,20 @@ export function useMeetingAi(
   streams: MeetAudioSource[] = [],
   live = true,
   enabled = true,
-  expectedActorId?: string
+  expectedActorId?: string,
+  settings: { language?: TranscriptionHints['language']; title?: string } = {}
 ) {
   const actor = useWorkspaceActor();
+  // TODO(M1-C/F): expose the locale suggestion in the transcription language picker.
+  const suggestedLanguage =
+    typeof navigator !== 'undefined' && navigator.language.startsWith('vi')
+      ? 'vi'
+      : 'en';
+  const hints = useRef(settings);
+  useLayoutEffect(() => {
+    hints.current = settings;
+  });
+
   const runtime = useMemo(
     () =>
       createMeetCaptureRuntime({
@@ -106,7 +122,7 @@ export function useMeetingAi(
     retry: false,
   });
   const { mutateAsync: startSession } = useMutation({
-    mutationFn: (epoch: number) => {
+    mutationFn: (epoch: number): Promise<{ sessionId: string }> => {
       assertScope(epoch);
       return updateMeetAiSession(wsId, meetingId, { action: 'start' });
     },
@@ -134,7 +150,7 @@ export function useMeetingAi(
       data: FormData;
       signal: AbortSignal;
       epoch: number;
-    }) => {
+    }): Promise<{ status: string }> => {
       assertScope(epoch);
       return uploadMeetAiChunk(wsId, meetingId, data, undefined, signal);
     },
@@ -144,6 +160,8 @@ export function useMeetingAi(
   const [ownsSession, setOwnsSession] = useState(false);
   const [capturing, setCapturing] = useState(false);
   const [captureError, setCaptureError] = useState(false);
+  const [creditFailure, setCreditFailure] =
+    useState<MeetingAiCreditReason | null>(null);
   const [recovering, setRecovering] = useState(false);
   const [pendingChunks, setPendingChunks] = useState(0);
   useLayoutEffect(() => {
@@ -175,6 +193,7 @@ export function useMeetingAi(
     setOwnsSession(false);
     setCapturing(false);
     setCaptureError(false);
+    setCreditFailure(null);
     setRecovering(false);
     setPendingChunks(0);
     return () => {
@@ -213,6 +232,7 @@ export function useMeetingAi(
     });
     setBusy(true);
     setCaptureError(false);
+    setCreditFailure(null);
     runtime.errorRef.current = false;
     runtime.autoFinishRequested.current = false;
     const overflow = () => {
@@ -245,6 +265,11 @@ export function useMeetingAi(
         return;
       }
       const data = new FormData();
+      data.set('language', hints.current.language ?? 'auto');
+      data.set('context', (hints.current.title ?? '').trim().slice(0, 400));
+      // TODO(M1-B #7264): populate from workspace_meet_settings when available.
+      data.set('glossary', '');
+
       clips.forEach((clip, index) => {
         data.set(`audio_${index}`, clip.audio, `source-${index}.wav`);
       });
@@ -283,9 +308,15 @@ export function useMeetingAi(
               },
             }
           );
-        } catch {
-          if (current() && runtime.mounted.current) setCaptureError(true);
+        } catch (error) {
+          const credits = meetingAiCreditReason(error);
+          if (current() && runtime.mounted.current) {
+            setCaptureError(true);
+            if (credits) setCreditFailure(credits);
+          }
           if (current()) runtime.errorRef.current = true;
+          // Billing refuses every later window too; stop instead of queueing more.
+          if (credits) overflow();
         } finally {
           if (current()) {
             runtime.pending.current--;
@@ -423,12 +454,14 @@ export function useMeetingAi(
     runtime.finishRef.current = finish;
   }, [runtime, finish]);
   return {
+    suggestedLanguage,
     meetingId,
     wsId,
     ...query,
     busy,
     capturing,
     captureError,
+    creditFailure,
     recovering,
     pendingChunks,
     start,

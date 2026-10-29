@@ -89,7 +89,7 @@ const resultSet = (overrides = {}, selected = {}) =>
         {
           result:
             overrides[id] ||
-            (['scope', 'branch-name', 'admitted'].includes(id)
+            (['scope', 'branch-name', 'staging-hosts', 'admitted'].includes(id)
               ? 'success'
               : 'skipped'),
           outputs:
@@ -294,4 +294,20 @@ test('Security Checks bytes match the pinned PR base 30a396356e534edafac76ef917d
     createHash('sha256').update(bytes).digest('hex'),
     'e40cc4481e16dba35251cbe90be820e8368639a230cdcb521e654fa8a34e6234'
   );
+});
+
+test('the staging host guard runs on every full PR run and fails the aggregate', () => {
+  const job = workflow.jobs['staging-hosts'];
+  assert.equal(job.if, workflow.jobs['branch-name'].if);
+  assert.deepEqual(job.permissions, { contents: 'read' });
+  assert.match(job.steps[0].uses, /^actions\/checkout@[a-f0-9]{40}$/u);
+  assert.equal(job.steps[0].with['persist-credentials'], false);
+  assert.equal(job.steps.at(-1).run, 'node scripts/check-staging-hosts.js');
+  assert.ok(workflow.jobs.gate.needs.includes('staging-hosts'));
+  for (const status of ['failure', 'cancelled', 'skipped'])
+    assert.equal(
+      gate(resultSet({ 'staging-hosts': status })).status,
+      1,
+      `staging-hosts ${status}`
+    );
 });

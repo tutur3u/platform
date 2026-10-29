@@ -25111,12 +25111,6 @@ abstract class AppLocalizations {
   /// **'{section} · {basis}'**
   String mastermindSectionWithBasis(String section, String basis);
 
-  /// No description provided for @mastermindSecurityFix.
-  ///
-  /// In en, this message translates to:
-  /// **'Security fix'**
-  String get mastermindSecurityFix;
-
   /// No description provided for @mastermindSecurityGroup.
   ///
   /// In en, this message translates to:
@@ -26958,6 +26952,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your catch-up is ready'**
   String get mastermindCatchupPushBody;
+
+  /// No description provided for @mastermindSecurityFix.
+  ///
+  /// In en, this message translates to:
+  /// **'Security fix'**
+  String get mastermindSecurityFix;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

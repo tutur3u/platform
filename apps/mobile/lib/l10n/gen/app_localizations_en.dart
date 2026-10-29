@@ -13368,9 +13368,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mastermindSecurityFix => 'Security fix';
-
-  @override
   String get mastermindSecurityGroup => 'Security';
 
   @override
@@ -14472,4 +14469,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindCatchupPushBody => 'Your catch-up is ready';
+
+  @override
+  String get mastermindSecurityFix => 'Security fix';
 }
