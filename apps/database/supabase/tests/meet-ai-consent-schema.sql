@@ -20,6 +20,7 @@ select ok(not has_table_privilege('service_role', 'private.meet_ai_consents', 'U
 select ok(has_table_privilege('service_role', 'private.meet_ai_consents', 'INSERT'), 'service can append consent');
 insert into public.users(id) values ('00000000-0000-4000-8000-000000008801');
 insert into public.workspaces(id, name, personal, creator_id) values ('00000000-0000-4000-8000-000000008811', 'Consent test', false, '00000000-0000-4000-8000-000000008801');
+update public.workspace_default_permissions set enabled = false where ws_id = '00000000-0000-4000-8000-000000008811' and permission = 'admin';
 insert into public.workspace_meet_settings(ws_id) values ('00000000-0000-4000-8000-000000008811');
 select is((select transcript_retention_days from public.workspace_meet_settings where ws_id = '00000000-0000-4000-8000-000000008811'), 365, '365 day default');
 select ok((select per_person_opt_in and audio_retention_hours = 0 and transcription_default = 'ask' from public.workspace_meet_settings where ws_id = '00000000-0000-4000-8000-000000008811'), 'opt-in with no audio');
