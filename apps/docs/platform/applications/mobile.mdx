@@ -221,6 +221,27 @@ constant glyphs in `core/icons/platform_icon_data.dart`; retain that contract
 when evaluating font subsets. Measure release size and startup timing separately
 in admitted CI/device workflows before claiming a numeric improvement.
 
+### First-frame critical path
+
+Before `runApp`, bootstrap runs Firebase/observability setup and the local
+preference reads (haptics, theme mode, system chrome, last routes) together with
+`initializeBootstrapServices`; Supabase still starts only after the platform
+error handler is installed. `MobileObservability.initialize` issues its
+Crashlytics, package-info and Analytics calls together; analytics collection is
+not deferred because the Android manifest disables it by default and early
+`mobile_error` events would be dropped.
+
+Local-notification, FCM and token setup (`PushNotificationService`) starts after
+the first painted frame through `scheduleOptionalStartup`.
+`startPushForCurrentAccount` reads the signed-in account when it runs, starting
+the session for that account or only initializing push when signed out; auth
+changes after launch still start sessions immediately. A notification that
+launched the app is delivered once setup completes.
+
+Regression coverage: `startup_state_test.dart` (`initializeBootstrapServices`
+and `startPushForCurrentAccount`). These are orchestration fixtures; no device
+timing is claimed.
+
 ### Independent startup state restoration
 
 After Firebase/observability handlers and Supabase have settled, bootstrap uses
