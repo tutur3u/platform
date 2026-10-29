@@ -17,6 +17,7 @@ const {
 } = require('./sql-grant-identifiers');
 const { RULES, evaluateSqlFiles } = require('./sql-grant-guard');
 
+const ROOT = path.resolve(__dirname, '..', '..');
 const MIGRATIONS = 'apps/database/supabase/migrations/';
 const LATE = `${MIGRATIONS}20261030000000_late.sql`;
 const NEXT = `${MIGRATIONS}20261030000100_next.sql`;
@@ -213,4 +214,35 @@ test('routineAclEffect treats signature-free targets as every overload', () => {
       roles: ['anon'],
     }
   );
+});
+
+test('the 030500 rollback restores only service_role access and never grants to PUBLIC or anon', () => {
+  const file =
+    'apps/database/rollbacks/20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql';
+  const rollback = fs.readFileSync(path.join(ROOT, file), 'utf8');
+  assert.ok(
+    rollback.startsWith(
+      '-- PUBLIC/anon defaults are intentionally not restored (SR-331 fence; least privilege). See forward migration 20261029030500_align_cross_app_token_grant_and_private_fence.sql.'
+    )
+  );
+  assert.deepEqual(
+    evaluateSqlFiles({ files: [file], readFile: () => rollback }).violations,
+    []
+  );
+  // The guard blanks dollar-quoted bodies, so scan the raw code too.
+  const code = rollback.replace(/--.*$/gm, '').toLowerCase();
+  const grantees = [
+    ...code.matchAll(
+      /\bgrant\b[\s\S]*?\bto\s+([a-z_, ]+?)(?=['\s;]*(?:;|\$|\)|,\s*pg_get))/g
+    ),
+  ].map((m) => m[1].trim());
+  assert.ok(grantees.length >= 2);
+  assert.deepEqual([...new Set(grantees)], ['service_role']);
+  assert.ok(!/\bto\s+(?:public|anon)\b/.test(code));
+  assert.ok(
+    !/\bgrant\b[^;]*\b(?:public|anon)\b(?!\.)/.test(
+      code.replace(/revoke[^;]*/g, '')
+    )
+  );
+  assert.ok(!/\bto\s+authenticated\b/.test(code));
 });
