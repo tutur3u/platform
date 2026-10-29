@@ -753,3 +753,19 @@ collection and item contracts. The unused unversioned collection and item
 handlers are retired. The separate indicator migration endpoints retain their
 existing lifecycle. `scripts/retired-workspace-user-routes.test.mjs` checks the
 active route and inventory boundary.
+
+## Post Approval And Delivery Eligibility
+
+Post approval lists and their counts use the selected workspace for both the
+post and its recipient. Web and Infrastructure email enqueueing and queued or
+immediate delivery require that the recipient and post group share a workspace.
+A queue row must also refer to that post's group.
+
+An existing check is the recipient association. Moving to another group does not
+remove that association, cancel queued or retrying messages, or prevent a new
+enqueue for that check. Delivery recovery still recognizes provider-accepted
+messages and restores their recorded sent state without resending.
+
+Guest status is derived from membership in a group marked `is_guest`; it does not
+replace the existing check association or the workspace rule. Regression coverage
+lives in the approval read, queue-core, batch history and delivery recovery tests.
