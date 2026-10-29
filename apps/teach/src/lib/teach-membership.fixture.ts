@@ -48,7 +48,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   access.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
   access.actor.mockResolvedValue({ id: 'actor' });
-  access.workspace.mockResolvedValue({ id: wsId });
+  access.workspace.mockResolvedValue({ id: wsId, joined: true });
   access.educationFlag.mockResolvedValue({
     data: { value: 'true' },
     error: null,

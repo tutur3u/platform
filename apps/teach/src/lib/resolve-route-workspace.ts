@@ -9,7 +9,7 @@ type ResolvedWorkspace = NonNullable<
 
 export async function resolveRouteWorkspace(
   routeWsId: string,
-  permission: PermissionId | null
+  permission: PermissionId | null = null
 ): Promise<{
   routeWsId: string;
   resolvedWsId: string;
