@@ -9751,6 +9751,120 @@ abstract class AppLocalizations {
   /// **'Search products'**
   String get inventorySearchProducts;
 
+  /// No description provided for @inventoryItemArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get inventoryItemArchived;
+
+  /// No description provided for @inventoryItemsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load products'**
+  String get inventoryItemsLoadFailed;
+
+  /// No description provided for @inventoryItemsLoadMoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load more products'**
+  String get inventoryItemsLoadMoreFailed;
+
+  /// No description provided for @inventoryItemAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} available'**
+  String inventoryItemAvailable(String amount);
+
+  /// No description provided for @inventoryItemMoreLocations.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 more location} other{{count} more locations}}'**
+  String inventoryItemMoreLocations(int count);
+
+  /// No description provided for @inventoryItemNoStock.
+  ///
+  /// In en, this message translates to:
+  /// **'No stock configured'**
+  String get inventoryItemNoStock;
+
+  /// No description provided for @inventoryItemStockHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock hidden'**
+  String get inventoryItemStockHidden;
+
+  /// No description provided for @inventoryItemsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No products yet'**
+  String get inventoryItemsEmptyTitle;
+
+  /// No description provided for @inventoryItemsNoMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'No products match'**
+  String get inventoryItemsNoMatch;
+
+  /// No description provided for @inventoryItemsNoMatchMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Search matches product names. Try another name or clear the search.'**
+  String get inventoryItemsNoMatchMessage;
+
+  /// No description provided for @inventoryItemsNoneArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'No archived products'**
+  String get inventoryItemsNoneArchived;
+
+  /// No description provided for @inventoryScanAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan code'**
+  String get inventoryScanAction;
+
+  /// No description provided for @inventoryScanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at a product QR code or barcode.'**
+  String get inventoryScanHint;
+
+  /// No description provided for @inventoryScanMatches.
+  ///
+  /// In en, this message translates to:
+  /// **'Name matches for “{code}”'**
+  String inventoryScanMatches(String code);
+
+  /// No description provided for @inventoryScanNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No product in this workspace matches this code.'**
+  String get inventoryScanNotFound;
+
+  /// No description provided for @inventoryScanNotProduct.
+  ///
+  /// In en, this message translates to:
+  /// **'This code can\'t be matched to a product.'**
+  String get inventoryScanNotProduct;
+
+  /// No description provided for @inventoryScanSearchInstead.
+  ///
+  /// In en, this message translates to:
+  /// **'Search instead'**
+  String get inventoryScanSearchInstead;
+
+  /// No description provided for @inventoryScanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan a code'**
+  String get inventoryScanTitle;
+
+  /// No description provided for @inventoryScanUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera unavailable'**
+  String get inventoryScanUnavailable;
+
   /// No description provided for @inventorySeasonHistoricalReadOnly.
   ///
   /// In en, this message translates to:

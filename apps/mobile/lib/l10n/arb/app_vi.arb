@@ -442,6 +442,27 @@
       }
     }
   },
+  "@inventoryItemAvailable": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@inventoryItemMoreLocations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@inventoryScanMatches": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "@inventoryRedesignPendingCount": {
     "placeholders": {
       "count": {
@@ -2827,6 +2848,25 @@
   "inventorySalesTitle": "Tiêu đề",
   "inventorySaveProduct": "Lưu sản phẩm",
   "inventorySearchProducts": "Tìm sản phẩm",
+  "inventoryItemArchived": "Đã lưu trữ",
+  "inventoryItemsLoadFailed": "Không tải được sản phẩm",
+  "inventoryItemsLoadMoreFailed": "Không tải thêm được sản phẩm",
+  "inventoryItemAvailable": "Còn {amount}",
+  "inventoryItemMoreLocations": "Thêm {count} vị trí",
+  "inventoryItemNoStock": "Chưa thiết lập tồn kho",
+  "inventoryItemStockHidden": "Tồn kho bị ẩn",
+  "inventoryItemsEmptyTitle": "Chưa có sản phẩm",
+  "inventoryItemsNoMatch": "Không có sản phẩm phù hợp",
+  "inventoryItemsNoMatchMessage": "Tìm kiếm theo tên sản phẩm. Hãy thử tên khác hoặc xoá tìm kiếm.",
+  "inventoryItemsNoneArchived": "Không có sản phẩm đã lưu trữ",
+  "inventoryScanAction": "Quét mã",
+  "inventoryScanHint": "Hướng camera vào mã QR hoặc mã vạch của sản phẩm.",
+  "inventoryScanMatches": "Tên khớp với “{code}”",
+  "inventoryScanNotFound": "Không có sản phẩm nào trong không gian làm việc này khớp với mã này.",
+  "inventoryScanNotProduct": "Không thể dùng mã này để tìm sản phẩm.",
+  "inventoryScanSearchInstead": "Chuyển sang tìm kiếm",
+  "inventoryScanTitle": "Quét mã",
+  "inventoryScanUnavailable": "Không dùng được camera",
   "inventorySeasonHistoricalReadOnly": "Lịch sử bán theo mùa chỉ có thể xem tại đây. Giá đã ghi nhận được giữ nguyên.",
   "inventorySeasonPriceAsOf": "Giá mùa · {currency} · tại {asOf} (UTC) · ngày mùa theo {timeZone}",
   "inventorySeasonPriceCached": "Bản nháp ngoại tuyến sử dụng giá mùa đã lưu. Giá và tình trạng hàng sẽ được kiểm tra khi đồng bộ.",

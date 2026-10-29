@@ -5118,6 +5118,75 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventorySearchProducts => 'Search products';
 
   @override
+  String get inventoryItemArchived => 'Archived';
+
+  @override
+  String get inventoryItemsLoadFailed => 'Couldn\'t load products';
+
+  @override
+  String get inventoryItemsLoadMoreFailed => 'Couldn\'t load more products';
+
+  @override
+  String inventoryItemAvailable(String amount) {
+    return '$amount available';
+  }
+
+  @override
+  String inventoryItemMoreLocations(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more locations',
+      one: '1 more location',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get inventoryItemNoStock => 'No stock configured';
+
+  @override
+  String get inventoryItemStockHidden => 'Stock hidden';
+
+  @override
+  String get inventoryItemsEmptyTitle => 'No products yet';
+
+  @override
+  String get inventoryItemsNoMatch => 'No products match';
+
+  @override
+  String get inventoryItemsNoMatchMessage => 'Search matches product names. Try another name or clear the search.';
+
+  @override
+  String get inventoryItemsNoneArchived => 'No archived products';
+
+  @override
+  String get inventoryScanAction => 'Scan code';
+
+  @override
+  String get inventoryScanHint => 'Point the camera at a product QR code or barcode.';
+
+  @override
+  String inventoryScanMatches(String code) {
+    return 'Name matches for “$code”';
+  }
+
+  @override
+  String get inventoryScanNotFound => 'No product in this workspace matches this code.';
+
+  @override
+  String get inventoryScanNotProduct => 'This code can\'t be matched to a product.';
+
+  @override
+  String get inventoryScanSearchInstead => 'Search instead';
+
+  @override
+  String get inventoryScanTitle => 'Scan a code';
+
+  @override
+  String get inventoryScanUnavailable => 'Camera unavailable';
+
+  @override
   String get inventorySeasonHistoricalReadOnly => 'Scheduled sale history is read only here. Recorded prices are preserved.';
 
   @override
