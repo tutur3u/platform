@@ -348,12 +348,12 @@ nonmembers, guests, lookup failures and canonical workspace attribution.
 ### Boards
 
 Capacity rules are scoped to the board's own workspace. A board that belongs to
-another workspace than the route's `wsId` returns 404 for reads and writes, before
-any permission lookup. Configuring rules also requires `manage_projects` in the
+another workspace than the route's `wsId`, or that does not exist, returns 404 for
+reads and writes before any permission lookup, so callers cannot tell the two apart. Configuring rules also requires `manage_projects` in the
 route workspace and edit access to the board; reading keeps view access.
 
-Creating or disabling a board's public link requires workspace membership with
-board edit access. A guest share, even with edit permission, cannot create or
+Creating or disabling a board's public link requires a workspace member with
+`manage_projects` (the board resolver's member edit access). A guest share, even with edit permission, cannot create or
 disable the link. Reading the link keeps view access, so a guest can still read it.
 
 Regression coverage: the Tasks board `capacity-rules/access.test.ts` and

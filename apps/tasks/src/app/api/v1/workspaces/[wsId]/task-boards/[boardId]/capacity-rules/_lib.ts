@@ -62,14 +62,21 @@ export async function requireCapacityAccess({
   const boardNotFound = () => ({
     error: NextResponse.json({ error: 'Board not found' }, { status: 404 }),
   });
-  // A board outside the route workspace is always a 404, before any
-  // permission lookup, so its existence is not revealed across workspaces.
-  const { data: board } = await sbAdmin
+  // A board that is missing or outside the route workspace is always a 404,
+  // before any permission lookup, so its existence is not revealed.
+  const { data: board, error: boardError } = await sbAdmin
     .from('workspace_boards')
     .select('ws_id')
     .eq('id', boardId)
     .maybeSingle();
-  if (board && board.ws_id !== wsId) return boardNotFound();
+  if (boardError)
+    return {
+      error: NextResponse.json(
+        { error: 'Failed to load board' },
+        { status: 500 }
+      ),
+    };
+  if (!board || board.ws_id !== wsId) return boardNotFound();
   if (write) {
     const membership = await verifyWorkspaceMembershipType({
       wsId,

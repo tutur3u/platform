@@ -112,12 +112,15 @@ describe('capacity access', () => {
     expect(m.permission).not.toHaveBeenCalled();
   });
 
-  it('leaves a missing board to the board resolver', async () => {
-    m.boardWsId = null;
-    m.resolve.mockResolvedValue({
-      error: { status: 404 },
-    });
-    expect(status(await requireCapacityAccess(input()))).toBe(404);
-    expect(m.resolve).toHaveBeenCalled();
-  });
+  it.each([false, true])(
+    '404s a missing board before any lookup (write=%s), like a foreign board',
+    async (write) => {
+      m.boardWsId = null;
+      expect(status(await requireCapacityAccess({ ...input(), write }))).toBe(
+        404
+      );
+      expect(m.membership).not.toHaveBeenCalled();
+      expect(m.resolve).not.toHaveBeenCalled();
+    }
+  );
 });
