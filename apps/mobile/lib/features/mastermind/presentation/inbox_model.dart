@@ -104,9 +104,6 @@ final class MastermindInboxModel {
     );
   }
 
-  /// Rows a group shows before "Show all N".
-  static const groupCap = 5;
-
   final InboxSegment segment;
   final List<InboxGroup> groups;
 

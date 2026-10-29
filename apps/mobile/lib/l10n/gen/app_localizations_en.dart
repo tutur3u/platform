@@ -13958,6 +13958,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindInboxSearchAction => 'Search Inbox';
 
   @override
+  String get mastermindInboxLoadingMore => 'Loading more';
+
+  @override
+  String get mastermindInboxLoadMoreFailed => 'Couldn\'t load more asks.';
+
+  @override
+  String get mastermindInboxEndOfList => 'That\'s every ask';
+
+  @override
   String get mastermindInboxResolvedSegment => 'Resolved';
 
   @override

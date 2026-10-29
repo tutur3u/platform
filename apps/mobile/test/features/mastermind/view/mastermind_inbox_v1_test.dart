@@ -74,7 +74,7 @@ void _removeOpen(Map<String, dynamic> json, {String? id}) {
   (json['decisions'] as List).removeWhere(drop);
 }
 
-/// [count] extra open decisions, so a group runs past its cap.
+/// [count] extra open decisions, so a group runs past its first page.
 void _addDecisions(Map<String, dynamic> json, int count) {
   _needsYou(json).addAll([
     for (var i = 1; i <= count; i++)
@@ -259,22 +259,6 @@ void main() {
       await _segment(tester, 'Decisions');
       expect(find.byType(TextField), findsNothing);
       expect(chrome.state.resolveForLocation(Routes.mastermindInbox), isEmpty);
-    });
-  });
-
-  group('caps', () {
-    testWidgets('a group shows five, then Show all N expands it', (
-      tester,
-    ) async {
-      final json = _v1();
-      _addDecisions(json, 5);
-      await _pump(tester, const MastermindInboxPage(), json);
-      expect(find.byType(InboxItemTile), findsNWidgets(5));
-      expect(find.text('Show all 7'), findsOneWidget);
-      await tester.tap(find.text('Show all 7'));
-      await tester.pumpAndSettle();
-      expect(find.byType(InboxItemTile), findsNWidgets(7));
-      expect(find.text('Show all 7'), findsNothing);
     });
   });
 

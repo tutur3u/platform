@@ -64,6 +64,7 @@
                   "platform/features/task-reminder-delivery",
                   "platform/features/mobile-chat",
                   "platform/features/mobile-mastermind",
+                  "platform/features/mobile-mastermind-inbox",
                   "platform/features/mobile-mastermind-answered-elsewhere",
                   "platform/features/mobile-mastermind-decision-detail",
                   "platform/features/mira-client-actions",
