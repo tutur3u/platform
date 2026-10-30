@@ -18,7 +18,7 @@ const user = { id: 'member-1', email: 'member@example.invalid' };
 function fixture({ creator = false, guest = false } = {}) {
   const filters = new Map<string, unknown>();
   const roles = [
-    { ws_id: workspaceId, permission: 'manage_roles' },
+    { ws_id: workspaceId, permission: 'manage_workspace_roles' },
     { ws_id: foreignWorkspaceId, permission: 'manage_users' },
   ];
   const roleQuery = {
@@ -126,7 +126,7 @@ describe('workspace role permission isolation across getPermissions callers', ()
         });
         expect(result?.wsId).toBe(workspaceId);
         expect(result?.containsPermission('manage_users')).toBe(false);
-        expect(result?.containsPermission('manage_roles')).toBe(true);
+        expect(result?.containsPermission('manage_workspace_roles')).toBe(true);
       });
     }
   }
