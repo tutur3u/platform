@@ -12,6 +12,7 @@ import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/config/app_flavor.dart';
+import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/deep_link_launcher.dart';
 import 'package:mobile/core/router/deep_links.dart';
@@ -55,6 +56,7 @@ import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
+import 'package:mobile/features/mastermind/privacy/mastermind_privacy_shield.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_auth_reset.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
@@ -260,6 +262,9 @@ class _AppState extends State<App> {
       _appTabCubit,
       mastermindAccessCubit: _mastermind.access,
       initialLocation: widget.initialRoute,
+      telemetryConsent: widget.appFlavor == AppFlavor.production
+          ? TelemetryPreference.instance
+          : null,
     );
     _unregisterAssistantActions = AssistantClientActions.register(
       AppAssistantClientActionBridge(
@@ -611,15 +616,23 @@ class _AppState extends State<App> {
                       return AppearanceBackdrop(
                         settings: appearance,
                         child: ShadcnMaterialBridge(
-                          child: AuthSessionBoundary(
-                            identity: authIdentity,
-                            child: DismissKeyboardOnPointerDown(
-                              child: AppLockBoundary(
-                                excluded: isAppLockExcludedRoute(
-                                  _currentMatchedLocation(),
-                                ),
-                                child: MobileMfaApprovalListener(
-                                  child: AppVersionGate(child: child!),
+                          child: MastermindPrivacyShield(
+                            location: () => _router
+                                .routerDelegate
+                                .currentConfiguration
+                                .uri
+                                .path,
+                            locationChanges: _router.routerDelegate,
+                            child: AuthSessionBoundary(
+                              identity: authIdentity,
+                              child: DismissKeyboardOnPointerDown(
+                                child: AppLockBoundary(
+                                  excluded: isAppLockExcludedRoute(
+                                    _currentMatchedLocation(),
+                                  ),
+                                  child: MobileMfaApprovalListener(
+                                    child: AppVersionGate(child: child!),
+                                  ),
                                 ),
                               ),
                             ),

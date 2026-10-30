@@ -19,6 +19,10 @@
 		<false/>
 		<key>FIREBASE_ANALYTICS_COLLECTION_ENABLED</key>
 		<false/>
+		<key>GOOGLE_ANALYTICS_ADID_COLLECTION_ENABLED</key>
+		<false/>
+		<key>FirebaseMessagingAutoInitEnabled</key>
+		<false/>
 		<key>CFBundleDisplayName</key>
 		<string>$(FLAVOR_APP_NAME)</string>
 		<key>CFBundleExecutable</key>

@@ -1,0 +1,167 @@
+---
+title: Meet transcript retention
+description: The fenced Cloudflare purge that removes Meet transcripts and AI notes after 365 days, and how to enable it.
+---
+
+## Decision
+
+Meet transcripts and AI notes are kept for **365 days** (owner-approved). The
+purge runs as the default-off Cron Control job `meet-transcript-retention` and
+stays a no-op until the database fence is opened. The consent notice keeps its
+current wording until deletion is enabled in production.
+
+## Scope
+
+| Store | Action | Due when |
+| --- | --- | --- |
+| `public.meet_ai_chunks` (transcript text; speaker and segments in `usage`) | Row deleted | Session due |
+| `public.meet_ai_sessions.notes` and `notes_edited` | Cleared; `transcript_purged_at` set | Session due, after its chunks are gone |
+| `private.recording_transcripts` (legacy recording text and segments) | Row deleted | `created_at` older than 365 days |
+
+M1-B explicitly replaces `private.purge_meet_transcripts_batch` to use
+`purge_after <= now()` in dry-run and delete. NULL means forever. Existing
+sessions retain their previous deadlines through a backfill from
+`coalesce(ended_at, created_at) + 365 days`; new sessions default to 365 days
+from creation. The purge clears edited notes alongside the original notes.
+Workspace overrides must be applied by the trusted server integration.
+
+The schema migration closes the stop fence and withdraws delete approval.
+Opening the fence and enabling deletion require fresh reviewed dry-run counts.
+Rollback restores the original 365-day predicate with a hardened search path
+and service-only grants, and closes the fence again.
+
+Never touched: meetings, participants, session rows and their usage/cost fields,
+recording sessions, `audio_chunks` and audio storage objects, consent evidence,
+Meet AI memories (a separately consented store) and Durable Object state.
+Consent rows restrict session deletion. A separate service-role erasure flow must
+delete consent rows explicitly before deleting a session or meeting. The transcript
+purge keeps both and requires no erasure-order change. Account deletion clears the
+consent user FK and retains a random session-scoped participant pseudonym.
+
+## Design
+
+`private.meet_transcript_purge_control` is a singleton fence row, readable and
+writable only by the database owner:
+
+- `fence_open = false` (default): every run records a `skipped` audit row and
+  touches nothing.
+- `fence_open = true`, `delete_enabled = false`: a **dry run** records totals and
+  a per-workspace breakdown (top 100) on the run row, and deletes nothing.
+- `delete_enabled = true` (requires `fence_open`): deletion. Closing the fence
+  must also clear `delete_enabled`, so reopening it starts with dry runs again.
+
+`service_role` can only execute three `SECURITY DEFINER` functions; it cannot read
+or change the fence.
+
+| Function | Role |
+| --- | --- |
+| `private.start_meet_transcript_purge_run()` | Abandons runs left running for 15 minutes, enforces one running run and two non-fenced runs per rolling 24 hours, and returns the mode |
+| `private.purge_meet_transcripts_batch(run_id, limit <= 500)` | Re-checks the fence under a row lock, then deletes at most `limit` rows, oldest due sessions first in `meet_ai_sessions_transcript_retention_idx` order, with `SKIP LOCKED`. Ends the run at its 20th batch |
+| `private.finish_meet_transcript_purge_run(run_id, status)` | Records a Worker-side terminal status; terminal runs are unchanged |
+
+The functions declare a 20-second statement timeout, but a function-level
+`statement_timeout` does not apply to calls over the API: the API role's own
+timeout applies. Measure batch timing in the production dry run before
+approving deletion.
+
+Progress is the remaining data, so a retry or the next run after a crash
+continues safely. `private.meet_transcript_purge_runs` keeps mode, terminal status,
+batch count and counts per table. It never stores content.
+
+The Worker side lives in `apps/cron-control/src/processors/meet-transcript-retention.ts`:
+an injectable loop with no Worker imports, plus a thin adapter. Before every batch
+it checks the Cron Control stop fence and a 25-second time reserve. It retries
+5xx and network failures at most three times per run with 1/2/4-second
+backoff, never retries after a deadline, and rejects summaries over 1 KiB or
+out-of-bounds counts as `unknown`.
+
+## Cost bounds
+
+The job shares the daily `17 3 * * *` trigger (10:17 GMT+7) with a 300-second
+processor deadline.
+
+| Bound | Per run | Per day |
+| --- | --- | --- |
+| Runs that do work | 1 | 2 (database cap) |
+| Batch RPCs | 20 | 40 |
+| Database requests (start, batches, retries, finish) | 25 | 50 |
+| Rows deleted or cleared | 10,000 | 20,000 |
+
+The ledger adds its usual claim/fence/complete Durable Object requests. Five
+failed or unknown days stop the job durably.
+
+## Enablement
+
+1. Apply the migration through the normal production migration path. The fence
+   is closed.
+2. Deploy Cron Control through the Release Desk with `meet-transcript-retention`
+   added to `CRON_CONTROL_ENABLED_JOBS`. Each run records a `skipped` row.
+3. Open the fence for a dry run (database owner, SQL editor):
+   ```sql
+   update private.meet_transcript_purge_control
+     set fence_open = true, updated_at = now(), updated_by = '<approver>';
+   ```
+   After the next run, report counts to the owner:
+   ```sql
+   select started_at, status, dry_run_counts
+   from private.meet_transcript_purge_runs
+   where mode = 'dry_run' order by started_at desc limit 1;
+   ```
+4. Complete [Before the first real delete](#before-the-first-real-delete), then
+   enable deletion with `delete_enabled = true`.
+
+## Before the first real delete
+
+Deletion is irreversible. Every item needs a recorded owner sign-off before
+`delete_enabled` is set:
+
+- **Legal hold:** the owner confirms no legal hold or retention obligation
+  covers in-scope workspaces. A hold needs an exclusion mechanism first; none
+  exists today.
+- **Backups:** record the backup/PITR retention window. Deleted rows persist in
+  backups until that window passes, so the notice and data-protection inventory
+  must not promise sooner erasure.
+- **Cost and usage history:** deleting chunk rows removes their per-chunk
+  `cost_usd`, `usage` and attempt counts, so meeting cost statistics for purged
+  sessions shrink. Either add a counts-only roll-up before deleting, or record
+  that the owner accepts the loss.
+- **Dry-run sign-off:** the owner signs off the latest dry-run counts and its
+  measured batch timing on the same function version that will delete.
+- **Approver log:** record who flipped `fence_open` and `delete_enabled`, and
+  when, in `updated_by` and the release record.
+- **Consent notice:** ship the notice wording that states the 365-day retention
+  in the same release window as enabling deletion.
+- **Watched first run:** watch the first deleting run live, with the operator
+  stop and the fence-close SQL ready.
+
+## Stop and rollback
+
+- Fastest stop: `POST /control/jobs/meet-transcript-retention/stop` (operator
+  token). An in-flight batch can still commit its at most 500 rows.
+- Durable stop:
+  ```sql
+  update private.meet_transcript_purge_control
+    set fence_open = false, delete_enabled = false, updated_at = now(),
+      updated_by = '<operator>';
+  ```
+  The next batch returns `fenced` and the run ends `stopped`.
+- Remove the job id from `CRON_CONTROL_ENABLED_JOBS` to stop claims entirely.
+- `apps/database/rollbacks/20261029170000_meet_transcript_retention_purge.rollback.sql`
+  drops the purge functions and the fence. It keeps the
+  `private.meet_transcript_purge_runs` audit, its rows and the
+  `transcript_purged_at` markers.
+
+**A rollback cannot restore deleted transcripts or notes.** Neither the stop
+fence nor the schema rollback brings back data that a run already removed; they
+only disable future runs. Deletion is irreversible, which is why it needs a dry
+run and a separate approval.
+
+## Regression evidence
+
+- `apps/database/supabase/tests/meet-transcript-retention-purge.sql`: grants,
+  closed fence, dry run, bounded batches, mid-run fence close, daily cap, newer
+  data kept, out-of-scope data kept, idempotent re-run, abandonment, and the
+  explicit M1-B custom deadline, NULL-as-forever, and edited-note erasure.
+- `apps/cron-control/src/meet-transcript-retention.test.ts`: default off,
+  both fences mid-run, batch and run bounds, time reserve, lost-Worker
+  resumption, bounded retries, terminal states and five-day durable stop.

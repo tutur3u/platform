@@ -23,6 +23,10 @@ export function TutoringWeakRules({ canConfigure, policy, onChange }: Props) {
   const matchOptions = (['contains', 'exact', 'prefix', 'suffix'] as const).map(
     (match) => ({ value: match, label: t(`policy_match_${match}`) })
   );
+  const targetOptions = (['name', 'tag'] as const).map((target) => ({
+    value: target,
+    label: t(`policy_target_${target}`),
+  }));
   const scopeOptions = (['all', 'make_up', 'weak_support'] as const).map(
     (scope) => ({ value: scope, label: t(`policy_scope_${scope}`) })
   );
@@ -122,6 +126,18 @@ export function TutoringWeakRules({ canConfigure, policy, onChange }: Props) {
             options={scopeOptions}
             placeholder={t('policy_scope')}
             selected={rule.scope}
+          />
+          <Combobox
+            className="w-full sm:w-36"
+            disabled={!canConfigure}
+            onChange={(value) =>
+              updateExclusion(index, {
+                target: value === 'tag' ? 'tag' : undefined,
+              })
+            }
+            options={targetOptions}
+            placeholder={t('policy_target')}
+            selected={rule.target ?? 'name'}
           />
           <Combobox
             className="w-full sm:w-40"

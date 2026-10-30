@@ -1,0 +1,79 @@
+---
+title: Mobile analytics and crash report privacy
+description: Device consent for Firebase telemetry in the Flutter app.
+---
+
+Settings > Preferences > Privacy exposes **Share analytics and crash reports**
+on the Flutter iOS and Android apps, in English and Vietnamese. This single
+device-wide choice controls Firebase Analytics events and Crashlytics reports,
+including operational and fatal error reporting. It persists across restarts,
+sign-in, sign-out and workspace changes; it is not synchronized to an account.
+
+Sharing is **off until the user taps Allow, in every region**. There is no
+locale or region default and no region list: Firebase Analytics and Crashlytics
+collect nothing before an explicit Allow, from the first-run prompt or from
+Settings. The app works fully either way. The answer is stored on the device
+together with the notice version it was given under (`telemetry-consent-v1`) and
+the time. Changing the prompt or Settings wording bumps the version, which voids
+stored answers and asks again; nothing is collected in between. An answer stored
+by an older build (including the earlier regional-default key) is never trusted:
+those users see the prompt once on the first launch after the update, with no
+collection until they answer. The wording is DRAFT LEGAL COPY: not
+lawyer-reviewed; for testing, not release.
+
+## First-run prompt
+
+Production builds show a one-time, full-screen prompt (route
+`/telemetry-consent`, above the shell) once a signed-in user has a workspace and
+the device has no stored answer for the current notice version. **Allow** and
+**Don't allow** share one size and style, in that order, nothing is preselected,
+and **Privacy details** opens the public privacy notice. Closing the prompt with
+the back gesture counts as **Don't allow**, never as consent. An answer persists
+exactly like the Settings switch (declining revokes before persisting) and the
+prompt is not shown again until the notice version changes. Settings stays the
+place to change the choice, and choosing there first also ends the prompt.
+Settings routes are never interrupted, and a deep link is restored after the
+answer. Development and staging builds never show the prompt and never collect.
+
+## Advertising identifiers
+
+No advertising identifier (Android AD_ID, iOS IDFA) is collected. Android removes
+the merged `com.google.android.gms.permission.AD_ID` and
+`android.permission.ACCESS_ADSERVICES_AD_ID` permissions and sets
+`google_analytics_adid_collection_enabled` to false. iOS sets
+`GOOGLE_ANALYTICS_ADID_COLLECTION_ENABLED` to NO and links Firebase Analytics
+without ad-ID support (`$FirebaseAnalyticsWithoutAdIdSupport` in the Podfile, so
+the `GoogleAppMeasurement/IdentitySupport` subspec and AdSupport are not
+linked). The native-config test guards these settings.
+
+Native collection defaults are disabled. Startup reads the preference before
+Firebase initialization and explicitly configures both collection SDKs. Turning
+the toggle off revokes collection before waiting for preference persistence.
+Turning it on requires successful persistence first. Settings shows a
+description under the switch. A failed update shows an
+inline retry message. Non-production flavors never collect, even when the saved
+choice is on. This setting does not control push notifications, backend request
+logs or other app surfaces; it cannot retract reports already transmitted.
+
+Whenever collection is disabled, at startup or on opt-out, the app deletes
+unsent Crashlytics reports, so crashes recorded without consent never upload
+later. Builds before this setting persisted Crashlytics collection on, and the
+SDK prefers that stored override over the platform default and acts on it before
+Dart runs. A native gate clears the override before Firebase starts: Android's
+`TelemetryConsentGateProvider` runs before `FirebaseInitProvider`, and iOS
+clears it in `willFinishLaunching` before `FirebaseApp.configure()`. Crashlytics
+then holds reports until Dart applies the stored choice. The gate mirrors
+SDK-internal storage, so recheck it when upgrading Crashlytics. Firebase
+Analytics also persists its collection flag, and no native gate clears it. On
+the first launch after upgrading, Analytics may record automatic events before
+Dart disables collection.
+
+Regression coverage: `telemetry_consent_page_test.dart` covers prompt
+eligibility, no collection before Allow, redirect and both answers;
+`telemetry_preference_test.dart` covers no collection in any locale, stored
+version and time, version changes, legacy values and startup ordering; `telemetry_settings_tile_test.dart` covers
+label and switch activation; `mobile_observability_test.dart` covers deletion of
+unsent reports at startup and on opt-out. The preference suite checks native
+defaults, duplicate keys and native gate ordering.
+Validation uses `flutter gen-l10n`, `flutter analyze`, focused `flutter test` and
+`bun check:changed` on an admitted Flutter host. No release build is required.

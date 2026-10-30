@@ -581,6 +581,28 @@ the scan. The roundtrip verifier asserts that validation retains no ACCESS
 EXCLUSIVE lock on the workspace or affected child tables. Allow 15 minutes for
 validation of the unpruned realtime log table; check its size/row estimate,
 meeting/document workspace mismatches, and long workspace transactions before
-release. The document ws_id index uses a plain CREATE INDEX IF NOT EXISTS on its
-small table, so plan for write blocking during index creation. If an index with
+release. The document ws_id index uses CREATE INDEX CONCURRENTLY IF NOT EXISTS in a
+separate single-statement migration before the guarded FK swap. If an index with
 that name predates D on a target, preserve it rather than dropping it on rollback.
+
+
+### Meet consent and retention adoption
+
+Keep consent evidence private and client mutations revoked. Exercise actual
+client DELETE/UPDATE denials and latest `(created_at, id)` ordering in
+`meet-ai-consent-schema.sql`. Retention schema adoption must explicitly replace
+the purge function and include a same-file REVOKE ALL plus service-only grant,
+with `search_path = pg_catalog, pg_temp` in forward and rollback definitions.
+Close the purge fence and withdraw deletion approval when eligibility changes;
+require fresh owner approval after dry-run counts. Preserve NULL-as-forever,
+backfilled historical deadlines, edited-note erasure and the bounded stop fence.
+See the Meet application feature page and transcript retention runbook.
+
+Meet evidence retention uses a session RESTRICT FK and user SET NULL FK. Mint a
+random per-session participant UUID on consent insert and reuse it under a session
+row lock; never derive it from identity or persist a separate mapping. Auth deletion keeps the public profile, so anonymize consent at an AFTER DELETE
+Auth trigger too. The immutable UPDATE trigger must permit only nested
+server/Auth deletion anonymization, preserving every
+other field. Test Auth/client deletion denial, creator/admin meeting deletion
+refusal and explicit service consent-before-session erasure. Keep transcript purge
+in-place; it retains consent. See `meet-ai-consent-retention.sql`.

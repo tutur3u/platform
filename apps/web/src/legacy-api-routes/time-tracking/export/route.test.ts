@@ -11,6 +11,15 @@ vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: async () => ({}),
+  createAdminClient: async () => ({}),
+}));
+vi.mock('@tuturuuu/supabase/next/user', () => ({
+  getVerifiedAuthUser: async () => ({
+    id: 'staff',
+    email: 'staff@tuturuuu.com',
+    email_confirmed_at: '2026-01-01',
+    identities: [{ provider: 'email', identity_data: {} }],
+  }),
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: async () => ({ ok: true }),

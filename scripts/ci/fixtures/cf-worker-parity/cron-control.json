@@ -83,9 +83,8 @@
     ],
     "routes": [],
     "vars": {
-      "CRON_CONTROL_ENABLED_JOBS": "",
+      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention",
       "CRON_CONTROL_WORKER_PROCESSORS": "",
-      "CRON_CONTROL_WEB_MODE": "off",
       "INFRASTRUCTURE_ORIGIN": "https://infrastructure.tuturuuu.com",
       "INVENTORY_ORIGIN": "https://inventory.tuturuuu.com",
       "PAY_ORIGIN": "https://pay.tuturuuu.com",
@@ -109,7 +108,7 @@
     "unmapped": {}
   },
   "transition": {
-    "decision": "CRON-HISTORY-RETENTION: enable only seven-day database cron history retention after migration 20261025210000; preserve all other settings and jobs.",
+    "decision": "CRON-WEB-MODE-1: #7091 introduces the CRON_CONTROL_WEB_MODE var in its disabled default over the live history-retention Worker, which has no such var; an absent var and the disabled default both keep web jobs from running, so behavior is unchanged. Enabled jobs and Worker processors are unchanged.",
     "fields": ["vars"]
   },
   "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication."

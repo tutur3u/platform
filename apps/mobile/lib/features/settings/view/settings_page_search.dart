@@ -100,6 +100,13 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
     final general = l10n.settingsGeneralGroup;
     final support = l10n.settingsSupportGroup;
     return [
+      jump(
+        'telemetry',
+        LucideIcons.shield,
+        l10n.settingsShareTelemetry,
+        'privacy',
+        l10n.settingsPrivacy,
+      ),
       route(
         'profile',
         LucideIcons.userRound,

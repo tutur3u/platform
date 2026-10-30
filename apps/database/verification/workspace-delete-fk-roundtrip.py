@@ -13,8 +13,10 @@ import re
 import subprocess
 
 DATABASE = Path(__file__).resolve().parents[1]
-SWAP = "20261029194000_workspace_delete_fk_cascade"
-VALIDATE = "20261029194020_validate_workspace_delete_fk_cascade"
+INDEX = "20261030110000_workspace_delete_fk_cascade_concurrent"
+SWAP = "20261030110010_workspace_delete_fk_cascade_guard"
+ROLLBACK = "20261030110000_workspace_delete_fk_cascade"
+VALIDATE = "20261030110020_validate_workspace_delete_fk_cascade"
 
 
 def main():
@@ -34,7 +36,7 @@ def main():
         return subprocess.run(command, input=sql, text=True, capture_output=True,
                               check=True).stdout
 
-    def apply(relative, validation=False):
+    def apply(relative, validation=False, concurrent=False):
         sql = (DATABASE / relative).read_text()
         if validation:
             # Assert lock mode inside the validation transaction, before COMMIT.
@@ -55,7 +57,7 @@ end $$;
                 sql += guard
         # Every phase is a separate connection/transaction. Never wrap the
         # rollback swap and its later validation in one transaction.
-        run(psql + ["--single-transaction"], sql)
+        run(psql + ([] if concurrent else ["--single-transaction"]), sql)
 
     def state(expected_action, validated):
         actual = run(psql, """
@@ -101,6 +103,7 @@ from pg_constraint where
 
     state("naa", "true")
     original = dump("main-before")
+    apply(f"supabase/migrations/{INDEX}.sql", concurrent=True)
     apply(f"supabase/migrations/{SWAP}.sql")
     state("ccc", "false")
     swapped = dump("swap-first")
@@ -112,24 +115,27 @@ from pg_constraint where
     apply(f"rollbacks/{VALIDATE}.rollback.sql")
     state("ccc", "false")
     identical(swapped, dump("validation-down"), "validation down restores NOT VALID schema")
-    apply(f"rollbacks/{SWAP}.rollback.sql")
+    apply(f"rollbacks/{ROLLBACK}.rollback.sql")
     state("naa", "false")
     original_not_valid = dump("rollback-swap-not-valid")
-    apply(f"rollbacks/{SWAP}.rollback-validate.sql", validation=True)
+    apply(f"rollbacks/{ROLLBACK}.rollback-validate.sql", validation=True)
     state("naa", "true")
+    apply(f"rollbacks/{INDEX}.rollback.sql", concurrent=True)
     identical(original, dump("swap-down"), "two-step D down restores exact main schema")
+    apply(f"supabase/migrations/{INDEX}.sql", concurrent=True)
     apply(f"supabase/migrations/{SWAP}.sql")
     state("ccc", "false")
     identical(swapped, dump("swap-second"), "D up-down-up is byte-identical")
     apply(f"supabase/migrations/{VALIDATE}.sql", validation=True)
     state("ccc", "true")
     identical(validated, dump("validated-second"), "validation up-down-up is byte-identical")
-    apply(f"rollbacks/{SWAP}.rollback.sql")
+    apply(f"rollbacks/{ROLLBACK}.rollback.sql")
     state("naa", "false")
     identical(original_not_valid, dump("rollback-swap-second"),
               "rollback NOT VALID swaps are byte-identical")
-    apply(f"rollbacks/{SWAP}.rollback-validate.sql", validation=True)
+    apply(f"rollbacks/{ROLLBACK}.rollback-validate.sql", validation=True)
     state("naa", "true")
+    apply(f"rollbacks/{INDEX}.rollback.sql", concurrent=True)
     identical(original, dump("main-after"), "rehearsal leaves exact main schema restored")
 
 

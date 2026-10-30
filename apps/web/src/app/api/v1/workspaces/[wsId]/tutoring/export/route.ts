@@ -6,6 +6,7 @@ import {
   createLegacyHeadHandler,
 } from '@/legacy-api-routes/head';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
+import { readAllRows, readByIds } from '../queue/all-rows';
 
 const QuerySchema = z.object({
   attendanceStatus: z
@@ -19,8 +20,6 @@ const QuerySchema = z.object({
   studentUserId: z.string().uuid().optional(),
   teacherId: z.string().uuid().optional(),
 });
-
-const EXPORT_PAGE_SIZE = 1000;
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -72,10 +71,8 @@ async function getTutoringData(request: Request, { params }: Params) {
 
   const sbAdmin = await createAdminClient();
   const tutoringSessionsClient = sbAdmin.schema('private');
-  const data = [];
-
-  for (let from = 0; ; from += EXPORT_PAGE_SIZE) {
-    const to = from + EXPORT_PAGE_SIZE - 1;
+  // Sessions sharing a date and start time tie, so `id` keeps pages stable.
+  const sessions = await readAllRows((from, to) => {
     let query = tutoringSessionsClient
       .from('workspace_tutoring_sessions')
       .select(
@@ -95,7 +92,7 @@ async function getTutoringData(request: Request, { params }: Params) {
       .eq('ws_id', normalizedWsId)
       .order('session_date', { ascending: true })
       .order('start_time', { ascending: true })
-      .range(from, to);
+      .order('id', { ascending: true });
 
     if (parsed.data.fromDate)
       query = query.gte('session_date', parsed.data.fromDate);
@@ -110,19 +107,13 @@ async function getTutoringData(request: Request, { params }: Params) {
       query = query.eq('reason_type', parsed.data.reasonType);
     if (parsed.data.attendanceStatus)
       query = query.eq('attendance_status', parsed.data.attendanceStatus);
-
-    const { data: pageData, error } = await query;
-    if (error) {
-      console.error('Failed to export tutoring sessions', error);
-      return NextResponse.json({ message: 'Export failed' }, { status: 500 });
-    }
-
-    data.push(...(pageData ?? []));
-
-    if ((pageData ?? []).length < EXPORT_PAGE_SIZE) {
-      break;
-    }
+    return query.range(from, to);
+  });
+  if (sessions.error) {
+    console.error('Failed to export tutoring sessions', sessions.error);
+    return NextResponse.json({ message: 'Export failed' }, { status: 500 });
   }
+  const data = sessions.data;
 
   const groupIds = [
     ...new Set(data.map((row) => row.group_id).filter(Boolean)),
@@ -136,18 +127,15 @@ async function getTutoringData(request: Request, { params }: Params) {
   ];
 
   const [groupsResult, usersResult] = await Promise.all([
-    groupIds.length > 0
-      ? sbAdmin
-          .from('workspace_user_groups')
-          .select('id,name')
-          .in('id', groupIds)
-      : Promise.resolve({ data: [], error: null }),
-    userIds.length > 0
-      ? sbAdmin
-          .from('workspace_users')
-          .select('id,full_name,display_name,email')
-          .in('id', userIds)
-      : Promise.resolve({ data: [], error: null }),
+    readByIds(groupIds, (chunk) =>
+      sbAdmin.from('workspace_user_groups').select('id,name').in('id', chunk)
+    ),
+    readByIds(userIds, (chunk) =>
+      sbAdmin
+        .from('workspace_users')
+        .select('id,full_name,display_name,email')
+        .in('id', chunk)
+    ),
   ]);
 
   if (groupsResult.error || usersResult.error) {
@@ -184,9 +172,22 @@ async function getTutoringData(request: Request, { params }: Params) {
         total_minutes: number;
       }
     >();
+    // A teacher tutoring several learners in one slot teaches it once, so
+    // completed rows count once per teacher, date, start minute and length.
+    const paidSlots = new Set<string>();
 
     for (const row of dataWithRelations) {
       if (row.attendance_status !== 'DONE') continue;
+      if (row.teacher_user_id) {
+        const slot = [
+          row.teacher_user_id,
+          row.session_date,
+          String(row.start_time).slice(0, 5),
+          row.duration_minutes,
+        ].join(':');
+        if (paidSlots.has(slot)) continue;
+        paidSlots.add(slot);
+      }
       const teacher = row.teacher as {
         id: string;
         full_name: string | null;
@@ -207,9 +208,9 @@ async function getTutoringData(request: Request, { params }: Params) {
 
     return NextResponse.json({
       mode: 'payroll',
-      data: [...byTeacher.values()].sort((a, b) =>
-        a.teacher_name.localeCompare(b.teacher_name)
-      ),
+      data: [...byTeacher.values()]
+        .map((row) => ({ ...row, total_cong: row.total_minutes / 45 }))
+        .sort((a, b) => a.teacher_name.localeCompare(b.teacher_name)),
     });
   }
 

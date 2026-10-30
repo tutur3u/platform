@@ -467,3 +467,14 @@ and multiplayer auth), Mail, Tasks, Infrastructure, AI, Calendar, Track, Meet,
 Parley, Lettin and Rewise. Examples list the
 name without a value; an unset setting fails closed for Azure-linked staff
 sessions. See [staff authorization](/platform/architecture/authorization#staff-session-verification).
+
+### Managed project branch validation
+
+Infrastructure project creation and updates reject unsafe selected branches with
+HTTP 400. The API and watcher share the same branch allowlist. Stored platform
+branches are validated before Git is invoked; unsafe values stop the poll with a
+value-free error rather than silently deploying the default branch. Missing or
+empty legacy values retain the production default. Whitespace is rejected rather
+than trimmed. This applies to the infrastructure API and blue-green watcher.
+Regression coverage lives in `branch-validation.test.ts`,
+`managed-project-branch.test.ts`, and `watch-blue-green-projects.test.js`.
