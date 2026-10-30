@@ -1,0 +1,36 @@
+{
+  "name": "@tuturuuu/mastermind",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.4",
+  "scripts": {
+    "dev": "vp dev --host 127.0.0.1",
+    "build": "vp build",
+    "test": "vp test run --config vitest.config.ts",
+    "type-check": "tsc --noEmit -p tsconfig.json",
+    "test:runtime": "node --test cloudflare/native-built-worker.acceptance.mjs",
+    "build:cloudflare": "vp build"
+  },
+  "dependencies": {
+    "@tanstack/react-router": "1.170.45",
+    "@tanstack/react-start": "1.169.3",
+    "@tuturuuu/auth": "workspace:*",
+    "@tuturuuu/start-bridge": "workspace:*",
+    "jose": "^6.2.13",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*",
+    "@types/node": "^26.6.5",
+    "@types/react": "~19.2.18",
+    "@types/react-dom": "~19.2.7",
+    "@vitejs/plugin-react": "6.1.2",
+    "typescript": "7.0.2",
+    "vite": "npm:@voidzero-dev/vite-plus-core@1.3.0",
+    "vite-plus": "1.3.0",
+    "void": "1.1.12",
+    "wrangler": "4.151.2"
+  }
+}
