@@ -18,9 +18,12 @@ export const WORKSPACE_MANAGED_AVATAR_LIMITS = {
   perDay: 300,
   perWeek: 1000,
   bytesPerDay: 600 * 1024 ** 2,
-  bytesPerWeek: 2000 * 1024 ** 2,
-  // Own platform-wide ceilings, so bulk admin work cannot starve self-profile
-  // uploads; same values as the shared profile ceilings.
-  globalPerDay: 10000,
-  globalBytesPerDay: 16 * 1024 ** 3,
+  // Cross-workspace cap per actor, so one actor with many workspaces cannot
+  // multiply the per-workspace budget and drain the managed global.
+  actorPerDay: 600,
+  actorBytesPerDay: 1200 * 1024 ** 2,
+  // Own platform-wide ceilings (half the shared profile ceilings), so bulk admin
+  // work cannot starve self-profile uploads.
+  globalPerDay: 5000,
+  globalBytesPerDay: 8 * 1024 ** 3,
 } as const;

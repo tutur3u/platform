@@ -128,7 +128,10 @@ export async function reserveProfileUploadBudget(
 /**
  * Charge an admin uploading an avatar for a workspace-managed user. Keyed per
  * workspace and actor, separate from the self-profile counters, with the much
- * higher WORKSPACE_MANAGED_AVATAR_LIMITS. Callers must have authorized the actor
+ * higher WORKSPACE_MANAGED_AVATAR_LIMITS, plus an actor-only cross-workspace
+ * cap and the managed global ceilings. The RPC allows 8 dimensions, so there is
+ * no separate weekly byte counter: it would equal perWeek x the 2 MiB charge.
+ * Callers must have authorized the actor
  * for `workspaceId` first; the key only partitions budgets, it grants nothing.
  */
 export async function reserveWorkspaceManagedAvatarBudget(
@@ -136,7 +139,8 @@ export async function reserveWorkspaceManagedAvatarBudget(
   actorId: string,
   now = new Date()
 ) {
-  const scope = `ws:${sha256(workspaceId)}:actor:${sha256(actorId)}`;
+  const actor = sha256(actorId);
+  const scope = `ws:${sha256(workspaceId)}:actor:${actor}`;
   const time = now.getTime();
   const { hour, day, week, hourEnd, dayEnd, weekEnd } = budgetWindows(time);
   const prefix = 'api-cost:v1:profile-upload:ws-user-avatar';
@@ -160,12 +164,20 @@ export async function reserveWorkspaceManagedAvatarBudget(
         172800,
         dayEnd,
       ],
+      // Actor-only, across every workspace the actor manages.
       [
-        `${prefix}:${scope}:bytes:week:${week}`,
+        `${prefix}:actor:${actor}:day:${day}`,
+        1,
+        limits.actorPerDay,
+        172800,
+        dayEnd,
+      ],
+      [
+        `${prefix}:actor:${actor}:bytes:day:${day}`,
         bytes,
-        limits.bytesPerWeek,
-        8 * 86400,
-        weekEnd,
+        limits.actorBytesPerDay,
+        172800,
+        dayEnd,
       ],
       [`${prefix}:global:day:${day}`, 1, limits.globalPerDay, 172800, dayEnd],
       [
