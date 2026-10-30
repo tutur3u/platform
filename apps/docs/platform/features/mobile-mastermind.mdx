@@ -97,7 +97,7 @@ Mastermind is restricted to one person, the platform owner account, through the 
   the hub allowlist is separate from the grant and must name the same user.
 
 Migrations `20261030113000` and `20261030113001` grant the permission to
-nobody. Granting it to the owner is a separate change and a production write that needs an explicit GO.
+nobody. Separate migration `20261030120000_grant_mastermind_owner.sql` grants only root's creator through `private.grant_mastermind_access`. Missing root, null creator, missing auth account or root MEMBER membership produces NOTICE without a grant. After seed, the database owner may idempotently run `SELECT private.grant_mastermind_root_creator();`. Production writes require explicit GO. Before this PR's production sync, Rex or Bea checks read-only that the creator exists in auth.users and is a root MEMBER, reporting names only. Rollback `20261030120000_grant_mastermind_owner.rollback.sql` uses audited revoke provenance, preserving later intentional operator grants. Missing provenance revokes nothing. Bootstrap coverage: `manage-mastermind-owner-grant.sql`; actual rollback coverage: `apps/database/scripts/mastermind-owner-rollback-test.py`.
 
 - **Regression coverage:** `apps/database/supabase/tests/manage-mastermind-permission.sql`
   (no role, default permission, member or creator holds it after the
