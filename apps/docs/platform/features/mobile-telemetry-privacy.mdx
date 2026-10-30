@@ -113,17 +113,30 @@ FlutterFire Analytics 12.5.0 calls FirebaseAnalytics.getInstance from
 onAttachedToEngine, independently starting Measurement. The generated Android
 source overlay replaces that eager instance with a lazy property while retaining
 plugin channel registration. It never changes the shared Pub cache and rejects
-unrecognized upstream startup code. Measurement's receiver, service and job
-service default to disabled in the manifest and are reset disabled on process
-startup. Only signed-in Allow enables them again.
+unrecognized upstream startup code. The native startup provider unconditionally
+disables Measurement's receiver, service and job service before SDK startup.
+Only signed-in Allow enables their runtime overrides again. Their manifest
+declarations retain enabled=true because Android's ComponentInfo.enabled
+reflects the manifest bit, not the runtime override; Measurement 23.2.0's
+zzpp.zzax/zzT capability probes otherwise reject every event even after Allow.
+The unconditional provider reset and deferred plugin remain the startup fence.
+See [Android's component-info generation](https://android.googlesource.com/platform/frameworks/base/+/android-16.0.0_r1/services/core/java/com/android/server/pm/parsing/PackageInfoUtils.java#890).
+Native startup assertions cover both the compatible manifest bit and the
+unconditional runtime disable; stored Allow never bypasses the reset.
 
 Android Allow first enables the components with PackageManager.DONT_KILL_APP,
 then resolves the lazy FlutterFire plugin, awaits its
 setAnalyticsCollectionEnabled(true), and dispatches the standard app_open event
-through that plugin at most once per process lifetime. The collected event
-app_open has no custom parameters or identifiers. Its dispatch guard survives
-withdrawal, re-enabling, sign-out and consent re-application; a failed dispatch
-is not retried in the same process. Merely changing the native flag does not
+through that plugin once per Allow transition, including restored Allow after
+sign-in on a cold start. The collected event app_open has no custom parameters or
+identifiers. Re-applying the same Allow does not duplicate it; withdrawal resets
+its guard. Before dispatch, the adapter waits 1,100 ms after collection is enabled:
+Measurement 23.2.0's upload-capability check (zzic.zzH) caches a disabled-component
+result for 1,000 ms, and its event path (zzlj.zzG) silently drops events during
+that window. The bounded wait makes no Firebase calls and checks for withdrawal
+before emitting the event. There is no event or network retry. The adapter's
+regression tests model that cache for in-session and cold-start Allow and verify
+withdrawal during the wait emits nothing. Merely changing the native flag does not
 exercise the deferred plugin's event path. This sequence runs both when Allow is selected
 in-session and when a signed-in session restores a current Allow after a cold
 start. No process restart or direct service launch is requested.

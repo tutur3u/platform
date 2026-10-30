@@ -25,6 +25,12 @@ class AndroidAnalyticsCollection {
   int _epoch = 0;
   bool _appOpenAttempted = false;
 
+  // Measurement 23.2.0 caches a negative upload-capability check for 1000 ms
+  // when started with disabled components. Its logEvent silently drops events
+  // in that window, even after collection is enabled. This is one bounded wait,
+  // not an SDK/network retry; withdrawal fences the continuation below.
+  static const _startupSettleTime = Duration(milliseconds: 1100);
+
   Future<void> apply({required bool enabled}) {
     final epoch = ++_epoch;
     final operation = _pending.then(
@@ -54,8 +60,10 @@ class AndroidAnalyticsCollection {
       final analytics = _analytics ??= _createAnalytics();
       await analytics.setAnalyticsCollectionEnabled(true);
       if (epoch != _epoch || _appOpenAttempted) return;
-      // The process singleton retains this guard across consent/session changes,
-      // including a failed dispatch, so retries cannot duplicate the event.
+      await Future<void>.delayed(_startupSettleTime);
+      if (epoch != _epoch) return;
+      // Re-applying Allow cannot duplicate the event. Withdrawal resets the
+      // guard, so a subsequent Allow gets its own first event.
       _appOpenAttempted = true;
       // Startup while disabled can suppress automatic launch events. Dispatch
       // through the admitted plugin to activate its normal event/upload path.
@@ -67,6 +75,7 @@ class AndroidAnalyticsCollection {
   }
 
   Future<void> _disable() async {
+    _appOpenAttempted = false;
     try {
       await _analytics?.setAnalyticsCollectionEnabled(false);
     } finally {

@@ -34,8 +34,15 @@ test('native startup resets persisted enable before any SDK call', () => {
   assert.ok(provider.indexOf('PersistedAnalyticsGate.disable') < provider.indexOf('clearPersistedCrashCollection(context)'));
   assert.match(provider, /check\(editor.commit\(\)\)/);
   assert.doesNotMatch(provider, /FirebaseAnalytics|getInstance|FirebaseApp/);
+  // ComponentInfo.enabled retains the manifest bit, ignoring runtime overrides.
+  // Measurement's zzpp.zzax/zzT need true; the provider still disables runtime
+  // components unconditionally before any Firebase/Measurement startup.
+  assert.match(provider, /FirebaseStartupGate.setMeasurementComponentsEnabled\(context, false\)/);
+  const gate = readFileSync(new URL('android/app/src/main/kotlin/com/tuturuuu/app/mobile/telemetry/FirebaseStartupGate.kt', root), 'utf8');
+  assert.match(gate, /COMPONENT_ENABLED_STATE_DISABLED/);
+  assert.match(gate, /PackageManager.DONT_KILL_APP/);
   const manifest = readFileSync(new URL('android/app/src/main/AndroidManifest.xml', root), 'utf8');
   for (const component of ['Receiver', 'Service', 'JobService']) {
-    assert.match(manifest, new RegExp('AppMeasurement' + component + '"\\s+android:enabled="false"'));
+    assert.match(manifest, new RegExp('AppMeasurement' + component + '"\\s+android:enabled="true"'));
   }
 });

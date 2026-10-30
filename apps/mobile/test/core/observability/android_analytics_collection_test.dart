@@ -71,26 +71,85 @@ void main() {
     },
   );
 
-  test(
-    'app_open is dispatched once across re-apply and consent toggles',
-    () async {
+  test('app_open is dispatched once per Allow, never per re-apply', () async {
+    signedIn = true;
+    consent = true;
+    await controller.apply(enabled: true);
+    await controller.apply(enabled: true);
+
+    consent = false;
+    await controller.apply(enabled: false);
+    expect(persistedEnabled, isFalse);
+
+    consent = true;
+    await controller.apply(enabled: true);
+    await controller.apply(enabled: true);
+
+    verify(() => analytics.logAppOpen()).called(2);
+    expect(persistedEnabled, isTrue);
+  });
+
+  for (final coldStart in [false, true]) {
+    test('first event survives the disabled-component cache '
+        '(cold start: $coldStart)', () async {
+      // Measurement 23.2.0 zzic.zzH caches upload capability as false for
+      // 1000 ms; zzlj.zzG silently discards events while that cache is valid.
+      // A push-only Firebase initialization can seed this before Allow.
       signedIn = true;
       consent = true;
-      await controller.apply(enabled: true);
-      await controller.apply(enabled: true);
+      var uploadAvailable = false;
+      Timer? availabilityTimer;
+      when(() => analytics.setAnalyticsCollectionEnabled(true)).thenAnswer((
+        _,
+      ) async {
+        calls.add('plugin:true');
+        persistedEnabled = true;
+        availabilityTimer = Timer(const Duration(milliseconds: 1000), () {
+          uploadAvailable = true;
+        });
+      });
+      when(() => analytics.logAppOpen()).thenAnswer((_) async {
+        calls.add(uploadAvailable ? 'app_open' : 'dropped');
+      });
+      if (!coldStart) await controller.apply(enabled: false);
+      calls.clear();
 
-      consent = false;
-      await controller.apply(enabled: false);
-      expect(persistedEnabled, isFalse);
+      try {
+        await controller.apply(enabled: true);
+      } finally {
+        availabilityTimer?.cancel();
+      }
 
-      consent = true;
-      await controller.apply(enabled: true);
-      await controller.apply(enabled: true);
-
-      verify(() => analytics.logAppOpen()).called(1);
       expect(persistedEnabled, isTrue);
-    },
-  );
+      expect(calls, [
+        'components:true',
+        'lazy-plugin',
+        'plugin:true',
+        'app_open',
+      ]);
+      verify(() => analytics.logAppOpen()).called(1);
+    });
+  }
+
+  test('withdraw during startup settling emits nothing', () async {
+    signedIn = true;
+    consent = true;
+    final enabling = Completer<void>();
+    when(() => analytics.setAnalyticsCollectionEnabled(true)).thenAnswer((
+      _,
+    ) async {
+      persistedEnabled = true;
+      enabling.complete();
+    });
+    final starting = controller.apply(enabled: true);
+    await enabling.future;
+    consent = false;
+    final stopping = controller.apply(enabled: false);
+    await Future.wait([starting, stopping]);
+    verifyNever(() => analytics.logAppOpen());
+    expect(persistedEnabled, isFalse);
+    expect(calls.last, 'components:false');
+  });
 
   test('cold signed-in Allow starts in the same session', () async {
     // Native process startup has reset the old persisted true unconditionally.

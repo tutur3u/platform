@@ -36,13 +36,15 @@
         <meta-data
             android:name="firebase_messaging_auto_init_enabled"
             android:value="false" />
-        <!-- Measurement can start independently of FirebaseApp; Allow enables these explicitly. -->
+        <!-- SDK capability probes read the manifest bit, ignoring runtime enable overrides.
+             The startup provider disables all three before SDK/component startup;
+             only signed-in Allow enables their runtime overrides again. -->
         <receiver android:name="com.google.android.gms.measurement.AppMeasurementReceiver"
-            android:enabled="false" tools:replace="android:enabled" />
+            android:enabled="true" tools:replace="android:enabled" />
         <service android:name="com.google.android.gms.measurement.AppMeasurementService"
-            android:enabled="false" tools:replace="android:enabled" />
+            android:enabled="true" tools:replace="android:enabled" />
         <service android:name="com.google.android.gms.measurement.AppMeasurementJobService"
-            android:enabled="false" tools:replace="android:enabled" />
+            android:enabled="true" tools:replace="android:enabled" />
         <!-- Persists disables before any plugin, receiver or service can start Measurement. -->
         <provider
             android:name=".telemetry.TelemetryConsentGateProvider"
