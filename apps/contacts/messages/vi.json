@@ -9424,7 +9424,7 @@
     "payroll_empty": "Không có buổi kèm trong khoảng này",
     "payroll_excel": "Xuất Excel",
     "payroll_from": "Từ",
-    "payroll_invalid_range": "Chọn khoảng ngày hợp lệ",
+    "payroll_invalid_range": "Chọn đủ ngày bắt đầu và kết thúc, theo thứ tự, trong tối đa 366 ngày.",
     "payroll_loading": "Đang tải báo cáo…",
     "payroll_minutes": "Phút",
     "payroll_pending": "Buổi đã qua chưa điểm danh",

@@ -40,15 +40,26 @@ beforeEach(() => {
   };
   mocks.admin.mockResolvedValue({ from: () => link });
 });
-async function request(query: string) {
+async function request(query: string, bounded = true) {
   const { GET } = await import('./route');
-  return GET(new Request(`http://localhost/export?mode=payroll&${query}`), {
+  const params = new URLSearchParams(
+    bounded
+      ? 'mode=payroll&fromDate=2026-10-01&toDate=2026-10-31'
+      : 'mode=payroll'
+  );
+  new URLSearchParams(query).forEach((value, key) => {
+    params.set(key, value);
+  });
+  return GET(new Request(`http://localhost/export?${params}`), {
     params: Promise.resolve({ wsId }),
   });
 }
-it('rejects another teacher for view_user_groups only', async () => {
-  expect((await request(`teacherId=${wsId}`))?.status).toBe(403);
-});
+it.each(['detailed', 'payroll', 'report'])(
+  'rejects another teacher for view_user_groups only in %s',
+  async (mode) => {
+    expect((await request(`mode=${mode}&teacherId=${wsId}`))?.status).toBe(403);
+  }
+);
 it('rejects reversed date bounds before reading data', async () => {
   expect((await request('fromDate=2026-10-31&toDate=2026-10-01'))?.status).toBe(
     400
@@ -121,4 +132,46 @@ it('uses inclusive lower and upper session date bounds', async () => {
   );
   expect(filters).toContainEqual(['gte', 'session_date', '2026-10-01']);
   expect(filters).toContainEqual(['lte', 'session_date', '2026-10-31']);
+});
+
+it.each(['detailed', 'payroll', 'report'])(
+  'requires both dates and a maximum inclusive 366 days for %s',
+  async (mode) => {
+    for (const bounds of [
+      '',
+      '&fromDate=2026-01-01',
+      '&toDate=2026-12-31',
+      '&fromDate=2025-01-01&toDate=2026-01-02',
+    ]) {
+      expect((await request(`mode=${mode}${bounds}`, false))?.status).toBe(400);
+    }
+    expect(mocks.admin).not.toHaveBeenCalled();
+  }
+);
+it.each(['detailed', 'payroll', 'report'])(
+  'accepts 366 inclusive days for %s',
+  async (mode) => {
+    const { builder } = allowSessionReads();
+    mocks.access.mockResolvedValue({
+      normalizedWsId: wsId,
+      permissions: { withoutPermission: () => false },
+    });
+    mocks.admin.mockResolvedValue({ schema: () => ({ from: () => builder }) });
+    expect(
+      (await request(`mode=${mode}&fromDate=2024-01-01&toDate=2024-12-31`))
+        ?.status
+    ).toBe(200);
+  }
+);
+
+it('rejects excessive bounds through the payroll endpoint before any admin read', async () => {
+  const { GET } = await import('../payroll/route');
+  const response = await GET(
+    new Request(
+      'http://localhost/payroll?fromDate=2025-01-01&toDate=2026-01-02'
+    ),
+    { params: Promise.resolve({ wsId }) }
+  );
+  expect(response?.status).toBe(400);
+  expect(mocks.admin).not.toHaveBeenCalled();
 });

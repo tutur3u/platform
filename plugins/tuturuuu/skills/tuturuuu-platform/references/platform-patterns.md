@@ -1442,5 +1442,7 @@ Report and payroll export totals share internal-api's pure
 `calculateTutoringPayroll`. Preserve the duration-bearing slot key until a
 product decision changes it. Apply `view_payroll` or a verified actor-to-workspace
 teacher link before reading sessions with the admin client. Never trust a client
-teacher filter as authorization. See the tutoring feature page and export route
+teacher filter as authorization. Apply the same self scope to detailed exports,
+session lists and teacher pickers, which otherwise reveal reconstructible work
+hours. Require both export dates and an inclusive span of at most 366 days. See the tutoring feature page and export route
 permission/parity regressions.

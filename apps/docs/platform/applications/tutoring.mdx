@@ -1076,7 +1076,7 @@ sessions pay zero. Past PENDING learner sessions are shown without pay.
 All-teacher payroll reports and downloads require `view_payroll` (including its
 existing admin implication). A member with only `view_user_groups` can read only
 their linked teacher row, enforced before session loading. Missing links deny
-access. Detailed session exports retain their existing staff permission.
+access. Detailed session exports, session lists, and teacher picker lists also require `view_payroll` for all-teacher scope; holders of only `view_user_groups` receive their linked self scope. This intentionally tightens the previous staff-wide access. Every export mode and report requires both dates, with an inclusive span of at most 366 days. Open-ended schedule presets must be changed to a bounded range before export.
 Numbers display two decimals; spreadsheet totals retain full precision.
 Regression coverage: export `route.payroll.test.ts`, `route.access.test.ts`,
-and Contacts `tutoring-filters.test.ts`.
+the tutoring `read-scope.routes.test.ts` permission matrix, and Contacts `tutoring-filters.test.ts`.

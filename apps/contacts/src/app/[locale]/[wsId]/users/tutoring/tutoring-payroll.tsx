@@ -27,7 +27,12 @@ export function TutoringPayroll({
   const [fromDate, setFrom] = useState(startOfMonthIsoDate(today));
   const [toDate, setTo] = useState(endOfMonthIsoDate(today));
   const [exporting, setExporting] = useState(false);
-  const valid = Boolean(fromDate && toDate && fromDate <= toDate);
+  const valid = Boolean(
+    fromDate &&
+      toDate &&
+      fromDate <= toDate &&
+      (Date.parse(toDate) - Date.parse(fromDate)) / 86_400_000 + 1 <= 366
+  );
   const query = useQuery({
     queryKey: ['tutoring-payroll', wsId, fromDate, toDate, today],
     enabled: valid,

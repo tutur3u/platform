@@ -3,10 +3,8 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Tables } from '@tuturuuu/types/supabase';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  createTutoringRequestClient,
-  resolveTutoringRouteAccess,
-} from '@/lib/tutoring/route-access';
+import { resolveTutoringReadScope } from '@/lib/tutoring/read-scope';
+import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 import { readAllRows, readByIds } from '../queue/all-rows';
 
 const QuerySchema = z
@@ -14,9 +12,9 @@ const QuerySchema = z
     attendanceStatus: z
       .enum(['PENDING', 'DONE', 'NO_SHOW', 'CANCELLED'])
       .optional(),
-    fromDate: z.string().date().optional(),
+    fromDate: z.string().date(),
     groupId: z.string().uuid().optional(),
-    toDate: z.string().date().optional(),
+    toDate: z.string().date(),
     mode: z.enum(['detailed', 'payroll', 'report']).default('detailed'),
     reasonType: z
       .enum(['ABSENT_RECOVERY', 'WEAK_SUPPORT', 'CUSTOM'])
@@ -26,7 +24,10 @@ const QuerySchema = z
   })
   .refine(
     (value) =>
-      !value.fromDate || !value.toDate || value.fromDate <= value.toDate,
+      value.fromDate <= value.toDate &&
+      (Date.parse(value.toDate) - Date.parse(value.fromDate)) / 86_400_000 +
+        1 <=
+        366,
     { message: 'Invalid date range' }
   );
 
@@ -52,8 +53,8 @@ function nameOf(
 
 export async function getTutoringData(request: Request, { params }: Params) {
   const { wsId } = await params;
-  const { normalizedWsId, permissions, user } =
-    await resolveTutoringRouteAccess(request, wsId);
+  const access = await resolveTutoringRouteAccess(request, wsId);
+  const { normalizedWsId, permissions } = access;
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -86,32 +87,15 @@ export async function getTutoringData(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
   const sbAdmin = await createAdminClient();
-  if (
-    parsed.data.mode !== 'detailed' &&
-    permissions.withoutPermission('view_payroll')
-  ) {
-    const authUser =
-      user ??
-      (await (await createTutoringRequestClient(request, user)).auth.getUser())
-        .data.user;
-    if (!authUser)
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    const { data: linked, error } = await sbAdmin
-      .from('workspace_user_linked_users')
-      .select('virtual_user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('platform_user_id', authUser.id)
-      .maybeSingle();
-    if (
-      error ||
-      !linked ||
-      (parsed.data.teacherId &&
-        parsed.data.teacherId !== linked.virtual_user_id)
-    ) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
-    parsed.data.teacherId = linked.virtual_user_id;
-  }
+  const scope = await resolveTutoringReadScope({
+    request,
+    access,
+    sbAdmin,
+    teacherId: parsed.data.teacherId,
+  });
+  if (!scope.allowed)
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  parsed.data.teacherId = scope.teacherId;
   const tutoringSessionsClient = sbAdmin.schema('private');
   // Sessions sharing a date and start time tie, so `id` keeps pages stable.
   const sessions = await readAllRows<

@@ -23,6 +23,7 @@ import {
   isLinkedContentSession,
   loadLinkedLessonContent,
 } from '@/lib/tutoring/linked-content';
+import { resolveTutoringReadScope } from '@/lib/tutoring/read-scope';
 import {
   createTutoringRequestClient,
   resolveTutoringRouteAccess,
@@ -39,10 +40,8 @@ interface Params {
 
 async function getTutoringData(request: Request, { params }: Params) {
   const { wsId } = await params;
-  const { normalizedWsId, permissions } = await resolveTutoringRouteAccess(
-    request,
-    wsId
-  );
+  const access = await resolveTutoringRouteAccess(request, wsId);
+  const { normalizedWsId, permissions } = access;
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -66,6 +65,15 @@ async function getTutoringData(request: Request, { params }: Params) {
   }
 
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const scope = await resolveTutoringReadScope({
+    request,
+    access,
+    sbAdmin,
+    teacherId: parsed.data.teacherId,
+  });
+  if (!scope.allowed)
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  parsed.data.teacherId = scope.teacherId;
   const tutoringSessionsClient = sbAdmin.schema('private');
   const { page, pageSize } = parsed.data;
   const from = (page - 1) * pageSize;

@@ -9424,7 +9424,7 @@
     "payroll_empty": "No sessions in this range",
     "payroll_excel": "Export Excel",
     "payroll_from": "From",
-    "payroll_invalid_range": "Choose a valid date range",
+    "payroll_invalid_range": "Choose both dates, from earliest to latest, within 366 days.",
     "payroll_loading": "Loading report…",
     "payroll_minutes": "Minutes",
     "payroll_pending": "Past unmarked sessions",
