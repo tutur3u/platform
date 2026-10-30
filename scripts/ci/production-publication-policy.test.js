@@ -36,6 +36,10 @@ function fixture(t, policy) {
     'tuturuuu.ci.ts',
     'scripts/ci/production-publication-policy.ts',
     'scripts/ci/wave1-native-publish.mjs',
+    // The real ingress preflight and its imports; never a stub.
+    'scripts/ci/wave1-ingress-preflight.mjs',
+    'scripts/ci/wave1-ingress-topology.mjs',
+    'scripts/native-cutover/route-pattern.mjs',
     'scripts/ci/wave1-native-upload-error.mjs',
     'scripts/ci/wave1-native-upload-limits.mjs',
     'scripts/ci/wave1-native-admission.mjs',

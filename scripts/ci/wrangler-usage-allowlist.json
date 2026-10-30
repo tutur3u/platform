@@ -1479,7 +1479,7 @@
       "gap": "void-wave1-publication",
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/6859",
-        "reason": "Calendar artifact fixtures reuse caller-owned pointer/config paths instead of adding usage in a new helper. Update only this test’s lowered token counts and digest; negative controls, sealed output and source binding are retained."
+        "reason": "Calendar artifact fixtures reuse caller-owned pointer/config paths instead of adding usage in a new helper. Update only this test\u2019s lowered token counts and digest; negative controls, sealed output and source binding are retained."
       },
       "digest": "f19a7422576c029e735df74b8aa26912501b364cb855ec8972ab6ffe11c210bb"
     },
@@ -2143,13 +2143,13 @@
       },
       "digest": "636e3d58aed2915baf22884c8958aac4ed5c43e3f5be9e4a52e441c150f53e5c"
     },
-    "scripts/ci/wave1-native-publication.test.js": {
+    "scripts/ci/wave1-native-publication-harness.cjs": {
       "lines": 2,
       "uses": 2,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7320",
+        "reason": "Moved unchanged from wave1-native-publication.test.js (admitted in #6485): the shared harness asserts the publisher's single `wrangler deploy` of the sealed Void config and reads its WRANGLER_OUTPUT_FILE_PATH receipt. cf cannot publish that artifact (Void emits no cf Build Output). Remove with the gap: when the wave-1 publisher moves to `cf deploy --prebuilt`, these fixture assertions move with it."
       },
       "digest": "337188d6eb8a642ffba63d4c5903066f6a151b1155140045d7f0c235df8500d3"
     },
