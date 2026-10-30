@@ -28,8 +28,8 @@ import { MeetingLocalTime } from '@/features/call/components/meeting-local-time'
 import { MeetingPublicSettings } from '@/features/call/components/meeting-public-settings';
 import { buildCalendarEventUrl } from '@/features/call/lib/calendar-link';
 import { encodeRoomCode } from '@/features/call/lib/room-code';
-import { MeetingAiOverview } from '@/features/meeting-ai/meeting-ai-overview';
 import { readMeetingRoomPolicy } from '@/features/meeting-ai/server/room-access';
+import { MeetingNotesWorkspace } from '@/features/meeting-notes/meeting-notes-workspace';
 import { getMeetWorkspaceContext } from '../../workspace-context';
 import { MeetingActions } from './meeting-actions';
 import { loadMeetingCalendarEvent } from './meeting-calendar-event';
@@ -57,6 +57,7 @@ export default async function MeetingDetailPage({
   const { user, workspaceSlug, wsId } = await getMeetWorkspaceContext(id);
   const t = await getTranslations('meet.call');
   const details = await getTranslations('meet.details');
+  const notesPage = await getTranslations('meet.notes_page');
   const supabase = await createAdminClient({ noCookie: true });
 
   // Fetch meeting details
@@ -149,8 +150,18 @@ export default async function MeetingDetailPage({
       </div>
 
       <div className="mb-6">
-        {policy.canReadNotes && (
-          <MeetingAiOverview wsId={wsId} meetingId={meetingId} />
+        {policy.canReadNotes ? (
+          <MeetingNotesWorkspace
+            wsId={wsId}
+            meetingId={meetingId}
+            title={meeting.name ?? t('untitled_meeting')}
+            isHost={isHost}
+            shared={policy.settings?.shareNotesAfterMeeting === true}
+          />
+        ) : (
+          <output className="block rounded-xl border bg-muted/30 p-4 text-muted-foreground text-sm">
+            {notesPage('not_shared')}
+          </output>
         )}
       </div>
       {/* Meeting Details */}
