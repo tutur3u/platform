@@ -185,6 +185,7 @@ describe('common', () => {
     );
 
     it('scopes cookies to .staging.tutur3u.com on a staging host and leaves production on .tuturuuu.com', () => {
+      process.env.TUTURUUU_DEPLOY_ENV = 'staging';
       process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN =
         '.staging.tutur3u.com';
 
@@ -205,6 +206,7 @@ describe('common', () => {
         sameSite: 'lax',
       });
 
+      delete process.env.TUTURUUU_DEPLOY_ENV;
       delete process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN;
 
       expect(

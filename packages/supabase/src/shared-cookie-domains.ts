@@ -37,7 +37,7 @@ export function resetProductionOverrideErrorLogForTests() {
 }
 
 /**
- * Server code reads `VERCEL_ENV`; browser bundles cannot see it, so they fall
+ * Server code reads `TUTURUUU_DEPLOY_ENV` for explicit staging admission and `VERCEL_ENV`; browser bundles cannot see it, so they fall
  * back to `NEXT_PUBLIC_VERCEL_ENV` when it is exposed to the client.
  */
 function isProductionDeployment() {
@@ -50,6 +50,15 @@ function isProductionDeployment() {
 export function getTuturuuuSharedCookieDomains(): readonly TuturuuuSharedCookieDomain[] {
   const normalized =
     process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN?.trim().toLowerCase();
+  if (
+    process.env.TUTURUUU_DEPLOY_ENV === 'staging' &&
+    (isProductionDeployment() || normalized !== '.staging.tutur3u.com')
+  ) {
+    throw new Error(
+      'Staging requires the staging shared cookie domain and a non-production runtime'
+    );
+  }
+
   const ignoredOnProduction = Boolean(normalized) && isProductionDeployment();
 
   if (ignoredOnProduction && !productionOverrideErrorLogged) {
@@ -59,9 +68,12 @@ export function getTuturuuuSharedCookieDomains(): readonly TuturuuuSharedCookieD
     );
   }
 
-  const accepted = ignoredOnProduction
-    ? undefined
-    : CONFIGURED_SHARED_COOKIE_DOMAINS.find((domain) => domain === normalized);
+  const accepted =
+    ignoredOnProduction || process.env.TUTURUUU_DEPLOY_ENV !== 'staging'
+      ? undefined
+      : CONFIGURED_SHARED_COOKIE_DOMAINS.find(
+          (domain) => domain === normalized
+        );
 
   return accepted
     ? [

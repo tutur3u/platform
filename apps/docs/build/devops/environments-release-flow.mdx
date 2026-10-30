@@ -478,3 +478,14 @@ empty legacy values retain the production default. Whitespace is rejected rather
 than trimmed. This applies to the infrastructure API and blue-green watcher.
 Regression coverage lives in `branch-validation.test.ts`,
 `managed-project-branch.test.ts`, and `watch-blue-green-projects.test.js`.
+
+
+Shared cookie scope requires `TUTURUUU_DEPLOY_ENV=staging` in the process
+running the shared cookie helpers before `.staging.tutur3u.com` is accepted.
+Missing, unknown and production values ignore the staging override. An explicit
+staging environment with a missing or invalid override, or a Vercel production
+marker, throws rather than falling back to the production cookie domain.
+This applies to both utils and Supabase helpers, including Workers; callers must
+provide this environment value where the helpers execute. Regression coverage:
+`packages/utils/src/shared-cookie-deploy-env.test.ts`. The Web fallback continues
+to reject mismatched upstream cookie domains with 502.
