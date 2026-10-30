@@ -551,3 +551,35 @@ The first-message rollback restores main's prior chat_create_conversation body
 and service-only ACL. Refuse retained creation receipts: removing retry identities
 can resurrect deleted conversations. Verify actual apply/rollback/reapply and
 prior catalog equality with apps/database/verification/chat-first-message-rollback-*.sql.
+
+### Local independent-session pgTAP fixtures
+
+Use `tests/helpers/local-dblink.inc` before transactions and fixture writes.
+Stock Supabase uses SCRAM on `db.supabase.internal:5432`, while loopback trust
+does not satisfy non-superuser dblink authentication even when a password is
+supplied. Preserve `test.dblink_connstr` for other disposable runners and treat
+the helper's connection-unavailable TAP skip as missing concurrency evidence,
+not a passing assertion. Verify both the default connection and unavailable-port
+skip path; keep later SQL errors fatal. See the local Supabase development
+runbook for setup and owned-stack cleanup.
+
+### Meet consent and retention adoption
+
+Keep consent evidence private and client mutations revoked. Exercise actual
+client DELETE/UPDATE denials and latest `(created_at, id)` ordering in
+`meet-ai-consent-schema.sql`. Retention schema adoption must explicitly replace
+the purge function and include a same-file REVOKE ALL plus service-only grant,
+with `search_path = pg_catalog, pg_temp` in forward and rollback definitions.
+Close the purge fence and withdraw deletion approval when eligibility changes;
+require fresh owner approval after dry-run counts. Preserve NULL-as-forever,
+backfilled historical deadlines, edited-note erasure and the bounded stop fence.
+See the Meet application feature page and transcript retention runbook.
+
+Meet evidence retention uses a session RESTRICT FK and user SET NULL FK. Mint a
+random per-session participant UUID on consent insert and reuse it under a session
+row lock; never derive it from identity or persist a separate mapping. Auth deletion keeps the public profile, so anonymize consent at an AFTER DELETE
+Auth trigger too. The immutable UPDATE trigger must permit only nested
+server/Auth deletion anonymization, preserving every
+other field. Test Auth/client deletion denial, creator/admin meeting deletion
+refusal and explicit service consent-before-session erasure. Keep transcript purge
+in-place; it retains consent. See `meet-ai-consent-retention.sql`.

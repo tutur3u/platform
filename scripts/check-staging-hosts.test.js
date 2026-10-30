@@ -9,8 +9,11 @@ const {
   check,
   normalizeHost,
   scannedFile,
+  stripCommentVariants,
   violations,
 } = require('./check-staging-hosts.js');
+
+const stripComments = (source) => stripCommentVariants(source)[0];
 for (const host of [
   'pay-staging',
   'contacts.staging',
@@ -304,4 +307,109 @@ test('detects hosts concatenated across comments', () => {
     violations('const host = "https://dev.staging.tutur3u.com";').length,
     0
   );
+});
+
+test('regex literals cannot open a block comment that hides a host', () => {
+  for (const source of [
+    "const re = /\\/*/;\nconst host = 'dev.tuturuuu.com';",
+    "if (/\\/*/.test(x)) host = 'dev.tuturuuu.com';",
+    "x = a ? /\\/*/ : 1; const h = 'staging.tuturuuu.com';",
+    "return /[/*]/g.test(s) && 'dev.tuturuuu.com';",
+    "const re = /\"/; const h = 'dev.tuturuuu.com';",
+    "const re = /'/; const h = 'dev.tuturuuu.com';",
+    "const re = /`/; const h = 'dev.tuturuuu.com';",
+    "if (ok) /\\/*/.test(s); const h = 'dev.tuturuuu.com';",
+  ])
+    assert.equal(violations(source).length, 1, source);
+});
+
+test('strings containing comment openers do not hide a host', () => {
+  for (const source of [
+    "const a = '/*'; const h = 'dev.tuturuuu.com';",
+    'const a = "/*"; const h = "dev.tuturuuu.com";',
+    'const a = `/*`; const h = `dev.tuturuuu.com`;',
+    "const a = '//'; const h = 'dev.tuturuuu.com';",
+  ])
+    assert.equal(violations(source).length, 1, source);
+});
+
+test('URLs with // do not start a comment', () => {
+  assert.equal(
+    violations('const u = "https://example.com"; const h = "dev.tuturuuu.com";')
+      .length,
+    1
+  );
+  assert.equal(
+    violations('URL=https://example.com\nHOST=dev.tuturuuu.com').length,
+    1
+  );
+  assert.equal(violations('url: https://dev.tuturuuu.com/path').length, 1);
+});
+
+test('real comments are still stripped', () => {
+  assert.equal(stripComments('a /* dev.tuturuuu.com */ b').trim(), 'a   b');
+  assert.equal(stripComments('a // dev.tuturuuu.com\nb'), 'a \nb');
+  assert.equal(
+    stripComments('x = 1 / 2; // dev.tuturuuu.com\n'),
+    'x = 1 / 2; \n'
+  );
+  assert.equal(stripComments('x = (a) / 2 /* c */;').includes('c'), false);
+  assert.deepEqual(violations('// dev.tuturuuu.com'), []);
+  assert.deepEqual(violations('/* dev.tuturuuu.com */'), []);
+  assert.deepEqual(violations('const re = /a+/g; // dev.tuturuuu.com'), []);
+  assert.deepEqual(violations('const n = a / b; /* dev.tuturuuu.com */'), []);
+});
+
+test('regex literals are kept verbatim', () => {
+  assert.equal(stripComments('const re = /\\/*/gi;'), 'const re = /\\/*/gi;');
+  assert.equal(stripComments('x = /[/]/;'), 'x = /[/]/;');
+  assert.equal(violations('const re = /dev\\.tuturuuu\\.com/;').length, 1);
+});
+
+test('division is not misread as a regex that hides a host', () => {
+  for (const source of [
+    'const n = (1) / "/ /*" / 1;\nconst host = "dev.tuturuuu.com";',
+    "const n = x / '/ /*' / 1; const host = 'dev.tuturuuu.com';",
+    'const n = a++ / "/ /*" / 1; const host = "dev.tuturuuu.com";',
+    'const n = {} / "/ /*" / 1;\nconst host = "dev.tuturuuu.com";',
+    'const n = [1] / "/ /*" / 1;\nconst host = "dev.tuturuuu.com";',
+  ])
+    assert.equal(violations(source).length, 1, source);
+});
+
+test('comments and whitespace after a keyword do not defeat regex detection', () => {
+  for (const source of [
+    'function f() { return /* explanation */ /\\/*/; }\nconst host = "dev.tuturuuu.com";',
+    `function f() { return${' '.repeat(40)}/\\/*/; }\nconst host = "dev.tuturuuu.com";`,
+    'function f() { return // why\n /\\/*/; }\nconst host = "dev.tuturuuu.com";',
+    'x = typeof /* c */ /\\/*/; const host = "dev.tuturuuu.com";',
+    'if (ok) /* c */ /\\/*/.test(s); const host = "dev.tuturuuu.com";',
+  ])
+    assert.equal(violations(source).length, 1, source);
+});
+
+test('mixed ambiguous sites cannot hide a host in every reading', () => {
+  assert.equal(
+    violations(
+      'const n = {} / "/ /*" / 1;\nfoo({}) /\\/*/.test(s);\nconst host = "dev.tuturuuu.com";\n/* end */'
+    ).length,
+    1
+  );
+});
+
+test('property names that look like keywords stay division', () => {
+  assert.equal(
+    violations('x = a.return / "/ /*" / 1; h = "dev.tuturuuu.com";').length,
+    1
+  );
+});
+
+test('an unterminated block comment is scanned, not stripped', () => {
+  assert.equal(violations("h = 'dev.tuturuuu.com'; /* never closed").length, 1);
+  assert.equal(violations("rm /tmp/*\nh = 'dev.tuturuuu.com'").length, 1);
+});
+
+test('too many ambiguous sites fail closed to scanning comments', () => {
+  const ambiguous = '{} /\\/*/ ;\n'.repeat(40);
+  assert.equal(violations(`${ambiguous}// dev.tuturuuu.com\n`).length, 1);
 });

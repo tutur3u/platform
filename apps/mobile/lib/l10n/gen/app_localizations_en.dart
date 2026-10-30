@@ -14326,6 +14326,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindAskRemindAtMacSoon => 'Coming soon';
 
   @override
+  String get settingsShareTelemetry => 'Share analytics and crash reports';
+
+  @override
+  String get settingsPrivacy => 'Privacy';
+
+  @override
+  String get settingsTelemetryError => 'Could not update sharing. Tap to retry.';
+
+  @override
   String mastermindMachineUpdated(String time) {
     return 'As of $time';
   }
@@ -14700,4 +14709,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindSecurityFix => 'Security fix';
+
+  @override
+  String get telemetryConsentTitle => 'Help improve Tuturuuu?';
+
+  @override
+  String get telemetryConsentBody => 'Share usage data and crash reports with Google Firebase so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.';
+
+  @override
+  String get telemetryConsentAllow => 'Allow';
+
+  @override
+  String get telemetryConsentDeny => 'Don\'t allow';
+
+  @override
+  String get telemetryConsentLearnMore => 'Privacy details';
+
+  @override
+  String get settingsShareTelemetryDescription => 'Send usage data and crash reports to Google Firebase to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.';
 }

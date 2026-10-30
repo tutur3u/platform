@@ -6300,6 +6300,9 @@
   "mastermindAskActionFyi": "Để bạn biết",
   "mastermindAskRemindAtMac": "Nhắc tôi khi ở máy Mac",
   "mastermindAskRemindAtMacSoon": "Sắp ra mắt",
+  "settingsShareTelemetry": "Chia sẻ dữ liệu phân tích và báo cáo sự cố",
+  "settingsPrivacy": "Quyền riêng tư",
+  "settingsTelemetryError": "Không thể cập nhật lựa chọn chia sẻ. Nhấn để thử lại.",
   "mastermindMachineUpdated": "Tính đến {time}",
   "@mastermindMachineUpdated": {
     "placeholders": {
@@ -6521,5 +6524,11 @@
   "mastermindMorningCatchupSubtitle": "Một thông báo cho biết bản tin đã sẵn sàng. Lưu trên thiết bị này; việc gửi sẽ bắt đầu khi hub hỗ trợ.",
   "mastermindMorningCatchupTime": "Giờ",
   "mastermindCatchupPushBody": "Bản tin của bạn đã sẵn sàng",
-  "mastermindSecurityFix": "Bản vá bảo mật"
+  "mastermindSecurityFix": "Bản vá bảo mật",
+  "telemetryConsentTitle": "Giúp cải thiện Tuturuuu?",
+  "telemetryConsentBody": "Chia sẻ dữ liệu sử dụng và báo cáo sự cố với Google Firebase để chúng tôi sửa lỗi và cải thiện ứng dụng. Gồm mã định danh ứng dụng và thiết bị, sự kiện sử dụng, báo cáo sự cố, và thông tin thiết bị, hệ điều hành. Bạn có thể đổi lựa chọn bất cứ lúc nào tại Cài đặt > Tùy chọn > Quyền riêng tư.",
+  "telemetryConsentAllow": "Cho phép",
+  "telemetryConsentDeny": "Không cho phép",
+  "telemetryConsentLearnMore": "Chi tiết về quyền riêng tư",
+  "settingsShareTelemetryDescription": "Gửi dữ liệu sử dụng và báo cáo sự cố tới Google Firebase để giúp chúng tôi sửa lỗi và cải thiện ứng dụng. Khi tắt, việc thu thập dừng lại và các báo cáo sự cố chưa gửi sẽ bị xóa."
 }

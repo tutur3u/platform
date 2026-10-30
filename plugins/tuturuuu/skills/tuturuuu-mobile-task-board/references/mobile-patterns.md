@@ -435,6 +435,29 @@ and the pre-`runApp` join. Completion-barrier tests live in
 `test/core/startup/startup_state_test.dart`. See the Mobile application guide's
 [ordering contract](../../../../../apps/docs/platform/applications/mobile.mdx#independent-startup-state-restoration).
 
+## Analytics and crash sharing
+
+- Keep collection changes behind `TelemetryPreference` and the production-only
+  gate in `MobileObservability`. Read the persisted device choice before Firebase
+  initialization; native defaults remain disabled. Collection is off until an
+  explicit Allow in every region: add no locale, region or network-based default.
+  The stored answer carries a notice version; bump it with any consent wording
+  change so users are asked again.
+- Keep no advertising identifier: the Android AD_ID and ACCESS_ADSERVICES_AD_ID permissions stay removed and
+  iOS keeps `$FirebaseAnalyticsWithoutAdIdSupport` and the ADID Info.plist key.
+- Older builds persisted SDK collection-on, which beats manifest/Info.plist
+  defaults. Keep the native gates (Android `TelemetryConsentGateProvider`
+  above `FirebaseInitProvider`, iOS `willFinishLaunching`) and Dart's unsent-
+  report deletion when collection is off; recheck the gate keys on SDK upgrades.
+- The first-run prompt (`TelemetryConsentPage`, `/telemetry-consent`) is driven by
+  `TelemetryPreference.consentPending` and the router redirect in
+  `app_router_telemetry_consent.dart`; it is production-only, opens above the
+  shell, has equal-weight answers (back gesture = Don't allow) and persists
+  through `setEnabled`.
+- See `apps/docs/platform/features/mobile-telemetry-privacy.mdx` for the consent
+  rules, notice versioning and exceptions. Verify startup ordering,
+  persistence, native defaults and Settings controls with the telemetry suites.
+
 ## Mastermind Machines
 
 - The read-only Machines parser lives in `features/mastermind/machines/`. Keep

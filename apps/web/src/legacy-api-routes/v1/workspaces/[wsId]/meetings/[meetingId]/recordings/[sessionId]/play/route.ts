@@ -8,6 +8,7 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { canReadLegacyRecordingMedia } from '@/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/_lib/recording-access';
 
 export async function GET(
   _request: NextRequest,
@@ -50,6 +51,18 @@ export async function GET(
       );
     }
 
+    // Verify the meeting belongs to this workspace and read its host
+    const { data: meeting } = await supabase
+      .from('workspace_meetings')
+      .select('id, creator_id')
+      .eq('id', meetingId)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (!meeting) {
+      return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
+    }
+
     // Verify the recording session exists and belongs to this meeting
     const { data: session } = await supabase
       .from('recording_sessions')
@@ -62,6 +75,31 @@ export async function GET(
       return NextResponse.json(
         { error: 'Recording session not found' },
         { status: 404 }
+      );
+    }
+
+    // Audio is as sensitive as the transcript: only the recorded identity,
+    // the host and workspace admins may list or sign it. Fail closed.
+    let canRead = false;
+    try {
+      canRead = await canReadLegacyRecordingMedia({
+        supabase,
+        wsId,
+        userId: user.id,
+        creatorId: meeting.creator_id,
+        recordedBy: session.user_id,
+      });
+    } catch (error) {
+      console.error('Error verifying recording audio access:', error);
+      return NextResponse.json(
+        { error: 'Failed to verify recording permissions' },
+        { status: 500 }
+      );
+    }
+    if (!canRead) {
+      return NextResponse.json(
+        { error: 'Recording audio access denied' },
+        { status: 403 }
       );
     }
 

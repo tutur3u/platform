@@ -32,6 +32,7 @@ import 'package:mobile/features/settings/view/settings_row_layout.dart';
 import 'package:mobile/features/settings/view/settings_search.dart';
 import 'package:mobile/features/settings/view/settings_session_section.dart';
 import 'package:mobile/features/settings/view/settings_widgets.dart';
+import 'package:mobile/features/settings/view/telemetry_settings_tile.dart';
 import 'package:mobile/features/settings/view/timezone_settings_tile.dart';
 import 'package:mobile/features/settings/view/workspace_timezone_settings_tile.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';

@@ -16,7 +16,7 @@ vi.mock(
     ...(await importOriginal<
       typeof import('@tuturuuu/storage-core/profile-upload-budget')
     >()),
-    reserveProfileUploadBudget: f.budget,
+    reserveWorkspaceManagedAvatarBudget: f.budget,
   })
 );
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -78,7 +78,7 @@ it('Web budgets the verified session actor before admin ticket issuance', async 
     request: req,
     user: { id: 'verified-web' },
   });
-  expect(f.budget).toHaveBeenCalledWith('verified-web', 'avatar');
+  expect(f.budget).toHaveBeenCalledWith(workspace, 'verified-web');
   expect(f.bucket).toHaveBeenCalledWith('avatars');
   expect(f.sign).toHaveBeenCalledExactlyOnceWith(
     `${workspace}/users/avatar.webp`
@@ -99,7 +99,7 @@ it('Contacts budgets the same injected satellite actor used for workspace author
     request: req,
     user: actor,
   });
-  expect(f.budget).toHaveBeenCalledWith(actor.id, 'avatar');
+  expect(f.budget).toHaveBeenCalledWith(workspace, actor.id);
 });
 it.each([429, 503])(
   'quota denial %s cannot create an admin upload ticket',
@@ -112,6 +112,12 @@ it.each([429, 503])(
     expect(response.headers.get('Retry-After')).toBe(
       status === 429 ? '60' : null
     );
+    if (status === 429)
+      expect(await response.json()).toEqual({
+        message: 'Denied',
+        code: 'PROFILE_UPLOAD_LIMIT',
+        retryAfter: 60,
+      });
     expect(f.admin).not.toHaveBeenCalled();
     expect(f.sign).not.toHaveBeenCalled();
   }
