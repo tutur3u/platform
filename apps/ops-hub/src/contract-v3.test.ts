@@ -85,7 +85,7 @@ it.each(ORG_CANARIES)(
     if (parsed.v !== 3) throw new Error('Expected v3');
     expect(parsed.snapshot?.org?.nodes[0]?.taskTitle).toBeNull();
     expect(JSON.stringify(parsed)).not.toContain(value);
-    for (const field of ['role', 'team', 'pool', 'modelFamily']) {
+    for (const field of ['role', 'roleKey', 'team', 'pool', 'modelFamily']) {
       expect(ingestSchema.safeParse(withNode({ [field]: value })).success).toBe(
         false
       );
@@ -220,6 +220,8 @@ it('preserves the safeExtend 128 KiB snapshot boundary with 100 org nodes', () =
           ...node,
           key: i.toString(16).padStart(32, 'a'),
           label: `界${'x'.repeat(79)}`,
+          roleKey: 'r'.repeat(64),
+          area: 'platform',
           role: 'x'.repeat(80),
           team: 'x'.repeat(64),
           pool: 'x'.repeat(64),
@@ -276,4 +278,73 @@ it('preserves the safeExtend 128 KiB snapshot boundary with 100 org nodes', () =
     expect(result.error.issues).toEqual([
       expect.objectContaining({ code: 'custom', path: ['snapshot'] }),
     ]);
+});
+
+it('accepts optional agent role keys at their regex bounds', () => {
+  for (const roleKey of ['atlas', 'release-agent', 'r'.repeat(64), '-', 'a0']) {
+    const parsed = ingestSchema.parse(withNode({ roleKey, area: 'release' }));
+    if (parsed.v !== 3) throw new Error('Expected v3');
+    expect(parsed.snapshot?.org?.nodes[0]).toMatchObject({
+      kind: 'agent',
+      roleKey,
+      area: 'release',
+    });
+  }
+});
+it('rejects role keys outside the closed ASCII format', () => {
+  for (const roleKey of [
+    '',
+    'Atlas',
+    'role_key',
+    'release.agent',
+    'release/agent',
+    'two words',
+    'r'.repeat(65),
+    'atlas\n',
+    null,
+    1,
+  ]) {
+    expect(ingestSchema.safeParse(withNode({ roleKey })).success).toBe(false);
+  }
+});
+it('deny-scans role keys even when their regex is valid', () => {
+  for (const roleKey of [
+    'customer',
+    'security',
+    'thread-canary',
+    'run-canary',
+    '01234567-89ab-4cde-8fab-0123456789ab',
+  ]) {
+    expect(roleKey).toMatch(/^[a-z0-9-]{1,64}$/);
+    expect(ingestSchema.safeParse(withNode({ roleKey })).success).toBe(false);
+  }
+});
+it('requires lanes to omit roleKey entirely', () => {
+  expect(ingestSchema.safeParse(withNode({ kind: 'lane' })).success).toBe(true);
+  for (const roleKey of ['atlas', undefined, null]) {
+    expect(
+      ingestSchema.safeParse(withNode({ kind: 'lane', roleKey })).success
+    ).toBe(false);
+  }
+});
+it('accepts exactly the operator-set areas on both node variants', () => {
+  for (const kind of ['agent', 'lane']) {
+    for (const area of [
+      'ec',
+      'meet',
+      'mobile',
+      'security',
+      'release',
+      'platform',
+    ]) {
+      expect(ingestSchema.safeParse(withNode({ kind, area })).success).toBe(
+        true
+      );
+    }
+    for (const area of ['unknown', 'EC', null, 1, []]) {
+      expect(ingestSchema.safeParse(withNode({ kind, area })).success).toBe(
+        false
+      );
+    }
+  }
 });

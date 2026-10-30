@@ -22,6 +22,8 @@ const node = {
   kind: 'agent',
   label: 'Release agent',
   role: 'Release',
+  roleKey: 'release-agent',
+  area: 'release',
   status: 'working',
   activity: 'now',
 };
@@ -85,9 +87,42 @@ before(async () => {
 after(async () => {
   await server?.close();
 });
+test('v3 stores agent role keys and areas but lanes strictly omit roleKey', async () => {
+  const { roleKey, ...lane } = node;
+  assert.equal(roleKey, 'release-agent');
+  const value = {
+    ...snapshot(),
+    org: {
+      nodes: [
+        node,
+        { ...lane, key: 'b'.repeat(32), kind: 'lane', area: 'mobile' },
+      ],
+      edges: [],
+    },
+  };
+  assert.equal((await publish(value)).status, 200);
+  assert.deepEqual((await (await read('/snapshot')).json()).org, value.org);
+  for (const invalid of [
+    snapshot({ kind: 'lane' }),
+    snapshot({ roleKey: 'thread-canary' }),
+    snapshot({ area: 'unknown' }),
+    {
+      ...value,
+      org: {
+        ...value.org,
+        nodes: [
+          node,
+          { ...lane, key: 'b'.repeat(32), kind: 'lane', area: 'unknown' },
+        ],
+      },
+    },
+  ])
+    assert.equal((await publish(invalid)).status, 400);
+});
 test('v3 signed ingest refuses label canaries and stores only null task titles', async () => {
   for (const { value } of ORG_CANARIES) {
     assert.equal((await publish(snapshot({ label: value }))).status, 400);
+    assert.equal((await publish(snapshot({ roleKey: value }))).status, 400);
     assert.equal((await publish(snapshot({ taskTitle: value }))).status, 200);
     const stored = await server.durableObjectSql(
       'OpsHub',
