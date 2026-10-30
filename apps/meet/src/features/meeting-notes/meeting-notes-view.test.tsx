@@ -16,7 +16,7 @@ import { MeetingNotesView } from './meeting-notes-view';
 const mocks = vi.hoisted(() => ({
   success: vi.fn(),
   error: vi.fn(),
-  followups: vi.fn(() => null),
+  followups: vi.fn((_props: Record<string, unknown>) => null),
 }));
 vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: { success: mocks.success, error: mocks.error },
