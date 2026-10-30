@@ -36,12 +36,31 @@ export function resetProductionOverrideErrorLogForTests() {
   productionOverrideErrorLogged = false;
 }
 
-/**
- * Server code reads `TUTURUUU_DEPLOY_ENV` for explicit staging admission and `VERCEL_ENV`; browser bundles cannot see it, so they fall
- * back to `NEXT_PUBLIC_VERCEL_ENV` when it is exposed to the client.
- */
+/** One policy for server runtime admission and the build-inlined browser signal. */
+export function isStagingSharedCookieDeployment(domain: string | undefined) {
+  const deployEnv = process.env.TUTURUUU_DEPLOY_ENV;
+  const production =
+    deployEnv === 'production' ||
+    process.env.VERCEL_ENV === 'production' ||
+    process.env.NEXT_PUBLIC_VERCEL_ENV === 'production';
+  const staging =
+    deployEnv === 'staging' ||
+    (deployEnv === undefined &&
+      process.env.NEXT_PUBLIC_TUTURUUU_STAGING === '1');
+
+  if (deployEnv === 'staging' && production) {
+    throw new Error('Staging cannot use a production runtime');
+  }
+  if (production) return false;
+  if (staging && domain !== '.staging.tutur3u.com') {
+    throw new Error('Staging requires the staging shared cookie domain');
+  }
+  return staging;
+}
+
 function isProductionDeployment() {
   return (
+    process.env.TUTURUUU_DEPLOY_ENV === 'production' ||
     process.env.VERCEL_ENV === 'production' ||
     process.env.NEXT_PUBLIC_VERCEL_ENV === 'production'
   );
@@ -50,14 +69,7 @@ function isProductionDeployment() {
 export function getTuturuuuSharedCookieDomains(): readonly TuturuuuSharedCookieDomain[] {
   const normalized =
     process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN?.trim().toLowerCase();
-  if (
-    process.env.TUTURUUU_DEPLOY_ENV === 'staging' &&
-    (isProductionDeployment() || normalized !== '.staging.tutur3u.com')
-  ) {
-    throw new Error(
-      'Staging requires the staging shared cookie domain and a non-production runtime'
-    );
-  }
+  const staging = isStagingSharedCookieDeployment(normalized);
 
   const ignoredOnProduction = Boolean(normalized) && isProductionDeployment();
 
@@ -69,7 +81,7 @@ export function getTuturuuuSharedCookieDomains(): readonly TuturuuuSharedCookieD
   }
 
   const accepted =
-    ignoredOnProduction || process.env.TUTURUUU_DEPLOY_ENV !== 'staging'
+    ignoredOnProduction || !staging
       ? undefined
       : CONFIGURED_SHARED_COOKIE_DOMAINS.find(
           (domain) => domain === normalized
