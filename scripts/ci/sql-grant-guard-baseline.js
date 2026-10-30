@@ -106,7 +106,7 @@ function collectDiagnostics({ files, readFile }) {
     if (rollback) {
       const name = path.posix.basename(file);
       const stem = name.replace(
-        /\.(?:incident-rollback|rollback|containment)\.sql$/,
+        /\.(?:incident-rollback|rollback-validate|rollback|containment)\.sql$/,
         '.sql'
       );
       if (stem === name || !files.includes(`${SQL_DIRS[0]}/${stem}`))

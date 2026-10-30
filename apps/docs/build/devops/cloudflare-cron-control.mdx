@@ -186,7 +186,10 @@ difference aborts. Secret values are never compared or logged.
 
 cf beta.20's strict dashboard diff compares arrays in order. The typed config
 therefore lists the nine crons in the exact order returned by the dashboard API, while the guard
-sorts both cron lists. Disabled traces explicitly retain the live sampling rate
+sorts both cron lists. The source/runtime verifier compares the exact cron set
+and total count, so reordering passes while missing, extra, changed or duplicate
+schedules fail. Coverage: `apps/cron-control/scripts/assert-cron-set.test.mjs`;
+run it with the real Worker checks in `scripts/verify-worker-runtime.mjs`. Disabled traces explicitly retain the live sampling rate
 of `0.05` and persistence; logs remain enabled at `0.05`. This prevents cf's
 implicit disabled-trace default of `1` from changing sampling. Do not enable
 traces or change sampling as part of admission.

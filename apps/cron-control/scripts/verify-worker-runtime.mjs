@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { after, before, test } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { startCfViteWorker } from '../../../scripts/ci/cf-vite-worker.mjs';
+import { assertCronSet } from './assert-cron-set.mjs';
 
 // No scheduled event is dispatched: HTTP checks cannot run the DB recovery RPC.
 // Source mode serves cloudflare.config.ts through the Vite dev runtime; CI sets
@@ -47,7 +48,7 @@ test('source config keeps every schedule and enables only database history reten
   const { default: config } = await import(
     pathToFileURL(`${root}/cloudflare.config.ts`).href
   );
-  assert.deepEqual(
+  assertCronSet(
     config.worker.triggers.map((trigger) => trigger.schedule),
     TRIGGERS
   );
