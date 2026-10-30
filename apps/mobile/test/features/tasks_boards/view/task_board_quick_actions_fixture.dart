@@ -42,6 +42,7 @@ class QuickActionsRepository extends RowActionsRepository {
     ),
   };
   final List<QuickActionUpdate> sent = [];
+  Future<void>? updateBarrier;
 
   @override
   Future<TaskBoardDetail> getTaskBoardDetail(
@@ -107,6 +108,7 @@ class QuickActionsRepository extends RowActionsRepository {
     bool clearEndDate = false,
     bool clearEstimationPoints = false,
   }) async {
+    await updateBarrier;
     if (updateError != null) throw updateError!;
     sent.add((
       taskId: taskId,
@@ -158,6 +160,7 @@ Future<void> openQuickActionsSheet(
 Future<void> settleQuickActionMutation(
   WidgetTester tester, {
   bool waitForCompletion = false,
+  Duration timeout = const Duration(seconds: 30),
 }) async {
   await tester.pump();
   final cubit = readRowActionsCubit(tester);
@@ -169,7 +172,7 @@ Future<void> settleQuickActionMutation(
   // run out long before a loaded CI runner finishes the save.
   final elapsed = Stopwatch()..start();
   while (cubit.state.isMutating) {
-    if (elapsed.elapsed > const Duration(seconds: 30)) {
+    if (elapsed.elapsed > timeout) {
       fail('quick-action save did not complete within 30s');
     }
     await tester.runAsync(
