@@ -1,6 +1,7 @@
 import {
   type ProfileMediaKind,
   reserveProfileUploadBudget,
+  reserveWorkspaceManagedAvatarBudget,
 } from '@tuturuuu/storage-core/profile-upload-budget';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { createAppCoordinationToken } from '@tuturuuu/utils/app-coordination-token';
@@ -11,9 +12,17 @@ export async function createOptimizedProfileMediaTicket(
   kind: ProfileMediaKind,
   origin: string,
   workspaceId?: string,
-  avatarPrefix?: string
+  avatarPrefix?: string,
+  /**
+   * Explicit opt-in for the higher workspace-managed avatar budget. Set it only
+   * after authorizing `userId` to manage users in this workspace; never derive
+   * it from `avatarPrefix`, which the unauthenticated profile-link route also uses.
+   */
+  managedUserWorkspaceId?: string
 ) {
-  await reserveProfileUploadBudget(userId, kind);
+  if (managedUserWorkspaceId && kind === 'avatar')
+    await reserveWorkspaceManagedAvatarBudget(managedUserWorkspaceId, userId);
+  else await reserveProfileUploadBudget(userId, kind);
   const { token, claims } = createAppCoordinationToken({
     userId,
     targetApp: 'profile-media-upload',

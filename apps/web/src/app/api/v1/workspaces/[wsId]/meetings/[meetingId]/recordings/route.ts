@@ -58,7 +58,7 @@ async function getRecordings(
     // Verify the meeting exists and belongs to this workspace
     const { data: meeting } = await supabase
       .from('workspace_meetings')
-      .select('id')
+      .select('id, creator_id')
       .eq('id', meetingId)
       .eq('ws_id', wsId)
       .single();
@@ -154,7 +154,13 @@ async function getRecordings(
       userId: user.id,
       creatorId: null,
     });
-    const sessionIds = (sessions ?? []).map((session) => session.id);
+    // A recording's transcript is readable only by the identity recorded on
+    // the session, the meeting host, and workspace admins; other members see
+    // the session without the transcript.
+    const isHost = meeting.creator_id === user.id;
+    const sessionIds = (sessions ?? [])
+      .filter((session) => isAdmin || isHost || session.user_id === user.id)
+      .map((session) => session.id);
     const transcriptsBySessionId = new Map<string, RecordingTranscript>();
 
     if (sessionIds.length > 0) {

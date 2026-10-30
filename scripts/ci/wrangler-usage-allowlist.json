@@ -1,6 +1,16 @@
 {
   "$comment": "Shrink-only allowlist enforced by scripts/ci/wrangler-usage-guard.test.js. Lower counts as usage is removed; a new entry, count growth or changed gap needs a fresh structured admitted object with a repository PR decision URL and reason. Uses conservatively count every Wrangler token, including comments. See apps/docs/build/development-tools/cf-cli-wrangler-parity.mdx.",
   "gaps": {
+    "cf-config-internals": {
+      "reason": "Installed cf exposes convertToWranglerConfig and wranglerConfig for normalized configuration and deployment drift checks; no equivalent cf-named API exists in the pinned version. The regression test invokes cf internals, not the Wrangler CLI.",
+      "owner": "cf/Void Wrangler-exit lane and Cron Control parity maintainers",
+      "removal": "Remove when the pinned cf package exposes equivalent APIs without the legacy names and the installed-helper drift regression migrates to them."
+    },
+    "deployment-source-compatibility": {
+      "reason": "Worker settings snapshots must recognize the Cloudflare last_deployed_from value wrangler alongside cf and dashboard provenance. Replacing the historical source value with cf would reject valid existing deployments; no CLI is invoked.",
+      "owner": "cf/Void Wrangler-exit lane and Worker settings preflight maintainers",
+      "removal": "Remove only when supported Worker deployment snapshots no longer report the legacy source value and provenance validation can safely stop recognizing it."
+    },
     "do-publication-rehearsal": {
       "reason": "Existing Durable Object Workers must retain applied v1 production migration tags until disposable same-history migration/data-retention rehearsal proves cf exports publication parity.",
       "owner": "cf/Void Wrangler-exit lane; release orchestrator owns rehearsal acceptance and the separate publisher promotion.",
@@ -1488,6 +1498,16 @@
       "uses": 2,
       "digest": "266117b4de2288a62660949298586be14768bbdd9d9a4fac3df4c0c03922e16a"
     },
+    "scripts/ci/cf-cron-control-order.test.mjs": {
+      "gap": "cf-config-internals",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7304",
+        "reason": "ADMITTED GAP: #7304 tests installed cf config conversion and deployment diff internals; the pinned cf package has no equivalent API without Wrangler-named exports/properties. Preserve all four compatibility references and drift assertions; no Wrangler invocation."
+      },
+      "lines": 4,
+      "uses": 4,
+      "digest": "48585ca106a27db7328e296491f15c6aadccd9da518c3c65f5dd2e966a033820"
+    },
     "scripts/ci/cf-worker-parity.mjs": {
       "lines": 9,
       "uses": 10,
@@ -1517,6 +1537,16 @@
       "lines": 1,
       "uses": 1,
       "digest": "70f59bbcfa3fd76e0da94e71b73769a58dbdf5c5af8899b888ea8d2a5f60f59a"
+    },
+    "scripts/ci/cf-worker-settings-dashboard.mjs": {
+      "gap": "deployment-source-compatibility",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7300",
+        "reason": "ADMITTED GAP: #7300 validates Worker settings/deployment snapshot provenance. Historical last_deployed_from=wrangler must remain accepted alongside cf; cf cannot rename that API response value. This is compatibility validation, not a CLI invocation."
+      },
+      "lines": 1,
+      "uses": 1,
+      "digest": "d6fe65a472876f91490f3648ef12703578b206db062e9f960f79026ea707966b"
     },
     "scripts/ci/cf-wrangler-publication.mjs": {
       "gap": "do-publication-rehearsal",
