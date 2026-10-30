@@ -263,7 +263,8 @@ export async function finishMeetAiSession(input: {
             // so a failed save is recovered instead of generated and billed again.
             onGenerated: async ({ measured, settlement }) => {
               fenced = true;
-              const built = build(measured);
+              // Notes generation returns the notes shape; the hook is shared with transcription.
+              const built = build(measured as unknown as Parameters<typeof build>[0]);
               const kept = await db
                 .from('meet_ai_sessions')
                 .update({
