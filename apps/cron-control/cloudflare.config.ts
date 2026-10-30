@@ -21,14 +21,14 @@ export default defineConfig({
     },
     triggers: [
       '* * * * *',
-      '*/10 * * * *',
-      '*/15 * * * *',
-      '*/30 * * * *',
-      '*/5 * * * *',
       '0 */12 * * *',
       '0 */6 * * *',
       '0 6 * * *',
+      '*/10 * * * *',
+      '*/15 * * * *',
       '17 3 * * *',
+      '*/30 * * * *',
+      '*/5 * * * *',
     ].map((schedule) => triggers.scheduled({ schedule })),
     env: {
       WEB_ORIGIN: bindings.text('https://tuturuuu.com'),
@@ -47,6 +47,7 @@ export default defineConfig({
       CRON_CONTROL_DELIVERY_TOKEN: bindings.secret(),
       CRON_CONTROL_OPERATOR_TOKEN: bindings.secret(),
       CRON_LEDGER: bindings.durableObject({
+        worker: 'tuturuuu-cron-control',
         exportName: 'CronLedger',
       }),
     },

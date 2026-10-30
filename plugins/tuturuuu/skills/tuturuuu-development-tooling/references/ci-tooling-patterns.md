@@ -48,7 +48,11 @@ and remove it on failure/close; never reuse the app developer state directory.
 Dashboard-origin Worker admission must pin a reviewed live version and exact
 settings, including secret names/count, before strict publication. cf beta.20
 compares cron order and normalizes disabled traces to sampling 1; match the
-intended live order and explicit sampling rather than dropping strict mode.
+exact live API order and explicit sampling rather than dropping strict mode.
+Validate typed config through cf's schema as well as importing it: a self Durable
+Object binding still requires its Worker name. beta.20 treats even a plus-only
+`script_name` addition inside its binding array as destructive; use the actual
+cf diff predicate before claiming strict publication passes.
 See the [Cron Control admission runbook](../../../../../apps/docs/build/devops/cloudflare-cron-control.mdx#dashboard-deployment-admission).
 
 Coordination's before/after token gates consume the verified snapshot's `secrets`

@@ -185,7 +185,7 @@ compatibility date, observability and remaining settings. Every other dashboard
 difference aborts. Secret values are never compared or logged.
 
 cf beta.20's strict dashboard diff compares arrays in order. The typed config
-therefore lists the nine crons in the dashboard's sorted order, while the guard
+therefore lists the nine crons in the exact order returned by the dashboard API, while the guard
 sorts both cron lists. Disabled traces explicitly retain the live sampling rate
 of `0.05` and persistence; logs remain enabled at `0.05`. This prevents cf's
 implicit disabled-trace default of `1` from changing sampling. Do not enable
@@ -194,7 +194,13 @@ traces or change sampling as part of admission.
 `CRON_CONTROL_WEB_MODE` stays absent, which keeps web jobs off just like `off`.
 The earlier `CRON-WEB-MODE-1` additive transition is retired. A later web cutover
 must declare its own reviewed settings change. The self Durable Object binding
-omits the optional Worker name, matching the live same-script binding.
+explicitly names `tuturuuu-cron-control`, as required by cf's configuration
+schema. cf beta.20 treats the resulting binding-array `script_name` addition
+as destructive, despite displaying a plus-only field. Matching cron order and
+sampling therefore does not alone clear strict publication. The release owner
+must reconcile this remaining same-script representation through a separately
+reviewed CLI/config compatibility change; never remove strict mode or the
+required Worker name to bypass it.
 `CRON_CONTROL_ENABLED_JOBS` remains `database-cron-history-retention`, Worker
 processors remain empty, and `meet-transcript-retention` remains disabled.
 
@@ -202,7 +208,8 @@ A successful strict CLI deploy republishes the Worker from the CLI, restoring
 `last_deployed_from` to the CLI source; a same-version rollback alone does not.
 Verify the source and after snapshot through the release owner before accepting
 the release. Keep strict deployment enabled. Regression coverage:
-`scripts/ci/cf-worker-settings-transition.test.mjs` and the settings CLI tests.
+`scripts/ci/cf-worker-settings-transition.test.mjs`, the settings CLI tests and
+`scripts/ci/cf-cron-control-order.test.mjs` (schema validation and converted order).
 
 ### Per-job cutover
 
