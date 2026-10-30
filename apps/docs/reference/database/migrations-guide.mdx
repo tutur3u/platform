@@ -484,6 +484,118 @@ Dynamic SQL requires statement-adjacent security review. Settings of
 `standard_conforming_strings` are forbidden, and `set_config('search_path', …)`
 fails closed. Dollar-quoted bodies cannot supply review markers.
 
+## SQL grant end-state guard
+
+The ACL-replay companion to the guard above is `scripts/ci/sql-grant-end-state-guard.js`. It owns no baseline: the frozen inherited-ACL list, the SR-843 source-bound exception and the end-state rules below live only there, and the security definer guard imports them. The baseline guard and this one share no entries.
+
+`scripts/ci/sql-grant-end-state-guard.js` runs with the root script tests
+(`bun test:scripts`, CI job "Root script tests") and rejects two patterns in
+migrations and rollbacks whose version prefix is `20261028000000` or later.
+Unversioned files are always checked.
+
+1. **Public or anon grants.** Any `GRANT` (function `EXECUTE`, table or view
+   privileges, schema usage, role membership) or
+   `ALTER DEFAULT PRIVILEGES ... GRANT` whose grantees include `public` or
+   `anon`, in `apps/database/supabase/migrations/*.sql` or
+   `apps/database/rollbacks/*.sql`. Rollbacks must not restore an open grant
+   that the forward migration closed; grant to `authenticated` or
+   `service_role` instead.
+2. **Unrevoked `SECURITY DEFINER` functions** (migrations only). Every
+   `CREATE [OR REPLACE] FUNCTION ... SECURITY DEFINER` needs a revoke for the
+   same name and argument types from both `public` and `anon` after its
+   creation. The end-state rule: the revoke may sit in the same file or in any
+   later timestamped forward migration, but **a migration newer than
+   `20261029030400` (the newest allowlisted file below) must carry the revoke
+   in the same file, after the creation**. The cutoff restricts only where the
+   qualifying revoke may come from; later migrations are still replayed, so a
+   later grant to `public` or `anon` (an `allow-anon-grant` marker does not
+   exempt the definer rule) fails the definer. An earlier revoke does not
+   satisfy a replacement. Later EXECUTE grants invalidate the corresponding revoke;
+   another overload, a different signature or a manual rollback cannot supply
+   proof. The guard prints every pass that rests on a revoke in another file:
+
+   ```sql
+   revoke all on function public.example(uuid, text) from public, anon;
+   grant execute on function public.example(uuid, text) to service_role;
+   ```
+
+3. **Inherited ACL (frozen allowlist).** `CREATE OR REPLACE` keeps the ACL of
+   the existing function, so six definers already on `main` whose earlier
+   revoke predates their latest replacement pass by inheritance. The allowlist
+   in `scripts/ci/sql-grant-frozen-definers.js` is the single frozen source
+   (never add entries or copy it; new definers carry their own revoke) and each entry is tied to its migration file:
+
+   | Definer | Migration |
+   | --- | --- |
+   | `public.transfer_workspace_ownership(uuid,uuid)` | `20261029012000_harden_workspace_ownership_guard` |
+   | `private.create_workspace_email_invitation_with_roles(uuid,text,uuid,public.workspace_member_type,uuid[])` | `20261029012100_restrict_subscription_writes` |
+   | `private.create_inventory_pos_operator_invite(uuid,uuid,text)` | `20261029012100_restrict_subscription_writes` |
+   | `private.finalize_workspace_invitation_membership_v2(uuid,uuid,public.workspace_member_type,uuid[])` | `20261029012100_restrict_subscription_writes` |
+   | `private.finalize_workspace_invitation_membership(uuid,uuid,public.workspace_member_type,uuid)` | `20261029012100_restrict_subscription_writes` |
+   | `public.get_user_workspace_subscription_info(uuid)` | `20261029030400_align_ai_chat_and_subscription_rpc_access` |
+
+   Inheritance holds only while the exact signature has a prior `REVOKE`
+   from `public` and `anon` (and from `authenticated`, which current policy
+   requires for every entry except `transfer_workspace_ownership`, which keeps
+   `authenticated` EXECUTE by design) and nothing after it drops, renames or
+   moves the function (a signature-free `DROP`, `ALTER ... RENAME TO` or
+   `SET SCHEMA` or `GRANT` names every overload of that name), recreates it
+   with a plain `CREATE`, or grants it to
+   `public`/`anon` (or to `authenticated` where that is required closed). The
+   guard prints the migration and line that evidence each inherited pass.
+
+**Reviewed, source-bound exception.** `scripts/ci/sql-grant-reviewed-exceptions.js`
+holds the one security-reviewed exception to the definer rule: the four
+invoice-total definers in `20261029040800_finance_workspace_boundaries.sql`,
+whose revoke sits in a pre-creation dynamic `DO` block (CREATE OR REPLACE
+preserves the ACL; bodies gate on `auth.role() = 'service_role'`, SR-843). It
+applies only while the exact path, the file's sha256, a per-finding digest
+(rule, creation line and signature, for each of the four findings) and a `DO`
+block whose normalized content digest matches all hold, so any byte change to the
+file, another file, another line or another signature gets nothing, and a later
+grant to `public` or `anon` still fails. SR-843 verified the end state is
+`service_role`-only (`proacl` of exactly `postgres` and `service_role`), covered
+by `supabase/tests/finance-invoice-totals-definer-acl.sql`.
+The guard prints each covered signature as a reviewed exception. Never add
+entries without a security review.
+
+**Default EXECUTE on new `private` functions.** A function that `postgres`
+creates in `private` is closed to `public` and `anon` but open to `authenticated`
+and `service_role`, through the global default privilege that
+`20261027151200_restrict_anon_definer_execute.sql` sets for role `postgres`. The
+schema-scoped `ALTER DEFAULT PRIVILEGES ... IN SCHEMA private REVOKE EXECUTE`
+in `20261029030500_align_cross_app_token_grant_and_private_fence.sql` adds
+nothing beyond it, because schema-scoped entries can only add privileges. That
+migration is applied history and is never edited; its comments are not
+authoritative, this paragraph is. `20261027151200` closes `public` and `anon` on
+new private functions, only `authenticated` and `service_role` keep default
+`EXECUTE`, and the guard's explicit same-file `REVOKE` rule is the enforcement
+for a definer in `private` that must not reach `authenticated`. The pgTAP test
+`apps/database/supabase/tests/private-schema-default-execute-limitation.sql`
+asserts this default and must be updated if the global default changes.
+
+The guard ignores text in comments, string literals and dollar-quoted bodies,
+so dynamic `EXECUTE 'grant ...'` inside PL/pgSQL is not detected; review
+those by hand. Focused cases live in
+`scripts/ci/sql-grant-end-state.test.js` and
+`scripts/ci/sql-grant-inherited-acl.test.js`; the repository-wide test stays
+strict. Rollbacks are applied manually and never count toward the forward end
+state.
+For a reviewed exception, put a comment with a reason on the
+statement's first line, any line of the statement, or the line before it:
+
+```sql
+-- allow-anon-grant: public catalog read by signed-out visitors
+grant select on table public.public_catalog to anon;
+
+-- allow-definer-public: called by the pre-sign-in login flow
+create or replace function public.example_login_probe() ...
+```
+
+`node scripts/ci/sql-grant-end-state-guard.js --report` lists the legacy findings in
+files before the cutoff by rule and by file. It never fails; use it to plan
+cleanup migrations.
+
 ## Migration Checklist
 
 Before committing a migration:
@@ -788,14 +900,12 @@ shallow-checkout regression coverage.
 
 The single historical-debt baseline is retained, including path/rule/block digest,
 occurrence, complete-file pins, stale-entry checks, and main's pre-push comparison.
-The following seven real debt items carry a `class` field. Multiple diagnostics
+The following five real debt items carry a `class` field. The `20261029012300` and `20261029030500` rollbacks were rewritten to restore only `authenticated`/`service_role` access, so their former items left the baseline. Multiple diagnostics
 for one statement receive the same class. These tags describe historical debt;
 forward fixes do not alter applied migration bytes or automatically clear entries.
 
 | File suffix | Statement lines | Class |
 | --- | --- | --- |
-| `20261029012300_tighten_legacy_table_grants.rollback.sql` | 2 | `latent-rollback-grant` |
-| `20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql` | 6 | `latent-rollback-grant` |
 | `20261029030600_pin_workspace_membership_rls.rollback.sql` | 43 | `latent-rollback-grant` |
 | `20261029050430_merge_batch_null_guards.sql` | 9, 120 | `definer-path-hygiene` |
 | `20261029100000_chat_first_message_creation_receipts.sql` | 39, 380 | `definer-path-hygiene` |

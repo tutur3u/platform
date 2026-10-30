@@ -1371,7 +1371,6 @@ Rust, TanStack and the cron runner. See the GitHub Actions runbook's
 [Report-only Web E2E](/build/devops/github-actions-runbook#report-only-web-e2e)
 section for runtime bounds, host-lock recovery and report-only acceptance.
 
-
 ### SQL grant guard review exceptions
 
 Run focused guard suites with `node --test scripts/ci/sql-grant-guard*.test.js`;
@@ -1388,6 +1387,23 @@ Reviewed findings belong in `sql-grant-guard-verified-findings.js`, bound to pat
 line, rule, file SHA-256, finding digest and reason. Fixed-forward findings must
 name an existing hardening migration; test both its presence and its removal.
 A placeholder filename leaves the original diagnostic enforced.
+
+## SQL grant guard end-state evidence
+
+`sql-grant-end-state-guard.js` (the ACL-replay companion to the baseline guard; no shared entries) accepts an exact-signature EXECUTE/ALL revoke after the
+creation statement in the same or a later timestamped forward migration;
+migrations newer than the newest frozen file (`20261029030400`) need the
+revoke in the same file, while later migrations are still replayed so a later
+PUBLIC/anon grant fails them. Later EXECUTE grants invalidate that evidence, and
+manual rollbacks never count. Six frozen definers (single source:
+`sql-grant-frozen-definers.js`, exporting `FROZEN_DEFINERS` and
+`FROZEN_DEFINERS_CUTOFF`; import it, never copy it) may
+inherit an earlier revoke through `CREATE OR REPLACE` while no drop, rename
+(signature-free forms cover every overload), plain recreate or public/anon grant follows it; the guard prints each inherited
+pass with its evidence. Do not extend the allowlist. Run
+`node --test scripts/ci/sql-grant-*.test.js` and both guards (`sql-grant-guard.js`, `sql-grant-end-state-guard.js`), and report
+repository-wide failures instead of exempting them. See the
+[migrations guide](../../../../../apps/docs/reference/database/migrations-guide.mdx#sql-grant-end-state-guard).
 
 ## Private Meet transcription evaluation
 
