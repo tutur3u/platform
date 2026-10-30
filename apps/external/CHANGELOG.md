@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/tutur3u/platform/compare/external-v0.6.1...external-v0.6.2) (2026-10-30)
+
+
+### Bug Fixes
+
+* **api:** align export and satellite request boundaries ([#7021](https://github.com/tutur3u/platform/issues/7021)) ([73a876a](https://github.com/tutur3u/platform/commit/73a876aaa7f13eceb13b6e6946e61d8323b1cf10))
+
 ## [0.6.1](https://github.com/tutur3u/platform/compare/external-v0.6.0...external-v0.6.1) (2026-10-17)
 
 

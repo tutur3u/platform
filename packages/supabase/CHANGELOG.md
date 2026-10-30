@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1](https://github.com/tutur3u/platform/compare/supabase-v0.6.0...supabase-v0.6.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **auth:** align verified account email handling ([#7007](https://github.com/tutur3u/platform/issues/7007)) ([5f47957](https://github.com/tutur3u/platform/commit/5f47957d2c2053d3281866ba45e76fb5fdb1f356))
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+* **auth:** scope the managed login shortcut to the configured shared cookie domain ([#7051](https://github.com/tutur3u/platform/issues/7051)) ([0f7d9e6](https://github.com/tutur3u/platform/commit/0f7d9e6f0bf96b41b48dd920015c309ff41dee82))
+
 ## [0.6.0](https://github.com/tutur3u/platform/compare/supabase-v0.5.2...supabase-v0.6.0) (2026-10-17)
 
 

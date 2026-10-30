@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.6.0](https://github.com/tutur3u/platform/compare/parley-v1.5.0...parley-v1.6.0) (2026-10-30)
+
+
+### Features
+
+* **contacts:** notify homeroom teachers when tutoring is completed ([#6912](https://github.com/tutur3u/platform/issues/6912)) ([7cb1f4c](https://github.com/tutur3u/platform/commit/7cb1f4c9f8c76ab39b8439c79280d0515dd269eb))
+* **tasks:** hide Initiatives in Tasks and remove their create controls ([#7099](https://github.com/tutur3u/platform/issues/7099)) ([72cfb25](https://github.com/tutur3u/platform/commit/72cfb25d4df4bf068669b4dc21590a23b6f717a9))
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+
+
+### Bug Fixes
+
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+* **meet:** admit AI credits before reserving transcript chunks ([#7243](https://github.com/tutur3u/platform/issues/7243)) ([0826b0e](https://github.com/tutur3u/platform/commit/0826b0eeee62421c284f1edfb9e4454bb2d1d526))
+* **meet:** validate plan creation access ([#7004](https://github.com/tutur3u/platform/issues/7004)) ([e16af79](https://github.com/tutur3u/platform/commit/e16af79b25a50c94395f4a6d579ffa3ce6485153))
+* **topic-announcements:** tighten teacher write scope and label topic_assigned ([d7af005](https://github.com/tutur3u/platform/commit/d7af005c28d05bf97379e6b6dffcd343a75d1a47))
+
 ## [1.5.0](https://github.com/tutur3u/platform/compare/parley-v1.4.1...parley-v1.5.0) (2026-10-24)
 
 

@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.41.0](https://github.com/tutur3u/platform/compare/ui-v0.40.0...ui-v0.41.0) (2026-10-30)
+
+
+### Features
+
+* **contacts:** notify homeroom teachers when tutoring is completed ([#6912](https://github.com/tutur3u/platform/issues/6912)) ([7cb1f4c](https://github.com/tutur3u/platform/commit/7cb1f4c9f8c76ab39b8439c79280d0515dd269eb))
+* **finance:** brand reconciliation money and test token bounds ([#6873](https://github.com/tutur3u/platform/issues/6873)) ([63417bb](https://github.com/tutur3u/platform/commit/63417bb06522ed9c64cc6ecc06cb0a9a881a88e2))
+* **topic-announcements:** add teacher-scoped access and send deadline ([3cb09f3](https://github.com/tutur3u/platform/commit/3cb09f3896307385fbeaf4cfbcc3320d7e77d8a5)) ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+
+
+### Bug Fixes
+
+* **contacts:** GVNN schedule notify teachers, swap race and unsaved-changes guard ([#6966](https://github.com/tutur3u/platform/issues/6966)) ([429bcb3](https://github.com/tutur3u/platform/commit/429bcb30bb03f082c523e8f06c5f3b8c493ac2f4))
+* **db:** restrict subscription writes to billing service ([#7185](https://github.com/tutur3u/platform/issues/7185)) ([c1503bc](https://github.com/tutur3u/platform/commit/c1503bcaa98bd0ea0d3cae02cce34065c39e7681))
+* **meet:** validate plan creation access ([#7004](https://github.com/tutur3u/platform/issues/7004)) ([e16af79](https://github.com/tutur3u/platform/commit/e16af79b25a50c94395f4a6d579ffa3ce6485153))
+* **mobile:** manage workspace visibility and filter Home choices ([#6978](https://github.com/tutur3u/platform/issues/6978)) ([8d625ae](https://github.com/tutur3u/platform/commit/8d625ae0a791b16db681a9ce238c66d0a8194003))
+* **ui:** increase light muted foreground contrast ([#7219](https://github.com/tutur3u/platform/issues/7219)) ([e1870dd](https://github.com/tutur3u/platform/commit/e1870dd454293ab614dc636d6ecaba00e84c10dc))
+* **ui:** start satellite sidebar closed on mobile ([#7161](https://github.com/tutur3u/platform/issues/7161)) ([d1f4824](https://github.com/tutur3u/platform/commit/d1f482417c36bdf0c0bd179e2a7af6a63537b968))
+* **users:** align workspace read permissions ([#7022](https://github.com/tutur3u/platform/issues/7022)) ([6d81393](https://github.com/tutur3u/platform/commit/6d8139370238d3be6455724c7e71bd296004002e))
+
 ## [0.40.0](https://github.com/tutur3u/platform/compare/ui-v0.39.2...ui-v0.40.0) (2026-10-24)
 
 

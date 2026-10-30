@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.19.0](https://github.com/tutur3u/platform/compare/ai-v0.18.3...ai-v0.19.0) (2026-10-30)
+
+
+### Features
+
+* **ai:** add private Meet transcription evaluation harness ([#7269](https://github.com/tutur3u/platform/issues/7269)) ([28a5503](https://github.com/tutur3u/platform/commit/28a5503f53655583230e95046869485012a72575))
+* **meet:** improve transcription quality and support solo meetings ([#7267](https://github.com/tutur3u/platform/issues/7267)) ([ecc5e53](https://github.com/tutur3u/platform/commit/ecc5e53bfa6423ddbd9aaf789e6779c551064eab))
+* **ops:** add resumable storage re-key tool for leaked signed URLs ([#6890](https://github.com/tutur3u/platform/issues/6890)) ([2f88257](https://github.com/tutur3u/platform/commit/2f88257b224ee70b783c4cf5ad8432e675e4e347))
+
+
+### Bug Fixes
+
+* **ai:** accept only user and assistant chat input from clients ([#7139](https://github.com/tutur3u/platform/issues/7139)) ([3d6d542](https://github.com/tutur3u/platform/commit/3d6d54204c6b557ecb5a44c05c3e5d5fabf235cd))
+* **ai:** read evaluation inputs through one file handle ([#7280](https://github.com/tutur3u/platform/issues/7280)) ([c77068a](https://github.com/tutur3u/platform/commit/c77068a7515a21adfbe1fa42a6586c7113228982))
+* **ai:** validate public request admission before workspace lookups ([#7027](https://github.com/tutur3u/platform/issues/7027)) ([c969617](https://github.com/tutur3u/platform/commit/c96961748c672c2ca588c9a499a253a3f58a0f82))
+* **ai:** validate public request admission before workspace lookups. ([c969617](https://github.com/tutur3u/platform/commit/c96961748c672c2ca588c9a499a253a3f58a0f82))
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+* **infrastructure:** align secret and role permission access ([#7013](https://github.com/tutur3u/platform/issues/7013)) ([4917e16](https://github.com/tutur3u/platform/commit/4917e16567f3b348ace0159d6cc982be50b9a8b7))
+* **integrations:** align AI and project request authorization ([#7012](https://github.com/tutur3u/platform/issues/7012)) ([606e882](https://github.com/tutur3u/platform/commit/606e882bb3c44f39eb7277f4a9701acc492a025b))
+* **mobile:** upload Mira attachments into the selected chat's store ([#6724](https://github.com/tutur3u/platform/issues/6724)) ([2109920](https://github.com/tutur3u/platform/commit/21099205486b88ca5aa9562071eab3e04dd7877b))
+* **storage:** cap Mira tool signed URLs and harden the share redirect ([b391ea2](https://github.com/tutur3u/platform/commit/b391ea2943fae9bb8f1d1bb5f32f23e087e6d1e0))
+* **storage:** cap signed URL lifetimes and sign stored media on read ([#6887](https://github.com/tutur3u/platform/issues/6887)) ([b08e0e4](https://github.com/tutur3u/platform/commit/b08e0e4f1afb6ef069d01c4f725cc07178bbfdcc))
+* **tasks:** align board access and realtime delivery ([#7016](https://github.com/tutur3u/platform/issues/7016)) ([70aef15](https://github.com/tutur3u/platform/commit/70aef1546bf600aaa29fc046a915fc7c69be4d02))
+
+
+### Performance Improvements
+
+* **ai:** cut Mira time to first token ([#6725](https://github.com/tutur3u/platform/issues/6725)) ([192ce93](https://github.com/tutur3u/platform/commit/192ce93c5cf7d3cf38489d6be97ab589e271778a))
+
 ## [0.18.3](https://github.com/tutur3u/platform/compare/ai-v0.18.2...ai-v0.18.3) (2026-10-24)
 
 

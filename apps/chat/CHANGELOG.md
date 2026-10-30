@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/chat-v0.28.0...chat-v0.29.0) (2026-10-30)
+
+
+### Features
+
+* **contacts:** notify homeroom teachers when tutoring is completed ([#6912](https://github.com/tutur3u/platform/issues/6912)) ([7cb1f4c](https://github.com/tutur3u/platform/commit/7cb1f4c9f8c76ab39b8439c79280d0515dd269eb))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/chat-v0.27.1...chat-v0.28.0) (2026-10-24)
 
 

@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.32.0](https://github.com/tutur3u/platform/compare/mail-v0.31.0...mail-v0.32.0) (2026-10-30)
+
+
+### Features
+
+* **contacts:** notify homeroom teachers when tutoring is completed ([#6912](https://github.com/tutur3u/platform/issues/6912)) ([7cb1f4c](https://github.com/tutur3u/platform/commit/7cb1f4c9f8c76ab39b8439c79280d0515dd269eb))
+* **mail:** adopt the shared Start bridge and request mounts ([#6763](https://github.com/tutur3u/platform/issues/6763)) ([d3621e5](https://github.com/tutur3u/platform/commit/d3621e508fcd17c11c781baddb82c7ce42e7886f))
+* **mail:** settle the sync icon smoothly and move the mail source into Settings ([#7145](https://github.com/tutur3u/platform/issues/7145)) ([7df69df](https://github.com/tutur3u/platform/commit/7df69df8b8a845d2371802aa7a32e5c150a18097))
+* **mail:** tighten the inbox list hierarchy and density ([#7146](https://github.com/tutur3u/platform/issues/7146)) ([5218adf](https://github.com/tutur3u/platform/commit/5218adf56b8fcd7a811020a0bfdc0e976750975f))
+* **meet,mail:** add flagged shared-origin routing at the Worker entry ([#6746](https://github.com/tutur3u/platform/issues/6746)) ([5b83ba8](https://github.com/tutur3u/platform/commit/5b83ba8eab646d423ff567d816deed73601ea38d))
+* **meet,mail:** add per-app document security headers ([#6749](https://github.com/tutur3u/platform/issues/6749)) ([f2a60c8](https://github.com/tutur3u/platform/commit/f2a60c86bac0bf658cbe43c23f07f1cfa539cd09))
+* **perf:** measure app switches for the one-origin rollout ([#6756](https://github.com/tutur3u/platform/issues/6756)) ([893f041](https://github.com/tutur3u/platform/commit/893f041e9b242a490a5a4abfa5de86adcd574a12))
+
+
+### Bug Fixes
+
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+* **security:** isolate staging hosts from production cookies ([#7245](https://github.com/tutur3u/platform/issues/7245)) ([4395a92](https://github.com/tutur3u/platform/commit/4395a92e9a0d1ee03b93fc7a944cc2722afd2974))
+
+
+### Performance Improvements
+
+* **mail:** load the inbox list without waiting on bootstrap writes ([#7144](https://github.com/tutur3u/platform/issues/7144)) ([05da011](https://github.com/tutur3u/platform/commit/05da011557427cf7bc0b62ae3bb03f11d8c716f5))
+
 ## [0.31.0](https://github.com/tutur3u/platform/compare/mail-v0.30.0...mail-v0.31.0) (2026-10-24)
 
 

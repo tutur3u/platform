@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.18.0](https://github.com/tutur3u/platform/compare/tasks-ui-v0.17.3...tasks-ui-v0.18.0) (2026-10-30)
+
+
+### Features
+
+* **tasks:** hide Initiatives in Tasks and remove their create controls ([#7099](https://github.com/tutur3u/platform/issues/7099)) ([72cfb25](https://github.com/tutur3u/platform/commit/72cfb25d4df4bf068669b4dc21590a23b6f717a9))
+
+
+### Bug Fixes
+
+* align workspace scoping for time requests and tasks ([#6999](https://github.com/tutur3u/platform/issues/6999)) ([c889c8b](https://github.com/tutur3u/platform/commit/c889c8b65ed09b8fec7bb50cf4b8fe1f3bedee61))
+* **tasks:** align board access and realtime delivery ([#7016](https://github.com/tutur3u/platform/issues/7016)) ([70aef15](https://github.com/tutur3u/platform/commit/70aef1546bf600aaa29fc046a915fc7c69be4d02))
+
 ## [0.17.3](https://github.com/tutur3u/platform/compare/tasks-ui-v0.17.2...tasks-ui-v0.17.3) (2026-10-24)
 
 

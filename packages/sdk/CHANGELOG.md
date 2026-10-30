@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.29.1](https://github.com/tutur3u/platform/compare/sdk-v0.29.0...sdk-v0.29.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **cli:** reject unsupported upgrade arguments before installation ([#6773](https://github.com/tutur3u/platform/issues/6773)) ([62f9db7](https://github.com/tutur3u/platform/commit/62f9db75298d454032554c3d0602a7547d294d57))
+* **sdk:** approve storage export links portable source ([#7154](https://github.com/tutur3u/platform/issues/7154)) ([8b60602](https://github.com/tutur3u/platform/commit/8b60602fd58b894a6bc5af3db8920676da1183ec))
+* **sdk:** make resource host tests deterministic ([#6870](https://github.com/tutur3u/platform/issues/6870)) ([b52f17b](https://github.com/tutur3u/platform/commit/b52f17b64433e897d85912194edb108f4a4c7eea))
+
 ## [0.29.0](https://github.com/tutur3u/platform/compare/sdk-v0.28.0...sdk-v0.29.0) (2026-10-24)
 
 

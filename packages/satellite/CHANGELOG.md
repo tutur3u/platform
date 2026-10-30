@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/satellite-v0.26.0...satellite-v0.27.0) (2026-10-30)
+
+
+### Features
+
+* **perf:** measure app switches for the one-origin rollout ([#6756](https://github.com/tutur3u/platform/issues/6756)) ([893f041](https://github.com/tutur3u/platform/commit/893f041e9b242a490a5a4abfa5de86adcd574a12))
+
+
+### Bug Fixes
+
+* **ui:** start satellite sidebar closed on mobile ([#7161](https://github.com/tutur3u/platform/issues/7161)) ([d1f4824](https://github.com/tutur3u/platform/commit/d1f482417c36bdf0c0bd179e2a7af6a63537b968))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/satellite-v0.25.0...satellite-v0.26.0) (2026-10-24)
 
 

@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.4.0](https://github.com/tutur3u/platform/compare/storage-core-v0.3.3...storage-core-v0.4.0) (2026-10-30)
+
+
+### Features
+
+* **storage:** app-side storage access audit log ([#6891](https://github.com/tutur3u/platform/issues/6891)) ([57cc3f1](https://github.com/tutur3u/platform/commit/57cc3f1750a94890f55a9b33496a1694c11c1888))
+
+
+### Bug Fixes
+
+* **ai:** sign Mira generated images on read in chat history ([#6896](https://github.com/tutur3u/platform/issues/6896)) ([64da5ce](https://github.com/tutur3u/platform/commit/64da5ce3bc0ba345ae08261a3fec2b2af77504ea))
+* **drive:** expire and revoke export links ([#7140](https://github.com/tutur3u/platform/issues/7140)) ([307f08f](https://github.com/tutur3u/platform/commit/307f08fee6ded7b19fe61901390afa45c33d5dce))
+* **storage:** cap signed URL lifetimes and sign stored media on read ([#6887](https://github.com/tutur3u/platform/issues/6887)) ([b08e0e4](https://github.com/tutur3u/platform/commit/b08e0e4f1afb6ef069d01c4f725cc07178bbfdcc))
+* **storage:** enforce bucket RLS rules in AI chat file read routes ([#6881](https://github.com/tutur3u/platform/issues/6881)) ([6609697](https://github.com/tutur3u/platform/commit/66096974e08e366a6591ba3f1f9e358ffdb394ce))
+* **storage:** isolate private chat attachments from Drive ([#6876](https://github.com/tutur3u/platform/issues/6876)) ([bedddc3](https://github.com/tutur3u/platform/commit/bedddc33bfb08a3af7a8fe75c08a0272b20cc40d))
+* **storage:** make topic-announcements a service-role-only storage root ([ae4e091](https://github.com/tutur3u/platform/commit/ae4e091fa2578059e202f16f355f1b5bfd38fc48)) ([#6920](https://github.com/tutur3u/platform/issues/6920)) ([3ca84b0](https://github.com/tutur3u/platform/commit/3ca84b00fed1221b65103025dad856b4c1aad55b))
+* **storage:** match Drive private roots case-insensitively ([#7084](https://github.com/tutur3u/platform/issues/7084)) ([85b61bb](https://github.com/tutur3u/platform/commit/85b61bb064adb66876fd9e993b8e8f0617fa5f25))
+* **storage:** short-lived signed URLs and sign-on-read for stored media ([b235bdb](https://github.com/tutur3u/platform/commit/b235bdbdb84198ebaf1e58a6c2e29d216f113fcf))
+
 ## [0.3.3](https://github.com/tutur3u/platform/compare/storage-core-v0.3.2...storage-core-v0.3.3) (2026-10-24)
 
 

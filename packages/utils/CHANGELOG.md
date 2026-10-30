@@ -1,5 +1,60 @@
 # Changelog
 
+## [0.39.0](https://github.com/tutur3u/platform/compare/utils-v0.38.1...utils-v0.39.0) (2026-10-30)
+
+
+### Features
+
+* **abuse-guard:** add Durable Object guard store Worker ([#6837](https://github.com/tutur3u/platform/issues/6837)) ([41970d1](https://github.com/tutur3u/platform/commit/41970d183e9120b7ed03ddc53d69301525b78a8a))
+* **contacts:** add default-off Start candidate ([#7120](https://github.com/tutur3u/platform/issues/7120)) ([9a7795d](https://github.com/tutur3u/platform/commit/9a7795d2036bb1be9c346b3461abeef8f4eb0642))
+* **contacts:** keep make-up tutoring content linked to lesson notes ([6c3186d](https://github.com/tutur3u/platform/commit/6c3186d2331350401e3e06a5269b15a0844e7d29)) ([#6907](https://github.com/tutur3u/platform/issues/6907)) ([2fb0e9f](https://github.com/tutur3u/platform/commit/2fb0e9ff9ac1ed4f65a09ce4137d7741eb7a4633))
+* **contacts:** monthly GVNN schedule editor with month clone ([#6927](https://github.com/tutur3u/platform/issues/6927)) ([13c4e0b](https://github.com/tutur3u/platform/commit/13c4e0b43cdc20a4566187386a8eecf21157a79b))
+* **database:** add topic announcement teacher assignment schema ([24ad041](https://github.com/tutur3u/platform/commit/24ad04103ecce259beb379cb2a92dce31aa9c5ee)) ([#6924](https://github.com/tutur3u/platform/issues/6924)) ([cf6a18d](https://github.com/tutur3u/platform/commit/cf6a18d3cfa33d5cc5b93a673613038e347be827))
+* **finance:** brand reconciliation money and test token bounds ([#6873](https://github.com/tutur3u/platform/issues/6873)) ([63417bb](https://github.com/tutur3u/platform/commit/63417bb06522ed9c64cc6ecc06cb0a9a881a88e2))
+* **meet,mail:** add flagged shared-origin routing at the Worker entry ([#6746](https://github.com/tutur3u/platform/issues/6746)) ([5b83ba8](https://github.com/tutur3u/platform/commit/5b83ba8eab646d423ff567d816deed73601ea38d))
+* **meet,mail:** add per-app document security headers ([#6749](https://github.com/tutur3u/platform/issues/6749)) ([f2a60c8](https://github.com/tutur3u/platform/commit/f2a60c86bac0bf658cbe43c23f07f1cfa539cd09))
+* **perf:** measure app switches for the one-origin rollout ([#6756](https://github.com/tutur3u/platform/issues/6756)) ([893f041](https://github.com/tutur3u/platform/commit/893f041e9b242a490a5a4abfa5de86adcd574a12))
+* **start-bridge:** shared root response policy (wrapResponse), safe failures and a runtime policy gate ([#6826](https://github.com/tutur3u/platform/issues/6826)) ([10e1778](https://github.com/tutur3u/platform/commit/10e17784ef192cb5ef65eee2b38c9b9cab738a0d))
+* **topic-announcements:** add teacher-scoped access and send deadline ([3cb09f3](https://github.com/tutur3u/platform/commit/3cb09f3896307385fbeaf4cfbcc3320d7e77d8a5)) ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+* **topic-announcements:** gate teacher assignments behind a workspace flag ([8252f98](https://github.com/tutur3u/platform/commit/8252f98a107e27d7ecb1605cb39793256fa9c406))
+* **tutoring:** per-session content and class time in the parent message ([#7055](https://github.com/tutur3u/platform/issues/7055)) ([5b52e01](https://github.com/tutur3u/platform/commit/5b52e018e1789d47ea2fbab7d85be3a3ec48e4cc)) ([9eb14a6](https://github.com/tutur3u/platform/commit/9eb14a6c62076e5f59d5f412a504833e58a81bb6))
+* **utils:** add abuse-guard store protocol and clients ([#6834](https://github.com/tutur3u/platform/issues/6834)) ([22b79b6](https://github.com/tutur3u/platform/commit/22b79b62be0fe486e66f1a0a2420b4b58449bf87))
+* **utils:** atomic password reservations on the abuse-guard store ([#6852](https://github.com/tutur3u/platform/issues/6852)) ([bd55672](https://github.com/tutur3u/platform/commit/bd55672054633e8cf6801b24747b63b30d4967dc))
+* **utils:** route offline, proxy and replay guards through the abuse-guard store ([#6845](https://github.com/tutur3u/platform/issues/6845)) ([ceb59e3](https://github.com/tutur3u/platform/commit/ceb59e3fc6bbdd3451b2b94cf195c6bbec4077ab))
+* **web:** add signed Mastermind push-events route ([#7133](https://github.com/tutur3u/platform/issues/7133)) ([8416d3c](https://github.com/tutur3u/platform/commit/8416d3cb54dced26149d0d82316739cd2842fcfa))
+* **web:** render public legal pages in Start staging candidate ([#7102](https://github.com/tutur3u/platform/issues/7102)) ([7f2f1d7](https://github.com/tutur3u/platform/commit/7f2f1d7923d08751d15b63cacc0a7ee3451f32eb))
+
+
+### Bug Fixes
+
+* **abuse-guard:** enforce durable command fairness ([#6865](https://github.com/tutur3u/platform/issues/6865)) ([1c44022](https://github.com/tutur3u/platform/commit/1c440227fb512187bb98dddf00b92c7127078e04))
+* align main unit fixtures with authorization and app inventory ([#7265](https://github.com/tutur3u/platform/issues/7265)) ([0eb1e3a](https://github.com/tutur3u/platform/commit/0eb1e3a8d350c5179bfaad63fc7281bfd47ebbf8))
+* align workspace scoping for time requests and tasks ([#6999](https://github.com/tutur3u/platform/issues/6999)) ([c889c8b](https://github.com/tutur3u/platform/commit/c889c8b65ed09b8fec7bb50cf4b8fe1f3bedee61))
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+* **auth:** scope the managed login shortcut to the configured shared cookie domain ([#7051](https://github.com/tutur3u/platform/issues/7051)) ([0f7d9e6](https://github.com/tutur3u/platform/commit/0f7d9e6f0bf96b41b48dd920015c309ff41dee82))
+* **database:** bound cross-app token lifetime and audience, contain overlong tokens ([#6840](https://github.com/tutur3u/platform/issues/6840)) ([c858586](https://github.com/tutur3u/platform/commit/c858586a6ae8c907ab55bdf5476b7bd73f2b28b7))
+* **db:** restrict subscription writes to billing service ([#7185](https://github.com/tutur3u/platform/issues/7185)) ([c1503bc](https://github.com/tutur3u/platform/commit/c1503bcaa98bd0ea0d3cae02cce34065c39e7681))
+* **infra:** require platform admin for workspace secrets ([#7174](https://github.com/tutur3u/platform/issues/7174)) ([496de2e](https://github.com/tutur3u/platform/commit/496de2ef9c819ec73e647e395e80f494a3c696c9))
+* **integrations:** align AI and project request authorization ([#7012](https://github.com/tutur3u/platform/issues/7012)) ([606e882](https://github.com/tutur3u/platform/commit/606e882bb3c44f39eb7277f4a9701acc492a025b))
+* **playground:** require a signed-in staff session for AI routes and pages ([#7215](https://github.com/tutur3u/platform/issues/7215)) ([e4e42e0](https://github.com/tutur3u/platform/commit/e4e42e06ca651b9838e06248f9ad4add952768d0))
+* **roles:** scope role permission updates to the role's workspace ([#6995](https://github.com/tutur3u/platform/issues/6995)) ([010f0f2](https://github.com/tutur3u/platform/commit/010f0f228acf8acbb095f2a6020eac414deac5d6))
+* **security:** harden staging-host guard and restore reserved-host handling ([#7256](https://github.com/tutur3u/platform/issues/7256)) ([077e48c](https://github.com/tutur3u/platform/commit/077e48c3ecea2841d4c99c9d848122ef1827dd42))
+* **security:** isolate staging hosts from production cookies ([#7245](https://github.com/tutur3u/platform/issues/7245)) ([4395a92](https://github.com/tutur3u/platform/commit/4395a92e9a0d1ee03b93fc7a944cc2722afd2974))
+* **security:** validate project branches and strip guard comments ([#7271](https://github.com/tutur3u/platform/issues/7271)) ([d718355](https://github.com/tutur3u/platform/commit/d718355c2d86bb875e835326f7744b9832673839))
+* **tasks:** align board access and realtime delivery ([#7016](https://github.com/tutur3u/platform/issues/7016)) ([70aef15](https://github.com/tutur3u/platform/commit/70aef1546bf600aaa29fc046a915fc7c69be4d02))
+* **time-tracking:** validate request task, category and linked-session scope ([#7068](https://github.com/tutur3u/platform/issues/7068)) ([716b49f](https://github.com/tutur3u/platform/commit/716b49f97999af4df1f20cc97214385e6e3f4f7d))
+* **topic-announcements:** store blank topics as NULL and fail the flag closed ([9e3611a](https://github.com/tutur3u/platform/commit/9e3611a96b42be5a8a75059e1cc546f862e4dd6b))
+* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening ([#7057](https://github.com/tutur3u/platform/issues/7057)) ([99aa5a8](https://github.com/tutur3u/platform/commit/99aa5a84b735abd4970bebb70bc7ccc3e8081c53)) ([c678300](https://github.com/tutur3u/platform/commit/c678300a63eba6c8e6b57ead465d247fd0d38331))
+* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening. ([c678300](https://github.com/tutur3u/platform/commit/c678300a63eba6c8e6b57ead465d247fd0d38331))
+* **tutoring:** teach the right content for absent, weak and both rows ([#7052](https://github.com/tutur3u/platform/issues/7052)) ([f029cf6](https://github.com/tutur3u/platform/commit/f029cf6dad6ef202ddd43aefdc15014dbb9eb4bc)) ([d6eef3a](https://github.com/tutur3u/platform/commit/d6eef3a7713e3fcb917ffc00dfca88828cd7489f))
+* **tutoring:** teach the right content for absent, weak and both rows. ([d6eef3a](https://github.com/tutur3u/platform/commit/d6eef3a7713e3fcb917ffc00dfca88828cd7489f))
+* **utils:** include Turbo cache in the internal comparison inventory ([#6899](https://github.com/tutur3u/platform/issues/6899)) ([945ccbe](https://github.com/tutur3u/platform/commit/945ccbe3119e62f6025d6755ae5379dec34e78c9))
+
+
+### Performance Improvements
+
+* **auth:** verify the request user once across refresh, guard and MFA ([#7153](https://github.com/tutur3u/platform/issues/7153)) ([959206e](https://github.com/tutur3u/platform/commit/959206efa1b1b686c75a1d17eade931519e8729f))
+
 ## [0.38.1](https://github.com/tutur3u/platform/compare/utils-v0.38.0...utils-v0.38.1) (2026-10-24)
 
 

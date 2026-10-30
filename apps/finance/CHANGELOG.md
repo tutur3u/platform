@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.36.0](https://github.com/tutur3u/platform/compare/finance-v0.35.0...finance-v0.36.0) (2026-10-30)
+
+
+### Features
+
+* **contacts:** notify homeroom teachers when tutoring is completed ([#6912](https://github.com/tutur3u/platform/issues/6912)) ([7cb1f4c](https://github.com/tutur3u/platform/commit/7cb1f4c9f8c76ab39b8439c79280d0515dd269eb))
+* **finance:** brand reconciliation money and test token bounds ([#6873](https://github.com/tutur3u/platform/issues/6873)) ([63417bb](https://github.com/tutur3u/platform/commit/63417bb06522ed9c64cc6ecc06cb0a9a881a88e2))
+* **tasks:** hide Initiatives in Tasks and remove their create controls ([#7099](https://github.com/tutur3u/platform/issues/7099)) ([72cfb25](https://github.com/tutur3u/platform/commit/72cfb25d4df4bf068669b4dc21590a23b6f717a9))
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+
+
+### Bug Fixes
+
+* **finance:** align workspace scoping for finance routes ([#7029](https://github.com/tutur3u/platform/issues/7029)) ([2ba27b9](https://github.com/tutur3u/platform/commit/2ba27b96035bbd43288b6c3de1e9ca9909b9243a))
+* **finance:** retire the wallet migration writer ([#7126](https://github.com/tutur3u/platform/issues/7126)) ([0ef3673](https://github.com/tutur3u/platform/commit/0ef3673546e17264c2e0edfba413f005a182416c))
+* **meet:** validate plan creation access ([#7004](https://github.com/tutur3u/platform/issues/7004)) ([e16af79](https://github.com/tutur3u/platform/commit/e16af79b25a50c94395f4a6d579ffa3ce6485153))
+* **security:** isolate staging hosts from production cookies ([#7245](https://github.com/tutur3u/platform/issues/7245)) ([4395a92](https://github.com/tutur3u/platform/commit/4395a92e9a0d1ee03b93fc7a944cc2722afd2974))
+* **topic-announcements:** tighten teacher write scope and label topic_assigned ([d7af005](https://github.com/tutur3u/platform/commit/d7af005c28d05bf97379e6b6dffcd343a75d1a47))
+
 ## [0.35.0](https://github.com/tutur3u/platform/compare/finance-v0.34.1...finance-v0.35.0) (2026-10-24)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.11.2](https://github.com/tutur3u/platform/compare/inventory-core-v0.11.1...inventory-core-v0.11.2) (2026-10-30)
+
+
+### Bug Fixes
+
+* **groups:** align group and member access checks ([#7028](https://github.com/tutur3u/platform/issues/7028)) ([6fa6453](https://github.com/tutur3u/platform/commit/6fa6453a9b76559fdac74fe6727c71348b090307))
+* restore main type check (meet fixture, track request routes) ([#7232](https://github.com/tutur3u/platform/issues/7232)) ([4fa1436](https://github.com/tutur3u/platform/commit/4fa143673a92161f31b4c300f774ebcbbdef468f))
+
 ## [0.11.1](https://github.com/tutur3u/platform/compare/inventory-core-v0.11.0...inventory-core-v0.11.1) (2026-10-24)
 
 
