@@ -4,12 +4,13 @@
   "type": "module",
   "packageManager": "bun@1.4.4",
   "exports": {
-    "./protocol": "./src/protocol.ts"
+    "./protocol": "./src/protocol.ts",
+    "./org-canaries": "./src/org-canaries.ts"
   },
   "scripts": {
     "build": "vp build",
     "test": "vitest run",
-    "test:runtime": "node --test scripts/verify-worker-runtime.mjs",
+    "test:runtime": "node --test scripts/verify-worker-runtime.mjs scripts/verify-org-runtime.mjs",
     "type-check": "cf workers types && tsc --project tsconfig.json",
     "lint": "vp lint --config .oxlintrc.json src cloudflare.config.ts vite.config.ts vitest.config.ts --deny-warnings"
   },

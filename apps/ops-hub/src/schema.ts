@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { decisionSchema, observabilitySchema } from './contract-v2';
+import { orgSchema } from './contract-v3';
 import { id, SECURITY, text, timestamp } from './fields';
 
 const state = z.enum([
@@ -87,7 +88,7 @@ const event = z
       ? { ...row, title: 'Security issue', summary: undefined }
       : row
   );
-export const snapshotSchema = z
+const snapshotBase = z
   .strictObject({
     enabled: z.boolean().optional(),
     pausedReason: text(100).optional(),
@@ -119,14 +120,26 @@ export const snapshotSchema = z
       new TextEncoder().encode(JSON.stringify(snapshot)).byteLength <=
       128 * 1024
   );
-export const ingestSchema = z.strictObject({
+export const snapshotV3Schema = snapshotBase.safeExtend({
+  org: orgSchema.optional(),
+});
+export const snapshotSchema = snapshotV3Schema;
+const ingestV2Schema = z.strictObject({
   v: z.literal(2),
   seq: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
   sentAt: timestamp,
   decisions: z.array(decisionSchema).max(50).default([]),
   observability: observabilitySchema.optional(),
-  snapshot: snapshotSchema.optional(),
+  snapshot: snapshotBase.optional(),
   events: z.array(event).max(100),
 });
+const ingestV3Schema = ingestV2Schema.extend({
+  v: z.literal(3),
+  snapshot: snapshotV3Schema.optional(),
+});
+export const ingestSchema = z.discriminatedUnion('v', [
+  ingestV2Schema,
+  ingestV3Schema,
+]);
 export type Ingest = z.infer<typeof ingestSchema>;
 export type HubSnapshot = z.infer<typeof snapshotSchema>;
