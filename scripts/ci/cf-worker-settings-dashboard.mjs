@@ -10,7 +10,7 @@ export function verifyDashboardAdmission(
 ) {
   const source = raw.service?.default_environment?.script?.last_deployed_from;
   assert.ok(
-    ['dash', 'wrangler', 'api', 'cf', 'workers-ci'].includes(source),
+    ['dash', 'wrangler', 'api', 'cf', 'cf_cli', 'workers-ci'].includes(source),
     'Worker deployment source unavailable'
   );
   if (source !== 'dash') return;
