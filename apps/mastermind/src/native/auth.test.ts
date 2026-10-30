@@ -20,7 +20,7 @@ let team = 0;
 const jwksFetch = vi.fn<typeof fetch>();
 beforeEach(async () => {
   env = {
-    CF_ACCESS_TEAM_DOMAIN: 'fixture-' + ++team + '.cloudflareaccess.com',
+    CF_ACCESS_TEAM_DOMAIN: `fixture-${++team}.cloudflareaccess.com`,
     CF_ACCESS_AUD: 'fixture',
     MASTERMIND_OWNER_EMAIL: email,
     OWNER_IDS: 'owner',
@@ -52,7 +52,7 @@ async function access(
 ) {
   return new SignJWT({ email: options.email ?? email })
     .setProtectedHeader({ alg: 'RS256', kid: options.kid ?? 'fixture' })
-    .setIssuer(options.iss ?? 'https://' + env.CF_ACCESS_TEAM_DOMAIN)
+    .setIssuer(options.iss ?? `https://${env.CF_ACCESS_TEAM_DOMAIN}`)
     .setAudience(options.aud ?? 'fixture')
     .setIssuedAt(Math.floor((options.at ?? now) / 1000) - 1)
     .setExpirationTime(
@@ -97,7 +97,7 @@ test.each(denied)('auth matrix: %s -> 403 and zero reads', async (kind) => {
         ? 'https://other.cloudflareaccess.com'
         : undefined,
   });
-  if (kind === 'invalid signature') jwt = jwt.slice(0, -12) + 'AAAAAAAAAAAA';
+  if (kind === 'invalid signature') jwt = `${jwt.slice(0, -12)}AAAAAAAAAAAA`;
   const headers = new Headers({
     'Cf-Access-Jwt-Assertion': jwt,
     cookie: `tuturuuu_app_session=${session(kind === 'wrong app' ? 'mail' : 'mastermind', kind === 'long session' ? 3600 : 300)}`,
@@ -245,7 +245,7 @@ test('rotated key is refused during cooldown and accepted after JWKS refetch', a
   const oldRequest = new Request('https://mastermind.tuturuuu.com/en', {
     headers: {
       'Cf-Access-Jwt-Assertion': await access(),
-      Authorization: 'Bearer ' + session(),
+      Authorization: `Bearer ${session()}`,
     },
   });
   expect((await mastermindRequest(oldRequest, env, render, now)).status).toBe(
@@ -253,7 +253,7 @@ test('rotated key is refused during cooldown and accepted after JWKS refetch', a
   );
   expect(jwksFetch).toHaveBeenCalledTimes(1);
   expect(String(jwksFetch.mock.calls[0]?.[0])).toBe(
-    'https://' + env.CF_ACCESS_TEAM_DOMAIN + '/cdn-cgi/access/certs'
+    `https://${env.CF_ACCESS_TEAM_DOMAIN}/cdn-cgi/access/certs`
   );
   const rotated = await generateKeyPair('RS256', { extractable: true });
   jwksFetch.mockImplementation(async () =>
@@ -269,7 +269,7 @@ test('rotated key is refused during cooldown and accepted after JWKS refetch', a
           key: rotated.privateKey,
           at,
         }),
-        Authorization: 'Bearer ' + session('mastermind', 300, 'owner', at),
+        Authorization: `Bearer ${session('mastermind', 300, 'owner', at)}`,
       },
     });
   }
