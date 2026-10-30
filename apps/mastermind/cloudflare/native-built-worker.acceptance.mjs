@@ -29,6 +29,9 @@ test('sealed emitted Worker enforces admission and renders bilingual owner shell
   const registry = join(scratch, 'registry');
   await mkdir(registry);
   const keys = await generateKeyPair('RS256', { extractable: true });
+  const jwks = JSON.stringify({
+    keys: [{ ...(await exportJWK(keys.publicKey)), kid: 'fixture' }],
+  });
   const secret = randomBytes(48).toString('hex');
   const email = 'owner@example.invalid';
   const seconds = Math.floor(Date.now() / 1000);
@@ -69,11 +72,6 @@ test('sealed emitted Worker enforces admission and renders bilingual owner shell
     bindings: {
       CF_ACCESS_TEAM_DOMAIN: plain('fixture.cloudflareaccess.com'),
       CF_ACCESS_AUD: plain('fixture'),
-      CF_ACCESS_CERTS: plain(
-        JSON.stringify({
-          keys: [{ ...(await exportJWK(keys.publicKey)), kid: 'fixture' }],
-        })
-      ),
       MASTERMIND_OWNER_EMAIL: plain(email),
       OWNER_IDS: plain('owner'),
       TUTURUUU_APP_COORDINATION_SECRET: { type: 'secret_text', value: secret },
@@ -94,8 +92,16 @@ test('sealed emitted Worker enforces admission and renders bilingual owner shell
       auth: () => {
         throw new Error('Provider auth forbidden');
       },
-      outboundService: () => {
-        throw new Error('Outbound reads forbidden');
+      outboundService: async (request) => {
+        if (
+          request.url ===
+          'https://fixture.cloudflareaccess.com/cdn-cgi/access/certs'
+        ) {
+          return new Response(jwks, {
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+        throw new Error('Application data reads forbidden');
       },
     },
   });
@@ -126,6 +132,12 @@ test('sealed emitted Worker enforces admission and renders bilingual owner shell
     ).status,
     403
   );
+  for (const path of ['/mastermind', '/mastermind/en']) {
+    assert.equal(
+      (await worker.fetch('https://tuturuuu.com' + path, { headers })).status,
+      403
+    );
+  }
   const root = await worker.fetch('https://mastermind.tuturuuu.com/', {
     headers,
     redirect: 'manual',

@@ -1,17 +1,32 @@
 import { verifyAppSessionRequestWithToken } from '@tuturuuu/auth/app-session-core';
 import type { AssetsBinding } from '@tuturuuu/start-bridge/assets';
-import { createLocalJWKSet, jwtVerify } from 'jose';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 
 export interface MastermindEnvironment {
   ASSETS?: AssetsBinding;
   CF_ACCESS_TEAM_DOMAIN?: string;
   CF_ACCESS_AUD?: string;
-  CF_ACCESS_CERTS?: string;
   MASTERMIND_OWNER_EMAIL?: string;
   OWNER_IDS?: string;
   TUTURUUU_APP_COORDINATION_SECRET?: string;
   OPS_HUB?: { fetch(request: Request): Promise<Response> };
 }
+// Keep jose's cache and cooldown alive across requests within this isolate.
+const accessKeySets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+function accessKeys(issuer: URL) {
+  let keys = accessKeySets.get(issuer.origin);
+  if (!keys) {
+    keys = createRemoteJWKSet(new URL('/cdn-cgi/access/certs', issuer), {
+      cooldownDuration: 300_000,
+      cacheMaxAge: 600_000,
+      timeoutDuration: 5_000,
+    });
+    if (accessKeySets.size >= 8) accessKeySets.clear();
+    accessKeySets.set(issuer.origin, keys);
+  }
+  return keys;
+}
+
 export type Owner = {
   id: string;
   email: string;
@@ -58,22 +73,13 @@ export async function authenticate(
   try {
     const url = new URL(request.url);
     // Never trust forwarded host headers to turn a preview into the canonical host.
-    if (
-      url.protocol !== 'https:' ||
-      !(
-        url.hostname === 'mastermind.tuturuuu.com' ||
-        (url.hostname === 'tuturuuu.com' &&
-          (url.pathname === '/mastermind' ||
-            url.pathname.startsWith('/mastermind/')))
-      )
-    )
+    if (url.protocol !== 'https:' || url.hostname !== 'mastermind.tuturuuu.com')
       return null;
     const token = request.headers.get('Cf-Access-Jwt-Assertion');
     if (
       !token ||
       !env.CF_ACCESS_TEAM_DOMAIN ||
       !env.CF_ACCESS_AUD ||
-      !env.CF_ACCESS_CERTS ||
       !env.MASTERMIND_OWNER_EMAIL
     )
       return null;
@@ -83,7 +89,7 @@ export async function authenticate(
       issuer.host !== env.CF_ACCESS_TEAM_DOMAIN
     )
       return null;
-    const keys = createLocalJWKSet(JSON.parse(env.CF_ACCESS_CERTS));
+    const keys = accessKeys(issuer);
     const { payload } = await jwtVerify(token, keys, {
       algorithms: ['RS256'],
       issuer: issuer.origin,

@@ -4,8 +4,9 @@ description: "Private owner shell, request authentication and held Worker public
 ---
 
 Mastermind is a native TanStack Start + Void + Vite+ Cloudflare Worker in
-`apps/mastermind`, intended for `mastermind.tuturuuu.com`. The bridge supports
-`TUTURUUU_BASE_PATH=/mastermind` on the apex. It does not revive the retired app.
+`apps/mastermind`, served only on `mastermind.tuturuuu.com`. Apex path hosting
+is deferred and requires a separate Selene design. The Worker rejects
+`tuturuuu.com/mastermind` and its children. It does not revive the retired app.
 W1 serves an English or Vietnamese owner shell at `/en` and `/vi`.
 Organization rendering follows in W2. There is no analytics or contact rendering.
 
@@ -13,14 +14,19 @@ Organization rendering follows in W2. There is no analytics or contact rendering
 
 Every path, including assets and server functions, passes the Worker first.
 Missing configuration fails closed with 403 before storage, API or hub reads.
-Certificate verification is local.
+Signing keys come from the team Access certs endpoint over HTTPS. A JWKS fetch
+error denies the request with 403 before any application data reads.
 
-1. Require HTTPS and the intended hostname, or the apex under `/mastermind`.
+1. Require HTTPS and exactly `mastermind.tuturuuu.com`.
    Preview and workers.dev hosts are refused regardless of forwarded headers.
 2. Verify `Cf-Access-Jwt-Assertion` using RS256, issuer
    `https://<CF_ACCESS_TEAM_DOMAIN>`, `CF_ACCESS_AUD`, expiry and issue time.
-   `CF_ACCESS_CERTS` is trusted Access JWKS JSON supplied from the team certs
-   endpoint by release owners. Rotate this configuration with Access keys.
+   jose's `createRemoteJWKSet` fetches
+   `https://<CF_ACCESS_TEAM_DOMAIN>/cdn-cgi/access/certs`. Its per-team,
+   per-isolate cache uses a five-minute refetch cooldown, a ten-minute maximum
+   cache age and a five-second fetch timeout. Unknown signing keys fail closed
+   during cooldown; a rotated key can be accepted after a successful refetch.
+   No static signing-key configuration or network-error fallback is used.
 3. Require the JWT email to equal `MASTERMIND_OWNER_EMAIL` exactly. Verify the
    satellite access session with `TUTURUUU_APP_COORDINATION_SECRET`, target `mastermind`,
    access scope and a maximum lifetime of 300 seconds. The request-injected
@@ -39,9 +45,10 @@ only the approved owner, cap sessions at 24 hours and enable audit logs.
 ## Data boundaries and memo
 
 The shell performs no data reads. Uncalled W2 client scaffolds use a private
-ops-hub binding and the user's satellite bearer for the web org API, refusing
-redirects. Hub-side authentication and response-schema wiring and C1 API
-acceptance are required before use. There is no second person store.
+ops-hub binding stub and the user's satellite bearer for the web org API,
+refusing redirects. Before W2 uses these clients, replace the hub stub with
+the gateway HMAC assertion path and validate org API responses against the
+allowlisted schema. C1 API acceptance is required before use. There is no second person store.
 
 The memo factory is per-isolate, keyed by owner ID, bounded to 32 entries and
 expires after 60 seconds or session expiry. Run authentication and the owner
@@ -60,7 +67,8 @@ nonce-based hydration with CSP runtime regression coverage.
 On an admitted host run
 `ttr resources run -- bun run --cwd apps/mastermind test`.
 The matrix signs real JWTs and app sessions and asserts 403 with zero reads.
-It covers immediate owner revocation, memo expiry and isolation, user-credential
+It also checks JWKS fetch failure, unknown keys, rotation after cooldown and
+apex-path refusal. It covers immediate owner revocation, memo expiry and isolation, user-credential
 forwarding and a recursive privileged-key-name scan.
 The owning native workflow builds only in CI, then seals and restores the Worker.
 Its explicit test:runtime command runs the .acceptance.mjs suite against the
@@ -75,7 +83,7 @@ the production-like preview hostname.
 No DNS or Access application is provisioned by W1.
 
 Before an explicit cutover PR require exact-commit CI, sealed original/restored
-Worker acceptance, both mount variants, staging behind Access, session issuance
+Worker acceptance on the dedicated hostname, staging behind Access, session issuance
 and refresh, MFA and live permission acceptance, C1 minimum-field serialization
 and revocation tests, approved sanitized publisher samples, Selene's design and
 implementation reviews, Bea's Access/DNS approval and Rex's gated release.

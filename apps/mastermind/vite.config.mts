@@ -7,6 +7,7 @@ import { voidPlugin } from 'void';
 const bridge = startBridgePreset({
   appRoot: import.meta.url,
   app: 'mastermind',
+  basePath: '',
   shims: [],
 });
 export default defineConfig(({ command }) => ({

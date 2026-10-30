@@ -7,15 +7,15 @@ export default {
   fetch(request: Request, env: MastermindEnvironment) {
     return mastermindRequest(request, env, (input, owner) => {
       const path = new URL(input.url).pathname;
-      if (path === '/' || path === '/mastermind' || path === '/mastermind/') {
+      if (path === '/') {
         return new Response(null, {
           status: 303,
           headers: {
-            Location: path.startsWith('/mastermind') ? '/mastermind/en' : '/en',
+            Location: '/en',
           },
         });
       }
-      if (/^(?:\/mastermind)?\/assets\//.test(path) && env.ASSETS) {
+      if (path.startsWith('/assets/') && env.ASSETS) {
         return fetchAsset(env.ASSETS, input);
       }
       return withOwner(input, owner, () => handler.fetch(input));

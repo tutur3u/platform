@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createAppSessionToken } from '@tuturuuu/auth/app-session-core';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
-import { beforeAll, expect, test } from 'vitest';
+import { afterEach, beforeAll, beforeEach, expect, test, vi } from 'vitest';
 import type { MastermindEnvironment, Owner } from './auth';
 import { createDataClients, createOwnerMemo } from './clients';
 import { mastermindRequest } from './request';
@@ -15,32 +15,55 @@ let keys: Awaited<ReturnType<typeof generateKeyPair>>;
 let env: MastermindEnvironment;
 beforeAll(async () => {
   keys = await generateKeyPair('RS256', { extractable: true });
+});
+let team = 0;
+const jwksFetch = vi.fn<typeof fetch>();
+beforeEach(async () => {
   env = {
-    CF_ACCESS_TEAM_DOMAIN: 'fixture.cloudflareaccess.com',
+    CF_ACCESS_TEAM_DOMAIN: 'fixture-' + ++team + '.cloudflareaccess.com',
     CF_ACCESS_AUD: 'fixture',
-    CF_ACCESS_CERTS: JSON.stringify({
-      keys: [{ ...(await exportJWK(keys.publicKey)), kid: 'fixture' }],
-    }),
     MASTERMIND_OWNER_EMAIL: email,
     OWNER_IDS: 'owner',
     TUTURUUU_APP_COORDINATION_SECRET: secret,
   };
+  jwksFetch.mockReset();
+  jwksFetch.mockImplementation(async () =>
+    Response.json({
+      keys: [{ ...(await exportJWK(keys.publicKey)), kid: 'fixture' }],
+    })
+  );
+  vi.stubGlobal('fetch', jwksFetch);
 });
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
+});
+
 async function access(
-  options: { email?: string; exp?: number; aud?: string; iss?: string } = {}
+  options: {
+    email?: string;
+    exp?: number;
+    aud?: string;
+    iss?: string;
+    kid?: string;
+    key?: CryptoKey;
+    at?: number;
+  } = {}
 ) {
   return new SignJWT({ email: options.email ?? email })
-    .setProtectedHeader({ alg: 'RS256', kid: 'fixture' })
-    .setIssuer(options.iss ?? 'https://fixture.cloudflareaccess.com')
+    .setProtectedHeader({ alg: 'RS256', kid: options.kid ?? 'fixture' })
+    .setIssuer(options.iss ?? 'https://' + env.CF_ACCESS_TEAM_DOMAIN)
     .setAudience(options.aud ?? 'fixture')
-    .setIssuedAt(Math.floor(now / 1000) - 1)
-    .setExpirationTime(options.exp ?? Math.floor(now / 1000) + 120)
-    .sign(keys.privateKey);
+    .setIssuedAt(Math.floor((options.at ?? now) / 1000) - 1)
+    .setExpirationTime(
+      options.exp ?? Math.floor((options.at ?? now) / 1000) + 120
+    )
+    .sign(options.key ?? keys.privateKey);
 }
-function session(app = 'mastermind', ttl = 300, userId = 'owner') {
+function session(app = 'mastermind', ttl = 300, userId = 'owner', at = now) {
   return createAppSessionToken(
     { targetApp: app, userId, email, expiresInSeconds: ttl },
-    { secret, now: new Date(now - 1000) }
+    { secret, now: new Date(at - 1000) }
   ).token;
 }
 const denied = [
@@ -49,6 +72,7 @@ const denied = [
   'forged email header',
   'expired JWT',
   'preview host',
+  'apex path',
   'workers.dev host',
   'no session',
   'no permission',
@@ -58,9 +82,12 @@ const denied = [
   'wrong issuer',
   'invalid signature',
   'missing config',
+  'unknown kid',
+  'JWKS fetch failure',
 ] as const;
 test.each(denied)('auth matrix: %s -> 403 and zero reads', async (kind) => {
   let jwt = await access({
+    kid: kind === 'unknown kid' ? 'unknown' : 'fixture',
     email: kind === 'wrong email' ? 'other@example.invalid' : email,
     exp: kind === 'expired JWT' ? Math.floor(now / 1000) - 1 : undefined,
     aud: kind === 'wrong audience' ? 'other' : undefined,
@@ -85,14 +112,20 @@ test.each(denied)('auth matrix: %s -> 403 and zero reads', async (kind) => {
       : kind === 'workers.dev host'
         ? 'mastermind.account.workers.dev'
         : 'mastermind.tuturuuu.com';
+  if (kind === 'JWKS fetch failure')
+    jwksFetch.mockRejectedValue(new Error('JWKS unavailable'));
   let reads = 0;
   const response = await mastermindRequest(
-    new Request(`https://${host}/en`, { headers }),
+    new Request(
+      kind === 'apex path'
+        ? 'https://tuturuuu.com/mastermind'
+        : `https://${host}/en`,
+      { headers }
+    ),
     {
       ...env,
       OWNER_IDS: kind === 'no permission' ? '' : env.OWNER_IDS,
-      CF_ACCESS_CERTS:
-        kind === 'missing config' ? undefined : env.CF_ACCESS_CERTS,
+      CF_ACCESS_AUD: kind === 'missing config' ? undefined : env.CF_ACCESS_AUD,
     },
     async () => {
       reads++;
@@ -197,4 +230,79 @@ test('app tree contains no privileged database key names', () => {
     }
   }
   scan(root);
+});
+
+test('rotated key is refused during cooldown and accepted after JWKS refetch', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(now);
+  let reads = 0;
+  const render = async () => {
+    reads++;
+    return new Response('owner');
+  };
+  const oldRequest = new Request('https://mastermind.tuturuuu.com/en', {
+    headers: {
+      'Cf-Access-Jwt-Assertion': await access(),
+      Authorization: 'Bearer ' + session(),
+    },
+  });
+  expect((await mastermindRequest(oldRequest, env, render, now)).status).toBe(
+    200
+  );
+  expect(jwksFetch).toHaveBeenCalledTimes(1);
+  expect(String(jwksFetch.mock.calls[0]?.[0])).toBe(
+    'https://' + env.CF_ACCESS_TEAM_DOMAIN + '/cdn-cgi/access/certs'
+  );
+  const rotated = await generateKeyPair('RS256', { extractable: true });
+  jwksFetch.mockImplementation(async () =>
+    Response.json({
+      keys: [{ ...(await exportJWK(rotated.publicKey)), kid: 'rotated' }],
+    })
+  );
+  async function rotatedRequest(at: number) {
+    return new Request('https://mastermind.tuturuuu.com/en', {
+      headers: {
+        'Cf-Access-Jwt-Assertion': await access({
+          kid: 'rotated',
+          key: rotated.privateKey,
+          at,
+        }),
+        Authorization: 'Bearer ' + session('mastermind', 300, 'owner', at),
+      },
+    });
+  }
+  expect(
+    (await mastermindRequest(await rotatedRequest(now), env, render, now))
+      .status
+  ).toBe(403);
+  expect(jwksFetch).toHaveBeenCalledTimes(1);
+  expect(reads).toBe(1);
+  const beforeCooldown = now + 299_999;
+  vi.setSystemTime(beforeCooldown);
+  expect(
+    (
+      await mastermindRequest(
+        await rotatedRequest(beforeCooldown),
+        env,
+        render,
+        beforeCooldown
+      )
+    ).status
+  ).toBe(403);
+  expect(jwksFetch).toHaveBeenCalledTimes(1);
+  expect(reads).toBe(1);
+  const afterCooldown = now + 300_001;
+  vi.setSystemTime(afterCooldown);
+  expect(
+    (
+      await mastermindRequest(
+        await rotatedRequest(afterCooldown),
+        env,
+        render,
+        afterCooldown
+      )
+    ).status
+  ).toBe(200);
+  expect(jwksFetch).toHaveBeenCalledTimes(2);
+  expect(reads).toBe(2);
 });
