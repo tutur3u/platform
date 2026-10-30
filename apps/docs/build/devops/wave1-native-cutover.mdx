@@ -173,22 +173,10 @@ staging profile publishes `tuturuuu-calendar-wave1-staging` for
 and the `.staging.tutur3u.com` shared cookie domain. Nothing is under
 `tuturuuu.com`, and `node scripts/check-staging-hosts.js` enforces that.
 
-These decisions are **open** and block hosted G3:
-
-1. **Public staging ingress.** The wave-1 staging publisher is private by design:
-   `routes=[]`, and the [serving-cost rule](/build/devops/wave1-native-publishers#serving-cost-and-emergency-stop)
-   forbids Custom Domains on staging identities. To serve `calendar.staging.tutur3u.com`,
-   the release owner must approve an ingress plan, for example an Access-protected
-   Custom Domain, plus its durable serving stop fence.
-2. **Issuer hosting.** No existing gated workflow publishes Web to staging.
-   `web-start-candidate.yaml` qualifies but never publishes, and the candidate
-   Worker needs an immutable staging Next fallback that does not exist yet.
-3. **Issuer hostname.** Wave-1 profiles and the release-flow guide name
-   `web.staging.tutur3u.com`. The hosted-staging profiles
-   (`scripts/wave1-staging/profiles.ts`), the Contacts suite and the Web candidate
-   guide still name `staging.tutur3u.com` as the central issuer.
-4. **Staging Supabase Auth.** Decide which login paths staging supports, and so
-   which Site URL, redirect allow-list and OAuth callbacks the issuer needs.
+The four questions that blocked hosted G3 are now decided: public staging
+ingress, issuer hosting, the issuer hostname and staging Supabase Auth. See
+[Staging issuer and Calendar G3: decisions and order](#staging-issuer-and-calendar-g3-decisions-and-order)
+for the decisions and the bootstrap-to-staff order.
 
 After those decisions, the release owner performs the external steps. Agents and
 this repository perform none of them:
