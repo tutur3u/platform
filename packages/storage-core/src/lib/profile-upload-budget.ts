@@ -4,6 +4,7 @@ import { ProfileUploadError } from './profile-upload-error';
 import {
   PROFILE_MEDIA_MAX_BYTES,
   type ProfileMediaKind,
+  WORKSPACE_MANAGED_AVATAR_LIMITS,
 } from './profile-upload-limits';
 
 import {
@@ -17,59 +18,35 @@ export {
   type ProfileMediaKind,
 } from './profile-upload-limits';
 
-/** Charge the source upload ceiling, never an untrusted client byte count. Tickets count even if unused. */
-export async function reserveProfileUploadBudget(
-  actorId: string,
-  kind: ProfileMediaKind,
-  now = new Date()
-) {
-  const actor = createHash('sha256').update(actorId).digest('hex');
-  const time = now.getTime();
+type BudgetSpec = readonly [
+  key: string,
+  amount: number,
+  maximum: number,
+  ttl: number,
+  resetAtMs: number,
+];
+
+const sha256 = (value: string) =>
+  createHash('sha256').update(value).digest('hex');
+
+/** UTC calendar windows: hour, day and Monday-based week. */
+function budgetWindows(time: number) {
   const hour = Math.floor(time / 3600000);
   const day = Math.floor(time / 86400000);
   // Calendar weeks start Monday, UTC.
   const week = Math.floor((day + 3) / 7);
-  const prefix = 'api-cost:v1:profile-upload';
-  const bytes = PROFILE_MEDIA_MAX_BYTES[kind];
-  const specs = [
-    [`${prefix}:actor:${actor}:hour:${hour}`, 1, 2, 7200, (hour + 1) * 3600000],
-    [
-      `${prefix}:actor:${actor}:${kind}:day:${day}`,
-      1,
-      kind === 'avatar' ? 3 : 2,
-      172800,
-      (day + 1) * 86400000,
-    ],
-    [
-      `${prefix}:actor:${actor}:week:${week}`,
-      1,
-      10,
-      8 * 86400,
-      ((week + 1) * 7 - 3) * 86400000,
-    ],
-    [
-      `${prefix}:actor:${actor}:bytes:day:${day}`,
-      bytes,
-      16 * 1024 ** 2,
-      172800,
-      (day + 1) * 86400000,
-    ],
-    [
-      `${prefix}:actor:${actor}:bytes:week:${week}`,
-      bytes,
-      32 * 1024 ** 2,
-      8 * 86400,
-      ((week + 1) * 7 - 3) * 86400000,
-    ],
-    [`${prefix}:global:day:${day}`, 1, 10000, 172800, (day + 1) * 86400000],
-    [
-      `${prefix}:global:bytes:day:${day}`,
-      bytes,
-      16 * 1024 ** 3,
-      172800,
-      (day + 1) * 86400000,
-    ],
-  ] as const;
+  return {
+    hour,
+    day,
+    week,
+    hourEnd: (hour + 1) * 3600000,
+    dayEnd: (day + 1) * 86400000,
+    weekEnd: ((week + 1) * 7 - 3) * 86400000,
+  };
+}
+
+/** Reserve every spec atomically; a denial reports the first exhausted window. */
+async function reserveSpecs(specs: readonly BudgetSpec[], time: number) {
   let result: [number, number];
   try {
     result = await reserveSecurityBudget(
@@ -97,6 +74,110 @@ export async function reserveProfileUploadBudget(
       Math.max(1, Math.ceil((denied[4] - time) / 1000))
     );
   }
+}
+
+/** Charge the source upload ceiling, never an untrusted client byte count. Tickets count even if unused. */
+export async function reserveProfileUploadBudget(
+  actorId: string,
+  kind: ProfileMediaKind,
+  now = new Date()
+) {
+  const actor = sha256(actorId);
+  const time = now.getTime();
+  const { hour, day, week, hourEnd, dayEnd, weekEnd } = budgetWindows(time);
+  const prefix = 'api-cost:v1:profile-upload';
+  const bytes = PROFILE_MEDIA_MAX_BYTES[kind];
+  await reserveSpecs(
+    [
+      [`${prefix}:actor:${actor}:hour:${hour}`, 1, 2, 7200, hourEnd],
+      [
+        `${prefix}:actor:${actor}:${kind}:day:${day}`,
+        1,
+        kind === 'avatar' ? 3 : 2,
+        172800,
+        dayEnd,
+      ],
+      [`${prefix}:actor:${actor}:week:${week}`, 1, 10, 8 * 86400, weekEnd],
+      [
+        `${prefix}:actor:${actor}:bytes:day:${day}`,
+        bytes,
+        16 * 1024 ** 2,
+        172800,
+        dayEnd,
+      ],
+      [
+        `${prefix}:actor:${actor}:bytes:week:${week}`,
+        bytes,
+        32 * 1024 ** 2,
+        8 * 86400,
+        weekEnd,
+      ],
+      [`${prefix}:global:day:${day}`, 1, 10000, 172800, dayEnd],
+      [
+        `${prefix}:global:bytes:day:${day}`,
+        bytes,
+        16 * 1024 ** 3,
+        172800,
+        dayEnd,
+      ],
+    ],
+    time
+  );
+}
+
+/**
+ * Charge an admin uploading an avatar for a workspace-managed user. Keyed per
+ * workspace and actor, separate from the self-profile counters, with the much
+ * higher WORKSPACE_MANAGED_AVATAR_LIMITS. Callers must have authorized the actor
+ * for `workspaceId` first; the key only partitions budgets, it grants nothing.
+ */
+export async function reserveWorkspaceManagedAvatarBudget(
+  workspaceId: string,
+  actorId: string,
+  now = new Date()
+) {
+  const scope = `ws:${sha256(workspaceId)}:actor:${sha256(actorId)}`;
+  const time = now.getTime();
+  const { hour, day, week, hourEnd, dayEnd, weekEnd } = budgetWindows(time);
+  const prefix = 'api-cost:v1:profile-upload:ws-user-avatar';
+  const bytes = PROFILE_MEDIA_MAX_BYTES.avatar;
+  const limits = WORKSPACE_MANAGED_AVATAR_LIMITS;
+  await reserveSpecs(
+    [
+      [`${prefix}:${scope}:hour:${hour}`, 1, limits.perHour, 7200, hourEnd],
+      [`${prefix}:${scope}:day:${day}`, 1, limits.perDay, 172800, dayEnd],
+      [
+        `${prefix}:${scope}:week:${week}`,
+        1,
+        limits.perWeek,
+        8 * 86400,
+        weekEnd,
+      ],
+      [
+        `${prefix}:${scope}:bytes:day:${day}`,
+        bytes,
+        limits.bytesPerDay,
+        172800,
+        dayEnd,
+      ],
+      [
+        `${prefix}:${scope}:bytes:week:${week}`,
+        bytes,
+        limits.bytesPerWeek,
+        8 * 86400,
+        weekEnd,
+      ],
+      [`${prefix}:global:day:${day}`, 1, limits.globalPerDay, 172800, dayEnd],
+      [
+        `${prefix}:global:bytes:day:${day}`,
+        bytes,
+        limits.globalBytesPerDay,
+        172800,
+        dayEnd,
+      ],
+    ],
+    time
+  );
 }
 
 /** Atomically consume a short-lived ticket once, before reading or decoding bytes. */
