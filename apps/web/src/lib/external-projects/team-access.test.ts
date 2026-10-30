@@ -307,7 +307,6 @@ describe('CMS explicit grant writes', () => {
         (access: unknown) =>
           updateExternalProjectTeamDefaultPermissions({
             access: access as never,
-            // @ts-expect-error Exercise a forged payload outside the catalog.
             payload,
             memberType: 'MEMBER',
           }),
