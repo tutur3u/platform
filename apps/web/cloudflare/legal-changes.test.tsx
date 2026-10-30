@@ -5,6 +5,7 @@ import {
   getLegalDocument,
   getProposedLegalDocument,
   legalChangesCopy,
+  upcomingLegalRevision,
 } from '@tuturuuu/legal';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
@@ -55,7 +56,7 @@ describe('upcoming legal changes', () => {
         const html = renderToStaticMarkup(
           <LegalChanges locale={locale} full={full} />
         );
-        expect(html).not.toContain('2026-09-13');
+        expect(html).not.toContain(upcomingLegalRevision.version);
         expect(html).toContain('data-binding-notice');
         expect(html).toContain(
           full
@@ -160,7 +161,9 @@ describe('upcoming legal changes', () => {
       expect(proposed?.querySelector('strong')?.textContent).toBe(
         copy.published
       );
-      expect(proposed?.querySelector('p')?.textContent).toBe('2026-09-13');
+      expect(proposed?.querySelector('p')?.textContent).toBe(
+        upcomingLegalRevision.version
+      );
       expect(proposed?.textContent).toContain('NOTICE-DATE');
       expect(proposed?.textContent).not.toMatch(/draft/iu);
     });
