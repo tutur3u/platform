@@ -13,11 +13,55 @@ import { Effect } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { MEETING_APP } from '../../../runtime';
 import { MeetAiError } from './access';
+import { BILLING_UNRECONCILED } from './notes-billing';
 import { admitMeetCredits, type MeetCreditAdmission } from './credit-admission';
 
 type Input = Parameters<typeof generateMeetArtifact>[0];
 
-/** The provider executes once; settlement retries reuse the same central run. */
+
+/** Everything needed to settle a run again without the provider output. */
+export type MeetRunSettlement = {
+  runId: string;
+  actualCredits: number;
+  providerCostUsd: number;
+  inputTokens: number;
+  outputTokens: number;
+  latencyMs: number;
+  metadata: { app: string; source: string; meetingId: string; operation: string };
+};
+
+/**
+ * Settling a run that is already terminal succeeds without charging again
+ * (private.settle_ai_studio_run), so this is safe to repeat during recovery.
+ */
+export async function settleMeetRun(settlement: MeetRunSettlement) {
+  await Effect.runPromise(
+    Effect.retry(
+      Effect.tryPromise(() =>
+        settleAiStudioRun({
+          runId: settlement.runId,
+          status: 'succeeded',
+          actualCredits: settlement.actualCredits,
+          providerCostUsd: settlement.providerCostUsd,
+          inputTokens: settlement.inputTokens,
+          outputTokens: settlement.outputTokens,
+          latencyMs: settlement.latencyMs,
+          metadata: { ...settlement.metadata, usage_source: 'provider' },
+        })
+      ),
+      { times: 2 }
+    )
+  );
+}
+
+/**
+ * The provider executes once; settlement retries reuse the same central run.
+ *
+ * `hooks.onGenerated` runs after the provider output is measured and BEFORE the
+ * charge is settled, so a caller can durably keep the output and the run
+ * reference. If it throws, nothing is charged and the run stays pending for
+ * reconciliation; the same idempotency key then refuses another run.
+ */
 export async function generateBilledMeetArtifact(
   input: Input,
   actor: {
@@ -25,7 +69,13 @@ export async function generateBilledMeetArtifact(
     meetingId: string;
     attemptId: string;
   },
-  admission?: MeetCreditAdmission
+  admission?: MeetCreditAdmission,
+  hooks?: {
+    onGenerated?: (generated: {
+      measured: Awaited<ReturnType<typeof generateMeetArtifact>>;
+      settlement: MeetRunSettlement;
+    }) => Promise<void>;
+  }
 ) {
   const { workspaceId, allowance } =
     admission ?? (await admitMeetCredits(actor.userId));
@@ -113,29 +163,27 @@ export async function generateBilledMeetArtifact(
   if (!measured.usage.available || measured.costUsd === null) {
     // Do not manufacture a bill from an estimate. The reservation and pending
     // run remain visible for reconciliation instead of returning unmetered output.
-    throw new MeetAiError(503, 'AI usage accounting unavailable');
+    throw new MeetAiError(
+      503,
+      'AI usage accounting unavailable',
+      BILLING_UNRECONCILED
+    );
   }
   const actualCredits =
     measured.costUsd === 0
       ? 0
       : Math.max(1, (measured.costUsd / 0.0001) * markup);
-  await Effect.runPromise(
-    Effect.retry(
-      Effect.tryPromise(() =>
-        settleAiStudioRun({
-          runId: run.runId,
-          status: 'succeeded',
-          actualCredits,
-          providerCostUsd: measured.costUsd ?? 0,
-          inputTokens: measured.usage.inputTokens ?? 0,
-          outputTokens: measured.usage.outputTokens ?? 0,
-          latencyMs: Date.now() - started,
-          metadata: { ...metadata, usage_source: 'provider' },
-        })
-      ),
-      { times: 2 }
-    )
-  );
+  const settlement: MeetRunSettlement = {
+    runId: run.runId,
+    actualCredits,
+    providerCostUsd: measured.costUsd ?? 0,
+    inputTokens: measured.usage.inputTokens ?? 0,
+    outputTokens: measured.usage.outputTokens ?? 0,
+    latencyMs: Date.now() - started,
+    metadata,
+  };
+  await hooks?.onGenerated?.({ measured, settlement });
+  await settleMeetRun(settlement);
   await recordAiStudioRunStep({
     runId: run.runId,
     sequence: 0,

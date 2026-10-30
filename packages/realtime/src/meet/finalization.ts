@@ -16,6 +16,8 @@ export const MEET_FINALIZE_BACKOFF_MS = [
   30_000, 60_000, 120_000, 240_000, 480_000,
 ] as const;
 export const MEET_FINALIZE_MAX_RECORDS = 8;
+/** Distinct sessions a room may ever queue. Beyond this, automatic notes are refused. */
+export const MEET_FINALIZE_MAX_SESSIONS = 64;
 export const MEET_FINALIZE_MAX_ACCOUNTS = 128;
 
 export interface MeetFinalization {
@@ -34,6 +36,12 @@ export interface MeetFinalization {
 
 export interface MeetFinalizationState {
   finalizations?: Record<string, MeetFinalization>;
+  /**
+   * Every session id this room ever queued. Unlike `finalizations` it is never
+   * compacted, so an exhausted or finished session can never be queued again
+   * and its attempt budget cannot be re-armed. Bounded by MAX_SESSIONS.
+   */
+  finalizationFence?: Record<string, true>;
 }
 
 const accountSet = (ids: Iterable<string | undefined>) =>
@@ -58,8 +66,12 @@ export function queueTranscriptionFinalization(
     consents.sessionId !== session.sessionId ||
     !consents.meetingId ||
     !consents.wsId ||
-    state.finalizations?.[session.sessionId]
+    state.finalizations?.[session.sessionId] ||
+    state.finalizationFence?.[session.sessionId]
   )
+    return state;
+  // Fail closed: the host can still finish a session by hand.
+  if (Object.keys(state.finalizationFence ?? {}).length >= MEET_FINALIZE_MAX_SESSIONS)
     return state;
   const accountOf = (userId: string) =>
     consents.accounts?.[userId] ?? state.presence[userId]?.accountId ?? userId;
@@ -101,6 +113,10 @@ export function queueTranscriptionFinalization(
   };
   return {
     ...state,
+    finalizationFence: {
+      ...state.finalizationFence,
+      [record.sessionId]: true,
+    },
     finalizations: Object.fromEntries(
       [...pending, ...settled, record].map((entry) => [entry.sessionId, entry])
     ),

@@ -1464,16 +1464,34 @@ Meet side, `finishMeetAiSession` (shared with the host's Finish click):
    `notes_started_at` (`pending` or `failed` to `processing`). Only the winner calls
    the provider and bills; concurrent ends, the host's click and retries get `409`,
    which the finalizer reports as `pending`. A finished session answers `completed`
-   without work.
+   without work. Automatic retries use a stable billing identity per session
+   (`<sessionId>:g<failures>`), so the AI Studio ledger refuses a second run
+   instead of charging again.
 4. Apply consent. Only segments whose verified speaker account is on the
    consented list are used for the transcript, the owner roster and the billing
    decision. Unattributed speech cannot be shown to be consented and is dropped.
-5. Generate and bill through the existing `generateBilledMeetArtifact`.
+5. Generate and bill through the existing `generateBilledMeetArtifact`. After
+   the provider output is measured and before the charge settles, the output and
+   the run reference are kept in the existing `notes_usage` column (a
+   `checkpoint`, never shown to readers). If saving the notes then fails, the
+   next delivery settles the stored run again (a settled run is a no-op in
+   `private.settle_ai_studio_run`) and commits the kept output: no second
+   provider call, no second charge. If the output cannot be kept, or a run
+   already exists for the identity, the billed state is unknown: the finalizer
+   answers `abandoned` and never generates again unattended. The failure counter
+   is not advanced in that case, so the identity does not rotate. Only the
+   host's Finish click reconciles, with a fresh identity.
 6. Notify the host and reader accounts who are workspace members, once, by the
    winner only. The notification is a `system_announcement` with code
    `meeting_notes_ready` and a link to `/<wsId>/meetings/<meetingId>`: no transcript,
    summary or other notes text. A dedicated type needs a migration and is a
    follow-up; the notification is best effort because the notes are already saved.
+
+Delivery fence: every session id a room queues is also written to a
+never-compacted `finalizationFence` (at most 64 sessions per room, then
+automatic notes are refused for that room). Evicting an exhausted record from
+the 8-record ledger therefore cannot re-arm its attempt budget, and a host
+cannot re-queue a retired session id.
 
 Cost bounds: the Durable Object spends an attempt and schedules the next one
 (30s, 1m, 2m, 4m, 8m) before each request, so a restart never extends the budget;
@@ -1491,9 +1509,10 @@ marks `incomplete` when any chunk is not completed or sequence numbers have a ga
 because it has no client chunk count.
 
 Regression coverage: `packages/realtime/src/meet/finalization.test.ts`,
-`apps/meet-realtime/src/room-finalization.test.ts`,
+`packages/realtime/src/meet/finalization-delivery.test.ts` (including the
+eviction-and-replay fence),
 `server/finalize.test.ts` (concurrent ends, flush ordering, bounded retry,
-consent), `server/consent-filter.test.ts`, `server/notes-notification.test.ts`, and the
+consent, charged-but-unsaved recovery, unknown-billed-state fence), `server/consent-filter.test.ts`, `server/notes-notification.test.ts`, and the
 proxy tests for the finalize path.
 
 ## Transcription capture scope

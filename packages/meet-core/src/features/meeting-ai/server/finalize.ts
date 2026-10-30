@@ -5,6 +5,7 @@ import { verifyMeetFinalizeToken } from '@tuturuuu/realtime/meet/finalization-to
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MeetAiError } from './access';
 import { finishMeetAiSession } from './finish-session';
+import { BILLING_UNRECONCILED } from './notes-billing';
 import { notifyNotesReady } from './notes-notification';
 
 /** Billed attempts that failed after the provider started. Past this, a human decides. */
@@ -70,6 +71,7 @@ export async function finalizeMeetAi(request: Request): Promise<{
       meetingId: meeting.id,
       meetingStartedAt: meeting.time,
       consentedAccountIds: new Set(claims.consented),
+      automatic: true,
     });
     if (outcome === 'generated')
       await notifyNotesReady(db, {
@@ -82,6 +84,9 @@ export async function finalizeMeetAi(request: Request): Promise<{
     return { status: 'completed', generated: outcome === 'generated' };
   } catch (failure) {
     if (failure instanceof MeetAiError) {
+      // A provider ran and its charge is unknown or already held by a run: never
+      // generate again unattended. The host's Finish click reconciles.
+      if (failure.code === BILLING_UNRECONCILED) return { status: 'abandoned' };
       // Audio still in flight or another finisher holds the lease: come back.
       if (failure.status === 409) return { status: 'pending' };
       // Retrying cannot change these: credits, size limits and the like.

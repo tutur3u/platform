@@ -1,7 +1,11 @@
 import { signMeetFinalizeToken } from '@tuturuuu/realtime/meet/finalization-token';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ db: null as unknown, generate: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  db: null as unknown,
+  generate: vi.fn(),
+  settle: vi.fn(),
+}));
 vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/satellite/auth', () => ({}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -13,9 +17,12 @@ vi.mock('@tuturuuu/meet-core/parley/repository', () => ({
 }));
 vi.mock('./artifact-billing', () => ({
   generateBilledMeetArtifact: mocks.generate,
+  settleMeetRun: mocks.settle,
 }));
 
+import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import { finalizeMeetAi } from './finalize';
+import { finishMeetAiSession } from './finish-session';
 
 const SECRET = 'finalize-test-secret';
 const id = (n: number) =>
@@ -54,7 +61,12 @@ function chunk(sequence: number, accountId: string | null, text: string): Row {
       : {},
   };
 }
-function fakeDb(tables: Record<string, Row[]>, log: string[] = []) {
+type Fail = (table: string, patch: Row) => boolean;
+function fakeDb(
+  tables: Record<string, Row[]>,
+  log: string[] = [],
+  failWhen: () => Fail | null = () => null
+) {
   const rpc = vi.fn(async () => ({ error: null, data: 'n' }));
   const from = (table: string) => {
     let op: 'select' | 'update' = 'select';
@@ -65,11 +77,15 @@ function fakeDb(tables: Record<string, Row[]>, log: string[] = []) {
       const rows = (tables[table] ?? []).filter((row) =>
         filters.every((test) => test(row))
       );
+      if (op === 'update' && failWhen()?.(table, patch)) {
+        log.push(`${table}.update-failed:${Object.keys(patch).sort().join(',')}`);
+        return { rows: [] as Row[], error: { message: 'storage down' } };
+      }
       if (op === 'update') {
         log.push(`${table}.update:${Object.keys(patch).sort().join(',')}`);
         for (const row of rows) Object.assign(row, patch);
       } else log.push(`${table}.select`);
-      return rows;
+      return { rows, error: null as { message: string } | null };
     };
     const chain: Record<string, unknown> = {
       select: () => chain,
@@ -88,16 +104,21 @@ function fakeDb(tables: Record<string, Row[]>, log: string[] = []) {
       },
       order: () => chain,
       range: () => chain,
-      maybeSingle: async () => ({ data: run()[0] ?? null, error: null }),
+      maybeSingle: async () => {
+        const out = run();
+        return { data: out.rows[0] ?? null, error: out.error };
+      },
       // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
       then: (resolve: (value: unknown) => void) =>
-        resolve({ data: run(), error: null }),
+        resolve((({ rows, error }) => ({ data: rows, error }))(run())),
     };
     return chain;
   };
   return { from, rpc };
 }
+let failing: Fail | null = null;
 function setup(overrides: { chunks?: Row[]; session?: Row } = {}) {
+  failing = null;
   const log: string[] = [];
   const tables = {
     workspace_meetings: [
@@ -131,7 +152,7 @@ function setup(overrides: { chunks?: Row[]; session?: Row } = {}) {
       chunk(2, null, 'UNATTRIBUTED-SPEECH'),
     ],
   };
-  const db = fakeDb(tables, log);
+  const db = fakeDb(tables, log, () => failing);
   mocks.db = db;
   return { tables, db, log };
 }
@@ -161,6 +182,8 @@ const call = (token: string | null = bearer()) =>
   );
 
 beforeEach(() => {
+  mocks.settle.mockReset();
+  mocks.settle.mockResolvedValue(undefined);
   vi.stubEnv('MEET_REALTIME_TOKEN_SECRET', SECRET);
   vi.stubEnv('GOOGLE_GENERATIVE_AI_API_KEY', 'test-key');
   mocks.generate.mockReset();
@@ -271,6 +294,13 @@ describe('finalizeMeetAi', () => {
     });
     expect(await call()).toEqual({ status: 'abandoned' });
     expect(mocks.generate).toHaveBeenCalledTimes(3);
+    // A provider failure that was durably recorded as uncharged rotates the
+    // identity, so a legitimate retry is not blocked by the failed run.
+    expect(mocks.generate.mock.calls.map((c) => c[1].attemptId)).toEqual([
+      `${sessionId}:g0`,
+      `${sessionId}:g1`,
+      `${sessionId}:g2`,
+    ]);
   });
 
   it('notifies with a link only, to the host and member readers', async () => {
@@ -291,5 +321,147 @@ describe('finalizeMeetAi', () => {
     setup({ session: { user_id: ada } });
     expect(await call()).toEqual({ status: 'abandoned' });
     expect(mocks.generate).not.toHaveBeenCalled();
+  });
+
+  describe('billing identity and recovery', () => {
+    function ledgerGenerate() {
+      const keys = new Set<string>();
+      const executed: string[] = [];
+      mocks.generate.mockImplementation(
+        async (_input, actor, _admission, hooks) => {
+          // Stands in for the AI Studio ledger: one run per idempotency key.
+          if (keys.has(actor.attemptId))
+            throw new AiStudioError('This request is already running or completed.', {
+              code: 'invalid_request_error',
+              status: 409,
+            });
+          keys.add(actor.attemptId);
+          executed.push(actor.attemptId);
+          const measured = {
+            notes: {
+              summary: 'SUMMARY-BODY',
+              decisions: [],
+              actionItems: [],
+              openQuestions: [],
+            },
+            usage: { available: true, inputTokens: 1, outputTokens: 1 },
+            costUsd: 0.001,
+          };
+          await hooks?.onGenerated?.({
+            measured,
+            settlement: {
+              runId: `run-${executed.length}`,
+              actualCredits: 1,
+              providerCostUsd: 0.001,
+              inputTokens: 1,
+              outputTokens: 1,
+              latencyMs: 1,
+              metadata: {
+                app: 'meet',
+                source: 'meet_artifact',
+                meetingId: meeting,
+                operation: 'meeting_notes',
+              },
+            },
+          });
+          return measured;
+        }
+      );
+      return executed;
+    }
+
+    it('charged but not saved: the retry recovers the output with no second run or charge', async () => {
+      const executed = ledgerGenerate();
+      const { tables, db } = setup();
+      failing = (table, patch) =>
+        table === 'meet_ai_sessions' && patch.notes_status === 'completed';
+      await expect(call()).rejects.toMatchObject({ status: 500 });
+      expect(executed).toHaveLength(1);
+      expect(tables.meet_ai_sessions[0]).toMatchObject({
+        notes_status: 'failed',
+        // The identity is not rotated after output existed.
+        notes_unpriced_attempts: 0,
+      });
+      expect(JSON.stringify(tables.meet_ai_sessions[0]?.notes_usage)).toContain(
+        'run-1'
+      );
+      expect(db.rpc).not.toHaveBeenCalled();
+
+      failing = null;
+      expect(await call()).toEqual({ status: 'completed', generated: true });
+      expect(executed).toHaveLength(1);
+      expect(mocks.generate).toHaveBeenCalledTimes(1);
+      // The stored run is settled again (idempotent in the ledger), not rerun.
+      expect(mocks.settle).toHaveBeenCalledTimes(1);
+      expect(mocks.settle.mock.calls[0]?.[0]).toMatchObject({ runId: 'run-1' });
+      expect(tables.meet_ai_sessions[0]).toMatchObject({
+        notes_status: 'completed',
+        notes: expect.objectContaining({ summary: 'SUMMARY-BODY' }),
+      });
+      expect(
+        JSON.stringify(tables.meet_ai_sessions[0]?.notes_usage)
+      ).not.toContain('checkpoint');
+      expect(db.rpc).toHaveBeenCalled();
+      // And a later end is still a no-op.
+      expect(await call()).toEqual({ status: 'completed', generated: false });
+      expect(mocks.generate).toHaveBeenCalledTimes(1);
+    });
+
+    it('unknown billed state: output could not be kept, so automatic regeneration is fenced', async () => {
+      const executed = ledgerGenerate();
+      const { tables, db } = setup();
+      failing = (table, patch) =>
+        table === 'meet_ai_sessions' && 'notes_usage' in patch;
+      expect(await call()).toEqual({ status: 'abandoned' });
+      failing = null;
+      expect(await call()).toEqual({ status: 'abandoned' });
+      expect(await call()).toEqual({ status: 'abandoned' });
+      // One provider run in total, under one stable identity.
+      expect(executed).toEqual([`${sessionId}:g0`]);
+      expect(
+        new Set(mocks.generate.mock.calls.map((c) => c[1].attemptId)).size
+      ).toBe(1);
+      expect(mocks.settle).not.toHaveBeenCalled();
+      expect(db.rpc).not.toHaveBeenCalled();
+      expect(tables.meet_ai_sessions[0]).toMatchObject({
+        notes_unpriced_attempts: 0,
+      });
+      expect(tables.meet_ai_sessions[0]?.notes_status).not.toBe('completed');
+    });
+
+    it('the host can reconcile by hand with a fresh identity', async () => {
+      const executed = ledgerGenerate();
+      const { tables } = setup();
+      failing = (table, patch) =>
+        table === 'meet_ai_sessions' && 'notes_usage' in patch;
+      await call();
+      failing = null;
+      const outcome = await finishMeetAiSession({
+        db: mocks.db as never,
+        session: tables.meet_ai_sessions[0] as never,
+        userId: host,
+        meetingId: meeting,
+        meetingStartedAt: null,
+        expectedChunks: 3,
+      });
+      expect(outcome).toBe('generated');
+      expect(executed).toHaveLength(2);
+      expect(executed[1]).not.toBe(executed[0]);
+    });
+
+    it('a stale processing lease does not rotate an unattended identity', async () => {
+      const executed = ledgerGenerate();
+      const { tables } = setup({
+        session: {
+          notes_status: 'processing',
+          notes_started_at: '2020-01-01T00:00:00Z',
+        },
+      });
+      expect(await call()).toEqual({ status: 'completed', generated: true });
+      expect(executed).toEqual([`${sessionId}:g0`]);
+      expect(tables.meet_ai_sessions[0]).toMatchObject({
+        notes_unpriced_attempts: 0,
+      });
+    });
   });
 });

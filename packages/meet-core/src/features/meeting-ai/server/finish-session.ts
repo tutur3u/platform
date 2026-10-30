@@ -3,13 +3,22 @@ import {
   readTranscriptSegments,
   transcriptSpeakers,
 } from '@tuturuuu/ai/meetings/transcript';
-import { generateBilledMeetArtifact } from './artifact-billing';
+import { AiStudioError } from '@tuturuuu/ai/studio/errors';
+import {
+  generateBilledMeetArtifact,
+  settleMeetRun,
+} from './artifact-billing';
 import 'server-only';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json, Tables } from '@tuturuuu/types';
 import { Effect, Schedule } from '@tuturuuu/utils/effect';
 import { MeetAiError } from './access';
 import { consentedChunks } from './consent-filter';
+import {
+  BILLING_UNRECONCILED,
+  notesCheckpointUsage,
+  readNotesCheckpoint,
+} from './notes-billing';
 
 /**
  * Finish a transcription session and generate its notes at most once.
@@ -30,6 +39,12 @@ export async function finishMeetAiSession(input: {
   expectedChunks?: number;
   captureIncomplete?: boolean;
   consentedAccountIds?: ReadonlySet<string>;
+  /**
+   * Unattended caller. Its billing identity is stable per session, so the
+   * ledger refuses a second run after an unknown billed outcome. A human click
+   * uses a fresh identity and is the way to reconcile.
+   */
+  automatic?: boolean;
 }): Promise<'generated' | 'already'> {
   const { db, session, meetingId } = input;
   const sessionId = session.id;
@@ -43,7 +58,10 @@ export async function finishMeetAiSession(input: {
       .from('meet_ai_sessions')
       .update({
         notes_status: 'failed',
-        notes_unpriced_attempts: session.notes_unpriced_attempts + 1,
+        // An unattended retry keeps its billing identity: a crash may have
+        // followed a charge, and only the ledger can say.
+        notes_unpriced_attempts:
+          session.notes_unpriced_attempts + (input.automatic ? 0 : 1),
       })
       .eq('id', sessionId)
       .eq('notes_status', 'processing')
@@ -52,7 +70,7 @@ export async function finishMeetAiSession(input: {
       .maybeSingle();
     if (recovered.error || !recovered.data)
       throw new MeetAiError(409, 'Notes are still processing');
-    session.notes_unpriced_attempts++;
+    if (!input.automatic) session.notes_unpriced_attempts++;
   }
   const ended = await db
     .from('meet_ai_sessions')
@@ -101,7 +119,59 @@ export async function finishMeetAiSession(input: {
   if (claimed.error || !claimed.data)
     throw new MeetAiError(409, 'Notes are already processing');
   let providerStarted = false;
+  // Set once output exists or the billed outcome is unknown; see the catch block.
+  let fenced = false;
+  // Reuse the settled output; only the idempotent CAS write is retried.
+  const save = async (payload: {
+    notes_status: string;
+    notes: Json;
+    notes_usage: Json;
+    notes_cost_usd: number;
+  }) => {
+      const persisted = await Effect.runPromise(
+        Effect.tryPromise({
+          try: async () => {
+            const saved = await db
+              .from('meet_ai_sessions')
+              .update(payload)
+              .eq('id', sessionId)
+              .eq('notes_started_at', attemptStartedAt)
+              .select('id')
+              .maybeSingle();
+            if (saved.error) throw new MeetAiError(500, 'Could not save notes');
+            if (!saved.data)
+              throw new MeetAiError(409, 'Notes finalization changed');
+          },
+          catch: (error) =>
+            error instanceof MeetAiError
+              ? error
+              : new MeetAiError(500, 'Could not save notes'),
+        }).pipe(
+          Effect.retry({
+            times: 2,
+            schedule: Schedule.exponential('100 millis'),
+            while: (error) => error.status === 500,
+          }),
+          Effect.either
+        )
+      );
+      if (persisted._tag === 'Left') throw persisted.left;
+  };
   try {
+    const kept = readNotesCheckpoint(session.notes_usage);
+    if (kept) {
+      // An earlier delivery generated and kept the output. Settle its run again
+      // (idempotent) and commit: no provider call, no new run, no second charge.
+      fenced = true;
+      await settleMeetRun(kept.settlement);
+      await save({
+        notes_status: 'completed',
+        notes: kept.notes as Json,
+        notes_usage: kept.usage as Json,
+        notes_cost_usd: kept.costUsd,
+      });
+      return 'generated';
+    }
     const ordered = [...chunks].sort((a, b) => a.sequence - b.sequence);
     const incomplete =
       input.captureIncomplete ||
@@ -138,21 +208,9 @@ export async function finishMeetAiSession(input: {
     if (transcript.length > 500_000)
       throw new MeetAiError(413, 'Transcript exceeds notes limit');
     providerStarted = hasSavedSpeech;
-    const result = hasSavedSpeech
-      ? await generateBilledMeetArtifact(
-          {
-            transcript,
-            meetingStartedAt: input.meetingStartedAt ?? undefined,
-            timezone: input.timezone,
-          },
-          {
-            userId: input.userId,
-            meetingId,
-            attemptId: `${sessionId}:${attemptStartedAt}`,
-          }
-        )
-      : null;
-    if (result?.notes) {
+    const build = (
+      generated: Awaited<ReturnType<typeof generateBilledMeetArtifact>> | null
+    ) => {
       const roster = new Map<string, string>(
         usable.flatMap((chunk) =>
           transcriptSpeakers(chunk.usage).map(
@@ -160,66 +218,109 @@ export async function finishMeetAiSession(input: {
           )
         )
       );
-      result.notes.actionItems = result.notes.actionItems.map((item) => ({
-        ...item,
-        ownerId: item.ownerId && roster.has(item.ownerId) ? item.ownerId : null,
-        owner:
-          item.ownerId && roster.has(item.ownerId)
-            ? roster.get(item.ownerId)!
-            : item.owner,
-      }));
-    }
-    // Reuse the settled output; only the idempotent CAS write is retried.
-    const payload = {
-      notes_status: 'completed',
-      notes: {
-        ...(result?.notes ?? {
-          incomplete: false,
-          summary: '',
-          decisions: [],
-          actionItems: [],
-          openQuestions: [],
-        }),
-        incomplete: !!incomplete,
-      } as Json,
-      notes_usage: (result?.usage as Json) ?? null,
-      notes_cost_usd: result ? result.costUsd : 0,
+      const notes = generated?.notes && {
+        ...generated.notes,
+        actionItems: generated.notes.actionItems.map((item) => ({
+          ...item,
+          ownerId:
+            item.ownerId && roster.has(item.ownerId) ? item.ownerId : null,
+          owner:
+            item.ownerId && roster.has(item.ownerId)
+              ? roster.get(item.ownerId)!
+              : item.owner,
+        })),
+      };
+      return {
+        notes_status: 'completed',
+        notes: {
+          ...(notes ?? {
+            incomplete: false,
+            summary: '',
+            decisions: [],
+            actionItems: [],
+            openQuestions: [],
+          }),
+          incomplete: !!incomplete,
+        } as Json,
+        notes_usage: (generated?.usage as Json) ?? null,
+        notes_cost_usd: generated ? (generated.costUsd ?? 0) : 0,
+      };
     };
-    const persisted = await Effect.runPromise(
-      Effect.tryPromise({
-        try: async () => {
-          const saved = await db
-            .from('meet_ai_sessions')
-            .update(payload)
-            .eq('id', sessionId)
-            .eq('notes_started_at', attemptStartedAt)
-            .select('id')
-            .maybeSingle();
-          if (saved.error) throw new MeetAiError(500, 'Could not save notes');
-          if (!saved.data)
-            throw new MeetAiError(409, 'Notes finalization changed');
-        },
-        catch: (error) =>
-          error instanceof MeetAiError
-            ? error
-            : new MeetAiError(500, 'Could not save notes'),
-      }).pipe(
-        Effect.retry({
-          times: 2,
-          schedule: Schedule.exponential('100 millis'),
-          while: (error) => error.status === 500,
-        }),
-        Effect.either
-      )
-    );
-    if (persisted._tag === 'Left') throw persisted.left;
+    const generationId = input.automatic
+      ? `${sessionId}:g${session.notes_unpriced_attempts}`
+      : `${sessionId}:${attemptStartedAt}`;
+    let result: Awaited<ReturnType<typeof generateBilledMeetArtifact>> | null =
+      null;
+    if (hasSavedSpeech) {
+      try {
+        result = await generateBilledMeetArtifact(
+          {
+            transcript,
+            meetingStartedAt: input.meetingStartedAt ?? undefined,
+            timezone: input.timezone,
+          },
+          { userId: input.userId, meetingId, attemptId: generationId },
+          undefined,
+          {
+            // Keep the output and the run reference before the charge settles,
+            // so a failed save is recovered instead of generated and billed again.
+            onGenerated: async ({ measured, settlement }) => {
+              fenced = true;
+              const built = build(measured);
+              const kept = await db
+                .from('meet_ai_sessions')
+                .update({
+                  notes_usage: notesCheckpointUsage({
+                    notes: built.notes as Record<string, unknown>,
+                    usage: built.notes_usage,
+                    costUsd: built.notes_cost_usd,
+                    settlement,
+                  }),
+                })
+                .eq('id', sessionId)
+                .eq('notes_started_at', attemptStartedAt)
+                .eq('notes_status', 'processing')
+                .select('id')
+                .maybeSingle();
+              if (kept.error || !kept.data)
+                throw new MeetAiError(
+                  503,
+                  'Could not keep generated notes',
+                  BILLING_UNRECONCILED
+                );
+            },
+          }
+        );
+      } catch (error) {
+        // The ledger already holds a run for this identity: its billed outcome
+        // is unknown to us, so nothing may generate again until it is reconciled.
+        if (error instanceof AiStudioError && error.status === 409) {
+          fenced = true;
+          throw new MeetAiError(
+            409,
+            'Notes generation needs reconciliation',
+            BILLING_UNRECONCILED
+          );
+        }
+        throw error;
+      }
+    }
+    const payload = build(result);
+    await save(payload);
   } catch (error) {
     await db
       .from('meet_ai_sessions')
       .update({
         notes_status: 'failed',
+        // Output or an unknown billed outcome keeps the same identity so the
+        // ledger, not a rotated counter, decides whether anything may run again.
         notes_unpriced_attempts:
-          session.notes_unpriced_attempts + (providerStarted ? 1 : 0),
+          session.notes_unpriced_attempts +
+          (providerStarted &&
+          !fenced &&
+          !(error instanceof MeetAiError && error.code === BILLING_UNRECONCILED)
+            ? 1
+            : 0),
       })
       .eq('id', sessionId)
       .eq('notes_started_at', attemptStartedAt)

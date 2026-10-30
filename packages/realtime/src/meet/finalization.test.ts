@@ -6,6 +6,7 @@ import {
   MEET_FINALIZE_FIRST_DELAY_MS,
   MEET_FINALIZE_MAX_ATTEMPTS,
   MEET_FINALIZE_MAX_RECORDS,
+  MEET_FINALIZE_MAX_SESSIONS,
   settleFinalization,
 } from './finalization';
 import {
@@ -248,6 +249,101 @@ describe('the bounded attempt ledger', () => {
     }
     expect(Object.keys(state.finalizations ?? {}).length).toBeLessThanOrEqual(
       MEET_FINALIZE_MAX_RECORDS
+    );
+  });
+});
+
+describe('the durable per-session fence', () => {
+  const at = Date.parse(now);
+  const sid = (n: number) =>
+    `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
+  const atTime = (state: State, message: unknown, time: number) =>
+    applyMeetRoomCommand(state, {
+      message: meetRealtimeClientMessageSchema.parse(message),
+      token: host,
+      now: new Date(time).toISOString(),
+    }).state;
+  // Start, consent and stop a session: the path a host can drive repeatedly.
+  function cycle(state: State, id: string, time: number) {
+    let next = atTime(
+      state,
+      { type: 'transcription.state', state: { ...start.state, sessionId: id } },
+      time
+    );
+    next = atTime(
+      next,
+      { type: 'transcription.consent', userId: host.userId, allowed: true },
+      time
+    );
+    return atTime(
+      next,
+      {
+        type: 'transcription.state',
+        state: { ...start.state, sessionId: id, active: false },
+      },
+      time
+    );
+  }
+  function base() {
+    let state = createMeetRoomSnapshot();
+    for (const person of people) state = admitOrHold(state, person, now).state;
+    return state;
+  }
+
+  it('refuses a session that was exhausted and evicted from the delivery ledger', () => {
+    const A = sid(1);
+    let state = cycle(base(), A, at);
+    let time = at;
+    // Exhaust A: six deliveries, all retryable failures.
+    for (let i = 0; i < 20; i++) {
+      time += 10 * 60_000;
+      const begun = beginFinalizationAttempt(state, A, time);
+      state = begun.state;
+      if (begun.record) state = settleFinalization(state, A, 'retry');
+    }
+    expect(state.finalizations?.[A]?.status).toBe('abandoned');
+    // Evict A: more sessions than the ledger keeps, each finished.
+    for (let n = 2; n < 2 + MEET_FINALIZE_MAX_RECORDS + 2; n++) {
+      time += 1000;
+      state = cycle(state, sid(n), time);
+      state = settleFinalization(state, sid(n), 'done');
+    }
+    expect(state.finalizations?.[A]).toBeUndefined();
+    expect(state.finalizationFence?.[A]).toBe(true);
+    // Replay A through the room command path.
+    time += 1000;
+    const replay = cycle(state, A, time);
+    expect(replay.finalizations?.[A]).toBeUndefined();
+    expect(replay.finalizationFence?.[A]).toBe(true);
+    expect(dueFinalizations(replay, time + 86_400_000)).toEqual([]);
+    expect(finalizationDeadline(replay)).toBeUndefined();
+    // Ending the room with A active again queues nothing either.
+    const ended = atTime(replay, { type: 'room.end' }, time + 1000);
+    expect(ended.finalizations?.[A]).toBeUndefined();
+  });
+
+  it('keeps a finished session fenced too, and bounds the fence', () => {
+    let state = cycle(base(), sid(1), at);
+    state = settleFinalization(state, sid(1), 'done');
+    const again = cycle(state, sid(1), at + 5000);
+    expect(again.finalizations?.[sid(1)]?.status).toBe('done');
+    expect(again.finalizations?.[sid(1)]?.queuedAt).toBe(at);
+
+    let full = base();
+    let time = at;
+    for (let n = 1; n <= MEET_FINALIZE_MAX_SESSIONS; n++) {
+      time += 1000;
+      full = cycle(full, sid(n), time);
+      full = settleFinalization(full, sid(n), 'done');
+    }
+    expect(Object.keys(full.finalizationFence ?? {})).toHaveLength(
+      MEET_FINALIZE_MAX_SESSIONS
+    );
+    // Fail closed beyond the cap; the host can still finish by hand.
+    const over = cycle(full, sid(MEET_FINALIZE_MAX_SESSIONS + 1), time + 1000);
+    expect(over.finalizations?.[sid(MEET_FINALIZE_MAX_SESSIONS + 1)]).toBeUndefined();
+    expect(Object.keys(over.finalizationFence ?? {})).toHaveLength(
+      MEET_FINALIZE_MAX_SESSIONS
     );
   });
 });
