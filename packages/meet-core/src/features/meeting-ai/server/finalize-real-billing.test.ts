@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Runs the REAL billing wrapper, the REAL Gemini failure classification and the
- * REAL finalizer. Only the network edge (`generateText`), the credit check and
- * the AI Studio ledger RPCs are stand-ins. The ledger refuses a repeated
- * idempotency key exactly as `begin_ai_studio_run` does.
+ * REAL finalizer. Only the HTTP edge (an injected `fetch` the real Gemini SDK
+ * calls), the credit check and the AI Studio ledger RPCs are stand-ins. The
+ * ledger refuses a repeated idempotency key exactly as `begin_ai_studio_run`.
  */
 const h = vi.hoisted(() => ({
   db: null as unknown,
-  generateText: vi.fn(),
+  fetch: vi.fn(),
   begin: vi.fn(),
   settle: vi.fn(),
   keys: new Set<string>(),
@@ -33,11 +33,10 @@ vi.mock('../../call/server/room-service', () => ({
   personalWorkspace: async () => 'personal-workspace',
 }));
 vi.mock('./provider-transport', () => ({
-  meetingProviderTransport: async () => ({}),
-}));
-vi.mock('ai', async (original) => ({
-  ...(await original<typeof import('ai')>()),
-  generateText: h.generateText,
+  meetingProviderTransport: async () => ({
+    apiKey: 'test-key',
+    fetch: h.fetch,
+  }),
 }));
 vi.mock('@tuturuuu/ai/studio/metering', () => ({
   beginAiStudioRun: h.begin,
@@ -45,7 +44,6 @@ vi.mock('@tuturuuu/ai/studio/metering', () => ({
   recordAiStudioRunStep: async () => undefined,
 }));
 
-import { APICallError } from 'ai';
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import { finalizeMeetAi } from './finalize';
 import {
@@ -73,11 +71,31 @@ const call = () =>
       body: '{}',
     })
   );
-const providerCalls = () => h.generateText.mock.calls.length;
+const providerCalls = () => h.fetch.mock.calls.length;
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
+const geminiReply = (text: string) =>
+  json({
+    candidates: [
+      {
+        content: { role: 'model', parts: [{ text }] },
+        finishReason: 'STOP',
+        index: 0,
+      },
+    ],
+    usageMetadata: {
+      promptTokenCount: 10,
+      candidatesTokenCount: 5,
+      totalTokenCount: 15,
+    },
+  });
 
 beforeEach(() => {
   h.keys.clear();
-  h.generateText.mockReset();
+  h.fetch.mockReset();
   h.settle.mockReset();
   h.settle.mockResolvedValue(undefined);
   h.begin.mockReset();
@@ -97,10 +115,9 @@ beforeEach(() => {
 describe('finalizer through the real billing wrapper', () => {
   it('a provider timeout is an unknown outcome: exactly one provider call, never retried unattended', async () => {
     const tables = setup();
-    h.generateText.mockRejectedValue(
-      Object.assign(new Error('The operation was aborted due to timeout'), {
-        name: 'TimeoutError',
-      })
+    // What AbortSignal.timeout(55s) produces when the provider never answers.
+    h.fetch.mockRejectedValue(
+      new DOMException('The operation was aborted due to timeout', 'TimeoutError')
     );
     expect(await call()).toEqual({ status: 'abandoned' });
     expect(await call()).toEqual({ status: 'abandoned' });
@@ -119,11 +136,8 @@ describe('finalizer through the real billing wrapper', () => {
 
   it('an output validation error after generation is an unknown outcome too', async () => {
     const tables = setup();
-    h.generateText.mockResolvedValue({
-      text: 'x',
-      output: { summary: 42 },
-      providerMetadata: { google: { usageMetadata: {} } },
-    });
+    // The provider answered and billed, but the output does not match the schema.
+    h.fetch.mockImplementation(async () => geminiReply('{"summary":42}'));
     expect(await call()).toEqual({ status: 'abandoned' });
     expect(await call()).toEqual({ status: 'abandoned' });
     expect(providerCalls()).toBe(1);
@@ -134,7 +148,7 @@ describe('finalizer through the real billing wrapper', () => {
 
   it('a network error after the request was sent is an unknown outcome', async () => {
     setup();
-    h.generateText.mockRejectedValue(new Error('fetch failed'));
+    h.fetch.mockRejectedValue(new TypeError('fetch failed'));
     expect(await call()).toEqual({ status: 'abandoned' });
     expect(await call()).toEqual({ status: 'abandoned' });
     expect(providerCalls()).toBe(1);
@@ -142,13 +156,11 @@ describe('finalizer through the real billing wrapper', () => {
 
   it('only an explicit provider rejection with no output rotates the identity', async () => {
     const tables = setup();
-    h.generateText.mockRejectedValue(
-      new APICallError({
-        message: 'Quota exceeded',
-        url: 'https://provider.invalid',
-        requestBodyValues: {},
-        statusCode: 429,
-      })
+    h.fetch.mockImplementation(async () =>
+      json(
+        { error: { code: 429, message: 'Quota exceeded', status: 'RESOURCE_EXHAUSTED' } },
+        429
+      )
     );
     await expect(call()).rejects.toMatchObject({ status: 502 });
     expect(tables.meet_ai_sessions[0]).toMatchObject({
