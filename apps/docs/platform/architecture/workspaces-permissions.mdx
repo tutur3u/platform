@@ -700,3 +700,16 @@ Regression coverage: `has-workspace-permission-caller-scope.sql`,
 `workspace-storage-limit-execute.sql`, and
 `workspace-permission-*.sql`. Apply the actual rollback before running
 `verification/workspace-permission-rollback.sql` and the invitation-role suite.
+
+The same JWT and trigger scope applies to `is_workspace_owner`, `is_member_invited`,
+`user_is_in_channel`, `is_hive_member`, `is_hive_platform_admin`,
+`can_create_workspace`, and `count_user_workspaces`. Non-self boolean checks return
+false; workspace counts return zero. Workspace creation limits query the caller's
+own count. `is_task_plan_intended_workspace` returns false for nonmembers.
+`is_personal_workspace` returns NULL for nonmembers outside triggers: neither a
+personal-only nor a nonpersonal-only predicate can authorize with a hidden value.
+Trigger checks retain the real personal flag. Analytics growth and retention RPCs
+are executable only by service_role.
+
+Regression coverage: `remaining-membership-helpers-caller-bound.sql` and
+`external-project-helpers-caller-bound.sql`; anonymous EXECUTE stays revoked.
