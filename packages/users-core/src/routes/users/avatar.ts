@@ -1,6 +1,6 @@
 import {
   ProfileUploadError,
-  reserveProfileUploadBudget,
+  reserveWorkspaceManagedAvatarBudget,
 } from '@tuturuuu/storage-core/profile-upload-budget';
 import { DEFAULT_SIGNED_URL_TTL_SECONDS } from '@tuturuuu/storage-core/signed-url-policy';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
@@ -140,11 +140,17 @@ export async function handleCreateAvatarUploadRequest(
   }
 
   try {
-    await reserveProfileUploadBudget(principal.id, 'avatar');
+    await reserveWorkspaceManagedAvatarBudget(permissions.wsId, principal.id);
   } catch (error) {
     if (error instanceof ProfileUploadError) {
       return NextResponse.json(
-        { message: error.message },
+        {
+          message: error.message,
+          ...(error.status === 429 && {
+            code: 'PROFILE_UPLOAD_LIMIT',
+            retryAfter: error.retryAfter,
+          }),
+        },
         {
           status: error.status,
           headers: error.retryAfter
