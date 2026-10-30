@@ -97,5 +97,16 @@
     "classification": "verified false positive",
     "effectiveRoles": ["service_role"],
     "reason": "SR-108 merge helper; dynamic row update with %I.%I identifiers from a fixed allowlist; service_role-only; reviewed in #7282 6965a5e5."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261030051010_tutoring_automation_notifications.sql",
+    "line": 19,
+    "sourceDigest": "a548c18f8e3f13a5bf14c737cc155205bc306294fa0f883a3109bad8440141e0",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "a29adb0fb54d30a1d7ccc6e3073cb30abd67e1c0e9dab36f98e0e45b61f71e9f",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "Static DO block rebuilding public.notifications_type_check; the only interpolated values are two fixed literals and type names read from the constraint's own pg_get_constraintdef, each passed through quote_literal; no GRANT, REVOKE, owner or ACL change; same shape as 20261029050200:29 (Tess, 30 Oct)."
   }
 ]
