@@ -208,3 +208,72 @@ it('keeps the snapshot UTF-8 byte ceiling with org included', () => {
     }).success
   ).toBe(false);
 });
+
+it('preserves the safeExtend 128 KiB snapshot boundary with 100 org nodes', () => {
+  const byteLength = (value: unknown) =>
+    new TextEncoder().encode(JSON.stringify(value)).byteLength;
+  const sizedSnapshot = (bytes: number) => {
+    const value = {
+      ...snapshot,
+      org: {
+        nodes: Array.from({ length: 100 }, (_, i) => ({
+          ...node,
+          key: i.toString(16).padStart(32, 'a'),
+          label: `界${'x'.repeat(79)}`,
+          role: 'x'.repeat(80),
+          team: 'x'.repeat(64),
+          pool: 'x'.repeat(64),
+          modelFamily: 'x'.repeat(80),
+          taskTitle: 'x'.repeat(80),
+          prRefs: Array.from({ length: 10 }, (_, index) => index + 1),
+        })),
+        edges: [],
+      },
+      backlog: Array.from({ length: 100 }, (_, i) => ({
+        id: `item-${i}`,
+        title: 'x'.repeat(100),
+        owner: 'x'.repeat(80),
+        state: 'queued',
+      })),
+      needsYou: Array.from({ length: 100 }, (_, i) => ({
+        id: `ask-${i}`,
+        version: 1,
+        contentHash: 'a'.repeat(64),
+        class: 'fyi',
+        risk: 'low',
+        title: 'x'.repeat(100),
+        body: '',
+        status: 'open',
+      })),
+    };
+    let remaining = bytes - byteLength(value);
+    expect(remaining).toBeGreaterThanOrEqual(0);
+    expect(remaining).toBeLessThanOrEqual(100 * 280);
+    for (const item of value.needsYou) {
+      const length = Math.min(remaining, 280);
+      item.body = 'x'.repeat(length);
+      remaining -= length;
+    }
+    expect(remaining).toBe(0);
+    expect(value.org.nodes).toHaveLength(100);
+    expect(byteLength(value)).toBe(bytes);
+    return value;
+  };
+  const atLimit = sizedSnapshot(128 * 1024);
+  const parsed = ingestSchema.parse({ ...envelope, snapshot: atLimit });
+  expect(parsed.snapshot).toEqual(atLimit);
+  expect(byteLength(parsed.snapshot)).toBe(128 * 1024);
+  const overLimit = sizedSnapshot(128 * 1024 + 1);
+  // Without org the same snapshot fits: the inherited refine must count org bytes.
+  const { org: omitted, ...withoutOrg } = overLimit;
+  expect(omitted.nodes).toHaveLength(100);
+  expect(
+    ingestSchema.safeParse({ ...envelope, snapshot: withoutOrg }).success
+  ).toBe(true);
+  const result = ingestSchema.safeParse({ ...envelope, snapshot: overLimit });
+  expect(result.success).toBe(false);
+  if (!result.success)
+    expect(result.error.issues).toEqual([
+      expect.objectContaining({ code: 'custom', path: ['snapshot'] }),
+    ]);
+});
