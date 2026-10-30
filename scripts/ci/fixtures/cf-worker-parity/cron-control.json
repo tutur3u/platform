@@ -14,60 +14,11 @@
         "enabled": true,
         "headSamplingRate": 0.05,
         "invocationLogs": true
-      }
-    },
-    "crons": [
-      "* * * * *",
-      "*/10 * * * *",
-      "*/15 * * * *",
-      "*/30 * * * *",
-      "*/5 * * * *",
-      "0 */12 * * *",
-      "0 */6 * * *",
-      "0 6 * * *",
-      "17 3 * * *"
-    ],
-    "routes": [],
-    "vars": {
-      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention",
-      "CRON_CONTROL_WORKER_PROCESSORS": "",
-      "CRON_CONTROL_WEB_MODE": "off",
-      "INFRASTRUCTURE_ORIGIN": "https://infrastructure.tuturuuu.com",
-      "INVENTORY_ORIGIN": "https://inventory.tuturuuu.com",
-      "PAY_ORIGIN": "https://pay.tuturuuu.com",
-      "TASKS_ORIGIN": "https://tasks.tuturuuu.com",
-      "WEB_ORIGIN": "https://tuturuuu.com"
-    },
-    "secrets": [
-      "CRON_CONTROL_DELIVERY_TOKEN",
-      "CRON_CONTROL_OPERATOR_TOKEN",
-      "SUPABASE_SECRET_KEY",
-      "SUPABASE_URL"
-    ],
-    "durableObjects": {
-      "CRON_LEDGER": {
-        "className": "CronLedger"
-      }
-    },
-    "durableObjectClasses": {
-      "CronLedger": "sqlite"
-    },
-    "unmapped": {}
-  },
-  "previousIdentity": {
-    "name": "tuturuuu-cron-control",
-    "accountId": "e8912e2867beecc673d171907bf09649",
-    "compatibilityDate": "2026-09-28",
-    "compatibilityFlags": [],
-    "workersDev": true,
-    "previewUrls": true,
-    "observability": {
-      "enabled": true,
-      "headSamplingRate": 0.05,
-      "logs": {
-        "enabled": true,
+      },
+      "traces": {
+        "enabled": false,
         "headSamplingRate": 0.05,
-        "invocationLogs": true
+        "persist": true
       }
     },
     "crons": [
@@ -107,9 +58,9 @@
     },
     "unmapped": {}
   },
-  "transition": {
-    "decision": "CRON-WEB-MODE-1: #7091 introduces the CRON_CONTROL_WEB_MODE var in its disabled default over the live history-retention Worker, which has no such var; an absent var and the disabled default both keep web jobs from running, so behavior is unchanged. Enabled jobs and Worker processors are unchanged.",
-    "fields": ["vars"]
-  },
-  "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication."
+  "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication.",
+  "dashboardAdmission": {
+    "versionId": "dbe3ed29-0d78-47fe-908e-0095c689f68d",
+    "decision": "CRON-DASH-ADMIT-1: admit only this unchanged live version and exact fixture settings; strict CLI publication restores the CLI deployment source. Disabled traces retain the live 0.05 sampling rate; absent WEB_MODE keeps web jobs off."
+  }
 }
