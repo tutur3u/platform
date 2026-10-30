@@ -33,7 +33,7 @@ set local role authenticated;
 select ok(not public.has_workspace_permission('00000000-0000-4000-8000-000000009111',auth.uid(),'admin'), 'ordinary member fixture has no admin permission');
 select results_eq($$select name from public.workspace_meetings where id='00000000-0000-4000-8000-000000009121'$$, array['Legacy meeting'], 'member meeting read survives');
 select results_eq($$select id::text from public.recording_sessions where id='00000000-0000-4000-8000-000000009124'$$, array['00000000-0000-4000-8000-000000009124'], 'member recording read survives');
-select results_eq($$select id::text from public.audio_chunks where id='00000000-0000-4000-8000-000000009125'$$, array['00000000-0000-4000-8000-000000009125'], 'member audio read survives');
+select is_empty($$select id::text from public.audio_chunks where id='00000000-0000-4000-8000-000000009125'$$, 'member who did not record cannot list another recorders audio');
 select is_empty($$update public.workspace_meetings set name='unauthorized' where id='00000000-0000-4000-8000-000000009121' returning id$$, 'member cannot update workspace_meetings');
 select is_empty($$delete from public.workspace_meetings where id='00000000-0000-4000-8000-000000009121' returning id$$, 'member cannot delete workspace_meetings');
 select is_empty($$update public.recording_sessions set status='failed' where id='00000000-0000-4000-8000-000000009124' returning id$$, 'member cannot update recording_sessions');
