@@ -131,7 +131,7 @@ Future<void> bootstrap(
       appFlavor,
       collectionEnabled: enabled,
     ),
-    unregisterPush: push.prepareInstallationDeletion,
+    unregisterPush: () => push.prepareInstallationDeletion(strict: true),
     deleteInstallation: () => const MethodChannel(
       'mobile/firebase_startup',
     ).invokeMethod<void>('deleteInstallation'),

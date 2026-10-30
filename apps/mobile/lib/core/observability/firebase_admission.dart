@@ -1,5 +1,7 @@
 import 'dart:developer';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 /// One serialized admission path for both native platforms and FID cleanup.
 class FirebaseAdmission {
   FirebaseAdmission({
@@ -29,6 +31,16 @@ class FirebaseAdmission {
   Future<void> _pending = Future<void>.value();
   bool _initialized = false;
   bool _mayHaveInstallation = false;
+
+  static const deletionStateKey = 'firebase-installation-deletion-state-v1';
+
+  Future<void> _persistDeletionState(String state) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!await prefs.setString(deletionStateKey, state)) {
+      throw StateError('Cannot persist Firebase Installation deletion state');
+    }
+  }
+
   int _epoch = 0;
 
   Future<bool> update({
@@ -45,6 +57,9 @@ class FirebaseAdmission {
         return false;
       }
 
+      // A new admission opens a new cleanup budget, before any SDK can create
+      // an FID. Re-applying the same admission does not reopen that budget.
+      if (!_mayHaveInstallation) await _persistDeletionState('active');
       final ready = await _initialize(
         signedIn: signedIn,
         pushAllowed: pushAllowed,
@@ -75,20 +90,43 @@ class FirebaseAdmission {
   }
 
   Future<void> _revoke(int epoch) async {
-    if (_initialized) {
+    if (_initialized && _mayHaveInstallation) {
       await _telemetry(enabled: false);
       if (epoch != _epoch) return;
       try {
         await _unregisterPush();
       } on Object catch (error) {
-        log('Push cleanup failed before FID deletion: ${error.runtimeType}');
+        log('Push cleanup failed; FID deletion skipped: ${error.runtimeType}');
+        return;
       }
       if (epoch != _epoch) return;
       if (_mayHaveInstallation) {
         try {
-          await _deleteInstallation();
+          final prefs = await SharedPreferences.getInstance();
+          final state = prefs.getString(deletionStateKey);
+          if (state == 'attempted' || state == 'deleted') {
+            _mayHaveInstallation = false;
+            return;
+          }
+          // A durable claim precedes the SDK, including crash/failure cases.
+          await _persistDeletionState('attempted');
+        } on Object catch (error) {
           _mayHaveInstallation = false;
+          log(
+            'FID deletion claim failed; request skipped: ${error.runtimeType}',
+          );
+          return;
+        }
+        _mayHaveInstallation = false;
+        log('Firebase Installation deletion attempted');
+        try {
+          await _deleteInstallation();
           log('Firebase Installation deletion completed');
+          try {
+            await _persistDeletionState('deleted');
+          } on Object catch (error) {
+            log('FID deleted; attempted marker retained: ${error.runtimeType}');
+          }
         } on Object catch (error) {
           log('Firebase Installation deletion failed: ${error.runtimeType}');
         }

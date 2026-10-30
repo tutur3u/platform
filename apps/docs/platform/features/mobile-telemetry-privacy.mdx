@@ -65,11 +65,47 @@ setting disclosure states that distinction explicitly.
 
 A serialized admission controller runs the same policy for both platforms.
 When neither purpose remains, it disables telemetry, drains push token/server
-unregistration, then attempts Installations.delete(). Failure is logged without
-identifiers and is retried on a later reconciliation. Sign-out uses the same
+unregistration successfully, then invokes Installations.delete() at most once
+per transition. The durable firebase-installation-deletion-state-v1 ledger is
+claimed as attempted before invoking the SDK and marked deleted on success.
+Failure is logged without identifiers and never retried by the app, including
+after restart. If cleanup fails first, the SDK delete is skipped. Only a new signed-in purpose admission opens a new cleanup
+budget; reapplying Deny plus push OFF does not. Sign-out uses the same
 order before credentials are removed. Token/FID deletion may itself contact
 Firebase as cleanup; it does not authorize a new installation or token.
 Native process-start resets remain unconditional even with a stored Allow.
+
+The exception permits one app-level delete() invocation, with one HTTP DELETE
+on a successful network path. The SDK may retry only that same DELETE:
+
+- **Android Firebase Installations 19.1.2:** deleteFirebaseInstallationId reads
+  existing persisted state and its refresh credential, and calls the delete
+  transport only for a registered FID. It never calls getId/getToken or the
+  registration/refresh path. The transport uses MAX_RETRIES=1 with a <= loop:
+  at most two HTTP attempts, on IOException, HTTP 429 or 5xx.
+  See [delete entrypoint](https://github.com/firebase/firebase-android-sdk/blob/master/firebase-installations/src/main/java/com/google/firebase/installations/FirebaseInstallations.java)
+  and [DELETE transport](https://github.com/firebase/firebase-android-sdk/blob/master/firebase-installations/src/main/java/com/google/firebase/installations/remote/FirebaseInstallationServiceClient.java).
+  These bounds were also checked against the installed 19.1.2 AAR bytecode.
+- **iOS Firebase Installations 12.18.0:** createDeleteInstallationPromise waits
+  for any existing operation or reads stored state; it does not create one.
+  sendDeleteInstallationRequestIfNeeded sends only for a registered FID, using
+  the stored refresh credential. sendURLRequest uses attempts:1 and delay:1,
+  retrying HTTP 500 once: at most two HTTP attempts. The Promise counter is a
+  retry budget, not the total attempt count.
+  See [delete controller](https://github.com/firebase/firebase-ios-sdk/blob/12.18.0/FirebaseInstallations/Source/Library/InstallationsIDController/FIRInstallationsIDController.m),
+  [request/retry implementation](https://github.com/firebase/firebase-ios-sdk/blob/12.18.0/FirebaseInstallations/Source/Library/InstallationsAPI/FIRInstallationsAPIService.m),
+  and [Promise retry counter](https://github.com/google/promises/blob/master/Sources/FBLPromises/FBLPromise%2BRetry.m).
+
+Admission stays serialized behind the SDK's final deletion callback, including
+its bounded internal retry. A new Allow/push request remains pending until that
+callback completes; Firebase is never re-admitted while an old DELETE retry is
+pending. No detached timeout releases admission early. Necessary collection
+disable setters run before cleanup; repeated denied reconciliations do not
+call Analytics/Crashlytics again after the cleanup budget has been spent.
+FirebaseAdmission tests cover no-FID denial, durable success/failure markers,
+restart silence, cleanup ordering/failure, and pending re-admission. Device QA
+must distinguish this cleanup exception from forbidden create/refresh/uploads.
+
 
 Firebase startup waits for an authenticated app session on both platforms.
 Removing FirebaseInitProvider alone is insufficient on Android:
