@@ -103,7 +103,7 @@ test('rejects cross-environment hosts, the production Supabase ref and unfolded 
       { 'server/index.js': 'rootHosts: "production" === "production" ? a : b' },
       /no folded rootHosts/,
     ],
-    ['staging', { 'wrangler.json': '{}' }, /no folded rootHosts/],
+    ['staging', { 'server/deploy.json': '{}' }, /no folded rootHosts/],
   ];
   for (const [profile, files, message] of cases) {
     const root = artifact(files);
