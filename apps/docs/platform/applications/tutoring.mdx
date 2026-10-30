@@ -1,7 +1,7 @@
 ---
 title: 'Tutoring'
 description: 'Schedule make-up and remedial sessions, work the support queue, and enable the module per workspace.'
-updatedAt: '2026-10-28'
+updatedAt: '2026-10-29'
 ---
 
 Tutoring lives in the Contacts satellite at `/{wsId}/users/tutoring`. It turns
@@ -635,6 +635,75 @@ Regression coverage:
 `apps/database/supabase/tests/tutoring-follow-up-notification-foundation.sql`.
 Rollback:
 `apps/database/rollbacks/20261026191000_tutoring_follow_up_notification_foundation.rollback.sql`.
+
+## Absence follow-up and automation settings
+
+Status: database foundation only, off for every workspace. No job, route, or
+screen uses it yet; the scheduled follow-up, the settings card, and the
+archived-absences view ship in later changes.
+
+These rules record Easy Center's request and apply to any workspace that
+enables them.
+
+- **Off by default.** `private.tutoring_automation_settings` holds one row per
+  workspace. A missing row, or a row with the defaults, keeps every rule off.
+  Turning a rule on stamps its enablement time, so absences older than that time
+  minus the absence lookback are never reminded about. The stamp changes only
+  when the rule switches on; it cannot be preset or backdated. Defaults: remind 3 days
+  after the absence, archive 3 days after the reminder, and flag 2 consecutive
+  incomplete lessons (for the later lesson-completion report).
+- **One reminder, then archive.** An absence with no make-up is reminded about
+  once, ever. If it is still not made up after the archive delay, the scheduled
+  job archives it. The job never archives an absence it has not reminded about.
+- **Archive hides the queue row only.** It does not archive the learner and
+  never deletes attendance, sessions, or the follow-up. Staff can restore an
+  archived absence. A restored absence is held: the job will not archive it
+  again, but staff can. Staff can also archive an absence manually. The state
+  machine (`reminded`, `archived`, `restored`) is enforced in the database for
+  every writer, and follow-ups cannot be hard-deleted. Reminder, archive and
+  restore times are always the database's `now()`; a caller cannot supply or
+  backdate them.
+- **Audit.** Every effective transition and settings change writes one row to
+  `private.tutoring_automation_events`, with the staff actor or null for the
+  scheduled job. No-op writes and upserts that change nothing write no event.
+  The settings actor comes from the `tutoring_automation.actor_user_id`
+  setting, never a stored `updated_by`. Required for the settings route: all
+  writes go through a service-role-only
+  `private.tutoring_automation_settings_save(...)` that checks the actor is a
+  member of that workspace and sets the setting with `is_local = true`; direct
+  table writes are then revoked. Until then, a session-level value could leave
+  a stale or unvalidated actor. The
+  audit is append-only: no role can update or truncate it, and the service role
+  cannot delete it.
+- **Actors.** Routes take the staff actor from the authenticated session and
+  never pass null for a user request; null is reserved for the scheduled job.
+  A staff actor must be a workspace `MEMBER` (not a guest) holding
+  `update_user_groups_scores`.
+- **Attendance link.** A follow-up may link the attendance row of the same
+  class, learner and date only.
+- **Notifications.** The types `tutoring_absence_makeup_reminder` and
+  `tutoring_lesson_incomplete_report` use the existing `create_notification` path.
+  `private.tutoring_notification_receipts` gains the kinds `absence_reminder`
+  (one per follow-up and recipient) and `lesson_report` (one per workspace,
+  local date, and recipient), so reruns never notify twice.
+- **Access.** All three tables are service-role only, with RLS enabled and no
+  client policies. `private.tutoring_absence_followup_apply` is the single
+  service-role entry point; scheduled actions are refused while the workspace
+  setting is off, and staff actions require current workspace membership.
+
+Open questions for Easy Center (who receives the reminder, exact delays) do not
+change this schema: delays are settings, and recipients are resolved by the
+later job.
+
+Regression coverage:
+`apps/database/supabase/tests/tutoring-automation-foundation.sql` and
+`tutoring-automation-hardening.sql`. Rollback: run
+`20261030051010_tutoring_automation_notifications.rollback.sql`, then
+`20261030051000_tutoring_automation_foundation.rollback.sql`, and prove it with
+`apps/database/verification/tutoring-automation-foundation-rollback-roundtrip.sql`.
+The rollback keeps both notification types, because a CHECK constraint is
+re-checked on every update and removing them would make existing
+notifications of those types fail mark-read.
 
 ## Exports
 
