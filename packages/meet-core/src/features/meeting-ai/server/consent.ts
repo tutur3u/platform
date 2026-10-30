@@ -2,6 +2,7 @@ import 'server-only';
 import { getMeetCallAccess } from '@tuturuuu/meet-core/features/call/lib/call-access';
 import { callRoomService } from '@tuturuuu/meet-core/features/call/server/room-service';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { z } from 'zod';
 import {
   MEET_CONSENT_DECISIONS,
@@ -31,7 +32,7 @@ function failure(error: unknown, fallback: string): never {
 }
 
 async function meetingSession(
-  db: Awaited<ReturnType<typeof createAdminClient>>,
+  db: TypedSupabaseClient,
   meetingId: string,
   sessionId: string
 ) {
