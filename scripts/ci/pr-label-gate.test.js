@@ -86,6 +86,7 @@ const PROTECTED_TRIGGERS = {
   'tutoring-teacher-hours-contract.yaml': 'cb666f22d4bbdc8f',
   'type-check.yaml': '47acd08d33c6cf4c',
   'web-start-candidate.yaml': '0a3cc2c97958f5cd',
+  'workspace-permission-scope-contract.yaml': '0a3cc2c97958f5cd',
 };
 
 function events(workflow) {

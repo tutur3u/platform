@@ -25,6 +25,7 @@ export const ci = {
   'external-project-storage-analytics-contract.yaml': true,
   'tutoring-absence-credit-contract.yaml': true,
   'report-review-receipts-contract.yaml': true,
+  'workspace-permission-scope-contract.yaml': true,
   'programming-app-builds.yaml': true,
   'mail-calendar-tasks-builds.yaml': true,
   'playground-runtime-acceptance.yaml': true,
