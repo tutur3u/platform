@@ -486,9 +486,11 @@ Servers explicitly admit staging with `TUTURUUU_DEPLOY_ENV=staging`. Browser
 bundles use the design's build-time `NEXT_PUBLIC_TUTURUUU_STAGING=1` signal
 when the private deploy environment is unavailable. Both require exactly
 `.staging.tutur3u.com` after domain normalization; invalid staging configuration
-throws rather than falling back to production. Production deploy or Vercel
-markers veto the public flag. An unknown private deploy environment also blocks
-public admission. Without staging admission, staging hosts get host-only cookies.
+throws rather than falling back to production. Vercel production markers veto the public flag. When the public flag is `1`,
+any defined private deploy environment other than `staging` throws, including
+empty, unknown, preview and production values, preventing divergent server and
+browser decisions. Without the public flag, private production markers reject
+and log an attempted staging cookie override once per process. Without staging admission, staging hosts get host-only cookies.
 Build staging server and browser artifacts with the same public flag and cookie
 domain to preserve refresh and sign-out scope across staging hosts.
 

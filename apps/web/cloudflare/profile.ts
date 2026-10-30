@@ -1,3 +1,5 @@
+import { cloudflareAccessIssuer } from '@tuturuuu/utils/cloudflare-access';
+
 export const stagingProfile = {
   host: 'web.staging.tutur3u.com',
   zone: 'tutur3u.com',
@@ -16,6 +18,21 @@ export interface WebCandidateEnv {
   NEXT_PUBLIC_SUPABASE_URL?: string;
   AUTH_COOKIE_DOMAIN?: string;
   TRUSTED_PROXY_ORIGIN_SECRET?: string;
+  /** Vercel Protection Bypass for Automation; sent only to the admitted origin. */
+  VERCEL_AUTOMATION_BYPASS_SECRET?: string;
+  /** Access team host and application AUD; the Worker verifies Access JWTs. */
+  CF_ACCESS_TEAM_DOMAIN?: string;
+  CF_ACCESS_AUD?: string;
+}
+
+/** Printable ASCII without spaces; bounds a secret before it becomes a header. */
+export function headerSafeSecret(value: string | undefined, min = 32) {
+  return (
+    typeof value === 'string' &&
+    value.length >= min &&
+    value.length <= 256 &&
+    /^[\x21-\x7e]+$/u.test(value)
+  );
 }
 
 export function admittedOrigin(request: Request, env: WebCandidateEnv) {
@@ -27,6 +44,9 @@ export function admittedOrigin(request: Request, env: WebCandidateEnv) {
     env.AUTH_COOKIE_DOMAIN !== stagingProfile.cookieDomain ||
     !env.TRUSTED_PROXY_ORIGIN_SECRET ||
     env.TRUSTED_PROXY_ORIGIN_SECRET.length < 32 ||
+    !headerSafeSecret(env.VERCEL_AUTOMATION_BYPASS_SECRET) ||
+    !cloudflareAccessIssuer(env.CF_ACCESS_TEAM_DOMAIN) ||
+    !env.CF_ACCESS_AUD?.trim() ||
     !env.NEXT_FALLBACK_ORIGIN
   )
     return null;

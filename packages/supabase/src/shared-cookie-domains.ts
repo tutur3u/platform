@@ -39,6 +39,13 @@ export function resetProductionOverrideErrorLogForTests() {
 /** One policy for server runtime admission and the build-inlined browser signal. */
 export function isStagingSharedCookieDeployment(domain: string | undefined) {
   const deployEnv = process.env.TUTURUUU_DEPLOY_ENV;
+  if (
+    process.env.NEXT_PUBLIC_TUTURUUU_STAGING === '1' &&
+    deployEnv !== undefined &&
+    deployEnv !== 'staging'
+  ) {
+    throw new Error('Public staging signal conflicts with TUTURUUU_DEPLOY_ENV');
+  }
   const production =
     deployEnv === 'production' ||
     process.env.VERCEL_ENV === 'production' ||

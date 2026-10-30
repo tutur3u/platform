@@ -299,7 +299,9 @@ remove public ingress rather than charging for a secret-header check on each req
 No public identity exception, shared-secret gate, paid Access product or rate-limit
 product is required. The publisher also observes disabled subdomain and preview
 serving before marking an upload accepted. Do not attach a Custom Domain, zone Route,
-external service caller, cron or queue to these identities. The owner must verify
+external service caller, cron or queue to these identities. The only exception is
+the [ingress-admitted class](#ingress-admitted-staging-identities) below, which
+allows exactly one Access-protected Custom Domain. The owner must verify
 that existing hosted identities have no such attachment before enabling publication;
 source configuration alone is not hosted-topology evidence. The disabled workers.dev
 URLs retained in app vars are identity placeholders, not usable callback/media URLs.
@@ -319,6 +321,162 @@ staging Workers if used, never a production identity. Verify its disabled/delete
 state and absence of further executions. Preserve the D1 ledger and provider/audit
 receipts: deleting a Worker does not restore consumed admission or permit replay.
 No deletion or other provider mutation is performed by these source tests.
+
+## Calendar per-environment hosts and Access
+
+Each Calendar artifact serves exactly one root host. `CALENDAR_DEPLOYMENT_PROFILE`
+is a required build input with no default. `production` serves
+`calendar.tuturuuu.com`, and `staging` serves `calendar.staging.tutur3u.com`.
+`vite.config.mts` validates the value and inlines it, so the other branch folds
+away at build time. A missing or unknown value fails the build. `development`
+is accepted only by the dev server, which `dev:app` sets explicitly; builds
+refuse it. Every artifact answers the other environment's host with 404 before
+middleware, assets or SSR.
+
+Who sets it:
+
+- `wave1-native-app.yaml` passes the matrix profile.
+- `wave1-native-production.yaml`, the `calendar-native` job in
+  `mail-calendar-tasks-builds.yaml`, and both Vercel Calendar workflows set
+  `production`.
+- `turbo.json` hashes the value, so the two profiles never share a cache entry.
+- Vitest pins `production` in `vitest.config.mts`; the profile tests re-import
+  the config under each profile and the unset and unknown cases.
+
+`scripts/ci/calendar-host-scan.mjs` scans the original and restored sealed
+bytes in both directions:
+
+- The production bytes must not contain `calendar.staging.tutur3u.com`.
+- The staging bytes must not contain the production Supabase project ref.
+- Neither may contain the retired smoke host.
+- Every folded `rootHosts` literal must equal the profile's single host. An
+  unfolded list fails.
+
+`wave1-native-runtime.mjs` also starts each artifact on the other
+environment's host and requires 404 (N8/N9).
+
+The staging artifact is reachable only through Cloudflare Access, and it
+verifies the `Cf-Access-Jwt-Assertion` header itself:
+
+- **JWT check:** RS256, the team issuer and the application AUD, through
+  `@tuturuuu/utils/cloudflare-access`. A missing or invalid token gets 403
+  before any middleware or asset work.
+- **Service token:** server-side forwards to the issuer carry the Calendar
+  service token only when the target origin is exactly
+  `https://web.staging.tutur3u.com` and the fetch uses `redirect: 'manual'`.
+  If the token is missing, the forward fails with 503 without contacting the
+  issuer.
+- **Credential stripping:** every forward removes client Access headers
+  (`cf-access-jwt-assertion`, `cf-access-authenticated-user-email`,
+  `cf-access-client-id`, `cf-access-client-secret`) and the `CF_Authorization`,
+  `CF_AppSession` and `CF_Binding` cookies, matched by exact parsed name.
+- **Secret names:** the staging profile adds the Worker secret names
+  `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`, `CF_ACCESS_CLIENT_ID` and
+  `CF_ACCESS_CLIENT_SECRET`. Production never requires them.
+
+The workerd gate serves fixture team keys and checks that missing,
+foreign-key, wrong-AUD, expired and malformed tokens get 403 (N19). The
+service-token origin, redirect and stripping cases are unit-tested in
+`staging-access.test.ts` (N18).
+
+## Ingress-admitted staging identities
+
+Two staging identities serve staff over an Access-protected Workers Custom
+Domain. Their profile entries set `"ingress": "access-custom-domain"`:
+
+- Calendar: `tuturuuu-calendar-wave1-staging` on `calendar.staging.tutur3u.com`.
+- The Web issuer: `webStaging`, `tuturuuu-web-wave1-staging` on
+  `web.staging.tutur3u.com`.
+
+Their configs keep `workers_dev=false`, `preview_urls=false` and
+`routes=[]`. The release owner attaches the one Custom Domain. The publisher
+never attaches or detaches domains, and its token has no Access or DNS write
+permission. Mail, Apps and Meet keep the no-ingress model above.
+
+The Web issuer entry sits outside `profiles.apps`, so the wave-1 publisher can
+never publish it. Its own publisher arrives with the staging Web workflow.
+
+### Preflight
+
+Before any D1 ledger read, CAS or upload, `wave1-native-publish.mjs` runs
+`ingressPreflight` from `scripts/ci/wave1-ingress-preflight.mjs`. It makes
+seven bounded, single-page, read-only Cloudflare reads and one fresh GitHub
+variable read. `wave1-ingress-topology.mjs` evaluates the observations:
+
+- **Serving intent (S0):** the `WEB_STAGING_SERVING` variable must read
+  exactly `on`. Anything else refuses publication, so a publish can never
+  revive a host the owner switched off.
+- **R1:** the host has exactly one Custom Domain, bound to the staging Worker
+  in zone `tutur3u.com`. That Worker holds no other hostname, and no
+  production Worker holds any `tutur3u.com` domain.
+- **R2:** no zone Worker route captures the host, and the zone has no
+  wildcard routes.
+- **DNS and N10:**
+  - every record named exactly the host is the proxied, read-only A/AAAA
+    record Cloudflare manages for the Custom Domain. A grey-cloud record, a
+    CNAME, any other type or a missing record refuses, because each could
+    route around Access;
+  - no wildcard DNS record that could mint an unknown
+    `<x>.staging.tutur3u.com` name: `*`, `*.tutur3u.com`,
+    `*.staging.tutur3u.com` or anything deeper.
+
+  The issuer's CORS trust in single-label staging origins holds only while
+  this check passes.
+- **Access:**
+  - an enabled self-hosted application covers the whole host and nothing
+    else;
+  - its OPTIONS preflight bypass is on for the issuer and off for Calendar;
+  - at least one allow policy exists, and its includes name only staff. The
+    permitted selectors are:
+    - the configured `STAGING_ACCESS_STAFF_GROUP_ID` group;
+    - an explicit `email` or `email_list`;
+    - `email_domain` `tuturuuu.com` only.
+
+    Any other domain, `login_method`, `any_valid_service_token`, IP, geo,
+    certificate, `external_evaluation`, `auth_method` and any unknown
+    selector refuse;
+  - no policy includes `everyone`;
+  - service-auth policies name specific service tokens;
+  - the host-wide application never carries a bypass policy. A future
+    exact-path exception must be a separate Access application whose
+    destinations are exactly those paths.
+- **workers.dev:** workers.dev and preview URLs are disabled.
+
+Any failure refuses before the ledger, so it consumes nothing. Incomplete or
+failed list reads also refuse.
+
+The publish step needs two inputs:
+
+- `STAGING_TUTUR3U_ZONE_ID`: the `tutur3u.com` zone ID.
+- `STAGING_ACCESS_APP_IDS`: a JSON object mapping each host to its Access
+  application ID.
+- `STAGING_ACCESS_STAFF_GROUP_ID`: the staff Access group ID. Without it, a
+  group selector refuses.
+
+The staging token additionally needs these read permissions: Access Apps and
+Policies, Zone DNS, Workers Routes and Workers Custom Domains.
+
+### Readback
+
+`node scripts/wave1-staging/readback.mjs [--app web|calendar] [--expect-sha <sha>]`
+is the read-only post-publication readback. It repeats the topology checks,
+then adds:
+
+- **R3:** the active deployment is one version at 100% carrying the SHA.
+- **R4:** with the CI Access service token (`CF_ACCESS_HEALTH_CLIENT_ID` and
+  `CF_ACCESS_HEALTH_CLIENT_SECRET`), `/api/build-info` returns the staging
+  build.
+- **N1–N4:** anonymous and forged-credential requests (GET, POST, HEAD,
+  OPTIONS, a forged `CF_Authorization` cookie and a forged
+  `Cf-Access-Jwt-Assertion` header) are denied. The issuer may answer only
+  the empty local preflight.
+- **N5:** the workers.dev and preview hostnames don't serve.
+- **N10:** live DNS doesn't resolve a random staging sibling.
+
+It prints a JSON report and exits 1 on any failure. Its regression coverage
+uses fixture transports only: `wave1-ingress-topology.test.mjs`,
+`readback.test.mjs`, and the publisher refusals in
+`wave1-native-publication.test.js`.
 
 ## Meet off-canonical profile
 
