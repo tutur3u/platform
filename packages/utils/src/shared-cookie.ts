@@ -59,6 +59,7 @@ export const CONFIGURED_SHARED_COOKIE_DOMAINS = [
 
 function isProductionDeployment() {
   return (
+    process.env.TUTURUUU_DEPLOY_ENV === 'production' ||
     process.env.VERCEL_ENV === 'production' ||
     process.env.NEXT_PUBLIC_VERCEL_ENV === 'production'
   );
