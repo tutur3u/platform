@@ -93,7 +93,7 @@ String usageNumber(double value) => value == value.roundToDouble()
     : value.toStringAsFixed(1);
 
 String _percent(AppLocalizations l10n, double? value) => value == null
-    ? l10n.mastermindUnavailable
+    ? l10n.mastermindQuotaUnreadable
     : l10n.mastermindUnitPercent(value.round().toString());
 
 /// The chart [id] names, or null when the snapshot no longer has it.

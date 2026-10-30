@@ -161,7 +161,10 @@ void main() {
           await tester.pumpAndSettle();
           expect(find.textContaining('Not connected'), findsWidgets);
         case 'Insights':
-          expect(find.textContaining('Not connected'), findsWidgets);
+          expect(
+            find.textContaining('Out of service / unreadable'),
+            findsWidgets,
+          );
           expect(find.textContaining('No samples published'), findsOneWidget);
       }
       final words = tester
