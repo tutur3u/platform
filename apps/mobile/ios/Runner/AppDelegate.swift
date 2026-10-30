@@ -10,6 +10,7 @@ import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate, MessagingDelegate {
+  private var analyticsStartupReady = false
   private var firebaseSessionActive = false
   private var analyticsStarted = false
   private var meetNoticeSound: SystemSoundID = 0
@@ -23,7 +24,7 @@ import UserNotifications
     willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     // Foundation-only reset before Firebase or a plugin can construct Measurement.
-    AnalyticsStartupGate.disableBeforeInitialization()
+    analyticsStartupReady = AnalyticsStartupGate.disableBeforeInitialization()
     UserDefaults.standard.set(false, forKey: "com.firebase.messaging.auto-init.enabled")
     TelemetryConsentGate.clearPersistedCrashCollection()
     return super.application(application, willFinishLaunchingWithOptions: launchOptions)
@@ -47,13 +48,13 @@ import UserNotifications
   }
 
   private func setAnalyticsCollection(_ requested: Bool) {
-    let enabled = requested && firebaseSessionActive
+    let enabled = requested && firebaseSessionActive && analyticsStartupReady
       && TelemetryConsentGate.allowsCollection { UserDefaults.standard.object(forKey: $0) }
     if enabled || analyticsStarted {
       Analytics.setAnalyticsCollectionEnabled(enabled)
       analyticsStarted = true
     }
-    if !enabled { AnalyticsStartupGate.disableBeforeInitialization() }
+    if !enabled { analyticsStartupReady = AnalyticsStartupGate.disableBeforeInitialization() }
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
@@ -63,6 +64,10 @@ import UserNotifications
       channel.setMethodCallHandler { call, result in
         switch call.method {
         case "initialize":
+          guard self.analyticsStartupReady else {
+            result(FlutterError(code: "analytics_startup_reset", message: "Analytics preferences could not be disabled", details: nil))
+            return
+          }
           if FirebaseApp.app() == nil { FirebaseApp.configure() }
           FirebaseApp.app()?.isDataCollectionDefaultEnabled = false
           Messaging.messaging().isAutoInitEnabled = false
@@ -231,24 +236,30 @@ enum AnalyticsStartupGate {
   static let stateKey = "/google/measurement/measurement_enabled_state"
   static let relativeFile = "Google/Measurement/com.google.gmp.measurement.plist"
 
+  @discardableResult
   static func disableBeforeInitialization(
     defaults: UserDefaults = .standard,
     support: URL? = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).last
-  ) {
+  ) -> Bool {
     defaults.set(2, forKey: stateKey)
     defaults.synchronize()
-    guard let support else { return }
+    guard let support else { return true }
     let file = support.appendingPathComponent(relativeFile)
-    guard FileManager.default.fileExists(atPath: file.path) else { return }
+    guard FileManager.default.fileExists(atPath: file.path) else { return true }
     do {
-      let data = try Data(contentsOf: file)
-      guard var state = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
-      else { preconditionFailure("Invalid Measurement preferences") }
+      let data = try? Data(contentsOf: file)
+      let parsed = data.flatMap { try? PropertyListSerialization.propertyList(from: $0, format: nil) }
+      var state = parsed as? [String: Any] ?? [:]
       state[stateKey] = 2
       let updated = try PropertyListSerialization.data(fromPropertyList: state, format: .binary, options: 0)
       try updated.write(to: file, options: .atomic)
+      if !(parsed is [String: Any]) {
+        NSLog("Replaced unreadable Measurement preferences with disabled Analytics state")
+      }
+      return true
     } catch {
-      preconditionFailure("Cannot persist Analytics startup disable")
+      NSLog("Cannot persist disabled Analytics state; Firebase startup remains blocked")
+      return false
     }
   }
 }

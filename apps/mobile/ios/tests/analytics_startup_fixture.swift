@@ -21,4 +21,18 @@ for seed in [1, 2] {
 try manager.removeItem(at: file)
 AnalyticsStartupGate.disableBeforeInitialization(defaults: defaults, support: root)
 precondition(defaults.integer(forKey: AnalyticsStartupGate.stateKey) == 2)
-print("7 persisted-state assertions passed")
+// Malformed bytes and a valid plist with the wrong root type both recover.
+let invalidRoot = try PropertyListSerialization.data(fromPropertyList: [1, 2], format: .binary, options: 0)
+for corrupt in [Data("corrupt plist".utf8), invalidRoot] {
+  defaults.set(1, forKey: AnalyticsStartupGate.stateKey)
+  try corrupt.write(to: file)
+  precondition(AnalyticsStartupGate.disableBeforeInitialization(defaults: defaults, support: root))
+  let repaired = try PropertyListSerialization.propertyList(from: Data(contentsOf: file), format: nil) as! [String: Any]
+  precondition(repaired[AnalyticsStartupGate.stateKey] as? Int == 2)
+  precondition(defaults.integer(forKey: AnalyticsStartupGate.stateKey) == 2)
+}
+// A replacement failure returns a closed startup gate instead of crashing.
+try manager.removeItem(at: file)
+try manager.createDirectory(at: file, withIntermediateDirectories: true)
+precondition(!AnalyticsStartupGate.disableBeforeInitialization(defaults: defaults, support: root))
+print("14 persisted-state assertions passed")
