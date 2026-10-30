@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   fixtureAppIds,
+  fixtureHealthTokenId,
   fixtureStaffGroupId,
   fixtureZoneId,
   healthyTopology,
@@ -16,6 +17,9 @@ const env = {
   STAGING_TUTUR3U_ZONE_ID: fixtureZoneId,
   STAGING_ACCESS_APP_IDS: JSON.stringify(fixtureAppIds),
   STAGING_ACCESS_STAFF_GROUP_ID: fixtureStaffGroupId,
+  STAGING_ACCESS_HEALTH_TOKEN_IDS: fixtureHealthTokenId,
+  WAVE1_CONTROL_READ_TOKEN: 'control-fixture',
+  GITHUB_REPOSITORY: 'fixture/repo',
   CLOUDFLARE_WORKERS_SUBDOMAIN: 'owner-example',
   CF_ACCESS_HEALTH_CLIENT_ID: 'ci.access',
   CF_ACCESS_HEALTH_CLIENT_SECRET: 'ci-secret',
@@ -76,6 +80,15 @@ function world(overrides = {}) {
       if (u.pathname.endsWith('/subdomain'))
         return Response.json(topology[app].subdomain);
       return Response.json(topologyResponse(u, topology[app]));
+    }
+    if (u.hostname === 'api.github.com') {
+      assert.equal(
+        init.method ?? 'GET',
+        'GET',
+        'readback never writes variables'
+      );
+      if (u.pathname.endsWith('/STAGING_ACCESS_PHASE'))
+        return Response.json({ value: overrides.phase ?? 'staff' });
     }
     if (u.hostname.endsWith('.workers.dev'))
       return new Response('nothing here', { status: 404 });
@@ -237,5 +250,33 @@ test('readback fails closed when a topology read errors or credentials are missi
   await assert.rejects(
     readback({ argv: ['--app', 'mail'], env, fetcher, resolver: nxdomain }),
     /No ingress-admitted/
+  );
+});
+
+test('readback refuses a missing or unknown Access phase and accepts bootstrap', async () => {
+  for (const phase of ['', 'preview']) {
+    const { fetcher } = world({ phase });
+    const report = await readback({
+      argv: ['--app', 'web'],
+      env,
+      fetcher,
+      resolver: nxdomain,
+    });
+    assert.ok(
+      report.checks.some((c) => c.id === 'R-a' && !c.ok),
+      phase
+    );
+    assert.equal(report.ok, false);
+  }
+  const { fetcher } = world({ phase: 'staff' });
+  assert.ok(
+    (
+      await readback({
+        argv: ['--app', 'web'],
+        env: { ...env, WAVE1_CONTROL_READ_TOKEN: '' },
+        fetcher,
+        resolver: nxdomain,
+      })
+    ).checks.some((c) => c.id === 'R-a' && !c.ok)
   );
 });

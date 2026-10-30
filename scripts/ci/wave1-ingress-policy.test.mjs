@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+  fixtureHealthTokenId,
   fixtureStaffGroupId,
   healthyTopology,
 } from './wave1-ingress-fixture.mjs';
@@ -14,6 +15,8 @@ const check = (app, mutate = () => {}) => {
   const observed = healthyTopology(app);
   mutate(observed);
   return evaluateIngress(ingressTarget(app), observed, {
+    phase: 'staff',
+    healthTokens: [fixtureHealthTokenId],
     staffGroupId: fixtureStaffGroupId,
     staffEmailListId,
   });
@@ -76,7 +79,10 @@ for (const [label, rule] of [
   });
 }
 test('C1 refuses a group selector when no staff group is configured', () => {
-  const result = evaluateIngress(ingressTarget('web'), healthyTopology('web'));
+  const result = evaluateIngress(ingressTarget('web'), healthyTopology('web'), {
+    phase: 'staff',
+    healthTokens: [fixtureHealthTokenId],
+  });
   assert.ok(result.some((line) => /non-staff selector \(group\)/.test(line)));
 });
 test('C1 refuses an allow policy with no include', () => {
@@ -180,7 +186,11 @@ test('email_list is accepted only for the configured staff list', () => {
       o.policies.result[0].include = [{ email_list: { id: staffEmailListId } }];
       return o;
     })(),
-    { staffGroupId: fixtureStaffGroupId }
+    {
+      phase: 'staff',
+      healthTokens: [fixtureHealthTokenId],
+      staffGroupId: fixtureStaffGroupId,
+    }
   );
   assert.ok(
     unconfigured.some((line) => /non-staff selector \(email_list\)/.test(line))

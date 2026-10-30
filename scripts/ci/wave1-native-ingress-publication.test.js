@@ -67,3 +67,31 @@ for (const [label, mutate, message] of [
     assert.equal(p.state.ledgerQueries, 0);
   });
 }
+
+// R-a/R-b: the Access phase is read fresh and never written by the publisher.
+for (const [label, phase, message] of [
+  ['a missing Access phase', undefined, /STAGING_ACCESS_PHASE must be/],
+  ['an unknown Access phase', 'preview', /STAGING_ACCESS_PHASE must be/],
+  [
+    'bootstrap while a staff allow remains',
+    'bootstrap',
+    /bootstrap allows only/,
+  ],
+]) {
+  test(`Calendar ingress preflight refuses ${label} with zero writes`, async (t) => {
+    const p = await publisher(t, 'calendar');
+    p.state.phase = phase;
+    await assert.rejects(p.run, message);
+    assert.equal(p.state.writes, 0);
+    assert.equal(p.state.ledgerQueries, 0);
+  });
+}
+
+test('a service-token-only bootstrap topology publishes once', async (t) => {
+  const { healthyTopology } = await import('./wave1-ingress-fixture.mjs');
+  const p = await publisher(t, 'calendar');
+  p.state.phase = 'bootstrap';
+  p.state.topology = healthyTopology('calendar', 'bootstrap');
+  await p.run();
+  assert.equal(p.state.writes, 1);
+});

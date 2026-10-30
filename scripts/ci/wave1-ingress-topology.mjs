@@ -6,7 +6,15 @@
 // Every check fails closed: an incomplete or ambiguous observation is a
 // failure, never a pass.
 import { matchesRoute } from '../native-cutover/route-pattern.mjs';
+import { evaluatePolicies } from './wave1-ingress-policies.mjs';
 import { profiles } from './wave1-native-profile.mjs';
+
+export {
+  ACCESS_PHASES,
+  healthTokenIds,
+  STAFF_EMAIL_DOMAIN,
+  staffSelector,
+} from './wave1-ingress-policies.mjs';
 
 export const STAGING_ZONE = 'tutur3u.com';
 export const STAGING_PARENT = 'staging.tutur3u.com';
@@ -89,7 +97,7 @@ export function completeList(response, label) {
 export function evaluateIngress(
   target,
   observed,
-  { staffGroupId, staffEmailListId } = {}
+  { phase, staffGroupId, staffEmailListId, healthTokens } = {}
 ) {
   const failures = [];
   const { host, worker } = target;
@@ -183,47 +191,14 @@ export function evaluateIngress(
         `Access: OPTIONS preflight bypass must be ${target.issuer ? 'on' : 'off'} for ${host}`
       );
   }
-  const policies = observed.policies.result;
-  if (!policies.some((p) => p.decision === 'allow'))
-    failures.push('Access: no staff allow policy');
-  for (const policy of policies) {
-    const includes = policy.include ?? [];
-    const name = policy.name ?? policy.id;
-    if (includes.some((rule) => 'everyone' in rule))
-      failures.push(`Access: policy ${name} includes everyone`);
-    // C1: allow includes name only the configured staff selector.
-    if (policy.decision === 'allow') {
-      if (!includes.length)
-        failures.push(`Access: allow policy ${name} has no staff selector`);
-      for (const rule of includes)
-        if (
-          !staffSelector(rule, {
-            groupId: staffGroupId,
-            emailListId: staffEmailListId,
-          })
-        )
-          failures.push(
-            `Access: allow policy ${name} includes a non-staff selector (${Object.keys(rule).join(',') || 'empty'})`
-          );
-    }
-    // C2: the host-wide app never carries a bypass. A future exact-path
-    // exception must be a separate Access app limited to those paths.
-    if (policy.decision === 'bypass')
-      failures.push(
-        `Access: bypass policy ${name} on the host-wide application is forbidden`
-      );
-    // Service auth names at least one specific service token; an empty
-    // include would otherwise pass `.every()`.
-    if (
-      policy.decision === 'non_identity' &&
-      (!includes.length || !includes.every((rule) => 'service_token' in rule))
-    )
-      failures.push(
-        `Access: service-auth policy ${policy.name ?? policy.id} must name service tokens`
-      );
-    if (!['allow', 'non_identity', 'bypass', 'deny'].includes(policy.decision))
-      failures.push(`Access: unknown policy decision ${policy.decision}`);
-  }
+  failures.push(
+    ...evaluatePolicies(observed.policies.result, {
+      phase,
+      staffGroupId,
+      staffEmailListId,
+      healthTokens,
+    })
+  );
 
   // workers.dev and preview URLs stay off so Access cannot be bypassed.
   const serving =
@@ -231,36 +206,6 @@ export function evaluateIngress(
   if (serving?.enabled !== false || serving.previews_enabled !== false)
     failures.push(`${worker}: workers.dev and preview URLs must be disabled`);
   return failures;
-}
-
-/** The company identity domain for staff email_domain selectors (D-4). */
-export const STAFF_EMAIL_DOMAIN = 'tuturuuu.com';
-
-/**
- * An Access include rule that names only staff (C1): the configured staff
- * group or email list, an explicit email, or the company email domain.
- * Every other selector type, including unknown ones, is refused.
- */
-export function staffSelector(rule, { groupId, emailListId } = {}) {
-  if (!rule || typeof rule !== 'object' || Array.isArray(rule)) return false;
-  const keys = Object.keys(rule);
-  if (keys.length !== 1) return false;
-  const [type] = keys;
-  const value = rule[type];
-  if (!value || typeof value !== 'object') return false;
-  switch (type) {
-    case 'group':
-      return Boolean(groupId) && value.id === groupId;
-    case 'email':
-      return /^[^\s@]+@[^\s@]+$/u.test(String(value.email ?? ''));
-    case 'email_list':
-      // Pinned like the group: only the configured staff list counts.
-      return Boolean(emailListId) && value.id === emailListId;
-    case 'email_domain':
-      return String(value.domain ?? '').toLowerCase() === STAFF_EMAIL_DOMAIN;
-    default:
-      return false;
-  }
 }
 
 /** The proxied, read-only DNS record Cloudflare manages for a Custom Domain. */

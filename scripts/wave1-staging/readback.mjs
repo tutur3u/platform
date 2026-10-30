@@ -9,10 +9,14 @@
 // prints a JSON report; any failed check exits 1. P5's verify-ingress runs it
 // after publication and extends it with the Vercel checks (V1b, N15–N17).
 import { pathToFileURL } from 'node:url';
-import { observeIngress } from '../ci/wave1-ingress-preflight.mjs';
+import {
+  observeIngress,
+  readAccessPhase,
+} from '../ci/wave1-ingress-preflight.mjs';
 import {
   accessAppIds,
   evaluateIngress,
+  healthTokenIds,
   ingressTargets,
 } from '../ci/wave1-ingress-topology.mjs';
 import { boundedJson } from '../ci/wave1-native-publish.mjs';
@@ -93,6 +97,23 @@ export async function readback({
     clientSecret: env.CF_ACCESS_HEALTH_CLIENT_SECRET,
   };
   const checks = [];
+  // R-a: the Access phase is read fresh; missing or unknown refuses topology.
+  let phase;
+  try {
+    phase = await readAccessPhase({
+      request,
+      ghToken: env.WAVE1_CONTROL_READ_TOKEN,
+      repository: env.GITHUB_REPOSITORY,
+    });
+  } catch (error) {
+    phase = undefined;
+    checks.push({
+      id: 'R-a',
+      host: 'STAGING_ACCESS_PHASE',
+      ok: false,
+      detail: error instanceof Error ? error.message : 'phase read failed',
+    });
+  }
   for (const target of targets) {
     let failures;
     try {
@@ -110,6 +131,8 @@ export async function readback({
           appId,
         }),
         {
+          phase,
+          healthTokens: healthTokenIds(env.STAGING_ACCESS_HEALTH_TOKEN_IDS),
           staffGroupId: env.STAGING_ACCESS_STAFF_GROUP_ID,
           staffEmailListId: env.STAGING_ACCESS_STAFF_EMAIL_LIST_ID,
         }

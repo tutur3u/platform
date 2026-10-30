@@ -422,9 +422,17 @@ variable read. `wave1-ingress-topology.mjs` evaluates the observations:
 
   The issuer's CORS trust in single-label staging origins holds only while
   this check passes.
+- **Access phase (R-a):** the `STAGING_ACCESS_PHASE` repository variable is
+  read fresh and must be exactly `bootstrap` or `staff`. Anything else
+  refuses. No workflow or script ever writes it.
 - **Access:**
   - an enabled self-hosted application covers the whole host and nothing
     else;
+  - in `bootstrap`, the policies are **only** service-auth policies whose
+    named tokens are **exactly** `STAGING_ACCESS_HEALTH_TOKEN_IDS`. Zero
+    allow, deny or bypass policies are permitted, and there are no other
+    tokens;
+  - in `staff`, the staff selector rules below apply;
   - its OPTIONS preflight bypass is on for the issuer and off for Calendar;
   - at least one allow policy exists, and its includes name only staff. The
     permitted selectors are:
@@ -536,6 +544,12 @@ project. The workflow runs only on `workflow_dispatch` from `main`, for one
    - **N17:** no `_vercel*` cookie is ever set.
    - **Attestation:** a relayed request with bypass and proof carries the
      staging Supabase attestation.
+
+   The `vercel build` step runs repository build code, so it gets **no**
+   Vercel token, Cloudflare credential or control-read token (M1). Only
+   `vercel pull` and the ledger-guarded deploy hold the Vercel token. The
+   workflow-shape test enforces this for every build, install and seal
+   step.
 4. **`seal-worker`** (no credentials): builds the candidate, runs the
    emitted workerd suite and seals it with `NEXT_FALLBACK_ORIGIN` set to the
    verified origin. The artifact digest therefore binds the pair. The job
@@ -559,25 +573,39 @@ project. The workflow runs only on `workflow_dispatch` from `main`, for one
 7. **`verify-ingress`**: runs the read-only `readback.mjs --app web`
    (R1–R4, N1–N5, N10, and N17 through the Worker with injected bypass
    controls). It then re-runs the full Vercel recheck after publishing (c):
-   N15–N17, every alias, `_next/image` and monitoring.
+   N15–N17, every alias, `_next/image` and monitoring. If any step fails, the
+   job's last step (R-d) rolls **only** the staging Worker back to the
+   deployment the publisher captured, using the signed attempt ledger. That
+   is one Cloudflare deployment write. It refuses unless this SHA's version
+   is the one serving, and it touches no Access, DNS, domain, Vercel, ledger
+   or variable state. The release owner then decides on S1/S1b. If the
+   rollback itself cannot be confirmed, apply S1/S1b immediately.
 
 ### What stays manual (d)
 
 The workflow never attaches a Custom Domain, changes Access or DNS, writes
-`WEB_STAGING_SERVING`, aliases or promotes a deployment.
+`WEB_STAGING_SERVING` or `STAGING_ACCESS_PHASE`, aliases or promotes a
+deployment.
 
-First publication, in order:
+The first publication runs with a **service-token-only bootstrap**: no
+human can reach either host until the pair is proven.
 
-1. Keep `WEB_STAGING_SERVING=off`. Set `WEB_STAGING_NEXT_ADMISSION` and
-   dispatch the workflow.
-2. After `next-verify` is green for the exact pair, the release owner
-   manually attaches `web.staging.tutur3u.com` behind the already-configured
-   Access app and sets `WEB_STAGING_SERVING=on`.
-3. Set `WAVE1_STAGING_PUBLICATION_ADMISSION` from the seal summary and
-   re-run the failed jobs.
-4. Staff use starts only after `verify-ingress` is green for that pair. If
-   it fails, apply S1 (Block: Everyone on both Access apps, with service-auth
-   policies removed) and S1b (revoke both service tokens).
+1. Set `STAGING_ACCESS_PHASE=bootstrap` and keep `WEB_STAGING_SERVING=off`.
+   The Access app carries only the `staging-ci-health` service-auth policy:
+   no staff allow, no bypass.
+2. Set `WEB_STAGING_NEXT_ADMISSION` and dispatch the workflow.
+3. After `next-verify` is green for the exact pair, the release owner
+   manually attaches `web.staging.tutur3u.com` behind that Access app and
+   sets `WEB_STAGING_SERVING=on`.
+4. Set `WAVE1_STAGING_PUBLICATION_ADMISSION` from the seal summary and
+   re-run the failed jobs. `verify-ingress` reads the pair back with the CI
+   service token only.
+5. Only after `verify-ingress` is green, the release owner adds the staff
+   allow policy, sets `STAGING_ACCESS_PHASE=staff`, and records that
+   `verify-ingress` run ID in the private operations ledger (R-c).
+
+   A red `verify-ingress` has already rolled the Worker back. Stay in
+   `bootstrap`, and apply S1/S1b if the cause is not understood.
 
 ### Rollback
 

@@ -59,6 +59,7 @@ async function publisher(t, app = 'mail', { preFetch } = {}) {
     STAGING_TUTUR3U_ZONE_ID: ingress.fixtureZoneId,
     STAGING_ACCESS_APP_IDS: JSON.stringify(ingress.fixtureAppIds),
     STAGING_ACCESS_STAFF_GROUP_ID: ingress.fixtureStaffGroupId,
+    STAGING_ACCESS_HEALTH_TOKEN_IDS: ingress.fixtureHealthTokenId,
     ...(app === 'web'
       ? {
           VERCEL_ORG_ID: 'team_fixture',
@@ -82,6 +83,7 @@ async function publisher(t, app = 'mail', { preFetch } = {}) {
     failUpload: false,
     loseReceipt: false,
     serving: 'on',
+    phase: 'staff',
     topology:
       app === 'web' || profiles.apps[app]?.ingress
         ? ingress.healthyTopology(app)
@@ -114,8 +116,11 @@ async function publisher(t, app = 'mail', { preFetch } = {}) {
             state.flagReads > 1 && state.stop === 'disabled' ? 'false' : 'true',
         });
       }
+      assert.equal(options.method, 'GET', 'Publisher never writes variables');
       if (u.pathname.endsWith('/WEB_STAGING_SERVING'))
         return response({ value: state.serving });
+      if (u.pathname.endsWith('/STAGING_ACCESS_PHASE'))
+        return response({ value: state.phase });
       if (u.pathname.endsWith('/WAVE1_STAGING_PUBLICATION_ADMISSION')) {
         state.admissionReads++;
         return response({

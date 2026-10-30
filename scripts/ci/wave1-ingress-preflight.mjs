@@ -2,8 +2,10 @@
 // staging Workers (design §6.1). Bounded reads only; no provider writes.
 import assert from 'node:assert/strict';
 import {
+  ACCESS_PHASES,
   accessAppIds,
   evaluateIngress,
+  healthTokenIds,
   ingressTarget,
 } from './wave1-ingress-topology.mjs';
 
@@ -62,6 +64,24 @@ export async function assertServingIntent({ request, ghToken, repository }) {
 }
 
 /**
+ * Fresh GitHub read of the Access phase (R-a). Only `bootstrap` or `staff`
+ * admit; anything else, including a missing variable, refuses. Readers never
+ * write it: the release owner switches phases by hand.
+ */
+export async function readAccessPhase({ request, ghToken, repository }) {
+  assert.ok(ghToken, 'A control read token is required for the Access phase');
+  const phase = await request(
+    `https://api.github.com/repos/${repository}/actions/variables/STAGING_ACCESS_PHASE`,
+    ghToken
+  );
+  assert.ok(
+    ACCESS_PHASES.includes(phase?.value),
+    'STAGING_ACCESS_PHASE must be bootstrap or staff'
+  );
+  return phase.value;
+}
+
+/**
  * Runs before any ledger write or upload. Returns null for apps outside the
  * ingress class, so no-ingress staging publication is unchanged.
  */
@@ -80,6 +100,11 @@ export async function ingressPreflight({
     ghToken,
     repository: env.GITHUB_REPOSITORY,
   });
+  const phase = await readAccessPhase({
+    request,
+    ghToken,
+    repository: env.GITHUB_REPOSITORY,
+  });
   const appId = accessAppIds(env.STAGING_ACCESS_APP_IDS)[target.host];
   assert.ok(appId, `No Access application recorded for ${target.host}`);
   const observed = await observeIngress({
@@ -91,6 +116,8 @@ export async function ingressPreflight({
     appId,
   });
   const failures = evaluateIngress(target, observed, {
+    phase,
+    healthTokens: healthTokenIds(env.STAGING_ACCESS_HEALTH_TOKEN_IDS),
     staffGroupId: env.STAGING_ACCESS_STAFF_GROUP_ID,
     staffEmailListId: env.STAGING_ACCESS_STAFF_EMAIL_LIST_ID,
   });
@@ -99,5 +126,5 @@ export async function ingressPreflight({
     [],
     `Ingress topology refused:\n${failures.join('\n')}`
   );
-  return { target, appId };
+  return { target, appId, phase };
 }
