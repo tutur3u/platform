@@ -84,3 +84,40 @@ it.each([
   });
   expect(getRewrittenUrl(response)).toBeNull();
 });
+
+describe('staging rewrite origins', () => {
+  const staging = { NEXT_PUBLIC_TUTURUUU_STAGING: '1' };
+  const good = {
+    calendarAppOrigin: 'https://calendar.staging.tutur3u.com',
+    infrastructureAppOrigin: 'https://infrastructure.staging.tutur3u.com/',
+  };
+  it('accepts exact staging origins in a staging build', () => {
+    expect(createSatelliteApiRewrites(good, staging)).toHaveLength(4);
+  });
+  it.each([
+    'https://calendar.tuturuuu.com',
+    'https://tuturuuu.com',
+    'http://calendar.staging.tutur3u.com',
+    'https://calendar.staging.tutur3u.com:8443',
+    'https://calendar.staging.tutur3u.com/path',
+    'https://a.b.staging.tutur3u.com',
+    'https://calendar.staging.tutur3u.com.evil.test',
+    'https://calendar-tuturuuu.vercel.app',
+    'not a url',
+  ])('fails a staging build that rewrites to %s', (calendarAppOrigin) => {
+    expect(() =>
+      createSatelliteApiRewrites({ ...good, calendarAppOrigin }, staging)
+    ).toThrow(/staging\.tutur3u\.com origin/);
+  });
+  it('leaves production builds unchanged', () => {
+    expect(
+      createSatelliteApiRewrites(
+        {
+          calendarAppOrigin: 'https://calendar.tuturuuu.com',
+          infrastructureAppOrigin: 'https://infrastructure.tuturuuu.com',
+        },
+        {}
+      )
+    ).toHaveLength(4);
+  });
+});

@@ -5,6 +5,7 @@ import { dirname, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { accessFixture } from './emitted-access-fixture.mjs';
 
 const root = fileURLToPath(new URL('./', import.meta.url));
 const require = createRequire(new URL('../package.json', import.meta.url));
@@ -28,6 +29,8 @@ const base = 'https://web.staging.tutur3u.com';
 const secret = 'disposable-emitted-worker-proof-secret';
 const upstream = 'https://tuturuuu-next-fixture.vercel.app';
 const ref = 'fxefojytwimjiqxseqag';
+const bypass = 'disposable-emitted-vercel-bypass-0001';
+const access = accessFixture();
 
 const legalPages = [
   { slug: 'privacy', seoKey: 'privacy' },
@@ -154,6 +157,8 @@ test(description, { timeout: 30000 }, async (t) => {
         compatibilityFlags: config.compatibility_flags,
         bindings,
         outboundService: async (request) => {
+          if (request.url === access.certsUrl)
+            return Response.json(access.jwks);
           egress.push(request.url);
           assert.equal(
             new URL(request.url).origin,
@@ -165,6 +170,21 @@ test(description, { timeout: 30000 }, async (t) => {
             /^hmac-v1;/u
           );
           assert.equal(request.headers.get('cookie'), 'sb-auth=fixture');
+          // N13/N17 on real workerd: client Access, server-owned and Vercel
+          // control headers never reach Next; only the Worker's bypass does.
+          for (const name of [
+            'cf-access-jwt-assertion',
+            'cf-access-client-id',
+            'x-tuturuuu-runtime',
+            'x-forwarded-prefix',
+            'x-vercel-set-bypass-cookie',
+          ])
+            assert.equal(request.headers.has(name), false, name);
+          assert.equal(
+            request.headers.get('x-vercel-protection-bypass'),
+            bypass
+          );
+          assert.doesNotMatch(new URL(request.url).search, /vercel/iu);
           const headers = new Headers({
             'content-type': 'text/event-stream',
             'service-worker-allowed': '/',
@@ -179,6 +199,8 @@ test(description, { timeout: 30000 }, async (t) => {
             'set-cookie',
             'sb-auth.1=two; Domain=.staging.tutur3u.com; Path=/; Secure; HttpOnly'
           );
+          headers.append('set-cookie', '_vercel_jwt=minted; Path=/; Secure');
+          headers.set('x-vercel-id', 'fixture');
           return new Response(`Next fixture:${await request.text()}`, {
             status: 429,
             headers,
@@ -189,42 +211,50 @@ test(description, { timeout: 30000 }, async (t) => {
     t.after(() => worker.dispose());
     return worker;
   }
+  const admitted = {
+    ...access.bindings,
+    NEXT_FALLBACK_ORIGIN: upstream,
+    TRUSTED_PROXY_ORIGIN_SECRET: secret,
+    VERCEL_AUTOMATION_BYPASS_SECRET: bypass,
+  };
   const disabled = instance(config.vars);
   const enabled = instance({
     ...config.vars,
     WEB_START_CANDIDATE: 'staging',
     WEB_START_NATIVE_LEGAL: 'on',
     WEB_START_NATIVE_SECURITY: 'on',
-    NEXT_FALLBACK_ORIGIN: upstream,
-    TRUSTED_PROXY_ORIGIN_SECRET: secret,
+    ...admitted,
   });
   const rollback = instance({
     ...config.vars,
     WEB_START_CANDIDATE: 'staging',
     WEB_START_NATIVE_LEGAL: 'off',
     WEB_START_NATIVE_SECURITY: 'off',
-    NEXT_FALLBACK_ORIGIN: upstream,
-    TRUSTED_PROXY_ORIGIN_SECRET: secret,
+    ...admitted,
   });
   const securityRollback = instance({
     ...config.vars,
     WEB_START_CANDIDATE: 'staging',
     WEB_START_NATIVE_LEGAL: 'on',
     WEB_START_NATIVE_SECURITY: 'off',
-    NEXT_FALLBACK_ORIGIN: upstream,
-    TRUSTED_PROXY_ORIGIN_SECRET: secret,
+    ...admitted,
   });
   const securityOnly = instance({
     ...config.vars,
     WEB_START_CANDIDATE: 'staging',
     WEB_START_NATIVE_LEGAL: 'off',
     WEB_START_NATIVE_SECURITY: 'on',
-    NEXT_FALLBACK_ORIGIN: upstream,
-    TRUSTED_PROXY_ORIGIN_SECRET: secret,
+    ...admitted,
   });
   const headers = {
     'cf-connecting-ip': '203.0.113.10',
-    cookie: 'sb-auth=fixture',
+    cookie: 'CF_Authorization=user; sb-auth=fixture; CF_AppSession=s',
+    'cf-access-jwt-assertion': access.token(),
+    'cf-access-client-id': 'client-supplied',
+    'x-tuturuuu-runtime': 'forged',
+    'x-tuturuuu-origin-auth': 'forged',
+    'x-forwarded-prefix': '/evil',
+    'x-vercel-set-bypass-cookie': 'true',
   };
   await t.test(
     'default-off emitted artifact rejects pages, assets, APIs and the Start probe',
@@ -412,7 +442,12 @@ test(description, { timeout: 30000 }, async (t) => {
       );
       assert.equal(response.status, 429);
       assert.equal(await response.text(), 'Next fixture:write-once');
+      // N17: the minted _vercel_jwt and x-vercel-* never reach the browser.
       assert.equal(response.headers.getSetCookie().length, 2);
+      assert.ok(
+        response.headers.getSetCookie().every((c) => !c.startsWith('_vercel'))
+      );
+      assert.equal(response.headers.has('x-vercel-id'), false);
       assert.equal(response.headers.get('retry-after'), '5');
       assert.equal(egress.at(-1), `${upstream}/api/a?x=1&x=2&raw=%2f`);
       const sw = await enabled.dispatchFetch(`${base}/serwist/sw.js?v=exact`, {
@@ -438,6 +473,53 @@ test(description, { timeout: 30000 }, async (t) => {
         503
       );
       assert.equal(egress.length, calls);
+    }
+  );
+  await t.test(
+    'Access JWTs are verified by the emitted Worker itself (N19)',
+    async () => {
+      const calls = egress.length;
+      for (const jwt of [
+        null,
+        access.token({ key: access.otherKey }),
+        access.token({ aud: 'web-other-aud' }),
+        access.token({ exp: -60 }),
+        'not.a.jwt',
+      ]) {
+        const denied = await rollback.dispatchFetch(`${base}/login`, {
+          headers: {
+            'cf-connecting-ip': '203.0.113.10',
+            ...(jwt ? { 'cf-access-jwt-assertion': jwt } : {}),
+          },
+        });
+        assert.equal(denied.status, 403);
+        assert.equal(denied.headers.has('set-cookie'), false);
+      }
+      assert.equal(egress.length, calls, 'Denied requests reached Next');
+    }
+  );
+  await t.test(
+    'OPTIONS is answered in the Worker with zero Next calls (N20)',
+    async () => {
+      const calls = egress.length;
+      for (const path of ['/api/v1/workspaces', '/login', '/privacy']) {
+        // No Access JWT: under S1 only preflights still reach the Worker.
+        const response = await rollback.dispatchFetch(`${base}${path}`, {
+          method: 'OPTIONS',
+          headers: {
+            origin: 'https://calendar.staging.tutur3u.com',
+            'access-control-request-method': 'POST',
+            'access-control-request-headers': 'content-type',
+          },
+        });
+        assert.equal(response.status, 204);
+        assert.equal(await response.text(), '');
+        assert.equal(
+          response.headers.get('access-control-allow-origin'),
+          'https://calendar.staging.tutur3u.com'
+        );
+      }
+      assert.equal(egress.length, calls, 'OPTIONS reached Next');
     }
   );
 });

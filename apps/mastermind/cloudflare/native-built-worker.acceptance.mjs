@@ -57,7 +57,7 @@ test('sealed emitted Worker enforces admission and renders bilingual owner shell
   };
   const b64 = (value) =>
     Buffer.from(JSON.stringify(value)).toString('base64url');
-  const content = b64({ alg: 'HS256', typ: 'JWT' }) + '.' + b64(claims);
+  const content = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64(claims)}`;
   const session =
     'ttr_app_' +
     content +
@@ -111,14 +111,14 @@ test('sealed emitted Worker enforces admission and renders bilingual owner shell
   await worker.ready;
   const headers = {
     'Cf-Access-Jwt-Assertion': access,
-    Authorization: 'Bearer ' + session,
+    Authorization: `Bearer ${session}`,
   };
   for (const host of [
     'preview.mastermind.example.invalid',
     'mastermind.account.workers.dev',
   ]) {
     assert.equal(
-      (await worker.fetch('https://' + host + '/en', { headers })).status,
+      (await worker.fetch(`https://${host}/en`, { headers })).status,
       403
     );
   }
@@ -136,7 +136,7 @@ test('sealed emitted Worker enforces admission and renders bilingual owner shell
   );
   for (const path of ['/mastermind', '/mastermind/en']) {
     assert.equal(
-      (await worker.fetch('https://tuturuuu.com' + path, { headers })).status,
+      (await worker.fetch(`https://tuturuuu.com${path}`, { headers })).status,
       403
     );
   }
@@ -148,7 +148,7 @@ test('sealed emitted Worker enforces admission and renders bilingual owner shell
   assert.equal(root.headers.get('Location'), '/en');
   for (const locale of ['en', 'vi']) {
     const response = await worker.fetch(
-      'https://mastermind.tuturuuu.com/' + locale,
+      `https://mastermind.tuturuuu.com/${locale}`,
       { headers }
     );
     assert.equal(response.status, 200);

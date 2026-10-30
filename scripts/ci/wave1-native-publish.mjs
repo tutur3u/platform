@@ -10,6 +10,7 @@ import {
 } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { ingressPreflight } from './wave1-ingress-preflight.mjs';
 import { stagingAdmission } from './wave1-native-admission.mjs';
 import {
   artifactDigest,
@@ -26,6 +27,7 @@ import {
   assertUploadLimits,
   measureUpload,
 } from './wave1-native-upload-limits.mjs';
+import { recheckNext, requireVerifiedPair } from './wave1-web-next.mjs';
 
 export function publicationAdmission({
   environment,
@@ -158,7 +160,9 @@ export async function main({
   appRoot,
 } = {}) {
   const [mode, app, environment, sha] = argv;
-  appRoot ??= resolve('apps', app);
+  // The Web issuer candidate builds from its isolated cloudflare/ root.
+  appRoot ??=
+    app === 'web' ? resolve('apps/web/cloudflare') : resolve('apps', app);
   if (mode === 'dry-run') {
     assert.ok(
       !env.CLOUDFLARE_API_TOKEN &&
@@ -269,6 +273,32 @@ export async function main({
     );
   };
   await assertEnabled();
+  // Ingress-admitted identities (Access-protected Custom Domain) must prove
+  // their topology and the fresh serving intent before any ledger write.
+  await ingressPreflight({
+    app,
+    env,
+    request,
+    cfToken,
+    ghToken,
+    accountId: p.accountId,
+  });
+  // Web issuer (a): the admitted pair must be the signed `verified` Next entry
+  // for this SHA, deployment, project and sealed origin. Read-only here.
+  if (app === 'web') {
+    assert.equal(
+      admitted.nextDeploymentId,
+      p.nextFallback?.deploymentId,
+      'Admitted Next deployment differs from the sealed fallback'
+    );
+    await requireVerifiedPair({
+      env,
+      fetcher,
+      sha,
+      deploymentId: p.nextFallback.deploymentId,
+      origin: p.nextFallback.origin,
+    });
+  }
   const ledger = await attemptLedger({
     request,
     base: `https://api.cloudflare.com/client/v4/accounts/${p.accountId}`,
@@ -425,6 +455,21 @@ export async function main({
   try {
     await assertEnabled();
     validate();
+    // Web issuer (b): `verified` is point-in-time, so re-read the Vercel
+    // protection, aliases and N15–N17 immediately before the only upload.
+    if (app === 'web') {
+      const fresh = await recheckNext({
+        env,
+        fetcher,
+        sha,
+        deploymentId: p.nextFallback.deploymentId,
+      });
+      assert.deepEqual(
+        fresh.failures,
+        [],
+        `Next protection changed since verification:\n${fresh.failures.join('\n')}`
+      );
+    }
   } catch (error) {
     record.state = 'failed';
     save();

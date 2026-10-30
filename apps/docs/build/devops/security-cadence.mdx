@@ -387,6 +387,44 @@ owner, or an agent assigned that role by the program owner, reviews:
 Record the outcome in the private program backlog. Keep public notes to IDs,
 counts and remediation receipts.
 
+## Attest new definer verified records
+
+Use this when a PR adds records to `scripts/ci/security-definer-verified-findings.json`
+for a migration it adds; the **Definer execution policy** job stays red until the
+attestation exists. The rules are in
+[Admitting new verified records](/build/devops/security-scans#admitting-new-verified-records-after-bootstrap).
+An attestation is an independent security ruling, not a PR approval, and it is not
+gated on CI.
+
+1. A security reviewer reviews each new record against the migration at the exact
+   head SHA and writes a mode-600 private receipt. Its first line is
+   `#<pr> ATTEST definer-records`; it names the full head SHA, carries
+   `Reviewer: <name>` and `Reviewer-Role: security`, and contains exactly one
+   fenced `json` array of the attested records.
+2. Preview the digest. The output's `description` is the exact status text:
+
+   ```sh
+   git show <base-sha>:scripts/ci/security-definer-verified-findings.json > /tmp/base.json
+   git show <head-sha>:scripts/ci/security-definer-verified-findings.json > /tmp/head.json
+   node scripts/ci/security-definer-admission.js digest /tmp/base.json /tmp/head.json
+   ```
+
+3. Post the status with the security operator's `attest-definer-records` command,
+   kept outside the repository with the release-bot approval tooling:
+   `attest-definer-records <pr> <head-sha> <receipt> [--dry-run]`. It refuses unless
+   the head is unchanged, the receipt passes the checks above, and the receipt records
+   hash to exactly the records the head adds over the base ledger. It computes that
+   hash with the base commit's admission module. It then posts
+   `security/definer-record-admission` as `tuturuuu-release-bot` and appends a
+   private receipt line.
+4. Rerun the **Definer execution policy** job. Any new push changes the head SHA and
+   needs a new attestation.
+5. After merge, attest the main merge commit with `--merged` (same receipt, naming
+   that SHA) and rerun the main push job.
+
+Never post the status by hand from another account; the guard accepts only the
+pinned bot login and id.
+
 ## Daily read-only inventory
 
 The separately approved `security-scan.yaml` workflow runs at 03:00 GMT+7 with

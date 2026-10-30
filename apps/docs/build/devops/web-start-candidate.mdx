@@ -166,10 +166,16 @@ Requests fail closed unless all of these runtime settings are admitted:
   `tuturuuu.vercel.app`, the `tuturuuu-*.vercel.app` prefix, or a staging-domain
   hostname; canonical Tuturuuu hosts are rejected. The Vercel prefix is not
   bound to our Vercel team, project or deployment ID and does not prove ownership.
-  It has no default. Before forwarding any request, the release owner must
-  verify the exact origin's Vercel team, project, immutable deployment ID, actual
-  Supabase project, API rewrites and satellite targets. Retain that admission
-  receipt privately and repeat verification when the origin changes.
+  It has no default.
+
+  The [staging Web publisher](/build/devops/wave1-native-publishers#staging-web-publisher)
+  performs that verification for every publication and seals the result into
+  the Worker artifact. It is stricter than this runtime filter: it accepts
+  only a READY, non-production `tuturuuu-web-staging-*` deployment of the
+  dedicated project at the exact SHA, with protection on all deployments and
+  every alias denied. The release owner still confirms the actual Supabase
+  project once per project, and repeats that whenever the project's
+  environment values change.
 - `TRUSTED_PROXY_ORIGIN_SECRET` must be a staging-only secret of at least 32
   characters, shared only by this Worker and its staging Next origin, and
   **distinct from production's origin-IP-proof secret**. No secret is checked
@@ -215,7 +221,73 @@ rewrite headers and individual cookies pass through. Upstream-origin Locations
 map back to the candidate host; external satellite redirects remain unchanged.
 Candidate responses are noindex and are never CDN cached.
 
-## Dormant template and owner-provided staging blockers
+## Access and Vercel hardening (staging issuer)
+
+The staging issuer sits behind Cloudflare Access, and its Next fallback is a
+protected Vercel deployment in the dedicated `tuturuuu-web-staging` project.
+These rules come from the staging Web publisher design and its security
+review. Admission also requires `VERCEL_AUTOMATION_BYPASS_SECRET` (32–256
+printable ASCII characters) and an exact `CF_ACCESS_TEAM_DOMAIN`
+(`<team>.cloudflareaccess.com`) and `CF_ACCESS_AUD`. If any is missing, the
+candidate returns 503.
+
+- **Access JWT:** every non-OPTIONS request must carry a valid
+  `Cf-Access-Jwt-Assertion`: RS256, signed by the team issuer, for the
+  application AUD. Otherwise the Worker returns 403 before Start or Next work,
+  even if Access itself let the request through.
+- **OPTIONS:** answered inside the Worker with 204. Only exact single-label
+  `https://<app>.staging.tutur3u.com` origins get CORS grants. OPTIONS never
+  reaches Next, so the Access preflight bypass stays inert while the serving
+  off-switch blocks everything else.
+- **Request hygiene:** before forwarding, the Worker strips these client
+  inputs:
+  - Access headers (`cf-access-jwt-assertion`,
+    `cf-access-authenticated-user-email`, `cf-access-client-id`,
+    `cf-access-client-secret`);
+  - the `CF_Authorization`, `CF_AppSession` and `CF_Binding` cookies, matched
+    by parsed name;
+  - `forwarded`, every `x-forwarded-*`, `x-real-ip`, `true-client-ip` and
+    `cf-connecting-ip`;
+  - every `x-vercel-*` header, and the `x-vercel-protection-bypass` and
+    `x-vercel-set-bypass-cookie` query parameters;
+  - every `x-tuturuuu-*` header except `x-tuturuuu-turnstile-token` (at most
+    2048 characters) and `x-tuturuuu-account-action` (at most 16 characters).
+    Allowed values must be printable ASCII without spaces; anything else is
+    dropped.
+
+  Next treats both allowed values as untrusted. The Turnstile token is
+  verified server-side, and account-action is an intent hint, never
+  authorization. After stripping, the Worker sets its own origin proof,
+  forwarding identity and Vercel bypass header. It never sends
+  `x-vercel-set-bypass-cookie`.
+- **Response hygiene:** every `x-vercel-*` header and every `_vercel*` cookie
+  (such as `_vercel_jwt`) is removed before the response reaches the browser.
+- **Origin proof on Next:** a build with `NEXT_PUBLIC_TUTURUUU_STAGING=1`
+  answers 403 to every request the proxy matcher reaches unless it carries a
+  fresh HMAC origin proof made with `TRUSTED_PROXY_ORIGIN_SECRET`. A raw
+  shared secret is not accepted. A direct `*.vercel.app` hit therefore needs
+  both the bypass secret and the origin-proof secret. Static `_next/static`
+  assets sit outside the proxy matcher, so only Deployment Protection guards
+  them.
+- **Rewrites:** the same staging build fails at config time unless every
+  satellite rewrite origin is an exact `https://<app>.staging.tutur3u.com`
+  origin.
+- **Staging Vercel config:** `apps/web/vercel.staging.json` matches
+  `vercel.json` except that it runs no crons and adds the
+  `x-tuturuuu-staging-supabase-ref` attestation to every response. Select it
+  with `vercel build --local-config`. `vercel.json` stays free of staging
+  identity.
+
+Regression coverage:
+
+- `access-hardening.test.ts`: N13, N17, N19 and N20, the allowlist bounds, and
+  client-sent server-owned names (`x-tuturuuu-runtime`, origin auth).
+- `vercel-staging.test.ts`: the staging Vercel config.
+- `apps/web/src/lib/staging-origin-proof.test.ts`: N15.
+- `satellite-api-rewrites.test.ts`: the rewrite assertion.
+- `emitted.runtime.mjs`: N13, N17, N19 and N20 on the emitted workerd Worker.
+
+## Dormant template and owner-provided staging inputs
 
 `apps/web/cloudflare/staging.env.example` is a placeholder-only input inventory.
 The Void config remains unbound, without routes, schedules, workers.dev or preview
@@ -223,14 +295,16 @@ URLs, and both gates remain off. Do not deploy the template or put credentials
 in tracked files. No new crons, queues, retries or external operations are added
 by legal rendering; all five current schedules retain their existing owner.
 
-Release owner must provide and verify these before hosted acceptance:
+The release owner provides these before hosted acceptance. The
+[release-owner checklist](/build/devops/wave1-native-publishers#release-owner-checklist-names-only)
+lists every name; the publisher verifies what it can on each run.
 
 | Resource or input | Required scope and admission |
 | --- | --- |
-| Cloudflare account and scoped token | Workers deployment permissions for the staging account plus only the `tutur3u.com` zone permissions needed for separately authorized ingress; no broad production token |
-| Staging Worker and ingress | An owner-provisioned candidate and `web.staging.tutur3u.com` certificate/domain/route; none exists by virtue of this config |
+| Cloudflare account and scoped token | `CLOUDFLARE_STAGING_API_TOKEN`: Workers deployment for the staging Workers, D1 for the control database, and **read** permission for Access Apps and Policies, Zone DNS, Workers Routes and Custom Domains on `tutur3u.com`; no Access or DNS write; never the production token |
+| Staging Worker and ingress | An inert, owner-bootstrapped `tuturuuu-web-wave1-staging` with workers.dev, previews and routes off. One Workers Custom Domain, `web.staging.tutur3u.com`, attached manually behind the `staging-web` Access app only after `next-verify` is green. The publisher's preflight checks the binding, DNS, Access phase and policies on every run |
 | Staging Supabase keys | Confirm project `fxefojytwimjiqxseqag`, publishable key, fallback-only service secret, staging schema/fixtures, auth callback URLs and disposable account/workspace; never production keys |
-| Immutable staging Next fallback | Verified team/project/deployment identity, build-info SHA/environment and per-response staging Supabase attestation; API rewrites and satellite destinations must point only to staging |
+| Immutable staging Next fallback | `wave1-web-staging.yaml` makes one ledger-guarded deployment per admitted SHA in project `tuturuuu-web-staging` and verifies it (`next-verify`): identity, protection, aliases, N15–N17, `_next/image`/monitoring and attestation. The staging build fails unless satellite rewrites point only to `*.staging.tutur3u.com` |
 | Origin proof secret | Staging-only `TRUSTED_PROXY_ORIGIN_SECRET` and private evidence that it differs from production; matching trusted-proxy settings on Next |
 | R2 storage | Separate staging account/bucket/binding or staging S3-compatible credentials and fallback storage-provider setup; legal routes need no R2 binding and do not authorize storage tests |
 | Login providers | Staging Turnstile site/secret and allowed hosts; staging OAuth/email credentials and callbacks if the chosen login path requires them |
@@ -245,6 +319,10 @@ Production/canonical hosts still fail before Chromium launches; request and
 WebSocket fences reject production egress and non-auth writes. The suite does
 not provision anything. Hosted EN/VI/session acceptance, source identity, real
 Next build and independent review remain release prerequisites.
+
+Until the release owner switches the Access phase to `staff`, browsers cannot
+reach the issuer. During `bootstrap`, hosted runs pass Access only with the
+CI health service token.
 
 ## Five retained infrastructure blockers
 
