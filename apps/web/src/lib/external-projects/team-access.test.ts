@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   addExternalProjectRoleMembers,
+  createExternalProjectTeamRole,
   removeExternalProjectRoleMember,
+  updateExternalProjectTeamDefaultPermissions,
   updateExternalProjectTeamRole,
 } from './team-access';
 
@@ -66,6 +68,13 @@ function createAccess({ roleExists }: { roleExists: boolean }) {
               },
             };
           },
+          insert() {
+            return {
+              select() {
+                return { single: async () => roleResult() };
+              },
+            };
+          },
           update(row: unknown) {
             calls.roleUpdates.push(row);
             return createMutationFilterChain(calls.roleFilters);
@@ -108,8 +117,15 @@ function createAccess({ roleExists }: { roleExists: boolean }) {
         };
       }
 
-      if (table === 'workspace_role_permissions') {
+      if (
+        table === 'workspace_role_permissions' ||
+        table === 'workspace_default_permissions'
+      ) {
         return {
+          insert(rows: unknown) {
+            calls.upsertedRolePermissions = rows;
+            return Promise.resolve({ error: null });
+          },
           select() {
             const query: Record<string, unknown> = {};
             for (const op of ['eq', 'in']) query[op] = () => query;
@@ -265,5 +281,59 @@ describe('external project role workspace binding', () => {
         ws_id: 'workspace-1',
       },
     ]);
+  });
+});
+
+describe('CMS explicit grant writes', () => {
+  it.each([true, false])(
+    'filters explicit grants set to %s in all writers',
+    async (enabled) => {
+      const payload = {
+        name: 'Role',
+        permissions: [
+          { id: 'admin' as const, enabled: true },
+          { id: 'manage_mastermind' as const, enabled },
+        ],
+      };
+      const writers = [
+        (access: unknown) =>
+          createExternalProjectTeamRole({ access: access as never, payload }),
+        (access: unknown) =>
+          updateExternalProjectTeamRole({
+            access: access as never,
+            payload,
+            roleId: 'role-1',
+          }),
+        (access: unknown) =>
+          updateExternalProjectTeamDefaultPermissions({
+            access: access as never,
+            // @ts-expect-error Exercise a forged payload outside the catalog.
+            payload,
+            memberType: 'MEMBER',
+          }),
+      ];
+      for (const write of writers) {
+        const { access, calls } = createAccess({ roleExists: true });
+        const response = await write(access);
+        expect(response.status).toBe(200);
+        expect(calls.upsertedRolePermissions).toEqual([
+          expect.objectContaining({ permission: 'admin', enabled: true }),
+        ]);
+      }
+    }
+  );
+
+  it('writes nothing for a payload holding only an explicit grant', async () => {
+    const { access, calls } = createAccess({ roleExists: true });
+    const response = await updateExternalProjectTeamRole({
+      access: access as never,
+      payload: {
+        name: 'Role',
+        permissions: [{ id: 'manage_mastermind', enabled: true }],
+      },
+      roleId: 'role-1',
+    });
+    expect(response.status).toBe(200);
+    expect(calls.upsertedRolePermissions).toEqual([]);
   });
 });

@@ -6,7 +6,6 @@ import type {
   WorkspaceDefaultPermissionsRole,
 } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
-import { filterCreatorGrantPermissions } from '@/lib/workspace-creator-grant-permissions';
 import { getWorkspaceMembers } from '@/lib/workspace-members';
 import {
   hasRootExternalProjectsAdminPermission,
@@ -15,6 +14,10 @@ import {
 } from './access';
 import { attachExternalProjectInvitationRoles } from './team-invitations';
 import { requireExternalProjectRoleInWorkspace } from './team-role-members';
+import {
+  type WorkspaceRolePayload,
+  writableTeamRolePermissions,
+} from './team-role-payload';
 
 export {
   inviteExternalProjectTeamMembers,
@@ -32,14 +35,6 @@ type WorkspaceExternalProjectAccess = Extract<
   Awaited<ReturnType<typeof requireWorkspaceExternalProjectAccess>>,
   { ok: true }
 >;
-type WorkspaceRolePayload = {
-  name: string;
-  permissions: Array<{
-    enabled: boolean;
-    id: string;
-  }>;
-};
-
 const DEFAULT_MEMBER_TYPES: WorkspaceDefaultPermissionMemberType[] = [
   'MEMBER',
   'GUEST',
@@ -321,11 +316,10 @@ export async function createExternalProjectTeamRole({
     );
   }
 
-  const permissions = await filterCreatorGrantPermissions(access.admin, {
-    permissions: payload.permissions,
-    userId: access.user.id,
-    wsId: access.normalizedWorkspaceId,
-  });
+  const permissions = await writableTeamRolePermissions(
+    access,
+    payload.permissions
+  );
   const { data: role, error: roleError } = await access.admin
     .from('workspace_roles')
     .insert({
@@ -400,11 +394,10 @@ export async function updateExternalProjectTeamRole({
     return roleAccess.response;
   }
 
-  const permissions = await filterCreatorGrantPermissions(access.admin, {
-    permissions: payload.permissions,
-    userId: access.user.id,
-    wsId: access.normalizedWorkspaceId,
-  });
+  const permissions = await writableTeamRolePermissions(
+    access,
+    payload.permissions
+  );
   const roleQuery = access.admin
     .from('workspace_roles')
     .update({ name: payload.name } satisfies TablesUpdate<'workspace_roles'>)
@@ -521,11 +514,10 @@ export async function updateExternalProjectTeamDefaultPermissions({
     );
   }
 
-  const permissions = await filterCreatorGrantPermissions(access.admin, {
-    permissions: payload.permissions,
-    userId: access.user.id,
-    wsId: access.normalizedWorkspaceId,
-  });
+  const permissions = await writableTeamRolePermissions(
+    access,
+    payload.permissions
+  );
   const { error } = await access.admin
     .from('workspace_default_permissions')
     .upsert(
