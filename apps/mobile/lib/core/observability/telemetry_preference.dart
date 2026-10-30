@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -50,6 +52,29 @@ class TelemetryPreference extends ChangeNotifier {
     _apply = apply;
     await apply(enabled: enabled);
     ready = true;
+    notifyListeners();
+  }
+
+  /// Session transitions (sign-out, account switch) never carry collection over
+  /// on trust: it is revoked first, then enabled again only if the stored
+  /// choice, read afresh, is an explicit Allow for the current notice version.
+  /// Never throws, so a storage failure cannot block signing out.
+  Future<void> reloadConsent() async {
+    if (!ready || busy) return;
+    enabled = false;
+    bool? saved;
+    try {
+      await _apply(enabled: false);
+      saved = await _read();
+      hasExplicitChoice = saved != null;
+      if (saved ?? false) {
+        await _apply(enabled: true);
+        enabled = true;
+      }
+    } on Object catch (error) {
+      enabled = false;
+      log('Telemetry consent reload failed: ${error.runtimeType}');
+    }
     notifyListeners();
   }
 

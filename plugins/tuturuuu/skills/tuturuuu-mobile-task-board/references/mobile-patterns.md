@@ -443,12 +443,14 @@ and the pre-`runApp` join. Completion-barrier tests live in
   explicit Allow in every region: add no locale, region or network-based default.
   The stored answer carries a notice version; bump it with any consent wording
   change so users are asked again.
-- Keep no advertising identifier: the Android AD_ID and ACCESS_ADSERVICES_AD_ID permissions stay removed and
+- Keep no advertising identifier: the Android AD_ID and ACCESS_ADSERVICES_AD_ID and ACCESS_ADSERVICES_ATTRIBUTION permissions stay removed and
   iOS keeps `$FirebaseAnalyticsWithoutAdIdSupport` and the ADID Info.plist key.
 - Older builds persisted SDK collection-on, which beats manifest/Info.plist
   defaults. Keep the native gates (Android `TelemetryConsentGateProvider`
-  above `FirebaseInitProvider`, iOS `willFinishLaunching`) and Dart's unsent-
-  report deletion when collection is off; recheck the gate keys on SDK upgrades.
+  above `FirebaseInitProvider` and `TelemetryCollectionLockProvider` after it,
+  iOS `willFinishLaunching` and right after `FirebaseApp.configure()`) and Dart's
+  unsent-report deletion when collection is off; recheck the gate keys on SDK
+  upgrades. Session transitions call `TelemetryPreference.reloadConsent()`.
 - The first-run prompt (`TelemetryConsentPage`, `/telemetry-consent`) is driven by
   `TelemetryPreference.consentPending` and the router redirect in
   `app_router_telemetry_consent.dart`; it is production-only, opens above the

@@ -36,9 +36,8 @@ void main() {
   );
 
   test('the region and locale logic is gone from the source', () {
-    final source = File(
-      'lib/core/observability/telemetry_preference.dart',
-    ).readAsStringSync();
+    final source = File('lib/core/observability/telemetry_preference.dart')
+        .readAsStringSync();
     expect(source, isNot(contains('privateRegions')));
     expect(source, isNot(contains('countryCode')));
     expect(source, isNot(contains('defaultEnabled')));
@@ -199,6 +198,151 @@ void main() {
     );
   });
 
+  test(
+    'a persisted enable from an older build never survives startup',
+    () async {
+      // Nothing stored (an older build never wrote consent): collection is
+      // switched off, never on, however Firebase last persisted it.
+      final applied = <bool>[];
+      final preference = TelemetryPreference();
+      await preference.initialize(
+        promptEligible: true,
+        apply: ({required enabled}) async => applied.add(enabled),
+      );
+      expect(applied, [false]);
+      expect(preference.enabled, isFalse);
+    },
+  );
+
+  test('a stale-version Allow is not consent at startup', () async {
+    SharedPreferences.setMockInitialValues({
+      TelemetryPreference.choiceKey: true,
+      TelemetryPreference.noticeVersionKey: 'telemetry-consent-v0',
+    });
+    final applied = <bool>[];
+    await TelemetryPreference().initialize(
+      apply: ({required enabled}) async => applied.add(enabled),
+    );
+    expect(applied, [false]);
+  });
+
+  group('session transitions re-read consent', () {
+    Future<(TelemetryPreference, List<bool>)> started() async {
+      final applied = <bool>[];
+      final preference = TelemetryPreference();
+      await preference.initialize(
+        apply: ({required enabled}) async => applied.add(enabled),
+      );
+      return (preference, applied);
+    }
+
+    test('stored Allow is revoked first, then enabled again', () async {
+      final (preference, applied) = await started();
+      await preference.setEnabled(value: true);
+      applied.clear();
+      await preference.reloadConsent();
+      expect(applied, [false, true]);
+      expect(preference.enabled, isTrue);
+    });
+
+    test('a consent that vanished leaves collection off', () async {
+      final (preference, applied) = await started();
+      await preference.setEnabled(value: true);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(TelemetryPreference.noticeVersionKey);
+      applied.clear();
+      await preference.reloadConsent();
+      expect(applied, [false]);
+      expect(preference.enabled, isFalse);
+      expect(preference.hasExplicitChoice, isFalse);
+    });
+
+    test('a Deny stays off', () async {
+      final (preference, applied) = await started();
+      await preference.setEnabled(value: false);
+      applied.clear();
+      await preference.reloadConsent();
+      expect(applied, [false]);
+      expect(preference.enabled, isFalse);
+    });
+
+    test('a failing enable fails closed and never throws', () async {
+      SharedPreferences.setMockInitialValues({
+        TelemetryPreference.choiceKey: true,
+        TelemetryPreference.noticeVersionKey:
+            TelemetryPreference.currentNoticeVersion,
+      });
+      final applied = <bool>[];
+      final preference = TelemetryPreference();
+      await preference.initialize(
+        apply: ({required enabled}) async {
+          applied.add(enabled);
+          if (applied.length > 1 && enabled) throw StateError('apply failed');
+        },
+      );
+      applied.clear();
+      await preference.reloadConsent();
+      expect(applied, [false, true]);
+      expect(preference.enabled, isFalse);
+    });
+
+    test('does nothing before startup finished', () async {
+      final applied = <bool>[];
+      final preference = TelemetryPreference();
+      await preference.reloadConsent();
+      expect(applied, isEmpty);
+      expect(preference.ready, isFalse);
+    });
+  });
+
+  test(
+    'the privacy manifest is declared, untracked and in the Runner target',
+    () {
+      final manifest = File('ios/Runner/PrivacyInfo.xcprivacy')
+          .readAsStringSync();
+      expect(manifest, matches(RegExp(r'NSPrivacyTracking</key>\s*<false/>')));
+      expect(manifest, contains('NSPrivacyAccessedAPICategoryUserDefaults'));
+      expect(manifest, contains('CA92.1'));
+      expect(
+        manifest,
+        isNot(contains('NSPrivacyCollectedDataTypePurchaseHistory')),
+      );
+      expect(manifest, isNot(contains('NSPrivacyCollectedDataTypeUserID')));
+      final project = File('ios/Runner.xcodeproj/project.pbxproj')
+          .readAsStringSync();
+      expect(
+        RegExp('PrivacyInfo.xcprivacy in Resources').allMatches(project),
+        hasLength(2),
+      );
+    },
+  );
+
+  test('native consent readers mirror the Dart keys and notice version', () {
+    final dart = File('lib/core/observability/telemetry_preference.dart')
+        .readAsStringSync();
+    expect(dart, contains("'telemetry-consent-v1'"));
+    expect(dart, contains("choiceKey = 'telemetry-consent-choice'"));
+    expect(
+      dart,
+      contains("noticeVersionKey = 'telemetry-consent-notice-version'"),
+    );
+    const shared = [
+      'flutter.telemetry-consent-choice',
+      'flutter.telemetry-consent-notice-version',
+      'telemetry-consent-v1',
+    ];
+    final kotlin = File(
+      'android/app/src/main/kotlin/com/tuturuuu/app/mobile/telemetry/'
+      'TelemetryConsentDecision.kt',
+    ).readAsStringSync();
+    final swift = File('ios/Runner/AppDelegate.swift').readAsStringSync();
+    for (final value in shared) {
+      expect(kotlin, contains('"$value"'));
+      expect(swift, contains('"$value"'));
+    }
+    expect(kotlin, contains('"FlutterSharedPreferences"'));
+  });
+
   test('native defaults stay disabled until Dart reads consent', () {
     final plist = File('ios/Runner/Info.plist').readAsStringSync();
     for (final key in [
@@ -211,9 +355,8 @@ void main() {
       expect(plist.split('<key>$key</key>'), hasLength(2));
       expect(plist, matches(RegExp('<key>$key</key>\\s*<false/>')));
     }
-    final manifest = File(
-      'android/app/src/main/AndroidManifest.xml',
-    ).readAsStringSync();
+    final manifest = File('android/app/src/main/AndroidManifest.xml')
+        .readAsStringSync();
     for (final key in [
       'firebase_analytics_collection_enabled',
       'firebase_crashlytics_collection_enabled',
@@ -244,6 +387,16 @@ void main() {
         ),
       ),
     );
+    // Attribution reporting is ad measurement; the app has none.
+    expect(
+      manifest,
+      matches(
+        RegExp(
+          r'<uses-permission\s+android:name="android\.permission\.ACCESS_ADSERVICES_ATTRIBUTION"'
+          r'\s+tools:node="remove"',
+        ),
+      ),
+    );
     expect(
       File('ios/Podfile').readAsStringSync(),
       contains(r'$FirebaseAnalyticsWithoutAdIdSupport = true'),
@@ -264,6 +417,40 @@ void main() {
         lessThan(delegate.indexOf('FirebaseApp.configure()')),
       ),
     );
+    // A persisted "on" from an older build is switched off right after Firebase
+    // starts, unless the stored choice is an explicit Allow.
+    final gateCall = delegate.indexOf(
+      'TelemetryConsentGate.disableCollectionUnlessAllowed()',
+    );
+    expect(gateCall, greaterThan(delegate.indexOf('FirebaseApp.configure()')));
+    expect(
+      gateCall,
+      lessThan(delegate.indexOf('Messaging.messaging().delegate')),
+    );
+    expect(
+      delegate,
+      contains('Analytics.setAnalyticsCollectionEnabled(false)'),
+    );
+    expect(
+      delegate,
+      contains(
+        'Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(false)',
+      ),
+    );
+    final lock = RegExp(
+      r'android:name="\.telemetry\.TelemetryCollectionLockProvider"'
+      r'[^>]*android:initOrder="(\d+)"',
+    ).firstMatch(manifest);
+    expect(lock, isNotNull);
+    // Created after FirebaseInitProvider (100) but before any Application code.
+    expect(int.parse(lock!.group(1)!), lessThan(100));
+    final kotlin = File(
+      'android/app/src/main/kotlin/com/tuturuuu/app/mobile/telemetry/'
+      'TelemetryCollectionLockProvider.kt',
+    ).readAsStringSync();
+    expect(kotlin, contains('setAnalyticsCollectionEnabled(false)'));
+    expect(kotlin, contains('setCrashlyticsCollectionEnabled(false)'));
+    expect(kotlin, contains('TelemetryConsentDecision.allowsCollection'));
     final bootstrap = File('lib/bootstrap.dart').readAsStringSync();
     expect(
       bootstrap.indexOf('TelemetryPreference.instance.initialize('),

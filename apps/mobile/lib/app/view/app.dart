@@ -194,6 +194,8 @@ class _AppState extends State<App> {
     _authCubit = AuthCubit(
       authRepository: _authRepo,
       onBeforeSignOut: () async {
+        // Sign-out and account switch revoke collection, then re-read consent.
+        await TelemetryPreference.instance.reloadConsent();
         await ReminderService.instance.stopSession();
         await PushNotificationService.instance.stopSession();
       },

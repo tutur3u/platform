@@ -12,6 +12,7 @@
     <!-- Firebase Analytics merges the advertising ID permissions; the app never uses them. -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
     <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID" tools:node="remove" />
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION" tools:node="remove" />
     <application
         android:label="${appName}"
         android:name="${applicationName}"
@@ -38,6 +39,12 @@
             android:authorities="${applicationId}.telemetryconsentgate"
             android:exported="false"
             android:initOrder="200" />
+        <!-- Runs right after FirebaseInitProvider; see the class. -->
+        <provider
+            android:name=".telemetry.TelemetryCollectionLockProvider"
+            android:authorities="${applicationId}.telemetrycollectionlock"
+            android:exported="false"
+            android:initOrder="50" />
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
             android:exported="false" />

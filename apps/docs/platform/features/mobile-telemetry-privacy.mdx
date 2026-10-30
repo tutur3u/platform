@@ -57,21 +57,57 @@ logs or other app surfaces; it cannot retract reports already transmitted.
 
 Whenever collection is disabled, at startup or on opt-out, the app deletes
 unsent Crashlytics reports, so crashes recorded without consent never upload
-later. Builds before this setting persisted Crashlytics collection on, and the
-SDK prefers that stored override over the platform default and acts on it before
-Dart runs. A native gate clears the override before Firebase starts: Android's
-`TelemetryConsentGateProvider` runs before `FirebaseInitProvider`, and iOS
-clears it in `willFinishLaunching` before `FirebaseApp.configure()`. Crashlytics
-then holds reports until Dart applies the stored choice. The gate mirrors
-SDK-internal storage, so recheck it when upgrading Crashlytics. Firebase
-Analytics also persists its collection flag, and no native gate clears it. On
-the first launch after upgrading, Analytics may record automatic events before
-Dart disables collection.
+later. Builds before this setting persisted Firebase collection on, and the
+SDKs prefer that stored override over the platform default and act on it before
+Dart runs. Two native gates close this, both reading the stored consent
+(shared_preferences: `FlutterSharedPreferences` with the `flutter.` key prefix on
+Android, NSUserDefaults on iOS) and treating anything other than an explicit
+Allow under the current notice version as "off":
+
+- Android's `TelemetryConsentGateProvider` (initOrder 200) clears the Crashlytics
+  override before `FirebaseInitProvider` (100), and `TelemetryCollectionLockProvider`
+  (initOrder 50) calls `setAnalyticsCollectionEnabled(false)` and
+  `setCrashlyticsCollectionEnabled(false)` right after it unless the choice is
+  Allow. Providers install before `Application.onCreate`, so this also covers
+  process starts that never open `MainActivity`.
+- iOS clears the Crashlytics override in `willFinishLaunching` and calls the same
+  two setters right after `FirebaseApp.configure()` unless the choice is Allow.
+
+Dart enables collection only after reading an explicit Allow. The gates mirror
+SDK-internal storage and the consent keys, so recheck them when upgrading
+Firebase or bumping the notice version (a unit test ties the native constants to
+`TelemetryPreference`).
+
+Signing out, switching accounts and removing the active account run the auth
+cubit's `onBeforeSignOut`, which calls `TelemetryPreference.reloadConsent()`:
+collection is revoked, then enabled again only if the stored choice, read
+afresh, is an explicit Allow. A storage or SDK failure leaves it off and never
+blocks the sign-out. The choice itself stays device-wide.
+
+Android also removes the merged `ACCESS_ADSERVICES_ATTRIBUTION` permission: the
+app does no ad measurement, so Privacy Sandbox attribution reporting stays
+unused.
+
+## iOS privacy manifest
+
+`ios/Runner/PrivacyInfo.xcprivacy` declares, as unlinked and not used for
+tracking, the data Firebase Analytics, Crashlytics and installation IDs may
+collect (device ID, product interaction, coarse location and diagnostics) and
+the UserDefaults required-reason API (`CA92.1`, the consent and Crashlytics
+gates read the app's own defaults). Purchase history and user ID are not
+declared: the app has no StoreKit purchases and never calls `setUserId`. The
+manifest states what the app may collect; the consent gate decides whether it
+does. The text is a draft that is not lawyer-reviewed; reconcile it with an Xcode
+Privacy Report from the CI archive and the App Store Connect labels before
+release.
 
 Regression coverage: `telemetry_consent_page_test.dart` covers prompt
 eligibility, no collection before Allow, redirect and both answers;
 `telemetry_preference_test.dart` covers no collection in any locale, stored
-version and time, version changes, legacy values and startup ordering; `telemetry_settings_tile_test.dart` covers
+version and time, version changes, legacy values, startup ordering, consent
+reloads and the native gates; `auth_cubit_consent_hook_test.dart` covers the
+reload on every session transition; `TelemetryConsentDecisionTest` (Android
+unit test) covers the native decision; `telemetry_settings_tile_test.dart` covers
 label and switch activation; `mobile_observability_test.dart` covers deletion of
 unsent reports at startup and on opt-out. The preference suite checks native
 defaults, duplicate keys and native gate ordering.

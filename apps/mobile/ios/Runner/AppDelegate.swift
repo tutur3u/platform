@@ -1,6 +1,8 @@
 import DeviceCheck
 import AudioToolbox
+import FirebaseAnalytics
 import FirebaseCore
+import FirebaseCrashlytics
 import FirebaseMessaging
 import Flutter
 import UIKit
@@ -30,6 +32,8 @@ import UserNotifications
     if FirebaseApp.app() == nil {
       FirebaseApp.configure()
     }
+    // Firebase persists an earlier "on"; only an explicit Allow may keep it.
+    TelemetryConsentGate.disableCollectionUnlessAllowed()
     UNUserNotificationCenter.current().delegate = self
     Messaging.messaging().delegate = self
     application.registerForRemoteNotifications()
@@ -152,6 +156,22 @@ private enum NativeIntegrityChannel {
 private enum TelemetryConsentGate {
   private static let key = "com.crashlytics.data_collection"
   private static let file = "com.crashlytics/CLSUserDefaults.plist"
+
+  /// Mirrors TelemetryPreference in Dart: shared_preferences stores its values in
+  /// NSUserDefaults under a `flutter.` prefix. Allowed only for an explicit
+  /// Allow under the current notice version; anything else means "not allowed".
+  static func allowsCollection(_ stored: (String) -> Any?) -> Bool {
+    stored("flutter.telemetry-consent-choice") as? Bool == true
+      && stored("flutter.telemetry-consent-notice-version") as? String == "telemetry-consent-v1"
+  }
+
+  /// Runs right after FirebaseApp.configure(), before Dart. The Dart gate
+  /// enables collection later, only after reading an explicit Allow.
+  static func disableCollectionUnlessAllowed() {
+    if allowsCollection({ UserDefaults.standard.object(forKey: $0) }) { return }
+    Analytics.setAnalyticsCollectionEnabled(false)
+    Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(false)
+  }
 
   static func clearPersistedCrashCollection() {
     UserDefaults.standard.removeObject(forKey: key)
