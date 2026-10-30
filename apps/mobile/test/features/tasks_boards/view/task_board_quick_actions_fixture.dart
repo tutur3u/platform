@@ -153,16 +153,27 @@ Future<void> openQuickActionsSheet(
   await tester.pumpAndSettle();
 }
 
-/// Waits for the board's current mutation. Its cache invalidation does real
-/// file work, so fake time alone never completes it. The cache store is a
-/// process-wide singleton that serializes writes; tests that chain several
-/// mutations therefore run alone in their own file.
-Future<void> settleQuickActionMutation(WidgetTester tester) async {
+/// Settles the edit's UI. Chained saves explicitly wait for the original
+/// mutation's cache work; single edits and deliberately dropped edits do not.
+Future<void> settleQuickActionMutation(
+  WidgetTester tester, {
+  bool waitForCompletion = false,
+}) async {
+  await tester.pump();
+  final cubit = readRowActionsCubit(tester);
+  if (!cubit.state.isMutating) return;
   await tester.pumpAndSettle();
-  for (var i = 0; i < 50; i++) {
-    if (!readRowActionsCubit(tester).state.isMutating) break;
+  if (!waitForCompletion) return;
+  // The save's cache work runs on real async I/O, so bound the wait in real
+  // time and give that work real time on each turn; the fake test clock can
+  // run out long before a loaded CI runner finishes the save.
+  final elapsed = Stopwatch()..start();
+  while (cubit.state.isMutating) {
+    if (elapsed.elapsed > const Duration(seconds: 30)) {
+      fail('quick-action save did not complete within 30s');
+    }
     await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
     );
     await tester.pump(const Duration(milliseconds: 100));
   }
