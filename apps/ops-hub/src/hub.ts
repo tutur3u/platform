@@ -77,10 +77,6 @@ export class OpsHub extends DurableObject<Env> {
     if (request.method === 'GET' && url.pathname === '/status') {
       return json({
         v: 2,
-        org:
-          flags.enabled && now - flags.lastPublisherAt < 30 * DAY
-            ? (this.snapshot(now)?.org ?? null)
-            : null,
         enabled: Boolean(flags.enabled),
         erased: Boolean(flags.erased),
         seq: flags.seq,

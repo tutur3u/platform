@@ -103,8 +103,26 @@ test('org survives restart, appears only on authenticated reads, and v2 replacem
   await server.restart();
   for (const target of ['/status', '/snapshot']) {
     assert.equal((await server.fetch(target)).status, 404);
-    assert.deepEqual((await (await read(target)).json()).org, snapshot().org);
+    const value = await (await read(target)).json();
+    if (target === '/snapshot') assert.deepEqual(value.org, snapshot().org);
+    else
+      assert.deepEqual(Object.keys(value).sort(), [
+        'enabled',
+        'erased',
+        'lastPublisherAt',
+        'publisherStale',
+        'seq',
+        'v',
+      ]);
   }
+  const exported = await (await read('/hub/export?section=snapshot')).json();
+  assert.equal(exported.rows.length, 1);
+  assert.deepEqual(exported.rows[0].data, {
+    needsYou: [],
+    environments: [],
+    lanes: [],
+    backlog: [],
+  });
   assert.equal((await server.fetch('/org')).status, 404);
   assert.equal((await publish(undefined)).status, 200);
   assert.deepEqual(
@@ -115,9 +133,12 @@ test('org survives restart, appears only on authenticated reads, and v2 replacem
   assert.ok(org);
   assert.equal((await publish(v2, 2)).status, 200);
   assert.equal((await (await read('/snapshot')).json()).org, undefined);
-  assert.equal((await (await read('/status')).json()).org, null);
+  assert.equal(
+    Object.hasOwn(await (await read('/status')).json(), 'org'),
+    false
+  );
 });
-test('expired and paused status withholds org content', async () => {
+test('expired snapshots and paused reads withhold org while status stays minimal', async () => {
   assert.equal((await publish(snapshot())).status, 200);
   await server.durableObjectSql(
     'OpsHub',
@@ -125,10 +146,16 @@ test('expired and paused status withholds org content', async () => {
     'UPDATE flags SET lastPublisherAt=?',
     [Date.now() - 31 * 86400000]
   );
-  assert.equal((await (await read('/status')).json()).org, null);
+  assert.equal(
+    Object.hasOwn(await (await read('/status')).json(), 'org'),
+    false
+  );
   assert.equal(await (await read('/snapshot')).json(), null);
   assert.equal((await publish({ ...snapshot(), enabled: false })).status, 200);
   await server.restart();
-  assert.equal((await (await read('/status')).json()).org, null);
+  assert.equal(
+    Object.hasOwn(await (await read('/status')).json(), 'org'),
+    false
+  );
   assert.equal((await read('/snapshot')).status, 503);
 });

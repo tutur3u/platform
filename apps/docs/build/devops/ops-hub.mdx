@@ -266,19 +266,27 @@ path, branch, thread/run, synthetic customer-name and prompt checks. A label hit
 rejects the envelope. Any taskTitle hit drops the entire value to null before
 storage; it is never partially redacted. Role/team/pool/modelFamily also reject
 hits so they cannot bypass text refusal. Optional taskTitle may be omitted or
-null. These scans supplement the publisher sanitizer and cannot identify every
-possible personal name or prompt; publisher allowlisting remains required.
+null. Customer-name canaries are synthetic regression fixtures, not a directory
+of real customers or a general name detector. The real control is the publisher:
+`taskTitle` comes only from an allowlisted, operator-set field and defaults to
+null. Never derive it from chat, a PR body or branch text. B2 owns the regression
+test for this source restriction. Keep the generic `customer` / `khách hàng` word
+filter as an additional Worker safeguard. These scans cannot identify every
+possible personal name or prompt and do not replace publisher allowlisting.
 The shared synthetic corpus is exported as `@tuturuuu/ops-hub/org-canaries`
 from `src/org-canaries.ts` for B2 to apply before signing. B2 publication still
 requires SB-91 F1–F3 fixes and the existing security/release gates.
 
-Authenticated `/snapshot` returns the org graph. Authenticated `/status` adds
-`org`, null when absent, paused, erased or expired; its existing control metadata
-and v=2 response remain compatible. Retention, replacement, erasure, signature,
+The org graph is served through authenticated `/snapshot` only. Frequently polled
+`/status` remains minimal control metadata (v=2) and never includes org. Snapshot
+exports retain the v2 projection and omit org. Expired
+snapshots return null; paused snapshot reads remain denied. Retention,
+replacement, erasure, signature,
 gateway authorization and byte ceilings are unchanged. A subsequent v2 snapshot
 replaces the v3 snapshot and removes org; heartbeat-only envelopes retain it.
 
 Regression evidence: `src/contract-v3.test.ts` covers version compatibility,
 closed objects, enums, graph integrity, byte/cardinality limits and shared canary
-refusal. `scripts/verify-org-runtime.mjs` exercises signed ingest, persisted
+refusal. Its 100-node org cases accept exactly 128 KiB and reject 128 KiB plus one
+byte, proving that the snapshot size refinement survives `safeExtend`. `scripts/verify-org-runtime.mjs` exercises signed ingest, persisted
 sanitization, authenticated reads, restart and pause/expiry fences in workerd.
