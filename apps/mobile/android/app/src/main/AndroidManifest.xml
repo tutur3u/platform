@@ -36,16 +36,20 @@
         <meta-data
             android:name="firebase_messaging_auto_init_enabled"
             android:value="false" />
-        <!-- SDK capability probes read the manifest bit, ignoring runtime enable overrides.
-             The startup provider disables all three before SDK/component startup;
-             only signed-in Allow enables their runtime overrides again. -->
+        <!-- SDK capability probes require these manifest bits to be true.
+             Before consent, collection is held by firebase_analytics_collection_enabled=false
+             plus the persisted override reset to false with commit() at every process start.
+             ContentProviders run before Application.onCreate and receiver/service/job callbacks,
+             including broadcast- or job-triggered restarts, so the gate provider resets first.
+             Disabling components does not cancel an in-flight broadcast or job delivery;
+             their enabled bits are not the no-pre-consent collection guarantee. -->
         <receiver android:name="com.google.android.gms.measurement.AppMeasurementReceiver"
             android:enabled="true" tools:replace="android:enabled" />
         <service android:name="com.google.android.gms.measurement.AppMeasurementService"
             android:enabled="true" tools:replace="android:enabled" />
         <service android:name="com.google.android.gms.measurement.AppMeasurementJobService"
             android:enabled="true" tools:replace="android:enabled" />
-        <!-- Persists disables before any plugin, receiver or service can start Measurement. -->
+        <!-- Commits persisted collection=false before application/component callbacks. -->
         <provider
             android:name=".telemetry.TelemetryConsentGateProvider"
             android:authorities="${applicationId}.telemetryconsentgate"

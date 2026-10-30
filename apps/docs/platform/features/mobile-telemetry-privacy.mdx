@@ -119,7 +119,14 @@ Only signed-in Allow enables their runtime overrides again. Their manifest
 declarations retain enabled=true because Android's ComponentInfo.enabled
 reflects the manifest bit, not the runtime override; Measurement 23.2.0's
 zzpp.zzax/zzT capability probes otherwise reject every event even after Allow.
-The unconditional provider reset and deferred plugin remain the startup fence.
+The no-pre-consent collection guarantee rests on the manifest default
+firebase_analytics_collection_enabled=false and the persisted collection override
+reset to false with commit() at every process start. ContentProviders run before
+Application.onCreate and before receiver, service or job callbacks, including
+broadcast- or job-triggered restarts, so the gate provider resets first.
+Disabling a component does not cancel an in-flight broadcast or job delivery;
+the component enabled bit is not the collection guarantee. The deferred plugin
+also prevents engine attachment from starting Measurement.
 See [Android's component-info generation](https://android.googlesource.com/platform/frameworks/base/+/android-16.0.0_r1/services/core/java/com/android/server/pm/parsing/PackageInfoUtils.java#890).
 Native startup assertions cover both the compatible manifest bit and the
 unconditional runtime disable; stored Allow never bypasses the reset.
@@ -129,8 +136,9 @@ then resolves the lazy FlutterFire plugin, awaits its
 setAnalyticsCollectionEnabled(true), and dispatches the standard app_open event
 through that plugin once per Allow transition, including restored Allow after
 sign-in on a cold start. The collected event app_open has no custom parameters or
-identifiers. Re-applying the same Allow does not duplicate it; withdrawal resets
-its guard. Before dispatch, the adapter waits 1,100 ms after collection is enabled:
+identifiers. Each Allow, including a re-Allow after withdrawal, emits one
+app_open; no event is sent before Allow. Re-applying the same Allow does not
+duplicate it; withdrawal resets its guard. Before dispatch, the adapter waits 1,100 ms after collection is enabled:
 Measurement 23.2.0's upload-capability check (zzic.zzH) caches a disabled-component
 result for 1,000 ms, and its event path (zzlj.zzG) silently drops events during
 that window. The bounded wait makes no Firebase calls and checks for withdrawal

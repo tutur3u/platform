@@ -62,8 +62,9 @@ class AndroidAnalyticsCollection {
       if (epoch != _epoch || _appOpenAttempted) return;
       await Future<void>.delayed(_startupSettleTime);
       if (epoch != _epoch) return;
-      // Re-applying Allow cannot duplicate the event. Withdrawal resets the
-      // guard, so a subsequent Allow gets its own first event.
+      // Each admitted Allow emits one app_open, including re-Allow after
+      // withdrawal, which re-arms this guard. Re-applying the same Allow does
+      // not duplicate it. No event is sent before Allow.
       _appOpenAttempted = true;
       // Startup while disabled can suppress automatic launch events. Dispatch
       // through the admitted plugin to activate its normal event/upload path.
