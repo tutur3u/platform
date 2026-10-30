@@ -291,6 +291,49 @@ Every non-host notes read checks the signed room policy on the Durable Object;
 removing permission blocks subsequent reads. Existing downloaded information
 cannot be recalled. Transcription mutations remain host-only.
 
+### Who can read transcripts and notes
+
+Product decision (30 October 2026): a meeting's transcript and AI notes are
+readable only by participants of that call and by workspace admins of the
+meeting's own workspace. Membership alone is not enough, and an outside guest
+reads only the calls they were a participant of.
+
+| Reader | Live and post-call notes and transcript |
+| --- | --- |
+| Meeting host | Always |
+| Admitted or approved participant, member or guest | Only while the host's sharing setting for the current phase (live or after the meeting) is on |
+| Workspace admin (`admin` permission in the meeting's workspace) | Always, independent of the sharing settings |
+| Workspace member who was not a participant | Never |
+| Outsider or guest of another meeting | Never |
+
+Sharing only narrows participant access; it can never grant access to anyone
+who is not a participant or an admin. A participant is an identity the room
+service recorded as present or approved for that meeting; there is no
+workspace-wide participant list. A guest's access is scoped to the meeting
+whose room approved them and is not carried to another meeting or workspace.
+
+Surfaces: the call and ended-call notes panels, the meeting detail page, the
+`/api/v1/workspaces/{wsId}/meetings/{meetingId}/review` route used by web and
+mobile, and the Meet AI session routes all decide through the room policy plus
+the admin check, and fail closed (a policy or admin lookup failure never grants
+access). The recordings list returns a recording transcript only to the
+identity recorded on that session, the host, and workspace admins.
+`meet_ai_sessions`, `meet_ai_chunks` and `private.recording_transcripts` hold no
+client read grant or policy; only the service role behind these gates reads
+them. Recorded audio chunks are outside this rule and follow the legacy
+recording permissions.
+
+Exceptions: the recordings list is stricter than the call rule, because the
+database records only the recording identity, not every call participant. Other
+participants read that call through the ended-call notes. Cost and token
+breakdowns remain host-only.
+
+Regression coverage: `packages/meet-core/src/features/meeting-ai/server/room-access.test.ts`,
+`packages/meet-core/src/features/meeting-ai/server/notes-admin.test.ts`,
+`apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/review/route.test.ts`,
+`apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/route.test.ts`
+and `apps/database/supabase/tests/meet-transcript-notes-read-boundary.sql`.
+
 Leaving stops local capture and signaling immediately while recording/notes
 finalization continues on the post-call screen. The host can leave alone or end
 the room for everyone. Ending is durable, disconnects participants and prevents
