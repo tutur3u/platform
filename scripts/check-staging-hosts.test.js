@@ -16,7 +16,7 @@ for (const host of [
     'allowedHosts: ',
   ]) {
     test(host + prefix, () =>
-      assert.equal(violations(prefix + host + '.tuturuuu.com').length, 1)
+      assert.equal(violations(`${prefix + host}.tuturuuu.com`).length, 1)
     );
   }
 }
@@ -44,10 +44,9 @@ for (const token of [
   'canary',
   'preview',
 ]) {
-  for (const label of [token, 'calendar-' + token, token + '-calendar']) {
-    test('rejects non-production token ' + label, () =>
-      assert.equal(violations(label + '.tuturuuu.com').length, 1)
-    );
+  for (const label of [token, `calendar-${token}`, `${token}-calendar`]) {
+    test(`rejects non-production token ${label}`, () =>
+      assert.equal(violations(`${label}.tuturuuu.com`).length, 1));
   }
 }
 test('production names containing token substrings remain allowed', () => {
