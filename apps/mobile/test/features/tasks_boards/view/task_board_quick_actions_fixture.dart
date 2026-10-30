@@ -159,11 +159,9 @@ Future<void> openQuickActionsSheet(
 /// mutations therefore run alone in their own file.
 Future<void> settleQuickActionMutation(WidgetTester tester) async {
   await tester.pumpAndSettle();
-  for (var i = 0; i < 50; i++) {
-    if (!readRowActionsCubit(tester).state.isMutating) break;
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 10)),
-    );
+  while (readRowActionsCubit(tester).state.isMutating) {
+    // Yield real file I/O, then drain continuations in fake time.
+    await tester.runAsync(() => Future<void>(() {}));
     await tester.pump(const Duration(milliseconds: 100));
   }
   await tester.pumpAndSettle();
