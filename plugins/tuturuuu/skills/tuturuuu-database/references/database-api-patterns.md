@@ -616,3 +616,12 @@ server/Auth deletion anonymization, preserving every
 other field. Test Auth/client deletion denial, creator/admin meeting deletion
 refusal and explicit service consent-before-session erasure. Keep transcript purge
 in-place; it retains consent. See `meet-ai-consent-retention.sql`.
+
+### Caller-scoped workspace predicates
+
+End-user calls to `has_workspace_permission` and `is_org_member` must pass
+`auth.uid()`. Service-role jobs retain cross-user evaluation. Audit negative
+predicates and trigger recipient selection when replacing these helpers:
+false for another identity means the identity was not evaluated. Preserve
+`pg_catalog, pg_temp`, explicit same-file ACLs, and the recorded root-role join
+for `manage_mastermind`; never replace it with creator/admin/default access.

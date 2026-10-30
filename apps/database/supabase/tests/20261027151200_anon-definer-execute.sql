@@ -8,8 +8,7 @@ INSERT INTO anon_definer_allowlist VALUES
   ('public.is_org_member(uuid,uuid)'),
   ('public.has_workspace_permission(uuid,uuid,text)'),
   ('public.check_request()'),
-  ('public.validate_cross_app_token_with_session(text,text)'),
-  ('public.get_workspace_storage_limit(uuid)');
+  ('public.validate_cross_app_token_with_session(text,text)');
 
 CREATE FUNCTION pg_temp.anon_definer_violations() RETURNS text[]
 LANGUAGE plpgsql AS $$

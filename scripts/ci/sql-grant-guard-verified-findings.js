@@ -142,4 +142,34 @@ module.exports = [
     reason:
       'ALTER … SET search_path = pg_catalog, pg_temp; security-reviewed in #7281 be1dda26',
   },
+  {
+    path: 'apps/database/rollbacks/20261030113002_consolidate_workspace_permission.rollback.sql',
+    line: 380,
+    rule: 'rollback-safety',
+    fileDigest:
+      'f0c13d9605d9c8b1158477548a83bd8341b0cef397505ae2542b408df43dedd2',
+    digest: '6c9981c44ecbc2474ea094b00a696b1f8ff0d8ba11b0cb3ae25710180fe28f8c',
+    reason:
+      'Paired rollback preserves the original PUBLIC predicate EXECUTE contract required by existing PUBLIC RLS policies. The original function ACL is preserved; no new role is admitted.',
+  },
+  {
+    path: 'apps/database/rollbacks/20261030113002_consolidate_workspace_permission.rollback.sql',
+    line: 383,
+    rule: 'rollback-safety',
+    fileDigest:
+      'f0c13d9605d9c8b1158477548a83bd8341b0cef397505ae2542b408df43dedd2',
+    digest: 'dad600d1db1abbe47fd4f7313c50b7ca21442aca536e6aacfeba3077b142426e',
+    reason:
+      'Paired rollback preserves the original PUBLIC predicate EXECUTE contract required by existing PUBLIC RLS policies. The original function ACL is preserved; no new role is admitted.',
+  },
+  {
+    path: 'apps/database/rollbacks/20261030113003_workspace_storage_limit_execute.rollback.sql',
+    line: 2,
+    rule: 'rollback-safety',
+    fileDigest:
+      'b9c954fe54378e9d6699ec0a7183c0773545abb6aef26a3dfd32ec08e25d1b4a',
+    digest: 'b9c954fe54378e9d6699ec0a7183c0773545abb6aef26a3dfd32ec08e25d1b4a',
+    reason:
+      'Paired rollback restores only the original anon EXECUTE contract for the storage limit RPC, explicitly requested by the owner. Forward access is authenticated/service-role only.',
+  },
 ];
