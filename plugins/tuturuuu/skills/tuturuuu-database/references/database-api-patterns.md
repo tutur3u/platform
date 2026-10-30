@@ -552,6 +552,16 @@ and service-only ACL. Refuse retained creation receipts: removing retry identiti
 can resurrect deleted conversations. Verify actual apply/rollback/reapply and
 prior catalog equality with apps/database/verification/chat-first-message-rollback-*.sql.
 
+### Local independent-session pgTAP fixtures
+
+Use `tests/helpers/local-dblink.inc` before transactions and fixture writes.
+Stock Supabase uses SCRAM on `db.supabase.internal:5432`, while loopback trust
+does not satisfy non-superuser dblink authentication even when a password is
+supplied. Preserve `test.dblink_connstr` for other disposable runners and treat
+the helper's connection-unavailable TAP skip as missing concurrency evidence,
+not a passing assertion. Verify both the default connection and unavailable-port
+skip path; keep later SQL errors fatal. See the local Supabase development
+runbook for setup and owned-stack cleanup.
 
 ### Meet consent and retention adoption
 
