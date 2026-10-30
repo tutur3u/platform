@@ -1,3 +1,34 @@
+-- Retain caller binding and invitation role checks while disabling Mastermind.
+BEGIN;
+
+CREATE OR REPLACE FUNCTION public.is_org_member(_user_id uuid, _org_id uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = pg_catalog, pg_temp
+AS $$
+DECLARE
+  v_caller_id uuid := auth.uid();
+  v_caller_role text := coalesce(
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role'
+  );
+BEGIN
+  IF pg_trigger_depth() = 0
+    AND v_caller_role IN ('anon', 'authenticated')
+    AND _user_id IS DISTINCT FROM v_caller_id
+  THEN
+    RETURN false;
+  END IF;
+
+  RETURN EXISTS (
+    SELECT 1 FROM public.workspace_members wsm
+    WHERE wsm.ws_id = _org_id AND wsm.user_id = _user_id
+      AND wsm.type = 'MEMBER'::public.workspace_member_type
+  );
+END;
+$$;
 CREATE OR REPLACE FUNCTION public.has_workspace_permission(
   p_ws_id uuid,
   p_user_id uuid,
@@ -10,7 +41,18 @@ STABLE
 SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
+  IF pg_trigger_depth() = 0
+    AND coalesce(
+      nullif(current_setting('request.jwt.claim.role', true), ''),
+      nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role'
+    ) IN ('anon', 'authenticated')
+    AND p_user_id IS DISTINCT FROM auth.uid()
+  THEN
+    RETURN false;
+  END IF;
+
   IF p_permission = 'manage_mastermind' THEN RETURN false; END IF;
+
   -- Workspace creators keep full workspace access.
   IF EXISTS (
     SELECT 1
@@ -72,17 +114,16 @@ BEGIN
   );
 END;
 $$;
-CREATE OR REPLACE FUNCTION public.is_org_member(_user_id uuid, _org_id uuid)
-RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = pg_catalog, pg_temp
-AS $$
-BEGIN
-  RETURN EXISTS (SELECT 1 FROM public.workspace_members wsm
-    WHERE wsm.ws_id = _org_id AND wsm.user_id = _user_id
-      AND wsm.type = 'MEMBER'::public.workspace_member_type);
-END;
-$$;
 
+COMMENT ON FUNCTION public.has_workspace_permission(uuid, uuid, text) IS
+  'Caller-bound workspace permissions; manage_mastermind is disabled by rollback.';
+
+REVOKE ALL ON FUNCTION public.has_workspace_permission(uuid, uuid, text) FROM PUBLIC, anon, authenticated, service_role;
+-- tuturuuu: reviewed(function-grant): public.has_workspace_permission(uuid,uuid,text) review=caller-bound-authenticated-predicate-rollback
+GRANT EXECUTE ON FUNCTION public.has_workspace_permission(uuid, uuid, text) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.is_org_member(uuid, uuid) FROM PUBLIC, anon, authenticated, service_role;
+-- tuturuuu: reviewed(function-grant): public.is_org_member(uuid,uuid) review=caller-bound-authenticated-predicate-rollback
+GRANT EXECUTE ON FUNCTION public.is_org_member(uuid, uuid) TO authenticated, service_role;
 create or replace function private.check_time_tracking_request_update()
 returns trigger
 language plpgsql
@@ -93,7 +134,15 @@ declare
     current_setting('time_tracking.override_auth_uid', true),
     ''
   );
-  v_actor_id uuid := coalesce(v_actor_override::uuid, auth.uid());
+  -- Under an end-user JWT role the actor is always the caller; only
+  -- service_role RPCs set the override.
+  v_actor_id uuid := case
+    when coalesce(
+      nullif(current_setting('request.jwt.claim.role', true), ''),
+      nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role'
+    ) in ('anon', 'authenticated') then auth.uid()
+    else coalesce(v_actor_override::uuid, auth.uid())
+  end;
   v_has_manage_permission boolean;
   v_content_changed boolean;
   v_status_changed boolean;
@@ -367,17 +416,35 @@ begin
 end;
 $function$;
 
-COMMIT;
+-- Check the invite target directly; caller-bound predicates answer only for self.
+ALTER POLICY "Allow member managers to insert invites"
+ON public.workspace_invites
+WITH CHECK (
+  public.has_workspace_permission(ws_id, (SELECT auth.uid()), 'manage_workspace_members')
+  AND public.is_org_member((SELECT auth.uid()), ws_id)
+  AND NOT EXISTS (
+    SELECT 1 FROM public.workspace_members invite_member
+    WHERE invite_member.ws_id = workspace_invites.ws_id
+      AND invite_member.user_id = workspace_invites.user_id
+      AND invite_member.type = 'MEMBER'::public.workspace_member_type
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM public.workspace_secrets wss
+    WHERE wss.ws_id = workspace_invites.ws_id AND wss.name = 'DISABLE_INVITE'
+  )
+  AND public.workspace_has_available_seats(ws_id)
+  AND (
+    role_id IS NULL
+    OR (
+      type = 'MEMBER'
+      AND public.current_user_can_assign_workspace_role(ws_id, role_id)
+    )
+  )
+);
 
-ALTER POLICY "Allow member managers to insert invites" ON public.workspace_invites
-    WITH CHECK ((has_workspace_permission(ws_id, (select auth.uid()), 'manage_workspace_members'::text) AND is_org_member((select auth.uid()), ws_id) AND (NOT is_org_member(user_id, ws_id)) AND (NOT (EXISTS ( SELECT 1 FROM workspace_secrets wss WHERE ((wss.ws_id = workspace_invites.ws_id) AND (wss.name = 'DISABLE_INVITE'::text))))) AND workspace_has_available_seats(ws_id)));
 
 REVOKE ALL ON FUNCTION private.check_time_tracking_request_update()
   FROM PUBLIC, anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION private.check_time_tracking_request_update() TO service_role;
-REVOKE ALL ON FUNCTION public.has_workspace_permission(uuid, uuid, text) FROM PUBLIC, anon, authenticated, service_role;
--- tuturuuu: reviewed(function-grant): public.has_workspace_permission(uuid,uuid,text) anon-required review=original-public-policy-predicate-contract
-GRANT EXECUTE ON FUNCTION public.has_workspace_permission(uuid, uuid, text) TO PUBLIC, anon, authenticated, service_role;
-REVOKE ALL ON FUNCTION public.is_org_member(uuid, uuid) FROM PUBLIC, anon, authenticated, service_role;
--- tuturuuu: reviewed(function-grant): public.is_org_member(uuid,uuid) anon-required review=original-public-policy-predicate-contract
-GRANT EXECUTE ON FUNCTION public.is_org_member(uuid, uuid) TO PUBLIC, anon, authenticated, service_role;
+
+COMMIT;

@@ -11,23 +11,31 @@
 -- The first two evaluate notification recipients; the remaining callers use
 -- the authenticated actor. Mastermind access requires the recorded root role.
 CREATE OR REPLACE FUNCTION public.is_org_member(_user_id uuid, _org_id uuid)
-RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
 SET search_path = pg_catalog, pg_temp
 AS $$
+DECLARE
+  v_caller_id uuid := auth.uid();
+  v_caller_role text := coalesce(
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role'
+  );
 BEGIN
   IF pg_trigger_depth() = 0
-    AND coalesce(
-      nullif(current_setting('request.jwt.claim.role', true), ''),
-      nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'role'
-    ) IN ('anon', 'authenticated')
-    AND _user_id IS DISTINCT FROM auth.uid()
+    AND v_caller_role IN ('anon', 'authenticated')
+    AND _user_id IS DISTINCT FROM v_caller_id
   THEN
     RETURN false;
   END IF;
 
-  RETURN EXISTS (SELECT 1 FROM public.workspace_members wsm
+  RETURN EXISTS (
+    SELECT 1 FROM public.workspace_members wsm
     WHERE wsm.ws_id = _org_id AND wsm.user_id = _user_id
-      AND wsm.type = 'MEMBER'::public.workspace_member_type);
+      AND wsm.type = 'MEMBER'::public.workspace_member_type
+  );
 END;
 $$;
 CREATE OR REPLACE FUNCTION public.has_workspace_permission(
@@ -438,8 +446,31 @@ end;
 $function$;
 
 -- Check the invite target directly; caller-bound predicates answer only for self.
-ALTER POLICY "Allow member managers to insert invites" ON public.workspace_invites
-    WITH CHECK ((has_workspace_permission(ws_id, (select auth.uid()), 'manage_workspace_members'::text) AND is_org_member((select auth.uid()), ws_id) AND (NOT EXISTS (SELECT 1 FROM public.workspace_members invite_member WHERE invite_member.ws_id = workspace_invites.ws_id AND invite_member.user_id = workspace_invites.user_id AND invite_member.type = 'MEMBER'::public.workspace_member_type)) AND (NOT (EXISTS ( SELECT 1 FROM workspace_secrets wss WHERE ((wss.ws_id = workspace_invites.ws_id) AND (wss.name = 'DISABLE_INVITE'::text))))) AND workspace_has_available_seats(ws_id)));
+ALTER POLICY "Allow member managers to insert invites"
+ON public.workspace_invites
+WITH CHECK (
+  public.has_workspace_permission(ws_id, (SELECT auth.uid()), 'manage_workspace_members')
+  AND public.is_org_member((SELECT auth.uid()), ws_id)
+  AND NOT EXISTS (
+    SELECT 1 FROM public.workspace_members invite_member
+    WHERE invite_member.ws_id = workspace_invites.ws_id
+      AND invite_member.user_id = workspace_invites.user_id
+      AND invite_member.type = 'MEMBER'::public.workspace_member_type
+  )
+  AND NOT EXISTS (
+    SELECT 1 FROM public.workspace_secrets wss
+    WHERE wss.ws_id = workspace_invites.ws_id AND wss.name = 'DISABLE_INVITE'
+  )
+  AND public.workspace_has_available_seats(ws_id)
+  AND (
+    role_id IS NULL
+    OR (
+      type = 'MEMBER'
+      AND public.current_user_can_assign_workspace_role(ws_id, role_id)
+    )
+  )
+);
+
 
 REVOKE ALL ON FUNCTION private.check_time_tracking_request_update()
   FROM PUBLIC, anon, authenticated, service_role;
