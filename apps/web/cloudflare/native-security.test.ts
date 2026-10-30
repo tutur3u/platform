@@ -10,6 +10,9 @@ const env = {
   NEXT_PUBLIC_SUPABASE_URL: stagingProfile.supabaseUrl,
   AUTH_COOKIE_DOMAIN: stagingProfile.cookieDomain,
   TRUSTED_PROXY_ORIGIN_SECRET: 'disposable-test-origin-proof-key-123456',
+  VERCEL_AUTOMATION_BYPASS_SECRET: 'test-bypass-secret-00000000000000000000',
+  CF_ACCESS_TEAM_DOMAIN: 'fixture-team.cloudflareaccess.com',
+  CF_ACCESS_AUD: 'fixture-aud',
 };
 const pages = [
   { kind: 'security-policy', slug: 'security/policy' },
@@ -33,7 +36,11 @@ function setup() {
   return {
     start,
     fetcher,
-    handler: createWebCandidateHandler({ start, fetcher }),
+    handler: createWebCandidateHandler({
+      start,
+      fetcher,
+      verifyAccess: async () => true,
+    }),
   };
 }
 function request(path: string, init?: RequestInit) {
@@ -100,7 +107,8 @@ describe('native security slice dispatch and rollback', () => {
     const { start, fetcher, handler } = setup();
     const requests = [
       ...paths.flatMap((path) => [
-        ...['POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'].map((method) =>
+        // OPTIONS never reaches Next (V5b); access-hardening.test.ts covers it.
+        ...['POST', 'PUT', 'PATCH', 'DELETE'].map((method) =>
           request(path, { method })
         ),
         ...[
@@ -129,6 +137,12 @@ describe('native security slice dispatch and rollback', () => {
       expect(await (await handler(input, env)).text()).toBe('Next');
     expect(start).not.toHaveBeenCalled();
     expect(fetcher).toHaveBeenCalledTimes(requests.length);
+    for (const path of paths)
+      expect(
+        (await handler(request(path, { method: 'OPTIONS' }), env)).status
+      ).toBe(204);
+    expect(fetcher).toHaveBeenCalledTimes(requests.length);
+    expect(start).not.toHaveBeenCalled();
   });
   it('does not bypass candidate admission, including signed-in requests', async () => {
     const { start, fetcher, handler } = setup();

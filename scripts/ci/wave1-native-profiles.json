@@ -76,5 +76,31 @@
     "publicationVariable": "WAVE1_STAGING_PUBLICATION_ADMISSION",
     "maxUploadsPerArtifact": 1
   },
-  "zoneId": "618b9966111b23a37113d30865f1fbb0"
+  "zoneId": "618b9966111b23a37113d30865f1fbb0",
+  "webStaging": {
+    "sourceWorker": "tuturuuu-web-start-candidate",
+    "stagingWorker": "tuturuuu-web-wave1-staging",
+    "stagingHost": "web.staging.tutur3u.com",
+    "zone": "tutur3u.com",
+    "ingress": "access-custom-domain",
+    "nextFallback": {
+      "vercelProject": "tuturuuu-web-staging",
+      "config": "apps/web/vercel.staging.json",
+      "target": "staging"
+    },
+    "vars": {
+      "WEB_START_CANDIDATE": "staging",
+      "WEB_START_NATIVE_LEGAL": "off",
+      "WEB_START_NATIVE_SECURITY": "off",
+      "AUTH_COOKIE_DOMAIN": ".staging.tutur3u.com",
+      "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co",
+      "TUTURUUU_NOINDEX": "1"
+    },
+    "secrets": [
+      "TRUSTED_PROXY_ORIGIN_SECRET",
+      "VERCEL_AUTOMATION_BYPASS_SECRET",
+      "CF_ACCESS_TEAM_DOMAIN",
+      "CF_ACCESS_AUD"
+    ]
+  }
 }
