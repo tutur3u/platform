@@ -234,6 +234,10 @@ class _AppState extends State<App> {
     );
     _mastermind = MastermindRuntime.create(
       userId: () => _authCubit.state.user?.id,
+      isPersonalWorkspace: (wsId) => [
+        ?_workspaceCubit.state.currentWorkspace,
+        ..._workspaceCubit.state.workspaces,
+      ].any((workspace) => workspace.id == wsId && workspace.personal),
     );
     _appTabCubit = AppTabCubit(settingsRepository: _settingsRepo);
     _shellChromeActionsCubit = ShellChromeActionsCubit();
