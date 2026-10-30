@@ -14727,4 +14727,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsShareTelemetryDescription => 'Send usage data and crash reports to Google Firebase to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.';
+
+  @override
+  String get settingsPushNotifications => 'Push notifications';
+
+  @override
+  String get settingsPushFirebaseDisclosure => 'Push notifications are delivered through Google Firebase Cloud Messaging, which registers this device with Firebase Installations. This is separate from your analytics choice. Turn push off and this device is no longer registered for notifications.';
 }

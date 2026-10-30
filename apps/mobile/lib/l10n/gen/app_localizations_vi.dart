@@ -14572,4 +14572,10 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsShareTelemetryDescription => 'Gửi dữ liệu sử dụng và báo cáo sự cố tới Google Firebase để giúp chúng tôi sửa lỗi và cải thiện ứng dụng. Khi tắt, việc thu thập dừng lại và các báo cáo sự cố chưa gửi sẽ bị xóa.';
+
+  @override
+  String get settingsPushNotifications => 'Thông báo đẩy';
+
+  @override
+  String get settingsPushFirebaseDisclosure => 'Thông báo đẩy được gửi qua Google Firebase Cloud Messaging, dịch vụ này đăng ký thiết bị này với Firebase Installations. Việc này tách biệt với lựa chọn phân tích của bạn. Tắt thông báo đẩy thì thiết bị này không còn được đăng ký nhận thông báo.';
 }

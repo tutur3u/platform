@@ -5,7 +5,6 @@ import 'dart:ui';
 
 import 'package:bloc/bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobile/core/cache/cache_store.dart';
@@ -27,7 +26,7 @@ import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/assistant/local/assistant_model_downloads.dart';
-import 'package:mobile/features/notifications/push/push_background_handler.dart';
+import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/settings/cubit/appearance_resolution.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -100,19 +99,29 @@ Future<void> bootstrap(
     logChanges: appFlavor != AppFlavor.production,
   );
 
-  // Initialize Supabase with secure storage
+  PushNotificationService.instance.firebaseInitializer = () async {
+    if (Firebase.apps.isEmpty) {
+      if (Platform.isIOS || Platform.isAndroid) {
+        await const MethodChannel(
+          'mobile/firebase_startup',
+        ).invokeMethod<void>('initialize');
+      }
+      await Firebase.initializeApp(
+        options: firebaseOptionsForFlavor(appFlavor),
+      );
+      await Firebase.app().setAutomaticDataCollectionEnabled(false);
+    }
+    await MobileObservability.instance.initialize(
+      appFlavor,
+      collectionEnabled: TelemetryPreference.instance.enabled,
+    );
+  };
+
   try {
     await TelemetryPreference.instance.initialize(
       promptEligible: consentGate.isEligible(appFlavor),
       apply: ({required enabled}) async {
-        if (Firebase.apps.isEmpty) {
-          await Firebase.initializeApp(
-            options: firebaseOptionsForFlavor(appFlavor),
-          );
-          FirebaseMessaging.onBackgroundMessage(
-            firebaseMessagingBackgroundHandler,
-          );
-        }
+        if (Firebase.apps.isEmpty) return;
         await MobileObservability.instance.initialize(
           appFlavor,
           collectionEnabled: enabled,

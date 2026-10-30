@@ -6530,5 +6530,7 @@
   "telemetryConsentAllow": "Cho phép",
   "telemetryConsentDeny": "Không cho phép",
   "telemetryConsentLearnMore": "Chi tiết về quyền riêng tư",
-  "settingsShareTelemetryDescription": "Gửi dữ liệu sử dụng và báo cáo sự cố tới Google Firebase để giúp chúng tôi sửa lỗi và cải thiện ứng dụng. Khi tắt, việc thu thập dừng lại và các báo cáo sự cố chưa gửi sẽ bị xóa."
+  "settingsShareTelemetryDescription": "Gửi dữ liệu sử dụng và báo cáo sự cố tới Google Firebase để giúp chúng tôi sửa lỗi và cải thiện ứng dụng. Khi tắt, việc thu thập dừng lại và các báo cáo sự cố chưa gửi sẽ bị xóa.",
+  "settingsPushNotifications": "Thông báo đẩy",
+  "settingsPushFirebaseDisclosure": "Thông báo đẩy được gửi qua Google Firebase Cloud Messaging, dịch vụ này đăng ký thiết bị này với Firebase Installations. Việc này tách biệt với lựa chọn phân tích của bạn. Tắt thông báo đẩy thì thiết bị này không còn được đăng ký nhận thông báo."
 }

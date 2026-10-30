@@ -21,6 +21,7 @@ import UserNotifications
     willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     // Must run before Firebase is configured here or by any plugin.
+    UserDefaults.standard.set(false, forKey: "com.firebase.messaging.auto-init.enabled")
     TelemetryConsentGate.clearPersistedCrashCollection()
     return super.application(application, willFinishLaunchingWithOptions: launchOptions)
   }
@@ -29,14 +30,8 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    if FirebaseApp.app() == nil {
-      FirebaseApp.configure()
-    }
-    // Firebase persists an earlier "on"; only an explicit Allow may keep it.
-    TelemetryConsentGate.disableCollectionUnlessAllowed()
+    // Dart configures Firebase after sign-in.
     UNUserNotificationCenter.current().delegate = self
-    Messaging.messaging().delegate = self
-    application.registerForRemoteNotifications()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
@@ -50,6 +45,18 @@ import UserNotifications
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "FirebaseStartupGate") {
+      let channel = FlutterMethodChannel(name: "mobile/firebase_startup", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { call, result in
+        guard call.method == "initialize" else { result(FlutterMethodNotImplemented); return }
+        if FirebaseApp.app() == nil { FirebaseApp.configure() }
+        FirebaseApp.app()?.isDataCollectionDefaultEnabled = false
+        Messaging.messaging().isAutoInitEnabled = false
+        TelemetryConsentGate.disableCollectionUnlessAllowed()
+        result(nil)
+      }
+    }
+
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "NativeIntegrity") {
       NativeIntegrityChannel.install(messenger: registrar.messenger())
     }

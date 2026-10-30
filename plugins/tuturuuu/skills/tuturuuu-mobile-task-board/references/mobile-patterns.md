@@ -485,3 +485,21 @@ public client configuration. PR workflows must receive no Firebase CI secret.
 Do not substitute the production deployment bundle or a dummy config for device
 acceptance. Google OAuth client fields are optional for telemetry-only Firebase
 registrations; Google Sign-In acceptance needs separately provisioned clients.
+
+
+## Firebase startup and consent
+
+Keep Firebase unconfigured while signed out. The mobile startup callback belongs
+to PushNotificationService.startSession; telemetry preference loading must not
+configure SDKs. Keep app-wide collection and Messaging auto-init off natively,
+including persisted Messaging overrides. Android removes FirebaseInitProvider.
+iOS defers APNs registration through the worktree-local Podfile source patch;
+never edit the shared Pub cache. Verify that patch against upgraded FlutterFire
+source and require CI native compilation.
+
+Push needs a signed-in actor, the push setting and OS permission, independently
+of analytics consent. Push-off drains registration writes, deletes the FCM token
+and removes the server device row; sign-out performs cleanup before auth removal.
+See apps/docs/platform/features/mobile-telemetry-privacy.mdx and the focused
+push_token_permission_gate_test.dart. Device traffic capture remains necessary
+to establish network silence.

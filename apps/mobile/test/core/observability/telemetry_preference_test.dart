@@ -352,6 +352,8 @@ void main() {
     for (final key in [
       'FIREBASE_ANALYTICS_COLLECTION_ENABLED',
       'FirebaseCrashlyticsCollectionEnabled',
+      'FirebaseDataCollectionDefaultEnabled',
+      'FirebaseMessagingAutoInitEnabled',
       // No advertising identifier is ever collected.
       'GOOGLE_ANALYTICS_ADID_COLLECTION_ENABLED',
     ]) {
@@ -359,12 +361,22 @@ void main() {
       expect(plist.split('<key>$key</key>'), hasLength(2));
       expect(plist, matches(RegExp('<key>$key</key>\\s*<false/>')));
     }
+    final gradle = File('android/app/build.gradle.kts').readAsStringSync();
+    expect(
+      gradle,
+      contains(
+        'exclude(group = "com.google.android.gms", '
+        'module = "play-services-ads-identifier")',
+      ),
+    );
     final manifest = File(
       'android/app/src/main/AndroidManifest.xml',
     ).readAsStringSync();
     for (final key in [
       'firebase_analytics_collection_enabled',
       'firebase_crashlytics_collection_enabled',
+      'firebase_data_collection_default_enabled',
+      'firebase_messaging_auto_init_enabled',
       'google_analytics_adid_collection_enabled',
     ]) {
       // Duplicate meta-data names break the manifest merge.
@@ -430,7 +442,7 @@ void main() {
     expect(gateCall, greaterThan(delegate.indexOf('FirebaseApp.configure()')));
     expect(
       gateCall,
-      lessThan(delegate.indexOf('Messaging.messaging().delegate')),
+      greaterThan(delegate.indexOf('GeneratedPluginRegistrant.register')),
     );
     expect(
       delegate,
@@ -456,10 +468,22 @@ void main() {
     expect(kotlin, contains('setAnalyticsCollectionEnabled(false)'));
     expect(kotlin, contains('setCrashlyticsCollectionEnabled(false)'));
     expect(kotlin, contains('TelemetryConsentDecision.allowsCollection'));
-    final bootstrap = File('lib/bootstrap.dart').readAsStringSync();
+    expect(manifest, contains('tools:node="remove"'));
     expect(
-      bootstrap.indexOf('TelemetryPreference.instance.initialize('),
-      lessThan(bootstrap.indexOf('await Firebase.initializeApp(')),
+      manifest,
+      contains('com.google.firebase.provider.FirebaseInitProvider'),
     );
+    final nativeStartup = delegate.substring(
+      delegate.indexOf('didFinishLaunchingWithOptions launchOptions:'),
+      delegate.indexOf(
+        'override func application(',
+        delegate.indexOf('didFinishLaunchingWithOptions launchOptions:'),
+      ),
+    );
+    expect(nativeStartup, isNot(contains('FirebaseApp.configure()')));
+    expect(nativeStartup, isNot(contains('registerForRemoteNotifications()')));
+    final podfile = File('ios/Podfile').readAsStringSync();
+    expect(podfile, contains('ConsentFirebaseMessagingPlugin.m'));
+    expect(podfile, contains('APNs registration waits'));
   });
 }

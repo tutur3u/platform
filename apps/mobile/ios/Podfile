@@ -44,6 +44,30 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+    if target.name == 'firebase_messaging'
+      sources = target.source_build_phase.files.select do |file|
+        file.file_ref && File.basename(file.file_ref.path) == 'FLTFirebaseMessagingPlugin.m'
+      end
+      raise 'Expected one Firebase Messaging source' unless sources.length == 1
+      source = sources.first.file_ref.real_path
+      contents = File.read(source)
+      # Worktree-local generated copy: never alter the shared Pub cache.
+      launch = %r{  // We automatically register for remote notifications as.*?(?=\n\})}m
+      raise 'Firebase Messaging launch registration changed' unless contents.match?(launch)
+      contents = contents.sub(launch, '  // APNs registration waits for the signed-in Dart push gate.')
+      auto_init = '  messaging.autoInitEnabled = enabled;'
+      raise 'Firebase Messaging auto-init setter changed' unless contents.include?(auto_init)
+      setter = contents.split('- (void)messagingSetAutoInitEnabled:').last.split('- (void)messagingRequestPermission:').first
+      unless setter.include?('[self registerForRemoteNotifications]')
+        contents = contents.sub(auto_init, auto_init + "\n  if (enabled) { [self registerForRemoteNotifications]; }")
+      end
+      header = File.join(source.dirname, 'FLTFirebaseMessagingPlugin.h')
+      contents = contents.sub('#import "FLTFirebaseMessagingPlugin.h"', "#import \"#{header}\"")
+      destination = File.join(__dir__, 'Pods', 'ConsentFirebaseMessagingPlugin.m')
+      File.write(destination, contents)
+      sources.first.file_ref.path = destination
+      sources.first.file_ref.source_tree = '<absolute>'
+    end
     if target.name == 'flutter_webrtc'
       # Replace only the socket implementation in this generated Pods project.
       # Never mutate the shared Pub cache used by other worktrees.

@@ -121,12 +121,18 @@ flutter {
     source = "../.."
 }
 
+// The app never collects an advertising identifier.
+configurations.configureEach {
+    exclude(group = "com.google.android.gms", module = "play-services-ads-identifier")
+}
+
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
     implementation("com.google.firebase:firebase-analytics")
     // Used natively by TelemetryCollectionLockProvider; the plugin's copy is not on this classpath.
     implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-messaging")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.10")
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
     testImplementation("junit:junit:4.13.2")

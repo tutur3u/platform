@@ -27456,6 +27456,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send usage data and crash reports to Google Firebase to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.'**
   String get settingsShareTelemetryDescription;
+
+  /// No description provided for @settingsPushNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Push notifications'**
+  String get settingsPushNotifications;
+
+  /// No description provided for @settingsPushFirebaseDisclosure.
+  ///
+  /// In en, this message translates to:
+  /// **'Push notifications are delivered through Google Firebase Cloud Messaging, which registers this device with Firebase Installations. This is separate from your analytics choice. Turn push off and this device is no longer registered for notifications.'**
+  String get settingsPushFirebaseDisclosure;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

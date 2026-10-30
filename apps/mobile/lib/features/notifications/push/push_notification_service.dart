@@ -4,6 +4,7 @@ import 'dart:io' show Platform;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mobile/core/config/app_flavor.dart';
+import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/utils/device_info.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/core/utils/timezone_location.dart';
@@ -12,10 +13,14 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/notifications/push/delivered_inbox_notifications.dart';
 import 'package:mobile/features/notifications/push/inbox_push_identity.dart';
 import 'package:mobile/features/notifications/push/login_notification_actions.dart';
+import 'package:mobile/features/notifications/push/push_background_handler.dart';
 import 'package:mobile/features/notifications/push/push_navigation_request.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/timezone.dart' as timezone;
 
 export 'package:mobile/features/notifications/push/push_navigation_request.dart';
+
+part 'push_notification_preferences.dart';
 
 enum PushNotificationEventType { received, opened, archived }
 
@@ -81,6 +86,10 @@ class PushNotificationService {
     );
   }
 
+  Future<void> Function()? _initializeFirebase;
+  bool _firebaseReady = false;
+  bool _pushEnabled = true;
+
   AppFlavor? _appFlavor;
   SettingsRepository? _settingsRepository;
   PushNavigationHandler? _navigationHandler;
@@ -98,6 +107,7 @@ class PushNotificationService {
   Future<void>? _reminderTimezoneSetup;
   bool _isDisposed = false;
   bool _tokenDeletionPending = false;
+  Future<void>? _registration;
 
   FirebaseMessaging get _messaging =>
       _messagingOverride ?? FirebaseMessaging.instance;
@@ -165,14 +175,27 @@ class PushNotificationService {
   }
 
   Future<bool> get notificationsEnabled async {
+    if (_currentUserId == null) return false;
     final settings = await _messaging.getNotificationSettings();
-    return _isAuthorized(settings);
+    return _pushEnabled && _isAuthorized(settings);
   }
 
   Future<void> startSession(String userId) async {
     if (_isDisposed) return;
     final epoch = ++_sessionEpoch;
     _currentUserId = userId;
+    if (_initializeFirebase != null) {
+      _pushEnabled = await pushEnabled;
+      if (!_currentSession(epoch, userId)) return;
+      await _initializeFirebase!();
+      if (!_currentSession(epoch, userId)) {
+        _firebaseReady = true;
+        await disableTelemetry();
+        return;
+      }
+      _firebaseReady = true;
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    }
     await _delivered.bindSession(userId);
     if (!_currentSession(epoch, userId)) return;
     await _ensureInitialized();
@@ -206,12 +229,18 @@ class PushNotificationService {
       return;
     }
 
+    await _revokeTokenCreation(force: true);
     final deviceId = await _getDeviceId();
     if (deviceId == null || !_currentSession(epoch, null)) {
       return;
     }
 
     try {
+      try {
+        await _registration;
+      } on Exception {
+        // Still remove a stale row.
+      }
       await _repository.unregisterDevice(
         deviceId: deviceId,
         appFlavor: _appFlavor!.value,
@@ -224,7 +253,7 @@ class PushNotificationService {
   Future<void> ensurePermissionPrompted() async {
     final userId = _currentUserId;
     final settingsRepository = _settingsRepository;
-    if (userId == null || settingsRepository == null) {
+    if (userId == null || settingsRepository == null || !_pushEnabled) {
       return;
     }
 
@@ -325,6 +354,7 @@ class PushNotificationService {
 
     await _createAndroidChannel();
     if (_isDisposed) return;
+    if (_initializeFirebase != null && !_firebaseReady) return;
 
     try {
       _messageSubscription =
@@ -511,13 +541,22 @@ class PushNotificationService {
     }
     final settings = await _messaging.getNotificationSettings();
     if (!_currentSession(epoch, userId)) return;
-    if (!_isAuthorized(settings)) {
+    if (!_pushEnabled || !_isAuthorized(settings)) {
       await _revokeTokenCreation();
+      await _unregisterDevice();
       return;
     }
 
     await _messaging.setAutoInitEnabled(true);
-    if (!_currentSession(epoch, userId)) return;
+    if (!_currentSession(epoch, userId)) {
+      if (_currentUserId == null || !_pushEnabled) {
+        await _revokeTokenCreation(force: true);
+      }
+      return;
+    }
+    // Token refresh completes enrollment when APNs answers asynchronously.
+    if (Platform.isIOS && await _messaging.getAPNSToken() == null) return;
+    if (!_currentSession(epoch, userId) || !_pushEnabled) return;
     final token = await _messaging.getToken();
     if (token == null || token.isEmpty || !_currentSession(epoch, userId)) {
       return;
@@ -533,14 +572,26 @@ class PushNotificationService {
     final userId = _currentUserId;
     if (userId == null || _isDisposed) return;
     final settings = await _messaging.getNotificationSettings();
-    if (!_currentSession(epoch, userId) || !_isAuthorized(settings)) return;
+    if (!_currentSession(epoch, userId) ||
+        !_pushEnabled ||
+        !_isAuthorized(settings)) {
+      return;
+    }
     await _registerDeviceToken(token);
   }
 
   /// FCM auto-init is disabled natively so no token exists before permission.
   /// If permission was revoked after a token was issued, stop token creation
   /// and drop the local token.
-  Future<void> _revokeTokenCreation() async {
+  Future<void> _revokeTokenCreation({
+    bool force = false,
+    bool strict = false,
+  }) async {
+    if (_registrationToken != null && _messagingOverride == null) {
+      return;
+    }
+    if (_initializeFirebase != null && !_firebaseReady) return;
+    if (force) _tokenDeletionPending = true;
     if (_messaging.isAutoInitEnabled) {
       _tokenDeletionPending = true;
       await _messaging.setAutoInitEnabled(false);
@@ -550,6 +601,7 @@ class PushNotificationService {
       await _messaging.deleteToken();
       _tokenDeletionPending = false;
     } on Exception {
+      if (strict) rethrow;
       // Token cleanup is best-effort; auto-init stays disabled.
     }
   }
@@ -563,16 +615,27 @@ class PushNotificationService {
     }
 
     final deviceId = await _getDeviceId();
-    if (deviceId == null || !_currentSession(epoch, userId)) {
+    if (deviceId == null || !_currentSession(epoch, userId) || !_pushEnabled) {
       return;
     }
 
-    await _repository.registerDevice(
-      deviceId: deviceId,
-      token: token,
-      platform: Platform.isIOS ? 'ios' : 'android',
-      appFlavor: appFlavor.value,
-    );
+    final previous = _registration;
+    final registration = () async {
+      try {
+        await previous;
+      } on Exception {
+        /* Retry the next write. */
+      }
+      if (!_currentSession(epoch, userId) || !_pushEnabled) return;
+      await _repository.registerDevice(
+        deviceId: deviceId,
+        token: token,
+        platform: Platform.isIOS ? 'ios' : 'android',
+        appFlavor: appFlavor.value,
+      );
+    }();
+    _registration = registration;
+    await registration;
   }
 
   Future<String?> _getDeviceId() async {

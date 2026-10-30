@@ -40,48 +40,60 @@ answer. Development and staging builds default to no prompt and no collection; t
 No advertising identifier (Android AD_ID, iOS IDFA) is collected. Android removes
 the merged `com.google.android.gms.permission.AD_ID` and
 `android.permission.ACCESS_ADSERVICES_AD_ID` permissions and sets
-`google_analytics_adid_collection_enabled` to false. iOS sets
+`google_analytics_adid_collection_enabled` to false. The app excludes the transitive play-services-ads-identifier module from all app configurations. iOS sets
 `GOOGLE_ANALYTICS_ADID_COLLECTION_ENABLED` to NO and links Firebase Analytics
 without ad-ID support (`$FirebaseAnalyticsWithoutAdIdSupport` in the Podfile, so
 the `GoogleAppMeasurement/IdentitySupport` subspec and AdSupport are not
 linked). The native-config test guards these settings.
 
-Native collection defaults are disabled. Startup reads the preference before
-Firebase initialization and explicitly configures both collection SDKs. Turning
-the toggle off revokes collection before waiting for preference persistence.
-Turning it on requires successful persistence first. Settings shows a
-description under the switch. A failed update shows an
-inline retry message. Non-production flavors do not collect unless the non-release QA override is active and the saved choice is Allow. This setting does not control push notifications, backend request
-logs or other app surfaces; it cannot retract reports already transmitted.
+## Firebase startup and push
 
-Whenever collection is disabled, at startup or on opt-out, the app deletes
-unsent Crashlytics reports, so crashes recorded without consent never upload
-later. Builds before this setting persisted Firebase collection on, and the
-SDKs prefer that stored override over the platform default and act on it before
-Dart runs. Two native gates close this, both reading the stored consent
-(shared_preferences: `FlutterSharedPreferences` with the `flutter.` key prefix on
-Android, NSUserDefaults on iOS) and treating anything other than an explicit
-Allow under the current notice version as "off":
+Firebase startup waits for an authenticated app session on both platforms.
+The signed-out sign-in screen does not configure Firebase, attach Messaging
+listeners or register with APNs. Android removes FirebaseInitProvider from the
+merged manifest. Both platforms configure Firebase through the signed-in startup channel. The Android channel disables stale Analytics collection before configuration when consent is absent.
+Both platforms default app-wide data collection to false and reset persisted
+Messaging auto-init to false before SDK startup.
 
-- Android's `TelemetryConsentGateProvider` (initOrder 200) clears the Crashlytics
-  override before `FirebaseInitProvider` (100), and `TelemetryCollectionLockProvider`
-  (initOrder 50) calls `setAnalyticsCollectionEnabled(false)` and
-  `setCrashlyticsCollectionEnabled(false)` right after it unless the choice is
-  Allow. Providers install before `Application.onCreate`, so this also covers
-  process starts that never open `MainActivity`.
-- iOS clears the Crashlytics override in `willFinishLaunching` and calls the same
-  two setters right after `FirebaseApp.configure()` unless the choice is Allow.
+On iOS, the Podfile compiles a generated, worktree-local Messaging plugin copy
+that defers APNs registration until Dart enables auto-init. It never mutates
+the shared Pub cache. The patch fails closed if the upstream source changes.
+Recheck it whenever updating FlutterFire; CI must compile the actual app.
 
-Dart enables collection only after reading an explicit Allow. The gates mirror
-SDK-internal storage and the consent keys, so recheck them when upgrading
-Firebase or bumping the notice version (a unit test ties the native constants to
-`TelemetryPreference`).
+Settings > Preferences > Notifications & interaction > Push notifications
+(**Cài đặt > Tùy chọn > Thông báo và tương tác > Thông báo đẩy**) exposes the
+device-wide push switch. Push registration requires a signed-in user, an enabled
+push switch and authorized or provisional OS notification permission. Existing
+OS grants remain valid. Push is independent of the analytics choice: declining
+analytics still permits push.
 
-Signing out, switching accounts and removing the active account run the auth
-cubit's `onBeforeSignOut`, which calls `TelemetryPreference.reloadConsent()`:
-collection is revoked, then enabled again only if the stored choice, read
-afresh, is an explicit Allow. A storage or SDK failure leaves it off and never
-blocks the sign-out. The choice itself stays device-wide.
+Turning push off disables auto-init, calls FirebaseMessaging.deleteToken and
+removes the authenticated device/flavor row from notification_push_devices
+through the push-devices DELETE API. It drains in-flight registration writes
+before deletion. Failures surface as a retry error. Sign-out also disables
+auto-init, deletes the token and attempts server unregistration before auth
+credentials are removed. OS permission revocation is reconciled on session
+startup/resume. Cleanup requests themselves may contact Firebase.
+
+Analytics/Crashlytics remain off until explicit Allow. Sign-out disables
+collection; a subsequent signed-in session applies the stored device choice.
+Declining or revoking telemetry deletes unsent crash reports after SDK startup.
+Native gates retain the existing persisted Crashlytics override reset and
+post-configuration collection lock. No Firebase SDK initialization is required
+to render a background local notification.
+
+The EN/VI push disclosure is maintained in the ARB keys
+settingsPushNotifications and settingsPushFirebaseDisclosure. There is no
+separate in-app About/privacy data-use document; the privacy-details link opens
+the external policy. The policy and store-console disclosures have separate
+publication owners.
+
+Regression evidence: push_token_permission_gate_test.dart covers signed-out
+startup, permission grants/denials, token refresh, push-off, sign-out and cleanup
+ordering; telemetry_preference_test.dart checks native defaults and deferred
+startup. Device QA must verify fresh/upgrade signed-out network silence and the
+Allow/Deny controls at the released commit. Unit tests do not establish network
+silence.
 
 Android also removes the merged `ACCESS_ADSERVICES_ATTRIBUTION` permission: the
 app does no ad measurement, so Privacy Sandbox attribution reporting stays

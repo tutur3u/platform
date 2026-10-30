@@ -16,7 +16,12 @@ import android.util.Log
  * The preference file and key mirror the SDK DataCollectionArbiter.
  */
 class TelemetryConsentGateProvider : TelemetryGateProvider() {
-    override fun runGate(context: Context) = clearPersistedCrashCollection(context)
+    override fun runGate(context: Context) {
+        // Firebase Messaging persists this override above the manifest default.
+        context.getSharedPreferences("com.google.firebase.messaging", Context.MODE_PRIVATE)
+            .edit().putBoolean("auto_init", false).commit()
+        clearPersistedCrashCollection(context)
+    }
 
     companion object {
         private const val CRASHLYTICS_PREFS = "com.google.firebase.crashlytics"
