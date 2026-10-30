@@ -87,6 +87,8 @@ test('sealed emitted Worker enforces admission and renders bilingual owner shell
       enableContainers: false,
       registry,
       server: { hostname: '127.0.0.1', port: 0 },
+      // Match the hosted request scheme without changing the loopback listener.
+      origin: { secure: true },
       inferOriginFromRoutes: false,
       routeRequestsByRoutes: false,
       auth: () => {

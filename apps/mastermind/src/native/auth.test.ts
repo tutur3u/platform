@@ -72,6 +72,7 @@ const denied = [
   'forged email header',
   'expired JWT',
   'preview host',
+  'plaintext HTTP',
   'apex path',
   'workers.dev host',
   'no session',
@@ -112,6 +113,7 @@ test.each(denied)('auth matrix: %s -> 403 and zero reads', async (kind) => {
       : kind === 'workers.dev host'
         ? 'mastermind.account.workers.dev'
         : 'mastermind.tuturuuu.com';
+  const protocol = kind === 'plaintext HTTP' ? 'http:' : 'https:';
   if (kind === 'JWKS fetch failure')
     jwksFetch.mockRejectedValue(new Error('JWKS unavailable'));
   let reads = 0;
@@ -119,7 +121,7 @@ test.each(denied)('auth matrix: %s -> 403 and zero reads', async (kind) => {
     new Request(
       kind === 'apex path'
         ? 'https://tuturuuu.com/mastermind'
-        : `https://${host}/en`,
+        : `${protocol}//${host}/en`,
       { headers }
     ),
     {

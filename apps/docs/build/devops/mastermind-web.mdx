@@ -70,11 +70,17 @@ The matrix signs real JWTs and app sessions and asserts 403 with zero reads.
 It also checks JWKS fetch failure, unknown keys, rotation after cooldown and
 apex-path refusal. It covers immediate owner revocation, memo expiry and isolation, user-credential
 forwarding and a recursive privileged-key-name scan.
-The owning native workflow builds only in CI, then seals and restores the Worker.
+The owning native workflow builds in CI, then seals and restores the Worker.
 Its explicit test:runtime command runs the .acceptance.mjs suite against the
 emitted artifact; generic source-test discovery must not run that suite. Runtime
 fixtures use isolated .invalid preview hosts. The source auth matrix also checks
 the production-like preview hostname.
+The local emitted-Worker fixture sets `dev.origin.secure: true` while its
+listener remains on loopback HTTP. The runner otherwise rewrites HTTPS inputs to
+HTTP before the Worker sees them, and the required HTTPS guard correctly denies
+the owner before JWT verification. Preserve the hostname without an origin-host
+override so preview and apex hosts still fail. The source matrix separately
+asserts that a plaintext HTTP owner request returns 403 with zero reads.
 
 ## Publication remains held
 
