@@ -13,7 +13,6 @@ on:
       - ".github/workflows/mobile-build-android.yaml"
       - ".github/actions/setup-flutter-with-cache/**"
       - "scripts/ci/gradle-cache-budget.js"
-      - "scripts/mobile-deployment/*firebase*"
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
@@ -21,7 +20,6 @@ on:
       - ".github/workflows/mobile-build-android.yaml"
       - ".github/actions/setup-flutter-with-cache/**"
       - "scripts/ci/gradle-cache-budget.js"
-      - "scripts/mobile-deployment/*firebase*"
 
 permissions:
   contents: read

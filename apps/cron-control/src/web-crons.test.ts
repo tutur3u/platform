@@ -79,7 +79,7 @@ it('preserves all five Vercel paths, schedules, methods and default-off selectio
     new URL('../cloudflare.config.ts', import.meta.url),
     'utf8'
   );
-  expect(config).toContain("CRON_CONTROL_WEB_MODE: bindings.text('off')");
+  expect(config).not.toContain('CRON_CONTROL_WEB_MODE:');
   expect(config).not.toMatch(
     /CRON_CONTROL_ENABLED_JOBS: bindings.text\(\s*'[^']*web-/
   );

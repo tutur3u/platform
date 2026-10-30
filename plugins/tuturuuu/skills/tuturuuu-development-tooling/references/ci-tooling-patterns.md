@@ -45,6 +45,19 @@ the qualified bundle and invokes Wrangler without rebundling. Runtime fixtures
 allocate one temporary persistence directory per run, retain it across restarts,
 and remove it on failure/close; never reuse the app developer state directory.
 
+Dashboard-origin Worker admission must pin a reviewed live version and exact
+settings, including secret names/count, before strict publication. cf beta.20
+compares cron order and normalizes disabled traces to sampling 1; match the
+exact live API order and explicit sampling rather than dropping strict mode.
+Validate typed config through cf's schema as well as importing it: a self Durable
+Object binding still requires its Worker name. The Bun-managed
+`@cloudflare/config@0.27.0` patch omits only same-Worker `script_name` during
+Wrangler conversion, matching Cloudflare's remote shape while preserving foreign
+targets. beta.20 rejects the unpatched addition inside the binding array. The
+Cron Control regression calls the installed Build Output normalizer and `bE`
+helper, requiring an empty diff and preserving the unpatched negative control.
+See the [Cron Control admission runbook](../../../../../apps/docs/build/devops/cloudflare-cron-control.mdx#dashboard-deployment-admission).
+
 Coordination's before/after token gates consume the verified snapshot's `secrets`
 array; avoid duplicate CLI reads. Settings tokens need Workers Scripts read on the
 pinned account and Zone/Workers Routes read on every zone; narrow visibility hides routes. Keep the bounded fail-closed checks and see
@@ -1371,7 +1384,6 @@ Rust, TanStack and the cron runner. See the GitHub Actions runbook's
 [Report-only Web E2E](/build/devops/github-actions-runbook#report-only-web-e2e)
 section for runtime bounds, host-lock recovery and report-only acceptance.
 
-
 ### SQL grant guard review exceptions
 
 Run focused guard suites with `node --test scripts/ci/sql-grant-guard*.test.js`;
@@ -1388,6 +1400,23 @@ Reviewed findings belong in `sql-grant-guard-verified-findings.js`, bound to pat
 line, rule, file SHA-256, finding digest and reason. Fixed-forward findings must
 name an existing hardening migration; test both its presence and its removal.
 A placeholder filename leaves the original diagnostic enforced.
+
+## SQL grant guard end-state evidence
+
+`sql-grant-end-state-guard.js` (the ACL-replay companion to the baseline guard; no shared entries) accepts an exact-signature EXECUTE/ALL revoke after the
+creation statement in the same or a later timestamped forward migration;
+migrations newer than the newest frozen file (`20261029030400`) need the
+revoke in the same file, while later migrations are still replayed so a later
+PUBLIC/anon grant fails them. Later EXECUTE grants invalidate that evidence, and
+manual rollbacks never count. Six frozen definers (single source:
+`sql-grant-frozen-definers.js`, exporting `FROZEN_DEFINERS` and
+`FROZEN_DEFINERS_CUTOFF`; import it, never copy it) may
+inherit an earlier revoke through `CREATE OR REPLACE` while no drop, rename
+(signature-free forms cover every overload), plain recreate or public/anon grant follows it; the guard prints each inherited
+pass with its evidence. Do not extend the allowlist. Run
+`node --test scripts/ci/sql-grant-*.test.js` and both guards (`sql-grant-guard.js`, `sql-grant-end-state-guard.js`), and report
+repository-wide failures instead of exempting them. See the
+[migrations guide](../../../../../apps/docs/reference/database/migrations-guide.mdx#sql-grant-end-state-guard).
 
 ## Private Meet transcription evaluation
 
