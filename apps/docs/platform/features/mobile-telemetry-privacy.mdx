@@ -33,7 +33,7 @@ exactly like the Settings switch (declining revokes before persisting) and the
 prompt is not shown again until the notice version changes. Settings stays the
 place to change the choice, and choosing there first also ends the prompt.
 Settings routes are never interrupted, and a deep link is restored after the
-answer. Development and staging builds never show the prompt and never collect.
+answer. Development and staging builds default to no prompt and no collection; the QA override below is the only exception.
 
 ## Advertising identifiers
 
@@ -51,8 +51,7 @@ Firebase initialization and explicitly configures both collection SDKs. Turning
 the toggle off revokes collection before waiting for preference persistence.
 Turning it on requires successful persistence first. Settings shows a
 description under the switch. A failed update shows an
-inline retry message. Non-production flavors never collect, even when the saved
-choice is on. This setting does not control push notifications, backend request
+inline retry message. Non-production flavors do not collect unless the non-release QA override is active and the saved choice is Allow. This setting does not control push notifications, backend request
 logs or other app surfaces; it cannot retract reports already transmitted.
 
 Whenever collection is disabled, at startup or on opt-out, the app deletes
@@ -113,3 +112,52 @@ unsent reports at startup and on opt-out. The preference suite checks native
 defaults, duplicate keys and native gate ordering.
 Validation uses `flutter gen-l10n`, `flutter analyze`, focused `flutter test` and
 `bun check:changed` on an admitted Flutter host. No release build is required.
+
+## QA with development Firebase
+
+Use a development-flavor debug build to exercise the production consent flow
+without sending QA telemetry to production Firebase:
+
+```sh
+# Before the iOS run in a fresh clone:
+python3 ../../scripts/mobile-deployment/firebase-service-config.py --platform ios
+flutter run --flavor development --target lib/main_development.dart --dart-define=CONSENT_GATE_QA=true -d <sim>
+flutter run --flavor development --target lib/main_development.dart --dart-define=CONSENT_GATE_QA=true -d <emulator>
+```
+
+The const flag is ignored in release mode. It enables the same prompt, Settings
+Allow control and collection gate on non-production flavors; it never changes
+the flavor or Firebase options. Development still uses development Firebase.
+No user-facing wording changes. Native AppDelegate and Android providers already
+read stored consent irrespective of flavor.
+
+For iOS Analytics debug output, add launch argument
+`-FIRAnalyticsDebugEnabled` in the development Xcode scheme. For Android use
+`adb shell setprop debug.firebase.analytics.app <development-application-id>`;
+reset with `adb shell setprop debug.firebase.analytics.app .none.`.
+Enable Crashlytics debug logs with `-FIRDebugEnabled` on iOS or
+`adb shell setprop log.tag.FirebaseCrashlytics DEBUG` on Android.
+
+Use disposable simulator/emulator data. Capture network traffic from process
+start, through fresh Deny and relaunch, then Allow as a positive control.
+Repeat an upgrade preserving earlier persisted Firebase-enable overrides with
+missing, denied and stale-version consent. Before Allow, expect zero Analytics
+and Crashlytics requests; use a proxy alongside debug logs, since logs alone
+cannot prove zero requests. Run the focused observability suite both normally
+and with `flutter test --dart-define=CONSENT_GATE_QA=true`; the
+`consent_gate_qa_test.dart` regression covers release exclusion and development
+Firebase identity on both mobile platforms.
+
+Development iOS and macOS flavor plists are committed; Android native config is
+injected into `android/app/src/development/google-services.json` from the CI
+secret `FIREBASE_DEVELOPMENT_GOOGLE_SERVICES_JSON` (raw JSON). Local developers
+place their downloaded dev config at the same ignored path. Dart development
+options and native resources use `tuturuuu-mobile-dev`. Earlier development
+builds targeted `tuturuuu-mobile` for analytics and crash data; this corrects
+development only. Staging still targets production and is tracked separately.
+No development web/Windows registrations exist, so those targets fail explicitly.
+The supplied dev Firebase registration has no Google OAuth client; Google sign-in
+requires separate OAuth provisioning before it can be accepted on this flavor.
+For Android Analytics logs, use `adb shell setprop log.tag.FA VERBOSE` and
+`adb shell setprop log.tag.FA-SVC VERBOSE`. Vera re-runs iOS and Android device
+checks; unit tests do not establish device network acceptance.

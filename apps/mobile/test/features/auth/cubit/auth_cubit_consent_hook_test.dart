@@ -28,12 +28,14 @@ void main() {
     events = [];
     repo = _MockAuthRepository();
     when(() => repo.getCurrentUserSync()).thenReturn(_user());
-    when(() => repo.onAuthStateChange())
-        .thenAnswer((_) => const Stream<supa.AuthState>.empty());
+    when(
+      () => repo.onAuthStateChange(),
+    ).thenAnswer((_) => const Stream<supa.AuthState>.empty());
     when(() => repo.dispose()).thenReturn(null);
     when(() => repo.checkMfaRequired()).thenReturn(false);
-    when(() => repo.getStoredAccounts())
-        .thenAnswer((_) async => const <StoredAuthAccount>[]);
+    when(
+      () => repo.getStoredAccounts(),
+    ).thenAnswer((_) async => const <StoredAuthAccount>[]);
     when(() => repo.getActiveStoredAccountId()).thenAnswer((_) async => 'a');
     when(
       () => repo.syncCurrentSessionToMultiAccountStore(

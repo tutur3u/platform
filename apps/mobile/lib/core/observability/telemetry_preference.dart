@@ -36,7 +36,7 @@ class TelemetryPreference extends ChangeNotifier {
   bool _promptEligible = false;
   late Future<void> Function({required bool enabled}) _apply;
 
-  /// The prompt is due: production only, and only while no answer is stored for
+  /// The prompt is due for eligible builds while no answer is stored for
   /// the current notice version.
   bool get consentPending => ready && _promptEligible && !hasExplicitChoice;
 

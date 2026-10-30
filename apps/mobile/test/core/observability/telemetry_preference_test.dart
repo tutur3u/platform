@@ -36,8 +36,9 @@ void main() {
   );
 
   test('the region and locale logic is gone from the source', () {
-    final source = File('lib/core/observability/telemetry_preference.dart')
-        .readAsStringSync();
+    final source = File(
+      'lib/core/observability/telemetry_preference.dart',
+    ).readAsStringSync();
     expect(source, isNot(contains('privateRegions')));
     expect(source, isNot(contains('countryCode')));
     expect(source, isNot(contains('defaultEnabled')));
@@ -298,8 +299,9 @@ void main() {
   test(
     'the privacy manifest is declared, untracked and in the Runner target',
     () {
-      final manifest = File('ios/Runner/PrivacyInfo.xcprivacy')
-          .readAsStringSync();
+      final manifest = File(
+        'ios/Runner/PrivacyInfo.xcprivacy',
+      ).readAsStringSync();
       expect(manifest, matches(RegExp(r'NSPrivacyTracking</key>\s*<false/>')));
       expect(manifest, contains('NSPrivacyAccessedAPICategoryUserDefaults'));
       expect(manifest, contains('CA92.1'));
@@ -308,8 +310,9 @@ void main() {
         isNot(contains('NSPrivacyCollectedDataTypePurchaseHistory')),
       );
       expect(manifest, isNot(contains('NSPrivacyCollectedDataTypeUserID')));
-      final project = File('ios/Runner.xcodeproj/project.pbxproj')
-          .readAsStringSync();
+      final project = File(
+        'ios/Runner.xcodeproj/project.pbxproj',
+      ).readAsStringSync();
       expect(
         RegExp('PrivacyInfo.xcprivacy in Resources').allMatches(project),
         hasLength(2),
@@ -318,8 +321,9 @@ void main() {
   );
 
   test('native consent readers mirror the Dart keys and notice version', () {
-    final dart = File('lib/core/observability/telemetry_preference.dart')
-        .readAsStringSync();
+    final dart = File(
+      'lib/core/observability/telemetry_preference.dart',
+    ).readAsStringSync();
     expect(dart, contains("'telemetry-consent-v1'"));
     expect(dart, contains("choiceKey = 'telemetry-consent-choice'"));
     expect(
@@ -355,8 +359,9 @@ void main() {
       expect(plist.split('<key>$key</key>'), hasLength(2));
       expect(plist, matches(RegExp('<key>$key</key>\\s*<false/>')));
     }
-    final manifest = File('android/app/src/main/AndroidManifest.xml')
-        .readAsStringSync();
+    final manifest = File(
+      'android/app/src/main/AndroidManifest.xml',
+    ).readAsStringSync();
     for (final key in [
       'firebase_analytics_collection_enabled',
       'firebase_crashlytics_collection_enabled',

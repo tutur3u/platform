@@ -12,6 +12,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/app_flavor.dart';
+import 'package:mobile/core/config/consent_gate.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/config/firebase_options_selector.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
@@ -102,7 +103,7 @@ Future<void> bootstrap(
   // Initialize Supabase with secure storage
   try {
     await TelemetryPreference.instance.initialize(
-      promptEligible: appFlavor == AppFlavor.production,
+      promptEligible: consentGate.isEligible(appFlavor),
       apply: ({required enabled}) async {
         if (Firebase.apps.isEmpty) {
           await Firebase.initializeApp(

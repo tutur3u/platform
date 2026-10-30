@@ -6,6 +6,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/config/app_flavor.dart';
+import 'package:mobile/core/config/consent_gate.dart';
 import 'package:mobile/core/observability/operational_error_reporter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -56,7 +57,7 @@ class MobileObservability {
     AppFlavor flavor, {
     required bool collectionEnabled,
   }) async {
-    final enabled = flavor == AppFlavor.production && collectionEnabled;
+    final enabled = consentGate.isEligible(flavor) && collectionEnabled;
     _enabled = false;
     await Future.wait([
       _controls.setCrashCollection(enabled: enabled),

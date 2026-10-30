@@ -50,6 +50,22 @@ class FirebaseConfigTests(unittest.TestCase):
                 _, app, _, _ = self.fixture(platform)
                 config.configure(platform, self.root, app)
 
+    def test_firebase_without_optional_google_signin_is_valid(self):
+        source, _, _, _ = self.fixture("ios")
+        values = dict(self.values)
+        values.pop("CLIENT_ID", None)
+        values.pop("REVERSED_CLIENT_ID", None)
+        self.write(source, values)
+        config.configure("ios", self.root)
+
+    def test_committed_development_resources_use_isolated_project(self):
+        root = Path(__file__).resolve().parents[2] / 'apps/mobile'
+        for platform in ('ios', 'macos'):
+            values = config.load_config(root / platform / 'Runner/GoogleService-Info-development.plist')
+            self.assertEqual(values['PROJECT_ID'], 'tuturuuu-mobile-dev')
+            self.assertEqual(values['BUNDLE_ID'], 'com.tuturuuu.app.mobile.dev')
+            self.assertEqual(values['GOOGLE_APP_ID'], '1:90814255724:ios:1081d3cc2616ca2a283e49')
+
     def test_wrong_flavor_is_rejected(self):
         _, app, resources, _ = self.fixture("ios")
         self.write(resources / "GoogleService-Info.plist", {**self.values, "GOOGLE_APP_ID": "other-flavor"})

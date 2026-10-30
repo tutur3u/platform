@@ -472,3 +472,16 @@ and the pre-`runApp` join. Completion-barrier tests live in
   `test/features/mastermind/machines/` suite along with Mastermind, shell and router
   coverage. Collector schema freeze, hub acceptance and security review remain
   separate from widget/parser verification; see the mobile Machines feature page.
+
+
+### Development Firebase consent QA
+
+Follow `apps/docs/platform/features/mobile-telemetry-privacy.mdx` for consent QA.
+Check both Dart options and native resources: differing app IDs do not imply
+separate Firebase projects. Development must use `tuturuuu-mobile-dev` before
+turning on `CONSENT_GATE_QA` in debug/profile mode; release ignores the flag.
+Apple flavor plists are committed. Android development config is ignored and
+hydrated from raw Actions secret `FIREBASE_DEVELOPMENT_GOOGLE_SERVICES_JSON`.
+Do not substitute the production deployment bundle or a dummy config for device
+acceptance. Google OAuth client fields are optional for telemetry-only Firebase
+registrations; Google Sign-In acceptance needs separately provisioned clients.
