@@ -1,16 +1,17 @@
 name: Security Checks
 
 # PR and main-push checks scan only what the change touched and fail on newly
-# introduced findings. The daily schedule (the only scan timer) runs CodeQL
+# introduced findings. This workflow's daily schedule runs CodeQL
 # through codeql.yml and builds the redacted findings register; on Mondays it
-# also runs the weekly deep pass (full-history secret scan).
+# also runs the weekly deep pass (full-history secret scan). The separate
+# read-only daily inventory lives in security-scan.yaml.
 on:
   pull_request:
   push:
     branches:
       - main
   schedule:
-    - cron: "17 2 * * *"
+    - cron: '17 2 * * *'
   workflow_dispatch:
     inputs:
       deep:
@@ -32,6 +33,51 @@ env:
   BUN_SHA256: bf8ccbfb2b0b80159e0f9a6d15c55317add8077534dbc6130a3edb52fccb395c
 
 jobs:
+  definer-guard:
+    name: Definer execution policy
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Check out migration data
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Use Node.js 24
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Load trusted definer guard and baseline
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/definer-guard"
+          mkdir -p "$dir"
+          if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "$BASE_SHA:scripts/ci/security-definer-guard.js" 2>/dev/null; then
+            for file in security-definer-baseline.json security-definer-blocks.js security-definer-guard.js security-definer-historical-blocks.json security-definer-reviewed-blocks.json security-definer-roles.js security-definer-verified-findings.json security-sql.js sql-grant-acl.js sql-grant-frozen-definers.js sql-grant-end-state-guard.js sql-grant-identifiers.js sql-grant-reviewed-exceptions.js; do
+              git show "$BASE_SHA:scripts/ci/$file" > "$dir/$file"
+            done
+          else
+            echo "::warning::Definer guard bootstrap requires independent CI/security review."
+            for file in security-definer-baseline.json security-definer-blocks.js security-definer-guard.js security-definer-historical-blocks.json security-definer-reviewed-blocks.json security-definer-roles.js security-definer-verified-findings.json security-sql.js sql-grant-acl.js sql-grant-frozen-definers.js sql-grant-end-state-guard.js sql-grant-identifiers.js sql-grant-reviewed-exceptions.js; do
+              cp "scripts/ci/$file" "$dir/$file"
+            done
+          fi
+          node "$dir/security-definer-guard.js" "$RUNNER_TEMP/definers.json"
+      - name: Keep definer report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: security-definer-guard
+          path: ${{ runner.temp }}/definers.json
+          retention-days: 7
+          if-no-files-found: error
+
   # No ci-check switchboard: its selectors run from the pull request checkout,
   # so a hostile copy could skip every scan. The scope job below selects scans
   # with base-commit scripts only and runs everything when they are missing.

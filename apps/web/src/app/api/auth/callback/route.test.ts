@@ -211,6 +211,7 @@ describe('auth callback route', () => {
       'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
       '.staging.tutur3u.com'
     );
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
     vi.stubEnv(
       'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
       'tasks:https://tasks.staging.tutur3u.com'
@@ -236,6 +237,7 @@ describe('auth callback route', () => {
       'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
       '.staging.tutur3u.com'
     );
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
     const managedReturnUrl = encodeURIComponent(
       'https://preview.staging.tutur3u.com/workspace/personal/plans'
     );

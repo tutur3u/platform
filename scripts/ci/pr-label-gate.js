@@ -57,6 +57,7 @@ const HEAVY_PR_WORKFLOWS = [
   'mail-calendar-tasks-builds.yaml',
   'mail-cloudflare.yaml',
   'mail-profile-runtime-contract.yaml',
+  'mastermind-cloudflare.yaml',
   'meet-cloudflare.yaml',
   'mobile-build-android.yaml',
   'mobile-build-ios.yaml',
