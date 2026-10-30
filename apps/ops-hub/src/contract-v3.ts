@@ -33,33 +33,48 @@ export const orgEdgeKindSchema = z.enum([
   'delegates_to',
   'reviews',
 ]);
+export const orgAreaSchema = z.enum([
+  'ec',
+  'meet',
+  'mobile',
+  'security',
+  'release',
+  'platform',
+]);
+const orgNodeFields = {
+  key: orgKeySchema,
+  label: cleanText(80),
+  role: cleanText(80),
+  area: orgAreaSchema.optional(),
+  team: cleanText(64).optional(),
+  pool: cleanText(64).optional(),
+  modelFamily: cleanText(80).optional(),
+  status: orgStatusSchema,
+  activity: orgActivitySchema,
+  taskTitle: boundedText(80)
+    .nullable()
+    .optional()
+    .transform((value) =>
+      value != null && orgTextDenied(value) ? null : value
+    ),
+  prRefs: z
+    .array(z.number().int().positive().max(Number.MAX_SAFE_INTEGER))
+    .max(10)
+    .optional(),
+};
+const orgNodeSchema = z.discriminatedUnion('kind', [
+  z.strictObject({
+    ...orgNodeFields,
+    kind: z.literal('agent'),
+    roleKey: cleanText(64)
+      .regex(/^[a-z0-9-]{1,64}$/)
+      .optional(),
+  }),
+  z.strictObject({ ...orgNodeFields, kind: z.literal('lane') }),
+]);
 export const orgSchema = z
   .strictObject({
-    nodes: z
-      .array(
-        z.strictObject({
-          key: orgKeySchema,
-          kind: z.enum(['agent', 'lane']),
-          label: cleanText(80),
-          role: cleanText(80),
-          team: cleanText(64).optional(),
-          pool: cleanText(64).optional(),
-          modelFamily: cleanText(80).optional(),
-          status: orgStatusSchema,
-          activity: orgActivitySchema,
-          taskTitle: boundedText(80)
-            .nullable()
-            .optional()
-            .transform((value) =>
-              value != null && orgTextDenied(value) ? null : value
-            ),
-          prRefs: z
-            .array(z.number().int().positive().max(Number.MAX_SAFE_INTEGER))
-            .max(10)
-            .optional(),
-        })
-      )
-      .max(100),
+    nodes: z.array(orgNodeSchema).max(100),
     edges: z
       .array(
         z.strictObject({

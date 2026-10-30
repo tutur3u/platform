@@ -246,7 +246,13 @@ route, deployment authorization or publication-hold change accompanies v3.
 `org` is a closed object with `nodes` (at most 100) and `edges` (at most 400).
 Each node requires `key`, `kind` (agent/lane), `label`, `role`, `status`
 (working/waiting/idle/blocked), and `activity` (now/lt1h/today/earlier).
-Optional fields are `team`, `pool`, `modelFamily`, `taskTitle`, and `prRefs`.
+Optional fields on both variants are `team`, `pool`, `modelFamily`, `taskTitle`,
+`prRefs`, and the operator-set `area` enum (ec/meet/mobile/security/release/platform).
+Only agent nodes may additionally carry `roleKey`: 1–64 lowercase ASCII letters,
+digits or hyphens, matching `^[a-z0-9-]{1,64}$`. It runs through the same deny-scan
+as label and rejects on any hit. Lanes must omit roleKey entirely; it is an unknown
+field on that closed variant. The optional canonical roleKey never replaces the
+opaque HMAC-derived key required on both variants.
 Label, role, modelFamily and taskTitle have an 80-character limit; team and pool
 have a 64-character limit. Non-null strings are nonempty and reject controls.
 PR references are at most ten positive safe integers. Activity never contains
@@ -287,6 +293,6 @@ replaces the v3 snapshot and removes org; heartbeat-only envelopes retain it.
 
 Regression evidence: `src/contract-v3.test.ts` covers version compatibility,
 closed objects, enums, graph integrity, byte/cardinality limits and shared canary
-refusal. Its 100-node org cases accept exactly 128 KiB and reject 128 KiB plus one
+refusal. Its 100-node org cases include maximum-length roleKey and area fields, accept exactly 128 KiB and reject 128 KiB plus one
 byte, proving that the snapshot size refinement survives `safeExtend`. `scripts/verify-org-runtime.mjs` exercises signed ingest, persisted
 sanitization, authenticated reads, restart and pause/expiry fences in workerd.
