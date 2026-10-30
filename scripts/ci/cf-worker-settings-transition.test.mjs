@@ -57,7 +57,7 @@ function withWebOrigin(attributes) {
 function liveWorker(identity, { settings = {}, ...overrides } = {}) {
   const responses = {
     service: {
-      default_environment: { script: { last_deployed_from: 'wrangler' } },
+      default_environment: { script: { last_deployed_from: 'cf' } },
     },
     settings: {
       compatibility_date: identity.compatibilityDate,
