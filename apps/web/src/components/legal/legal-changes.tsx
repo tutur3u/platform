@@ -12,6 +12,7 @@ import { changeCopy } from './change-copy';
 import { ChangeVersions } from './change-versions';
 import { LegalHubNav } from './legal-hub-nav';
 import { LegalMarkdown } from './legal-markdown';
+import { LegalRevisionEntries } from './legal-revision-entries';
 import { ProposedLegalDocuments } from './proposed-legal-documents';
 import { RedlineView } from './redline-view';
 import './legal-changes.css';
@@ -73,6 +74,7 @@ export function LegalChanges({
           </LegalMarkdown>
         </section>
       </header>
+      <LegalRevisionEntries locale={locale} notice={notice} full={full} />
       <ChangeVersions locale={locale} notice={notice} />
       <ChangeControls
         full={full}

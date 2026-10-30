@@ -5,7 +5,9 @@ import {
   getLegalDocument,
   getProposedLegalDocument,
   legalChangesCopy,
+  legalRevisionChangesCopy,
   upcomingLegalRevision,
+  upcomingMobilePrivacyRevision,
 } from '@tuturuuu/legal';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
@@ -51,12 +53,91 @@ describe('upcoming legal changes', () => {
   });
 
   for (const locale of ['en', 'vi'] as const) {
+    it(`${locale} separates A and B with exact F copy and release timing`, () => {
+      for (const full of [false, true]) {
+        const page = new DOMParser().parseFromString(
+          renderToStaticMarkup(<LegalChanges locale={locale} full={full} />),
+          'text/html'
+        );
+        const a = page.querySelector(
+          `[data-legal-revision="${upcomingMobilePrivacyRevision.version}"]`
+        );
+        const b = page.querySelector(
+          `[data-legal-revision="${upcomingLegalRevision.version}"]`
+        );
+        expect(a?.textContent).toContain(
+          legalRevisionChangesCopy[locale].mobile
+        );
+        expect(a?.textContent).toContain(
+          legalRevisionChangesCopy[locale].pendingDate
+        );
+        expect(a?.querySelector('time')).toBeNull();
+        expect(b?.textContent).toContain(
+          legalRevisionChangesCopy[locale].processors
+        );
+        expect(b?.querySelector('time')?.dateTime).toBe(
+          upcomingLegalRevision.effectiveDate
+        );
+        if (full) {
+          const document = getProposedLegalDocument(
+            'privacy',
+            locale,
+            upcomingMobilePrivacyRevision.version
+          );
+          const article = a?.querySelector('article');
+          expect(article?.querySelectorAll('section')).toHaveLength(
+            document.sections.length
+          );
+          expect(article?.outerHTML).toMatchSnapshot();
+          for (const section of document.sections)
+            expect(article?.textContent).toContain(section.title);
+        }
+      }
+    });
+    it(`${locale} never renders a pending mobile date on a published changes page`, () => {
+      const config = {
+        published: true as const,
+        noticeDate: 'NOTICE-DATE',
+        laterDate: upcomingLegalRevision.effectiveDate,
+        archiveLinks: { [locale]: 'ARCHIVE' },
+      };
+      expect(() =>
+        renderToStaticMarkup(
+          <LegalChanges locale={locale} noticeConfig={config} />
+        )
+      ).toThrow('requires a pinned release date');
+      const page = new DOMParser().parseFromString(
+        renderToStaticMarkup(
+          <LegalChanges
+            locale={locale}
+            noticeConfig={{
+              ...config,
+              mobilePrivacyEffectiveDate: '2026-11-05',
+            }}
+          />
+        ),
+        'text/html'
+      );
+      expect(page.body.textContent).not.toContain(
+        legalRevisionChangesCopy[locale].pendingDate
+      );
+      expect(
+        page
+          .querySelector(
+            `[data-legal-revision="${upcomingMobilePrivacyRevision.version}"] time`
+          )
+          ?.getAttribute('datetime')
+      ).toBe('2026-11-05');
+    });
     it(`${locale} proposals have no effective date and cannot be indexed`, async () => {
       for (const full of [false, true]) {
         const html = renderToStaticMarkup(
           <LegalChanges locale={locale} full={full} />
         );
-        expect(html).not.toContain(upcomingLegalRevision.version);
+        const page = new DOMParser().parseFromString(html, 'text/html');
+        expect(page.querySelector('.version-pair')?.textContent).not.toContain(
+          upcomingLegalRevision.version
+        );
         expect(html).toContain('data-binding-notice');
         expect(html).toContain(
           full
@@ -150,6 +231,7 @@ describe('upcoming legal changes', () => {
             noticeConfig={{
               published: true,
               noticeDate: 'NOTICE-DATE',
+              mobilePrivacyEffectiveDate: '2026-11-05',
               laterDate: 'LATER-DATE',
               archiveLinks: { [locale]: 'ARCHIVE' },
             }}
@@ -163,6 +245,9 @@ describe('upcoming legal changes', () => {
       );
       expect(proposed?.querySelector('p')?.textContent).toBe(
         upcomingLegalRevision.version
+      );
+      expect(proposed?.querySelector('dd')?.textContent).toBe(
+        upcomingLegalRevision.effectiveDate
       );
       expect(proposed?.textContent).toContain('NOTICE-DATE');
       expect(proposed?.textContent).not.toMatch(/draft/iu);

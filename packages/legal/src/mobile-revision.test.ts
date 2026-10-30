@@ -5,6 +5,7 @@ import septemberHashes from './fixtures/september-draft-hashes.json';
 import { mobileRevisionCopy } from './mobile-revision-copy';
 import { getLegalNotice, legalNotice } from './notice';
 import { getProposedLegalDocument } from './proposed';
+import { legalRevisionChangesCopy } from './revision-changes';
 import { getLegalRevision, upcomingLegalRevision } from './revisions';
 
 const kinds = [
@@ -48,6 +49,23 @@ describe('pinned November proposal', () => {
           expect(next.sections).toEqual(old.sections);
       });
     }
+    it(`${locale} includes the approved section F summary verbatim`, () => {
+      const fixture = readFileSync(
+        new URL('./fixtures/mobile-7294.md', import.meta.url),
+        'utf8'
+      );
+      const bullets = fixture
+        .split('## F.')[1]!
+        .split(`\n${locale.toUpperCase()}\n`)[1]!
+        .split('\n')
+        .filter((line) => line.startsWith('- '))
+        .slice(0, 2);
+      expect(bullets).toHaveLength(2);
+      expect(bullets).toEqual([
+        `- ${legalRevisionChangesCopy[locale].mobile}`,
+        `- ${legalRevisionChangesCopy[locale].processors}`,
+      ]);
+    });
     it(`${locale} includes the exact B/C copy and processor fields`, () => {
       const fixture = readFileSync(
         new URL('./fixtures/mobile-7294.md', import.meta.url),

@@ -2,7 +2,7 @@ import { reviseLegalDocument } from './commercial-revisions';
 import { getCommunityPolicy } from './community-policies';
 import { getLegalDocument } from './documents';
 import { mobileRevisionCopy } from './mobile-revision-copy';
-import type { LegalDocument } from './types';
+import type { LegalDocument, LegalSection } from './types';
 
 export const upcomingLegalRevision = {
   version: '2026-11-02',
@@ -10,15 +10,81 @@ export const upcomingLegalRevision = {
   publishedDate: '2026-11-02',
 } as const;
 
-export type ProposedLegalVersion =
+export const upcomingMobilePrivacyRevision = {
+  version: '2026-11-02-mobile',
+  kind: 'privacy',
+  published: false,
+  effectiveDate: null,
+  publishedDate: '2026-11-02',
+} as const;
+
+type CommercialProposedVersion =
   | '2026-09-13-draft'
   | typeof upcomingLegalRevision.version;
+export type MobilePrivacyDocument = Omit<LegalDocument, 'effectiveDate'> & {
+  effectiveDate: string | null;
+  published: boolean;
+};
+
+export function requireMobilePrivacyReleaseDate(
+  date: string | null | undefined
+): string {
+  if (
+    !date ||
+    !/^\d{4}-\d{2}-\d{2}$/u.test(date) ||
+    Number.isNaN(Date.parse(date)) ||
+    new Date(date).toISOString().slice(0, 10) !== date
+  )
+    throw new Error(
+      'Mobile privacy publication requires a pinned release date'
+    );
+  return date;
+}
+
+function mobileSection(locale: LegalDocument['locale']): LegalSection {
+  return {
+    id: 'privacy-mobile',
+    title: locale === 'vi' ? 'Ứng dụng di động' : 'Mobile app',
+    content: mobileRevisionCopy[locale].paragraphs.join('\n\n'),
+    icon: 'bell',
+    tone: 'blue',
+  };
+}
+
+export type ProposedLegalVersion =
+  | CommercialProposedVersion
+  | typeof upcomingMobilePrivacyRevision.version;
 
 export function getLegalRevision(
   kind: LegalDocument['kind'],
   locale: string,
+  version?: CommercialProposedVersion
+): LegalDocument;
+export function getLegalRevision(
+  kind: 'privacy',
+  locale: string,
+  version: typeof upcomingMobilePrivacyRevision.version
+): MobilePrivacyDocument;
+export function getLegalRevision(
+  kind: LegalDocument['kind'],
+  locale: string,
+  version?: ProposedLegalVersion
+): LegalDocument | MobilePrivacyDocument;
+export function getLegalRevision(
+  kind: LegalDocument['kind'],
+  locale: string,
   version: ProposedLegalVersion = upcomingLegalRevision.version
-): LegalDocument {
+): LegalDocument | MobilePrivacyDocument {
+  if (version === upcomingMobilePrivacyRevision.version) {
+    if (kind !== 'privacy')
+      throw new Error('Mobile revision supports privacy only');
+    const current = getLegalDocument('privacy', locale);
+    return {
+      ...current,
+      ...upcomingMobilePrivacyRevision,
+      sections: [...current.sections, mobileSection(current.locale)],
+    };
+  }
   const draft =
     kind === 'acceptable-use' || kind === 'community-guidelines'
       ? getCommunityPolicy(kind, locale)
@@ -27,13 +93,7 @@ export function getLegalRevision(
   const copy = mobileRevisionCopy[draft.locale];
   const sections = [...draft.sections];
   if (kind === 'privacy') {
-    sections.push({
-      id: 'privacy-mobile',
-      title: draft.locale === 'vi' ? 'Ứng dụng di động' : 'Mobile app',
-      content: copy.paragraphs.join('\n\n'),
-      icon: 'bell',
-      tone: 'blue',
-    });
+    sections.push(mobileSection(draft.locale));
   }
   if (kind === 'subprocessors') {
     sections.push(

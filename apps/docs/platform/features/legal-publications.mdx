@@ -82,19 +82,27 @@ their strings as props instead of importing the message bundles.
 
 ### Pinned November mobile proposal
 
-The proposed revision selector uses version `2026-11-02`, planned publication date
-`2026-11-02` and planned effective date `2026-12-02`. These are proposal metadata:
-the notice remains unpublished and public proposal adapters omit effective dates.
-All in-force documents and dates remain unchanged. The September
-`2026-09-13-draft` revision remains retrievable with its original content.
+Two unpublished proposals share one mobile privacy section, including the Firebase
+installation identifier disclosure. `upcomingMobilePrivacyRevision` identifies
+`2026-11-02-mobile` (A): the current in-force privacy document plus only
+`privacy-mobile`, without the September privacy changes. Its effective date D is
+null until the fixed mobile build ships. `upcomingLegalRevision` identifies
+`2026-11-02` (B): the September draft plus that same mobile section and processor
+rows, effective `2026-12-02`; B supersedes A.
 
-Both locales of the November proposal add the Firebase Analytics/Crashlytics and
-Cloud Messaging/Installations processor entries and mobile privacy paragraphs.
-Analytics and crash reporting require Allow everywhere; push requires sign-in and
-push enabled independently of analytics. No Firebase contact occurs before sign-in.
-No DPA annex sentence is added. These additions apply only to the proposal.
+The changes pages show the two entries with the approved bilingual section F copy.
+A's added section and summary do not claim Google has joined the processor list;
+the existing in-force privacy text remains intact. Full proposals show A's privacy
+text separately from B. The notice remains unpublished. Publishing the notice
+requires a real pinned mobile release date; missing, placeholder and invalid dates
+fail before rendering, so published pages cannot show a pending date.
 
-`packages/legal/src/mobile-revision.test.ts` pins both revisions and checks the
-bilingual copy against its B/C source fixture; existing effective-publication
-hashes continue to guard the in-force documents. The upcoming summary remains
-unchanged pending legal review of matching summary bullets.
+The September `2026-09-13-draft` revision and all in-force documents remain unchanged.
+No DPA annex sentence is added. Analytics and crash reporting require Allow
+everywhere; push requires sign-in and push enabled independently of analytics.
+
+`packages/legal/src/mobile-privacy-revision.test.ts` snapshots A, checks exact
+in-force-plus-mobile composition, identical A/B mobile text and publication guards.
+`mobile-revision.test.ts` pins the September and B revisions and checks the bilingual
+B/C and F copy. Candidate legal-changes tests verify both entries, full text and
+pending-date exclusion on publication.
