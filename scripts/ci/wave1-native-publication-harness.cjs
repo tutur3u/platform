@@ -13,19 +13,33 @@ const publicEnv = {
 };
 Object.assign(process.env, publicEnv);
 
-async function publisher(t, app = 'mail') {
+// Web issuer fixtures: the sealed Next fallback pair (design §2.2).
+const webFallback = {
+  deploymentId: 'dpl_fixture0001',
+  origin: 'https://tuturuuu-web-staging-abc123-fixture.vercel.app',
+};
+
+async function publisher(t, app = 'mail', { preFetch } = {}) {
   const { prepare, artifactDigest } = await import(
     './wave1-native-artifact.mjs'
   );
   const { profiles } = await import('./wave1-native-profile.mjs');
   const ingress = await import('./wave1-ingress-fixture.mjs');
   const dir = fixture(t, app);
-  const receipt = prepare(dir, app, 'staging', 'owner-example', sha);
+  const receipt = prepare(
+    dir,
+    app,
+    'staging',
+    'owner-example',
+    sha,
+    app === 'web' ? webFallback : undefined
+  );
   const admission = {
     schema: 1,
     app,
     sourceSha: sha,
     artifactSha256: artifactDigest(receipt),
+    ...(app === 'web' ? { nextDeploymentId: webFallback.deploymentId } : {}),
     ...profiles.stagingAdmission,
   };
   const env = {
@@ -45,6 +59,16 @@ async function publisher(t, app = 'mail') {
     STAGING_TUTUR3U_ZONE_ID: ingress.fixtureZoneId,
     STAGING_ACCESS_APP_IDS: JSON.stringify(ingress.fixtureAppIds),
     STAGING_ACCESS_STAFF_GROUP_ID: ingress.fixtureStaffGroupId,
+    STAGING_ACCESS_HEALTH_TOKEN_IDS: ingress.fixtureHealthTokenId,
+    ...(app === 'web'
+      ? {
+          VERCEL_ORG_ID: 'team_fixture',
+          VERCEL_WEB_STAGING_PROJECT_ID: 'prj_fixture0001',
+          VERCEL_TOKEN_WEB_STAGING: 'vercel-fixture',
+          VERCEL_AUTOMATION_BYPASS_SECRET: 'b'.repeat(32),
+          TRUSTED_PROXY_ORIGIN_SECRET: 'p'.repeat(40),
+        }
+      : {}),
     RUNNER_TEMP: dir,
   };
   const state = {
@@ -59,10 +83,18 @@ async function publisher(t, app = 'mail') {
     failUpload: false,
     loseReceipt: false,
     serving: 'on',
-    topology: profiles.apps[app].ingress ? ingress.healthyTopology(app) : null,
+    phase: 'staff',
+    topology:
+      app === 'web' || profiles.apps[app]?.ingress
+        ? ingress.healthyTopology(app)
+        : null,
   };
   const response = (body) => Response.json(body);
   const fetcher = async (url, options) => {
+    if (preFetch) {
+      const intercepted = await preFetch(new URL(url), options, state);
+      if (intercepted) return intercepted;
+    }
     assert.equal(options.redirect, 'error');
     assert.ok(options.signal);
     const u = new URL(url);
@@ -84,8 +116,11 @@ async function publisher(t, app = 'mail') {
             state.flagReads > 1 && state.stop === 'disabled' ? 'false' : 'true',
         });
       }
+      assert.equal(options.method, 'GET', 'Publisher never writes variables');
       if (u.pathname.endsWith('/WEB_STAGING_SERVING'))
         return response({ value: state.serving });
+      if (u.pathname.endsWith('/STAGING_ACCESS_PHASE'))
+        return response({ value: state.phase });
       if (u.pathname.endsWith('/WAVE1_STAGING_PUBLICATION_ADMISSION')) {
         state.admissionReads++;
         return response({
@@ -269,4 +304,4 @@ async function publisher(t, app = 'mail') {
   };
 }
 
-module.exports = { newId, oldId, publicEnv, publisher, sha };
+module.exports = { newId, oldId, publicEnv, publisher, sha, webFallback };

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+  fixtureHealthTokenId,
   fixtureStaffGroupId,
   healthyTopology,
 } from './wave1-ingress-fixture.mjs';
@@ -16,6 +17,8 @@ const check = (app, mutate = () => {}) => {
   const observed = healthyTopology(app);
   mutate(observed);
   return evaluateIngress(ingressTarget(app), observed, {
+    phase: 'staff',
+    healthTokens: [fixtureHealthTokenId],
     staffGroupId: fixtureStaffGroupId,
   });
 };

@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
+  fixtureHealthTokenId,
   fixtureStaffGroupId,
   healthyTopology,
 } from './wave1-ingress-fixture.mjs';
+
+const staffEmailListId = '44444444-4444-4444-8444-444444444444';
+
 import { evaluateIngress, ingressTarget } from './wave1-ingress-topology.mjs';
 
 // Tess C1–C3 on the Access policy and host DNS checks (design §6.1).
@@ -11,7 +15,10 @@ const check = (app, mutate = () => {}) => {
   const observed = healthyTopology(app);
   mutate(observed);
   return evaluateIngress(ingressTarget(app), observed, {
+    phase: 'staff',
+    healthTokens: [fixtureHealthTokenId],
     staffGroupId: fixtureStaffGroupId,
+    staffEmailListId,
   });
 };
 
@@ -72,7 +79,10 @@ for (const [label, rule] of [
   });
 }
 test('C1 refuses a group selector when no staff group is configured', () => {
-  const result = evaluateIngress(ingressTarget('web'), healthyTopology('web'));
+  const result = evaluateIngress(ingressTarget('web'), healthyTopology('web'), {
+    phase: 'staff',
+    healthTokens: [fixtureHealthTokenId],
+  });
   assert.ok(result.some((line) => /non-staff selector \(group\)/.test(line)));
 });
 test('C1 refuses an allow policy with no include', () => {
@@ -155,3 +165,40 @@ for (const [label, mutate] of [
     }
   });
 }
+
+// P4 follow-ups: email_list is pinned; service auth names a token.
+test('email_list is accepted only for the configured staff list', () => {
+  assert.deepEqual(
+    check('web', allowRule({ email_list: { id: staffEmailListId } })),
+    []
+  );
+  const other = check(
+    'web',
+    allowRule({ email_list: { id: '66666666-6666-4666-8666-666666666666' } })
+  );
+  assert.ok(
+    other.some((line) => /non-staff selector \(email_list\)/.test(line))
+  );
+  const unconfigured = evaluateIngress(
+    ingressTarget('web'),
+    (() => {
+      const o = healthyTopology('web');
+      o.policies.result[0].include = [{ email_list: { id: staffEmailListId } }];
+      return o;
+    })(),
+    {
+      phase: 'staff',
+      healthTokens: [fixtureHealthTokenId],
+      staffGroupId: fixtureStaffGroupId,
+    }
+  );
+  assert.ok(
+    unconfigured.some((line) => /non-staff selector \(email_list\)/.test(line))
+  );
+});
+test('a service-auth policy with an empty include fails', () => {
+  const result = check('web', (o) => {
+    o.policies.result[1].include = [];
+  });
+  assert.ok(result.some((line) => /must name service tokens/.test(line)));
+});

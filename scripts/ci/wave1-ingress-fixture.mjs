@@ -3,6 +3,7 @@ import { ingressTarget } from './wave1-ingress-topology.mjs';
 
 export const fixtureZoneId = 'a'.repeat(32);
 export const fixtureStaffGroupId = '33333333-3333-4333-8333-333333333333';
+export const fixtureHealthTokenId = '77777777-7777-4777-8777-777777777777';
 export const fixtureAppIds = {
   'calendar.staging.tutur3u.com': '11111111-1111-4111-8111-111111111111',
   'web.staging.tutur3u.com': '22222222-2222-4222-8222-222222222222',
@@ -14,9 +15,9 @@ const list = (result) => ({
 });
 
 /** A topology that passes every §6.1 check for the app's ingress target. */
-export function healthyTopology(app) {
+export function healthyTopology(app, phase = 'staff') {
   const target = ingressTarget(app);
-  return {
+  const topology = {
     domains: list([
       {
         hostname: target.host,
@@ -61,7 +62,7 @@ export function healthyTopology(app) {
         id: 'ci',
         name: 'staging-ci-health',
         decision: 'non_identity',
-        include: [{ service_token: { token_id: 't' } }],
+        include: [{ service_token: { token_id: fixtureHealthTokenId } }],
       },
     ]),
     subdomain: {
@@ -69,6 +70,12 @@ export function healthyTopology(app) {
       result: { enabled: false, previews_enabled: false },
     },
   };
+  // Bootstrap (R-b): no allow policy, only the CI health service token.
+  if (phase === 'bootstrap')
+    topology.policies.result = topology.policies.result.filter(
+      (policy) => policy.decision === 'non_identity'
+    );
+  return topology;
 }
 
 /** Routes a fixture URL to its observation, or null when it is not topology. */

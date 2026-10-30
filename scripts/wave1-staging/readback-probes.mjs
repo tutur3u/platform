@@ -144,6 +144,32 @@ export async function hostProbes({
         (!expectedSha || info?.commitHash === expectedSha),
       `build-info -> ${identity.status || identity.error}`
     );
+    // N17 through the issuer Worker: client-injected Vercel bypass controls
+    // (header and query) never mint a `_vercel*` cookie or leak `x-vercel-*`.
+    if (target.issuer) {
+      const injected = await probe(
+        fetcher,
+        `${base}/login?x-vercel-protection-bypass=guess&x-vercel-set-bypass-cookie=true`,
+        {
+          headers: {
+            'cf-access-client-id': serviceToken.clientId,
+            'cf-access-client-secret': serviceToken.clientSecret,
+            'x-vercel-protection-bypass': 'guess',
+            'x-vercel-set-bypass-cookie': 'samesitenone',
+          },
+        }
+      );
+      const leaked = [...(injected.headers?.keys?.() ?? [])].filter((name) =>
+        name.startsWith('x-vercel-')
+      );
+      add(
+        'N17',
+        injected.status > 0 &&
+          !injected.setCookie.some((cookie) => /^\s*_vercel/iu.test(cookie)) &&
+          leaked.length === 0,
+        `injected bypass controls -> ${injected.status || injected.error}${leaked.length ? ` leaked ${leaked.join(',')}` : ''}`
+      );
+    }
   } else add('R4', false, 'CF_ACCESS_HEALTH_CLIENT_ID/SECRET not provided');
   return checks;
 }
