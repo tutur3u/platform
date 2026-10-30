@@ -239,8 +239,8 @@ Release owner must provide and verify these before hosted acceptance:
 Run the #7093 Playwright config with `WAVE1_STAGING_APP=web`,
 `WAVE1_STAGING_BASE_URL=https://web.staging.tutur3u.com` and its required
 private inputs. Enable each slice flag only for an accepted staging deployment.
-The central issuer remains `https://staging.tutur3u.com` for the existing
-satellite suites; the Web suite signs in through its own candidate origin.
+The canonical staging session issuer is `https://web.staging.tutur3u.com`
+for both satellite suites and the Web suite.
 Production/canonical hosts still fail before Chromium launches; request and
 WebSocket fences reject production egress and non-auth writes. The suite does
 not provision anything. Hosted EN/VI/session acceptance, source identity, real
