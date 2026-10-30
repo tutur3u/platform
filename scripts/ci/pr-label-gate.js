@@ -90,6 +90,7 @@ const HEAVY_PR_WORKFLOWS = [
   'tutoring-teacher-hours-contract.yaml',
   'type-check.yaml',
   'web-start-candidate.yaml',
+  'workspace-permission-scope-contract.yaml',
 ];
 
 // Sub-minute, script-only or security checks that stay on for every PR push.
