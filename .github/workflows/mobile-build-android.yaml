@@ -74,13 +74,6 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Prepare development Firebase configuration
-        env:
-          FIREBASE_DEVELOPMENT_GOOGLE_SERVICES_JSON: ${{ secrets.FIREBASE_DEVELOPMENT_GOOGLE_SERVICES_JSON }}
-        run: |
-          python3 ../../scripts/mobile-deployment/test_firebase_android_development.py
-          python3 ../../scripts/mobile-deployment/firebase-android-development.py
-
       - name: Build APK (development flavor)
         run: flutter build apk --flavor development --target lib/main_development.dart
 

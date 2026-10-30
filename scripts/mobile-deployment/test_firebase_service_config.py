@@ -66,6 +66,18 @@ class FirebaseConfigTests(unittest.TestCase):
             self.assertEqual(values['BUNDLE_ID'], 'com.tuturuuu.app.mobile.dev')
             self.assertEqual(values['GOOGLE_APP_ID'], '1:90814255724:ios:1081d3cc2616ca2a283e49')
 
+    def test_android_development_config_is_committed_and_pr_has_no_secrets(self):
+        root = Path(__file__).resolve().parents[2]
+        path = root / 'apps/mobile/android/app/src/development/google-services.json'
+        values = json.loads(path.read_text())
+        self.assertEqual(values['project_info']['project_id'], 'tuturuuu-mobile-dev')
+        client = values['client'][0]['client_info']
+        self.assertEqual(client['mobilesdk_app_id'], '1:90814255724:android:049567a22fe2e1b5283e49')
+        self.assertEqual(client['android_client_info']['package_name'], 'com.tuturuuu.app.mobile.dev')
+        workflow = (root / '.github/workflows/mobile-build-android.yaml').read_text()
+        self.assertIn('pull_request:', workflow)
+        self.assertNotIn('secrets.', workflow)
+
     def test_wrong_flavor_is_rejected(self):
         _, app, resources, _ = self.fixture("ios")
         self.write(resources / "GoogleService-Info.plist", {**self.values, "GOOGLE_APP_ID": "other-flavor"})

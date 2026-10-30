@@ -13,3 +13,6 @@ google-services.json
 key.properties
 **/*.keystore
 **/*.jks
+
+# Public Firebase development client configuration; other flavors stay injected.
+!app/src/development/google-services.json

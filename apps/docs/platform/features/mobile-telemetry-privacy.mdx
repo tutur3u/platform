@@ -148,10 +148,9 @@ and with `flutter test --dart-define=CONSENT_GATE_QA=true`; the
 `consent_gate_qa_test.dart` regression covers release exclusion and development
 Firebase identity on both mobile platforms.
 
-Development iOS and macOS flavor plists are committed; Android native config is
-injected into `android/app/src/development/google-services.json` from the CI
-secret `FIREBASE_DEVELOPMENT_GOOGLE_SERVICES_JSON` (raw JSON). Local developers
-place their downloaded dev config at the same ignored path. Dart development
+Development iOS/macOS flavor plists and Android's
+`android/app/src/development/google-services.json` are committed public Firebase
+client configuration. PR builds receive no Firebase CI secret. Dart development
 options and native resources use `tuturuuu-mobile-dev`. Earlier development
 builds targeted `tuturuuu-mobile` for analytics and crash data; this corrects
 development only. Staging still targets production and is tracked separately.
