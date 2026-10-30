@@ -13,7 +13,11 @@ export const ben = id(12);
 export const SECRET_TEXT = 'BEN-PRIVATE-SPEECH';
 
 export type Row = Record<string, unknown>;
-export function chunk(sequence: number, accountId: string | null, text: string): Row {
+export function chunk(
+  sequence: number,
+  accountId: string | null,
+  text: string
+): Row {
   return {
     id: id(100 + sequence),
     session_id: sessionId,

@@ -46,12 +46,7 @@ vi.mock('@tuturuuu/ai/studio/metering', () => ({
 
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import { finalizeMeetAi } from './finalize';
-import {
-  bearer,
-  buildTables,
-  fakeDb,
-  sessionId,
-} from './finalize.fixtures';
+import { bearer, buildTables, fakeDb, sessionId } from './finalize.fixtures';
 
 function setup() {
   const tables = {
@@ -117,7 +112,10 @@ describe('finalizer through the real billing wrapper', () => {
     const tables = setup();
     // What AbortSignal.timeout(55s) produces when the provider never answers.
     h.fetch.mockRejectedValue(
-      new DOMException('The operation was aborted due to timeout', 'TimeoutError')
+      new DOMException(
+        'The operation was aborted due to timeout',
+        'TimeoutError'
+      )
     );
     expect(await call()).toEqual({ status: 'abandoned' });
     expect(await call()).toEqual({ status: 'abandoned' });
@@ -158,7 +156,13 @@ describe('finalizer through the real billing wrapper', () => {
     const tables = setup();
     h.fetch.mockImplementation(async () =>
       json(
-        { error: { code: 429, message: 'Quota exceeded', status: 'RESOURCE_EXHAUSTED' } },
+        {
+          error: {
+            code: 429,
+            message: 'Quota exceeded',
+            status: 'RESOURCE_EXHAUSTED',
+          },
+        },
         429
       )
     );

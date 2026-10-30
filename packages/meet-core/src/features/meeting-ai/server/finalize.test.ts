@@ -22,13 +22,10 @@ vi.mock('./artifact-billing', () => ({
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import { MeetAiError } from './access';
 import { finalizeMeetAi } from './finalize';
-import { finishMeetAiSession } from './finish-session';
-import { BILLING_UNRECONCILED, markSettledUncharged } from './notes-billing';
-
 import {
   ada,
-  ben,
   bearer,
+  ben,
   buildTables,
   chunk,
   type Fail,
@@ -41,6 +38,8 @@ import {
   sessionId,
   ws,
 } from './finalize.fixtures';
+import { finishMeetAiSession } from './finish-session';
+import { BILLING_UNRECONCILED, markSettledUncharged } from './notes-billing';
 
 let failing: Fail | null = null;
 function setup(overrides: { chunks?: Row[]; session?: Row } = {}) {
