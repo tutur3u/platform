@@ -20,3 +20,25 @@ export async function canManageLegacyRecording({
   if (error) throw new Error('Failed to verify recording permissions');
   return data === true;
 }
+
+/**
+ * Recorded audio carries the same spoken content as the transcript, so it is
+ * readable only by the identity recorded on the session, the meeting host and
+ * workspace admins. Any lookup failure throws so callers fail closed.
+ */
+export async function canReadLegacyRecordingMedia({
+  supabase,
+  wsId,
+  userId,
+  creatorId,
+  recordedBy,
+}: {
+  supabase: TypedSupabaseClient;
+  wsId: string;
+  userId: string;
+  creatorId: string | null;
+  recordedBy: string | null;
+}): Promise<boolean> {
+  if (recordedBy === userId) return true;
+  return canManageLegacyRecording({ supabase, wsId, userId, creatorId });
+}

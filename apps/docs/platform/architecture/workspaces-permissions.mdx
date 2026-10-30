@@ -644,3 +644,37 @@ Regression coverage: infrastructure's `infrastructure-admin-access.test.ts`,
 rate-limits `workspace-secrets/route.test.ts`, and workspace secrets
 `managed-cron.test.ts` (which also covers renaming a normal secret into
 `MANAGED_CRON_ENABLED` and the workspace and id binding of the lookup).
+
+## Workspace deletion and retained history
+
+For non-personal workspaces, deletion removes workspace-owned realtime log
+aggregations, documents including their meeting-document links, and team membership
+rows. Team member user accounts and memberships in other workspaces survive.
+Migration `20261030112010` repairs those three foreign keys with `ON DELETE CASCADE NOT VALID`;
+`20261030112020` validates them separately. New writes and cascading deletes are
+enforced immediately during the NOT VALID phase. The document `ws_id` index
+is created concurrently by `20261030112000` before the guarded foreign-key swap. Validation has a 15-minute statement timeout for the
+unpruned realtime log table, whose production size must be checked before release;
+its SHARE UPDATE EXCLUSIVE lock allows ordinary writes. Rollback first commits a
+NOT VALID swap, then validates the original definitions in a separate transaction
+using the `rollback-validate.sql` file, after swap/index locks are released.
+These database rules apply to
+all app surfaces using the shared workspace deletion path. Documents without a
+workspace, documents in another workspace, and the creator's account survive.
+
+This is not a blanket history-deletion policy. Immutable topic delivery receipts,
+billing reservations, provider-operation journals, bank events, cross-workspace
+chat attachments, healthcare measurements, and other retained references keep
+their existing guards. Their populated workspaces may still reject hard deletion.
+Mastermind must decide whether to retain a soft-deleted workspace or approve a
+durable archive and scoped reference migration before changing those rules.
+Personal-workspace deletion restrictions also remain in force.
+
+Regression coverage is
+`apps/database/supabase/tests/workspace-delete-fk-cascade.sql`: populated deletion,
+no document/log/meeting/membership orphans, surviving member accounts and unrelated
+data, immediate rejection of
+new FK orphans, and continued rejection for retained delivery/personal workspaces.
+The catalog audit and full-schema up/down/up verifier live under
+`apps/database/verification/workspace-delete-*`. These checks exercise local SQL
+and database roles; they do not establish HTTP, staging, or production acceptance.

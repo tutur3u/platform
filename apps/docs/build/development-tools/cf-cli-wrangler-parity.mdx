@@ -74,6 +74,8 @@ The existing native profiles qualify only their declared configuration fields.
 | Cron, routes, custom domains | top-level `triggers`, `routes` | `worker.triggers`, `worker.domains`; `cf workers triggers deploy` | Parity in config; verify applied settings at cutover |
 | Durable Object migrations | `migrations` tags | `worker.exports` lifecycle declaration; `cf migrate` does not convert it | Manual conversion; needs a disposable rehearsal before production |
 | D1 migrations | `wrangler d1 migrations apply` | `cf d1 migrations apply <database-id> --dir <directory>`; remote unless `--local` | Requires UUID, migration directory/table and local-persistence parity; binding names are rejected |
+| Installed cf config conversion and drift helpers | `convertToWranglerConfig`, `wranglerConfig` names inside cf | Pinned cf exposes only these internal names | `cf-config-internals`: admit compatibility references until equivalent cf APIs replace them; no Wrangler CLI invocation |
+| Deployment-source snapshots | API value `last_deployed_from: wrangler` | `cf` is also accepted; historical provenance values remain distinct | `deployment-source-compatibility`: retain recognition until supported snapshots stop reporting the legacy value; no Wrangler CLI invocation |
 | Live logs | `wrangler tail` | Not supported (cf docs) | Gap |
 | Prebuilt Void deploy | n/a | `void deploy` always builds and provisions; `--skip-build` is static-only (Void 1.1.12 and 1.2.1) | Gap for the exact-artifact contract |
 | OpenNext publication | `opennextjs-cloudflare deploy` invokes Wrangler | None | Gap until Start on Void |
@@ -271,7 +273,9 @@ CI
 compares the allowlist with its base commit (`HEAD^1` of the pull request merge ref)
 and fails if that commit is unavailable.
 
-Current gaps: `paused-runtime` (retained paused runtimes), `opennext-adapter`,
+Current gaps: `cf-config-internals` (installed cf API names),
+`deployment-source-compatibility` (historical Worker snapshot provenance),
+`paused-runtime` (retained paused runtimes), `opennext-adapter`,
 `void-wave1-publication`, `pending-migration` (services awaiting their parity PR),
 `shared-toolchain` (root CLI provider, trusted-dependency and policy files),
 `parity-tooling` (the migration parity checker, which reads former Wrangler configs),

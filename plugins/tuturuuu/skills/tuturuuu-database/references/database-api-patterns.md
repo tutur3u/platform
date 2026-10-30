@@ -551,7 +551,50 @@ The first-message rollback restores main's prior chat_create_conversation body
 and service-only ACL. Refuse retained creation receipts: removing retry identities
 can resurrect deleted conversations. Verify actual apply/rollback/reapply and
 prior catalog equality with apps/database/verification/chat-first-message-rollback-*.sql.
+### Workspace delete foreign-key audit
 
+Audit the full migrated local catalog before replacing a delete action. Follow
+referencing tables recursively with `pg_constraint` and join `pg_attribute` for
+nullability. For PostgreSQL column-specific SET NULL actions, inspect
+`confdelsetcols`: a different NOT NULL column in the composite key does not make
+the SET NULL action invalid. A NO ACTION/RESTRICT candidate may already resolve
+through another ownership cascade; reproduce with populated rows before changing
+it. Inspect DELETE triggers and policy functions as well as FKs.
+
+Use `apps/database/verification/workspace-delete-catalog-audit.sql` for the query.
+The D regression is `supabase/tests/workspace-delete-fk-cascade.sql`. Its companion
+`workspace-delete-fk-roundtrip.py` takes an isolated workspace-delete Docker DB
+container and a private output directory, compares complete schema dump bytes
+with a fixed pg_dump restrict key, tests NOT VALID and validated behavior, and
+restores main's schema. Run it under `ttr resources run --` before applying D with
+`bun sb:up --workdir <isolated-root>` from `apps/database`.
+
+Preserve immutable delivery, billing, provider-operation and cross-workspace
+history until an explicit retention decision. FK CASCADE cannot bypass an
+immutable DELETE trigger. Keep the NOT VALID swap and validation in separate
+migration files; promoting both files applies both, so separate deployment needs
+separate promotion. Rollbacks must restore original update/delete actions and
+validation state; restoring a previously validated FK entails a validation scan.
+Commit rollback NOT VALID swaps before running their separate rollback validation
+file; never combine both files in one transaction and hold swap/index locks over
+the scan. The roundtrip verifier asserts that validation retains no ACCESS
+EXCLUSIVE lock on the workspace or affected child tables. Allow 15 minutes for
+validation of the unpruned realtime log table; check its size/row estimate,
+meeting/document workspace mismatches, and long workspace transactions before
+release. The document ws_id index uses CREATE INDEX CONCURRENTLY IF NOT EXISTS in a
+separate single-statement migration before the guarded FK swap. If an index with
+that name predates D on a target, preserve it rather than dropping it on rollback.
+
+### Local independent-session pgTAP fixtures
+
+Use `tests/helpers/local-dblink.inc` before transactions and fixture writes.
+Stock Supabase uses SCRAM on `db.supabase.internal:5432`, while loopback trust
+does not satisfy non-superuser dblink authentication even when a password is
+supplied. Preserve `test.dblink_connstr` for other disposable runners and treat
+the helper's connection-unavailable TAP skip as missing concurrency evidence,
+not a passing assertion. Verify both the default connection and unavailable-port
+skip path; keep later SQL errors fatal. See the local Supabase development
+runbook for setup and owned-stack cleanup.
 
 ### Meet consent and retention adoption
 

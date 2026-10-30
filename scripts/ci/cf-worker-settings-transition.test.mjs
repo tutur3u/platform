@@ -8,12 +8,23 @@ import {
   settingsPlan,
 } from './cf-worker-settings.mjs';
 
-const CRON_CONTROL = JSON.parse(
+const BASELINE = JSON.parse(
   readFileSync(
     new URL('./fixtures/cf-worker-parity/cron-control.json', import.meta.url),
     'utf8'
   )
 );
+const CRON_CONTROL = {
+  identity: {
+    ...BASELINE.identity,
+    vars: { ...BASELINE.identity.vars, CRON_CONTROL_WEB_MODE: 'off' },
+  },
+  previousIdentity: BASELINE.identity,
+  transition: {
+    decision: 'CRON-WEB-MODE-1: regression fixture for additive disabled mode',
+    fields: ['vars'],
+  },
+};
 const plan = settingsPlan(CRON_CONTROL);
 const accountId = CRON_CONTROL.identity.accountId;
 
@@ -45,11 +56,20 @@ function withWebOrigin(attributes) {
 /** Fake read-only API whose live Worker matches `identity` (plus overrides). */
 function liveWorker(identity, { settings = {}, ...overrides } = {}) {
   const responses = {
+    service: {
+      default_environment: { script: { last_deployed_from: 'cf' } },
+    },
     settings: {
       compatibility_date: identity.compatibilityDate,
       compatibility_flags: identity.compatibilityFlags,
       usage_model: 'standard',
-      observability: { enabled: true, head_sampling_rate: 0.05 },
+      observability: {
+        enabled: true,
+        head_sampling_rate: 0.05,
+        ...(identity.observability.traces && {
+          traces: { enabled: false, head_sampling_rate: 0.05, persist: true },
+        }),
+      },
       bindings: bindingsFor(identity),
       ...settings,
     },
@@ -71,7 +91,11 @@ function liveWorker(identity, { settings = {}, ...overrides } = {}) {
     fetchImpl: async (url, init) => {
       assert.equal(init.method, 'GET');
       calls.push(url);
-      const key = url.includes('/zones?') ? 'zones' : url.split('/').at(-1);
+      const key = url.includes('/workers/services/')
+        ? 'service'
+        : url.includes('/zones?')
+          ? 'zones'
+          : url.split('/').at(-1);
       assert.ok(Object.hasOwn(responses, key), `unexpected endpoint ${url}`);
       return {
         ok: true,
@@ -214,7 +238,7 @@ test('first publication: previous live settings may move only to the target', as
   const live = liveWorker(plan.previous);
   const before = await captureBefore({ plan, ...credentials(live) });
   assert.equal(before.stage, 'previous');
-  assert.equal(live.calls.length, 7, 'one bounded read for both stages');
+  assert.equal(live.calls.length, 8, 'one bounded read for both stages');
   const published = liveWorker(plan.target);
   const after = await captureAfter({ plan, ...credentials(published) });
   assert.equal(after.stage, 'target');
@@ -503,4 +527,171 @@ test('prototype-shaped binding names cannot bypass verification', async () => {
     'undeclared plain_text binding <undeclared binding #14>',
     'undeclared durable_object_namespace binding <undeclared binding #14>',
   ]);
+});
+
+const dashboardPlan = settingsPlan(BASELINE);
+function dashboardWorker(change = () => {}) {
+  const live = {
+    settings: {
+      bindings: bindingsFor(BASELINE.identity),
+    },
+    service: {
+      default_environment: { script: { last_deployed_from: 'dash' } },
+    },
+    deployments: {
+      deployments: [
+        {
+          id: 'live',
+          versions: [
+            {
+              version_id: BASELINE.dashboardAdmission.versionId,
+              percentage: 100,
+            },
+          ],
+        },
+      ],
+    },
+  };
+  change(live);
+  return liveWorker(BASELINE.identity, live);
+}
+
+test('same-version dashboard preflight passes with exact fixture settings', async () => {
+  const before = await captureBefore({
+    plan: dashboardPlan,
+    ...credentials(dashboardWorker()),
+  });
+  assert.deepEqual(before.schedules, [...BASELINE.identity.crons].sort());
+  assert.equal(
+    BASELINE.identity.vars.CRON_CONTROL_ENABLED_JOBS,
+    'database-cron-history-retention'
+  );
+  assert.ok(!Object.hasOwn(BASELINE.identity.vars, 'CRON_CONTROL_WEB_MODE'));
+  assert.deepEqual(BASELINE.identity.observability.traces, {
+    enabled: false,
+    headSamplingRate: 0.05,
+    persist: true,
+  });
+  const after = await captureAfter({
+    plan: dashboardPlan,
+    ...credentials(liveWorker(BASELINE.identity)),
+  });
+  compareTransition(dashboardPlan, before, after);
+});
+
+test('dashboard cron comparison ignores order on both sides', async () => {
+  const unordered = structuredClone(dashboardPlan);
+  unordered.target.crons.reverse();
+  const api = dashboardWorker((live) => {
+    live.schedules = {
+      schedules: BASELINE.identity.crons.map((cron) => ({ cron })).reverse(),
+    };
+  });
+  await captureBefore({ plan: unordered, ...credentials(api) });
+});
+
+for (const [label, change] of [
+  [
+    'var',
+    (live) => {
+      live.settings.bindings.find(({ name }) => name === 'WEB_ORIGIN').text =
+        'changed';
+    },
+  ],
+  [
+    'cron',
+    (live) => {
+      live.schedules = { schedules: [{ cron: '1 * * * *' }] };
+    },
+  ],
+  [
+    'binding type',
+    (live) => {
+      live.settings.bindings.at(-1).type = 'kv_namespace';
+    },
+  ],
+  [
+    'binding name',
+    (live) => {
+      live.settings.bindings.at(-1).name = 'OTHER';
+    },
+  ],
+  [
+    'binding class',
+    (live) => {
+      live.settings.bindings.at(-1).class_name = 'Other';
+    },
+  ],
+  [
+    'version',
+    (live) => {
+      live.deployments.deployments[0].versions[0].version_id = 'different';
+    },
+  ],
+  [
+    'traffic split',
+    (live) => {
+      live.deployments.deployments[0].versions = [
+        { version_id: BASELINE.dashboardAdmission.versionId, percentage: 50 },
+        { version_id: 'other', percentage: 50 },
+      ];
+    },
+  ],
+  [
+    'extra secret',
+    (live) => {
+      live.secrets = [...BASELINE.identity.secrets, 'EXTRA'].map((name) => ({
+        name,
+      }));
+    },
+  ],
+  [
+    'missing secret binding',
+    (live) => {
+      live.settings.bindings = live.settings.bindings.filter(
+        ({ name }) => name !== 'SUPABASE_URL'
+      );
+    },
+  ],
+  [
+    'extra secret binding',
+    (live) => {
+      live.settings.bindings.push({ name: 'EXTRA', type: 'secret_text' });
+    },
+  ],
+  [
+    'compatibility date',
+    (live) => {
+      live.settings.compatibility_date = '2026-01-01';
+    },
+  ],
+  [
+    'trace sampling',
+    (live) => {
+      live.settings.observability = {
+        enabled: true,
+        head_sampling_rate: 0.05,
+        traces: { enabled: false, head_sampling_rate: 1, persist: true },
+      };
+    },
+  ],
+]) {
+  test(`dashboard admission rejects ${label} drift`, async () => {
+    await assert.rejects(
+      captureBefore({
+        plan: dashboardPlan,
+        ...credentials(dashboardWorker(change)),
+      })
+    );
+  });
+}
+
+test('unrecorded dashboard deployments fail even with matching settings', async () => {
+  await assert.rejects(
+    captureBefore({
+      plan: { target: BASELINE.identity },
+      ...credentials(dashboardWorker()),
+    }),
+    /no reviewed admission/
+  );
 });
