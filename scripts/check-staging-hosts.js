@@ -32,16 +32,48 @@ function normalizeHost(value) {
     .replace(/\.+$/, '');
 }
 
-// Preserve string contents and escapes while removing source comments in one pass.
+// A `/` after one of these starts a regex literal; after an identifier, number,
+// string or closing bracket it is division. `)` and `}` are ambiguous and read
+// as regex, which is the safe side: the span is kept verbatim, never dropped.
+const REGEX_PRECEDER = /[(,=:[!&|?{};+\-*%<>~^/)}]/;
+const REGEX_KEYWORD =
+  /(?:^|[^\w$.])(?:return|typeof|case|do|else|in|of|void|delete|throw|new|yield|await|instanceof)\s*$/;
+
+/** End index (exclusive) of a regex literal with its flags at `start`, or -1. */
+function regexLiteralEnd(source, start) {
+  if (source[start + 1] === '/' || source[start + 1] === '*') return -1;
+  let inClass = false;
+  for (let i = start + 1; i < source.length; i++) {
+    const char = source[i];
+    if (char === '\n') return -1;
+    if (char === '\\') i++;
+    else if (char === '[') inClass = true;
+    else if (char === ']') inClass = false;
+    else if (char === '/' && !inClass) {
+      // `/*` or `//` right after the closer is a comment, so this was division.
+      if (source[i + 1] === '*' || source[i + 1] === '/') return -1;
+      while (/[a-z]/i.test(source[i + 1] ?? '')) i++;
+      return i + 1;
+    }
+  }
+  return -1;
+}
+
+// Preserve string and regex literal contents while removing source comments in
+// one pass. Not a parser: regex-versus-division is a one-token heuristic.
 function stripComments(source) {
   const result = [];
   let quote = null;
+  let previous = '';
   for (let i = 0; i < source.length; i++) {
     const char = source[i];
     if (quote) {
       result.push(char);
       if (char === '\\') result.push(source[++i] ?? '');
-      else if (char === quote) quote = null;
+      else if (char === quote) {
+        quote = null;
+        previous = char;
+      }
     } else if (char === '"' || char === "'" || char === '`') {
       quote = char;
       result.push(char);
@@ -54,7 +86,23 @@ function stripComments(source) {
     } else if (char === '/' && source[i + 1] === '/' && source[i - 1] !== ':') {
       while (i < source.length && source[i] !== '\n') i++;
       result.push('\n');
-    } else result.push(char);
+    } else {
+      const end =
+        char === '/' &&
+        (previous === '' ||
+          REGEX_PRECEDER.test(previous) ||
+          REGEX_KEYWORD.test(source.slice(Math.max(0, i - 12), i)))
+          ? regexLiteralEnd(source, i)
+          : -1;
+      if (end === -1) {
+        result.push(char);
+        if (!/\s/.test(char)) previous = char;
+      } else {
+        result.push(source.slice(i, end));
+        previous = '0';
+        i = end - 1;
+      }
+    }
   }
   return result.join('');
 }
@@ -204,5 +252,6 @@ module.exports = {
   normalizeHost,
   normalizeSource,
   scannedFile,
+  stripComments,
   violations,
 };
