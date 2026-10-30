@@ -41,14 +41,17 @@ vi.mock('./access', () => ({
   MeetAiError: class extends Error {
     constructor(
       public status: number,
-      message: string
+      message: string,
+      public code?: string
     ) {
       super(message);
     }
   },
 }));
 
+import { MeetAiGenerationError } from '@tuturuuu/ai/meetings/failure';
 import { generateBilledMeetArtifact } from './artifact-billing';
+import { isBillingUnknown, isSettledUncharged } from './notes-billing';
 
 const actor = { userId: 'actor', meetingId: 'meeting', attemptId: 'attempt' };
 beforeEach(() => {
@@ -136,4 +139,81 @@ it('does not execute again when AI Hub rejects an existing attempt', async () =>
     generateBilledMeetArtifact({ transcript: 'hello' }, actor)
   ).rejects.toThrow('already running');
   expect(f.generate).not.toHaveBeenCalled();
+});
+
+it('tags only a definitive provider rejection as uncharged, after its failed settlement is recorded', async () => {
+  const rejection = new MeetAiGenerationError('quota_exceeded', 429);
+  f.generate.mockRejectedValue(rejection);
+  const caught = await generateBilledMeetArtifact(
+    { transcript: 'hello' },
+    actor
+  ).catch((error) => error);
+  expect(caught).toBe(rejection);
+  expect(isSettledUncharged(caught)).toBe(true);
+  expect(isBillingUnknown(caught)).toBe(false);
+  expect(f.settle).toHaveBeenCalledWith(
+    expect.objectContaining({
+      runId: 'run',
+      status: 'failed',
+      actualCredits: 0,
+    })
+  );
+});
+
+it('does not tag a missing-configuration failure as unknown: no request was ever made', async () => {
+  const failure = new MeetAiGenerationError('missing_configuration');
+  f.generate.mockRejectedValue(failure);
+  const caught = await generateBilledMeetArtifact(
+    { transcript: 'hello' },
+    actor
+  ).catch((error) => error);
+  expect(isSettledUncharged(caught)).toBe(true);
+});
+
+it.each([
+  ['a timeout', new MeetAiGenerationError('timeout', null)],
+  ['an abort-style timeout from a plain error', new Error('provider timeout')],
+  [
+    'a network error after the request was sent',
+    new MeetAiGenerationError('network_error', null),
+  ],
+  [
+    'a post-generation parse or output error',
+    new MeetAiGenerationError('runtime_error', null),
+  ],
+])(
+  'treats %s as an unknown outcome even when the zero-credit settlement succeeds',
+  async (_name, failure) => {
+    f.generate.mockRejectedValue(failure);
+    const caught = await generateBilledMeetArtifact(
+      { transcript: 'hello' },
+      actor
+    ).catch((error) => error);
+    // The original error is preserved for the host-facing failure code...
+    expect(caught).toBe(failure);
+    // ...but it can never allow another unattended provider call.
+    expect(isSettledUncharged(caught)).toBe(false);
+    expect(isBillingUnknown(caught)).toBe(true);
+    // The reservation is still released at zero credits.
+    expect(f.settle).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'failed', actualCredits: 0 })
+    );
+    expect(f.generate).toHaveBeenCalledTimes(1);
+  }
+);
+
+it('treats a lost or failed failure settlement as an unknown billed state', async () => {
+  const failure = new Error('provider timeout');
+  f.generate.mockRejectedValue(failure);
+  f.settle.mockRejectedValue(new Error('settlement ack lost'));
+  const caught = await generateBilledMeetArtifact(
+    { transcript: 'hello' },
+    actor
+  ).catch((error) => error);
+  expect(caught).not.toBe(failure);
+  expect(caught).toMatchObject({ status: 503, code: 'billing_unreconciled' });
+  // Neither the original error nor the wrapper may rotate an identity.
+  expect(isSettledUncharged(caught)).toBe(false);
+  expect(isSettledUncharged(failure)).toBe(false);
+  expect(f.generate).toHaveBeenCalledTimes(1);
 });

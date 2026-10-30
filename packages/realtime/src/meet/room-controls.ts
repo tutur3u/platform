@@ -54,7 +54,7 @@ export function applyRoomControl(
   token: MeetRealtimeTokenPayload,
   now: string
 ) {
-  const transcription = applyTranscription(state, message, token);
+  const transcription = applyTranscription(state, message, token, now);
   if (transcription) return transcription;
   if (message.type === 'reaction.send') {
     if (!state.presence[token.userId])

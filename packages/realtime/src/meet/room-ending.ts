@@ -1,11 +1,16 @@
+import { queueTranscriptionFinalization } from './finalization';
 import type { MeetRoomSnapshot } from './room';
 import { failActiveRecording } from './room-recording';
 import { publicationCleanupKey } from './room-tracks';
 
 /** Ending never discards provider cleanup or creates another resource allowance. */
 export function endMeetRoom(state: MeetRoomSnapshot, now: string) {
+  // Consent is cleared below, so the session is queued for notes first.
+  const queued = queueTranscriptionFinalization(state, Date.parse(now), {
+    ending: true,
+  });
   return {
-    ...failActiveRecording(state, now),
+    ...failActiveRecording(queued, now),
     budget: state.budget
       ? {
           ...state.budget,

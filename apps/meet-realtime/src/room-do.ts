@@ -20,6 +20,8 @@ import {
   releaseParticipant,
   remoteMeetTracks,
 } from '../../../packages/realtime/src/meet';
+import { finalizationWake } from '../../../packages/realtime/src/meet/finalization';
+import { drainFinalizations } from '../../../packages/realtime/src/meet/finalization-token';
 import { isMeetMessageWithinLimit } from '../../../packages/realtime/src/meet/message-size';
 import {
   emptyRoomDeadline,
@@ -34,6 +36,7 @@ import { parseMeetRoomSettingsPatch } from '../../../packages/realtime/src/meet/
 import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
 import { normalizeTranscriptionConsent } from '../../../packages/realtime/src/meet/transcription';
 import { personalReceiptStorage } from './personal-receipt-storage';
+import { restoreUsageCounter, stampPendingRequests } from './room-restore';
 import { type RoomServiceState, roomService } from './room-service';
 import { runRoomSfuIntent } from './room-sfu-intent';
 import type { TurnEnv } from './turn-credentials';
@@ -43,6 +46,7 @@ export interface MeetRoomEnv extends TurnEnv {
   CLOUDFLARE_REALTIME_APP_SECRET: string;
   MEET_REALTIME_TOKEN_SECRET: string;
   MEET_ROOM: DurableObjectNamespace;
+  MEET_FINALIZE_URL?: string;
 }
 const SNAPSHOT_KEY = 'snapshot';
 const PRESENCE_SWEEP_MS = 10_000;
@@ -75,26 +79,10 @@ export class MeetRoomDurableObject implements DurableObject {
       const counter = await this.state.storage.get<
         number | { requests: number; writes: number }
       >('usage-http-requests');
-      if (counter !== undefined) {
-        this.snapshot.usage ??= createRoomUsage();
-        this.snapshot.usage.httpRequests = Math.max(
-          this.snapshot.usage.httpRequests,
-          typeof counter === 'number' ? counter : counter.requests
-        );
-        this.snapshot.usage.httpCounterWrites = Math.max(
-          this.snapshot.usage.httpCounterWrites ?? 0,
-          typeof counter === 'number' ? counter : counter.writes
-        );
-      }
-      let migrated =
+      if (counter !== undefined) restoreUsageCounter(this.snapshot, counter);
+      const migrated =
         stored?.transcriptionConsents !== this.snapshot.transcriptionConsents;
-      for (const request of Object.values(this.snapshot.aiRequests ?? {})) {
-        if (request.status === 'pending' && request.startedAt === undefined) {
-          request.startedAt = Date.now();
-          migrated = true;
-        }
-      }
-      if (migrated) {
+      if (stampPendingRequests(this.snapshot) || migrated) {
         this.snapshot.usage ??= createRoomUsage();
         this.snapshot.usage.storageWrites++;
         await this.state.storage.put(SNAPSHOT_KEY, this.snapshot);
@@ -106,10 +94,14 @@ export class MeetRoomDurableObject implements DurableObject {
   private persist() {
     if (this.snapshot.usage) this.snapshot.usage.storageWrites++;
     // Output gating keeps acknowledgements behind the durable write.
-    return this.state.storage.put(SNAPSHOT_KEY, {
+    const write = this.state.storage.put(SNAPSHOT_KEY, {
       ...this.snapshot,
       chat: this.snapshot.chat?.filter((message) => message.retained !== false),
     });
+    const wake = finalizationWake(this.snapshot, this.env.MEET_FINALIZE_URL);
+    return wake === undefined
+      ? write
+      : write.then(() => this.scheduleSweep(wake));
   }
 
   private sockets() {
@@ -691,5 +683,14 @@ export class MeetRoomDurableObject implements DurableObject {
       );
     if (this.snapshot.budget && !this.snapshot.ended)
       await this.scheduleSweep(this.snapshot.budget.expiresAt);
+    // Last, so a slow Meet response never delays presence or media cleanup.
+    const wake = await drainFinalizations(this.env, {
+      read: () => this.snapshot,
+      write: async (next) => {
+        this.snapshot = next;
+        await this.persist();
+      },
+    });
+    if (wake !== undefined) await this.scheduleSweep(wake);
   }
 }

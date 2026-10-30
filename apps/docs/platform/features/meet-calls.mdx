@@ -1431,6 +1431,96 @@ same attempt predicates, exhausted recovery, safe errors and immediate conflict.
 These source fixtures do not identify the original incident's provider status or
 establish deployed database/provider delivery.
 
+## Finalizing a transcription session (automatic notes)
+
+When the host stops transcription, replaces the session, or the room ends
+(host end, empty-room expiry, resource budget), the room Durable Object queues a
+finalization for that session in its own snapshot. No database column or table
+is used. The record holds only identifiers and the consent decision: session,
+meeting and workspace ids, the accounts that consented, and the accounts allowed
+to read the notes under the room policy at that moment (`shareNotes` while live,
+`shareNotesAfterMeeting` once ended). It is queued before consent is cleared, once per
+session id, and not at all when nobody consented.
+
+Delivery is opt-in. The Durable Object calls `MEET_FINALIZE_URL`
+(`https://<meet-origin>/api/meet-ai/finalize`) from its alarm; unset keeps this
+dormant. Set it only after the Meet deployment that serves the route, because the
+Realtime Worker ships first and a 404 is retried within the budget below.
+
+The request carries no content. It is `POST` with an empty JSON body and a bearer
+token signed with `MEET_REALTIME_TOKEN_SECRET` (domain-separated, so a join token
+never validates), expiring in 10 minutes, containing the ids and the consent and
+reader lists. The Meet route has no cookie session; the proxy skips session
+refresh for exactly `POST /api/meet-ai/finalize` and the handler rejects anything
+without a valid token with 401.
+
+Meet side, `finishMeetAiSession` (shared with the host's Finish click):
+
+1. Mark the session ended. The chunks route rejects uploads after this, which is
+   the flush fence.
+2. Read the chunks. Any chunk still `processing` inside its 90 second lease means
+   audio is in flight: the finalizer answers `pending` and the Durable Object retries.
+3. Claim the notes lease with the existing compare-and-set on `notes_status` and
+   `notes_started_at` (`pending` or `failed` to `processing`). Only the winner calls
+   the provider and bills; concurrent ends, the host's click and retries get `409`,
+   which the finalizer reports as `pending`. A finished session answers `completed`
+   without work. Automatic retries use a stable billing identity per session
+   (`<sessionId>:g<failures>`), so the AI Studio ledger refuses a second run
+   instead of charging again.
+4. Apply consent. Only segments whose verified speaker account is on the
+   consented list are used for the transcript, the owner roster and the billing
+   decision. Unattributed speech cannot be shown to be consented and is dropped.
+5. Generate and bill through the existing `generateBilledMeetArtifact`. After
+   the provider output is measured and before the charge settles, the output and
+   the run reference are kept in the existing `notes_usage` column (a
+   `checkpoint`, never shown to readers). If saving the notes then fails, the
+   next delivery settles the stored run again (a settled run is a no-op in
+   `private.settle_ai_studio_run`) and commits the kept output: no second
+   provider call, no second charge. If the output cannot be kept, or a run
+   already exists for the identity, the billed state is unknown: the finalizer
+   answers `abandoned` and never generates again unattended. The failure counter
+   advances, and the identity rotates, only after a definitive provider
+   rejection (an explicit HTTP error response with no output, or no request
+   made at all) whose failed settlement the ledger durably recorded. A timeout,
+   an abort, a network error after the request was sent, an output validation
+   error or a lost settlement acknowledgement keeps the identity and answers
+   `abandoned`, because none of them proves the provider did no billable work.
+   The reservation is still released at zero credits. Only the
+   host's Finish click reconciles, with a fresh identity.
+6. Notify the host and reader accounts who are workspace members, once, by the
+   winner only. The notification is a `system_announcement` with code
+   `meeting_notes_ready` and a link to `/<wsId>/meetings/<meetingId>`: no transcript,
+   summary or other notes text. A dedicated type needs a migration and is a
+   follow-up; the notification is best effort because the notes are already saved.
+
+Delivery fence: every session id a room queues is also written to a
+never-compacted `finalizationFence` (at most 64 sessions per room, then
+automatic notes are refused for that room). Evicting an exhausted record from
+the 8-record ledger therefore cannot re-arm its attempt budget, and a host
+cannot re-queue a retired session id.
+
+Cost bounds: the Durable Object spends an attempt and schedules the next one
+(30s, 1m, 2m, 4m, 8m) before each request, so a restart never extends the budget;
+at most 6 deliveries per session, 8 records per room, 128 accounts per record.
+Meet refuses automatic generation after 3 billed provider failures
+(`notes_unpriced_attempts`); the host can still finish manually. Statuses `402`,
+`413`, `403`, `400` end the record. Credit admission, one reservation per
+claim and settlement are unchanged.
+
+Notes keep the existing `meetNotesSchema` shape (`summary`, `decisions`,
+`actionItems`, `openQuestions`, `calendarSuggestions`, `incomplete`). Schema v2
+(evidence quotes and a `version` field) is not introduced here; it would be a
+superset of this shape and belongs with the M1-F reader. The server finalizer
+marks `incomplete` when any chunk is not completed or sequence numbers have a gap,
+because it has no client chunk count.
+
+Regression coverage: `packages/realtime/src/meet/finalization.test.ts`,
+`packages/realtime/src/meet/finalization-delivery.test.ts` (including the
+eviction-and-replay fence),
+`server/finalize.test.ts` (concurrent ends, flush ordering, bounded retry,
+consent, charged-but-unsaved recovery, unknown-billed-state fence), `server/consent-filter.test.ts`, `server/notes-notification.test.ts`, and the
+proxy tests for the finalize path.
+
 ## Transcription capture scope
 
 Transcription capture and its pending uploads belong to one verified actor,

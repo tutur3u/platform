@@ -7,6 +7,7 @@ import * as api3 from '../app/api/build-info/route';
 import * as api4 from '../app/api/meet-ai/[wsId]/[meetingId]/chunks/route';
 import * as api5 from '../app/api/meet-ai/[wsId]/[meetingId]/followups/route';
 import * as api6 from '../app/api/meet-ai/[wsId]/[meetingId]/route';
+import * as api23 from '../app/api/meet-ai/finalize/route';
 import * as api7 from '../app/api/meet-call/[meetingId]/assistant/personal/route';
 import * as api8 from '../app/api/meet-call/[meetingId]/assistant/review/route';
 import * as api9 from '../app/api/meet-call/[meetingId]/assistant/route';
@@ -113,6 +114,13 @@ export const meetEndpoints: Endpoint[] = [
             meetingId: routeParam(params, 'meetingId'),
           }),
         }),
+    },
+  },
+  {
+    // Room-signed server call; authenticated by its bearer token, not a session.
+    pattern: '/api/meet-ai/finalize',
+    methods: {
+      POST: (request) => api23.POST(request),
     },
   },
   {
