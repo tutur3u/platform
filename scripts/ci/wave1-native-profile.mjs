@@ -31,9 +31,12 @@ export function profileFor(app, environment, subdomain) {
     name,
     host,
     secrets:
-      environment === 'production' && app === 'calendar'
-        ? [...settings.secrets, 'GOOGLE_REDIRECT_URI']
-        : settings.secrets,
+      environment === 'production'
+        ? app === 'calendar'
+          ? [...settings.secrets, 'GOOGLE_REDIRECT_URI']
+          : settings.secrets
+        : // Staging-only names (Access JWT and service token) never reach production.
+          [...settings.secrets, ...(settings.stagingSecrets ?? [])],
     accountId: profiles.accountId,
   };
 }

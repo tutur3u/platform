@@ -43,6 +43,7 @@ jobs:
     env:
       APP: ${{ inputs.app }}
       PROFILE: production
+      CALENDAR_DEPLOYMENT_PROFILE: production
       SOURCE_SHA: ${{ github.sha }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
@@ -86,6 +87,7 @@ jobs:
         timeout-minutes: 5
         run: |
           node scripts/ci/wave1-native-artifact.mjs prepare "$APP" production "$SOURCE_SHA"
+          if [ "$APP" = calendar ]; then node scripts/ci/calendar-host-scan.mjs "apps/$APP/dist" production; fi
           node scripts/ci/wave1-native-runtime.mjs "$APP" production "$SOURCE_SHA"
           node scripts/ci/wave1-native-publish.mjs dry-run "$APP" production "$SOURCE_SHA"
           node scripts/ci/wave1-native-artifact.mjs verify "$APP" production "$SOURCE_SHA"

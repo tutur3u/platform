@@ -320,6 +320,63 @@ state and absence of further executions. Preserve the D1 ledger and provider/aud
 receipts: deleting a Worker does not restore consumed admission or permit replay.
 No deletion or other provider mutation is performed by these source tests.
 
+## Calendar per-environment hosts and Access
+
+Each Calendar artifact serves exactly one root host. `CALENDAR_DEPLOYMENT_PROFILE`
+is a required build input with no default. `production` serves
+`calendar.tuturuuu.com`, and `staging` serves `calendar.staging.tutur3u.com`.
+`vite.config.mts` validates the value and inlines it, so the other branch folds
+away at build time. A missing or unknown value fails the build. `development`
+is accepted only by the dev server, which `dev:app` sets explicitly; builds
+refuse it. Every artifact answers the other environment's host with 404 before
+middleware, assets or SSR.
+
+Who sets it:
+
+- `wave1-native-app.yaml` passes the matrix profile.
+- `wave1-native-production.yaml`, the `calendar-native` job in
+  `mail-calendar-tasks-builds.yaml`, and both Vercel Calendar workflows set
+  `production`.
+- `turbo.json` hashes the value, so the two profiles never share a cache entry.
+- Vitest pins `production` in `vitest.config.mts`; the profile tests re-import
+  the config under each profile and the unset and unknown cases.
+
+`scripts/ci/calendar-host-scan.mjs` scans the original and restored sealed
+bytes in both directions:
+
+- The production bytes must not contain `calendar.staging.tutur3u.com`.
+- The staging bytes must not contain the production Supabase project ref.
+- Neither may contain the retired smoke host.
+- Every folded `rootHosts` literal must equal the profile's single host. An
+  unfolded list fails.
+
+`wave1-native-runtime.mjs` also starts each artifact on the other
+environment's host and requires 404 (N8/N9).
+
+The staging artifact is reachable only through Cloudflare Access, and it
+verifies the `Cf-Access-Jwt-Assertion` header itself:
+
+- **JWT check:** RS256, the team issuer and the application AUD, through
+  `@tuturuuu/utils/cloudflare-access`. A missing or invalid token gets 403
+  before any middleware or asset work.
+- **Service token:** server-side forwards to the issuer carry the Calendar
+  service token only when the target origin is exactly
+  `https://web.staging.tutur3u.com` and the fetch uses `redirect: 'manual'`.
+  If the token is missing, the forward fails with 503 without contacting the
+  issuer.
+- **Credential stripping:** every forward removes client Access headers
+  (`cf-access-jwt-assertion`, `cf-access-authenticated-user-email`,
+  `cf-access-client-id`, `cf-access-client-secret`) and the `CF_Authorization`,
+  `CF_AppSession` and `CF_Binding` cookies, matched by exact parsed name.
+- **Secret names:** the staging profile adds the Worker secret names
+  `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`, `CF_ACCESS_CLIENT_ID` and
+  `CF_ACCESS_CLIENT_SECRET`. Production never requires them.
+
+The workerd gate serves fixture team keys and checks that missing,
+foreign-key, wrong-AUD, expired and malformed tokens get 403 (N19). The
+service-token origin, redirect and stripping cases are unit-tested in
+`staging-access.test.ts` (N18).
+
 ## Meet off-canonical profile
 
 `apps/meet/void.staging.config.ts` is selected only by

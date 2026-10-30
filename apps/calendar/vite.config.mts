@@ -6,6 +6,7 @@ import { startBridgeNodeBuiltinsPlugin } from '@tuturuuu/start-bridge/vite/rsc';
 import react from '@vitejs/plugin-react';
 import { defineConfig, type UserConfig } from 'vite-plus';
 import { voidPlugin } from 'void';
+import { resolveCalendarDeploymentProfile } from './src/runtime/deployment-profile';
 import { CALENDAR_FUNCTION_BASE } from './src/runtime/native-function-config';
 import { createCalendarNativePortResolver } from './src/runtime/native-port-resolver';
 
@@ -29,6 +30,16 @@ const bridge = startBridgePreset({
     '@opennextjs/cloudflare',
   ],
 });
+// No default: build, dev and preview all fail unless the profile is explicit.
+// Only the dev server accepts `development`; builds need production/staging.
+const deploymentProfile = (command: 'build' | 'serve') =>
+  JSON.stringify(
+    resolveCalendarDeploymentProfile(
+      process.env.CALENDAR_DEPLOYMENT_PROFILE,
+      command
+    )
+  );
+
 export default defineConfig(
   ({ command }): UserConfig => ({
     base: bridge.base,
@@ -130,6 +141,7 @@ export default defineConfig(
     },
     define: {
       ...bridge.define,
+      'process.env.CALENDAR_DEPLOYMENT_PROFILE': deploymentProfile(command),
       'process.env.NEXT_PUBLIC_SUPABASE_URL': JSON.stringify(
         process.env.NEXT_PUBLIC_SUPABASE_URL
       ),
@@ -147,6 +159,7 @@ export default defineConfig(
       client: {
         define: {
           ...bridge.clientDefine(command),
+          'process.env.CALENDAR_DEPLOYMENT_PROFILE': deploymentProfile(command),
         },
       },
     },

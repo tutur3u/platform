@@ -257,6 +257,7 @@ jobs:
     timeout-minutes: 45
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      CALENDAR_DEPLOYMENT_PROFILE: production
       NEXT_PUBLIC_SUPABASE_URL: https://calendar-ci.supabase.invalid
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_calendar_ci_placeholder
       NEXT_PUBLIC_APP_URL: https://calendar-ci.invalid
@@ -301,6 +302,8 @@ jobs:
       - name: Build native Calendar with the official Void plugin
         id: calendar-native-build
         run: bun run --cwd apps/calendar build
+      - name: Calendar production artifact host scan
+        run: node scripts/ci/calendar-host-scan.mjs apps/calendar/dist production
       - name: Capture generated Calendar route tree evidence
         if: always()
         env:
