@@ -144,13 +144,13 @@ const callers = Object.entries(workflows).flatMap(([file, workflow]) =>
   )
 );
 for (const row of cases) {
-  test('credential event/caller matrix: ' + row.name, () => {
+  test(`credential event/caller matrix: ${row.name}`, () => {
     const context = scope(row);
     for (const name of ['PROXY_API_KEY', 'NEXT_PUBLIC_PROXY_API_KEY']) {
       assert.equal(
         credential(unit.jobs['test-shards'].env[name], context),
         row.allowed ? credentials[name] : '',
-        'unit shard: ' + name
+        `unit shard: ${name}`
       );
     }
     assert.equal(
@@ -167,12 +167,12 @@ for (const row of cases) {
       assert.notEqual(
         job.secrets,
         'inherit',
-        file + ':' + jobId + ' must map credentials explicitly'
+        `${file}:${jobId} must map credentials explicitly`
       );
       assert.equal(
         credential(job.secrets?.CODECOV_TOKEN, context),
         row.allowed ? credentials.CODECOV_TOKEN : '',
-        file + ':' + jobId
+        `${file}:${jobId}`
       );
       const forwarded = credential(job.secrets?.CODECOV_TOKEN, context);
       assert.equal(

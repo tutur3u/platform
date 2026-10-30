@@ -159,8 +159,8 @@ function identity(ts, start, declaration = false) {
         .replace(/\bint\b/g, 'int4')
         .replace(/\bboolean\b/g, 'bool');
     });
-  const name = names.length === 1 ? 'public.' + names[0] : names.join('.');
-  return { name, signature: name + '(' + types.join(',') + ')', end: i + 1 };
+  const name = names.length === 1 ? `public.${names[0]}` : names.join('.');
+  return { name, signature: `${name}(${types.join(',')})`, end: i + 1 };
 }
 
 function definitions(sql) {
@@ -179,7 +179,7 @@ function definitions(sql) {
     )
       return [];
     const body = options.find((t) => t.kind === 'body' || t.kind === 'string');
-    if (!body) throw new Error('Missing function body: ' + id.signature);
+    if (!body) throw new Error(`Missing function body: ${id.signature}`);
     const digest = crypto
       .createHash('sha256')
       .update(JSON.stringify(ts.map(({ value, kind }) => [kind, value])))

@@ -172,7 +172,7 @@ test('historical exceptions bind path, overload, source and ACL bytes', (t) => {
   assert.equal(check().length, 1);
   fs.writeFileSync(
     path.join(root, file),
-    original + '\ngrant execute on function public.probe(uuid) to anon;'
+    `${original}\ngrant execute on function public.probe(uuid) to anon;`
   );
   assert.equal(check().length, 1);
   fs.writeFileSync(path.join(root, file), original);
@@ -230,16 +230,16 @@ test('bare-name ACL changes invalidate historical exceptions too', (t) => {
   assert.deepEqual(checkRepository({ root, files: [file], baseline }), []);
   fs.writeFileSync(
     path.join(root, file),
-    original + '\ngrant execute on function public.probe to anon;'
+    `${original}\ngrant execute on function public.probe to anon;`
   );
   assert.equal(checkRepository({ root, files: [file], baseline }).length, 1);
 });
 
 for (const role of ['anon', 'PUBLIC']) {
-  test('rejects a later standalone grant to ' + role, (t) => {
+  test(`rejects a later standalone grant to ${role}`, (t) => {
     const { check } = grantFixture(
       t,
-      'grant execute on function public.probe(uuid) to ' + role + ';'
+      `grant execute on function public.probe(uuid) to ${role};`
     );
     const findings = check();
     assert.equal(findings.length, 1);

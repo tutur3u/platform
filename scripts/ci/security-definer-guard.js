@@ -175,7 +175,7 @@ function routineTarget(ts) {
       .filter(Boolean);
   } else if (i !== ts.length) throw new Error('Unsupported routine target');
   return {
-    name: names.length === 1 ? 'public.' + names[0] : names.join('.'),
+    name: names.length === 1 ? `public.${names[0]}` : names.join('.'),
     base: names.at(-1),
     schema: names.length === 1 ? 'public' : names.slice(0, -1).join('.'),
     parts: names.length === 1 ? ['public', ...names] : names,
@@ -278,9 +278,9 @@ function aclStatements(parsed, fn) {
 function reviewFinding(ts, rule, sql) {
   return {
     function: '<migration>',
-    signature: '<' + rule + '>',
+    signature: `<${rule}>`,
     rule,
-    message: 'manual review required: ' + rule,
+    message: `manual review required: ${rule}`,
     ...(sql === undefined
       ? {}
       : {
@@ -519,7 +519,7 @@ function checkRepository({
     );
   const paths =
     files ??
-    execFileSync('git', ['ls-files', '--', MIGRATIONS + '*.sql'], {
+    execFileSync('git', ['ls-files', '--', `${MIGRATIONS}*.sql`], {
       cwd: root,
       encoding: 'utf8',
     })
@@ -549,7 +549,7 @@ function checkRepository({
           path.posix.basename(entry.file).slice(0, 14) <=
             FROZEN_DEFINERS_CUTOFF)
       )
-        inherited.add(entry.file + ':' + entry.signature);
+        inherited.add(`${entry.file}:${entry.signature}`);
     }
   }
   const findings = [];
@@ -666,17 +666,17 @@ if (require.main === module) {
     });
     const report = process.argv[2];
     if (report)
-      fs.writeFileSync(report, JSON.stringify({ findings }, null, 2) + '\n');
+      fs.writeFileSync(report, `${JSON.stringify({ findings }, null, 2)}\n`);
     for (const f of findings)
       console.error(
         f.file +
-          (f.line ? ':' + f.line : '') +
+          (f.line ? `:${f.line}` : '') +
           ': ' +
           f.signature +
           ': ' +
           (f.message ?? f.rule)
       );
-    console.log('Definer guard: ' + findings.length + ' new finding(s).');
+    console.log(`Definer guard: ${findings.length} new finding(s).`);
     process.exitCode = findings.length ? 1 : 0;
   } catch (error) {
     console.error(error.message);

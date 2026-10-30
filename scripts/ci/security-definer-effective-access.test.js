@@ -123,7 +123,7 @@ test('reviewed dynamic exceptions bind the exact path and raw block content', (t
   assert.equal(run([record]).length, 1);
   fs.writeFileSync(
     path.join(root, 'b.sql'),
-    '-- unrelated file comment\n' + sql
+    `-- unrelated file comment\n${sql}`
   );
   assert.deepEqual(run([record]), []);
 });
@@ -135,7 +135,7 @@ test('both guards use the shared frozen entry and require surviving inherited re
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'shared-definers-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.mkdirSync(path.join(root, prefix), { recursive: true });
-  const prior = prefix + '20261027000000_prior.sql';
+  const prior = `${prefix}20261027000000_prior.sql`;
   const file = prefix + entry.file;
   const name = entry.signature.split('(')[0];
   const definition = `CREATE OR REPLACE FUNCTION ${name}(id uuid) RETURNS void LANGUAGE plpgsql

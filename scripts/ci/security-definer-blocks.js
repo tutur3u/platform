@@ -15,7 +15,7 @@ function assertShrinkingBlocks(reviewed, proposed) {
       seen.has(key)
     )
       throw new Error(
-        'Historical block baseline may only shrink: ' + entry.file
+        `Historical block baseline may only shrink: ${entry.file}`
       );
     seen.add(key);
   }
@@ -26,7 +26,7 @@ function assertReviewedBlocks(reviewed, proposed) {
   for (const entry of proposed) {
     if (!keys.has(JSON.stringify(entry)))
       throw new Error(
-        'Reviewed block source or grant roles changed: ' + entry.file
+        `Reviewed block source or grant roles changed: ${entry.file}`
       );
   }
 }

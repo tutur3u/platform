@@ -17,7 +17,7 @@ test('accepts supported permission helpers at call sites', () => {
     'requireWorkspacePermission',
   ]) {
     assert.equal(
-      missingPermissionHelper('export const GET = ' + helper + '({});'),
+      missingPermissionHelper(`export const GET = ${helper}({});`),
       false
     );
   }
@@ -30,7 +30,7 @@ test('comments, strings and bare imports cannot hide an unguarded route', () => 
     'import { getPermissions } from "helper";\n',
   ]) {
     assert.equal(
-      missingPermissionHelper(prefix + 'export async function GET() {}'),
+      missingPermissionHelper(`${prefix}export async function GET() {}`),
       true
     );
   }

@@ -73,52 +73,46 @@ const file =
 for (const record of reviewed.filter(
   (entry) => entry.file === file && entry.grantedRoles
 )) {
-  test(
-    'mixed hardening block binds source and roles: ' + record.grantedRoles,
-    (t) => {
-      const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mixed-block-'));
-      t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-      fs.mkdirSync(path.join(root, path.dirname(file)), { recursive: true });
-      const sql = fs.readFileSync(
-        path.resolve(__dirname, '../..', file),
-        'utf8'
+  test(`mixed hardening block binds source and roles: ${record.grantedRoles}`, (t) => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'mixed-block-'));
+    t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+    fs.mkdirSync(path.join(root, path.dirname(file)), { recursive: true });
+    const sql = fs.readFileSync(path.resolve(__dirname, '../..', file), 'utf8');
+    fs.writeFileSync(path.join(root, file), sql);
+    const run = (records = reviewed) =>
+      checkRepository({
+        root,
+        files: [file],
+        baseline: [],
+        reviewedBlocks: records,
+        historicalBlocks: [],
+      });
+    assert.deepEqual(run(), []);
+    for (const changed of [
+      { ...record, grantedRoles: [] },
+      { ...record, grantedRoles: ['anon'] },
+      { ...record, grantedRoles: [...record.grantedRoles, 'PUBLIC'] },
+      { ...record, file: 'copied.sql' },
+      { ...record, blockDigest: '0'.repeat(64) },
+    ]) {
+      assert.equal(
+        run(reviewed.map((entry) => (entry === record ? changed : entry)))
+          .length,
+        1
       );
-      fs.writeFileSync(path.join(root, file), sql);
-      const run = (records = reviewed) =>
-        checkRepository({
-          root,
-          files: [file],
-          baseline: [],
-          reviewedBlocks: records,
-          historicalBlocks: [],
-        });
-      assert.deepEqual(run(), []);
-      for (const changed of [
-        { ...record, grantedRoles: [] },
-        { ...record, grantedRoles: ['anon'] },
-        { ...record, grantedRoles: [...record.grantedRoles, 'PUBLIC'] },
-        { ...record, file: 'copied.sql' },
-        { ...record, blockDigest: '0'.repeat(64) },
-      ]) {
-        assert.equal(
-          run(reviewed.map((entry) => (entry === record ? changed : entry)))
-            .length,
-          1
-        );
-      }
-      const tag = record.grantedRoles.length === 1 ? 'definers' : 'legacy';
-      fs.writeFileSync(
-        path.join(root, file),
-        sql.replace('DO $' + tag + '$', 'DO /* changed */ $' + tag + '$')
-      );
-      assert.equal(run().length, 1);
-      fs.writeFileSync(
-        path.join(root, file),
-        sql.replaceAll('TO service_role', 'TO anon')
-      );
-      assert.equal(run().length, 2);
     }
-  );
+    const tag = record.grantedRoles.length === 1 ? 'definers' : 'legacy';
+    fs.writeFileSync(
+      path.join(root, file),
+      sql.replace(`DO $${tag}$`, `DO /* changed */ $${tag}$`)
+    );
+    assert.equal(run().length, 1);
+    fs.writeFileSync(
+      path.join(root, file),
+      sql.replaceAll('TO service_role', 'TO anon')
+    );
+    assert.equal(run().length, 2);
+  });
 }
 
 test('trusted reviews reject changed roles even with an unchanged block digest', () => {
@@ -146,7 +140,7 @@ test('trusted CI guard rejects inventory expansion and digest edits, permits shr
     const source = fs.readFileSync(path.join(__dirname, name), 'utf8');
     fs.writeFileSync(path.join(trusted, name), source);
     for (const match of source.matchAll(/require\('\.\/([^']+)'\)/g))
-      copy(match[1].endsWith('.json') ? match[1] : match[1] + '.js');
+      copy(match[1].endsWith('.json') ? match[1] : `${match[1]}.js`);
   }
   copy('security-definer-guard.js');
   fs.copyFileSync(

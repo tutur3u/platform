@@ -16,7 +16,7 @@ for (const searchPath of [
   'SET search_path TO pg_catalog, pg_temp',
   "SET search_path = ''",
 ]) {
-  test('recognizes a pinned path: ' + searchPath, () => {
+  test(`recognizes a pinned path: ${searchPath}`, () => {
     const sql = `CREATE FUNCTION public.probe() RETURNS void LANGUAGE plpgsql
       SECURITY DEFINER ${searchPath} AS $$ BEGIN RETURN; END $$;
       REVOKE ALL ON FUNCTION public.probe() FROM PUBLIC, anon;`;

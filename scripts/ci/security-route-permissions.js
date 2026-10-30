@@ -67,7 +67,7 @@ if (require.main === module) {
     if (process.argv[2])
       fs.writeFileSync(
         process.argv[2],
-        JSON.stringify({ findings }, null, 2) + '\n'
+        `${JSON.stringify({ findings }, null, 2)}\n`
       );
     for (const finding of findings)
       console.error(
@@ -75,7 +75,7 @@ if (require.main === module) {
           ': permission helper not found; inspect delegation or add authorization.'
       );
     console.log(
-      'Route permission inventory: ' + findings.length + ' new finding(s).'
+      `Route permission inventory: ${findings.length} new finding(s).`
     );
     process.exitCode = findings.length ? 1 : 0;
   } catch (error) {

@@ -16,7 +16,7 @@ const DEMO_JWTS = [
 function readFindingLine(finding) {
   const source = execFileSync(
     'git',
-    ['show', finding.Commit + ':' + finding.File],
+    ['show', `${finding.Commit}:${finding.File}`],
     {
       cwd: process.cwd(),
       encoding: 'utf8',
@@ -63,7 +63,7 @@ if (require.main === module) {
     const findings = summarize(report);
     fs.writeFileSync(
       process.argv[3],
-      JSON.stringify({ findings }, null, 2) + '\n'
+      `${JSON.stringify({ findings }, null, 2)}\n`
     );
     console.log(
       'Secret diff: ' +
