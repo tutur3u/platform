@@ -26,13 +26,36 @@ const identity = {
 };
 function fixture(overrides = {}, target = identity) {
   const responses = {
+    service: {
+      default_environment: { script: { last_deployed_from: 'wrangler' } },
+    },
     settings: {
       compatibility_date: target.compatibilityDate,
       compatibility_flags: target.compatibilityFlags,
       observability: { enabled: true, head_sampling_rate: 0.05 },
-      bindings: [
-        { name: 'ORIGIN', type: 'plain_text', text: 'private-fixture-value' },
-      ],
+      bindings: target.vars
+        ? [
+            ...Object.entries(target.vars).map(([name, text]) => ({
+              name,
+              type: 'plain_text',
+              text,
+            })),
+            ...target.secrets.map((name) => ({ name, type: 'secret_text' })),
+            ...Object.entries(target.durableObjects ?? {}).map(
+              ([name, { className }]) => ({
+                name,
+                type: 'durable_object_namespace',
+                class_name: className,
+              })
+            ),
+          ]
+        : [
+            {
+              name: 'ORIGIN',
+              type: 'plain_text',
+              text: 'private-fixture-value',
+            },
+          ],
     },
     subdomain: { enabled: true, previews_enabled: true },
     schedules: { schedules: target.crons.map((cron) => ({ cron })) },
@@ -54,7 +77,11 @@ function fixture(overrides = {}, target = identity) {
       assert.equal(init.redirect, 'error');
       assert.ok(init.signal instanceof AbortSignal);
       calls.push(url);
-      const key = url.includes('/zones?') ? 'zones' : url.split('/').at(-1);
+      const key = url.includes('/workers/services/')
+        ? 'service'
+        : url.includes('/zones?')
+          ? 'zones'
+          : url.split('/').at(-1);
       assert.ok(Object.hasOwn(responses, key), `unexpected endpoint ${url}`);
       return {
         ok: true,
@@ -73,7 +100,7 @@ const options = (api, target = identity) => ({
 test('settings readback retains rollback identity, compares settings, and omits text values', async () => {
   const api = fixture();
   const before = await captureSettings(options(api));
-  assert.equal(api.calls.length, 7);
+  assert.equal(api.calls.length, 8);
   assert.equal(before.rollback[0].versions[0].version_id, 'old');
   assert.ok(!JSON.stringify(before).includes('private-fixture-value'));
   const after = structuredClone(before);
@@ -588,7 +615,7 @@ test('Coordination snapshots retain the required token with one bounded secret r
       1,
       phase
     );
-    assert.equal(api.calls.length, 7, phase);
+    assert.equal(api.calls.length, 8, phase);
     assert.equal(
       api.calls.find((url) => url.endsWith('/secrets')),
       `https://api.cloudflare.com/client/v4/accounts/${coordination.accountId}/workers/scripts/${coordination.name}/secrets`,
