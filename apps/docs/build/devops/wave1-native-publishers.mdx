@@ -299,7 +299,9 @@ remove public ingress rather than charging for a secret-header check on each req
 No public identity exception, shared-secret gate, paid Access product or rate-limit
 product is required. The publisher also observes disabled subdomain and preview
 serving before marking an upload accepted. Do not attach a Custom Domain, zone Route,
-external service caller, cron or queue to these identities. The owner must verify
+external service caller, cron or queue to these identities. The only exception is
+the [ingress-admitted class](#ingress-admitted-staging-identities) below, which
+allows exactly one Access-protected Custom Domain. The owner must verify
 that existing hosted identities have no such attachment before enabling publication;
 source configuration alone is not hosted-topology evidence. The disabled workers.dev
 URLs retained in app vars are identity placeholders, not usable callback/media URLs.
@@ -376,6 +378,90 @@ The workerd gate serves fixture team keys and checks that missing,
 foreign-key, wrong-AUD, expired and malformed tokens get 403 (N19). The
 service-token origin, redirect and stripping cases are unit-tested in
 `staging-access.test.ts` (N18).
+
+## Ingress-admitted staging identities
+
+Two staging identities serve staff over an Access-protected Workers Custom
+Domain. Their profile entries set `"ingress": "access-custom-domain"`:
+
+- Calendar: `tuturuuu-calendar-wave1-staging` on `calendar.staging.tutur3u.com`.
+- The Web issuer: `webStaging`, `tuturuuu-web-wave1-staging` on
+  `web.staging.tutur3u.com`.
+
+Their configs keep `workers_dev=false`, `preview_urls=false` and
+`routes=[]`. The release owner attaches the one Custom Domain. The publisher
+never attaches or detaches domains, and its token has no Access or DNS write
+permission. Mail, Apps and Meet keep the no-ingress model above.
+
+The Web issuer entry sits outside `profiles.apps`, so the wave-1 publisher can
+never publish it. Its own publisher arrives with the staging Web workflow.
+
+### Preflight
+
+Before any D1 ledger read, CAS or upload, `wave1-native-publish.mjs` runs
+`ingressPreflight` from `scripts/ci/wave1-ingress-preflight.mjs`. It makes
+seven bounded, single-page, read-only Cloudflare reads and one fresh GitHub
+variable read. `wave1-ingress-topology.mjs` evaluates the observations:
+
+- **Serving intent (S0):** the `WEB_STAGING_SERVING` variable must read
+  exactly `on`. Anything else refuses publication, so a publish can never
+  revive a host the owner switched off.
+- **R1:** the host has exactly one Custom Domain, bound to the staging Worker
+  in zone `tutur3u.com`. That Worker holds no other hostname, and no
+  production Worker holds any `tutur3u.com` domain.
+- **R2:** no zone Worker route captures the host, and the zone has no
+  wildcard routes.
+- **DNS and N10:**
+  - no CNAME on the host, since a third party could claim it;
+  - no wildcard DNS record that could mint an unknown
+    `<x>.staging.tutur3u.com` name: `*`, `*.tutur3u.com`,
+    `*.staging.tutur3u.com` or anything deeper.
+
+  The issuer's CORS trust in single-label staging origins holds only while
+  this check passes.
+- **Access:**
+  - an enabled self-hosted application covers the whole host and nothing
+    else;
+  - its OPTIONS preflight bypass is on for the issuer and off for Calendar;
+  - at least one allow policy exists;
+  - no policy includes `everyone`;
+  - service-auth policies name specific service tokens;
+  - no bypass policy is admitted.
+- **workers.dev:** workers.dev and preview URLs are disabled.
+
+Any failure refuses before the ledger, so it consumes nothing. Incomplete or
+failed list reads also refuse.
+
+The publish step needs two inputs:
+
+- `STAGING_TUTUR3U_ZONE_ID`: the `tutur3u.com` zone ID.
+- `STAGING_ACCESS_APP_IDS`: a JSON object mapping each host to its Access
+  application ID.
+
+The staging token additionally needs these read permissions: Access Apps and
+Policies, Zone DNS, Workers Routes and Workers Custom Domains.
+
+### Readback
+
+`node scripts/wave1-staging/readback.mjs [--app web|calendar] [--expect-sha <sha>]`
+is the read-only post-publication readback. It repeats the topology checks,
+then adds:
+
+- **R3:** the active deployment is one version at 100% carrying the SHA.
+- **R4:** with the CI Access service token (`CF_ACCESS_HEALTH_CLIENT_ID` and
+  `CF_ACCESS_HEALTH_CLIENT_SECRET`), `/api/build-info` returns the staging
+  build.
+- **N1–N4:** anonymous and forged-credential requests (GET, POST, HEAD,
+  OPTIONS, a forged `CF_Authorization` cookie and a forged
+  `Cf-Access-Jwt-Assertion` header) are denied. The issuer may answer only
+  the empty local preflight.
+- **N5:** the workers.dev and preview hostnames don't serve.
+- **N10:** live DNS doesn't resolve a random staging sibling.
+
+It prints a JSON report and exits 1 on any failure. Its regression coverage
+uses fixture transports only: `wave1-ingress-topology.test.mjs`,
+`readback.test.mjs`, and the publisher refusals in
+`wave1-native-publication.test.js`.
 
 ## Meet off-canonical profile
 

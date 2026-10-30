@@ -18,6 +18,7 @@
         "MICROSOFT_TENANT_ID"
       ],
       "stagingHost": "calendar.staging.tutur3u.com",
+      "ingress": "access-custom-domain",
       "stagingSecrets": [
         "CF_ACCESS_TEAM_DOMAIN",
         "CF_ACCESS_AUD",
