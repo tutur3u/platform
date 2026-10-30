@@ -349,6 +349,43 @@ notes while the host's sharing setting permits it. Room policy and approval
 state live in Cloudflare Durable Object storage; no self-hosted server or new
 database migration is required.
 
+### Self-capture read contract (not yet enabled)
+
+Product decision (30 October 2026): participant self-capture (`self_v1`)
+sessions, where each account uploads only its own microphone, use a durable
+read rule that never consults live room state. It is defined in the database and
+is not exposed to any client yet; legacy sessions keep the rule above.
+
+| Reader | Own speech | Other speakers and mixed notes |
+| --- | --- | --- |
+| Account that spoke | Always, including after leaving, removal or room cleanup, with sharing off | Only under one of the rows below |
+| Fixed session host | Always | Always |
+| Admin of the meeting's workspace | Always | Always, independent of sharing |
+| Account with a durable admission record for that session | Always | Only while the host's sharing flag for the current phase is on and session visibility is `participants` |
+| Approved but never admitted, invited, or generic workspace member | Never | Never |
+
+- Own speech never grants mixed notes, because notes contain other people's
+  speech.
+- The live or after-meeting flag is chosen from durable session state: the
+  session is post-call once it is closed at its 20-second drain deadline, the
+  deadline has passed, or the 3-hour capture lifetime plus drain has elapsed. A
+  missing room, or a room that ended early, cannot switch flags. Only the fixed
+  host changes sharing, through a revisioned write.
+- `workspace` visibility is rejected for `self_v1` and never grants reads.
+- Coverage reports only `contributing` or `not_contributing`, so a decline,
+  withdrawal, "decide later", unsupported device and offline participant look
+  the same. Only the host and admins see the roster; others see their own row.
+- An account deletion or erase fence hides that person's speech immediately.
+  Any erase, or any fenced contributor, redacts the whole mixed notes for every
+  reader without revealing who asked.
+- Workspace, meeting, session or host-profile deletion removes `self_v1`
+  consent evidence with the session. The host profile foreign key is
+  `SET NULL`, so participants keep their own speech. Legacy consent evidence
+  still requires explicit service erasure first.
+
+Regression coverage: `apps/database/supabase/tests/meet-ai-self-v1-read-contract.sql`
+and `apps/database/supabase/tests/meet-ai-self-v1-schema.sql`.
+
 ## Missing microphone or camera
 
 If enabling a device reports that none was found, the browser returned
