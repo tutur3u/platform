@@ -13,6 +13,9 @@ const env: WebCandidateEnv = {
   NEXT_PUBLIC_SUPABASE_URL: stagingProfile.supabaseUrl,
   AUTH_COOKIE_DOMAIN: stagingProfile.cookieDomain,
   TRUSTED_PROXY_ORIGIN_SECRET: secret,
+  VERCEL_AUTOMATION_BYPASS_SECRET: 'test-bypass-secret-00000000000000000000',
+  CF_ACCESS_TEAM_DOMAIN: 'fixture-team.cloudflareaccess.com',
+  CF_ACCESS_AUD: 'fixture-aud',
 };
 const base = `https://${stagingProfile.host}`;
 function request(path: string, init?: RequestInit) {
@@ -29,7 +32,12 @@ function setup(response: () => Response | Promise<Response> = () => reply()) {
   const fetcher = vi.fn<Fetcher>(async () => response());
   const start = vi.fn(async () => Response.json({ status: 'candidate' }));
   return {
-    handler: createWebCandidateHandler({ fetcher, start }),
+    // Access JWT verification is covered in access-hardening.test.ts.
+    handler: createWebCandidateHandler({
+      fetcher,
+      start,
+      verifyAccess: async () => true,
+    }),
     fetcher,
     start,
   };
