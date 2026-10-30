@@ -1,3 +1,5 @@
+require_relative 'ConsentFirebasePatches'
+
 # Uncomment this line to define a global platform for your project
 platform :ios, '15.0'
 
@@ -71,6 +73,7 @@ post_install do |installer|
       sources.first.file_ref.path = destination
       sources.first.file_ref.source_tree = '<absolute>'
     end
+    ConsentFirebasePatches.install(target, File.join(__dir__, 'Pods'))
     if target.name == 'flutter_webrtc'
       # Replace only the socket implementation in this generated Pods project.
       # Never mutate the shared Pub cache used by other worktrees.

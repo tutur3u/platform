@@ -14559,7 +14559,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get telemetryConsentTitle => 'Giúp cải thiện Tuturuuu?';
 
   @override
-  String get telemetryConsentBody => 'Chia sẻ dữ liệu sử dụng và báo cáo sự cố với Google Firebase để chúng tôi sửa lỗi và cải thiện ứng dụng. Gồm mã định danh ứng dụng và thiết bị, sự kiện sử dụng, báo cáo sự cố, và thông tin thiết bị, hệ điều hành. Bạn có thể đổi lựa chọn bất cứ lúc nào tại Cài đặt > Tùy chọn > Quyền riêng tư.';
+  String get telemetryConsentBody => 'Chia sẻ dữ liệu sử dụng và báo cáo sự cố với Google Firebase Analytics và Crashlytics để chúng tôi sửa lỗi và cải thiện ứng dụng. Gồm mã định danh ứng dụng và thiết bị, sự kiện sử dụng, báo cáo sự cố, và thông tin thiết bị, hệ điều hành. Bạn có thể đổi lựa chọn bất cứ lúc nào tại Cài đặt > Tùy chọn > Quyền riêng tư.';
+
+  @override
+  String get telemetryFirebaseInstallationDisclosure => 'Cho phép phân tích và báo cáo sự cố cũng tạo một mã định danh bản cài đặt Firebase (Firebase Installation ID) trên thiết bị này (iOS và Android), giúp Google phân biệt các bản cài đặt ứng dụng. Mã này không gắn với tài khoản của bạn.';
 
   @override
   String get telemetryConsentAllow => 'Cho phép';
@@ -14571,7 +14574,7 @@ class AppLocalizationsVi extends AppLocalizations {
   String get telemetryConsentLearnMore => 'Chi tiết về quyền riêng tư';
 
   @override
-  String get settingsShareTelemetryDescription => 'Gửi dữ liệu sử dụng và báo cáo sự cố tới Google Firebase để giúp chúng tôi sửa lỗi và cải thiện ứng dụng. Khi tắt, việc thu thập dừng lại và các báo cáo sự cố chưa gửi sẽ bị xóa.';
+  String get settingsShareTelemetryDescription => 'Gửi dữ liệu sử dụng và báo cáo sự cố tới Google Firebase Analytics và Crashlytics để giúp chúng tôi sửa lỗi và cải thiện ứng dụng. Khi tắt, việc thu thập dừng lại và các báo cáo sự cố chưa gửi sẽ bị xóa.';
 
   @override
   String get settingsPushNotifications => 'Thông báo đẩy';

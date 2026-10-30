@@ -78,6 +78,8 @@ class _TelemetryConsentPageState extends State<TelemetryConsentPage> {
                           const SizedBox(height: AppSpacing.md),
                           Text(l10n.telemetryConsentBody),
                           const SizedBox(height: AppSpacing.sm),
+                          Text(l10n.telemetryFirebaseInstallationDisclosure),
+                          const SizedBox(height: AppSpacing.sm),
                           AppButton.ghost(
                             onPressed: () =>
                                 (widget.openLink ?? openMobileLink)(

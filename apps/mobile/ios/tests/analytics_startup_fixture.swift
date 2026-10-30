@@ -35,4 +35,18 @@ for corrupt in [Data("corrupt plist".utf8), invalidRoot] {
 try manager.removeItem(at: file)
 try manager.createDirectory(at: file, withIntermediateDirectories: true)
 precondition(!AnalyticsStartupGate.disableBeforeInitialization(defaults: defaults, support: root))
-print("14 persisted-state assertions passed")
+// All old Allows are reset at launch; only a post-auth admit path can start.
+defaults.set(true, forKey: FirebaseAdmissionGate.analyticsKey)
+defaults.set(true, forKey: FirebaseAdmissionGate.installationsKey)
+FirebaseAdmissionGate.reset(defaults: defaults)
+precondition(!defaults.bool(forKey: FirebaseAdmissionGate.analyticsKey))
+precondition(!defaults.bool(forKey: FirebaseAdmissionGate.installationsKey))
+for signedIn in [false, true] {
+  for push in [false, true] {
+    for telemetry in [false, true] {
+      precondition(FirebaseAdmissionGate.allowsStartup(signedIn: signedIn, push: push, telemetry: telemetry)
+        == (signedIn && (push || telemetry)))
+    }
+  }
+}
+print("24 persisted-state and admission assertions passed")

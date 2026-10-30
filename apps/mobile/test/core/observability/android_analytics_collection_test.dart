@@ -71,6 +71,27 @@ void main() {
     },
   );
 
+  test(
+    'app_open is dispatched once across re-apply and consent toggles',
+    () async {
+      signedIn = true;
+      consent = true;
+      await controller.apply(enabled: true);
+      await controller.apply(enabled: true);
+
+      consent = false;
+      await controller.apply(enabled: false);
+      expect(persistedEnabled, isFalse);
+
+      consent = true;
+      await controller.apply(enabled: true);
+      await controller.apply(enabled: true);
+
+      verify(() => analytics.logAppOpen()).called(1);
+      expect(persistedEnabled, isTrue);
+    },
+  );
+
   test('cold signed-in Allow starts in the same session', () async {
     // Native process startup has reset the old persisted true unconditionally.
     persistedEnabled = false;

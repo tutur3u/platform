@@ -18,8 +18,13 @@ the time. Changing the prompt or Settings wording bumps the version, which voids
 stored answers and asks again; nothing is collected in between. An answer stored
 by an older build (including the earlier regional-default key) is never trusted:
 those users see the prompt once on the first launch after the update, with no
-collection until they answer. The wording is DRAFT LEGAL COPY: not
-lawyer-reviewed; for testing, not release.
+collection until they answer. The FID clarification keeps the legal notice at
+telemetry-consent-v1. A separate telemetry-consent-copy-version value,
+telemetry-fid-copy-v1, re-prompts Allows from earlier unreleased dev/QA screens
+once; there was no distributed Allow screen requiring a production re-prompt.
+The EN/VI FID sentence is maintained in telemetryFirebaseInstallationDisclosure,
+shared by the prompt and Settings. The prompt explicitly names Google Firebase
+Analytics and Crashlytics and links the privacy policy.
 
 ## First-run prompt
 
@@ -48,6 +53,21 @@ linked). The native-config test guards these settings.
 
 ## Firebase startup and push
 
+On **both iOS and Android**, Firebase/Installations admission requires a signed-in
+session and either (a) push ON with OS authorization or (b) a current explicit
+telemetry Allow. Deny plus push OFF never configures Firebase or creates an FID.
+Consented Analytics and Crashlytics also use a Firebase Installation ID when
+push is OFF; Messaging stays dormant until push is admitted. These identifiers
+are not assigned an account ID, email, user property or Crashlytics user ID.
+
+A serialized admission controller runs the same policy for both platforms.
+When neither purpose remains, it disables telemetry, drains push token/server
+unregistration, then attempts Installations.delete(). Failure is logged without
+identifiers and is retried on a later reconciliation. Sign-out uses the same
+order before credentials are removed. Token/FID deletion may itself contact
+Firebase as cleanup; it does not authorize a new installation or token.
+Native process-start resets remain unconditional even with a stored Allow.
+
 Firebase startup waits for an authenticated app session on both platforms.
 Removing FirebaseInitProvider alone is insufficient on Android:
 FlutterFire Analytics 12.5.0 calls FirebaseAnalytics.getInstance from
@@ -61,8 +81,11 @@ startup. Only signed-in Allow enables them again.
 Android Allow first enables the components with PackageManager.DONT_KILL_APP,
 then resolves the lazy FlutterFire plugin, awaits its
 setAnalyticsCollectionEnabled(true), and dispatches the standard app_open event
-through that plugin. Merely changing the native flag does not exercise the
-deferred plugin's event path. This sequence runs both when Allow is selected
+through that plugin at most once per process lifetime. The collected event
+app_open has no custom parameters or identifiers. Its dispatch guard survives
+withdrawal, re-enabling, sign-out and consent re-application; a failed dispatch
+is not retried in the same process. Merely changing the native flag does not
+exercise the deferred plugin's event path. This sequence runs both when Allow is selected
 in-session and when a signed-in session restores a current Allow after a cold
 start. No process restart or direct service launch is requested.
 
@@ -82,8 +105,29 @@ merely to disable collection. These are Measurement 23.2.0's persisted override
 keys, verified against the SDK and the seeded-upgrade fixture. No permanent
 collection-deactivated setting is used.
 
-On iOS, the plugin registrant only binds channels; it does not construct
-Analytics. Nevertheless, its persisted override also survives process restarts.
+On iOS, firebase_core 4.14.0's registration-time shared instance normally calls
+FirebaseApp.configure. A worktree-local source overlay removes that eager call.
+FirebaseCore's default-app configureCore also normally starts FIRAnalytics
+regardless of collection=false; Analytics starts a GULNetwork hostname
+reachability monitor and requests an Installation ID. The overlay defers that
+Analytics startup block until the native signed-in/current-Allow admission
+notification. FirebaseMessaging's eager default-app component becomes lazy,
+and FlutterFire's plugin constants read the persisted auto-init flag without
+constructing Messaging. Crashlytics registration also defers its Flutter platform
+metadata setter to post-auth plugin constants, avoiding an SDK getter before
+there is a configured app.
+
+The GoogleUtilities reachability overlay gates the Analytics hostname monitor
+before SCNetworkReachabilityCreateWithName or scheduling can run, and stops it
+on withdrawal/sign-out. Non-Analytics monitors retain upstream behavior.
+The installed SDK's APMAnalytics +load records a timestamp; APMMeasurement +load
+subscribes to launch notifications. Inspection found no hostname monitor in
+those pre-configure paths; exact-head device DNS acceptance remains required.
+The Installations overlay rejects ID/auth-token reads outside admission so an
+SDK observer cannot recreate an FID after deletion. All overlays fail pod install
+when expected source contracts change, and leave shared Pub/SDK sources intact.
+
+The persisted Analytics override also survives process restarts.
 Before super.willFinishLaunching, Foundation resets the legacy standard-defaults
 key and the existing Application Support/Google/Measurement/
 com.google.gmp.measurement.plist entry
@@ -92,7 +136,7 @@ GoogleAppMeasurement 12.18 uses 1 for enabled and 2 for disabled. The native
 fixture tests both stores and preserves unrelated preferences. Review these
 SDK-internal storage contracts whenever upgrading Firebase.
 
-Native collection commands require a signed-in session and the current explicit
+Native Analytics collection commands require a signed-in session and the current explicit
 Allow. Sign-out and withdrawal call the SDK disable API if it is already active,
 synchronously persist the disable, and close background Measurement components
 on Android. A stored Allow is never enough to enable collection during native

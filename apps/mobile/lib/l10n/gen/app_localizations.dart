@@ -27430,8 +27430,14 @@ abstract class AppLocalizations {
   /// No description provided for @telemetryConsentBody.
   ///
   /// In en, this message translates to:
-  /// **'Share usage data and crash reports with Google Firebase so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.'**
+  /// **'Share usage data and crash reports with Google Firebase Analytics and Crashlytics so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.'**
   String get telemetryConsentBody;
+
+  /// No description provided for @telemetryFirebaseInstallationDisclosure.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowing analytics and crash reports also creates a Firebase Installation ID on this device (iOS and Android), which Google uses to tell app installs apart. It is not linked to your account.'**
+  String get telemetryFirebaseInstallationDisclosure;
 
   /// No description provided for @telemetryConsentAllow.
   ///
@@ -27454,7 +27460,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsShareTelemetryDescription.
   ///
   /// In en, this message translates to:
-  /// **'Send usage data and crash reports to Google Firebase to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.'**
+  /// **'Send usage data and crash reports to Google Firebase Analytics and Crashlytics to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.'**
   String get settingsShareTelemetryDescription;
 
   /// No description provided for @settingsPushNotifications.

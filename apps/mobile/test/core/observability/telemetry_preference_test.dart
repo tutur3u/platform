@@ -65,6 +65,33 @@ void main() {
     );
   });
 
+  test(
+    'old dev or QA Allow without the FID copy revision re-prompts once',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        TelemetryPreference.choiceKey: true,
+        TelemetryPreference.noticeVersionKey:
+            TelemetryPreference.currentNoticeVersion,
+      });
+      final preference = TelemetryPreference();
+      await preference.initialize(
+        promptEligible: true,
+        apply: ({required enabled}) async {},
+      );
+      expect(preference.enabled, isFalse);
+      expect(preference.consentPending, isTrue);
+      await preference.setEnabled(value: true);
+      final restarted = TelemetryPreference();
+      await restarted.initialize(
+        promptEligible: true,
+        apply: ({required enabled}) async {},
+      );
+      expect(restarted.enabled, isTrue);
+      expect(restarted.consentPending, isFalse);
+      expect(TelemetryPreference.currentNoticeVersion, 'telemetry-consent-v1');
+    },
+  );
+
   test('both answers persist across restarts', () async {
     final applied = <bool>[];
     Future<TelemetryPreference> start() async {
@@ -170,6 +197,8 @@ void main() {
 
   test('off revokes collection before the saved value changes', () async {
     SharedPreferences.setMockInitialValues({
+      TelemetryPreference.copyVersionKey:
+          TelemetryPreference.currentCopyVersion,
       TelemetryPreference.choiceKey: true,
       TelemetryPreference.noticeVersionKey:
           TelemetryPreference.currentNoticeVersion,
@@ -217,6 +246,8 @@ void main() {
 
   test('a stale-version Allow is not consent at startup', () async {
     SharedPreferences.setMockInitialValues({
+      TelemetryPreference.copyVersionKey:
+          TelemetryPreference.currentCopyVersion,
       TelemetryPreference.choiceKey: true,
       TelemetryPreference.noticeVersionKey: 'telemetry-consent-v0',
     });
@@ -269,6 +300,8 @@ void main() {
 
     test('a failing enable fails closed and never throws', () async {
       SharedPreferences.setMockInitialValues({
+        TelemetryPreference.copyVersionKey:
+            TelemetryPreference.currentCopyVersion,
         TelemetryPreference.choiceKey: true,
         TelemetryPreference.noticeVersionKey:
             TelemetryPreference.currentNoticeVersion,
@@ -333,7 +366,9 @@ void main() {
     const shared = [
       'flutter.telemetry-consent-choice',
       'flutter.telemetry-consent-notice-version',
-      'telemetry-consent-v1',
+      'flutter.telemetry-consent-copy-version',
+      TelemetryPreference.currentCopyVersion,
+      TelemetryPreference.currentNoticeVersion,
     ];
     final kotlin = File(
       'android/app/src/main/kotlin/com/tuturuuu/app/mobile/telemetry/'
@@ -434,25 +469,21 @@ void main() {
         lessThan(delegate.indexOf('FirebaseApp.configure()')),
       ),
     );
-    // A persisted "on" from an older build is switched off right after Firebase
-    // starts, unless the stored choice is an explicit Allow.
-    final gateCall = delegate.indexOf(
-      'TelemetryConsentGate.disableCollectionUnlessAllowed()',
-    );
-    expect(gateCall, greaterThan(delegate.indexOf('FirebaseApp.configure()')));
-    expect(
-      gateCall,
-      greaterThan(delegate.indexOf('GeneratedPluginRegistrant.register')),
-    );
+    // No SDK setter is used to disable an SDK that has not been admitted.
+    expect(delegate, contains('guard FirebaseAdmissionGate.allowsStartup'));
+    expect(delegate, contains('FirebaseAdmissionGate.reset()'));
     expect(
       delegate,
       contains('Analytics.setAnalyticsCollectionEnabled(false)'),
     );
+    final initialization = delegate.substring(
+      delegate.indexOf('private func initializeFirebase('),
+      delegate.indexOf('func didInitializeImplicitFlutterEngine'),
+    );
+    expect(initialization, isNot(contains('Messaging.messaging()')));
     expect(
-      delegate,
-      contains(
-        'Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(false)',
-      ),
+      initialization,
+      isNot(contains('Analytics.setAnalyticsCollectionEnabled')),
     );
     expect(manifest, isNot(contains('TelemetryCollectionLockProvider')));
     final kotlin = File(

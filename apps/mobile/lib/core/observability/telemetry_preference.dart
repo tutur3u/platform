@@ -18,8 +18,11 @@ class TelemetryPreference extends ChangeNotifier {
 
   static final instance = TelemetryPreference();
 
-  /// Bump with any wording change to the prompt or the Settings description.
+  /// Legal notice version is unchanged for the FID copy clarification.
   static const currentNoticeVersion = 'telemetry-consent-v1';
+  // Separate copy revision re-prompts Allows from unreleased dev/QA screens.
+  static const currentCopyVersion = 'telemetry-fid-copy-v1';
+  static const copyVersionKey = 'telemetry-consent-copy-version';
   static const choiceKey = 'telemetry-consent-choice';
   static const noticeVersionKey = 'telemetry-consent-notice-version';
   static const decidedAtKey = 'telemetry-consent-decided-at';
@@ -83,7 +86,12 @@ class TelemetryPreference extends ChangeNotifier {
     // Older builds could leave a regional default or an "on" here.
     if (prefs.containsKey(legacyKey)) await prefs.remove(legacyKey);
     if (prefs.getString(noticeVersionKey) != noticeVersion) return null;
-    return prefs.getBool(choiceKey);
+    final choice = prefs.getBool(choiceKey);
+    if (choice == true &&
+        prefs.getString(copyVersionKey) != currentCopyVersion) {
+      return null;
+    }
+    return choice;
   }
 
   Future<void> setEnabled({required bool value}) async {
@@ -106,6 +114,7 @@ class TelemetryPreference extends ChangeNotifier {
             decidedAtKey,
             _clock().toUtc().toIso8601String(),
           ) &&
+          await prefs.setString(copyVersionKey, currentCopyVersion) &&
           await prefs.setString(noticeVersionKey, noticeVersion);
       if (!saved) {
         throw StateError('Telemetry preference could not be saved');

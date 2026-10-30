@@ -15,6 +15,7 @@ import 'package:mobile/core/config/consent_gate.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/config/firebase_options_selector.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/observability/firebase_admission.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/startup/optional_startup.dart';
@@ -99,35 +100,59 @@ Future<void> bootstrap(
     logChanges: appFlavor != AppFlavor.production,
   );
 
-  PushNotificationService.instance.firebaseInitializer = () async {
-    if (Firebase.apps.isEmpty) {
-      if (Platform.isIOS || Platform.isAndroid) {
-        await const MethodChannel(
-          'mobile/firebase_startup',
-        ).invokeMethod<void>('initialize');
-      }
-      await Firebase.initializeApp(
-        options: firebaseOptionsForFlavor(appFlavor),
-      );
-      await Firebase.app().setAutomaticDataCollectionEnabled(false);
-    }
-    await MobileObservability.instance.initialize(
+  final push = PushNotificationService.instance;
+  final firebaseAdmission = FirebaseAdmission(
+    initialize:
+        ({
+          required signedIn,
+          required pushAllowed,
+          required telemetryAllowed,
+        }) async {
+          if (Platform.isIOS || Platform.isAndroid) {
+            final admitted =
+                await const MethodChannel(
+                  'mobile/firebase_startup',
+                ).invokeMethod<bool>('initialize', {
+                  'signedIn': signedIn,
+                  'pushAllowed': pushAllowed,
+                  'telemetryAllowed': telemetryAllowed,
+                });
+            if (admitted != true) return false;
+          }
+          if (Firebase.apps.isEmpty) {
+            await Firebase.initializeApp(
+              options: firebaseOptionsForFlavor(appFlavor),
+            );
+            await Firebase.app().setAutomaticDataCollectionEnabled(false);
+          }
+          return true;
+        },
+    telemetry: ({required enabled}) => MobileObservability.instance.initialize(
       appFlavor,
-      collectionEnabled:
-          TelemetryPreference.instance.enabled &&
-          PushNotificationService.instance.hasActiveSession,
-    );
-  };
+      collectionEnabled: enabled,
+    ),
+    unregisterPush: push.prepareInstallationDeletion,
+    deleteInstallation: () => const MethodChannel(
+      'mobile/firebase_startup',
+    ).invokeMethod<void>('deleteInstallation'),
+  );
+  push.firebaseInitializer = ({required pushAllowed}) =>
+      firebaseAdmission.update(
+        signedIn: push.hasActiveSession,
+        pushAllowed: pushAllowed,
+        telemetryAllowed:
+            consentGate.isEligible(appFlavor) &&
+            TelemetryPreference.instance.enabled,
+      );
 
   try {
     await TelemetryPreference.instance.initialize(
       promptEligible: consentGate.isEligible(appFlavor),
       apply: ({required enabled}) async {
-        if (Firebase.apps.isEmpty) return;
-        await MobileObservability.instance.initialize(
-          appFlavor,
-          collectionEnabled:
-              enabled && PushNotificationService.instance.hasActiveSession,
+        await firebaseAdmission.update(
+          signedIn: push.hasActiveSession,
+          pushAllowed: push.pushAdmitted,
+          telemetryAllowed: consentGate.isEligible(appFlavor) && enabled,
         );
       },
     );

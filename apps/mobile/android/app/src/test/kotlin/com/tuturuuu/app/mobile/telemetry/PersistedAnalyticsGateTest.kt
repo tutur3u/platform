@@ -32,6 +32,15 @@ class PersistedAnalyticsGateTest {
     }
 
     @Test
+    fun onlySignedInPushOrAllowCanInitializeFirebaseAndInstallations() {
+        for (signedIn in listOf(false, true))
+            for (push in listOf(false, true))
+                for (telemetry in listOf(false, true))
+                    assertEquals(signedIn && (push || telemetry),
+                        PersistedAnalyticsGate.mayInitialize(signedIn, push, telemetry))
+    }
+
+    @Test
     fun resetIsIdempotentAndAlsoCoversFreshInstalls() {
         val disk = mutableMapOf<String, Boolean>()
         repeat(2) { PersistedAnalyticsGate.disable { key, value -> disk[key] = value } }

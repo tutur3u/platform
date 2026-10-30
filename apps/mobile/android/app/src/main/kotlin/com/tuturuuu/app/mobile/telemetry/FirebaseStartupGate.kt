@@ -1,12 +1,13 @@
 package com.tuturuuu.app.mobile.telemetry
 
 import android.content.ComponentName
+import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageManager
+import android.util.Log
 import com.google.firebase.FirebaseApp
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.google.firebase.messaging.FirebaseMessaging
+import com.google.firebase.installations.FirebaseInstallations
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 
@@ -48,19 +49,52 @@ object FirebaseStartupGate {
         return enabled
     }
 
+    private fun pushPermission(context: Context): Boolean =
+        context.getSystemService(NotificationManager::class.java)?.areNotificationsEnabled() == true
+
     fun install(context: Context, messenger: BinaryMessenger) {
         MethodChannel(messenger, "mobile/firebase_startup").setMethodCallHandler { call, result ->
             when (call.method) {
                 "initialize" -> {
+                    val arguments = call.arguments as? Map<*, *> ?: emptyMap<Any, Any>()
+                    signedIn = arguments["signedIn"] == true
+                    val push = arguments["pushAllowed"] == true && pushPermission(context) &&
+                        context.getSharedPreferences(TelemetryConsentDecision.PREFERENCES_FILE,
+                            Context.MODE_PRIVATE).getBoolean("flutter.push-enabled", true)
+                    val telemetry = arguments["telemetryAllowed"] == true &&
+                        TelemetryConsentDecision.allowsCollection(context)
+                    if (!PersistedAnalyticsGate.mayInitialize(signedIn, push, telemetry)) {
+                        result.success(false)
+                        return@setMethodCallHandler
+                    }
                     val app = FirebaseApp.initializeApp(context)
                     if (app == null) {
                         result.error("firebase_configuration", "Firebase configuration unavailable", null)
                         return@setMethodCallHandler
                     }
                     app.setDataCollectionDefaultEnabled(false)
-                    FirebaseMessaging.getInstance().isAutoInitEnabled = false
-                    FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(false)
-                    signedIn = true
+                    result.success(true)
+                    return@setMethodCallHandler
+                }
+                "pushPermission" -> {
+                    result.success(pushPermission(context))
+                    return@setMethodCallHandler
+                }
+                "deleteInstallation" -> {
+                    if (FirebaseApp.getApps(context).isEmpty()) {
+                        result.success(null)
+                        return@setMethodCallHandler
+                    }
+                    FirebaseInstallations.getInstance().delete().addOnCompleteListener { task ->
+                        if (task.isSuccessful) {
+                            Log.i("FirebaseConsent", "Firebase Installation deletion completed")
+                            result.success(null)
+                        } else {
+                            Log.w("FirebaseConsent", "Firebase Installation deletion failed")
+                            result.error("installation_delete", "Installation deletion failed", null)
+                        }
+                    }
+                    return@setMethodCallHandler
                 }
                 "prepareAnalyticsCollection" -> {
                     result.success(prepareAnalyticsCollection(context, call.arguments == true))

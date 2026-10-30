@@ -147,16 +147,59 @@ void main() {
 
   test('Firebase startup waits for sign-in', () async {
     var starts = 0;
-    service.firebaseInitializer = () async {
-      starts++;
+    service.firebaseInitializer = ({required pushAllowed}) async {
+      if (pushAllowed) starts++;
+      return pushAllowed;
     };
     await service.initialize();
     expect(starts, 0);
     verifyNever(messaging.getNotificationSettings);
     await service.startSession(_actor);
-    expect(starts, 1);
+    expect(starts, 0);
     verifyNever(messaging.getToken);
+    status = AuthorizationStatus.authorized;
+    await service.refreshRegistration();
+    expect(starts, 1);
+    verify(messaging.getToken).called(1);
   });
+
+  test(
+    'push off drains an in-flight FCM token before token and FID deletion',
+    () async {
+      status = AuthorizationStatus.authorized;
+      final entered = Completer<void>();
+      final token = Completer<String?>();
+      when(messaging.getToken).thenAnswer((_) {
+        calls.add('getToken');
+        entered.complete();
+        return token.future;
+      });
+      service.firebaseInitializer = ({required pushAllowed}) async {
+        if (!pushAllowed) calls.add('deleteFID');
+        return pushAllowed;
+      };
+      final starting = service.startSession(_actor);
+      await entered.future;
+      final stopping = service.setPushEnabled(enabled: false);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, isNot(contains('deleteToken')));
+      expect(calls, isNot(contains('deleteFID')));
+      token.complete('synthetic-inflight-token');
+      await Future.wait([starting, stopping]);
+      expect(calls.where((c) => c == 'deleteToken'), hasLength(1));
+      expect(
+        calls.indexOf('deleteFID'),
+        greaterThan(calls.indexOf('deleteToken')),
+      );
+      expect(registered, isEmpty);
+      verify(
+        () => repository.unregisterDevice(
+          deviceId: any(named: 'deviceId'),
+          appFlavor: any(named: 'appFlavor'),
+        ),
+      ).called(1);
+    },
+  );
 
   test('push off waits for an outstanding server registration', () async {
     status = AuthorizationStatus.authorized;
@@ -325,6 +368,18 @@ void main() {
     expect(calls, ['autoInit:false', 'deleteToken', 'deleteToken']);
     expect(registered, isEmpty);
   });
+
+  test(
+    'token refresh cannot re-register while sign-out cleanup is closing',
+    () async {
+      status = AuthorizationStatus.authorized;
+      await service.startSession(_actor);
+      registered.clear();
+      await service.disableTelemetry();
+      await refresh('synthetic-closing-token');
+      expect(registered, isEmpty);
+    },
+  );
 
   test('sign-out still unregisters the device', () async {
     status = AuthorizationStatus.authorized;

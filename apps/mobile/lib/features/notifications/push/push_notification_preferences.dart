@@ -1,21 +1,25 @@
 part of 'push_notification_service.dart';
 
 extension PushNotificationPreferences on PushNotificationService {
-  set firebaseInitializer(Future<void> Function() initialize) {
+  set firebaseInitializer(
+    Future<bool> Function({required bool pushAllowed}) initialize,
+  ) {
     _initializeFirebase = initialize;
   }
 
   Future<void> disableTelemetry() async {
+    _sessionClosing = true;
+    _sessionEpoch++;
+    _pushAdmitted = false;
+    if (_initializeFirebase != null) {
+      await _initializeFirebase!(pushAllowed: false);
+      return;
+    }
     if (!_firebaseReady || _appFlavor == null) return;
     await MobileObservability.instance.initialize(
       _appFlavor!,
       collectionEnabled: false,
     );
-    if (Platform.isAndroid || Platform.isIOS) {
-      await const MethodChannel(
-        'mobile/firebase_startup',
-      ).invokeMethod<void>('endSession');
-    }
   }
 
   Future<void> refreshRegistration() => _syncRegistrationIfAuthorized();
@@ -29,19 +33,39 @@ extension PushNotificationPreferences on PushNotificationService {
       'push-enabled',
       enabled,
     );
-    if (!_firebaseReady && _initializeFirebase != null) return;
     if (enabled) {
       await ensurePermissionPrompted();
     } else {
+      _pushAdmitted = false;
       try {
-        await _revokeTokenCreation(force: true, strict: true);
+        await prepareInstallationDeletion(strict: true);
       } finally {
-        await _unregisterDevice();
+        await _initializeFirebaseForSession();
       }
     }
   }
 
+  /// Drains token/server writes before best-effort Installation deletion.
+  Future<void> prepareInstallationDeletion({bool strict = false}) async {
+    try {
+      await _tokenEnrollment;
+    } on Object {
+      // Finish cleanup even when the in-flight token fetch failed.
+    }
+    if (_pushCleanupComplete) return;
+    try {
+      await _revokeTokenCreation(
+        force: strict || _messagingInitialized,
+        strict: strict,
+      );
+    } finally {
+      await _unregisterDevice();
+    }
+    _pushCleanupComplete = !_tokenDeletionPending;
+  }
+
   Future<void> _unregisterDevice() async {
+    if (_appFlavor == null) return;
     try {
       await _registration;
     } on Exception {

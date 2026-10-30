@@ -11,7 +11,8 @@ class TelemetryConsentDecisionTest {
 
     @Test
     fun explicitAllowUnderTheCurrentNoticeIsTheOnlyYes() {
-        assertTrue(TelemetryConsentDecision.allowsCollection(mapOf(choice to true, version to current)))
+        assertTrue(TelemetryConsentDecision.allowsCollection(mapOf(choice to true, version to current,
+            TelemetryConsentDecision.COPY_VERSION_KEY to TelemetryConsentDecision.CURRENT_COPY_VERSION)))
     }
 
     @Test

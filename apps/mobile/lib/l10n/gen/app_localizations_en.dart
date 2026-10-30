@@ -14714,7 +14714,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get telemetryConsentTitle => 'Help improve Tuturuuu?';
 
   @override
-  String get telemetryConsentBody => 'Share usage data and crash reports with Google Firebase so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.';
+  String get telemetryConsentBody => 'Share usage data and crash reports with Google Firebase Analytics and Crashlytics so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.';
+
+  @override
+  String get telemetryFirebaseInstallationDisclosure => 'Allowing analytics and crash reports also creates a Firebase Installation ID on this device (iOS and Android), which Google uses to tell app installs apart. It is not linked to your account.';
 
   @override
   String get telemetryConsentAllow => 'Allow';
@@ -14726,7 +14729,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get telemetryConsentLearnMore => 'Privacy details';
 
   @override
-  String get settingsShareTelemetryDescription => 'Send usage data and crash reports to Google Firebase to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.';
+  String get settingsShareTelemetryDescription => 'Send usage data and crash reports to Google Firebase Analytics and Crashlytics to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.';
 
   @override
   String get settingsPushNotifications => 'Push notifications';

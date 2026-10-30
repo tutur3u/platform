@@ -23,6 +23,7 @@ class AndroidAnalyticsCollection {
   FirebaseAnalytics? _analytics;
   Future<void> _pending = Future<void>.value();
   int _epoch = 0;
+  bool _appOpenAttempted = false;
 
   Future<void> apply({required bool enabled}) {
     final epoch = ++_epoch;
@@ -52,7 +53,10 @@ class AndroidAnalyticsCollection {
     try {
       final analytics = _analytics ??= _createAnalytics();
       await analytics.setAnalyticsCollectionEnabled(true);
-      if (epoch != _epoch) return;
+      if (epoch != _epoch || _appOpenAttempted) return;
+      // The process singleton retains this guard across consent/session changes,
+      // including a failed dispatch, so retries cannot duplicate the event.
+      _appOpenAttempted = true;
       // Startup while disabled can suppress automatic launch events. Dispatch
       // through the admitted plugin to activate its normal event/upload path.
       await analytics.logAppOpen();

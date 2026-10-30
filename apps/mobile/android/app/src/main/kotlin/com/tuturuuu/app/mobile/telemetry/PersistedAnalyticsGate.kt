@@ -4,6 +4,9 @@ package com.tuturuuu.app.mobile.telemetry
 object PersistedAnalyticsGate {
     const val PREFERENCES = "com.google.android.gms.measurement.prefs"
 
+    fun mayInitialize(signedIn: Boolean, pushAllowed: Boolean, telemetryAllowed: Boolean): Boolean =
+        signedIn && (pushAllowed || telemetryAllowed)
+
     fun mayEnable(requested: Boolean, signedIn: Boolean, consent: Boolean): Boolean =
         requested && signedIn && consent
 

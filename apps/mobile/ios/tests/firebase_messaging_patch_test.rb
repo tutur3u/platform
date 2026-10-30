@@ -2,11 +2,13 @@ require 'minitest/autorun'
 require 'tmpdir'
 require 'pathname'
 require 'fileutils'
+require_relative '../ConsentFirebasePatches'
 
 class FirebaseMessagingPatchTest < Minitest::Test
   PODFILE = File.expand_path('../Podfile', __dir__)
   SOURCE = <<~'OBJC'
     #import "FLTFirebaseMessagingPlugin.h"
+    id autoInit = @([FIRMessaging messaging].isAutoInitEnabled);
     - (void)setupNotificationHandling {
       // We automatically register for remote notifications as part of startup.
       [self registerForRemoteNotifications];
@@ -37,7 +39,7 @@ class FirebaseMessagingPatchTest < Minitest::Test
       target = Target.new('firebase_messaging', Phase.new([SourceFile.new(reference)]))
       contents = File.read(PODFILE)
       start = contents.index("    if target.name == 'firebase_messaging'")
-      finish = contents.index("    if target.name == 'flutter_webrtc'", start)
+      finish = contents.index("    ConsentFirebasePatches.install", start)
       apply = -> { eval(contents[start...finish], binding, File.join(ios, 'Podfile')) }
       yield source, header, reference, apply
     end
