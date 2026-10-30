@@ -30,7 +30,7 @@ function deferred(t, description, timeout = 15000) {
   t.after(() => clearTimeout(timer));
   return {
     promise: result.promise,
-    arm() {
+    startTimer() {
       timer = setTimeout(
         () => result.reject(new Error(`${description} was not observed`)),
         timeout
@@ -102,7 +102,7 @@ for (const phase of ['pricing', 'settlement']) {
     const stalled = deferred(t, `stalled ${phase}`);
     const journaled = deferred(t, 'reconciliation journal');
     const normalSettled = deferred(t, 'concurrent settlement');
-    // Attach rejection handlers immediately while the Worker starts.
+    // Attach rejection handlers before any observation deadline can expire.
     void stalled.promise.catch(() => {});
     void journaled.promise.catch(() => {});
     void normalSettled.promise.catch(() => {});
@@ -230,12 +230,13 @@ for (const phase of ['pricing', 'settlement']) {
         return new Response('Unexpected egress denied', { status: 500 });
       },
     });
-    stalled.arm();
-    journaled.arm();
-    normalSettled.arm();
+    stalled.startTimer();
     await disconnectStream(worker, a);
     const disconnectedAt = performance.now();
+    // Match the journal deadline below: startup and request setup are excluded.
+    journaled.startTimer();
     await stalled.promise;
+    normalSettled.startTimer();
     await disconnectStream(worker, b);
     const normal = await normalSettled.promise;
     assert.equal(normal.p_run_id, b.run);
