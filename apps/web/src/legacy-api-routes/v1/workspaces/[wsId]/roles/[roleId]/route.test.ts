@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   calls: [] as Array<{ table: string; op: string; args: unknown[] }>,
+  canManageCreatorGrantRole: vi.fn(),
   resolveWorkspaceRouteAccess: vi.fn(),
   permissionError: null as unknown,
   roleLookup: { data: null as unknown, error: null as unknown },
@@ -11,6 +12,16 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/workspace-route-access', () => ({
   resolveWorkspaceRouteAccess: mocks.resolveWorkspaceRouteAccess,
 }));
+
+vi.mock(
+  '@/lib/workspace-creator-grant-permissions',
+  async (importOriginal) => ({
+    ...(await importOriginal<
+      typeof import('@/lib/workspace-creator-grant-permissions')
+    >()),
+    canManageCreatorGrantRole: mocks.canManageCreatorGrantRole,
+  })
+);
 
 function createQuery(table: string) {
   const result = () =>
@@ -70,8 +81,12 @@ describe('workspace role update route', () => {
       permissions: { wsId: 'caller-workspace-id' },
       user: { id: 'admin-user' },
     });
-    mocks.roleLookup = { data: { id: 'own-role-id' }, error: null };
+    mocks.roleLookup = {
+      data: { id: 'own-role-id', name: 'Role' },
+      error: null,
+    };
     mocks.workspaceLookup = { data: { creator_id: 'owner-user' }, error: null };
+    mocks.canManageCreatorGrantRole.mockResolvedValue(true);
   });
 
   it('does not write permissions for a role outside the workspace', async () => {
@@ -126,6 +141,27 @@ describe('workspace role update route', () => {
       op: 'upsert',
       table: 'workspace_role_permissions',
     });
+  });
+
+  it('refuses a non-creator rename of a creator-granted role', async () => {
+    mocks.roleLookup = {
+      data: { id: 'own-role-id', name: 'Billing' },
+      error: null,
+    };
+    mocks.canManageCreatorGrantRole.mockResolvedValue(false);
+
+    const response = await putRole('own-role-id');
+
+    expect(response.status).toBe(403);
+    expect(mocks.canManageCreatorGrantRole).toHaveBeenCalledWith(
+      expect.anything(),
+      {
+        roleId: 'own-role-id',
+        userId: 'admin-user',
+        wsId: 'caller-workspace-id',
+      }
+    );
+    expect(mocks.calls.some((call) => call.op === 'update')).toBe(false);
   });
 
   it('drops manage_subscription from a non-creator admin payload', async () => {

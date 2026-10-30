@@ -6,6 +6,7 @@ import type {
   WorkspaceDefaultPermissionsRole,
 } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
+import { canManageCreatorGrantRole } from '@/lib/workspace-creator-grant-permissions';
 import { getWorkspaceMembers } from '@/lib/workspace-members';
 import {
   hasRootExternalProjectsAdminPermission,
@@ -392,6 +393,20 @@ export async function updateExternalProjectTeamRole({
 
   if (!roleAccess.ok) {
     return roleAccess.response;
+  }
+
+  if (
+    payload.name !== roleAccess.role.name &&
+    !(await canManageCreatorGrantRole(access.admin, {
+      roleId,
+      userId: access.user.id,
+      wsId: access.normalizedWorkspaceId,
+    }))
+  ) {
+    return NextResponse.json(
+      { message: 'Only the workspace creator can rename this role' },
+      { status: 403 }
+    );
   }
 
   const permissions = await writableTeamRolePermissions(

@@ -713,3 +713,21 @@ are executable only by service_role.
 
 Regression coverage: `remaining-membership-helpers-caller-bound.sql` and
 `external-project-helpers-caller-bound.sql`; anonymous EXECUTE stays revoked.
+
+## Role workspace ownership
+
+Role permission rows reference the role's workspace through a composite foreign
+key. API database roles cannot move a role to another workspace. Service-role
+maintenance may move it, cascading its permission rows to the destination.
+
+Across Web role editors, external project teams and external app member tools,
+renaming a role with a subscription grant (including a disabled grant) requires
+the creator of every workspace holding that grant. Adding members checks enabled
+grants. Plain roles remain editable by role managers. Name-selected POS and
+external-app administrator roles cannot silently reuse subscription-granted roles.
+Explicit Mastermind permissions continue to be filtered from ordinary role writes.
+
+Regression coverage: `role-workspace-consistency.sql`,
+`name-based-role-creator-grant.sql`, `workspace-creator-grant-permissions.test.ts`,
+the role route tests, and external project/app member tests. Database checks must
+run against the applied migration chain; route mocks alone do not qualify SQL.

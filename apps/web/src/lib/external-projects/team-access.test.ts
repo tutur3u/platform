@@ -32,8 +32,14 @@ function createAccess({ roleExists }: { roleExists: boolean }) {
     upsertedRolePermissions: null as unknown,
   };
 
-  const roleResult = (): QueryResult<{ id: string }> => ({
-    data: roleExists ? { id: 'role-1' } : null,
+  const roleResult = (): QueryResult<{
+    id: string;
+    name: string;
+    ws_id: string;
+  }> => ({
+    data: roleExists
+      ? { id: 'role-1', name: 'Publisher', ws_id: 'workspace-1' }
+      : null,
     error: roleExists ? null : { code: 'PGRST116' },
   });
   const createMutationFilterChain = (filters: Array<[string, string]>) => {
@@ -63,8 +69,20 @@ function createAccess({ roleExists }: { roleExists: boolean }) {
                 calls.roleFilters.push([column, value]);
                 return this;
               },
+              in() {
+                return this;
+              },
               single() {
                 return Promise.resolve(roleResult());
+              },
+              // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
+              then(resolve: (value: unknown) => unknown) {
+                return Promise.resolve({
+                  data: roleExists
+                    ? [{ id: 'role-1', ws_id: 'workspace-1' }]
+                    : [],
+                  error: null,
+                }).then(resolve);
               },
             };
           },

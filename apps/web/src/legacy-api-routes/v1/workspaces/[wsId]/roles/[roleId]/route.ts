@@ -7,7 +7,10 @@ import type {
 } from '@tuturuuu/types';
 import { isExplicitGrantPermission } from '@tuturuuu/utils/explicit-grant-permissions';
 import { NextResponse } from 'next/server';
-import { filterCreatorGrantPermissions } from '@/lib/workspace-creator-grant-permissions';
+import {
+  canManageCreatorGrantRole,
+  filterCreatorGrantPermissions,
+} from '@/lib/workspace-creator-grant-permissions';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
 
 interface Params {
@@ -91,7 +94,40 @@ export async function PUT(req: Request, { params }: Params) {
     name: data.name,
   };
 
-  // Verify workspace ownership before writing permission rows.
+  const existingRole = await supabase
+    .from('workspace_roles')
+    .select('name')
+    .eq('id', id)
+    .eq('ws_id', resolvedWsId)
+    .maybeSingle();
+
+  if (existingRole.error) {
+    return NextResponse.json(
+      { message: 'Error fetching workspace role' },
+      { status: 500 }
+    );
+  }
+
+  if (!existingRole.data) {
+    return NextResponse.json({ message: 'Role not found' }, { status: 404 });
+  }
+
+  if (
+    data.name !== existingRole.data.name &&
+    !(await canManageCreatorGrantRole(supabase, {
+      roleId: id,
+      userId: authorization.userId,
+      wsId: resolvedWsId,
+    }))
+  ) {
+    return NextResponse.json(
+      { message: 'Only the workspace creator can rename this role' },
+      { status: 403 }
+    );
+  }
+
+  // Update the role first so permission rows are only written for a role that
+  // belongs to the authorized workspace.
   const roleRes = await supabase
     .from('workspace_roles')
     .select('id')
