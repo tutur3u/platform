@@ -18,6 +18,7 @@ const {
   reviewedBlockMatches,
 } = require('./security-definer-blocks');
 
+const { admitVerifiedFindings } = require('./security-definer-admission');
 const MIGRATIONS = 'apps/database/supabase/migrations/';
 const BASELINE = 'scripts/ci/security-definer-baseline.json';
 const { inheritedFindings } = require('./security-definer-roles');
@@ -634,54 +635,59 @@ function checkRepository({
 }
 
 if (require.main === module) {
-  try {
-    const root = process.cwd();
-    const historicalFile = 'scripts/ci/security-definer-historical-blocks.json';
-    assertShrinkingBlocks(
-      JSON.parse(
-        fs.readFileSync(
-          path.join(__dirname, 'security-definer-historical-blocks.json'),
-          'utf8'
-        )
-      ),
-      JSON.parse(fs.readFileSync(path.join(root, historicalFile), 'utf8'))
-    );
-    const proposedReviews = readReviewedFile(
-      root,
-      __dirname,
-      'security-definer-reviewed-blocks.json'
-    );
-    const proposedVerified = readReviewedFile(
-      root,
-      __dirname,
-      'security-definer-verified-findings.json'
-    );
-    const findings = checkRepository({
-      root,
-      reviewedBlocks: proposedReviews,
-      verifiedFindings: proposedVerified,
-      historicalBlocks: JSON.parse(
-        fs.readFileSync(path.join(root, historicalFile), 'utf8')
-      ),
-    });
-    const report = process.argv[2];
-    if (report)
-      fs.writeFileSync(report, `${JSON.stringify({ findings }, null, 2)}\n`);
-    for (const f of findings)
-      console.error(
-        f.file +
-          (f.line ? `:${f.line}` : '') +
-          ': ' +
-          f.signature +
-          ': ' +
-          (f.message ?? f.rule)
+  (async () => {
+    try {
+      const root = process.cwd();
+      const historicalFile =
+        'scripts/ci/security-definer-historical-blocks.json';
+      assertShrinkingBlocks(
+        JSON.parse(
+          fs.readFileSync(
+            path.join(__dirname, 'security-definer-historical-blocks.json'),
+            'utf8'
+          )
+        ),
+        JSON.parse(fs.readFileSync(path.join(root, historicalFile), 'utf8'))
       );
-    console.log(`Definer guard: ${findings.length} new finding(s).`);
-    process.exitCode = findings.length ? 1 : 0;
-  } catch (error) {
-    console.error(error.message);
-    process.exitCode = 1;
-  }
+      const proposedReviews = readReviewedFile(
+        root,
+        __dirname,
+        'security-definer-reviewed-blocks.json'
+      );
+      // Base verified records are append-only; additions need source binding
+      // and an attestation (security-definer-admission.js) before they apply.
+      const findings = await admitVerifiedFindings({
+        root,
+        trustedDirectory: __dirname,
+        scan: (verifiedFindings) =>
+          checkRepository({
+            root,
+            reviewedBlocks: proposedReviews,
+            verifiedFindings,
+            historicalBlocks: JSON.parse(
+              fs.readFileSync(path.join(root, historicalFile), 'utf8')
+            ),
+          }),
+      });
+      const report = process.argv[2];
+      if (report)
+        fs.writeFileSync(report, `${JSON.stringify({ findings }, null, 2)}\n`);
+      for (const f of findings)
+        console.error(
+          f.file +
+            (f.line ? `:${f.line}` : '') +
+            ': ' +
+            f.signature +
+            ': ' +
+            (f.message ?? f.rule)
+        );
+      console.log(`Definer guard: ${findings.length} new finding(s).`);
+      process.exitCode = findings.length ? 1 : 0;
+    } catch (error) {
+      console.error(error.message);
+      process.exitCode = 1;
+    }
+  })();
 }
 
 module.exports = {

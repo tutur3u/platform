@@ -202,7 +202,10 @@ test('trusted CI guard rejects inventory expansion and digest edits, permits shr
   );
   const changedEffectiveRoles = run(historical);
   assert.equal(changedEffectiveRoles.status, 1);
-  assert.match(changedEffectiveRoles.stderr, /grant roles changed/);
+  assert.match(
+    changedEffectiveRoles.stderr,
+    /Verified finding record changed or removed/
+  );
 });
 
 test('historical inventory is explicitly debt and cannot be relabeled safe', () => {
