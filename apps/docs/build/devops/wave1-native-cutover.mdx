@@ -215,6 +215,47 @@ this repository perform none of them:
 Rollback deletes only the staging Workers, Custom Domains and records. Production
 is untouched.
 
+## Staging issuer and Calendar G3: decisions and order
+
+These are the release-owner decisions of 30 October 2026. They settle the
+staging ingress questions that blocked hosted G3.
+
+| Question | Decision |
+| --- | --- |
+| Public staging ingress | None. `calendar.staging.tutur3u.com` and `web.staging.tutur3u.com` are reachable only through Cloudflare Access: a Google Workspace (`tuturuuu.com`) staff allowlist within the 50 free seats, plus named service tokens. There is no bypass policy, and workers.dev, previews and routes stay off |
+| Issuer hostname | `web.staging.tutur3u.com` is the only staging issuer |
+| Issuer hosting | The Web Start candidate Worker `tuturuuu-web-wave1-staging`, in front of one immutable deployment of the protected Vercel project `tuturuuu-web-staging`, published by `wave1-web-staging.yaml` |
+| Staging Supabase login | Email (OTP through a staging mailbox and staging SMTP sender) and Google only. Production auth is unchanged |
+| Calendar to issuer server calls | An Access service token, sent only to the exact issuer origin with manual redirects |
+
+Each Calendar artifact serves exactly one host, selected by the required
+`CALENDAR_DEPLOYMENT_PROFILE` build input. See
+[Calendar per-environment hosts and Access](/build/devops/wave1-native-publishers#calendar-per-environment-hosts-and-access).
+
+Order for the first hosted G3:
+
+1. **Access in `bootstrap`.** Both Access apps carry only the CI health
+   Service Auth policy, and `STAGING_ACCESS_PHASE=bootstrap`.
+2. **Publish the issuer.** Run the
+   [staging Web publisher](/build/devops/wave1-native-publishers#staging-web-publisher):
+   `next-verify`, then the manual domain attach and `WEB_STAGING_SERVING=on`,
+   then publish and `verify-ingress`. A red `verify-ingress` rolls the Worker
+   back automatically.
+3. **Publish Calendar.** Use the existing wave-1 Calendar staging publisher.
+   Its ingress preflight checks Access, the single Custom Domain, DNS and
+   the phase. Read it back with
+   `node scripts/wave1-staging/readback.mjs --app calendar`.
+4. **Switch to staff.** After both readbacks are green, the release owner
+   adds the staff allow policy and the Calendar-to-Web Service Auth policy,
+   sets `STAGING_ACCESS_PHASE=staff`, and records the run IDs.
+5. **Run G3** through the Calendar host with the disposable staging account.
+   Automated runs present the CI health service token. A staff member proves
+   Google sign-in once by hand.
+
+Known gap: Web's two Calendar event rewrites to `calendar.staging.tutur3u.com`
+are server-side Vercel rewrites that carry no Access credential, so Access
+denies them. G3 exercises Calendar events through the Calendar host.
+
 ## Subdomain cutover tools
 
 Native apps go live on their own subdomain first (root mode). Two read-only

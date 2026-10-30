@@ -614,6 +614,101 @@ sealed origin points to the prior immutable deployment, so the pair rolls
 back together. There is no Next-only rollback: a Next fix is a new SHA and a
 new admission.
 
+### Serving off-switch for ingress-admitted hosts
+
+Each layer below is durable on its own. Apply them in order, under
+release-owner custody. None of them is automated except the Worker
+rollback, which the workflow performs on a red `verify-ingress`.
+
+| Layer | Action | Effect |
+| --- | --- | --- |
+| S0 intent | `WEB_STAGING_SERVING=off` | The publisher refuses every upload for both ingress hosts |
+| S1 Access | On **both** Access apps, put a **Block: Everyone** policy first, and remove the Service Auth policies in the same change | The edge denies every request before the Worker runs, including service-token holders. OPTIONS still reaches the issuer Worker through the preflight bypass, which answers it locally with zero Vercel calls |
+| S1b tokens | Revoke the `staging-ci-health` and `staging-calendar-to-web` service tokens | No remaining credential can pass Access |
+| S2 ingress | Detach the Custom Domain; its DNS record goes with it | There is no hostname. The publisher never re-attaches it |
+| S3 backend | Remove the Vercel automation bypass, or delete the staging deployments | The Worker gets 401 from Vercel and returns 502 |
+| S4 Worker | Delete only the named staging Worker | Last resort, as for the no-ingress identities above |
+
+After any S-layer, the preflight refuses to publish until the release owner
+restores every layer. A Block-only Access app is never publishable in either
+phase.
+
+### Credential rotation
+
+- **Vercel automation bypass (V1d).** Rotate it at least every 90 days, on
+  any suspicion, and whenever a staff member with access leaves. Update the
+  Vercel project, the Worker secret and both environment secrets together.
+  Record a names-only receipt. `next-verify` and the publisher's recheck
+  refuse until the Worker secret and the project's single bypass agree.
+- **Access service tokens.** Use a 30-day expiry and rotate them before it
+  lapses. Update `STAGING_ACCESS_HEALTH_TOKEN_IDS` whenever the CI health
+  token id changes; while in `bootstrap`, the preflight requires an exact
+  match.
+- **Origin proof secret.** `TRUSTED_PROXY_ORIGIN_SECRET` is staging-only. Its
+  distinct-from-production fingerprint receipt is repeated after every
+  rotation.
+
+### Cost and stop model
+
+- **No public traffic.** Access denies unauthenticated requests before the
+  Worker runs. workers.dev, previews and routes are off, and the Vercel URL
+  needs both the bypass secret and an origin proof.
+- **No scheduled work.** No cron, queue, Durable Object or alarm is added.
+  `vercel.staging.json` has no crons.
+- **Bounded runs.** Each run makes at most one Vercel deployment and one
+  Worker upload, plus the single R-d rollback write on failure. Every write
+  sits behind a fresh stop fence and a signed CAS.
+- **What spend remains.** Staff and CI requests only. Access is free for up
+  to 50 seats, and service tokens use no seat. Set Workers usage
+  notifications on both staging scripts; they are alerts, not caps, and S1
+  is the seconds-level stop.
+
+### Release-owner checklist (names only)
+
+The release owner performs these steps; no workflow does. Values never go
+into source, logs or evidence.
+
+1. **Access:**
+   - Google Workspace identity provider for `tuturuuu.com`;
+   - the `staging-staff` group (an explicit allowlist);
+   - self-hosted apps `staging-web` (OPTIONS preflight bypass on) and
+     `staging-calendar` (off);
+   - service tokens `staging-ci-health` and `staging-calendar-to-web`, each
+     with a 30-day expiry;
+   - start in `bootstrap`: only the CI health Service Auth policy, no allow,
+     no bypass.
+2. **Repository variables:**
+   - `STAGING_ACCESS_PHASE`, `STAGING_ACCESS_APP_IDS`,
+     `STAGING_ACCESS_HEALTH_TOKEN_IDS`, `STAGING_ACCESS_STAFF_GROUP_ID`;
+   - `STAGING_ACCESS_STAFF_EMAIL_LIST_ID`, only if the staff allow policy
+     uses an email list;
+   - `STAGING_TUTUR3U_ZONE_ID`, `WEB_STAGING_SERVING`,
+     `WEB_STAGING_NEXT_ADMISSION`, `WAVE1_STAGING_PUBLICATION_ADMISSION`.
+3. **Protected environments** (`main` only, release-owner review):
+   - `wave1-web-next-staging` and `wave1-web-staging` with the secret names
+     listed in [Staging Web publisher](#staging-web-publisher);
+   - the existing `wave1-calendar-staging`, plus the Calendar Access secret
+     names.
+4. **Cloudflare:**
+   - Bootstrap Worker `tuturuuu-web-wave1-staging` with an inert initial
+     version: workers.dev, previews and routes off. Set its secret names.
+   - Extend `CLOUDFLARE_STAGING_API_TOKEN` with **read** permission for
+     Access Apps and Policies, Zone DNS, Workers Routes and Workers Custom
+     Domains. Grant no Access or DNS write.
+   - Seed the D1 rows `wave1-web-next-staging` and `wave1-web-staging` with
+     signed empty history.
+   - Add Workers usage notifications.
+5. **Vercel:** create project `tuturuuu-web-staging`:
+   - a `staging` custom environment;
+   - Vercel Authentication on all deployments;
+   - no password protection, trusted IPs, OPTIONS allowlist or shareable
+     links;
+   - exactly one automation bypass;
+   - Git deployments off, no domains, preview retention of at least 90 days;
+   - staging-only environment values.
+6. **Order of operations:** follow [What stays manual](#what-stays-manual-d),
+   then record the DNS record shape on the first readback.
+
 ## Meet off-canonical profile
 
 `apps/meet/void.staging.config.ts` is selected only by
