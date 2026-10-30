@@ -1,24 +1,58 @@
+import { MeetAiGenerationError } from '@tuturuuu/ai/meetings/failure';
 import type { Json } from '@tuturuuu/types';
 import { z } from 'zod';
 
 /** A provider ran but its billed outcome is unknown: never rerun it automatically. */
 export const BILLING_UNRECONCILED = 'billing_unreconciled';
 
-// Only a failure that the ledger has durably settled as failed (zero credits)
-// may rotate an unattended billing identity. Anything else is ambiguous: a
-// timeout or a lost acknowledgement does not prove the provider did no work.
+// Rotation of an unattended billing identity needs two facts at once: the
+// provider positively refused the request before doing any work, and the ledger
+// durably settled the run as failed. Recording a zero-credit failure says nothing
+// about what the provider did, so ambiguity is decided here, before settling.
 const settledUncharged = new WeakSet<object>();
+const outcomeUnknown = new WeakSet<object>();
+const objectOf = (error: unknown) =>
+  typeof error === 'object' && error !== null
+    ? error
+    : new Error(String(error));
 export function markSettledUncharged(error: unknown): unknown {
-  const tagged =
-    typeof error === 'object' && error !== null
-      ? error
-      : new Error(String(error));
+  const tagged = objectOf(error);
   settledUncharged.add(tagged);
+  return tagged;
+}
+export function markBillingUnknown(error: unknown): unknown {
+  const tagged = objectOf(error);
+  outcomeUnknown.add(tagged);
   return tagged;
 }
 export function isSettledUncharged(error: unknown) {
   return (
     typeof error === 'object' && error !== null && settledUncharged.has(error)
+  );
+}
+export function isBillingUnknown(error: unknown) {
+  return (
+    typeof error === 'object' && error !== null && outcomeUnknown.has(error)
+  );
+}
+
+/**
+ * True only for a definitive refusal that produced no output: the provider
+ * answered with an explicit HTTP error status, or no request was ever made
+ * (missing configuration). Timeouts, aborts, network errors after the request
+ * was sent and output validation errors are NOT definitive: the provider may
+ * have done and billed the work.
+ */
+export function isDefinitiveProviderRejection(error: unknown) {
+  if (!(error instanceof MeetAiGenerationError)) return false;
+  if (error.reason === 'missing_configuration') return true;
+  return (
+    error.providerStatus !== null &&
+    error.providerStatus >= 400 &&
+    error.providerStatus <= 599 &&
+    error.reason !== 'timeout' &&
+    error.reason !== 'network_error' &&
+    error.reason !== 'runtime_error'
   );
 }
 

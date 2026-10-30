@@ -14,7 +14,12 @@ import { z } from 'zod';
 import { MEETING_APP } from '../../../runtime';
 import { MeetAiError } from './access';
 import { admitMeetCredits, type MeetCreditAdmission } from './credit-admission';
-import { BILLING_UNRECONCILED, markSettledUncharged } from './notes-billing';
+import {
+  BILLING_UNRECONCILED,
+  isDefinitiveProviderRejection,
+  markBillingUnknown,
+  markSettledUncharged,
+} from './notes-billing';
 
 type Input = Parameters<typeof generateMeetArtifact>[0];
 
@@ -155,6 +160,7 @@ export async function generateBilledMeetArtifact(
           )
         : await generateMeetArtifact(input, options);
   } catch (error) {
+    const definitive = isDefinitiveProviderRejection(error);
     try {
       await settleAiStudioRun({
         runId: run.runId,
@@ -172,8 +178,9 @@ export async function generateBilledMeetArtifact(
         BILLING_UNRECONCILED
       );
     }
-    // Recorded and settled as failed: the only failure that may allow a new run.
-    throw markSettledUncharged(error);
+    // Rotation needs a definitive refusal AND a recorded failed settlement.
+    // Anything else may have cost real provider work: keep the identity.
+    throw definitive ? markSettledUncharged(error) : markBillingUnknown(error);
   }
   if (!measured.usage.available || measured.costUsd === null) {
     // Do not manufacture a bill from an estimate. The reservation and pending

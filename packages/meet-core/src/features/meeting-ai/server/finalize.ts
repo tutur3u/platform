@@ -5,7 +5,7 @@ import { verifyMeetFinalizeToken } from '@tuturuuu/realtime/meet/finalization-to
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { MeetAiError } from './access';
 import { finishMeetAiSession } from './finish-session';
-import { BILLING_UNRECONCILED } from './notes-billing';
+import { BILLING_UNRECONCILED, isBillingUnknown } from './notes-billing';
 import { notifyNotesReady } from './notes-notification';
 
 /** Billed attempts that failed after the provider started. Past this, a human decides. */
@@ -83,6 +83,9 @@ export async function finalizeMeetAi(request: Request): Promise<{
       }).catch(() => console.error('Meeting notes notification failed'));
     return { status: 'completed', generated: outcome === 'generated' };
   } catch (failure) {
+    // A timeout, abort, network loss or output error may have cost provider
+    // work: never generate again unattended. The host's Finish click reconciles.
+    if (isBillingUnknown(failure)) return { status: 'abandoned' };
     if (failure instanceof MeetAiError) {
       // A provider ran and its charge is unknown or already held by a run: never
       // generate again unattended. The host's Finish click reconciles.

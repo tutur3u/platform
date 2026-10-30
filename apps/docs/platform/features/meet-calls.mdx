@@ -1479,10 +1479,13 @@ Meet side, `finishMeetAiSession` (shared with the host's Finish click):
    provider call, no second charge. If the output cannot be kept, or a run
    already exists for the identity, the billed state is unknown: the finalizer
    answers `abandoned` and never generates again unattended. The failure counter
-   advances, and the identity rotates, only after a provider failure whose
-   failed settlement the ledger durably recorded. A timeout, a lost settlement
-   acknowledgement or any other unrecorded failure keeps the identity, because it
-   does not prove the provider did no billable work. Only the
+   advances, and the identity rotates, only after a definitive provider
+   rejection (an explicit HTTP error response with no output, or no request
+   made at all) whose failed settlement the ledger durably recorded. A timeout,
+   an abort, a network error after the request was sent, an output validation
+   error or a lost settlement acknowledgement keeps the identity and answers
+   `abandoned`, because none of them proves the provider did no billable work.
+   The reservation is still released at zero credits. Only the
    host's Finish click reconciles, with a fresh identity.
 6. Notify the host and reader accounts who are workspace members, once, by the
    winner only. The notification is a `system_announcement` with code
