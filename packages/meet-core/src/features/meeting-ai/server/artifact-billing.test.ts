@@ -150,7 +150,11 @@ it('tags a provider failure as uncharged only once its failed settlement is reco
   expect(caught).toBe(failure);
   expect(isSettledUncharged(caught)).toBe(true);
   expect(f.settle).toHaveBeenCalledWith(
-    expect.objectContaining({ runId: 'run', status: 'failed', actualCredits: 0 })
+    expect.objectContaining({
+      runId: 'run',
+      status: 'failed',
+      actualCredits: 0,
+    })
   );
 });
 

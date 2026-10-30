@@ -21,8 +21,8 @@ vi.mock('./artifact-billing', () => ({
 }));
 
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
-import { finalizeMeetAi } from './finalize';
 import { MeetAiError } from './access';
+import { finalizeMeetAi } from './finalize';
 import { finishMeetAiSession } from './finish-session';
 import { BILLING_UNRECONCILED, markSettledUncharged } from './notes-billing';
 
@@ -444,10 +444,13 @@ describe('finalizeMeetAi', () => {
       const executed: string[] = [];
       mocks.generate.mockImplementation(async (_input, actor) => {
         if (keys.has(actor.attemptId))
-          throw new AiStudioError('This request is already running or completed.', {
-            code: 'invalid_request_error',
-            status: 409,
-          });
+          throw new AiStudioError(
+            'This request is already running or completed.',
+            {
+              code: 'invalid_request_error',
+              status: 409,
+            }
+          );
         keys.add(actor.attemptId);
         executed.push(actor.attemptId);
         // The provider failed, and recording that failure then failed too.
@@ -472,10 +475,13 @@ describe('finalizeMeetAi', () => {
       const executed: string[] = [];
       mocks.generate.mockImplementation(async (_input, actor) => {
         if (keys.has(actor.attemptId))
-          throw new AiStudioError('This request is already running or completed.', {
-            code: 'invalid_request_error',
-            status: 409,
-          });
+          throw new AiStudioError(
+            'This request is already running or completed.',
+            {
+              code: 'invalid_request_error',
+              status: 409,
+            }
+          );
         keys.add(actor.attemptId);
         executed.push(actor.attemptId);
         // For example a timeout after generation, never tagged as settled.
