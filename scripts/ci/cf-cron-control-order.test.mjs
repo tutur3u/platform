@@ -4,6 +4,7 @@ import { readFileSync, realpathSync } from 'node:fs';
 import { registerHooks } from 'node:module';
 import test from 'node:test';
 import { pathToFileURL } from 'node:url';
+import { assertCronSet } from '../../apps/cron-control/scripts/assert-cron-set.mjs';
 
 const LIVE_ORDER = [
   '* * * * *',
@@ -60,16 +61,13 @@ async function installedCfDiff() {
   }
 }
 
-test('Cron Control passes cf schema and preserves live cron order in emitted config', () => {
-  assert.deepEqual(
+test('Cron Control passes cf schema and preserves the exact live cron set and count', () => {
+  assertCronSet(
     resolved.worker.triggers.map(({ schedule }) => schedule),
     LIVE_ORDER
   );
-  assert.deepEqual(emitted.triggers.crons, LIVE_ORDER);
-  assert.deepEqual(
-    [...emitted.triggers.crons].sort(),
-    [...baseline.identity.crons].sort()
-  );
+  assertCronSet(emitted.triggers.crons, LIVE_ORDER);
+  assertCronSet(emitted.triggers.crons, baseline.identity.crons);
   assert.equal(validated.worker.env.CRON_LEDGER.worker, validated.worker.name);
   assert.deepEqual(emitted.durable_objects.bindings, [
     { name: 'CRON_LEDGER', class_name: 'CronLedger' },
