@@ -57,12 +57,69 @@ test('the entry agrees with the candidate profile and admission inputs', () => {
   JSON.parse(source(web.nextFallback.config));
 });
 
-test('no production identity appears in the Web staging entry', () => {
-  const text = JSON.stringify(web);
-  for (const app of Object.values(profiles.apps)) {
-    assert.ok(!text.includes(app.productionWorker));
-    assert.ok(!text.includes(app.canonicalHost));
+// Every string (keys and values, recursively) in a JSON value.
+function strings(value) {
+  if (typeof value === 'string') return [value];
+  if (Array.isArray(value)) return value.flatMap(strings);
+  if (value && typeof value === 'object')
+    return Object.entries(value).flatMap(([key, item]) => [
+      key,
+      ...strings(item),
+    ]);
+  return [];
+}
+
+/**
+ * Host-like tokens that name the production zone. Splits on anything outside
+ * [A-Za-z0-9.-], so URLs, ports, cookie domains and embedded text all yield
+ * their host. A token directly after '@' is a package scope, not a host.
+ */
+function productionZoneHosts(value) {
+  const found = [];
+  for (const match of value.matchAll(/[A-Za-z0-9.-]+/gu)) {
+    if (value[match.index - 1] === '@') continue;
+    const host = match[0].replace(/^\.+/u, '').toLowerCase();
+    if (
+      host === 'tuturuuu.com' ||
+      host.endsWith('.tuturuuu.com') ||
+      host.startsWith('tuturuuu.com.')
+    )
+      found.push(host);
   }
-  assert.ok(!/\btuturuuu\.com\b/u.test(text.replaceAll('@tuturuuu', '')));
-  assert.ok(!text.includes('nzamlzqfdwaaxdefwraj'));
+  return found;
+}
+
+test('the production-zone host scan flags every host form and spares package scopes', () => {
+  for (const sample of [
+    'https://calendar.tuturuuu.com/x',
+    'tuturuuu.com',
+    'api.tuturuuu.com',
+    '.tuturuuu.com',
+    'tuturuuu.com:443',
+    'redirect to tuturuuu.com now',
+    'tuturuuu.com.evil.test',
+    'https://x.tuturuuu.com/a',
+    'calendar.tuturuuu.com',
+    'TUTURUUU.COM',
+  ])
+    assert.notDeepEqual(productionZoneHosts(sample), [], sample);
+  for (const sample of [
+    '@tuturuuu/utils',
+    'web.staging.tutur3u.com',
+    'https://calendar.staging.tutur3u.com/x',
+    'tuturuuu-web-staging',
+    'tuturuuu-web-wave1-staging',
+  ])
+    assert.deepEqual(productionZoneHosts(sample), [], sample);
+});
+
+test('no production identity appears in the Web staging entry', () => {
+  const values = strings(web);
+  for (const app of Object.values(profiles.apps)) {
+    // Canonical hosts are production-zone hosts, so the scan below covers them.
+    assert.ok(productionZoneHosts(app.canonicalHost).length > 0);
+    assert.ok(!values.some((value) => value.includes(app.productionWorker)));
+  }
+  assert.deepEqual(values.flatMap(productionZoneHosts), []);
+  assert.ok(!values.some((value) => value.includes('nzamlzqfdwaaxdefwraj')));
 });
