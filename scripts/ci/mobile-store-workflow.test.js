@@ -183,7 +183,7 @@ test('mobile store deployment workflow is production-only beta delivery with ver
   assert.equal(
     betaStep.env.TESTFLIGHT_BETA_GROUPS,
     // biome-ignore lint/suspicious/noTemplateCurlyInString: literal GitHub Actions expression
-    "${{ vars.TESTFLIGHT_BETA_GROUPS || 'all' }}"
+    "${{ vars.TESTFLIGHT_BETA_GROUPS || '' }}"
   );
   assert.equal(
     betaStep.env.GITHUB_TOKEN,

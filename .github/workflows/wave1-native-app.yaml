@@ -61,6 +61,7 @@ jobs:
     env:
       APP: ${{ inputs.app }}
       PROFILE: ${{ matrix.profile }}
+      CALENDAR_DEPLOYMENT_PROFILE: ${{ matrix.profile }}
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       CLOUDFLARE_WORKERS_SUBDOMAIN: ${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN || 'wave1-ci-fixture' }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ matrix.profile == 'staging' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && vars.STAGING_SUPABASE_URL || 'https://wave1-ci.supabase.invalid' }}
@@ -104,6 +105,9 @@ jobs:
           team: ''
       - name: Seal admitted publication profile with original emitted bytes
         run: node scripts/ci/wave1-native-artifact.mjs prepare "$APP" "$PROFILE" "$SOURCE_SHA" "$CLOUDFLARE_WORKERS_SUBDOMAIN"
+      - name: Calendar per-environment artifact host scan
+        if: inputs.app == 'calendar'
+        run: node scripts/ci/calendar-host-scan.mjs "apps/$APP/dist" "$PROFILE"
       - name: Original emitted workerd acceptance including Mail and Apps fence
         timeout-minutes: 3
         run: node scripts/ci/wave1-native-runtime.mjs "$APP" "$PROFILE" "$SOURCE_SHA"
@@ -155,6 +159,9 @@ jobs:
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           python3 scripts/ci/wave1-native-archive.py restore "apps/$APP" "$RUNNER_TEMP/native-restore/wave1-native.tar.gz"
           node scripts/ci/wave1-native-artifact.mjs verify "$APP" "$PROFILE" "$SOURCE_SHA"
+      - name: Restored Calendar per-environment artifact host scan
+        if: inputs.app == 'calendar'
+        run: node scripts/ci/calendar-host-scan.mjs "apps/$APP/dist" "$PROFILE"
       - name: Restored Mail Calendar Apps workerd acceptance
         timeout-minutes: 3
         run: node scripts/ci/wave1-native-runtime.mjs "$APP" "$PROFILE" "$SOURCE_SHA"

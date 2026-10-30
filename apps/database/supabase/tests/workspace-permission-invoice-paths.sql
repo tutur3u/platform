@@ -1,0 +1,40 @@
+BEGIN;
+CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
+SET LOCAL search_path=public,extensions;
+SELECT plan(12);
+SELECT set_config('request.jwt.claims','{}',true);
+INSERT INTO auth.users(id,raw_app_meta_data) VALUES ('9c7302d1-0000-4000-8000-000000000001','{}'),('9c7302d1-0000-4000-8000-000000000002','{}');
+INSERT INTO public.users(id) VALUES ('9c7302d1-0000-4000-8000-000000000001'),('9c7302d1-0000-4000-8000-000000000002') ON CONFLICT DO NOTHING;
+INSERT INTO public.workspaces(id,name,creator_id,personal) VALUES ('9c7302d1-0000-4000-8000-000000000010','Invoice member path','9c7302d1-0000-4000-8000-000000000001',false);
+DELETE FROM public.workspace_default_permissions WHERE ws_id='9c7302d1-0000-4000-8000-000000000010';
+INSERT INTO public.workspace_members(ws_id,user_id,type) VALUES ('9c7302d1-0000-4000-8000-000000000010','9c7302d1-0000-4000-8000-000000000002','MEMBER');
+INSERT INTO public.workspace_roles(id,ws_id,name) VALUES ('9c7302d1-0000-4000-8000-000000000020','9c7302d1-0000-4000-8000-000000000010','Invoice member reader');
+INSERT INTO public.workspace_role_members(role_id,user_id) VALUES ('9c7302d1-0000-4000-8000-000000000020','9c7302d1-0000-4000-8000-000000000002');
+INSERT INTO public.workspace_role_permissions(ws_id,role_id,permission,enabled) VALUES
+ ('9c7302d1-0000-4000-8000-000000000010','9c7302d1-0000-4000-8000-000000000020','view_invoices',true),
+ ('9c7302d1-0000-4000-8000-000000000010','9c7302d1-0000-4000-8000-000000000020','view_transactions',true);
+INSERT INTO private.workspace_wallets(id,ws_id,name) VALUES ('9c7302d1-0000-4000-8000-000000000030','9c7302d1-0000-4000-8000-000000000010','Invoice member wallet');
+INSERT INTO public.workspace_role_wallet_whitelist(role_id,wallet_id) VALUES ('9c7302d1-0000-4000-8000-000000000020','9c7302d1-0000-4000-8000-000000000030');
+INSERT INTO public.wallet_transactions(wallet_id,amount,taken_at) VALUES ('9c7302d1-0000-4000-8000-000000000030',100,now()),('9c7302d1-0000-4000-8000-000000000030',-40,now());
+-- Select the older overload by a transaction-local rename; no ACL is widened.
+ALTER FUNCTION public.get_weekly_invoice_totals(uuid,integer,uuid[],uuid[],date,date) RENAME TO hwp_weekly_invoice_totals_6;
+SET LOCAL ROLE authenticated;
+SELECT set_config('request.jwt.claims','{"sub":"9c7302d1-0000-4000-8000-000000000002","role":"authenticated","aal":"aal2"}',true);
+SELECT ok(public.is_org_member(auth.uid(),'9c7302d1-0000-4000-8000-000000000010'),'invoice fixture is a MEMBER');
+SELECT ok(public.has_workspace_permission('9c7302d1-0000-4000-8000-000000000010',auth.uid(),'view_invoices'),'invoice permission remains available to the member');
+SELECT is((SELECT jsonb_build_array(total_transactions,total_income,total_expense) FROM public.get_transaction_stats('9c7302d1-0000-4000-8000-000000000010',auth.uid())), '[2,100,-40]'::jsonb,'finance parameter-actor member path passes caller binding');
+SELECT throws_ok($$SELECT * FROM public.get_transaction_stats('9c7302d1-0000-4000-8000-000000000010','9c7302d1-0000-4000-8000-000000000001')$$,'42501',null,'finance parameter-actor path denies another user');
+SELECT throws_ok($$SELECT * FROM public.get_daily_invoice_totals('9c7302d1-0000-4000-8000-000000000010')$$,'42501',null,'invoice 93: direct authenticated daily RPC retains service-only contract');
+SELECT throws_ok($$SELECT * FROM public.hwp_weekly_invoice_totals_6('9c7302d1-0000-4000-8000-000000000010')$$,'42501',null,'invoice 94: older weekly RPC retains service-only contract');
+SELECT throws_ok($$SELECT * FROM public.get_weekly_invoice_totals('9c7302d1-0000-4000-8000-000000000010',12,null,null,null,null,1)$$,'42501',null,'invoice 95: weekly RPC retains service-only contract');
+SELECT throws_ok($$SELECT * FROM public.get_monthly_invoice_totals('9c7302d1-0000-4000-8000-000000000010')$$,'42501',null,'invoice 96: monthly RPC retains service-only contract');
+RESET ROLE;
+SET LOCAL ROLE service_role;
+SELECT set_config('request.jwt.claims','{"sub":"9c7302d1-0000-4000-8000-000000000002","role":"service_role"}',true);
+SELECT is((SELECT count(*) FROM public.get_daily_invoice_totals('9c7302d1-0000-4000-8000-000000000010')),14::bigint,'invoice 93: server reads daily periods for the member workspace');
+SELECT is((SELECT count(*) FROM public.hwp_weekly_invoice_totals_6('9c7302d1-0000-4000-8000-000000000010')),12::bigint,'invoice 94: server reads older weekly periods');
+SELECT is((SELECT count(*) FROM public.get_weekly_invoice_totals('9c7302d1-0000-4000-8000-000000000010',12,null,null,null,null,1)),12::bigint,'invoice 95: server reads weekly periods');
+SELECT is((SELECT count(*) FROM public.get_monthly_invoice_totals('9c7302d1-0000-4000-8000-000000000010')),12::bigint,'invoice 96: server reads monthly periods');
+RESET ROLE;
+SELECT * FROM finish();
+ROLLBACK;

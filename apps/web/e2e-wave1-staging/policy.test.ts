@@ -53,6 +53,7 @@ test('web issuer has its own off-canonical fence', () => {
     stagingOrigin('https://web.staging.tutur3u.com', 'issuer'),
     'https://web.staging.tutur3u.com'
   );
+  assert.throws(() => stagingOrigin('https://staging.tutur3u.com', 'issuer'));
   assert.throws(() => stagingOrigin('https://tuturuuu.com', 'issuer'));
   assert.throws(() =>
     stagingOrigin('https://calendar.staging.tutur3u.com', 'issuer')

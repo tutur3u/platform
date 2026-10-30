@@ -58,11 +58,31 @@ test('daily secret scan ignores checkout suppressions and emits a sanitized arti
 });
 test('PR guard trusts base source and baseline, never PR baseline additions', () => {
   const job = checks.jobs['definer-guard'];
-  assert.deepEqual(job.permissions, { contents: 'read' });
+  assert.deepEqual(job.permissions, { contents: 'read', statuses: 'read' });
   assert.match(job.if, /pull_request/);
-  const run = job.steps.find(
+  const step = job.steps.find(
     (s) => s.name === 'Load trusted definer guard and baseline'
-  ).run;
+  );
+  const run = step.run;
+  // Record admission reads the exact head and verifies the attestation with
+  // the read-only job token, from base code; no privileged trigger is added.
+  assert.deepEqual(Object.keys(step.env), [
+    'BASE_SHA',
+    'HEAD_SHA',
+    'GITHUB_TOKEN',
+  ]);
+  assert.match(step.env.HEAD_SHA, /github\.event\.pull_request\.head\.sha/);
+  assert.equal(step.env.GITHUB_TOKEN, '$' + '{{ github.token }}');
+  assert.match(
+    run,
+    /git show "\$BASE_SHA:scripts\/ci\/security-definer-admission\.js"/
+  );
+  assert.deepEqual(Object.keys(checks.on).sort(), [
+    'pull_request',
+    'push',
+    'schedule',
+    'workflow_dispatch',
+  ]);
   assert.match(run, /git show "\$BASE_SHA:scripts\/ci\/\$file"/);
   assert.match(run, /security-definer-baseline\.json/);
   assert.match(run, /security-sql\.js/);

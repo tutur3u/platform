@@ -25,7 +25,7 @@ jobs:
       deployments: read
     name: Ask the production workflow to retry review
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: needs.check-ci.outputs.should_run == 'true' && vars.TESTFLIGHT_EXTERNAL_BETA_GROUPS != ''
     runs-on: ubuntu-latest
     steps:
       - name: Check out workflow source

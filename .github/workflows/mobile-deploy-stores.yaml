@@ -543,7 +543,8 @@ jobs:
         env:
           MOBILE_BUILD_NAME: ${{ needs.mobile-credentials-preflight.outputs.build_name }}
           TESTFLIGHT_BETA_ENABLED: ${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}
-          TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || 'all' }}
+          TESTFLIGHT_EXTERNAL_BETA_GROUPS: ${{ vars.TESTFLIGHT_EXTERNAL_BETA_GROUPS || '' }}
+          TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || '' }}
           GITHUB_TOKEN: ${{ github.token }}
         run: node ../../scripts/mobile-deployment/verify-store.mjs ios "${{ needs.mobile-credentials-preflight.outputs.build_number }}"
 
@@ -616,7 +617,8 @@ jobs:
       - name: Retry newest eligible build
         env:
           TESTFLIGHT_BETA_ENABLED: ${{ vars.TESTFLIGHT_BETA_ENABLED || 'true' }}
-          TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || 'all' }}
+          TESTFLIGHT_EXTERNAL_BETA_GROUPS: ${{ vars.TESTFLIGHT_EXTERNAL_BETA_GROUPS || '' }}
+          TESTFLIGHT_BETA_GROUPS: ${{ vars.TESTFLIGHT_BETA_GROUPS || '' }}
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/mobile-deployment/verify-store.mjs ios-pending
 

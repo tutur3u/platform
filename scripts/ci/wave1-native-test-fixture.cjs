@@ -26,7 +26,12 @@ function fixture(t, app = 'mail') {
   fs.writeFileSync(
     path.join(dir, 'dist/server/wrangler.json'),
     JSON.stringify({
-      name: app === 'apps' ? 'tuturuuu-apps-vite-staging' : `tuturuuu-${app}`,
+      name:
+        app === 'apps'
+          ? 'tuturuuu-apps-vite-staging'
+          : app === 'web'
+            ? 'tuturuuu-web-start-candidate'
+            : `tuturuuu-${app}`,
       no_bundle: true,
       main: './index.js',
       compatibility_date: app === 'apps' ? '2026-10-12' : '2026-10-19',
@@ -35,15 +40,24 @@ function fixture(t, app = 'mail') {
           ? ['nodejs_compat']
           : ['nodejs_compat', 'global_fetch_strictly_public'],
       vars:
-        app === 'apps'
-          ? { TUTURUUU_NOINDEX: '1' }
-          : app === 'mail'
-            ? {
-                NEXT_PUBLIC_APP_URL: 'https://mail.tuturuuu.com',
-                NEXT_PUBLIC_MAIL_APP_URL: 'https://mail.tuturuuu.com',
-                NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
-              }
-            : {},
+        app === 'web'
+          ? {
+              WEB_START_CANDIDATE: 'off',
+              WEB_START_NATIVE_LEGAL: 'off',
+              WEB_START_NATIVE_SECURITY: 'off',
+              AUTH_COOKIE_DOMAIN: '.staging.tutur3u.com',
+              NEXT_PUBLIC_SUPABASE_URL:
+                'https://fxefojytwimjiqxseqag.supabase.co',
+            }
+          : app === 'apps'
+            ? { TUTURUUU_NOINDEX: '1' }
+            : app === 'mail'
+              ? {
+                  NEXT_PUBLIC_APP_URL: 'https://mail.tuturuuu.com',
+                  NEXT_PUBLIC_MAIL_APP_URL: 'https://mail.tuturuuu.com',
+                  NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
+                }
+              : {},
       rules: [{ type: 'ESModule', globs: ['**/*.js'] }],
       assets: {
         directory: '../client',

@@ -39,6 +39,19 @@ The ten findings independently ruled false positives (the finance migrations, th
 
 PR and push scans load the guard, parser and baseline from the trusted base commit. The initial independently reviewed introduction uses checkout files only when the base does not yet contain the guard. Migrations are read as data, never executed. Regression fixtures copy the historical session migration and the unmodified `20261027021000` fix from #6993.
 
+### Admitting new verified records after bootstrap
+
+Base records in `security-definer-verified-findings.json` are append-only: every record in the trusted base must still appear byte-identical (same keys, order and values), so the guard rejects an edited or removed record before scanning. Reviewed blocks and the historical inventory keep their existing rules. A new verified record is admitted only when the trusted base guard (`security-definer-admission.js`, loaded from the base commit) confirms all of the following:
+
+1. **Source binding.** The record's `file` is a migration the change ADDED (git status `A` against the base, so modified, renamed and pre-existing paths are rejected). The guard recomputes the findings over that file with the base records only; the record's path, line, rule, signature, finding digest and full-file `sourceDigest` must match a finding that actually occurs. A record with no finding is rejected.
+2. **Attestation.** The newest `security/definer-record-admission` commit status on the exact head SHA (`HEAD_SHA`, which must be the checked-out commit or the PR side of the merge checkout) has state `success`, was created by the pinned `tuturuuu-release-bot` login and numeric user id hard-coded in the base guard, and has the description `definer-records sha256:<digest>`. The digest is SHA-256 over the canonical JSON (recursively sorted keys, records sorted by their canonical form) of exactly the new records, so an extra, missing or edited addition fails.
+
+A missing token, missing or foreign status, wrong SHA, wrong digest or any status API error fails the job. There is no label or approval path. Only matched findings are suppressed; SQL scanning, baseline, historical, reviewed-block and grant rules stay fully enforced in the same run. The job keeps `contents: read` plus `statuses: read`, uses the existing `pull_request` and `push` triggers only, and executes base code alone, reading PR SQL and ledgers as data. After the attestation is posted, rerun the **Definer execution policy** job; see [how to attest](/build/devops/security-cadence#attest-new-definer-verified-records). A main push that merges new records needs the same attestation on the merge commit, because that run evaluates the pushed SHA.
+
+Coverage lives in `security-definer-admission.test.js` (append-only base records and source binding) and `security-definer-attestation.test.js` (attestation, digest, API failures and the guard CLI).
+
+The admission module was introduced by a PR that the previous base guard evaluated, so it could not admit records for itself and added none. Its workflow step copies `security-definer-admission.js` from the base only once the base contains it; base guards from before then neither have nor require it. This bootstrap is documentation only: no code path skips a check.
+
 The SQL grant end-state guard (`sql-grant-end-state-guard.js`) and the definer guard import the frozen six-entry inherited-ACL policy from `scripts/ci/sql-grant-frozen-definers.js`. An inherited exception requires the earlier revokes to survive ACL replay; the list and cutoff never authorize a new definer or a later grant.
 
 ## Daily reports

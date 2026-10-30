@@ -11,6 +11,7 @@ import { FormField, FormItem } from '@tuturuuu/ui/form';
 import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
 import { isAdminImpliedPermission } from '@tuturuuu/utils/creator-grant-permissions';
+import { isExplicitGrantPermission } from '@tuturuuu/utils/explicit-grant-permissions';
 import { cn } from '@tuturuuu/utils/format';
 import { permissionGroups } from '@tuturuuu/utils/permissions';
 import { useTranslations } from 'next-intl';
@@ -43,9 +44,12 @@ export default function RoleFormPermissionsSection({
 
   // Check if admin permission is enabled
   const isAdminEnabled = form.watch('permissions.admin') === true;
-  // Admin never implies a creator-grant permission such as manage_subscription.
+  // Admin never implies a creator-grant (manage_subscription) or an
+  // explicit-grant (manage_mastermind) permission.
   const grantedViaAdmin = (permissionId: string) =>
-    isAdminEnabled && isAdminImpliedPermission(permissionId);
+    isAdminEnabled &&
+    isAdminImpliedPermission(permissionId) &&
+    !isExplicitGrantPermission(permissionId);
 
   const totalPermissions = groups.reduce(
     (acc, group) => acc + group.permissions.length,

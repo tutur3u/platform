@@ -12831,6 +12831,59 @@ export type Database = {
         };
         Relationships: [];
       };
+      mastermind_access_audit: {
+        Row: {
+          action: string;
+          changed: boolean;
+          created_at: string;
+          id: number;
+          performed_by: string;
+          reason: string;
+          role_id: string | null;
+          target_user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          action: string;
+          changed: boolean;
+          created_at?: string;
+          id?: never;
+          performed_by?: string;
+          reason: string;
+          role_id?: string | null;
+          target_user_id: string;
+        };
+        Update: {
+          action?: string;
+          changed?: boolean;
+          created_at?: string;
+          id?: never;
+          performed_by?: string;
+          reason?: string;
+          role_id?: string | null;
+          target_user_id?: string;
+        };
+        Relationships: [];
+      };
+      mastermind_access_role: {
+        Row: {
+          created_at: string;
+          role_id: string;
+          singleton: boolean;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          role_id: string;
+          singleton?: boolean;
+        };
+        Update: {
+          created_at?: string;
+          role_id?: string;
+          singleton?: boolean;
+        };
+        Relationships: [];
+      };
       meet_stream_events: {
         Row: {
           actor_id: string | null;
@@ -23785,6 +23838,10 @@ export type Database = {
         Args: { p_actor_id: string; p_grant: Json };
         Returns: Json;
       };
+      grant_mastermind_access: {
+        Args: { p_reason: string; p_user_id: string };
+        Returns: string;
+      };
       has_account_benefit: {
         Args: { p_actor_id: string; p_key: string };
         Returns: boolean;
@@ -24337,6 +24394,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      mastermind_grant_allowed: {
+        Args: Record<PropertyKey, never>;
+        Returns: boolean;
+      };
       materialize_workspace_user_group_session_series: {
         Args: { p_series_id: string; p_until?: string };
         Returns: number;
@@ -24824,6 +24885,10 @@ export type Database = {
       revoke_account_benefit: {
         Args: { p_actor_id: string; p_id: string };
         Returns: boolean;
+      };
+      revoke_mastermind_access: {
+        Args: { p_reason: string; p_user_id: string };
+        Returns: number;
       };
       safe_parse_inet: { Args: { p_value: string }; Returns: unknown };
       save_learn_programming_problem: {
@@ -55184,7 +55249,8 @@ export type Database = {
         | 'view_ai_logs'
         | 'manage_git_repositories'
         | 'manage_desktop_deployment_vault'
-        | 'manage_sso_clients';
+        | 'manage_sso_clients'
+        | 'manage_mastermind';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -58018,6 +58084,7 @@ export const Constants = {
         'manage_git_repositories',
         'manage_desktop_deployment_vault',
         'manage_sso_clients',
+        'manage_mastermind',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

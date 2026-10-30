@@ -678,3 +678,23 @@ new FK orphans, and continued rejection for retained delivery/personal workspace
 The catalog audit and full-schema up/down/up verifier live under
 `apps/database/verification/workspace-delete-*`. These checks exercise local SQL
 and database roles; they do not establish HTTP, staging, or production acceptance.
+
+## Permission predicate caller scope
+
+`has_workspace_permission` and `is_org_member` answer only for `auth.uid()` under
+anonymous/authenticated JWT roles outside triggers; other-user queries return false.
+Service-role, owner and trigger evaluation retain their scope. Invites check the
+actual target membership row. Role-bearing invites require MEMBER type, member-
+and role-management permissions, and a same-workspace role. Rollbacks retain
+caller binding and grant helper execution only to authenticated/service roles.
+
+`manage_mastermind` requires the recorded root role and its enabled explicit grant.
+Creator/admin/default permissions never imply it. Only the audited owner procedure
+admits a member; this migration grants nobody access. The storage-limit RPC
+requires authenticated or service-role EXECUTE.
+
+Regression coverage: `has-workspace-permission-caller-scope.sql`,
+`manage-mastermind-*.sql`, `workspace-invite-role-binding.sql`, `meet-audio-chunk-read-boundary.sql`,
+`workspace-storage-limit-execute.sql`, and
+`workspace-permission-*.sql`. Apply the actual rollback before running
+`verification/workspace-permission-rollback.sql` and the invitation-role suite.
