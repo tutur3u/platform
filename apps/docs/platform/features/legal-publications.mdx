@@ -79,3 +79,22 @@ must match it on publication day.
 The scope uses the shared theme tokens directly (no local redefinition), so dark
 theme works; the navbar brand mark switches by theme, and client controls receive
 their strings as props instead of importing the message bundles.
+
+### Pinned November mobile proposal
+
+The proposed revision selector uses version `2026-11-02`, planned publication date
+`2026-11-02` and planned effective date `2026-12-02`. These are proposal metadata:
+the notice remains unpublished and public proposal adapters omit effective dates.
+All in-force documents and dates remain unchanged. The September
+`2026-09-13-draft` revision remains retrievable with its original content.
+
+Both locales of the November proposal add the Firebase Analytics/Crashlytics and
+Cloud Messaging/Installations processor entries and mobile privacy paragraphs.
+Analytics and crash reporting require Allow everywhere; push requires sign-in and
+push enabled independently of analytics. No Firebase contact occurs before sign-in.
+No DPA annex sentence is added. These additions apply only to the proposal.
+
+`packages/legal/src/mobile-revision.test.ts` pins both revisions and checks the
+bilingual copy against its B/C source fixture; existing effective-publication
+hashes continue to guard the in-force documents. The upcoming summary remains
+unchanged pending legal review of matching summary bullets.
