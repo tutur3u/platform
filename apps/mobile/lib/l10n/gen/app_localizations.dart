@@ -27436,7 +27436,7 @@ abstract class AppLocalizations {
   /// No description provided for @telemetryFirebaseInstallationDisclosure.
   ///
   /// In en, this message translates to:
-  /// **'Allowing analytics and crash reports also creates a Firebase Installation ID on this device (iOS and Android), which Google uses to tell app installs apart. It is not linked to your account.'**
+  /// **'Allowing analytics and crash reports also creates a Firebase Installation ID on this device (iOS and Android), which Google uses to tell app installs apart. We do not send your account details to Google with it.'**
   String get telemetryFirebaseInstallationDisclosure;
 
   /// No description provided for @telemetryConsentAllow.
@@ -27472,7 +27472,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsPushFirebaseDisclosure.
   ///
   /// In en, this message translates to:
-  /// **'Push notifications are delivered through Google Firebase Cloud Messaging, which registers this device with Firebase Installations. This is separate from your analytics choice. Turn push off and this device is no longer registered for notifications.'**
+  /// **'Push notifications are delivered through Google Firebase Cloud Messaging, which registers this device with Firebase Installations. This creates a Firebase Installation ID and a push token for this device; we link the push token to your account so we can send you notifications. This is separate from your analytics choice. Turn push off and this device is no longer registered for notifications.'**
   String get settingsPushFirebaseDisclosure;
 }
 

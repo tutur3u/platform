@@ -24,7 +24,8 @@ telemetry-fid-copy-v1, re-prompts Allows from earlier unreleased dev/QA screens
 once; there was no distributed Allow screen requiring a production re-prompt.
 The EN/VI FID sentence is maintained in telemetryFirebaseInstallationDisclosure,
 shared by the prompt and Settings. The prompt explicitly names Google Firebase
-Analytics and Crashlytics and links the privacy policy.
+Analytics and Crashlytics and links the privacy policy at /privacy for English
+or /vi/privacy for Vietnamese, selected by the app locale.
 
 ## First-run prompt
 
@@ -57,8 +58,10 @@ On **both iOS and Android**, Firebase/Installations admission requires a signed-
 session and either (a) push ON with OS authorization or (b) a current explicit
 telemetry Allow. Deny plus push OFF never configures Firebase or creates an FID.
 Consented Analytics and Crashlytics also use a Firebase Installation ID when
-push is OFF; Messaging stays dormant until push is admitted. These identifiers
-are not assigned an account ID, email, user property or Crashlytics user ID.
+push is OFF; Messaging stays dormant until push is admitted. The app does not
+send account details to Google with the telemetry FID. For push, it links the
+push token to the authenticated account to deliver notifications. The push
+setting disclosure states that distinction explicitly.
 
 A serialized admission controller runs the same policy for both platforms.
 When neither purpose remains, it disables telemetry, drains push token/server
