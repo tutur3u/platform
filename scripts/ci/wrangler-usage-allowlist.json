@@ -1541,12 +1541,22 @@
     "scripts/ci/cf-worker-settings-dashboard.mjs": {
       "gap": "deployment-source-compatibility",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7300",
-        "reason": "ADMITTED GAP: #7300 validates Worker settings/deployment snapshot provenance. Historical last_deployed_from=wrangler must remain accepted alongside cf; cf cannot rename that API response value. This is compatibility validation, not a CLI invocation."
+        "decision": "https://github.com/tutur3u/platform/pull/7308",
+        "reason": "ADMITTED GAP: #7308 validates Worker settings/deployment snapshot provenance. Historical last_deployed_from=wrangler stays accepted alongside cf and cf_cli (the value the API reports for cf CLI deploys); cf cannot rename that API response value. Compatibility validation, not a CLI invocation."
       },
       "lines": 1,
       "uses": 1,
-      "digest": "d6fe65a472876f91490f3648ef12703578b206db062e9f960f79026ea707966b"
+      "digest": "66cc4a9bafec14c89b4c64c6e5b9214c3d6a112ead6a33e7bb72d1a4ff4f72f6"
+    },
+    "scripts/ci/cf-worker-settings.test.mjs": {
+      "gap": "deployment-source-compatibility",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7308",
+        "reason": "ADMITTED GAP: #7308 keeps one strict after-check fixture with the historical last_deployed_from=wrangler API value so legacy deployment provenance stays covered alongside cf and cf_cli. Fixture data, not a CLI invocation."
+      },
+      "lines": 1,
+      "uses": 1,
+      "digest": "be195bf411095de969efbffe0dc40582019771f190d139fea2f690cce44dfc81"
     },
     "scripts/ci/cf-wrangler-publication.mjs": {
       "gap": "do-publication-rehearsal",
