@@ -77,6 +77,10 @@ export class OpsHub extends DurableObject<Env> {
     if (request.method === 'GET' && url.pathname === '/status') {
       return json({
         v: 2,
+        org:
+          flags.enabled && now - flags.lastPublisherAt < 30 * DAY
+            ? (this.snapshot(now)?.org ?? null)
+            : null,
         enabled: Boolean(flags.enabled),
         erased: Boolean(flags.erased),
         seq: flags.seq,
@@ -202,7 +206,7 @@ export class OpsHub extends DurableObject<Env> {
           ingests
         );
       });
-      return json({ seq: body.seq, v: 2 });
+      return json({ seq: body.seq, v: body.v });
     }
     if (request.method === 'DELETE' && url.pathname === '/hub') {
       // Preserve only a disabled replay tombstone: old signed requests cannot recreate erased data.

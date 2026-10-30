@@ -234,3 +234,51 @@ Run the focused gateway and authorizer tests from apps/infrastructure with
 These tests cover non-admin and non-allowlisted 404s, verified Bearer actor/root
 permission binding, cookie fallback prevention, fresh and expired assertions,
 credential stripping, CSRF and bounded upstream behavior.
+
+## Agent org contract v3
+
+Version 3 is accepted alongside the frozen v2 envelope. Only v3 may include
+`snapshot.org`; the rest of the envelope is unchanged. Both versions use the
+existing `ops-hub-publisher-v2` signature domain and exact signed body bytes
+(including `v`). Successful ingest echoes the submitted version. No new public
+route, deployment authorization or publication-hold change accompanies v3.
+
+`org` is a closed object with `nodes` (at most 100) and `edges` (at most 400).
+Each node requires `key`, `kind` (agent/lane), `label`, `role`, `status`
+(working/waiting/idle/blocked), and `activity` (now/lt1h/today/earlier).
+Optional fields are `team`, `pool`, `modelFamily`, `taskTitle`, and `prRefs`.
+Label, role, modelFamily and taskTitle have an 80-character limit; team and pool
+have a 64-character limit. Non-null strings are nonempty and reject controls.
+PR references are at most ten positive safe integers. Activity never contains
+an exact timestamp. Unknown fields reject the entire envelope at every depth.
+
+The publisher computes stable keys as the first 16 bytes of
+HMAC-SHA256(publisher secret, canonical role key), encoded as exactly 32 lowercase
+hex characters. The Worker validates this wire format, not the cryptographic
+provenance; the publisher secret stays on the publisher. Keys must be unique.
+Edges require `from`, `to`, and `kind` (reports_to/delegates_to/reviews).
+Endpoints must exist; self edges and duplicate edges reject the envelope.
+Human nodes and customer_of relations are never accepted. People belong to the
+separately authorized Contacts API join, never to snapshots or publisher input.
+
+Org text uses the existing Worker secret/personal/security deny-scan plus org
+path, branch, thread/run, synthetic customer-name and prompt checks. A label hit
+rejects the envelope. Any taskTitle hit drops the entire value to null before
+storage; it is never partially redacted. Role/team/pool/modelFamily also reject
+hits so they cannot bypass text refusal. Optional taskTitle may be omitted or
+null. These scans supplement the publisher sanitizer and cannot identify every
+possible personal name or prompt; publisher allowlisting remains required.
+The shared synthetic corpus is exported as `@tuturuuu/ops-hub/org-canaries`
+from `src/org-canaries.ts` for B2 to apply before signing. B2 publication still
+requires SB-91 F1–F3 fixes and the existing security/release gates.
+
+Authenticated `/snapshot` returns the org graph. Authenticated `/status` adds
+`org`, null when absent, paused, erased or expired; its existing control metadata
+and v=2 response remain compatible. Retention, replacement, erasure, signature,
+gateway authorization and byte ceilings are unchanged. A subsequent v2 snapshot
+replaces the v3 snapshot and removes org; heartbeat-only envelopes retain it.
+
+Regression evidence: `src/contract-v3.test.ts` covers version compatibility,
+closed objects, enums, graph integrity, byte/cardinality limits and shared canary
+refusal. `scripts/verify-org-runtime.mjs` exercises signed ingest, persisted
+sanitization, authenticated reads, restart and pause/expiry fences in workerd.
