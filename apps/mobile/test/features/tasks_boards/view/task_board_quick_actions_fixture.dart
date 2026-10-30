@@ -164,12 +164,17 @@ Future<void> settleQuickActionMutation(
   if (!cubit.state.isMutating) return;
   await tester.pumpAndSettle();
   if (!waitForCompletion) return;
-  final deadline = tester.binding.clock.now().add(const Duration(seconds: 30));
+  // The save's cache work runs on real async I/O, so bound the wait in real
+  // time and give that work real time on each turn; the fake test clock can
+  // run out long before a loaded CI runner finishes the save.
+  final elapsed = Stopwatch()..start();
   while (cubit.state.isMutating) {
-    if (!tester.binding.clock.now().isBefore(deadline)) {
+    if (elapsed.elapsed > const Duration(seconds: 30)) {
       fail('quick-action save did not complete within 30s');
     }
-    await tester.runAsync(() => Future<void>(() {}));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
     await tester.pump(const Duration(milliseconds: 100));
   }
   await tester.pumpAndSettle();
