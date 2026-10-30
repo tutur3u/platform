@@ -19,9 +19,10 @@ vi.mock('@tuturuuu/ui/dialog', () => {
   };
 });
 
-function render(selfDecision: boolean | undefined) {
+function render(selfDecision: boolean | undefined, outdated = false) {
   const consent = {
     selfDecision,
+    outdated,
     decide: { isPending: false, mutate: vi.fn() },
   } as unknown as TranscriptionConsent;
   return renderToStaticMarkup(
@@ -47,6 +48,14 @@ describe('transcription consent dialog', () => {
       expect(markup).toContain('Allow');
       expect(markup).toContain('Don&#x27;t transcribe me');
     }
+  });
+
+  it('replaces the choices with a reload when this bundle shows an outdated notice', () => {
+    const markup = render(undefined, true);
+    expect(markup).toContain('Reload');
+    expect(markup).toContain('notice was updated');
+    expect(markup).not.toContain('>Allow<');
+    expect(markup).not.toContain('Don&#x27;t transcribe me');
   });
 
   it('names the provider and makes no deletion promise', () => {

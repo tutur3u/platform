@@ -15,7 +15,9 @@ import type { MeetAiState } from '@tuturuuu/internal-api';
 import type { Json } from '@tuturuuu/types';
 import { Effect, Schedule } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
+import { MEET_CONSENT_NOTICE_VERSION } from '../consent/notice';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
+import { appendMeetConsentRecord } from './consent-records';
 
 export async function readMeetAi(request: Request, params: MeetAiParams) {
   const { db, meetingId, canManage } = await meetAiAccess(request, params);
@@ -201,6 +203,18 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
         error.code === '23505' ? 409 : 500,
         'Could not start transcription'
       );
+    // Audit symmetry: the starting host's own consent is recorded under the
+    // notice in force. It is best-effort and never gates the host's own
+    // microphone (the documented host exemption), so an unavailable log or a
+    // failed write must not stop transcription from starting.
+    await appendMeetConsentRecord(db, {
+      sessionId: data.id,
+      userId: user.id,
+      decision: 'allow',
+      noticeVersion: MEET_CONSENT_NOTICE_VERSION,
+    }).catch(() => {
+      console.warn('Host consent record pending', { sessionId: data.id });
+    });
     return { sessionId: data.id };
   }
   if (!sessionId) throw new MeetAiError(400, 'Missing session');

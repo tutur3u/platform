@@ -30,6 +30,53 @@ function failure(error: unknown, fallback: string): never {
   throw new MeetAiError(status >= 400 && status < 500 ? status : 503, fallback);
 }
 
+async function meetingSession(
+  db: Awaited<ReturnType<typeof createAdminClient>>,
+  meetingId: string,
+  sessionId: string
+) {
+  const { data: session, error } = await db
+    .from('meet_ai_sessions')
+    .select('id, created_at, ended_at')
+    .eq('id', sessionId)
+    .eq('meeting_id', meetingId)
+    .maybeSingle();
+  if (error) throw new MeetAiError(500, 'Session lookup failed');
+  if (!session) throw new MeetAiError(404, 'Session not found');
+  return session;
+}
+
+/**
+ * The signed-in participant's own effective decision, for the client prompt.
+ * An allow recorded under another notice version reads as no decision, so a
+ * participant who allowed before a notice change is asked again. The server's
+ * notice version is returned so an outdated client can tell it must reload.
+ */
+async function readOwnMeetConsent(request: Request, params: MeetAiParams) {
+  const { wsId, meetingId } = await params.params;
+  if (!z.uuid().safeParse(meetingId).success)
+    throw new MeetAiError(400, 'Invalid meeting');
+  const sessionId = new URL(request.url).searchParams.get('sessionId');
+  if (!z.uuid().safeParse(sessionId).success)
+    throw new MeetAiError(400, 'Invalid session');
+  const access = await getMeetCallAccess(meetingId, 'Participant').catch(
+    (error) => failure(error, 'Meeting access is unavailable')
+  );
+  if (z.uuid().safeParse(wsId).success && wsId !== access.meeting.ws_id)
+    throw new MeetAiError(404, 'Meeting not found');
+  await callRoomService(access, { action: 'read' }).catch((error) =>
+    failure(error, 'Join the meeting first')
+  );
+  const db = await createAdminClient();
+  const session = await meetingSession(db, meetingId, sessionId!);
+  const own = await readMeetConsentRecords(db, session.id, access.user.id);
+  return {
+    available: own !== null,
+    noticeVersion: MEET_CONSENT_NOTICE_VERSION,
+    decision: own ? (latestMeetConsents(own)[access.user.id] ?? null) : null,
+  };
+}
+
 /**
  * Append the signed-in participant's own decision to the legal consent log.
  * The actor is the verified app session, never a client-supplied id, and must
@@ -63,14 +110,7 @@ export async function recordMeetConsent(
     failure(error, 'Join the meeting first')
   );
   const db = await createAdminClient();
-  const { data: session, error } = await db
-    .from('meet_ai_sessions')
-    .select('id, created_at, ended_at')
-    .eq('id', parsed.data.sessionId)
-    .eq('meeting_id', meetingId)
-    .maybeSingle();
-  if (error) throw new MeetAiError(500, 'Session lookup failed');
-  if (!session) throw new MeetAiError(404, 'Session not found');
+  const session = await meetingSession(db, meetingId, parsed.data.sessionId);
   if (
     parsed.data.decision === 'allow' &&
     (session.ended_at ||
@@ -109,6 +149,8 @@ export async function readMeetConsentRoster(
   request: Request,
   params: MeetAiParams
 ) {
+  if (new URL(request.url).searchParams.get('scope') === 'self')
+    return readOwnMeetConsent(request, params);
   const { db, meetingId, user, canManage } = await meetAiAccess(
     request,
     params
@@ -129,6 +171,7 @@ export async function readMeetConsentRoster(
   const records = await readMeetConsentRecords(db, session.id);
   return {
     available: records !== null,
+    noticeVersion: MEET_CONSENT_NOTICE_VERSION,
     decisions: records ? latestMeetConsents(records) : {},
   };
 }

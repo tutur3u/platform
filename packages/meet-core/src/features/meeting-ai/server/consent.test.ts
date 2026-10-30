@@ -239,3 +239,53 @@ describe('consent roster GET', () => {
     expect(response.status).toBe(403);
   });
 });
+
+describe('own consent GET', () => {
+  const self = (query = `scope=self&sessionId=${session}`) =>
+    new Request(`https://meet.tuturuuu.com/x?${query}`);
+  const row = (decision: string, notice_version: string | null) => ({
+    id: '1',
+    user_id: participant,
+    decision,
+    notice_version,
+    created_at: new Date(Date.now() - 60_000).toISOString(),
+  });
+
+  it('returns the current allow with the server notice version', async () => {
+    database({ id: session }, [row('allow', MEET_CONSENT_NOTICE_VERSION)]);
+    const result = await readMeetConsentRoster(self(), params);
+    expect(result).toEqual({
+      available: true,
+      noticeVersion: MEET_CONSENT_NOTICE_VERSION,
+      decision: 'allow',
+    });
+    // Participants never go through the host-only access check.
+    expect(mocks.access).not.toHaveBeenCalled();
+    expect(mocks.roomService).toHaveBeenCalledWith(expect.anything(), {
+      action: 'read',
+    });
+  });
+
+  it('reports an allow under another notice as no decision', async () => {
+    database({ id: session }, [row('allow', 'meet-transcription-v3-old')]);
+    expect(await readMeetConsentRoster(self(), params)).toMatchObject({
+      decision: null,
+      noticeVersion: MEET_CONSENT_NOTICE_VERSION,
+    });
+    database({ id: session }, [row('withdraw', 'meet-transcription-v3-old')]);
+    expect(await readMeetConsentRoster(self(), params)).toMatchObject({
+      decision: 'withdraw',
+    });
+  });
+
+  it('refuses a user who is not admitted to the room', async () => {
+    database({ id: session }, []);
+    mocks.roomService.mockRejectedValue(
+      Object.assign(new Error('no'), { status: 403 })
+    );
+    const response = await meetAiResponse(() =>
+      readMeetConsentRoster(self(), params)
+    );
+    expect(response.status).toBe(403);
+  });
+});

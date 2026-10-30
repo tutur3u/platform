@@ -1,10 +1,19 @@
 'use client';
 
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { getMeetAiConsents, recordMeetAiConsent } from '@tuturuuu/internal-api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  getMeetAiConsents,
+  getMeetAiOwnConsent,
+  recordMeetAiConsent,
+} from '@tuturuuu/internal-api';
 import type { MeetRealtimePresence } from '@tuturuuu/realtime/meet';
 import { useMemo } from 'react';
 import type { MeetRoomController } from '../../call/lib/room-controller';
+import {
+  effectiveSelfDecision,
+  isNoticeOutdated,
+  type OwnConsent,
+} from './effective-decision';
 import { MEET_CONSENT_NOTICE_VERSION } from './notice';
 
 export type TranscriptionBadgeState = 'transcribed' | 'excluded' | 'pending';
@@ -31,9 +40,23 @@ export function useTranscriptionConsent({
   const sessionId = active ? live.sessionId : null;
   const selfUserId = state.selfUserId;
   const isStarter = active && !!selfUserId && live.startedBy === selfUserId;
-  const selfDecision = selfUserId
+  const roomDecision = selfUserId
     ? state.transcription.consents[selfUserId]
     : undefined;
+  const queryClient = useQueryClient();
+  // The legal record decides for participants; the room only mirrors it.
+  const ownKey = ['meet-ai-consent-self', wsId, meetingId, sessionId] as const;
+  const own = useQuery({
+    queryKey: ownKey,
+    queryFn: () => getMeetAiOwnConsent(wsId, meetingId, sessionId!),
+    enabled: !!sessionId && !isStarter,
+    refetchInterval: 10_000,
+    retry: false,
+  });
+  const selfDecision = isStarter
+    ? roomDecision
+    : effectiveSelfDecision(roomDecision, own.data);
+  const outdated = isNoticeOutdated(own.data, MEET_CONSENT_NOTICE_VERSION);
   // Live decisions reach the host first; refetch the record as soon as they do.
   const signal = JSON.stringify(state.transcription.consents);
   const roster = useQuery({
@@ -67,6 +90,11 @@ export function useTranscriptionConsent({
         sessionId,
         decision: allowed ? 'allow' : selfDecision ? 'withdraw' : 'deny',
         noticeVersion: MEET_CONSENT_NOTICE_VERSION,
+      });
+      queryClient.setQueryData<OwnConsent>(ownKey, {
+        available: true,
+        noticeVersion: MEET_CONSENT_NOTICE_VERSION,
+        decision: allowed ? 'allow' : selfDecision ? 'withdraw' : 'deny',
       });
       room.sendTranscriptionConsent(selfUserId, allowed);
     },
@@ -104,6 +132,10 @@ export function useTranscriptionConsent({
     startedBy: active ? live.startedBy : null,
     isStarter,
     selfDecision,
+    /** The server shows another notice than this bundle: reload to decide. */
+    outdated,
+    /** Server notice version, so a decision deferred under an old one resets. */
+    noticeVersion: own.data?.noticeVersion ?? null,
     selfAllowed: !(isStarter && selfDecision === false),
     allowedAccountIds,
     rosterAvailable: roster.data?.available ?? true,

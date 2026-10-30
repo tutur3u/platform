@@ -25,7 +25,15 @@ export async function generateBilledMeetArtifact(
     meetingId: string;
     attemptId: string;
   },
-  admission?: MeetCreditAdmission
+  admission?: MeetCreditAdmission,
+  hooks?: {
+    /**
+     * Runs after reservation, immediately before the provider call. It may
+     * return a narrower input or throw to abort; an abort sends and bills
+     * nothing and settles the reservation as failed.
+     */
+    beforeDispatch?: (input: Input) => Promise<Input>;
+  }
 ) {
   const { workspaceId, allowance } =
     admission ?? (await admitMeetCredits(actor.userId));
@@ -87,25 +95,31 @@ export async function generateBilledMeetArtifact(
   });
   const started = Date.now();
   let measured: Awaited<ReturnType<typeof generateMeetArtifact>> | undefined;
+  let aborted = false;
   try {
     const options = {
       maxOutputTokens,
       provider: await meetingProviderTransport(),
     };
+    aborted = true;
+    const dispatched = hooks?.beforeDispatch
+      ? await hooks.beforeDispatch(input)
+      : input;
+    aborted = false;
     measured =
-      'audioSegments' in input
+      'audioSegments' in dispatched
         ? await geminiSttProvider.transcribeBatch(
-            input.audioSegments,
-            input.hints,
+            dispatched.audioSegments,
+            dispatched.hints,
             options
           )
-        : await generateMeetArtifact(input, options);
+        : await generateMeetArtifact(dispatched, options);
   } catch (error) {
     await settleAiStudioRun({
       runId: run.runId,
       status: 'failed',
       actualCredits: 0,
-      errorClass: 'provider_failed',
+      errorClass: aborted ? 'dispatch_aborted' : 'provider_failed',
       metadata: { ...metadata, usage_source: 'unavailable' },
     });
     throw error;

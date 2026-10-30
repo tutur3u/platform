@@ -137,3 +137,25 @@ it('does not execute again when AI Hub rejects an existing attempt', async () =>
   ).rejects.toThrow('already running');
   expect(f.generate).not.toHaveBeenCalled();
 });
+it('aborts before the provider and settles as failed when the dispatch recheck refuses', async () => {
+  await expect(
+    generateBilledMeetArtifact(
+      { audioSegments: [new Uint8Array(100)] },
+      actor,
+      undefined,
+      {
+        beforeDispatch: async () => {
+          throw new Error('consent withdrawn');
+        },
+      }
+    )
+  ).rejects.toThrow('consent withdrawn');
+  expect(f.generate).not.toHaveBeenCalled();
+  expect(f.settle).toHaveBeenCalledWith(
+    expect.objectContaining({
+      status: 'failed',
+      actualCredits: 0,
+      errorClass: 'dispatch_aborted',
+    })
+  );
+});

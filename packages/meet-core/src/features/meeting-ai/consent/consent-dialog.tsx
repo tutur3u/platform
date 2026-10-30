@@ -69,6 +69,9 @@ export function TranscriptionConsentDialog({
             })}
           </DialogDescription>
         </DialogHeader>
+        {consent.outdated ? (
+          <p className="rounded-xl bg-muted/50 p-4 text-sm">{t('outdated')}</p>
+        ) : null}
         <ul className="space-y-2.5 rounded-xl bg-muted/50 p-4 text-sm">
           {FACTS.map(({ icon: Icon, key }) => (
             <li key={key} className="flex items-start gap-2.5">
@@ -81,7 +84,14 @@ export function TranscriptionConsentDialog({
           ))}
         </ul>
         <DialogFooter className="grid grid-cols-2 gap-2 sm:space-x-0">
-          {consent.selfDecision === true ? (
+          {consent.outdated ? (
+            <Button
+              className="col-span-2"
+              onClick={() => window.location.reload()}
+            >
+              {t('reload')}
+            </Button>
+          ) : consent.selfDecision === true ? (
             <Button
               variant="outline"
               className="col-span-2"

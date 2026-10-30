@@ -153,9 +153,31 @@ export function getMeetAiConsents(
 ) {
   return getInternalApiClient(options).json<{
     available: boolean;
+    noticeVersion: string;
     decisions: Record<string, MeetAiConsentDecision>;
   }>(
     `${path(wsId, meetingId)}/consent?sessionId=${encodeURIComponent(sessionId)}`,
+    { cache: 'no-store' }
+  );
+}
+
+/**
+ * The signed-in participant's own effective decision. An allow recorded under
+ * another notice version reads as null, so the participant is asked again.
+ * `noticeVersion` is the server's current notice.
+ */
+export function getMeetAiOwnConsent(
+  wsId: string,
+  meetingId: string,
+  sessionId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    available: boolean;
+    noticeVersion: string;
+    decision: MeetAiConsentDecision | null;
+  }>(
+    `${path(wsId, meetingId)}/consent?scope=self&sessionId=${encodeURIComponent(sessionId)}`,
     { cache: 'no-store' }
   );
 }

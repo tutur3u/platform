@@ -1,5 +1,6 @@
 import 'server-only';
 import { MEET_AUDIO_REQUEST_MAX_BYTES } from '@tuturuuu/ai/meetings/audio-contract';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { Effect, Either, Schedule } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
@@ -29,6 +30,38 @@ const schema = z.object({
   sequence: z.coerce.number().int().min(0).max(1080),
   startSeconds: z.coerce.number().min(0).max(16_200),
 });
+
+type ReceivedSource = Awaited<ReturnType<typeof readAudioParts>>[number];
+
+/**
+ * Indexes of `sources` that may be transcribed right now. Reads the current
+ * consent log and room audience, so it can be repeated just before dispatch.
+ */
+async function admittedSourceIndexes(input: {
+  db: TypedSupabaseClient;
+  meetingId: string;
+  actorId: string;
+  sessionId: string;
+  sessionStartedAt: string;
+  sources: ReceivedSource[];
+}) {
+  const { sources, actorId } = input;
+  // Host screen audio can carry other people's voices; with anyone else in the
+  // room it is excluded (an unknown audience counts as someone else).
+  const audience = hasHostSharedAudio(actorId, sources)
+    ? await readTranscriptionAudience(input.meetingId, actorId)
+    : null;
+  return consentedSourceIndexes({
+    actorId,
+    sessionStartedAt: input.sessionStartedAt,
+    sources,
+    records: needsConsentRecords(actorId, sources)
+      ? await readMeetConsentRecords(input.db, input.sessionId)
+      : [],
+    excludeHostSharedAudio:
+      audience === null || audience > MEET_HOST_SHARED_AUDIO_MAX_ADMITTED,
+  });
+}
 
 export async function transcribeMeetChunk(
   request: Request,
@@ -79,29 +112,22 @@ export async function transcribeMeetChunk(
       'Too many host audio tracks',
       'MEET_AI_HOST_TRACKS'
     );
-  // Host screen audio can carry other people's voices; with anyone else in the
-  // room it is excluded (an unknown audience counts as someone else).
-  const audience = hasHostSharedAudio(user.id, received)
-    ? await readTranscriptionAudience(meetingId, user.id)
-    : null;
-  const kept = consentedSourceIndexes({
+  const gateInput = {
+    db,
+    meetingId,
     actorId: user.id,
+    sessionId,
     sessionStartedAt: session.created_at,
     sources: received,
-    records: needsConsentRecords(user.id, received)
-      ? await readMeetConsentRecords(db, sessionId)
-      : [],
-    excludeHostSharedAudio:
-      audience === null || audience > MEET_HOST_SHARED_AUDIO_MAX_ADMITTED,
-  });
+  };
+  const kept = await admittedSourceIndexes(gateInput);
   if (!kept.length)
     throw new MeetAiError(
       403,
       'Transcription consent is required',
       'MEET_AI_CONSENT_REQUIRED'
     );
-  const parts = kept.map((index) => received[index]!);
-  const excludedSources = received.length - parts.length;
+  let parts = kept.map((index) => received[index]!);
   // A credit refusal must reject the upload before it can leave a failed row.
   const admission = await admitMeetCredits(user.id);
   const resolved = await Effect.runPromise(
@@ -125,7 +151,7 @@ export async function transcribeMeetChunk(
     )
   );
   if (Either.isLeft(resolved)) throw resolved.left;
-  const speakers = resolved.right;
+  let speakers = resolved.right;
   // Claim one provider attempt at a time, including recovery of failed attempts.
   const reservationStarted = performance.now();
   const inserted = await db.rpc('reserve_meet_ai_chunk', {
@@ -179,8 +205,33 @@ export async function transcribeMeetChunk(
         ? { audioSegments: parts.map((part) => part.bytes), hints }
         : { audio: parts[0]!.bytes, hints },
       { userId: user.id, meetingId, attemptId: inserted.data.attempt_id ?? id },
-      admission
+      admission,
+      {
+        // The upload may have waited on credits, lookups and the reservation
+        // since the first check, and consent can change meanwhile. Read the
+        // current consent again immediately before the provider call and send
+        // only sources that are still allowed; if none are, nothing is sent,
+        // stored or billed.
+        beforeDispatch: async () => {
+          const current = new Set(await admittedSourceIndexes(gateInput));
+          const stillAllowed = kept.flatMap((index, position) =>
+            current.has(index) ? [position] : []
+          );
+          if (!stillAllowed.length)
+            throw new MeetAiError(
+              403,
+              'Transcription consent is required',
+              'MEET_AI_CONSENT_REQUIRED'
+            );
+          parts = stillAllowed.map((position) => parts[position]!);
+          speakers = stillAllowed.map((position) => speakers[position]!);
+          return batched
+            ? { audioSegments: parts.map((part) => part.bytes), hints }
+            : { audio: parts[0]!.bytes, hints };
+        },
+      }
     );
+    const excludedSources = received.length - parts.length;
     const segments = batched
       ? parts.map((part, index) => ({
           speaker: speakers[index] ?? null,

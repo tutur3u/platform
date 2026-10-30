@@ -1689,7 +1689,14 @@ therefore excludes everyone but the host until they allow again (fail closed).
 Withdrawal takes effect within one chunk. The filter reads the latest decision
 on every upload, so once a participant denies or withdraws, none of their sources
 is forwarded again, including clips captured earlier that are still queued or
-uploaded late. A clip that overlaps the withdrawal, or ends up to 10 s before it,
+uploaded late. The gate also runs a second time immediately before the provider
+call, after credit admission, speaker lookups, chunk reservation and billing
+reservation: consent, notice version and room audience are read again and only
+sources still allowed are sent. If none are, nothing is sent, stored or billed
+and the reserved chunk is marked failed (the billing run settles as failed with
+`dispatch_aborted`). Provider calls already in flight when someone withdraws
+cannot be recalled; the recheck narrows that window to the single read-to-call
+gap, and that speech falls under the forward-only rule below. A clip that overlaps the withdrawal, or ends up to 10 s before it,
 is dropped as well. Speech that went out while the person was allowed and was
 already transcribed is not recalled: the text stays in the session transcript and
 the notes generated from it until the transcript is deleted, as the notice says
@@ -1697,6 +1704,18 @@ the notes generated from it until the transcript is deleted, as the notice says
 identified in each chunk's `usage.speaker`/`usage.segments`, and an erase path is
 tracked separately. Audio itself is not stored: chunks are sent to the provider
 and only the transcript text, usage and cost are kept.
+
+Participants see their own effective decision from the legal record, not from
+the room mirror. `GET …/consent?scope=self&sessionId=` (any admitted participant)
+returns `{available, noticeVersion, decision}` where an allow under another
+notice version reads as `null`. A participant who allowed before a notice change
+therefore gets the dialog again (a "decide later" is remembered per session and
+notice version, so a changed notice asks again), and a client bundle that shows
+a different notice than the server gets a Reload action instead of Allow, because
+the server refuses its writes with 409 `MEET_AI_CONSENT_NOTICE_OUTDATED`. The
+starting host's own allow is appended to the log under the current notice when
+the session starts, for audit symmetry. It is best-effort and the host's own
+microphone is still not gated by it (the documented host exemption).
 
 Consent writes accept only the notice version the server currently shows
 (`MEET_CONSENT_NOTICE_VERSION`); any other value gets 409

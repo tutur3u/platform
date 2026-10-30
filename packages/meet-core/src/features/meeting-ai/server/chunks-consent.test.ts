@@ -34,6 +34,7 @@ const host = '00000000-0000-4000-8000-000000000001';
 const guest = '00000000-0000-4000-8000-000000000002';
 const decliner = '00000000-0000-4000-8000-000000000003';
 const stale = '00000000-0000-4000-8000-000000000004';
+const staleNotice = 'meet-transcription-v2-old';
 const bystander = '00000000-0000-4000-8000-000000000005';
 const params = { params: Promise.resolve({ wsId: host, meetingId: host }) };
 const started = new Date(Date.now() - 60_000).toISOString();
@@ -83,7 +84,50 @@ function storage(consents: { data: unknown; error: unknown }) {
     meetingId: host,
     user: { id: host },
   });
-  return { schema, rpc, persisted };
+  return { schema, rpc, persisted, log };
+}
+
+/** Rows as the log returns them: newest first, current notice by default. */
+function rows(
+  entries: Array<{
+    user: string;
+    decision: string;
+    at: number;
+    notice?: string;
+  }>
+) {
+  return {
+    data: entries
+      .map((entry, index) => ({
+        id: String(index),
+        user_id: entry.user,
+        decision: entry.decision,
+        created_at: at(entry.at),
+        notice_version: entry.notice ?? MEET_CONSENT_NOTICE_VERSION,
+      }))
+      .reverse(),
+    error: null,
+  };
+}
+
+/** Provider mock that runs the pre-dispatch recheck and records what it sent. */
+function dispatching() {
+  const sent: Uint8Array[][] = [];
+  mocks.generate.mockImplementation(
+    async (input, _actor, _admission, hooks) => {
+      const final = hooks?.beforeDispatch
+        ? await hooks.beforeDispatch(input)
+        : input;
+      sent.push(final.audioSegments);
+      return {
+        text: '',
+        transcripts: final.audioSegments.map(() => 'words'),
+        usage: {},
+        costUsd: 0.001,
+      };
+    }
+  );
+  return sent;
 }
 
 function upload(
@@ -323,7 +367,6 @@ describe('server-side transcription consent', () => {
       );
     }
   });
-  const staleNotice = 'meet-transcription-v2-old';
   const states: Array<[string, unknown[], boolean]> = [
     ['no record', [], false],
     ['deny', [{ decision: 'deny', created_at: at(1) }], false],
@@ -463,5 +506,93 @@ describe('server-side transcription consent', () => {
     ]);
     expect(rpc).toHaveBeenCalledOnce();
     expect(persisted.update.mock.calls[0]?.[0].usage.excludedSources).toBe(4);
+  });
+
+  it('rechecks consent right before dispatch and drops a participant who withdrew while queued', async () => {
+    const { log, persisted } = storage({ data: [], error: null });
+    const allowedFirst = rows([
+      { user: guest, decision: 'allow', at: 1 },
+      { user: decliner, decision: 'allow', at: 1 },
+    ]);
+    // The first read (the upload gate) sees both allowed; by the time the
+    // request reaches the provider call, one of them has withdrawn.
+    log.limit.mockResolvedValueOnce(allowedFirst).mockResolvedValue(
+      rows([
+        { user: guest, decision: 'allow', at: 1 },
+        { user: decliner, decision: 'allow', at: 1 },
+        { user: decliner, decision: 'withdraw', at: 45 },
+      ])
+    );
+    const sent = dispatching();
+    await transcribeMeetChunk(
+      upload([
+        { speakerAccountId: host, at: 30 },
+        { speakerAccountId: decliner, at: 30 },
+        { speakerAccountId: guest, at: 30 },
+      ]),
+      params
+    );
+    expect(sent).toHaveLength(1);
+    expect(sent[0]).toHaveLength(2);
+    const update = persisted.update.mock.calls[0]?.[0];
+    expect(update.usage.excludedSources).toBe(1);
+    expect(
+      update.usage.segments.map(
+        (segment: { speaker: { accountId: string } }) =>
+          segment.speaker.accountId
+      )
+    ).toEqual([host, guest]);
+  });
+
+  it('sends nothing, stores nothing and fails the attempt when every source withdrew while queued', async () => {
+    const { log, persisted } = storage({ data: [], error: null });
+    log.limit
+      .mockResolvedValueOnce(rows([{ user: guest, decision: 'allow', at: 1 }]))
+      .mockResolvedValue(
+        rows([
+          { user: guest, decision: 'allow', at: 1 },
+          { user: guest, decision: 'withdraw', at: 45 },
+        ])
+      );
+    const sent = dispatching();
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(upload([{ speakerAccountId: guest, at: 30 }]), params)
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({
+      code: 'MEET_AI_CONSENT_REQUIRED',
+    });
+    expect(sent).toHaveLength(0);
+    // The reserved chunk is marked failed, never completed with a transcript.
+    expect(persisted.update).toHaveBeenCalledOnce();
+    expect(persisted.update.mock.calls[0]?.[0]).toEqual({ status: 'failed' });
+  });
+
+  it('drops a source when the notice changes between the gate and dispatch', async () => {
+    const { log } = storage({ data: [], error: null });
+    log.limit
+      .mockResolvedValueOnce(rows([{ user: guest, decision: 'allow', at: 1 }]))
+      .mockResolvedValue(
+        rows([{ user: guest, decision: 'allow', at: 1, notice: staleNotice }])
+      );
+    const sent = dispatching();
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(upload([{ speakerAccountId: guest, at: 30 }]), params)
+    );
+    expect(response.status).toBe(403);
+    expect(sent).toHaveLength(0);
+  });
+
+  it('fails closed when consent cannot be read at dispatch', async () => {
+    const { log } = storage({ data: [], error: null });
+    log.limit
+      .mockResolvedValueOnce(rows([{ user: guest, decision: 'allow', at: 1 }]))
+      .mockResolvedValue({ data: null, error: { code: '57014' } });
+    const sent = dispatching();
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(upload([{ speakerAccountId: guest, at: 30 }]), params)
+    );
+    expect(response.status).toBe(503);
+    expect(sent).toHaveLength(0);
   });
 });

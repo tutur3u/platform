@@ -55,11 +55,13 @@ export function TranscriptionLayer({
   useTranscriptionCues(consent.active);
   const [manual, setManual] = useState(false);
   const [deferred, setDeferred] = useState<string | null>(null);
+  // A deferral applies to one notice version; a changed notice asks again.
+  const deferralKey = `${consent.sessionId}:${consent.noticeVersion ?? ''}`;
   const prompt =
     consent.active &&
     !consent.isStarter &&
     consent.selfDecision === undefined &&
-    deferred !== consent.sessionId;
+    deferred !== deferralKey;
   const open = consent.active && !consent.isStarter && (manual || prompt);
   const host = consent.startedBy
     ? room.state.participants[consent.startedBy]?.displayName
@@ -76,7 +78,7 @@ export function TranscriptionLayer({
         onOpenChange={(next) => {
           if (next) return;
           setManual(false);
-          setDeferred(consent.sessionId);
+          setDeferred(deferralKey);
         }}
         hostName={host}
       />
