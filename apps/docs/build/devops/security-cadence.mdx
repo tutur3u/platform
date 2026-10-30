@@ -93,6 +93,11 @@ findings are tracked in the findings register instead of blocking unrelated work
   it is checkout code. `scripts/ci/security-trusted-helpers.test.js` runs the real
   scan, audit and CodeQL gate steps against a base without the trusted helpers
   and a hostile checkout copy.
+- Gitleaks allowlist changes take effect for a pull request only after its
+  `base.sha` moves (a push or `gh pr update-branch`). Closing and reopening the
+  PR does not move its base, because the scan loads
+  `.github/security/gitleaks.toml` from the PR's trusted base commit.
+  To confirm, check that the run log's `BASE_SHA` includes the allowlist commit.
 - Fork CodeQL results are not uploaded. They feed only the new-alert gate.
 - The new-alert gate prints each blocking result's rule ID and primary
   `path:line`, with workflow-command characters escaped. SARIF messages and full
