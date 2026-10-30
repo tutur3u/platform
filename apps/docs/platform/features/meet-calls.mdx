@@ -503,13 +503,20 @@ workspace membership, meeting ownership, and same-origin mutation requests.
 
 The host opens **Transcript & notes**, tells participants that audio will be sent
 to Gemini, then starts live transcription. The panel and call header show an
-active-session indicator to members. The browser mixes its current microphone
-track with received participant audio; it does not request another microphone or
-capture unrelated desktop audio. Muted tracks contribute silence. AudioWorklet
-emits independent mono 16 kHz WAV chunks about every ten seconds, skipping silence.
-Transcripts arrive after Gemini processes each chunk. This is chunked live
-transcription, not word-by-word captions, and overlapping speech is not assigned
-to guessed speaker identities.
+active-session indicator to members. Transcription audio is not mixed: the
+capturing browser keeps one source per person and kind (its own microphone, its
+own shared audio, each received participant microphone and each received screen
+audio track), each tagged with that person's account. It does not request another
+microphone or capture unrelated desktop audio. Muted tracks contribute silence.
+AudioWorklet cuts each source into independent mono 16 kHz WAV chunks about every
+ten seconds, skipping silence, and the upload carries them as separate parts with
+their speaker. Transcripts arrive after Gemini processes each chunk. This is
+chunked live transcription, not word-by-word captions. Because sources are
+separate, speech is attributed to the account that owns the source, and the
+consent filter described under "Transcription consent and capture" can drop one
+person's audio without touching anyone else's. Overlapping speech from two people
+arrives as two sources, not as a guessed mix. The local recording below is the
+only place audio is mixed.
 
 **Stop & generate notes** flushes pending audio and generates a summary, decisions,
 action items, and open questions. Leaving through the call's leave control does
@@ -697,8 +704,9 @@ capabilities depend on browser, operating system, and the chosen source. Select
 **Share audio** when offered. The in-call badge reports whether captured audio is
 available; a video-only capture still works. Remote screen tiles play shared audio,
 and muting the microphone does not mute shared audio. Stopping screen sharing
-stops both its audio and video tracks. The host's shared audio is included in the
-existing consent-controlled transcription mixer.
+stops both its audio and video tracks. The host's shared audio is its own
+transcription source, subject to the consent rules for host shared audio below;
+it is not mixed with microphones.
 
 The host can click the meeting title to rename it in a dialog, without changing
 the meeting time or calendar linkage, and hover or keyboard-focus a participant's
@@ -829,7 +837,13 @@ Recording permissions start disabled for participants. Admins can independently
 share saved recordings and allow participants to start/stop recording. The Durable
 Object holds one recording lease for the room; a remote stop cannot be overwritten
 by a delayed start. The recording device composites its available video and mixes
-audio locally, and must remain available until saving completes. Recordings stop
+every audio track locally into one file (`room-recorder.ts`), and must remain
+available until saving completes. The recording is the all-participants mix: it
+goes to the creator's Drive only, is never sent to Gemini or any AI service, and
+is not used for transcription or notes. Per-person transcription consent does not
+apply to it and per-person exclusion is impossible, because one mixed file has no
+per-person split. Recording is a separate, room-visible action (the REC indicator
+and its own permissions). Recordings stop
 at 55 MiB and upload directly to the creator's personal Drive using a scoped signed
 URL, followed by server-side metadata verification. Failed saves offer a local copy.
 This is browser capture, not a Cloudflare server-side recording service.
@@ -1605,7 +1619,7 @@ types in the call reducer's default branch, so realtime can ship first.
 Regression coverage lives in `transcription.test.ts` and
 `transcription-routing.test.ts`; `transcription-compat.test.ts` now covers the
 client reducer that consumes both messages.
-In-room consent survives DO hibernation only under the active session UUID and is cleared on session or room end. This is not the legal consent record; private.meet_ai_consents belongs to M1-B/M1-C. WebSocket messages over 256 KiB (UTF-8 bytes for text) are rejected before JSON parsing. Legal consent persistence, audio filtering and notices belong to subsequent milestones.
+In-room consent survives DO hibernation only under the active session UUID and is cleared on session or room end. This is not the legal consent record; the legal record is private.meet_ai_consents, and the audio filter reads that record, never this ephemeral room state (see "Transcription consent and capture"). WebSocket messages over 256 KiB (UTF-8 bytes for text) are rejected before JSON parsing.
 
 ## Transcription consent and capture
 
@@ -1662,6 +1676,27 @@ per upload that contains host shared audio, and an unknown audience counts as
 someone else being present. The host device mirrors this and does not capture
 screen audio with more than one person in the call. A session-scoped host toggle
 to include shared audio, with an indicator for everyone, is a follow-up.
+
+An allow also has to name the notice the server currently shows. A record whose
+`notice_version` is missing or is not `MEET_CONSENT_NOTICE_VERSION` is stale: it
+never admits audio, even if it is the participant's latest decision, and it
+supersedes an earlier current allow. The roster reports that account as
+undecided, so the participant is asked again, and the consent route writes a new
+allow instead of treating it as a repeat. A deny or withdraw always stands
+whatever version it names. Bumping the notice version during a live call
+therefore excludes everyone but the host until they allow again (fail closed).
+
+Withdrawal takes effect within one chunk. The filter reads the latest decision
+on every upload, so once a participant denies or withdraws, none of their sources
+is forwarded again, including clips captured earlier that are still queued or
+uploaded late. A clip that overlaps the withdrawal, or ends up to 10 s before it,
+is dropped as well. Speech that went out while the person was allowed and was
+already transcribed is not recalled: the text stays in the session transcript and
+the notes generated from it until the transcript is deleted, as the notice says
+(withdrawal is forward-only). There is no per-person erase yet; the account is
+identified in each chunk's `usage.speaker`/`usage.segments`, and an erase path is
+tracked separately. Audio itself is not stored: chunks are sent to the provider
+and only the transcript text, usage and cost are kept.
 
 Consent writes accept only the notice version the server currently shows
 (`MEET_CONSENT_NOTICE_VERSION`); any other value gets 409
@@ -1720,8 +1755,10 @@ privacy-policy section is pending with legal. Until then the dialog itself
 carries the essential notice.
 
 Regression coverage: `chunks-consent.test.ts` (refusal without consent, declined
-and withdrawn participants excluded, pre-allow audio excluded, missing log fails
-closed, solo uploads unaffected), `consent-gate.test.ts`, `consent.test.ts`
+and withdrawn participants excluded, stale-notice allows excluded, a mid-session
+withdrawal stopping that person within one chunk, mixed uploads forwarding only
+consented sources, pre-allow audio excluded, missing log fails closed, solo
+uploads unaffected), `consent-gate.test.ts`, `consent.test.ts`
 (origin, room admission, session-user binding, ended sessions, host-only
 roster), `consent-dialog.test.tsx` (withdraw shown only after allow; no
 deletion or retention-period promise), `audio-sources.test.ts` and

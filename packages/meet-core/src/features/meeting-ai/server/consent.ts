@@ -84,8 +84,14 @@ export async function recordMeetConsent(
       'Consent could not be recorded',
       'MEET_AI_CONSENT_UNAVAILABLE'
     );
-  // Repeating the current decision appends nothing; changes are bounded.
-  if (own.at(-1)?.decision === parsed.data.decision)
+  // Repeating the current decision appends nothing; changes are bounded. An
+  // allow recorded under an older notice is not current and is written again.
+  const last = own.at(-1);
+  if (
+    last?.decision === parsed.data.decision &&
+    (last.decision !== 'allow' ||
+      last.notice_version === MEET_CONSENT_NOTICE_VERSION)
+  )
     return { recorded: false, decision: parsed.data.decision };
   if (own.length >= MEET_CONSENT_MAX_DECISIONS)
     throw new MeetAiError(429, 'Too many consent changes for this session');

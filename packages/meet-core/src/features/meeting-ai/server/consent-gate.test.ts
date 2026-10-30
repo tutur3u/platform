@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MEET_CONSENT_NOTICE_VERSION } from '../consent/notice';
 import {
   consentedSourceIndexes,
   hasExtraHostTracks,
@@ -24,7 +25,12 @@ const gate = (
   consentedSourceIndexes({
     actorId: 'host',
     sessionStartedAt: started,
-    records,
+    // Fixtures default to the notice in force; stale versions are explicit.
+    records:
+      records?.map((record) => ({
+        notice_version: MEET_CONSENT_NOTICE_VERSION,
+        ...record,
+      })) ?? null,
     sources,
     excludeHostSharedAudio,
   });
@@ -88,6 +94,46 @@ describe('consent gate', () => {
         [
           { id: '2', user_id: 'a', decision: 'allow', created_at: at(10) },
           { id: '1', user_id: 'a', decision: 'withdraw', created_at: at(10) },
+        ],
+        [clip('a', 30)]
+      )
+    ).toEqual([]);
+  });
+
+  it('drops an allow that names an older or missing notice version', () => {
+    const allowed: MeetConsentRecord = {
+      user_id: 'a',
+      decision: 'allow',
+      created_at: at(0),
+    };
+    expect(
+      gate(
+        [
+          { ...allowed, user_id: 'old', notice_version: 'meet-v2-old' },
+          { ...allowed, user_id: 'blank', notice_version: null },
+          { ...allowed, user_id: 'current' },
+        ],
+        [clip('old', 30), clip('blank', 30), clip('current', 30)]
+      )
+    ).toEqual([2]);
+    // A stale allow recorded after a current one supersedes it.
+    expect(
+      gate(
+        [allowed, { ...allowed, created_at: at(5), notice_version: 'old' }],
+        [clip('a', 30)]
+      )
+    ).toEqual([]);
+    // A deny or withdraw stands whatever notice it names.
+    expect(
+      gate(
+        [
+          allowed,
+          {
+            ...allowed,
+            decision: 'withdraw',
+            created_at: at(5),
+            notice_version: 'old',
+          },
         ],
         [clip('a', 30)]
       )

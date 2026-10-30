@@ -173,6 +173,7 @@ describe('consent POST', () => {
       id: String(index),
       user_id: participant,
       decision,
+      notice_version: MEET_CONSENT_NOTICE_VERSION,
       created_at: new Date(Date.now() - 60_000 + index).toISOString(),
     });
     const repeated = database(live, [row('allow', 0)]);
@@ -192,6 +193,28 @@ describe('consent POST', () => {
     );
     expect(response.status).toBe(429);
     expect(flapping.insert).not.toHaveBeenCalled();
+  });
+
+  it('records the allow again when the stored one names an older notice', async () => {
+    const live = {
+      id: session,
+      created_at: new Date().toISOString(),
+      ended_at: null,
+    };
+    const { insert } = database(live, [
+      {
+        id: '0',
+        user_id: participant,
+        decision: 'allow',
+        notice_version: 'meet-transcription-v2-old',
+        created_at: new Date(Date.now() - 60_000).toISOString(),
+      },
+    ]);
+    expect(await recordMeetConsent(post(allow), params)).toEqual({
+      recorded: true,
+      decision: 'allow',
+    });
+    expect(insert).toHaveBeenCalledOnce();
   });
 
   it('rejects a session from another meeting', async () => {

@@ -3,13 +3,18 @@ import type {
   SupabaseClient,
   TypedSupabaseClient,
 } from '@tuturuuu/supabase/types';
-import type { MeetConsentDecision } from '../consent/notice';
+import {
+  MEET_CONSENT_NOTICE_VERSION,
+  type MeetConsentDecision,
+} from '../consent/notice';
 import { MeetAiError } from './access';
 
 export type MeetConsentRecord = {
   id?: string;
   user_id: string | null;
   decision: MeetConsentDecision;
+  /** Notice the person saw; a missing value is treated as stale. */
+  notice_version?: string | null;
   created_at: string;
 };
 
@@ -39,7 +44,7 @@ export async function readMeetConsentRecords(
 ): Promise<MeetConsentRecord[] | null> {
   const limit = userId ? MEET_CONSENT_MAX_DECISIONS : SESSION_READ_LIMIT;
   let query = consentLog(db)
-    .select('id, user_id, decision, created_at')
+    .select('id, user_id, decision, notice_version, created_at')
     .eq('session_id', sessionId);
   if (userId) query = query.eq('user_id', userId);
   const { data, error } = await query
@@ -80,10 +85,20 @@ export async function appendMeetConsentRecord(
     );
 }
 
-/** Latest decision per account, for the host roster. */
+/**
+ * Latest decision per account, for the roster. An allow for another notice
+ * version is stale, so that account reads as undecided and is asked again.
+ */
 export function latestMeetConsents(records: MeetConsentRecord[]) {
   const latest: Record<string, MeetConsentDecision> = {};
-  for (const record of records)
-    if (record.user_id) latest[record.user_id] = record.decision;
+  for (const record of records) {
+    if (!record.user_id) continue;
+    if (
+      record.decision === 'allow' &&
+      record.notice_version !== MEET_CONSENT_NOTICE_VERSION
+    )
+      delete latest[record.user_id];
+    else latest[record.user_id] = record.decision;
+  }
   return latest;
 }

@@ -1,3 +1,4 @@
+import { MEET_CONSENT_NOTICE_VERSION } from '../consent/notice';
 import type { MeetConsentRecord } from './consent-records';
 
 /**
@@ -16,8 +17,20 @@ export type ConsentGateSource = {
 };
 
 /**
+ * An allow counts only while it names the notice this server currently shows.
+ * A missing or older version is stale: the person agreed to different wording,
+ * so it never admits their audio (a deny or withdraw always stands).
+ */
+function isCurrentAllow(record: MeetConsentRecord) {
+  return (
+    record.decision === 'allow' &&
+    record.notice_version === MEET_CONSENT_NOTICE_VERSION
+  );
+}
+
+/**
  * Decision in force at `time` for one account. Ties on `created_at` resolve to
- * "not allowed" unless every tied row is an allow.
+ * "not allowed" unless every tied row is a current allow.
  */
 function allowedAt(records: MeetConsentRecord[], time: number) {
   let latest = Number.NEGATIVE_INFINITY;
@@ -27,8 +40,8 @@ function allowedAt(records: MeetConsentRecord[], time: number) {
     if (at > time) continue;
     if (at > latest) {
       latest = at;
-      allowed = record.decision === 'allow';
-    } else if (at === latest && record.decision !== 'allow') allowed = false;
+      allowed = isCurrentAllow(record);
+    } else if (at === latest && !isCurrentAllow(record)) allowed = false;
   }
   return allowed;
 }
@@ -38,9 +51,10 @@ function allowedAt(records: MeetConsentRecord[], time: number) {
  * - The uploading host's microphone needs no record.
  * - The host's shared (screen or tab) audio may carry other people's voices,
  *   so it is excluded when `excludeHostSharedAudio` is set.
- * - Any other speaker needs an allow that is the latest decision, was already
- *   in force when the clip started (no tolerance toward inclusion), and was not
- *   followed by a deny or withdraw before the clip ended plus a margin.
+ * - Any other speaker needs an allow that is the latest decision, names the
+ *   current notice version, was already in force when the clip started (no
+ *   tolerance toward inclusion), and was not followed by a deny or withdraw
+ *   before the clip ended plus a margin.
  * - Unattributed sources cannot be matched to a decision and are excluded.
  * Speaker labels and offsets come from the host client; see the trust model in
  * the Meet docs.
