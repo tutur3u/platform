@@ -61,7 +61,10 @@ post_install do |installer|
       unless setter.include?('[self registerForRemoteNotifications]')
         contents = contents.sub(auto_init, auto_init + "\n  if (enabled) { [self registerForRemoteNotifications]; }")
       end
-      header = File.join(source.dirname, 'FLTFirebaseMessagingPlugin.h')
+      headers = Dir.glob(File.join(source.dirname.parent, '**', 'FLTFirebaseMessagingPlugin.h'))
+        .select { |path| File.file?(path) }
+      raise 'Expected one Firebase Messaging header in the plugin Sources tree' unless headers.length == 1
+      header = headers.first
       contents = contents.sub('#import "FLTFirebaseMessagingPlugin.h"', "#import \"#{header}\"")
       destination = File.join(__dir__, 'Pods', 'ConsentFirebaseMessagingPlugin.m')
       File.write(destination, contents)
