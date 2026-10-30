@@ -1,0 +1,47 @@
+---
+title: "Task board access"
+description: "Task reads, edits, and realtime delivery across workspace and board shares."
+---
+
+## Planned access contract
+
+The access changes and regression coverage described below are proposed in [PR
+#7016](https://github.com/tutur3u/platform/pull/7016). They do not ship with this
+documentation commit. Verify the implementation and its acceptance before relying on
+this contract.
+
+The proposed contract allows workspace members to read tasks in their workspace. Editing task content requires
+`manage_projects` or an explicit board share with `edit` permission. A `view` share
+does not grant edit permission. These rules apply to the shared task detail API
+used by Web and Tasks. Permanent deletion and restoration retain their additional
+workspace-member requirement and also require board edit access.
+
+Mira task detail and search reads use the selected workspace and the caller's
+current membership. Guests and non-members can read only explicitly shared boards.
+Email-addressed shares match the confirmed Auth email. Profile email and personal
+override rows do not establish access. Board-only tasks retain their direct board
+ownership; list tasks use their list's board when they have no direct board.
+
+## Realtime implementation status
+
+This documentation commit does not change realtime delivery. The existing
+broadcaster selects board and user recipients from task placements. This page
+does not establish per-recipient authorization, revocation handling or private
+channel delivery as enforced guarantees.
+
+PR #7016 proposes those checks and board-navigation guards. They require
+independent review and implementation acceptance before this page can describe
+them as enforced.
+
+## Planned regression coverage
+
+Coverage for the proposed contract belongs to PR #7016 and its dependencies. The
+task-read-scope and navigation regression files below are absent from this
+documentation head. The existing mutation and broadcast tests do not by themselves
+establish acceptance of the proposed contract.
+
+- `packages/tasks-api/src/server/tasks/taskId/route.test.ts` covers mutation admission.
+- `packages/tasks-api/src/server/tasks/realtime-broadcast.test.ts` covers recipients and task batches.
+- `packages/ai/src/tools/executors/task-read.test.ts` covers Mira read filters.
+- `packages/utils/src/__tests__/task-read-scope.test.ts` covers membership and share identity.
+- `packages/tasks-ui/src/hooks/__tests__/useBoardRealtime.navigation.test.tsx` covers channel switches and pending payloads.
