@@ -1,0 +1,114 @@
+---
+title: "Web font subsets"
+description: "Regenerate and verify committed apps/web font assets without build-time processing."
+---
+
+## Scope and behavior
+
+The pilot replaces `next/font` for the web root Noto Sans, marketing Be Vietnam
+Pro and JetBrains Mono, and branding Inter and Noto Sans specimens. Other apps
+and independent declarations remain unchanged. Public pages and the authenticated
+dashboard inherit the same Noto Sans body stack from
+`apps/web/src/app/[locale]/layout.tsx`; authenticated visual acceptance remains a
+merge requirement.
+
+CSS faces share their family before the metric-adjusted fallback. Root Noto Sans
+retains `font-display: block`; marketing and branding retain `swap`. Branding
+Noto Sans has a separate CSS alias using the same assets and fallback metrics,
+so its `swap` does not override the root's `block`. Arial fallback source,
+family order, ascent, descent, line gap and size adjustment match the former
+Next-generated CSS. CJK continues to use system fallback where these sources
+have no glyphs. The original normal faces continue to supply synthetic italics.
+
+Latin-1, Latin Extended-A, full Vietnamese composed characters and supported
+combining marks are retained. The core pool contains full Vietnamese coverage.
+The original Google character groups retain their shaping priority: a combined
+font can change normalization, feature selection and native rendering even when
+its glyph outlines and advances match. Noto Sans and Be Vietnam Pro therefore
+retain separate Latin and Vietnamese core chunks and their original Latin
+Extended data on demand. That Extended face overlaps some Vietnamese characters,
+so Vietnamese text can still request it. This is an explicit rendering-preservation
+cost, rather than a claim that Vietnamese requests only core bytes.
+
+Preloads retain their original route scope: the web root preloads Noto Sans
+Latin and Vietnamese core, marketing adds its display weights and mono core,
+and branding adds Inter core. Extended files are never preloaded. All faces
+precede their fallback family; no fallback face is inserted between core and
+extended. Public files under `/fonts/subsets/` bypass the web proxy so font
+requests do not redirect to login.
+
+## Manual regeneration
+
+No font processing runs during install, development, CI or release builds.
+Install tools into a disposable environment, then run from the repository root:
+
+```bash
+python3 -m venv /tmp/web-font-tools
+/tmp/web-font-tools/bin/pip install 'fonttools[woff]==4.60.1' 'brotli==1.1.0'
+/tmp/web-font-tools/bin/python scripts/fonts/subset_web_fonts.py
+/tmp/web-font-tools/bin/python -m unittest discover -s scripts/fonts -p 'test_*.py'
+bun check:changed
+```
+
+Admit commands through the executing host's `ttr resources run`. Do not build on
+the M4. Other-host dependency builds require the current task's authorization.
+The generator uses the repository's pinned Biome formatter; install repository
+dependencies first.
+
+Google Fonts TTF sources, served WOFF2 sources and existing Colab Noto Sans
+assets are pinned by immutable revision or URL plus SHA-256. JetBrains Mono's
+existing local source is hash-checked. Inputs cache outside the repository.
+Commit output WOFF2 files, licenses, CSS and manifest. Rerun after intentional
+source, character, axis, feature or fallback-metric changes. Review source hashes
+and licenses before updating pins.
+
+The public census includes body weights 400–700, display 600/800 and mono
+400/700. Four existing display weights remain available for other marketing
+routes. Noto Sans retains 100–900 for dashboard and public content. Width is
+fixed at Noto Sans's original default 100 and Inter optical size at 14. Inter's
+CSS exposes the used 400–700 range; its underlying weight variation data and
+JetBrains Mono's original variation data are preserved where trimming changes
+browser pixels. This retains extra bytes to preserve appearance.
+
+Default shaping and numeric behavior must survive feature pruning. Preserve
+original glyph names and standard family-name records: changing this metadata
+can change native font rendering. JetBrains Mono retains its feature closure, original glyph IDs and font bounds
+(empty slots replace unused outlines), and seven-byte `prep` rasterizer-control program; glyph instructions are absent.
+Explicit U+2010/U+2011 hyphen mappings preserve Chromium normalization formerly
+allowed by Google's broad punctuation ranges. Instancer output is serialized
+before subsetting because FontTools otherwise removes empty `gvar` entries that
+the subsetter expects to exist.
+
+The manifest records bytes, glyph/character counts, axes, features, hint tables,
+glyph-instruction counts and SHA-256 digests. Tests open the actual WOFF2 files,
+check Vietnamese coverage in each core pool, validate declared ranges against
+real cmaps, verify licensing, and prove that public/dashboard roots share the
+same body stack. Original overlapping character groups are intentional.
+
+## Licenses and Reserved Font Names
+
+All four pinned families use SIL OFL 1.1. Their copyright headers declare no
+Reserved Font Name, so the subsets retain their original family and PostScript
+names. Copyright and license records remain with the fonts, and complete OFL
+files ship beside the assets. Recheck this permission on source updates; an RFN
+requires appropriate derivative names before shipping.
+
+## Rendering acceptance
+
+Capture cold Chromium at 1440×1000 using identical runtime, source fixture,
+viewport, theme and motion settings before and after. Await fonts, record font
+response-body bytes and preload URLs, inspect computed family/weight/style, and
+capture full-page images. Keep explicit specimen loads separate from natural
+page traffic. Include composed/decomposed Vietnamese accents, code/monospace,
+synthetic italic and CJK probes.
+
+An unchanged control pair identifies existing motion variability. Additionally,
+compare each family with the exact baseline font data on a frozen page, after
+both font sets load, so animation changes cannot hide font regressions. Do not
+accept unexplained text or layout differences.
+
+Report `next dev` response bytes as development measurements, identify overlay
+font requests, and give committed file sizes separately. These measurements do
+not certify production cache behavior, preload discovery or a release build.
+Require exact-commit CI and authenticated dashboard acceptance before removing
+the pilot's merge hold.

@@ -6,17 +6,29 @@ import '@/style/react-easy-crop.css';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import '@tuturuuu/tasks-ui/globals.css';
 import { Toaster } from '@tuturuuu/ui/sonner';
-import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
+import { generateCommonMetadata } from '@tuturuuu/utils/common/metadata';
+import '@/fonts/root.css';
 import { cn } from '@tuturuuu/utils/format';
 import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { locale as getRootLocale } from 'next/root-params';
 import { getMessages } from 'next-intl/server';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { type ReactNode, Suspense } from 'react';
+import { FontPreloads } from '@/fonts/preloads';
 import { getPublicClientMessages } from '@/i18n/client-messages';
 
-export { viewport } from '@tuturuuu/utils/common/nextjs';
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: 'black' },
+    { media: '(prefers-color-scheme: light)', color: 'white' },
+  ],
+  colorScheme: 'dark light',
+};
 
 interface Props {
   children: ReactNode;
@@ -131,10 +143,13 @@ export default async function RootLayout({ children }: Props) {
 
   return (
     <html lang={locale} suppressHydrationWarning data-scroll-behavior="smooth">
+      <head>
+        <FontPreloads names={['noto-sans-latin', 'noto-sans-vietnamese']} />
+      </head>
       <body
         className={cn(
           'overflow-y-auto bg-root-background antialiased',
-          font.className
+          'web-app-font'
         )}
       >
         <ServiceWorkerBoundary serviceWorkerUrl={serviceWorkerUrl}>
