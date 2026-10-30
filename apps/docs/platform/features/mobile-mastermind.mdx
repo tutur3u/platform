@@ -56,7 +56,7 @@ Mastermind is restricted to one person, the platform owner account, through the 
   service role). Re-saving an unchanged role and disabling or deleting grants
   stay allowed. The web and mobile role editors omit it from their catalogs,
   and every role write from either client (create, update, default
-  permissions) strips it, even for the workspace creator.
+  permissions) strips it, even for the workspace creator. CMS external-project team role creation, role updates and default-permission writes apply the same filter; `team-access.test.ts` covers enabled, disabled and explicit-only payloads.
 - **Granting:** for API sessions, only
   `private.grant_mastermind_access(user_id, reason)`, which the database owner
   alone may execute; a database-owner session is fully trusted and could also
