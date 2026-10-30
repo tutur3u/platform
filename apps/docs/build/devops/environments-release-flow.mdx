@@ -478,3 +478,20 @@ empty legacy values retain the production default. Whitespace is rejected rather
 than trimmed. This applies to the infrastructure API and blue-green watcher.
 Regression coverage lives in `branch-validation.test.ts`,
 `managed-project-branch.test.ts`, and `watch-blue-green-projects.test.js`.
+
+
+Shared cookie scope uses one decision function in
+`@tuturuuu/supabase/shared-cookie-domains`, shared by utils and Supabase helpers.
+Servers explicitly admit staging with `TUTURUUU_DEPLOY_ENV=staging`. Browser
+bundles use the design's build-time `NEXT_PUBLIC_TUTURUUU_STAGING=1` signal
+when the private deploy environment is unavailable. Both require exactly
+`.staging.tutur3u.com` after domain normalization; invalid staging configuration
+throws rather than falling back to production. Production deploy or Vercel
+markers veto the public flag. An unknown private deploy environment also blocks
+public admission. Without staging admission, staging hosts get host-only cookies.
+Build staging server and browser artifacts with the same public flag and cookie
+domain to preserve refresh and sign-out scope across staging hosts.
+
+Regression coverage: `packages/utils/src/shared-cookie-deploy-env.test.ts` and
+`packages/utils/src/shared-cookie-browser-env.test.ts`. The Web fallback continues
+to reject mismatched upstream cookie domains with 502.
