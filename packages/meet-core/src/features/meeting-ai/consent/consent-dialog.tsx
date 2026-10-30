@@ -60,7 +60,7 @@ export function TranscriptionConsentDialog({
           <DialogDescription>
             {t.rich('description', {
               // Today any workspace member who can open the meeting can read it.
-              audience: t('audience_workspace'),
+              audience: t('audience_participants_admins'),
               strong: (chunks) => (
                 <strong className="font-semibold text-foreground">
                   {chunks}

@@ -285,16 +285,18 @@ adds a signed-in identity to this room's approved list, so reconnects and later
 visits bypass the lobby. Forgetting approval requires admission on the next
 visit; removing a current participant also removes their saved approval.
 
-Transcript and notes sharing is private by default. The host can enable it for
-admitted and approved participants, including guests outside the workspace.
-Every non-host notes read checks the signed room policy on the Durable Object;
+Transcript access is limited to the people who were in that call and workspace
+admins. Room or guest sharing never widens it: approving a guest or sharing the
+room does not grant transcript access to anyone outside that group. Live notes
+sharing remains a private-by-default host setting for people in the call. Every
+non-host notes read checks the signed room policy on the Durable Object;
 removing permission blocks subsequent reads. Existing downloaded information
 cannot be recalled. Transcription mutations remain host-only.
 
 Leaving stops local capture and signaling immediately while recording/notes
 finalization continues on the post-call screen. The host can leave alone or end
 the room for everyone. Ending is durable, disconnects participants and prevents
-rejoining that room. Approved participants can still read shared post-call
+rejoining that room. Participants of the call can still read post-call
 notes while the host's sharing setting permits it. Room policy and approval
 state live in Cloudflare Durable Object storage; no self-hosted server or new
 database migration is required.
@@ -795,8 +797,10 @@ and can be muted from the header. Initial snapshots, reconnect snapshots and the
 participant's own actions do not produce notification bursts.
 
 Live notes sharing and post-meeting sharing are separate room settings. Both are
-disabled by default. The host may enable post-meeting access for approved people
-from the transcript panel or centered ended-meeting screen. Ended invite/detail
+disabled by default. The host may enable post-meeting access for people who were
+in the call from the transcript panel or centered ended-meeting screen. Neither
+setting widens transcript access beyond participants of that call and workspace
+admins. Ended invite/detail
 pages perform a signed read-only room-state check and never open a call socket.
 Notes open on demand with transcript and notes tabs; there is no join button for
 an ended room. The authenticated host-only sharing mutation reaches the room
@@ -1684,7 +1688,7 @@ Participants with concerns about this can write to privacy@tuturuuu.com.
 
 Consent copy lives in the `meet.consent` message namespace (en and vi, Meet and
 Parley bundles) and is versioned by `MEET_CONSENT_NOTICE_VERSION` in
-`meeting-ai/consent/notice.ts` (currently `meet-transcription-v3-2026-10-30`,
+`meeting-ai/consent/notice.ts` (currently `meet-transcription-v4-2026-10-30`,
 legal-approved wording); bump it whenever the copy changes so each record names
 the notice it accepted. The notice states that the voice is sent to Google's
 Gemini through Mira, that people who do not allow are left out of the transcript, and
@@ -1695,10 +1699,15 @@ yet. No purge job exists and no workspace retention setting applies to Meet
 transcripts (see the data-protection inventory), so the notice says only that.
 A Cloudflare-scheduled purge with a 365-day default is planned. State a retention period only after that purge ships
 (tracked separately; see `TODO(meet-transcript-retention-purge)` in
-`notice.ts`) and bump the notice version. The audience line reflects current
-access: members of the workspace who can open the meeting can read transcripts
-and notes (the recordings read path is workspace-scoped). A tighter visibility
-model arrives with the meeting page redesign (M1-F); update the string then.
+`notice.ts`) and bump the notice version. The audience line (`audience_participants_admins`)
+states the rule: only people who were in the call and workspace admins can read
+the transcript and notes. The notice also says the audio is not kept after it is
+transcribed (`fact_storage`). The enforcing change
+(`feat/meet-transcript-read-participants`) enforces this server-side and must
+merge before or with the consent PR (#7273).
+The **Record** button produces a single mixed file saved to Drive only and never
+sent to AI, so per-participant transcription consent cannot exclude anyone from
+a recording.
 "Stop transcribing me" appears only after the participant allowed; a declined
 participant sees Allow and Don't transcribe me again.
 
