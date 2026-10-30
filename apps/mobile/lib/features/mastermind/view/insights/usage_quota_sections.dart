@@ -8,8 +8,8 @@ import 'package:mobile/features/mastermind/view/ship/ship_capped_section.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// The quota table: how much each pool had left and how long ago that was
-/// read, least left first and capped at five. The pool labels include
-/// `Unknown account`.
+/// read, unreadable first. The initial cap includes every unreadable pool.
+/// The pool labels include `Unknown account`.
 class UsageQuotaSection extends StatelessWidget {
   const UsageQuotaSection({required this.quotas, super.key});
 
@@ -20,6 +20,9 @@ class UsageQuotaSection extends StatelessWidget {
     final l10n = context.l10n;
     return ShipCappedSection(
       caption: l10n.mastermindQuotaTitle,
+      cap: quotas.where((quota) => quota.remainingPercent == null).length > 5
+          ? quotas.where((quota) => quota.remainingPercent == null).length
+          : 5,
       empty: AppGroupedRow(title: Text(l10n.mastermindQuotaEmpty)),
       rows: [
         for (final quota in quotas)
@@ -36,12 +39,15 @@ class UsageQuotaSection extends StatelessWidget {
                       ),
                     ),
                   ),
-            trailing: Text(
-              quota.remainingPercent == null
-                  ? l10n.mastermindUnavailable
-                  : l10n.mastermindUnitPercent(
-                      usageNumber(quota.remainingPercent!),
-                    ),
+            trailing: SizedBox(
+              width: quota.remainingPercent == null ? 150 : null,
+              child: Text(
+                quota.remainingPercent == null
+                    ? l10n.mastermindQuotaUnreadable
+                    : l10n.mastermindUnitPercent(
+                        usageNumber(quota.remainingPercent!),
+                      ),
+              ),
             ),
           ),
       ],

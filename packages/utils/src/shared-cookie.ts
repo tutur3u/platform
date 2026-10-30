@@ -1,3 +1,5 @@
+import { isStagingSharedCookieDeployment } from '@tuturuuu/supabase/shared-cookie-domains';
+
 export interface TuturuuuSharedCookieDomain {
   cookieDomain: string;
   hostname: string;
@@ -55,11 +57,6 @@ export const CONFIGURED_SHARED_COOKIE_DOMAINS = [
   '.staging.tutur3u.com',
 ] as const;
 
-/**
- * True on a Vercel production deployment. Server code reads `VERCEL_ENV`;
- * browser bundles cannot see it (it is not `NEXT_PUBLIC_`-inlined), so they fall
- * back to `NEXT_PUBLIC_VERCEL_ENV` when it is exposed to the client.
- */
 function isProductionDeployment() {
   return (
     process.env.VERCEL_ENV === 'production' ||
@@ -92,6 +89,7 @@ function warnIgnoredSharedCookieDomain(value: string, reason: string) {
 export function getConfiguredSharedCookieDomainOverride(): TuturuuuSharedCookieDomain | null {
   const normalized =
     process.env.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN?.trim().toLowerCase();
+  const staging = isStagingSharedCookieDeployment(normalized);
 
   if (!normalized) return null;
 
@@ -117,6 +115,8 @@ export function getConfiguredSharedCookieDomainOverride(): TuturuuuSharedCookieD
     );
     return null;
   }
+
+  if (!staging) return null;
 
   return { cookieDomain: accepted, hostname: accepted.slice(1), secure: true };
 }

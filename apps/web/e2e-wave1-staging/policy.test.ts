@@ -50,8 +50,8 @@ for (const app of apps) {
 
 test('web issuer has its own off-canonical fence', () => {
   assert.equal(
-    stagingOrigin('https://staging.tutur3u.com', 'issuer'),
-    'https://staging.tutur3u.com'
+    stagingOrigin('https://web.staging.tutur3u.com', 'issuer'),
+    'https://web.staging.tutur3u.com'
   );
   assert.throws(() => stagingOrigin('https://tuturuuu.com', 'issuer'));
   assert.throws(() =>
@@ -81,7 +81,7 @@ const config = {
   WAVE1_PRODUCTION_SUPABASE_PROJECT_REF: 'p'.repeat(20),
   WAVE1_STAGING_APP: 'mail',
   WAVE1_STAGING_BASE_URL: 'https://mail.staging.tutur3u.com',
-  WAVE1_STAGING_WEB_ORIGIN: 'https://staging.tutur3u.com',
+  WAVE1_STAGING_WEB_ORIGIN: 'https://web.staging.tutur3u.com',
   WAVE1_STAGING_DISPOSABLE_ACCOUNT: 'confirmed',
   WAVE1_STAGING_SOURCE_SHA: 'a'.repeat(40),
   WAVE1_STAGING_WORKSPACE_ID: 'disposable-workspace',
@@ -214,8 +214,8 @@ test('HTTPS origins normalize uppercase hosts and the default :443 port', () => 
     assert.equal(stagingOrigin(`${origin}:443/`, app), origin);
   }
   assert.equal(
-    stagingOrigin('HTTPS://STAGING.TUTUR3U.COM:443/', 'issuer'),
-    'https://staging.tutur3u.com'
+    stagingOrigin('HTTPS://WEB.STAGING.TUTUR3U.COM:443/', 'issuer'),
+    'https://web.staging.tutur3u.com'
   );
 });
 
@@ -228,14 +228,14 @@ test('browser configuration denies the public production project despite a false
   );
 });
 
-test('web candidate and central staging issuer remain separate exact hosts', () => {
+test('web candidate and central staging issuer share the canonical exact host', () => {
   const cfg = readConfig({
     ...config,
     WAVE1_STAGING_APP: 'web',
     WAVE1_STAGING_BASE_URL: undefined,
   });
   assert.equal(cfg.baseURL, 'https://web.staging.tutur3u.com');
-  assert.equal(cfg.webOrigin, 'https://staging.tutur3u.com');
+  assert.equal(cfg.webOrigin, 'https://web.staging.tutur3u.com');
   assert.throws(() =>
     readConfig({
       ...config,
@@ -244,7 +244,8 @@ test('web candidate and central staging issuer remain separate exact hosts', () 
     })
   );
   assert.throws(() => stagingOrigin('https://staging.tutur3u.com', 'web'));
-  assert.throws(() =>
-    stagingOrigin('https://web.staging.tutur3u.com', 'issuer')
+  assert.equal(
+    stagingOrigin('https://web.staging.tutur3u.com', 'issuer'),
+    'https://web.staging.tutur3u.com'
   );
 });
