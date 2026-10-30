@@ -16,6 +16,15 @@ import UserNotifications
 
   override func application(
     _ application: UIApplication,
+    willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -> Bool {
+    // Must run before Firebase is configured here or by any plugin.
+    TelemetryConsentGate.clearPersistedCrashCollection()
+    return super.application(application, willFinishLaunchingWithOptions: launchOptions)
+  }
+
+  override func application(
+    _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     if FirebaseApp.app() == nil {
@@ -129,6 +138,37 @@ private enum NativeIntegrityChannel {
     case "attestKey": service.attestKey(key, clientDataHash: hash, completionHandler: complete)
     case "generateAssertion": service.generateAssertion(key, clientDataHash: hash, completionHandler: complete)
     default: result(FlutterMethodNotImplemented)
+    }
+  }
+}
+
+/// Builds before the telemetry consent setting persisted Crashlytics
+/// collection-on. The SDK prefers that sticky value over Info.plist and reads it
+/// inside FirebaseApp.configure(), so held reports could upload before Dart
+/// reads consent. Clearing it lets FirebaseCrashlyticsCollectionEnabled=false
+/// apply until Dart enables collection from the stored choice; without consent
+/// Dart then deletes the held reports. The key and file mirror the SDK
+/// FIRCLSDataCollectionArbiter and FIRCLSUserDefaults.
+private enum TelemetryConsentGate {
+  private static let key = "com.crashlytics.data_collection"
+  private static let file = "com.crashlytics/CLSUserDefaults.plist"
+
+  static func clearPersistedCrashCollection() {
+    UserDefaults.standard.removeObject(forKey: key)
+    let manager = FileManager.default
+    guard let support = manager.urls(for: .applicationSupportDirectory, in: .userDomainMask).last
+    else { return }
+    // Simulator builds omit the bundle identifier directory; devices include it.
+    let children = (try? manager.contentsOfDirectory(at: support, includingPropertiesForKeys: nil)) ?? []
+    for url in [support.appendingPathComponent(file)] + children.map({ $0.appendingPathComponent(file) }) {
+      guard let data = try? Data(contentsOf: url),
+            var state = (try? PropertyListSerialization.propertyList(from: data, format: nil)) as? [String: Any],
+            state.removeValue(forKey: key) != nil,
+            let updated = try? PropertyListSerialization.data(fromPropertyList: state, format: .xml, options: 0)
+      else { continue }
+      try? updated.write(to: url, options: .atomic)
+      // Match the SDK so Crashlytics can still read it while the device is locked.
+      try? manager.setAttributes([.protectionKey: FileProtectionType.none], ofItemAtPath: url.path)
     }
   }
 }

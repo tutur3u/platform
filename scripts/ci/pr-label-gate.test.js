@@ -61,6 +61,7 @@ const PROTECTED_TRIGGERS = {
   'mobile-build-windows.yaml': 'ff0b86edd5297973',
   'mobile.yaml': '2bd82a7675ba9ab3',
   'nova-cloudflare.yaml': '2033d2d0bbf8194b',
+  'ops-hub-cloudflare.yaml': '0a3cc2c97958f5cd',
   'parley-cloudflare.yaml': 'f1777123fb48e37c',
   'periodic-report-delivery-contract.yaml': 'dc372af9059d0c07',
   'playground-runtime-acceptance.yaml': '0a3cc2c97958f5cd',

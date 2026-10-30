@@ -315,6 +315,53 @@ describe('production fail-closed behavior', () => {
       '.staging.tutur3u.com'
     );
   });
+
+  // Cloudflare Workers never set VERCEL_ENV, so the production default must
+  // not depend on detecting a Vercel production deployment.
+  it('gives Cloudflare production hosts no cookie-domain override when VERCEL_ENV is unset', () => {
+    vi.stubEnv('VERCEL_ENV', '');
+    vi.stubEnv('NEXT_PUBLIC_VERCEL_ENV', '');
+    vi.stubEnv(ENV_KEY, '');
+
+    expect(getConfiguredSharedCookieDomainOverride()).toBeNull();
+    for (const url of [
+      'https://tuturuuu.com',
+      'https://calendar.tuturuuu.com',
+      'https://dev.tuturuuu.com',
+    ]) {
+      expect(
+        getTuturuuuSharedCookieOptions<CookieOptionsLike>({}, url).domain,
+        url
+      ).toBe('.tuturuuu.com');
+      expect(
+        getSupabaseCookieOptions(
+          'https://nzamlzqfdwaaxdefwraj.supabase.co',
+          url
+        ).domain,
+        url
+      ).toBe('.tuturuuu.com');
+    }
+  });
+
+  it('never scopes a production host to the staging zone when the override leaks onto Cloudflare', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubEnv('VERCEL_ENV', '');
+    vi.stubEnv('NEXT_PUBLIC_VERCEL_ENV', '');
+    vi.stubEnv(ENV_KEY, '.staging.tutur3u.com');
+
+    for (const url of [
+      'https://tuturuuu.com',
+      'https://calendar.tuturuuu.com',
+      'https://dev.tuturuuu.com',
+    ]) {
+      const options = getTuturuuuSharedCookieOptions<CookieOptionsLike>(
+        {},
+        url
+      );
+      expect(options.domain, url).not.toBe('.staging.tutur3u.com');
+      expect(options.domain, url).toBeUndefined();
+    }
+  });
 });
 
 describe('parity with the Supabase cookie helpers', () => {

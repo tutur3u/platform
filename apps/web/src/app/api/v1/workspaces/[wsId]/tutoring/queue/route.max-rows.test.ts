@@ -29,6 +29,7 @@ function query(rows: () => unknown[]) {
     lte: () => builder,
     lt: () => builder,
     neq: () => builder,
+    or: () => builder,
     like: () => builder,
     order: () => builder,
     limit: () => builder,
@@ -83,6 +84,8 @@ beforeEach(() => {
     from: (name: string) => {
       if (name === 'user_group_attendance') return query(() => attendanceRows);
       if (name === 'user_feedbacks') return query(() => []);
+      if (name === 'workspace_user_groups_users')
+        return query(() => attendanceRows);
       if (name === 'workspace_configs')
         return {
           ...query(() => configRows),

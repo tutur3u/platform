@@ -123,7 +123,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.descendant(of: row, matching: find.textContaining('2 h ago')),
+        find.descendant(of: row, matching: findTimeLabel('2h')),
         findsOneWidget,
       );
       expect(find.text('Mastermind · hub · decision'), findsNothing);
