@@ -164,6 +164,7 @@ describe('managed Tuturuuu return URLs', () => {
     const stagingWeb = 'https://web.staging.tutur3u.com';
 
     beforeEach(() => {
+      vi.stubEnv('NEXT_PUBLIC_TUTURUUU_STAGING', '1');
       vi.stubEnv(
         'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
         '.staging.tutur3u.com'
@@ -216,6 +217,7 @@ describe('managed Tuturuuu return URLs', () => {
 
     it('rejects an apex .tutur3u.com value and falls back to production behavior', () => {
       const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.stubEnv('NEXT_PUBLIC_TUTURUUU_STAGING', undefined);
       vi.stubEnv('NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN', '.tutur3u.com');
 
       expect(

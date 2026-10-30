@@ -27,11 +27,7 @@ const telemetry: CalendarTelemetryPort = {
 beforeEach(() => vi.resetAllMocks());
 
 describe('Calendar cutover boundary', () => {
-  it.each([
-    'calendar.tuturuuu.com',
-    'calendar.staging.tutur3u.com',
-    'calendar-cutover.staging.tutur3u.com',
-  ])(
+  it.each(['calendar.tuturuuu.com', 'calendar.staging.tutur3u.com'])(
     'threads a fresh CSP nonce through the proxy and Start on %s',
     async (host) => {
       const seen: string[] = [];
@@ -67,6 +63,10 @@ describe('Calendar cutover boundary', () => {
     'unknown.invalid',
     'tuturuuu-calendar.workers.dev',
     'web.staging.tutur3u.com',
+    // Retired temporary production-smoke host; the canonical flip is accepted.
+    'calendar-cutover.staging.tutur3u.com',
+    'calendar-cutover.tuturuuu.com',
+    'calendar-staging.tuturuuu.com',
   ])('rejects %s before middleware, assets or SSR', async (host) => {
     const response = await handleCalendarRequest(
       new Request(`https://${host}/`, {
@@ -83,7 +83,7 @@ describe('Calendar cutover boundary', () => {
     expect(asset).not.toHaveBeenCalled();
   });
 
-  it('does not forward cutover-host ACME requests through global fetch', async () => {
+  it('does not forward canonical ACME requests through global fetch', async () => {
     suppliers.proxy.mockImplementation(() => NextResponse.next());
     suppliers.start.mockResolvedValue(
       new Response('Not Found', { status: 404 })
@@ -92,7 +92,7 @@ describe('Calendar cutover boundary', () => {
     try {
       const response = await handleCalendarRequest(
         new Request(
-          'https://calendar-cutover.staging.tutur3u.com/.well-known/acme-challenge/probe'
+          'https://calendar.tuturuuu.com/.well-known/acme-challenge/probe'
         ),
         env,
         ctx,

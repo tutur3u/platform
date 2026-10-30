@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const {
   copyFileSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -14,7 +15,7 @@ const { dirname, join } = require('node:path');
 const { repoRoot } = require('./workflow-config-test-helpers.js');
 const { readWorkflow } = require('./workflow-yaml-test-helper.js');
 
-const apps = ['meet', 'calendar', 'mail', 'apps', 'shortener'];
+const apps = ['meet', 'calendar', 'mail', 'apps', 'shortener', 'mastermind'];
 const heldPolicy = Object.fromEntries(
   apps.map((app) => [
     app,
@@ -279,10 +280,12 @@ test('Calendar admission opens only its frontend while other wave-1 apps remain 
 });
 
 const publishers = [
-  ...apps.map((app) => ({
-    workflow: `vercel-production-${app}.yaml`,
-    job: 'Deploy-Production',
-  })),
+  ...apps
+    .filter((app) => app !== 'mastermind')
+    .map((app) => ({
+      workflow: `vercel-production-${app}.yaml`,
+      job: 'Deploy-Production',
+    })),
   { workflow: 'meet-cloudflare.yaml', job: 'deploy' },
 ];
 for (const { workflow, job } of publishers) {
@@ -411,3 +414,16 @@ for (const app of ['calendar', 'mail', 'apps']) {
     }
   });
 }
+
+test('Mastermind has qualification jobs only and no production publisher', () => {
+  assert.equal(
+    existsSync(
+      join(repoRoot, '.github/workflows/vercel-production-mastermind.yaml')
+    ),
+    false
+  );
+  const { jobs } = readWorkflow('mastermind-cloudflare.yaml');
+  assert.deepEqual(Object.keys(jobs), ['check-ci', 'native']);
+  assert.equal(jobs.native.uses, './.github/workflows/native-start-app.yaml');
+  assert.equal(jobs.native.with.app, 'mastermind');
+});
