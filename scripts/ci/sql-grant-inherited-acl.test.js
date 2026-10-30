@@ -271,7 +271,8 @@ const DIRECTLY_EVIDENCED = new Set([
 ]);
 
 test('the repository passes with every remaining inherited pass evidenced', () => {
-  const { violations } = require('./sql-grant-guard').checkRepository();
+  const { violations } =
+    require('./sql-grant-repository-fixture').checkSnapshot(ROOT);
   const { satisfied } =
     require('./sql-grant-end-state-guard').checkRepository();
   assert.deepEqual(
@@ -303,7 +304,10 @@ test('the repository passes with every remaining inherited pass evidenced', () =
     assert.match(formatSatisfied(entry), /inherited ACL/);
   const result = spawnSync(
     process.execPath,
-    [path.join(__dirname, 'sql-grant-guard.js')],
+    [
+      '-e',
+      `const { checkSnapshot } = require(${JSON.stringify(path.join(__dirname, 'sql-grant-repository-fixture'))}); const result = checkSnapshot(${JSON.stringify(ROOT)}); if (result.violations.length) { console.error(result.violations); process.exit(1); } console.log('SQL grant guard passed.');`,
+    ],
     { encoding: 'utf8' }
   );
   assert.equal(result.status, 0, result.stderr);
