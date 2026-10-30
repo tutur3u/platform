@@ -108,7 +108,7 @@
     "unmapped": {}
   },
   "transition": {
-    "decision": "CRON-WEB-MODE-1: #7091 introduces CRON_CONTROL_WEB_MODE=off over the live history-retention Worker, which has no such var; absent and off both keep web jobs disabled, so behavior is unchanged. ENABLED_JOBS and WORKER_PROCESSORS are unchanged.",
+    "decision": "CRON-WEB-MODE-1: #7091 introduces the CRON_CONTROL_WEB_MODE var in its disabled default over the live history-retention Worker, which has no such var; an absent var and the disabled default both keep web jobs from running, so behavior is unchanged. Enabled jobs and Worker processors are unchanged.",
     "fields": ["vars"]
   },
   "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication."
