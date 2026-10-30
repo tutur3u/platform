@@ -1049,3 +1049,16 @@ five rows. Missing chart series retain their window-not-reported description.
 Numeric readings, including a measured zero, retain their existing meaning.
 Regression coverage lives in `mastermind_insights_compact_test.dart` and
 `ship_usage_model_test.dart`; snapshot parsing preserves null quota rows.
+
+### Root creator bootstrap
+
+Migrations 20261030113000 and 20261030113001 grant nobody access. The separate
+20261030120000_grant_mastermind_owner.sql grants only the root workspace creator
+through private.grant_mastermind_access. Missing root, null creator, missing auth
+user or missing root MEMBER membership produces a NOTICE and no grant. After seed,
+a database owner can idempotently run `SELECT private.grant_mastermind_root_creator();`.
+Production execution still requires explicit GO. Before this PR's production sync,
+Rex or Bea must perform a read-only root-creator check: confirm the creator exists
+in auth.users and is a root MEMBER, reporting names only. Roll back with
+20261030120000_grant_mastermind_owner.rollback.sql, which uses the audited revoke
+helper and preserves later intentional operator grants.
