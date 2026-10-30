@@ -503,3 +503,13 @@ and removes the server device row; sign-out performs cleanup before auth removal
 See apps/docs/platform/features/mobile-telemetry-privacy.mdx and the focused
 push_token_permission_gate_test.dart. Device traffic capture remains necessary
 to establish network silence.
+
+
+Analytics can initialize independently of FirebaseApp: FlutterFire 12.5.0 does
+so on Android engine attachment. Keep its generated source lazy, disable the
+Measurement receiver/service/job until signed-in Allow, and reset both persisted
+Measurement enable flags synchronously before any SDK call. iOS12.18 also stores
+an enable enum in standard defaults and the Measurement plist; reset both before
+Firebase configuration. Native upgrade tests must seed enabled overrides, retain
+unrelated preferences and prove the first SDK read sees disabled. See the
+mobile telemetry privacy page for version-specific storage keys and commands.

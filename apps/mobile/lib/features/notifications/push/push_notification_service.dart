@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
@@ -121,6 +122,8 @@ class PushNotificationService {
     _settingsRepository = settingsRepository;
     _navigationHandler = onOpen;
   }
+
+  bool get hasActiveSession => _currentUserId != null && !_isDisposed;
 
   Future<void> initialize() => _ensureInitialized();
 

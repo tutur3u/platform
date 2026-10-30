@@ -49,16 +49,42 @@ linked). The native-config test guards these settings.
 ## Firebase startup and push
 
 Firebase startup waits for an authenticated app session on both platforms.
-The signed-out sign-in screen does not configure Firebase, attach Messaging
-listeners or register with APNs. Android removes FirebaseInitProvider from the
-merged manifest. Both platforms configure Firebase through the signed-in startup channel. The Android channel disables stale Analytics collection before configuration when consent is absent.
-Both platforms default app-wide data collection to false and reset persisted
-Messaging auto-init to false before SDK startup.
+Removing FirebaseInitProvider alone is insufficient on Android:
+FlutterFire Analytics 12.5.0 calls FirebaseAnalytics.getInstance from
+onAttachedToEngine, independently starting Measurement. The generated Android
+source overlay replaces that eager instance with a lazy property while retaining
+plugin channel registration. It never changes the shared Pub cache and rejects
+unrecognized upstream startup code. Measurement's receiver, service and job
+service default to disabled in the manifest and are reset disabled on process
+startup. Only signed-in Allow enables them again.
 
-On iOS, the Podfile compiles a generated, worktree-local Messaging plugin copy
-that defers APNs registration until Dart enables auto-init. It never mutates
-the shared Pub cache. The patch fails closed if the upstream source changes.
-Recheck it whenever updating FlutterFire; CI must compile the actual app.
+The native Android content provider synchronously writes false to
+measurement_enabled and measurement_enabled_from_api in
+com.google.android.gms.measurement.prefs before plugin registration.
+SharedPreferences.Editor.putBoolean plus commit avoids calling getInstance
+merely to disable collection. These are Measurement 23.2.0's persisted override
+keys, verified against the SDK and the seeded-upgrade fixture. No permanent
+collection-deactivated setting is used.
+
+On iOS, the plugin registrant only binds channels; it does not construct
+Analytics. Nevertheless, its persisted override also survives process restarts.
+Before super.willFinishLaunching, Foundation resets the legacy standard-defaults
+key and the existing Application Support/Google/Measurement/
+com.google.gmp.measurement.plist entry
+/google/measurement/measurement_enabled_state to 2 (disabled).
+GoogleAppMeasurement 12.18 uses 1 for enabled and 2 for disabled. The native
+fixture tests both stores and preserves unrelated preferences. Review these
+SDK-internal storage contracts whenever upgrading Firebase.
+
+Native collection commands require a signed-in session and the current explicit
+Allow. Sign-out and withdrawal call the SDK disable API if it is already active,
+synchronously persist the disable, and close background Measurement components
+on Android. A stored Allow is never enough to enable collection during native
+startup; Dart reapplies it only after authentication.
+
+Both platforms retain app-wide collection and Messaging auto-init defaults off.
+iOS defers APNs registration through the worktree-local Podfile source patch;
+CI must compile the actual app after FlutterFire updates.
 
 Settings > Preferences > Notifications & interaction > Push notifications
 (**Cài đặt > Tùy chọn > Thông báo và tương tác > Thông báo đẩy**) exposes the
@@ -78,8 +104,7 @@ startup/resume. Cleanup requests themselves may contact Firebase.
 Analytics/Crashlytics remain off until explicit Allow. Sign-out disables
 collection; a subsequent signed-in session applies the stored device choice.
 Declining or revoking telemetry deletes unsent crash reports after SDK startup.
-Native gates retain the existing persisted Crashlytics override reset and
-post-configuration collection lock. No Firebase SDK initialization is required
+Native startup retains the persisted Crashlytics override reset. No Firebase SDK initialization is required
 to render a background local notification.
 
 The EN/VI push disclosure is maintained in the ARB keys

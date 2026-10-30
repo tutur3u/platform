@@ -181,3 +181,39 @@ webRtcProject.plugins.withId("com.android.library") {
         }
     }
 }
+
+
+// FlutterFire Analytics eagerly constructs Measurement on engine attachment.
+// Patch only generated build storage; keep the SDK lazy until an admitted API call.
+val analyticsProject = project(":firebase_analytics")
+analyticsProject.plugins.withId("org.jetbrains.kotlin.android") {
+    analyticsProject.afterEvaluate {
+        analyticsProject.extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension> {
+            val kotlinSources = sourceSets.getByName("main").kotlin
+            val originalRoots = kotlinSources.srcDirs.toList()
+            val relativePlugin = "io/flutter/plugins/firebase/analytics/FlutterFirebaseAnalyticsPlugin.kt"
+            val upstream = analyticsProject.file("src/main/kotlin/" + relativePlugin)
+            val output = analyticsProject.layout.buildDirectory.dir("generated/consent-analytics/kotlin")
+            val patcher = rootProject.file("../tool/defer_analytics_startup.mjs")
+            val prepare = analyticsProject.tasks.register<Sync>("prepareConsentAnalyticsSources") {
+                inputs.file(upstream)
+                inputs.file(patcher)
+                from(originalRoots)
+                into(output)
+                doLast {
+                    val patched = output.get().file(relativePlugin).asFile
+                    analyticsProject.providers.exec {
+                        commandLine("node", patcher.absolutePath, upstream.absolutePath, patched.absolutePath)
+                    }.result.get().assertNormalExitValue()
+                }
+            }
+            kotlinSources.setSrcDirs(listOf(output))
+            analyticsProject.extensions.configure<com.android.build.gradle.LibraryExtension> {
+                sourceSets.getByName("main").java.setSrcDirs(listOf(output))
+            }
+            analyticsProject.tasks.configureEach {
+                if (name.startsWith("compile") || name.startsWith("lint")) dependsOn(prepare)
+            }
+        }
+    }
+}

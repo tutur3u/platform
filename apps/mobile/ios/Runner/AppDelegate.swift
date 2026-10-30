@@ -10,6 +10,8 @@ import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate, MessagingDelegate {
+  private var firebaseSessionActive = false
+  private var analyticsStarted = false
   private var meetNoticeSound: SystemSoundID = 0
 
   deinit {
@@ -20,7 +22,8 @@ import UserNotifications
     _ application: UIApplication,
     willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Must run before Firebase is configured here or by any plugin.
+    // Foundation-only reset before Firebase or a plugin can construct Measurement.
+    AnalyticsStartupGate.disableBeforeInitialization()
     UserDefaults.standard.set(false, forKey: "com.firebase.messaging.auto-init.enabled")
     TelemetryConsentGate.clearPersistedCrashCollection()
     return super.application(application, willFinishLaunchingWithOptions: launchOptions)
@@ -43,16 +46,37 @@ import UserNotifications
     super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
   }
 
+  private func setAnalyticsCollection(_ requested: Bool) {
+    let enabled = requested && firebaseSessionActive
+      && TelemetryConsentGate.allowsCollection { UserDefaults.standard.object(forKey: $0) }
+    if enabled || analyticsStarted {
+      Analytics.setAnalyticsCollectionEnabled(enabled)
+      analyticsStarted = true
+    }
+    if !enabled { AnalyticsStartupGate.disableBeforeInitialization() }
+  }
+
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "FirebaseStartupGate") {
       let channel = FlutterMethodChannel(name: "mobile/firebase_startup", binaryMessenger: registrar.messenger())
       channel.setMethodCallHandler { call, result in
-        guard call.method == "initialize" else { result(FlutterMethodNotImplemented); return }
-        if FirebaseApp.app() == nil { FirebaseApp.configure() }
-        FirebaseApp.app()?.isDataCollectionDefaultEnabled = false
-        Messaging.messaging().isAutoInitEnabled = false
-        TelemetryConsentGate.disableCollectionUnlessAllowed()
+        switch call.method {
+        case "initialize":
+          if FirebaseApp.app() == nil { FirebaseApp.configure() }
+          FirebaseApp.app()?.isDataCollectionDefaultEnabled = false
+          Messaging.messaging().isAutoInitEnabled = false
+          self.firebaseSessionActive = true
+          TelemetryConsentGate.disableCollectionUnlessAllowed()
+        case "setAnalyticsCollectionEnabled":
+          self.setAnalyticsCollection(call.arguments as? Bool == true)
+        case "endSession":
+          self.firebaseSessionActive = false
+          self.setAnalyticsCollection(false)
+        default:
+          result(FlutterMethodNotImplemented)
+          return
+        }
         result(nil)
       }
     }
@@ -196,6 +220,35 @@ private enum TelemetryConsentGate {
       try? updated.write(to: url, options: .atomic)
       // Match the SDK so Crashlytics can still read it while the device is locked.
       try? manager.setAttributes([.protectionKey: FileProtectionType.none], ofItemAtPath: url.path)
+    }
+  }
+}
+
+
+// Mirrors GoogleAppMeasurement 12.18 APMPersistedConfig: 1 enabled, 2 disabled.
+// Foundation writes avoid constructing Measurement merely to reset its SDK override.
+enum AnalyticsStartupGate {
+  static let stateKey = "/google/measurement/measurement_enabled_state"
+  static let relativeFile = "Google/Measurement/com.google.gmp.measurement.plist"
+
+  static func disableBeforeInitialization(
+    defaults: UserDefaults = .standard,
+    support: URL? = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).last
+  ) {
+    defaults.set(2, forKey: stateKey)
+    defaults.synchronize()
+    guard let support else { return }
+    let file = support.appendingPathComponent(relativeFile)
+    guard FileManager.default.fileExists(atPath: file.path) else { return }
+    do {
+      let data = try Data(contentsOf: file)
+      guard var state = try PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any]
+      else { preconditionFailure("Invalid Measurement preferences") }
+      state[stateKey] = 2
+      let updated = try PropertyListSerialization.data(fromPropertyList: state, format: .binary, options: 0)
+      try updated.write(to: file, options: .atomic)
+    } catch {
+      preconditionFailure("Cannot persist Analytics startup disable")
     }
   }
 }

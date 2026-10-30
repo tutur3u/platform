@@ -113,7 +113,9 @@ Future<void> bootstrap(
     }
     await MobileObservability.instance.initialize(
       appFlavor,
-      collectionEnabled: TelemetryPreference.instance.enabled,
+      collectionEnabled:
+          TelemetryPreference.instance.enabled &&
+          PushNotificationService.instance.hasActiveSession,
     );
   };
 
@@ -124,7 +126,8 @@ Future<void> bootstrap(
         if (Firebase.apps.isEmpty) return;
         await MobileObservability.instance.initialize(
           appFlavor,
-          collectionEnabled: enabled,
+          collectionEnabled:
+              enabled && PushNotificationService.instance.hasActiveSession,
         );
       },
     );

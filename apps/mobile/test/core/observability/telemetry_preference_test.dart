@@ -454,19 +454,13 @@ void main() {
         'Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(false)',
       ),
     );
-    final lock = RegExp(
-      r'android:name="\.telemetry\.TelemetryCollectionLockProvider"'
-      r'[^>]*android:initOrder="(\d+)"',
-    ).firstMatch(manifest);
-    expect(lock, isNotNull);
-    // Created after FirebaseInitProvider (100) but before any Application code.
-    expect(int.parse(lock!.group(1)!), lessThan(100));
+    expect(manifest, isNot(contains('TelemetryCollectionLockProvider')));
     final kotlin = File(
       'android/app/src/main/kotlin/com/tuturuuu/app/mobile/telemetry/'
-      'TelemetryCollectionLockProvider.kt',
+      'FirebaseStartupGate.kt',
     ).readAsStringSync();
-    expect(kotlin, contains('setAnalyticsCollectionEnabled(false)'));
-    expect(kotlin, contains('setCrashlyticsCollectionEnabled(false)'));
+    expect(kotlin, contains('setAnalyticsCollectionEnabled(enabled)'));
+    expect(kotlin, contains('PersistedAnalyticsGate.mayEnable'));
     expect(kotlin, contains('TelemetryConsentDecision.allowsCollection'));
     expect(manifest, contains('tools:node="remove"'));
     expect(

@@ -11,6 +11,11 @@ extension PushNotificationPreferences on PushNotificationService {
       _appFlavor!,
       collectionEnabled: false,
     );
+    if (Platform.isAndroid || Platform.isIOS) {
+      await const MethodChannel(
+        'mobile/firebase_startup',
+      ).invokeMethod<void>('endSession');
+    }
   }
 
   Future<void> refreshRegistration() => _syncRegistrationIfAuthorized();

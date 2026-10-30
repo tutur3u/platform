@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
+import 'dart:io' show Platform;
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -27,8 +28,15 @@ class TelemetryCollectionControls {
   Future<void> setCrashCollection({required bool enabled}) =>
       FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(enabled);
 
-  Future<void> setAnalyticsCollection({required bool enabled}) =>
-      FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(enabled);
+  Future<void> setAnalyticsCollection({required bool enabled}) async {
+    if (Platform.isAndroid || Platform.isIOS) {
+      await const MethodChannel(
+        'mobile/firebase_startup',
+      ).invokeMethod<void>('setAnalyticsCollectionEnabled', enabled);
+      return;
+    }
+    await FirebaseAnalytics.instance.setAnalyticsCollectionEnabled(enabled);
+  }
 
   Future<void> deleteUnsentCrashReports() =>
       FirebaseCrashlytics.instance.deleteUnsentReports();

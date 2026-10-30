@@ -36,18 +36,19 @@
         <meta-data
             android:name="firebase_messaging_auto_init_enabled"
             android:value="false" />
-        <!-- Runs before FirebaseInitProvider (initOrder 100); see the class. -->
+        <!-- Measurement can start independently of FirebaseApp; Allow enables these explicitly. -->
+        <receiver android:name="com.google.android.gms.measurement.AppMeasurementReceiver"
+            android:enabled="false" tools:replace="android:enabled" />
+        <service android:name="com.google.android.gms.measurement.AppMeasurementService"
+            android:enabled="false" tools:replace="android:enabled" />
+        <service android:name="com.google.android.gms.measurement.AppMeasurementJobService"
+            android:enabled="false" tools:replace="android:enabled" />
+        <!-- Persists disables before any plugin, receiver or service can start Measurement. -->
         <provider
             android:name=".telemetry.TelemetryConsentGateProvider"
             android:authorities="${applicationId}.telemetryconsentgate"
             android:exported="false"
             android:initOrder="200" />
-        <!-- Runs right after FirebaseInitProvider; see the class. -->
-        <provider
-            android:name=".telemetry.TelemetryCollectionLockProvider"
-            android:authorities="${applicationId}.telemetrycollectionlock"
-            android:exported="false"
-            android:initOrder="50" />
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver"
             android:exported="false" />

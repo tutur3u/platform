@@ -17,6 +17,13 @@ import android.util.Log
  */
 class TelemetryConsentGateProvider : TelemetryGateProvider() {
     override fun runGate(context: Context) {
+        // Reset even a stored Allow: authentication is unknown during process startup.
+        val editor = context.getSharedPreferences(
+            PersistedAnalyticsGate.PREFERENCES, Context.MODE_PRIVATE,
+        ).edit()
+        PersistedAnalyticsGate.disable { key, value -> editor.putBoolean(key, value) }
+        check(editor.commit()) { "Cannot persist Analytics startup disable" }
+        FirebaseStartupGate.setMeasurementComponentsEnabled(context, false)
         // Firebase Messaging persists this override above the manifest default.
         context.getSharedPreferences("com.google.firebase.messaging", Context.MODE_PRIVATE)
             .edit().putBoolean("auto_init", false).commit()
