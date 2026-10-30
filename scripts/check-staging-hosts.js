@@ -32,12 +32,14 @@ function normalizeHost(value) {
     .replace(/\.+$/, '');
 }
 
-// A `/` after one of these starts a regex literal; after an identifier, number,
-// string or closing bracket it is division. `)` and `}` are ambiguous and read
-// as regex, which is the safe side: the span is kept verbatim, never dropped.
-const REGEX_PRECEDER = /[(,=:[!&|?{};+\-*%<>~^/)}]/;
+const BLOCK_PAREN_KEYWORD = /^(?:if|while|for|with)$/;
 const REGEX_KEYWORD =
-  /(?:^|[^\w$.])(?:return|typeof|case|do|else|in|of|void|delete|throw|new|yield|await|instanceof)\s*$/;
+  /^(?:return|typeof|case|do|else|in|of|void|delete|throw|new|yield|await|instanceof)$/;
+// A `/` straight after one of these starts a regex literal.
+const REGEX_PRECEDER = /[(,=:[!&|?{;+\-*%<>~^/]/;
+const WORD_CHARACTER = /[\p{L}\p{N}_$]/u;
+// More ambiguous `/` sites than this and every comment is kept (fail closed).
+const MAX_LEX_PATHS = 64;
 
 /** End index (exclusive) of a regex literal with its flags at `start`, or -1. */
 function regexLiteralEnd(source, start) {
@@ -59,60 +61,125 @@ function regexLiteralEnd(source, start) {
   return -1;
 }
 
-// Preserve string and regex literal contents while removing source comments in
-// one pass. Not a parser: regex-versus-division is a one-token heuristic.
-function stripComments(source) {
+// One lexing pass that preserves string and regex literals and removes
+// comments. `slash` is what a `/` would mean after the previous token, taken
+// from tokens only (comments and whitespace are skipped, with no lookback
+// window). After a `}` it cannot be known without a parser, so `choices[n]`
+// picks regex (true) or division for the n-th such site; the caller runs every
+// combination. An unterminated `/*` is never valid code, so it is kept.
+function stripComments(source, choices = []) {
   const result = [];
+  const parens = [];
   let quote = null;
-  let previous = '';
+  let slash = 'regex';
+  let word = null;
+  let punct = '';
+  let sites = 0;
+  let noCloser = false;
+  const closerAfter = (from) => {
+    const closer = noCloser ? -1 : source.indexOf('*/', from);
+    if (closer === -1) noCloser = true;
+    return closer;
+  };
+  const token = (next, nextWord = null, nextPunct = '') => {
+    slash = next;
+    word = nextWord;
+    punct = nextPunct;
+  };
   for (let i = 0; i < source.length; i++) {
     const char = source[i];
+    const closer =
+      char === '/' && source[i + 1] === '*' ? closerAfter(i + 2) : -1;
     if (quote) {
       result.push(char);
       if (char === '\\') result.push(source[++i] ?? '');
       else if (char === quote) {
         quote = null;
-        previous = char;
+        token('division');
       }
     } else if (char === '"' || char === "'" || char === '`') {
       quote = char;
       result.push(char);
-    } else if (char === '/' && source[i + 1] === '*') {
-      i += 2;
-      while (i < source.length && !(source[i] === '*' && source[i + 1] === '/'))
-        i++;
-      i++;
+    } else if (closer !== -1) {
+      i = closer + 1;
       result.push(' ');
     } else if (char === '/' && source[i + 1] === '/' && source[i - 1] !== ':') {
       while (i < source.length && source[i] !== '\n') i++;
       result.push('\n');
-    } else {
-      const end =
-        char === '/' &&
-        (previous === '' ||
-          REGEX_PRECEDER.test(previous) ||
-          REGEX_KEYWORD.test(source.slice(Math.max(0, i - 12), i)))
-          ? regexLiteralEnd(source, i)
-          : -1;
-      if (end === -1) {
-        result.push(char);
-        if (!/\s/.test(char)) previous = char;
-      } else {
+    } else if (char <= ' ') {
+      result.push(char);
+    } else if (WORD_CHARACTER.test(char)) {
+      let end = i + 1;
+      while (end < source.length && WORD_CHARACTER.test(source[end])) end++;
+      const text = source.slice(i, end);
+      const property = punct === '.';
+      result.push(text);
+      token(!property && REGEX_KEYWORD.test(text) ? 'regex' : 'division', {
+        text,
+        property,
+      });
+      i = end - 1;
+    } else if (char === '/') {
+      const end = slash === 'division' ? -1 : regexLiteralEnd(source, i);
+      let regex = end !== -1 && slash === 'regex';
+      if (end !== -1 && slash === 'either') regex = choices[sites++] ?? false;
+      if (regex) {
         result.push(source.slice(i, end));
-        previous = '0';
+        token('division');
         i = end - 1;
+      } else {
+        result.push(char);
+        token('regex', null, char);
       }
+    } else {
+      result.push(char);
+      if (char === '(') {
+        parens.push(
+          !!word && !word.property && BLOCK_PAREN_KEYWORD.test(word.text)
+        );
+        token('regex', null, char);
+      } else if (char === ')')
+        token(parens.pop() ? 'regex' : 'division', null, char);
+      else if (char === ']' || char === '.') token('division', null, char);
+      else if (char === '}') token('either', null, char);
+      else if (char === '+' || char === '-')
+        token(punct === char ? 'division' : 'regex', null, char);
+      else token(REGEX_PRECEDER.test(char) ? 'regex' : 'either', null, char);
     }
   }
-  return result.join('');
+  return { text: result.join(''), sites };
+}
+
+/**
+ * Every plausible comment-stripped reading of the source. Regex versus
+ * division is undecidable without a parser, so each ambiguous `/` is tried both
+ * ways and a host visible in any reading is reported. Past MAX_LEX_PATHS
+ * readings the unstripped source is returned, so comments are scanned too.
+ */
+function stripCommentVariants(source) {
+  const variants = new Set();
+  const pending = [[]];
+  for (let runs = 0; pending.length; runs++) {
+    if (runs === MAX_LEX_PATHS) return [source];
+    const choices = pending.pop();
+    const { text, sites } = stripComments(source, choices);
+    variants.add(text);
+    for (let site = choices.length; site < sites; site++)
+      pending.push([
+        ...choices,
+        ...Array(site - choices.length).fill(false),
+        true,
+      ]);
+  }
+  return [...variants];
 }
 
 /**
  * Rewrites source so hosts hidden by case, escapes, string concatenation or
  * template interpolation of simple same-file constants read as literal text.
  */
-function normalizeSource(source) {
-  let text = stripComments(source)
+function normalizeSource(source, stripped = stripCommentVariants(source)[0]) {
+  let text = stripped
     // Fold fullwidth and other compatibility letters and digits to ASCII.
     .normalize('NFKC')
     .toLowerCase()
@@ -193,7 +260,13 @@ function dynamicPrefix(text, index) {
 }
 
 function violations(source) {
-  const text = normalizeSource(source);
+  const variants = stripCommentVariants(source).map((stripped) =>
+    sourceViolations(normalizeSource(source, stripped))
+  );
+  return variants.length === 1 ? variants[0] : [...new Set(variants.flat())];
+}
+
+function sourceViolations(text) {
   const found = [];
   if (!text.includes('tuturuuu')) return found;
   for (const [declaration] of text.matchAll(STAGING_ALLOWLIST))
@@ -252,6 +325,6 @@ module.exports = {
   normalizeHost,
   normalizeSource,
   scannedFile,
-  stripComments,
+  stripCommentVariants,
   violations,
 };
