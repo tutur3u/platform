@@ -13,7 +13,7 @@ import io.flutter.plugin.common.MethodChannel
 /** The channel is called only after app authentication, or to revoke collection. */
 object FirebaseStartupGate {
     private var signedIn = false
-    private var analyticsStarted = false
+    private var analyticsAdmitted = false
 
     fun setMeasurementComponentsEnabled(context: Context, enabled: Boolean) {
         val state = if (enabled) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
@@ -26,15 +26,17 @@ object FirebaseStartupGate {
         }
     }
 
-    private fun setAnalyticsCollection(context: Context, requested: Boolean) {
+    private fun prepareAnalyticsCollection(context: Context, requested: Boolean): Boolean {
         val enabled = PersistedAnalyticsGate.mayEnable(
             requested, signedIn, TelemetryConsentDecision.allowsCollection(context),
         )
         if (enabled) setMeasurementComponentsEnabled(context, true)
-        if (enabled || analyticsStarted) {
-            FirebaseAnalytics.getInstance(context).setAnalyticsCollectionEnabled(enabled)
-            analyticsStarted = true
+        // Enable runs through the lazy FlutterFire plugin after this admission.
+        // Native revocation also covers sign-out and a failed plugin start.
+        if (!enabled && analyticsAdmitted) {
+            FirebaseAnalytics.getInstance(context).setAnalyticsCollectionEnabled(false)
         }
+        analyticsAdmitted = enabled
         if (!enabled) {
             val editor = context.getSharedPreferences(
                 PersistedAnalyticsGate.PREFERENCES, Context.MODE_PRIVATE,
@@ -43,6 +45,7 @@ object FirebaseStartupGate {
             check(editor.commit()) { "Cannot persist Analytics disable" }
         }
         if (!enabled) setMeasurementComponentsEnabled(context, false)
+        return enabled
     }
 
     fun install(context: Context, messenger: BinaryMessenger) {
@@ -59,10 +62,13 @@ object FirebaseStartupGate {
                     FirebaseCrashlytics.getInstance().setCrashlyticsCollectionEnabled(false)
                     signedIn = true
                 }
-                "setAnalyticsCollectionEnabled" -> setAnalyticsCollection(context, call.arguments == true)
+                "prepareAnalyticsCollection" -> {
+                    result.success(prepareAnalyticsCollection(context, call.arguments == true))
+                    return@setMethodCallHandler
+                }
                 "endSession" -> {
                     signedIn = false
-                    setAnalyticsCollection(context, false)
+                    prepareAnalyticsCollection(context, false)
                 }
                 else -> { result.notImplemented(); return@setMethodCallHandler }
             }

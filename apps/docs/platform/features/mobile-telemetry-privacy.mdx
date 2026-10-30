@@ -58,6 +58,22 @@ unrecognized upstream startup code. Measurement's receiver, service and job
 service default to disabled in the manifest and are reset disabled on process
 startup. Only signed-in Allow enables them again.
 
+Android Allow first enables the components with PackageManager.DONT_KILL_APP,
+then resolves the lazy FlutterFire plugin, awaits its
+setAnalyticsCollectionEnabled(true), and dispatches the standard app_open event
+through that plugin. Merely changing the native flag does not exercise the
+deferred plugin's event path. This sequence runs both when Allow is selected
+in-session and when a signed-in session restores a current Allow after a cold
+start. No process restart or direct service launch is requested.
+
+The Android adapter serializes requests and fences stale Allow continuations.
+Withdrawal disables the existing plugin first, then the native gate persists
+false and disables the components. A stored Allow while signed out never
+resolves the plugin. Process-start preference resets remain unconditional,
+including for stored Allow. AndroidAnalyticsCollection tests cover the ordered
+start/stop calls, cold signed-out and signed-in starts, withdrawal during
+admission, and failed plugin startup. Actual uploads remain a device QA check.
+
 The native Android content provider synchronously writes false to
 measurement_enabled and measurement_enabled_from_api in
 com.google.android.gms.measurement.prefs before plugin registration.

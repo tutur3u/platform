@@ -459,7 +459,7 @@ void main() {
       'android/app/src/main/kotlin/com/tuturuuu/app/mobile/telemetry/'
       'FirebaseStartupGate.kt',
     ).readAsStringSync();
-    expect(kotlin, contains('setAnalyticsCollectionEnabled(enabled)'));
+    expect(kotlin, contains('setAnalyticsCollectionEnabled(false)'));
     expect(kotlin, contains('PersistedAnalyticsGate.mayEnable'));
     expect(kotlin, contains('TelemetryConsentDecision.allowsCollection'));
     expect(manifest, contains('tools:node="remove"'));

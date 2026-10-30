@@ -8,6 +8,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/config/consent_gate.dart';
+import 'package:mobile/core/observability/android_analytics_collection.dart';
 import 'package:mobile/core/observability/operational_error_reporter.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -29,7 +30,11 @@ class TelemetryCollectionControls {
       FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(enabled);
 
   Future<void> setAnalyticsCollection({required bool enabled}) async {
-    if (Platform.isAndroid || Platform.isIOS) {
+    if (Platform.isAndroid) {
+      await AndroidAnalyticsCollection.instance.apply(enabled: enabled);
+      return;
+    }
+    if (Platform.isIOS) {
       await const MethodChannel(
         'mobile/firebase_startup',
       ).invokeMethod<void>('setAnalyticsCollectionEnabled', enabled);
