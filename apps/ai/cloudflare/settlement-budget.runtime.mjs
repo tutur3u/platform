@@ -26,13 +26,16 @@ const [a, b] = identities;
 
 function deferred(t, description, timeout = 15000) {
   const result = Promise.withResolvers();
-  const timer = setTimeout(
-    () => result.reject(new Error(`${description} was not observed`)),
-    timeout
-  );
+  let timer;
   t.after(() => clearTimeout(timer));
   return {
     promise: result.promise,
+    arm() {
+      timer = setTimeout(
+        () => result.reject(new Error(`${description} was not observed`)),
+        timeout
+      );
+    },
     resolve(value) {
       clearTimeout(timer);
       result.resolve(value);
@@ -227,6 +230,9 @@ for (const phase of ['pricing', 'settlement']) {
         return new Response('Unexpected egress denied', { status: 500 });
       },
     });
+    stalled.arm();
+    journaled.arm();
+    normalSettled.arm();
     await disconnectStream(worker, a);
     const disconnectedAt = performance.now();
     await stalled.promise;
