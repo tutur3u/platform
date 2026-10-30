@@ -51,6 +51,11 @@
       "owner": "cf/Void Wrangler-exit lane",
       "removal": "Delete when no other allowlist entry needs the Wrangler CLI and @cloudflare/vite-plugin 2.x (no wrangler dependency) is adopted."
     },
+    "void-emitted-runtime": {
+      "reason": "Void emits dist/server/wrangler.json rather than cf Build Output. The qualified cf/Vite runtime harness accepts cloudflare.config.ts or .cloudflare/output/v0 and has no equivalent sealed Void-config runner with injected bindings, outboundService interception and fail-closed provider auth. Retain the isolated unstable_startWorker fixture and its pinned dependency; no publication is admitted.",
+      "owner": "Mastermind native Start qualification owner and cf/Void Wrangler-exit lane",
+      "removal": "Remove when the cf/Void runtime harness accepts the exact sealed Void artifact and preserves disposable secrets, outbound interception, denied provider auth, no rebuild, no publication and all owner/host/session assertions."
+    },
     "void-wave1-publication": {
       "reason": "Void deploy always rebuilds and provisions (--skip-build is static-only in Void 1.1.12 and 1.2.1), so Wave 1 Start + Void apps publish the exact Void-emitted config with Wrangler.",
       "owner": "Wave 1 native Start + Void lane",
@@ -667,6 +672,46 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "bf3f28a750c92bb8c300492836fa2eff1e326b561e156a39a00ba5f68d6cef44"
+    },
+    "apps/mastermind/.gitignore": {
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7301",
+        "reason": "ADMITTED GAP: retain the .wrangler/ cache ignore for the isolated Void runtime toolchain; this is a filesystem exclusion, not a CLI invocation. Remove when the retained runtime no longer produces this cache."
+      },
+      "lines": 1,
+      "uses": 1,
+      "digest": "fb576a0a285ec483f842c79f48d22e695b41ec7df3f3f3afc9ab5e01b846a24d"
+    },
+    "apps/mastermind/cloudflare/native-built-worker.acceptance.mjs": {
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7301",
+        "reason": "ADMITTED GAP: require(wrangler).unstable_startWorker runs the exact sealed Void-emitted config with bundle/processEntrypoint disabled, disposable bindings, outbound JWKS interception and provider auth denied. The cf/Vite harness requires native cf Build Output and lacks this Void-config fixture contract. No build or publication is admitted."
+      },
+      "lines": 1,
+      "uses": 1,
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/mastermind/package.json": {
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7301",
+        "reason": "ADMITTED GAP: the pinned Wrangler devDependency supplies unstable_startWorker for the sealed Void runtime acceptance fixture. cf/Vite has no qualified runner for that emitted config with these isolation controls; remove this dependency with the fixture migration."
+      },
+      "lines": 1,
+      "uses": 1,
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/mastermind/src/native/auth.test.ts": {
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7301",
+        "reason": "ADMITTED GAP: exclude the retained .wrangler cache directory from the source admission audit, alongside node_modules, dist and .void. This is a filesystem classification reference, not a CLI invocation; retain until the runtime cache is retired."
+      },
+      "lines": 1,
+      "uses": 1,
+      "digest": "f76a81cfbf9dc5b3a63eff7e9bb26b5f312d7349e7cc5fd898f1c4d49ab4cd1d"
     },
     "apps/meet-realtime/.gitignore": {
       "lines": 1,

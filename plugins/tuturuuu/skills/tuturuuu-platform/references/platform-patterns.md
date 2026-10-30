@@ -1435,3 +1435,18 @@ The export and crawler denial matrix is covered by
 `apps/web/src/lib/staff-session.test.ts` and `staff-exact-domain.test.ts`.
 When a role gate is added to an identity-policy test, mock its permission boundary
 and assert denied identities never call it; keep role-reader coverage separate.
+
+### Private native Worker admission
+
+For owner-only native apps, keep admission at the Worker entry before assets,
+Start server functions or rendering. Use the request-injected satellite auth
+core with an explicit app target and secret; legacy satellite helpers may
+fall back to database identity. Never permit that fallback before an owner
+gate that promises zero data reads on denial. Mastermind's binding/key rotation,
+short session and publication gates are documented in
+`apps/docs/build/devops/mastermind-web.mdx`.
+
+Keep emitted-Worker acceptance behind an explicit `test:runtime` command and
+`.acceptance.mjs` filename so source-only gates cannot invoke it without an
+artifact. Use `.invalid` hosts for isolated runtime preview fixtures; retain
+production-like preview refusal in the source auth matrix.

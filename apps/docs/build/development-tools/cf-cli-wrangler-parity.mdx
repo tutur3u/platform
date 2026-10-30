@@ -80,6 +80,23 @@ The existing native profiles qualify only their declared configuration fields.
 | Prebuilt Void deploy | n/a | `void deploy` always builds and provisions; `--skip-build` is static-only (Void 1.1.12 and 1.2.1) | Gap for the exact-artifact contract |
 | OpenNext publication | `opennextjs-cloudflare deploy` invokes Wrangler | None | Gap until Start on Void |
 
+### Void emitted runtime qualification
+
+The native cf/Vite runtime harness accepts `cloudflare.config.ts` or cf Build
+Output under `.cloudflare/output/v0`. It does not accept Void's sealed
+`dist/server/wrangler.json` artifact. Mastermind retains an isolated
+`unstable_startWorker` acceptance fixture under the `void-emitted-runtime` gap
+with bundling and entrypoint processing disabled, disposable bindings, intercepted
+JWKS egress and denied provider authentication. Its pinned runtime dependency is
+covered by the same gap; cache ignores and source-audit exclusions are data-only
+`shared-toolchain` references. [PR #7301](https://github.com/tutur3u/platform/pull/7301)
+records the admission, exact usage counts and digests in the usage allowlist.
+
+Retire this gap only when a qualified cf/Void runner accepts the same sealed
+artifact and preserves the fixture's host, owner, session and bilingual rendering
+assertions, secret isolation and egress controls without rebuilding or publishing.
+This qualification does not admit production publication, DNS or Access changes.
+
 ### Capability limits before replacing a caller
 
 `cf workers types --no-include-runtime` skips the runtime declaration generator;
