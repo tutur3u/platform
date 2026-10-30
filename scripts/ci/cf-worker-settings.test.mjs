@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
+  captureAfter,
   captureSettings,
   compareSettings,
   describeToken,
@@ -27,7 +28,7 @@ const identity = {
 function fixture(overrides = {}, target = identity) {
   const responses = {
     service: {
-      default_environment: { script: { last_deployed_from: 'cf' } },
+      default_environment: { script: { last_deployed_from: 'cf_cli' } },
     },
     settings: {
       compatibility_date: target.compatibilityDate,
@@ -108,6 +109,31 @@ test('settings readback retains rollback identity, compares settings, and omits 
   compareSettings(before, after);
   after.settingsHash = 'changed';
   assert.throws(() => compareSettings(before, after), /acceptance is blocked/);
+});
+
+for (const source of ['cf_cli', 'cf', 'wrangler']) {
+  test(`strict after-check admits deployment source ${source}`, async () => {
+    const api = fixture({
+      service: {
+        default_environment: { script: { last_deployed_from: source } },
+      },
+    });
+    const after = await captureAfter({
+      plan: { target: identity },
+      ...options(api),
+    });
+    assert.equal(after.rollback[0].versions[0].version_id, 'old');
+  });
+}
+
+test('strict after-check rejects an unknown deployment source', async () => {
+  const api = fixture({
+    service: { default_environment: { script: { last_deployed_from: 'foo' } } },
+  });
+  await assert.rejects(
+    captureAfter({ plan: { target: identity }, ...options(api) }),
+    /Worker deployment source unavailable/
+  );
 });
 
 test('account mismatch fails before network access', async () => {

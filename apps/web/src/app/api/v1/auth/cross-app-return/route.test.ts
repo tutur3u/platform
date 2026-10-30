@@ -335,6 +335,7 @@ describe('cross-app return route', () => {
         'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
         '.staging.tutur3u.com'
       );
+      vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
       vi.stubEnv(
         'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
         `tasks:${stagingTasksOrigin}`
@@ -410,6 +411,7 @@ describe('cross-app return route', () => {
         'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
         '.staging.tutur3u.com'
       );
+      vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
 
       const response = await POST(
         createRequest('https://tasks.tuturuuu.com/verify-token?nextUrl=%2F', {
@@ -427,6 +429,7 @@ describe('cross-app return route', () => {
         'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
         '.staging.tutur3u.com'
       );
+      vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
       vi.stubEnv(
         'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
         'tasks:https://tasks.example.tutur3u.com'
@@ -448,6 +451,7 @@ describe('cross-app return route', () => {
         'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
         '.staging.tutur3u.com'
       );
+      vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
 
       const response = await POST(
         createRequest('https://preview.staging.tutur3u.com/personal', {

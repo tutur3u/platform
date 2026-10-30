@@ -23,7 +23,9 @@ export function stagingOrigin(
   }
   const host = url.hostname;
   const named =
-    role === 'issuer' ? 'staging.tutur3u.com' : `${role}.staging.tutur3u.com`;
+    role === 'issuer'
+      ? 'web.staging.tutur3u.com'
+      : `${role}.staging.tutur3u.com`;
   if (
     url.protocol !== 'https:' ||
     url.port ||
@@ -89,7 +91,7 @@ export function readConfig(env: Env) {
       app
     ),
     webOrigin: stagingOrigin(
-      env.WAVE1_STAGING_WEB_ORIGIN ?? 'https://staging.tutur3u.com',
+      env.WAVE1_STAGING_WEB_ORIGIN ?? 'https://web.staging.tutur3u.com',
       'issuer'
     ),
     sha,

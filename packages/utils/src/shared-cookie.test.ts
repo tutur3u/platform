@@ -148,6 +148,7 @@ describe('configurable shared cookie domain', () => {
   });
 
   it('resolves the configured staging domain to exactly .staging.tutur3u.com', () => {
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
     vi.stubEnv(ENV_KEY, '.staging.tutur3u.com');
 
     for (const url of [
@@ -170,6 +171,7 @@ describe('configurable shared cookie domain', () => {
   });
 
   it('never shares cookies with .tutur3u.com, tuturuuu.com or lookalikes when staging is configured', () => {
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
     vi.stubEnv(ENV_KEY, '.staging.tutur3u.com');
 
     for (const url of [
@@ -191,6 +193,7 @@ describe('configurable shared cookie domain', () => {
   });
 
   it('keeps the local portless domain when staging is configured', () => {
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
     vi.stubEnv(ENV_KEY, '.staging.tutur3u.com');
 
     expect(
@@ -261,6 +264,7 @@ describe('shared cookie delete options without an accepted override', () => {
   });
 
   it('exposes the accepted override only for the exact staging domain', () => {
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
     vi.stubEnv(ENV_KEY, '.STAGING.tutur3u.com ');
 
     expect(getConfiguredSharedCookieDomainOverride()).toEqual({
@@ -269,6 +273,7 @@ describe('shared cookie delete options without an accepted override', () => {
       secure: true,
     });
 
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', '');
     vi.stubEnv(ENV_KEY, '');
     expect(getConfiguredSharedCookieDomainOverride()).toBeNull();
   });
@@ -290,6 +295,7 @@ describe('production fail-closed behavior', () => {
       vi.stubEnv('VERCEL_ENV', '');
       vi.stubEnv('NEXT_PUBLIC_VERCEL_ENV', '');
       vi.stubEnv(envKey, 'production');
+      vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'production');
       vi.stubEnv(ENV_KEY, '.staging.tutur3u.com');
       vi.stubEnv(
         'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
@@ -309,6 +315,7 @@ describe('production fail-closed behavior', () => {
   it('keeps honoring the override on preview and staging deployments', () => {
     vi.stubEnv('VERCEL_ENV', 'preview');
     vi.stubEnv('NEXT_PUBLIC_VERCEL_ENV', '');
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
     vi.stubEnv(ENV_KEY, '.staging.tutur3u.com');
 
     expect(getConfiguredSharedCookieDomainOverride()?.cookieDomain).toBe(
@@ -347,6 +354,7 @@ describe('production fail-closed behavior', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.stubEnv('VERCEL_ENV', '');
     vi.stubEnv('NEXT_PUBLIC_VERCEL_ENV', '');
+    vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
     vi.stubEnv(ENV_KEY, '.staging.tutur3u.com');
 
     for (const url of [
