@@ -81,7 +81,7 @@ on a successful network path. The SDK may retry only that same DELETE:
 - **Android Firebase Installations 19.1.2:** deleteFirebaseInstallationId reads
   existing persisted state and its refresh credential, and calls the delete
   transport only for a registered FID. It never calls getId/getToken or the
-  registration/refresh path. The transport uses MAX_RETRIES=1 with a <= loop:
+  registration/refresh path. The transport uses `MAX_RETRIES=1` with a `<=` loop:
   at most two HTTP attempts, on IOException, HTTP 429 or 5xx.
   See [delete entrypoint](https://github.com/firebase/firebase-android-sdk/blob/master/firebase-installations/src/main/java/com/google/firebase/installations/FirebaseInstallations.java)
   and [DELETE transport](https://github.com/firebase/firebase-android-sdk/blob/master/firebase-installations/src/main/java/com/google/firebase/installations/remote/FirebaseInstallationServiceClient.java).
