@@ -92,6 +92,7 @@ export async function ingressPreflight({
   });
   const failures = evaluateIngress(target, observed, {
     staffGroupId: env.STAGING_ACCESS_STAFF_GROUP_ID,
+    staffEmailListId: env.STAGING_ACCESS_STAFF_EMAIL_LIST_ID,
   });
   assert.deepEqual(
     failures,

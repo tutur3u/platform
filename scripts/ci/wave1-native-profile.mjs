@@ -4,7 +4,100 @@ import { readFileSync } from 'node:fs';
 export const profiles = JSON.parse(
   readFileSync(new URL('./wave1-native-profiles.json', import.meta.url), 'utf8')
 );
-export function profileFor(app, environment, subdomain) {
+// The staging Web issuer seals one exact Vercel fallback deployment into its
+// publication config, so the artifact digest binds the Worker/Next pair.
+const webFallbackHost = /^tuturuuu-web-staging-[a-z0-9-]+\.vercel\.app$/u;
+export function assertWebFallback(fallback) {
+  assert.match(
+    fallback?.deploymentId ?? '',
+    /^dpl_[A-Za-z0-9]{8,64}$/u,
+    'Web fallback needs an exact Vercel deployment id'
+  );
+  const origin = new URL(fallback.origin);
+  assert.equal(
+    origin.origin,
+    fallback.origin,
+    'Web fallback must be an origin'
+  );
+  assert.equal(origin.protocol, 'https:');
+  assert.match(
+    origin.hostname,
+    webFallbackHost,
+    'Web fallback must be a tuturuuu-web-staging deployment URL'
+  );
+  return { deploymentId: fallback.deploymentId, origin: fallback.origin };
+}
+function webProfileFor(environment, fallback) {
+  assert.equal(environment, 'staging', 'Web publishes to staging only');
+  const web = profiles.webStaging;
+  return {
+    app: 'web',
+    environment,
+    name: web.stagingWorker,
+    host: web.stagingHost,
+    secrets: web.secrets,
+    accountId: profiles.accountId,
+    ...(fallback ? { nextFallback: assertWebFallback(fallback) } : {}),
+  };
+}
+function webPublicationConfig(base, profile, { main, assets }) {
+  const web = profiles.webStaging;
+  assert.equal(
+    base.name,
+    web.sourceWorker,
+    'Unexpected original Worker identity'
+  );
+  assert.equal(
+    base.no_bundle,
+    true,
+    'Only prebundled native output may publish'
+  );
+  assert.equal(base.assets?.binding, 'ASSETS');
+  assert.equal(base.assets.run_worker_first, true);
+  assert.equal(base.assets.not_found_handling, 'none');
+  assert.deepEqual(base.compatibility_flags, [
+    'nodejs_compat',
+    'global_fetch_strictly_public',
+  ]);
+  assert.equal(base.compatibility_date, '2026-10-19');
+  assert.deepEqual(
+    base.vars ?? {},
+    {
+      WEB_START_CANDIDATE: 'off',
+      WEB_START_NATIVE_LEGAL: 'off',
+      WEB_START_NATIVE_SECURITY: 'off',
+      AUTH_COOKIE_DOMAIN: web.vars.AUTH_COOKIE_DOMAIN,
+      NEXT_PUBLIC_SUPABASE_URL: web.vars.NEXT_PUBLIC_SUPABASE_URL,
+    },
+    'Source vars require explicit profile review'
+  );
+  for (const key of resourceKeys)
+    assert.ok(empty(base[key]), `Unadmitted source resource: ${key}`);
+  assert.ok(empty(base.env), 'Named source environments are not admitted');
+  const fallback = assertWebFallback(profile.nextFallback);
+  const config = {
+    name: profile.name,
+    account_id: profile.accountId,
+    main,
+    no_bundle: true,
+    upload_source_maps: false,
+    compatibility_date: base.compatibility_date,
+    compatibility_flags: base.compatibility_flags,
+    rules: base.rules,
+    assets: { ...base.assets, directory: assets },
+    workers_dev: false,
+    preview_urls: false,
+    routes: [],
+    secrets: { required: profile.secrets },
+    vars: { ...web.vars, NEXT_FALLBACK_ORIGIN: fallback.origin },
+    observability: { enabled: true, head_sampling_rate: 0.05 },
+  };
+  assertStagingIsolation(config);
+  return config;
+}
+
+export function profileFor(app, environment, subdomain, fallback) {
+  if (app === 'web') return webProfileFor(environment, fallback);
   assert.ok(Object.hasOwn(profiles.apps, app), 'Unknown wave-1 app');
   assert.ok(
     ['staging', 'production'].includes(environment),
@@ -88,6 +181,8 @@ export function assertStagingIsolation(config) {
   check(config);
 }
 export function publicationConfig(base, profile, { main, assets }) {
+  if (profile.app === 'web')
+    return webPublicationConfig(base, profile, { main, assets });
   const originalName =
     profile.app === 'apps'
       ? 'tuturuuu-apps-vite-staging'

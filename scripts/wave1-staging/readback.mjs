@@ -109,7 +109,10 @@ export async function readback({
           target,
           appId,
         }),
-        { staffGroupId: env.STAGING_ACCESS_STAFF_GROUP_ID }
+        {
+          staffGroupId: env.STAGING_ACCESS_STAFF_GROUP_ID,
+          staffEmailListId: env.STAGING_ACCESS_STAFF_EMAIL_LIST_ID,
+        }
       );
     } catch (error) {
       failures = [

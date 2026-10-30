@@ -13,6 +13,8 @@ export function stagingAdmission(raw, app, sha, digest) {
       'app',
       'sourceSha',
       'artifactSha256',
+      // The Web issuer admission also names its exact sealed Next deployment.
+      ...(app === 'web' ? ['nextDeploymentId'] : []),
       ...Object.keys(policy),
     ].sort(),
     'Unexpected admission fields'
@@ -24,6 +26,12 @@ export function stagingAdmission(raw, app, sha, digest) {
   assert.match(record.artifactSha256 ?? '', /^[a-f0-9]{64}$/);
   if (digest !== undefined)
     assert.equal(record.artifactSha256, digest, 'Unadmitted artifact digest');
+  if (app === 'web')
+    assert.match(
+      record.nextDeploymentId ?? '',
+      /^dpl_[A-Za-z0-9]{8,64}$/u,
+      'Web admission needs an exact Vercel deployment id'
+    );
   for (const key of [
     'isolation',
     'accountIdEnv',

@@ -86,7 +86,11 @@ export function completeList(response, label) {
  * name starts with `*`), app (Access application), policies (Access app
  * policies) and subdomain (workers.dev / preview serving).
  */
-export function evaluateIngress(target, observed, { staffGroupId } = {}) {
+export function evaluateIngress(
+  target,
+  observed,
+  { staffGroupId, staffEmailListId } = {}
+) {
   const failures = [];
   const { host, worker } = target;
   for (const [label, response] of [
@@ -192,7 +196,12 @@ export function evaluateIngress(target, observed, { staffGroupId } = {}) {
       if (!includes.length)
         failures.push(`Access: allow policy ${name} has no staff selector`);
       for (const rule of includes)
-        if (!staffSelector(rule, staffGroupId))
+        if (
+          !staffSelector(rule, {
+            groupId: staffGroupId,
+            emailListId: staffEmailListId,
+          })
+        )
           failures.push(
             `Access: allow policy ${name} includes a non-staff selector (${Object.keys(rule).join(',') || 'empty'})`
           );
@@ -203,9 +212,11 @@ export function evaluateIngress(target, observed, { staffGroupId } = {}) {
       failures.push(
         `Access: bypass policy ${name} on the host-wide application is forbidden`
       );
+    // Service auth names at least one specific service token; an empty
+    // include would otherwise pass `.every()`.
     if (
       policy.decision === 'non_identity' &&
-      !includes.every((rule) => 'service_token' in rule)
+      (!includes.length || !includes.every((rule) => 'service_token' in rule))
     )
       failures.push(
         `Access: service-auth policy ${policy.name ?? policy.id} must name service tokens`
@@ -227,10 +238,10 @@ export const STAFF_EMAIL_DOMAIN = 'tuturuuu.com';
 
 /**
  * An Access include rule that names only staff (C1): the configured staff
- * group, an explicit email or email list, or the company email domain.
+ * group or email list, an explicit email, or the company email domain.
  * Every other selector type, including unknown ones, is refused.
  */
-export function staffSelector(rule, staffGroupId) {
+export function staffSelector(rule, { groupId, emailListId } = {}) {
   if (!rule || typeof rule !== 'object' || Array.isArray(rule)) return false;
   const keys = Object.keys(rule);
   if (keys.length !== 1) return false;
@@ -239,11 +250,12 @@ export function staffSelector(rule, staffGroupId) {
   if (!value || typeof value !== 'object') return false;
   switch (type) {
     case 'group':
-      return Boolean(staffGroupId) && value.id === staffGroupId;
+      return Boolean(groupId) && value.id === groupId;
     case 'email':
       return /^[^\s@]+@[^\s@]+$/u.test(String(value.email ?? ''));
     case 'email_list':
-      return /^[a-f0-9-]{36}$/u.test(String(value.id ?? ''));
+      // Pinned like the group: only the configured staff list counts.
+      return Boolean(emailListId) && value.id === emailListId;
     case 'email_domain':
       return String(value.domain ?? '').toLowerCase() === STAFF_EMAIL_DOMAIN;
     default:
