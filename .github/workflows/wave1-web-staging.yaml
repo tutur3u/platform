@@ -24,8 +24,6 @@ concurrency:
   cancel-in-progress: false
 env:
   SOURCE_SHA: ${{ inputs.source_sha }}
-  WRANGLER_SEND_METRICS: 'false'
-  WRANGLER_WRITE_LOGS: 'false'
 jobs:
   admit:
     if: github.ref == 'refs/heads/main'

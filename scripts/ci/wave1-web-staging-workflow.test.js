@@ -81,7 +81,10 @@ test('the workflow never performs serving, domain, Access or DNS changes', () =>
     /access\/apps[^\n]*(PUT|POST|PATCH|DELETE)/iu,
     /vercel (alias|domains|promote|remove|rm)\b/iu,
     /--prod\b/u,
-    /wrangler[^\n]*(domain|route)/iu,
+    // No package CLI runs directly: every Cloudflare write goes through the
+    // reviewed publisher, and no Cloudflare CLI may touch domains or routes.
+    /\b(?:bunx|npx|bun x)\b/u,
+    /\bcf\s+(?:domains?|routes?|dns|access)\b/iu,
   ])
     assert.doesNotMatch(text, forbidden);
   assert.match(text, /never attaches domains/u);
