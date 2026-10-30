@@ -78,7 +78,7 @@ function healthy(live) {
   });
   return {
     service: ok({
-      default_environment: { script: { last_deployed_from: 'wrangler' } },
+      default_environment: { script: { last_deployed_from: 'cf' } },
     }),
     verify: ok({ id: TOKEN_ID, status: 'active' }),
     settings: ok({
