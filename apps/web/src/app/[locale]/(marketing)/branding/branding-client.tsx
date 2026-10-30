@@ -4,7 +4,7 @@ import { ArrowRight, Download, FileText } from '@tuturuuu/icons/lucide';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useReducedMotion } from 'framer-motion';
-import { Inter, Noto_Sans } from 'next/font/google';
+import '@/fonts/branding.css';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { HeroAtmosphere } from '@/components/landing/shared/atmosphere';
@@ -26,8 +26,8 @@ import {
 import { ColorTokenCard, SectionHeader, SystemTokenCard } from './brand-tokens';
 import { TypeSpecimen } from './brand-typography';
 
-const inter = Inter({ subsets: ['latin'] });
-const notoSans = Noto_Sans({ subsets: ['latin', 'vietnamese'] });
+const inter = { className: 'web-brand-inter' };
+const notoSans = { className: 'web-brand-noto' };
 
 /**
  * Brand guidelines: marks, colour, type and the downloadable kit.
