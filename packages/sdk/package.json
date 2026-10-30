@@ -13,11 +13,7 @@
   "bugs": {
     "url": "https://github.com/tutur3u/platform/issues"
   },
-  "keywords": [
-    "tuturuuu",
-    "sdk",
-    "api"
-  ],
+  "keywords": ["tuturuuu", "sdk", "api"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
@@ -83,12 +79,7 @@
       "default": "./dist/platform.js"
     }
   },
-  "files": [
-    "dist",
-    "bin",
-    "README.md",
-    "LICENSE"
-  ],
+  "files": ["dist", "bin", "README.md", "LICENSE"],
   "publishConfig": {
     "access": "public"
   },

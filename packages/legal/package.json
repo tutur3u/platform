@@ -3,9 +3,7 @@
   "version": "0.4.0",
   "license": "MIT",
   "type": "module",
-  "files": [
-    "src"
-  ],
+  "files": ["src"],
   "scripts": {
     "test": "vitest run",
     "type-check": "tsc --project tsconfig.json"

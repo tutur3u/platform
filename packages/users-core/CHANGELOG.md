@@ -5,8 +5,7 @@
 
 ### Features
 
-* **topic-announcements:** add teacher-scoped access and send deadline ([3cb09f3](https://github.com/tutur3u/platform/commit/3cb09f3896307385fbeaf4cfbcc3320d7e77d8a5))
-* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+* **topic-announcements:** add teacher-scoped access and send deadline ([3cb09f3](https://github.com/tutur3u/platform/commit/3cb09f3896307385fbeaf4cfbcc3320d7e77d8a5)) ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
 * **topic-announcements:** gate teacher assignments behind a workspace flag ([8252f98](https://github.com/tutur3u/platform/commit/8252f98a107e27d7ecb1605cb39793256fa9c406))
 
 
@@ -19,8 +18,7 @@
 * **storage:** short-lived signed URLs and sign-on-read for stored media ([b235bdb](https://github.com/tutur3u/platform/commit/b235bdbdb84198ebaf1e58a6c2e29d216f113fcf))
 * **topic-announcements:** store blank topics as NULL and fail the flag closed ([9e3611a](https://github.com/tutur3u/platform/commit/9e3611a96b42be5a8a75059e1cc546f862e4dd6b))
 * **topic-announcements:** tighten teacher write scope and label topic_assigned ([d7af005](https://github.com/tutur3u/platform/commit/d7af005c28d05bf97379e6b6dffcd343a75d1a47))
-* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening ([#7057](https://github.com/tutur3u/platform/issues/7057)) ([99aa5a8](https://github.com/tutur3u/platform/commit/99aa5a84b735abd4970bebb70bc7ccc3e8081c53))
-* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening ([#7057](https://github.com/tutur3u/platform/issues/7057)) ([c678300](https://github.com/tutur3u/platform/commit/c678300a63eba6c8e6b57ead465d247fd0d38331))
+* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening ([#7057](https://github.com/tutur3u/platform/issues/7057)) ([99aa5a8](https://github.com/tutur3u/platform/commit/99aa5a84b735abd4970bebb70bc7ccc3e8081c53)) ([c678300](https://github.com/tutur3u/platform/commit/c678300a63eba6c8e6b57ead465d247fd0d38331))
 * **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening. ([c678300](https://github.com/tutur3u/platform/commit/c678300a63eba6c8e6b57ead465d247fd0d38331))
 * **users:** align approval and post delivery scoping ([#6989](https://github.com/tutur3u/platform/issues/6989)) ([d1a7052](https://github.com/tutur3u/platform/commit/d1a7052c247e19467cbff8aa60c8c06dbb46e91d))
 * **users:** align workspace read permissions ([#7022](https://github.com/tutur3u/platform/issues/7022)) ([6d81393](https://github.com/tutur3u/platform/commit/6d8139370238d3be6455724c7e71bd296004002e))

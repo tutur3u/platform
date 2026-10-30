@@ -10,10 +10,7 @@
   "main": "./dist/index.js",
   "sideEffects": false,
   "types": "./dist/index.d.ts",
-  "files": [
-    "dist",
-    "README.md"
-  ],
+  "files": ["dist", "README.md"],
   "publishConfig": {
     "access": "public"
   },

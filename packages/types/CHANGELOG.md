@@ -6,11 +6,9 @@
 ### Features
 
 * **ai:** create Mira chat with the first message ([#6765](https://github.com/tutur3u/platform/issues/6765)) ([aae4d08](https://github.com/tutur3u/platform/commit/aae4d088b0225d428bce41153bac7cf204d5a8dd))
-* **database:** add topic announcement teacher assignment schema ([24ad041](https://github.com/tutur3u/platform/commit/24ad04103ecce259beb379cb2a92dce31aa9c5ee))
-* **database:** add topic announcement teacher assignment schema ([#6924](https://github.com/tutur3u/platform/issues/6924)) ([cf6a18d](https://github.com/tutur3u/platform/commit/cf6a18d3cfa33d5cc5b93a673613038e347be827))
+* **database:** add topic announcement teacher assignment schema ([24ad041](https://github.com/tutur3u/platform/commit/24ad04103ecce259beb379cb2a92dce31aa9c5ee)) ([#6924](https://github.com/tutur3u/platform/issues/6924)) ([cf6a18d](https://github.com/tutur3u/platform/commit/cf6a18d3cfa33d5cc5b93a673613038e347be827))
 * **database:** add topic teacher deadline notice types and receipts ([#6975](https://github.com/tutur3u/platform/issues/6975)) ([ee987de](https://github.com/tutur3u/platform/commit/ee987dec1d739c81a8d5eeda0502aa2c436249bf))
-* **database:** add tutoring follow-up notification foundation ([3b51993](https://github.com/tutur3u/platform/commit/3b51993e516ad33d92b9e821acf4d7e4b4d81b08))
-* **database:** add tutoring follow-up notification foundation ([#6909](https://github.com/tutur3u/platform/issues/6909)) ([1a986eb](https://github.com/tutur3u/platform/commit/1a986eb918304ce12c1b732307bce9b7817a5232))
+* **database:** add tutoring follow-up notification foundation ([3b51993](https://github.com/tutur3u/platform/commit/3b51993e516ad33d92b9e821acf4d7e4b4d81b08)) ([#6909](https://github.com/tutur3u/platform/issues/6909)) ([1a986eb](https://github.com/tutur3u/platform/commit/1a986eb918304ce12c1b732307bce9b7817a5232))
 * **devbox:** admit claims by reported execution mode behind a flag ([#6457](https://github.com/tutur3u/platform/issues/6457)) ([394fd27](https://github.com/tutur3u/platform/commit/394fd27a8e6aa5f3b868237f4fc9139d95132832))
 
 

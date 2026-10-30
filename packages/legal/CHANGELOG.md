@@ -11,8 +11,7 @@
 ### Bug Fixes
 
 * **legal:** keep safety rules in the proposed AUP and community policies ([#7226](https://github.com/tutur3u/platform/issues/7226)) ([8ffeeef](https://github.com/tutur3u/platform/commit/8ffeeef8bc996b1997a46047e322f86885438c6c))
-* **legal:** restore the in-force legal documents and separate proposed changes ([#7220](https://github.com/tutur3u/platform/issues/7220)) ([e035fa9](https://github.com/tutur3u/platform/commit/e035fa9c54d79b7766cd8d4c053b2f739d4d0ff4))
-* **legal:** restore the in-force legal documents and separate proposed changes ([#7220](https://github.com/tutur3u/platform/issues/7220)) ([aba1e25](https://github.com/tutur3u/platform/commit/aba1e250d7bcd08ae2ead0417e6816f8c97d2ae6))
+* **legal:** restore the in-force legal documents and separate proposed changes ([#7220](https://github.com/tutur3u/platform/issues/7220)) ([e035fa9](https://github.com/tutur3u/platform/commit/e035fa9c54d79b7766cd8d4c053b2f739d4d0ff4)) ([aba1e25](https://github.com/tutur3u/platform/commit/aba1e250d7bcd08ae2ead0417e6816f8c97d2ae6))
 
 ## [0.3.1](https://github.com/tutur3u/platform/compare/legal-v0.3.0...legal-v0.3.1) (2026-09-20)
 
