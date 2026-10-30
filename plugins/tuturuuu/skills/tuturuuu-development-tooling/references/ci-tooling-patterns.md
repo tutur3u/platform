@@ -50,9 +50,12 @@ settings, including secret names/count, before strict publication. cf beta.20
 compares cron order and normalizes disabled traces to sampling 1; match the
 exact live API order and explicit sampling rather than dropping strict mode.
 Validate typed config through cf's schema as well as importing it: a self Durable
-Object binding still requires its Worker name. beta.20 treats even a plus-only
-`script_name` addition inside its binding array as destructive; use the actual
-cf diff predicate before claiming strict publication passes.
+Object binding still requires its Worker name. The Bun-managed
+`@cloudflare/config@0.27.0` patch omits only same-Worker `script_name` during
+Wrangler conversion, matching Cloudflare's remote shape while preserving foreign
+targets. beta.20 rejects the unpatched addition inside the binding array. The
+Cron Control regression calls the installed Build Output normalizer and `bE`
+helper, requiring an empty diff and preserving the unpatched negative control.
 See the [Cron Control admission runbook](../../../../../apps/docs/build/devops/cloudflare-cron-control.mdx#dashboard-deployment-admission).
 
 Coordination's before/after token gates consume the verified snapshot's `secrets`

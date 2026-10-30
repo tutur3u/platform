@@ -194,13 +194,24 @@ traces or change sampling as part of admission.
 `CRON_CONTROL_WEB_MODE` stays absent, which keeps web jobs off just like `off`.
 The earlier `CRON-WEB-MODE-1` additive transition is retired. A later web cutover
 must declare its own reviewed settings change. The self Durable Object binding
-explicitly names `tuturuuu-cron-control`, as required by cf's configuration
-schema. cf beta.20 treats the resulting binding-array `script_name` addition
-as destructive, despite displaying a plus-only field. Matching cron order and
-sampling therefore does not alone clear strict publication. The release owner
-must reconcile this remaining same-script representation through a separately
-reviewed CLI/config compatibility change; never remove strict mode or the
-required Worker name to bypass it.
+explicitly names `tuturuuu-cron-control`, as required by cf's typed schema.
+The Bun-managed `@cloudflare/config@0.27.0` patch omits `script_name` during
+conversion only when the binding's Worker equals the current Worker's name.
+That is Cloudflare's implicit same-Worker class representation and preserves the
+namespace and class. Cross-Worker bindings retain their explicit `script_name`.
+The typed schema and strict deployment checks remain unchanged.
+
+cf beta.20's `DE`/`kE` reorder bindings by exact object shape; they do not merge
+an omitted self `script_name` with an explicit one. `SE`/`TE` do not remove that
+field either. Thus the unpatched converter's self-name addition appears inside
+a modified binding-array element and is rejected as destructive. The regression
+runs cf's installed Build Output deployment normalizer and private `bE` helper
+against the recorded live fields, requiring an empty diff. Negative controls
+retain the original rejection and verify that foreign Worker targets stay
+explicit. This is offline evidence; exact-commit CI and production verification
+are still required. Keep the patch until an upstream converter release provides
+equivalent behavior, then remove it with the same regression passing.
+
 `CRON_CONTROL_ENABLED_JOBS` remains `database-cron-history-retention`, Worker
 processors remain empty, and `meet-transcript-retention` remains disabled.
 
