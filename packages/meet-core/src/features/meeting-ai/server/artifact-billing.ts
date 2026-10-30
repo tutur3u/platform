@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { MEETING_APP } from '../../../runtime';
 import { MeetAiError } from './access';
 import { admitMeetCredits, type MeetCreditAdmission } from './credit-admission';
-import { BILLING_UNRECONCILED } from './notes-billing';
+import { BILLING_UNRECONCILED, markSettledUncharged } from './notes-billing';
 
 type Input = Parameters<typeof generateMeetArtifact>[0];
 
@@ -155,14 +155,25 @@ export async function generateBilledMeetArtifact(
           )
         : await generateMeetArtifact(input, options);
   } catch (error) {
-    await settleAiStudioRun({
-      runId: run.runId,
-      status: 'failed',
-      actualCredits: 0,
-      errorClass: 'provider_failed',
-      metadata: { ...metadata, usage_source: 'unavailable' },
-    });
-    throw error;
+    try {
+      await settleAiStudioRun({
+        runId: run.runId,
+        status: 'failed',
+        actualCredits: 0,
+        errorClass: 'provider_failed',
+        metadata: { ...metadata, usage_source: 'unavailable' },
+      });
+    } catch {
+      // The failure is not recorded, so what the provider did is unknown. Never
+      // report it as a clean failure: the run stays pending for reconciliation.
+      throw new MeetAiError(
+        503,
+        'AI usage settlement unavailable',
+        BILLING_UNRECONCILED
+      );
+    }
+    // Recorded and settled as failed: the only failure that may allow a new run.
+    throw markSettledUncharged(error);
   }
   if (!measured.usage.available || measured.costUsd === null) {
     // Do not manufacture a bill from an estimate. The reservation and pending

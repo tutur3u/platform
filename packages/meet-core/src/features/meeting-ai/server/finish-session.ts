@@ -13,6 +13,7 @@ import { MeetAiError } from './access';
 import { consentedChunks } from './consent-filter';
 import {
   BILLING_UNRECONCILED,
+  isSettledUncharged,
   notesCheckpointUsage,
   readNotesCheckpoint,
 } from './notes-billing';
@@ -312,15 +313,24 @@ export async function finishMeetAiSession(input: {
       .from('meet_ai_sessions')
       .update({
         notes_status: 'failed',
-        // Output or an unknown billed outcome keeps the same identity so the
-        // ledger, not a rotated counter, decides whether anything may run again.
+        // An unattended identity rotates only after a failure the ledger settled
+        // as failed. Output, an unknown billed outcome or a lost settlement keeps
+        // it, so the ledger decides whether anything may run again. A human click
+        // already uses a fresh identity, so it keeps the plain failure count.
         notes_unpriced_attempts:
           session.notes_unpriced_attempts +
-          (providerStarted &&
-          !fenced &&
-          !(error instanceof MeetAiError && error.code === BILLING_UNRECONCILED)
-            ? 1
-            : 0),
+          (input.automatic
+            ? isSettledUncharged(error)
+              ? 1
+              : 0
+            : providerStarted &&
+                !fenced &&
+                !(
+                  error instanceof MeetAiError &&
+                  error.code === BILLING_UNRECONCILED
+                )
+              ? 1
+              : 0),
       })
       .eq('id', sessionId)
       .eq('notes_started_at', attemptStartedAt)

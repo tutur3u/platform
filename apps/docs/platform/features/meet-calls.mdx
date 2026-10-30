@@ -1479,7 +1479,10 @@ Meet side, `finishMeetAiSession` (shared with the host's Finish click):
    provider call, no second charge. If the output cannot be kept, or a run
    already exists for the identity, the billed state is unknown: the finalizer
    answers `abandoned` and never generates again unattended. The failure counter
-   is not advanced in that case, so the identity does not rotate. Only the
+   advances, and the identity rotates, only after a provider failure whose
+   failed settlement the ledger durably recorded. A timeout, a lost settlement
+   acknowledgement or any other unrecorded failure keeps the identity, because it
+   does not prove the provider did no billable work. Only the
    host's Finish click reconciles, with a fresh identity.
 6. Notify the host and reader accounts who are workspace members, once, by the
    winner only. The notification is a `system_announcement` with code

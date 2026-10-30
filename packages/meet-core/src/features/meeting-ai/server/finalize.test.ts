@@ -22,7 +22,9 @@ vi.mock('./artifact-billing', () => ({
 
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
 import { finalizeMeetAi } from './finalize';
+import { MeetAiError } from './access';
 import { finishMeetAiSession } from './finish-session';
+import { BILLING_UNRECONCILED, markSettledUncharged } from './notes-billing';
 
 const SECRET = 'finalize-test-secret';
 const id = (n: number) =>
@@ -284,9 +286,12 @@ describe('finalizeMeetAi', () => {
 
   it('bounds retries: provider failures stop after the cap and then abandon', async () => {
     const { tables } = setup();
-    mocks.generate.mockRejectedValue(
-      Object.assign(new Error('provider down'), { status: 502 })
-    );
+    // artifact-billing tags a failure only after the ledger settled it as failed.
+    mocks.generate.mockImplementation(async () => {
+      throw markSettledUncharged(
+        Object.assign(new Error('provider down'), { status: 502 })
+      );
+    });
     for (let attempt = 0; attempt < 3; attempt++)
       await expect(call()).rejects.toThrow('provider down');
     expect(mocks.generate).toHaveBeenCalledTimes(3);
@@ -432,6 +437,59 @@ describe('finalizeMeetAi', () => {
         notes_unpriced_attempts: 0,
       });
       expect(tables.meet_ai_sessions[0]?.notes_status).not.toBe('completed');
+    });
+
+    it('a lost failure-settlement acknowledgement keeps the identity: one provider run, then fenced', async () => {
+      const keys = new Set<string>();
+      const executed: string[] = [];
+      mocks.generate.mockImplementation(async (_input, actor) => {
+        if (keys.has(actor.attemptId))
+          throw new AiStudioError('This request is already running or completed.', {
+            code: 'invalid_request_error',
+            status: 409,
+          });
+        keys.add(actor.attemptId);
+        executed.push(actor.attemptId);
+        // The provider failed, and recording that failure then failed too.
+        throw new MeetAiError(
+          503,
+          'AI usage settlement unavailable',
+          BILLING_UNRECONCILED
+        );
+      });
+      const { tables } = setup();
+      expect(await call()).toEqual({ status: 'abandoned' });
+      expect(await call()).toEqual({ status: 'abandoned' });
+      expect(await call()).toEqual({ status: 'abandoned' });
+      expect(executed).toEqual([`${sessionId}:g0`]);
+      expect(tables.meet_ai_sessions[0]).toMatchObject({
+        notes_unpriced_attempts: 0,
+      });
+    });
+
+    it('an ambiguous provider exception that was not settled does not rotate the identity', async () => {
+      const keys = new Set<string>();
+      const executed: string[] = [];
+      mocks.generate.mockImplementation(async (_input, actor) => {
+        if (keys.has(actor.attemptId))
+          throw new AiStudioError('This request is already running or completed.', {
+            code: 'invalid_request_error',
+            status: 409,
+          });
+        keys.add(actor.attemptId);
+        executed.push(actor.attemptId);
+        // For example a timeout after generation, never tagged as settled.
+        throw new Error('provider timeout');
+      });
+      const { tables } = setup();
+      await expect(call()).rejects.toThrow('provider timeout');
+      expect(tables.meet_ai_sessions[0]).toMatchObject({
+        notes_status: 'failed',
+        notes_unpriced_attempts: 0,
+      });
+      expect(await call()).toEqual({ status: 'abandoned' });
+      expect(await call()).toEqual({ status: 'abandoned' });
+      expect(executed).toEqual([`${sessionId}:g0`]);
     });
 
     it('the host can reconcile by hand with a fresh identity', async () => {

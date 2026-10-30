@@ -41,7 +41,8 @@ vi.mock('./access', () => ({
   MeetAiError: class extends Error {
     constructor(
       public status: number,
-      message: string
+      message: string,
+      public code?: string
     ) {
       super(message);
     }
@@ -49,6 +50,7 @@ vi.mock('./access', () => ({
 }));
 
 import { generateBilledMeetArtifact } from './artifact-billing';
+import { isSettledUncharged } from './notes-billing';
 
 const actor = { userId: 'actor', meetingId: 'meeting', attemptId: 'attempt' };
 beforeEach(() => {
@@ -136,4 +138,34 @@ it('does not execute again when AI Hub rejects an existing attempt', async () =>
     generateBilledMeetArtifact({ transcript: 'hello' }, actor)
   ).rejects.toThrow('already running');
   expect(f.generate).not.toHaveBeenCalled();
+});
+
+it('tags a provider failure as uncharged only once its failed settlement is recorded', async () => {
+  const failure = new Error('provider timeout');
+  f.generate.mockRejectedValue(failure);
+  const caught = await generateBilledMeetArtifact(
+    { transcript: 'hello' },
+    actor
+  ).catch((error) => error);
+  expect(caught).toBe(failure);
+  expect(isSettledUncharged(caught)).toBe(true);
+  expect(f.settle).toHaveBeenCalledWith(
+    expect.objectContaining({ runId: 'run', status: 'failed', actualCredits: 0 })
+  );
+});
+
+it('treats a lost or failed failure settlement as an unknown billed state', async () => {
+  const failure = new Error('provider timeout');
+  f.generate.mockRejectedValue(failure);
+  f.settle.mockRejectedValue(new Error('settlement ack lost'));
+  const caught = await generateBilledMeetArtifact(
+    { transcript: 'hello' },
+    actor
+  ).catch((error) => error);
+  expect(caught).not.toBe(failure);
+  expect(caught).toMatchObject({ status: 503, code: 'billing_unreconciled' });
+  // Neither the original error nor the wrapper may rotate an identity.
+  expect(isSettledUncharged(caught)).toBe(false);
+  expect(isSettledUncharged(failure)).toBe(false);
+  expect(f.generate).toHaveBeenCalledTimes(1);
 });

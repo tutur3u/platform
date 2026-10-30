@@ -4,6 +4,24 @@ import { z } from 'zod';
 /** A provider ran but its billed outcome is unknown: never rerun it automatically. */
 export const BILLING_UNRECONCILED = 'billing_unreconciled';
 
+// Only a failure that the ledger has durably settled as failed (zero credits)
+// may rotate an unattended billing identity. Anything else is ambiguous: a
+// timeout or a lost acknowledgement does not prove the provider did no work.
+const settledUncharged = new WeakSet<object>();
+export function markSettledUncharged(error: unknown): unknown {
+  const tagged =
+    typeof error === 'object' && error !== null
+      ? error
+      : new Error(String(error));
+  settledUncharged.add(tagged);
+  return tagged;
+}
+export function isSettledUncharged(error: unknown) {
+  return (
+    typeof error === 'object' && error !== null && settledUncharged.has(error)
+  );
+}
+
 /**
  * Durable record of a generation whose charge may have been taken. It lives in
  * the existing `notes_usage` jsonb until the notes are committed, and is never
