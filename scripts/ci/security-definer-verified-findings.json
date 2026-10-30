@@ -75,5 +75,27 @@
     "classification": "verified false positive",
     "effectiveRoles": [],
     "reason": "030500 dynamic default-privilege DO block, reviewed in #7234 (SR-331 fence); revoke-only, no GRANT."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261030041500_pin_merge_batch_helper_search_path.sql",
+    "line": 31,
+    "sourceDigest": "0bdbeb72ed942f266231c3c027087dd2e574659a15a6f730f86101db5c0c7cd4",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "dbb4ff89a07ae34d402e621bf09f3d9ebb3b6cf698c0ad16ef830c9946d6cd6f",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "SR-108 merge helper; dynamic row update with %I.%I identifiers from a fixed allowlist; service_role-only; reviewed in #7282 6965a5e5."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261030041500_pin_merge_batch_helper_search_path.sql",
+    "line": 149,
+    "sourceDigest": "0bdbeb72ed942f266231c3c027087dd2e574659a15a6f730f86101db5c0c7cd4",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "80b69522710f0b8e018671df3b800431ee296dbbd58eaf28c978dd84cc5fa1ae",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "SR-108 merge helper; dynamic row update with %I.%I identifiers from a fixed allowlist; service_role-only; reviewed in #7282 6965a5e5."
   }
 ]
