@@ -78,7 +78,9 @@ function productionZoneHosts(value) {
   const found = [];
   for (const match of value.matchAll(/[A-Za-z0-9.-]+/gu)) {
     if (value[match.index - 1] === '@') continue;
-    const host = match[0].replace(/^\.+/u, '').toLowerCase();
+    // Leading dots (cookie domains) and trailing dots (FQDN form) are not
+    // part of the host name.
+    const host = match[0].replace(/^\.+|\.+$/gu, '').toLowerCase();
     if (
       host === 'tuturuuu.com' ||
       host.endsWith('.tuturuuu.com') ||
@@ -101,6 +103,9 @@ test('the production-zone host scan flags every host form and spares package sco
     'https://x.tuturuuu.com/a',
     'calendar.tuturuuu.com',
     'TUTURUUU.COM',
+    'calendar.tuturuuu.com.',
+    'https://calendar.tuturuuu.com./x',
+    'tuturuuu.com.',
   ])
     assert.notDeepEqual(productionZoneHosts(sample), [], sample);
   for (const sample of [
