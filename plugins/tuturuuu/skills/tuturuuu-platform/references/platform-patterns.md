@@ -1446,3 +1446,7 @@ teacher filter as authorization. Apply the same self scope to detailed exports,
 session lists and teacher pickers, which otherwise reveal reconstructible work
 hours. Require both export dates and an inclusive span of at most 366 days. See the tutoring feature page and export route
 permission/parity regressions.
+
+Parent-message previews also expose teacher work hours. Apply the shared teacher
+read scope to both the preview session lookup and save, and return no preview
+when a concurrent reassignment makes the scoped save miss. Keep the editor gate.

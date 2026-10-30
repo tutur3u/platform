@@ -1080,3 +1080,10 @@ access. Detailed session exports, session lists, and teacher picker lists also r
 Numbers display two decimals; spreadsheet totals retain full precision.
 Regression coverage: export `route.payroll.test.ts`, `route.access.test.ts`,
 the tutoring `read-scope.routes.test.ts` permission matrix, and Contacts `tutoring-filters.test.ts`.
+
+Parent-message previews retain the editor permission and also apply the same
+teacher read scope to both the session read and preview save. Editors without
+`view_payroll` can preview only their linked teacher sessions; missing links and
+other-teacher session IDs are denied. A concurrent reassignment cannot return a
+preview after a scoped save no longer matches. Regression coverage is the
+message-preview route test suite.
