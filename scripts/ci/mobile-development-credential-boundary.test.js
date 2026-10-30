@@ -5,7 +5,14 @@ const { readWorkflow } = require('./workflow-yaml-test-helper');
 const workflow = readWorkflow('mobile-build-android.yaml', { raw: true });
 
 function assertNoCredentials(value) {
-  assert.doesNotMatch(JSON.stringify(value), /secrets\./u);
+  if (typeof value === 'string') {
+    assert.doesNotMatch(value, /\bsecrets\s*(?:\.|\[)/iu);
+  } else if (value && typeof value === 'object') {
+    for (const [key, item] of Object.entries(value)) {
+      assert.notEqual(key.toLowerCase(), 'secrets');
+      assertNoCredentials(item);
+    }
+  }
 }
 
 test('development Android PR workflow receives no repository secrets', () => {
@@ -13,13 +20,22 @@ test('development Android PR workflow receives no repository secrets', () => {
   assertNoCredentials(workflow);
 });
 
-test('credential guard rejects the former Firebase config injection', () => {
-  const injected = structuredClone(workflow);
-  injected.jobs['build-android'].steps.push({
-    env: {
-      FIREBASE_DEVELOPMENT_GOOGLE_SERVICES_JSON:
-        '$' + '{{ secrets.FIREBASE_DEVELOPMENT_GOOGLE_SERVICES_JSON }}',
-    },
+for (const reference of [
+  'secrets.FIREBASE_DEVELOPMENT_GOOGLE_SERVICES_JSON',
+  "secrets['FIREBASE_DEVELOPMENT_GOOGLE_SERVICES_JSON']",
+  "SeCrEtS [ 'FIREBASE_DEVELOPMENT_GOOGLE_SERVICES_JSON' ]",
+]) {
+  test(`credential guard rejects ${reference}`, () => {
+    const injected = structuredClone(workflow);
+    injected.jobs['build-android'].steps.push({
+      env: { FIREBASE_CONFIG: `\${{ ${reference} }}` },
+    });
+    assert.throws(() => assertNoCredentials(injected), assert.AssertionError);
   });
+}
+
+test('credential guard rejects reusable workflow secret inheritance', () => {
+  const injected = structuredClone(workflow);
+  injected.jobs['build-android'].secrets = 'inherit';
   assert.throws(() => assertNoCredentials(injected), assert.AssertionError);
 });
