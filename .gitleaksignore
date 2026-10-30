@@ -230,3 +230,10 @@ b4ed5bcadb892097a20d83a0b7e248e8835e0be1:scripts/ci/sql-grant-guard-legacy.json:
 b4ed5bcadb892097a20d83a0b7e248e8835e0be1:scripts/ci/sql-grant-guard-legacy.json:generic-api-key:92
 b4ed5bcadb892097a20d83a0b7e248e8835e0be1:scripts/ci/sql-grant-guard-legacy.json:generic-api-key:94
 b4ed5bcadb892097a20d83a0b7e248e8835e0be1:scripts/ci/sql-grant-guard-legacy.json:generic-api-key:964
+
+# Public development Firebase client config (#7294, Theo/Tess decision).
+# Exact fingerprints from gitleaks 8.30.1; no path, rule or key-value allowlist.
+53cdd0a6de5943971a3f075d87a9891cde859187:apps/mobile/android/app/src/development/google-services.json:gcp-api-key:18
+b10217339a73ba4275d36908e31cd2630d7bdb57:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:46
+b10217339a73ba4275d36908e31cd2630d7bdb57:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:54
+b10217339a73ba4275d36908e31cd2630d7bdb57:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:63
