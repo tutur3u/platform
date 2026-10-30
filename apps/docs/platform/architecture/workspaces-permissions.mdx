@@ -681,7 +681,9 @@ and database roles; they do not establish HTTP, staging, or production acceptanc
 
 ## Permission predicate caller scope
 
-`has_workspace_permission` and `is_org_member` answer only for `auth.uid()` under
+`has_workspace_permission`, `is_org_member`,
+`can_manage_workspace_external_projects`, `can_publish_workspace_external_projects`,
+and `is_root_external_project_admin` answer only for `auth.uid()` under
 anonymous/authenticated JWT roles outside triggers; other-user queries return false.
 Service-role, owner and trigger evaluation retain their scope. Invites check the
 actual target membership row. Role-bearing invites require MEMBER type, member-
