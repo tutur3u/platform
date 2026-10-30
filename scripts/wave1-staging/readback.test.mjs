@@ -126,7 +126,7 @@ test('a healthy Access-only topology reads back green with no provider writes', 
     assert.ok(ids.has(id), id);
   // Only the R4 probes carry a credential, and never a staff identity.
   for (const call of calls.filter(
-    (c) => !c.url.startsWith('https://api.cloudflare.com')
+    (c) => new URL(c.url).origin !== 'https://api.cloudflare.com'
   ))
     assert.equal(
       call.headers.has('cookie') &&
