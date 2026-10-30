@@ -181,6 +181,20 @@ rejected, the publication step fails and `after` never runs. After promotion, ch
 `GET /control/jobs`. Then remove the transition so later deployments return to the
 unchanged-settings rule.
 
+### Web mode var transition
+
+`CRON_CONTROL_WEB_MODE` (declared `off` in `cloudflare.config.ts`) was added to
+the parity baseline after production already ran the history-retention Worker,
+which has no such var. Absent and `off` both keep web jobs disabled, so the
+baseline's `previousIdentity` records the live state (retention enabled, no
+`CRON_CONTROL_WEB_MODE`) under transition `CRON-WEB-MODE-1`, and `identity`
+adds `off`. The settings preflight admits only those two exact stages: a live
+`active`, `shadow` or empty mode, or any other var, schedule or binding drift,
+still fails. Never add the var through the dashboard (`cf deploy --strict`
+aborts on dashboard drift); publish through the CLI. Remove the transition once
+production has deployed. `CRON_CONTROL_ENABLED_JOBS` and
+`CRON_CONTROL_WORKER_PROCESSORS` are unchanged by this transition.
+
 ### Per-job cutover
 
 Never run both owners unfenced, and never enable a job in production as a side
