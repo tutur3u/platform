@@ -126,7 +126,7 @@ export async function finishMeetAiSession(input: {
     notes_status: string;
     notes: Json;
     notes_usage: Json;
-    notes_cost_usd: number;
+    notes_cost_usd: number | null;
   }) => {
       const persisted = await Effect.runPromise(
         Effect.tryPromise({
@@ -243,7 +243,7 @@ export async function finishMeetAiSession(input: {
           incomplete: !!incomplete,
         } as Json,
         notes_usage: (generated?.usage as Json) ?? null,
-        notes_cost_usd: generated ? (generated.costUsd ?? 0) : 0,
+        notes_cost_usd: generated ? generated.costUsd : 0,
       };
     };
     const generationId = input.automatic

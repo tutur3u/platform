@@ -293,15 +293,16 @@ describe('the durable per-session fence', () => {
   it('refuses a session that was exhausted and evicted from the delivery ledger', () => {
     const A = sid(1);
     let state = cycle(base(), A, at);
-    let time = at;
-    // Exhaust A: six deliveries, all retryable failures.
+    // The delivery clock is separate: room commands must stay inside the room budget.
+    let delivery = at;
     for (let i = 0; i < 20; i++) {
-      time += 10 * 60_000;
-      const begun = beginFinalizationAttempt(state, A, time);
+      delivery += 10 * 60_000;
+      const begun = beginFinalizationAttempt(state, A, delivery);
       state = begun.state;
       if (begun.record) state = settleFinalization(state, A, 'retry');
     }
     expect(state.finalizations?.[A]?.status).toBe('abandoned');
+    let time = at;
     // Evict A: more sessions than the ledger keeps, each finished.
     for (let n = 2; n < 2 + MEET_FINALIZE_MAX_RECORDS + 2; n++) {
       time += 1000;

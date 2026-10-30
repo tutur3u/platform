@@ -27,7 +27,7 @@ const checkpointSchema = z.object({
   checkpoint: z.object({
     notes: z.record(z.string(), z.unknown()),
     usage: z.unknown(),
-    costUsd: z.number(),
+    costUsd: z.number().nullable(),
     settlement: settlementSchema,
   }),
 });
