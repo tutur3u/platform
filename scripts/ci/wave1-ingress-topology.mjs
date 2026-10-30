@@ -86,7 +86,7 @@ export function completeList(response, label) {
  * name starts with `*`), app (Access application), policies (Access app
  * policies) and subdomain (workers.dev / preview serving).
  */
-export function evaluateIngress(target, observed, { bypassPaths = [] } = {}) {
+export function evaluateIngress(target, observed, { staffGroupId } = {}) {
   const failures = [];
   const { host, worker } = target;
   for (const [label, response] of [
@@ -137,10 +137,17 @@ export function evaluateIngress(target, observed, { bypassPaths = [] } = {}) {
       failures.push(`R2: route ${pattern} captures ${host}`);
   }
 
-  // DNS: no third-party CNAME on the host, and no wildcard (N10).
-  for (const record of observed.hostRecords.result)
-    if (record.type === 'CNAME')
-      failures.push(`DNS: ${host} has a claimable CNAME to ${record.content}`);
+  // DNS (C3): every record named exactly the host must be the proxied,
+  // Worker-managed Custom Domain record. A grey-cloud A/AAAA, a CNAME or any
+  // other type could route around Access, and no record means no binding.
+  const hostRecords = observed.hostRecords.result;
+  if (!hostRecords.length)
+    failures.push(`DNS: ${host} has no Custom Domain record`);
+  for (const record of hostRecords)
+    if (!workerManagedRecord(record, host))
+      failures.push(
+        `DNS: ${host} ${record.type ?? 'record'} is not the proxied Worker-managed Custom Domain record`
+      );
   for (const record of observed.wildcardRecords.result)
     if (isStagingWildcard(String(record.name ?? '').toLowerCase()))
       failures.push(`N10: wildcard DNS record ${record.name} exists`);
@@ -177,13 +184,24 @@ export function evaluateIngress(target, observed, { bypassPaths = [] } = {}) {
     failures.push('Access: no staff allow policy');
   for (const policy of policies) {
     const includes = policy.include ?? [];
+    const name = policy.name ?? policy.id;
     if (includes.some((rule) => 'everyone' in rule))
+      failures.push(`Access: policy ${name} includes everyone`);
+    // C1: allow includes name only the configured staff selector.
+    if (policy.decision === 'allow') {
+      if (!includes.length)
+        failures.push(`Access: allow policy ${name} has no staff selector`);
+      for (const rule of includes)
+        if (!staffSelector(rule, staffGroupId))
+          failures.push(
+            `Access: allow policy ${name} includes a non-staff selector (${Object.keys(rule).join(',') || 'empty'})`
+          );
+    }
+    // C2: the host-wide app never carries a bypass. A future exact-path
+    // exception must be a separate Access app limited to those paths.
+    if (policy.decision === 'bypass')
       failures.push(
-        `Access: policy ${policy.name ?? policy.id} includes everyone`
-      );
-    if (policy.decision === 'bypass' && bypassPaths.length === 0)
-      failures.push(
-        `Access: bypass policy ${policy.name ?? policy.id} is not admitted`
+        `Access: bypass policy ${name} on the host-wide application is forbidden`
       );
     if (
       policy.decision === 'non_identity' &&
@@ -202,6 +220,45 @@ export function evaluateIngress(target, observed, { bypassPaths = [] } = {}) {
   if (serving?.enabled !== false || serving.previews_enabled !== false)
     failures.push(`${worker}: workers.dev and preview URLs must be disabled`);
   return failures;
+}
+
+/** The company identity domain for staff email_domain selectors (D-4). */
+export const STAFF_EMAIL_DOMAIN = 'tuturuuu.com';
+
+/**
+ * An Access include rule that names only staff (C1): the configured staff
+ * group, an explicit email or email list, or the company email domain.
+ * Every other selector type, including unknown ones, is refused.
+ */
+export function staffSelector(rule, staffGroupId) {
+  if (!rule || typeof rule !== 'object' || Array.isArray(rule)) return false;
+  const keys = Object.keys(rule);
+  if (keys.length !== 1) return false;
+  const [type] = keys;
+  const value = rule[type];
+  if (!value || typeof value !== 'object') return false;
+  switch (type) {
+    case 'group':
+      return Boolean(staffGroupId) && value.id === staffGroupId;
+    case 'email':
+      return /^[^\s@]+@[^\s@]+$/u.test(String(value.email ?? ''));
+    case 'email_list':
+      return /^[a-f0-9-]{36}$/u.test(String(value.id ?? ''));
+    case 'email_domain':
+      return String(value.domain ?? '').toLowerCase() === STAFF_EMAIL_DOMAIN;
+    default:
+      return false;
+  }
+}
+
+/** The proxied, read-only DNS record Cloudflare manages for a Custom Domain. */
+export function workerManagedRecord(record, host) {
+  return (
+    String(record?.name ?? '').toLowerCase() === host &&
+    ['A', 'AAAA'].includes(record.type) &&
+    record.proxied === true &&
+    record.meta?.read_only === true
+  );
 }
 
 /** Parses `STAGING_ACCESS_APP_IDS`: a JSON object of host → Access app id. */

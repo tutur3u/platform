@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { healthyTopology } from './wave1-ingress-fixture.mjs';
+import {
+  fixtureStaffGroupId,
+  healthyTopology,
+} from './wave1-ingress-fixture.mjs';
 import {
   accessAppIds,
   evaluateIngress,
@@ -12,7 +15,9 @@ import {
 const check = (app, mutate = () => {}) => {
   const observed = healthyTopology(app);
   mutate(observed);
-  return evaluateIngress(ingressTarget(app), observed);
+  return evaluateIngress(ingressTarget(app), observed, {
+    staffGroupId: fixtureStaffGroupId,
+  });
 };
 
 test('ingress targets are exactly the Access-protected staging hosts', () => {
@@ -135,7 +140,7 @@ const failures = [
         },
       ];
     },
-    /claimable CNAME/,
+    /not the proxied Worker-managed/,
   ],
   [
     'missing Access application',
@@ -196,7 +201,7 @@ const failures = [
         include: [{ ip: { ip: '0.0.0.0/0' } }],
       });
     },
-    /bypass policy/,
+    /bypass policy .* forbidden/,
   ],
   [
     'any-valid-service-token service auth',

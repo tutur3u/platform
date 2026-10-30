@@ -2,6 +2,7 @@
 import { ingressTarget } from './wave1-ingress-topology.mjs';
 
 export const fixtureZoneId = 'a'.repeat(32);
+export const fixtureStaffGroupId = '33333333-3333-4333-8333-333333333333';
 export const fixtureAppIds = {
   'calendar.staging.tutur3u.com': '11111111-1111-4111-8111-111111111111',
   'web.staging.tutur3u.com': '22222222-2222-4222-8222-222222222222',
@@ -31,7 +32,13 @@ export function healthyTopology(app) {
     ]),
     routes: list([{ pattern: 'docs.tutur3u.com/*', script: 'docs' }]),
     hostRecords: list([
-      { type: 'AAAA', name: target.host, content: '100::', proxied: true },
+      {
+        type: 'AAAA',
+        name: target.host,
+        content: '100::',
+        proxied: true,
+        meta: { read_only: true },
+      },
     ]),
     wildcardRecords: list([]),
     app: {
@@ -48,7 +55,7 @@ export function healthyTopology(app) {
         id: 'staff',
         name: 'staging-staff',
         decision: 'allow',
-        include: [{ group: { id: 'g' } }],
+        include: [{ group: { id: fixtureStaffGroupId } }],
       },
       {
         id: 'ci',

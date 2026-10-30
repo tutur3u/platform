@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   fixtureAppIds,
+  fixtureStaffGroupId,
   fixtureZoneId,
   healthyTopology,
   topologyResponse,
@@ -14,6 +15,7 @@ const env = {
   CLOUDFLARE_STAGING_ACCOUNT_ID: 'e'.repeat(32),
   STAGING_TUTUR3U_ZONE_ID: fixtureZoneId,
   STAGING_ACCESS_APP_IDS: JSON.stringify(fixtureAppIds),
+  STAGING_ACCESS_STAFF_GROUP_ID: fixtureStaffGroupId,
   CLOUDFLARE_WORKERS_SUBDOMAIN: 'owner-example',
   CF_ACCESS_HEALTH_CLIENT_ID: 'ci.access',
   CF_ACCESS_HEALTH_CLIENT_SECRET: 'ci-secret',

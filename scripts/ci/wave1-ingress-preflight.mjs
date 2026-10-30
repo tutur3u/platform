@@ -90,7 +90,9 @@ export async function ingressPreflight({
     target,
     appId,
   });
-  const failures = evaluateIngress(target, observed);
+  const failures = evaluateIngress(target, observed, {
+    staffGroupId: env.STAGING_ACCESS_STAFF_GROUP_ID,
+  });
   assert.deepEqual(
     failures,
     [],

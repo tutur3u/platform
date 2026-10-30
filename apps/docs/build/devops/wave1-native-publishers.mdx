@@ -412,7 +412,10 @@ variable read. `wave1-ingress-topology.mjs` evaluates the observations:
 - **R2:** no zone Worker route captures the host, and the zone has no
   wildcard routes.
 - **DNS and N10:**
-  - no CNAME on the host, since a third party could claim it;
+  - every record named exactly the host is the proxied, read-only A/AAAA
+    record Cloudflare manages for the Custom Domain. A grey-cloud record, a
+    CNAME, any other type or a missing record refuses, because each could
+    route around Access;
   - no wildcard DNS record that could mint an unknown
     `<x>.staging.tutur3u.com` name: `*`, `*.tutur3u.com`,
     `*.staging.tutur3u.com` or anything deeper.
@@ -423,10 +426,20 @@ variable read. `wave1-ingress-topology.mjs` evaluates the observations:
   - an enabled self-hosted application covers the whole host and nothing
     else;
   - its OPTIONS preflight bypass is on for the issuer and off for Calendar;
-  - at least one allow policy exists;
+  - at least one allow policy exists, and its includes name only staff. The
+    permitted selectors are:
+    - the configured `STAGING_ACCESS_STAFF_GROUP_ID` group;
+    - an explicit `email` or `email_list`;
+    - `email_domain` `tuturuuu.com` only.
+
+    Any other domain, `login_method`, `any_valid_service_token`, IP, geo,
+    certificate, `external_evaluation`, `auth_method` and any unknown
+    selector refuse;
   - no policy includes `everyone`;
   - service-auth policies name specific service tokens;
-  - no bypass policy is admitted.
+  - the host-wide application never carries a bypass policy. A future
+    exact-path exception must be a separate Access application whose
+    destinations are exactly those paths.
 - **workers.dev:** workers.dev and preview URLs are disabled.
 
 Any failure refuses before the ledger, so it consumes nothing. Incomplete or
@@ -437,6 +450,8 @@ The publish step needs two inputs:
 - `STAGING_TUTUR3U_ZONE_ID`: the `tutur3u.com` zone ID.
 - `STAGING_ACCESS_APP_IDS`: a JSON object mapping each host to its Access
   application ID.
+- `STAGING_ACCESS_STAFF_GROUP_ID`: the staff Access group ID. Without it, a
+  group selector refuses.
 
 The staging token additionally needs these read permissions: Access Apps and
 Policies, Zone DNS, Workers Routes and Workers Custom Domains.

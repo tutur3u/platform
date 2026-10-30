@@ -108,7 +108,8 @@ export async function readback({
           zoneId: env.STAGING_TUTUR3U_ZONE_ID,
           target,
           appId,
-        })
+        }),
+        { staffGroupId: env.STAGING_ACCESS_STAFF_GROUP_ID }
       );
     } catch (error) {
       failures = [

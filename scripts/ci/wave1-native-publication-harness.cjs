@@ -44,6 +44,7 @@ async function publisher(t, app = 'mail') {
     WAVE1_CONTROL_READ_TOKEN: 'control-fixture',
     STAGING_TUTUR3U_ZONE_ID: ingress.fixtureZoneId,
     STAGING_ACCESS_APP_IDS: JSON.stringify(ingress.fixtureAppIds),
+    STAGING_ACCESS_STAFF_GROUP_ID: ingress.fixtureStaffGroupId,
     RUNNER_TEMP: dir,
   };
   const state = {
