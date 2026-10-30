@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/features/mastermind/machines/machine_labels.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
 import 'package:mobile/features/mastermind/threads/threads_location.dart';
@@ -64,6 +65,10 @@ class MastermindThreadsPage extends StatelessWidget {
           AppSegment(
             value: WorkSegment.staff,
             label: l10n.mastermindStaffGroup,
+          ),
+          AppSegment(
+            value: WorkSegment.machines,
+            label: l10n.mastermindMachineLabel('machines'),
           ),
         ],
       ),

@@ -1,6 +1,7 @@
 import {
   CRON_JOBS,
   type CronJob,
+  DATABASE_MAINTENANCE_RPCS,
   leaseMs,
   MAX_CONCURRENT_DISPATCHES,
   MAX_CONSECUTIVE_FAILURES,
@@ -47,11 +48,14 @@ const RETRY_BACKOFF_MS = 2_000;
 type Target = { problem: string } | { secret: string; url: URL };
 
 function resolveTarget(cronJob: CronJob, env: DispatchEnv): Target {
-  if (cronJob.workerProcessor === 'cron-history-retention') {
+  const maintenanceRpc = cronJob.workerProcessor
+    ? DATABASE_MAINTENANCE_RPCS[cronJob.workerProcessor]
+    : undefined;
+  if (maintenanceRpc) {
     if (!env.SUPABASE_SECRET_KEY)
       return { problem: 'SUPABASE_SECRET_KEY unset' };
     try {
-      const url = new URL('/rest/v1/rpc/prune_cron_history', env.SUPABASE_URL);
+      const url = new URL(`/rest/v1/rpc/${maintenanceRpc}`, env.SUPABASE_URL);
       const loopback =
         url.hostname === '127.0.0.1' || url.hostname === 'localhost';
       if (url.protocol !== 'https:' && !(loopback && url.protocol === 'http:'))
@@ -87,7 +91,7 @@ function workerProcessorFor(cronJob: CronJob, env: DispatchEnv) {
     .split(',')
     .map((id) => id.trim());
   if (
-    cronJob.workerProcessor !== 'cron-history-retention' &&
+    !DATABASE_MAINTENANCE_RPCS[cronJob.workerProcessor] &&
     !selected.includes(cronJob.id)
   )
     return null;
@@ -270,6 +274,7 @@ async function runJob(
           fetch: deps.fetch,
           fence: () => ledger.checkFence(cronJob.id, claim.generation),
           now: deps.now,
+          sleep: deps.sleep,
           pending: {
             add: (items) => ledger.addPendingWork(cronJob.id, items),
             fail: (items) =>

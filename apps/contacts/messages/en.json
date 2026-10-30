@@ -9576,7 +9576,15 @@
     "policy_no_campus_options": "No campuses yet. Type a label to use it.",
     "policy_remove_campus_option": "Remove campus",
     "policy_search_campuses": "Search or type a campus",
-    "policy_use_campus_label": "Use this label"
+    "policy_use_campus_label": "Use this label",
+    "policy_target": "Matches",
+    "policy_target_name": "Class name",
+    "policy_target_tag": "Class tag",
+    "policy_support_groups": "Needs-tutoring groups",
+    "policy_support_groups_description": "Every current learner in these groups appears in the weak-support queue under each class they belong to now, until a weak-support session is scheduled, and again after the reassessment interval once it is completed. Learners with no other class are listed under the group itself.",
+    "policy_select_support_groups": "Select needs-tutoring groups",
+    "policy_no_support_groups": "None",
+    "queue_support_group": "In a needs-tutoring group"
   },
   "ws-user-attendance": {
     "absent": "Absent",
@@ -10296,6 +10304,9 @@
     "attention_none": "No Require-Attention",
     "attention_only": "Require-Attention",
     "audit_log": "Audit Log",
+    "avatar_upload_limit": "Avatar upload limit reached. Please try again later.",
+    "avatar_upload_limit_hours": "Avatar upload limit reached. Try again in {count, plural, one {# hour} other {# hours}}.",
+    "avatar_upload_limit_minutes": "Avatar upload limit reached. Try again in {count, plural, one {# minute} other {# minutes}}.",
     "birthday": "Birthday",
     "birthday_tooltip": "The birth date of this user.",
     "both_linked_cluster_warning": "This cluster contains users linked to different platform accounts. They cannot be merged until one is unlinked.",

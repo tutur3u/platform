@@ -24,10 +24,10 @@ select throws_ok($$select public.reserve_meet_ai_chunk('00000000-0000-4000-8000-
 reset role;
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000009701","role":"authenticated"}', true);
-select is((select count(*) from public.meet_ai_chunks), 1::bigint, 'workspace member can read transcripts');
+select throws_ok($$select * from public.meet_ai_chunks$$, '42501', null, 'transcript reads require the application sharing gate');
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-000000009702","role":"authenticated"}', true);
-select is((select count(*) from public.meet_ai_sessions), 0::bigint, 'outsider cannot read AI sessions');
-select is((select count(*) from public.meet_ai_chunks), 0::bigint, 'outsider cannot read transcripts');
+select throws_ok($$select * from public.meet_ai_sessions$$, '42501', null, 'outsider cannot read AI sessions directly');
+select throws_ok($$select * from public.meet_ai_chunks$$, '42501', null, 'outsider cannot read transcripts directly');
 reset role;
 select * from finish();
 rollback;

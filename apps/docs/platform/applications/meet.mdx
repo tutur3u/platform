@@ -29,6 +29,22 @@ Afterward, review notes and proposed follow-ups before writing to Tasks or
 Calendar. A proposal is not an executed action, and a room URL is not broad
 workspace authority.
 
+## Transcription credit admission
+
+Live transcription bills Gemini usage to the host's personal workspace. Each
+upload window is admitted against AI credits before its transcript row is
+reserved, so a refusal never leaves a "[Missing audio segment]" gap. A failed
+credit check (RPC error or unreadable result) is retried at most three times
+with backoff, then returns a retryable 503 that stays within the client's
+five-minute recovery window. A real refusal (credits used up, daily limit, model
+not on the plan, or another plan restriction) is a non-retryable 402 with a
+client-safe reason code. Meet then stops capture, finalizes the session, and
+shows the specific reason in English and Vietnamese instead of the generic
+partial-transcript alert. Notes generation keeps its own admission check.
+Regression controls: `server/credit-admission.test.ts`,
+`server/chunks-credit-admission.test.ts` and `use-meeting-ai.test.ts` under
+`packages/meet-core/src/features/meeting-ai`.
+
 ## Public authentication callback
 
 Meet's native app renders the tokenless `/verify-token` and `/vi/verify-token`
@@ -313,3 +329,59 @@ browser hydration need independent acceptance. Preserve
 an observed hosted configuration and recoverable prior Worker version before
 traffic changes. Local workerd probes do not qualify hosted SFU/TURN, devices,
 recording or assistant stop behavior.
+
+
+### Consent evidence and retention schema (M1-B)
+
+The consent log is private server data. Neither authenticated nor anonymous
+clients can insert, update, or delete evidence; the server appends decisions and
+orders them by `created_at DESC, id DESC`. Only the service role can erase rows.
+A withdrawal cannot be removed by a client to revive an earlier allow (F7).
+A BEFORE UPDATE trigger also refuses privileged evidence edits; only nested server/Auth account-deletion actions
+can clear `user_id`, retaining all other fields.
+A random UUID `participant_ref` is minted on first consent per session/participant,
+reused for later decisions in that pair, and stored only on consent rows. It is
+neither a user-ID digest nor an email/name hash. Deleting an account sets the
+consent `user_id` to NULL while retaining that random pseudonym and the evidence.
+Clients cannot delete Auth accounts or trigger this anonymization. Auth account
+deletion clears consent identity immediately, even though the legacy Auth trigger
+retains the public profile. Later service profile erasure removes its personal
+workspace after Auth deletion; consent evidence survives both steps.
+
+These decisions apply by default to Meet and Parley session consent, including
+live and recording sources, with no client-role exception. Meeting deletion and
+account deletion are distinct from an explicitly authorized evidence erasure.
+They do not expand transcript purge into evidence deletion. Guardian/legal
+retention policy remains an independent product/legal decision.
+Meeting/session deletion is refused while consent rows exist (`ON DELETE
+RESTRICT`). Only a trusted service erasure flow explicitly deletes consent rows
+before deleting the session or meeting. Transcript retention purges text in place
+and retains the session and consent evidence; it needs no consent erasure.
+This schema does not enable audio storage.
+
+Meet and Parley retain host-only visibility for existing sessions and callers
+that omit visibility. Workspace settings default new application-created sessions
+to participants, explicit per-person opt-in, an ask prompt, zero audio retention,
+and 365 days of text retention. Retention is bounded to 1–365 days or NULL
+(forever); audio retention is enforced at zero until audio storage is implemented.
+Notice versions are capped at 80 characters. Workspace settings enforce required
+account MFA in addition to membership/admin RLS. Applying workspace overrides
+belongs to the server integration; adding settings does not bypass participant consent.
+
+The M1-B migration explicitly replaces `private.purge_meet_transcripts_batch`:
+`purge_after <= now()` selects expired sessions in both dry-run and delete;
+NULL retains a session forever. Existing deadlines are backfilled from
+`coalesce(ended_at, created_at) + 365 days`. New sessions default to 365 days
+from creation. Purging clears both original and edited notes, and transcript
+chunks; legacy recording transcripts retain their separate 365-day policy.
+The migration and rollback close the purge fence and withdraw delete approval.
+A database owner must approve fresh dry-run counts before enabling deletion.
+The existing batch, daily, terminal-state and stop-fence limits remain in force.
+
+Regression coverage: `meet-ai-consent-schema.sql` checks client denials and
+withdrawal ordering;
+[`meet-ai-consent-retention.sql`](https://github.com/tutur3u/platform/blob/feat/meet-ai-consent-schema/apps/database/supabase/tests/meet-ai-consent-retention.sql)
+checks creator/admin deletion refusal, server erasure ordering, random pseudonym
+reuse and account anonymization; `required-account-mfa.sql` checks MFA policy.
+`meet-transcript-retention-purge.sql` checks custom deadlines,
+forever retention, edited-note deletion, ACLs and bounded restart behavior.

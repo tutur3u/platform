@@ -2,7 +2,9 @@ export class InternalApiError extends Error {
   constructor(
     message: string,
     public readonly status: number,
-    public readonly code?: string
+    public readonly code?: string,
+    /** Seconds until a rate/budget limit resets, from `Retry-After` or the body. */
+    public readonly retryAfter?: number
   ) {
     super(message);
     this.name = 'InternalApiError';
@@ -29,14 +31,19 @@ function routeRequiredMfa(code: string | undefined) {
 export async function parseInternalApiError(response: Response) {
   const fallbackMessage = `Internal API request failed: ${response.status}`;
   let code: string | undefined;
+  let retryAfter: number | undefined;
   let message: string;
   try {
     const data = (await response.json()) as {
       code?: string;
       error?: string;
       message?: string;
+      retryAfter?: number;
     };
     code = data.code;
+    const header = Number(response.headers?.get?.('retry-after'));
+    const body = Number(data.retryAfter);
+    retryAfter = [header, body].find((n) => Number.isFinite(n) && n > 0);
     const challenge = response.headers?.get?.('x-abuse-challenge');
     if (code === 'ABUSE_CHALLENGE_REQUIRED' || challenge) {
       message = [
@@ -49,5 +56,5 @@ export async function parseInternalApiError(response: Response) {
     message = fallbackMessage;
   }
   routeRequiredMfa(code);
-  return new InternalApiError(message, response.status, code);
+  return new InternalApiError(message, response.status, code, retryAfter);
 }

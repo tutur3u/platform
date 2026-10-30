@@ -84,10 +84,7 @@ void main() {
       expect(find.text('Canonical title'), findsNothing);
       expect(find.text('Tuturuuu'), findsOneWidget);
       expect(find.textContaining('Orchestrator'), findsOneWidget);
-      expect(
-        find.textContaining(locale == 'en' ? '32 min ago' : '32 phút trước'),
-        findsOneWidget,
-      );
+      expect(findTimeLabel(locale == 'en' ? '32m' : '32 phút'), findsOneWidget);
       expect(
         find.text(locale == 'en' ? 'Recommended' : 'Đề xuất'),
         findsOneWidget,

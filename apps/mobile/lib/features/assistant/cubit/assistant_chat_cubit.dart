@@ -16,6 +16,7 @@ import 'package:mobile/features/chat/models/chat_models.dart';
 
 import '../data/assistant_chat_persistence_contract.dart';
 import '../data/assistant_created_chat.dart';
+import '../data/assistant_first_message_creation.dart';
 import '../data/assistant_media_optimizer.dart';
 import '../data/assistant_preferences.dart';
 import '../data/assistant_reaction_intent.dart';
@@ -33,6 +34,7 @@ part 'assistant_chat_state.dart';
 part 'assistant_chat_stream_reconcile.dart';
 part 'assistant_chat_stream_events.dart';
 part 'assistant_chat_submission.dart';
+part 'assistant_chat_creation_submission.dart';
 part 'assistant_chat_pending_submission.dart';
 part 'assistant_chat_tool_effects.dart';
 part 'assistant_chat_reactions.dart';

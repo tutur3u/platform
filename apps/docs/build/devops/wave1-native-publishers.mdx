@@ -650,12 +650,52 @@ production cookie zone. Production hosts are unchanged.
 
 Staging sets `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com`
 using the shared cookie helper from #7085. Without that variable the staging
-override is inactive; production ignores it. #6951 must use this same helper
-and environment contract rather than introduce another cookie-domain mechanism.
+override is inactive. #6951 must use this same helper and environment contract
+rather than introduce another cookie-domain mechanism.
+
+Production must never receive the override. Vercel production ignores it via
+`VERCEL_ENV`, but Cloudflare Workers have no `VERCEL_ENV`, so production Worker
+configs must omit the variable entirely. If it ever leaks onto a production
+Worker, production hosts fall back to host-only cookies; they never take the
+`.staging.tutur3u.com` scope. `packages/utils/src/shared-cookie.test.ts` and
+`scripts/ci/wave1-native-calendar-profile.test.mjs` cover both cases.
+
+Managed projects can never serve a platform cookie-zone hostname. One shared
+rule, `@tuturuuu/utils/managed-project-hostnames` (plain-Node core
+`packages/utils/src/managed-project-hostnames-core.cjs`), rejects
+`tuturuuu.com`, every `*.tuturuuu.com` name, and `staging.tutur3u.com` and its
+subdomains. It also keeps the exact non-zone reservations (`localhost`,
+`nova.ai.vn`, `rewise.me`). It compares after lowercasing and stripping the
+scheme, path and trailing dots. It fails closed: anything that is not an ASCII
+DNS name (253 characters, 63 per label) counts as reserved. Input longer than
+512 characters is rejected before any regex runs, so oversized request bodies
+cannot stall the event loop. The web API, the infrastructure app and the
+blue/green watcher all import this rule, so the three surfaces cannot drift
+apart, and no file needs a guard exemption.
+
+The guard (`scripts/check-staging-hosts.js`) scans every tracked source and
+configuration file, including root files such as `.env.*`, `wrangler.toml`
+and Dockerfiles. Tests, Markdown and lockfiles are skipped. Before matching, it
+applies NFKC (folding fullwidth letters), lowercases text, and decodes hex,
+unicode, octal and numeric-entity escapes of hostname characters. It also
+decodes escaped dots (including `&period;` and percent-encoding) and
+fullwidth and ideographic dots. It also joins string
+concatenations and inlines simple same-file string constants used in
+templates. It then extracts whole dotted hostnames, bounded on both sides so
+`tuturuuu.com.attacker.net` stays one foreign host. After stripping the
+scheme, port and trailing dot, each hostname is compared exactly against the
+production zone. Any variable or property whose
+name contains `staging` followed by host, domain, origin, zone, pattern or
+allow fails if it names the production zone. Non-production labels in a regex
+alternation in front of the zone or any production subdomain also fail, for
+example `(staging|preview)\.calendar\.tuturuuu\.com`. Values that only exist at runtime,
+such as `${env}.tuturuuu.com` with `env` read from configuration, are outside
+what a static guard can see.
 
 Run `node scripts/check-staging-hosts.js` and
 `node --test scripts/check-staging-hosts.test.js`. The guard runs in
-`bun check:changed` and its repository test runs in the root CI suite.
+`bun check:changed`, as the **Staging cookie-domain isolation** job in Cheap PR
+Checks, and its repository test runs in the root CI suite.
 
 These source changes do not provision DNS or modify live routes. Rex owns
 that separate cutover. Atlas confirmed the dead Vercel redirect domains

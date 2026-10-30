@@ -10,6 +10,7 @@ abstract final class Routes {
 
   // Workspace
   static const workspaceSelect = '/workspace-select';
+  static const telemetryConsent = '/telemetry-consent';
 
   // Dashboard (shell)
   static const home = '/';

@@ -237,6 +237,15 @@ function planChecks(changes, context) {
     );
   }
 
+  if (any(/^packages\/(internal-api|sdk|utils|types)\//)) {
+    steps.push(
+      nodeStep('sdk-portable', 'SDK portable source approval (no emit)', [
+        'packages/sdk/scripts/portable-build.cjs',
+        '--check',
+      ])
+    );
+  }
+
   const biomeFiles = present.filter(
     (file) => BIOME_FILE.test(file) && !file.startsWith(MOBILE_PREFIX)
   );

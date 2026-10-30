@@ -550,7 +550,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('expanded Settings preserves three preference categories', (
+  testWidgets('expanded Settings preserves four preference categories', (
     tester,
   ) async {
     _viewport(tester, const Size(1024, 768));
@@ -568,11 +568,12 @@ void main() {
             'Appearance & language',
             'Time zone',
             'Notifications & interaction',
+            'Privacy',
           }.contains(w.title),
     );
     expect(
       find.descendant(of: preferences, matching: find.byType(SettingsGroup)),
-      findsNWidgets(3),
+      findsNWidgets(4),
     );
     expect(
       tester.getRect(find.byKey(const ValueKey('settings-haptics-row'))).left,

@@ -6,7 +6,22 @@ const codes = new Set([
   'MEET_AI_PROVIDER_TIMEOUT',
   'MEET_AI_PROVIDER_NETWORK',
   'MEET_AI_PROCESSING_FAILED',
+  'MEET_AI_CREDIT_CHECK_FAILED',
+  'MEET_AI_CREDITS_EXHAUSTED',
+  'MEET_AI_CREDITS_DAILY_LIMIT',
+  'MEET_AI_MODEL_NOT_ON_PLAN',
+  'MEET_AI_CREDITS_UNAVAILABLE',
 ]);
+const creditReasons: Record<string, MeetingAiCreditReason> = {
+  MEET_AI_CREDITS_EXHAUSTED: 'credits_exhausted',
+  MEET_AI_CREDITS_DAILY_LIMIT: 'credits_daily_limit',
+  MEET_AI_MODEL_NOT_ON_PLAN: 'credits_model_not_on_plan',
+};
+export type MeetingAiCreditReason =
+  | 'credits_exhausted'
+  | 'credits_daily_limit'
+  | 'credits_model_not_on_plan'
+  | 'credits_unavailable';
 
 export function meetingAiRequestFailure(error: unknown) {
   const record = typeof error === 'object' && error !== null ? error : {};
@@ -39,6 +54,15 @@ export function meetingAiRequestFailure(error: unknown) {
               ? 'failure_unavailable'
               : null;
   return { status, code, key } as const;
+}
+
+/** A 402 is a billing refusal that every later upload window would repeat. */
+export function meetingAiCreditReason(
+  error: unknown
+): MeetingAiCreditReason | null {
+  const { status, code } = meetingAiRequestFailure(error);
+  if (status !== 402) return null;
+  return (code && creditReasons[code]) || 'credits_unavailable';
 }
 
 export function meetingAiGenerationFailureCode(reason: unknown) {

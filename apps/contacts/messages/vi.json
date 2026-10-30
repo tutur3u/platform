@@ -9576,7 +9576,15 @@
     "policy_no_campus_options": "Chưa có cơ sở. Nhập tên để sử dụng.",
     "policy_remove_campus_option": "Xóa cơ sở",
     "policy_search_campuses": "Tìm hoặc nhập cơ sở",
-    "policy_use_campus_label": "Dùng tên này"
+    "policy_use_campus_label": "Dùng tên này",
+    "policy_target": "So khớp",
+    "policy_target_name": "Tên lớp",
+    "policy_target_tag": "Nhãn lớp",
+    "policy_support_groups": "Nhóm cần kèm",
+    "policy_support_groups_description": "Mọi học viên hiện thuộc các nhóm này đều hiện trong hàng chờ kèm yếu, dưới từng lớp các em đang học, cho đến khi có buổi kèm yếu được xếp, và hiện lại sau khoảng đánh giá lại kể từ khi buổi kèm hoàn thành. Học viên không thuộc lớp nào khác được liệt kê dưới chính nhóm này.",
+    "policy_select_support_groups": "Chọn nhóm cần kèm",
+    "policy_no_support_groups": "Không có",
+    "queue_support_group": "Thuộc nhóm cần kèm"
   },
   "ws-user-attendance": {
     "absent": "Vắng mặt",
@@ -10296,6 +10304,9 @@
     "attention_none": "Không cần chú ý",
     "attention_only": "Cần chú ý",
     "audit_log": "Nhật Ký Kiểm Tra",
+    "avatar_upload_limit": "Đã đạt giới hạn tải ảnh đại diện. Vui lòng thử lại sau.",
+    "avatar_upload_limit_hours": "Đã đạt giới hạn tải ảnh đại diện. Vui lòng thử lại sau {count} giờ.",
+    "avatar_upload_limit_minutes": "Đã đạt giới hạn tải ảnh đại diện. Vui lòng thử lại sau {count} phút.",
     "birthday": "Ngày sinh",
     "birthday_tooltip": "Ngày sinh của người dùng này.",
     "both_linked_cluster_warning": "Cụm này chứa người dùng được liên kết với các tài khoản nền tảng khác nhau. Không thể hợp nhất cho đến khi một người dùng được hủy liên kết.",

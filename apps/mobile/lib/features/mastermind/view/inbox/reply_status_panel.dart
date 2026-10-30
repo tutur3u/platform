@@ -7,11 +7,11 @@ import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/app_dialog.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
-import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
 import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_time_label.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// A one-line explanation of why the last attempt did not become a reply.
@@ -128,9 +128,6 @@ class _ReplyEntryPanelState extends State<ReplyEntryPanel> {
     final sent = entry.status == OutboxStatus.sent;
     final (icon, tone, title) = _headline(context, sent);
     final large = mastermindLargeText(context);
-    final queuedAt = l10n.mastermindReplyQueuedAt(
-      Gmt7.time(entry.createdAt, Localizations.localeOf(context).toString()),
-    );
     return MastermindGroup(
       caption: l10n.mastermindReplyOptionsTitle,
       children: [
@@ -145,7 +142,10 @@ class _ReplyEntryPanelState extends State<ReplyEntryPanel> {
                   children: [
                     Text(l10n.mastermindReplyYourReply(reply)),
                     const SizedBox(height: AppSpacing.xxs),
-                    Text(queuedAt),
+                    MastermindTimeLabel(
+                      entry.createdAt,
+                      sentence: l10n.mastermindReplyQueuedAt,
+                    ),
                   ],
                 )
               : Text(l10n.mastermindReplyYourReply(reply)),
@@ -155,8 +155,9 @@ class _ReplyEntryPanelState extends State<ReplyEntryPanel> {
               ? null
               : ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 120),
-                  child: Text(
-                    queuedAt,
+                  child: MastermindTimeLabel(
+                    entry.createdAt,
+                    sentence: l10n.mastermindReplyQueuedAt,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

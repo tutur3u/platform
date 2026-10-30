@@ -1,6 +1,6 @@
 ---
 title: Meet calls
-updatedAt: '2026-10-02'
+updatedAt: '2026-10-29'
 description: Run Tuturuuu Meet video calls on Cloudflare Realtime SFU, including room signaling, host controls, and in-call recording.
 ---
 
@@ -290,6 +290,56 @@ admitted and approved participants, including guests outside the workspace.
 Every non-host notes read checks the signed room policy on the Durable Object;
 removing permission blocks subsequent reads. Existing downloaded information
 cannot be recalled. Transcription mutations remain host-only.
+
+### Who can read transcripts and notes
+
+Product decision (30 October 2026): a meeting's transcript and AI notes are
+readable only by participants of that call and by workspace admins of the
+meeting's own workspace. Membership alone is not enough, and an outside guest
+reads only the calls they were a participant of.
+
+| Reader | Live and post-call notes and transcript |
+| --- | --- |
+| Meeting host | Always |
+| Admitted or approved participant, member or guest | Only while the host's sharing setting for the current phase (live or after the meeting) is on |
+| Workspace admin (`admin` permission in the meeting's workspace) | Always, independent of the sharing settings |
+| Workspace member who was not a participant | Never |
+| Outsider or guest of another meeting | Never |
+
+Sharing only narrows participant access; it can never grant access to anyone
+who is not a participant or an admin. A participant is an identity the room
+service recorded as present or approved for that meeting; there is no
+workspace-wide participant list. A guest's access is scoped to the meeting
+whose room approved them and is not carried to another meeting or workspace.
+
+Surfaces: the call and ended-call notes panels, the meeting detail page, the
+`/api/v1/workspaces/{wsId}/meetings/{meetingId}/review` route used by web and
+mobile, and the Meet AI session routes all decide through the room policy plus
+the admin check, and fail closed (a policy or admin lookup failure never grants
+access). The recordings list returns a recording transcript only to the
+identity recorded on that session, the host, and workspace admins.
+`meet_ai_sessions`, `meet_ai_chunks` and `private.recording_transcripts` hold no
+client read grant or policy; only the service role behind these gates reads
+them. Recorded audio carries the same spoken content, so it follows the same
+rule: the playback route (chunk listing and one-hour signed URLs, which are also
+the download URLs) and the `audio_chunks` listing are limited to the identity
+recorded on the session, the host and workspace admins. A non-participant member
+and an outsider are denied, and a failed admin lookup fails closed. Signed URLs
+already issued stay valid until they expire.
+
+Exceptions: the recordings list and audio playback are stricter than the call
+rule, because the database records only the recording identity, not every call
+participant. Other participants read that call through the ended-call notes and
+do not get the audio. Cost and token
+breakdowns remain host-only.
+
+Regression coverage: `packages/meet-core/src/features/meeting-ai/server/room-access.test.ts`,
+`packages/meet-core/src/features/meeting-ai/server/notes-admin.test.ts`,
+`apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/review/route.test.ts`,
+`apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/route.test.ts`
+`apps/database/supabase/tests/meet-transcript-notes-read-boundary.sql`, and for
+audio the playback route test under `legacy-api-routes/.../recordings/[sessionId]/play/`
+and `apps/database/supabase/tests/meet-audio-chunk-read-boundary.sql`.
 
 Leaving stops local capture and signaling immediately while recording/notes
 finalization continues on the post-call screen. The host can leave alone or end
@@ -1510,3 +1560,101 @@ Regression evidence: `channel-retry-budget.test.ts` counts operations and tests
 failure/clock/restart/recovery boundaries; `test-fixtures/channel-retry` verifies
 reservation persistence against real local Worker SQLite with controlled callback
 failures. Hosted alarm delivery and actual workspace storage remain separate gates.
+
+## Host identity and transcript reads
+
+A meeting's creator is immutable after insertion, including when a member edits
+other meeting fields. Clients cannot transfer or clear that host identity.
+
+Meet and Parley transcript sessions and chunks are read through the application
+API. Direct anonymous and authenticated Data API reads are denied, including
+for hosts. The API retains its host, workspace, room-sharing, and participant
+checks before service-role reads. All first-party transcript consumers use that
+API; room sharing remains the authority for non-host access.
+
+Database coverage: `meeting-identity-transcript-access.sql` and `meet-ai.sql`.
+Application coverage: `packages/meet-core/src/features/meeting-ai/server/access.test.ts`.
+
+### Private transcription evaluation
+
+The M1 transcription evaluation CLI lives at
+[packages/ai/src/meetings/eval](https://github.com/tutur3u/platform/tree/main/packages/ai/src/meetings/eval);
+its README defines the private manifest, environment variables, bounds and scoring
+contract. Run it only with consented clips and UTF-8 references stored outside Git.
+Reports also stay outside Git and contain aggregate counts and scores without
+transcript or glossary text.
+
+Gemini Flash-Lite and an explicitly configured Flash candidate are evaluated
+through an evaluation-local SttProvider boundary. OpenAI gpt-4o-transcribe requires
+explicit evaluation opt-in and is never wired to production traffic. The harness
+does not choose or change the production model. D1 requires real consented corpus
+results and coverage review; synthetic regression tests establish the metrics and
+privacy boundaries, not Vietnamese provider quality.
+
+## Legacy meeting and recording access
+
+Legacy meeting lists and recording session metadata remain readable by full
+workspace members. Audio chunks (listing and playback) are limited to the
+recorded identity, the meeting host and workspace admins; see
+[Who can read transcripts and notes](#who-can-read-transcripts-and-notes). Anonymous users have no direct privileges on these legacy
+tables; guests and removed members do not gain access through ownership. Private
+recording transcripts continue through the existing service-role API boundary.
+
+Meeting UPDATE and DELETE require the meeting creator or the existing workspace
+`admin` permission. Recording session INSERT, UPDATE and DELETE require the
+recording creator (`user_id`) or that workspace permission. This recording admin
+exception is intentional; ownership does not grant writes after membership ends.
+Existing sessions cannot change their creator or parent meeting. In-call room
+recordings in Drive and Meet AI sharing rules use their existing access gates.
+
+The legacy recording controls show Stop only for a creator or admin. Both the
+recording toggle and direct status/delete APIs verify permission before writing
+and require a returned row. A denied or zero-row update returns HTTP 403; the UI
+keeps the active recording and explains that it has not stopped. Active-session
+queries include the creator/admin capability rather than inferring it from
+workspace membership. Web and mobile consumers keep the existing read response
+fields; `can_manage` is additive.
+
+Regression coverage: `legacy-meet-rls.sql`, the meeting identity/transcript pgTAP
+suite, the recording route unit tests and `meeting-actions.test.tsx`. Rollbacks
+drop only the five meeting/session write policies, the recording identity trigger
+and its function. Privilege revokes, the authenticated audio policy target and
+creator/admin audio write fences remain in place, including during rollback.
+
+Legacy audio chunk INSERT, UPDATE and DELETE require the parent recording creator
+or the workspace `admin` permission. Audio chunk SELECT is fenced by the
+restrictive policy `legacy_audio_chunk_select_participant`
+(`20261030110000_restrict_audio_chunk_reads`; the rollback only drops that
+policy), and the playback API applies the same check before it lists or signs
+audio. The chunk and complete-recording upload APIs check the write capability
+before parsing or storing audio. Meet mounts recording capture only for that
+capability. A viewer who did not take part can read permitted recording metadata
+but not the audio. Coverage is in `legacy-meet-rls.sql`,
+`meet-audio-chunk-read-boundary.sql`, the playback route test and the upload
+route unit tests.
+
+## Transcription room protocol
+
+Meet and Parley share the transcription protocol in `packages/realtime/src/meet`.
+This protocol milestone adds no capture or UI behavior. A host sends
+`transcription.state {state: {active, sessionId, startedBy, language, consentRequired}}`.
+Language is `auto | vi | en | vi+en`; consent is required. Active state requires
+a session UUID and the initiating host's participant UUID. Only admitted hosts
+may change it, regardless of delegated recording or participant-management scopes.
+
+An admitted participant sends `transcription.consent {userId, allowed}` using
+their own participant/device UUID, including for guests. Account IDs and other
+participants' IDs cannot stand in for that identity. Missing consent means
+excluded; `false` withdraws consent. A new session clears the prior roster.
+Only that participant and admitted hosts receive live consent decisions. Client snapshots contain only the participant's own decision and aggregate counts, including for hosts. Transcription
+state reaches admitted participants and replays on admission or reconnection.
+Waiting sockets receive neither state nor consent.
+
+The existing room Durable Object validates these messages and executes the shared
+reducer through its serialized command executor. Its broadcast path excludes
+unadmitted sockets; consent uses direct delivery to admitted hosts rather than
+the broader participant-manager audience. Existing clients ignore unknown server
+types in the call reducer's default branch, so realtime can ship first.
+Regression coverage lives in `transcription.test.ts`,
+`transcription-routing.test.ts`, and `transcription-compat.test.ts`.
+In-room consent survives DO hibernation only under the active session UUID and is cleared on session or room end. This is not the legal consent record; private.meet_ai_consents belongs to M1-B/M1-C. WebSocket messages over 256 KiB (UTF-8 bytes for text) are rejected before JSON parsing. Legal consent persistence, audio filtering and notices belong to subsequent milestones.
