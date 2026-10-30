@@ -55,6 +55,7 @@ describe('configured staging internal app registry', () => {
   const COOKIE_ENV_KEY = 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN';
 
   beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_STAGING', '1');
     vi.stubEnv(COOKIE_ENV_KEY, '.staging.tutur3u.com');
   });
 
@@ -169,6 +170,7 @@ describe('configured staging internal app registry', () => {
     'registers nothing unless the shared cookie domain is the accepted override (%s)',
     (_label, cookieDomain) => {
       vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.stubEnv('NEXT_PUBLIC_TUTURUUU_STAGING', undefined);
       vi.stubEnv(COOKIE_ENV_KEY, cookieDomain);
       vi.stubEnv(
         ENV_KEY,
@@ -229,6 +231,7 @@ describe('configured staging internal app registry', () => {
   });
 
   it('leaves the production registry and resolution unchanged without the env vars', () => {
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_STAGING', undefined);
     vi.stubEnv(COOKIE_ENV_KEY, '');
     vi.stubEnv(ENV_KEY, '');
 
@@ -265,6 +268,7 @@ describe('configured staging internal app registry', () => {
   });
 
   it('does not change how production origins resolve when staging entries are set without the override', () => {
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_STAGING', undefined);
     vi.stubEnv(COOKIE_ENV_KEY, '');
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const before = getAppDomainByUrl('https://tasks.tuturuuu.com/x');
