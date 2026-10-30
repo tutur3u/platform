@@ -71,7 +71,10 @@ export function queueTranscriptionFinalization(
   )
     return state;
   // Fail closed: the host can still finish a session by hand.
-  if (Object.keys(state.finalizationFence ?? {}).length >= MEET_FINALIZE_MAX_SESSIONS)
+  if (
+    Object.keys(state.finalizationFence ?? {}).length >=
+    MEET_FINALIZE_MAX_SESSIONS
+  )
     return state;
   const accountOf = (userId: string) =>
     consents.accounts?.[userId] ?? state.presence[userId]?.accountId ?? userId;

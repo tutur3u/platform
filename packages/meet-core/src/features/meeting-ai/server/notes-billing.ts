@@ -33,7 +33,9 @@ const checkpointSchema = z.object({
 });
 export type NotesCheckpoint = z.infer<typeof checkpointSchema>['checkpoint'];
 
-export function readNotesCheckpoint(notesUsage: unknown): NotesCheckpoint | null {
+export function readNotesCheckpoint(
+  notesUsage: unknown
+): NotesCheckpoint | null {
   const parsed = checkpointSchema.safeParse(notesUsage);
   return parsed.success ? parsed.data.checkpoint : null;
 }

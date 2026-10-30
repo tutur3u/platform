@@ -78,7 +78,9 @@ function fakeDb(
         filters.every((test) => test(row))
       );
       if (op === 'update' && failWhen()?.(table, patch)) {
-        log.push(`${table}.update-failed:${Object.keys(patch).sort().join(',')}`);
+        log.push(
+          `${table}.update-failed:${Object.keys(patch).sort().join(',')}`
+        );
         return { rows: [] as Row[], error: { message: 'storage down' } };
       }
       if (op === 'update') {
@@ -331,10 +333,13 @@ describe('finalizeMeetAi', () => {
         async (_input, actor, _admission, hooks) => {
           // Stands in for the AI Studio ledger: one run per idempotency key.
           if (keys.has(actor.attemptId))
-            throw new AiStudioError('This request is already running or completed.', {
-              code: 'invalid_request_error',
-              status: 409,
-            });
+            throw new AiStudioError(
+              'This request is already running or completed.',
+              {
+                code: 'invalid_request_error',
+                status: 409,
+              }
+            );
           keys.add(actor.attemptId);
           executed.push(actor.attemptId);
           const measured = {

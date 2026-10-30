@@ -13,11 +13,10 @@ import { Effect } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { MEETING_APP } from '../../../runtime';
 import { MeetAiError } from './access';
-import { BILLING_UNRECONCILED } from './notes-billing';
 import { admitMeetCredits, type MeetCreditAdmission } from './credit-admission';
+import { BILLING_UNRECONCILED } from './notes-billing';
 
 type Input = Parameters<typeof generateMeetArtifact>[0];
-
 
 /** Everything needed to settle a run again without the provider output. */
 export type MeetRunSettlement = {
@@ -27,7 +26,12 @@ export type MeetRunSettlement = {
   inputTokens: number;
   outputTokens: number;
   latencyMs: number;
-  metadata: { app: string; source: string; meetingId: string; operation: string };
+  metadata: {
+    app: string;
+    source: string;
+    meetingId: string;
+    operation: string;
+  };
 };
 
 /**

@@ -342,7 +342,9 @@ describe('the durable per-session fence', () => {
     );
     // Fail closed beyond the cap; the host can still finish by hand.
     const over = cycle(full, sid(MEET_FINALIZE_MAX_SESSIONS + 1), time + 1000);
-    expect(over.finalizations?.[sid(MEET_FINALIZE_MAX_SESSIONS + 1)]).toBeUndefined();
+    expect(
+      over.finalizations?.[sid(MEET_FINALIZE_MAX_SESSIONS + 1)]
+    ).toBeUndefined();
     expect(Object.keys(over.finalizationFence ?? {})).toHaveLength(
       MEET_FINALIZE_MAX_SESSIONS
     );

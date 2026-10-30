@@ -4,10 +4,7 @@ import {
   transcriptSpeakers,
 } from '@tuturuuu/ai/meetings/transcript';
 import { AiStudioError } from '@tuturuuu/ai/studio/errors';
-import {
-  generateBilledMeetArtifact,
-  settleMeetRun,
-} from './artifact-billing';
+import { generateBilledMeetArtifact, settleMeetRun } from './artifact-billing';
 import 'server-only';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json, Tables } from '@tuturuuu/types';
@@ -128,34 +125,34 @@ export async function finishMeetAiSession(input: {
     notes_usage: Json;
     notes_cost_usd: number | null;
   }) => {
-      const persisted = await Effect.runPromise(
-        Effect.tryPromise({
-          try: async () => {
-            const saved = await db
-              .from('meet_ai_sessions')
-              .update(payload)
-              .eq('id', sessionId)
-              .eq('notes_started_at', attemptStartedAt)
-              .select('id')
-              .maybeSingle();
-            if (saved.error) throw new MeetAiError(500, 'Could not save notes');
-            if (!saved.data)
-              throw new MeetAiError(409, 'Notes finalization changed');
-          },
-          catch: (error) =>
-            error instanceof MeetAiError
-              ? error
-              : new MeetAiError(500, 'Could not save notes'),
-        }).pipe(
-          Effect.retry({
-            times: 2,
-            schedule: Schedule.exponential('100 millis'),
-            while: (error) => error.status === 500,
-          }),
-          Effect.either
-        )
-      );
-      if (persisted._tag === 'Left') throw persisted.left;
+    const persisted = await Effect.runPromise(
+      Effect.tryPromise({
+        try: async () => {
+          const saved = await db
+            .from('meet_ai_sessions')
+            .update(payload)
+            .eq('id', sessionId)
+            .eq('notes_started_at', attemptStartedAt)
+            .select('id')
+            .maybeSingle();
+          if (saved.error) throw new MeetAiError(500, 'Could not save notes');
+          if (!saved.data)
+            throw new MeetAiError(409, 'Notes finalization changed');
+        },
+        catch: (error) =>
+          error instanceof MeetAiError
+            ? error
+            : new MeetAiError(500, 'Could not save notes'),
+      }).pipe(
+        Effect.retry({
+          times: 2,
+          schedule: Schedule.exponential('100 millis'),
+          while: (error) => error.status === 500,
+        }),
+        Effect.either
+      )
+    );
+    if (persisted._tag === 'Left') throw persisted.left;
   };
   try {
     const kept = readNotesCheckpoint(session.notes_usage);
