@@ -1,4 +1,5 @@
 -- Bootstrap may precede seed data. Re-run this owner-only function after seed.
+-- tuturuuu: no-grant (internal)
 CREATE OR REPLACE FUNCTION private.grant_mastermind_root_creator()
 RETURNS void
 LANGUAGE plpgsql

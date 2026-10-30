@@ -97,7 +97,7 @@ Mastermind is restricted to one person, the platform owner account, through the 
   the hub allowlist is separate from the grant and must name the same user.
 
 Migrations `20261030113000` and `20261030113001` grant the permission to
-nobody. Granting it to the owner is a separate change and a production write that needs an explicit GO.
+nobody. Separate migration `20261030120000_grant_mastermind_owner.sql` grants only root's creator through `private.grant_mastermind_access`. Missing root, null creator, missing auth account or root MEMBER membership produces NOTICE without a grant. After seed, the database owner may idempotently run `SELECT private.grant_mastermind_root_creator();`. Production writes require explicit GO. Before this PR's production sync, Rex or Bea checks read-only that the creator exists in auth.users and is a root MEMBER, reporting names only. Rollback `20261030120000_grant_mastermind_owner.rollback.sql` uses audited revoke provenance, preserving later intentional operator grants. Missing provenance revokes nothing. Bootstrap coverage: `manage-mastermind-owner-grant.sql`; actual rollback coverage: `apps/database/scripts/mastermind-owner-rollback-test.py`.
 
 - **Regression coverage:** `apps/database/supabase/tests/manage-mastermind-permission.sql`
   (no role, default permission, member or creator holds it after the
@@ -1049,16 +1049,3 @@ five rows. Missing chart series retain their window-not-reported description.
 Numeric readings, including a measured zero, retain their existing meaning.
 Regression coverage lives in `mastermind_insights_compact_test.dart` and
 `ship_usage_model_test.dart`; snapshot parsing preserves null quota rows.
-
-### Root creator bootstrap
-
-Migrations 20261030113000 and 20261030113001 grant nobody access. The separate
-20261030120000_grant_mastermind_owner.sql grants only the root workspace creator
-through private.grant_mastermind_access. Missing root, null creator, missing auth
-user or missing root MEMBER membership produces a NOTICE and no grant. After seed,
-a database owner can idempotently run `SELECT private.grant_mastermind_root_creator();`.
-Production execution still requires explicit GO. Before this PR's production sync,
-Rex or Bea must perform a read-only root-creator check: confirm the creator exists
-in auth.users and is a root MEMBER, reporting names only. Roll back with
-20261030120000_grant_mastermind_owner.rollback.sql, which uses the audited revoke
-helper and preserves later intentional operator grants.
