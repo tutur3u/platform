@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.29.0](https://github.com/tutur3u/platform/compare/teach-v0.28.0...teach-v0.29.0) (2026-10-30)
+
+
+### Features
+
+* **contacts:** notify homeroom teachers when tutoring is completed ([#6912](https://github.com/tutur3u/platform/issues/6912)) ([7cb1f4c](https://github.com/tutur3u/platform/commit/7cb1f4c9f8c76ab39b8439c79280d0515dd269eb))
+
+
+### Bug Fixes
+
+* align main unit fixtures with authorization and app inventory ([#7265](https://github.com/tutur3u/platform/issues/7265)) ([0eb1e3a](https://github.com/tutur3u/platform/commit/0eb1e3a8d350c5179bfaad63fc7281bfd47ebbf8))
+* **education:** scope learner and teacher resource access ([#7017](https://github.com/tutur3u/platform/issues/7017)) ([5942601](https://github.com/tutur3u/platform/commit/59426011aafb60ec51da42f6feb95872834acc60))
+* **education:** validate test courses and quiz destinations ([#7020](https://github.com/tutur3u/platform/issues/7020)) ([8535738](https://github.com/tutur3u/platform/commit/8535738863df43f37c64eb8348a9a02377b6308a))
+* **groups:** align group and member access checks ([#7028](https://github.com/tutur3u/platform/issues/7028)) ([6fa6453](https://github.com/tutur3u/platform/commit/6fa6453a9b76559fdac74fe6727c71348b090307))
+* **teach:** enforce page-level workspace membership ([#7098](https://github.com/tutur3u/platform/issues/7098)) ([77f5869](https://github.com/tutur3u/platform/commit/77f58694876e8320dcf38789f4b0ba2c5725589a))
+* **teach:** scope module pages to the workspace (F8) ([#7082](https://github.com/tutur3u/platform/issues/7082)) ([7925a33](https://github.com/tutur3u/platform/commit/7925a33d05070f6eea74adacc1dd728b301df31d))
+* **teach:** scope quiz set and module reads to the route workspace ([#7078](https://github.com/tutur3u/platform/issues/7078)) ([4be48e4](https://github.com/tutur3u/platform/commit/4be48e41cf255f59f06586b069102cc52b015a1c))
+* **teach:** scope quiz-set module link to the route workspace ([#7067](https://github.com/tutur3u/platform/issues/7067)) ([2a7cefb](https://github.com/tutur3u/platform/commit/2a7cefbe3911e75077bdc9e6659df479097184f4))
+* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening ([#7057](https://github.com/tutur3u/platform/issues/7057)) ([99aa5a8](https://github.com/tutur3u/platform/commit/99aa5a84b735abd4970bebb70bc7ccc3e8081c53))
+* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening ([#7057](https://github.com/tutur3u/platform/issues/7057)) ([c678300](https://github.com/tutur3u/platform/commit/c678300a63eba6c8e6b57ead465d247fd0d38331))
+* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening. ([c678300](https://github.com/tutur3u/platform/commit/c678300a63eba6c8e6b57ead465d247fd0d38331))
+
 ## [0.28.0](https://github.com/tutur3u/platform/compare/teach-v0.27.1...teach-v0.28.0) (2026-10-24)
 
 

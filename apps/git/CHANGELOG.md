@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.16.0](https://github.com/tutur3u/platform/compare/git-v0.15.0...git-v0.16.0) (2026-10-30)
+
+
+### Features
+
+* **contacts:** notify homeroom teachers when tutoring is completed ([#6912](https://github.com/tutur3u/platform/issues/6912)) ([7cb1f4c](https://github.com/tutur3u/platform/commit/7cb1f4c9f8c76ab39b8439c79280d0515dd269eb))
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+
+
+### Bug Fixes
+
+* **topic-announcements:** tighten teacher write scope and label topic_assigned ([d7af005](https://github.com/tutur3u/platform/commit/d7af005c28d05bf97379e6b6dffcd343a75d1a47))
+
 ## [0.15.0](https://github.com/tutur3u/platform/compare/git-v0.14.1...git-v0.15.0) (2026-10-24)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.3](https://github.com/tutur3u/platform/compare/tasks-api-v0.5.2...tasks-api-v0.5.3) (2026-10-30)
+
+
+### Bug Fixes
+
+* **auth:** align verified account email handling ([#7007](https://github.com/tutur3u/platform/issues/7007)) ([5f47957](https://github.com/tutur3u/platform/commit/5f47957d2c2053d3281866ba45e76fb5fdb1f356))
+* **tasks:** align board access and realtime delivery ([#7016](https://github.com/tutur3u/platform/issues/7016)) ([70aef15](https://github.com/tutur3u/platform/commit/70aef1546bf600aaa29fc046a915fc7c69be4d02))
+
 ## [0.5.2](https://github.com/tutur3u/platform/compare/tasks-api-v0.5.1...tasks-api-v0.5.2) (2026-09-20)
 
 

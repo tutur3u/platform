@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/tutur3u/platform/compare/playground-v0.6.1...playground-v0.6.2) (2026-10-30)
+
+
+### Bug Fixes
+
+* **playground:** require a signed-in staff session for AI routes and pages ([#7215](https://github.com/tutur3u/platform/issues/7215)) ([e4e42e0](https://github.com/tutur3u/platform/commit/e4e42e06ca651b9838e06248f9ad4add952768d0))
+
 ## [0.6.1](https://github.com/tutur3u/platform/compare/playground-v0.6.0...playground-v0.6.1) (2026-10-17)
 
 

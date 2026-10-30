@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/mind-v0.26.0...mind-v0.27.0) (2026-10-30)
+
+
+### Features
+
+* **contacts:** notify homeroom teachers when tutoring is completed ([#6912](https://github.com/tutur3u/platform/issues/6912)) ([7cb1f4c](https://github.com/tutur3u/platform/commit/7cb1f4c9f8c76ab39b8439c79280d0515dd269eb))
+
 ## [0.26.0](https://github.com/tutur3u/platform/compare/mind-v0.25.1...mind-v0.26.0) (2026-10-24)
 
 

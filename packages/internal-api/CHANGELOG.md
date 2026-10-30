@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.56.0](https://github.com/tutur3u/platform/compare/internal-api-v0.55.0...internal-api-v0.56.0) (2026-10-30)
+
+
+### Features
+
+* **contacts:** assign tutoring shifts to class groups ([#6895](https://github.com/tutur3u/platform/issues/6895)) ([6054729](https://github.com/tutur3u/platform/commit/60547296d963cc9955c53654569e06f79a32a5e9))
+* **contacts:** keep make-up tutoring content linked to lesson notes ([6c3186d](https://github.com/tutur3u/platform/commit/6c3186d2331350401e3e06a5269b15a0844e7d29))
+* **contacts:** keep make-up tutoring content linked to lesson notes ([#6907](https://github.com/tutur3u/platform/issues/6907)) ([2fb0e9f](https://github.com/tutur3u/platform/commit/2fb0e9ff9ac1ed4f65a09ce4137d7741eb7a4633))
+* **contacts:** label weak-support tutoring content and add Thoát kèm ([#6911](https://github.com/tutur3u/platform/issues/6911)) ([83dce34](https://github.com/tutur3u/platform/commit/83dce344854b7bc3334581504fc325aefbb111af))
+* **contacts:** monthly GVNN schedule editor with month clone ([#6927](https://github.com/tutur3u/platform/issues/6927)) ([13c4e0b](https://github.com/tutur3u/platform/commit/13c4e0b43cdc20a4566187386a8eecf21157a79b))
+* **topic-announcements:** add teacher-scoped access and send deadline ([3cb09f3](https://github.com/tutur3u/platform/commit/3cb09f3896307385fbeaf4cfbcc3320d7e77d8a5))
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+* **tutoring:** add workspace campus list and announcement place picker ([#7049](https://github.com/tutur3u/platform/issues/7049)) ([9ae0a76](https://github.com/tutur3u/platform/commit/9ae0a76828670c29cbdce07638d0213324453a6d))
+* **tutoring:** per-session content and class time in the parent message ([#7055](https://github.com/tutur3u/platform/issues/7055)) ([5b52e01](https://github.com/tutur3u/platform/commit/5b52e018e1789d47ea2fbab7d85be3a3ec48e4cc))
+* **tutoring:** per-session content and class time in the parent message ([#7055](https://github.com/tutur3u/platform/issues/7055)) ([9eb14a6](https://github.com/tutur3u/platform/commit/9eb14a6c62076e5f59d5f412a504833e58a81bb6))
+* **tutoring:** tutor groups for the policy, teacher picker and queues ([#7054](https://github.com/tutur3u/platform/issues/7054)) ([5298df0](https://github.com/tutur3u/platform/commit/5298df043e186f242d660b018d0003f608ec04a8))
+
+
+### Bug Fixes
+
+* **ai:** sign Mira generated images on read in chat history ([#6896](https://github.com/tutur3u/platform/issues/6896)) ([64da5ce](https://github.com/tutur3u/platform/commit/64da5ce3bc0ba345ae08261a3fec2b2af77504ea))
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+* **contacts:** block unverified topic sends without losing the draft ([#6923](https://github.com/tutur3u/platform/issues/6923)) ([184bcf3](https://github.com/tutur3u/platform/commit/184bcf3b9d1c2fb5400adca2d0834cd9edcb5172))
+* **contacts:** bound linked-content freeze and warn when it fails ([#6919](https://github.com/tutur3u/platform/issues/6919)) ([841dad8](https://github.com/tutur3u/platform/commit/841dad85aeade756e8acd0aabcfdb842344d45d4))
+* **contacts:** English center tutoring defaults to one session, three-day follow-up ([#6906](https://github.com/tutur3u/platform/issues/6906)) ([8ce9380](https://github.com/tutur3u/platform/commit/8ce93809bad90473bb90cb83df0e5ca8bdfba05e))
+* **contacts:** GVNN schedule notify teachers, swap race and unsaved-changes guard ([#6966](https://github.com/tutur3u/platform/issues/6966)) ([429bcb3](https://github.com/tutur3u/platform/commit/429bcb30bb03f082c523e8f06c5f3b8c493ac2f4))
+* **drive:** expire and revoke export links ([#7140](https://github.com/tutur3u/platform/issues/7140)) ([307f08f](https://github.com/tutur3u/platform/commit/307f08fee6ded7b19fe61901390afa45c33d5dce))
+* **education:** scope learner and teacher resource access ([#7017](https://github.com/tutur3u/platform/issues/7017)) ([5942601](https://github.com/tutur3u/platform/commit/59426011aafb60ec51da42f6feb95872834acc60))
+* **learn:** require parent consent for Tulearn parent links (SR-238) ([#7062](https://github.com/tutur3u/platform/issues/7062)) ([b085a0e](https://github.com/tutur3u/platform/commit/b085a0e331aa758fd1e8f490df284b6bf22ed63a))
+* **tutoring:** allow learners to share a teacher group slot ([#7222](https://github.com/tutur3u/platform/issues/7222)) ([16e8ff6](https://github.com/tutur3u/platform/commit/16e8ff65880be827c4c2dc03e7cc186b0b2c7724))
+* **tutoring:** allow learners to share a teacher group slot ([#7222](https://github.com/tutur3u/platform/issues/7222)) ([f913a3c](https://github.com/tutur3u/platform/commit/f913a3c012ba38211e05c6a98692e8d1c7ccc04a))
+* **tutoring:** let one teacher tutor many learners in a shared slot ([#7255](https://github.com/tutur3u/platform/issues/7255)) ([daf6835](https://github.com/tutur3u/platform/commit/daf6835daade9216a16efc177a4e8dab6ab0919e))
+* **tutoring:** list learners under current classes and needs-tutoring groups ([#7257](https://github.com/tutur3u/platform/issues/7257)) ([07c85f4](https://github.com/tutur3u/platform/commit/07c85f41c16c9ac86ea3afa5710c93bf934454b0))
+* **tutoring:** teach the right content for absent, weak and both rows ([#7052](https://github.com/tutur3u/platform/issues/7052)) ([f029cf6](https://github.com/tutur3u/platform/commit/f029cf6dad6ef202ddd43aefdc15014dbb9eb4bc))
+* **tutoring:** teach the right content for absent, weak and both rows ([#7052](https://github.com/tutur3u/platform/issues/7052)) ([d6eef3a](https://github.com/tutur3u/platform/commit/d6eef3a7713e3fcb917ffc00dfca88828cd7489f))
+* **tutoring:** teach the right content for absent, weak and both rows. ([d6eef3a](https://github.com/tutur3u/platform/commit/d6eef3a7713e3fcb917ffc00dfca88828cd7489f))
+* **workspace:** surface deletion failures and preserve confirmation ([#6969](https://github.com/tutur3u/platform/issues/6969)) ([a6af584](https://github.com/tutur3u/platform/commit/a6af584903a4741934e023776d90bc50667c1a33))
+
 ## [0.55.0](https://github.com/tutur3u/platform/compare/internal-api-v0.54.0...internal-api-v0.55.0) (2026-10-24)
 
 

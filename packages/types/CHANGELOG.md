@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.38.0](https://github.com/tutur3u/platform/compare/types-v0.37.0...types-v0.38.0) (2026-10-30)
+
+
+### Features
+
+* **ai:** create Mira chat with the first message ([#6765](https://github.com/tutur3u/platform/issues/6765)) ([aae4d08](https://github.com/tutur3u/platform/commit/aae4d088b0225d428bce41153bac7cf204d5a8dd))
+* **database:** add topic announcement teacher assignment schema ([24ad041](https://github.com/tutur3u/platform/commit/24ad04103ecce259beb379cb2a92dce31aa9c5ee))
+* **database:** add topic announcement teacher assignment schema ([#6924](https://github.com/tutur3u/platform/issues/6924)) ([cf6a18d](https://github.com/tutur3u/platform/commit/cf6a18d3cfa33d5cc5b93a673613038e347be827))
+* **database:** add topic teacher deadline notice types and receipts ([#6975](https://github.com/tutur3u/platform/issues/6975)) ([ee987de](https://github.com/tutur3u/platform/commit/ee987dec1d739c81a8d5eeda0502aa2c436249bf))
+* **database:** add tutoring follow-up notification foundation ([3b51993](https://github.com/tutur3u/platform/commit/3b51993e516ad33d92b9e821acf4d7e4b4d81b08))
+* **database:** add tutoring follow-up notification foundation ([#6909](https://github.com/tutur3u/platform/issues/6909)) ([1a986eb](https://github.com/tutur3u/platform/commit/1a986eb918304ce12c1b732307bce9b7817a5232))
+* **devbox:** admit claims by reported execution mode behind a flag ([#6457](https://github.com/tutur3u/platform/issues/6457)) ([394fd27](https://github.com/tutur3u/platform/commit/394fd27a8e6aa5f3b868237f4fc9139d95132832))
+
+
+### Bug Fixes
+
+* **database:** restrict remaining privileged definer functions ([#7092](https://github.com/tutur3u/platform/issues/7092)) ([5743c29](https://github.com/tutur3u/platform/commit/5743c290cfccc7c9250f1c9e6027c3318482df74))
+* **database:** scope Discord mappings to the linked workspace ([#7014](https://github.com/tutur3u/platform/issues/7014)) ([cc59d0b](https://github.com/tutur3u/platform/commit/cc59d0ba1527509297ec18ac6a1d559991f1fe64))
+* **db:** restrict subscription writes to billing service ([#7185](https://github.com/tutur3u/platform/issues/7185)) ([c1503bc](https://github.com/tutur3u/platform/commit/c1503bcaa98bd0ea0d3cae02cce34065c39e7681))
+* **devboxes:** reap stale runs that hold runner capacity ([#6460](https://github.com/tutur3u/platform/issues/6460)) ([702e108](https://github.com/tutur3u/platform/commit/702e108c2a0dd0cfb75e0ac54bf34461782a9bb0))
+* **mobile:** manage workspace visibility and filter Home choices ([#6978](https://github.com/tutur3u/platform/issues/6978)) ([8d625ae](https://github.com/tutur3u/platform/commit/8d625ae0a791b16db681a9ce238c66d0a8194003))
+
 ## [0.37.0](https://github.com/tutur3u/platform/compare/types-v0.36.0...types-v0.37.0) (2026-10-24)
 
 

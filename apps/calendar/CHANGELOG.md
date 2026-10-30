@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.37.0](https://github.com/tutur3u/platform/compare/calendar-v0.36.0...calendar-v0.37.0) (2026-10-30)
+
+
+### Features
+
+* **calendar:** admit native production cutover ([#6952](https://github.com/tutur3u/platform/issues/6952)) ([1269e31](https://github.com/tutur3u/platform/commit/1269e310101f1b360ab1dadf0311cafe8a3d337a))
+* **contacts:** notify homeroom teachers when tutoring is completed ([#6912](https://github.com/tutur3u/platform/issues/6912)) ([7cb1f4c](https://github.com/tutur3u/platform/commit/7cb1f4c9f8c76ab39b8439c79280d0515dd269eb))
+* **tasks:** hide Initiatives in Tasks and remove their create controls ([#7099](https://github.com/tutur3u/platform/issues/7099)) ([72cfb25](https://github.com/tutur3u/platform/commit/72cfb25d4df4bf068669b4dc21590a23b6f717a9))
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+
+
+### Bug Fixes
+
+* align workspace scoping for time requests and tasks ([#6999](https://github.com/tutur3u/platform/issues/6999)) ([c889c8b](https://github.com/tutur3u/platform/commit/c889c8b65ed09b8fec7bb50cf4b8fe1f3bedee61))
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+* **calendar:** cap automatic Google consent restarts ([#6869](https://github.com/tutur3u/platform/issues/6869)) ([a155548](https://github.com/tutur3u/platform/commit/a155548bf7b3513c4cb5e25adff491d429b3836c))
+* **calendar:** close OAuth self-heal review follow-ups ([#6878](https://github.com/tutur3u/platform/issues/6878)) ([3765547](https://github.com/tutur3u/platform/commit/376554797511bbe02bf56b06218b8ae69040ad06))
+* **calendar:** deliver OAuth health spike notifications ([3ae17ff](https://github.com/tutur3u/platform/commit/3ae17ff64879d2efa439982ffe70a4d056e2f784))
+* **calendar:** deliver OAuth health spike notifications ([#6871](https://github.com/tutur3u/platform/issues/6871)) ([292429e](https://github.com/tutur3u/platform/commit/292429e2ecf12a4ebf72f56bb09c5f331ada717f))
+* **calendar:** persist transient provider degradation ([#6867](https://github.com/tutur3u/platform/issues/6867)) ([5a2d7c1](https://github.com/tutur3u/platform/commit/5a2d7c1fbe0295f9ea8b9af9fa8af64c24bbb7ca))
+* **calendar:** qualify the root Worker and exact offline assets ([#6859](https://github.com/tutur3u/platform/issues/6859)) ([284bdaf](https://github.com/tutur3u/platform/commit/284bdaf034e5b127b1c5c690d74b43da6a178276))
+* **calendar:** target verified operators for OAuth spike alerts ([5977bf7](https://github.com/tutur3u/platform/commit/5977bf7942691df373a4daf5355088491c7ed809))
+* **meet:** validate plan creation access ([#7004](https://github.com/tutur3u/platform/issues/7004)) ([e16af79](https://github.com/tutur3u/platform/commit/e16af79b25a50c94395f4a6d579ffa3ce6485153))
+* **security:** isolate staging hosts from production cookies ([#7245](https://github.com/tutur3u/platform/issues/7245)) ([4395a92](https://github.com/tutur3u/platform/commit/4395a92e9a0d1ee03b93fc7a944cc2722afd2974))
+* **topic-announcements:** tighten teacher write scope and label topic_assigned ([d7af005](https://github.com/tutur3u/platform/commit/d7af005c28d05bf97379e6b6dffcd343a75d1a47))
+
 ## [0.36.0](https://github.com/tutur3u/platform/compare/calendar-v0.35.0...calendar-v0.36.0) (2026-10-24)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/tutur3u/platform/compare/realtime-v0.10.2...realtime-v0.11.0) (2026-10-30)
+
+
+### Features
+
+* **meet:** add transcription state and consent protocol ([#7266](https://github.com/tutur3u/platform/issues/7266)) ([2d601a1](https://github.com/tutur3u/platform/commit/2d601a1620cc8d39d425abb0617774c6eb2184bf))
+
 ## [0.10.2](https://github.com/tutur3u/platform/compare/realtime-v0.10.1...realtime-v0.10.2) (2026-10-17)
 
 

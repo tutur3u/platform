@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.38.0](https://github.com/tutur3u/platform/compare/inventory-v0.37.0...inventory-v0.38.0) (2026-10-30)
+
+
+### Features
+
+* **contacts:** notify homeroom teachers when tutoring is completed ([#6912](https://github.com/tutur3u/platform/issues/6912)) ([7cb1f4c](https://github.com/tutur3u/platform/commit/7cb1f4c9f8c76ab39b8439c79280d0515dd269eb))
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+
+
+### Bug Fixes
+
+* **api:** align user group workspace scoping ([#7001](https://github.com/tutur3u/platform/issues/7001)) ([7c7ec6e](https://github.com/tutur3u/platform/commit/7c7ec6ea248d9a3fdb7aabf9e64fbda1933ad321))
+* **api:** align workspace operation permissions and references ([#7033](https://github.com/tutur3u/platform/issues/7033)) ([86c6dd4](https://github.com/tutur3u/platform/commit/86c6dd4dd388a9081334293b0b0005452e846200))
+* **groups:** align group and member access checks ([#7028](https://github.com/tutur3u/platform/issues/7028)) ([6fa6453](https://github.com/tutur3u/platform/commit/6fa6453a9b76559fdac74fe6727c71348b090307))
+* **inventory:** align product stock routes with adjust-stock permission model ([#7063](https://github.com/tutur3u/platform/issues/7063)) ([68d5c5f](https://github.com/tutur3u/platform/commit/68d5c5f769a8011ce5cb297b2af8130193d3cfa4))
+* **inventory:** remove stale server logger fixture ([#6954](https://github.com/tutur3u/platform/issues/6954)) ([eb8842b](https://github.com/tutur3u/platform/commit/eb8842ba190f0603eedbbc9a9aa26e06203e92f2))
+* **inventory:** repair baseline unit tests ([#6855](https://github.com/tutur3u/platform/issues/6855)) ([7d5776b](https://github.com/tutur3u/platform/commit/7d5776b5bc0c9d71c06948272e56e81b691ceb1b))
+* **inventory:** resolve product export test path relative to file ([#6965](https://github.com/tutur3u/platform/issues/6965)) ([1bdb508](https://github.com/tutur3u/platform/commit/1bdb508a97e56885660c59fdd6b32fed45e9c47f))
+* **inventory:** type existing stock rows for route comparisons ([#7230](https://github.com/tutur3u/platform/issues/7230)) ([8f5fa7f](https://github.com/tutur3u/platform/commit/8f5fa7f2884642cd7c254d21e9e9a14dd22f1cb9))
+* **security:** isolate staging hosts from production cookies ([#7245](https://github.com/tutur3u/platform/issues/7245)) ([4395a92](https://github.com/tutur3u/platform/commit/4395a92e9a0d1ee03b93fc7a944cc2722afd2974))
+* **topic-announcements:** tighten teacher write scope and label topic_assigned ([d7af005](https://github.com/tutur3u/platform/commit/d7af005c28d05bf97379e6b6dffcd343a75d1a47))
+
 ## [0.37.0](https://github.com/tutur3u/platform/compare/inventory-v0.36.1...inventory-v0.37.0) (2026-10-24)
 
 

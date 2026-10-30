@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.13.2](https://github.com/tutur3u/platform/compare/apis-v0.13.1...apis-v0.13.2) (2026-10-30)
+
+
+### Bug Fixes
+
+* **api:** align user group workspace scoping ([#7001](https://github.com/tutur3u/platform/issues/7001)) ([7c7ec6e](https://github.com/tutur3u/platform/commit/7c7ec6ea248d9a3fdb7aabf9e64fbda1933ad321))
+* **auth:** scope challenge and participant management ([#7026](https://github.com/tutur3u/platform/issues/7026)) ([0991afe](https://github.com/tutur3u/platform/commit/0991afedb1757203fb4d95496e2cc034df6aa4fc))
+* **finance:** align workspace scoping for finance routes ([#7029](https://github.com/tutur3u/platform/issues/7029)) ([2ba27b9](https://github.com/tutur3u/platform/commit/2ba27b96035bbd43288b6c3de1e9ca9909b9243a))
+* **finance:** scope categories and transaction access to the workspace ([#7150](https://github.com/tutur3u/platform/issues/7150)) ([f08c4ea](https://github.com/tutur3u/platform/commit/f08c4ead35be9b81465de2505121de003285f651))
+* **meet:** align guest and poll plan access ([#7010](https://github.com/tutur3u/platform/issues/7010)) ([3848203](https://github.com/tutur3u/platform/commit/38482031cb31370266617da264d71bea61a48acb))
+* **meet:** apply anonymous plan access to guest availability writes ([#7064](https://github.com/tutur3u/platform/issues/7064)) ([019d52d](https://github.com/tutur3u/platform/commit/019d52d2f27f2c37c96ca967ff9edc56d12e00c8))
+* **meet:** apply anonymous plan access to guest availability writes. ([019d52d](https://github.com/tutur3u/platform/commit/019d52d2f27f2c37c96ca967ff9edc56d12e00c8))
+* **meet:** validate plan creation access ([#7004](https://github.com/tutur3u/platform/issues/7004)) ([e16af79](https://github.com/tutur3u/platform/commit/e16af79b25a50c94395f4a6d579ffa3ce6485153))
+* **members:** normalize targets before access changes ([#7005](https://github.com/tutur3u/platform/issues/7005)) ([9d870f6](https://github.com/tutur3u/platform/commit/9d870f62769d8941695eff1ca07d68714abc171a))
+* restore main type check (meet fixture, track request routes) ([#7232](https://github.com/tutur3u/platform/issues/7232)) ([4fa1436](https://github.com/tutur3u/platform/commit/4fa143673a92161f31b4c300f774ebcbbdef468f))
+
 ## [0.13.1](https://github.com/tutur3u/platform/compare/apis-v0.13.0...apis-v0.13.1) (2026-10-24)
 
 

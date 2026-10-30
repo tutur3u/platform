@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.39.0](https://github.com/tutur3u/platform/compare/infra-v0.38.0...infra-v0.39.0) (2026-10-30)
+
+
+### Features
+
+* **contacts:** notify homeroom teachers when tutoring is completed ([#6912](https://github.com/tutur3u/platform/issues/6912)) ([7cb1f4c](https://github.com/tutur3u/platform/commit/7cb1f4c9f8c76ab39b8439c79280d0515dd269eb))
+* **infrastructure:** add the private ops hub gateway ([#6997](https://github.com/tutur3u/platform/issues/6997)) ([c7be6a7](https://github.com/tutur3u/platform/commit/c7be6a7b766ce04085887cdf5510f62611bf46d8))
+* **ops:** add resumable storage re-key tool for leaked signed URLs ([#6890](https://github.com/tutur3u/platform/issues/6890)) ([2f88257](https://github.com/tutur3u/platform/commit/2f88257b224ee70b783c4cf5ad8432e675e4e347))
+* **tasks:** hide Initiatives in Tasks and remove their create controls ([#7099](https://github.com/tutur3u/platform/issues/7099)) ([72cfb25](https://github.com/tutur3u/platform/commit/72cfb25d4df4bf068669b4dc21590a23b6f717a9))
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+
+
+### Bug Fixes
+
+* align main unit fixtures with authorization and app inventory ([#7265](https://github.com/tutur3u/platform/issues/7265)) ([0eb1e3a](https://github.com/tutur3u/platform/commit/0eb1e3a8d350c5179bfaad63fc7281bfd47ebbf8))
+* **api:** align export and satellite request boundaries ([#7021](https://github.com/tutur3u/platform/issues/7021)) ([73a876a](https://github.com/tutur3u/platform/commit/73a876aaa7f13eceb13b6e6946e61d8323b1cf10))
+* **auth:** align verified account email handling ([#7007](https://github.com/tutur3u/platform/issues/7007)) ([5f47957](https://github.com/tutur3u/platform/commit/5f47957d2c2053d3281866ba45e76fb5fdb1f356))
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+* **database:** scope Discord mappings to the linked workspace ([#7014](https://github.com/tutur3u/platform/issues/7014)) ([cc59d0b](https://github.com/tutur3u/platform/commit/cc59d0ba1527509297ec18ac6a1d559991f1fe64))
+* **desktop:** publish run-free desktop versions with structured release notes ([#7157](https://github.com/tutur3u/platform/issues/7157)) ([90643d7](https://github.com/tutur3u/platform/commit/90643d747d01672e6f3a8ccc348f26aed0586d5c))
+* **devboxes:** reap stale runs that hold runner capacity ([#6460](https://github.com/tutur3u/platform/issues/6460)) ([702e108](https://github.com/tutur3u/platform/commit/702e108c2a0dd0cfb75e0ac54bf34461782a9bb0))
+* **infra:** align platform administration permissions ([#7011](https://github.com/tutur3u/platform/issues/7011)) ([18d30ec](https://github.com/tutur3u/platform/commit/18d30ec1204fcd89d7abc8cb463043331330f33d))
+* **infra:** require platform admin for workspace secrets ([#7174](https://github.com/tutur3u/platform/issues/7174)) ([496de2e](https://github.com/tutur3u/platform/commit/496de2ef9c819ec73e647e395e80f494a3c696c9))
+* **infra:** require verified staff identity for managed cron toggles ([#7181](https://github.com/tutur3u/platform/issues/7181)) ([714983a](https://github.com/tutur3u/platform/commit/714983a56d7672bf221d72841c211fa4dd3c5d63))
+* **infrastructure:** align secret and role permission access ([#7013](https://github.com/tutur3u/platform/issues/7013)) ([4917e16](https://github.com/tutur3u/platform/commit/4917e16567f3b348ace0159d6cc982be50b9a8b7))
+* **meet:** validate plan creation access ([#7004](https://github.com/tutur3u/platform/issues/7004)) ([e16af79](https://github.com/tutur3u/platform/commit/e16af79b25a50c94395f4a6d579ffa3ce6485153))
+* restore main type check (meet fixture, track request routes) ([#7232](https://github.com/tutur3u/platform/issues/7232)) ([4fa1436](https://github.com/tutur3u/platform/commit/4fa143673a92161f31b4c300f774ebcbbdef468f))
+* **security:** harden staging-host guard and restore reserved-host handling ([#7256](https://github.com/tutur3u/platform/issues/7256)) ([077e48c](https://github.com/tutur3u/platform/commit/077e48c3ecea2841d4c99c9d848122ef1827dd42))
+* **security:** isolate staging hosts from production cookies ([#7245](https://github.com/tutur3u/platform/issues/7245)) ([4395a92](https://github.com/tutur3u/platform/commit/4395a92e9a0d1ee03b93fc7a944cc2722afd2974))
+* **security:** validate project branches and strip guard comments ([#7271](https://github.com/tutur3u/platform/issues/7271)) ([d718355](https://github.com/tutur3u/platform/commit/d718355c2d86bb875e835326f7744b9832673839))
+* **topic-announcements:** tighten teacher write scope and label topic_assigned ([d7af005](https://github.com/tutur3u/platform/commit/d7af005c28d05bf97379e6b6dffcd343a75d1a47))
+* **users:** align approval and post delivery scoping ([#6989](https://github.com/tutur3u/platform/issues/6989)) ([d1a7052](https://github.com/tutur3u/platform/commit/d1a7052c247e19467cbff8aa60c8c06dbb46e91d))
+
 ## [0.38.0](https://github.com/tutur3u/platform/compare/infra-v0.37.0...infra-v0.38.0) (2026-10-24)
 
 

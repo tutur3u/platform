@@ -1,5 +1,32 @@
 # Changelog
 
+## [0.41.0](https://github.com/tutur3u/platform/compare/tasks-v0.40.0...tasks-v0.41.0) (2026-10-30)
+
+
+### Features
+
+* **contacts:** notify homeroom teachers when tutoring is completed ([#6912](https://github.com/tutur3u/platform/issues/6912)) ([7cb1f4c](https://github.com/tutur3u/platform/commit/7cb1f4c9f8c76ab39b8439c79280d0515dd269eb))
+* **tasks:** hide Initiatives in Tasks and remove their create controls ([#7099](https://github.com/tutur3u/platform/issues/7099)) ([72cfb25](https://github.com/tutur3u/platform/commit/72cfb25d4df4bf068669b4dc21590a23b6f717a9))
+* **tasks:** seal the native artifact, gate signed-in root SSR, keep the exact offline fallback ([#6849](https://github.com/tutur3u/platform/issues/6849)) ([174d4b9](https://github.com/tutur3u/platform/commit/174d4b97e73104fa1803ff71746d67121d318acd))
+* **topic-announcements:** add teacher-scoped access and send deadline ([#6928](https://github.com/tutur3u/platform/issues/6928)) ([bc62da4](https://github.com/tutur3u/platform/commit/bc62da488da9edc61e131eb1eb11458b560ade45))
+
+
+### Bug Fixes
+
+* align workspace scoping for time requests and tasks ([#6999](https://github.com/tutur3u/platform/issues/6999)) ([c889c8b](https://github.com/tutur3u/platform/commit/c889c8b65ed09b8fec7bb50cf4b8fe1f3bedee61))
+* **api:** align export and satellite request boundaries ([#7021](https://github.com/tutur3u/platform/issues/7021)) ([73a876a](https://github.com/tutur3u/platform/commit/73a876aaa7f13eceb13b6e6946e61d8323b1cf10))
+* **auth:** align verified account email handling ([#7007](https://github.com/tutur3u/platform/issues/7007)) ([5f47957](https://github.com/tutur3u/platform/commit/5f47957d2c2053d3281866ba45e76fb5fdb1f356))
+* **auth:** require a verified identity for staff-only routes ([#7127](https://github.com/tutur3u/platform/issues/7127)) ([2198072](https://github.com/tutur3u/platform/commit/2198072bcd0d584ae24c1b47e32caedf90dc4344))
+* **database:** align time-tracking and task RPC permissions ([#7000](https://github.com/tutur3u/platform/issues/7000)) ([6730c79](https://github.com/tutur3u/platform/commit/6730c798f17be276dc3f1fe8efd60306a84b66f3))
+* **infrastructure:** align secret and role permission access ([#7013](https://github.com/tutur3u/platform/issues/7013)) ([4917e16](https://github.com/tutur3u/platform/commit/4917e16567f3b348ace0159d6cc982be50b9a8b7))
+* **meet:** validate plan creation access ([#7004](https://github.com/tutur3u/platform/issues/7004)) ([e16af79](https://github.com/tutur3u/platform/commit/e16af79b25a50c94395f4a6d579ffa3ce6485153))
+* **security:** isolate staging hosts from production cookies ([#7245](https://github.com/tutur3u/platform/issues/7245)) ([4395a92](https://github.com/tutur3u/platform/commit/4395a92e9a0d1ee03b93fc7a944cc2722afd2974))
+* **tasks:** complete guest board test auth fixture ([#7225](https://github.com/tutur3u/platform/issues/7225)) ([84827c6](https://github.com/tutur3u/platform/commit/84827c6b492c81a942fca43ca2ab170890f0b554))
+* **tasks:** limit project update attachment links to 15 minutes ([#6850](https://github.com/tutur3u/platform/issues/6850)) ([7e0f08c](https://github.com/tutur3u/platform/commit/7e0f08c25c9a8ffb38f85d2cfaa16873895857f5))
+* **tasks:** restrict task list writes to authorized members ([#7125](https://github.com/tutur3u/platform/issues/7125)) ([f6d616f](https://github.com/tutur3u/platform/commit/f6d616f14bdbd76a215bca76fdfcda995cf356e8))
+* **tasks:** scope board capacity rules and public-link writes (SR-229) ([#7060](https://github.com/tutur3u/platform/issues/7060)) ([cda3344](https://github.com/tutur3u/platform/commit/cda3344e084e4f95a7a2d66aab3817d93104518e))
+* **topic-announcements:** tighten teacher write scope and label topic_assigned ([d7af005](https://github.com/tutur3u/platform/commit/d7af005c28d05bf97379e6b6dffcd343a75d1a47))
+
 ## [0.40.0](https://github.com/tutur3u/platform/compare/tasks-v0.39.0...tasks-v0.40.0) (2026-10-24)
 
 

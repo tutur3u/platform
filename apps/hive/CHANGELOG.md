@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.0](https://github.com/tutur3u/platform/compare/hive-v0.26.2...hive-v0.27.0) (2026-10-30)
+
+
+### Features
+
+* **hive:** add Cloudflare maintenance and native migration plan ([#6868](https://github.com/tutur3u/platform/issues/6868)) ([00f1071](https://github.com/tutur3u/platform/commit/00f107166aab3428cc97e84e5284ec13ff127447))
+
 ## [0.26.2](https://github.com/tutur3u/platform/compare/hive-v0.26.1...hive-v0.26.2) (2026-10-24)
 
 

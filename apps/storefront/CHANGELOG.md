@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.33.0](https://github.com/tutur3u/platform/compare/storefront-v0.32.0...storefront-v0.33.0) (2026-10-30)
+
+
+### Features
+
+* **contacts:** notify homeroom teachers when tutoring is completed ([#6912](https://github.com/tutur3u/platform/issues/6912)) ([7cb1f4c](https://github.com/tutur3u/platform/commit/7cb1f4c9f8c76ab39b8439c79280d0515dd269eb))
+
+
+### Bug Fixes
+
+* **security:** isolate staging hosts from production cookies ([#7245](https://github.com/tutur3u/platform/issues/7245)) ([4395a92](https://github.com/tutur3u/platform/commit/4395a92e9a0d1ee03b93fc7a944cc2722afd2974))
+
 ## [0.32.0](https://github.com/tutur3u/platform/compare/storefront-v0.31.1...storefront-v0.32.0) (2026-10-24)
 
 
