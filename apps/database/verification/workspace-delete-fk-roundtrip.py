@@ -13,10 +13,10 @@ import re
 import subprocess
 
 DATABASE = Path(__file__).resolve().parents[1]
-INDEX = "20261030110000_workspace_delete_fk_cascade_concurrent"
-SWAP = "20261030110010_workspace_delete_fk_cascade_guard"
-ROLLBACK = "20261030110010_workspace_delete_fk_cascade_guard"
-VALIDATE = "20261030110020_validate_workspace_delete_fk_cascade"
+INDEX = "20261030112000_workspace_delete_fk_cascade_concurrent"
+SWAP = "20261030112010_workspace_delete_fk_cascade_guard"
+ROLLBACK = "20261030112010_workspace_delete_fk_cascade_guard"
+VALIDATE = "20261030112020_validate_workspace_delete_fk_cascade"
 
 
 def main():

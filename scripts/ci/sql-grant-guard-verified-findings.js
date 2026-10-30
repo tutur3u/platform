@@ -5,11 +5,11 @@ const HARDENING_MIGRATION_FILENAME =
 const requiredMigration = `apps/database/supabase/migrations/${HARDENING_MIGRATION_FILENAME}`;
 module.exports = [
   {
-    path: 'apps/database/supabase/migrations/20261030110010_workspace_delete_fk_cascade_guard.sql',
+    path: 'apps/database/supabase/migrations/20261030112010_workspace_delete_fk_cascade_guard.sql',
     line: 2,
     rule: 'dynamic-sql-review',
     fileDigest:
-      'f9427eee7b5bb00b26db83422416b42dd877278d5955fe86d6ba6898c8094535',
+      '47ee75196fd67e301bd939552bcd2f40ba062008648f3377c03b41dc0c184928',
     digest: 'd7b8f0b916c414e4be19dc041d1eb64a93e06146ca9ee51f2a069ef3456250cd',
     reason:
       'Reviewed static DO block: pg_catalog index validity lookup and exception only; no EXECUTE, routine creation, grants or caller-controlled SQL. Preserve unchanged migration bytes for PR6977 retiming.',

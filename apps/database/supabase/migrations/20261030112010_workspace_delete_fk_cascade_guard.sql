@@ -119,7 +119,7 @@ $$;
 -- The old block/attribute tables were dropped by 20241024135412; do not recreate.
 --
 -- NOT VALID enforces new writes/deletes immediately without scanning old rows.
--- Validation is deliberately in 20261030110020, a separately shippable file.
+-- Validation is deliberately in 20261030112020, a separately shippable file.
 -- Preserve ON UPDATE, match type, deferrability and all privileges.
 -- Reserved after EC A/B/C 20261027010000-20261027010200 (owner-confirmed).
 -- Rollback swaps original definitions NOT VALID, commits, then validates in a

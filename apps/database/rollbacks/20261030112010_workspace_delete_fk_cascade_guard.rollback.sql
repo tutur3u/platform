@@ -1,6 +1,6 @@
 -- Step 1: restore pre-D FK definitions as NOT VALID, then COMMIT.
 -- Reintroduces the known document 23503 and log NOT NULL 23502 delete failures.
--- Step 2: run 20261030110010_workspace_delete_fk_cascade_guard.rollback-validate.sql
+-- Step 2: run 20261030112010_workspace_delete_fk_cascade_guard.rollback-validate.sql
 -- in a SEPARATE transaction to restore the original validated catalog.
 -- Do not wrap both files in one transaction: swap/index locks must be released.
 -- Manual rollback only with release-authority approval; never an automatic down.
