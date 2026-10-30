@@ -1,9 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
-import {
-  isWorkspaceCreator,
-  roleHasCreatorGrantPermission,
-} from '@/lib/workspace-creator-grant-permissions';
+import { canAddCreatorGrantRoleMember } from '@/lib/workspace-creator-grant-permissions';
 import { addWorkspaceRoleMembers } from '@/lib/workspace-role-member-mutations';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
@@ -27,12 +24,12 @@ export async function GET(req: Request, { params }: Params) {
 
   const { data: role, error: roleError } = await supabase
     .from('workspace_roles')
-    .select('id')
+    .select('id,ws_id')
     .eq('id', roleId)
     .eq('ws_id', resolvedWsId)
-    .single();
+    .maybeSingle();
 
-  if (roleError || !role) {
+  if (roleError || !role || role.ws_id !== resolvedWsId) {
     console.log(roleError);
     return NextResponse.json({ message: 'Role not found' }, { status: 404 });
   }
@@ -77,24 +74,20 @@ export async function POST(req: Request, { params }: Params) {
 
   const { data: role } = await supabase
     .from('workspace_roles')
-    .select('id')
+    .select('id,ws_id')
     .eq('id', roleId)
     .eq('ws_id', access.permissions.wsId)
     .maybeSingle();
-  if (!role) {
+  if (!role || role.ws_id !== access.permissions.wsId) {
     return NextResponse.json({ message: 'Role not found' }, { status: 404 });
   }
 
   if (
-    (await roleHasCreatorGrantPermission(supabase, {
+    !(await canAddCreatorGrantRoleMember(supabase, {
       roleId,
+      userId: access.user?.id,
       wsId: access.permissions.wsId,
-    })) &&
-    !(await isWorkspaceCreator(
-      supabase,
-      access.permissions.wsId,
-      access.user?.id
-    ))
+    }))
   ) {
     return NextResponse.json(
       { message: 'Only the workspace creator can add members to this role' },

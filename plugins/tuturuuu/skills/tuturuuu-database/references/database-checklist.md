@@ -6,6 +6,11 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
 
 - Prefer additive migrations.
 - Keep PR migration filenames ahead of latest `main` migrations after rebases.
+- When rebuilding a stale permission migration, compare each replacement with the
+  latest main definition. Preserve consolidated caller binding and explicit-grant
+  branches; enforce role workspace ownership with the composite foreign key rather
+  than restoring an older permission predicate. See the role ownership section in
+  `apps/docs/platform/architecture/workspaces-permissions.mdx`.
 - Every definer replacement must retain a privilege-checked search path with
   `pg_temp` explicitly last; use `pg_catalog, pg_temp` for qualified bodies.
   Run `security-definer-search-paths.sql` on the full chain: even trigger-only

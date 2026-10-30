@@ -28,7 +28,7 @@ function createAccess() {
               },
               in(_column: string, ids: string[]) {
                 return Promise.resolve({
-                  data: ids.map((id) => ({ id })),
+                  data: ids.map((id) => ({ id, ws_id: 'workspace-1' })),
                   error: null,
                 });
               },
