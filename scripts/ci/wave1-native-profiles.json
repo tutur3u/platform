@@ -18,6 +18,12 @@
         "MICROSOFT_TENANT_ID"
       ],
       "stagingHost": "calendar.staging.tutur3u.com",
+      "stagingSecrets": [
+        "CF_ACCESS_TEAM_DOMAIN",
+        "CF_ACCESS_AUD",
+        "CF_ACCESS_CLIENT_ID",
+        "CF_ACCESS_CLIENT_SECRET"
+      ],
       "optionalSecretNames": ["TUTURUUU_APP_COORDINATION_SECRET"]
     },
     "mail": {

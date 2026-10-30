@@ -27,7 +27,7 @@ const telemetry: CalendarTelemetryPort = {
 beforeEach(() => vi.resetAllMocks());
 
 describe('Calendar cutover boundary', () => {
-  it.each(['calendar.tuturuuu.com', 'calendar.staging.tutur3u.com'])(
+  it.each(['calendar.tuturuuu.com'])(
     'threads a fresh CSP nonce through the proxy and Start on %s',
     async (host) => {
       const seen: string[] = [];
@@ -59,10 +59,13 @@ describe('Calendar cutover boundary', () => {
     }
   );
 
+  // The production artifact (pinned profile) must not answer staging (N8),
+  // the retired smoke hosts or former production-zone staging names.
   it.each([
     'unknown.invalid',
     'tuturuuu-calendar.workers.dev',
     'web.staging.tutur3u.com',
+    'calendar.staging.tutur3u.com',
     // Retired temporary production-smoke host; the canonical flip is accepted.
     'calendar-cutover.staging.tutur3u.com',
     'calendar-cutover.tuturuuu.com',

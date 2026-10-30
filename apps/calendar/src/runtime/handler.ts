@@ -26,6 +26,7 @@ import {
 } from './request-telemetry.server';
 import { applyCalendarResponsePolicy } from './response-policy';
 import { reportCalendarSsrError } from './ssr-diagnostics';
+import { denyWithoutStagingAccess, fetchOwner } from './staging-access';
 import type {
   CalendarExecutionContext,
   CalendarWorkerEnvironment,
@@ -64,6 +65,8 @@ async function dispatchCalendarRequest(
   const base = calendarBase(url);
   let path = base?.strip(url.pathname);
   if (!base || path == null) return new Response('Not Found', { status: 404 });
+  const denied = await denyWithoutStagingAccess(request, env);
+  if (denied) return denied;
   if (
     path === CALENDAR_LEGACY_FUNCTION_BASE ||
     path.startsWith(`${CALENDAR_LEGACY_FUNCTION_BASE}/`)
@@ -155,11 +158,12 @@ async function dispatchCalendarRequest(
                               'http://localhost:7809'
                             ),
                     });
-              return fetch(
+              return fetchOwner(
                 forwardToOwner(
                   base.stripRequest(forwarded) ?? forwarded,
                   origin
-                )
+                ),
+                env
               );
             }
             const endpoint = await dispatchCalendarEndpoint(forwarded);
@@ -167,8 +171,9 @@ async function dispatchCalendarRequest(
             if (forwarded.nextUrl.pathname.startsWith('/api/')) {
               if (!base.isRoot)
                 return new Response('Not Found', { status: 404 });
-              return fetch(
-                forwardToOwner(forwarded, resolveTuturuuuWebAppUrl())
+              return fetchOwner(
+                forwardToOwner(forwarded, resolveTuturuuuWebAppUrl()),
+                env
               );
             }
             if (
