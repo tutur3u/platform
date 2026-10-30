@@ -3,6 +3,7 @@ import {
   type getLegalNotice,
   getProposedLegalDocument,
   type LegalLocale,
+  upcomingLegalRevision,
 } from '@tuturuuu/legal';
 import { changeCopy } from './change-copy';
 
@@ -48,7 +49,7 @@ export function ChangeVersions({
             <dl>
               <div>
                 <dt>{copy.effective}</dt>
-                <dd>{notice.noticeDate}</dd>
+                <dd>{upcomingLegalRevision.effectiveDate}</dd>
               </div>
               <div>
                 <dt>{copy.published}</dt>

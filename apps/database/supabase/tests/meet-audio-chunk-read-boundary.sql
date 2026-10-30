@@ -1,7 +1,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(8);
+select plan(10);
 
 -- M1 rule extended to recorded audio: the chunk listing is readable only by the
 -- recorded identity, the meeting host and workspace admins of that workspace.
@@ -51,8 +51,10 @@ select is((select count(*) from public.audio_chunks),1::bigint,'the recorded par
 select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000009a01","role":"authenticated"}',true);
 select is((select count(*) from public.audio_chunks),1::bigint,'the meeting host lists the chunks');
 select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000009a05","role":"authenticated"}',true);
+select ok(public.has_workspace_permission('00000000-0000-4000-8000-000000009a11', auth.uid(), 'admin'), 'audio policy admin checks remain allowed for the caller');
 select is((select count(*) from public.audio_chunks),1::bigint,'a workspace admin lists the chunks');
 select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000009a03","role":"authenticated"}',true);
+select ok(not public.has_workspace_permission('00000000-0000-4000-8000-000000009a11', auth.uid(), 'admin'), 'the non-recorder member has no admin grant');
 select is((select count(*) from public.audio_chunks),0::bigint,'a member who did not take part sees no chunks');
 select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-000000009a04","role":"authenticated"}',true);
 select is((select count(*) from public.audio_chunks),0::bigint,'an outsider sees no chunks');

@@ -29,6 +29,7 @@ describe('legal redesign source integrity', () => {
       const notice = getLegalNotice(locale, {
         published: true,
         noticeDate: 'NOTICE-DATE',
+        mobilePrivacyEffectiveDate: '2026-11-05',
         laterDate: 'LATER-DATE',
         archiveLinks: { [locale]: 'ARCHIVE-LINK-TEXT' },
       });
@@ -45,6 +46,7 @@ describe('legal redesign source integrity', () => {
       const base = {
         published: true as const,
         noticeDate: 'NOTICE-DATE',
+        mobilePrivacyEffectiveDate: '2026-11-05',
         laterDate: 'LATER-DATE',
       };
       expect(() =>

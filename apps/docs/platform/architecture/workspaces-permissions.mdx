@@ -678,3 +678,56 @@ new FK orphans, and continued rejection for retained delivery/personal workspace
 The catalog audit and full-schema up/down/up verifier live under
 `apps/database/verification/workspace-delete-*`. These checks exercise local SQL
 and database roles; they do not establish HTTP, staging, or production acceptance.
+
+## Permission predicate caller scope
+
+`has_workspace_permission`, `is_org_member`,
+`can_manage_workspace_external_projects`, `can_publish_workspace_external_projects`,
+and `is_root_external_project_admin` answer only for `auth.uid()` under
+anonymous/authenticated JWT roles outside triggers; other-user queries return false.
+Service-role, owner and trigger evaluation retain their scope. Invites check the
+actual target membership row. Role-bearing invites require MEMBER type, member-
+and role-management permissions, and a same-workspace role. Rollbacks retain
+caller binding and grant helper execution only to authenticated/service roles.
+
+`manage_mastermind` requires the recorded root role and its enabled explicit grant.
+Creator/admin/default permissions never imply it. Only the audited owner procedure
+admits a member; this migration grants nobody access. The storage-limit RPC
+requires authenticated or service-role EXECUTE.
+
+Regression coverage: `has-workspace-permission-caller-scope.sql`,
+`manage-mastermind-*.sql`, `workspace-invite-role-binding.sql`, `meet-audio-chunk-read-boundary.sql`,
+`workspace-storage-limit-execute.sql`, and
+`workspace-permission-*.sql`. Apply the actual rollback before running
+`verification/workspace-permission-rollback.sql` and the invitation-role suite.
+
+The same JWT and trigger scope applies to `is_workspace_owner`, `is_member_invited`,
+`user_is_in_channel`, `is_hive_member`, `is_hive_platform_admin`,
+`can_create_workspace`, and `count_user_workspaces`. Non-self boolean checks return
+false; workspace counts return zero. Workspace creation limits query the caller's
+own count. `is_task_plan_intended_workspace` returns false for nonmembers.
+`is_personal_workspace` returns NULL for nonmembers outside triggers: neither a
+personal-only nor a nonpersonal-only predicate can authorize with a hidden value.
+Trigger checks retain the real personal flag. Analytics growth and retention RPCs
+are executable only by service_role.
+
+Regression coverage: `remaining-membership-helpers-caller-bound.sql` and
+`external-project-helpers-caller-bound.sql`; anonymous EXECUTE stays revoked.
+
+## Role workspace ownership
+
+Role permission rows reference the role's workspace through a composite foreign
+key. API database roles cannot move a role to another workspace. Service-role
+maintenance may move it, cascading its permission rows to the destination.
+
+Across Web role editors, external project teams and external app member tools,
+renaming a role with a subscription grant (including a disabled grant) requires
+the creator of every workspace holding that grant. Adding members checks enabled
+grants. Plain roles remain editable by role managers. Name-selected POS and
+external-app administrator roles cannot silently reuse subscription-granted roles.
+Explicit Mastermind permissions continue to be filtered from ordinary role writes.
+
+Regression coverage: `role-workspace-consistency.sql`,
+`name-based-role-creator-grant.sql`, `workspace-creator-grant-permissions.test.ts`,
+the role route tests, and external project/app member tests. Database checks must
+run against the applied migration chain; route mocks alone do not qualify SQL.

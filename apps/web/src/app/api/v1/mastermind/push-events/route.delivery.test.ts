@@ -204,6 +204,54 @@ describe('POST /api/v1/mastermind/push-events delivery', () => {
     expect(owners).toEqual([OWNER, SECOND_OWNER, SECOND_OWNER]);
   });
 
+  // Product rule: apps/docs/platform/features/mobile-mastermind.mdx#rollout
+  it('keeps the allowlist-only rule while the explicit-grant flag is off', async () => {
+    // Before the migration lands the lookup fails; it must not be consulted.
+    fixture.permissionHolders = new Set();
+    fixture.permissionError = true;
+
+    const response = await POST(signedRequest(baseEvent));
+
+    expect(response.status).toBe(202);
+    await expect(response.json()).resolves.toMatchObject({
+      sent: 2,
+      skipped: 0,
+    });
+  });
+
+  // Product rule: apps/docs/platform/features/mobile-mastermind.mdx#access-rule
+  it('skips an allowlisted owner without manage_mastermind in root', async () => {
+    vi.stubEnv('MASTERMIND_REQUIRE_EXPLICIT_GRANT', 'true');
+    fixture.permissionHolders = new Set([OWNER]);
+
+    const response = await POST(signedRequest(baseEvent));
+
+    expect(response.status).toBe(202);
+    await expect(response.json()).resolves.toMatchObject({
+      sent: 1,
+      skipped: 1,
+      failed: 0,
+    });
+    const owners = vi
+      .mocked(sendCustomPushMessageBatch)
+      .mock.calls.map(([args]) => deviceOwner(args));
+    expect(owners).toEqual([OWNER]);
+  });
+
+  it('sends nothing when the permission lookup fails', async () => {
+    vi.stubEnv('MASTERMIND_REQUIRE_EXPLICIT_GRANT', 'true');
+    fixture.permissionError = true;
+
+    const response = await POST(signedRequest(baseEvent));
+
+    expect(response.status).toBe(202);
+    await expect(response.json()).resolves.toMatchObject({
+      sent: 0,
+      skipped: 2,
+    });
+    expect(sendCustomPushMessageBatch).not.toHaveBeenCalled();
+  });
+
   it('removes tokens FCM reports as invalid', async () => {
     vi.mocked(sendCustomPushMessageBatch).mockResolvedValueOnce({
       deliveredCount: 1,

@@ -4,16 +4,24 @@ on:
   push:
     branches: [main, production, 'release-please--branches--**']
     paths:
-      - "apps/discord/**"
-      - ".github/workflows/discord-python-ci.yml"
+      - 'apps/discord/**'
+      - '.github/workflows/discord-python-ci.yml'
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
+    types:
+      [
+        opened,
+        synchronize,
+        reopened,
+        ready_for_review,
+        labeled,
+        converted_to_draft,
+      ]
     paths:
-      - "apps/discord/**"
-      - ".github/workflows/discord-python-ci.yml"
+      - 'apps/discord/**'
+      - '.github/workflows/discord-python-ci.yml'
 
 env:
-  PYTHON_VERSION: "3.13"
+  PYTHON_VERSION: '3.13'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
@@ -168,7 +176,7 @@ jobs:
           name: discord-python-coverage
           fail_ci_if_error: false
         env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          CODECOV_TOKEN: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && secrets.CODECOV_TOKEN || '' }}
 
   build-check:
     name: Build Check
@@ -243,7 +251,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        python-version: ["3.13"]
+        python-version: ['3.13']
     defaults:
       run:
         working-directory: ./apps/discord

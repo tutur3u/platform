@@ -6,7 +6,12 @@ const mocks = vi.hoisted(() => ({
   calls: [] as Array<{ table: string; op: string; args: unknown[] }>,
   creatorId: 'owner-user',
   resolveWorkspaceRouteAccess: vi.fn(),
-  rolePermissions: [] as Array<{ permission: string }>,
+  rolePermissions: [] as Array<{
+    permission: string;
+    role_id: string;
+    ws_id: string;
+  }>,
+  roleWorkspaceId: 'workspace-id',
 }));
 
 vi.mock('@/lib/workspace-route-access', () => ({
@@ -16,7 +21,10 @@ vi.mock('@/lib/workspace-route-access', () => ({
 function createQuery(table: string) {
   const single = () => {
     if (table === 'workspace_roles') {
-      return { data: { id: 'role-id' }, error: null };
+      return {
+        data: { id: 'role-id', ws_id: mocks.roleWorkspaceId },
+        error: null,
+      };
     }
     if (table === 'workspaces') {
       return { data: { creator_id: mocks.creatorId }, error: null };
@@ -38,7 +46,12 @@ function createQuery(table: string) {
         ? { data: mocks.rolePermissions, error: null }
         : table === 'workspace_members'
           ? { data: [{ user_id: MEMBER_ID }], error: null }
-          : { data: null, error: null }
+          : table === 'workspace_roles'
+            ? {
+                data: [{ id: 'role-id', ws_id: mocks.roleWorkspaceId }],
+                error: null,
+              }
+            : { data: null, error: null }
     ).then(resolve);
   return query;
 }
@@ -72,6 +85,7 @@ describe('workspace role members route', () => {
     mocks.calls.length = 0;
     mocks.creatorId = 'owner-user';
     mocks.rolePermissions = [];
+    mocks.roleWorkspaceId = 'workspace-id';
     mocks.resolveWorkspaceRouteAccess.mockResolvedValue({
       ok: true,
       permissions: { wsId: 'workspace-id' },
@@ -87,7 +101,13 @@ describe('workspace role members route', () => {
   });
 
   it('rejects a non-creator adding members to a manage_subscription role', async () => {
-    mocks.rolePermissions = [{ permission: 'manage_subscription' }];
+    mocks.rolePermissions = [
+      {
+        permission: 'manage_subscription',
+        role_id: 'role-id',
+        ws_id: 'workspace-id',
+      },
+    ];
 
     const response = await addMembers();
 
@@ -96,12 +116,34 @@ describe('workspace role members route', () => {
   });
 
   it('lets the workspace creator add members to a manage_subscription role', async () => {
-    mocks.rolePermissions = [{ permission: 'manage_subscription' }];
+    mocks.rolePermissions = [
+      {
+        permission: 'manage_subscription',
+        role_id: 'role-id',
+        ws_id: 'workspace-id',
+      },
+    ];
     mocks.creatorId = 'admin-user';
 
     const response = await addMembers();
 
     expect(response.status).toBe(200);
     expect(memberInserted()).toBe(true);
+  });
+
+  it('rejects a role whose own workspace differs from the route workspace', async () => {
+    mocks.roleWorkspaceId = 'workspace-a';
+    mocks.rolePermissions = [
+      {
+        permission: 'manage_subscription',
+        role_id: 'role-id',
+        ws_id: 'workspace-a',
+      },
+    ];
+
+    const response = await addMembers();
+
+    expect(response.status).toBe(404);
+    expect(memberInserted()).toBe(false);
   });
 });

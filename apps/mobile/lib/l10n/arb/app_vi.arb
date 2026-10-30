@@ -6116,6 +6116,7 @@
   "mastermindTimeSpokenHours": "{count, plural, other{{count} giờ trước}}",
   "mastermindTimeSpokenMinutes": "{count, plural, other{{count} phút trước}}",
   "mastermindTimeSpokenNow": "vừa xong",
+  "mastermindQuotaUnreadable": "Ngừng hoạt động / không đọc được",
   "mastermindUnavailable": "Không khả dụng",
   "mastermindUnitCredits": "{value} tín dụng",
   "mastermindUnitCreditsPerDay": "{value} tín dụng/ngày",

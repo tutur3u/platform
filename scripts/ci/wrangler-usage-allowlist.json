@@ -51,6 +51,11 @@
       "owner": "cf/Void Wrangler-exit lane",
       "removal": "Delete when no other allowlist entry needs the Wrangler CLI and @cloudflare/vite-plugin 2.x (no wrangler dependency) is adopted."
     },
+    "void-emitted-runtime": {
+      "reason": "Void emits dist/server/wrangler.json rather than cf Build Output. The qualified cf/Vite runtime harness accepts cloudflare.config.ts or .cloudflare/output/v0 and has no equivalent sealed Void-config runner with injected bindings, outboundService interception and fail-closed provider auth. Retain the isolated unstable_startWorker fixture and its pinned dependency; no publication is admitted.",
+      "owner": "Mastermind native Start qualification owner and cf/Void Wrangler-exit lane",
+      "removal": "Remove when the cf/Void runtime harness accepts the exact sealed Void artifact and preserves disposable secrets, outbound interception, denied provider auth, no rebuild, no publication and all owner/host/session assertions."
+    },
     "void-wave1-publication": {
       "reason": "Void deploy always rebuilds and provisions (--skip-build is static-only in Void 1.1.12 and 1.2.1), so Wave 1 Start + Void apps publish the exact Void-emitted config with Wrangler.",
       "owner": "Wave 1 native Start + Void lane",
@@ -667,6 +672,46 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "bf3f28a750c92bb8c300492836fa2eff1e326b561e156a39a00ba5f68d6cef44"
+    },
+    "apps/mastermind/.gitignore": {
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7301",
+        "reason": "ADMITTED GAP: retain the .wrangler/ cache ignore for the isolated Void runtime toolchain; this is a filesystem exclusion, not a CLI invocation. Remove when the retained runtime no longer produces this cache."
+      },
+      "lines": 1,
+      "uses": 1,
+      "digest": "fb576a0a285ec483f842c79f48d22e695b41ec7df3f3f3afc9ab5e01b846a24d"
+    },
+    "apps/mastermind/cloudflare/native-built-worker.acceptance.mjs": {
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7301",
+        "reason": "ADMITTED GAP: require(wrangler).unstable_startWorker runs the exact sealed Void-emitted config with bundle/processEntrypoint disabled, disposable bindings, outbound JWKS interception and provider auth denied. The cf/Vite harness requires native cf Build Output and lacks this Void-config fixture contract. No build or publication is admitted."
+      },
+      "lines": 1,
+      "uses": 1,
+      "digest": "e139bd3b3961b60527b5aa98419fb40cde9679450f4c651769242014bfec1e29"
+    },
+    "apps/mastermind/package.json": {
+      "gap": "void-emitted-runtime",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7301",
+        "reason": "ADMITTED GAP: the pinned Wrangler devDependency supplies unstable_startWorker for the sealed Void runtime acceptance fixture. cf/Vite has no qualified runner for that emitted config with these isolation controls; remove this dependency with the fixture migration."
+      },
+      "lines": 1,
+      "uses": 1,
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
+    "apps/mastermind/src/native/auth.test.ts": {
+      "gap": "shared-toolchain",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7301",
+        "reason": "ADMITTED GAP: exclude the retained .wrangler cache directory from the source admission audit, alongside node_modules, dist and .void. This is a filesystem classification reference, not a CLI invocation; retain until the runtime cache is retired."
+      },
+      "lines": 1,
+      "uses": 1,
+      "digest": "f76a81cfbf9dc5b3a63eff7e9bb26b5f312d7349e7cc5fd898f1c4d49ab4cd1d"
     },
     "apps/meet-realtime/.gitignore": {
       "lines": 1,
@@ -1434,7 +1479,7 @@
       "gap": "void-wave1-publication",
       "admitted": {
         "decision": "https://github.com/tutur3u/platform/pull/6859",
-        "reason": "Calendar artifact fixtures reuse caller-owned pointer/config paths instead of adding usage in a new helper. Update only this test’s lowered token counts and digest; negative controls, sealed output and source binding are retained."
+        "reason": "Calendar artifact fixtures reuse caller-owned pointer/config paths instead of adding usage in a new helper. Update only this test\u2019s lowered token counts and digest; negative controls, sealed output and source binding are retained."
       },
       "digest": "f19a7422576c029e735df74b8aa26912501b364cb855ec8972ab6ffe11c210bb"
     },
@@ -1541,12 +1586,22 @@
     "scripts/ci/cf-worker-settings-dashboard.mjs": {
       "gap": "deployment-source-compatibility",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/7300",
-        "reason": "ADMITTED GAP: #7300 validates Worker settings/deployment snapshot provenance. Historical last_deployed_from=wrangler must remain accepted alongside cf; cf cannot rename that API response value. This is compatibility validation, not a CLI invocation."
+        "decision": "https://github.com/tutur3u/platform/pull/7308",
+        "reason": "ADMITTED GAP: #7308 validates Worker settings/deployment snapshot provenance. Historical last_deployed_from=wrangler stays accepted alongside cf and cf_cli (the value the API reports for cf CLI deploys); cf cannot rename that API response value. Compatibility validation, not a CLI invocation."
       },
       "lines": 1,
       "uses": 1,
-      "digest": "d6fe65a472876f91490f3648ef12703578b206db062e9f960f79026ea707966b"
+      "digest": "66cc4a9bafec14c89b4c64c6e5b9214c3d6a112ead6a33e7bb72d1a4ff4f72f6"
+    },
+    "scripts/ci/cf-worker-settings.test.mjs": {
+      "gap": "deployment-source-compatibility",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7308",
+        "reason": "ADMITTED GAP: #7308 keeps one strict after-check fixture with the historical last_deployed_from=wrangler API value so legacy deployment provenance stays covered alongside cf and cf_cli. Fixture data, not a CLI invocation."
+      },
+      "lines": 1,
+      "uses": 1,
+      "digest": "be195bf411095de969efbffe0dc40582019771f190d139fea2f690cce44dfc81"
     },
     "scripts/ci/cf-wrangler-publication.mjs": {
       "gap": "do-publication-rehearsal",
@@ -2088,13 +2143,13 @@
       },
       "digest": "636e3d58aed2915baf22884c8958aac4ed5c43e3f5be9e4a52e441c150f53e5c"
     },
-    "scripts/ci/wave1-native-publication.test.js": {
+    "scripts/ci/wave1-native-publication-harness.cjs": {
       "lines": 2,
       "uses": 2,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6485",
-        "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
+        "decision": "https://github.com/tutur3u/platform/pull/7320",
+        "reason": "Moved unchanged from wave1-native-publication.test.js (admitted in #6485): the shared harness asserts the publisher's single `wrangler deploy` of the sealed Void config and reads its WRANGLER_OUTPUT_FILE_PATH receipt. cf cannot publish that artifact (Void emits no cf Build Output). Remove with the gap: when the wave-1 publisher moves to `cf deploy --prebuilt`, these fixture assertions move with it."
       },
       "digest": "337188d6eb8a642ffba63d4c5903066f6a151b1155140045d7f0c235df8500d3"
     },
@@ -2137,6 +2192,26 @@
         "reason": "REV-6485-1..7: reviewed token/digest scanner, explicit settings, and fixture harness corrections."
       },
       "digest": "5ce11fab75df1f5880c6fc88e29b795d31719025350fb56f46e023691532732f"
+    },
+    "scripts/ci/wave1-web-seal.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7323",
+        "reason": "One path literal, no CLI: after restoring the sealed archive the restored job recreates Void's emitted deploy pointer (.wrangler/deploy/config.json), the location the admitted wave1-native-artifact and apps-native-runtime-pointer readers require, so the emitted workerd suite can re-run on the same bytes. Remove when Void emits a cf Build Output and the wave-1 seal and readers stop reading the Void/Wrangler pointer."
+      },
+      "digest": "6e8c3daf68e1f6625b85a7b64999dca62510a364ff8019234f65b53085a7c478"
+    },
+    "scripts/ci/wave1-web-seal.test.mjs": {
+      "lines": 4,
+      "uses": 4,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7323",
+        "reason": "Four fixture path literals, no CLI: the seal regression reads the sealed publication config the admitted wave1-native-artifact writes (dist/wave1/wrangler.json), tampers it, and checks the recreated Void pointer and its Void-emitted server/wrangler.json target. Remove with wave1-web-seal.mjs's entry, when the wave-1 seal publishes a cf Build Output instead of a Void-emitted Wrangler config."
+      },
+      "digest": "a4a353fa3c894f530726d9581cda208933d0ef09a4753282f43934c4437cade3"
     },
     "scripts/generate-docs-inventory.js": {
       "lines": 1,

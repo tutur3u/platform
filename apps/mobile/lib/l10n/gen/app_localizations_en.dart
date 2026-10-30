@@ -13841,6 +13841,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindTimeSpokenNow => 'just now';
 
   @override
+  String get mastermindQuotaUnreadable => 'Out of service / unreadable';
+
+  @override
   String get mastermindUnavailable => 'Unavailable';
 
   @override

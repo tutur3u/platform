@@ -13689,6 +13689,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindTimeSpokenNow => 'vừa xong';
 
   @override
+  String get mastermindQuotaUnreadable => 'Ngừng hoạt động / không đọc được';
+
+  @override
   String get mastermindUnavailable => 'Không khả dụng';
 
   @override

@@ -3,7 +3,19 @@ import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/models/workspace_management.dart';
+import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+
+/// Role and default-permission payload. Explicit grants are dropped whatever
+/// their value: only the audited root procedure may grant them.
+List<Map<String, Object>> workspaceRolePermissionPayload(
+  Map<String, bool> permissions,
+) {
+  return permissions.entries
+      .where((entry) => !explicitGrantPermissions.contains(entry.key))
+      .map((entry) => {'id': entry.key, 'enabled': entry.value})
+      .toList(growable: false);
+}
 
 class WorkspaceManagementRepository {
   WorkspaceManagementRepository({ApiClient? apiClient})
@@ -149,9 +161,7 @@ class WorkspaceManagementRepository {
     final path = WorkspaceSettingsEndpoints.roles(wsId);
     final payload = {
       'name': name,
-      'permissions': permissions.entries
-          .map((entry) => {'id': entry.key, 'enabled': entry.value})
-          .toList(growable: false),
+      'permissions': workspaceRolePermissionPayload(permissions),
     };
     await queueOrSendVoid(
       feature: 'workspace-management',
@@ -174,9 +184,7 @@ class WorkspaceManagementRepository {
     final path = WorkspaceSettingsEndpoints.role(wsId, roleId);
     final payload = {
       'name': name,
-      'permissions': permissions.entries
-          .map((entry) => {'id': entry.key, 'enabled': entry.value})
-          .toList(growable: false),
+      'permissions': workspaceRolePermissionPayload(permissions),
     };
     await queueOrSendVoid(
       feature: 'workspace-management',
@@ -197,9 +205,7 @@ class WorkspaceManagementRepository {
   }) async {
     final path = WorkspaceSettingsEndpoints.defaultRole(wsId);
     final payload = {
-      'permissions': permissions.entries
-          .map((entry) => {'id': entry.key, 'enabled': entry.value})
-          .toList(growable: false),
+      'permissions': workspaceRolePermissionPayload(permissions),
     };
     await queueOrSendVoid(
       feature: 'workspace-management',

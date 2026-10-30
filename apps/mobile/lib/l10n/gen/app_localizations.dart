@@ -25873,6 +25873,12 @@ abstract class AppLocalizations {
   /// **'just now'**
   String get mastermindTimeSpokenNow;
 
+  /// No description provided for @mastermindQuotaUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of service / unreadable'**
+  String get mastermindQuotaUnreadable;
+
   /// No description provided for @mastermindUnavailable.
   ///
   /// In en, this message translates to:
