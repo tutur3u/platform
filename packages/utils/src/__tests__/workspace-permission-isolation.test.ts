@@ -96,7 +96,7 @@ function fixture({ creator = false, guest = false } = {}) {
       case 'workspace_default_permissions':
         return defaults;
       default:
-        throw new Error('Unexpected table: ' + table);
+        throw new Error(`Unexpected table: ${table}`);
     }
   });
   const client = {
@@ -115,7 +115,7 @@ describe('workspace role permission isolation across getPermissions callers', ()
 
   for (const caller of ['provided-user', 'cookie', 'request'] as const) {
     for (const wsId of [workspaceId, 'personal']) {
-      it(caller + ' rejects foreign permission rows for ' + wsId, async () => {
+      it(`${caller} rejects foreign permission rows for ${wsId}`, async () => {
         fixture();
         const result = await getPermissions({
           wsId,
