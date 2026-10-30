@@ -1061,3 +1061,22 @@ not imply room or contractual availability. Regression coverage lives in
 tutoring `shared.test.ts`, `apps/web/src/lib/tutoring/teacher-assignment-routes.test.ts`,
 `packages/internal-api/src/tutoring-draft-plan.test.ts`, `export/route.payroll.test.ts` and the Contacts
 `use-tutoring-create.test.ts`.
+
+### Teacher công report
+
+Contacts tutoring includes a teacher công tab with a calendar-month default,
+previous-month and week presets, and inclusive custom dates. Schedule filters
+also accept previous month and custom dates. The report and payroll downloads
+share `calculateTutoringPayroll` in internal-api. Only DONE sessions pay;
+45 minutes equals one công, retaining fractions. The existing teacher/date/start
+minute/duration key remains unchanged: overlapping starts or different durations
+remain distinct, and unassigned rows remain independent. No-show and cancelled
+sessions pay zero. Past PENDING learner sessions are shown without pay.
+
+All-teacher payroll reports and downloads require `view_payroll` (including its
+existing admin implication). A member with only `view_user_groups` can read only
+their linked teacher row, enforced before session loading. Missing links deny
+access. Detailed session exports retain their existing staff permission.
+Numbers display two decimals; spreadsheet totals retain full precision.
+Regression coverage: export `route.payroll.test.ts`, `route.access.test.ts`,
+and Contacts `tutoring-filters.test.ts`.

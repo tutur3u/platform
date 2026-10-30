@@ -1435,3 +1435,12 @@ The export and crawler denial matrix is covered by
 `apps/web/src/lib/staff-session.test.ts` and `staff-exact-domain.test.ts`.
 When a role gate is added to an identity-policy test, mock its permission boundary
 and assert denied identities never call it; keep role-reader coverage separate.
+
+### Tutoring payroll
+
+Report and payroll export totals share internal-api's pure
+`calculateTutoringPayroll`. Preserve the duration-bearing slot key until a
+product decision changes it. Apply `view_payroll` or a verified actor-to-workspace
+teacher link before reading sessions with the admin client. Never trust a client
+teacher filter as authorization. See the tutoring feature page and export route
+permission/parity regressions.

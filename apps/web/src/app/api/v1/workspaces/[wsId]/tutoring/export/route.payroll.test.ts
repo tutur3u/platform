@@ -188,3 +188,36 @@ describe('tutoring payroll for shared slots', () => {
     ]);
   });
 });
+
+it('report and export have identical totals for the same fixtures', async () => {
+  sessionRows = [
+    session('1', 'a'),
+    session('2', 'b'),
+    session('3', 'c', { duration_minutes: 60 }),
+    session('4', 'd', { attendance_status: 'NO_SHOW' }),
+  ];
+  const exported = await payroll();
+  const { GET } = await import('./route');
+  const response = await GET(
+    new Request(
+      'http://localhost/export?mode=report&fromDate=2026-11-01&toDate=2026-11-30'
+    ),
+    { params: Promise.resolve({ wsId }) }
+  );
+  const report = (await response!.json()).data;
+  expect(
+    report.map(
+      ({
+        teacher_name,
+        completed_sessions,
+        total_minutes,
+        total_cong,
+      }: {
+        teacher_name: string;
+        completed_sessions: number;
+        total_minutes: number;
+        total_cong: number;
+      }) => ({ teacher_name, completed_sessions, total_minutes, total_cong })
+    )
+  ).toEqual(exported);
+});
