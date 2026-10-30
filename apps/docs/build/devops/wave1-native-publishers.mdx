@@ -645,7 +645,7 @@ Exact-commit CI and hosted provider acceptance remain separate gates.
 ### Staging cookie isolation (SR-846)
 
 All app staging hosts use `<app>.staging.tutur3u.com`. Web staging uses
-`staging.tutur3u.com`. Preview and canary hosts must also stay outside the
+`web.staging.tutur3u.com`. Preview and canary hosts must also stay outside the
 production cookie zone. Production hosts are unchanged.
 
 Staging sets `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com`

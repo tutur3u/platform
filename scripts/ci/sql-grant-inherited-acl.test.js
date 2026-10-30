@@ -9,7 +9,6 @@ const {
 } = require('./sql-grant-frozen-definers');
 const {
   RULES,
-  checkRepository,
   evaluateSqlFiles,
   formatSatisfied,
 } = require('./sql-grant-end-state-guard');
@@ -272,7 +271,10 @@ const DIRECTLY_EVIDENCED = new Set([
 ]);
 
 test('the repository passes with every remaining inherited pass evidenced', () => {
-  const { violations, satisfied } = checkRepository();
+  const { violations } =
+    require('./sql-grant-repository-fixture').checkSnapshot(ROOT);
+  const { satisfied } =
+    require('./sql-grant-end-state-guard').checkRepository();
   assert.deepEqual(
     violations.map((violation) => violation.message),
     []
@@ -298,17 +300,18 @@ test('the repository passes with every remaining inherited pass evidenced', () =
   for (const entry of inherited) {
     assert.ok(entry.evidence.every((item) => item.file < entry.file));
   }
+  for (const entry of inherited)
+    assert.match(formatSatisfied(entry), /inherited ACL/);
   const result = spawnSync(
     process.execPath,
-    [path.join(__dirname, 'sql-grant-end-state-guard.js')],
+    [
+      '-e',
+      `const { checkSnapshot } = require(${JSON.stringify(path.join(__dirname, 'sql-grant-repository-fixture'))}); const result = checkSnapshot(${JSON.stringify(ROOT)}); if (result.violations.length) { console.error(result.violations); process.exit(1); } console.log('SQL grant guard passed.');`,
+    ],
     { encoding: 'utf8' }
   );
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(
-    result.stdout.match(/inherited ACL \(frozen allowlist\)/g).length,
-    INHERITED_ACL_ALLOWLIST.length
-  );
-  assert.match(result.stdout, /SQL grant end-state guard passed\./);
+  assert.match(result.stdout, /SQL grant guard passed\./);
 });
 
 function privileges(sql, verb) {

@@ -284,7 +284,7 @@ test('the consolidated branch check executes the existing policy with branch nam
   }
 });
 
-test('Security Checks bytes match the pinned PR base 30a396356e534edafac76ef917d6a55cb26d1d8e', () => {
+test('Security Checks bytes match the reviewed definer-guard workflow', () => {
   const { createHash } = require('node:crypto');
   const { readFileSync } = require('node:fs');
   const bytes = readFileSync(
@@ -292,7 +292,7 @@ test('Security Checks bytes match the pinned PR base 30a396356e534edafac76ef917d
   );
   assert.equal(
     createHash('sha256').update(bytes).digest('hex'),
-    'e40cc4481e16dba35251cbe90be820e8368639a230cdcb521e654fa8a34e6234'
+    'c11029e2113f4cc40ce6119a35f0addb6fec2ca93c0435be379a2a19b916a0e6'
   );
 });
 

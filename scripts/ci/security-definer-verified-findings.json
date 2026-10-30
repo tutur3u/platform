@@ -1,5 +1,115 @@
 [
   {
+    "file": "apps/database/supabase/migrations/20261029030700_finance_workspace_scoping.sql",
+    "line": 3,
+    "sourceDigest": "9e42ece288d78db3626ed2d44a4966a9460177d1cedeab45fe90e345e02666ce",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "614b4f0a27deac5e7137ab8d17137852d1c1b85e6d7b58b1821e4b97def6a61a",
+    "classification": "verified false positive",
+    "effectiveRoles": ["authenticated", "service_role"],
+    "reason": "Dynamic SELECT/COUNT uses bound caller parameters; ORDER BY text comes only from whitelisted columns and directions. No routine ACL mutation."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029030700_finance_workspace_scoping.sql",
+    "line": 3,
+    "sourceDigest": "9e42ece288d78db3626ed2d44a4966a9460177d1cedeab45fe90e345e02666ce",
+    "rule": "public-execute",
+    "signature": "public.get_wallet_transactions_with_permissions(uuid,uuid,uuid [ ],uuid [ ],uuid [ ],uuid [ ],uuid [ ],text,text,timestamp with time zone,timestamp with time zone,text,text,int4,int4,timestamp with time zone,timestamp with time zone,bool,timestamp with time zone)",
+    "digest": "7ede1abc0bf872d83df1ca6a101984e38c6751262b30faf70af49690520cbd1c",
+    "classification": "verified false positive",
+    "effectiveRoles": ["authenticated", "service_role"],
+    "reason": "Unqualified REVOKE at line 300 resolves to public during migrations and exactly matches the replaced 19-argument signature; authenticated retains its required existing grant."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029040800_finance_workspace_boundaries.sql",
+    "line": 184,
+    "sourceDigest": "31973f08b14236f3ec1befe03897ff7787b40486d66848c7a1af8ccd499792c1",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "bda6640f22e39d588b637844184e8d5d69def07221cf4c769cb22faff457aca6",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "Hardening loop reads oid::regprocedure from pg_proc for three named public routines, revokes PUBLIC/anon/authenticated, and grants only service_role; no caller input."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029050200_topic_teacher_deadline_notices.sql",
+    "line": 29,
+    "sourceDigest": "b2483b6b59589199115abfbe6550053570f7a2543498414dbe2689873c1d58cb",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "9e6f5301ecd66ecf036ee802e4d856dabb9bd0deaf03952a2dded70b3c30674e",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "DO block rebuilds notifications_type_check from existing values plus a fixed list; dynamic DDL with no GRANT/REVOKE/ACL change."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029050430_merge_batch_null_guards.sql",
+    "line": 9,
+    "sourceDigest": "a08dd7028596a671c64ca49c21cca330390023c571cb0dc6fd9e0df8bca726d7",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "1aaa523bb23d0441ab56ac994cb4c3e102e0a5aaad0fb0997a57e64ee2f75cec",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "public.merge_workspace_users_batch_update refuses any (table, column) outside the fixed phase-1a..1d VALUES allowlist before dynamic EXECUTE; the dynamic SQL updates rows only and never touches ACLs; same-file REVOKE ALL FROM PUBLIC, anon, authenticated (:116) and service_role-only EXECUTE (:118)."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029050430_merge_batch_null_guards.sql",
+    "line": 120,
+    "sourceDigest": "a08dd7028596a671c64ca49c21cca330390023c571cb0dc6fd9e0df8bca726d7",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "e145921d61dd5afba43ba016983021cde58eb33cd91716aab956f95208b3eeb7",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "public.merge_workspace_users_table_batch refuses any (table, column) outside the fixed phase-1a..1d VALUES allowlist before dynamic EXECUTE; the dynamic SQL updates rows only and never touches ACLs; same-file REVOKE ALL FROM PUBLIC, anon, authenticated (:262) and service_role-only EXECUTE (:264)."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261029030500_align_cross_app_token_grant_and_private_fence.sql",
+    "line": 9,
+    "sourceDigest": "c5e60836296239e4cc6d3c75dbc799b6656465de5e55322fff9724caa69f72a2",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "214967bb681dd2755b95e7eab3185efa486c6f16740b9bcfdbefad7d868028bc",
+    "classification": "verified false positive",
+    "effectiveRoles": [],
+    "reason": "030500 dynamic default-privilege DO block, reviewed in #7234 (SR-331 fence); revoke-only, no GRANT."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261030041500_pin_merge_batch_helper_search_path.sql",
+    "line": 31,
+    "sourceDigest": "0bdbeb72ed942f266231c3c027087dd2e574659a15a6f730f86101db5c0c7cd4",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "dbb4ff89a07ae34d402e621bf09f3d9ebb3b6cf698c0ad16ef830c9946d6cd6f",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "SR-108 merge helper; dynamic row update with %I.%I identifiers from a fixed allowlist; service_role-only; reviewed in #7282 6965a5e5."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261030041500_pin_merge_batch_helper_search_path.sql",
+    "line": 149,
+    "sourceDigest": "0bdbeb72ed942f266231c3c027087dd2e574659a15a6f730f86101db5c0c7cd4",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "80b69522710f0b8e018671df3b800431ee296dbbd58eaf28c978dd84cc5fa1ae",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "SR-108 merge helper; dynamic row update with %I.%I identifiers from a fixed allowlist; service_role-only; reviewed in #7282 6965a5e5."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261030051010_tutoring_automation_notifications.sql",
+    "line": 19,
+    "sourceDigest": "a548c18f8e3f13a5bf14c737cc155205bc306294fa0f883a3109bad8440141e0",
+    "rule": "dynamic-execute-acl",
+    "signature": "<dynamic-execute-acl>",
+    "digest": "a29adb0fb54d30a1d7ccc6e3073cb30abd67e1c0e9dab36f98e0e45b61f71e9f",
+    "classification": "verified false positive",
+    "effectiveRoles": ["service_role"],
+    "reason": "Static DO block rebuilding public.notifications_type_check; the only interpolated values are two fixed literals and type names read from the constraint's own pg_get_constraintdef, each passed through quote_literal; no GRANT, REVOKE, owner or ACL change; same shape as 20261029050200:29 (Tess, 30 Oct)."
+  },
+  {
     "file": "apps/database/supabase/migrations/20261030113002_consolidate_workspace_permission.sql",
     "signature": "public.is_org_member(uuid,uuid)",
     "rule": "public-execute",

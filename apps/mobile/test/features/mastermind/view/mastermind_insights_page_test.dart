@@ -121,7 +121,7 @@ void main() {
     testWidgets('an unread window shows a dash, never zero', (tester) async {
       await pumpInsights(tester, _usage);
       expect(find.text('—'), findsOneWidget);
-      expect(find.text('Not published yet'), findsOneWidget);
+      expect(find.text('Out of service / unreadable'), findsWidgets);
       expect(find.text('0%'), findsNothing);
       expect(find.text('Session left'), findsNWidgets(4));
       expect(find.text('Weekly left'), findsNWidgets(4));
@@ -176,7 +176,9 @@ void main() {
   });
 
   group('quota and forecasts', () {
-    testWidgets('least left first, unknown last, as of an age', (tester) async {
+    testWidgets('unreadable first, then least left, as of an age', (
+      tester,
+    ) async {
       await pumpInsights(tester, _usage);
       expect(find.text('as of 5 min ago'), findsOneWidget);
       expect(find.text('Unknown account'), findsOneWidget);
@@ -187,7 +189,7 @@ void main() {
           .where((y) => y > base)
           .reduce((a, b) => a < b ? a : b);
       expect(rowTop('Claude pool B'), lessThan(rowTop('Claude pool A')));
-      expect(rowTop('Claude pool A'), lessThan(rowTop('Unknown account')));
+      expect(rowTop('Unknown account'), lessThan(rowTop('Claude pool B')));
     });
 
     testWidgets('forecasts: soonest empty first, then not projected', (

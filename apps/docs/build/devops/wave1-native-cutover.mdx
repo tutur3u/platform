@@ -90,11 +90,20 @@ frontend and realtime versions. Calendar/Mail/Apps use the
 
 ### Calendar route and certificate continuity
 
-Calendar temporarily admits exactly `calendar-cutover.staging.tutur3u.com` alongside
-its canonical and staging root hosts. Unknown hosts remain rejected and one-origin
-mounts stay disabled. Remove this temporary host in an immediate follow-up commit
-or PR after the canonical flip is accepted; include that removal in the review
-brief. Attach the temporary domain only after the private publisher succeeds.
+Calendar admits exactly two root hosts: canonical `calendar.tuturuuu.com` and
+staging `calendar.staging.tutur3u.com`. Unknown hosts remain rejected and one-origin
+mounts stay disabled. The temporary production-smoke host
+`calendar-cutover.staging.tutur3u.com` is retired now that the canonical flip is
+accepted. `rootHosts` is shared source compiled into **both** the staging and the
+production artifact, so a temporary host can never be proved to bind only the
+production Worker; it must not outlive its smoke window. The former
+`calendar-staging.tuturuuu.com` and `calendar-cutover.tuturuuu.com` names stay
+reserved from managed projects and are rejected by the Calendar host boundary.
+A future app's production smoke host follows the same rule: admit it in its
+cutover PR, attach it only after the private publisher succeeds, detach its domain
+before the canonical switch, and remove it from `rootHosts` in an immediate
+follow-up after acceptance. Detach any `calendar-cutover.staging.tutur3u.com`
+Custom Domain or DNS record that remains on the `tutur3u.com` zone.
 
 Export the full zone and Vercel fallback before writes. Proxy only Calendar's
 existing CNAME, retaining its Vercel target. Verify HTTPS, legacy smoke, redirects,
@@ -143,7 +152,8 @@ requests end to end with uncached Vercel identity and no native Worker execution
 The production publisher filters attachments by `script === name`, so this
 scriptless exclusion does not attach the Worker or prevent its private upload.
 Regression coverage includes `calendar-routes.test.mjs`, `capture.test.mjs`, the
-cutover-host ACME negative case in `root-cutover.test.ts`, and the publisher's
+canonical-host ACME negative case and retired-host rejections in
+`root-cutover.test.ts`, and the publisher's
 scriptless-topology control. A currently valid certificate alone does not prove
 future renewal safety.
 
@@ -153,6 +163,57 @@ Reverting Worker code does not restore routing. Restore exact captured Route/Cus
 Domain and DNS/proxy topology before disabling a candidate. Never replay uncertain
 Mail sends or change ingestion/R2 ownership as a frontend rollback. Rehearse recovery;
 DNS TTLs and provider convergence prevent assuming instantaneous rollback.
+
+## Staging issuer and Calendar G3 canary
+
+G3 (central staging login handoff) runs first on Calendar: it is native in
+production and frontend-only. Source is ready for the Calendar side only. The
+staging profile publishes `tuturuuu-calendar-wave1-staging` for
+`calendar.staging.tutur3u.com` with `NEXT_PUBLIC_WEB_APP_URL=https://web.staging.tutur3u.com`
+and the `.staging.tutur3u.com` shared cookie domain. Nothing is under
+`tuturuuu.com`, and `node scripts/check-staging-hosts.js` enforces that.
+
+These decisions are **open** and block hosted G3:
+
+1. **Public staging ingress.** The wave-1 staging publisher is private by design:
+   `routes=[]`, and the [serving-cost rule](/build/devops/wave1-native-publishers#serving-cost-and-emergency-stop)
+   forbids Custom Domains on staging identities. To serve `calendar.staging.tutur3u.com`,
+   the release owner must approve an ingress plan, for example an Access-protected
+   Custom Domain, plus its durable serving stop fence.
+2. **Issuer hosting.** No existing gated workflow publishes Web to staging.
+   `web-start-candidate.yaml` qualifies but never publishes, and the candidate
+   Worker needs an immutable staging Next fallback that does not exist yet.
+3. **Issuer hostname.** Wave-1 profiles and the release-flow guide name
+   `web.staging.tutur3u.com`. The hosted-staging profiles
+   (`scripts/wave1-staging/profiles.ts`), the Contacts suite and the Web candidate
+   guide still name `staging.tutur3u.com` as the central issuer.
+4. **Staging Supabase Auth.** Decide which login paths staging supports, and so
+   which Site URL, redirect allow-list and OAuth callbacks the issuer needs.
+
+After those decisions, the release owner performs the external steps. Agents and
+this repository perform none of them:
+
+- **Calendar Worker:** complete the [one-time owner provisioning](/build/devops/wave1-native-publishers#one-time-owner-provisioning)
+  for `wave1-calendar-staging`. Provision secret names from the profile's `secrets`
+  list. Register the staging Google and Microsoft OAuth callbacks
+  `https://calendar.staging.tutur3u.com/api/v1/calendar/auth/callback` and
+  `.../api/v1/calendar/auth/microsoft/callback`. Then set the exact admission and
+  `WAVE1_STAGING_PUBLISH_ENABLED=true`.
+- **DNS on `tutur3u.com`:** create only the approved records for
+  `calendar.staging.tutur3u.com` and the issuer host. Do not create wildcards or
+  third-party-claimable CNAMEs, because staging CORS trusts every
+  `*.staging.tutur3u.com` name. Remove any `calendar-cutover.staging.tutur3u.com`
+  record or Custom Domain.
+- **Issuer runtime:** set `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com`,
+  `NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS` with `platform:` (the issuer origin)
+  and `calendar:https://calendar.staging.tutur3u.com`, and the staging Supabase URL,
+  publishable key and `SUPABASE_SECRET_KEY`. Production keys never go here.
+  Allow the issuer host in staging Turnstile.
+- **Access:** apply the approved Access policy to both hosts before the first
+  publication.
+
+Rollback deletes only the staging Workers, Custom Domains and records. Production
+is untouched.
 
 ## Subdomain cutover tools
 
