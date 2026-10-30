@@ -31,19 +31,92 @@ test('an SQL string body cannot pretend to be a search_path option', () => {
     lintMigration(sql).some((entry) => entry.rule === 'missing-search-path')
   );
 });
+const expectedVerifiedIdentities = [
+  [
+    'apps/database/supabase/migrations/20261029030500_align_cross_app_token_grant_and_private_fence.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
+  [
+    'apps/database/supabase/migrations/20261029030700_finance_workspace_scoping.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
+  [
+    'apps/database/supabase/migrations/20261029030700_finance_workspace_scoping.sql',
+    'public.get_wallet_transactions_with_permissions(uuid,uuid,uuid [ ],uuid [ ],uuid [ ],uuid [ ],uuid [ ],text,text,timestamp with time zone,timestamp with time zone,text,text,int4,int4,timestamp with time zone,timestamp with time zone,bool,timestamp with time zone)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261029040800_finance_workspace_boundaries.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
+  [
+    'apps/database/supabase/migrations/20261029050200_topic_teacher_deadline_notices.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
+  [
+    'apps/database/supabase/migrations/20261029050430_merge_batch_null_guards.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
+  [
+    'apps/database/supabase/migrations/20261029050430_merge_batch_null_guards.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
+  [
+    'apps/database/supabase/migrations/20261030041500_pin_merge_batch_helper_search_path.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
+  [
+    'apps/database/supabase/migrations/20261030041500_pin_merge_batch_helper_search_path.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
+  [
+    'apps/database/supabase/migrations/20261030051010_tutoring_automation_notifications.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
+  [
+    'apps/database/supabase/migrations/20261030113002_consolidate_workspace_permission.sql',
+    'public.has_workspace_permission(uuid,uuid,text)',
+    'public-execute',
+  ],
+  [
+    'apps/database/supabase/migrations/20261030113002_consolidate_workspace_permission.sql',
+    'public.is_org_member(uuid,uuid)',
+    'public-execute',
+  ],
+];
+const identity = ({ file, signature, rule }) => [file, signature, rule];
+const sortedIdentities = (entries) =>
+  entries
+    .map(identity)
+    .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+
 test('verified findings remain separate from the historical debt inventory', () => {
   const historical = require('./security-definer-historical-blocks.json');
-  assert.equal(verified.length, 10);
+  assert.deepEqual(sortedIdentities(verified), expectedVerifiedIdentities);
   for (const entry of verified) {
     assert.equal(entry.classification, 'verified false positive');
     assert.ok(!historical.some((old) => old.file === entry.file));
     assert.deepEqual(
       entry.effectiveRoles,
-      entry.file.includes('030700')
-        ? ['authenticated', 'service_role']
-        : entry.file.includes('030500')
-          ? []
-          : ['service_role']
+      [
+        'public.is_org_member(uuid,uuid)',
+        'public.has_workspace_permission(uuid,uuid,text)',
+      ].includes(entry.signature)
+        ? ['PUBLIC', 'anon', 'authenticated', 'service_role']
+        : entry.file.includes('030700')
+          ? ['authenticated', 'service_role']
+          : entry.file.includes('030500')
+            ? []
+            : ['service_role']
     );
     assert.throws(
       () =>
@@ -75,7 +148,7 @@ test('each reviewed finance finding binds file, line, rule and all source bytes'
       verifiedFindings,
     });
   assert.deepEqual(run(), []);
-  assert.equal(run([]).length, 10);
+  assert.deepEqual(sortedIdentities(run([])), expectedVerifiedIdentities);
   for (const entry of verified) {
     for (const changed of [
       { ...entry, file: 'copied.sql' },
@@ -92,7 +165,7 @@ test('each reviewed finance finding binds file, line, rule and all source bytes'
   }
   for (const file of files)
     fs.appendFileSync(path.join(root, file), '\n-- changed source\n');
-  assert.equal(run().length, 14);
+  assert.equal(run().length, expectedVerifiedIdentities.length + 4);
 });
 
 test('each SR-843 finding is covered by exactly one mechanism', (t) => {

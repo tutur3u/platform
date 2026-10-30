@@ -142,4 +142,14 @@ module.exports = [
     reason:
       'ALTER … SET search_path = pg_catalog, pg_temp; security-reviewed in #7281 be1dda26',
   },
+  {
+    path: 'apps/database/rollbacks/20261030113003_workspace_storage_limit_execute.rollback.sql',
+    line: 2,
+    rule: 'rollback-safety',
+    fileDigest:
+      'b9c954fe54378e9d6699ec0a7183c0773545abb6aef26a3dfd32ec08e25d1b4a',
+    digest: 'b9c954fe54378e9d6699ec0a7183c0773545abb6aef26a3dfd32ec08e25d1b4a',
+    reason:
+      'Paired restore of the pre-migration anon EXECUTE ACL for the storage limit RPC. Forward access is authenticated/service-role only.',
+  },
 ];
