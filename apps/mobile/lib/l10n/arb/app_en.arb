@@ -6440,6 +6440,7 @@
   "mastermindTimeSpokenHours": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
   "mastermindTimeSpokenMinutes": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
   "mastermindTimeSpokenNow": "just now",
+  "mastermindQuotaUnreadable": "Out of service / unreadable",
   "mastermindUnavailable": "Unavailable",
   "mastermindUnitCredits": "{value} credits",
   "mastermindUnitCreditsPerDay": "{value} credits/day",

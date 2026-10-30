@@ -890,3 +890,13 @@ Full detail continues to show canonical ask text and choices.
 Regression coverage: `view/decision_cards_test.dart` (English/Vietnamese,
 320px, text scale 2.0, short-copy fallback, recommendation, canonical indices,
 Undo and delayed send) plus the existing reply cubit and Inbox/Home suites.
+
+### Unreadable quota pools
+
+On mobile Insights, a null pool percentage displays “Out of service / unreadable”
+in the quota table, percentage chart summaries, and session/weekly rows. Null
+quota rows sort before numeric readings so they remain visible in the initial
+five rows. Missing chart series retain their window-not-reported description.
+Numeric readings, including a measured zero, retain their existing meaning.
+Regression coverage lives in `mastermind_insights_compact_test.dart` and
+`ship_usage_model_test.dart`; snapshot parsing preserves null quota rows.
