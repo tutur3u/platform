@@ -87,20 +87,71 @@ const credentials = (api) => ({
 });
 
 test('cron-control records a reviewed transition from the live identity', () => {
-  assert.match(plan.transition.decision, /^CRON-HISTORY-RETENTION:/);
+  assert.match(plan.transition.decision, /^CRON-WEB-MODE-1:/);
   assert.deepEqual(plan.transition.fields, ['vars']);
-  assert.deepEqual(plan.previous, {
-    ...plan.target,
-    vars: { ...plan.target.vars, CRON_CONTROL_ENABLED_JOBS: '' },
-  });
+  const { CRON_CONTROL_WEB_MODE: webMode, ...liveVars } = plan.target.vars;
+  assert.equal(webMode, 'off');
+  assert.deepEqual(plan.previous, { ...plan.target, vars: liveVars });
   assert.equal(plan.target.crons.length, 9);
   assert.deepEqual(plan.target.durableObjectClasses, { CronLedger: 'sqlite' });
   assert.equal(
     plan.target.vars.CRON_CONTROL_ENABLED_JOBS,
     'database-cron-history-retention'
   );
+  assert.equal(
+    plan.previous.vars.CRON_CONTROL_ENABLED_JOBS,
+    'database-cron-history-retention'
+  );
   assert.equal(plan.target.vars.CRON_CONTROL_WORKER_PROCESSORS, '');
+  assert.equal(plan.previous.vars.CRON_CONTROL_WORKER_PROCESSORS, '');
 });
+
+test('the live Worker without CRON_CONTROL_WEB_MODE passes the before check', async () => {
+  const snapshot = await captureBefore({
+    plan,
+    ...credentials(liveWorker(plan.previous)),
+  });
+  assert.equal(snapshot.stage, 'previous');
+  assert.equal(snapshot.transition, plan.transition.decision);
+  assert.ok(
+    !bindingsFor(plan.previous).some(
+      (binding) => binding.name === 'CRON_CONTROL_WEB_MODE'
+    )
+  );
+});
+
+for (const mode of ['active', 'shadow', '']) {
+  test(`a live CRON_CONTROL_WEB_MODE of '${mode}' fails the before check`, async () => {
+    const live = {
+      ...plan.previous,
+      vars: { ...plan.previous.vars, CRON_CONTROL_WEB_MODE: mode },
+    };
+    await assert.rejects(
+      captureBefore({ plan, ...credentials(liveWorker(live)) }),
+      /match no recorded transition stage/
+    );
+  });
+}
+
+for (const [label, vars] of [
+  [
+    'jobs enabled beyond retention',
+    {
+      CRON_CONTROL_ENABLED_JOBS:
+        'database-cron-history-retention,meet-transcript-retention',
+    },
+  ],
+  ['jobs disabled', { CRON_CONTROL_ENABLED_JOBS: '' }],
+  ['Worker processors set', { CRON_CONTROL_WORKER_PROCESSORS: 'web' }],
+]) {
+  test(`live drift (${label}) without WEB_MODE still fails the before check`, async () => {
+    const live = { ...plan.previous, vars: { ...plan.previous.vars, ...vars } };
+    await assert.rejects(
+      captureBefore({ plan, ...credentials(liveWorker(live)) }),
+      /match no recorded transition stage/
+    );
+  });
+}
 
 test('baselines without a transition keep the single expected identity', () => {
   const { identity } = CRON_CONTROL;
@@ -262,7 +313,7 @@ test('a live Worker matching neither stage fails closed without leaking values',
       );
       assert.match(
         error.message,
-        /target: Worker vars differ: CRON_CONTROL_ENABLED_JOBS\)$/
+        /target: Worker vars differ: CRON_CONTROL_ENABLED_JOBS, CRON_CONTROL_WEB_MODE\)$/
       );
       assert.ok(!error.message.includes('unreviewed-job'));
       // No var value may leak: compare parsed hostnames, not substrings.
