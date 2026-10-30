@@ -27,7 +27,7 @@ const identity = {
 function fixture(overrides = {}, target = identity) {
   const responses = {
     service: {
-      default_environment: { script: { last_deployed_from: 'wrangler' } },
+      default_environment: { script: { last_deployed_from: 'cf' } },
     },
     settings: {
       compatibility_date: target.compatibilityDate,
