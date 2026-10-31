@@ -24,7 +24,11 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
     _request: Request,
     _id: string,
     action: (access: unknown) => unknown
-  ) => action({ user: { id: 'authenticated-owner' } }),
+  ) =>
+    action({
+      user: { id: 'authenticated-owner' },
+      meeting: { ws_id: 'ws-team' },
+    }),
 }));
 vi.mock('@tuturuuu/meet-core/features/live-assistant/workspace-tools', () => ({
   liveWorkspaceTools: f.tools,
@@ -57,6 +61,7 @@ beforeEach(() => {
         idFromName: (id: string) => id,
         get: () => ({ fetch: f.fetch }),
       },
+      MEET_AI_ENABLED_WORKSPACE_IDS: 'ws-team',
     },
   });
   f.fetch.mockImplementation(async (_url, options) => {
@@ -95,7 +100,7 @@ it('executes only the claimed arguments under the authenticated requester', asyn
   const claim = JSON.parse(f.fetch.mock.calls[0]![1].body);
   expect(claim.ownerId).toBe('authenticated-owner');
   expect(f.tools).toHaveBeenCalledWith(
-    { user: { id: 'authenticated-owner' } },
+    { user: { id: 'authenticated-owner' }, meeting: { ws_id: 'ws-team' } },
     'selected-workspace',
     'UTC'
   );
@@ -136,4 +141,22 @@ it('does not rerun an operation when reporting its outcome fails', async () => {
     .mockResolvedValue(new Response('Ended', { status: 409 }));
   await expect(invoke()).rejects.toThrow('Action may have completed');
   expect(f.execute).toHaveBeenCalledOnce();
+});
+it('denies review writes outside the Meet AI allowlist before any Durable Object or tool call', async () => {
+  for (const MEET_AI_ENABLED_WORKSPACE_IDS of [undefined, '', 'other-ws']) {
+    vi.stubGlobal(Symbol.for('__cloudflare-context__'), {
+      env: {
+        MEET_LIVE: {
+          idFromName: (id: string) => id,
+          get: () => ({ fetch: f.fetch }),
+        },
+        MEET_AI_ENABLED_WORKSPACE_IDS,
+      },
+    });
+    for (const approved of [true, false])
+      await expect(invoke(approved)).rejects.toMatchObject({ status: 403 });
+  }
+  expect(f.fetch).not.toHaveBeenCalled();
+  expect(f.tools).not.toHaveBeenCalled();
+  expect(f.execute).not.toHaveBeenCalled();
 });

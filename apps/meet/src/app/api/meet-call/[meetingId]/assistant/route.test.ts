@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   model: vi.fn(async () => ({
@@ -85,19 +85,31 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
     Response.json(
       await run({
         user: { id: 'tagger' },
-        meeting: { id: 'room', creator_id: 'creator' },
+        meeting: { id: 'room', creator_id: 'creator', ws_id: 'ws-team' },
       })
     ),
 }));
 
 import { POST } from './route';
 
+// The Worker context crosses the app/core adapter package boundary.
+const allowlist = (value: string | undefined) =>
+  vi.stubGlobal(Symbol.for('__cloudflare-context__'), {
+    env: { MEET_AI_ENABLED_WORKSPACE_IDS: value },
+  });
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 const request = () =>
   new Request('https://meet.test/api/meet-call/room/assistant', {
     method: 'POST',
     body: JSON.stringify({ messageId: 'message' }),
   });
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  allowlist('ws-team');
+});
 it('charges the tagger personal quota and uses server-supplied recent chat', async () => {
   const response = await POST(request(), {
     params: Promise.resolve({ meetingId: 'room' }),
@@ -263,7 +275,10 @@ it.each(['invalid JSON', JSON.stringify({ messages: [], context: {} })])(
       .mockResolvedValueOnce(review as never);
     await expect(
       generateMeetAssistant(
-        { user: { id: 'tagger' }, meeting: { id: 'room' } } as never,
+        {
+          user: { id: 'tagger' },
+          meeting: { id: 'room', ws_id: 'ws-team' },
+        } as never,
         {
           messageId: 'message',
           timezone: 'UTC',
@@ -295,4 +310,16 @@ it('settles usage but never publishes a blank model answer', async () => {
     messageId: 'message',
     costUsd: 0.001,
   });
+});
+it('denies assistant generation outside the Meet AI allowlist before any quota, room or model work', async () => {
+  for (const env of [{}, { MEET_AI_ENABLED_WORKSPACE_IDS: 'other-ws' }]) {
+    vi.stubGlobal(Symbol.for('__cloudflare-context__'), { env });
+    await expect(
+      POST(request(), { params: Promise.resolve({ meetingId: 'room' }) })
+    ).rejects.toMatchObject({ status: 403 });
+  }
+  expect(mocks.personal).not.toHaveBeenCalled();
+  expect(mocks.service).not.toHaveBeenCalled();
+  expect(mocks.check).not.toHaveBeenCalled();
+  expect(mocks.answer).not.toHaveBeenCalled();
 });
