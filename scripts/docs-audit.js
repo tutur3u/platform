@@ -20,14 +20,16 @@ function navigationPages(value, insidePages = false, result = []) {
   return result;
 }
 
-// Public docs must never name internal registers, hosts, paths, secrets or
-// customers without consent. Messages carry the rule and location only, so CI
-// logs never repeat the matched text.
+// Public docs must never name internal registers, hosts, paths, secrets,
+// accounts, agent threads or customers without consent. Messages carry the
+// rule and location only, so CI logs never repeat the matched text. Rules run
+// over the whole source (not line by line) so a name wrapped across a line
+// break is still found.
 const PUBLIC_SAFETY_RULES = [
   ['internal security register ID', /\bSR-\d{2,4}[a-z]?\b/],
   [
     'developer home-directory path',
-    /(?<![\w\]\[)}.\/-])\/(?:Users|home)\/(?!runner\b|user\b)[a-z][\w.-]*\//,
+    /(?<![\w\]\[)}.\/-])\/(?:Users|home)\/(?!runner\b|user\b)[A-Za-z][\w.-]*\//,
   ],
   ['fleet host or machine name', /\b(?:skr-[a-z0-9-]+|sokora[\w-]*)\b/i],
   [
@@ -35,6 +37,10 @@ const PUBLIC_SAFETY_RULES = [
     /\b(?:Sonha|ThanhStudio)\b|\bThanh\b(?! toan\b)/,
   ],
   ['tailnet hostname', /\.ts\.net\b/],
+  [
+    'tailnet address',
+    /\b100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}\b/,
+  ],
   [
     'Cloudflare account workers.dev host',
     /\b[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-]*\.workers\.dev\b/i,
@@ -47,16 +53,30 @@ const PUBLIC_SAFETY_RULES = [
     'token-shaped secret',
     /\b(?:gh[pousr]_[A-Za-z0-9]{30,}|sk-[A-Za-z0-9_-]{30,}|AKIA[0-9A-Z]{16}|xox[bap]-[A-Za-z0-9-]{10,}|sbp_[a-z0-9]{30,})\b|-----BEGIN [A-Z ]*PRIVATE KEY-----/,
   ],
-  ['customer name without consent', /\bEasy Center\b/],
+  ['JWT-shaped token', /\beyJ[A-Za-z0-9_-]{10,}\.eyJ/],
+  [
+    'Supabase project reference',
+    /\b[a-z]{20}\.supabase\.(?:co|in)\b|\b(?:nzamlzqfdwaaxdefwraj|fxefojytwimjiqxseqag)\b/,
+  ],
+  ['agent or thread identifier', /\bmcp:(?:launch:|[0-9a-f]{8}-)/],
+  [
+    'customer name without consent',
+    /\b(?:Easy[\s_-]*Center|phongkhamtinhmach|bacsivy|buouco|lomnguc|PKTM)\b/i,
+  ],
+  ['personal or staff email address', /[\w.+-]+@gmail\.com\b|\bphucvo@/i],
 ];
 
 function publicSafetyErrors(source, relative) {
   const errors = [];
-  source.split(/\r?\n/).forEach((line, index) => {
-    for (const [label, pattern] of PUBLIC_SAFETY_RULES)
-      if (pattern.test(line))
-        errors.push(`Public-safety (${label}): ${relative}:${index + 1}`);
-  });
+  for (const [label, pattern] of PUBLIC_SAFETY_RULES) {
+    const lines = new Set();
+    for (const match of source.matchAll(
+      new RegExp(pattern.source, `${pattern.flags}g`)
+    ))
+      lines.add(source.slice(0, match.index).split('\n').length);
+    for (const line of lines)
+      errors.push(`Public-safety (${label}): ${relative}:${line}`);
+  }
   return errors;
 }
 

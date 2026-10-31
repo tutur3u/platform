@@ -585,7 +585,7 @@ Existing workspaces need no migration.
 Status: database foundation only. No job, route, or screen sends these yet; the
 completion notice and the daily content check ship in later changes.
 
-These rules record the learning centre's answers and apply to any workspace that
+These rules are configurable and apply to any workspace that
 enables them.
 
 - **Recipients.** A class's homeroom teachers (GVCN) are its
@@ -597,8 +597,8 @@ enables them.
   (administrators, including the creator) or `approve_reports` (supervisors),
   checked with `has_workspace_permission`. No office role, recipient list, or
   column exists; grant or revoke those permissions to change who is notified.
-- **Weak-support content alert.** After the configured review period (Easy
-  Center: 14 days) with no homeroom-teacher action, all homeroom teachers of
+- **Weak-support content alert.** After the configured review period (default
+  14 days) with no homeroom-teacher action, all homeroom teachers of
   the class and the office are notified together, in one step. There is no
   separate reminder or later escalation. Each unchanged period alerts each
   recipient once.
@@ -642,7 +642,7 @@ Status: database foundation only, off for every workspace. No job, route, or
 screen uses it yet; the scheduled follow-up, the settings card, and the
 archived-absences view ship in later changes.
 
-These rules record the learning centre's request and apply to any workspace that
+These rules are configurable and apply to any workspace that
 enables them.
 
 - **Off by default.** `private.tutoring_automation_settings` holds one row per
@@ -691,9 +691,7 @@ enables them.
   service-role entry point; scheduled actions are refused while the workspace
   setting is off, and staff actions require current workspace membership.
 
-Open questions for the learning centre (who receives the reminder, exact delays) do not
-change this schema: delays are settings, and recipients are resolved by the
-later job.
+Delays are settings, and recipients are resolved by the later job.
 
 Regression coverage:
 `apps/database/supabase/tests/tutoring-automation-foundation.sql` and
