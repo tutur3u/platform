@@ -173,3 +173,12 @@ test('a red verify-ingress rolls back only the staging Worker', () => {
     if (name !== 'verify-ingress')
       assert.ok(!JSON.stringify(job).includes('wave1-web-rollback'), name);
 });
+
+test('staging installs disable lifecycle scripts and pull uses environment authentication', () => {
+  const steps = workflow.jobs['next-deploy'].steps;
+  for (const step of steps.filter((s) => /bun install/u.test(s.run ?? '')))
+    assert.match(step.run, /--ignore-scripts/u);
+  const pull = steps.find((s) => /vercel pull/u.test(s.run ?? ''));
+  assert.ok(pull.env.VERCEL_TOKEN);
+  assert.doesNotMatch(pull.run, /--token/u);
+});

@@ -133,12 +133,14 @@ export async function recheckNext({
   );
   const enumerated = deploymentHosts({ deployment, aliases, domains });
   failures.push(...enumerated.failures);
-  const checks = await vercelProbes({
-    hosts: enumerated.hosts,
-    fetcher,
-    bypassSecret: env.VERCEL_AUTOMATION_BYPASS_SECRET,
-    proofSecret: withProof ? env.TRUSTED_PROXY_ORIGIN_SECRET : undefined,
-  });
+  const checks = enumerated.failures.length
+    ? []
+    : await vercelProbes({
+        hosts: enumerated.hosts,
+        fetcher,
+        bypassSecret: env.VERCEL_AUTOMATION_BYPASS_SECRET,
+        proofSecret: withProof ? env.TRUSTED_PROXY_ORIGIN_SECRET : undefined,
+      });
   for (const check of checks)
     if (!check.ok) failures.push(`${check.id} ${check.host}: ${check.detail}`);
   return {
@@ -189,7 +191,6 @@ export async function deploy({
           '--meta',
           `githubCommitSha=${sha}`,
           '--yes',
-          `--token=${env.VERCEL_TOKEN_WEB_STAGING}`,
         ],
         {
           cwd: 'apps/web',
@@ -202,6 +203,7 @@ export async function deploy({
             PATH: env.PATH,
             HOME: env.HOME,
             CI: 'true',
+            VERCEL_TOKEN: env.VERCEL_TOKEN_WEB_STAGING,
             VERCEL_ORG_ID: env.VERCEL_ORG_ID,
             VERCEL_PROJECT_ID: env.VERCEL_WEB_STAGING_PROJECT_ID,
           },

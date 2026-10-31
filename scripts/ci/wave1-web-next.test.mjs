@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { deploy, nextAdmission, verify } from './wave1-web-next.mjs';
+import {
+  deploy,
+  nextAdmission,
+  recheckNext,
+  verify,
+} from './wave1-web-next.mjs';
 import {
   requireVerifiedNext,
   signWebNextState,
@@ -122,6 +127,9 @@ function world({
   w.exec = (command, args, options) => {
     w.execs++;
     assert.equal(command, 'vercel');
+    assert.ok(args.every((arg) => !arg.includes(env.VERCEL_TOKEN_WEB_STAGING)));
+    assert.ok(args.every((arg) => !arg.startsWith('--token')));
+    assert.equal(options.env.VERCEL_TOKEN, env.VERCEL_TOKEN_WEB_STAGING);
     assert.ok(
       args.includes('--prebuilt') &&
         args.includes('--target=staging') &&
@@ -289,4 +297,26 @@ test('requireVerifiedNext refuses any mismatch', () => {
     () => requireVerifiedNext(ledger(null), pair),
     /No Web Next ledger entry/
   );
+});
+
+test('readback refuses a disallowed alias before any deployment probe', async () => {
+  const w = world();
+  let probes = 0;
+  const fetcher = async (url, init) => {
+    const u = new URL(url);
+    if (u.pathname.endsWith('/aliases'))
+      return Response.json({ aliases: [{ alias: 'web.example.com' }] });
+    if (
+      !['api.vercel.com', 'api.cloudflare.com', 'api.github.com'].includes(
+        u.hostname
+      )
+    )
+      probes++;
+    return w.fetcher(url, init);
+  };
+  const result = await recheckNext({ env, sha, deploymentId, fetcher });
+  assert.equal(result.ok, false);
+  assert.ok(result.failures.some((f) => /forbidden staging host/.test(f)));
+  assert.equal(probes, 0);
+  assert.deepEqual(result.checks, []);
 });
