@@ -5,6 +5,7 @@
 // SHA. Protected jobs re-read the fence and admission freshly before writing.
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
+import { parseDryRunArgs } from './dry-run-args.mjs';
 import { boundedJson } from './wave1-native-publish.mjs';
 import { nextAdmission } from './wave1-web-next.mjs';
 
@@ -32,16 +33,46 @@ export async function admit({ env, sha, fetcher = fetch }) {
   return { candidateRuns: candidate.length };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
-  admit({ env: process.env, sha: process.argv[2] })
-    .then(({ candidateRuns }) =>
-      console.log(
-        `Admitted ${process.argv[2]} (${candidateRuns} candidate run(s))`
-      )
-    )
-    .catch((error) => {
+// Prints the intended actions without any network access (`--dry-run`).
+export function describeAdmitPlan({ sha }) {
+  assert.match(sha ?? '', /^[a-f0-9]{40}$/u, 'Exact source SHA required');
+  return [
+    `[dry-run] Would admit ${sha} for the staging Web publisher:`,
+    '  1. verify NEXT_ADMISSION names this SHA',
+    `  2. GET https://api.github.com/repos/$GITHUB_REPOSITORY/commits/${sha}/check-runs?check_name=candidate&per_page=20`,
+    '  3. require every "candidate" run at this SHA to be completed/success',
+    '[dry-run] No request was made.',
+  ];
+}
+
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  const cli = parseDryRunArgs(process.argv.slice(2));
+  if (cli.dryRun) {
+    try {
+      for (const line of describeAdmitPlan({ sha: cli.args[0] }))
+        console.log(line);
+    } catch (error) {
       console.error(
         error instanceof Error ? error.message : 'Web staging admission failed'
       );
       process.exitCode = 1;
-    });
+    }
+  } else
+    admit({ env: process.env, sha: process.argv[2] })
+      .then(({ candidateRuns }) =>
+        console.log(
+          `Admitted ${process.argv[2]} (${candidateRuns} candidate run(s))`
+        )
+      )
+      .catch((error) => {
+        console.error(
+          error instanceof Error
+            ? error.message
+            : 'Web staging admission failed'
+        );
+        process.exitCode = 1;
+      });
+}
