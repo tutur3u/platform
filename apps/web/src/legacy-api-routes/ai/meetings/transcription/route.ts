@@ -1,6 +1,6 @@
 import { createPOST } from '@tuturuuu/ai/meetings/transcription/route';
-import { meetAiAvailable } from '@tuturuuu/meet-core/features/meeting-ai/server/workspace-gate';
+import { isMeetAiEnabledOnWeb } from './meet-ai-gate';
 
-const POST = createPOST({ isMeetAiEnabled: meetAiAvailable });
+const POST = createPOST({ isMeetAiEnabled: isMeetAiEnabledOnWeb });
 
 export { POST };
