@@ -492,3 +492,15 @@ test('check() passes the file name so non-JS files are not stripped', (t) => {
   execFileSync('git', ['add', '.'], { cwd: root });
   assert.deepEqual(check(root), ['run.sh: dev.tuturuuu.com']);
 });
+
+test('a comment between the pieces of a split string cannot hide a host', () => {
+  const dart = "const host = 'dev.' /* x */ + 'tuturuuu.com';\n";
+  const go = 'host := "dev." + // x\n  "tuturuuu.com"\n';
+  assert.equal(violations(dart, 'lib/config.dart').length, 1);
+  assert.equal(violations(go, 'cmd/main.go').length, 1);
+  // Verbatim source stays in the mix, so a glob-like `/*` cannot swallow a host.
+  const globbed = 'a := "/*"\nb := "dev.tuturuuu.com"\nc := "*/"\n';
+  assert.equal(violations(globbed, 'cmd/main.go').length, 1);
+  // Non-C-comment files are still scanned verbatim only.
+  assert.deepEqual(stripCommentVariants(dart, 'a.sh'), [dart]);
+});

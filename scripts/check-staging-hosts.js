@@ -20,6 +20,10 @@ const SCANNED_FILE =
 // Only these languages have C-style comments. Elsewhere `/*` is a shell glob,
 // SQL or YAML text, so stripping it could swallow a real staging host.
 const C_COMMENT_FILE = /\.(?:[cm]?[jt]sx?|css|scss|sass|less|pcss)$/i;
+// Scanned languages with C-style comments that the lexer is not tuned for. They
+// are read both verbatim and stripped, so a comment between two halves of a
+// split string cannot hide a host and a stray `/*` cannot swallow one.
+const OTHER_C_COMMENT_FILE = /\.(?:rs|dart|go|swift|kt|jsonc|json5|tf)$/i;
 const SKIPPED_FILE =
   /\.(?:test|spec)\.|(?:^|\/)(?:__tests__|fixtures?)\/|\.(?:md|mdx|lock)$|(?:^|\/)bun\.lock$/i;
 
@@ -158,10 +162,18 @@ function stripComments(source, choices = []) {
  * division is undecidable without a parser, so each ambiguous `/` is tried both
  * ways and a host visible in any reading is reported. Past MAX_LEX_PATHS
  * readings the unstripped source is returned, so comments are scanned too.
- * A `file` outside the C-comment languages is never stripped; omit it to strip.
+ * A `file` outside the C-comment languages is never stripped, and the other
+ * C-comment languages get the verbatim source as well; omit it to strip.
  */
 function stripCommentVariants(source, file) {
-  if (file !== undefined && !C_COMMENT_FILE.test(file)) return [source];
+  if (file !== undefined && !C_COMMENT_FILE.test(file))
+    return OTHER_C_COMMENT_FILE.test(file)
+      ? [source, ...stripAllCommentVariants(source)]
+      : [source];
+  return stripAllCommentVariants(source);
+}
+
+function stripAllCommentVariants(source) {
   const variants = new Set();
   const pending = [[]];
   for (let runs = 0; pending.length; runs++) {
