@@ -6603,5 +6603,20 @@
   "mastermindIrisEnrolConfirmed": "Thiết bị này đã được đăng ký.",
   "mastermindIrisEnrolExpired": "Mã đã hết hạn. Hãy bắt đầu lại để nhận mã mới.",
   "mastermindIrisEnrolFailed": "Không thể bắt đầu đăng ký. Hãy thử lại.",
-  "mastermindIrisEnrolLimit": "Có quá nhiều thiết bị đang chờ. Hãy đợi một thiết bị hết hạn."
+  "mastermindIrisEnrolLimit": "Có quá nhiều lượt đăng ký hoặc thiết bị đang chờ. Hãy thử lại sau.",
+  "mastermindIrisEnrolAgain": "Đăng ký lại bằng khóa mới",
+  "mastermindIrisUnlockReason": "Mở khóa Iris để đọc hộp thư",
+  "mastermindIrisConfirmReason": "Xác nhận thao tác Iris này",
+  "mastermindIrisDeviceLocked": "Iris đang bị khóa trên thiết bị này. Ứng dụng sẽ hỏi mở khóa lại sau vài phút.",
+  "mastermindIrisDeviceLockedEnrol": "Nếu lỗi này lặp lại, hãy đăng ký lại bằng khóa mới.",
+  "mastermindIrisDeviceRevoked": "Thiết bị này đã bị gỡ khỏi Iris. Hãy đăng ký lại để tiếp tục sử dụng.",
+  "mastermindIrisEnrolAgainAction": "Đăng ký lại",
+  "mastermindIrisClockSkew": "Hãy kiểm tra đồng hồ thiết bị. Giờ không khớp với Iris.",
+  "mastermindIrisEnrolCodeConflict": "Mã này đang được dùng. Hãy thử lại.",
+  "mastermindIrisEnrolDeviceConflict": "Khóa này đã được đăng ký. Hãy đăng ký lại bằng khóa mới.",
+  "mastermindIrisRelayStopped": "Relay đã dừng. Hãy nhờ chủ sở hữu khôi phục.",
+  "mastermindIrisDevicesUnavailable": "Danh sách thiết bị chưa khả dụng. Bạn vẫn có thể đăng ký thiết bị này.",
+  "mastermindIrisDeviceCurrent": "Thiết bị này",
+  "mastermindIrisWritesOff": "Tạm thời chưa thể gửi tin. Bạn vẫn có thể đọc cuộc trò chuyện.",
+  "mastermindIrisWritesNeedEnrol": "Hãy đăng ký thiết bị này để gửi tin nhắn."
 }

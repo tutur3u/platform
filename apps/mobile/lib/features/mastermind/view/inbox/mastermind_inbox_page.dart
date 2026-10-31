@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/features/mastermind/iris/data/fixture_iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/iris_flag.dart';
 import 'package:mobile/features/mastermind/iris/view/iris_chat_view.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
@@ -201,6 +203,11 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
         Expanded(
           child: IrisChatView(
             relay: context.read<MastermindRuntime>().iris,
+            onEnrol: () =>
+                unawaited(context.push<void>(Routes.mastermindIrisDevices)),
+            writesEnabled: FixtureIrisRelay.buildEnabled
+                ? _fixtureWrites
+                : null,
             leading: (summary) => [
               MastermindFreshnessStrip(freshness: freshness),
               InboxSegmentBar(selected: _segment, onChanged: _selectSegment),
@@ -324,3 +331,6 @@ class _SearchAction extends StatelessWidget {
     ),
   );
 }
+
+/// Fixture builds reach no relay, so their synthetic sends stay on.
+final ValueListenable<bool> _fixtureWrites = ValueNotifier(true);
