@@ -1,7 +1,7 @@
 ---
 title: 'Local Supabase Development'
 description: 'Learn how to work with Supabase locally in the Tuturuuu development workflow.'
-updatedAt: '2026-10-23'
+updatedAt: "2026-10-31"
 ---
 
 <Info>
@@ -309,7 +309,7 @@ accurate generated row shapes.
 Alternatively, you can use the shorthand:
 
 ```bash
-bun typegen
+bun sb:typegen
 ```
 
 <Info>
@@ -1098,7 +1098,7 @@ Sometimes you might want to create a custom seed file for specific testing scena
 3. Run it with the Supabase CLI:
 
 ```bash
-bun supabase db reset --db-url=postgresql://postgres:postgres@localhost:54322/postgres
+node apps/database/scripts/run-supabase.js db reset --db-url=postgresql://postgres:postgres@localhost:54322/postgres
 psql postgresql://postgres:postgres@localhost:54322/postgres -f apps/database/supabase/my_custom_seed.sql
 ```
 
@@ -1108,7 +1108,7 @@ You can also export your current database data to use as seed data:
 
 ```bash
 # Export only data (not schema) to seed.sql
-bun supabase db dump --db-url=postgresql://postgres:postgres@localhost:54322/postgres --data-only > apps/database/supabase/new_seed.sql
+node apps/database/scripts/run-supabase.js db dump --db-url=postgresql://postgres:postgres@localhost:54322/postgres --data-only > apps/database/supabase/new_seed.sql
 ```
 
 This is helpful when you've set up data manually and want to preserve it for future development environments.
@@ -1119,7 +1119,7 @@ For Tuturuuu development, we recommend:
 
 1. Start with a fresh database: `bun sb:reset`
 2. Make changes through the UI or your app
-3. When you're satisfied, export the data: `bun supabase db dump --data-only > apps/database/supabase/new_seed.sql`
+3. When you're satisfied, export the data: `node apps/database/scripts/run-supabase.js db dump --data-only > apps/database/supabase/new_seed.sql`
 4. Edit the generated SQL to keep only what you need
 5. Update the main `seed.sql` file with your changes
 6. Test by running `bun sb:reset` again

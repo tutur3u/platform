@@ -1,54 +1,61 @@
 ---
 title: 'QR'
-description: 'Public QR generator app hosted at qr.tuturuuu.com.'
-updatedAt: '2026-05-21'
+description: 'Public QR generator served by the Tools app at tools.tuturuuu.com/qr.'
+updatedAt: '2026-10-31'
 ---
 
 ## Overview
 
-`apps/qr` serves the public Tuturuuu QR generator at
-`https://qr.tuturuuu.com`. It owns the QR generator UI and reuses the shared
-`@tuturuuu/ui/custom/qr/qr` component.
+The public Tuturuuu QR generator lives in the Tools app (`apps/tools`) at
+`https://tools.tuturuuu.com/qr`. It reuses the shared
+`@tuturuuu/ui/custom/qr/qr` component. The standalone `apps/qr` app and the
+`qr.tuturuuu.com` host were retired when `apps/tools` was introduced;
+`qr.tuturuuu.com` to `tools.tuturuuu.com/qr` is an operator redirect, not
+application code. See [Tools](/platform/applications/tools) for the app as a
+whole.
 
-The app is public and does not own workspace auth, app-session cookies, or
-protected APIs. Existing `apps/web` QR generator routes are compatibility
-redirects to the QR app root.
+The generator is public and does not own workspace auth, app-session cookies,
+or protected APIs. Existing `apps/web` QR generator routes are compatibility
+redirects to the Tools app QR route.
 
-The root layout uses `@tuturuuu/satellite/providers` so the public QR surface
-still supports `system`, `light`, and `dark` theme switching through the shared
-`next-themes` shell.
+The Tools root layout uses `@tuturuuu/satellite/providers`, so the public QR
+surface still supports `system`, `light`, and `dark` theme switching through
+the shared `next-themes` shell.
 
 ## Routing Contract
 
-- `/`: canonical QR generator.
-- `/en` and `/vi`: canonicalize back to `/` while storing `NEXT_LOCALE`.
-- `apps/web /qr-generator`: redirects to `qr.tuturuuu.com/`.
-- `apps/web /{wsId}/qr-generator`: redirects to `qr.tuturuuu.com/` without
+- `/qr` on the Tools host: canonical QR generator.
+- `/en/qr` and `/vi/qr`: canonicalize back to `/qr` while storing
+  `NEXT_LOCALE`.
+- `apps/web /qr-generator`: redirects to `<tools origin>/qr`.
+- `apps/web /{wsId}/qr-generator`: redirects to `<tools origin>/qr` without
   forwarding the workspace ID.
 
-Query strings are preserved during compatibility redirects.
+Query strings are preserved during compatibility redirects. The redirect target
+is built by `buildQrAppUrl` in `apps/web/src/lib/qr-app-url.ts`, which resolves
+the Tools origin through `apps/web/src/lib/tools-app-url.ts`.
 
 ## Local Development
 
-- `bun dev:qr` starts the app through Portless.
-- Local app origin: `https://qr.tuturuuu.localhost`.
-- Direct fallback port: `7819`.
-- App URL overrides: `QR_APP_URL` or `NEXT_PUBLIC_QR_APP_URL`.
+- `bun dev:tools` starts the Tools app through Portless.
+- Local app origin: `https://tools.tuturuuu.localhost`.
+- Direct fallback port: `7825`.
+- App URL overrides: `TOOLS_APP_URL` or `NEXT_PUBLIC_TOOLS_APP_URL`.
 
 ## CI/CD
 
-Preview and production deployments use dedicated Vercel workflows:
+The QR generator ships with the Tools app. Preview and production deployments
+use the Tools Vercel workflows:
 
-- `.github/workflows/vercel-preview-qr.yaml`
-- `.github/workflows/vercel-production-qr.yaml`
+- `.github/workflows/vercel-preview-tools.yaml`
+- `.github/workflows/vercel-production-tools.yaml`
 
-Both workflows are registered in `tuturuuu.ts` and use the shared
-`ci-check.yml` switchboard with affected-path gating. They require
-environment-scoped Vercel credentials:
+Both workflows use the shared `ci-check.yml` switchboard with affected-path
+gating. They require environment-scoped Vercel credentials:
 
-- preview environment: `vercel-preview-qr`
-- production environment: `vercel-production-qr`
-- project secret: `VERCEL_QR_PROJECT_ID`
+- preview environment: `vercel-preview-tools`
+- production environment: `vercel-production-tools`
+- project secret: `VERCEL_TOOLS_PROJECT_ID`
 - shared secrets: `VERCEL_TOKEN` and `VERCEL_ORG_ID`
 
 The app-specific project secret should live in those GitHub Environments, not in
@@ -56,16 +63,16 @@ workflow-level `env`.
 
 ## Validation
 
-Use these focused checks when changing QR app routing or deployment wiring:
+Use these focused checks when changing QR routing or deployment wiring:
 
 ```bash
-bun type-check:qr
+bun type-check:tools
 bun --cwd apps/web vitest run src/lib/qr-app-url.test.ts 'src/app/[locale]/(dashboard)/[wsId]/qr-generator/page.test.ts' 'src/app/[locale]/(marketing)/qr-generator/page.test.ts'
 bun --cwd packages/utils test src/__tests__/app-url.test.ts
 node --test scripts/portless-config.test.js
 node --test scripts/ci/check-workflow-config.test.js scripts/ci/release-workflows.test.js
 ```
 
-Because QR touches TypeScript, workflow config, docs navigation, and
-translations, finish QR changes with `bun validate` when the shared worktree state
-allows it.
+Because the QR route touches TypeScript, workflow config, docs navigation, and
+translations, finish QR changes with `bun validate` when the shared worktree
+state allows it.
