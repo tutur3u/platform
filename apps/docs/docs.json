@@ -19,6 +19,7 @@
             "group": "Overview",
             "pages": [
               "overview/start-here",
+              "overview/whats-new",
               "overview/vision",
               "overview/organization-guide"
             ]
@@ -332,6 +333,7 @@
                   "platform/applications/tutoring",
                   "platform/applications/learn",
                   "platform/applications/teach",
+                  "platform/applications/upskii",
                   "platform/applications/hive",
                   "platform/applications/mind",
                   "platform/applications/hive-world-event-troubleshooting",
