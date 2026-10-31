@@ -7,7 +7,9 @@ import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/presentation/what_needs_me.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
+import 'package:mobile/features/mastermind/view/inbox/what_needs_me_header.dart';
 import 'package:mobile/features/mastermind/view/widgets/show_all_row.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -39,6 +41,18 @@ class HomeNeedsYouCard extends StatelessWidget {
                   model.security.isEmpty
                       ? l10n.mastermindAllCaughtUp
                       : l10n.mastermindNothingNeedsReply,
+                ),
+              ),
+            if (hasNormal)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppLayout.rowHorizontalPadding,
+                  AppSpacing.md,
+                  AppLayout.rowHorizontalPadding,
+                  0,
+                ),
+                child: WhatNeedsMeHeader(
+                  counts: WhatNeedsMeCounts.from(model.needsYou),
                 ),
               ),
             for (final item in model.needsYouShown)

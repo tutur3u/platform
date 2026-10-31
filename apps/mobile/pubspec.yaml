@@ -113,6 +113,9 @@ flutter:
     - path: assets/dev/mastermind/sample_snapshot.json
       flavors:
         - development
+    - path: assets/dev/mastermind/iris_fixture.json
+      flavors:
+        - development
     - assets/audio/meet-notice.wav
     - CHANGELOG.md
     - assets/release_history.json

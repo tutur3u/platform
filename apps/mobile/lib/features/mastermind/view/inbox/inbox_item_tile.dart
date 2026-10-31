@@ -17,6 +17,7 @@ import 'package:mobile/features/mastermind/presentation/relative_time.dart';
 import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
+import 'package:mobile/features/mastermind/view/inbox/ask_timing_chips.dart';
 import 'package:mobile/features/mastermind/view/inbox/decision_card_actions.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
 import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
@@ -117,6 +118,8 @@ class InboxItemTile extends StatelessWidget {
     Widget buildRow(String? spokenAge) => Semantics(
       button: true,
       label: [
+        if (item.state == ItemState.open && elsewhere == null)
+          ...askTimingSpoken(l10n, item),
         ?kindLabel,
         title,
         if (item.product case final product?) MastermindLabels.product(product),
@@ -161,6 +164,8 @@ class InboxItemTile extends StatelessWidget {
               spacing: AppSpacing.xs,
               runSpacing: AppSpacing.xs,
               children: [
+                if (item.state == ItemState.open && elsewhere == null)
+                  ...askTimingChips(l10n, item),
                 if (showKind && kindLabel != null)
                   MastermindStatusChip(label: kindLabel),
                 if (item.product case final product?)
