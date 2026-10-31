@@ -90,7 +90,7 @@ test('the workflow never performs serving, domain, Access or DNS changes', () =>
   assert.match(text, /never attaches domains/u);
 });
 
-// M1: repo build code never sees deploy, provider or control credentials.
+// Check explicit step environments; this does not isolate a shared runner.
 const forbiddenCredential =
   /^(VERCEL_TOKEN|CLOUDFLARE_|WAVE1_CONTROL_READ_TOKEN)/u;
 const buildCode =
@@ -174,10 +174,19 @@ test('a red verify-ingress rolls back only the staging Worker', () => {
       assert.ok(!JSON.stringify(job).includes('wave1-web-rollback'), name);
 });
 
-test('staging installs disable lifecycle scripts and pull uses environment authentication', () => {
+test('all Web staging jobs disable install scripts and pull uses environment authentication', () => {
+  let installs = 0;
+  for (const [name, job] of Object.entries(workflow.jobs))
+    for (const step of job.steps ?? [])
+      for (const command of `${step.run ?? ''}\n${step.with?.command ?? ''}`
+        .replace(/\\\n/gu, ' ')
+        .split(/[\n;&|]/u)) {
+        if (!/\bbun\s+install\b/u.test(command)) continue;
+        installs++;
+        assert.match(command, /(?:^|\s)--ignore-scripts(?:\s|$)/u, name);
+      }
+  assert.ok(installs >= 5, 'all Web staging installs were scanned');
   const steps = workflow.jobs['next-deploy'].steps;
-  for (const step of steps.filter((s) => /bun install/u.test(s.run ?? '')))
-    assert.match(step.run, /--ignore-scripts/u);
   const pull = steps.find((s) => /vercel pull/u.test(s.run ?? ''));
   assert.ok(pull.env.VERCEL_TOKEN);
   assert.doesNotMatch(pull.run, /--token/u);
