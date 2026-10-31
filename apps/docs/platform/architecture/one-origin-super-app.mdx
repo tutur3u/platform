@@ -400,8 +400,8 @@ config until all of these exist and pass with exact-commit evidence:
 
 ### Lab
 
-A Playwright script (planned `scripts/perf/app-switch.lab.mjs`) runs on a Studio host,
-not the M4. It signs in a synthetic account, warms Web's dashboard and clicks the
+A Playwright script (planned `scripts/perf/app-switch.lab.mjs`) runs on a remote build host,
+not the local hub. It signs in a synthetic account, warms Web's dashboard and clicks the
 launcher to Meet and to Mail 30 times each. It runs cold and warm, under no
 throttling and under a "Slow 4G" profile, against the subdomain and the one-origin
 staging host. It also records Web TTFB direct versus through Cloudflare (gate W1).
@@ -436,7 +436,7 @@ DNS/proxy lane.
 | P4 | Meet base-path build serving both hosts, `appApi`/`centralApi` split, origin/base split. | Bridge | P1, P2 | None |
 | P5 | Portable security-header builder; strict CSP and Trusted Types report-only in Meet and Mail. Enforcement and the programming-preview fence follow. | One-origin lane | — | None |
 | P6 | Web client-IP trust behind a Cloudflare origin-auth header, switched together with O3. | One-origin lane | — | None |
-| P7 | App-switch RUM helper, Workers Analytics Engine ingest, `ttr:app-ready` marks and the Thanh lab script. The Analytics Engine binding waits for the [cost and stop gate](#ingestion-cost-and-stop-gate). | One-origin lane | — | None |
+| P7 | App-switch RUM helper, Workers Analytics Engine ingest, `ttr:app-ready` marks and the lab script. The Analytics Engine binding waits for the [cost and stop gate](#ingestion-cost-and-stop-gate). | One-origin lane | — | None |
 | P8 | Subdomain 307/301 redirect plumbing behind `TTR_ONE_ORIGIN_<APP>`. | One-origin lane | P4 to serve the apex | None |
 | P9 | Mail OAuth `redirect_uri` chosen by serving origin and mount from the configured allowlist ([#6744](https://github.com/tutur3u/platform/pull/6744)). | Mail lane | — | None |
 | P10 | Speculation Rules and cross-document View Transitions, behind the flag. Prerender traffic counts against the same Worker cost bounds. | Platform UI | P4 | None |
