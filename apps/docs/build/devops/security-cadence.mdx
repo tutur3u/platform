@@ -392,7 +392,7 @@ counts and remediation receipts.
 Use this when a PR adds records to `scripts/ci/security-definer-verified-findings.json`
 for a migration it adds; the **Definer execution policy** job stays red until the
 attestation exists. The rules are in
-[Admitting new verified records](/build/devops/security-scans#admitting-new-verified-records-after-bootstrap).
+the internal procedure for admitting new verified records.
 An attestation is an independent security ruling, not a PR approval, and it is not
 gated on CI.
 
@@ -431,6 +431,6 @@ The separately approved `security-scan.yaml` workflow runs at 03:00 GMT+7 with
 only `contents: read`. It checks the last 36 hours of secret changes, migration
 definer policy and route permission-helper coverage. Each job uploads its own
 redacted report and fails on new findings. See
-[Definer guard and daily security scans](/build/devops/security-scans) for
+the internal definer guard and daily security scans runbook for
 content-pinned historical exceptions, the two exact public demo JWT locations,
 the initial definer-guard bootstrap review and the gated staging catalog check.

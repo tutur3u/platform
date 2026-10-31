@@ -213,7 +213,7 @@ local SARIF gate. Triage at the analyzed SHA and current main: trace validation
 rejections, same-descriptor reads and directory-only fsync before calling an alert real.
 Keep optional-reader defects distinct from default production reachability; test
 replacement negatives without enabling collection. The gate prints escaped rule IDs
-and locations, omits messages, and fails closed without a baseline. See [`security-cadence.mdx`](../../../../../apps/docs/build/devops/security-cadence.mdx). Definer policy, read-only daily inventory, historical exceptions and focused checks live in the [security scans runbook](../../../../../apps/docs/build/devops/security-scans.mdx).
+and locations, omits messages, and fails closed without a baseline. See [`security-cadence.mdx`](../../../../../apps/docs/build/devops/security-cadence.mdx). Definer policy, read-only daily inventory, historical exceptions and focused checks live in the internal security scans runbook (org/lanes/internal-docs).
 
 ## Bun runtime pins
 

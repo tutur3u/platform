@@ -121,7 +121,7 @@ Ops Hub uses the cf/Vite native Worker template with a SQLite OpsHub namespace.
 Its dedicated validation workflow has no deploy job or deployment credentials.
 Run source acceptance with apps/ops-hub/scripts/verify-worker-runtime.mjs; it
 uses isolated persistence and disposable fixture keys. The gateway shares only
-the portable protocol export. See the [ops runbook](../../../../../apps/docs/build/devops/ops-hub.mdx)
+the portable protocol export. See the internal ops runbook (org/lanes/internal-docs)
 for strict signed envelopes, request/storage budgets, retention, tombstone erasure
 and the disabled-state alarm fence. Hosted acceptance and publisher sample approval
 remain independent release gates. Do not infer deployment authority from CI wiring.
