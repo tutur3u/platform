@@ -16,9 +16,13 @@ import type { Json } from '@tuturuuu/types';
 import { Effect, Schedule } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
+import { isMeetAiAvailableForWorkspace } from './workspace-gate';
 
 export async function readMeetAi(request: Request, params: MeetAiParams) {
-  const { db, meetingId, canManage } = await meetAiAccess(request, params);
+  const { db, meetingId, wsId, canManage } = await meetAiAccess(
+    request,
+    params
+  );
   const { data: sessions, error } = await db
     .from('meet_ai_sessions')
     .select('*')
@@ -93,6 +97,7 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
       a.sequence - b.sequence
   );
   return {
+    available: isMeetAiAvailableForWorkspace(wsId),
     configured:
       MEETING_APP === 'parley'
         ? await meetingProviderTransport().then(

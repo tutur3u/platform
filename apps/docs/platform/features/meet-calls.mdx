@@ -1,6 +1,6 @@
 ---
 title: Meet calls
-updatedAt: '2026-10-29'
+updatedAt: '2026-10-31'
 description: Run Tuturuuu Meet video calls on Cloudflare Realtime SFU, including room signaling, host controls, and in-call recording.
 ---
 
@@ -541,6 +541,32 @@ server. Configure `GOOGLE_GENERATIVE_AI_API_KEY` as a secret on `tuturuuu-meet`;
 without it, the panel reports that Gemini is not configured. Do not put the key
 in public environment variables or the browser. Existing deployment credentials
 do not grant permission to transfer a Gemini key to a new destination.
+
+### Pilot workspace allowlist
+
+Product decision (31 October 2026): Meet AI (transcription and post-call notes)
+is **default deny**. Until the 23-28 November pilot, only the internal team
+workspace may use it in production. Scope: the Meet app's session start/finish/
+sharing endpoint and the audio chunk endpoint (`/api/meet-ai/:wsId/:meetingId`
+and `/chunks`), checked on the server for the meeting's resolved workspace id.
+The Parley scenario product is outside this gate.
+
+Meet production (`meet.tuturuuu.com`) is the Cloudflare Worker `tuturuuu-meet`,
+not a Vercel deployment. Set `MEET_AI_ENABLED_WORKSPACE_IDS` on that Worker, the
+same way as `GOOGLE_GENERATIVE_AI_API_KEY`, to a comma- or whitespace-separated
+list of workspace ids. A deployment of this code without the variable keeps Meet AI
+off for everyone. Unset, blank or unlisted means every
+mutation returns 403 `MEET_AI_WORKSPACE_NOT_ENABLED`; there is no wildcard.
+Keep the team workspace id in deployment configuration only, never in source.
+Transcripts and notes that already exist stay readable under the existing
+participant rules. The panel reads `available` from the state response and, when
+it is false, shows a neutral "not available for this workspace" message instead of
+the Start, Finish and Retry controls. Widening the allowlist beyond the team
+workspace needs an explicit user decision.
+
+Regression coverage: `workspace-gate.test.ts`, `access.test.ts` (unset denies,
+unlisted denies, listed allows, reads unaffected) and `sessions.test.ts`
+(`available`).
 
 Apply `20260907040000_meet_ai_sessions.sql` through the normal database release
 process before enabling the feature. A missing schema produces a visible

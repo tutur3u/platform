@@ -64,6 +64,7 @@ function dbWith(results: unknown[]) {
   mocks.access.mockResolvedValue({
     db: { from },
     meetingId: id,
+    wsId: id,
     user: { id },
     canManage: true,
   });
@@ -302,6 +303,16 @@ describe('Meet notes finalization', () => {
     expect(state.transcriptionCostUsd).toBe(0.75);
     expect(state.estimatedCostUsd).toBe(0.75);
   });
+});
+
+it('reports workspace availability from the pilot allowlist', async () => {
+  vi.stubEnv('MEET_AI_ENABLED_WORKSPACE_IDS', '');
+  dbWith([result([]), result([])]);
+  expect((await readMeetAi(request(), params)).available).toBe(false);
+  vi.stubEnv('MEET_AI_ENABLED_WORKSPACE_IDS', id);
+  dbWith([result([]), result([])]);
+  expect((await readMeetAi(request(), params)).available).toBe(true);
+  vi.unstubAllEnvs();
 });
 
 it('redacts all costs and raw usage from a shared-notes reader', async () => {
