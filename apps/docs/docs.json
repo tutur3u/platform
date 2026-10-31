@@ -440,6 +440,7 @@
               "build/development-tools/stacked-pull-requests",
               "build/development-tools/local-supabase-development",
               "build/development-tools/thanh-local-e2e",
+              "build/development-tools/hosted-dev-supabase-preview",
               "build/development-tools/employee-schema-qualification",
               "build/development-tools/employee-cli-recovery",
               "build/development-tools/employee-schema-provenance",
