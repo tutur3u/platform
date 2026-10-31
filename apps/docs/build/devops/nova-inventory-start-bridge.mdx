@@ -157,7 +157,7 @@ season-merge recovery tests. See
 
 ## Qualification and cutover
 
-Run unit/types on Sonha and heavy build/runtime/browser work on Thanh through
+Run unit/types and heavy build/runtime/browser work on remote build hosts through
 the shared resource queue. Frozen installs can make workspace bin files
 executable; require a clean source check and reconcile such a mode change with
 the owning package rather than silently accepting a different source tree.
@@ -199,7 +199,7 @@ move destination with its temporary path, while the implementation resolves that
 path. A `/var` to `/private/var` alias prevents the fixture from injecting its
 symlink; it is not evidence that the negative control ran.
 
-An M4 storage refusal moves `check:changed` to a verified Thanh bundle; it does
+A local-hub storage refusal moves `check:changed` to a verified remote-host bundle; it does
 not authorize a disk override. Independent security review and an explicit
 cutover PR remain required. No migrations or production publication are part of
 the preparatory ports.

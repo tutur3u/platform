@@ -3,18 +3,24 @@ import 'dart:typed_data';
 
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 
-/// GET /v1/capabilities: `{schema_versions, replies, push}`. The Worker flips
-/// these without a store release, so the client reads them instead of probing.
+/// GET /v1/capabilities: `{schema_versions, replies, push}` plus an optional
+/// last `iris` key. The Worker flips these without a store release, so the
+/// client reads them instead of probing.
 final class MastermindCapabilities {
   MastermindCapabilities({
     required List<String> schemaVersions,
     required this.replies,
     required this.push,
+    this.iris = false,
   }) : schemaVersions = List.unmodifiable(schemaVersions);
 
   final List<String> schemaVersions;
   final bool replies;
   final bool push;
+
+  /// The Iris relay is on (`IRIS_ENABLED` on the Worker). Never a statement
+  /// about this device's enrolment.
+  final bool iris;
 
   bool get supportsSchema14 => schemaVersions.contains('1.4');
 
@@ -22,10 +28,12 @@ final class MastermindCapabilities {
   static MastermindCapabilities? parse(Uint8List bytes) {
     try {
       final decoded = jsonDecode(utf8.decode(bytes));
-      if (decoded is! Map<String, dynamic> ||
-          decoded.length != 3 ||
+      if (decoded is! Map<String, dynamic>) return null;
+      final hasIris = decoded.containsKey('iris');
+      if (decoded.length != (hasIris ? 4 : 3) ||
           decoded['replies'] is! bool ||
-          decoded['push'] is! bool) {
+          decoded['push'] is! bool ||
+          (hasIris && decoded['iris'] is! bool)) {
         return null;
       }
       final versions = decoded['schema_versions'];
@@ -38,6 +46,7 @@ final class MastermindCapabilities {
         schemaVersions: versions.cast<String>(),
         replies: decoded['replies'] as bool,
         push: decoded['push'] as bool,
+        iris: hasIris && decoded['iris'] as bool,
       );
     } on FormatException {
       return null;

@@ -149,7 +149,7 @@ With `--offload auto`, the command prefers a devbox runner. Offload skips
 runners whose heartbeat reports critical disk (`blockedBy=low_disk`).
 `ttr storage fleet` lists every runner's reported headroom and marks stale or
 offline runners `unknown`, never healthy. See
-`apps/docs/build/development-tools/machine-storage-health.mdx`.
+`docs-internal/build/development-tools/machine-storage-health.mdx`.
 
 Cross-machine offload: `ttr resources run --offload auto -- <cmd>` runs the
 exact pushed `HEAD` on a fresh, attested trusted-development `ttr box` runner
@@ -192,7 +192,7 @@ host probes (stale or missing telemetry is UNKNOWN, never idle). Each run
 executes in a fresh checkout inside that host's own `ttr resources run`
 queue. An UNKNOWN run is never rescheduled; settle it with
 `ttr balancer reconcile`. See
-`apps/docs/build/development-tools/fleet-balancer.mdx`.
+`docs-internal/build/development-tools/fleet-balancer.mdx`.
 
 ## Multi-host weighted admission
 

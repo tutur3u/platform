@@ -91,7 +91,7 @@ review prove baseline equivalence. Existing migration history stays immutable.
   defaults and user-client RPC callers before revoking EXECUTE. Run
   `security-definer-policy-callers.sql` to enforce policy-role EXECUTE, including
   PUBLIC policies and its failing privilege control. See the RPC
-  hardening section of `apps/docs/build/devops/secrets-and-configuration.mdx`.
+  hardening section of `docs-internal/build/devops/secrets-and-configuration.mdx`.
 - Catalog-wide anonymous EXECUTE changes must snapshot effective signed-in/service
   privileges before revocation and restore only previously available access.
   Preserve exact-signature anonymous exceptions for final policy/view and invoker
@@ -149,6 +149,16 @@ and exclude unrelated baseline drift; never hand-edit generated declarations.
   scans every app and package source for this pattern.
 
 ## Storage
+
+- Match bucket INSERT tests to the owning upload-url route's client identity.
+  Inquiry and time request routes issue service-backed signed upload tickets;
+  preserve underlying table ACLs. Legacy storage policy subqueries can surface
+  table privilege errors in other buckets after a permissive policy changes.
+  Scope obsolete client policies to their supported role rather than adding
+  table SELECT grants. See the bucket contracts in
+  `apps/docs/build/devops/workspace-storage-rls.mdx` and
+  `storage-insert-policies.sql`. SQL deletion fixtures use transaction-local
+  `storage.allow_delete_query = 'true'` and roll back.
 
 - Authenticated storage API routes should authorize with the user-scoped client,
   then perform storage operations through an admin-backed storage client.
@@ -507,7 +517,7 @@ For the retained pure-SQL dashboard refresh, alter only the command to call
 New retention scheduling belongs in Cloudflare Cron Control. Its service-only
 `private.prune_cron_history(integer)` RPC bounds each table's oldest completed
 seven-day history batch; unfinished executions remain for recovery. See the
-[Cron Control runbook](../../../../../apps/docs/build/devops/cloudflare-cron-control.mdx#seven-day-database-cron-history)
+[Cron Control runbook](../../../../../docs-internal/build/devops/cloudflare-cron-control.mdx#seven-day-database-cron-history)
 and `supabase/tests/cron-history-retention.sql` for the role, budget and replay
 regressions. Never add a cleanup pg_cron job to repair an accumulating history table.
 

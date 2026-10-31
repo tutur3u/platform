@@ -1,6 +1,11 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ service: vi.fn(), generate: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  service: vi.fn(),
+  generate: vi.fn(),
+  access: { user: { id: 'requester' }, meeting: { ws_id: 'ws-team' } },
+}));
+const access = mocks.access;
 vi.mock('next/server', () => ({ connection: async () => undefined }));
 vi.mock(
   '@tuturuuu/meet-core/features/call/server/assistant-generation',
@@ -24,14 +29,24 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
     _req: unknown,
     _id: unknown,
     run: (access: unknown) => Promise<unknown>
-  ) => Response.json(await run({ user: { id: 'requester' } })),
+  ) => Response.json(await run(mocks.access)),
 }));
 
 import { GET, POST } from './route';
 
+// The Worker context crosses the app/core adapter package boundary.
+const allowlist = (value: string | undefined) =>
+  vi.stubGlobal(Symbol.for('__cloudflare-context__'), {
+    env: { MEET_AI_ENABLED_WORKSPACE_IDS: value },
+  });
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 const params = { params: Promise.resolve({ meetingId: 'room' }) };
 beforeEach(() => {
   vi.clearAllMocks();
+  allowlist('ws-team');
   mocks.service.mockResolvedValue({
     text: 'Private',
     continuation: 'secret-provider-signatures',
@@ -55,10 +70,9 @@ it('returns private display data without the provider continuation', async () =>
 });
 it('lists only through the requester-scoped room service', async () => {
   await GET(new Request('https://meet.test/review'), params);
-  expect(mocks.service).toHaveBeenCalledWith(
-    { user: { id: 'requester' } },
-    { action: 'ai.review.list' }
-  );
+  expect(mocks.service).toHaveBeenCalledWith(access, {
+    action: 'ai.review.list',
+  });
 });
 it('passes explicit approval and revision to the protected continuation flow', async () => {
   await POST(
@@ -74,14 +88,11 @@ it('passes explicit approval and revision to the protected continuation flow', a
     }),
     params
   );
-  expect(mocks.generate).toHaveBeenCalledWith(
-    { user: { id: 'requester' } },
-    {
-      messageId: 'message',
-      timezone: 'UTC',
-      resume: { revision: 1, approved: true },
-    }
-  );
+  expect(mocks.generate).toHaveBeenCalledWith(access, {
+    messageId: 'message',
+    timezone: 'UTC',
+    resume: { revision: 1, approved: true },
+  });
 });
 it('never accepts client-authored replacement content when sharing', async () => {
   await POST(
@@ -96,14 +107,35 @@ it('never accepts client-authored replacement content when sharing', async () =>
     }),
     params
   );
-  expect(mocks.service).toHaveBeenCalledWith(
-    { user: { id: 'requester' } },
-    { action: 'ai.review.share', messageId: 'message', revision: 1 }
-  );
+  expect(mocks.service).toHaveBeenCalledWith(access, {
+    action: 'ai.review.share',
+    messageId: 'message',
+    revision: 1,
+  });
 });
 it('rejects invalid review ids before accessing the room', async () => {
   await expect(
     GET(new Request('https://meet.test/review?messageId='), params)
   ).rejects.toMatchObject({ status: 400 });
   expect(mocks.service).not.toHaveBeenCalled();
+});
+it('denies review writes outside the Meet AI allowlist but keeps reads open', async () => {
+  allowlist(undefined);
+  for (const action of ['approve', 'deny', 'share', 'discard']) {
+    await expect(
+      POST(
+        new Request('https://meet.test/review', {
+          method: 'POST',
+          body: JSON.stringify({ messageId: 'message', revision: 1, action }),
+        }),
+        params
+      )
+    ).rejects.toMatchObject({ status: 403 });
+  }
+  expect(mocks.generate).not.toHaveBeenCalled();
+  expect(mocks.service).not.toHaveBeenCalled();
+  await GET(new Request('https://meet.test/review'), params);
+  expect(mocks.service).toHaveBeenCalledWith(access, {
+    action: 'ai.review.list',
+  });
 });

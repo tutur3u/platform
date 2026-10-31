@@ -54,7 +54,7 @@ and Oxc tooling. A backend service does not need React or a router to qualify.
 | Colab | Vite React assets plus native Worker | Adopt Vite+ without changing auth, sponsorship, room Durable Objects or SPA routing |
 | Meet realtime | Native Worker and Durable Objects | Adopt shared tooling; preserve signalling, TURN/SFU contracts and realtime health checks |
 | Coordination | Native Worker service | Preserve coordination protocol, authentication, object identity and storage |
-| Ops Hub | New native Worker and per-user SQLite DO; publication held | Strict signed ingress, bounded storage/maintenance, durable stop fence; see [ops runbook](/build/devops/ops-hub) |
+| Ops Hub | New native Worker and per-user SQLite DO; publication held | Strict signed ingress, bounded storage/maintenance, durable stop fence; the operations runbook is internal |
 | Devbox control | Native Worker service | Preserve control authentication, lease/state transitions and deployment identity |
 | Cron control | Scheduled/native Worker | Preserve scheduler ownership, deduplication, recovery RPC and authenticated forwarding |
 | Mail email routing | Native email Worker within Mail | Preserve MIME ingestion, R2 permissions and the owning Mail webhook contract |
@@ -335,7 +335,7 @@ slot, deleting at most 1,000 completed rows per table. It has no in-slot retry o
 drain loop; the existing durable slot claim, pre-delete stop fence and five-failure
 budget survive ledger restarts. Counted dispatch/stop regressions and full-chain
 pgTAP cover the bounds and seven-day cutoff. The
-[history retention runbook](/build/devops/cloudflare-cron-control#seven-day-database-cron-history)
+history retention runbook
 records the daily operation envelope and stop procedure. Hosted scheduled execution,
 independent operator-stop acceptance and billed usage remain rollout evidence.
 
@@ -384,9 +384,9 @@ background jobs. Focused tests cover HTTP methods, WebSocket rejection and zero
 external work. Request volume can still incur charges. Hosted route removal and
 script deletion are its durable stop procedure; that control-plane rehearsal is
 pending separately approved staging access, not proven by source tests.
-See the [maintenance runbook](/build/devops/hive-cloudflare-maintenance).
+See the maintenance runbook.
 
-The [native migration plan](/build/devops/hive-cloudflare-migration) requires
+The native migration plan requires
 persisted budgets and generation/stop fences before simulation, queues, alarms
 or model calls can be enabled. Operation-count, crash/restart and stop-versus-
 reschedule evidence remains pending implementation. No Hive native scheduler or

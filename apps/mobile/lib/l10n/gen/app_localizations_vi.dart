@@ -14584,4 +14584,273 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get settingsPushFirebaseDisclosure => 'Thông báo đẩy được gửi qua Google Firebase Cloud Messaging, dịch vụ này đăng ký thiết bị này với Firebase Installations. Việc này tạo một mã định danh bản cài đặt Firebase (Firebase Installation ID) và một mã thông báo đẩy cho thiết bị này; chúng tôi gắn mã thông báo đẩy với tài khoản của bạn để gửi thông báo cho bạn. Việc này tách biệt với lựa chọn phân tích của bạn. Tắt thông báo đẩy thì thiết bị này không còn được đăng ký nhận thông báo.';
+
+  @override
+  String get mastermindIrisChatSegment => 'Trò chuyện';
+
+  @override
+  String get mastermindIrisChatEmpty => 'Chưa có tin nhắn nào';
+
+  @override
+  String get mastermindIrisComposerPlaceholder => 'Nhắn cho Atlas';
+
+  @override
+  String get mastermindIrisSend => 'Gửi';
+
+  @override
+  String get mastermindIrisReceiptSending => 'Đang gửi';
+
+  @override
+  String get mastermindIrisReceiptQueued => 'Đang chờ';
+
+  @override
+  String get mastermindIrisReceiptSent => 'Đã gửi';
+
+  @override
+  String get mastermindIrisReceiptSeen => 'Đã xem';
+
+  @override
+  String get mastermindIrisReceiptFailed => 'Chưa gửi được';
+
+  @override
+  String get mastermindIrisRetry => 'Thử lại';
+
+  @override
+  String get mastermindIrisHidden => 'Tin nhắn đã ẩn';
+
+  @override
+  String get mastermindIrisTruncated => 'Mở trên Mac để xem phần còn lại.';
+
+  @override
+  String get mastermindIrisLoadEarlier => 'Tải tin cũ hơn';
+
+  @override
+  String get mastermindIrisKilledTitle => 'Iris đang tạm dừng';
+
+  @override
+  String get mastermindIrisKilledBody => 'Không thể gửi cho đến khi công tắc dừng được gỡ. Bạn vẫn đọc được cuộc trò chuyện.';
+
+  @override
+  String get mastermindIrisOffline => 'Không kết nối được Iris. Đang thử lại.';
+
+  @override
+  String get mastermindIrisRateLimited => 'Iris đang bận. Sẽ thử lại sau ít phút.';
+
+  @override
+  String get mastermindIrisAccessLost => 'Thiết bị này không dùng được Iris. Hãy kiểm tra đăng ký thiết bị.';
+
+  @override
+  String get mastermindIrisAuthorOwner => 'Chủ sở hữu';
+
+  @override
+  String get mastermindIrisAuthorAgent => 'Atlas';
+
+  @override
+  String get mastermindIrisAuthorSystem => 'Hệ thống';
+
+  @override
+  String get mastermindIrisRedactedPath => 'đường dẫn';
+
+  @override
+  String get mastermindIrisRedactedLink => 'liên kết';
+
+  @override
+  String mastermindIrisRedactedLinkHost(String host) {
+    return 'liên kết: $host';
+  }
+
+  @override
+  String get mastermindIrisRedactedSecret => 'bí mật đã ẩn';
+
+  @override
+  String get mastermindIrisRedactedId => 'mã định danh';
+
+  @override
+  String get mastermindIrisRedactedEmail => 'email';
+
+  @override
+  String get mastermindIrisRedactedNumber => 'số';
+
+  @override
+  String get mastermindIrisRedactedOther => 'đã ẩn';
+
+  @override
+  String mastermindIrisActivityCommands(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã chạy $count lệnh',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindIrisActivityEdits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã sửa $count tệp',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindIrisActivitySearches(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã tìm $count lần',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindIrisActivitySubagents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Đã chạy $count tác tử phụ',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindIrisWhatNeedsMe => 'Việc cần tôi';
+
+  @override
+  String mastermindIrisCountUrgent(int count) {
+    return '$count khẩn';
+  }
+
+  @override
+  String mastermindIrisCountSoon(int count) {
+    return '$count sắp đến hạn';
+  }
+
+  @override
+  String mastermindIrisCountFyi(int count) {
+    return '$count để biết';
+  }
+
+  @override
+  String mastermindIrisCountOther(int count) {
+    return '$count khác';
+  }
+
+  @override
+  String get mastermindIrisNothingNeedsYou => 'Hiện không có việc gì cần bạn';
+
+  @override
+  String mastermindIrisRoleLine(String role, String status) {
+    return '$role: $status';
+  }
+
+  @override
+  String get mastermindIrisRoleArmed => 'sẵn sàng';
+
+  @override
+  String get mastermindIrisRoleRunning => 'đang chạy';
+
+  @override
+  String get mastermindIrisRoleStalled => 'bị kẹt';
+
+  @override
+  String get mastermindIrisRoleIdle => 'đang rảnh';
+
+  @override
+  String get mastermindIrisUseRecommendations => 'Dùng đề xuất';
+
+  @override
+  String get mastermindIrisUseRecommendationsDescription => 'Gửi câu trả lời được đề xuất cho từng yêu cầu bên dưới. Mỗi câu trả lời có thể hoàn tác trên thẻ của nó trong vài giây.';
+
+  @override
+  String mastermindIrisUseRecommendationsConfirm(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Gửi $count câu trả lời',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindIrisRecommendationQueued => 'Đang gửi. Hoàn tác trên thẻ.';
+
+  @override
+  String get mastermindIrisRecommendationSkipped => 'Đã bỏ qua: đã được trả lời hoặc đang tắt trả lời';
+
+  @override
+  String mastermindIrisRecommendationsResult(int sent, int total) {
+    return 'Đã gửi $sent/$total';
+  }
+
+  @override
+  String get mastermindIrisDone => 'Xong';
+
+  @override
+  String get mastermindIrisDevicesTitle => 'Thiết bị Iris';
+
+  @override
+  String get mastermindIrisDevicesAction => 'Thiết bị Iris';
+
+  @override
+  String get mastermindIrisDevicesEmpty => 'Chưa có thiết bị nào được đăng ký';
+
+  @override
+  String get mastermindIrisDevicesLoadFailed => 'Không tải được danh sách thiết bị. Hãy thử lại.';
+
+  @override
+  String get mastermindIrisDeviceStatusPending => 'Đang chờ xác nhận';
+
+  @override
+  String get mastermindIrisDeviceStatusConfirmed => 'Đã đăng ký';
+
+  @override
+  String get mastermindIrisDeviceStatusExpired => 'Đã hết hạn';
+
+  @override
+  String get mastermindIrisDeviceStatusRevoked => 'Đã thu hồi';
+
+  @override
+  String get mastermindIrisDeviceQa => 'QA';
+
+  @override
+  String mastermindIrisDeviceFingerprint(String prefix) {
+    return 'Khóa $prefix';
+  }
+
+  @override
+  String get mastermindIrisRevoke => 'Thu hồi';
+
+  @override
+  String get mastermindIrisRevokeConfirm => 'Nhấn lần nữa để thu hồi';
+
+  @override
+  String get mastermindIrisEnrol => 'Đăng ký thiết bị này';
+
+  @override
+  String get mastermindIrisEnrolUnavailable => 'Bản dựng này chưa thể tạo khóa thiết bị.';
+
+  @override
+  String get mastermindIrisEnrolCode => 'Mã đăng ký';
+
+  @override
+  String mastermindIrisEnrolInstructions(String prefix) {
+    return 'Mở trang đăng ký Iris và xác nhận bằng passkey của bạn. Hãy kiểm tra khóa bắt đầu bằng $prefix.';
+  }
+
+  @override
+  String get mastermindIrisEnrolWaiting => 'Đang chờ bạn xác nhận. Mã hết hạn sau 15 phút.';
+
+  @override
+  String get mastermindIrisEnrolConfirmed => 'Thiết bị này đã được đăng ký.';
+
+  @override
+  String get mastermindIrisEnrolExpired => 'Mã đã hết hạn. Hãy bắt đầu lại để nhận mã mới.';
+
+  @override
+  String get mastermindIrisEnrolFailed => 'Không thể bắt đầu đăng ký. Hãy thử lại.';
+
+  @override
+  String get mastermindIrisEnrolLimit => 'Có quá nhiều thiết bị đang chờ. Hãy đợi một thiết bị hết hạn.';
 }

@@ -152,7 +152,7 @@ guards. Listing them or passing policy unit tests is not hosted acceptance.
 `apps/web/cloudflare/profile.ts` declares the exact host
 `web.staging.tutur3u.com`, zone `tutur3u.com`, cookie domain
 `.staging.tutur3u.com`, HSTS `max-age=31536000`, and staging Supabase project
-`fxefojytwimjiqxseqag`. There are no wildcard hosts. The checked Void config has
+`<staging-project-ref>`. There are no wildcard hosts. The checked Void config has
 no routes, custom domains, schedules or external resource bindings;
 `workers_dev` and preview URLs are disabled. No provider resources are created.
 
@@ -160,7 +160,7 @@ Requests fail closed unless all of these runtime settings are admitted:
 
 - `WEB_START_CANDIDATE=staging` (checked default: `off`).
 - `AUTH_COOKIE_DOMAIN=.staging.tutur3u.com` and
-  `NEXT_PUBLIC_SUPABASE_URL=https://fxefojytwimjiqxseqag.supabase.co`.
+  `NEXT_PUBLIC_SUPABASE_URL=https://<staging-project-ref>.supabase.co`.
 - `NEXT_FALLBACK_ORIGIN` is one exact HTTPS staging Next deployment origin,
   with no path, credentials or query. The hostname filter accepts
   `tuturuuu.vercel.app`, the `tuturuuu-*.vercel.app` prefix, or a staging-domain
@@ -189,7 +189,7 @@ Requests fail closed unless all of these runtime settings are admitted:
   no production fingerprint configured and cannot enforce key separation.
 
 The staging Next deployment must return
-`x-tuturuuu-staging-supabase-ref: fxefojytwimjiqxseqag` on **every** response,
+`x-tuturuuu-staging-supabase-ref: <staging-project-ref>` on **every** response,
 including errors, redirects and the service-worker script. Configure that
 attestation only after verifying its actual database identity. Missing or
 mismatched attestation returns 502 without exposing the upstream body or cookies.
@@ -303,7 +303,7 @@ lists every name; the publisher verifies what it can on each run.
 | --- | --- |
 | Cloudflare account and scoped token | `CLOUDFLARE_STAGING_API_TOKEN`: Workers deployment for the staging Workers, D1 for the control database, and **read** permission for Access Apps and Policies, Zone DNS, Workers Routes and Custom Domains on `tutur3u.com`; no Access or DNS write; never the production token |
 | Staging Worker and ingress | An inert, owner-bootstrapped `tuturuuu-web-wave1-staging` with workers.dev, previews and routes off. One Workers Custom Domain, `web.staging.tutur3u.com`, attached manually behind the `staging-web` Access app only after `next-verify` is green. The publisher's preflight checks the binding, DNS, Access phase and policies on every run |
-| Staging Supabase keys | Confirm project `fxefojytwimjiqxseqag`, publishable key, fallback-only service secret, staging schema/fixtures, auth callback URLs and disposable account/workspace; never production keys |
+| Staging Supabase keys | Confirm project `<staging-project-ref>`, publishable key, fallback-only service secret, staging schema/fixtures, auth callback URLs and disposable account/workspace; never production keys |
 | Immutable staging Next fallback | `wave1-web-staging.yaml` makes one ledger-guarded deployment per admitted SHA in project `tuturuuu-web-staging` and verifies it (`next-verify`): identity, protection, aliases, N15–N17, `_next/image`/monitoring and attestation. The staging build fails unless satellite rewrites point only to `*.staging.tutur3u.com` |
 | Origin proof secret | Staging-only `TRUSTED_PROXY_ORIGIN_SECRET` and private evidence that it differs from production; matching trusted-proxy settings on Next |
 | R2 storage | Separate staging account/bucket/binding or staging S3-compatible credentials and fallback storage-provider setup; legal routes need no R2 binding and do not authorize storage tests |
@@ -351,8 +351,8 @@ ttr resources run -- bunx --no-install vitest run --config apps/web/cloudflare/v
 bun apps/web/cloudflare/generate-inventory.ts --check
 ```
 
-On Studio (`skr-studio`) or
-the i9, in a separate exact-source checkout with dependencies restored, run:
+On a build Mac or
+another remote build host, in a separate exact-source checkout with dependencies restored, run:
 
 ```sh
 ttr resources run -- bun run --cwd apps/web build:candidate

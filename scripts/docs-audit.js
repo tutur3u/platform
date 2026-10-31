@@ -20,6 +20,66 @@ function navigationPages(value, insidePages = false, result = []) {
   return result;
 }
 
+// Public docs must never name internal registers, hosts, paths, secrets,
+// accounts, agent threads or customers without consent. Messages carry the
+// rule and location only, so CI logs never repeat the matched text. Rules run
+// over the whole source (not line by line) so a name wrapped across a line
+// break is still found.
+const PUBLIC_SAFETY_RULES = [
+  ['internal security register ID', /\bSR-\d{2,4}[a-z]?\b/],
+  [
+    'developer home-directory path',
+    /(?<![\w\][)}./-])\/(?:Users|home)\/(?!runner\b|user\b)[A-Za-z][\w.-]*\//,
+  ],
+  ['fleet host or machine name', /\b(?:skr-[a-z0-9-]+|sokora[\w-]*)\b/i],
+  [
+    'fleet host or machine name',
+    /\b(?:Sonha|ThanhStudio)\b|\bThanh\b(?! toan\b)/,
+  ],
+  ['tailnet hostname', /\.ts\.net\b/],
+  [
+    'tailnet address',
+    /\b100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d{1,3}\.\d{1,3}\b/,
+  ],
+  [
+    'Cloudflare account workers.dev host',
+    /\b[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-]*\.workers\.dev\b/i,
+  ],
+  [
+    'private network address',
+    /\b(?:192\.168|10\.(?!0\.2\.2\b)\d{1,3}|172\.(?:1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3}\b/,
+  ],
+  [
+    'token-shaped secret',
+    /\b(?:gh[pousr]_[A-Za-z0-9]{30,}|sk-[A-Za-z0-9_-]{30,}|AKIA[0-9A-Z]{16}|xox[bap]-[A-Za-z0-9-]{10,}|sbp_[a-z0-9]{30,})\b|-----BEGIN [A-Z ]*PRIVATE KEY-----/,
+  ],
+  ['JWT-shaped token', /\beyJ[A-Za-z0-9_-]{10,}\.eyJ/],
+  [
+    'Supabase project reference',
+    /\b[a-z]{20}\.supabase\.(?:co|in)\b|\b(?:nzamlzqfdwaaxdefwraj|fxefojytwimjiqxseqag)\b/,
+  ],
+  ['agent or thread identifier', /\bmcp:(?:launch:|[0-9a-f]{8}-)/],
+  [
+    'customer name without consent',
+    /\b(?:Easy[\s_-]*Center|phongkhamtinhmach|bacsivy|buouco|lomnguc|PKTM)\b/i,
+  ],
+  ['personal or staff email address', /[\w.+-]+@gmail\.com\b|\bphucvo@/i],
+];
+
+function publicSafetyErrors(source, relative) {
+  const errors = [];
+  for (const [label, pattern] of PUBLIC_SAFETY_RULES) {
+    const lines = new Set();
+    for (const match of source.matchAll(
+      new RegExp(pattern.source, `${pattern.flags}g`)
+    ))
+      lines.add(source.slice(0, match.index).split('\n').length);
+    for (const line of lines)
+      errors.push(`Public-safety (${label}): ${relative}:${line}`);
+  }
+  return errors;
+}
+
 function audit(root = ROOT) {
   const docs = path.join(root, 'apps/docs');
   const config = JSON.parse(
@@ -32,6 +92,17 @@ function audit(root = ROOT) {
   );
   const errors = [];
   const files = walk(docs).filter((file) => file.endsWith('.mdx'));
+  // docs-internal/ is hidden from the site but still public on GitHub, so it
+  // gets the same public-safety scan (not the navigation or link checks).
+  const internalRoot = path.join(root, 'docs-internal');
+  if (fs.existsSync(internalRoot))
+    for (const file of walk(internalRoot).filter((f) => /\.mdx?$/.test(f)))
+      errors.push(
+        ...publicSafetyErrors(
+          fs.readFileSync(file, 'utf8'),
+          path.relative(root, file).split(path.sep).join('/')
+        )
+      );
   const exists = (slug) =>
     ['.mdx', '.md'].some((extension) =>
       fs.existsSync(path.join(docs, slug + extension))
@@ -45,6 +116,7 @@ function audit(root = ROOT) {
     const relative = path.relative(docs, file).split(path.sep).join('/');
     const slug = relative.slice(0, -4);
     const source = fs.readFileSync(file, 'utf8');
+    errors.push(...publicSafetyErrors(source, relative));
     if (!registered.has(slug) && !redirects.has(slug))
       errors.push(`Unregistered page: ${slug}`);
     if (
@@ -105,7 +177,7 @@ function audit(root = ROOT) {
   };
 }
 
-module.exports = { audit, navigationPages };
+module.exports = { audit, navigationPages, publicSafetyErrors };
 if (require.main === module) {
   const result = audit();
   // The agent operating model page must agree with AGENTS.md and the plugin

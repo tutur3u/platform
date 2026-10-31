@@ -14739,4 +14739,278 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsPushFirebaseDisclosure => 'Push notifications are delivered through Google Firebase Cloud Messaging, which registers this device with Firebase Installations. This creates a Firebase Installation ID and a push token for this device; we link the push token to your account so we can send you notifications. This is separate from your analytics choice. Turn push off and this device is no longer registered for notifications.';
+
+  @override
+  String get mastermindIrisChatSegment => 'Chat';
+
+  @override
+  String get mastermindIrisChatEmpty => 'No messages yet';
+
+  @override
+  String get mastermindIrisComposerPlaceholder => 'Message Atlas';
+
+  @override
+  String get mastermindIrisSend => 'Send';
+
+  @override
+  String get mastermindIrisReceiptSending => 'Sending';
+
+  @override
+  String get mastermindIrisReceiptQueued => 'Queued';
+
+  @override
+  String get mastermindIrisReceiptSent => 'Sent';
+
+  @override
+  String get mastermindIrisReceiptSeen => 'Seen';
+
+  @override
+  String get mastermindIrisReceiptFailed => 'Not sent';
+
+  @override
+  String get mastermindIrisRetry => 'Retry';
+
+  @override
+  String get mastermindIrisHidden => 'Hidden message';
+
+  @override
+  String get mastermindIrisTruncated => 'Open on Mac for the rest.';
+
+  @override
+  String get mastermindIrisLoadEarlier => 'Load earlier messages';
+
+  @override
+  String get mastermindIrisKilledTitle => 'Iris is paused';
+
+  @override
+  String get mastermindIrisKilledBody => 'Sending is off until the kill switch is lifted. You can still read the chat.';
+
+  @override
+  String get mastermindIrisOffline => 'Can\'t reach Iris. Retrying.';
+
+  @override
+  String get mastermindIrisRateLimited => 'Iris is busy. Retrying shortly.';
+
+  @override
+  String get mastermindIrisAccessLost => 'This device can\'t use Iris. Check its enrolment.';
+
+  @override
+  String get mastermindIrisAuthorOwner => 'Owner';
+
+  @override
+  String get mastermindIrisAuthorAgent => 'Atlas';
+
+  @override
+  String get mastermindIrisAuthorSystem => 'System';
+
+  @override
+  String get mastermindIrisRedactedPath => 'path';
+
+  @override
+  String get mastermindIrisRedactedLink => 'link';
+
+  @override
+  String mastermindIrisRedactedLinkHost(String host) {
+    return 'link: $host';
+  }
+
+  @override
+  String get mastermindIrisRedactedSecret => 'secret withheld';
+
+  @override
+  String get mastermindIrisRedactedId => 'id';
+
+  @override
+  String get mastermindIrisRedactedEmail => 'email';
+
+  @override
+  String get mastermindIrisRedactedNumber => 'number';
+
+  @override
+  String get mastermindIrisRedactedOther => 'withheld';
+
+  @override
+  String mastermindIrisActivityCommands(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ran $count commands',
+      one: 'Ran 1 command',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindIrisActivityEdits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Edited $count files',
+      one: 'Edited 1 file',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindIrisActivitySearches(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Searched $count times',
+      one: 'Searched once',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindIrisActivitySubagents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ran $count subagents',
+      one: 'Ran 1 subagent',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindIrisWhatNeedsMe => 'What needs me';
+
+  @override
+  String mastermindIrisCountUrgent(int count) {
+    return '$count urgent';
+  }
+
+  @override
+  String mastermindIrisCountSoon(int count) {
+    return '$count soon';
+  }
+
+  @override
+  String mastermindIrisCountFyi(int count) {
+    return '$count FYI';
+  }
+
+  @override
+  String mastermindIrisCountOther(int count) {
+    return '$count other';
+  }
+
+  @override
+  String get mastermindIrisNothingNeedsYou => 'Nothing needs you right now';
+
+  @override
+  String mastermindIrisRoleLine(String role, String status) {
+    return '$role: $status';
+  }
+
+  @override
+  String get mastermindIrisRoleArmed => 'armed';
+
+  @override
+  String get mastermindIrisRoleRunning => 'running';
+
+  @override
+  String get mastermindIrisRoleStalled => 'stalled';
+
+  @override
+  String get mastermindIrisRoleIdle => 'idle';
+
+  @override
+  String get mastermindIrisUseRecommendations => 'Use recommendations';
+
+  @override
+  String get mastermindIrisUseRecommendationsDescription => 'Sends the recommended answer to each ask below. Each one can be undone on its card for a few seconds.';
+
+  @override
+  String mastermindIrisUseRecommendationsConfirm(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Send $count answers',
+      one: 'Send 1 answer',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindIrisRecommendationQueued => 'Sending. Undo on its card.';
+
+  @override
+  String get mastermindIrisRecommendationSkipped => 'Skipped: already answered, or replies are off';
+
+  @override
+  String mastermindIrisRecommendationsResult(int sent, int total) {
+    return '$sent of $total sent';
+  }
+
+  @override
+  String get mastermindIrisDone => 'Done';
+
+  @override
+  String get mastermindIrisDevicesTitle => 'Iris devices';
+
+  @override
+  String get mastermindIrisDevicesAction => 'Iris devices';
+
+  @override
+  String get mastermindIrisDevicesEmpty => 'No devices enrolled yet';
+
+  @override
+  String get mastermindIrisDevicesLoadFailed => 'Couldn\'t load devices. Try again.';
+
+  @override
+  String get mastermindIrisDeviceStatusPending => 'Waiting for confirmation';
+
+  @override
+  String get mastermindIrisDeviceStatusConfirmed => 'Enrolled';
+
+  @override
+  String get mastermindIrisDeviceStatusExpired => 'Expired';
+
+  @override
+  String get mastermindIrisDeviceStatusRevoked => 'Revoked';
+
+  @override
+  String get mastermindIrisDeviceQa => 'QA';
+
+  @override
+  String mastermindIrisDeviceFingerprint(String prefix) {
+    return 'Key $prefix';
+  }
+
+  @override
+  String get mastermindIrisRevoke => 'Revoke';
+
+  @override
+  String get mastermindIrisRevokeConfirm => 'Tap again to revoke';
+
+  @override
+  String get mastermindIrisEnrol => 'Enrol this device';
+
+  @override
+  String get mastermindIrisEnrolUnavailable => 'This build can\'t create a device key yet.';
+
+  @override
+  String get mastermindIrisEnrolCode => 'Enrolment code';
+
+  @override
+  String mastermindIrisEnrolInstructions(String prefix) {
+    return 'Open the Iris enrol page and confirm with your passkey. Check that the key starts with $prefix.';
+  }
+
+  @override
+  String get mastermindIrisEnrolWaiting => 'Waiting for you to confirm. The code expires in 15 minutes.';
+
+  @override
+  String get mastermindIrisEnrolConfirmed => 'This device is enrolled.';
+
+  @override
+  String get mastermindIrisEnrolExpired => 'The code expired. Start again for a new one.';
+
+  @override
+  String get mastermindIrisEnrolFailed => 'Couldn\'t start enrolment. Try again.';
+
+  @override
+  String get mastermindIrisEnrolLimit => 'Too many pending devices. Wait for one to expire.';
 }

@@ -43,7 +43,7 @@ Regression coverage: `apps/database/supabase/tests/merge-phase-workspace-guards.
 `apps/database/supabase/tests/merge-workspace-users-null-guards.sql`, and
 `apps/database/supabase/tests/merge-batch-helper-search-path.sql`.
 Manual reversal is in the matching `apps/database/rollbacks/20261029050400`–`20261029050430`
-rollback files. A rollback removes these guards and reopens SR-108 for
+rollback files. A rollback removes these guards and reopens an internal security finding for
 authenticated callers of the phase functions; it never re-grants `PUBLIC` or
 `anon`, and the two helpers stay `service_role`-only.
 
@@ -635,7 +635,7 @@ listings that embed a role's permissions under a `ws_id`-filtered
 
 Infrastructure workspace-secret APIs require root MEMBER membership and either
 `manage_workspace_secrets` or `manage_workspace_roles` before using an admin client
-(SR-385). Tenant permissions alone do not
+(an internal security review). Tenant permissions alone do not
 grant infrastructure access. Creating, renaming, updating, or deleting
 `MANAGED_CRON_ENABLED` also requires a current subject-bound verified Auth user and verified Tuturuuu staff session.
 A matching email alone does not grant access.

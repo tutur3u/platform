@@ -351,6 +351,19 @@ bytes in both directions:
 - Neither may contain the retired smoke host.
 - Every folded `rootHosts` literal must equal the profile's single host. An
   unfolded list fails.
+- For `staging`, the request-forwarding sources (`handler.ts`,
+  `api-owner-routing.ts`, `request-init.ts`, `staging-access.ts`,
+  `tasks-origin.ts`) must not name `tuturuuu.com` or any app subdomain. Shared
+  registries may still carry production hosts in staging bytes, so the scan
+  covers the forwarding source rather than the whole artifact. A guard line opts
+  out with `host-scan-allow`.
+
+Staging Calendar has no Tasks fallback. `resolveCalendarTasksOrigin()` needs an
+explicit `TASKS_APP_URL` (or `NEXT_PUBLIC_TASKS_APP_URL`) that is HTTPS and not a
+production host; otherwise Tasks API paths return 503 and no cookie is
+forwarded. No staging Tasks host is registered yet, so staging Calendar's Tasks
+paths stay disabled until one is. Production derives the Tasks origin from the
+build-time `production` profile, not `NODE_ENV`.
 
 `wave1-native-runtime.mjs` also starts each artifact on the other
 environment's host and requires 404 (N8/N9).
@@ -1031,7 +1044,7 @@ admitted, retry, unknown-outcome, topology and reconciliation paths with countin
 provider/CLI fixtures, and verifies all three sealed frontend profiles have no routes.
 Exact-commit CI and hosted provider acceptance remain separate gates.
 
-### Staging cookie isolation (SR-846)
+### Staging cookie isolation
 
 All app staging hosts use `<app>.staging.tutur3u.com`. Web staging uses
 `web.staging.tutur3u.com`. Preview and canary hosts must also stay outside the

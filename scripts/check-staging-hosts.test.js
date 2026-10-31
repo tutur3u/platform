@@ -413,3 +413,94 @@ test('too many ambiguous sites fail closed to scanning comments', () => {
   const ambiguous = '{} /\\/*/ ;\n'.repeat(40);
   assert.equal(violations(`${ambiguous}// dev.tuturuuu.com\n`).length, 1);
 });
+
+test('C-style comments are stripped only for JS, TS and CSS-family files', () => {
+  const commented = 'a /* dev.tuturuuu.com */ b';
+  for (const file of [
+    'a.js',
+    'a.mjs',
+    'a.cjs',
+    'a.ts',
+    'a.tsx',
+    'a.jsx',
+    'a.mts',
+    'a.css',
+    'a.scss',
+    'a.less',
+  ]) {
+    assert.equal(violations(commented, file).length, 0, file);
+    assert.equal(
+      stripCommentVariants(commented, file)[0].includes('dev'),
+      false
+    );
+  }
+  for (const file of [
+    'a.sh',
+    'a.sql',
+    'a.yaml',
+    'a.yml',
+    '.env',
+    'Dockerfile',
+  ]) {
+    assert.deepEqual(stripCommentVariants(commented, file), [commented], file);
+    assert.equal(violations(commented, file).length, 1, file);
+  }
+});
+
+test('a shell glob /* cannot swallow a staging host', () => {
+  const script =
+    'ls /var/log/*\nSTAGING=dev.tuturuuu.com\necho done # see /tmp/x */\n';
+  assert.equal(violations(script, 'deploy.sh').length, 1);
+  assert.equal(violations(script, 'scripts/run.bash').length, 1);
+  // Without a file the JS/TS reading applies, which would have hidden the host.
+  assert.equal(violations(script).length, 0);
+});
+
+test('SQL text containing /* cannot swallow a staging host', () => {
+  const sql =
+    "select '/*' as a;\ninsert into hosts values ('staging.tuturuuu.com');\nselect '*/';\n";
+  assert.equal(violations(sql, 'supabase/migrations/1_hosts.sql').length, 1);
+  assert.equal(
+    violations(
+      "-- /* note\nupdate t set h = 'preview.tuturuuu.com';\n-- */\n",
+      'a.sql'
+    ).length,
+    1
+  );
+});
+
+test('YAML text containing /* or // cannot swallow a staging host', () => {
+  const yaml =
+    'paths:\n  - src/*\nhost: next.tuturuuu.com\nglob: "docs/*/index.md" # */\n';
+  assert.equal(violations(yaml, '.github/workflows/ci.yaml').length, 1);
+  assert.equal(violations(yaml, 'config.yml').length, 1);
+  assert.equal(
+    violations('a: // x\nhost: qa.tuturuuu.com\n', 'config.yaml').length,
+    1
+  );
+});
+
+test('check() passes the file name so non-JS files are not stripped', (t) => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'staging-hosts-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  execFileSync('git', ['init', '-q'], { cwd: root });
+  writeFileSync(
+    path.join(root, 'run.sh'),
+    'ls /var/*\nH=dev.tuturuuu.com\n# */\n'
+  );
+  writeFileSync(path.join(root, 'ok.js'), '/* dev.tuturuuu.com */\n');
+  execFileSync('git', ['add', '.'], { cwd: root });
+  assert.deepEqual(check(root), ['run.sh: dev.tuturuuu.com']);
+});
+
+test('a comment between the pieces of a split string cannot hide a host', () => {
+  const dart = "const host = 'dev.' /* x */ + 'tuturuuu.com';\n";
+  const go = 'host := "dev." + // x\n  "tuturuuu.com"\n';
+  assert.equal(violations(dart, 'lib/config.dart').length, 1);
+  assert.equal(violations(go, 'cmd/main.go').length, 1);
+  // Verbatim source stays in the mix, so a glob-like `/*` cannot swallow a host.
+  const globbed = 'a := "/*"\nb := "dev.tuturuuu.com"\nc := "*/"\n';
+  assert.equal(violations(globbed, 'cmd/main.go').length, 1);
+  // Non-C-comment files are still scanned verbatim only.
+  assert.deepEqual(stripCommentVariants(dart, 'a.sh'), [dart]);
+});
