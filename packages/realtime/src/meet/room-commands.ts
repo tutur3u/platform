@@ -36,7 +36,7 @@ import { transcriptionAnnouncements } from './transcription';
 
 export function applyMeetRoomCommand(
   state: MeetRoomSnapshot,
-  { message, now, token }: MeetRoomCommand
+  { message, now, token, notesEligible }: MeetRoomCommand
 ): MeetRoomOutcome {
   const { roomId, userId } = token;
   state = accountRoomTime(state, Date.parse(now));
@@ -53,7 +53,7 @@ export function applyMeetRoomCommand(
     return denied(state, 'awaiting_admission');
   }
 
-  const control = applyRoomControl(state, message, token, now);
+  const control = applyRoomControl(state, message, token, now, notesEligible);
   if (control) return control;
   switch (message.type) {
     case 'assistant.preferences': {

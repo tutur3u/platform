@@ -70,7 +70,7 @@ export async function transactLedger<T>(
     } catch (error) {
       const retryable =
         error instanceof Error &&
-        /transaction-owner-live-or-unverified|transaction-reclamation-busy|transaction-lock-changed|transaction-lock-disappeared|transaction-lock-incomplete/.test(
+        /transaction-owner-unverified|transaction-owner-live-or-unverified|transaction-reclamation-busy|transaction-lock-changed|transaction-lock-disappeared|transaction-lock-incomplete/.test(
           error.message
         );
       if (!retryable) throw new HookError('ledger-lock-unavailable');

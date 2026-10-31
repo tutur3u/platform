@@ -1,7 +1,7 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-09-23"
+updatedAt: "2026-10-31"
 ---
 
 <Note>
@@ -178,7 +178,7 @@ No package version, dependency resolution or published changelog is rewritten.
   `vercel-production-platform.yaml`; self-hosted machines still use the Docker
   release flow below for their own runtime deployment.
 - `apps/apps` production deploys are handled by `vercel-production-apps.yaml`.
-- `apps/qr` production deploys are handled by `vercel-production-qr.yaml`.
+- `apps/tools` (which serves the public QR generator at `/qr`) production deploys are handled by `vercel-production-tools.yaml`.
 - Each production app uses a workflow-and-branch concurrency group whose
   `cancel-in-progress` predicate matches only `production` push events, so the
   newest production SHA remains deployable without letting `main` commits or

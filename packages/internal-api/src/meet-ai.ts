@@ -55,6 +55,8 @@ export type MeetAiSession = {
   notes_cost_usd: number | null;
 };
 export type MeetAiState = {
+  /** False when the pilot allowlist excludes this workspace; absent on older servers. */
+  available?: boolean;
   configured: boolean;
   canManage: boolean;
   sessions: MeetAiSession[];

@@ -14,6 +14,7 @@ import {
 import { readLiveRequestBody } from '@tuturuuu/meet-core/features/live-assistant/request-body';
 import { signLiveSession } from '@tuturuuu/meet-core/features/live-assistant/token';
 import { liveWorkspaceCatalog } from '@tuturuuu/meet-core/features/live-assistant/workspace-tools';
+import { isMeetAiAvailableForWorkspace } from '@tuturuuu/meet-core/features/meeting-ai/server/workspace-gate';
 import { getScenarioPrompt } from '@tuturuuu/meet-core/parley/repository';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { z } from 'zod';
@@ -46,6 +47,7 @@ export async function POST(
       MEET_LIVE: DurableObjectNamespace;
       MEET_REALTIME_TOKEN_SECRET: string;
       GOOGLE_GENERATIVE_AI_API_KEY?: string;
+      MEET_AI_ENABLED_WORKSPACE_IDS?: string;
     };
     if (
       !env.MEET_LIVE ||
@@ -53,6 +55,16 @@ export async function POST(
     )
       throw new MeetCallAccessError(503, 'Live assistant is unavailable');
     const command = input.data;
+    // Live is transcription. Start and resume are default deny for workspaces
+    // outside the pilot allowlist; stop stays open so a session can always end.
+    if (
+      command.action !== 'stop' &&
+      !isMeetAiAvailableForWorkspace(access.meeting.ws_id, env)
+    )
+      throw new MeetCallAccessError(
+        403,
+        'Meeting AI is not available for this workspace'
+      );
     const sharedContext =
       command.action === 'stop'
         ? undefined
