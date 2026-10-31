@@ -137,7 +137,7 @@ not keys.
 The examples set these variables:
 
 ```bash
-export SUPABASE_ACCESS_TOKEN_FILE=~/.config/<ops>/supabase-access.token  # mode 600
+export SUPABASE_ACCESS_TOKEN_FILE=<path to your access-token file (0600, outside the repo)>
 LEDGER_DIR=$(mktemp -d) && chmod 700 "$LEDGER_DIR"
 REKEY="node scripts/storage-rekey/cli.mjs --project-ref $PROD_PROJECT_REF \
   --environment production --ledger $LEDGER_DIR/ledger.json"
@@ -237,7 +237,7 @@ named as development or staging. It covers:
 - Two vault versions that share one artifact path.
 
 ```bash
-export SUPABASE_ACCESS_TOKEN_FILE=~/.config/<staging-worker>/supabase-access.token
+export SUPABASE_ACCESS_TOKEN_FILE=<path to your staging access-token file (0600, outside the repo)>
 R=$(mktemp -d); H="node scripts/storage-rekey/rehearsal.mjs"
 $H seed --project-ref $STAGING_REF --state $R/state.json
 $H seed-vault --project-ref $STAGING_REF --state $R/state.json
