@@ -359,6 +359,7 @@
             "pages": [
               "build/overview",
               "build/mail/report-email-replies",
+              "build/mail/newsletter-provider-feasibility",
               {
                 "group": "DevOps & Deployment",
                 "pages": [

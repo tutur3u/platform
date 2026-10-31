@@ -1,0 +1,195 @@
+---
+title: "Newsletter provider feasibility"
+description: "Chosen SES bulk provider, remaining account/identity gates, newsletter tier sandbox fixtures and local webhook verification."
+updatedAt: '2026-10-25'
+---
+
+## Verdict and scope
+
+**Amazon SES is the user-approved newsletter/bulk delivery provider (2026-10-25).**
+Cloudflare continues to own new scheduling, Queues and dispatch compute; Email
+Service remains an option for existing transactional mail only. Its marketing
+restriction no longer blocks the selected newsletter architecture.
+
+AWS documents [marketing email](https://aws.amazon.com/ses/) and
+[third-party sending authorization](https://docs.aws.amazon.com/ses/latest/dg/sending-authorization.html).
+This establishes a documented product fit, not live account enablement or blanket
+approval of any customer content. Sender consent, AWS policies, regional production
+access, identity authority and deliverability controls still apply. No sends or
+production writes are authorized or performed in this update.
+
+This is Phase 1 provider feasibility, following the
+[design draft PR #6719](https://github.com/tutur3u/platform/pull/6719).
+It adds research, nonproduction catalog request fixtures and a finite loopback
+verification tool. It creates no product routes, tables, subscriptions, Workers,
+DNS records, provider products or deployed configuration. Research was checked
+2026-10-25; account access and hosted acceptance remain separate evidence.
+
+## Superseded Cloudflare sending option — retained evidence
+
+| Question | Verified public source | Conclusion / missing evidence |
+| --- | --- | --- |
+| Does sending exist? | [Email Service overview](https://developers.cloudflare.com/email-service/) and [REST guide](https://developers.cloudflare.com/email-service/api/send-emails/rest-api/) | Email Sending beta supports `POST /accounts/{account_id}/email/sending/send`, native Workers binding and SMTP. A documented endpoint does not establish this account's permission. |
+| Is newsletter marketing allowed? | [FAQ](https://developers.cloudflare.com/email-service/reference/faq/) and [Developer Platform terms, Cloudflare Email Service](https://www.cloudflare.com/service-specific-terms-developer-platform/) | Transactional-only. Terms restrict sends to responses to specific customer interactions facilitating an agreed transaction/update. Opt-in alone does not establish marketing permission. |
+| Can a customer authorize its domain? | [Service terms](https://www.cloudflare.com/service-specific-terms-developer-platform/) | Domains/addresses may be owned or explicitly authorized. SPF/DKIM verification and possible identity/address/script restrictions still apply. This is not a resale or cross-account delegation approval. |
+| What DNS/account model is documented? | [Get started](https://developers.cloudflare.com/email-service/get-started/send-emails/) and [domain configuration](https://developers.cloudflare.com/email-service/configuration/domains/) | Cloudflare DNS; onboarding selects a domain in the account. The SMTP guide binds sender domain to the token-owning account. No reviewed evidence establishes arbitrary external DNS or customer zones staying in independent accounts while a platform token sends. |
+| What domain records are needed? | [Domain configuration](https://developers.cloudflare.com/email-service/configuration/domains/) | Provider-configured SPF, DKIM, DMARC and bounce-routing MX, with a `cf-bounce` return path. Preserve customer root MX and existing DMARC. Do not change DNS during this research. |
+| What are content/account limits? | [Limits](https://developers.cloudflare.com/email-service/platform/limits/) | 50 combined recipients, 5 MiB message, 16 KB custom headers; 30 combined routing/sending domains per zone. Account daily capacity scales by reputation; no universal fixed daily quota is documented. Need account-specific capacity before selling aggregate workspace limits. |
+| Is sending isolated by a universal sandbox? | [Service terms](https://www.cloudflare.com/service-specific-terms-developer-platform/) and [local development](https://developers.cloudflare.com/email-service/observability/local-development/sending/) | Provider can impose restricted sandbox volume/destinations; local Worker simulation exists. Neither proves a universally available isolated hosted email sandbox or legal eligibility. Never use a remote binding believing it is a simulation. |
+| What does it cost? | [Pricing](https://developers.cloudflare.com/email-service/platform/pricing/) | Workers Paid arbitrary-recipient sending: 3,000/account/billing-month included, then $0.35/1,000; accepted hard bounces count. Verified-destination sends are free but are not a substitute for arbitrary-recipient account acceptance. |
+| Are feedback and suppressions supported? | [Event subscriptions](https://developers.cloudflare.com/email-service/reference/event-subscriptions/) and [suppression management](https://developers.cloudflare.com/email-service/configuration/suppressions/) | Sending-domain delivery/bounce/complaint facts can reach Queues; provider suppressions exist. Need hosted event binding and no-plaintext retention compatibility proof. |
+| Can unknown sends be replayed safely? | [REST guide](https://developers.cloudflare.com/email-service/api/send-emails/rest-api/) | No provider idempotency guarantee established by the inspected guide. Preserve unknown submission and reconcile; no blind automatic resend. |
+
+This table explains the rejected bulk-sending option; it is not a request to
+obtain a Cloudflare marketing exception. No provider contact was sent. Existing
+Cloudflare transactional transports remain governed by their own limits and terms.
+
+## SES feasibility and remaining acceptance
+
+| Boundary | Verified source and conclusion | Unverified live evidence |
+| --- | --- | --- |
+| Sending API | [SES v2 SendEmail](https://docs.aws.amazon.com/ses/latest/APIReference-V2/API_SendEmail.html) supports simple/raw/templated messages. Reuse the existing `packages/email-service` SES adapter; qualify its Worker boundary and unsubscribe headers. | Actual account/region IAM, configuration set, message identity and adapter/runtime acceptance. |
+| Customer domains | [Create/verify identities](https://docs.aws.amazon.com/ses/latest/dg/creating-identities.html): publish SES DKIM records in customer DNS. [Sending authorization](https://docs.aws.amazon.com/ses/latest/dg/sending-authorization.html) also documents customer-owned identity delegation to a third-party sender. | Chosen platform-account or delegated identity model, ownership proof and least-privilege policies. No mandatory Cloudflare DNS transfer. |
+| Return path | [Custom MAIL FROM](https://docs.aws.amazon.com/ses/latest/dg/mail-from.html) uses a dedicated subdomain with SPF/MX; preserve root MX and customer DMARC. | Aligned DKIM/SPF, identity region, fallback policy and independently approved sender. |
+| Capacity | [SES sandbox](https://docs.aws.amazon.com/ses/latest/dg/request-production-access.html): per-region restrictions, verified recipients, 200 messages/24 hours and one/second. [Quotas](https://docs.aws.amazon.com/ses/latest/dg/manage-sending-quotas.html) include rolling 24-hour volume and rate. | Regional production access and aggregate capacity for all workspaces; application local-day quota is a separate ceiling. |
+| Feedback | [SES event notifications](https://docs.aws.amazon.com/ses/latest/dg/monitor-sending-activity-using-notifications.html): configuration-set publishing including SNS; authenticated bounded ingestion into Cloudflare Queues. | Topic/configuration-set identity, SNS signature verification, event-to-workspace mapping, suppression handling and retention compatibility. |
+| Policy and safety | SES product fit does not waive consent, spam/abuse policy, workspace/domain/sender approval, quota, full-campaign reservation or stop fence. | Independent security review and hosted release acceptance; no sends in this task. |
+
+## Approved newsletter tier contract
+
+The user clarified that a workspace has exactly one newsletter tier:
+
+| Tier | Price | Daily allowance | Billing-period allowance |
+| --- | --- | --- | --- |
+| Free | $0 | 10 only after workspace newsletter approval; otherwise 0 | No separate monthly pool |
+| Tier 1 | $2/month | At most 200 | 2,000 total |
+| Tier 2 | $10/month | 500 | No separate monthly pool |
+
+No extra free allowance on paid tiers. Tier 1 exhaustion blocks sending until the
+next verified period. Workspace-local midnight defines quota days; authoritative
+subscription anniversaries define Tier 1 pool periods. A coupon can discount a
+product without changing its tier. Both paid catalog entries belong to the same
+exclusive newsletter group, independently of the workspace's base subscription.
+
+[SES pricing](https://aws.amazon.com/ses/pricing/) lists à la carte $0.10/1,000
+and first-band Essentials $0.16/1,000. Email-only Tier 1 cost is $0.20/$0.32;
+full 31-day Tier 2 is $1.55/$2.48. Actual account plan, data, optional features,
+Cloudflare, storage and payment costs remain unverified/excluded; these are not
+net margins. The old Cloudflare $0.35/1,000 estimate is superseded for newsletters.
+
+The user approved #6719's retention and billing policies as written on 2026-10-25,
+including full-campaign quota reservation, grace and downgrade handling. All
+unapproved workspaces have **zero newsletter sends**, regardless of tier/payment.
+Free grants 10/day only after newsletter approval. Domain/sender approvals remain
+separate. A quota admission can be all-or-nothing, but external delivery cannot:
+bounces, unsubscribes, outages and Stop still require honest partial outcomes.
+Platform-wide GDPR/PDPD implementation is a separate lane; cite the approved
+newsletter retention standard in #6719 without expanding this feasibility task.
+
+## Reproducible local proof
+
+The checked-in SDK is `@polar-sh/sdk` 0.49.0. Current upstream
+[product API examples](https://polar.sh/docs/api-reference/products/create) use a
+versioned contract; do not copy new SDK constructors into this repository without
+qualification. The fixtures deliberately serialize through the installed SDK.
+No dependency change is needed.
+
+From the repository root:
+
+```bash
+node scripts/verification/newsletter-polar-webhook-proof.mjs
+```
+
+The tool validates two draft monthly product requests in
+`scripts/verification/newsletter-polar-sandbox-products.json`: $2 (200 minor units)
+and $10 (1,000 minor units), with fixed USD prices and exclusive-tier metadata.
+This proves serialization, not product creation or entitlement enforcement.
+
+It then starts an ephemeral `127.0.0.1` HTTP receiver, generates a random in-memory
+fixture signing key and posts eight finite requests. The real installed Polar
+`validateEvent` checks the raw body and Standard Webhooks headers. Expected results:
+
+- Valid signed `product.created` returns 200 and a parsed product.
+- Identical signed replay returns 200 without another in-memory effect.
+- Modified body, missing signature, expired timestamp and wrong key return 401.
+- Correctly signed wrong-organization event returns 403.
+- Reusing the signed event ID with changed content returns 409.
+
+The listener closes after the proof and prints only PASS summaries. It does not
+read credential files, load `.env`, call Polar/Cloudflare, expose a network service,
+print signing material, or persist customer data. Receiver state is in memory;
+it is not production webhook code or durable billing idempotency. This proof does
+not exercise the Pay adapter, real subscription lifecycle or hosted webhook delivery.
+
+Observed locally: SDK request serialization and all eight HTTP cases passed.
+Keep exact-commit CI lint/type/test/build gates distinct from this executed proof.
+
+## Polar sandbox continuation
+
+[Polar sandbox](https://polar.sh/docs/integrate/sandbox) has separate organization,
+API host and credentials. The next authenticated operation must explicitly target
+`sandbox-api.polar.sh`, with no fallback to live mode. Product creation needs
+`products:write`; listing/readback needs the corresponding read access.
+
+1. Supply a sandbox organization token through the private secret mechanism. Use
+   `POLAR_SANDBOX_ACCESS_TOKEN` in an authorized execution environment; use
+   `POLAR_SANDBOX_ORGANIZATION_ID` to pin the target, not browser input. Never log
+   the token, request Authorization headers or raw provider responses.
+2. Confirm the sandbox organization with bounded read-only access. List existing
+   test products with a bounded page budget; match an owned run marker and exact
+   product/price/metadata before deciding to create anything.
+3. Create exactly two draft products from the serialized fixtures, bound to that
+   sandbox organization. Keep an operation journal before each external write.
+   No automatic create retry: unknown outcome requires marker-based reconciliation
+   and readback before any next create. Record private product/price IDs and prices.
+4. Register or reuse a sandbox-only webhook receiver. Follow
+   [Polar local webhook forwarding](https://polar.sh/docs/integrate/cli/webhooks)
+   with a sandbox organization. The official listener prints its local signing
+   secret: capture it privately into `POLAR_SANDBOX_WEBHOOK_SECRET`, never into
+   tool output, PR artifacts or chat. Use a secure executor, not a public terminal
+   log containing the banner.
+5. Verify genuine product-created events through the installed raw-body validator,
+   including organization/product binding; repeat tamper/replay/expired controls.
+   Synthetic `polar webhook trigger` is explicitly separate from genuine events.
+6. Stop the local listener, remove only owned ephemeral forwarding resources and
+   retain redacted receipts. Do not delete a test product with an unknown outcome.
+
+## Credential and no-send boundary
+
+No live SES/Polar checks are part of this update. The earlier run had no usable
+sandbox credential and created no provider products or hosted webhook receipts.
+Do not read credential files, print tokens or infer production domain readiness
+from checked-in Mail configuration. Stop before any authenticated check until
+credentials are supplied privately via `request_secret` (file delivery for an
+approved shell executor where supported), never chat.
+
+SES read-only checks need `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and
+`AWS_SESSION_TOKEN` for temporary credentials, plus pinned `AWS_REGION`, account
+ID, identity ARN/domain and configuration-set name. Prefer short-lived least-
+privilege read-only credentials; no `ses:SendEmail` or provisioning authority is
+needed for account/identity inspection. Polar sandbox needs
+`POLAR_SANDBOX_ACCESS_TOKEN`, `POLAR_SANDBOX_ORGANIZATION_ID` and, for genuine local
+webhook validation, `POLAR_SANDBOX_WEBHOOK_SECRET`. Refer only to variable names
+in public artifacts. The authenticated continuation above remains unexecuted.
+
+No own-domain send proof is attempted: **no sends and no production writes** is
+the current custody boundary, including SES sandbox/simulator sends. A later
+separately authorized proof must pin a disposable identity/account/region, preserve
+unknown-send fences, and satisfy the existing
+[Cloudflare cost/stop rules](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance)
+for queue/dispatch compute. Provider selection does not authorize that proof.
+
+## Outstanding acceptance and owners
+
+| Blocker / gap | Owner and resume evidence |
+| --- | --- |
+| SES account access, quotas and pricing | AWS account owner: pinned account/region and private read-only credentials; no sends or production writes. |
+| SES customer identity model | Platform/AWS owner: verified platform identity or explicit customer delegation and scoped policy; domain/sender approvals remain required. |
+| Feedback and suppression | Platform/AWS owner: authenticated configuration-set/SNS ingestion evidence and compatibility with approved retention policy. |
+| Two real Polar sandbox products | Billing owner: private sandbox token/organization and separately executed bounded create/readback receipts. |
+| Genuine local sandbox webhooks | Billing owner: private sandbox forwarding/signing-secret injection and signed provider receipt. |
+| Approved retention and billing implementation | Newsletter implementation owner: regression evidence against #6719; platform-wide data-protection implementation belongs to its separate owner. |
+
+Source research and finite local signature mechanics are complete. Hosted provider
+acceptance and sandbox mutations remain blocked, not complete. Neither draft PR
+is merge, deployment, migration or customer-sending authorization.
