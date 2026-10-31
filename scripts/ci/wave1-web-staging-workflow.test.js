@@ -56,14 +56,19 @@ test('staging is Cloudflare-only: no Vercel job, secret, CLI or deployment', () 
   assert.doesNotMatch(code, /wave1-web-next-staging/u);
 });
 
-test('the preflight is credential-free and root of every other job', () => {
+test('the preflight holds no Cloudflare credential and is root of every other job', () => {
   const preflight = workflow.jobs.preflight;
   assert.equal(preflight.environment, undefined);
   assert.deepEqual(preflight.permissions, {
     contents: 'read',
     actions: 'read',
   });
-  assert.ok(!JSON.stringify(preflight).includes('secrets.'));
+  // The only secret is the optional read-only GitHub token for environments.
+  const preflightSecrets = [
+    ...JSON.stringify(preflight).matchAll(/secrets\.([A-Z0-9_]+)/gu),
+  ].map((match) => match[1]);
+  assert.deepEqual([...new Set(preflightSecrets)], ['WAVE1_ENV_READ_TOKEN']);
+  assert.doesNotMatch(JSON.stringify(preflight), /CLOUDFLARE_[A-Z_]*TOKEN/u);
   assert.match(
     runs('preflight'),
     /^node scripts\/ci\/wave1-staging-guard\.mjs preflight$/mu
@@ -77,17 +82,21 @@ test('the preflight is credential-free and root of every other job', () => {
     'WAVE1_STAGING_ATTEMPT_D1_ID',
     'WAVE1_STAGING_PUBLISH_ENABLED',
   ]);
-  assert.equal(env.GH_TOKEN, '${{ github.token }}');
+  // Optional: the read-only token if provisioned, else the workflow token.
+  assert.equal(
+    env.GH_TOKEN,
+    '$' + '{{ secrets.WAVE1_ENV_READ_TOKEN || github.token }}'
+  );
   assert.deepEqual(needs('preflight'), []);
-  for (const job of Object.keys(workflow.jobs).filter(
-    (j) => j !== 'preflight'
-  ))
+  for (const job of Object.keys(workflow.jobs).filter((j) => j !== 'preflight'))
     assert.ok(ancestors(job).has('preflight'), `${job} runs after preflight`);
 });
 
 test('every secret-bearing or environment job directly needs the preflight', () => {
   let secretBearing = 0;
   for (const [name, job] of Object.entries(workflow.jobs)) {
+    // The preflight is the root; its only secret is the read-only env token.
+    if (name === 'preflight') continue;
     if (!job.environment && !JSON.stringify(job).includes('secrets.')) continue;
     secretBearing++;
     assert.ok(needs(name).includes('preflight'), `${name} needs preflight`);
@@ -110,13 +119,19 @@ test('credentials live only in the protected staging environment', () => {
   const env = (job) => workflow.jobs[job].environment;
   assert.equal(env('publish-worker'), 'wave1-web-staging');
   assert.equal(env('verify-ingress'), 'wave1-web-staging');
-  for (const job of ['preflight', 'admit', 'seal-worker', 'restored']) {
+  for (const job of ['admit', 'seal-worker', 'restored']) {
     assert.equal(env(job), undefined, job);
     assert.ok(
       !JSON.stringify(workflow.jobs[job]).includes('secrets.'),
       `${job} must be credential-free`
     );
   }
+  assert.equal(env('preflight'), undefined);
+  assert.ok(
+    !/secrets\.CLOUDFLARE_|secrets: inherit/u.test(
+      JSON.stringify(workflow.jobs.preflight)
+    )
+  );
   assert.ok(!/secrets\.CLOUDFLARE_API_TOKEN\b|secrets: inherit/u.test(text));
 });
 
@@ -144,7 +159,7 @@ test('the fence and admission are checked before any credentialed step', () => {
   assert.equal(
     workflow.jobs.admit.steps.find((s) => /ENABLED/u.test(s.run ?? '')).env
       .ENABLED,
-    '${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}'
+    '$' + '{{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}'
   );
 });
 

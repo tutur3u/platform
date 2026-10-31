@@ -42,7 +42,7 @@ jobs:
           node-version: 24.22.0
       - name: Protected environments, stop fence and provisioned identifiers (fail closed)
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.WAVE1_ENV_READ_TOKEN || github.token }}
           WAVE1_STAGING_PUBLISH_ENABLED: ${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}
           WAVE1_STAGING_ATTEMPT_D1_ID: ${{ vars.WAVE1_STAGING_ATTEMPT_D1_ID }}
           CLOUDFLARE_STAGING_ACCOUNT_ID: ${{ vars.CLOUDFLARE_STAGING_ACCOUNT_ID }}

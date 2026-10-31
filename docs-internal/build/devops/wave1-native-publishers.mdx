@@ -532,14 +532,25 @@ Everything below is credential-free and runs before any Cloudflare request.
   and `CLOUDFLARE_STAGING_ACCOUNT_ID` must be set, and the account must equal
   the reviewed profile account. An unset, empty, `false`, or differently cased
   value stops the run.
-- **Protected environments.** For each of `wave1-web-next-staging` and
-  `wave1-web-staging` the preflight reads the GitHub API
-  (`/environments/<name>` and `/deployment-branch-policies`) and requires
-  that the environment exists, has at least one required reviewer, and
-  allows deployments from the custom branch policy `main` (type `branch`,
-  exactly one policy) only. A 404, a 403, a missing reviewer, `protected
-  branches` mode, a second or wildcard branch policy, or a tag policy
-  stops the run. Any API error fails closed.
+- **Protected environment.** `wave1-web-staging` is the only required
+  environment; no job uses any other. The preflight reads the GitHub API
+  (`/environments/wave1-web-staging` and `/deployment-branch-policies`) and
+  requires that the environment exists, has a required-reviewers rule with
+  `prevent_self_review: true` and at least one reviewer entry (user or
+  team), and allows deployments from the custom branch policy `main` (type
+  `branch`, exactly one policy) only. A 404, a 403, a missing reviewer, a
+  rule that allows self-review (`prevent_self_review` false or missing),
+  `protected branches` mode, a second or wildcard branch policy, or a tag
+  policy stops the run. Any API error fails closed.
+- **Environment read token.** The preflight reads environments with
+  `secrets.WAVE1_ENV_READ_TOKEN` when it is set, else `github.token`. If
+  `github.token` cannot read environments (403 or 404 from the environments
+  API), the preflight fails closed and the fix is a **fine-grained,
+  read-only** token stored as `WAVE1_ENV_READ_TOKEN`: repository Actions
+  read (and Administration read only if the API still refuses), or the
+  minimal read scope that exposes environment protection rules. Never grant
+  a write scope or a classic broad token; the preflight performs only `GET`
+  requests, and the token is visible to no Cloudflare or publish step.
 - **One D1 database.** The attempt ledger and the rollback read refuse any D1
   database id other than `vars.WAVE1_STAGING_ATTEMPT_D1_ID` (the
   `expectedDatabaseId` argument), before the first query.
@@ -721,9 +732,12 @@ into source, logs or evidence.
    - `STAGING_ACCESS_STAFF_EMAIL_LIST_ID`, only if the staff allow policy
      uses an email list;
    - `STAGING_TUTUR3U_ZONE_ID`, `WEB_STAGING_SERVING`.
-3. **Protected environments.** Both `wave1-web-next-staging` and
-   `wave1-web-staging` must have required reviewers and a `main`-only
-   deployment branch policy; the preflight enforces this. Keep the existing
+3. **Protected environment.** `wave1-web-staging` must have a required
+   reviewers rule (at least one user or team, `prevent_self_review: true`)
+   and a `main`-only deployment branch policy; the preflight enforces this.
+   If `github.token` cannot read environments, add the fine-grained,
+   read-only `WAVE1_ENV_READ_TOKEN` secret described in
+   [Fail-closed rules](#fail-closed-rules). Keep the existing
    `wave1-calendar-staging`, plus the Calendar Access secret names.
 4. **Cloudflare:**
    - Bootstrap Worker `tuturuuu-web-wave1-staging` with an inert initial

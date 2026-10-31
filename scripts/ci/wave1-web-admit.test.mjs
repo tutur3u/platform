@@ -28,8 +28,6 @@ for (const [label, list] of [
   ['a candidate for another SHA', [run({ head_sha: '0'.repeat(40) })]],
 ]) {
   test(`refuses ${label}`, async () => {
-    await assert.rejects(
-      admit({ env, sha, fetcher: runs(list) })
-    );
+    await assert.rejects(admit({ env, sha, fetcher: runs(list) }));
   });
 }

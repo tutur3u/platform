@@ -14,10 +14,7 @@ import { pathToFileURL } from 'node:url';
 import { profiles } from './wave1-native-profile.mjs';
 
 /** Environments whose protection the preflight proves before any credential. */
-export const REQUIRED_ENVIRONMENTS = Object.freeze([
-  'wave1-web-next-staging',
-  'wave1-web-staging',
-]);
+export const REQUIRED_ENVIRONMENTS = Object.freeze(['wave1-web-staging']);
 
 const STAGING_HOST = /^(?:[a-z0-9-]+\.tutur3u\.com|tutur3u\.com)$/u;
 const SCRIPT_NAME = /^[a-z0-9-]+$/u;
@@ -119,8 +116,17 @@ export function assertEnvironmentProtected(name, environment, policies) {
     (rule) => rule?.type === 'required_reviewers'
   );
   assert.ok(
-    reviewers.some((rule) => (rule.reviewers ?? []).length > 0),
+    reviewers.some((rule) =>
+      (Array.isArray(rule.reviewers) ? rule.reviewers : []).some(
+        (entry) => entry?.type === 'User' || entry?.type === 'Team'
+      )
+    ),
     `Environment ${name} has no required reviewers`
+  );
+  // The dispatcher must never be able to approve their own deployment.
+  assert.ok(
+    reviewers.every((rule) => rule.prevent_self_review === true),
+    `Environment ${name} does not prevent self-review`
   );
   const policy = environment?.deployment_branch_policy;
   assert.ok(
@@ -152,8 +158,8 @@ async function githubJson(url, token, fetcher) {
 }
 
 /**
- * Proves every named environment exists with required reviewers and a
- * main-only deployment branch policy. Any API error, 404 or unexpected shape
+ * Proves every named environment exists with required reviewers (self-review
+ * prevented) and a main-only deployment branch policy. Any API error, 404 or unexpected shape
  * stops the run.
  */
 export async function preflightEnvironments({
@@ -178,8 +184,14 @@ export async function preflightEnvironments({
         fetcher
       );
     } catch (error) {
+      const reason = error instanceof Error ? error.message : 'unknown';
+      // github.token may be unable to read environments: the fix is a
+      // fine-grained, read-only WAVE1_ENV_READ_TOKEN, never a write scope.
+      const hint = /answered (?:403|404)\b/u.test(reason)
+        ? ' (a missing environment, or a token that cannot read environment protection rules: provide a fine-grained read-only WAVE1_ENV_READ_TOKEN secret)'
+        : '';
       throw new Error(
-        `Environment ${name} could not be verified: ${error instanceof Error ? error.message : 'unknown'}`
+        `Environment ${name} could not be verified: ${reason}${hint}`
       );
     }
     assert.equal(environment?.name, name, `Environment ${name} is missing`);
@@ -224,10 +236,7 @@ export async function main(argv = process.argv.slice(2), env = process.env) {
   throw new Error(`Unknown mode ${mode}`);
 }
 
-if (
-  process.argv[1] &&
-  import.meta.url === pathToFileURL(process.argv[1]).href
-)
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
   main().catch((error) => {
     console.error(
       error instanceof Error ? error.message : 'Wave-1 staging guard failed'

@@ -33,10 +33,7 @@ export function main(
 ) {
   const [mode, sha] = argv;
   if (mode === 'prepare') {
-    assert.ok(
-      !env.CLOUDFLARE_STAGING_API_TOKEN,
-      'Sealing is credential-free'
-    );
+    assert.ok(!env.CLOUDFLARE_STAGING_API_TOKEN, 'Sealing is credential-free');
     return report(env, prepare(root, 'web', 'staging', undefined, sha));
   }
   if (mode === 'restored') {

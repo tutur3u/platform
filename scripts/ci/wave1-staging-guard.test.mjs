@@ -168,7 +168,11 @@ const protectedEnvironment = (name) => ({
   name,
   protection_rules: [
     { type: 'wait_timer', wait_timer: 0 },
-    { type: 'required_reviewers', reviewers: [{ type: 'User', reviewer: {} }] },
+    {
+      type: 'required_reviewers',
+      prevent_self_review: true,
+      reviewers: [{ type: 'User', reviewer: {} }],
+    },
     { type: 'branch_policy' },
   ],
   deployment_branch_policy: {
@@ -211,10 +215,9 @@ const run = (world, environments) =>
     fetcher: github(world).fetcher,
   });
 
-test('both required environments are protected on the happy path', async () => {
-  assert.deepEqual(await run(healthyWorld()), [...REQUIRED_ENVIRONMENTS]);
-  assert.ok(REQUIRED_ENVIRONMENTS.includes('wave1-web-next-staging'));
-  assert.ok(REQUIRED_ENVIRONMENTS.includes('wave1-web-staging'));
+test('the one required environment is protected on the happy path', async () => {
+  assert.deepEqual([...REQUIRED_ENVIRONMENTS], ['wave1-web-staging']);
+  assert.deepEqual(await run(healthyWorld()), ['wave1-web-staging']);
 });
 
 for (const name of REQUIRED_ENVIRONMENTS)
@@ -245,6 +248,54 @@ const unprotected = [
     'no protection rules at all',
     (e) => {
       delete e.environment.protection_rules;
+    },
+    /no required reviewers/u,
+  ],
+  [
+    'self-review is allowed (prevent_self_review false)',
+    (e) => {
+      e.environment.protection_rules = [
+        {
+          type: 'required_reviewers',
+          prevent_self_review: false,
+          reviewers: [{ type: 'User', reviewer: {} }],
+        },
+      ];
+    },
+    /does not prevent self-review/u,
+  ],
+  [
+    'self-review prevention is missing',
+    (e) => {
+      e.environment.protection_rules = [
+        { type: 'required_reviewers', reviewers: [{ type: 'Team' }] },
+      ];
+    },
+    /does not prevent self-review/u,
+  ],
+  [
+    'self-review prevention is not exactly true',
+    (e) => {
+      e.environment.protection_rules = [
+        {
+          type: 'required_reviewers',
+          prevent_self_review: 'true',
+          reviewers: [{ type: 'User' }],
+        },
+      ];
+    },
+    /does not prevent self-review/u,
+  ],
+  [
+    'a reviewer entry that is neither a user nor a team',
+    (e) => {
+      e.environment.protection_rules = [
+        {
+          type: 'required_reviewers',
+          prevent_self_review: true,
+          reviewers: [{ type: 'Bot' }, null],
+        },
+      ];
     },
     /no required reviewers/u,
   ],
@@ -327,11 +378,49 @@ test('an environment answered under another name is not accepted', async () => {
   await assert.rejects(run(world), /is missing/u);
 });
 
-test('the protection assertion is pure and needs reviewers and main only', () => {
+test('the protection assertion is pure and needs reviewers, no self-review and main only', () => {
   assert.doesNotThrow(() =>
     assertEnvironmentProtected('e', protectedEnvironment('e'), mainOnly)
   );
   assert.throws(() => assertEnvironmentProtected('e', undefined, mainOnly));
+  const selfReview = protectedEnvironment('e');
+  selfReview.protection_rules[1].prevent_self_review = false;
+  assert.throws(
+    () => assertEnvironmentProtected('e', selfReview, mainOnly),
+    /does not prevent self-review/u
+  );
+  const noReviewers = protectedEnvironment('e');
+  noReviewers.protection_rules[1].reviewers = [];
+  assert.throws(
+    () => assertEnvironmentProtected('e', noReviewers, mainOnly),
+    /no required reviewers/u
+  );
+});
+
+for (const status of [403, 404])
+  test(`a ${status} on the environments API fails closed and names the read-only token`, async () => {
+    const world = healthyWorld();
+    world['wave1-web-staging'].status = status;
+    await assert.rejects(
+      preflight({ env: baseEnv(), fetcher: github(world).fetcher }),
+      (error) => {
+        assert.match(error.message, new RegExp(`answered ${status}`, 'u'));
+        assert.match(error.message, /read-only WAVE1_ENV_READ_TOKEN/u);
+        assert.doesNotMatch(error.message, /write/iu);
+        return true;
+      }
+    );
+  });
+
+test('a non-permission API failure fails closed without the token hint', async () => {
+  const world = healthyWorld();
+  world['wave1-web-staging'].status = 500;
+  await assert.rejects(
+    run(world),
+    (error) =>
+      /answered 500/u.test(error.message) &&
+      !/WAVE1_ENV_READ_TOKEN/u.test(error.message)
+  );
 });
 
 const baseEnv = () => ({

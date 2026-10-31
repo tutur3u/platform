@@ -143,10 +143,7 @@ export function verify(appRoot, app, environment, sha) {
     !profiles.apps[app].stagingHost
       ? receipt.profile.host.split('.')[1]
       : undefined;
-  assert.deepEqual(
-    receipt.profile,
-    profileFor(app, environment, subdomain)
-  );
+  assert.deepEqual(receipt.profile, profileFor(app, environment, subdomain));
   assert.equal(
     receipt.lockSha256,
     digest(readFileSync(new URL('../../bun.lock', import.meta.url)))
