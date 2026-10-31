@@ -17,6 +17,13 @@ const SIMPLE_STRING_CONSTANT =
   /\b(?:const|let|var)\s+([a-z_$][\w$]*)\s*=\s*(['"`])([a-z0-9.*_-]+)\2/g;
 const SCANNED_FILE =
   /(?:\.(?:[cm]?[jt]sx?|jsonc?|json5|toml|ya?ml|env|vars|sh|bash|py|sql|html?|tf|conf|ini|properties|rs|dart|go|swift|kt)|(?:^|\/)(?:dockerfile[^/]*|\.env[^/]*|\.dev\.vars[^/]*))$/i;
+// Only these languages have C-style comments. Elsewhere `/*` is a shell glob,
+// SQL or YAML text, so stripping it could swallow a real staging host.
+const C_COMMENT_FILE = /\.(?:[cm]?[jt]sx?|css|scss|sass|less|pcss)$/i;
+// Scanned languages with C-style comments that the lexer is not tuned for. They
+// are read both verbatim and stripped, so a comment between two halves of a
+// split string cannot hide a host and a stray `/*` cannot swallow one.
+const OTHER_C_COMMENT_FILE = /\.(?:rs|dart|go|swift|kt|jsonc|json5|tf)$/i;
 const SKIPPED_FILE =
   /\.(?:test|spec)\.|(?:^|\/)(?:__tests__|fixtures?)\/|\.(?:md|mdx|lock)$|(?:^|\/)bun\.lock$/i;
 
@@ -155,8 +162,18 @@ function stripComments(source, choices = []) {
  * division is undecidable without a parser, so each ambiguous `/` is tried both
  * ways and a host visible in any reading is reported. Past MAX_LEX_PATHS
  * readings the unstripped source is returned, so comments are scanned too.
+ * A `file` outside the C-comment languages is never stripped, and the other
+ * C-comment languages get the verbatim source as well; omit it to strip.
  */
-function stripCommentVariants(source) {
+function stripCommentVariants(source, file) {
+  if (file !== undefined && !C_COMMENT_FILE.test(file))
+    return OTHER_C_COMMENT_FILE.test(file)
+      ? [source, ...stripAllCommentVariants(source)]
+      : [source];
+  return stripAllCommentVariants(source);
+}
+
+function stripAllCommentVariants(source) {
   const variants = new Set();
   const pending = [[]];
   for (let runs = 0; pending.length; runs++) {
@@ -259,8 +276,8 @@ function dynamicPrefix(text, index) {
   return text.slice(start + 1, index).replace(/[.-]+$/, '');
 }
 
-function violations(source) {
-  const variants = stripCommentVariants(source).map((stripped) =>
+function violations(source, file) {
+  const variants = stripCommentVariants(source, file).map((stripped) =>
     sourceViolations(normalizeSource(source, stripped))
   );
   return variants.length === 1 ? variants[0] : [...new Set(variants.flat())];
@@ -308,7 +325,8 @@ function check(root = process.cwd()) {
     } catch {
       continue;
     }
-    for (const host of violations(source)) failures.push(`${file}: ${host}`);
+    for (const host of violations(source, file))
+      failures.push(`${file}: ${host}`);
   }
   return failures;
 }

@@ -3982,7 +3982,8 @@
       "transcript": "Live transcript",
       "unavailable": "Meeting AI is unavailable. Please retry shortly.",
       "unpriced": "Usage unavailable for {count} requests; total is incomplete.",
-      "usage_details": "Usage details"
+      "usage_details": "Usage details",
+      "workspace_unavailable": "Meeting AI is not available for this workspace."
     },
     "call": {
       "actions_action": "Action items",

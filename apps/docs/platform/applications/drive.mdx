@@ -1,7 +1,7 @@
 ---
 title: 'Drive'
 description: 'Standalone Drive app with centralized workspace storage APIs.'
-updatedAt: '2026-05-22'
+updatedAt: "2026-10-31"
 ---
 
 ## Overview
@@ -143,19 +143,19 @@ These source locations are the upload contracts for the separate Storage RLS lan
 
 | Prefix | Owning app/surface | Upload path source |
 | --- | --- | --- |
-| `chat/<chatId>/` | Web legacy AI chat | `apps/web/src/components/chat-panel.tsx:523` (upload at 526; mounted by `ai-chat/chat.tsx:16`) |
-| `chats/ai/resources/<chatId>/` | Mira AI chat and private Mind threads | `apps/web/src/legacy-api-routes/ai/chat/upload-url/route.ts:114` (signed upload at 124) |
-| `chats/ai/resources/temp/<userId>/` | Mira/Mind temporary attachments | `apps/web/src/legacy-api-routes/ai/chat/upload-url/route.ts:116` |
+| `chat/<chatId>/` | Historical web AI chat prefix | No current direct writer found: `apps/web/src/components/chat-panel.tsx:473` (`uploadFile`, mounted by `ai-chat/chat.tsx:16`) now calls `uploadAiChatFile` (`packages/internal-api/src/ai.ts:226`), which uses the `chats/ai/resources/<chatId>/` row below. Objects uploaded earlier may still exist. |
+| `chats/ai/resources/<chatId>/` | Mira AI chat and private Mind threads | `apps/web/src/app/api/ai/chat/upload-url/route.ts:143` (signed upload at 151) |
+| `chats/ai/resources/temp/<userId>/` | Mira/Mind temporary attachments | `apps/web/src/app/api/ai/chat/upload-url/route.ts:144` |
 | `chats/ai/resources/<resourceChatId>/` | Native assistant attachment copies | `apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/messages/ai-message-shared.ts:243` |
-| `chats/<conversationId>/` | Native Chat | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/attachments/upload-url/route.ts:76` (RPC supplies the prefix) |
+| `chats/<conversationId>/` | Native Chat | `apps/web/src/app/api/v1/workspaces/[wsId]/chat/conversations/[conversationId]/attachments/upload-url/route.ts:64` (`chat_prepare_attachment` RPC supplies the prefix, used at 88) |
 | `external-apps/<app>/chat/` | Registered external apps | `apps/web/src/lib/external-apps/workspace-drive.ts:224` |
 | `AI Agent Imports/<adapter>/<channel>/<thread>/` | Chat external-channel imports | `apps/web/src/lib/ai-agents/external-chat-attachments.ts:143` (upload at 58) |
-| `mira/images/` | Mira generated image results | `packages/ai/src/tools/executors/image.ts:109` (upload at 123) |
-| `recordings/<meeting>/<session>/` | Workspace meeting audio and chunks | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/upload/route.ts:91`; sibling `chunks/route.ts:112` |
-| `topic-announcements/attachments/` | Contacts topic announcement attachments | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/upload-url/route.ts` (topic branch: feature flag and `manage_users`, signed upload) |
+| `mira/images/` | Mira generated image results | `packages/ai/src/tools/executors/image.ts:113` (upload at 127) |
+| `recordings/<meeting>/<session>/` | Workspace meeting audio and chunks | `apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/recordings/[sessionId]/upload/route.ts:129`; sibling `chunks/route.ts:158` |
+| `topic-announcements/attachments/` | Contacts topic announcement attachments | `apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/storage/upload-url/route.ts` (reached through the generated `app/api` wrapper; topic branch at 76 and 269-280: feature flag and `manage_users`, signed upload) |
 
 Mobile voice attachments use the same AI/native upload flow through
-`apps/mobile/lib/features/assistant/data/assistant_repository.dart:513` and 540;
+`apps/mobile/lib/features/assistant/data/assistant_repository.dart:536` (`uploadAttachment`, delegating to `assistant_attachment_upload.dart`);
 there is no additional voice-only workspace storage root. Notes voice analysis
 accepts request audio without a `workspaces` object upload.
 
@@ -191,7 +191,7 @@ re-key run.
 Regression coverage:
 
 - storage-core `mira-image-access.test.ts`.
-- Web `legacy-api-routes/ai/chat/mira-image-read-access.test.ts`.
+- Web `app/api/ai/chat/mira-image-read-access.test.ts`.
 - The chat `use-generated-image-url.test.ts`.
 - internal-api `ai.test.ts`.
 

@@ -3,6 +3,23 @@ title: Workspace storage RLS
 description: Path-scoped Row Level Security for the workspaces Storage bucket, its regression matrix, and the tested rollback.
 ---
 
+## Bucket insert contracts
+
+Inquiry and time request attachments use signed upload URLs issued by the owning
+web API with `createDynamicAdminClient`. Browser uploads consume those tickets;
+direct authenticated SQL inserts are not their supported upload contract.
+`POST /api/reports/upload-url` issues inquiry tickets and
+`POST /api/v1/workspaces/[wsId]/time-tracking/requests/upload-url` issues time
+request tickets. Neither requires authenticated SELECT grants on the underlying
+inquiry or private time request tables.
+
+The legacy inquiry INSERT policy is scoped to `service_role` so its table query
+does not participate in unrelated client bucket inserts. Workspace path policies
+and root-workspace changelog membership continue to authorize client inserts.
+Avatars and banners use server-issued tickets; artifact buckets and bucket
+creation remain server-owned. Regression coverage:
+`apps/database/supabase/tests/storage-insert-policies.sql`.
+
 ## Access model
 
 The `workspaces` bucket stores objects as `<wsId>/<root>/...`. Supabase Storage

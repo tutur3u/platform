@@ -1,7 +1,7 @@
 ---
 title: "DevOps & Deployment"
 description: "The operational map for how Tuturuuu is built, deployed, migrated, and validated."
-updatedAt: "2026-10-08"
+updatedAt: "2026-10-31"
 ---
 
 This section is the runbook for shipping and operating Tuturuuu. It documents the
@@ -14,7 +14,7 @@ released, or recovered.
 | Surface                                                                                                                                                                               | Source of truth                                                                                         | Delivery target                                         |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | Platform web app (`apps/web`)                                                                                                                                                         | `.github/workflows/vercel-preview-platform.yaml`, `.github/workflows/vercel-production-platform.yaml`   | Vercel preview build validation and production deploy   |
-| Satellite web apps (every app under `apps/*` with a `vercel-preview-<app>.yaml` / `vercel-production-<app>.yaml` pair: `apps`, `nova`, `rewise`, `calendar`, `finance`, `inventory`, `infrastructure`, `meet`, `tasks`, `track`, `shortener`, `qr`, `cms`, `mail`, `learn`, `teach`, `chat`, `drive`, `mind`, `storefront`) | `.github/workflows/vercel-preview-*.yaml`, `.github/workflows/vercel-production-*.yaml`                                          | Vercel preview and production deployments               |
+| Satellite web apps (every app under `apps/*` with a `vercel-preview-<app>.yaml` / `vercel-production-<app>.yaml` pair: `ai`, `apps`, `nova`, `rewise`, `calendar`, `finance`, `inventory`, `infrastructure`, `meet`, `tasks`, `track`, `shortener`, `tools`, `cms`, `mail`, `learn`, `teach`, `chat`, `drive`, `mind`, `storefront`, `contacts`, `forms`, `git`, `pay`) | `.github/workflows/vercel-preview-*.yaml`, `.github/workflows/vercel-production-*.yaml`                                          | Vercel preview and production deployments               |
 | Database schema (`apps/database`)                                                                                                                                                     | `.github/workflows/supabase-staging.yaml`, `.github/workflows/supabase-production.yaml`                 | Supabase staging and production projects                |
 | Self-hosted web runtime (`apps/web`)                                                                                                                                                  | `apps/web/Dockerfile`, `docker-compose.web.yml`, `docker-compose.web.prod.yml`, `scripts/docker-web.js` | Inactive retained Docker setup; not an active delivery path |
 | Paused migration web runtime (`apps/tanstack-web`)                                                                                                                                    | `apps/tanstack-web/Dockerfile`, `apps/tanstack-web/wrangler.jsonc`, `.github/workflows/rust-backend.yml`, `.github/workflows/vercel-*-tanstack-web.yaml` | Paused; not in use; no source, dependency, test, or CI refresh |

@@ -8,8 +8,14 @@ const FLAGS =
   constants.O_WRONLY |
   constants.O_NOFOLLOW;
 export const INCOMPLETE_LOCK_GRACE_MS = 10_000;
+let ownStartedAt: string | undefined;
+// A process never changes its own start time, so only the first lookup needs to spawn `ps`.
+function ownProcessStartedAt() {
+  ownStartedAt ??= processStartedAt(process.pid);
+  return ownStartedAt;
+}
 async function create(path: string): Promise<FileHandle> {
-  const startedAt = processStartedAt(process.pid);
+  const startedAt = ownProcessStartedAt();
   if (!startedAt) throw Error('transaction-owner-unverified');
   const file = await open(path, FLAGS, 0o600);
   try {

@@ -76,6 +76,11 @@ export interface MeetRoomCommand {
   message: MeetRealtimeClientMessage;
   now: string;
   token: MeetRealtimeTokenPayload;
+  /**
+   * Whether the room's workspace may use Meet AI (allowlist, resolved by the
+   * runtime). Absent means not eligible, so enabling note sharing is denied.
+   */
+  notesEligible?: boolean;
 }
 
 export function createMeetRoomSnapshot(): MeetRoomSnapshot {

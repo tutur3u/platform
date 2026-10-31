@@ -150,6 +150,16 @@ and exclude unrelated baseline drift; never hand-edit generated declarations.
 
 ## Storage
 
+- Match bucket INSERT tests to the owning upload-url route's client identity.
+  Inquiry and time request routes issue service-backed signed upload tickets;
+  preserve underlying table ACLs. Legacy storage policy subqueries can surface
+  table privilege errors in other buckets after a permissive policy changes.
+  Scope obsolete client policies to their supported role rather than adding
+  table SELECT grants. See the bucket contracts in
+  `apps/docs/build/devops/workspace-storage-rls.mdx` and
+  `storage-insert-policies.sql`. SQL deletion fixtures use transaction-local
+  `storage.allow_delete_query = 'true'` and roll back.
+
 - Authenticated storage API routes should authorize with the user-scoped client,
   then perform storage operations through an admin-backed storage client.
 - Supabase signed upload URLs for protected buckets often need admin-backed

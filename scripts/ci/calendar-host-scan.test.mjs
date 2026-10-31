@@ -10,7 +10,10 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { scanCalendarArtifact } from './calendar-host-scan.mjs';
+import {
+  scanCalendarArtifact,
+  scanCalendarForwardingSources,
+} from './calendar-host-scan.mjs';
 
 const require = createRequire(import.meta.url);
 const { readWorkflow } = require('./workflow-yaml-test-helper');
@@ -213,4 +216,38 @@ test('the dev server is the only explicit development caller', () => {
   assert.equal(pkg.scripts.build, 'vp build');
   for (const name of ['build', 'start', 'preview'])
     assert.doesNotMatch(pkg.scripts[name], /CALENDAR_DEPLOYMENT_PROFILE/, name);
+});
+
+test('staging forwarding sources name no production host', () => {
+  const appDir = join(import.meta.dirname, '../../apps/calendar');
+  assert.deepEqual(scanCalendarForwardingSources(appDir), { sources: 5 });
+});
+
+test('flags a production host fallback in staging forwarding sources', () => {
+  const root = artifact({
+    'src/runtime/handler.ts':
+      "const fallback = isStaging ? undefined : 'https://tasks.tuturuuu.com';",
+    'src/runtime/other.ts': "const web = 'https://tuturuuu.com';",
+    'src/runtime/allowed.ts': "const root = 'tuturuuu.com'; // host-scan-allow",
+    'src/runtime/clean.ts': 'const tasks = process.env.TASKS_APP_URL;',
+  });
+  try {
+    assert.throws(
+      () => scanCalendarForwardingSources(root, ['src/runtime/handler.ts']),
+      /handler\.ts:1 names a production host/
+    );
+    assert.throws(
+      () => scanCalendarForwardingSources(root, ['src/runtime/other.ts']),
+      /other\.ts:1 names a production host/
+    );
+    assert.deepEqual(
+      scanCalendarForwardingSources(root, [
+        'src/runtime/allowed.ts',
+        'src/runtime/clean.ts',
+      ]),
+      { sources: 2 }
+    );
+  } finally {
+    rmSync(root, { recursive: true });
+  }
 });
