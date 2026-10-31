@@ -156,3 +156,56 @@ test('audit also applies the public-safety scan to docs-internal', (t) => {
   );
   assert.ok(errors.every((error) => !error.includes('Unregistered')));
 });
+
+test('staging guard covers docs and plugins, skips docs-internal and honors the allowlist', (t) => {
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'docs-audit-'));
+  t.after(() => fs.rmSync(fixture, { recursive: true, force: true }));
+  const header = '---\ntitle: Home\ndescription: Test\n---\n';
+  const write = (file, text) => {
+    const target = path.join(fixture, file);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.writeFileSync(target, text);
+  };
+  write(
+    'apps/docs/docs.json',
+    JSON.stringify({ navigation: { pages: ['home', 'ok'] } })
+  );
+  write(
+    'apps/docs/home.mdx',
+    `${header}Use web.staging.tutur3u.com and tuturuuu-web-wave1-staging.\nSet VERCEL_AUTOMATION_BYPASS_SECRET and my.workers.dev.\n`
+  );
+  write(
+    'apps/docs/ok.mdx',
+    `${header}Placeholders <app>.staging.tutur3u.com and <sub>.workers.dev pass; AUTH_BYPASS is allowlisted.\n`
+  );
+  write('plugins/p/ref.md', 'Host calendar.staging.tutur3u.com\n');
+  write('docs-internal/runbook.mdx', 'Host web.staging.tutur3u.com\n');
+  write(
+    'scripts/docs-safety-allowlist.json',
+    JSON.stringify({
+      entries: [
+        {
+          path: 'apps/docs/ok.mdx',
+          rule: 'bypass secret name',
+          reason: 'test',
+        },
+        { path: 'apps/docs/home.mdx', rule: 'staging host' },
+      ],
+    })
+  );
+  const errors = audit(fixture).errors;
+  const has = (rule, file) =>
+    errors.some((error) =>
+      error.startsWith(`Public-safety (${rule}): ${file}`)
+    );
+  assert.ok(has('staging host', 'home.mdx:'));
+  assert.ok(has('staging worker name', 'home.mdx:'));
+  assert.ok(has('bypass secret name', 'home.mdx:'));
+  assert.ok(has('workers.dev hostname', 'home.mdx:'));
+  assert.ok(has('staging host', 'plugins/p/ref.md:'));
+  assert.ok(!errors.some((error) => error.includes('docs-internal')));
+  assert.ok(!errors.some((error) => error.includes('ok.mdx')));
+  assert.ok(
+    errors.some((error) => error.startsWith('Invalid allowlist entry'))
+  );
+});

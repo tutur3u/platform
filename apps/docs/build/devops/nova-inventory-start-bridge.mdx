@@ -58,8 +58,8 @@ Both native apps are root-only while apex cutover is held. Their app-owned
 
 | App | Production root | Staging root |
 | --- | --- | --- |
-| Nova | `nova.ai.vn` | `nova.staging.tutur3u.com` |
-| Inventory | `inventory.tuturuuu.com` | `inventory.staging.tutur3u.com` |
+| Nova | `nova.ai.vn` | `<app>.staging.tutur3u.com` |
+| Inventory | `inventory.tuturuuu.com` | `<app>.staging.tutur3u.com` |
 
 Nova's `nova.tuturuuu.com` alias is a routing-layer 307 redirect to
 `nova.ai.vn`, not a Worker root. Preserve that redirect at cutover, including

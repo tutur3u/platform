@@ -237,7 +237,7 @@ named as development or staging. It covers:
 - Two vault versions that share one artifact path.
 
 ```bash
-export SUPABASE_ACCESS_TOKEN_FILE=~/.config/tuturuuu-staging/supabase-access.token
+export SUPABASE_ACCESS_TOKEN_FILE=~/.config/<staging-worker>/supabase-access.token
 R=$(mktemp -d); H="node scripts/storage-rekey/rehearsal.mjs"
 $H seed --project-ref $STAGING_REF --state $R/state.json
 $H seed-vault --project-ref $STAGING_REF --state $R/state.json

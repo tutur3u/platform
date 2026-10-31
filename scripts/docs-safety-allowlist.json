@@ -1,0 +1,14 @@
+{
+  "entries": [
+    {
+      "path": "apps/docs/build/development-tools/local-e2e.mdx",
+      "rule": "bypass secret name",
+      "reason": "Names the local-only end-to-end auth flag; it is never set outside local test runs. Selene to confirm."
+    },
+    {
+      "path": "apps/docs/platform/architecture/shared-session.mdx",
+      "rule": "bypass secret name",
+      "reason": "Explains that the local end-to-end flag does not apply to hosted environments. Selene to confirm."
+    }
+  ]
+}

@@ -5,14 +5,14 @@ updatedAt: '2026-10-25'
 ---
 
 Every web app except `apps/web` moves to its own TanStack Start + Void + Vite+
-Worker on Cloudflare. `apps/web` now has a separately scheduled [Web 1 candidate](/build/devops/web-start-candidate); all existing Web routes remain on Next.js.
+Worker on Cloudflare. `apps/web` now has a separately scheduled Web 1 candidate; all existing Web routes remain on Next.js.
 The retired `apps/tanstack-web` tree is not part of this program and is not
 revived. Current hosting (Vercel, or Next.js/OpenNext Workers) stays canonical
 for an app until its explicit cutover PR merges.
 
 ## Web candidate pre-publication requirements
 
-Before publishing the separate [Web 1 staging profile](/build/devops/web-start-candidate#staging-profile),
+Before publishing the separate Web 1 staging profile,
 verify that its Worker and staging Next origin share a staging-only
 `TRUSTED_PROXY_ORIGIN_SECRET` that is distinct from production's. Origin-IP
 proofs are not bound to an environment or audience. Compare SHA-256 fingerprints
