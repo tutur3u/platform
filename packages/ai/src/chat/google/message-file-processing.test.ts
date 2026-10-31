@@ -6,7 +6,15 @@ const mocks = vi.hoisted(() => {
   const adminDownload = vi.fn();
   const adminList = vi.fn();
 
+  const query = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    maybeSingle: vi.fn(async () => ({ data: { id: 'chat-1' }, error: null })),
+  };
+  query.select.mockReturnValue(query);
+  query.eq.mockReturnValue(query);
   const adminSupabase = {
+    from: vi.fn(() => query),
     storage: {
       from: vi.fn(() => ({
         list: adminList,
@@ -28,6 +36,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: (...args: Parameters<typeof mocks.createClient>) =>
     mocks.createClient(...args),
 }));
+
+const M4A_HEAD = new Uint8Array([
+  0, 0, 0, 0x20, 0x66, 0x74, 0x79, 0x70, 0x4d, 0x34, 0x41, 0x20,
+]);
 
 describe('processMessagesWithFiles', () => {
   beforeEach(() => {
@@ -63,7 +75,10 @@ describe('processMessagesWithFiles', () => {
     const result = await processMessagesWithFiles(
       inputMessages,
       'ws-1',
-      'chat-1'
+      'chat-1',
+      undefined,
+      false,
+      'actor'
     );
 
     expect(mocks.createClient).not.toHaveBeenCalled();
@@ -91,7 +106,7 @@ describe('processMessagesWithFiles', () => {
       error: null,
     });
     mocks.adminDownload.mockResolvedValue({
-      data: new Blob([new Uint8Array([1, 2, 3])]),
+      data: new Blob([M4A_HEAD]),
       error: null,
     });
     const { processMessagesWithFiles } = await import(
@@ -100,14 +115,18 @@ describe('processMessagesWithFiles', () => {
     const result = await processMessagesWithFiles(
       [{ role: 'user', content: 'Summarize my recording' }],
       'ws-1',
-      'chat-1'
+      'chat-1',
+      undefined,
+      false,
+      'actor'
     );
     const subscription = await processMessagesWithFiles(
       [{ role: 'user', content: 'Continue with text' }],
       'ws-1',
       'chat-1',
       undefined,
-      true
+      true,
+      'actor'
     );
     expect(subscription).toEqual([
       { role: 'user', content: 'Continue with text' },
@@ -117,6 +136,80 @@ describe('processMessagesWithFiles', () => {
     expect(parts).toContainEqual(
       expect.objectContaining({ type: 'file', mediaType: 'audio/m4a' })
     );
+  });
+});
+
+describe('processMessagesWithFiles attachment guard', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    vi.clearAllMocks();
+  });
+
+  async function partsFor(name: string, bytes: Uint8Array, size?: number) {
+    mocks.adminList.mockResolvedValue({
+      data: [{ name, metadata: size === undefined ? {} : { size } }],
+      error: null,
+    });
+    mocks.adminDownload.mockResolvedValue({
+      data: new Blob([new Uint8Array(bytes)]),
+      error: null,
+    });
+    const { processMessagesWithFiles } = await import(
+      './message-file-processing'
+    );
+    const [message] = await processMessagesWithFiles(
+      [{ role: 'user', content: 'Look' }],
+      'ws-1',
+      'chat-1',
+      undefined,
+      false,
+      'actor'
+    );
+    return Array.isArray(message?.content) ? message.content : [];
+  }
+
+  it.each([
+    new Uint8Array([0xff, 0xfe, 0x41, 0, 0x42, 0]),
+    new Uint8Array([0xfe, 0xff, 0, 0x41, 0, 0x42]),
+  ])('decodes BOM-marked UTF-16 text for the model', async (bytes) => {
+    const parts = await partsFor('notes.txt', bytes);
+    expect(parts).toContainEqual(
+      expect.objectContaining({
+        type: 'file',
+        mediaType: 'text/plain',
+        data: new TextEncoder().encode('AB'),
+      })
+    );
+  });
+
+  it('drops a renamed non-image .jpg before it reaches the model', async () => {
+    const parts = await partsFor(
+      '1_photo.jpg',
+      new TextEncoder().encode('MZ not really a jpeg')
+    );
+    expect(parts).not.toContainEqual(
+      expect.objectContaining({ type: 'image' })
+    );
+  });
+
+  it('skips an object whose stored size exceeds the limit unread', async () => {
+    const parts = await partsFor(
+      '1_photo.jpg',
+      new Uint8Array([0xff, 0xd8, 0xff, 0xe0]),
+      33 * 1024 * 1024
+    );
+    expect(mocks.adminDownload).not.toHaveBeenCalled();
+    expect(parts).not.toContainEqual(
+      expect.objectContaining({ type: 'image' })
+    );
+  });
+
+  it('admits a real JPEG', async () => {
+    const parts = await partsFor(
+      '1_photo.jpg',
+      new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0, 0x10])
+    );
+    expect(parts).toContainEqual(expect.objectContaining({ type: 'image' }));
   });
 });
 

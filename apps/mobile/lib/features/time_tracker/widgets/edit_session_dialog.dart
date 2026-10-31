@@ -3,6 +3,8 @@ import 'package:flutter/material.dart'
 import 'package:intl/intl.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
+import 'package:mobile/core/ui/overlays/show_app_sheet.dart'
+    show AppSheetHandle;
 import 'package:mobile/data/models/time_tracking/category.dart';
 import 'package:mobile/data/models/time_tracking/session.dart';
 import 'package:mobile/features/time_tracker/utils/duration.dart';
@@ -82,28 +84,13 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
     );
 
     return Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.background,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-      ),
       padding: const EdgeInsets.all(24),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.mutedForeground.withValues(
-                    alpha: 0.4,
-                  ),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
+            const AppSheetHandle(),
             const shad.Gap(16),
             Text(l10n.timerEditSession, style: theme.typography.h3),
             if (!canEditTimes) ...[
@@ -145,6 +132,7 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
               key: const shad.FormKey<String>(#editSessionTitle),
               label: Text(l10n.timerSessionTitle),
               child: shad.TextField(
+                placeholder: Text(context.l10n.inputPlaceholderTimeTitle),
                 selectionControls: platformTextSelectionControls(),
                 contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _titleCtrl,
@@ -155,6 +143,7 @@ class _EditSessionDialogState extends State<EditSessionDialog> {
               key: const shad.FormKey<String>(#editSessionDesc),
               label: Text(l10n.timerDescription),
               child: shad.TextField(
+                placeholder: Text(context.l10n.inputPlaceholderTimeDescription),
                 selectionControls: platformTextSelectionControls(),
                 contextMenuBuilder: platformTextContextMenuBuilder(),
                 controller: _descCtrl,

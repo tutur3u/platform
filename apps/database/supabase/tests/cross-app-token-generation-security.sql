@@ -6,6 +6,8 @@ set local search_path = public, extensions;
 
 select plan(10);
 
+insert into auth.users (id) values ('00000000-0000-0000-0000-00000000ca11'),('00000000-0000-0000-0000-00000000b0b0') on conflict do nothing;
+
 insert into public.users (id)
 values
   ('00000000-0000-0000-0000-00000000ca11'),
@@ -64,7 +66,7 @@ select lives_ok(
     select public.generate_cross_app_token(
       '00000000-0000-0000-0000-00000000ca11'::uuid,
       'web'::text,
-      'tulearn'::text,
+      'learn'::text,
       300::integer
     )
   $$,
@@ -76,7 +78,7 @@ select lives_ok(
     select public.generate_cross_app_token(
       '00000000-0000-0000-0000-00000000ca11',
       'web',
-      'tulearn',
+      'learn',
       300,
       null::jsonb
     )
@@ -89,7 +91,7 @@ select throws_ok(
     select public.generate_cross_app_token(
       '00000000-0000-0000-0000-00000000b0b0'::uuid,
       'web'::text,
-      'tulearn'::text,
+      'learn'::text,
       300::integer
     )
   $$,
@@ -103,7 +105,7 @@ select throws_ok(
     select public.generate_cross_app_token(
       '00000000-0000-0000-0000-00000000b0b0',
       'web',
-      'tulearn',
+      'learn',
       300,
       null::jsonb
     )
@@ -131,7 +133,7 @@ select is(
     select count(*)::integer
     from private.cross_app_tokens
     where user_id = '00000000-0000-0000-0000-00000000b0b0'
-      and target_app = 'tulearn'
+      and target_app = 'learn'
   ),
   0,
   'forged victim cross-app token attempts do not insert token rows'

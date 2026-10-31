@@ -1,10 +1,14 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:http/http.dart' as http;
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
+import 'package:mobile/features/assistant/data/assistant_first_message_creation.dart';
 import 'package:mobile/features/assistant/data/assistant_preferences.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_stream_parser.dart';
@@ -57,6 +61,27 @@ class RepairRepository extends ReplyRepository {
       timezone: timezone,
       attachments: attachments,
       creditWsId: creditWsId,
+      admission: admission,
+    );
+  }
+
+  @override
+  Stream<AssistantStreamEvent> streamFirstChat({
+    required AssistantFirstMessageCreation creation,
+    required String chatId,
+    required String wsId,
+    required List<AssistantMessage> messages,
+    required String timezone,
+    required ApiMutationAdmission admission,
+  }) {
+    starts++;
+    api.firstChats = chats;
+    return native.streamFirstChat(
+      creation: creation,
+      chatId: chatId,
+      wsId: wsId,
+      messages: messages,
+      timezone: timezone,
       admission: admission,
     );
   }
@@ -126,9 +151,7 @@ class RepairHarness extends BackgroundReplyHarness {
     await tester.pumpAndSettle();
     await tester.tap(find.byIcon(LucideIcons.history));
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.widgetWithIcon(AppIconButton, LucideIcons.messageSquarePlus),
-    );
+    await tester.tap(find.byKey(const ValueKey('assistant-history-new')));
     await tester.pumpAndSettle();
   }
 }
@@ -162,11 +185,12 @@ class SettingsApi extends ApiClient {
   }) async {
     creates++;
     final input = body! as Map<String, dynamic>;
+    final createdId = input['id'] as String? ?? repairChat;
     final initial = input['initialAiSettings'] as Map<String, dynamic>?;
-    settings = {'conversationId': repairChat, ...?initial};
+    settings = {'conversationId': createdId, ...?initial};
     return {
       'conversation': {
-        'id': repairChat,
+        'id': createdId,
         'wsId': repairWorkspace,
         'type': 'ai',
         'title': 'Fixture',
@@ -174,13 +198,92 @@ class SettingsApi extends ApiClient {
         if (initial != null)
           'initialAiSettings': {
             ...initial,
-            'conversationId': repairChat,
+            'conversationId': createdId,
             'wsId': repairWorkspace,
             'actorUserId': repairActor,
           },
         'createdAt': '2026-10-12T00:00:00Z',
       },
     };
+  }
+
+  RepairChats? firstChats;
+  @override
+  Future<http.StreamedResponse> sendJsonStreamAcknowledged(
+    String method,
+    String path,
+    Object? rawBody, {
+    required ApiMutationAdmission admission,
+    String accept = 'text/event-stream',
+  }) async {
+    final body = rawBody! as Map<String, dynamic>;
+    admission.recordDispatchPossible();
+    final chatId = path.split('/')[7];
+    final creation = await postJson('/synthetic-first-message', {
+      'id': chatId,
+      'initialAiSettings': body['initialConversation'],
+    });
+    final receipt = {
+      ...creation,
+      'creationRequestId': body['clientRequestId'],
+      'conversation': {
+        ...creation['conversation'] as Map<String, dynamic>,
+        'creationRequestId': body['clientRequestId'],
+      },
+    };
+    var cancelled = false;
+    StreamSubscription<ChatMessageStreamEvent>? subscription;
+    late final StreamController<List<int>> controller;
+    controller = StreamController<List<int>>(
+      onListen: () {
+        scheduleMicrotask(() {
+          if (cancelled) return;
+          subscription = firstChats!
+              .sendMessageStream(
+                repairWorkspace,
+                chatId,
+                content: body['content'] as String,
+                clientRequestId: body['clientRequestId'] as String,
+                admission: admission,
+              )
+              .listen(
+                (event) {
+                  final Map<String, dynamic> raw;
+                  if (event is ChatStreamMessageEvent) {
+                    raw = {
+                      'type': 'message',
+                      'message': wireMessage(event.message),
+                    };
+                  } else if (event is ChatStreamMessagesEvent) {
+                    raw = {
+                      'type': 'messages',
+                      'messages': event.messages.map(wireMessage).toList(),
+                    };
+                  } else {
+                    raw = {'type': 'done'};
+                  }
+                  controller.add(utf8.encode('${jsonEncode(raw)}\n'));
+                },
+                onError: controller.addError,
+                onDone: controller.close,
+              );
+        });
+      },
+      onCancel: () {
+        cancelled = true;
+        return subscription?.cancel();
+      },
+    );
+    return http.StreamedResponse(
+      controller.stream,
+      200,
+      headers: {
+        'content-type': 'application/x-ndjson',
+        'x-mira-chat-creation': base64Url.encode(
+          utf8.encode(jsonEncode(receipt)),
+        ),
+      },
+    );
   }
 
   Map<String, dynamic> settings = {};
@@ -276,3 +379,14 @@ class RepairChats extends ChatRepository {
     yield const ChatStreamDoneEvent();
   }
 }
+
+Map<String, dynamic> wireMessage(ChatMessage message) => {
+  'id': message.id,
+  'conversationId': message.conversationId,
+  'kind': message.kind.name,
+  'senderId': message.senderId,
+  'content': message.content,
+  'createdAt': message.createdAt?.toUtc().toIso8601String(),
+  'metadata': message.metadata,
+  'attachments': <Object>[],
+};

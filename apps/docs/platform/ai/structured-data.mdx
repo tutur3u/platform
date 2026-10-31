@@ -37,6 +37,33 @@ Tuturuuu's AI features follow this high-level architecture:
 3. **AI SDK** - Vercel AI SDK that manages model providers and generates structured data
 4. **Supabase** - Backend database for authentication, authorization, and storing AI-generated content
 
+### Chat request trust boundary
+
+The shared Google chat handler accepts only `user` and `assistant` message
+roles from request JSON, after trimming and case normalization. Other roles,
+including `system` and `tool`, return 400 before authentication or model work.
+This applies to web Mira, web AI Chat, Rewise, Learn, mobile legacy chat and
+the subscription route that reuses the handler.
+
+Client histories remain accepted for compatibility, but assistant parts are
+text only. Client `dynamic-tool` and `tool-*` call/result parts are dropped
+from both roles rather than rejecting a normal send that echoes rendered tool
+history. Other non-text assistant parts, including sources and reasoning, are
+also dropped. User text and existing user source URL mapping remain supported;
+chat attachments continue through the server storage path below. Tool results
+in the current generation come from server tool execution; echoed results are
+never reconstructed as model context. This does not authenticate client-supplied
+assistant text as a persisted server response.
+
+Native conversations load persisted history on the server. Their adapter passes
+server-created split instructions and saved conversation prompts through the
+in-process `createPOST({ serverSystemInstructions })` option, outside JSON.
+An identically named request-body field grants no instruction authority.
+
+Regression coverage: `packages/ai/src/chat/google/chat-request-schema.test.ts`,
+`subscription-route.test.ts`, and the native conversation adapter's
+`ai-message-shared.test.ts`.
+
 ### Mira Chat Attachments
 
 Dashboard chat attachments are uploaded to Supabase Storage before the user
@@ -47,6 +74,34 @@ message is sent. New chats may first place files under
 Tools that read those attachments, such as `convert_file_to_markdown`, should
 resolve bare filenames and stale same-workspace attachment paths against the
 current chat folder. They must still reject full paths from another workspace.
+
+Workspace membership alone never grants access to a chat's resource folder.
+`/api/ai/chat/upload-url`, `file-urls`, `signed-read-url` and `delete-file`
+also require that an existing `ai_chats` row belongs to the actor (checked with
+the admin client, because creator-only RLS would hide another member's chat as
+missing) and that `temp/{userId}` paths name the actor. Another member's chat
+answers 404 and no URL is issued. Ids without an `ai_chats` row stay usable for
+Mind threads and pre-creation uploads. Uploads accept images (including
+HEIC/HEIF), audio (`m4a`, `mp3`, `wav`, `aac`, `ogg`, `opus`, `flac`), video
+and documents up to 32 MiB, the per-request model attachment budget; a larger
+declared size answers 413.
+
+The mobile Assistant uploads into the selected chat's own store with no
+cross-store fallback: native conversations (bare UUIDs) use
+`/api/v1/workspaces/:wsId/chat/conversations/:id/attachments/upload-url`, and
+legacy chats (`ai-chat-`/`legacy-ai-` ids) use `/api/ai/chat/upload-url` with
+the stored chat id. A native send refuses any attachment stored outside
+`chats/<conversationId>/` instead of silently dropping it. Before upload the
+app re-encodes photos on device to JPEG (quality 82, longest edge 2048 px,
+EXIF orientation applied, EXIF/GPS removed). It keeps a PNG with transparency,
+or one that JPEG would enlarge, minus its metadata chunks. Voice notes record
+AAC-LC `.m4a`, mono, 16 kHz at 32 kbps; neither platform encodes MP3 natively.
+Originals stay on the device. Each failed attachment shows its own reason
+(too large, unsupported, not allowed in this chat, connection, server) and
+offers Retry when retrying can help. Regression coverage:
+`apps/web/src/app/api/ai/chat/**/*.test.ts` and
+`apps/mobile/test/features/assistant/{data,cubit}/assistant_*attachment*_test.dart`
+plus `assistant_media_optimizer_test.dart`.
 
 ### Attachment conversion URL policy
 

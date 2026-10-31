@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/router/app_router_access_redirects.dart';
+import 'package:mobile/core/router/app_router_telemetry_consent.dart';
 import 'package:mobile/core/router/app_settings_routes.dart';
 import 'package:mobile/core/router/inventory_catalog_routes.dart';
 import 'package:mobile/core/router/routes.dart';
@@ -41,6 +43,8 @@ import 'package:mobile/features/inventory/view/inventory_manage_page.dart';
 import 'package:mobile/features/inventory/view/inventory_product_editor_page.dart';
 import 'package:mobile/features/inventory/view/inventory_products_page.dart';
 import 'package:mobile/features/inventory/view/inventory_sales_page.dart';
+import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/view/mastermind_routes.dart';
 import 'package:mobile/features/notifications/view/notifications_page.dart';
 import 'package:mobile/features/profile/view/profile_overview_page.dart';
 import 'package:mobile/features/security/qr_login/view/qr_login_sign_in_page.dart';
@@ -52,6 +56,7 @@ import 'package:mobile/features/task_portfolio/view/task_project_detail_page.dar
 import 'package:mobile/features/tasks_boards/cubit/task_board_detail_cubit.dart';
 import 'package:mobile/features/tasks_boards/view/task_board_detail_page.dart';
 import 'package:mobile/features/tasks_boards/view/task_boards_page.dart';
+import 'package:mobile/features/telemetry_consent/view/telemetry_consent_page.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/utils/history_anchor.dart';
 import 'package:mobile/features/time_tracker/view/time_tracker_page.dart';
@@ -65,6 +70,7 @@ export 'package:mobile/core/router/app_router_access_redirects.dart'
     show
         shouldRedirectDisabledEducationRoutes,
         shouldRedirectDisabledHabitsRoutes,
+        shouldRedirectDisabledMastermindRoutes,
         shouldRedirectPersonalTimerRequests;
 
 String? resolveUnauthenticatedRedirect({
@@ -163,7 +169,9 @@ GoRouter createAppRouter(
   EducationAccessCubit educationAccessCubit,
   InventoryAccessCubit inventoryAccessCubit,
   AppTabCubit appTabCubit, {
+  MastermindAccessCubit? mastermindAccessCubit,
   String? initialLocation,
+  TelemetryPreference? telemetryConsent,
 }) {
   final navigatorKey = GlobalKey<NavigatorState>();
   ApiVerification.requestToken = () async {
@@ -175,13 +183,17 @@ GoRouter createAppRouter(
     debugLogDiagnostics: true,
     initialLocation: initialLocation ?? Routes.home,
     overridePlatformDefaultLocation: true,
-    refreshListenable: _AppRefreshNotifier(
-      authCubit,
-      workspaceCubit,
-      habitsAccessCubit,
-      educationAccessCubit,
-      inventoryAccessCubit,
-    ),
+    refreshListenable: Listenable.merge([
+      _AppRefreshNotifier(
+        authCubit,
+        workspaceCubit,
+        habitsAccessCubit,
+        educationAccessCubit,
+        inventoryAccessCubit,
+        mastermindAccessCubit,
+      ),
+      if (telemetryConsent != null) telemetryConsent,
+    ]),
     redirect: (context, state) {
       final authState = authCubit.state;
       final wsState = workspaceCubit.state;
@@ -288,10 +300,26 @@ GoRouter createAppRouter(
         return Routes.apps;
       }
 
+      if (mastermindAccessCubit != null &&
+          shouldRedirectDisabledMastermindRoutes(
+            state.matchedLocation,
+            mastermindAccessCubit.state,
+          )) {
+        return Routes.apps;
+      }
+
       // On workspace-select but already has a workspace → go home
       if (isWsSelectRoute && wsState.hasWorkspace) {
         return Routes.home;
       }
+
+      final consentRedirect = resolveTelemetryConsentRedirect(
+        preference: telemetryConsent,
+        uri: state.uri,
+        matchedLocation: state.matchedLocation,
+        hasWorkspace: wsState.hasWorkspace,
+      );
+      if (consentRedirect != null) return consentRedirect;
 
       if (AppRegistry.moduleFromLocation(state.matchedLocation) != null) {
         appTabCubit.syncFromLocation(state.matchedLocation);
@@ -330,6 +358,11 @@ GoRouter createAppRouter(
         path: Routes.workspaceSelect,
         builder: (context, state) => const WorkspaceSelectPage(),
       ),
+      // First-run consent opens above the shell, never inside it.
+      GoRoute(
+        path: Routes.telemetryConsent,
+        builder: (context, state) => const TelemetryConsentPage(),
+      ),
 
       // ── Main shell with bottom navigation ────────
       ShellRoute(
@@ -360,6 +393,7 @@ GoRouter createAppRouter(
           ),
           ...appSettingsAliasRoutes(),
           ...AppRegistry.routes,
+          ...mastermindTabRoutes,
           GoRoute(
             path: Routes.habits,
             builder: (context, state) => const HabitsPage(),
@@ -564,6 +598,7 @@ class _AppRefreshNotifier extends ChangeNotifier {
     HabitsAccessCubit habitsAccessCubit,
     EducationAccessCubit educationAccessCubit,
     InventoryAccessCubit inventoryAccessCubit,
+    MastermindAccessCubit? mastermindAccessCubit,
   ) {
     _authSub = authCubit.stream.listen((state) {
       if (kDebugMode) {
@@ -590,6 +625,9 @@ class _AppRefreshNotifier extends ChangeNotifier {
     _inventoryAccessSub = inventoryAccessCubit.stream.listen((_) {
       notifyListeners();
     });
+    _mastermindAccessSub = mastermindAccessCubit?.stream.listen((_) {
+      notifyListeners();
+    });
   }
 
   late final StreamSubscription<AuthState> _authSub;
@@ -597,6 +635,7 @@ class _AppRefreshNotifier extends ChangeNotifier {
   late final StreamSubscription<HabitsAccessState> _habitsAccessSub;
   late final StreamSubscription<EducationAccessState> _educationAccessSub;
   late final StreamSubscription<InventoryAccessState> _inventoryAccessSub;
+  late final StreamSubscription<MastermindAccessState>? _mastermindAccessSub;
 
   @override
   Future<void> dispose() async {
@@ -605,6 +644,7 @@ class _AppRefreshNotifier extends ChangeNotifier {
     await _habitsAccessSub.cancel();
     await _educationAccessSub.cancel();
     await _inventoryAccessSub.cancel();
+    await _mastermindAccessSub?.cancel();
     super.dispose();
   }
 }

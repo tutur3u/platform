@@ -3804,6 +3804,16 @@
       "permission-denied": "Browser notifications are blocked. Please enable them in your browser settings.",
       "permission-request": "Enable browser notifications to stay updated"
     },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Calendar sync paused because the provider stopped accepting access. Reconnect the account to resume.",
+        "title": "Reconnect your calendar"
+      },
+      "tutoring_session_completed": {
+        "description": "A tutor marked a tutoring session for a learner in your class as complete.",
+        "title": "Tutoring session completed"
+      }
+    },
     "date_earlier": "Earlier",
     "date_this_week": "This Week",
     "date_today": "Today",
@@ -3913,6 +3923,7 @@
         "task_start_date_changed": "Start date changes",
         "task_title_changed": "Title changes",
         "task_updated": "Task updates",
+        "topic_assigned": "Topics assigned to you",
         "workspace_activity": "Workspace activity",
         "workspace_invite": "Workspace invitations"
       },
@@ -3990,6 +4001,7 @@
       "task_start_date_changed": "Start Date Changed",
       "task_title_changed": "Title Changed",
       "task_updated": "Task Updated",
+      "topic_assigned": "Topic assigned",
       "workspace_invite": "Workspace Invite"
     },
     "unified_view": "Unified",

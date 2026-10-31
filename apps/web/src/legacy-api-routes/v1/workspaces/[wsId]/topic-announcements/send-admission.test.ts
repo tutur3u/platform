@@ -3,11 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const f = vi.hoisted(() => ({
   enabled: true,
+  teacherAssignments: false,
   archived: false,
   failReceipt: false,
   contactWsId: '',
   nullRecipient: false,
   recipientError: false,
+  unverified: false,
   provider: vi.fn(),
   admin: vi.fn(),
   row: {} as Record<string, any>,
@@ -21,14 +23,16 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: f.admin,
   createClient: vi.fn(),
 }));
-vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
-  resolveAuthenticatedSessionUser: vi.fn(),
-}));
+vi.mock('@/lib/api-auth', () => ({ resolveSessionAuthContext: vi.fn() }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   getSecrets: async () => [
     { name: 'ENABLE_TOPIC_ANNOUNCEMENTS', value: f.enabled ? 'true' : 'false' },
+    {
+      name: 'ENABLE_TOPIC_TEACHER_ASSIGNMENTS',
+      value: f.teacherAssignments ? 'true' : 'false',
+    },
   ],
   getSecret: (name: string, rows: Array<{ name: string }>) =>
     rows.find((row) => row.name === name),
@@ -54,7 +58,7 @@ const contactId = '00000000-0000-4000-8000-000000000003';
 function client() {
   const db: any = {
     schema: () => db,
-    rpc: vi.fn(async () => ({ data: true, error: null })),
+    rpc: vi.fn(async () => ({ data: !f.unverified, error: null })),
   };
   db.from = (table: string) => {
     let patch: Record<string, any> | undefined;
@@ -78,13 +82,15 @@ function client() {
           },
         ];
       if (table === 'topic_announcement_contact_verifications')
-        return [
-          {
-            contact_id: contactId,
-            status: 'verified',
-            expires_at: '2027-01-01T00:00:00Z',
-          },
-        ];
+        return f.unverified
+          ? []
+          : [
+              {
+                contact_id: contactId,
+                status: 'verified',
+                expires_at: '2027-01-01T00:00:00Z',
+              },
+            ];
       if (table === 'topic_announcement_attachments') return [];
       if (table === 'workspaces')
         return [
@@ -168,10 +174,11 @@ const request = () =>
     'https://web.example.test/api/cron/process-topic-announcement-queue',
     { headers: { authorization: 'Bearer synthetic-test-cron' } }
   );
-const send = () =>
+const send = (markSkippedWhenUnverified?: boolean) =>
   sendTopicAnnouncement({
     actorUserId: 'synthetic-actor',
     announcementId,
+    markSkippedWhenUnverified,
     normalizedWsId: workspaceId,
     request: request(),
     resend: false,
@@ -184,9 +191,11 @@ beforeEach(() => {
   vi.setSystemTime(new Date('2026-10-07T10:00:00Z'));
   vi.stubEnv('CRON_SECRET', 'synthetic-test-cron');
   f.enabled = true;
+  f.teacherAssignments = false;
   f.contactWsId = workspaceId;
   f.nullRecipient = false;
   f.recipientError = false;
+  f.unverified = false;
   f.archived = false;
   f.failReceipt = false;
   f.row = {
@@ -244,6 +253,35 @@ describe('real topic sender admission and authoritative receipt', () => {
     expect(f.provider).not.toHaveBeenCalled();
     expect(f.row.status).toBe('queued');
   });
+  it('blocks an interactive send to an unverified recipient without changing the announcement', async () => {
+    f.unverified = true;
+    expect(await send()).toEqual({
+      error: 'EMAIL_NOT_VERIFIED',
+      status: 409,
+      unverifiedContacts: [
+        {
+          email: 'teacher@example.test',
+          id: contactId,
+          name: 'Synthetic teacher',
+        },
+      ],
+    });
+    expect(f.provider).not.toHaveBeenCalled();
+    expect(f.row.status).toBe('queued');
+    expect(f.row.last_error).toBeUndefined();
+  });
+  it('records a queue send to an unverified recipient as skipped', async () => {
+    f.unverified = true;
+    expect(await send(true)).toMatchObject({
+      error: 'EMAIL_NOT_VERIFIED',
+      status: 409,
+    });
+    expect(f.provider).not.toHaveBeenCalled();
+    expect(f.row).toMatchObject({
+      last_error: 'EMAIL_NOT_VERIFIED: teacher@example.test',
+      status: 'skipped',
+    });
+  });
   it('preserves the ordinary verified-recipient successful receipt control', async () => {
     const result = await send();
     expect(result).toEqual({
@@ -255,6 +293,45 @@ describe('real topic sender admission and authoritative receipt', () => {
       sent_email_audit_id: 'synthetic-audit',
     });
     expect(f.provider).toHaveBeenCalledOnce();
+  });
+  it('restamps sent_at on a resend with teacher assignments off (as before)', async () => {
+    await send();
+    expect(f.row.sent_at).toBe('2026-10-07T10:00:00.000Z');
+    vi.setSystemTime(new Date('2026-10-09T10:00:00Z'));
+    await sendTopicAnnouncement({
+      actorUserId: 'synthetic-actor',
+      announcementId,
+      normalizedWsId: workspaceId,
+      request: request(),
+      resend: true,
+      sbAdmin: client(),
+    });
+    expect(f.provider).toHaveBeenCalledTimes(2);
+    expect(f.row.sent_at).toBe('2026-10-09T10:00:00.000Z');
+  });
+  it('keeps the first sent_at on a resend with teacher assignments on', async () => {
+    f.teacherAssignments = true;
+    await send();
+    expect(f.row.sent_at).toBe('2026-10-07T10:00:00.000Z');
+    vi.setSystemTime(new Date('2026-10-09T10:00:00Z'));
+    await sendTopicAnnouncement({
+      actorUserId: 'synthetic-actor',
+      announcementId,
+      normalizedWsId: workspaceId,
+      request: request(),
+      resend: true,
+      sbAdmin: client(),
+    });
+    expect(f.provider).toHaveBeenCalledTimes(2);
+    expect(f.row.sent_at).toBe('2026-10-07T10:00:00.000Z');
+  });
+  it('does not send a draft whose topic is still blank', async () => {
+    f.row.topic = '';
+    expect(await send()).toMatchObject({
+      error: 'TOPIC_REQUIRED',
+      status: 409,
+    });
+    expect(f.provider).not.toHaveBeenCalled();
   });
   it('preserves a genuine provider failure and does not claim sent', async () => {
     f.provider.mockResolvedValue({

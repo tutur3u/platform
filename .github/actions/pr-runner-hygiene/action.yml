@@ -1,0 +1,7 @@
+name: Isolate persistent PR runner state
+description: Use a disposable home and caches, then remove this job's workspace and state.
+runs:
+  using: node24
+  main: index.js
+  post: index.js
+  post-if: always()

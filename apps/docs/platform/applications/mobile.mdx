@@ -1,7 +1,7 @@
 ---
 title: "Mobile"
 description: "Native workspace products, defaults, account controls, and offline behavior."
-updatedAt: '2026-10-23'
+updatedAt: '2026-10-29'
 ---
 
 The Flutter app (`apps/mobile`) brings eligible Tuturuuu workspace tools into a
@@ -25,6 +25,49 @@ Tasks, Calendar, and Finance are default launcher modules. Meet, Mail, Chat,
 and Notes are opt-in experiments documented in the workspace-tools guide.
 Turning a module on exposes its eligible launch surfaces; it does not grant
 workspace or account privileges. Mail keeps its exact-domain eligibility rule.
+
+## Modes (General and Education)
+
+A mode is a display preference for one account in one workspace. It changes
+what the app puts first and never grants anything: every surface keeps its own
+permission check, workspace-hidden modules stay hidden, and guests see only
+what they could already open.
+
+- **Default:** General. Home is unchanged in General mode.
+- **Resolution, first stored value wins:**
+  1. the member's own choice for this workspace (`user_workspace_configs`
+     `MOBILE_AUDIENCE_MODE`);
+  2. the workspace default an admin with `manage_workspace_settings` sets
+     (`workspace_configs` `MOBILE_DEFAULT_AUDIENCE_MODE`), so a centre can open
+     every member's phone in Education while members can still opt out;
+  3. the account preference chosen in onboarding (`user_configs`
+     `MOBILE_AUDIENCE_MODE`).
+- **Where to change it:** Settings → Workspace → Mode. Admins also see
+  "Default for members"; personal workspaces have no member default.
+- **Education Home:** a "Today's classes" card leads Home (hideable and
+  reorderable like other Home widgets). The server decides access: the card is
+  offered on Home and in the customization sheet only after the sessions read
+  succeeds, which requires `view_user_groups`. A denial removes the card and
+  its stored copy; any other failure keeps the last classes with an inline
+  notice. In General mode the card's data is never requested. Finished
+  sessions sink below current and upcoming ones, phases update at each start
+  and end, the list reloads after midnight, and states are words, never count
+  chips.
+- **Teacher scope:** teachers see only the classes they teach by default, with
+  a "Show all" switch. This is a presentation filter, not a security boundary.
+  Until the consolidated Today endpoint can tell which classes a teacher
+  teaches, the card lists all of the day's classes and says so ("All classes
+  today") instead of claiming a filter.
+- **Offline:** the last resolved mode is cached per account and workspace, so
+  the first frame is correct offline. A member's own choice is queued and
+  replayed (the config write is idempotent); the admin default is online only.
+
+Regression coverage: `test/features/audience_mode/`, `test/features/classes/`,
+`test/features/dashboard/view/home_mode_gate_test.dart` (General never fetches;
+no access means absent from Home and the customization sheet),
+`test/features/settings/view/settings_audience_mode_section_test.dart`, the
+onboarding mode-slide cases in `test/features/onboarding/onboarding_page_test.dart`,
+and the Home order case in `dashboard_layout_cubit_test.dart`.
 
 ## Shell and offline expectations
 
@@ -51,6 +94,16 @@ The [toolchain reference](/reference/repository/versions) reads the Flutter and
 Dart constraints and mobile package version from `pubspec.yaml`. Distribution
 artifacts and build metadata establish what a device is running. The browser
 bootstrap for Flutter is noindex; it is not a duplicate public marketing site.
+
+The standalone API migration uses a build-number gate at
+`/api/v1/mobile/version` for iOS and Android. The configured minimum supported
+build is inclusive; older builds require an update. Missing policy fails closed
+with 503. Mobile switches to consolidated contracts during this migration; the
+program accepts a temporary compatibility break followed by a forced update.
+External non-mobile consumers retain compatibility. The old semantic-version
+endpoint remains on the retained Next origin until separately reviewed. See the
+[API contract and regression coverage](/build/devops/standalone-api#mobile-version-contract).
+The API foundation does not itself activate the client screen or production gate.
 
 Developers changing translations regenerate localization before analysis/tests.
 Native app work does not require the paused Rust/TanStack Start runtime or the
@@ -145,3 +198,41 @@ your PC** or **Unknown publisher**. Verify the release SHA-256 checksum before
 using **More info → Run anyway**, if Windows offers it. Use the web app when
 organization policy blocks unsigned installers. See the
 [desktop installation and signing plan](/build/devops/desktop-beta-distribution).
+
+## Startup recovery and performance inspection
+
+On Android and iOS, optional public model-download recovery starts after the
+first painted Flutter frame. This moves native transfer restoration and model
+file checks out of first-frame contention. The owning Settings flow retains
+initialization failures and retry behavior; other platforms do not schedule
+this recovery. Required authentication, appearance, encrypted cache and pending
+mutation restoration still finish before `runApp`.
+
+Regression coverage: `test/core/startup/optional_startup_test.dart` verifies
+paint-before-recovery ordering, one invocation, subsequent frame progress while
+recovery is pending, and synchronous/asynchronous failure containment.
+
+For a build-free performance pass, follow `bootstrap.dart` and
+`app/view/app.dart` separately: unawaited work can still compete with painting,
+and provider construction/locale loading happens when the root mounts. Record
+asset byte sizes and dependency/native plugin candidates as source measurements,
+not installed bundle sizes. Dynamic server icon selection references many
+constant glyphs in `core/icons/platform_icon_data.dart`; retain that contract
+when evaluating font subsets. Measure release size and startup timing separately
+in admitted CI/device workflows before claiming a numeric improvement.
+
+### Independent startup state restoration
+
+After Firebase/observability handlers and Supabase have settled, bootstrap uses
+`initializeStartupState` to overlap account appearance reads with offline state
+restoration via `Future.wait`. Keep the identity/MFA boundary before appearance,
+and keep CacheStore before OfflineMutationQueue in a single branch: a cache
+failure must skip queue restoration. Each branch retains its original fallback
+or error log with the original error/stack; both finish before routes, builder
+and `runApp`. Firebase and Supabase remain sequential to preserve platform-error
+handler coverage during session restoration.
+
+`test/core/startup/startup_state_test.dart` uses completion barriers to prove
+concurrency, both completion orders, queue ordering, sync/async cache and queue
+failure reporting, appearance fallback and unexpected-error propagation. These
+are orchestration fixtures, not native-plugin or device latency measurements.

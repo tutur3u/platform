@@ -158,8 +158,9 @@ select ok(
         'calendar_event_virtual_participants'
       )
       and roles && array['anon', 'authenticated']::name[]
+      and permissive = 'PERMISSIVE'
   ),
-  'private calendar participant tables have no client-role RLS policies'
+  'private calendar participant tables have no permissive client-role RLS policies'
 );
 
 select ok(
@@ -207,16 +208,19 @@ select ok(
 
 select ok(
   (
-    select bool_and(position('private' in setting) > 0)
+    select bool_and(
+      coalesce(proconfig, '{}') @> array['search_path=public, private, pg_temp']
+      or (coalesce(proconfig, '{}') @> array['search_path=pg_catalog, pg_temp']
+        and prosrc like '%private.calendar_event_virtual_participants%')
+    )
     from (
-      select unnest(proconfig) as setting
+      select proconfig, prosrc
       from pg_proc
       where oid in (
         'public.merge_workspace_users(uuid,uuid,uuid)'::regprocedure,
         'public.merge_workspace_users_phase2(uuid,uuid,uuid)'::regprocedure
       )
     ) as function_settings
-    where setting like 'search_path=%'
   ),
   'workspace-user merge functions can resolve private virtual participants'
 );

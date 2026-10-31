@@ -1,12 +1,17 @@
 ---
 title: Hive
 description: Voxel research playground for CRDT worlds, farming simulation, NPC economies, and manual or autonomous society experiments.
-updatedAt: '2026-06-21'
+updatedAt: '2026-10-26'
 ---
 
 Hive is the Tuturuuu research satellite app at `https://hive.tuturuuu.com`.
-It uses the centralized Tuturuuu login handoff and keeps protected product APIs
-inside `apps/web` under `/api/v1/hive/*`.
+It uses the centralized Tuturuuu login handoff. Protected product APIs live in
+`apps/hive/src/app/api/v1/hive`; unmatched API paths fall back to `apps/web`.
+The native Cloudflare plan records the
+target architecture and delivery gates. The separately approved
+maintenance Worker returns bilingual
+503 responses on the satellite host while the application is unavailable; it
+does not replace the embedded web host or restore product features.
 
 Hive consumes cross-app login tokens through `/verify-token`. That verifier
 posts the handoff token to `/api/auth/verify-app-token`, trusts the returned
@@ -42,7 +47,7 @@ Both hosts must render the same shared Studio UI, engine, realtime client, data
 hooks, and access-request card from `@tuturuuu/hive-ui`. Keep `apps/hive` and
 the `apps/web` Hive routes as thin host wrappers for auth, access resolution,
 build metadata, and forwarded API context only. Future Hive feature work belongs
-in `packages/hive-ui`, `@tuturuuu/realtime/hive`, or the centralized Hive APIs
+in `packages/hive-ui`, `@tuturuuu/realtime/hive`, or the owning Hive APIs
 so the standalone app and web-hosted app stay 1:1.
 
 ## Access Model
@@ -74,69 +79,44 @@ so the standalone app and web-hosted app stay 1:1.
   lists, snapshots, realtime membership, or world data.
 - `apps/web` remains the login authority and verifies platform roles through
   internal APIs. Hive itself uses the app-session JWT as the local identity
-  cookie. Hive product data is split across two databases (see
-  [Data Model](#data-model)): the authoritative world-event, CRDT, and research
-  tables live in the main Supabase `public` schema, while a parallel Docker-managed
-  Hive Postgres baseline accessed through `HIVE_DATABASE_URL` carries the
-  dedicated-store mirror used by backfill and product-data workflows.
+  cookie. Product/world data uses dedicated Hive Postgres through
+  `HIVE_DATABASE_URL`; platform access, workspace context and AI credits still
+  depend on platform services backed by Supabase. See [Data Model](#data-model).
 
 ## Data Model
 
-Hive product state spans **two physical databases**, and it matters which one is
-authoritative for any given table when you operate or debug the app.
+Current source routes product writes through `apps/hive/src/app/api/v1/hive`
+and `apps/hive/src/lib/hive/hive-db.ts`. `getHiveSql()` requires
+`HIVE_DATABASE_URL`; server creation, world snapshots/events, CRDT state,
+economy, NPCs and research data use that dedicated Postgres connection.
+`createHiveWorldEvent()` updates the world/CRDT state and appends the event
+inside `sql.begin()`. `apps/hive-realtime/src/hive-db.ts` uses the same environment
+variable for its own persistence adapter.
 
-### Authoritative store: main Supabase `public` schema
+The baseline `apps/hive/db/001_schema.sql` and forward migrations describe that
+store. Legacy Supabase `public.hive_*` migrations and the historical
+`apply_hive_world_event()` function do not prove that current source writes
+world events there. Existing backfill copies are not a second write authority.
 
-The live world-event, CRDT, economy, NPC, and research tables that the running
-`/api/v1/hive/*` routes read and write are in the **main Supabase project**
-(`public.hive_*`). All apps share one Supabase project, so these tables are
-managed by the standard Supabase migration flow in
-`apps/database/supabase/migrations/`, not by the Hive Postgres migrator. This is
-where the audited world-event path actually runs:
+Access remains separate: `apps/hive/src/lib/hive-page-context.ts` resolves enabled
+membership and platform roles from Supabase. Access approvals synchronize the
+dedicated member row and the platform member row. Workspace context and AI credit
+paths also retain platform/Supabase dependencies. A Cloudflare migration must
+replace these contracts explicitly rather than declaring completion after a UI
+move. Keep app sessions and platform role checks intact during that work.
 
-- `hive_servers`
-- `hive_world_states` — authoritative full-world snapshots
-- `hive_world_events` — event metadata and compact payloads
-- `hive_npcs`, `hive_npc_runs`, `hive_npc_memories`
-- `hive_workflows`, `hive_workflow_runs`
-- `hive_research_sessions`, `hive_research_session_events`
-- `hive_members`, `hive_access_requests`
-
-The `apply_hive_world_event()` Postgres function is defined as
-`public.apply_hive_world_event(...)` in the Supabase migrations
-(`20260510143500_add_hive_research_engine.sql`, then hardened by
-`20260511160200_fix_hive_world_event_ambiguity.sql`,
-`20260512151000_make_hive_revision_conflicts_non_exceptional.sql`, and
-`20260512204028_secure_hive_world_event_actor.sql`). It inserts/updates
-`public.hive_world_states` and appends to `public.hive_world_events` in one
-transaction. It is **not** a Hive-Postgres migration. If a world save returns
-`hive_event_failed`, debug it against Supabase — see
+This describes checked-in callers, not verified deployed bytes or source-store
+freshness. Before a live export or incident fix, the owning operator must confirm
+the deployed route and database authority. Do not assume identically named tables
+contain the same data. For the historical Supabase function failure, see
 [Hive world event troubleshooting](/platform/applications/hive-world-event-troubleshooting).
-
-### Dedicated Hive Postgres mirror (`HIVE_DATABASE_URL`)
-
-A separate Docker-managed Hive Postgres database holds a parallel
-dedicated-store baseline (`apps/hive/db/001_schema.sql`) that the one-shot
-backfill path populates from legacy Supabase Hive rows. Its `001_schema.sql`
-baseline declares its own copies of `hive_members`, `hive_access_requests`,
-`hive_servers`, `hive_world_states`, `hive_world_events`,
-`hive_research_sessions`, `hive_research_session_events`, `hive_crdt_updates`,
-`hive_npcs`, `hive_npc_needs`, `hive_npc_wallets`, `hive_npc_memories`,
-`hive_npc_runs`, `hive_ledger_entries`, `hive_inventory_items`,
-`hive_warehouses`, `hive_trade_offers`, `hive_crop_instances`, and
-`hive_simulation_ticks`. The `apply_hive_world_event` function and the
-world-event/actor-security logic are **not** present in this baseline; that path
-lives only in Supabase.
-
-Because the dedicated baseline mirrors many of the same table names, do not
-assume a fix applied to one database is visible to the other. App access gates
-read Supabase `public.hive_members` (and platform-admin roles), and approving a
-request writes **both** stores (see [Access Model](#access-model)).
 
 ## Database Migrations
 
-Hive Postgres is forward-migrated by the `hive-db-migrate` Docker Compose job
-before web, Hive, Hive realtime, or Hive cron processes are allowed to start.
+The retained Docker deployment path forward-migrates Hive Postgres through
+the `hive-db-migrate` Compose job before its dependent services start. Docker is currently paused under the
+[active runtime policy](/build/devops/active-runtime); these retained procedures
+do not authorize restarting it. New delivery follows the Cloudflare plan.
 The deployment watcher also runs that job explicitly with
 `docker compose run --rm --no-build hive-db-migrate` on every blue/green
 deployment so an already-completed migration container cannot silently satisfy a
@@ -183,19 +163,15 @@ audit counter. It is not a write precondition for normal CRDT world edits.
 Authoritative economy writes must use SQL transactions, idempotency keys where
 available, and ledger rows.
 
-The one-shot Hive backfill path copies legacy Hive rows into the dedicated Hive
-Postgres baseline so the dedicated store mirrors prior product data. Note that
-the authoritative live world-event, CRDT, economy, NPC, and research writes
-performed by `/api/v1/hive/*` run against the main Supabase `public` schema (see
-[Data Model](#data-model)); the dedicated Hive Postgres is the mirrored
-dedicated store, not the runtime authority for the world-event path. In all
-cases, `apps/web` internal APIs use the forwarded app-session cookie to resolve
-the caller and platform-admin status.
+The one-shot backfill copies legacy rows into dedicated Hive Postgres. Preserve
+its source manifest and verify imported data before changing writer ownership.
+Current Hive API adapters validate the app session and access before product
+writes; unmatched platform API calls retain the web fallback.
 
 In Docker production, Hive satellite API rewrites must target the web service
-through `INTERNAL_WEB_API_ORIGIN=http://web-proxy:7803`. If that value is empty,
-the Hive Next.js rewrite can fall back to the public web origin and turn every
-editor save into a browser-to-Hive-to-public-Web round trip.
+through `INTERNAL_WEB_API_ORIGIN=http://web-proxy:7803` for unmatched platform
+API requests. If empty, those fallback calls can traverse the public web origin.
+Local Hive product handlers keep precedence over that fallback.
 
 Hive Docker production builds run the Next.js build through
 `scripts/run-hive-docker-next-build.js` under the real `node:24` builder stage.
@@ -295,11 +271,11 @@ server controls: creating a server creates its world, deleting a server deletes
 the world through database cascade, and clear/reseed actions persist typed audit
 events plus CRDT updates against the current server document.
 
-Manual editor changes persist through the web gateway world-event API, which
-calls the Supabase `public.apply_hive_world_event()` function. That function
-stores the authoritative `world_data` and the matching event metadata in the
-same Supabase transaction, then the Hive client only broadcasts the already
-applied event through `hive-realtime`. Do not add a second client-side
+Manual editor changes persist through the local Hive world-event API, which
+calls `createHiveWorldEvent()` in `apps/hive/src/lib/hive/hive-db.ts`. The helper
+stores `world_data`, CRDT state and matching event metadata in one dedicated
+Hive Postgres transaction, then the client broadcasts the applied event through
+`hive-realtime`. Do not add a second client-side
 `sync.update` persistence write after the gateway event succeeds; duplicate
 writes can churn `op_seq`, slow visible save completion, and let older world
 snapshots overwrite newer local edits. Realtime and snapshot consumers must

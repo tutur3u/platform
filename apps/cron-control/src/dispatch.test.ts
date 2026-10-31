@@ -10,6 +10,7 @@ import { LedgerCore, localLedger, memoryLedgerStore } from './ledger';
 
 const SECRET = 'test-cron-secret-value';
 const env = {
+  CRON_CONTROL_WEB_MODE: 'active',
   CRON_SECRET_INFRASTRUCTURE: SECRET,
   CRON_SECRET_INVENTORY: SECRET,
   CRON_SECRET_PAY: SECRET,
@@ -619,3 +620,20 @@ it.each(['claim', 'complete'] as const)(
     }
   }
 );
+
+it('ignores the Calendar degradation signal for a non-Calendar job', async () => {
+  const h = harness(() =>
+    Response.json({ ok: true, degraded: true, transientProviders: ['google'] })
+  );
+  const enabled = { ...env, CRON_CONTROL_ENABLED_JOBS: 'tasks-cleanup-media' };
+  const reports = await dispatchScheduledJobs(DAILY, T0, enabled, h.deps);
+  expect(reports).toEqual([
+    { attempts: 1, id: 'tasks-cleanup-media', outcome: 'ok', status: 200 },
+  ]);
+  expect(h.core.status()['tasks-cleanup-media']).toMatchObject({
+    lastOutcome: 'ok',
+    lastCompletedAt: T0,
+    consecutiveFailures: 0,
+    stopped: false,
+  });
+});

@@ -1,6 +1,8 @@
 import type { ProductionPublicationPolicy } from './scripts/ci/production-publication-policy.ts';
 
 export const ci = {
+  'mastermind-cloudflare.yaml': true,
+  'contacts-start-candidate.yaml': true,
   'sso-persistence-contract.yaml': true,
   'employee-schema-contract.yaml': true,
   'actions-storage-report.yaml': true,
@@ -23,6 +25,7 @@ export const ci = {
   'external-project-storage-analytics-contract.yaml': true,
   'tutoring-absence-credit-contract.yaml': true,
   'report-review-receipts-contract.yaml': true,
+  'workspace-permission-scope-contract.yaml': true,
   'programming-app-builds.yaml': true,
   'mail-calendar-tasks-builds.yaml': true,
   'playground-runtime-acceptance.yaml': true,
@@ -32,9 +35,13 @@ export const ci = {
   'calendar-cloudflare.yaml': true,
   'mail-cloudflare.yaml': true,
   'wave1-native-app.yaml': true,
+  'native-start-app.yaml': true,
   'wave1-native-publish.yaml': true,
+  'wave1-native-production.yaml': true,
   'colab-cloudflare.yaml': true,
   'coordination-cloudflare.yaml': true,
+  'ops-hub-cloudflare.yaml': true,
+  'turbo-cache-cloudflare.yaml': true,
   'codex-plugin.yaml': true,
   'discord-python-ci.yml': true,
   'docker-setup-check.yaml': false,
@@ -46,6 +53,7 @@ export const ci = {
   'tanstack-route-manifest.yaml': false,
   'i18n-check.yaml': true,
   'inventory-offline-contract.yaml': true,
+  'required-account-mfa-contract.yaml': true,
   'lettin-cloudflare.yaml': true,
   'meet-cloudflare.yaml': true,
   'parley-cloudflare.yaml': true,
@@ -77,10 +85,11 @@ export const ci = {
   'vercel-preview-platform.yaml': true,
   'vercel-production-ai.yaml': true,
   'vercel-production-apps.yaml': true,
-  'vercel-production-calendar.yaml': true,
+  'vercel-production-calendar.yaml': false,
   'vercel-production-chat.yaml': true,
   'vercel-production-cms.yaml': true,
   'vercel-production-drive.yaml': true,
+  'finance-cloudflare.yaml': true,
   'vercel-production-finance.yaml': true,
   'vercel-production-inventory.yaml': true,
   'vercel-production-infrastructure.yaml': true,
@@ -113,13 +122,30 @@ export const ci = {
   'desktop-beta.yaml': true,
   'desktop-store-draft.yaml': true,
   'mobile-build-linux.yaml': true,
+  'track-cloudflare.yaml': true,
+  'cms-cloudflare.yaml': true,
+  'storefront-cloudflare.yaml': true,
+  'ai-cloudflare.yaml': true,
+  'forms-cloudflare.yaml': true,
+  'web-start-candidate.yaml': true,
+  'nova-cloudflare.yaml': true,
+  'inventory-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
 // Admit each app only in an explicitly reviewed wave cutover PR.
 export const productionPublicationPolicy = {
+  mastermind: {
+    state: 'held',
+    reason: 'held for wave-2 cutover: Mastermind security review required',
+  },
   meet: { state: 'held', reason: 'held for wave-1 cutover' },
-  calendar: { state: 'held', reason: 'held for wave-1 cutover' },
+  calendar: {
+    state: 'admitted',
+    reason:
+      'Calendar native root cutover with private smoke and rehearsed route rollback',
+    surfaces: ['frontend'],
+  },
   mail: { state: 'held', reason: 'held for wave-1 cutover' },
   apps: { state: 'held', reason: 'held for wave-1 cutover' },
   shortener: { state: 'held', reason: 'held for wave-2 cutover' },

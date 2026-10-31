@@ -1,0 +1,151 @@
+---
+title: "Contacts Start candidate"
+description: "Default-off Contacts Worker, route ownership and isolated staging acceptance."
+---
+
+## Scope and defaults
+
+`apps/contacts/cloudflare` is an additive TanStack Start, Vite+ and Void
+candidate for `<app>.staging.tutur3u.com` in the `tutur3u.com` zone.
+Contacts hosts tutoring workspaces. Existing Contacts Next.js source, Vercel
+routing and customer behavior remain canonical. This PR does not deploy,
+provision, attach hostnames, change DNS or enable production publication.
+
+`CONTACTS_START_CANDIDATE` defaults to `off`; only the exact value `staging`
+on the exact HTTPS staging origin admits requests. Unset, unknown and disabled
+values return 503 without invoking Start or calling Next. Worker-first assets,
+no SPA fallback, disabled workers.dev/preview URLs and no routes prevent an
+asset or public-host bypass. The configuration contains no credentials, fallback
+origin, bindings, schedules, queues or database migrations.
+
+The only native route is GET/HEAD `/__contacts1`, an inert JSON probe. All
+customer pages, route handlers, public assets and other methods use Next fallback.
+`start-route-manifest.json` records the full route census, local owners,
+rewrites, Web API fallback and the non-Contacts workspace redirect. The generated
+private census artifact additionally traces inherited layouts/templates, actions,
+`after()`, `connection()` and cache boundaries through first-party imports.
+Unresolved import edges remain blockers for later native slices.
+
+## Preserve identity and API ownership
+
+The candidate forwards through `@tuturuuu/start-bridge/api-forward` to a separately
+admitted Contacts **Next staging** origin. It does not dispatch `/api/*` directly
+to Web: existing Contacts feedback, payment/billing and auth handlers must win;
+the remaining workspace API rewrites and `/api/:path*` fallback retain Web as owner.
+There is no new Next catch-all or route-segment rendering configuration.
+
+Contacts Next middleware retains app-session audience/expiry, MFA, refresh,
+workspace ownership, locale redirects and non-migrated-route redirects. Native
+code never resolves a user. Future native slices must use an injected Contacts
+satellite session via `getSatelliteAppSessionUser('contacts')`, never
+`user-helper`. Shared domain libraries remain independent of React/router/runtime.
+
+EN and VI use `localePrefix: never`. Explicit locale prefixes redirect to the
+unprefixed path and set `NEXT_LOCALE`; the candidate must preserve those redirects,
+cookies, query strings and reload behavior.
+
+Forwarding preserves authorization, cookies, request bodies, Next action headers,
+streaming, abort signals, statuses, retry headers and separate response cookies.
+It signs the Cloudflare client IP, removes spoofable forwarding headers and
+hop-by-hop nominations, and never retries a failed write. The Next origin must
+attest the pinned staging Supabase project before its response is released.
+Duplicate Domain attributes or non-staging cookie domains reject the whole
+response. Internal redirects return through Contacts staging; issuer redirects
+must target the separately configured central staging login.
+
+## Owner inputs blocking contacts.staging
+
+`cloudflare/staging.env.example` is a dormant template. The release owner must
+supply and privately verify all of the following before publication:
+
+- Scoped Cloudflare staging account/token, Worker identity, private admission and
+  separately authorized hostname, DNS/TLS and ingress topology.
+- Immutable Contacts Next staging fallback with verified team, project, deployment,
+  source SHA and staging Supabase identity attestation. The Vercel hostname filter
+  alone does not establish team/project ownership; never forward credentials until
+  that ownership is verified. Keep fallback and Worker origins distinct.
+- Staging Supabase publishable/server keys, schema, callbacks, disposable actor,
+  workspace and Contacts tutoring/feedback/module fixtures. The expected public
+  staging ref is pinned in `profile.ts`; it is not a credential.
+- Staging-only `TRUSTED_PROXY_ORIGIN_SECRET` and matching Next proxy configuration.
+  Compare private SHA-256 fingerprints with production before enablement and after
+  either key rotates: equal or unavailable fingerprints hold publication.
+- Central Web staging auth/API service, Contacts app-session keys/audience and
+  allowlists, exact `.staging.tutur3u.com` Secure cookie support across issuer,
+  Contacts and Supabase adapters, MFA and refresh callbacks. Those hosted adapters
+  are prerequisites; this candidate does not silently enable staging auth in Next.
+- Staging R2/storage, Turnstile, email/OAuth and payment sandbox inputs required by
+  the existing Next flows; never production credentials or real payment data.
+- Exact source/artifact identity, independent security review, applicable CI
+  lint/types/tests/build, emitted Worker receipt and hosted EN/VI acceptance.
+
+Secrets stay in the approved secret store. Neither `.env` credentials nor browser
+traces, screenshots, passwords or raw handoff URLs belong in public artifacts.
+
+## Verification and controls
+
+Use a remote build host under `ttr resources`; do not build on the local hub. From the repository root:
+
+```bash
+bun run --cwd apps/contacts routes:candidate:check
+bun run --cwd apps/contacts test:candidate
+bun run --cwd apps/contacts test:staging:policy
+bun run --cwd apps/contacts type-check:candidate
+bun run --cwd apps/contacts test:candidate:controls
+bun run --cwd apps/contacts build:candidate
+bun run --cwd apps/contacts test:candidate:runtime
+bun check:changed
+```
+
+`routes:candidate` regenerates the tracked manifest. `--artifact <private-path>`
+adds the import/boundary census. The control runner temporarily removes admission,
+then forces all requests into Start. It requires assertion failures for both,
+restores the source in `finally`, and reruns the original suite green.
+The emitted runtime uses workerd through Wrangler's pinned Miniflare supplier,
+with outbound requests confined to a synthetic Next fixture. It proves the
+actual emitted gate, native probe, fallback and immediate disable behavior;
+it does not prove hosted identity or database access.
+
+The validation-only candidate CI has no publisher or secrets and retains the
+repository's CI admission gate. No admission label is added by this lane.
+
+The hosted Playwright suite is intentionally dormant. Set the names below in
+the approved secret environment, then run `test:e2e:staging` on an allowed host:
+
+- `CONTACTS_STAGING_SOURCE_SHA` (full emitted/deployed source SHA).
+- `CONTACTS_STAGING_SUPABASE_PROJECT_REF` (the pinned staging ref).
+- `CONTACTS_STAGING_DISPOSABLE_ACCOUNT=confirmed`.
+- `CONTACTS_STAGING_EMAIL`, `CONTACTS_STAGING_PASSWORD`, `CONTACTS_STAGING_USER_ID`,
+  `CONTACTS_STAGING_WORKSPACE_ID` for the disposable fixture.
+- Optional `CONTACTS_STAGING_BASE_URL` and `CONTACTS_STAGING_WEB_ORIGIN` accept only
+  the exact Contacts and issuer staging origins; canonical/prod/confusable hosts
+  are rejected before browser launch.
+
+Both locales exercise real login handoff, exact build identity, actor read via
+the Web API proxy, Secure cookie continuity, app-session refresh, tutoring,
+feedback, attendance and posts navigation, plus reloads. The network fence blocks
+production, non-auth mutations and unexpected WebSockets. This read-only suite
+does not establish editor writes, payments, MFA recovery or wrong-audience denials;
+those require separately reviewed disposable hosted cases before a customer slice.
+
+## Cost, stop and later cutover
+
+Disabled requests perform zero downstream calls; admitted probes do the same.
+Each fallback performs at most one downstream call, with zero application retries,
+no persistence and no rescheduling. Source tests count calls for repeated failures
+and disable transitions. There is no background actor to survive the stop fence.
+The durable deployment setting `CONTACTS_START_CANDIDATE=off` stops new work;
+remove/disable only this candidate Worker if unexpected serving persists, preserve
+receipts and the Next rollback artifact, and verify zero new downstream calls.
+Ingress/CPU limits alone do not cap aggregate request spend. Before exposing ingress,
+the owner must admit finite acceptance volume and verify provider topology and
+hosted stop behavior. This PR does not claim a total-spend cap or hosted stop proof.
+
+The product decision is web first, then per-app staging acceptance followed by
+automatic cutover with immediate rollback. This PR prepares Contacts only; it
+contains no cutover controller, one-origin routing or publication authority.
+A later owner must prove session/API parity, customer tutoring/editor flows,
+bounded cost/stop behavior and exact source receipts, then execute the authorized
+promotion/rollback procedure. Disabling a future native route cohort must restore
+Next immediately; disabling this entire staging candidate returns 503 and leaves
+the existing canonical Next app serving customers.

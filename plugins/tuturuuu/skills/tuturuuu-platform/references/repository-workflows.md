@@ -5,7 +5,12 @@ Consult only the section relevant to the current task. Paths are repository-rela
 ## 4. Repository Map
 
 - `apps/web`: maintained Next.js platform on port `7803`; live route owner
-  alongside the owning Next.js satellites.
+  alongside the owning Next.js satellites. Its [Web 1 Start candidate](../../../../../docs-internal/build/devops/web-start-candidate.mdx)
+  is default-off and forwards existing routes to an attested staging Next origin.
+  Use `build:candidate` only on an admitted remote host or CI; inventory generation
+  and focused proxy tests are build-free. Commit only route-level inventory;
+  retain the full module census with hashes in the CI artifact documented in
+  the candidate runbook. No candidate route is production-owned.
 - `apps/backend` and `apps/tanstack-web`: paused Rust/TanStack Start source,
   not in use. Do not run, update, or refresh them during ordinary app work.
 - Docker setup is inactive and the Docker cron runner is retired. Use the local
@@ -246,3 +251,13 @@ controls must import the canonical dependency-free owner directly, use byte-chec
 isolated copies and Bun --no-install, and retain actual marker/descendant cleanup
 assertions. Diagnose root/import boundaries before attributing a control timeout
 to IPC or Web startup; a missing later artifact is secondary when the gate failed.
+
+## Focused route tests with unbuilt packages
+
+When a test partially imports route utilities to keep a pure parameter parser
+real, mock the unused satellite actor and workspace access dependencies. Otherwise
+loading the module can import package distributions before the mocked request
+context is used. The Forms form-ID route test preserves its seeded-ID parser
+assertion while mocking those unused boundaries; it runs without building
+`internal-api`. Keep resource authorization tests on the real mutation helper
+with fixture clients, and check that denials happen before any writes.

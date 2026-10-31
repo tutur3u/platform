@@ -5,230 +5,12 @@ const { pathToFileURL } = require('node:url');
 const test = require('node:test');
 const { fixture } = require('./wave1-native-test-fixture.cjs');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
-const sha = 'a'.repeat(40);
-const oldId = '11111111-1111-1111-1111-111111111111';
-const newId = '22222222-2222-2222-2222-222222222222';
-const publicEnv = {
-  NEXT_PUBLIC_SUPABASE_URL: 'https://staging-fixture.example.com',
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_fixture',
-};
-Object.assign(process.env, publicEnv);
-
-async function publisher(t) {
-  const { prepare, artifactDigest } = await import(
-    './wave1-native-artifact.mjs'
-  );
-  const { profiles } = await import('./wave1-native-profile.mjs');
-  const dir = fixture(t);
-  const receipt = prepare(dir, 'mail', 'staging', 'owner-example', sha);
-  const admission = {
-    schema: 1,
-    app: 'mail',
-    sourceSha: sha,
-    artifactSha256: artifactDigest(receipt),
-    ...profiles.stagingAdmission,
-  };
-  const env = {
-    ...publicEnv,
-    GITHUB_REF: 'refs/heads/main',
-    GITHUB_EVENT_NAME: 'push',
-    GITHUB_REPOSITORY: 'fixture/repo',
-    GITHUB_RUN_ID: '12345',
-    GITHUB_RUN_ATTEMPT: '1',
-    WAVE1_STAGING_ATTEMPT_D1_ID: '33333333-3333-3333-3333-333333333333',
-    WAVE1_STAGING_PUBLISH_ENABLED: 'true',
-    WAVE1_STAGING_PUBLICATION_ADMISSION: JSON.stringify(admission),
-    CLOUDFLARE_STAGING_API_TOKEN: 'staging-fixture',
-    CLOUDFLARE_STAGING_ACCOUNT_ID: profiles.accountId,
-    CLOUDFLARE_WORKERS_SUBDOMAIN: 'owner-example',
-    WAVE1_CONTROL_READ_TOKEN: 'control-fixture',
-    RUNNER_TEMP: dir,
-  };
-  const state = {
-    writes: 0,
-    flagReads: 0,
-    admissionReads: 0,
-    reads: 0,
-    ledgerQueries: 0,
-    ledgerWrites: 0,
-    versions: [],
-    active: oldId,
-    failUpload: false,
-    loseReceipt: false,
-  };
-  const response = (body) => Response.json(body);
-  const fetcher = async (url, options) => {
-    assert.equal(options.redirect, 'error');
-    assert.ok(options.signal);
-    const u = new URL(url);
-    if (u.hostname === 'api.github.com') {
-      if (u.pathname.endsWith('/WAVE1_STAGING_PUBLISH_ENABLED')) {
-        state.flagReads++;
-        if (state.flagReads > 1 && state.stop === 'timeout')
-          throw new Error('timeout');
-        if (state.flagReads > 1 && ['deleted', 'denied'].includes(state.stop))
-          return new Response('', {
-            status: state.stop === 'deleted' ? 404 : 403,
-          });
-        return response({
-          value:
-            state.flagReads > 1 && state.stop === 'disabled' ? 'false' : 'true',
-        });
-      }
-      if (u.pathname.endsWith('/WAVE1_STAGING_PUBLICATION_ADMISSION')) {
-        state.admissionReads++;
-        return response({
-          value:
-            state.admissionReads > 1 && state.stop === 'admission'
-              ? '{}'
-              : env.WAVE1_STAGING_PUBLICATION_ADMISSION,
-        });
-      }
-    }
-    if (u.hostname === 'api.cloudflare.com') {
-      assert.equal(options.headers.Authorization, 'Bearer staging-fixture');
-      if (u.pathname.endsWith('/query')) {
-        state.ledgerQueries++;
-        const { sql, params } = JSON.parse(options.body);
-        if (sql.startsWith('SELECT'))
-          return response({
-            success: true,
-            result: [
-              {
-                success: true,
-                results:
-                  state.record === undefined ? [] : [{ record: state.record }],
-              },
-            ],
-          });
-        assert.equal(
-          sql,
-          'UPDATE wave1_attempts SET record = ? WHERE app = ? AND record = ?'
-        );
-        if (state.deleteOnWrite) state.record = undefined;
-        const changes = state.record === params[2] ? 1 : 0;
-        if (changes) {
-          state.ledgerWrites++;
-          state.record = params[0];
-        }
-        if (state.loseMarkerReceipt) throw new Error('lost marker receipt');
-        return response({
-          success: true,
-          result: [{ success: true, meta: { changes } }],
-        });
-      }
-      state.reads++;
-      assert.equal(
-        options.method,
-        'GET',
-        'No provider write outside attempt D1'
-      );
-      if (u.pathname.endsWith('/subdomain'))
-        return response({
-          success: true,
-          result: {
-            enabled: state.publicServing === 'workers.dev',
-            previews_enabled: state.publicServing === 'preview',
-          },
-        });
-      if (u.pathname.endsWith('/deployments'))
-        return response({
-          success: true,
-          result: {
-            deployments: [
-              {
-                id: 'rollback',
-                versions: [{ version_id: state.active, percentage: 100 }],
-              },
-            ],
-          },
-        });
-      if (u.pathname.endsWith('/secrets'))
-        return response({
-          success: true,
-          result: receipt.profile.secrets.map((name) => ({ name })),
-        });
-      if (u.pathname.endsWith('/versions'))
-        return response({
-          success: true,
-          result: { items: state.versions.map(({ id }) => ({ id })) },
-        });
-      const version = state.versions.find(
-        (v) => v.id === u.pathname.split('/').at(-1)
-      );
-      if (version) return response({ success: true, result: version });
-    }
-    throw new Error(`Unexpected test transport ${url}`);
-  };
-  const exec = (command, args, options) => {
-    state.writes++;
-    assert.equal(command, 'bun');
-    assert.deepEqual(args.slice(0, 4), [
-      'x',
-      '--no-install',
-      'wrangler',
-      'deploy',
-    ]);
-    assert.equal(
-      options.env.CLOUDFLARE_API_TOKEN,
-      env.CLOUDFLARE_STAGING_API_TOKEN
-    );
-    assert.equal(options.timeout, 180000);
-    state.versions.push({
-      id: newId,
-      annotations: {
-        'workers/message': sha,
-        'workers/tag': admission.artifactSha256,
-      },
-    });
-    if (state.failUpload) throw new Error('timeout after upload');
-    state.active = newId;
-    if (!state.loseReceipt)
-      fs.writeFileSync(
-        options.env.WRANGLER_OUTPUT_FILE_PATH,
-        JSON.stringify({
-          type: 'deploy',
-          worker_name: receipt.profile.name,
-          version_id: newId,
-        })
-      );
-  };
-  const { signAttemptState } = await import('./wave1-native-attempt.mjs');
-  const ledgerData = {
-    schema: 1,
-    scope: {
-      databaseId: env.WAVE1_STAGING_ATTEMPT_D1_ID,
-      repository: env.GITHUB_REPOSITORY,
-      app: 'mail',
-      worker: receipt.profile.name,
-      accountId: receipt.profile.accountId,
-    },
-    entries: [],
-  };
-  const setLedger = (data) => {
-    state.record = signAttemptState(data, env.CLOUDFLARE_STAGING_API_TOKEN);
-  };
-  const getLedger = () => JSON.parse(JSON.parse(state.record).data);
-  setLedger(ledgerData);
-  const { main } = await import('./wave1-native-publish.mjs');
-  const options = {
-    argv: ['publish', 'mail', 'staging', sha],
-    env,
-    appRoot: dir,
-    fetcher,
-    exec,
-  };
-  return {
-    run: () => main(options),
-    options,
-    state,
-    env,
-    admission,
-    dir,
-    setLedger,
-    getLedger,
-  };
-}
+const {
+  newId,
+  oldId,
+  publisher,
+  sha,
+} = require('./wave1-native-publication-harness.cjs');
 
 async function assertStopped(p, main) {
   await assert.rejects(() => (main ? main(p.options) : p.run()));
@@ -284,10 +66,14 @@ for (const outcome of [
     p.state.failUpload = outcome === 'timeout';
     p.state.loseReceipt = outcome === 'lost-receipt';
     p.state.loseMarkerReceipt = outcome === 'lost-marker-receipt';
-    if (outcome === 'crash-before-upload')
-      p.options.exec = () => {
+    if (outcome === 'crash-before-upload') {
+      const originalExec = p.options.exec;
+      p.options.exec = (command, args, options) => {
+        if (args.includes('--dry-run'))
+          return originalExec(command, args, options);
         throw new Error('crash');
       };
+    }
     await assert.rejects(p.run);
     const writes = p.state.writes;
     fs.rmSync(path.join(p.dir, 'mail-staging-publication.json'), {
@@ -525,7 +311,10 @@ for (const attack of [
   test(`unauthentic or missing D1 state blocks upload: ${attack}`, async (t) => {
     const p = await publisher(t);
     if (attack !== 'missing') {
-      p.options.exec = () => {
+      const originalExec = p.options.exec;
+      p.options.exec = (command, args, options) => {
+        if (args.includes('--dry-run'))
+          return originalExec(command, args, options);
         throw new Error('crash before provider upload');
       };
       await assert.rejects(p.run);
@@ -566,25 +355,43 @@ test('a PR GitHub token cannot authenticate the ledger or settle uncertainty', a
   await assert.rejects(p.run, /Invalid attempt signature/);
   assert.equal(p.state.writes, 0);
 });
+test('staging startup rejection retains sanitized diagnostics and its pending fence', async (t) => {
+  const p = await publisher(t);
+  p.state.uploadError = Object.assign(new Error('provider rejected'), {
+    status: 1,
+    stderr: Buffer.from('Script startup exceeded CPU time limit [code: 10021]'),
+  });
+  await assert.rejects(p.run(), /outcome is uncertain/u);
+  const receipt = JSON.parse(
+    fs.readFileSync(path.join(p.dir, 'mail-staging-publication.json'))
+  );
+  assert.equal(receipt.state, 'pending');
+  assert.equal(receipt.uploadFailure.cfCode, 10021);
+  assert.match(
+    receipt.uploadFailure.cfErrors[0].message,
+    /startup exceeded CPU/u
+  );
+  assert.equal(p.getLedger().entries.length, 1);
+});
 
-test('every reusable boundary forwards exactly staging credentials and public inputs', () => {
+test('only publication boundaries forward staging credentials and public inputs', () => {
   const names = [
     'CLOUDFLARE_STAGING_API_TOKEN',
     'WAVE1_CONTROL_READ_TOKEN',
     'STAGING_SUPABASE_URL',
     'STAGING_SUPABASE_PUBLISHABLE_KEY',
   ].sort();
-  for (const file of ['wave1-native-app.yaml', 'wave1-native-publish.yaml']) {
-    const workflow = readWorkflow(file);
-    assert.deepEqual(
-      Object.keys(workflow.on.workflow_call.secrets).sort(),
-      names
-    );
-  }
+  assert.equal(
+    readWorkflow('wave1-native-app.yaml').on.workflow_call.secrets,
+    undefined
+  );
+  assert.deepEqual(
+    Object.keys(
+      readWorkflow('wave1-native-publish.yaml').on.workflow_call.secrets
+    ).sort(),
+    names
+  );
   for (const [file, jobId] of [
-    ['calendar-cloudflare.yaml', 'native-profiles'],
-    ['mail-cloudflare.yaml', 'native-profiles'],
-    ['apps-cloudflare.yaml', 'native-publication-profiles'],
     ['calendar-cloudflare.yaml', 'native-publish-staging'],
     ['mail-cloudflare.yaml', 'native-publish-staging'],
     ['apps-cloudflare.yaml', 'native-publish-staging'],
@@ -628,3 +435,14 @@ for (const publicServing of ['workers.dev', 'preview']) {
     assert.equal(p.getLedger().entries[0].state, 'uploaded');
   });
 }
+
+test('Calendar publishes only the explicit custom staging host from its sealed profile', async (t) => {
+  const p = await publisher(t, 'calendar');
+  await p.run();
+  assert.equal(p.state.writes, 1);
+  assert.equal(p.getLedger().entries[0].state, 'activated');
+  const receipt = JSON.parse(
+    fs.readFileSync(path.join(p.dir, 'wave1-artifact.json'))
+  );
+  assert.equal(receipt.profile.host, 'calendar.staging.tutur3u.com');
+});

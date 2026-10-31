@@ -3979,6 +3979,8 @@
     "participants": "Participants",
     "registered_users": "Registered users",
     "select-time-zone": "Select time zone",
+    "sign_in_to_create_plan": "Sign in to create a plan",
+    "sign_in_to_create_plan_desc": "Creating a plan requires a signed-in Tuturuuu account. Anyone with a public plan link can still join without signing in.",
     "smart_scheduling": "Smart Scheduling",
     "something_went_wrong": "Something went wrong",
     "soonest-time-to-meet": "Soonest time",
@@ -4182,6 +4184,16 @@
       "permission-denied": "Browser notifications are blocked. Please enable them in your browser settings.",
       "permission-request": "Enable browser notifications to stay updated"
     },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Calendar sync paused because the provider stopped accepting access. Reconnect the account to resume.",
+        "title": "Reconnect your calendar"
+      },
+      "tutoring_session_completed": {
+        "description": "A tutor marked a tutoring session for a learner in your class as complete.",
+        "title": "Tutoring session completed"
+      }
+    },
     "date_earlier": "Earlier",
     "date_this_week": "This Week",
     "date_today": "Today",
@@ -4296,6 +4308,7 @@
         "time_tracking_request_rejected": "Time tracking request rejections",
         "time_tracking_request_resubmitted": "Time tracking request resubmissions",
         "time_tracking_request_submitted": "Time tracking requests awaiting approval",
+        "topic_assigned": "Topics assigned to you",
         "workspace_activity": "Workspace activity",
         "workspace_invite": "Workspace invitations"
       },
@@ -4380,6 +4393,7 @@
       "time_tracking_request_rejected": "Time Tracking Request Rejected",
       "time_tracking_request_resubmitted": "Time Tracking Request Resubmitted",
       "time_tracking_request_submitted": "Time Tracking Request Submitted",
+      "topic_assigned": "Topic assigned",
       "workspace_invite": "Workspace Invite"
     },
     "unified_view": "Unified",

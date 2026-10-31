@@ -1,10 +1,12 @@
 import { UserCog } from '@tuturuuu/icons';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
 import type { PermissionId } from '@tuturuuu/types';
 import { Alert, AlertDescription, AlertTitle } from '@tuturuuu/ui/alert';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -34,7 +36,17 @@ export default async function InternalAccountsPage({ params }: Props) {
   await enforceInfrastructureRootWorkspace(wsId);
 
   const user = await getSatelliteAppSessionUser('infra');
-  if (!user || !isExactTuturuuuDotComEmail(user.email)) notFound();
+  if (
+    !user ||
+    !isVerifiedTuturuuuStaffSession(
+      user &&
+        (await getVerifiedAuthUser(
+          await createAdminClient({ noCookie: true }),
+          user.id
+        ))
+    )
+  )
+    notFound();
 
   const permissions = await getPermissions({
     user,

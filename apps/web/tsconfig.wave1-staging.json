@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false,
+    "composite": false,
+    "allowImportingTsExtensions": true,
+    "types": ["node"],
+    "plugins": []
+  },
+  "include": [
+    "e2e-wave1-staging/**/*.ts",
+    "playwright.wave1-staging.config.ts"
+  ],
+  "exclude": ["node_modules", "dist", ".turbo"]
+}

@@ -95,6 +95,7 @@ export function renderTopicAnnouncementEmail({
   announcement: {
     body?: string | null;
     class_label?: string | null;
+    course_book?: string | null;
     day_label?: string | null;
     end_time?: string | null;
     place?: string | null;
@@ -102,7 +103,8 @@ export function renderTopicAnnouncementEmail({
     session_date?: string | null;
     start_time?: string | null;
     title: string;
-    topic: string;
+    topic: string | null;
+    video_url?: string | null;
   };
   attachments?: TopicAnnouncementEmailAttachmentSummary[];
   workspaceName: string | null;
@@ -114,11 +116,13 @@ export function renderTopicAnnouncementEmail({
     ['Time', formatTimeRange(announcement.start_time, announcement.end_time)],
     ['Room', announcement.room],
     ['Place', announcement.place],
+    ['Course book', announcement.course_book],
+    ['Video', announcement.video_url],
   ].filter(([, value]) => Boolean(value)) as [string, string][];
   const detailText = details
     .map(([label, value]) => `${label}: ${value}`)
     .join('\n');
-  const body = announcement.body || announcement.topic;
+  const body = announcement.body || announcement.topic || '';
   const safeWorkspaceName = workspaceName || 'your workspace team';
   const safetyNotice =
     'This message and any attachments were added by a member of the workspace whose emails you verified. They may contain spam or unexpected content. Tuturuuu has not scanned this email or its attachments, so only proceed at your own risk.';

@@ -1,7 +1,8 @@
 import {
   ProfileUploadError,
-  reserveProfileUploadBudget,
+  reserveWorkspaceManagedAvatarBudget,
 } from '@tuturuuu/storage-core/profile-upload-budget';
+import { DEFAULT_SIGNED_URL_TTL_SECONDS } from '@tuturuuu/storage-core/signed-url-policy';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -51,9 +52,32 @@ export async function handleGetAvatarRequest(
 
   const sbAdmin = await createAdminClient();
 
+  // Avatars uploaded through POST live in the public `avatars` bucket: return
+  // their stable public URL, which carries no bearer token and is safe to
+  // store. `signedUrl` keeps the field older clients (mobile CRM) persist.
+  const separator = path.lastIndexOf('/');
+  const folder = path.slice(0, separator);
+  const fileName = path.slice(separator + 1);
+  const { data: publicObjects, error: listError } = await sbAdmin.storage
+    .from('avatars')
+    .list(folder, { limit: 1, search: fileName });
+
+  if (!listError && publicObjects?.some((item) => item.name === fileName)) {
+    const { data: publicUrlData } = sbAdmin.storage
+      .from('avatars')
+      .getPublicUrl(path);
+    return NextResponse.json({
+      path,
+      publicUrl: publicUrlData.publicUrl,
+      signedUrl: publicUrlData.publicUrl,
+    });
+  }
+
+  // Legacy avatars in the private `workspaces` bucket: sign on read with a
+  // short lifetime. Callers must store the path, not this URL.
   const { data, error } = await sbAdmin.storage
     .from('workspaces')
-    .createSignedUrl(path, 60 * 60 * 24 * 365); // 1 year
+    .createSignedUrl(path, DEFAULT_SIGNED_URL_TTL_SECONDS);
 
   if (error) {
     console.error(error);
@@ -63,7 +87,7 @@ export async function handleGetAvatarRequest(
     );
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json({ ...data, path });
 }
 
 export async function handleCreateAvatarUploadRequest(
@@ -116,11 +140,17 @@ export async function handleCreateAvatarUploadRequest(
   }
 
   try {
-    await reserveProfileUploadBudget(principal.id, 'avatar');
+    await reserveWorkspaceManagedAvatarBudget(permissions.wsId, principal.id);
   } catch (error) {
     if (error instanceof ProfileUploadError) {
       return NextResponse.json(
-        { message: error.message },
+        {
+          message: error.message,
+          ...(error.status === 429 && {
+            code: 'PROFILE_UPLOAD_LIMIT',
+            retryAfter: error.retryAfter,
+          }),
+        },
         {
           status: error.status,
           headers: error.retryAfter

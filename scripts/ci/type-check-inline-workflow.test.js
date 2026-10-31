@@ -4,11 +4,13 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
+const { labelExpressionToJs } = require('./pr-label-gate');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
 
 const root = path.resolve(__dirname, '../..');
 const workflow = readWorkflow('type-check.yaml');
 const job = workflow.jobs['type-check'];
+const prJob = workflow.jobs['type-check-pr'];
 const decision =
   "steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'";
 const preflightIds = ['changed_files', 'check_config', 'release_relevance'];
@@ -23,15 +25,44 @@ const expression = (body) => `\${{ ${body} }}`;
 
 test('singleton keeps the Type Check context, event surface and runner with a read-only token', () => {
   assert.equal(workflow.name, 'TypeScript Type Check');
-  assert.deepEqual(workflow.on, { push: null, workflow_dispatch: null });
-  assert.deepEqual(Object.keys(workflow.jobs), ['type-check']);
+  // Feature branches validate through the ready-for-ci PR gate.
+  assert.deepEqual(workflow.on, {
+    push: { branches: ['main', 'production', 'release-please--branches--**'] },
+    pull_request: {
+      types: [
+        'opened',
+        'synchronize',
+        'reopened',
+        'ready_for_review',
+        'labeled',
+      ],
+    },
+    workflow_dispatch: null,
+  });
+  // Two variants share the Type Check context; exactly one runs per event. The
+  // pull request variant may route to the PR pool (see
+  // scripts/ci/workflow-pr-self-hosted.test.js) and so names no secret.
+  assert.deepEqual(Object.keys(workflow.jobs), ['type-check', 'type-check-pr']);
   assert.equal(job.name, 'Type Check');
+  assert.equal(prJob.name, 'Type Check');
   assert.equal(job['runs-on'], 'ubuntu-latest');
+  assert.match(prJob['runs-on'], /\|\| 'ubuntu-latest' \}\}$/);
+  assert.equal(prJob.if, "github.event_name == 'pull_request'");
+  const withoutCredentials = (steps) =>
+    steps.map((step) => {
+      if (!step.with) return step;
+      const { token: _token, team: _team, ...rest } = step.with;
+      return { ...step, with: rest };
+    });
+  assert.deepEqual(
+    withoutCredentials(prJob.steps),
+    withoutCredentials(job.steps)
+  );
   assert.equal(job.concurrency, undefined);
   assert.deepEqual(workflow.permissions, { contents: 'read' });
   assert.deepEqual(job.permissions, { contents: 'read' });
   assert.equal(job.needs, undefined);
-  assert.equal(job.if, undefined);
+  assert.equal(job.if, "github.event_name != 'pull_request'");
   const checkouts = job.steps.filter((step) =>
     step.uses?.startsWith('actions/checkout@')
   );
@@ -385,7 +416,7 @@ function evaluateConcurrency(value, github) {
       'github',
       'startsWith',
       'format',
-      `return (${body});`
+      `return (${labelExpressionToJs(body)});`
     )(
       github,
       (text, prefix) => text.startsWith(prefix),

@@ -59,15 +59,14 @@ extension _CrmPageLayout on _CrmPageState {
             onResetSection: _resetSearch,
             actions: [
               if (selected == null && allowed)
-                ShellActionSpec(
+                ShellActionSpec.search(
                   id: 'crm-search',
-                  icon: Icons.search_rounded,
+                  active: _searching,
                   tooltip: usersTab
                       ? l10n.crmSearchUsersHint
                       : l10n.crmSearchAuditHint,
-                  inDock: true,
-                  callbackToken: (_searching, _tab),
-                  searchController: _searching ? _searchController : null,
+                  callbackToken: _tab,
+                  controller: _searchController,
                   searchHint: usersTab
                       ? l10n.crmSearchUsersHint
                       : l10n.crmSearchAuditHint,
@@ -171,7 +170,7 @@ extension _CrmPageLayout on _CrmPageState {
                       // The list already applies the page gutters.
                       return const Padding(
                         padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
-                        child: Center(child: NovaLoadingIndicator()),
+                        child: AppLoadingIndicator.page(),
                       );
                     }
                     if (_error != null && count == 0) {

@@ -40,6 +40,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { getMountedAppVerifyTokenMatch } from '@tuturuuu/utils/internal-app-mounts';
 import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import { requiresAccountMfa } from '@tuturuuu/utils/required-mfa-browser';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -243,11 +244,9 @@ function getStaticReturnApp(
     return 'web';
   }
 
-  const appDomain = getAppDomainByUrl(returnUrl);
-
-  if (appDomain?.kind === 'internal') {
-    return appDomain.name;
-  }
+  const appDomain =
+    getMountedAppVerifyTokenMatch(returnUrl) ?? getAppDomainByUrl(returnUrl);
+  if (appDomain?.kind === 'internal') return appDomain.name;
 
   return normalizeManagedTuturuuuReturnUrl(returnUrl)
     ? MANAGED_TUTURUUU_RETURN_APP
@@ -885,13 +884,8 @@ export default function LoginForm({
         nextUrl.searchParams.set('multiAccount', 'true');
       }
 
-      if (nextUrl.origin !== window.location.origin) {
-        window.location.assign(nextUrl.toString());
-      } else {
-        router.push(nextUrl.toString());
-        router.refresh();
-      }
-
+      // Another app serves its verifier, even on this origin (an apex mount).
+      window.location.assign(nextUrl.toString());
       return;
     }
 
@@ -1407,7 +1401,6 @@ export default function LoginForm({
       >
         {t('login.continue_with_google')}
       </SocialLoginButton>
-
       <SocialLoginButton
         disabled={loading}
         onClick={() => void handleOAuthLogin('azure')}
@@ -1415,9 +1408,11 @@ export default function LoginForm({
           <SocialImageLogo src="/media/logos/microsoft.svg" alt="Microsoft" />
         }
       >
-        {t('login.continue_with_microsoft')}
+        {t('login.staff_microsoft')}
       </SocialLoginButton>
-
+      <p className="text-muted-foreground text-sm">
+        {t('login.microsoft_email_recovery')}
+      </p>
       <SocialLoginButton
         disabled={loading}
         onClick={() => void handleOAuthLogin('apple')}
@@ -1425,7 +1420,6 @@ export default function LoginForm({
       >
         {t('login.continue_with_apple')}
       </SocialLoginButton>
-
       <SocialLoginButton
         disabled={loading}
         onClick={() => void handleOAuthLogin('github')}
@@ -1435,7 +1429,6 @@ export default function LoginForm({
       </SocialLoginButton>
     </div>
   );
-
   const renderRateLimitedSocialAuthSuggestion = (email: string) => (
     <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/20 p-4">
       <p className="text-muted-foreground text-sm leading-relaxed">
@@ -1538,12 +1531,10 @@ export default function LoginForm({
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
     const diagnosticCode = searchParams.get('diagnosticCode');
-
     if (!error && !errorDescription && !diagnosticCode) {
       oauthErrorToastKeyRef.current = null;
       return;
     }
-
     const toastKey = `${error ?? ''}:${errorDescription ?? ''}:${diagnosticCode ?? ''}`;
     if (oauthErrorToastKeyRef.current === toastKey) {
       return;
@@ -1556,9 +1547,11 @@ export default function LoginForm({
     toast.error(t('login.failed'), {
       description: formatDiagnosticDescription(
         errorDescription ||
-          (error === 'auth_failed'
-            ? t('login.oauth_callback_failed')
-            : t('login.social_sign_in_failed')),
+          (error === 'azure_tenant_restricted'
+            ? t('login.microsoft_tenant_restricted')
+            : error === 'auth_failed'
+              ? t('login.oauth_callback_failed')
+              : t('login.social_sign_in_failed')),
         diagnosticCode
       ),
     });

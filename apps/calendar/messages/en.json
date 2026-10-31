@@ -1417,6 +1417,8 @@
     "connect_microsoft_desc": "Connect your Microsoft account",
     "connected_accounts": "Connected Accounts",
     "connected_calendars": "Connected Calendars",
+    "consent_restart_limited": "Google did not issue a refresh token. Wait before reconnecting this account again.",
+    "consent_restart_unavailable": "Calendar reconnection is temporarily unavailable. Try again later.",
     "create": "Create",
     "create_calendar": "Create Calendar",
     "creation_recovery_notice": "The previous creation is unconfirmed. Retry the original request first; your edits will stay open to save after confirmation.",
@@ -1510,6 +1512,8 @@
     "no_google_accounts": "No Google accounts connected yet.",
     "no_microsoft_accounts": "No Microsoft accounts connected yet.",
     "no_outbound_calendar": "No outbound calendar",
+    "oauth_spike_alert_description": "Quarantined / deferred / held / systemic / transient accounts",
+    "oauth_spike_alert_title": "Calendar OAuth needs attention",
     "outlook": "Outlook",
     "overridden_by_settings": "Overridden by your settings",
     "personal_first_day_override_desc": "You have set your personal first day of week to <bold>{firstDay}</bold>, which overrides this workspace setting. Your effective first day is <bold>{effectiveFirstDay}</bold>. Change it in Appearance & Theme settings.",
@@ -6133,6 +6137,8 @@
     "participants": "Participants",
     "registered_users": "Registered users",
     "select-time-zone": "Select time zone",
+    "sign_in_to_create_plan": "Sign in to create a plan",
+    "sign_in_to_create_plan_desc": "Creating a plan requires a signed-in Tuturuuu account. Anyone with a public plan link can still join without signing in.",
     "smart_scheduling": "Smart Scheduling",
     "something_went_wrong": "Something went wrong",
     "soonest-time-to-meet": "Soonest time",
@@ -6336,6 +6342,16 @@
       "permission-denied": "Browser notifications are blocked. Please enable them in your browser settings.",
       "permission-request": "Enable browser notifications to stay updated"
     },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Calendar sync paused because the provider stopped accepting access. Reconnect the account to resume.",
+        "title": "Reconnect your calendar"
+      },
+      "tutoring_session_completed": {
+        "description": "A tutor marked a tutoring session for a learner in your class as complete.",
+        "title": "Tutoring session completed"
+      }
+    },
     "date_earlier": "Earlier",
     "date_this_week": "This Week",
     "date_today": "Today",
@@ -6445,6 +6461,7 @@
         "task_start_date_changed": "Start date changes",
         "task_title_changed": "Title changes",
         "task_updated": "Task updates",
+        "topic_assigned": "Topics assigned to you",
         "workspace_activity": "Workspace activity",
         "workspace_invite": "Workspace invitations"
       },
@@ -6522,6 +6539,7 @@
       "task_start_date_changed": "Start Date Changed",
       "task_title_changed": "Title Changed",
       "task_updated": "Task Updated",
+      "topic_assigned": "Topic assigned",
       "workspace_invite": "Workspace Invite"
     },
     "unified_view": "Unified",

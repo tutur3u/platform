@@ -61,6 +61,9 @@ class AccountSecurityRepository {
   }
 
   Future<void> link(OAuthProvider provider) async {
+    if (provider == OAuthProvider.azure) {
+      throw const AuthException('Microsoft linking is unavailable');
+    }
     final userId = _client.auth.currentUser?.id;
     final info = await PackageInfo.fromPlatform();
     if (userId == null || _client.auth.currentUser?.id != userId) {
@@ -69,7 +72,6 @@ class AccountSecurityRepository {
     await _client.auth.linkIdentity(
       provider,
       redirectTo: '${info.packageName}://login-callback',
-      scopes: provider == OAuthProvider.azure ? 'email' : null,
     );
   }
 }

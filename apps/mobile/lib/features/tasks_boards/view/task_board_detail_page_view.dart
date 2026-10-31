@@ -51,7 +51,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
   late final ScrollController _kanbanVerticalScrollController;
   late final PageController _kanbanHorizontalPageController;
   late final ScrollController _timelineVerticalScrollController;
-  late final ScrollController _timelineHorizontalScrollController;
   final Set<String> _collapsedListIds = <String>{};
   final Set<String> _listCollapsePreferenceTouchedIds = <String>{};
   final Set<String> _initialListLoadRequested = <String>{};
@@ -94,9 +93,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     _timelineVerticalScrollController = ScrollController(
       initialScrollOffset: _savedOffset('timeline-vertical'),
     );
-    _timelineHorizontalScrollController = ScrollController(
-      initialScrollOffset: _savedOffset('timeline-horizontal'),
-    );
     _selectedTaskId = _normalizedTaskId(widget.initialTaskId);
   }
 
@@ -107,7 +103,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     _kanbanVerticalScrollController.dispose();
     _kanbanHorizontalPageController.dispose();
     _timelineVerticalScrollController.dispose();
-    _timelineHorizontalScrollController.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -205,14 +200,13 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                   }
                 },
               ),
-              ShellActionSpec(
+              ShellActionSpec.search(
                 id: 'task-board-detail-search',
-                icon: _searchVisible ? Icons.close_rounded : Icons.search,
+                active: _searchVisible,
+                hasQuery: state.searchQuery.trim().isNotEmpty,
                 tooltip: context.l10n.taskBoardDetailSearchTitle,
-                highlighted:
-                    _searchVisible || state.searchQuery.trim().isNotEmpty,
                 enabled: detail != null,
-                searchController: _searchVisible ? _searchController : null,
+                controller: _searchController,
                 searchHint: context.l10n.taskBoardDetailSearchPlaceholder,
                 onSearchChanged: context
                     .read<TaskBoardDetailCubit>()
@@ -286,7 +280,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               children: [
                 shellActionRegistration,
                 shellMiniNavRegistration,
-                const Center(child: NovaLoadingIndicator()),
+                const AppLoadingIndicator.page(),
               ],
             );
           }
@@ -392,8 +386,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                 shellMiniNavRegistration,
                 shellTitleRegistration,
               ],
-              // The list view pads itself with the page insets; kanban and
-              // timeline are full-bleed canvases.
+              // The list view and timeline agenda pad themselves with the page
+              // insets; kanban is a full-bleed canvas.
               LayoutBuilder(
                 builder: (context, constraints) {
                   final pageSizeHint = _tasksPageSizeHintForViewport(
@@ -408,9 +402,10 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                     }
                   } else if (state.currentView ==
                       TaskBoardDetailView.timeline) {
-                    for (final list in sortedLists) {
-                      _requestInitialListLoadOnce(list.id, pageSizeHint, state);
-                    }
+                    _scheduleTimelinePages(
+                      context,
+                      _timelineOpenLists(sortedLists),
+                    );
                   }
 
                   return NovaRefreshIndicator(
@@ -444,6 +439,10 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                               sortedLists,
                               targetStatus,
                             ),
+                        rowActions: _taskRowActionHandlers(
+                          context,
+                          sortedLists,
+                        ),
                         isBulkSelectMode: state.isBulkSelectMode,
                         selectedTaskIds: state.selectedTaskIds,
                         onToggleTaskSelection: (task) => context
@@ -492,8 +491,8 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                             ),
                         onTaskTap: (task) =>
                             _handleTaskTap(context, task, sortedLists),
-                        onTaskMove: (task) =>
-                            _openMoveTaskPicker(context, task, sortedLists),
+                        onTaskMenu: (task) =>
+                            _openTaskContextMenu(context, task, sortedLists),
                         isBulkSelectMode: state.isBulkSelectMode,
                         selectedTaskIds: state.selectedTaskIds,
                         onToggleTaskSelection: (task) => context
@@ -509,38 +508,22 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
                         onFocusedListChanged: _handleKanbanPageChanged,
                       ),
                       TaskBoardDetailView.timeline => _TaskBoardTimelineView(
-                        board: detail,
                         lists: sortedLists,
                         tasksByList: filteredByList,
-                        hasMoreTasks: _hasMoreTasksForLists(sortedLists, state),
+                        hasLoadError: _timelineHasLoadError(sortedLists, state),
+                        hasMoreTasks: _timelineHasMore(sortedLists, state),
                         isLoadingMoreTasks: state.isLoadingListTasks,
-                        verticalScrollController:
-                            _timelineVerticalScrollController,
-                        horizontalScrollController:
-                            _timelineHorizontalScrollController,
+                        scrollController: _timelineVerticalScrollController,
                         onLoadMore: () {
                           _loadMoreVisibleLists(
                             context,
-                            lists: sortedLists,
+                            lists: _timelineOpenLists(sortedLists),
                             state: state,
-                            pageSizeHint: pageSizeHint,
+                            pageSizeHint: taskTimelinePageSize,
                           );
                         },
                         onTaskTap: (task) =>
                             _handleTaskTap(context, task, sortedLists),
-                        onTimelineTaskCommit:
-                            ({
-                              required task,
-                              required listId,
-                              required startDate,
-                              required endDate,
-                            }) => _commitTimelineTaskChange(
-                              context,
-                              task: task,
-                              listId: listId,
-                              startDate: startDate,
-                              endDate: endDate,
-                            ),
                       ),
                     },
                   );
@@ -1006,10 +989,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       'timeline-vertical',
       _timelineVerticalScrollController,
     );
-    _rememberScrollOffset(
-      'timeline-horizontal',
-      _timelineHorizontalScrollController,
-    );
     if (_kanbanHorizontalPageController.hasClients) {
       final page = _kanbanHorizontalPageController.page;
       if (page != null) {
@@ -1031,10 +1010,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       _jumpToSavedOffset(
         'timeline-vertical',
         _timelineVerticalScrollController,
-      );
-      _jumpToSavedOffset(
-        'timeline-horizontal',
-        _timelineHorizontalScrollController,
       );
       final page = _savedKanbanPages[widget.boardId];
       if (page != null && _kanbanHorizontalPageController.hasClients) {
@@ -1067,95 +1042,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     await _openTaskQuickActionsSheet(context, task, lists);
   }
 
-  Future<void> _openTaskQuickActionsSheet(
-    BuildContext context,
-    TaskBoardTask task,
-    List<TaskBoardList> lists,
-  ) async {
-    await showAdaptiveSheet<void>(
-      context: context,
-      backgroundColor: shad.Theme.of(context).colorScheme.background,
-      builder: (sheetContext) => _TaskQuickActionsSheet(
-        task: task,
-        lists: lists,
-        onMove: () {
-          Navigator.of(sheetContext).pop();
-          unawaited(_openMoveTaskPicker(context, task, lists));
-        },
-        onMarkStatus: (status) {
-          Navigator.of(sheetContext).pop();
-          unawaited(_markTaskAsStatus(context, task, lists, status));
-        },
-        onPriorityChanged: (priority) {
-          Navigator.of(sheetContext).pop();
-          unawaited(_changeTaskPriority(context, task, priority));
-        },
-        onOpenDetails: () {
-          Navigator.of(sheetContext).pop();
-          unawaited(_openTaskDetails(context, task));
-        },
-      ),
-    );
-  }
-
-  Future<void> _changeTaskPriority(
-    BuildContext context,
-    TaskBoardTask task,
-    String priority,
-  ) async {
-    final normalizedPriority = _normalizeTaskPriority(
-      priority,
-      _taskQuickActionPriorityOptions,
-    );
-    if (task.priority == normalizedPriority) {
-      return;
-    }
-
-    final cubit = context.read<TaskBoardDetailCubit>();
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    final fallbackErrorMessage = context.l10n.commonSomethingWentWrong;
-    final updatedMessage = context.l10n.taskBoardDetailPriorityUpdated;
-
-    try {
-      await cubit.updateTask(
-        taskId: task.id,
-        name: task.name?.trim().isNotEmpty == true
-            ? task.name!.trim()
-            : context.l10n.taskBoardDetailUntitledTask,
-        priority: normalizedPriority,
-        startDate: task.startDate,
-        endDate: task.endDate,
-        estimationPoints: task.estimationPoints,
-        labelIds: task.labelIds,
-        projectIds: task.projectIds,
-        assigneeIds: task.assigneeIds,
-      );
-      if (!context.mounted || !toastContext.mounted) return;
-      shad.showToast(
-        context: toastContext,
-        builder: (context, overlay) =>
-            shad.Alert(content: Text(updatedMessage)),
-      );
-    } on ApiException catch (error) {
-      if (!context.mounted || !toastContext.mounted) return;
-      shad.showToast(
-        context: toastContext,
-        builder: (context, overlay) => shad.Alert.destructive(
-          content: Text(
-            error.message.trim().isEmpty ? fallbackErrorMessage : error.message,
-          ),
-        ),
-      );
-    } on Exception {
-      if (!context.mounted || !toastContext.mounted) return;
-      shad.showToast(
-        context: toastContext,
-        builder: (context, overlay) =>
-            shad.Alert.destructive(content: Text(fallbackErrorMessage)),
-      );
-    }
-  }
-
   Future<void> _openBulkActionsSheet(BuildContext context) async {
     final cubit = context.read<TaskBoardDetailCubit>();
     if (!cubit.state.isBulkSelectMode) {
@@ -1186,7 +1072,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       return;
     }
 
-    final selectedListId = await shad.showDialog<String>(
+    final selectedListId = await _showBoardDialog<String>(
       context: context,
       builder: (dialogContext) => _MoveTaskListDialog(lists: lists),
     );
@@ -1261,65 +1147,6 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     setState(() => _searchVisible = false);
   }
 
-  Future<void> _commitTimelineTaskChange(
-    BuildContext context, {
-    required TaskBoardTask task,
-    required String listId,
-    required DateTime startDate,
-    required DateTime endDate,
-  }) async {
-    final cubit = context.read<TaskBoardDetailCubit>();
-    final toastContext = Navigator.of(context, rootNavigator: true).context;
-    final fallbackErrorMessage = context.l10n.commonSomethingWentWrong;
-
-    try {
-      await cubit.updateTask(
-        taskId: task.id,
-        listId: task.listId,
-        name: task.name?.trim().isNotEmpty == true
-            ? task.name!.trim()
-            : context.l10n.taskBoardDetailUntitledTask,
-        description: task.description,
-        priority: task.priority,
-        startDate: _taskStartOfDay(startDate),
-        endDate: _taskEndOfDay(endDate),
-        estimationPoints: task.estimationPoints,
-        labelIds: task.labelIds,
-        projectIds: task.projectIds,
-        assigneeIds: task.assigneeIds,
-      );
-      if (!context.mounted) {
-        return;
-      }
-      if (listId != task.listId) {
-        await cubit.moveTask(taskId: task.id, listId: listId);
-      }
-    } on ApiException catch (error) {
-      if (!toastContext.mounted) {
-        return;
-      }
-      shad.showToast(
-        context: toastContext,
-        builder: (context, overlay) => shad.Alert.destructive(
-          content: Text(
-            error.message.trim().isNotEmpty
-                ? error.message
-                : fallbackErrorMessage,
-          ),
-        ),
-      );
-    } on Exception {
-      if (!toastContext.mounted) {
-        return;
-      }
-      shad.showToast(
-        context: toastContext,
-        builder: (context, overlay) =>
-            shad.Alert.destructive(content: Text(fallbackErrorMessage)),
-      );
-    }
-  }
-
   Future<void> _openMoveTaskPicker(
     BuildContext context,
     TaskBoardTask task,
@@ -1332,7 +1159,7 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
       return;
     }
 
-    final selectedListId = await shad.showDialog<String>(
+    final selectedListId = await _showBoardDialog<String>(
       context: context,
       builder: (dialogContext) => _MoveTaskListDialog(lists: availableLists),
     );
@@ -1408,10 +1235,12 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
     if (targetLists.length == 1) {
       selectedListId = targetLists.single.id;
     } else {
-      final title = normalizedStatus == 'done'
-          ? context.l10n.taskBoardDetailBulkMarkDone
-          : context.l10n.taskBoardDetailBulkMarkClosed;
-      selectedListId = await shad.showDialog<String>(
+      final title = switch (normalizedStatus) {
+        'done' => context.l10n.taskBoardDetailBulkMarkDone,
+        'closed' => context.l10n.taskBoardDetailBulkMarkClosed,
+        _ => _taskBoardListStatusLabel(context, normalizedStatus),
+      };
+      selectedListId = await _showBoardDialog<String>(
         context: context,
         builder: (dialogContext) =>
             _TaskListPickerDialog(title: title, lists: targetLists),

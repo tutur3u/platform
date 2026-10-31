@@ -10,8 +10,11 @@ on:
       - ".github/workflows/desktop-beta.yaml"
       - ".github/actions/setup-flutter-with-cache/**"
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
       - "scripts/desktop-deployment/**"
+      - "scripts/mobile-deployment/build-name.mjs"
+      - "scripts/ci/normalize-release-notes.js"
       - ".github/workflows/desktop-beta.yaml"
       - ".github/actions/setup-flutter-with-cache/**"
   workflow_dispatch:
@@ -22,7 +25,7 @@ on:
         default: true
 
 concurrency:
-  group: desktop-beta-${{ github.ref }}
+  group: desktop-beta-${{ github.ref }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: false
   queue: max
 
@@ -32,6 +35,7 @@ permissions:
 
 jobs:
   check-ci:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     permissions:
       contents: read
       deployments: read
@@ -42,12 +46,12 @@ jobs:
   validate:
     name: Desktop distribution tests
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - run: node --test scripts/desktop-deployment/*.test.mjs
@@ -55,16 +59,16 @@ jobs:
   windows-dry-run:
     name: Windows x64 installer dry run
     needs: [check-ci, validate]
-    if: needs.check-ci.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.dry_run
+    if: (needs.check-ci.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch' && inputs.dry_run) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: windows-latest
     timeout-minutes: 60
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - uses: ./.github/actions/setup-flutter-with-cache
@@ -94,7 +98,7 @@ jobs:
       - name: Smoke installed Windows dry run
         run: pwsh -NoProfile -File scripts/desktop-deployment/smoke-windows.ps1
       - name: Upload Windows dry-run installer and checksum receipt
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-windows-x64-dry-run
           path: |
@@ -109,16 +113,22 @@ jobs:
 
   release-status:
     name: Desktop beta availability
+    # GitHub requires push access to include draft releases in the listing.
+    permissions:
+      contents: write
     needs: check-ci
-    if: needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production' && !inputs.dry_run
+    if: (needs.check-ci.outputs.should_run == 'true' && github.ref == 'refs/heads/production' && !inputs.dry_run) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     outputs:
       enabled: ${{ steps.status.outputs.enabled }}
       platforms: ${{ steps.platforms.outputs.platforms }}
       matrix: ${{ steps.platforms.outputs.matrix }}
+      version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - id: platforms
@@ -133,11 +143,17 @@ jobs:
           if [ "$ENABLED" != true ]; then
             echo 'Desktop downloads are coming soon. Signing setup and platform verification are deferred; no desktop release was published.' >> "$GITHUB_STEP_SUMMARY"
           fi
+      - name: Derive next desktop version
+        id: version
+        if: steps.status.outputs.enabled == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/desktop-deployment/release-version.mjs
 
   build:
     name: Desktop beta (${{ matrix.platform }})
     needs: [check-ci, validate, release-status]
-    if: needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production'
+    if: (needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     environment: desktop-beta
     permissions:
       contents: read
@@ -148,11 +164,13 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.release-status.outputs.matrix) }}
     runs-on: ${{ matrix.runner }}
+    env:
+      DESKTOP_VERSION: ${{ needs.release-status.outputs.version }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
       - name: Validate Windows smoke and updater scripts
@@ -192,7 +210,7 @@ jobs:
       - name: Build Windows beta
         if: matrix.platform == 'windows'
         working-directory: apps/mobile
-        run: flutter build windows --release --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
+        run: flutter build windows --release --target lib/main_production.dart --build-name="$env:DESKTOP_VERSION" --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$env:RUNNER_TEMP/desktop-public.json"
       - name: Select Windows signing mode
         id: windows-signing
         if: matrix.platform == 'windows'
@@ -205,11 +223,11 @@ jobs:
       - name: Build macOS beta
         if: matrix.platform == 'macos'
         working-directory: apps/mobile
-        run: flutter build macos --release --flavor production --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
+        run: flutter build macos --release --flavor production --target lib/main_production.dart --build-name="$DESKTOP_VERSION" --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
       - name: Build Linux beta
         if: matrix.platform == 'linux'
         working-directory: apps/mobile
-        run: flutter build linux --release --target lib/main_production.dart --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
+        run: flutter build linux --release --target lib/main_production.dart --build-name="$DESKTOP_VERSION" --dart-define=DESKTOP_RELEASE_RUN_ID=${{ github.run_id }} --dart-define-from-file="$RUNNER_TEMP/desktop-public.json"
       - name: Audit and package beta
         if: matrix.platform == 'linux'
         shell: bash
@@ -259,7 +277,7 @@ jobs:
         if: matrix.platform == 'windows'
         run: pwsh -NoProfile -File scripts/desktop-deployment/smoke-windows.ps1
       - name: Upload isolated beta package
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-beta-${{ matrix.platform }}
           path: ${{ runner.temp }}/desktop-artifacts/*
@@ -268,7 +286,7 @@ jobs:
           compression-level: 0
       - name: Upload Windows installation inventory
         if: matrix.platform == 'windows'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: windows-installation-inventory
           path: ${{ runner.temp }}/windows-installed-files.json
@@ -284,7 +302,8 @@ jobs:
     needs: [build, release-status]
     env:
       DESKTOP_BETA_PLATFORMS: ${{ needs.release-status.outputs.platforms }}
-    if: always() && !cancelled() && needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production' && (needs.build.result == 'success' || needs.build.result == 'failure')
+      DESKTOP_VERSION: ${{ needs.release-status.outputs.version }}
+    if: (always() && !cancelled() && needs.release-status.outputs.enabled == 'true' && github.ref == 'refs/heads/production' && (needs.build.result == 'success' || needs.build.result == 'failure')) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     environment: desktop-beta
     runs-on: macos-latest
     timeout-minutes: 45
@@ -293,13 +312,15 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # Release notes list app changes since the previous desktop beta.
+          fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: desktop-beta-*
           merge-multiple: true
@@ -317,6 +338,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/desktop-deployment/verify-provenance.mjs
       - name: Publish immutable beta release
+        id: publication
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/desktop-deployment/publish.mjs
+      - name: Remove this run's failed draft
+        if: failure() && steps.publication.outputs.draft_tag != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DESKTOP_DRAFT_TAG: ${{ steps.publication.outputs.draft_tag }}
+        run: node scripts/desktop-deployment/cleanup-draft.mjs

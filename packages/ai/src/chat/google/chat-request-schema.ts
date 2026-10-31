@@ -9,7 +9,7 @@ const ChatRoleSchema = z
   .trim()
   .min(1)
   .transform((value) => value.toLowerCase())
-  .pipe(z.enum(['assistant', 'system', 'user']));
+  .pipe(z.enum(['assistant', 'user']));
 
 const UIMessagePartSchema = z
   .object({
@@ -77,7 +77,8 @@ function isValidHttpUrl(value: string): boolean {
 }
 
 function mapToUIMessageParts(
-  parts: z.infer<typeof UIMessageSchema>['parts']
+  parts: z.infer<typeof UIMessageSchema>['parts'],
+  role: z.infer<typeof ChatRoleSchema>
 ): UIMessage['parts'] {
   const mappedParts: UIMessage['parts'] = [];
 
@@ -89,17 +90,7 @@ function mapToUIMessageParts(
       continue;
     }
 
-    if (
-      part.type === 'dynamic-tool' &&
-      typeof part.toolName === 'string' &&
-      typeof part.toolCallId === 'string'
-    ) {
-      mappedParts.push({
-        type: 'text',
-        text: serializeToolPartForModelContext(part),
-      });
-      continue;
-    }
+    if (role === 'assistant') continue;
 
     if (
       part.type === 'source-url' &&
@@ -119,25 +110,6 @@ function mapToUIMessageParts(
   return mappedParts;
 }
 
-function serializeToolPartForModelContext(part: Record<string, unknown>) {
-  const sections = [
-    `Tool result: ${part.toolName}`,
-    part.input === undefined ? null : `Input: ${safeStringify(part.input)}`,
-    part.output === undefined ? null : `Output: ${safeStringify(part.output)}`,
-    typeof part.errorText === 'string' ? `Error: ${part.errorText}` : null,
-  ].filter(Boolean);
-
-  return sections.join('\n');
-}
-
-function safeStringify(value: unknown) {
-  try {
-    return JSON.stringify(value);
-  } catch {
-    return String(value);
-  }
-}
-
 export function mapToUIMessages(
   messages: ChatRequestBody['messages']
 ): UIMessage[] {
@@ -147,7 +119,7 @@ export function mapToUIMessages(
     (message): UIMessage => ({
       id: message.id ?? generateRandomUUID(),
       role: message.role,
-      parts: mapToUIMessageParts(message.parts),
+      parts: mapToUIMessageParts(message.parts, message.role),
       ...(message.name ? { name: message.name } : {}),
       ...(message.metadata ? { metadata: message.metadata } : {}),
     })

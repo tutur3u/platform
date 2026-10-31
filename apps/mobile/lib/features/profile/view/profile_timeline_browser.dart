@@ -95,22 +95,15 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
       );
   Map<DateTime, List<ProfileTimelineItem>> get _groups => _cachedGroups;
   final GlobalKey _chromeKey = GlobalKey();
-  double _rowExtent(BuildContext context) {
-    double line(TextStyle style) => TextPainter(
-      text: TextSpan(
-        text: 'Mg',
-        style: DefaultTextStyle.of(context).style.merge(style),
-      ),
-      textDirection: Directionality.of(context),
-      textScaler: MediaQuery.textScalerOf(context),
-    ).preferredLineHeight;
-    final material = Theme.of(context).textTheme;
-    final typography = AppTokens.of(context).typography;
-    final tile =
-        line(material.titleMedium!) * 2 + line(material.bodyMedium!) * 2 + 32;
-    final heading =
-        line(typography.base) * 2 + line(typography.textSmall) * 2 + 32;
-    return math.max(88, math.max(tile, heading)).ceilToDouble();
+  double _extent(
+    BuildContext context,
+    List<({DateTime day, ProfileTimelineItem? item})> nodes,
+    int index,
+  ) {
+    final item = nodes[index].item;
+    return item == null
+        ? ProfileTimelineDays.headerExtent(context, first: index == 0)
+        : ProfileTimelineDays.rowExtent(context, item);
   }
 
   List<({DateTime day, ProfileTimelineItem? item})> _nodes() => [
@@ -272,9 +265,16 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
       final chromeHeight = chrome is RenderBox && chrome.hasSize
           ? chrome.size.height
           : 0.0;
+      final nodes = _nodes();
+      var before = 0.0;
+      for (var i = 0; i < index; i++) {
+        before += _extent(context, nodes, i);
+      }
       _scroll.jumpTo(
-        (widget.contentTopPadding + chromeHeight + index * _rowExtent(context))
-            .clamp(0.0, _scroll.position.maxScrollExtent),
+        (widget.contentTopPadding + chromeHeight + before).clamp(
+          0.0,
+          _scroll.position.maxScrollExtent,
+        ),
       );
     });
     _animate();
@@ -396,8 +396,10 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
             ),
             SliverPadding(
               padding: padding,
-              sliver: SliverFixedExtentList(
-                itemExtent: _rowExtent(context),
+              sliver: SliverVariedExtentList(
+                itemExtentBuilder: (index, _) => index < nodes.length
+                    ? _extent(context, nodes, index)
+                    : null,
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final node = nodes[index];
                   final item = node.item;
@@ -414,6 +416,7 @@ class _ProfileTimelineBrowserState extends State<ProfileTimelineBrowser>
                     items: item == null ? groups[node.day]! : [item],
                     showHeader: item == null,
                     showItems: item != null,
+                    firstHeader: index == 0,
                     segment: item == null ? null : (first: first, last: last),
                     convertDate: _convert,
                     now: widget.now,

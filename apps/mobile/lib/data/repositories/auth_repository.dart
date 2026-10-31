@@ -16,6 +16,7 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/apple_identity_client.dart';
 import 'package:mobile/data/sources/google_identity_client.dart';
 import 'package:mobile/data/sources/oauth_url_launcher.dart';
+import 'package:mobile/data/sources/secure_storage.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/auth/required_mfa_policy.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -64,7 +65,7 @@ class AuthRepository {
         multiAccountStorageService ??
         MultiAccountStorageService(
           supabaseClient: _client,
-          secureStorage: secureStorage ?? const FlutterSecureStorage(),
+          secureStorage: secureStorage ?? authSecureStorage,
           apiClient: _apiClient,
           googleIdentityClient: _googleIdentityClient,
         );
@@ -377,15 +378,6 @@ class AuthRepository {
     }
 
     return await _launchBrowserGoogleSignIn();
-  }
-
-  Future<AuthActionResult> signInWithMicrosoft() {
-    return _launchBrowserOAuthSignIn(
-      provider: OAuthProvider.azure,
-      queryParams: const {},
-      scopes: 'email',
-      errorCode: AuthErrorCode.microsoftBrowserLaunchFailed,
-    );
   }
 
   Future<AuthActionResult> signInWithApple() async {

@@ -10,6 +10,12 @@ URL boundary; the Router does not serialize their query strings. Cards and the
 native navigation adapter use document navigation. The retained portable gateway
 is predecessor source and cannot substitute for native acceptance.
 
+The request context, `next/*` ports (document-mode navigation), `next-intl`
+alias, Vite preset and central API forwarding come from
+[`@tuturuuu/start-bridge`](/build/devops/start-bridge). `start-bridge.routes.json`
+maps each retained App Router file to the native module that owns it, and CI
+fails on any unmapped `route.*` or `page.*`.
+
 ## Owning validation
 
 `.github/workflows/apps-cloudflare.yaml` uses Bun 1.4.4 and Node 24.22.0. Root
@@ -69,7 +75,7 @@ object substitutes and unrelated fields, and check raw emitted config bytes
 through sealing and restore. Artifact validation does not qualify source-map
 upload, dry-run, hosted runtime or publication.
 
-The checked name `tuturuuu-apps-vite-staging` is the candidate's source-declared
+The checked name `<staging-worker>` is the candidate's source-declared
 sandbox name. This check does not establish an existing hosted Worker, account,
 route, binding, credential, rollback version or provisioning authority. Staging
 keeps `TUTURUUU_NOINDEX=1`. The candidate returns HTTP 503 for the canonical host

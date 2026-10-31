@@ -8,8 +8,17 @@ import {
   type TutoringSessionSlotInput,
   TutoringSessionUpdateSchema,
 } from '@/legacy-api-routes/v1/workspaces/[wsId]/tutoring/shared';
+import { notifyCompletionSafely } from '@/lib/tutoring/completion-notification';
+import {
+  freezeLinkedLessonContent,
+  LINKED_CONTENT_NOT_STORED,
+} from '@/lib/tutoring/linked-content';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 import { listWorkspaceTeacherIds } from '@/lib/tutoring/teachers';
+import {
+  denyWeakContentEdit,
+  isWeakSupportSession,
+} from '@/lib/tutoring/weak-content-access';
 
 interface Params {
   params: Promise<{ wsId: string; id: string }>;
@@ -17,10 +26,8 @@ interface Params {
 
 export async function PUT(request: Request, { params }: Params) {
   const { wsId, id } = await params;
-  const { normalizedWsId, permissions } = await resolveTutoringRouteAccess(
-    request,
-    wsId
-  );
+  const { normalizedWsId, permissions, user } =
+    await resolveTutoringRouteAccess(request, wsId);
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -86,7 +93,7 @@ export async function PUT(request: Request, { params }: Params) {
     await tutoringSessionsClient
       .from('workspace_tutoring_sessions')
       .select(
-        'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
+        'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id,reason_type,source_feedback_id'
       )
       .eq('id', id)
       .eq('ws_id', normalizedWsId)
@@ -108,6 +115,27 @@ export async function PUT(request: Request, { params }: Params) {
   if (!currentSession) {
     return NextResponse.json({ message: 'Session not found' }, { status: 404 });
   }
+
+  // Changing the text (or the reason) of weak-support content follows the same
+  // class-manager restriction as the feedback it comes from.
+  const changesContent =
+    parsed.data.content !== undefined ||
+    parsed.data.reasonDetail !== undefined ||
+    (parsed.data.reasonType !== undefined &&
+      parsed.data.reasonType !== currentSession.reason_type);
+  const deniedWeakContent = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent:
+      changesContent &&
+      (isWeakSupportSession({
+        reasonType: currentSession.reason_type,
+        sourceFeedbackId: currentSession.source_feedback_id,
+      }) ||
+        parsed.data.reasonType === 'WEAK_SUPPORT'),
+    wsId: normalizedWsId,
+  });
+  if (deniedWeakContent) return deniedWeakContent;
 
   if (parsed.data.teacherUserId) {
     const teacherCheck = await listWorkspaceTeacherIds({
@@ -145,6 +173,7 @@ export async function PUT(request: Request, { params }: Params) {
     parsed.data.teacherUserId !== undefined
   ) {
     const nextSlot: TutoringSessionSlotInput = {
+      groupId: currentSession.group_id,
       durationMinutes:
         parsed.data.durationMinutes ?? currentSession.duration_minutes,
       sessionDate: parsed.data.sessionDate ?? currentSession.session_date,
@@ -161,7 +190,7 @@ export async function PUT(request: Request, { params }: Params) {
       ? tutoringSessionsClient
           .from('workspace_tutoring_sessions')
           .select(
-            'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
+            'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
           )
           .eq('ws_id', normalizedWsId)
           .in('session_date', sessionDates)
@@ -172,7 +201,7 @@ export async function PUT(request: Request, { params }: Params) {
     const studentQuery = tutoringSessionsClient
       .from('workspace_tutoring_sessions')
       .select(
-        'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
+        'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
       )
       .eq('ws_id', normalizedWsId)
       .in('session_date', sessionDates)
@@ -225,13 +254,27 @@ export async function PUT(request: Request, { params }: Params) {
     }
   }
 
-  const { data, error } = await tutoringSessionsClient
+  let updateQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .update(updates)
     .eq('id', id)
-    .eq('ws_id', normalizedWsId)
-    .select('id')
-    .maybeSingle();
+    .eq('ws_id', normalizedWsId);
+  // The weak-content verdict above rests on the reason and source feedback we
+  // read; pin both so a concurrent change cannot slip content past the check.
+  // Any reason in the payload is pinned, even one equal to the stale read, so
+  // it cannot undo a concurrent switch. Attendance-only edits stay unpinned.
+  const pinsReason = changesContent || parsed.data.reasonType !== undefined;
+  if (pinsReason) {
+    updateQuery = updateQuery.eq('reason_type', currentSession.reason_type);
+    updateQuery =
+      currentSession.source_feedback_id === null
+        ? updateQuery.is('source_feedback_id', null)
+        : updateQuery.eq(
+            'source_feedback_id',
+            currentSession.source_feedback_id
+          );
+  }
+  const { data, error } = await updateQuery.select('id').maybeSingle();
 
   if (error) {
     console.error('Failed to update tutoring session', error);
@@ -242,7 +285,37 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   if (!data) {
+    if (pinsReason) {
+      return NextResponse.json(
+        { message: 'Session changed before the update' },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ message: 'Session not found' }, { status: 404 });
+  }
+
+  // Completing with no (or blank) content keeps the linked notes; only real
+  // text sent alongside the completion counts as a manual edit.
+  if (parsed.data.attendanceStatus === 'DONE') {
+    const frozen = parsed.data.content?.trim()
+      ? 'skipped'
+      : await freezeLinkedLessonContent({
+          sbAdmin,
+          sessionId: id,
+          wsId: normalizedWsId,
+        });
+    await notifyCompletionSafely({
+      actorUserId: user?.id ?? null,
+      sbAdmin,
+      sessionId: id,
+      wsId: normalizedWsId,
+    });
+    // Completion stands; the client warns that the notes may need a check.
+    if (frozen === 'failed')
+      return NextResponse.json({
+        message: 'success',
+        warning: LINKED_CONTENT_NOT_STORED,
+      });
   }
 
   return NextResponse.json({ message: 'success' });
@@ -269,7 +342,7 @@ export async function DELETE(request: Request, { params }: Params) {
   const tutoringSessionsClient = sbAdmin.schema('private');
   const sessionQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
-    .select('id,attendance_status')
+    .select('id,attendance_status,reason_type,source_feedback_id')
     .eq('id', id)
     .eq('ws_id', normalizedWsId);
   const { data: session, error: lookupError } =
@@ -289,6 +362,18 @@ export async function DELETE(request: Request, { params }: Params) {
   if (!session) {
     return NextResponse.json({ message: 'Session not found' }, { status: 404 });
   }
+  // Deleting weak-support content follows the same class-manager restriction as
+  // editing it.
+  const deniedWeakContent = await denyWeakContentEdit({
+    permissions,
+    sbAdmin,
+    touchesWeakContent: isWeakSupportSession({
+      reasonType: session.reason_type,
+      sourceFeedbackId: session.source_feedback_id,
+    }),
+    wsId: normalizedWsId,
+  });
+  if (deniedWeakContent) return deniedWeakContent;
   if (
     session.attendance_status !== 'PENDING' &&
     session.attendance_status !== 'CANCELLED'
@@ -299,14 +384,22 @@ export async function DELETE(request: Request, { params }: Params) {
     );
   }
 
-  const { data: deleted, error: deleteError } = await tutoringSessionsClient
+  // The weak-content verdict above rests on the reason and source feedback we
+  // read; pin both so a concurrent switch cannot delete protected content.
+  const deleteQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .delete()
     .eq('id', id)
     .eq('ws_id', normalizedWsId)
-    .in('attendance_status', ['PENDING', 'CANCELLED'])
-    .select('id')
-    .maybeSingle();
+    .eq('reason_type', session.reason_type)
+    .in('attendance_status', ['PENDING', 'CANCELLED']);
+  const { data: deleted, error: deleteError } =
+    await (session.source_feedback_id === null
+      ? deleteQuery.is('source_feedback_id', null)
+      : deleteQuery.eq('source_feedback_id', session.source_feedback_id)
+    )
+      .select('id')
+      .maybeSingle();
 
   if (deleteError) {
     console.error('Failed to delete tutoring session', {

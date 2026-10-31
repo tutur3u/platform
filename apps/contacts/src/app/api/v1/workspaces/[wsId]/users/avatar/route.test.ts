@@ -60,3 +60,29 @@ it('preserves quota status from the central issuer', async () => {
   f.issue.mockRejectedValue(new InternalApiError('Quota reached', 429));
   expect((await POST(request(), context)).status).toBe(429);
 });
+it('surfaces the 429 reason and retry time so the dialog can show them', async () => {
+  f.issue.mockRejectedValue(
+    new InternalApiError(
+      'Profile upload limit reached',
+      429,
+      'PROFILE_UPLOAD_LIMIT',
+      1800
+    )
+  );
+  const response = await POST(request(), context);
+  expect(response.status).toBe(429);
+  expect(response.headers.get('Retry-After')).toBe('1800');
+  expect(await response.json()).toEqual({
+    message: 'Profile upload limit reached',
+    code: 'PROFILE_UPLOAD_LIMIT',
+    retryAfter: 1800,
+  });
+});
+it('keeps non-429 failures generic', async () => {
+  f.issue.mockRejectedValue(new InternalApiError('private detail', 503));
+  const response = await POST(request(), context);
+  expect(response.status).toBe(503);
+  expect(await response.json()).toEqual({
+    message: 'Avatar upload unavailable',
+  });
+});

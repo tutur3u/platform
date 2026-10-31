@@ -5,6 +5,7 @@ import {
   resolveTopicAnnouncementsAccess,
   serializeTopicAnnouncementContact,
   TopicAnnouncementContactSchema,
+  validateTopicAnnouncementWorkspaceUserId,
 } from '../../shared';
 
 interface Params {
@@ -35,6 +36,12 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const { actorUserId, normalizedWsId, sbAdmin } = access.context;
   const payload = parsed.data;
+  const invalidWorkspaceUser = await validateTopicAnnouncementWorkspaceUserId({
+    normalizedWsId,
+    sbAdmin,
+    workspaceUserId: payload.workspaceUserId,
+  });
+  if (invalidWorkspaceUser) return invalidWorkspaceUser;
   const email = payload.email ? normalizeEmail(payload.email) : undefined;
 
   const { data, error } = await sbAdmin

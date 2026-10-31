@@ -11,6 +11,9 @@ const {
   runChangedFileResolver,
   writeEventPayload,
 } = require('./workflow-config-test-helpers.js');
+const { classifyScope } = require('./security-paths.js');
+
+const MISSING_SHA = 'f'.repeat(40);
 
 test('changed-file resolver unions batched push commits before workflow gating', () => {
   const rootDir = createFixtureRoot();
@@ -51,7 +54,7 @@ test('changed-file resolver unions batched push commits before workflow gating',
     workflowName: 'biome-check.yaml',
   });
 
-  assert.match(resolver.output, /Changed-file source: push-payload:2-commits/);
+  assert.match(resolver.output, /Changed-file source: push-compare/);
   assert.deepEqual(resolver.changedFiles, [
     'apps/calendar/src/app/page.tsx',
     'apps/docs/build/devops/github-actions-runbook.mdx',
@@ -164,14 +167,14 @@ test('Supabase workflow runs diff from the last successful migration marker', ()
   );
 });
 
-test('Vercel gating fails open when no successful deployment marker exists', () => {
+test('enabled Vercel gating fails open when no successful deployment marker exists', () => {
   const rootDir = createFixtureRoot();
   initializeGitRepo(rootDir);
   commitFile(
     rootDir,
-    'apps/calendar/src/app/page.tsx',
+    'apps/storefront/src/app/page.tsx',
     'export default function Page() { return null; }\n',
-    'calendar change'
+    'storefront change'
   );
   const previousSha = git(rootDir, ['rev-parse', 'HEAD']);
   const headSha = commitFile(
@@ -192,7 +195,7 @@ test('Vercel gating fails open when no successful deployment marker exists', () 
     ],
     size: 1,
   });
-  const workflowName = 'vercel-production-calendar.yaml';
+  const workflowName = 'vercel-production-storefront.yaml';
   const resolver = runChangedFileResolver({
     eventPath,
     headSha,
@@ -217,9 +220,138 @@ test('Vercel gating fails open when no successful deployment marker exists', () 
   );
 });
 
-test('changed-file resolver does not fall back to latest commit only when push range is unavailable', () => {
+// Squash and admin merges push commits[] entries without file lists; the
+// resolver must diff the pushed range instead of reporting zero paths.
+test('changed-file resolver diffs before..after when push payload lists no files', () => {
+  const rootDir = createFixtureRoot();
+  initializeGitRepo(rootDir);
+  const baseSha = commitFile(
+    rootDir,
+    'apps/web/src/legacy.ts',
+    'export {};\n',
+    'seed'
+  );
+  commitFile(
+    rootDir,
+    'packages/start-bridge/src/intl/localized-path.ts',
+    'export {};\n',
+    'bridge change'
+  );
+  git(rootDir, ['rm', '-q', 'apps/web/src/legacy.ts']);
+  git(rootDir, ['commit', '-m', 'remove legacy']);
+  const headSha = git(rootDir, ['rev-parse', 'HEAD']);
+  const eventPath = writeEventPayload(rootDir, {
+    after: headSha,
+    before: baseSha,
+    commits: [{ added: [], modified: [], removed: [] }],
+    size: 1,
+  });
+  const resolver = runChangedFileResolver({
+    eventPath,
+    headSha,
+    rootDir,
+    workflowName: 'codeql.yml',
+  });
+
+  assert.match(resolver.output, /Changed-file source: push-compare/);
+  assert.deepEqual(resolver.changedFiles, [
+    'apps/web/src/legacy.ts',
+    'packages/start-bridge/src/intl/localized-path.ts',
+  ]);
+  assert.deepEqual(classifyScope(resolver.changedFiles).codeqlLanguages, [
+    'javascript-typescript',
+  ]);
+});
+
+test('changed-file resolver uses payload file lists when the push range is not checked out', () => {
+  const rootDir = createFixtureRoot();
+  initializeGitRepo(rootDir);
+  const headSha = commitFile(
+    rootDir,
+    'apps/calendar/src/app/page.tsx',
+    'export default function Page() { return null; }\n',
+    'calendar change'
+  );
+  const eventPath = writeEventPayload(rootDir, {
+    after: headSha,
+    before: MISSING_SHA,
+    commits: [
+      { added: [], modified: ['apps/calendar/src/app/page.tsx'], removed: [] },
+    ],
+    size: 1,
+  });
+  const resolver = runChangedFileResolver({
+    eventPath,
+    headSha,
+    rootDir,
+    workflowName: 'codeql.yml',
+  });
+
+  assert.match(resolver.output, /Changed-file source: push-payload:1-commit/);
+  assert.deepEqual(resolver.changedFiles, ['apps/calendar/src/app/page.tsx']);
+});
+
+test('an empty-files push payload without a resolvable range runs every scan', () => {
+  const rootDir = createFixtureRoot();
+  initializeGitRepo(rootDir);
+  const headSha = commitFile(
+    rootDir,
+    'apps/web/src/app/page.tsx',
+    'export default function Page() { return null; }\n',
+    'web change'
+  );
+  const eventPath = writeEventPayload(rootDir, {
+    after: headSha,
+    before: MISSING_SHA,
+    commits: [{ added: [], modified: [], removed: [] }],
+    size: 1,
+  });
+  const resolver = runChangedFileResolver({
+    eventPath,
+    headSha,
+    rootDir,
+    workflowName: 'codeql.yml',
+  });
+
+  assert.equal(resolver.changedFiles, null);
+  assert.match(resolver.output, /Changed-file state: unavailable/);
+  assert.match(resolver.output, /affected gating must fail open/);
+
+  const scope = classifyScope(resolver.changedFiles);
+  assert.deepEqual(scope.codeqlLanguages, [
+    'actions',
+    'javascript-typescript',
+    'python',
+  ]);
+  assert.equal(scope.dependencies, true);
+  assert.equal(scope.workflows, true);
+});
+
+test('a non-empty push whose range diff is empty fails open', () => {
   const rootDir = createFixtureRoot();
   const baseSha = initializeGitRepo(rootDir);
+  git(rootDir, ['commit', '--allow-empty', '-m', 'empty']);
+  const headSha = git(rootDir, ['rev-parse', 'HEAD']);
+  const eventPath = writeEventPayload(rootDir, {
+    after: headSha,
+    before: baseSha,
+    commits: [{ added: [], modified: [], removed: [] }],
+    size: 1,
+  });
+  const resolver = runChangedFileResolver({
+    eventPath,
+    headSha,
+    rootDir,
+    workflowName: 'security-checks.yaml',
+  });
+
+  assert.equal(resolver.changedFiles, null);
+  assert.match(resolver.output, /affected gating must fail open/);
+});
+
+test('changed-file resolver does not fall back to latest commit only when push range is unavailable', () => {
+  const rootDir = createFixtureRoot();
+  initializeGitRepo(rootDir);
   commitFile(
     rootDir,
     'apps/calendar/src/app/page.tsx',
@@ -234,7 +366,7 @@ test('changed-file resolver does not fall back to latest commit only when push r
   );
   const eventPath = writeEventPayload(rootDir, {
     after: headSha,
-    before: baseSha,
+    before: MISSING_SHA,
     commits: [],
     size: 2,
   });

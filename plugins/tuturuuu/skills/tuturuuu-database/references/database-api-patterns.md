@@ -14,6 +14,9 @@ review prove baseline equivalence. Existing migration history stays immutable.
 
 ## Schema And Typegen
 
+- Remote `db reset --linked` retains managed storage tables. Bucket creation
+  defaults must tolerate existing IDs; preserve intentional configuration upserts.
+  See [storage replay verification](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#replaying-migrations-with-existing-storage-buckets).
 - Prepare migrations; do not push production Supabase changes from Codex.
 - Prefer additive migrations and runtime fallbacks when rollout order can vary.
 - Separate short existing-table DDL, `VALIDATE CONSTRAINT`, and concurrent index
@@ -39,6 +42,18 @@ review prove baseline equivalence. Existing migration history stays immutable.
   the live local schema, not unapplied SQL.
 - Never hand-edit generated type files. Prefer shared DB row aliases from
   `@tuturuuu/types/db`.
+- CLI image upgrades can change generated declarations without an application
+  migration. Regenerate `public,private,storage` from a complete disposable replay
+  and compare old/new generators against the same database to separate generator
+  changes from service-supplied schema changes. Keep AST drift checks insensitive
+  to equivalent quoted property names while retaining optionality, nullability,
+  computed-field and relationship checks. See
+  [CLI upgrade type drift](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#cli-upgrade-type-drift).
+- After generator upgrades, check all active workspace consumers, not only the
+  first Turbo failure. Narrow object-only JSON producers at their source; retain
+  nullable delivery contracts and complete computed-row fixtures. Cold no-emit
+  source-resolution configs must preserve the owning workspace's exclusions;
+  they do not replace exact-commit CI. See the CLI upgrade type drift guide above.
 - If a migration adds or changes PostgREST-exposed RPC signatures, drop legacy
   overloads that would make named arguments ambiguous.
 - Call typed `.rpc(name, args)` directly. Binding the full generic RPC method can
@@ -46,6 +61,14 @@ review prove baseline equivalence. Existing migration history stays immutable.
   optional arguments only after verifying their SQL defaults preserve behavior.
 - Public `SECURITY DEFINER` RPCs must enforce `auth.uid()` and workspace/RBAC
   checks internally, then revoke broad execution and grant only required roles.
+- For resumable multi-phase RPCs, authorize every phase before any early success
+  return. Treat permission results `IS DISTINCT FROM TRUE` as denial. Recreate
+  replacements and manual rollbacks from the full-chain catalog definition and
+  ACLs, including later private-schema moves; qualify relations before narrowing
+  the path. Keep private-schema regression checks for explicit qualified access.
+  Lock rows in a fixed order before a check-then-delete, and never let a manual
+  rollback re-grant `PUBLIC` or `anon`. Definer helpers that take table or column
+  identifiers stay `service_role`-only and raise outside an exact allowlist.
 - Public functions created before `20260522172925` inherited EXECUTE for
   `PUBLIC`, `anon` and `authenticated`. When touching one, revoke from all three,
   grant only the roles its callers use, and check RLS policies and invoker
@@ -68,7 +91,16 @@ review prove baseline equivalence. Existing migration history stays immutable.
   defaults and user-client RPC callers before revoking EXECUTE. Run
   `security-definer-policy-callers.sql` to enforce policy-role EXECUTE, including
   PUBLIC policies and its failing privilege control. See the RPC
-  hardening section of `apps/docs/build/devops/secrets-and-configuration.mdx`.
+  hardening section of `tutur3u/internal-docs: docs-internal/build/devops/secrets-and-configuration.mdx`.
+- Catalog-wide anonymous EXECUTE changes must snapshot effective signed-in/service
+  privileges before revocation and restore only previously available access.
+  Preserve exact-signature anonymous exceptions for final policy/view and invoker
+  dependencies. Function defaults need a global revoke as well as the schema
+  revoke; schema ACLs cannot subtract the implicit global PUBLIC grant. Provider
+  defaults require their owner. See the RPC hardening runbook and
+  `20261027151200_anon-definer-execute.sql` for the catalog and privilege snapshot.
+- Admin-only report RPCs can retain an internal workspace-permission guard without granting authenticated EXECUTE. Test ACLs first, then grant authenticated only inside the rolled-back pgTAP transaction to prove both denial and permitted-member behavior. Before removing an obsolete overload, inspect `pg_get_functiondef` and final SQL/trigger callers on a fresh full replay; historical callers may have been replaced. See the RPC hardening runbook and `anon-definer-migration-c.sql`.
+- Audit definer revokes must name PUBLIC and both client roles explicitly. Re-verify app/package callers before denying schema USAGE; preserve service/owner access and each audit creator's schema-local defaults. Verify the migration as plain postgres, separately from provider-owned objects. Capture ACL grantors and grant options for exact rollback; schema-local function defaults cannot subtract a global authenticated grant, so verify effective schema access too. See `sb25-nonpublic-definers.sql` and the RPC hardening runbook.
 - Views over RLS-protected tables need `security_invoker` before broad grants.
 
 ## Outbound SSO persistence
@@ -109,8 +141,24 @@ and exclude unrelated baseline drift; never hand-edit generated declarations.
   side effects when no row matched.
 - Membership lookup errors are `500`; successful lookups with no membership are
   `403`.
+- Never filter by a credential value (`access_token`, `refresh_token`):
+  PostgREST puts every filter in the request URL, where gateway logs keep it.
+  Fence by row id and metadata such as `created_at`, compare a sha256
+  fingerprint inside an RPC body (see `quarantine_calendar_auth_token`), or
+  compare in process. `packages/utils/src/oauth-credential-url-filter.test.ts`
+  scans every app and package source for this pattern.
 
 ## Storage
+
+- Match bucket INSERT tests to the owning upload-url route's client identity.
+  Inquiry and time request routes issue service-backed signed upload tickets;
+  preserve underlying table ACLs. Legacy storage policy subqueries can surface
+  table privilege errors in other buckets after a permissive policy changes.
+  Scope obsolete client policies to their supported role rather than adding
+  table SELECT grants. See the bucket contracts in
+  `apps/docs/build/devops/workspace-storage-rls.mdx` and
+  `storage-insert-policies.sql`. SQL deletion fixtures use transaction-local
+  `storage.allow_delete_query = 'true'` and roll back.
 
 - Authenticated storage API routes should authorize with the user-scoped client,
   then perform storage operations through an admin-backed storage client.
@@ -118,6 +166,15 @@ and exclude unrelated baseline drift; never hand-edit generated declarations.
   storage clients because `createSignedUploadUrl` writes storage metadata.
 - Do not request signed read URLs before the client uploads the object.
 - Storage key builders must sanitize parent paths and terminal names.
+- The `workspaces` bucket RLS is path-scoped
+  (`workspace_storage.object_access`). Pass
+  `(select workspace_storage.actor_access())` so permissions resolve once per
+  statement, not per row. Browsers never write private
+  roots (`chat`, `chats`, `external-apps`, `AI Agent Imports`, `mira/images`,
+  `recordings`, `.tuturuuu`). Issue signed upload URLs from the owning API
+  after an ownership check. When you add a private root, update the helper,
+  the Drive path policy and `tests/workspace-storage-least-privilege-rls.sql`
+  together. See `apps/docs/build/devops/workspace-storage-rls.mdx`.
 - Folder deletes should recurse through the Storage API; do not depend on
   direct `storage.objects` SQL scans.
 - Mixed Supabase/R2 upload helpers must preserve Authorization headers when
@@ -427,3 +484,164 @@ as checking effective privileges. The regression is
 `apps/database/supabase/tests/security-meet-guest-grants.sql`; a socket-only PG14
 fixture can apply the relevant historical view definition and later grant
 migrations against synthetic prerequisite tables without a shared Docker stack.
+
+### Historical NOT VALID checks during backfills
+
+Unchanged payloads are still checked on UPDATE. Audit pending backfills for
+legacy size/length violations before deployment. Notification email-copy cleanup
+uses the catalog expression for safe batches, then temporarily drops/restores
+the exact check only for the oversized tail in one transaction. The table lock
+lasts through commit; do not drop the check before the regular scan. Preserve
+payload bytes and verify the safe-only path retains the constraint OID. See
+[disposable proof requirements](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#backfills-with-historical-payload-violations).
+
+### Dataset server access
+
+Dataset client grants and RLS policies remain revoked by
+`20260312113000_lock_description_tables_to_server_apis`. Use the shared
+`apps/web/src/lib/datasets/access.ts` authorization flow, which resolves the actor
+and `getPermissions` workspace/`ai_lab` authority before creating a dataset admin
+client. Bind the dataset to the verified workspace, and retain its `dataset_id`
+on all child reads and mutations. Validate row/column ids inside that parent;
+never restore direct client grants as an API repair. See the
+[authorization decision](../../../../../apps/docs/platform/architecture/authorization.mdx)
+and the opt-in dataset `local-chain.test.ts` for full local Auth/PostgREST checks.
+
+### Cron maintenance after private-schema moves
+
+When moving a function called by pg_cron, inspect and execute the stored
+`cron.job.command` on the complete disposable migration chain. Function existence
+or direct helper tests do not prove that the schedule still resolves its target.
+For the retained pure-SQL dashboard refresh, alter only the command to call
+`private.refresh_posts_dashboard_view()`; preserve job id, schedule and active state.
+New retention scheduling belongs in Cloudflare Cron Control. Its service-only
+`private.prune_cron_history(integer)` RPC bounds each table's oldest completed
+seven-day history batch; unfinished executions remain for recovery. See the
+[Cron Control runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/cloudflare-cron-control.mdx#seven-day-database-cron-history)
+and `supabase/tests/cron-history-retention.sql` for the role, budget and replay
+regressions. Never add a cleanup pg_cron job to repair an accumulating history table.
+
+### Task list and assignment policies
+
+Before revoking task-list writes, audit direct user-client callers as well as
+service-role APIs: the shared list form, board copy/template paths and AI tools
+can use RLS. Keep read membership separate from write permission; list writes
+require MEMBER plus manage_projects or an edit board share, and assignment
+writes also accept an edit task share. Resolve email recipients from confirmed
+Auth email. Preserve the restrictive MFA policy and check both boards on moves.
+Use `task-list-assignee-authorization.sql` for behavioral regression coverage.
+For rollback rehearsals, compare the observed hosted ACLs with replay first:
+historical GRANT ALL can include MAINTAIN on PostgreSQL 17 even when the hosted
+ACL excludes it. Record that fixture difference separately from migration proof.
+### Azure identity-link verification
+
+For Azure account linking, require the explicit provider claim at
+`identity_data.custom_claims.xms_edov`; GoTrue's `email_verified` also accepts a
+missing claim and cannot stand in for explicit proof. Preserve new-user and
+existing-identity update behavior. The
+[authentication decision](../../../../../apps/docs/platform/architecture/authentication.mdx#oauth-sign-in)
+owns the accepted claim forms and Auth source references; the
+`azure-identity-link-verification*.sql` pgTAP suites cover behavior and helper
+grants. Replay installation and rollback as the non-superuser `postgres` role:
+Auth tables belong to `supabase_auth_admin`, so creating and dropping a trigger
+have different privilege requirements.
+
+### Atomic Assistant first-message creation
+
+The native first-message RPC binds a client UUID and request key to an immutable
+private creation snapshot. Validate actor/workspace/type before replay, compare
+initial settings against the snapshot rather than mutable settings, and keep the
+creation and user-message idempotency operation in one transaction. Retain a
+minimal tombstone after conversation deletion to deny stale resurrection.
+`verify-chat-first-message.mjs` exercises the full isolated migration chain,
+rollback cases and a two-connection advisory-lock race. Its baseline/candidate
+type generation applies only the new schema delta to the checked-in snapshot.
+
+The first-message rollback restores main's prior chat_create_conversation body
+and service-only ACL. Refuse retained creation receipts: removing retry identities
+can resurrect deleted conversations. Verify actual apply/rollback/reapply and
+prior catalog equality with apps/database/verification/chat-first-message-rollback-*.sql.
+### Workspace delete foreign-key audit
+
+Audit the full migrated local catalog before replacing a delete action. Follow
+referencing tables recursively with `pg_constraint` and join `pg_attribute` for
+nullability. For PostgreSQL column-specific SET NULL actions, inspect
+`confdelsetcols`: a different NOT NULL column in the composite key does not make
+the SET NULL action invalid. A NO ACTION/RESTRICT candidate may already resolve
+through another ownership cascade; reproduce with populated rows before changing
+it. Inspect DELETE triggers and policy functions as well as FKs.
+
+Use `apps/database/verification/workspace-delete-catalog-audit.sql` for the query.
+The D regression is `supabase/tests/workspace-delete-fk-cascade.sql`. Its companion
+`workspace-delete-fk-roundtrip.py` takes an isolated workspace-delete Docker DB
+container and a private output directory, compares complete schema dump bytes
+with a fixed pg_dump restrict key, tests NOT VALID and validated behavior, and
+restores main's schema. Run it under `ttr resources run --` before applying D with
+`bun sb:up --workdir <isolated-root>` from `apps/database`.
+
+Preserve immutable delivery, billing, provider-operation and cross-workspace
+history until an explicit retention decision. FK CASCADE cannot bypass an
+immutable DELETE trigger. Keep the NOT VALID swap and validation in separate
+migration files; promoting both files applies both, so separate deployment needs
+separate promotion. Rollbacks must restore original update/delete actions and
+validation state; restoring a previously validated FK entails a validation scan.
+Commit rollback NOT VALID swaps before running their separate rollback validation
+file; never combine both files in one transaction and hold swap/index locks over
+the scan. The roundtrip verifier asserts that validation retains no ACCESS
+EXCLUSIVE lock on the workspace or affected child tables. Allow 15 minutes for
+validation of the unpruned realtime log table; check its size/row estimate,
+meeting/document workspace mismatches, and long workspace transactions before
+release. The document ws_id index uses CREATE INDEX CONCURRENTLY IF NOT EXISTS in a
+separate single-statement migration before the guarded FK swap. If an index with
+that name predates D on a target, preserve it rather than dropping it on rollback.
+
+### Local independent-session pgTAP fixtures
+
+Use `tests/helpers/local-dblink.inc` before transactions and fixture writes.
+Stock Supabase uses SCRAM on `db.supabase.internal:5432`, while loopback trust
+does not satisfy non-superuser dblink authentication even when a password is
+supplied. Preserve `test.dblink_connstr` for other disposable runners and treat
+the helper's connection-unavailable TAP skip as missing concurrency evidence,
+not a passing assertion. Verify both the default connection and unavailable-port
+skip path; keep later SQL errors fatal. See the local Supabase development
+runbook for setup and owned-stack cleanup.
+
+### Meet consent and retention adoption
+
+Keep consent evidence private and client mutations revoked. Exercise actual
+client DELETE/UPDATE denials and latest `(created_at, id)` ordering in
+`meet-ai-consent-schema.sql`. Retention schema adoption must explicitly replace
+the purge function and include a same-file REVOKE ALL plus service-only grant,
+with `search_path = pg_catalog, pg_temp` in forward and rollback definitions.
+Close the purge fence and withdraw deletion approval when eligibility changes;
+require fresh owner approval after dry-run counts. Preserve NULL-as-forever,
+backfilled historical deadlines, edited-note erasure and the bounded stop fence.
+See the Meet application feature page and transcript retention runbook.
+
+Meet evidence retention uses a session RESTRICT FK and user SET NULL FK. Mint a
+random per-session participant UUID on consent insert and reuse it under a session
+row lock; never derive it from identity or persist a separate mapping. Auth deletion keeps the public profile, so anonymize consent at an AFTER DELETE
+Auth trigger too. The immutable UPDATE trigger must permit only nested
+server/Auth deletion anonymization, preserving every
+other field. Test Auth/client deletion denial, creator/admin meeting deletion
+refusal and explicit service consent-before-session erasure. Keep transcript purge
+in-place; it retains consent. See `meet-ai-consent-retention.sql`.
+
+### Caller-scoped workspace predicates
+
+End-user calls to `has_workspace_permission` and `is_org_member` must pass
+`auth.uid()`. Service-role jobs retain cross-user evaluation. Audit negative
+predicates and trigger recipient selection when replacing these helpers:
+false for another identity means the identity was not evaluated. Preserve
+`pg_catalog, pg_temp`, explicit same-file ACLs, and the recorded root-role join
+for `manage_mastermind`; never replace it with creator/admin/default access.
+
+Build replacement policies from the latest applied definition, including role
+assignment restrictions; do not copy an older membership-only policy. Test both
+member-only and role-managing inviters with local and foreign roles. Keep helper
+caller binding in rollback bodies and verify their actual catalog ACLs after
+applying the rollback. For isolated pgTAP callers, create real Auth users as well
+as public profiles, use distinct fixture IDs and consistent JWT claims, and keep
+existing positive/negative assertions. Generate types before tests can install
+catalog fixtures. Preserve verified provider-identity and tenant gates when preparing
+company-account fixtures; a domain claim alone is insufficient.

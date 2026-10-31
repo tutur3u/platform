@@ -1,5 +1,6 @@
 // biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Direct CI entrypoint; deployment credentials never enter Turbo builds.
 import assert from 'node:assert/strict';
+import { generateKeyPairSync, sign } from 'node:crypto';
 import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -24,11 +25,23 @@ await writeFile(join(scratch, 'empty.env'), '');
 const require = createRequire(resolve(appRoot, 'package.json'));
 const { unstable_startWorker } = require('wrangler');
 const egress = [];
+const accessCertReads = [];
+// Calendar staging verifies Access JWTs itself; serve fixture team keys only.
+const access =
+  app === 'calendar' && environment === 'staging' ? accessFixture() : null;
+// N8/N9: each Calendar artifact must 404 the other environment's host.
+const foreignHost =
+  app === 'calendar'
+    ? environment === 'production'
+      ? 'calendar.staging.tutur3u.com'
+      : 'calendar.tuturuuu.com'
+    : null;
 let clean = false;
 try {
   const hosts = [receipt.profile.host];
   if (app === 'apps' && environment === 'staging')
     hosts.push('apps.tuturuuu.com');
+  if (foreignHost) hosts.push(foreignHost);
   for (const host of hosts) {
     let worker;
     try {
@@ -44,7 +57,7 @@ try {
               value:
                 name === 'NEXT_PUBLIC_SUPABASE_URL'
                   ? 'https://wave1-runtime.supabase.invalid'
-                  : 'wave1_disposable_fixture_only',
+                  : (access?.bindings[name] ?? 'wave1_disposable_fixture_only'),
             },
           ])
         ),
@@ -65,15 +78,48 @@ try {
           auth: () => {
             throw new Error('Provider auth forbidden');
           },
-          outboundService: async () => {
+          outboundService: async (request) => {
+            if (access && request.url === access.certsUrl) {
+              accessCertReads.push(request.method);
+              return Response.json(access.jwks);
+            }
             egress.push('denied');
             return new Response('Egress denied', { status: 599 });
           },
         },
       });
       await worker.ready;
-      const fetchWorker = (path, init = {}) =>
-        worker.fetch(`https://${host}${path}`, { ...init, redirect: 'manual' });
+      const fetchWorker = (path, init = {}, jwt = access?.token()) =>
+        worker.fetch(`https://${host}${path}`, {
+          ...init,
+          headers: {
+            ...(init.headers ?? {}),
+            ...(jwt ? { 'cf-access-jwt-assertion': jwt } : {}),
+          },
+          redirect: 'manual',
+        });
+      if (host === foreignHost) {
+        for (const path of ['/api/build-info', '/en/personal', '/']) {
+          const refused = await fetchWorker(path);
+          assert.equal(refused.status, 404, `${host}${path} must 404`);
+          assert.deepEqual(refused.headers.getSetCookie(), []);
+        }
+        continue;
+      }
+      if (access) {
+        // N19: missing, foreign-key, wrong-AUD and expired tokens are denied.
+        for (const jwt of [
+          null,
+          access.token({ key: access.otherKey }),
+          access.token({ aud: 'wave1-other-aud' }),
+          access.token({ exp: -60 }),
+          'not.a.jwt',
+        ]) {
+          const denied = await fetchWorker('/api/build-info', {}, jwt);
+          assert.equal(denied.status, 403, 'Access JWT must be verified');
+          assert.deepEqual(denied.headers.getSetCookie(), []);
+        }
+      }
       const identity = await fetchWorker('/api/build-info');
       if (
         app === 'apps' &&
@@ -133,7 +179,9 @@ try {
         const target = new URL(page.headers.get('location'));
         assert.equal(
           target.hostname,
-          environment === 'production' ? 'tuturuuu.com' : 'staging.tuturuuu.com'
+          environment === 'production'
+            ? 'tuturuuu.com'
+            : 'web.staging.tutur3u.com'
         );
         assert.ok(target.pathname.includes('login'));
       }
@@ -146,6 +194,8 @@ try {
     [],
     'Anonymous acceptance unexpectedly contacted a supplier'
   );
+  if (access)
+    assert.ok(accessCertReads.length > 0, 'Access keys were never verified');
   verify(appRoot, app, environment, sha);
   clean = true;
   console.log(
@@ -154,4 +204,48 @@ try {
 } finally {
   // Failed evidence is retained for CI diagnostics; the job watchdog owns SDK hangs.
   if (clean) await rm(scratch, { recursive: true });
+}
+
+function accessFixture() {
+  const teamDomain = 'wave1-fixture.cloudflareaccess.com';
+  const audience = 'wave1-fixture-aud';
+  const { privateKey, publicKey } = generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+  });
+  const otherKey = generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+  }).privateKey;
+  const encode = (value) =>
+    Buffer.from(JSON.stringify(value)).toString('base64url');
+  return {
+    certsUrl: `https://${teamDomain}/cdn-cgi/access/certs`,
+    jwks: {
+      keys: [
+        {
+          ...publicKey.export({ format: 'jwk' }),
+          kid: 'wave1',
+          alg: 'RS256',
+          use: 'sig',
+        },
+      ],
+    },
+    otherKey,
+    bindings: {
+      CF_ACCESS_TEAM_DOMAIN: teamDomain,
+      CF_ACCESS_AUD: audience,
+    },
+    token({ key = privateKey, aud = audience, exp = 300 } = {}) {
+      const now = Math.floor(Date.now() / 1000);
+      const body = `${encode({ alg: 'RS256', kid: 'wave1', typ: 'JWT' })}.${encode(
+        {
+          iss: `https://${teamDomain}`,
+          aud: [aud],
+          iat: now - 5,
+          exp: now + exp,
+          email: 'wave1-fixture@tuturuuu.invalid',
+        }
+      )}`;
+      return `${body}.${sign('sha256', Buffer.from(body), key).toString('base64url')}`;
+    },
+  };
 }

@@ -155,3 +155,32 @@ instead of hand-writing query strings.
   app-specific dialog includes the shared account tabs.
 - `apps/web/src/__tests__/proxy.test.ts`: settings params survive the root
   redirect.
+
+
+## Workspace operation permissions
+
+The Web settings API requires `manage_workspace_settings` for writes and accepts
+only editable configuration fields. Workspace members may still read operational
+settings needed by time tracking. A referral promotion selected from Web or
+Inventory must belong to the normalized workspace before settings or user links
+change.
+
+E2EE key initialization requires `manage_e2ee`, matching the other key management
+operations. Status reads remain available to workspace members.
+
+Per-user referral discounts require `update_users` or an invoice permission
+(`view_invoices`, `create_invoices`, `update_invoices`). Per-user group membership
+reads require `view_user_groups` or those invoice permissions, preserving invoice
+forms and previews. API-key callers retain their existing key-scoped admission.
+External-project asset edits validate referenced entries and blocks in the
+asset's workspace before updating.
+
+Global crawler data requires root-workspace `ai_lab`. Legacy memory backfills
+require root `manage_workspace_roles` and preserve each user's memory-service
+consent settings. Root time-tracking exports require
+`manage_time_tracking_requests`; exchange-rate cron requests always require
+service or cron authentication, including development.
+
+These rules cover the active Web and Inventory handlers. Regression tests live
+beside the settings, encryption, referral, asset, crawler, backfill, export and
+exchange-rate handlers, and in Users Core's referral-discount route tests.

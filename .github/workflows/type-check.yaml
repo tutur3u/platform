@@ -2,18 +2,24 @@ name: TypeScript Type Check
 
 on:
   push:
+    branches: [main, production, 'release-please--branches--**']
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
   workflow_dispatch:
 
 # Initial PR/main validation supersedes; reruns and manual evidence stay independent.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 permissions:
   contents: read
 
 jobs:
+  # Push, dispatch and generated-branch variant: keeps the Turbo credentials and
+  # always runs on a hosted runner, never the PR pool.
   type-check:
+    if: (github.event_name != 'pull_request') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     name: Type Check
     permissions:
       contents: read
@@ -24,11 +30,17 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
+          clean: true
+          persist-credentials: ${{ runner.environment != 'self-hosted' }}
+      - name: Isolate persistent runner state
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/pr-runner-hygiene
 
       - name: Setup Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
+          package-manager-cache: ${{ runner.environment != 'self-hosted' }}
 
       # Keep script wiring aligned with ci-check.yml; shell parity is enforced by
       # scripts/ci/type-check-inline-workflow.test.js. Inline differences are the
@@ -93,7 +105,9 @@ jobs:
 
       - name: Install dependencies
         if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
-        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+        env:
+          BUN_INSTALL_FLAGS: ${{ runner.environment == 'self-hosted' && '--ignore-scripts' || '' }}
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile $BUN_INSTALL_FLAGS
 
       # --frozen-lockfile accepts orphan entries that a plain install prunes,
       # so every fresh worktree's setup rewrote bun.lock. Keep main canonical.
@@ -133,6 +147,139 @@ jobs:
           command: bun turbo:local run type-check --concurrency=4 --filter='!@tuturuuu/tanstack-web'
           token: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && secrets.TURBO_TOKEN || '' }}
           team: ${{ github.event_name != 'pull_request' && github.actor != 'dependabot[bot]' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production') && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+
+      - name: Report skipped type check
+        if: steps.check_config.outputs.should_run != 'true' || steps.release_relevance.outputs.run_checks != 'true'
+        run: echo "Type Check heavy steps skipped by CI configuration or release-only detection; no compilation was performed and inline preflight regression tests were not run." >> "$GITHUB_STEP_SUMMARY"
+
+  # Pull request variant: eligible for the PR runner pool, so it must never name a
+  # secret (a guarded reference is still shipped to the runner). It shares the
+  # `Type Check` context with the variant below; exactly one of them runs.
+  type-check-pr:
+    if: (github.event_name == 'pull_request') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    name: Type Check
+    permissions:
+      contents: read
+    runs-on: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.triggering_actor != 'dependabot[bot]' && github.event.pull_request.user.login != 'dependabot[bot]' && (vars.PR_SELF_HOSTED_RUNNERS == 'true' || vars.PR_SELF_HOSTED_RUNNERS == format('pr:{0}', github.event.pull_request.number)) && fromJSON('["self-hosted","macOS","ARM64","tuturuuu-pr-ephemeral"]') || 'ubuntu-latest' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          clean: true
+          persist-credentials: ${{ runner.environment != 'self-hosted' }}
+      - name: Isolate persistent runner state
+        if: runner.environment == 'self-hosted'
+        uses: ./.github/actions/pr-runner-hygiene
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          package-manager-cache: ${{ runner.environment != 'self-hosted' }}
+
+      # Keep script wiring aligned with ci-check.yml; shell parity is enforced by
+      # scripts/ci/type-check-inline-workflow.test.js. Inline differences are the
+      # fixed workflow name, no deployment token, and config-gated release detection.
+      - name: Compute changed files
+        id: changed_files
+        shell: bash
+        env:
+          WORKFLOW_NAME: type-check.yaml
+        run: |
+          node --experimental-strip-types scripts/ci/resolve-changed-files.ts
+
+      - name: Check Configuration
+        id: check_config
+        shell: bash
+        env:
+          CHANGED_FILES_FILE: ${{ steps.changed_files.outputs.changed_files_path }}
+          WORKFLOW_NAME: type-check.yaml
+        run: |
+          if [ "$(node scripts/ci/overflow-notes-ci.js)" = true ]; then
+            echo "Validated overflow notes only: no checks required."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CONFIG_FILE="tuturuuu.ts"
+
+          if [ ! -f "$CONFIG_FILE" ]; then
+            echo "::warning::Configuration file $CONFIG_FILE not found. Defaulting to true."
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          node --experimental-strip-types scripts/ci/check-workflow-config.ts
+
+      - name: Detect release-only changes
+        if: steps.check_config.outputs.should_run == 'true'
+        id: release_relevance
+        shell: bash
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          result="$(node scripts/ci/release-only-changes.js "$BEFORE_SHA" "$GITHUB_SHA")"
+          echo "run_checks=$result" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Bun
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+
+      - name: Test inline Type Check preflight
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        run: node --test --test-reporter=tap scripts/ci/type-check-inline-workflow.test.js
+
+      - name: Restore Turbo fallback cache
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        uses: ./.github/actions/setup-turbo-fallback-cache
+        with:
+          family: type-check
+          cross-lock-restore: 'true'
+
+      - name: Install dependencies
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        env:
+          BUN_INSTALL_FLAGS: ${{ runner.environment == 'self-hosted' && '--ignore-scripts' || '' }}
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile $BUN_INSTALL_FLAGS
+
+      # --frozen-lockfile accepts orphan entries that a plain install prunes,
+      # so every fresh worktree's setup rewrote bun.lock. Keep main canonical.
+      - name: Verify bun.lock is canonical
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        shell: bash
+        run: |
+          # A missing lockfile would be regenerated as an untracked file that
+          # `git diff` ignores, so require a tracked one before comparing.
+          if [ ! -f bun.lock ] || ! git ls-files --error-unmatch bun.lock >/dev/null 2>&1; then
+            echo "::error file=bun.lock::bun.lock must be committed."
+            exit 1
+          fi
+          bun install --lockfile-only
+          # Assign separately so a failing `git status` aborts under `-e`.
+          lock_status="$(git status --porcelain -- bun.lock)"
+          if [ -n "$lock_status" ]; then
+            git diff --stat HEAD -- bun.lock
+            echo "::error file=bun.lock::bun.lock is not canonical. Run 'bun install' locally and commit the resulting bun.lock."
+            exit 1
+          fi
+
+      - name: Build workspace dependencies
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --concurrency=4 --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry
+
+      - name: Run type check
+        if: steps.check_config.outputs.should_run == 'true' && steps.release_relevance.outputs.run_checks == 'true'
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          # The TanStack Start migration is paused; keep maintained workspace
+          # type checks active without scheduling its package.
+          command: bun turbo:local run type-check --concurrency=4 --filter='!@tuturuuu/tanstack-web'
 
       - name: Report skipped type check
         if: steps.check_config.outputs.should_run != 'true' || steps.release_relevance.outputs.run_checks != 'true'

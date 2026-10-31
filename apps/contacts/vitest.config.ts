@@ -5,7 +5,7 @@ import { configDefaults, defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [react()],
   test: {
-    exclude: [...configDefaults.exclude, 'e2e/**'],
+    exclude: [...configDefaults.exclude, 'e2e/**', 'e2e-staging/**'],
     server: {
       deps: {
         inline: ['next-intl'],
@@ -28,6 +28,7 @@ export default defineConfig({
         'client',
         'user-group-attendance',
         'posts',
+        'topic-announcements',
       ].map((entry) => ({
         find: `@tuturuuu/internal-api/${entry}`,
         replacement: resolve(

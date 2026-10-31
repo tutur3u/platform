@@ -466,6 +466,25 @@
       "override_revoked": "Đã thu hồi ghi đè"
     }
   },
+  "accountBenefits": {
+    "active": "Đang có hiệu lực",
+    "amount": "Số tín dụng",
+    "benefit": "Loại quyền lợi",
+    "credits": "Tín dụng AI bổ sung",
+    "description": "Cấp tính năng, quyền truy cập sớm và tín dụng AI bổ sung kèm lý do được ghi nhận.",
+    "earlyAccess": "Truy cập sớm",
+    "expired": "Đã hết hạn",
+    "expiry": "Hết hạn lúc (tùy chọn)",
+    "failed": "Yêu cầu quyền lợi thất bại. Hãy thử lại.",
+    "feature": "Quyền tính năng",
+    "grant": "Cấp quyền lợi",
+    "key": "Mã quyền lợi",
+    "reason": "Lý do",
+    "revoke": "Thu hồi",
+    "revoked": "Đã thu hồi",
+    "title": "Quyền lợi tài khoản",
+    "userId": "ID tài khoản"
+  },
   "account_switcher": {
     "account_added_error": "Không thể thêm tài khoản",
     "account_added_success": "Đã thêm tài khoản thành công!",
@@ -516,25 +535,6 @@
     "switch_failed_description": "Tài khoản này đã bị xóa. Vui lòng thêm lại để tiếp tục sử dụng.",
     "unknown_user": "Người dùng không xác định"
   },
-  "accountBenefits": {
-    "active": "Đang có hiệu lực",
-    "amount": "Số tín dụng",
-    "benefit": "Loại quyền lợi",
-    "credits": "Tín dụng AI bổ sung",
-    "description": "Cấp tính năng, quyền truy cập sớm và tín dụng AI bổ sung kèm lý do được ghi nhận.",
-    "earlyAccess": "Truy cập sớm",
-    "expired": "Đã hết hạn",
-    "expiry": "Hết hạn lúc (tùy chọn)",
-    "failed": "Yêu cầu quyền lợi thất bại. Hãy thử lại.",
-    "feature": "Quyền tính năng",
-    "grant": "Cấp quyền lợi",
-    "key": "Mã quyền lợi",
-    "reason": "Lý do",
-    "revoke": "Thu hồi",
-    "revoked": "Đã thu hồi",
-    "title": "Quyền lợi tài khoản",
-    "userId": "ID tài khoản"
-  },
   "admin-holidays": {
     "actions": "Thao tác",
     "add": "Thêm",
@@ -571,82 +571,6 @@
     "save": "Lưu",
     "title": "Ngày lễ Việt Nam",
     "year": "Năm"
-  },
-  "ai_chat": {
-    "add_attachments": "Thêm tệp đính kèm",
-    "ai_models": "Mô hình AI",
-    "all_conversations": "Tất cả cuộc trò chuyện",
-    "anonymous": "Ẩn danh",
-    "chat_notes": "Ghi chú",
-    "chat_summary": "Tóm tắt",
-    "chat_updated": "Cập nhật trò chuyện",
-    "chat_visibility": "Hiển thị trò chuyện",
-    "chat_visibility_description": "Chọn ai có thể xem cuộc trò chuyện này.",
-    "chatbots": "Thư viện chatbot",
-    "chats": "Các cuộc trò chuyện",
-    "copy_public_link": "Sao chép liên kết công khai",
-    "correct": "chính xác",
-    "correct_answer_is_highlighed": "Câu trả lời đúng đã được đánh dấu",
-    "created": "Đã tạo",
-    "creating_chat": "Đang tạo cuộc trò chuyện...",
-    "default_chat": "Mặc định",
-    "example_1": "Giải thích các khái niệm liên quan đến công nghệ",
-    "example_1_prompt": "Giải thích về vật lý lượng tử?",
-    "example_2": "Tạo ra danh sách bài tập toán",
-    "example_2_prompt": "Tạo ra một danh sách các bài toán toán học khó nhưng thú vị cho sinh viên đại học.",
-    "example_3": "Giải thích cho học sinh lớp 5",
-    "example_3_prompt": "Giải thích các khái niệm sau như thể tôi là học sinh lớp 5: \n\n",
-    "example_4": "Tóm tắt một văn bản",
-    "example_4_prompt": "Tóm tắt bài viết sau cho học sinh lớp 2: \n\n",
-    "example_5": "Viết một email",
-    "example_5_prompt": "Viết một email cho sếp tôi về vấn đề sau: \n\n",
-    "example_6": "Tạo một bài thơ",
-    "example_6_prompt": "Tạo một bài thơ về vấn đề sau: \n\n",
-    "experimental_disclaimer": "Chú ý: Nội dung được tạo ra bởi AI có thể không chính xác hoặc cập nhật, vui lòng kiểm tra thông tin trước khi sử dụng.",
-    "extra_options": "Tùy chọn khác",
-    "flashcards": "Thẻ ghi nhớ",
-    "incorrect": "không chính xác",
-    "latest_messages": "Tin nhắn mới nhất",
-    "microphone_permission_denied": "Bạn đã từ chối quyền truy cập microphone. Vui lòng bật quyền truy cập microphone trong cài đặt trình duyệt của bạn để sử dụng tính năng này.",
-    "multi_choice_quiz": "Câu hỏi nhiều lựa chọn",
-    "multiple_choice": "Bộ trắc nghiệm",
-    "my_chatbots": "Chatbot của tôi",
-    "my_chatbots_description": "Quản lý chatbot tùy chỉnh của bạn với các lệnh nhắc và câu trả lời của riêng bạn.",
-    "new_chat": "Trò chuyện mới",
-    "new_chatbot": "Chatbot mới",
-    "no_chats": "Bắt đầu trò chuyện mới bằng cách gửi một yêu cầu.",
-    "notes": "Ghi chú",
-    "only_me": "Chỉ mình tôi",
-    "open_public_link": "Mở liên kết công khai",
-    "paragraph_answers": "Câu hỏi đoạn văn",
-    "paragraph_quiz": "Câu hỏi đoạn văn",
-    "permission_denied": "Quyền truy cập bị từ chối",
-    "prompt": "Nhập yêu cầu để bắt đầu trò chuyện với Tuturuuu AI.",
-    "prompt_placeholder": "Nhập yêu cầu của bạn...",
-    "public": "Công khai",
-    "quizzes": "Bộ câu hỏi",
-    "recent_conversations": "Các cuộc trò chuyện gần đây",
-    "refresh_chat": "Làm mới trò chuyện",
-    "regenerate_response": "Tạo lại câu trả lời",
-    "reset_chat": "Đặt lại",
-    "response_language": "Ngôn ngữ phản hồi",
-    "reveal_answer": "Xem đáp án",
-    "send_message": "Gửi tin nhắn",
-    "something_went_wrong": "Có lỗi xảy ra.",
-    "stop_generating": "Dừng trả lời",
-    "summarized": "Có tóm tắt",
-    "summary": "Tóm tắt",
-    "try_again_later": "Vui lòng thử lại sau.",
-    "upload_file_description": "Chọn tệp bạn muốn tải lên cuộc trò chuyện này.",
-    "upload_files": "Tải lên tập tin",
-    "view_conversation": "Xem cuộc trò chuyện",
-    "visibility_updated_desc": "Hiển thị trò chuyện đã được cập nhật.",
-    "voice_input": "Nhập bằng giọng nói",
-    "welcome_msg": "Bạn có thể bắt đầu một cuộc trò chuyện ở đây hoặc thử các ví dụ sau:",
-    "welcome_to": "Chào mừng đến với",
-    "which_is": "đó là một câu trả lời",
-    "you": "Bạn",
-    "you_selected": "Bạn đã chọn"
   },
   "ai-agents-settings": {
     "actions": {
@@ -1220,6 +1144,82 @@
     "add_domain": "Thêm tên miền",
     "add_email": "Thêm email"
   },
+  "ai_chat": {
+    "add_attachments": "Thêm tệp đính kèm",
+    "ai_models": "Mô hình AI",
+    "all_conversations": "Tất cả cuộc trò chuyện",
+    "anonymous": "Ẩn danh",
+    "chat_notes": "Ghi chú",
+    "chat_summary": "Tóm tắt",
+    "chat_updated": "Cập nhật trò chuyện",
+    "chat_visibility": "Hiển thị trò chuyện",
+    "chat_visibility_description": "Chọn ai có thể xem cuộc trò chuyện này.",
+    "chatbots": "Thư viện chatbot",
+    "chats": "Các cuộc trò chuyện",
+    "copy_public_link": "Sao chép liên kết công khai",
+    "correct": "chính xác",
+    "correct_answer_is_highlighed": "Câu trả lời đúng đã được đánh dấu",
+    "created": "Đã tạo",
+    "creating_chat": "Đang tạo cuộc trò chuyện...",
+    "default_chat": "Mặc định",
+    "example_1": "Giải thích các khái niệm liên quan đến công nghệ",
+    "example_1_prompt": "Giải thích về vật lý lượng tử?",
+    "example_2": "Tạo ra danh sách bài tập toán",
+    "example_2_prompt": "Tạo ra một danh sách các bài toán toán học khó nhưng thú vị cho sinh viên đại học.",
+    "example_3": "Giải thích cho học sinh lớp 5",
+    "example_3_prompt": "Giải thích các khái niệm sau như thể tôi là học sinh lớp 5: \n\n",
+    "example_4": "Tóm tắt một văn bản",
+    "example_4_prompt": "Tóm tắt bài viết sau cho học sinh lớp 2: \n\n",
+    "example_5": "Viết một email",
+    "example_5_prompt": "Viết một email cho sếp tôi về vấn đề sau: \n\n",
+    "example_6": "Tạo một bài thơ",
+    "example_6_prompt": "Tạo một bài thơ về vấn đề sau: \n\n",
+    "experimental_disclaimer": "Chú ý: Nội dung được tạo ra bởi AI có thể không chính xác hoặc cập nhật, vui lòng kiểm tra thông tin trước khi sử dụng.",
+    "extra_options": "Tùy chọn khác",
+    "flashcards": "Thẻ ghi nhớ",
+    "incorrect": "không chính xác",
+    "latest_messages": "Tin nhắn mới nhất",
+    "microphone_permission_denied": "Bạn đã từ chối quyền truy cập microphone. Vui lòng bật quyền truy cập microphone trong cài đặt trình duyệt của bạn để sử dụng tính năng này.",
+    "multi_choice_quiz": "Câu hỏi nhiều lựa chọn",
+    "multiple_choice": "Bộ trắc nghiệm",
+    "my_chatbots": "Chatbot của tôi",
+    "my_chatbots_description": "Quản lý chatbot tùy chỉnh của bạn với các lệnh nhắc và câu trả lời của riêng bạn.",
+    "new_chat": "Trò chuyện mới",
+    "new_chatbot": "Chatbot mới",
+    "no_chats": "Bắt đầu trò chuyện mới bằng cách gửi một yêu cầu.",
+    "notes": "Ghi chú",
+    "only_me": "Chỉ mình tôi",
+    "open_public_link": "Mở liên kết công khai",
+    "paragraph_answers": "Câu hỏi đoạn văn",
+    "paragraph_quiz": "Câu hỏi đoạn văn",
+    "permission_denied": "Quyền truy cập bị từ chối",
+    "prompt": "Nhập yêu cầu để bắt đầu trò chuyện với Tuturuuu AI.",
+    "prompt_placeholder": "Nhập yêu cầu của bạn...",
+    "public": "Công khai",
+    "quizzes": "Bộ câu hỏi",
+    "recent_conversations": "Các cuộc trò chuyện gần đây",
+    "refresh_chat": "Làm mới trò chuyện",
+    "regenerate_response": "Tạo lại câu trả lời",
+    "reset_chat": "Đặt lại",
+    "response_language": "Ngôn ngữ phản hồi",
+    "reveal_answer": "Xem đáp án",
+    "send_message": "Gửi tin nhắn",
+    "something_went_wrong": "Có lỗi xảy ra.",
+    "stop_generating": "Dừng trả lời",
+    "summarized": "Có tóm tắt",
+    "summary": "Tóm tắt",
+    "try_again_later": "Vui lòng thử lại sau.",
+    "upload_file_description": "Chọn tệp bạn muốn tải lên cuộc trò chuyện này.",
+    "upload_files": "Tải lên tập tin",
+    "view_conversation": "Xem cuộc trò chuyện",
+    "visibility_updated_desc": "Hiển thị trò chuyện đã được cập nhật.",
+    "voice_input": "Nhập bằng giọng nói",
+    "welcome_msg": "Bạn có thể bắt đầu một cuộc trò chuyện ở đây hoặc thử các ví dụ sau:",
+    "welcome_to": "Chào mừng đến với",
+    "which_is": "đó là một câu trả lời",
+    "you": "Bạn",
+    "you_selected": "Bạn đã chọn"
+  },
   "api-key-data-table": {
     "active": "Hoạt động",
     "created_at": "Ngày tạo",
@@ -1737,6 +1737,23 @@
     }
   },
   "avatar": "Ảnh đại diện",
+  "balancer": {
+    "title": "Lượt chạy của bộ cân bằng",
+    "description": "Các lượt chạy được yêu cầu qua ttr balancer, kèm máy, mã nguồn chính xác, hợp đồng thuê và kết quả của từng lượt.",
+    "columns": {
+      "run": "Lượt chạy",
+      "state": "Trạng thái",
+      "host": "Máy",
+      "source": "Mã nguồn",
+      "lease": "Hợp đồng thuê",
+      "result": "Kết quả",
+      "requester": "Người yêu cầu",
+      "updated": "Cập nhật"
+    },
+    "empty": "Chưa có lượt chạy nào của bộ cân bằng được công bố.",
+    "unknown_hint": "Chưa rõ kết quả: máy đã ngừng phản hồi. Lượt chạy không bao giờ được tự động lên lịch lại; hãy đối soát bằng ttr balancer reconcile.",
+    "exit_code": "Mã thoát"
+  },
   "basic-data-table": {
     "created_at": "Tạo lúc",
     "id": "Mã số",
@@ -3706,6 +3723,29 @@
     "year": "Năm",
     "yesterday": "Hôm qua"
   },
+  "calendar-sidebar": {
+    "collapse": "Thu gọn thanh bên",
+    "due": "Hạn",
+    "expand": "Mở rộng thanh bên",
+    "habits-tab": "Thói quen",
+    "no-tasks": "Không có công việc được giao",
+    "priority-critical": "Ưu tiên khẩn cấp",
+    "priority-high": "Ưu tiên cao",
+    "priority-low": "Ưu tiên thấp",
+    "priority-normal": "Ưu tiên bình thường",
+    "ready": "Sẵn sàng",
+    "schedule-tab": "Lịch trình",
+    "search-tasks": "Tìm kiếm công việc...",
+    "tasks-tab": "Công việc",
+    "untitled-task": "Công việc chưa đặt tên"
+  },
+  "calendar-tabs": {
+    "calendar": "Lịch",
+    "events": "Sự kiện",
+    "overview": "Tổng quan",
+    "sync-dashboard": "Bảng điều khiển đồng bộ",
+    "sync-history": "Đồng bộ hóa lịch sử"
+  },
   "calendar_lab": {
     "baseline_captured": "Đã ghi nhận mốc so sánh. Điều chỉnh trọng số và chạy lại để so sánh.",
     "controls": "Điều khiển Lab",
@@ -3740,29 +3780,6 @@
     "tuning": "Tinh chỉnh trọng số",
     "violations": "Vi phạm",
     "visualization": "Trực quan hóa"
-  },
-  "calendar-sidebar": {
-    "collapse": "Thu gọn thanh bên",
-    "due": "Hạn",
-    "expand": "Mở rộng thanh bên",
-    "habits-tab": "Thói quen",
-    "no-tasks": "Không có công việc được giao",
-    "priority-critical": "Ưu tiên khẩn cấp",
-    "priority-high": "Ưu tiên cao",
-    "priority-low": "Ưu tiên thấp",
-    "priority-normal": "Ưu tiên bình thường",
-    "ready": "Sẵn sàng",
-    "schedule-tab": "Lịch trình",
-    "search-tasks": "Tìm kiếm công việc...",
-    "tasks-tab": "Công việc",
-    "untitled-task": "Công việc chưa đặt tên"
-  },
-  "calendar-tabs": {
-    "calendar": "Lịch",
-    "events": "Sự kiện",
-    "overview": "Tổng quan",
-    "sync-dashboard": "Bảng điều khiển đồng bộ",
-    "sync-history": "Đồng bộ hóa lịch sử"
   },
   "changelog-data-table": {
     "category": "Danh mục",
@@ -6459,16 +6476,6 @@
   "dworkspace-mail": {
     "destination-addresses": "Địa chỉ đích"
   },
-  "email_service": {
-    "emails_already_sent": "Email đã được gửi đến những người nhận này.",
-    "emails_blocked_count": "Đã chặn {count} email. Có thể áp dụng giới hạn tần suất.",
-    "emails_send_failed_count": "Gửi thất bại {count} email.",
-    "emails_sent_success": "Đã gửi thành công {count} email.",
-    "rate_limit_blocked": "Việc gửi email bị chặn do giới hạn tần suất.",
-    "rate_limit_exceeded_details": "Vượt quá giới hạn tần suất ({limitType}). Đã sử dụng {usage}/{limit}. Thử lại sau {retryAfter} giây.",
-    "send_failed": "Gửi email thất bại.",
-    "unexpected_error": "Đã xảy ra lỗi không mong muốn"
-  },
   "email-audit": {
     "description": "Xem và theo dõi tất cả email gửi đi từ không gian làm việc của bạn.",
     "failed_emails": "Email thất bại",
@@ -6642,6 +6649,16 @@
     "select_template": "Chọn Mẫu",
     "template_props": "Thuộc tính Mẫu",
     "title": "Mẫu Email"
+  },
+  "email_service": {
+    "emails_already_sent": "Email đã được gửi đến những người nhận này.",
+    "emails_blocked_count": "Đã chặn {count} email. Có thể áp dụng giới hạn tần suất.",
+    "emails_send_failed_count": "Gửi thất bại {count} email.",
+    "emails_sent_success": "Đã gửi thành công {count} email.",
+    "rate_limit_blocked": "Việc gửi email bị chặn do giới hạn tần suất.",
+    "rate_limit_exceeded_details": "Vượt quá giới hạn tần suất ({limitType}). Đã sử dụng {usage}/{limit}. Thử lại sau {retryAfter} giây.",
+    "send_failed": "Gửi email thất bại.",
+    "unexpected_error": "Đã xảy ra lỗi không mong muốn"
   },
   "entity-creation-limits": {
     "actions": {
@@ -10833,6 +10850,8 @@
     "participants": "Người tham gia",
     "registered_users": "Người dùng đã đăng ký",
     "select-time-zone": "Chọn múi giờ",
+    "sign_in_to_create_plan": "Đăng nhập để tạo kế hoạch",
+    "sign_in_to_create_plan_desc": "Bạn cần đăng nhập tài khoản Tuturuuu để tạo kế hoạch. Bất kỳ ai có liên kết kế hoạch công khai vẫn có thể tham gia mà không cần đăng nhập.",
     "smart_scheduling": "Lập lịch thông minh",
     "something_went_wrong": "Có lỗi xảy ra",
     "soonest-time-to-meet": "Giờ sớm nhất",
@@ -11676,6 +11695,16 @@
       "permission-denied": "Thông báo trình duyệt đã bị chặn. Vui lòng bật trong cài đặt trình duyệt.",
       "permission-request": "Bật thông báo trình duyệt để cập nhật"
     },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Đồng bộ lịch đã tạm dừng vì nhà cung cấp không còn chấp nhận quyền truy cập. Hãy kết nối lại tài khoản để tiếp tục.",
+        "title": "Kết nối lại lịch của bạn"
+      },
+      "tutoring_session_completed": {
+        "description": "Giáo viên kèm đã đánh dấu hoàn thành một buổi kèm của học viên trong lớp bạn chủ nhiệm.",
+        "title": "Đã hoàn thành buổi kèm"
+      }
+    },
     "date_earlier": "Trước đó",
     "date_this_week": "Tuần này",
     "date_today": "Hôm nay",
@@ -11790,6 +11819,7 @@
         "time_tracking_request_rejected": "Từ chối yêu cầu theo dõi thời gian",
         "time_tracking_request_resubmitted": "Gửi lại yêu cầu theo dõi thời gian",
         "time_tracking_request_submitted": "Yêu cầu theo dõi thời gian chờ phê duyệt",
+        "topic_assigned": "Chủ đề được giao cho bạn",
         "workspace_activity": "Hoạt động không gian làm việc",
         "workspace_invite": "Lời mời không gian làm việc"
       },
@@ -11874,6 +11904,7 @@
       "time_tracking_request_rejected": "Yêu cầu theo dõi thời gian bị từ chối",
       "time_tracking_request_resubmitted": "Yêu cầu theo dõi thời gian được gửi lại",
       "time_tracking_request_submitted": "Yêu cầu theo dõi thời gian được gửi",
+      "topic_assigned": "Được giao chủ đề",
       "workspace_invite": "Lời mời không gian làm việc"
     },
     "unified_view": "Gộp",
@@ -12926,32 +12957,32 @@
     "success-message": "Mật khẩu của bạn đã được đặt lại thành công. Bạn có thể đăng nhập bằng mật khẩu mới."
   },
   "satellite-account-settings": {
-    "accounts": "Các tài khoản",
-    "accounts_add": "Thêm tài khoản khác",
-    "accounts_description": "Quản lý nhiều tài khoản và chuyển đổi giữa chúng",
-    "accounts_remove": "Xóa một tài khoản khỏi trình duyệt này",
-    "accounts_switch": "Chuyển đổi giữa các tài khoản đã đăng nhập",
-    "appearance": "Giao diện",
-    "appearance_description": "Chủ đề và ngôn ngữ",
     "email_managed_centrally": "Việc đổi email cần được xác nhận, nên bạn thực hiện trong phần cài đặt tài khoản Tuturuuu.",
-    "managed_centrally_description": "Để bảo vệ bạn, các thay đổi về {section} được thực hiện trong Tuturuuu, nơi có thể yêu cầu bạn xác minh danh tính. Thay đổi sẽ áp dụng cho mọi ứng dụng Tuturuuu.",
-    "managed_centrally_title": "Được quản lý trong tài khoản Tuturuuu của bạn",
-    "open_in_tuturuuu": "Mở trong Tuturuuu",
+    "title": "Tài khoản",
     "preferences": "Tùy chọn",
     "profile": "Hồ sơ",
     "profile_description": "Quản lý tên, ảnh đại diện và email của bạn",
+    "accounts": "Các tài khoản",
+    "accounts_description": "Quản lý nhiều tài khoản và chuyển đổi giữa chúng",
     "security": "Bảo mật",
     "security_description": "Mật khẩu, xác thực hai lớp, passkey và phương thức đăng nhập",
-    "security_linked_identities": "Phương thức đăng nhập đã liên kết",
-    "security_passkeys": "Passkey",
-    "security_password": "Đổi hoặc đặt lại mật khẩu",
-    "security_two_factor": "Xác thực hai lớp bằng ứng dụng xác thực",
     "sessions": "Phiên & Thiết bị",
     "sessions_description": "Quản lý các phiên đăng nhập và thiết bị đang hoạt động",
-    "sessions_devices": "Xem mọi thiết bị đang đăng nhập vào tài khoản của bạn",
-    "sessions_revoke": "Đăng xuất khỏi các thiết bị khác",
+    "appearance": "Giao diện",
+    "appearance_description": "Chủ đề và ngôn ngữ",
+    "managed_centrally_title": "Được quản lý trong tài khoản Tuturuuu của bạn",
+    "managed_centrally_description": "Để bảo vệ bạn, các thay đổi về {section} được thực hiện trong Tuturuuu, nơi có thể yêu cầu bạn xác minh danh tính. Thay đổi sẽ áp dụng cho mọi ứng dụng Tuturuuu.",
     "signed_in_as": "Đang đăng nhập với {email}",
-    "title": "Tài khoản"
+    "open_in_tuturuuu": "Mở trong Tuturuuu",
+    "accounts_switch": "Chuyển đổi giữa các tài khoản đã đăng nhập",
+    "accounts_add": "Thêm tài khoản khác",
+    "accounts_remove": "Xóa một tài khoản khỏi trình duyệt này",
+    "security_password": "Đổi hoặc đặt lại mật khẩu",
+    "security_two_factor": "Xác thực hai lớp bằng ứng dụng xác thực",
+    "security_passkeys": "Passkey",
+    "security_linked_identities": "Phương thức đăng nhập đã liên kết",
+    "sessions_devices": "Xem mọi thiết bị đang đăng nhập vào tài khoản của bạn",
+    "sessions_revoke": "Đăng xuất khỏi các thiết bị khác"
   },
   "satellite-workspace-settings": {
     "avatar": "Ảnh đại diện không gian làm việc",
@@ -14790,148 +14821,6 @@
       }
     }
   },
-  "task_project_detail": {
-    "common": {
-      "untitled_list": "Danh sách chưa đặt tên"
-    },
-    "configuration": {
-      "archive_description": "Dự án đã lưu trữ sẽ bị ẩn khỏi chế độ xem mặc định",
-      "archive_project": "Lưu trữ dự án",
-      "end_date_label": "Ngày kết thúc",
-      "health_status": {
-        "at_risk": "Có rủi ro",
-        "off_track": "Lệch tiến độ",
-        "on_track": "Đúng tiến độ"
-      },
-      "health_status_label": "Tình trạng sức khỏe",
-      "health_status_placeholder": "Chọn tình trạng sức khỏe",
-      "priority": {
-        "critical": "Nghiêm trọng",
-        "high": "Cao",
-        "low": "Thấp",
-        "normal": "Bình thường"
-      },
-      "priority_label": "Mức độ ưu tiên",
-      "priority_placeholder": "Chọn mức độ ưu tiên",
-      "project_lead_label": "Trưởng dự án",
-      "start_date_label": "Ngày bắt đầu",
-      "status": {
-        "active": "Đang hoạt động",
-        "backlog": "Tồn đọng",
-        "cancelled": "Đã hủy",
-        "completed": "Hoàn thành",
-        "in_progress": "Đang thực hiện",
-        "in_review": "Đang xem xét",
-        "in_testing": "Đang kiểm tra",
-        "on_hold": "Tạm dừng",
-        "planned": "Đã lên kế hoạch"
-      },
-      "status_label": "Trạng thái",
-      "title": "Cấu hình dự án"
-    },
-    "documents_tab": {
-      "description": "{count} mục tham khảo được liên kết qua danh sách tài liệu.",
-      "document_list": "Danh sách tài liệu",
-      "documents": "tài liệu",
-      "empty_description": "Các nhiệm vụ trong danh sách tài liệu được liên kết vào dự án sẽ xuất hiện tại đây, tách khỏi công việc thực thi.",
-      "empty_title": "Chưa có tài liệu liên kết",
-      "title": "Tài liệu đã liên kết"
-    },
-    "header": {
-      "cancel": "Hủy",
-      "edit_name_aria": "Chỉnh sửa tên dự án",
-      "project_name_placeholder": "Tên dự án",
-      "save_changes": "Lưu thay đổi",
-      "saving": "Đang lưu..."
-    },
-    "lead_selector": {
-      "loading": "Đang tải...",
-      "no_lead": "Không có trưởng dự án",
-      "select_lead": "Chọn trưởng dự án"
-    },
-    "link_dialog": {
-      "description": "Tìm kiếm công việc hiện có để liên kết vào dự án này",
-      "no_tasks_found": "Không tìm thấy công việc nào phù hợp với \"{query}\"",
-      "search_placeholder": "Tìm kiếm công việc theo tiêu đề...",
-      "start_typing": "Bắt đầu nhập để tìm kiếm công việc",
-      "tip": "Mẹo: Tạo công việc mới trực tiếp trong tab Công việc và chúng sẽ tự động được liên kết vào dự án này.",
-      "title": "Liên kết công việc vào dự án"
-    },
-    "metadata": {
-      "page_description": "Xem và quản lý chi tiết dự án nhiệm vụ.",
-      "page_title": "Dự Án Nhiệm Vụ"
-    },
-    "overview": {
-      "describe_placeholder": "Mô tả dự án của bạn...",
-      "description": "Mô tả",
-      "document": "Tài liệu",
-      "document_list": "Danh sách tài liệu",
-      "done": "Hoàn thành",
-      "edit_description_aria": "Chỉnh sửa mô tả dự án",
-      "hide_configuration": "Ẩn cấu hình",
-      "link_tasks": "Liên kết công việc",
-      "linked_documents": "Tài Liệu Đã Liên Kết",
-      "linked_documents_description": "Mục tham khảo được tách khỏi số lượng nhiệm vụ.",
-      "linked_tasks": "Công việc đã liên kết",
-      "no_description": "Chưa có mô tả. Nhấp vào biểu tượng chỉnh sửa để thêm.",
-      "no_documents_linked": "Chưa liên kết tài liệu nào",
-      "no_tasks_linked": "Chưa liên kết công việc nào",
-      "no_updates_yet": "Chưa có cập nhật nào. Hãy chia sẻ cập nhật đầu tiên!",
-      "post_update": "Đăng cập nhật",
-      "recent_updates": "Cập nhật gần đây",
-      "rich_text_note": "Lưu ý: Trình soạn thảo văn bản sẽ được thêm trong bản cập nhật tương lai",
-      "show_configuration": "Hiện cấu hình",
-      "unknown_user": "Không xác định",
-      "view_all": "Xem tất cả"
-    },
-    "sidebar": {
-      "click_assign_lead": "Nhấp để chỉ định trưởng dự án",
-      "click_set_timeline": "Nhấp để đặt tiến độ",
-      "completed": "Đã hoàn thành",
-      "edit_lead_aria": "Chỉnh sửa trưởng dự án",
-      "edit_timeline_aria": "Chỉnh sửa tiến độ",
-      "end_date": "Ngày kết thúc",
-      "end_label": "Kết thúc:",
-      "in_progress": "Đang thực hiện",
-      "project_lead": "Trưởng dự án",
-      "project_stats": "Thống kê dự án",
-      "select_lead_label": "Chọn trưởng dự án",
-      "start_date": "Ngày bắt đầu",
-      "start_label": "Bắt đầu:",
-      "timeline": "Tiến độ",
-      "total_tasks": "Tổng công việc",
-      "unknown": "Không xác định"
-    },
-    "tabs": {
-      "documents": "Tài liệu",
-      "overview": "Tổng quan",
-      "tasks": "Công việc",
-      "updates": "Cập nhật"
-    },
-    "tasks_tab": {
-      "link_tasks": "Liên kết công việc",
-      "no_tasks_description": "Liên kết công việc hiện có hoặc tạo công việc mới để bắt đầu",
-      "no_tasks_title": "Chưa liên kết công việc nào"
-    },
-    "update_card": {
-      "actions_aria": "Hành động cập nhật",
-      "cancel": "Hủy",
-      "delete": "Xóa",
-      "edit": "Chỉnh sửa",
-      "edited_badge": "Đã chỉnh sửa",
-      "save": "Lưu",
-      "unknown_user": "Không xác định"
-    },
-    "updates_tab": {
-      "no_updates_description": "Hãy là người đầu tiên chia sẻ tiến độ cho dự án này!",
-      "no_updates_title": "Chưa có cập nhật nào",
-      "post_update": "Đăng cập nhật",
-      "posting": "Đang đăng...",
-      "rich_text_coming_soon": "Trình soạn thảo văn bản, phản ứng và tệp đính kèm sẽ sớm ra mắt",
-      "share_placeholder": "Chia sẻ tiến độ, kỷ niệm thành công hoặc thảo luận thách thức...",
-      "share_update": "Chia sẻ cập nhật"
-    }
-  },
   "task-drafts": {
     "board_view_description": "Bản nháp đã lưu",
     "cancel": "Hủy",
@@ -15339,6 +15228,148 @@
     "sub_tasks": "Tác vụ con",
     "task_created": "Tạo tác vụ thành công",
     "task_creation_failed": "Không thể tạo tác vụ"
+  },
+  "task_project_detail": {
+    "common": {
+      "untitled_list": "Danh sách chưa đặt tên"
+    },
+    "configuration": {
+      "archive_description": "Dự án đã lưu trữ sẽ bị ẩn khỏi chế độ xem mặc định",
+      "archive_project": "Lưu trữ dự án",
+      "end_date_label": "Ngày kết thúc",
+      "health_status": {
+        "at_risk": "Có rủi ro",
+        "off_track": "Lệch tiến độ",
+        "on_track": "Đúng tiến độ"
+      },
+      "health_status_label": "Tình trạng sức khỏe",
+      "health_status_placeholder": "Chọn tình trạng sức khỏe",
+      "priority": {
+        "critical": "Nghiêm trọng",
+        "high": "Cao",
+        "low": "Thấp",
+        "normal": "Bình thường"
+      },
+      "priority_label": "Mức độ ưu tiên",
+      "priority_placeholder": "Chọn mức độ ưu tiên",
+      "project_lead_label": "Trưởng dự án",
+      "start_date_label": "Ngày bắt đầu",
+      "status": {
+        "active": "Đang hoạt động",
+        "backlog": "Tồn đọng",
+        "cancelled": "Đã hủy",
+        "completed": "Hoàn thành",
+        "in_progress": "Đang thực hiện",
+        "in_review": "Đang xem xét",
+        "in_testing": "Đang kiểm tra",
+        "on_hold": "Tạm dừng",
+        "planned": "Đã lên kế hoạch"
+      },
+      "status_label": "Trạng thái",
+      "title": "Cấu hình dự án"
+    },
+    "documents_tab": {
+      "description": "{count} mục tham khảo được liên kết qua danh sách tài liệu.",
+      "document_list": "Danh sách tài liệu",
+      "documents": "tài liệu",
+      "empty_description": "Các nhiệm vụ trong danh sách tài liệu được liên kết vào dự án sẽ xuất hiện tại đây, tách khỏi công việc thực thi.",
+      "empty_title": "Chưa có tài liệu liên kết",
+      "title": "Tài liệu đã liên kết"
+    },
+    "header": {
+      "cancel": "Hủy",
+      "edit_name_aria": "Chỉnh sửa tên dự án",
+      "project_name_placeholder": "Tên dự án",
+      "save_changes": "Lưu thay đổi",
+      "saving": "Đang lưu..."
+    },
+    "lead_selector": {
+      "loading": "Đang tải...",
+      "no_lead": "Không có trưởng dự án",
+      "select_lead": "Chọn trưởng dự án"
+    },
+    "link_dialog": {
+      "description": "Tìm kiếm công việc hiện có để liên kết vào dự án này",
+      "no_tasks_found": "Không tìm thấy công việc nào phù hợp với \"{query}\"",
+      "search_placeholder": "Tìm kiếm công việc theo tiêu đề...",
+      "start_typing": "Bắt đầu nhập để tìm kiếm công việc",
+      "tip": "Mẹo: Tạo công việc mới trực tiếp trong tab Công việc và chúng sẽ tự động được liên kết vào dự án này.",
+      "title": "Liên kết công việc vào dự án"
+    },
+    "metadata": {
+      "page_description": "Xem và quản lý chi tiết dự án nhiệm vụ.",
+      "page_title": "Dự Án Nhiệm Vụ"
+    },
+    "overview": {
+      "describe_placeholder": "Mô tả dự án của bạn...",
+      "description": "Mô tả",
+      "document": "Tài liệu",
+      "document_list": "Danh sách tài liệu",
+      "done": "Hoàn thành",
+      "edit_description_aria": "Chỉnh sửa mô tả dự án",
+      "hide_configuration": "Ẩn cấu hình",
+      "link_tasks": "Liên kết công việc",
+      "linked_documents": "Tài Liệu Đã Liên Kết",
+      "linked_documents_description": "Mục tham khảo được tách khỏi số lượng nhiệm vụ.",
+      "linked_tasks": "Công việc đã liên kết",
+      "no_description": "Chưa có mô tả. Nhấp vào biểu tượng chỉnh sửa để thêm.",
+      "no_documents_linked": "Chưa liên kết tài liệu nào",
+      "no_tasks_linked": "Chưa liên kết công việc nào",
+      "no_updates_yet": "Chưa có cập nhật nào. Hãy chia sẻ cập nhật đầu tiên!",
+      "post_update": "Đăng cập nhật",
+      "recent_updates": "Cập nhật gần đây",
+      "rich_text_note": "Lưu ý: Trình soạn thảo văn bản sẽ được thêm trong bản cập nhật tương lai",
+      "show_configuration": "Hiện cấu hình",
+      "unknown_user": "Không xác định",
+      "view_all": "Xem tất cả"
+    },
+    "sidebar": {
+      "click_assign_lead": "Nhấp để chỉ định trưởng dự án",
+      "click_set_timeline": "Nhấp để đặt tiến độ",
+      "completed": "Đã hoàn thành",
+      "edit_lead_aria": "Chỉnh sửa trưởng dự án",
+      "edit_timeline_aria": "Chỉnh sửa tiến độ",
+      "end_date": "Ngày kết thúc",
+      "end_label": "Kết thúc:",
+      "in_progress": "Đang thực hiện",
+      "project_lead": "Trưởng dự án",
+      "project_stats": "Thống kê dự án",
+      "select_lead_label": "Chọn trưởng dự án",
+      "start_date": "Ngày bắt đầu",
+      "start_label": "Bắt đầu:",
+      "timeline": "Tiến độ",
+      "total_tasks": "Tổng công việc",
+      "unknown": "Không xác định"
+    },
+    "tabs": {
+      "documents": "Tài liệu",
+      "overview": "Tổng quan",
+      "tasks": "Công việc",
+      "updates": "Cập nhật"
+    },
+    "tasks_tab": {
+      "link_tasks": "Liên kết công việc",
+      "no_tasks_description": "Liên kết công việc hiện có hoặc tạo công việc mới để bắt đầu",
+      "no_tasks_title": "Chưa liên kết công việc nào"
+    },
+    "update_card": {
+      "actions_aria": "Hành động cập nhật",
+      "cancel": "Hủy",
+      "delete": "Xóa",
+      "edit": "Chỉnh sửa",
+      "edited_badge": "Đã chỉnh sửa",
+      "save": "Lưu",
+      "unknown_user": "Không xác định"
+    },
+    "updates_tab": {
+      "no_updates_description": "Hãy là người đầu tiên chia sẻ tiến độ cho dự án này!",
+      "no_updates_title": "Chưa có cập nhật nào",
+      "post_update": "Đăng cập nhật",
+      "posting": "Đang đăng...",
+      "rich_text_coming_soon": "Trình soạn thảo văn bản, phản ứng và tệp đính kèm sẽ sớm ra mắt",
+      "share_placeholder": "Chia sẻ tiến độ, kỷ niệm thành công hoặc thảo luận thách thức...",
+      "share_update": "Chia sẻ cập nhật"
+    }
   },
   "tasks": {
     "board": "Bảng",
@@ -18572,12 +18603,6 @@
     "contracts": "Hợp đồng",
     "directory": "Danh bạ",
     "payroll": "Bảng lương"
-  },
-  "ws_post_details": {
-    "approval_locked": "Không thể gỡ phê duyệt vì đã có ít nhất một email được gửi.",
-    "approval_revocable": "Có thể gỡ phê duyệt vì chưa có email nào được gửi.",
-    "check_all": "Đã kiểm tra tất cả",
-    "completed": "Hoàn thành"
   },
   "ws-activities": {
     "added": "Đã thêm",
@@ -23875,5 +23900,11 @@
     "unnamed_wallet": "Ví không tên",
     "wallet": "Phương thức thanh toán",
     "wallet_deleted": "Đã xóa ví thành công"
+  },
+  "ws_post_details": {
+    "approval_locked": "Không thể gỡ phê duyệt vì đã có ít nhất một email được gửi.",
+    "approval_revocable": "Có thể gỡ phê duyệt vì chưa có email nào được gửi.",
+    "check_all": "Đã kiểm tra tất cả",
+    "completed": "Hoàn thành"
   }
 }

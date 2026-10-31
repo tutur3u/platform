@@ -11,6 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/router/settings_routes.dart';
 import 'package:mobile/core/theme/appearance/ambient_background.dart';
@@ -92,6 +93,7 @@ part 'settings_design_checks.dart';
 part 'settings_assistant_shell_checks.dart';
 part 'settings_assistant_entrypoint_checks.dart';
 part 'settings_secrets_shell_checks.dart';
+part 'settings_appearance_interface_checks.dart';
 part 'settings_appearance_shell_checks.dart';
 part 'settings_apps_checks.dart';
 part 'settings_mail_visual_checks.dart';
@@ -109,6 +111,7 @@ void main() {
   registerSettingsAssistantEntrypointChecks();
   registerSettingsSecretsShellChecks();
   registerSettingsAppearanceShellChecks();
+  registerSettingsAppearanceInterfaceChecks();
   registerSettingsAppsChecks();
   registerSettingsMailVisualChecks();
   registerSettingsOfflineVisualChecks();
@@ -547,7 +550,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('expanded Settings preserves three preference categories', (
+  testWidgets('expanded Settings preserves four preference categories', (
     tester,
   ) async {
     _viewport(tester, const Size(1024, 768));
@@ -565,11 +568,12 @@ void main() {
             'Appearance & language',
             'Time zone',
             'Notifications & interaction',
+            'Privacy',
           }.contains(w.title),
     );
     expect(
       find.descendant(of: preferences, matching: find.byType(SettingsGroup)),
-      findsNWidgets(3),
+      findsNWidgets(4),
     );
     expect(
       tester.getRect(find.byKey(const ValueKey('settings-haptics-row'))).left,

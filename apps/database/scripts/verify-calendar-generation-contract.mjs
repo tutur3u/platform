@@ -44,6 +44,12 @@ const fixtures = hasSaga
       'calendar-google-import-generation.sql',
     ]
   : ['calendar-retained-generation.sql'];
+if (
+  trackedFiles.some((file) =>
+    file.endsWith('/20261026023000_calendar_auth_token_deactivation.sql')
+  )
+)
+  fixtures.push('calendar-auth-token-deactivation.sql');
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
   repositoryRoot,
@@ -86,6 +92,11 @@ const excluded =
 const runner = async (command, args, cwd) => {
   if (args.includes('test')) {
     const container = `supabase_db_${metadata.projectId}`;
+    execFileSync('docker', [
+      'cp',
+      path.resolve(metadata.disposableRoot, 'supabase/tests/helpers'),
+      `${container}:/tmp/helpers`,
+    ]);
     for (const fixture of fixtures) {
       const target = '/tmp/calendar-generation-contract.sql';
       execFileSync('docker', [
@@ -104,6 +115,8 @@ const runner = async (command, args, cwd) => {
           '-t',
           '-v',
           'ON_ERROR_STOP=1',
+          '-v',
+          'require_dblink=1',
           '-U',
           'supabase_admin',
           '--dbname',

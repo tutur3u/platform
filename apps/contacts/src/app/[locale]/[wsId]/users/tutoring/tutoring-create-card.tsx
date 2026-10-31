@@ -8,7 +8,6 @@ import type {
 } from '@tuturuuu/internal-api';
 import { listWorkspaceUserGroupSessions } from '@tuturuuu/internal-api';
 import type { TutoringPolicy } from '@tuturuuu/internal-api/tutoring-policy';
-import { suggestTutoringSlots } from '@tuturuuu/internal-api/tutoring-suggestion';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
@@ -21,6 +20,10 @@ import { TutoringCreateSlots } from './tutoring-create-slots';
 import { TutoringDraftChoices } from './tutoring-draft-choices';
 import { addDaysToIsoDate, toIsoDate } from './tutoring-filters';
 import { WorkspacePersonPicker } from './tutoring-people-picker';
+import {
+  applyTutoringSuggestions,
+  resolveTutoringClassSchedule,
+} from './tutoring-suggestion-apply';
 import {
   findSessionSlotConflicts,
   getConflictingSlotIndexes,
@@ -92,6 +95,18 @@ export function TutoringCreateCard({
     gcTime: 0,
     staleTime: 5 * 60_000,
   });
+
+  const schedule = useMemo(
+    () =>
+      resolveTutoringClassSchedule({
+        calendar: classSchedule.data?.data ?? [],
+        groupId: form.groupId,
+        loaded: classSchedule.isSuccess,
+        policy,
+        today,
+      }),
+    [classSchedule.data, classSchedule.isSuccess, form.groupId, policy, today]
+  );
 
   const groupOptions = useMemo<ComboboxOption[]>(
     () =>
@@ -179,6 +194,14 @@ export function TutoringCreateCard({
     );
   }, [form]);
 
+  const singleSlot = form.sessionSlots.length === 1;
+  const contentHelp = t(
+    form.reasonType === 'WEAK_SUPPORT'
+      ? 'content_rule_weak'
+      : 'content_rule_absent'
+  );
+  const firstSlot = form.sessionSlots[0];
+
   const reasonLabels: Record<TutoringReasonType, string> = {
     ABSENT_RECOVERY: t('absent_recovery'),
     CUSTOM: t('custom_reason'),
@@ -200,6 +223,8 @@ export function TutoringCreateCard({
                 ...form,
                 groupId: nextGroupId,
                 missedClassDate: '',
+                missedClassDates: undefined,
+                missingLessonDates: undefined,
                 sourceFeedbackId: null,
               });
             }}
@@ -222,6 +247,8 @@ export function TutoringCreateCard({
                 studentLabel: option?.label || form.studentLabel,
                 studentUserId: value,
                 missedClassDate: '',
+                missedClassDates: undefined,
+                missingLessonDates: undefined,
               })
             }
             placeholder={t('select_student')}
@@ -239,7 +266,7 @@ export function TutoringCreateCard({
               onChange({ ...form, reasonType: value as TutoringReasonType })
             }
             options={REASON_TYPES.map((reason) => ({
-              label: reasonLabels[reason],
+              label: reasonLabels[reason] ?? reason,
               value: reason,
             }))}
             placeholder={t('reason')}
@@ -299,39 +326,18 @@ export function TutoringCreateCard({
                   void classSchedule.refetch();
                   return;
                 }
-                const suggestions = suggestTutoringSlots(
-                  classSchedule.data?.data ?? [],
-                  form.reasonType === 'ABSENT_RECOVERY'
-                    ? missedDate
-                    : addDaysToIsoDate(today, -1),
-                  form.sessionSlots.length,
+                const result = applyTutoringSuggestions({
+                  form,
+                  fromDate:
+                    form.reasonType === 'ABSENT_RECOVERY'
+                      ? missedDate
+                      : addDaysToIsoDate(today, -1),
                   policy,
-                  form.reasonType === 'WEAK_SUPPORT'
-                    ? 'consecutive'
-                    : 'separate'
-                );
-                if (suggestions.length !== form.sessionSlots.length) {
-                  setScheduleMessage(
-                    t('suggestion_unavailable', {
-                      days: policy.schedulingHorizonDays,
-                    })
-                  );
-                  return;
-                }
-                onChange({
-                  ...form,
-                  sessionSlots: form.sessionSlots.map((slot, index) => ({
-                    ...slot,
-                    durationMinutes:
-                      suggestions[index]?.durationMinutes ??
-                      policy.durationMinutes,
-                    sessionDate:
-                      suggestions[index]?.sessionDate ?? slot.sessionDate,
-                    startTime: suggestions[index]?.startTime ?? slot.startTime,
-                  })),
+                  schedule,
                 });
+                if (result.form) onChange(result.form);
                 setScheduleMessage(
-                  t('smart_suggestion_applied', { count: suggestions.length })
+                  t(result.message.key, result.message.values)
                 );
               }}
               type="button"
@@ -362,7 +368,7 @@ export function TutoringCreateCard({
         form={form}
         policy={policy}
         today={today}
-        schedule={classSchedule.data?.data ?? []}
+        schedule={schedule}
         missingCount={classSchedule.data?.missing?.length ?? 0}
         scheduleLoading={classSchedule.isFetching}
         scheduleError={classSchedule.isError}
@@ -372,6 +378,7 @@ export function TutoringCreateCard({
 
       <TutoringCreateSlots
         conflictingIndexes={conflictingIndexes}
+        contentHelp={contentHelp}
         form={form}
         onChange={onChange}
         teacherOptions={teacherOptions}
@@ -379,23 +386,41 @@ export function TutoringCreateCard({
       />
 
       <div className="space-y-2">
-        <Label htmlFor="content">{t('content')}</Label>
-        <p className="text-muted-foreground text-xs">
-          {t(
-            form.reasonType === 'WEAK_SUPPORT'
-              ? 'content_rule_weak'
-              : 'content_rule_absent'
-          )}
-        </p>
-        <Textarea
-          id="content"
-          onChange={(event) =>
-            onChange({ ...form, content: event.target.value })
-          }
-          placeholder={t('content_placeholder')}
-          rows={3}
-          value={form.content}
-        />
+        {singleSlot ? <Label htmlFor="content">{t('content')}</Label> : null}
+        {singleSlot ? (
+          <p className="text-muted-foreground text-xs" id="content-help">
+            {contentHelp}
+          </p>
+        ) : null}
+        {singleSlot ? (
+          <Textarea
+            aria-describedby="content-help"
+            id="content"
+            onChange={(event) =>
+              onChange(
+                firstSlot?.content !== undefined
+                  ? {
+                      ...form,
+                      sessionSlots: form.sessionSlots.map((slot) => ({
+                        ...slot,
+                        content: event.target.value,
+                      })),
+                    }
+                  : { ...form, content: event.target.value }
+              )
+            }
+            placeholder={t('content_placeholder')}
+            rows={3}
+            value={firstSlot?.content ?? form.content}
+          />
+        ) : null}
+        {form.missingLessonDates?.length ? (
+          <p className="text-dynamic-orange text-xs">
+            {t('lesson_notes_missing', {
+              dates: form.missingLessonDates.join(', '),
+            })}
+          </p>
+        ) : null}
       </div>
 
       {conflictMessage ? (

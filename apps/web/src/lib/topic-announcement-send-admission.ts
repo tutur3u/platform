@@ -1,10 +1,22 @@
-import { TOPIC_ANNOUNCEMENTS_SECRET } from '@tuturuuu/utils/topic-announcements';
+import {
+  isTopicTeacherAssignmentsEnabled,
+  TOPIC_ANNOUNCEMENTS_SECRET,
+} from '@tuturuuu/utils/topic-announcements';
 import { getSecret, getSecrets } from '@tuturuuu/utils/workspace-helper';
 
 /** Re-read the current workspace gate immediately before dispatch preparation. */
 export async function isTopicAnnouncementSendingEnabled(wsId: string) {
+  return (await getTopicAnnouncementSendFlags(wsId)).sending;
+}
+
+/** Sending gate plus the teacher-assignments flag, from one secrets read. */
+export async function getTopicAnnouncementSendFlags(wsId: string) {
   const secrets = await getSecrets({ forceAdmin: true, wsId });
-  return getSecret(TOPIC_ANNOUNCEMENTS_SECRET, secrets ?? [])?.value === 'true';
+  return {
+    sending:
+      getSecret(TOPIC_ANNOUNCEMENTS_SECRET, secrets ?? [])?.value === 'true',
+    teacherAssignments: isTopicTeacherAssignmentsEnabled(secrets ?? []),
+  };
 }
 
 /** Reject the entire intended recipient set; never silently send a subset. */

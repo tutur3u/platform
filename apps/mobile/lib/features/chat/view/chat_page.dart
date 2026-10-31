@@ -139,7 +139,7 @@ class _ChatPageState extends State<_ChatActorHost> {
                 children: [
                   shellActions,
                   miniNav,
-                  const Center(child: NovaLoadingIndicator()),
+                  const AppLoadingIndicator.page(),
                 ],
               );
             }
@@ -301,11 +301,11 @@ class _ChatPageState extends State<_ChatActorHost> {
             ),
           ),
         ),
-        ShellActionSpec(
+        ShellActionSpec.search(
           id: 'chat-search',
-          icon: _searchVisible ? Icons.close_rounded : LucideIcons.search,
+          active: _searchVisible,
           tooltip: l10n.chatSearch,
-          searchController: _searchVisible ? _searchController : null,
+          controller: _searchController,
           searchHint: l10n.chatSearch,
           onSearchChanged: (query) =>
               unawaited(_chatCubit.searchMessages(query)),

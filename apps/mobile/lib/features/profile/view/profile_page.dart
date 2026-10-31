@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/input/platform_text_context_menu.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
 import 'package:mobile/core/responsive/responsive_padding.dart';
 import 'package:mobile/core/responsive/responsive_values.dart';
@@ -107,86 +108,60 @@ class _ProfileView extends StatelessWidget {
           },
         ),
       ],
-      child: shad.Scaffold(
-        child: BlocBuilder<ProfileCubit, ProfileState>(
-          builder: (context, state) {
-            if (state.status == ProfileStatus.loading &&
-                state.profile == null) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const NovaLoadingIndicator(),
-                    const AppGap(16),
-                    Text(l10n.profileLoading),
-                  ],
-                ),
-              );
-            }
+      child: BlocBuilder<ProfileCubit, ProfileState>(
+        builder: (context, state) {
+          if (state.status == ProfileStatus.loading && state.profile == null) {
+            return AppLoadingIndicator.page(semanticLabel: l10n.profileLoading);
+          }
 
-            if (state.status == ProfileStatus.error && state.profile == null) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        state.error ?? l10n.profileUpdateError,
-                        textAlign: TextAlign.center,
-                      ),
-                      const AppGap(16),
-                      shad.PrimaryButton(
-                        onPressed: () => context
-                            .read<ProfileCubit>()
-                            .loadProfile(forceRefresh: true),
-                        child: Text(l10n.commonRetry),
-                      ),
-                    ],
-                  ),
+          if (state.status == ProfileStatus.error && state.profile == null) {
+            return AppPageBody(
+              child: AppStateMessage(
+                icon: LucideIcons.cloudOff,
+                tone: AppTone.destructive,
+                title: state.error ?? l10n.profileUpdateError,
+                actionLabel: l10n.commonRetry,
+                onAction: () => context.read<ProfileCubit>().loadProfile(
+                  forceRefresh: true,
                 ),
-              );
-            }
-
-            final profile = state.profile;
-            if (profile == null) {
-              return const SizedBox.shrink();
-            }
-
-            return NovaRefreshIndicator(
-              onRefresh: () =>
-                  context.read<ProfileCubit>().loadProfile(forceRefresh: true),
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(
-                  parent: BouncingScrollPhysics(),
-                ),
-                padding: SettingsRowLayout.scrollPadding(
-                  context,
-                  ResponsivePadding.horizontal(context.deviceClass),
-                ),
-                children: [
-                  ProfileMediaRecovery(
-                    state: state,
-                    avatarPicker: avatarPicker,
-                    pickerContext: pickerContext,
-                  ),
-                  StaggeredEntry(
-                    index: 0,
-                    playOnceKey: 'profile-hero',
-                    child: _ProfileHeroCard(profile: profile, state: state),
-                  ),
-                  const AppGap(SettingsRowLayout.groupGap),
-                  _ProfileSettingsGroups(
-                    profile: profile,
-                    editField: _showEditFieldSheet,
-                    avatarPicker: avatarPicker,
-                    busy: state.isLoading,
-                  ),
-                ],
               ),
             );
-          },
-        ),
+          }
+
+          final profile = state.profile;
+          if (profile == null) {
+            return const SizedBox.shrink();
+          }
+
+          return NovaRefreshIndicator(
+            onRefresh: () =>
+                context.read<ProfileCubit>().loadProfile(forceRefresh: true),
+            child: AppPageListView(
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
+              ),
+              children: [
+                ProfileMediaRecovery(
+                  state: state,
+                  avatarPicker: avatarPicker,
+                  pickerContext: pickerContext,
+                ),
+                StaggeredEntry(
+                  index: 0,
+                  playOnceKey: 'profile-hero',
+                  child: _ProfileHeroCard(profile: profile, state: state),
+                ),
+                const AppGap(SettingsRowLayout.groupGap),
+                _ProfileSettingsGroups(
+                  profile: profile,
+                  editField: _showEditFieldSheet,
+                  avatarPicker: avatarPicker,
+                  busy: state.isLoading,
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

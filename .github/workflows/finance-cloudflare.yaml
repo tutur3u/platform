@@ -1,0 +1,185 @@
+name: Finance Cloudflare Source
+on:
+  workflow_call:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    paths:
+      [
+        'apps/finance/**',
+        'apps/apps/cloudflare/native-browser-fence.mjs',
+        'packages/ai/**',
+        'packages/apis/**',
+        'packages/auth/**',
+        'packages/email-service/**',
+        'packages/finance-core/**',
+        'packages/google/**',
+        'packages/hooks/**',
+        'packages/icons/**',
+        'packages/internal-api/**',
+        'packages/inventory-core/**',
+        'packages/offline/**',
+        'packages/payment-core/**',
+        'packages/payment/**',
+        'packages/realtime/**',
+        'packages/satellite/**',
+        'packages/start-bridge/**',
+        'packages/storage-core/**',
+        'packages/supabase/**',
+        'packages/turnstile/**',
+        'packages/types/**',
+        'packages/typescript-config/**',
+        'packages/ui/**',
+        'packages/users-core/**',
+        'packages/utils/**',
+        'packages/vercel/**',
+        'apps/web/package.json',
+        'scripts/ci/finance-native-*',
+        'scripts/ci/apps-native-artifact.py',
+        'scripts/ci/apps-native-runtime-pointer.mjs',
+        'scripts/ci/native-emitted-config-receipt.mjs',
+        'scripts/ci/native-config-default-probe.mjs',
+        'scripts/ci/native-receipt-layout.mjs',
+        'scripts/ci/production-publication-policy.ts',
+        'bun.lock',
+        '.github/workflows/finance-cloudflare.yaml',
+        '.github/workflows/native-start-app.yaml',
+        '.github/workflows/ci-check.yml',
+        '.github/actions/setup-bun-with-retry/action.yml',
+        '.github/actions/install-native-runtime-prerequisites/**',
+        'scripts/ci/native-runtime-prerequisites.test.js',
+        '.github/actions/run-with-turbo-remote-cache/action.yml',
+        'scripts/ci/generate-build-metadata.ts',
+        'scripts/ci/check-workflow-config.ts',
+        'scripts/ci/workflow-config-core.ts',
+        'scripts/ci/workspace-dependency-closure.ts',
+        'scripts/ci/resolve-changed-files-core.ts',
+        'scripts/ci/resolve-changed-files.ts',
+        'package.json',
+        'turbo.json',
+        'tuturuuu.ts',
+        'tuturuuu.ci.ts',
+        '!**/*.md',
+        '!**/*.mdx',
+      ]
+  push:
+    branches: [main]
+    paths:
+      [
+        'apps/finance/**',
+        'apps/apps/cloudflare/native-browser-fence.mjs',
+        'packages/ai/**',
+        'packages/apis/**',
+        'packages/auth/**',
+        'packages/email-service/**',
+        'packages/finance-core/**',
+        'packages/google/**',
+        'packages/hooks/**',
+        'packages/icons/**',
+        'packages/internal-api/**',
+        'packages/inventory-core/**',
+        'packages/offline/**',
+        'packages/payment-core/**',
+        'packages/payment/**',
+        'packages/realtime/**',
+        'packages/satellite/**',
+        'packages/start-bridge/**',
+        'packages/storage-core/**',
+        'packages/supabase/**',
+        'packages/turnstile/**',
+        'packages/types/**',
+        'packages/typescript-config/**',
+        'packages/ui/**',
+        'packages/users-core/**',
+        'packages/utils/**',
+        'packages/vercel/**',
+        'apps/web/package.json',
+        'scripts/ci/finance-native-*',
+        'scripts/ci/apps-native-artifact.py',
+        'scripts/ci/apps-native-runtime-pointer.mjs',
+        'scripts/ci/native-emitted-config-receipt.mjs',
+        'scripts/ci/native-config-default-probe.mjs',
+        'scripts/ci/native-receipt-layout.mjs',
+        'scripts/ci/production-publication-policy.ts',
+        'bun.lock',
+        '.github/workflows/finance-cloudflare.yaml',
+        '.github/workflows/native-start-app.yaml',
+        '.github/workflows/ci-check.yml',
+        '.github/actions/setup-bun-with-retry/action.yml',
+        '.github/actions/install-native-runtime-prerequisites/**',
+        'scripts/ci/native-runtime-prerequisites.test.js',
+        '.github/actions/run-with-turbo-remote-cache/action.yml',
+        'scripts/ci/generate-build-metadata.ts',
+        'scripts/ci/check-workflow-config.ts',
+        'scripts/ci/workflow-config-core.ts',
+        'scripts/ci/workspace-dependency-closure.ts',
+        'scripts/ci/resolve-changed-files-core.ts',
+        'scripts/ci/resolve-changed-files.ts',
+        'package.json',
+        'turbo.json',
+        'tuturuuu.ts',
+        'tuturuuu.ci.ts',
+      ]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+jobs:
+  check-ci:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: finance-cloudflare.yaml
+  # Qualification only: neither job publishes. Native deploys are operator
+  # actions inside an approved custody window.
+  native:
+    needs: check-ci
+    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    uses: ./.github/workflows/native-start-app.yaml
+    permissions:
+      contents: read
+    with:
+      app: finance
+      package: '@tuturuuu/finance'
+      artifact-script: scripts/ci/finance-native-artifact.py
+      env-interface: FinanceGeneratedEnv
+      worker-environment-type: FinanceEnvironment
+      helper-tests: python3 scripts/ci/finance-native-artifact.test.py
+      unit-command: bun run test && bun run type-check:cloudflare
+      runtime-setup-command: cd ../web && bun x --no-install playwright install --with-deps chromium
+      runtime-command: node --test --test-concurrency=1 cloudflare/native-built-worker.runtime.mjs
+      # The native profile pins the public Supabase URL and app/Web origins.
+      # Same-repository events use the staging publishable key; fork pull
+      # requests build with a placeholder.
+      public-env: |
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_finance_ci_placeholder' }}
+        TUTURUUU_NOINDEX=1
+      format-paths: >-
+        apps/finance/cloudflare apps/finance/src/start-bridge apps/finance/src/routes apps/finance/src/router.tsx apps/finance/src/start.ts apps/finance/vite.config.mts apps/finance/void.config.ts apps/finance/vitest.config.ts apps/finance/tsconfig.json apps/finance/tsconfig.cloudflare.json apps/finance/package.json apps/finance/start-bridge.routes.json apps/finance/start-bridge.config.ts
+  native-production:
+    needs: check-ci
+    # Production public values are unavailable to fork pull requests.
+    if: (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    uses: ./.github/workflows/native-start-app.yaml
+    permissions:
+      contents: read
+    with:
+      app: finance
+      package: '@tuturuuu/finance'
+      artifact-script: scripts/ci/finance-native-artifact.py
+      env-interface: FinanceGeneratedEnv
+      worker-environment-type: FinanceEnvironment
+      helper-tests: python3 scripts/ci/finance-native-artifact.test.py
+      unit-command: bun run test && bun run type-check:cloudflare
+      runtime-setup-command: cd ../web && bun x --no-install playwright install --with-deps chromium
+      runtime-command: node --test --test-concurrency=1 cloudflare/native-built-worker.runtime.mjs
+      profile-env: VITE_FINANCE_NATIVE_PROFILE=production
+      artifact-suffix: production
+      public-env: |
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      format-paths: >-
+        apps/finance/cloudflare apps/finance/src/start-bridge apps/finance/src/routes apps/finance/src/router.tsx apps/finance/src/start.ts apps/finance/vite.config.mts apps/finance/void.config.ts apps/finance/vitest.config.ts apps/finance/tsconfig.json apps/finance/tsconfig.cloudflare.json apps/finance/package.json apps/finance/start-bridge.routes.json apps/finance/start-bridge.config.ts

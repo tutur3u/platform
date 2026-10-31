@@ -1,11 +1,11 @@
 import { Goal, Sparkles } from '@tuturuuu/icons';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import type { Metadata } from 'next';
 import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
+import { requireCourseModulePageAccess } from '@/lib/course-module-page-access';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
 import { ModuleContentEditor } from './content-editor';
 
@@ -26,25 +26,18 @@ export default async function ModuleContentPage({ params }: Props) {
   await connection();
 
   const { wsId: routeWsId, courseId, moduleId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(
+    routeWsId,
+    'update_user_groups'
+  );
   const t = await getTranslations();
 
-  const getContent = async (courseId: string, moduleId: string) => {
-    const supabase = await createAdminClient();
-    const { data, error } = await supabase
-      .from('workspace_course_modules')
-      .select('content')
-      .eq('id', moduleId)
-      .eq('group_id', courseId);
-
-    if (error) {
-      console.error(error);
-    }
-
-    return data?.[0]?.content as JSONContent;
-  };
-
-  const content = await getContent(courseId, moduleId);
+  const { module } = await requireCourseModulePageAccess({
+    wsId: resolvedWsId,
+    courseId,
+    moduleId,
+  });
+  const content = module.content as JSONContent;
 
   return (
     <div className="grid gap-4">

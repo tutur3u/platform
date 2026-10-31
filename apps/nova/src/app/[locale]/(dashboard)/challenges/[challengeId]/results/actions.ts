@@ -8,6 +8,7 @@ import type {
   NovaSubmissionWithScoresAndCriteria,
 } from '@tuturuuu/types';
 import { getNovaAppSessionUserFromHeaders } from '@/lib/app-session';
+import { canManageNovaChallenge } from '@/lib/challenge-management-auth';
 
 // Helper interfaces for return types
 interface SessionDetails {
@@ -188,19 +189,11 @@ export async function fetchAllProblems(
   const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
-    // Step 1: Get all problems for this challenge using admin client
-    const { data: problems, error: problemsError } = await sbAdmin
-      .schema('private')
-      .from('nova_problems')
-      .select('*')
-      .eq('challenge_id', challengeId);
+    const user = await getNovaAppSessionUserFromHeaders();
+    if (!user?.id) throw new Error('Unauthorized');
+    const isManager = await canManageNovaChallenge(user, challengeId, sbAdmin);
+    if (userId !== user.id && !isManager) throw new Error('Forbidden');
 
-    if (problemsError || !problems) {
-      console.error('Problems fetch error:', problemsError);
-      throw new Error('Failed to fetch problems');
-    }
-
-    // Step 2: Get the user's sessions for this challenge using the verified actor id.
     const { data: sessions, error: sessionsError } = await sbAdmin
       .schema('private')
       .from('nova_sessions')
@@ -211,6 +204,19 @@ export async function fetchAllProblems(
     if (sessionsError) {
       console.error('Sessions fetch error:', sessionsError);
       throw new Error('Failed to fetch sessions');
+    }
+
+    if (!sessions?.length && !isManager) throw new Error('Forbidden');
+
+    const { data: problems, error: problemsError } = await sbAdmin
+      .schema('private')
+      .from('nova_problems')
+      .select('*')
+      .eq('challenge_id', challengeId);
+
+    if (problemsError || !problems) {
+      console.error('Problems fetch error:', problemsError);
+      throw new Error('Failed to fetch problems');
     }
 
     // If no sessions, return problems with empty submissions

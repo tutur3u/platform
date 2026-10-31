@@ -54,7 +54,10 @@ export function viteConfig({ app, navigation, serverOnlySpecifiers, og }) {
   return `${header(app)}import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import { startBridgePreset } from '${BRIDGE.vitePreset}';
-import { startBridgeRscPlugin } from '${BRIDGE.viteRsc}';
+import {
+  startBridgeNodeBuiltinsPlugin,
+  startBridgeRscPlugin,
+} from '${BRIDGE.viteRsc}';
 import react from '@vitejs/plugin-react';
 import rsc from '@vitejs/plugin-rsc';
 import { defineConfig } from 'vite-plus';
@@ -69,6 +72,9 @@ export default defineConfig(({ command }) => ({
   define: bridge.define,
   plugins: [
     startBridgeRscPlugin({ ${pluginOptions.join(', ')} }),
+    // SSR bundles CommonJS too (postcss via sanitize-html requires 'path'):
+    // the same Node built-in conversion the rsc environment always gets.
+    startBridgeNodeBuiltinsPlugin(),
     voidPlugin(),
     tanstackStart(bridge.tanstackStart),
     rsc(),
@@ -83,8 +89,8 @@ export default defineConfig(({ command }) => ({
 `;
 }
 
-export function voidConfig({ app, workerName }) {
-  const flags = RUNTIME.compatibilityFlags.map(quote).join(', ');
+export function voidConfig({ app, workerName, worker }) {
+  const flags = worker.compatibilityFlags.map(quote).join(', ');
   return `${header(app)}import { defineConfig } from 'void/config';
 
 // Staging candidate only: production stays held in tuturuuu.ci.ts until an
@@ -97,7 +103,7 @@ export default defineConfig({
     main: './cloudflare/worker.ts',
     compatibility_date: ${quote(RUNTIME.compatibilityDate)},
     compatibility_flags: [${flags}],
-    workers_dev: true,
+    workers_dev: ${worker.workersDev},
     vars: { TUTURUUU_NOINDEX: '1' },
     assets: {
       binding: 'ASSETS',
@@ -111,8 +117,48 @@ export default defineConfig({
 `;
 }
 
-export function workerEntry({ app, proxyModule, rootHost, proxyMatcher }) {
+/**
+ * The generated Worker's default mounts, before the app-owned
+ * `start-bridge.config.ts` overrides them. The runtime test applies the same
+ * defaults and overrides, so its root/apex expectations cannot drift.
+ */
+export function defaultMounts({ app, rootHost }) {
+  return {
+    rootHosts: [rootHost],
+    mountHosts: ['tuturuuu.com'],
+    basePath: `/${app}`,
+  };
+}
+
+export function workerEntry({
+  app,
+  proxyModule,
+  rootHost,
+  proxyMatcher,
+  assetsBinding,
+  mounts: effectiveMounts,
+  seoPolicy = null,
+}) {
   const name = `${pascal(app)}Environment`;
+  const mounts = effectiveMounts ?? defaultMounts({ app, rootHost });
+  const mounted = mounts.mountHosts?.length > 0;
+  const mountComment = mounted
+    ? `// One artifact: the subdomain root and the ${mounts.mountHosts.join(', ')}${mounts.basePath} mount.`
+    : `// Root-only: served at ${mounts.rootHosts.join(', ')}; no apex mount${
+        mounts.unknownHost === 'reject'
+          ? ', and unknown hosts are rejected'
+          : ''
+      }.`;
+  const mountLines = [
+    `  rootHosts: [${mounts.rootHosts.map(quote).join(', ')}],`,
+    `  mountHosts: [${(mounts.mountHosts ?? []).map(quote).join(', ')}],`,
+    ...(mounts.basePath && mounted
+      ? [`  basePath: ${quote(mounts.basePath)},`]
+      : []),
+    ...(mounts.unknownHost
+      ? [`  unknownHost: ${quote(mounts.unknownHost)} as const,`]
+      : []),
+  ];
   const proxyImport = proxyMatcher
     ? `import { config as proxyConfig, proxy } from '${proxyModule}';`
     : `import { proxy } from '${proxyModule}';`;
@@ -126,9 +172,20 @@ import { createProxyMatcher } from '${BRIDGE.proxyMatcher}';
     // The proxy's own \`config.matcher\`, evaluated like Next.
     matches: createProxyMatcher(proxyConfig.matcher, defaultProxyMatches),`
     : '';
+  // The portable binding (#6753): the Workers \`Fetcher\` satisfies it.
+  const assetsImport = assetsBinding
+    ? `import type { AssetsBinding } from '${BRIDGE.assets}';
+`
+    : '';
+  const assetsType = assetsBinding
+    ? 'AssetsBinding'
+    : '{ fetch(request: Request): Promise<Response> }';
   return `${header(app)}/// <reference types="@vitejs/plugin-rsc/types" />
-import { createFunctionProxy } from '${BRIDGE.functionProxy}';
-${matcherImports}import { createBridgeHandler } from '${BRIDGE.handler}';
+${assetsImport}import { createFunctionProxy } from '${BRIDGE.functionProxy}';
+${matcherImports}import {
+  bridgeErrorResponse,
+  createBridgeHandler,
+} from '${BRIDGE.handler}';
 import { createBridgeStartHandler } from '${BRIDGE.serverEntry}';
 ${proxyImport}
 import appConfig from '${moduleFrom('../', APP_CONFIG)}';
@@ -136,7 +193,7 @@ import { centralFirst } from '${moduleFrom('../', CENTRAL_FIRST)}';
 import { publicAssets } from '${moduleFrom('../', PUBLIC_ASSETS)}';
 
 export interface ${name} {
-  ASSETS: { fetch(request: Request): Promise<Response> };
+  ASSETS: ${assetsType};
   INTERNAL_WEB_API_ORIGIN?: string;
   TUTURUUU_NOINDEX?: string;
 }
@@ -147,22 +204,26 @@ interface WorkerContext {
 
 type ApiEntry = typeof import('${moduleFrom('../', API_ENTRY)}');
 
+// Robots policy: this app's entry in packages/utils/src/seo-policy.json.
+const seoPolicy = ${seoPolicy ? JSON.stringify(seoPolicy) : 'null'};
+
+${mountComment}
+const mounts = {
+  app: ${quote(app)},
+${mountLines.join('\n')}
+  ...appConfig.mounts,
+};
+
 // Route handlers are server code (\`server-only\` is valid only in the rsc
 // environment), while this entry is bundled in ssr: load them from rsc.
 const handler = (
   import.meta.viteRsc.loadModule('rsc', ${quote(API_RSC_ENTRY)}) as Promise<ApiEntry>
 ).then(({ endpoints }) =>
   createBridgeHandler<${name}, WorkerContext>({
-    // One artifact: the subdomain root and the tuturuuu.com/${app} mount.
-    mounts: {
-      app: ${quote(app)},
-      rootHosts: [${quote(rootHost)}],
-      mountHosts: ['tuturuuu.com'],
-      basePath: ${quote(`/${app}`)},
-      ...appConfig.mounts,
-    },
+    mounts,
     csp: appConfig.csp,
     apiOrigin: appConfig.apiOrigin,
+    framablePaths: appConfig.framablePaths,
     start: createBridgeStartHandler(),
     serverFnBase: ${quote(FUNCTION_BASE)},
     proxy,${matcherOption}
@@ -179,9 +240,23 @@ const handler = (
 
 export default {
   async fetch(request: Request, env: ${name}, ctx: WorkerContext) {
-    const response = await (await handler)(request, env, ctx);
+    let response: Response;
+    try {
+      response = await (await handler)(request, env, ctx);
+    } catch (error) {
+      // Even a failed route load answers through the response policy.
+      console.error('[start-bridge] worker failed', error);
+      response = bridgeErrorResponse();
+    }
     return appConfig.wrapResponse
-      ? appConfig.wrapResponse(response, { request, env })
+      ? appConfig.wrapResponse(response, {
+          request,
+          env,
+          mounts,
+          publicAssets,
+          framablePaths: appConfig.framablePaths,
+          seoPolicy,
+        })
       : response;
   },
 };
@@ -193,9 +268,15 @@ export function appConfigModule({ app }) {
   return `// App-owned start-bridge Worker options for ${app}: the codemod created this
 // file and never overwrites it. See "Worker options" in
 // apps/docs/build/devops/start-bridge-codemod.mdx.
+import { appRobots, createRootResponsePolicy } from '${BRIDGE.responsePolicy}';
 import { defineBridgeAppConfig } from '${BRIDGE.appConfig}';
 
-export default defineBridgeAppConfig({});
+export default defineBridgeAppConfig({
+  // Robots (the app's seo-policy.json allowlist on its canonical host),
+  // framing, sniffing, referrer and private caching on every response; only
+  // GET/HEAD static files keep their own caching.
+  wrapResponse: createRootResponsePolicy({ seo: appRobots }),
+});
 `;
 }
 
@@ -218,7 +299,8 @@ export function apiEntryModule({ app, appBase }) {
 
 /**
  * Registers internal-api's default app base once per environment bundle
- * (browser, ssr and rsc each carry their own internal-api module).
+ * (browser, ssr and rsc each carry their own internal-api module), tagged with
+ * the app so cross-app helpers keep their owning app's origin.
  */
 export function appBaseModule({ app }) {
   return `${header(app)}import { registerDefaultAppBaseResolver } from '@tuturuuu/internal-api/client';
@@ -227,7 +309,8 @@ import { appApiPatterns } from '${moduleFrom('./', API_PATTERNS.slice('src/start
 import { centralFirst } from '${moduleFrom('./', CENTRAL_FIRST.slice('src/start-bridge/'.length))}';
 
 registerDefaultAppBaseResolver(
-  createAppBaseResolver(appApiPatterns, centralFirst)
+  createAppBaseResolver(appApiPatterns, centralFirst),
+  { app: ${quote(app)} }
 );
 `;
 }

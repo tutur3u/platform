@@ -1,0 +1,158 @@
+---
+title: "Tasks native Start on Vite+ and Cloudflare"
+description: "How the native Tasks candidate is built on the start bridge, and what it does and does not yet cover."
+---
+
+Tasks has a native TanStack Start candidate built through
+[`@tuturuuu/start-bridge`](/build/devops/start-bridge). `next build` (package
+`build`) remains the production path on Vercel. The native build is
+`build:cloudflare` and nothing publishes it; production stays held until an
+explicit cutover PR.
+
+## Layout
+
+| Piece | File |
+| --- | --- |
+| Route registries | `start-bridge.routes.json` generates `src/runtime/*.bridge.gen.ts`; `bun run routes:check` fails on drift |
+| Worker entry | `cloudflare/worker.ts` → `src/runtime/worker-handler.ts` (bridge handler, build-info, runtime tag, noindex) |
+| Pages | `src/routes/$.tsx` loads `src/runtime/page-model.server.ts`, one loader per manifest pattern (`satisfies Record<PagePattern, …>`), rendered by `page-view.tsx` |
+| Workspace shell | `workspace-model.server.ts` (the `[wsId]` layout guards as data) and `workspace-view.tsx` |
+| Server actions | `src/runtime/action-ports.ts` replaces client-reached `'use server'` modules with server functions in the native build only; each server half re-checks the actor |
+| Types | `tsconfig.json` (Next) excludes the native files; `tsconfig.native.json` covers them. `type-check` runs both |
+
+`build-info` is owned by the Worker. The `serwist/[path]` route builds the
+offline worker with esbuild at request time and stays on the Next build until
+the native offline port; the native shell does not register a service worker.
+
+## Build notes
+
+- Run Vite with `--configLoader runner` (the package scripts do). The bridge's
+  `vite` preset is TypeScript with extensionless imports, which the default
+  native-ESM config loader cannot load.
+- The Worker (`ssr`) bundle sets rolldown `strictExecutionOrder`: circular
+  server chunks otherwise ran a CommonJS interop wrapper before its chunk
+  initialized and the Worker failed at startup.
+- `debug` and `supports-color` 7 are CommonJS and `require('tty')` in their Node
+  entry, which cannot run in the ESM Worker. A resolve plugin uses each
+  package's own `browser` entry; ESM releases with `exports` maps are untouched.
+- Proxy rewrites (crawler link preview, root fallback) reach the page loader
+  through the `x-tuturuuu-page-rewrite` request header, because the bridge
+  renders the browser-visible URL. The Worker strips any client-sent copy.
+- The server reads Supabase public configuration from Worker vars at runtime
+  (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`); build
+  environment only reaches the client bundle.
+
+## Hosts and response headers
+
+Tasks goes live on its own subdomain first (root mode). `tasksMounts()` in
+`src/runtime/worker-request.ts` admits `tasks.tuturuuu.com` plus any staging
+hostnames an operator lists in the `TUTURUUU_STAGING_HOSTS` Worker var
+(`*.workers.dev` or `*.tuturuuu.com` only). It uses `mountHosts: []` and
+`unknownHost: 'reject'`, so every other host, including the `tuturuuu.com`
+apex, gets a 404 before any app code runs. Request headers never admit a host.
+Mounting at `tuturuuu.com/tasks` waits for the shared-session decision and the
+shared auth-boundary guard.
+
+Every response carries `x-tuturuuu-runtime: native` and the Next build's
+production headers: `X-Robots-Tag` from the Tasks SEO policy
+(`PRIVATE_ROBOTS_HEADER`), `Content-Security-Policy: frame-ancestors 'none'`,
+`X-Frame-Options: DENY` (except on the Next build's framable WebGL asset path,
+`/api/v1/workspaces/*/external-projects/assets/*/webgl`) and HSTS. A
+response's own CSP is kept, but
+`frame-ancestors 'none'` replaces any ancestor directive in each of its
+policies. It also sends `X-Content-Type-Options:
+nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`. Every
+dynamic response is `Cache-Control: private, no-store, max-age=0`, replacing
+any policy the handler set (a `private, max-age` would keep personalized data
+in the browser cache); only `GET`/`HEAD` of hashed assets and public files keep
+their own caching. `GET`/`HEAD /api/build-info` is public on both
+builds: the Worker answers it first, and the Next proxy admits it without
+session work or ambient credentials. The Worker uses
+`global_fetch_strictly_public`.
+
+Cutover is direct (no staged canary): exact-head gates, cross-family review
+and a staging smoke where staging exists, then the flip with the prior Vercel
+deployment and captured routing ready as a one-step rollback, a post-deploy
+smoke and a 30–60 minute watch.
+
+## Local emitted smoke
+
+On a Studio host, after `bun run build:cloudflare`, run the emitted Worker in
+local workerd with loopback-only fixtures:
+
+```bash
+bunx wrangler dev --config dist/server/wrangler.json --ip 127.0.0.1 \
+  --port 18797 --local --local-upstream tasks.tuturuuu.com \
+  --var NEXT_PUBLIC_SUPABASE_URL:http://127.0.0.1:54321 \
+  --var NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:sb_publishable_fixture_only
+```
+
+Check `/api/build-info`, a static file, an unauthenticated page (redirect to
+the central login with a `verify-token` return URL), an API route without a
+session (401), the server-function base (415 for a non-JSON POST) and the
+runtime header. `--local-upstream` makes the Worker see the admitted host; with
+`--local-upstream tuturuuu.com` every path must answer 404. Or run
+`scripts/native-cutover/smoke.mjs` against the same origin. This smoke does not replace exact-commit CI, sealed-artifact
+checks or signed-in acceptance on staging.
+
+## Sealed artifact and signed-in browser gate
+
+`scripts/ci/tasks-native-artifact.py` seals and restores the Tasks staging
+artifact with the shared Apps helper. The Worker identity it requires is the
+one `void.config.ts` declares:
+
+- `<staging-worker>`, compatibility date `2026-10-19`
+- `nodejs_compat` and `global_fetch_strictly_public`
+- `workers_dev: false`, no vars and no observability block
+- static assets with `html_handling: 'none'`, so the offline worker's exact
+  `/offline.html` is read directly rather than through the default internal
+  redirect to `/offline` (a missing value or an `auto`/trailing-slash policy
+  fails the contract)
+
+`public/offline.html` is a declared public file, byte-checked like the others;
+any other HTML in the output is rejected as prerender output. Run the
+regressions with `python3 scripts/ci/tasks-native-artifact.test.py` (CI runs
+them in the `build (tasks)` job). That job also builds the native candidate,
+checks and seals its emitted config, runs `bun run --cwd apps/tasks
+test:runtime` and verifies the sealed output is unchanged.
+`cloudflare/offline-fallback.runtime.mjs` checks that `/offline.html` and
+`/offline.css` answer `200` with their exact bytes and no egress. The app's
+asset fetch follows redirects, which would hide a redirecting policy, so a
+probe Worker also reads the `ASSETS` binding directly (`redirect: 'manual'`)
+under the sealed `assets` block. A negative control with `html_handling`
+dropped must get the `307` to `/offline`. Only `offline.html` may be HTML in
+the output (`PUBLIC_HTML` in the wrapper).
+
+After a real `bun run build:cloudflare`:
+
+```bash
+export TASKS_SOURCE_SHA=$(git rev-parse HEAD)
+python3 scripts/ci/tasks-native-artifact.py seal apps/tasks --receipt sealed.json
+python3 scripts/ci/tasks-native-artifact.py pack apps/tasks --receipt sealed.json --archive tasks-native.tar.gz
+# On the browser host, into a fresh checkout at the same commit:
+python3 scripts/ci/tasks-native-artifact.py restore apps/tasks --archive tasks-native.tar.gz --receipt restored.json
+node scripts/ci/native-root-browser.mjs tasks --receipt restored.json
+```
+
+The browser gate uses `apps/tasks/cloudflare/root-browser.profile.mjs`: the
+fixture user has a personal workspace with its default board, so a signed-in
+`/` and `/vi` open that board in English and Vietnamese. The task-board APIs
+the root resolves run in the same Worker. See
+[Signed-in root browser gate](/build/devops/start-bridge-codemod#signed-in-root-browser-gate).
+
+## Shared Calendar task ports
+
+The Calendar task model and view live in `packages/tasks-ui/tu-do/shared`.
+The model receives headers, navigation and workspace permission services
+from its framework adapter. Its server-only entrypoint imports no request
+globals or framework navigation APIs. Calendar's previous paths remain
+small adapters and re-exports.
+
+`createAuthorizedWorkspaceReader` checks the injected actor before reading
+workspaces. Each app keeps its own compiled server-function entry and
+supplies its registered satellite identity. Do not share a server function
+that selects its app audience from client input.
+
+Use the shared scheduling transport and notification view instead of app
+copies. The existing shared workspace invitation card remains the client
+entry for invitation rendering.

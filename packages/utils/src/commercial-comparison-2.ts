@@ -1,6 +1,13 @@
 import type { ComparisonFeature } from './commercial-comparison-types';
 export const features2: ComparisonFeature[] = [
   {
+    id: 'ops-hub_0',
+    app: 'ops-hub',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
+  {
     id: 'lettin_0',
     app: 'lettin',
     category: 'learning',
@@ -225,6 +232,13 @@ export const features2: ComparisonFeature[] = [
     detail: 'standard',
   },
   {
+    id: 'abuse-guard_0',
+    app: 'abuse-guard',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
+  {
     id: 'coordination_0',
     app: 'coordination',
     category: 'internal',
@@ -255,6 +269,13 @@ export const features2: ComparisonFeature[] = [
   {
     id: 'infrastructure_0',
     app: 'infrastructure',
+    category: 'internal',
+    values: ['internal', 'internal', 'internal', 'internal'],
+    detail: 'standard',
+  },
+  {
+    id: 'api_0',
+    app: 'api',
     category: 'internal',
     values: ['internal', 'internal', 'internal', 'internal'],
     detail: 'standard',

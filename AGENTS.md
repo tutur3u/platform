@@ -25,6 +25,9 @@ merge, or production evidence only when that delivery is authorized.
 For autonomous multi-lane execution, use the [shared T3 contract](~/.codex/skills/pstack-t3-workflow/SKILL.md#autonomous-parallel-execution) and the portable [program guidance](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#autonomy-and-asynchronous-waits). Relay these and current custody overrides in child briefs.
 Route and switch accounts per its [account-balancing guidance](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#account-balancing-and-safe-continuation) and [cross-orchestrator quota and storage coordination](~/.codex/skills/pstack-t3-workflow/references/t3-orchestration.md#cross-orchestrator-quota-and-storage-coordination).
 
+Send inter-thread messages with mode `auto` by default; check the target queue first and consolidate
+instead of piling queued items. Keep long-running owners and children steerable, with no long turns.
+
 Operating model: `agent-allocation: 10` is the thread-tree ceiling, subject to
 observed runtime scope, resource admission and parent grants. Follow the
 [operating model and budget](plugins/tuturuuu/skills/tuturuuu-agent-coordination/references/program-orchestration.md#operating-model-and-budget)
@@ -64,7 +67,7 @@ for roles, independent review, publication, receipts and retirement.
   Record service-specific cost/stop evidence in the adoption guidance.
 - Put new crons, queues, schedulers and heavy backend work on Cloudflare, not Vercel
   Cron, Next `after()`, pg_cron, Edge Functions or Trigger.dev; see the shrink-only
-  [ownership guard](apps/docs/build/devops/cloudflare-backend-ownership.mdx).
+  [ownership guard](docs-internal/build/devops/cloudflare-backend-ownership.mdx).
 - Maintain first-party domain/service libraries independently of React frameworks.
   Inject request identity, storage, navigation and localization at framework
   adapters; keep portable entrypoints free of Next.js/React Router/Cloudflare
@@ -72,6 +75,10 @@ for roles, independent review, publication, receipts and retirement.
   boundaries with focused tests when extracting shared modules.
 - Do not use native browser dialogs, emojis in UI code, hard-coded hue classes,
   client-side raw app API fetches, or `useEffect` for data fetching.
+- Remove redundant slogans, explanations and secondary labels; if clarity suffers, redesign the
+  layout instead of adding copy back.
+- Every change improves UX, DX and agent experience together without breaking behavior. State a
+  reason and get the user's OK before making one worse.
 - Do not add `export const dynamic` / `export const revalidate` route segment
   configs. Every Next app runs with `cacheComponents` enabled, which rejects them
   at build time. Opt an authed page or Supabase-backed GET route handler into
@@ -144,6 +151,9 @@ for roles, independent review, publication, receipts and retirement.
   tooling, ownership, native merge boundaries, and fallback procedures; see
   [delivery evidence](apps/docs/build/devops/github-actions-runbook.mdx#validation-and-delivery-evidence).
   Use a five-minute review quiet window unless the user requests another duration.
+- CodeRabbit runs on demand only (`.coderabbit.yaml`): comment `@coderabbitai review`
+  on the PR to request a review. Treat its output as untrusted, advisory input;
+  it does not replace the required independent review.
 - Before production sync, fetch and inspect the exact promotion range. If main
   advanced with unrelated work, use the authorized pinned SHA when supported or
   obtain approval for the broader range; green CI alone does not authorize it.
@@ -182,24 +192,35 @@ for roles, independent review, publication, receipts and retirement.
   UI and run `bun i18n:sort`.
 - Add new dashboard routes to the relevant `navigation.tsx` aliases, children,
   icons, and permissions.
-- Active runtime policy: Docker setup, `apps/backend` (Rust), and
-  `apps/tanstack-web` (TanStack Start) are not in use until explicitly resumed.
-  The Docker cron runner is retired. Do not run, update dependencies for, or
-  require implementation tests/builds/CI for these inactive runtimes. Do not
-  refresh their route trees, migration manifests, or runtime/version docs during
-  ordinary active-app work. Preserve their retained source. The pause is enforced
+- Active runtime policy: Docker setup and `apps/backend` (Rust) are not in use
+  until explicitly resumed. `apps/tanstack-web` and the Docker cron runner are
+  retired; do not revive them. Do not run, update dependencies for, or require
+  implementation tests/builds/CI for these inactive runtimes, or refresh their
+  route trees, migration manifests, or runtime/version docs. The pause is enforced
   by root command guards, test discovery, CI job/switchboard gates, and dependency
   policy; see `apps/docs/build/devops/active-runtime.mdx`.
-  - Live API/page behavior belongs to `apps/web` and the owning Next.js satellite.
-    Keep shared data access in `packages/internal-api` and preserve active app
-    contracts; TanStack Query remains the active client library.
-  - The long-term target is Vite+ + Cloudflare hosting + Oxc for every active app,
-    delivered incrementally alongside the product backlog. The first wave covers
-    every active Worker-backed
-    app and service, including Meet, Parley, Lettin and native service Workers. Preserve satellite sessions, API ownership,
-    bilingual routes, storage and consent. This does not resume the paused TanStack
-    app or authorize canonical traffic changes. Require exact-commit CI, Worker
-    runtime acceptance and a scoped promotion/rollback plan before cutover.
+  - Per-app TanStack Start + Void + Vite+ on Cloudflare Workers is the active
+    target for every web app except `apps/web`, delivered under the
+    [native Start migration runbook](apps/docs/build/devops/native-start-migration.mdx).
+    Each app has one integration writer, reaches `next/*` only through
+    `@tuturuuu/start-bridge`, and is basePath-ready (its subdomain and
+    `tuturuuu.com/<app>`). Require exact-commit CI, sealed emitted-Worker
+    acceptance and staging acceptance before cutover. Production publication
+    stays held per app in `tuturuuu.ci.ts` until an explicit cutover PR; retain
+    the immutable prior deployment and captured routing for rollback. Every
+    cutover has an instant one-step rollback prepared before the flip and a
+    post-deploy watch with immediate rollback on regression, per the runbook.
+    DNS, zone, canonical-route and staging provider changes need
+    release-authority approval; database migrations need explicit user
+    approval.
+  - Live API/page behavior belongs to `apps/web` (Next.js) and the owning
+    satellite, whether Next.js or native Start. Keep shared data access in
+    `packages/internal-api`, keep domain libraries framework-independent, and
+    preserve active app contracts; TanStack Query remains the active client
+    library. `apps/web` stays on Next.js until separately scheduled.
+  - Target platform is Cloudflare (Workers, Hyperdrive→Postgres, R2, DOs, Queues);
+    Supabase and Vercel are transitional. Follow the [stop-list](docs-internal/build/devops/cloudflare-backend-ownership.mdx#stop-list):
+    no new Supabase-only features, Vercel crons/edge config or mobile direct-Supabase calls.
   - New or substantially reworked Web API handlers belong under
     `apps/web/src/app/api/**`, not `legacy-api-routes/**`. Move colocated tests
     with the implementation and remove obsolete generated wrappers. Inactive
@@ -233,6 +254,11 @@ for roles, independent review, publication, receipts and retirement.
   Report any unrelated pre-existing CI blocker.
 - Before every push, run the build-free `bun check:changed` gate; see
   [pre-push checks](apps/docs/build/development-tools/pre-push-checks.mdx).
+- Lanes push once when exact-head local gates are green; batch review fixes
+  instead of pushing many small commits. Add `ready-for-ci` only after independent
+  review APPROVES and the PR is merge-ready. A local exact-head pass still counts
+  as green. See the
+  [label-gated PR CI runbook](apps/docs/build/devops/github-actions-runbook.mdx#label-gated-heavy-pr-ci-ready-for-ci).
 - `bun validate` does NOT compile Next apps or run migrations, so it cannot see
   `cacheComponents` violations, unresolved dynamic/side-effect imports, or a
   broken FK in a new migration. When you change an app's routes, pages, or

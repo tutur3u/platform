@@ -49,6 +49,20 @@ the submission's challenge, or the owner when the submission is bound to their
 own session in that challenge. Challenge password verifier fields are never
 sent to the client.
 
+Server actions apply their own authorization before using an admin client;
+rendering their caller under a protected layout is not sufficient. Whitelist
+creation requires an enabled global role manager. Submission detail reads require
+the bound session owner or an enabled manager of that challenge; only that
+manager may include hidden test cases. Aggregated results require the caller's
+own challenge session, or an enabled challenge manager when selecting another
+user or reading a challenge without a session. Disabled manager roles grant no
+bypass. These rules cover the retained Next actions and the native Start action
+suppliers, without changing database grants or central sign-in.
+
+Regression coverage: `src/start-bridge/action-security.test.ts`. Native payload
+validation is covered by `src/start-bridge/action-contracts.test.ts`; emitted
+transport and browser acceptance remain separate gates.
+
 Active-session reads select the newest start. Session inserts serialize on the
 challenge row and reject an overlapping active session with HTTP 409. Expired rows
 remain as attempt history and do not prevent a new attempt. Daily attempt limits
@@ -158,6 +172,15 @@ without a grant, and a challenge manager must set a new password. Scrypt hashes
 with older parameters still verify and are rehashed with an update guarded by
 the previous hash. See
 [shared-secret password reset](/platform/features/shared-secret-password-reset).
+
+The optional Durable Object password store remains default-off. Once assigned,
+each verified user and each trusted source network may spend at most 5% of the
+password family's daily command share, across challenges. Denied probes and
+successful-login refunds consume that allowance; rotating challenges or source
+addresses cannot reset the user's quota. See
+[durable command fairness](/build/devops/abuse-guard-store#durable-command-fairness).
+Real-store concurrency and restart coverage lives in
+`apps/abuse-guard/src/fairness.test.ts`.
 
 After the password verifies, `/api/auth/challenges/verify-password` sets an
 httpOnly `nova_challenge_access_<challengeId>` cookie holding a signed grant
@@ -537,3 +560,12 @@ service-role writes are never gated by app-session presence alone:
 - **Prompt history** - version control for participant submissions
 - **Advanced metrics** - token usage and latency analysis per submission
 - **Custom evaluation** - configurable, criterion-weighted scoring functions
+
+## Management page scope
+
+The global sessions overview requires an enabled global challenge manager.
+Session and problem details require management access to their owning challenge;
+assigned managers retain access to their own challenge. Manager membership
+changes require an enabled platform role. The page and route boundaries are
+covered by `apps/nova/src/test/management-page-access.test.tsx` and the challenge
+manager route tests.

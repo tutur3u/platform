@@ -63,6 +63,8 @@ export function streamNativeAiConversationResponse({
   timezone,
   clientCapabilities,
   userMessage,
+  initialSettings,
+  publishInitialMessages,
 }: {
   auth: SessionAuthContext;
   context: ChatRouteContext;
@@ -72,6 +74,8 @@ export function streamNativeAiConversationResponse({
   timezone?: string;
   clientCapabilities?: string[];
   userMessage: ChatMessage;
+  initialSettings?: NativeChatAiSettings;
+  publishInitialMessages?: () => Promise<void>;
 }) {
   const encoder = new TextEncoder();
 
@@ -86,18 +90,30 @@ export function streamNativeAiConversationResponse({
 
       write({ message: userMessage, type: 'message' });
       try {
-        const persistence = await sendNativeAiConversationMessages({
-          auth,
-          context,
-          conversation,
-          miraMode,
-          onDelta: (delta) => write({ delta, type: 'assistant_delta' }),
-          onPart: (part) => write({ part, type: 'assistant_part' }),
-          request,
-          timezone,
-          clientCapabilities,
-          userMessage,
-        });
+        const [generation, publication] = await Promise.allSettled([
+          sendNativeAiConversationMessages({
+            auth,
+            context,
+            conversation,
+            miraMode,
+            onDelta: (delta) => write({ delta, type: 'assistant_delta' }),
+            onPart: (part) => write({ part, type: 'assistant_part' }),
+            request,
+            timezone,
+            clientCapabilities,
+            userMessage,
+            initialSettings,
+          }),
+          publishInitialMessages?.(),
+        ]);
+
+        if (publication.status === 'rejected') {
+          console.warn('Initial chat publication failed', {
+            conversationId: conversation.id,
+          });
+        }
+        if (generation.status === 'rejected') throw generation.reason;
+        const persistence = generation.value;
 
         try {
           await publishChatRealtimeMessages({
@@ -156,6 +172,7 @@ export async function sendNativeAiConversationMessages({
   timezone,
   clientCapabilities,
   userMessage,
+  initialSettings,
 }: {
   auth: SessionAuthContext;
   context: ChatRouteContext;
@@ -167,18 +184,18 @@ export async function sendNativeAiConversationMessages({
   timezone?: string;
   clientCapabilities?: string[];
   userMessage: ChatMessage;
+  initialSettings?: NativeChatAiSettings;
 }): Promise<NativeAiMessagePersistence> {
-  const settings = await getNativeAiSettings(conversation.id);
-  const privateMessages = await callPrivateChatRpc<ChatMessage[]>(
-    'chat_list_messages',
-    {
+  const [settings, privateMessages] = await Promise.all([
+    initialSettings ?? getNativeAiSettings(conversation.id),
+    callPrivateChatRpc<ChatMessage[]>('chat_list_messages', {
       p_actor_user_id: auth.user.id,
       p_before: null,
       p_conversation_id: conversation.id,
       p_limit: 100,
       p_ws_id: context.normalizedWsId,
-    }
-  );
+    }),
+  ]);
   const replayedMessages = (privateMessages ?? []).filter((message) => {
     const metadata = readRecord(message.metadata);
     return (

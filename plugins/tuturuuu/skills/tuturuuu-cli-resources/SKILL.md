@@ -149,7 +149,7 @@ With `--offload auto`, the command prefers a devbox runner. Offload skips
 runners whose heartbeat reports critical disk (`blockedBy=low_disk`).
 `ttr storage fleet` lists every runner's reported headroom and marks stale or
 offline runners `unknown`, never healthy. See
-`apps/docs/build/development-tools/machine-storage-health.mdx`.
+`tutur3u/internal-docs: docs-internal/build/development-tools/machine-storage-health.mdx`.
 
 Cross-machine offload: `ttr resources run --offload auto -- <cmd>` runs the
 exact pushed `HEAD` on a fresh, attested trusted-development `ttr box` runner
@@ -183,6 +183,16 @@ queue or home.
   artifact, drain first, every `ttr` on the host upgraded before the config
   changes, the zshenv shim guard, then a +2 lane ramp with measurements.
   Never edit a shared host's live config from an agent session.
+
+## Fleet run balancer
+
+To run a test or check on other machines at an exact pushed commit, use
+`ttr balancer run --sha main --replicas N -- <argv>`. It places runs from fresh
+host probes (stale or missing telemetry is UNKNOWN, never idle). Each run
+executes in a fresh checkout inside that host's own `ttr resources run`
+queue. An UNKNOWN run is never rescheduled; settle it with
+`ttr balancer reconcile`. See
+`docs-internal/build/development-tools/fleet-balancer.mdx`.
 
 ## Multi-host weighted admission
 
@@ -379,8 +389,23 @@ class/physical-lane/budget checks and exclude only the dispatcher's own
 reservation during its final check. Current aggregate telemetry may conservatively
 overcount a running job; it must never erase an unconfirmed reservation.
 
+Multi-host dispatch tests use one fixed timestamp for server time and heartbeat:
+separate wall-clock reads can make the heartbeat appear future-dated and refuse
+dispatch. Keep real ledger reservation checks, hold concurrent work with promises,
+and fail a start barrier if its producer exits. Supply disk inputs and an explicit
+environment; skip fixture polling delays while retaining ledger mutex backoff.
+See [resource fixture guidance](../../../../apps/docs/reference/packages/sdk.mdx#local-resource-control).
+
 Known `sb:*` wrappers infer Supabase plus Docker. Mobile/Flutter scripts and
 Dart/Melos wrappers infer Flutter, with Apple build requirements preserved.
 Ambiguous heavy scripts need explicit `--requires` for automatic placement.
 Invalid disk-floor configuration appears in status/probe explanations. Admission
 below the byte floor runs reclaim and blocker reporting before refusal.
+
+Slot observers tolerate a concurrently released directory without retries.
+`ENOENT`/`ENOTDIR` for the disappearing slot or owner means absent; recent
+ownerless directories remain occupied during initialization. Invalid directory
+types, malformed/unreadable owners and persistent budget-fence loss still fail
+closed. `resources-slots-observation.test.ts` deterministically removes a slot
+between observer reads; this is a release/observation race, not a reason to
+retry a failed workload or remove fixture-isolation assertions.

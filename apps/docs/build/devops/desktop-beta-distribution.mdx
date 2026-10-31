@@ -8,6 +8,26 @@ plus verified desktop packages from GitHub Releases. Every distribution is beta
 and may not be production-ready. Mobile users may need an invitation using their
 Apple or Google account; installing TestFlight alone does not grant access.
 
+The page leads with one recommended download for the visitor's platform,
+detected from the request user agent (iPadOS desktop agents are corrected on
+the client), and lists every other platform compactly. Desktop visitors also
+get a QR code to the same page, which then leads with their phone's store. A
+desktop OS without a published package falls back to opening the web app.
+Versions are never guessed: desktop versions and checksums come from the cached
+GitHub Releases parse, and mobile store links come from the
+`MOBILE_*_STORE_URL` root workspace configs. The mobile version shown is the
+policy's `MOBILE_*_EFFECTIVE_VERSION`, not a store lookup. Only HTTPS
+`apps.apple.com`, `testflight.apple.com` and `play.google.com` links without
+credentials or ports are accepted. Play links are rebuilt from the validated
+package id; while the Android app is in closed testing
+(`ANDROID_PUBLICLY_LISTED` in `apps/web/src/lib/download-platform.ts`), they
+point at the `play.google.com/apps/testing/<package>` opt-in page because the
+public details page returns 404. Without a policy, Android shows that testing
+link without a version and iOS offers an early-access request. Desktop rows
+keep the checksum, release notes and Windows SmartScreen note in a collapsed
+details section. Platform rules are covered by
+`apps/web/src/lib/download-platform.test.ts`.
+
 ## Release workflow
 
 `.github/workflows/desktop-beta.yaml` runs on relevant production pushes or an
@@ -89,8 +109,7 @@ reviewed change after provisioning; their credentials are not PFX replacements.
 ### Signing later
 
 Authenticode needs an OV/EV certificate, compatible hardware/cloud key integration and timestamping.
-EV does not guarantee SmartScreen reputation. Azure Trusted Signing (now Artifact Signing) is a managed
-alternative; review identity eligibility, bounded usage and cost before enabling it. No purchase or service is created here.
+EV does not guarantee SmartScreen reputation. For Azure Trusted Signing (now Artifact Signing), review identity, bounded usage and costs before enabling it.
 MSIX is separate: reuse `desktop-store-draft.yaml` and `windows-store-manifest.xml`, then verify publisher identity,
 signing, URI activation, upgrades and Store certification. See [Microsoft's signing overview](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options).
 
@@ -114,9 +133,8 @@ matching publisher signatures and rejects unsigned installers.
 
 ### Build Windows artifacts without publishing
 
-Dispatch `desktop-beta.yaml` on the implementation branch with `dry_run=true`.
-The `windows-latest` job uses placeholder public configuration and `contents: read`;
-it receives no signing credentials, protected environment or publication rights.
+Dispatch `desktop-beta.yaml` on the implementation branch with `dry_run=true`. The `windows-latest` job
+uses placeholder public configuration and `contents: read`, without signing credentials or publication rights.
 Dry runs skip release jobs, including on `production`. Production sign-in and updates need separate qualification.
 
 The seven-day `desktop-windows-x64-dry-run` artifact contains:
@@ -125,16 +143,19 @@ The seven-day `desktop-windows-x64-dry-run` artifact contains:
 - `desktop-artifacts/verified-windows.json`: installer SHA-256, source SHA, run ID and `unsigned-windows` status.
 - `windows-installed-files.json`: installed filenames, sizes/hashes, source SHA, run ID/attempt and installer hash.
 
-The smoke silently installs the installer, verifies its receipt hash, and checks
-the runner, Flutter DLL, ICU data, AOT library and assets.
-Root files must match the runner/DLL/uninstaller allowlist; assets stay under `data/`.
-The runner starts hidden and shows its window only from Flutter's first-frame callback. The smoke requires a visible window after 15 seconds, then stops and uninstalls. OIDC request/runtime credentials are removed before child launches.
-Cleanup failures are reported without masking an earlier startup failure.
-The production matrix uses the same gate, with its inventory uploaded separately.
-Windows CI runs PowerShell parse and smoke fixtures for hidden windows, unexpected files
-and simultaneous startup/uninstall failure. Fixtures simulate processes; the installed-app
-check is the native acceptance gate. See [Flutter's first-frame guidance](https://docs.flutter.dev/release/breaking-changes/windows-show-window-migration).
-Packaging/updating currently targets x64; ARM64 needs separate native qualification.
+The smoke verifies the receipt, required Flutter files and hidden/system files, using literal paths.
+Reject all reparse points. Root files match the runner/DLL/uninstaller allowlist; `data/` permits ICU, AOT and Flutter assets, rejecting `.env*` path segments, MZ headers and executable/script/debug/credential types.
+The runner stays hidden until Flutter's first frame. After 15 seconds the smoke requires a visible main window
+with the exact title `Tuturuuu`. Installation and uninstallation each have a 120-second wait, then a 10-second
+owned-process-tree stop attempt. Uninstall is skipped if the installer is still running; original errors survive cleanup.
+[Inno's uninstaller exit code](https://jrsoftware.org/ishelp/topic_uninstexitcodes.htm) signals completion of its actual work; its clone may still finish deleting the original EXE.
+
+This proves a first frame, not healthy Firebase, Supabase, caches or widgets: caught startup failures and ErrorWidgets can render.
+OIDC/runtime variables are removed, but same-user process access is not isolated; a separate smoke job without OIDC is a follow-up.
+Slow bootstrap leaves the window hidden. A native splash/watchdog is a separate product follow-up; the 15-second gate is unchanged.
+The production matrix uses the same gate and separate inventory. Fixtures cover hidden files, wrong titles and phase timeouts; the installed-app check is the native gate.
+See [Flutter's first-frame guidance](https://docs.flutter.dev/release/breaking-changes/windows-show-window-migration).
+Packaging/updating targets x64; ARM64 needs separate native qualification.
 
 | Platform | Configuration |
 | --- | --- |
@@ -174,10 +195,10 @@ Public downloads use persistent GitHub Release assets, which do not require a
 repository token in the browser. The workflow attests the packages and verifies
 each signed attestation against the exact source SHA, protected `production` ref,
 desktop workflow identity, and GitHub-hosted runner policy before it uploads a
-draft `desktop-v<version>-<run-id>` prerelease, then makes the complete selected-platform prerelease
+draft `desktop-v<version>` prerelease, then makes the complete selected-platform prerelease
 visible. It never marks the desktop beta as the repository's latest stable
-release or overwrites an existing release tag. A failed draft needs inspection
-before rerunning; do not replace assets of a published tag.
+release or overwrites an existing release tag. A failed draft is cleaned up only after verifying run ownership;
+unclaimed drafts reserve their version for the next derivation to skip; do not replace assets of a published tag.
 
 Draft publication resolves the authenticated `gh release view` database ID and
 reads the release by REST ID; the release-by-tag endpoint can return 404 for an
@@ -230,56 +251,18 @@ same commit. The post-job cache upload is not evidence that the build failed.
 
 Published desktop builds include `DESKTOP_RELEASE_RUN_ID`, supplied directly by
 `desktop-beta.yaml`. Development builds and mobile store builds do not run the
-desktop updater. The version and run ID together distinguish successive beta
-builds without manually changing Release Please versions.
+desktop updater. Successive betas differ by version (see
+[Versions and release notes](#versions-and-release-notes)); the updater compares
+versions, and the run ID only orders legacy run-suffixed tags.
 
-On startup and every six hours, the app checks the public GitHub release list and
-automatically downloads a newer desktop beta for its platform. Downloads use no account
-session or repository token. Exact repository URLs, prerelease tags, every present
-platform asset, byte counts, and GitHub SHA-256 digests are required. Redirects
-are limited to GitHub's HTTPS asset hosts. Incomplete downloads never become
-installable, and cached packages are rehashed before use. After verification, older
-updater-owned release cache directories are pruned; unrelated files are preserved.
+## Versions and release notes
 
-When ready, a compact banner offers **Install and restart** or **Install on next
-launch**. Next-launch consent applies only to that exact release and can be
-cancelled. A failed installation clears the saved choice so startup cannot get
-stuck retrying it. Offline checks and download failures leave the current app
-usable and retry on the next check.
-
-- Windows verifies Authenticode on both the running executable and installer,
-  requires matching certificate subjects, waits for the old process to exit,
-  and runs the per-user Inno installer. A successful installation relaunches the
-  app. The helper rechecks the digest and signatures immediately before running.
-- macOS verifies the signed/notarized disk image, validates the replacement app's
-  signature and matching Apple team, and stages it on the destination volume
-  before exiting. The helper swaps bundles after exit and keeps the previous
-  app in one updater-owned recovery directory. An unwritable installation
-  directory or running directly from a mounted disk image blocks installation
-  while keeping the app open.
-- Linux asks the operating system's Polkit agent to authorize a packaged,
-  root-owned helper. It stages and verifies the archive in a root-owned directory,
-  then uses `apt-get install` to resolve dependencies. An unprivileged detached
-  helper waits for the previous process to exit before relaunching
-  `/opt/tuturuuu/tuturuuu`. The Flutter process never runs as root. A cancelled
-  elevation prompt leaves the current app open. Linux beta installations require
-  Ubuntu 24.04+ amd64, `pkexec`, and a desktop Polkit agent.
-
-Before enabling publication, exercise installation and at least one subsequent
-update on each actual supported OS, including cancelled elevation, damaged
-packages, next-launch consent, and relaunch. Unit tests for the metadata and
-transport boundary do not establish native installer success.
+See [Desktop Release Versioning](/build/devops/desktop-release-versioning#versions-and-release-notes)
+for version allocation, the notes template, and failed-draft recovery.
 
 ### Current provisioning prerequisites
 
-The existing Infrastructure mobile vault supports Android/iOS bundles and binds
-its OIDC audience to the mobile store workflow. Its App Store distribution P12
-is **not** a macOS Developer ID certificate, and the desktop workflow cannot use
-that bundle endpoint under the mobile workflow's identity. Provision the desktop
-credentials listed above through the separate desktop vault and protected
-environment-secret or explicit vault workflow path; do not copy a mobile CI
-token into desktop jobs or weaken that OIDC policy. A Microsoft Store developer
-account alone does not supply the Authenticode certificate used by this workflow.
+See [current provisioning prerequisites](/build/devops/desktop-release-versioning#current-provisioning-prerequisites).
 
 ## Windows Store draft channel
 

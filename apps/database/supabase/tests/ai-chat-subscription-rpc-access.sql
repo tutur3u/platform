@@ -1,0 +1,36 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+select plan(13);
+insert into public.users(id) values ('11111111-1111-4111-8111-111111111111'), ('22222222-2222-4222-8222-222222222222') on conflict do nothing;
+insert into public.ai_chats(id,title,creator_id) values
+ ('33333333-3333-4333-8333-333333333333','own fixture','11111111-1111-4111-8111-111111111111'),
+ ('44444444-4444-4444-8444-444444444444','other fixture','22222222-2222-4222-8222-222222222222');
+insert into public.workspaces(id,name,personal,creator_id) values ('55555555-5555-4555-8555-555555555555','fixture',false,'22222222-2222-4222-8222-222222222222');
+insert into public.workspace_members(ws_id,user_id) values ('55555555-5555-4555-8555-555555555555','22222222-2222-4222-8222-222222222222') on conflict do nothing;
+select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+select set_config('request.jwt.claim.role','authenticated',true);
+set local role authenticated;
+select lives_ok($$select public.insert_ai_chat_message('own message','33333333-3333-4333-8333-333333333333','fixture')$$, 'SR-206 own chat insert remains available');
+select throws_ok($$select public.insert_ai_chat_message('foreign message','44444444-4444-4444-8444-444444444444','fixture')$$, '42501', 'ai_chat_access_denied', 'SR-206 foreign chat insert is denied');
+select throws_ok($$select public.insert_ai_chat_message('missing chat','66666666-6666-4666-8666-666666666666','fixture')$$, '42501', 'ai_chat_access_denied', 'SR-206 absent chat is denied without revealing existence');
+select set_config('request.jwt.claim.sub','',true);
+select throws_ok($$select public.insert_ai_chat_message('null actor','33333333-3333-4333-8333-333333333333','fixture')$$, '42501', 'ai_chat_access_denied', 'SR-206 null actor is denied');
+reset role;
+select is((select count(*) from public.ai_chat_messages where chat_id='44444444-4444-4444-8444-444444444444'), 0::bigint, 'SR-206 no foreign message persisted');
+select ok(not has_function_privilege('anon','public.insert_ai_chat_message(text,uuid,text)','EXECUTE'), 'SR-206 anon cannot execute');
+select ok(not has_function_privilege('anon','public.get_user_workspace_subscription_info(uuid)','EXECUTE'), 'SR-209 anon cannot execute');
+select ok(not has_function_privilege('authenticated','public.get_user_workspace_subscription_info(uuid)','EXECUTE'), 'SR-209 authenticated cannot execute');
+set local role anon;
+select throws_ok($$select public.insert_ai_chat_message('anon','33333333-3333-4333-8333-333333333333','fixture')$$, '42501', null, 'SR-206 actual anon invocation is denied');
+select throws_ok($$select * from public.get_user_workspace_subscription_info('22222222-2222-4222-8222-222222222222')$$, '42501', null, 'SR-209 actual anon invocation is denied');
+reset role;
+select set_config('request.jwt.claim.role','authenticated',true);
+select throws_ok($$select * from public.get_user_workspace_subscription_info('22222222-2222-4222-8222-222222222222')$$, '42501', 'service_role_required', 'SR-209 body rejects a non-service role even with function-owner privileges');
+select set_config('request.jwt.claim.role','service_role',true);
+set local role service_role;
+select is((select count(*) from public.get_user_workspace_subscription_info('22222222-2222-4222-8222-222222222222') where ws_id = '55555555-5555-4555-8555-555555555555'),1::bigint,'SR-209 service account-deletion lookup remains available');
+reset role;
+select ok((select proconfig @> array['search_path=pg_catalog, pg_temp'] from pg_proc where oid='public.insert_ai_chat_message(text,uuid,text)'::regprocedure), 'SR-206 search path is pinned');
+select * from finish();
+rollback;

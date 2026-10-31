@@ -125,7 +125,7 @@ class _CmsQueue extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.stretch,
     mainAxisSize: MainAxisSize.min,
     children: [
-      AppSectionHeader(title: title, count: items.length),
+      AppSectionHeader(title: title),
       AppGroupedCard(
         dividerInset: _CmsStatus.rowDividerInset,
         children: items.isEmpty

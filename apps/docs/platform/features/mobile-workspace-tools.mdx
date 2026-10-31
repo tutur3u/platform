@@ -132,7 +132,8 @@ shows a skeleton while an image downloads, and displays the cached image when
 ready. Back from a peer navigation section exits to
 the root tab that opened that context; back from a detail page returns to its
 parent section. Shell search actions across Apps, Chat, Finance, Habits, Mail,
-Meet, Notes, task boards, and Timer focus the top search input on entry. The
+Meet, Notes, task boards, and Timer share `ShellActionSpec.search` and focus
+the top search input on entry. The
 search icon, input, and close control share one vertical center; submitting an
 empty or whitespace-only query closes search mode except in Apps, which keeps
 its current search. Chat shows message matches
@@ -235,6 +236,19 @@ bubbles must not install a competing native text-selection long-press recognizer
 Other standalone markdown views remain selectable.
 
 ## Responsive Loading And Cache Verification
+
+### Push token registration and notification permission
+
+The mobile app creates and registers a push (FCM) device token only while the
+operating-system notification permission is authorized or provisional. Firebase
+Messaging auto-init is disabled in the Android manifest and iOS `Info.plist`, so
+the SDK creates no token before permission is granted. The app enables auto-init
+after permission is granted. A token refresh is sent to the server only while
+permission is still granted. If permission is later revoked, the next
+registration sync disables auto-init and deletes the local token. If deletion
+fails, later unauthorized syncs retry until deletion succeeds. Sign-out still
+unregisters the device. Regression coverage:
+`push_token_permission_gate_test.dart`.
 
 ### Device task and calendar reminders
 
@@ -593,8 +607,9 @@ cached data must never grant mutation permissions.
 Use the available window width, including split-screen windows, when choosing
 columns. Home uses a full-width workspace selector and independently flowing card columns;
 the Apps hub uses content-sized rows so larger text can grow.
-Drive and CMS allow their grids to use the wider workspace. Kanban and timeline
-are work surfaces: do not wrap them in the reading-column width constraint.
+Drive and CMS allow their grids to use the wider workspace. Kanban is a work
+surface: do not wrap it in the reading-column width constraint. The board
+timeline is a day-grouped agenda at the detail page width.
 Tablet Kanban fills the available height and puts dock clearance inside each
 scrolling task list. It shows multiple independently scrolling lists; compact windows keep
 the swipe-between-lists interaction. Leave room for the shell dock and task actions.
@@ -976,9 +991,11 @@ The check extracts Flutter `/api/*` templates from `api_config.dart` and the
 production endpoint catalog used by the `ttr` CLI SDK. It verifies that both
 legacy clients still resolve to a canonical owner in a checked-in Next
 satellite, the legacy route wrappers, or the Rust/TanStack migration manifest.
-The `Mobile API Mappings` workflow runs whenever either client catalog, an app
-API route, or the migration manifest changes. If a route is migrated or
-removed, update Flutter and the CLI SDK in the same change instead of leaving a
+For PRs targeting `main`, `Cheap PR Checks` selects the reusable
+`mobile-api-mappings.yaml` validation whenever either client catalog, an app
+API route, or the migration manifest changes. The standalone Mobile API
+Mappings workflow retains its main-push and manual entrypoints. If a route is
+migrated or removed, update Flutter and the CLI SDK in the same change instead of leaving a
 legacy client to discover the break in production.
 
 ## Mobile Inventory And Storefront Coverage
@@ -1074,6 +1091,58 @@ when the gateway and owning app both enforce the guard. Ordinary unmarked
 foreground reads do not consume these additional bulk-download budgets.
 The additional server download protection applies only to eligible GET/HEAD requests explicitly marked `x-tuturuuu-offline-download: 1`. Ordinary daily enterprise operations in Finance, Inventory, Contacts, Tasks and other apps always continue through existing authentication, authorization, MFA, abuse and API protections without accessing this additional guard's Redis clients, quotas or CAPTCHA, even when it is activated. This scope applies to the web API and every registered satellite proxy. `OFFLINE_DOWNLOAD_PROTECTION_ENABLED` defaults to inactive and activates only for the exact value `true`; while inactive, marked bulk downloads return 503 with `Retry-After: 30`. Omitting the bulk marker never bypasses baseline protections or grants access.
 
+### Guard rejection diagnostics
+
+Every rejection emitted by the shared API proxy/offline-download/account-assurance
+guards, including Infrastructure's early app-session failures, carries one fixed
+scalar `X-Tuturuuu-Guard-Reason`. These diagnostics apply across registered
+satellites and Web; guard decisions, statuses, limits and fail-closed behavior
+remain unchanged. The reason values are:
+
+| Reason | Existing rejection |
+| --- | --- |
+| `offline-download-inactive` | 503: marked bulk read while protection is inactive. |
+| `offline-download-unavailable` | 503: activated protection cannot complete (including missing distributed storage or an unavailable subject). |
+| `offline-download-rate-limited` | 429: bulk read budget exhausted. |
+| `offline-download-authentication-required` | 401: bulk read lacks a session subject. |
+| `offline-download-challenge-required` | 403: Turnstile verification missing or rejected. |
+| `auth-assurance-unavailable` | 503: account assurance cannot be verified. |
+| `auth-assurance-required` | 403: MFA verification required. |
+| `auth-assurance-unauthenticated` | 401: account credentials invalid. |
+| `app-session-refresh-unavailable` | 503: app-session refresh unavailable before the API guard. |
+| `app-session-unauthenticated` | 401: app-session authentication failed before the API guard. |
+| `proxy-ip-blocked` | 429: existing IP block. |
+| `proxy-rate-limited` | 429: route budget exhausted. |
+| `proxy-payload-too-large` | 413: payload exceeds its existing bound. |
+| `proxy-content-rejected` | 400: request content validation rejected the payload. |
+
+`X-Tuturuuu-Auth-Assurance`, retry and cookie behavior remain intact.
+`X-Tuturuuu-Guard-Request-Id` is a locally generated random correlation ID;
+request-provided IDs, identities and credentials are never copied into diagnostics.
+Both diagnostic headers are listed in `Access-Control-Expose-Headers`, retaining
+existing entries. This permits browser clients to read them when the existing
+origin policy allows the response; it does not grant new origins access. Native
+mobile clients can read response headers directly.
+
+Infrastructure returns these shared guard responses through its middleware,
+before the mobile Calendar gateway runs. Always emit one `console.warn` event
+named `Guard rejected request` per rejection, containing only the fixed reason,
+a fixed route template (for example `/api/v1/mobile-calendar/:path*`) and the
+same generated request ID. This provides runtime-log evidence without depending
+on whether a deployment's Vercel request-log view retains response headers.
+Infrastructure omits its older Calendar preference 429 warning when this shared
+diagnostic is present, keeping one warning per rejection.
+Do not log raw paths, queries, bodies, user/workspace IDs, cookies or tokens.
+A gateway-owned 503 without this header remains a distinct failure; absence of
+the header alone does not prove which downstream service failed.
+
+Regression coverage: `guard-rejection.test.ts`, `offline-download-guard.test.ts`,
+`required-mfa-runtime.test.ts`, `api-proxy-guard.test.ts`, auth's
+`mfa-failure.test.ts`, and Infrastructure's `proxy.test.ts` cover reason values,
+privacy, existing status/retry behavior and middleware header propagation.
+Mobile's existing 503 diagnostics do not yet record the reason; adding that
+client field is a follow-up and does not block server-side correlation.
+
 ### Mobile download protection readiness
 
 The default production mobile Download all path needs protection readiness at
@@ -1087,10 +1156,13 @@ must verify every serving replica and fallback, using exact deployment identitie
 | Inventory | Catalog, setup, sales, audit and inventory access reads. |
 | Tasks | Tasks, boards, labels, projects and initiatives; some supporting reads go to Web. |
 | Infrastructure | Inbound `/api/v1/mobile-calendar/` gateway reads. |
-| Calendar | Also required for direct marked Calendar reads. The current Infrastructure gateway constructs upstream headers without the bulk marker, so that specific upstream hop is unmarked. |
+| Calendar | Marked reads forwarded by Infrastructure, plus direct marked Calendar reads. |
 
 This serving map follows `core/config/api_origins.dart` in mobile, each app's
 `proxy.ts`, and `apps/infrastructure/src/lib/mobile-calendar/gateway.ts`.
+Infrastructure forwards the bulk marker and Turnstile token to Calendar. Both
+hops enforce the guard and need shared Redis clearance, so Calendar can reuse
+the verified clearance without submitting the one-use Turnstile token again.
 No checked-in workflow or application configuration assigns the activation flag.
 That establishes source wiring only: deployed flag values, Redis/Turnstile
 provisioning, mixed-replica consistency and authenticated canary results remain
@@ -1112,11 +1184,11 @@ data remain usable. Regression coverage is in
 `offline_preparation_service_pause_test.dart` and
 `offline_preparation_intent_test.dart`.
 
-Before enabling offline prefetch, provision `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` on every gateway and owning-app replica that can handle these reads. Verify distributed limiter operations, shared clearance storage, Turnstile configuration, and authenticated ordinary-read and marked-bulk canaries on the exact deployment. Enable the activation flag only after those checks pass, consistently across the request path; available Redis or elevated account trust never implicitly activates the feature. Keep the flag inactive during initial provisioning. Once activated, Redis/configuration/runtime failures still return 503; there is no automatic outage bypass or process-local substitute.
+Before enabling offline prefetch, configure the shared guard store on every gateway and owning-app replica that can handle these reads. Use the [abuse-guard store](/build/devops/abuse-guard-store): `ABUSE_GUARD_FAMILIES` must include `offline`, alongside `ABUSE_GUARD_URL`, `ABUSE_GUARD_SECRET` and `ABUSE_GUARD_KEY_PEPPER`, or a native Worker's `ABUSE_GUARD` binding. Every hop shares one store per environment. The legacy `UPSTASH_REDIS_REST_*` pair remains a back-compatible alternative only while the family is unassigned. Verify distributed limiter operations, shared clearance storage, Turnstile configuration, and authenticated ordinary-read and marked-bulk canaries on the exact deployment. Enable the activation flag only after those checks pass, consistently across the request path. An available store or elevated account trust never implicitly activates the feature. Keep the flag inactive during initial provisioning. Once activated, every store, configuration or runtime failure still returns 503. That includes a timeout, the guard's stop fence or budget stop, an incomplete assigned configuration, and `ABUSE_GUARD_BACKEND=off`. There is no automatic outage bypass, process-local substitute or fallback to another store.
 
 When activated, the shared proxy enforces explicitly marked eligible bulk reads: 1,200/minute and 30,000/hour per IP, plus 600/minute and 12,000/hour per session when present. Gateway and owning-app enforcement may both count a marked request. Bulk requests require Turnstile clearance unless the server has verified elevated trust; clearance lasts 15 minutes and never bypasses authentication, permissions, MFA, blocks, or quotas. Ordinary unmarked requests do not spend these additional offline-download allowances.
 Regular reconnect refreshes are paced without the bulk marker; optional history fills use silent bulk mode. Background work never opens a verification modal and pauses when challenged. Verification-required 403 responses preserve existing authorized snapshots; authorization-denied responses purge the denied resource. A 429 stops downloads and delays queued replay according to Retry-After, with at least a minute's wait.
-Regression coverage in [offline-download-guard.test.ts](https://github.com/tutur3u/platform/blob/main/packages/utils/src/__tests__/offline-download-guard.test.ts) proves unmarked ordinary reads avoid Redis, offline quotas and CAPTCHA with activation on or off, inactive bulk remains blocked, and activated bulk storage failures, quotas and CAPTCHA remain enforced.
+Regression coverage in [offline-download-guard.test.ts](https://github.com/tutur3u/platform/blob/main/packages/utils/src/__tests__/offline-download-guard.test.ts) proves unmarked ordinary reads avoid Redis, offline quotas and CAPTCHA with activation on or off, inactive bulk remains blocked, and activated bulk storage failures, quotas and CAPTCHA remain enforced. [offline-download-guard-store.test.ts](https://github.com/tutur3u/platform/blob/main/packages/utils/src/__tests__/offline-download-guard-store.test.ts) covers the Durable Object store. It checks the window shapes and limits in one sequential call, 429 with Retry-After, and the reusable 15-minute clearance. It also checks that a timeout, a stopped guard, an auth failure, a clearance write failure and `off` all return 503.
 
 Local Inventory search mirrors name-only SQL ILIKE, trimmed whole query, case
 insensitivity, preserved accents, `%`/`_` wildcards, and backslash escaping.
@@ -1200,7 +1272,8 @@ for unsynchronized drafts and destructive confirmation dialogs remain intentiona
 
 Regression evidence: `shell_dock_reselection_checks.dart`,
 `shell_chrome_actions_test.dart`, `profile_overview_shell_test.dart`,
-`profile_timeline_section_test.dart`, and `profile_timeline_races_test.dart`.
+`profile_timeline_section_test.dart`, `profile_timeline_races_test.dart`,
+and `profile_identity_card_test.dart` (icon-only edit, label and destination).
 
 Synthetic Profile renders use placeholder identity and activity data:
 
@@ -1217,8 +1290,10 @@ checks actor membership and Calendar permission before its audited Calendar read
 missing permission omits that source, while lookup failures mark the result partial.
 Finance keeps its permission-aware RPC. Calendar titles are not returned.
 
-Overview is the default view and has no edit shortcut. Profile editing and full
-banner controls live in consolidated account settings. Avatar/banner uploads are
+Overview is the default view. Its only edit control is an icon-only button
+beside the avatar, labelled "Edit profile" for assistive technology, that opens
+the consolidated account settings where profile editing and full banner
+controls live. Avatar/banner uploads are
 optimized off the UI isolate: input is bounded to 20 MiB/40 MP, orientation is
 applied, and JPEG output is limited to 1024/2048 pixels and the existing 2/5 MiB
 bucket ceilings. Animated images become a static first frame; re-encoding strips
@@ -1228,8 +1303,13 @@ avatars/banners enter the scoped disk cache. Signed, private and foreign URLs do
 not. Account changes fence asynchronous profile loads and media dispatch.
 
 Timeline groups records by local day, links to native views, and reveals days near
-the bottom, including an initially short viewport. Day headings and activity rows
-are mounted lazily, with row extents adapted to the effective text scale. Further API pages contain at
+the bottom, including an initially short viewport. Each day heading is the day
+with its activity count. Each row shows the record title, or its kind when the
+record has none ("Task", "Transaction", "Note", "Workspace event"), the kind as one
+supporting line for titled records, and the time on the trailing edge. Rows
+never repeat a per-row count. Day headings and activity rows
+are mounted lazily, with header and row extents adapted to the effective text
+scale so no empty slot precedes a day. Further API pages contain at
 most 200 rows per source, with a pinned upper time boundary and a maximum of 1000
 pages per browsing session. Offset continuation can omit or repeat records during
 concurrent inserts/deletes; client deduplication does not guarantee snapshot
@@ -1863,3 +1943,270 @@ content/dock padding are unchanged. Actual-shell regression coverage in
 `settings_secrets_shell_checks.dart` checks English/Vietnamese, narrow layouts and
 large text, including denial visibility and dock Back. This scoped correction
 does not establish the cause of the reported Assistant Settings TestFlight issue.
+
+### Board timeline agenda
+
+The board **Timeline** view is a vertical, day-grouped agenda for phones,
+replacing the horizontal Gantt chart that needed sideways scrolling and
+dragging on a 68dp-per-day grid. It applies to every device size.
+
+- It opens on **Today**. Overdue days sit above Today, nearest first, with an
+  Overdue label; upcoming days follow below. When there is overdue work,
+  **Show overdue** at the top of Today jumps up to it, and **Today** in the
+  toolbar scrolls back to the anchor.
+- Each task appears once: an overdue task on its due day, a task running
+  today on Today (multi-day tasks show "Day 3 of 6, ends Oct 30"), and a later
+  task on its first day with its date span. A task with only a start date
+  has nothing due, so it is never overdue: once started it stays on Today as
+  "Started Oct 21". Done and closed lists are left out, as before. Rows show
+  the priority, name, span and list.
+- Overdue uses the board's one rule, shared with the quick actions sheet: the
+  due day is before today. Days and "today" follow the user's timezone
+  setting, as Calendar does, and the agenda re-anchors at midnight.
+- The agenda needs every open task, not the first page the List view starts
+  from, so the Timeline loads every page of each open list by itself, with
+  no scrolling needed: 100 tasks per page whichever view loaded the list
+  first, at most two lists at a time, and up to 2,000 tasks across the board
+  unattended (beyond that it offers Load more). Done and Closed lists are not
+  paged. While pages remain it never says "Nothing scheduled today": Today
+  shows that tasks are still loading, or that some are not loaded yet.
+- Each arriving page is processed on its own: only its tasks' descriptions
+  are parsed for search and only its list is rebuilt, so loading a large
+  board stays linear.
+- **Week**, **Month** (the default) and **All** limit how far ahead the agenda
+  lists work. Overdue work always shows. When the range hides later tasks,
+  **Show later tasks** switches to All.
+- Undated tasks are listed under **Unscheduled tasks** with a hint to add
+  dates; the earlier cap of eight with a "+N" count is gone.
+- Tapping a row opens the task quick actions. Rescheduling moves from dragging
+  bars to the sheet's [Dates rows](#task-quick-actions-sheet), which set and
+  clear the start and due dates; the drag and resize handles are removed.
+- No count chips: the range chip, the "N tasks" chips and the per-list task
+  totals are gone. The day header names the day instead of counting tasks.
+- Rows build lazily in both directions from Today, and the agenda is rebuilt
+  only when tasks, the day or the range change.
+
+Regression coverage: `task_board_timeline_agenda_test.dart` (placement,
+start-only tasks, the timezone setting and next-midnight delay, ranges,
+ordering, a 20,000-task board, rebuild memoization) and
+`task_board_timeline_paging_test.dart` (two lists at a time, board budget),
+`task_board_detail_cubit_paging_test.dart` (a page re-processes only its own
+list, page size growth, a rejected move leaves loads able to finish) and
+`task_board_timeline_test.dart` (Today anchor and button, Show overdue, every
+page loaded without scrolling with today's task on page five, no empty claim
+while a page is pending,
+start-only rows, range and Show later, tap to open, lazy building with 1,500
+tasks, the empty state, 320dp at 2x text, light/dark/blob renders). The
+midnight re-anchor is covered by the delay calculation, not a widget clock.
+
+### Task board row gestures
+
+In the board **List** view, task rows take native swipe and long-press
+gestures. The same behavior applies on Android and iOS.
+
+- **Swipe toward the end edge** (right in left-to-right locales) completes an
+  open task or reopens a done one, through the existing move-to-status
+  mutation. Rows in closed lists offer no completion swipe.
+- **Swipe toward the start edge** reveals **Schedule** (due-date picker; the
+  due date lands at the end of the chosen local day), **Priority** (single
+  choice) and **Delete** (the existing asynchronous confirmation, which stays
+  busy until the mutation finishes).
+- **Long press** opens the row's context menu: Complete or Reopen, Start
+  focus, Schedule, Change priority, Move task, Select task, Open full details
+  and Delete task.
+- **Start focus** starts a device Pomodoro focus phase for the task: an
+  ordinary time-tracking session linked to the task, with a countdown and a
+  phase-end notification (see the Timer page). Starting a
+  session closes any running one on the server, so a running or paused timer
+  for another task is replaced only after confirmation. A paused one is stopped
+  first, which closes its break. If the new start then fails, the paused work
+  is resumed and paused again, so it looks as it did. If the pause still
+  fails after one retry, the toast says the timer is running. Before saying
+  so, the app re-reads the paused and running sessions, because a lost pause
+  response may hide a pause that succeeded. It reports what it finds (paused,
+  running, or that it could not confirm). Only when nothing could be resumed
+  does the toast say the paused timer ended. All of these offer **Open
+  timer**. A timer running
+  for this task is kept, and one paused on this task is resumed. The success
+  toast offers **Open timer**.
+- **Failures** roll the row back, then show the server's error as a toast:
+  a failed complete returns the task to its list, and a failed priority or due
+  date change restores the previous value.
+  **Select task** enters bulk selection. Earlier, a long press entered bulk
+  selection directly. In bulk selection, swipes are off and a long press
+  toggles the row, as before.
+- Tapping a row opens the [quick actions sheet](#task-quick-actions-sheet).
+  Every swipe action is also
+  exposed as a screen-reader action.
+
+Kanban cards keep their earlier long-press selection behavior; this decision
+covers List view rows only. Regression coverage:
+`task_board_row_actions_test.dart` (mutations, menu, bulk mode, 320dp at 2x
+text), `task_board_row_actions_flows_test.dart` (failure rollback and error
+toasts, the Schedule picker, Start focus), `task_board_bulk_selection_test.dart`
+and `app_swipe_actions_test.dart` (thresholds, the fling minimum, reveal,
+right-to-left, semantics, enlarged text). Widget tests do
+not establish gesture feel on devices.
+
+### Task quick actions sheet
+
+Tapping a task on a board (List, Kanban or Timeline) opens the quick actions
+sheet. It replaces the earlier button grid; the long-press menu is unchanged.
+
+- **Status**: one large tile per status that has a list on the board (Not
+  started, Active, Review, Done, Closed; Documents lists are not a target).
+  The current status is selected. Another status moves the task to that
+  status's list, asking which list when there are several, and closes the
+  sheet.
+- **Priority**: None, Urgent, High, Medium and Low, the web's task priority
+  menu wording (Vietnamese: Không có, Khẩn cấp, Cao, Trung bình, Thấp). The
+  four levels use the web's icons and colours: unicorn head (red), horse head
+  (orange), rabbit (yellow) and turtle (blue), from Lucide and Lucide Lab.
+  None clears the priority. Every mobile task surface (cards, filters, bulk
+  edit, row menu, recycle bin, My tasks and the timer task picker) uses the
+  same labels and icons.
+- **Dates**: Start date and Due date rows show the day, or None, and open the
+  task editor's date picker; each set date has a clear button. Days are read
+  and saved in the user's timezone setting: a start date at the first instant
+  of the picked day, a due date at its last second, so the task lands on that
+  day in the Timeline. As in the editor, a start after the due day moves the
+  due date onto it, and a due date before the start moves the start onto it.
+  Picking the current day saves nothing. These rows replace Timeline
+  drag-to-reschedule. A task is overdue once its due day, in the user's
+  timezone setting, is before today; a task without a due date is never
+  overdue.
+- **Fields**: Assignees (team workspaces with members), Labels (boards with
+  labels) and Move task. Each row shows its current value and opens its
+  picker.
+- **Open full details** closes the sheet and opens the task.
+- Priority and field edits keep the sheet open and update it in place, so
+  several can be made in a row. They save without a success toast because the
+  sheet shows the saved value; failures still roll back and show the error.
+  While one edit saves, every control dims and ignores taps, because the
+  board runs one mutation at a time. A mutation started anyway is rejected
+  before any optimistic change, so nothing needs rolling back.
+- No count chips: assignee and label names replace overflow counts.
+
+Regression coverage: `task_priority_visuals_test.dart` (web order, icons,
+colours, English and Vietnamese labels including None),
+`task_board_quick_actions_test.dart` (icons, labels and order, selected
+semantics, statuses offered, None clears, dropped concurrent edit with every
+control disabled, status move, due-date clear, 320dp at 2x text,
+light/dark/blob renders), `task_board_quick_actions_dates_test.dart` (both
+dates or None, a picked start or due day, the range pull, an unchanged day,
+start-date clear, rollback with an error toast, the timezone setting),
+`task_repository_test.dart` (a zoned date saves as that zone's day),
+`task_board_detail_cubit_mutation_guard_test.dart`
+(a rejected concurrent update or move changes nothing)
+and `task_board_quick_actions_edits_test.dart` (consecutive edits save from
+the live task). Widget tests do not establish touch feel on devices.
+
+### Root tabs and dock search
+
+The floating dock's five root tabs are named **Home**, **Apps**, **Mira**,
+**Inbox** and **You** (Vietnamese: Trang chủ, Ứng dụng, Mira, Hộp thư, Bạn).
+The names are the tabs' accessible labels and the shell titles of their root
+pages. The dock stays icon-only (no captions), and Back stays on the dock;
+there is no top-left back button.
+
+The Inbox tab is the dock's bell-icon tab, formerly labelled Notifications;
+it opens the same notifications inbox. "Notifications" now survives only as
+the item in the shell's overflow menu, which opens that same page. Whether
+Inbox should also lose the bell icon is still an open decision.
+
+**Search appears only where it searches the current screen.** Home, Inbox and
+You have no Search dock action: the former shortcut only opened Apps search,
+which long-pressing the Apps tab still does from anywhere. Apps and every
+searchable mini app use the shared `ShellActionSpec.search` action: the same
+search glyph, dock placement, 48dp hit target and highlight, switching to the
+close glyph while the navbar shows the query field. Mira's dock belongs to its
+composer.
+
+**Counts only where they lead somewhere.** Root tabs show no bare count chips
+or badges. Home's at-a-glance metrics open the list they summarise (active and
+overdue tasks open Tasks, upcoming events open Calendar). Inbox offers
+**Archive all** only while the inbox tab has unread notifications, instead of
+a disabled control. You's Workspaces row and Timeline day headers no longer
+repeat item counts.
+
+**Mira** opens on its starter suggestions when no conversation is shown:
+Today's focus, Day plan, Backlog cleanup and Team update, under a single
+heading with no subtitle. They are one grouped
+card of icon rows (title and caption, no shadows or gradients), and a tap puts
+the prompt in the composer, as before. A Recent conversations section is
+deferred until the open Mira chat PRs that own the Assistant page land; the
+history sheet remains the way to reopen a conversation.
+
+**You** shows the identity card, then **Focus Time**: totals for today, this
+week and this month, plus the recent-activity chart, counting all tracked
+time linked to a task (`taskLinked`; see the Timer page). Its **See all**
+opens the Timer statistics, which count all tracked time. Below that are
+rows for **Workspaces** (opening the workspace picker), **Timeline** (switching
+the page to Timeline) and **Settings**. The identity card's labelled **Edit
+profile** button sits centred beside the avatar's lower half, on the card's
+text gutter, clear of the cover edge. When the label does not fit beside the
+avatar (narrow cards or enlarged text), it becomes an outline icon button with
+the same accessible name and target. Home's metrics are screen-reader buttons
+with the same actions as a tap. Tasks has no overdue filter route, so Overdue
+opens Tasks, whose Overdue section is listed first.
+
+The Mira prompt centres its text, Plus and microphone controls on one line;
+extra lines grow the field upward while the controls stay centred on the last
+line (`AppComposerRow`).
+
+Regression coverage: `shell_viewport_checks.dart` (icon-only dock and labels
+across phone, tablet and rail sizes), `apps_search_submit_test.dart` (only
+Apps offers Search; Home has none), `assistant_composer_alignment_test.dart`
+(single-line centring at 1x and 2x text, multi-line growth),
+`profile_identity_card_test.dart` (edit button gutter, band centre and target),
+`assistant_starter_prompts_test.dart` (grouped rows
+at phone and tablet sizes, 2x text, English and Vietnamese),
+`profile_you_rows_test.dart`, `profile_render_cases.dart` and
+`profile_overview_shell_test.dart` (Focus Time beside identity on desktop).
+
+### Task detail fields
+
+Task details show the task's fields as one grouped card of icon rows, in this
+order:
+
+1. **List**, always shown;
+2. **Due**;
+3. **Start**;
+4. **Priority**;
+5. **Estimation**;
+6. **Assignees**;
+7. **Labels**;
+8. **Projects**.
+
+Fields from Due onwards appear only when set. Values sit at the trailing edge;
+assignee, label and project chips wrap under the field name, so enlarged text
+never clips them. The description accordion stays above the card, and editing
+still happens in the task editor. Back stays on the dock.
+
+
+## Request content validation bounds
+
+JSON mutations checked by the shared proxy content guard, including Tools, have
+a 2 MiB streamed validation bound, at most 10,000 visited values, nesting depth
+32, and path length 2,048 characters. Structural checks run before per-field
+emoji and text scanning. The proxy's existing route body limit still applies.
+These bounds also apply to fields exempted from emoji checks, with two
+intentional machine-state exceptions: task-description Yjs state keeps its
+existing structural exemption, and `PATCH /api/v1/workspaces/:wsId/whiteboards/:id`
+removes the top-level `snapshot` before structural and text checks. Whiteboard
+saves instead have an 8 MiB streamed body cap, allowing multi-hundred-shape
+boards and dense freehand strokes beyond the generic 2 MiB budget while
+bounding JSON parsing. Database writes independently cap `workspace_whiteboards.snapshot`
+at 25 MiB of serialized JSON bytes (26,214,400), preserving the contract from
+`20260326163000_set_whiteboard_snapshot_payload_limit_25mb.sql`. The payload
+helper and existing CHECK enforce the same cap; the HTTP route retains its
+smaller body bound. Other whiteboard fields retain the generic validation
+rules; other routes and methods keep the 2 MiB cap. Trusted server bypass
+credentials retain their existing behavior. Over-limit content returns
+HTTP 400 with `REQUEST_COMPLEXITY_EXCEEDED`; the earlier proxy body-size gate
+returns HTTP 413 when its route cap is exceeded. Existing invalid JSON handling
+remains with the route. Regression coverage:
+`packages/utils/src/__tests__/request-emoji-complexity.test.ts`,
+`packages/utils/src/__tests__/request-whiteboard-bounds.test.ts`,
+`apps/database/supabase/tests/description-table-hardening.sql`, and
+`apps/database/supabase/tests/readiness-whiteboard-contracts.sql`.

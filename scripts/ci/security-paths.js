@@ -16,6 +16,8 @@ const reviewCategories = [
       /^\.github\//u,
       /^scripts\/ci\//u,
       /^scripts\/git-[\w-]+\.(?:c|m)?[jt]s$/u,
+      // Owns ORDER_EXEMPT_VERSIONS, which both migration order checks honour.
+      /^scripts\/check-migration-timestamps\.js$/u,
       /^tuturuuu(?:\.ci)?\.ts$/u,
       /^turbo\.json$/u,
       /(?:^|\/)CODEOWNERS$/u,
@@ -57,7 +59,7 @@ const reviewCategories = [
     category: 'runner-sandbox',
     owner: 'runtime',
     patterns: [
-      /^apps\/(?:devbox-control|cron-control|coordination|playground|storage-unzip-proxy)\//u,
+      /^apps\/(?:abuse-guard|ops-hub|devbox-control|cron-control|coordination|playground|storage-unzip-proxy)\//u,
       /^packages\/(?:devbox|trigger|workflows)\//u,
       /^apps\/(?:web|infrastructure)\/src\/lib\/devboxes\//u,
       /(?:^|\/)Dockerfile[^/]*$/u,
@@ -68,6 +70,7 @@ const reviewCategories = [
     category: 'tokens-secrets',
     owner: 'platform-auth',
     patterns: [
+      /^packages\/utils\/src\/abuse-guard\//u,
       /(?:^|\/)[^/]*(?:token|secret|credential|crypto|encrypt|decrypt|signing|signature|hmac|jwt|api-?keys?)[^/]*$/iu,
       /(?:^|\/)\.env(?:\.[\w.-]+)?$/u,
       /(?:^|\/)email-unsubscribe\.(?:c|m)?[jt]s$/u,
@@ -183,16 +186,17 @@ function ownerForPath(filePath) {
   );
 }
 
-// Scan scope for PR/push checks. Unknown change sets scan everything.
+// Scan scope for PR/push checks. Unknown or empty change sets scan
+// everything: an empty list is never trusted as proof that nothing changed.
 function classifyScope(paths, { full = false } = {}) {
-  if (full || paths === null) {
+  const files = (paths ?? []).map(normalize).filter(Boolean);
+  if (full || files.length === 0) {
     return {
       codeqlLanguages: Object.keys(codeqlLanguages),
       dependencies: true,
       workflows: true,
     };
   }
-  const files = paths.map(normalize).filter(Boolean);
   return {
     codeqlLanguages: Object.entries(codeqlLanguages)
       .filter(([, patterns]) =>

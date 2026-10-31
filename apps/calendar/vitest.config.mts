@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vitest/config';
 
@@ -11,15 +12,24 @@ export default defineConfig({
       },
     },
     environment: 'jsdom',
+    // Pinned explicitly: source has no fallback, and root-cutover.test.ts
+    // re-imports the config under each profile plus the unset/unknown cases.
+    env: { CALENDAR_DEPLOYMENT_PROFILE: 'production' },
   },
   ssr: {
     resolve: {
-      conditions: ['bun', 'module', 'node', 'development|production'],
+      conditions: ['bun', 'node', 'development|production'],
     },
   },
   resolve: {
-    conditions: ['bun', 'module', 'node', 'development|production'],
+    conditions: ['bun', 'node', 'development|production'],
     alias: [
+      {
+        find: /^server-only$/u,
+        replacement: fileURLToPath(
+          import.meta.resolve('@tanstack/react-start/server-only')
+        ),
+      },
       { find: '@', replacement: resolve(__dirname, './src') },
       {
         find: /^@tuturuuu\/internal-api$/,

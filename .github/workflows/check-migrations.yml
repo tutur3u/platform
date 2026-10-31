@@ -1,12 +1,9 @@
 name: Check Database Migrations
 
 on:
-  pull_request:
-    paths:
-      - "apps/database/supabase/migrations/**.sql"
-
+  workflow_call:
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
+  group: check-migrations-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 
 permissions:
@@ -76,9 +73,23 @@ jobs:
             LAST_BASE_MIGRATION=$(basename "$LAST_BASE_MIGRATION_PATH")
             echo "Last migration in base branch: $LAST_BASE_MIGRATION"
 
+            # Reviewed out-of-order versions come from one source of truth, never
+            # from a list copied here. Matching is exact: the full 14-digit
+            # version must equal a whole line (fixed string, no glob or prefix).
+            EXEMPT_VERSIONS=$(node scripts/check-migration-timestamps.js --print-exempt-versions) || {
+              echo "::error::Could not read the exempt migration versions from scripts/check-migration-timestamps.js."
+              exit 1
+            }
+
             for file in $NEW_MIGRATIONS; do
               CURRENT_MIGRATION_BASENAME=$(basename "$file")
               if [[ "$CURRENT_MIGRATION_BASENAME" < "$LAST_BASE_MIGRATION" ]]; then
+                CURRENT_VERSION="${CURRENT_MIGRATION_BASENAME%%_*}"
+                if [[ "$CURRENT_VERSION" =~ ^[0-9]{14}$ ]] &&
+                  printf '%s\n' "$EXEMPT_VERSIONS" | grep -Fxq -- "$CURRENT_VERSION"; then
+                  echo "::notice file=$file::Migration version $CURRENT_VERSION is a reviewed out-of-order exemption (ORDER_EXEMPT_VERSIONS)."
+                  continue
+                fi
                 echo "::error file=$file::New migration file '$file' is older than the last migration in base branch '$LAST_BASE_MIGRATION_PATH'."
                 exit 1
               fi

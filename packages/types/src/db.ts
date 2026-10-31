@@ -1,6 +1,7 @@
 import type { User as PrimitiveUser } from './primitives/User';
 import type { Database, Json, Tables } from './supabase';
 import type { JSONContent } from './tiptap';
+import type { InternalApiWorkspaceSummary } from './workspace-summary';
 
 export type * from './db-desktop-deployment';
 export type * from './db-task-actor';
@@ -357,18 +358,7 @@ export interface WorkspaceStorageFile {
   metadata?: WorkspaceStorageFileMetadata | null;
 }
 
-export type InternalApiWorkspaceSummary = Pick<
-  Workspace,
-  'id' | 'name' | 'personal' | 'avatar_url' | 'logo_url'
-> & {
-  access_type?: 'member' | 'guest';
-  tier?: Database['public']['Enums']['workspace_product_tier'] | null;
-  created_by_me?: boolean;
-  guest_board_count?: number;
-  guest_highest_permission?: 'view' | 'edit' | null;
-  guest_landing_path?: string | null;
-  guest_products?: Array<'tasks'>;
-};
+export type { InternalApiWorkspaceSummary } from './workspace-summary';
 export type InternalApiWorkspaceMember = Pick<
   WorkspaceUser,
   'id' | 'display_name' | 'email' | 'avatar_url'
@@ -830,9 +820,9 @@ export type ExternalProjectDeliveryAsset = Pick<
   | 'source_url'
   | 'alt_text'
   | 'sort_order'
-  | 'metadata'
   | 'updated_at'
 > & {
+  metadata: Json;
   assetUrl: string | null;
   assetRevision: string;
 };

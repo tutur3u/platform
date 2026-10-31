@@ -1,8 +1,5 @@
 import { updateSession } from '@tuturuuu/supabase/next/proxy';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   AuthenticatorAssuranceLevels,
   SupabaseUser,
@@ -31,6 +28,7 @@ import { appSessionFailureResponse } from './mfa-failure';
 import {
   decodeURIComponentSafely,
   normalizeAuthRedirectPath,
+  withRequestBasePath,
 } from './redirect-path';
 import {
   copySetCookieHeaders,
@@ -42,12 +40,24 @@ import {
   resolveSignedAppSessionForRequest,
 } from './signed-refresh';
 import { createAppSessionClaimsFromSupabaseClaims } from './supabase-app-claims';
+import {
+  bindRequestAppToken,
+  hasVerifiedTotpFactor,
+} from './verified-request-user';
+import {
+  readVerifyTokenResponse,
+  redirectToNormalizedVerifyTarget,
+  redirectToVerifyFallback,
+} from './verify-token-redirect';
 
 export {
   appSessionFailureResponse,
   preserveMfaRecoveryCookies,
 } from './mfa-failure';
-export { normalizeAuthRedirectPath } from './redirect-path';
+export {
+  normalizeAuthRedirectPath,
+  withRequestBasePath,
+} from './redirect-path';
 export { getRequestHeadersWithResponseCookies } from './response-cookies';
 
 const INTERNAL_HOSTNAME_PATTERN =
@@ -150,7 +160,10 @@ function buildCentralizedReturnUrl(
     publicOrigin,
     '/'
   );
-  const verifyUrl = new URL('/verify-token', publicOrigin);
+  const verifyUrl = new URL(
+    withRequestBasePath(req, '/verify-token'),
+    publicOrigin
+  );
   verifyUrl.searchParams.set('nextUrl', normalizedTargetPath);
   return verifyUrl.toString();
 }
@@ -223,11 +236,14 @@ function getLocalPortlessAuthApiUrl(req: NextRequest, apiPath: string) {
   ) {
     return null;
   }
-  return new URL(apiPath, `http://127.0.0.1:${port}`);
+  return new URL(withRequestBasePath(req, apiPath), `http://127.0.0.1:${port}`);
 }
 
 function getAuthApiUrl(req: NextRequest, apiPath: string) {
-  return getLocalPortlessAuthApiUrl(req, apiPath) ?? new URL(apiPath, req.url);
+  return (
+    getLocalPortlessAuthApiUrl(req, apiPath) ??
+    new URL(withRequestBasePath(req, apiPath), req.url)
+  );
 }
 
 function shouldUseClientVerifyTokenFlow(req: NextRequest) {
@@ -260,29 +276,6 @@ function matchesVerifyTokenPath(
     segments.length === 2 &&
     segments[1] === verifySegment &&
     locales.includes(segments[0] ?? '')
-  );
-}
-
-async function readVerifyTokenResponse(response: Response) {
-  return response.json().catch(() => null) as Promise<{
-    appSessionCreated?: unknown;
-    userId?: unknown;
-    valid?: unknown;
-  } | null>;
-}
-
-function redirectToNormalizedVerifyTarget(req: NextRequest, nextPath: string) {
-  return NextResponse.redirect(new URL(nextPath, req.nextUrl));
-}
-
-function redirectToVerifyFallback(
-  req: NextRequest,
-  fallbackPath: string,
-  response?: NextResponse
-) {
-  return clearSupabaseAuthCookies(
-    req,
-    response ?? NextResponse.redirect(new URL(fallbackPath, req.nextUrl))
   );
 }
 
@@ -371,6 +364,7 @@ function createSupabaseBackedAppSessionResponse(
     },
     { now: options.now }
   );
+  bindRequestAppToken(req, token, claims.sub);
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set('authorization', `Bearer ${token}`);
   req.headers.set('authorization', `Bearer ${token}`);
@@ -412,10 +406,7 @@ async function resolveAppSessionForRequest(
       discardAppCookiesForVerifiedProvider(req);
     const appSessionClaims = await createAppSessionClaimsFromSupabaseClaims(
       claims,
-      {
-        now,
-        targetApp: options.targetApp,
-      }
+      { now, request: req, targetApp: options.targetApp }
     );
 
     if (claims && !appSessionClaims)
@@ -549,11 +540,7 @@ async function requiresMfaVerification(
   if (assurance?.status === 503)
     throw new Error('Account assurance unavailable');
   if (assurance) return true;
-  const supabase = await createClient();
-
-  const { data: factors } = await supabase.auth.mfa.listFactors();
-  const hasVerifiedMFA =
-    factors?.totp?.some((factor) => factor.status === 'verified') || false;
+  const hasVerifiedMFA = await hasVerifiedTotpFactor(req, userId);
 
   if (!(hasVerifiedMFA && aal === 'aal1')) {
     return false;
@@ -789,6 +776,7 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
             const appSessionClaims =
               await createAppSessionClaimsFromSupabaseClaims(claims, {
                 now,
+                request: req,
                 targetApp: appSession.targetApp,
               });
 

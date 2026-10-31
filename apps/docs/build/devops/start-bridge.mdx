@@ -28,6 +28,7 @@ signature needs a new subpath and a coordinated migration.
 | `request-context` | Server adapter: installs the AsyncLocalStorage store and adds Next's `cookies()`; re-exports the core: `withBridgeRequest`, `bridgeRequest`, `maybeBridgeRequest`, `createRequestLocal`, `headers`, `cookies`, `draftMode`, `connection`, `after`, `appendContextCookies` | One AsyncLocalStorage store for every alias; carries `appBase` |
 | `endpoints` | `dispatchEndpoint`, `sortEndpoints`, `BridgeEndpoint`, `RouteModule`, `HTTP_METHODS` | Next route-handler semantics (HEAD→GET, OPTIONS 204, 405 with `Allow`, 400 on bad encoding) |
 | `pages` | `matchPage`, `BridgePage` | Matches a generated page manifest |
+| `assets` | `AssetsBinding`, `fetchAsset`, `AssetsResponse`, `AssetsRequestInit` | Type `env.ASSETS` as `AssetsBinding` (the Workers `Fetcher` satisfies it structurally) and serve through `fetchAsset(binding, request)`, which sends a URL plus a plain init and streams the reply back as a web `Response`; no Workers runtime type crosses into app code |
 | `api-forward` | `forwardToCentralApi`, `centralApiOrigin`, `HOP_BY_HOP_HEADERS` | Unowned `/api/*` to the central Web API; a same-origin target is refused only for paths the app owns (`ownsPath`), so a mounted app reaches Web on `tuturuuu.com` while a root-mounted self-forward stays a 503 |
 | `csp` | `createNonce`, `requestNonce`, `defaultContentSecurityPolicy` | Per-response script nonce; `createBridgeHandler({ csp })` sends the policy, `createRouter({ ssr: { nonce: requestNonce() } })` and `appBaseHeadScript()` stamp scripts. Required before any app mounts on the apex |
 | `canary` | `RUNTIME_HEADER`, `tagResponse`; retained unused: `decideCohort`, `parseCanaryPercent`, `CANARY_PERCENT_VARIABLE`, `COHORT_COOKIE` | Runtime tag for the post-cutover watch; no staged canaries |
@@ -35,11 +36,11 @@ signature needs a new subpath and a coordinated migration.
 | `next/navigation`, `next/link` | Router-mode navigation; `BridgeParamsContext` | Client navigation on the TanStack router |
 | `next/root-params` (alias) | `locale`, `getRootParam` | Explicit `rootParams` in the request context, then the app-relative first segment of the request the app sees (the next-intl rewrite), then `x-next-intl-locale` |
 | `next-intl/routing`, `next-intl/navigation`, `next-intl/server` (aliases) | `defineRouting`, `hasLocale`; `createNavigation(routing)` honouring `localePrefix` `never`/`as-needed`/`always`; `getRequestConfig`, `setRequestLocale`, `getLocale`, `getMessages`, `getTranslations`, `getFormatter`, `getNow`, `getTimeZone` | The server shim evaluates the app's `i18n/request.ts` once per request through the `next-intl/config` alias (as next-intl's plugin does). The real `next-intl/middleware` runs unchanged |
-| Other aliases | `server-only` → Start's marker; `@tuturuuu/satellite/i18n` → `intl/localized-navigation`; `nuqs/adapters/next/app` → `nuqs/adapters/tanstack-router`; `next/og` → `og`; `next/<module>.js`; `intlServer` replaces the generic `next-intl/server` | Set by the Vite preset |
+| Other aliases | `server-only` → Start's marker; `@tuturuuu/satellite/i18n` → `intl/satellite-i18n` (server-safe locale data and `redirect`; hooks and `Link` from the client `intl/localized-navigation`); `nuqs/adapters/next/app` → `nuqs/adapters/tanstack-router`; `next/og` → `og`; `next/<module>.js`; `intlServer` replaces the generic `next-intl/server` | Set by the Vite preset |
 | `next/navigation-document` | Document-mode `useRouter`/`NativeLink` | Full page loads (Apps gateway) |
 | `next/image`, `next/dynamic`, `next/cloudflare-context` | Optimizer-free image, lazy component, `getCloudflareContext` | |
 | `proxy-bridge` | `dispatchThroughProxy`, `defaultProxyMatches`, `toNextRequest`, `forwardedRequestInit` | Runs `proxy.ts` with Next's middleware protocol |
-| `function-proxy` | `createFunctionProxy({ targetApp, prefixBase?, continueWith? })` | Guards the server-function base |
+| `function-proxy` | `createFunctionProxy({ targetApp, prefixBase?, continueWith? })` | Guards the server-function base; refreshes the satellite session only at a host root, never for a mounted request (shared apex session, no app-cookie writes) |
 | `intl`, `intl/localized-navigation`, `intl/server` | `next-intl` on `use-intl`; en/vi localized links; `createIntlServer(messages)` | English unprefixed, Vietnamese under `/vi` |
 | `start/handler` | `createBridgeHandler(options)` | The Worker `fetch` skeleton; `mounts` resolves the base per request |
 | `start/server-entry` | `createBridgeStartHandler()` | Start handler that prefixes SSR asset URLs with the request's base |
@@ -143,7 +144,7 @@ fallback when no runtime base exists. Root mode is the identity everywhere.
 | Next middleware | `NextRequest` carries Next's `basePath`; `nextUrl.pathname` is app-relative and `nextUrl.clone()` redirects keep the base |
 | Links and navigation | `next/link`, `useRouter().push/replace`, `redirect()` prefix path-absolute hrefs with the runtime base |
 | URLs in app code | `appPath('/...')` and `appUrl('/share/...', origin?)` from `app-url` (worklets, Live, preview, download, share) |
-| Browser `/api` calls | Web-owned `/api` stays relative: on the apex it reaches Web directly, on a subdomain the Worker forwards it. App-owned endpoints must use `createApiPath(appApiPatterns, centralFirst)` (codegen `api.patternsOut` emits `appApiPatterns` without importing route modules); `@tuturuuu/internal-api` keeps calling Web relatively |
+| Browser `/api` calls | Web-owned `/api` stays relative: on the apex it reaches Web directly, on a subdomain the Worker forwards it. App-owned endpoints must use `createApiPath(appApiPatterns, centralFirst)` (codegen `api.patternsOut` emits `appApiPatterns` without importing route modules); `@tuturuuu/internal-api` adapters register the same route-aware resolver for calls without client options |
 | Location headers | Path-relative `Location` not already under the base gains it. Absolute URLs are never rewritten, so `new URL('/login', request.url)` behaves as in Next (it leaves the app) |
 | Central API | Unowned `/<app>/api/*` is forwarded as `/api/*` |
 | Auth return URLs | `appUrl(path, origin)` so the central login returns into the app |
@@ -152,115 +153,147 @@ fallback when no runtime base exists. Root mode is the identity everywhere.
 `tuturuuu.com/meet` is the Meet app root; product marketing moves to
 `/products/<app>`.
 
-## Shared session on the apex (proposal for security review)
+### Internal API resolver registration
 
-**Decision (user, 2026-10-25):** keep one Tuturuuu session, usable across
-every app; no per-app session cookies. The bridge therefore leaves all cookies
-untouched. Making that safe on the apex needs the auth change below. It is a
-**proposal awaiting security review**; nothing here is implemented yet.
+`registerDefaultAppBaseResolver(resolver)` is exported from
+`@tuturuuu/internal-api/client` and the package root. The callback receives a
+normalized path and returns a relative mounted path or an absolute URL. Clients,
+the shared singleton, `resolveInternalApiUrl(path, baseUrl?)`, and app-origin
+helpers use this precedence for relative inputs: explicit per-call `baseUrl` >
+client `options.baseUrl` > per-client `appBaseResolver` > latest active registered
+default > built-in fallback. Explicit bases bypass both resolvers, including
+resolvers returning absolute SSR URLs. Absolute input URLs bypass all base
+resolution. With no registration, existing root and subdomain defaults remain.
 
-### Current model and the apex problems
+Register once in each app adapter entrypoint, before requests or hydration.
+Browser adapters can register `appPath`, or `createApiPath(appApiPatterns,
+centralFirst)` when they also call Web-owned routes. The resolver applies to all
+relative internal-api calls, so mixed consumers must select their app-owned
+routes rather than prefix every route indiscriminately.
 
-- Each satellite holds a per-app access token in `tuturuuu_app_session`
-  (`target_app` = that app; `verifyAppSessionToken` requires an exact match)
-  plus `tuturuuu_app_session_refresh`, host-only at `Path=/` on its subdomain.
-- With `sessionMode: 'supabase-first'` and the root Supabase cookies
-  (`sb-<ref>-auth-token*`, shared on `.tuturuuu.com`) present,
-  `refreshAppSessionForRequest` already derives the app claims from Supabase,
-  mints the access token **in memory** as `Authorization: Bearer` for that
-  request, and then calls `clearAppSessionCookie`.
-- On the apex, `clearAppSessionCookie` would expire `tuturuuu_app_session`,
-  its refresh cookie **and Web's own `tuturuuu_web_app_session` (+ refresh)**
-  at `Path=/` on every mounted-app request.
-- Web's `createClient` (`packages/supabase/src/next/server.ts` and
-  `request/server.ts`, `requestHasAppSessionAuth`) switches to the isolated
-  app-session client whenever a `tuturuuu_app_session` cookie is present, so
-  any app writing that cookie at `Path=/` on the apex drops Web's Supabase
-  session. If several apps wrote it, they would overwrite each other's
-  per-app token.
+Server adapters must return an absolute URL using the incoming request host;
+a mounted relative path alone would still resolve against the configured Web
+origin. Read the bridge context inside the callback on every invocation:
 
-### Decision required: a JavaScript-readable shared session on one origin
+```ts
+import { registerDefaultAppBaseResolver } from '@tuturuuu/internal-api/client';
+import { appUrl } from '@tuturuuu/start-bridge/app-url';
+import { bridgeRequest } from '@tuturuuu/start-bridge/request-context';
 
-The root Supabase session cookies (`sb-<ref>-auth-token*`) are set with
-`Path=/`, `SameSite=Lax`, `Secure` and `Domain=.tuturuuu.com` but **not
-`HttpOnly`**: `getSupabaseCookieOptions`
-(`packages/supabase/src/next/common.ts`) leaves `@supabase/ssr`'s default
-`httpOnly: false`, because the browser Supabase client reads the session. Do
-not toggle that flag: browser auth depends on it.
+const unregister = registerDefaultAppBaseResolver((path) =>
+  appUrl(path, bridgeRequest().request.url)
+);
+```
 
-**Blast radius.** Today an XSS in one satellite can already read the root
-session through the shared `.tuturuuu.com` domain cookie. On one origin the
-radius is wider: script running under any `tuturuuu.com/<app>` path also shares
-the origin's `localStorage`, `sessionStorage`, IndexedDB, service-worker scope
-and same-origin `fetch`, so one app's XSS can act as the user in every app and
-in Web without reading a cookie at all. Path separation is not a security
-boundary within an origin.
+This example addresses all calls to the incoming app host; adapters with central
+Web calls must apply their ownership policy in the callback. Never register a
+new resolver per request or close over one request's URL or base. The portable
+internal-api module stores callbacks only; the bridge owns request isolation.
+The returned unregister function is idempotent, supports out-of-order cleanup,
+and restores the latest registration that is still active. Use it for adapter
+teardown or hot reload.
 
-**Accepting this requires, per mounted app:**
+Regression coverage: `packages/internal-api/src/default-app-base-resolver.test.ts`
+executes root, Meet and Mail mounts, SSR host selection, interleaved bridge
+requests sharing one client, per-client precedence, unregister, absolute bypass
+and prefix-once behavior. Consumer runtime acceptance remains with each app.
 
-- an enforced CSP with per-response script nonces (`createBridgeHandler({ csp })`,
-  `requestNonce()`) and Trusted Types, which is already mandatory before an
-  app mounts on the apex;
-- no inline event handlers or `eval`-style sinks, and dependency review for
-  script injection;
-- the `decideOneOriginRequest` gate (#6746) in front of every mount.
+## Shared session on the apex: decision (b), server-held session
 
-**Alternatives** if the risk is not accepted: keep satellites on their
-subdomains (today's isolation); mount only apps that pass a stricter security
-review; or move the browser to a backend-for-frontend session where an
-`HttpOnly` cookie is exchanged server-side and the browser Supabase client is
-not used on the apex.
+**Decision (user, 2026-10-26):** every app mounted at `tuturuuu.com/<app>`
+shares one Tuturuuu session that page script cannot read. It is an `HttpOnly`,
+`Secure`, `SameSite=Lax` cookie served through a backend-for-frontend (BFF)
+session layer, with no JavaScript-readable access or refresh token anywhere. CSP
+and Trusted Types stay mandatory per app, but as defense in depth, not the gate.
+Apex cutovers stay held until the admission gate below reports ready.
+Subdomain hosts keep serving throughout. The product rules (logout scope,
+step-up, token lifetimes) are in
+[Shared session](/platform/architecture/shared-session).
 
-### Proposed model (if accepted)
+### Model
 
-1. **The shared apex session is the root Supabase session.** Mounted apps
-   derive their per-app claims per request (in-memory bearer, as today) and
-   never write or clear `tuturuuu_app_session*` or
-   `tuturuuu_web_app_session*` on the apex. The audience check stays per app;
-   the Supabase JWT is validated on every request.
-2. **Mounted mode is decided by the bridge from the request URL only.** The
-   handler deletes any client-sent `x-tuturuuu-app-base` and sets its own from
-   the resolved mount. Auth code must not trust that header on any route a
-   client can reach without the bridge in front (direct Worker hosts, Web, or
-   tests); the invariant below is enforced by the writers themselves.
-3. **The no-app-cookie invariant holds at every writer and clearer on the
-   apex host:** `setAppSessionCookie`, `setAppSessionRefreshCookie`,
-   `setWebAppSessionCookie`, `setWebAppSessionRefreshCookie`,
-   `clearAppSessionCookie` (including the MFA-redirect clear in
-   `packages/auth/src/proxy/index.ts`), `createSupabaseBackedAppSessionResponse`,
-   and the cross-app helpers in `packages/auth/src/cross-app/server.ts`. Each
-   checks the response's target host, not a request header. The satellite
-   `api/auth/refresh-app-session` and `api/auth/verify-app-token` routes reject
-   apex (mounted) calls before any write.
-4. **CSRF.** Every unsafe, cookie-authenticated endpoint on the apex requires a
-   same-origin `Origin` (or a CSRF token) and rejects `Sec-Fetch-Site:
-   cross-site`; server functions keep Start's CSRF middleware. Logout is a
-   protected unsafe operation, not a GET.
-5. **Logout and refresh races.** Logout signs the user out of the Supabase
-   session, so it is global across Web and every mounted app by design.
-   Concurrent tabs and Workers may refresh the same Supabase refresh token:
-   rely on the project's refresh-token reuse interval, never let a refresh
-   response restore cookies after a sign-out (responses compare a session
-   generation before writing `Set-Cookie`), and accept that an already issued
-   access JWT stays valid until its expiry (bound the access-token lifetime
-   accordingly; revocation-sensitive operations re-check the session).
-6. **Verification cost.** Each mounted-app request validates the Supabase JWT
-   (local with asymmetric keys; JWKS cached with rotation-aware refetch),
-   refreshes when near expiry, and may run the MFA lookups the satellites
-   already run. Measure the p95 on staging before cutover.
-7. **Subdomains keep today's behaviour** until each app's cutover.
+- **One writer.** Web is the only component that creates, refreshes, rotates or
+  clears the session cookie. Mounted Workers and satellites on the apex only
+  read it: they validate the JWT and derive per-app claims in memory per request
+  (as `sessionMode: 'supabase-first'` already does). They never write or clear
+  `sb-*`, `tuturuuu_app_session*` or `tuturuuu_web_app_session*`.
+- **No token in JavaScript.** No access or refresh JWT is readable by page
+  script, returned in a JSON body to a browser request, or kept in Web Storage,
+  IndexedDB or the Cache API. The only exceptions are single-purpose
+  capabilities that are topic- or object-scoped, last at most 5 minutes and
+  cannot be exchanged for a session: realtime join tickets (60 s) and storage
+  signed URLs.
+- **Browser code reaches data only through same-origin `/api/*`** (or the app's
+  own `/<app>/api/*`) with the cookie. Browser Supabase clients are retired.
+- **Bearer clients are untouched.** A request with `Authorization: Bearer` is
+  authenticated by the bearer alone; its cookies are ignored and CSRF rules do
+  not apply. Mobile and CLI keep their native flows.
+- **Mounted mode comes from the URL.** The bridge deletes any client-sent
+  `x-tuturuuu-app-base` and sets its own from the resolved mount; auth code never
+  trusts that header (#6774).
+- **Stages.** Stage A makes the existing `sb-<ref>-auth-token*` cookie
+  `HttpOnly` and keeps `Domain=.tuturuuu.com` so subdomain servers keep reading
+  it; ambiguous duplicate cookies are treated as unauthenticated for unsafe
+  methods. Stage B moves to a host-only `__Host-` cookie after the first
+  cutovers.
+- **End state.** The platform is moving to Cloudflare. The long-term session is
+  a first-party signed `HttpOnly` cookie issued and verified in a Worker, with
+  state in a Durable Object or D1. Supabase Auth becomes one identity provider
+  behind an interface. Stage A and Stage B harden today's cookie in the
+  meantime; build no new features on the Supabase cookie format.
 
-### Code that must change (auth owner, after acceptance)
+### Mounted no-writer guard
 
-| Where | Change |
-| --- | --- |
-| `packages/auth/src/proxy/index.ts` `refreshAppSessionForRequest` | Apex host: Supabase-only; skip `resolveSignedAppSessionForRequest`; a missing/invalid session goes to Web login with `appUrl(...)` as the return URL |
-| same file, `createSupabaseBackedAppSessionResponse` and the MFA-redirect branch | Apex host: keep the in-memory bearer and the Supabase `Set-Cookie` pass-through; never call `clearAppSessionCookie` |
-| same file, `appSessionFailureResponse` | Apex host: no app-cookie writes; absolute Web URLs |
-| `packages/auth/src/app-session.ts` setters and `clearAppSessionCookie`; `packages/auth/src/cross-app/server.ts` | Refuse apex-host writes (the invariant above) |
-| Satellite `app/api/auth/{logout,refresh-app-session,verify-app-token}` | Apex: logout is a protected POST to Web sign-out; refresh and verify reject before writes |
-| `packages/supabase/src/next/server.ts`, `packages/supabase/src/request/server.ts` `requestHasAppSessionAuth` | On the apex host, a valid Supabase cookie session wins over a cookie-borne `tuturuuu_app_session` |
-| `@tuturuuu/start-bridge` `function-proxy` and app `proxy.ts` calls | Pass the URL-derived mount through; never a header from the client |
+The function-proxy change (#6774) covers server-function middleware only. The
+app's ordinary `proxy.ts` and endpoint registry still reach the auth writers,
+for example `/api/auth/verify-app-token` and `/api/auth/refresh-app-session`,
+whose `createPOST` and `createRefreshPOST`
+(`packages/auth/src/cross-app/server.ts`) set `Path=/` app-session cookies.
+Under (b) the guard is permanent:
+
+1. **Bridge admission**, before `proxy.ts` and endpoint dispatch: a mounted
+   request (non-empty URL-derived `appBase`) to a session-minting endpoint gets a
+   terminal `409 APP_SESSION_MOUNTED`, with no verification, rotation or
+   `Set-Cookie`. A same-origin mount needs no handshake, because the apex
+   cookie is the session.
+2. **The writers themselves**: the app-session setters and
+   `clearAppSessionCookie` refuse to write when the server-side bridge context
+   is mounted (never a header). This also covers `proxy.ts` refresh and MFA
+   redirects.
+3. **Response backstop**: mounted responses drop any `Set-Cookie` for app-session
+   **and Supabase session** names, and drop `Service-Worker-Allowed`.
+4. **Logout** from a mounted app is a POST to Web `/api/auth/logout`.
+5. **Expiry**: a mounted Worker answers `401 SESSION_REFRESH_REQUIRED` for API
+   and server-function calls, and `303` to Web's refresh endpoint for document
+   navigations. It never refreshes itself.
+
+Whole-handler tests run through `createBridgeHandler`:
+
+- mounted verify and refresh return `409` with no `Set-Cookie`;
+- mounted pages and APIs emit no session `Set-Cookie`, including on the MFA and
+  refresh-failure paths;
+- root-mode controls behave exactly as today;
+- a client-sent `x-tuturuuu-app-base` never switches modes.
+
+### CSRF
+
+Cookie-authenticated unsafe requests (no `Authorization: Bearer`) pass only
+with `Sec-Fetch-Site: same-origin`, or, when Fetch Metadata is absent, an
+`Origin` equal to the request's own origin. `same-site` (sibling subdomains),
+`cross-site`, `none`, a missing or `null` `Origin` and any mismatch are
+rejected. The check is a framework-free helper applied by Web middleware, by
+bridge admission and by each BFF auth endpoint, with an explicit, tested
+exemption registry (provider webhooks, OAuth callbacks, bearer and native auth
+routes). It rolls out `off`, then `report` (at least 24 h clean in production),
+then `enforce`, with the mode injected by each adapter.
+
+### Admission gate
+
+`@tuturuuu/utils/one-origin-routing` refuses the shared origin in every mode
+until a `bffSessionReady` input is true. That input requires CSRF `enforce`, the
+`HttpOnly` cookie, no browser Supabase client and the no-writer guard, read from
+runtime config. Each app still needs its own one-origin admission review (CSP,
+Trusted Types, content inventory).
 
 ## Page adapter
 
@@ -270,6 +303,28 @@ The generic App Router page adapter (React Server Components) and the
 RSC-environment shims for `next-intl/*` and `next/root-params`. The bridge
 keeps its request store on a global Symbol so every bundled environment
 observes the same request.
+
+The RSC `next-intl` hooks call `use()` on the request's single cached config
+promise. That promise carries React's `status`/`value`, and
+`NextIntlClientProvider` settles it before rendering children, so translated
+server components render inline. A hook that suspends makes Flight outline the
+component as a lazy row. React's streaming renderer (19.2.8, and still 19.3.1)
+can leave a Suspense boundary unresolved when a boundary rendered after the
+shell has a fallback that suspends. The browser then reports React error #419.
+Keep Suspense fallbacks synchronous. A translated server component rendered
+above or beside the provider still suspends once; in development the bridge
+logs a one-time `console.warn` for it.
+
+Assert emitted HTML with `findUnresolvedSuspenseBoundaries` from
+`@tuturuuu/start-bridge/start/suspense-boundaries`; it must return `[]`. It
+reports:
+- pending boundaries, under any `identifierPrefix`;
+- completions whose segment container (`div`, `svg`, `math` or table) is missing;
+- unfilled `P:` segments;
+- boundaries switched to client rendering (`$RX`, or `<!--$!-->` from the shell).
+
+It reads the inline instruction scripts of stable React and the `data-r*i`
+templates of the external runtime.
 
 ## Runtime tag
 
@@ -304,6 +359,61 @@ export default defineConfig(({ command }) => ({
 `basePath` defaults to `TUTURUUU_BASE_PATH` at build time. List `shims`
 explicitly when converting an app whose current config aliases only some
 `next/*` modules, so the bundle does not change.
+
+Worker SSR/RSC environments resolve `workerd`, `worker`, `module` and `browser`
+export conditions, matching Cloudflare's runtime. A package whose `browser`
+entry needs a DOM therefore fails during server rendering, and its `node` entry
+is no substitute when it depends on jsdom. Do not reorder conditions per package;
+use a DOM-free implementation for code that renders on the server. For example,
+`isomorphic-dompurify` throws at import and `dompurify` has no `sanitize`
+without a `window`, so server-rendered rich text uses `sanitize-html` (Forms,
+Mail). Cover the swap with a `@vitest-environment node` test that mocks the
+DOM-only module to throw.
+
+## CI template
+
+`.github/workflows/native-start-app.yaml` is the reusable validation for a
+bridged app. Each app keeps a thin caller (`<app>-cloudflare.yaml`) that owns
+the triggers, the **path filters** (the app, every workspace package in its
+dependency closure including `packages/start-bridge/**`, its artifact helper,
+`bun.lock`, the caller and the template), concurrency and the `ci-check.yml`
+gate, then calls the template with:
+
+| Input | Example (Shortener) |
+| --- | --- |
+| `app`, `package` | `shortener`, `@tuturuuu/shortener` |
+| `artifact-script` | `scripts/ci/shortener-native-artifact.py` (config/seal/verify/pack/restore) |
+| `env-interface`, `worker-environment-type` | `ShortenerGeneratedEnv`, `ShortenerEnvironment` |
+| `public-env` | Newline-separated `NEXT_PUBLIC_*`/`TUTURUUU_NOINDEX` build fixtures; anything else is rejected |
+| `format-paths` | Owning paths for Biome |
+| `helper-tests`, `unit-command`, `runtime-command` | Optional overrides |
+| `runtime-setup-command` | Optional prerequisite install (for example Playwright browsers) run in its own 10-minute step before each runtime step, so slow mirrors cannot consume the tight runtime timeout |
+
+Runtime setup uses `.github/actions/install-native-runtime-prerequisites` in
+both validation and restore acceptance. On the disposable Ubuntu runner it
+keeps Ubuntu's suites, components and signing key, selects the official HTTPS
+archive instead of the Azure mirror, and sets three apt acquisition retries
+with 20-second HTTP/HTTPS inactivity timeouts. Index download failures are
+fatal. The existing ten-minute setup and four-minute runtime limits remain.
+Playwright still owns the complete Chromium/font dependency list and already
+uses `--no-install-recommends`; do not trim fonts to hide download failures.
+No package cache or whole-command replay is used. For a setup timeout, inspect
+the apt download host and timestamps separately from browser installation;
+then rerun the failed job after resolving transport failures. Regression coverage:
+`node --test scripts/ci/native-runtime-prerequisites.test.js`.
+
+The template validates the inputs and runs, on the exact source SHA: frozen
+install, dependency build, build identity, the registry check, unit tests,
+Biome, the Void build, route-tree drift, type-check, emitted-config validation,
+emitted binding-type compatibility (a scoped harness: the generated bindings
+become a module importing only the Workers types they name, checked under the
+app's own tsconfig, so global runtime types never retype app code), Wrangler `deploy --dry-run`, then seal →
+emitted runtime → verify → pack. A second job restores the archive into clean
+output and repeats the dry-run, runtime acceptance and byte verification. It
+has no publish job or provider credential; production stays held in
+`tuturuuu.ci.ts`. Apps with extra acceptance (Apps' browser anchors, Meet's
+realtime Worker) keep those steps in their own workflow until the template
+grows an input for them.
 
 ## Verification
 

@@ -1,0 +1,144 @@
+---
+title: "TanStack and Cloudflare migration inventory"
+description: "Repository snapshot of app runtimes, hosts, migration readiness and suggested sequencing."
+updatedAt: '2026-10-29'
+---
+
+## Scope and evidence
+
+Snapshot from `origin/main` commit `040ebe764a` (2026-10-29). The active target is
+per-app TanStack Start + Void + Vite+ on Cloudflare Workers, with Oxc adoption;
+`apps/web` remains last and `apps/tanstack-web` is paused retained source. The
+app/runtime distinctions below follow package manifests, deployment configs and
+workflow/runtime docs. Counts are reproducible rough source indicators: files
+under an app excluding generated/dependency directories; route-like source files
+and total TS/JS/RS/Dart lines. They are not URL counts or complexity scores.
+
+Current operating contracts, basePath/session behavior and release gates are in
+the [active runtime](/build/devops/active-runtime), [native Start migration]
+(/build/devops/native-start-migration), [Oxc/Cloudflare adoption]
+(/build/development-tools/oxc-cloudflare-adoption), and backend ownership references. Every app must retain
+its exact current host until an explicit app cutover.
+
+## Application inventory
+
+| App | Purpose / runtime | Host/config evidence | Route-like files / LOC | Migration blockers and readiness |
+| --- | --- | --- | ---: | --- |
+| ai | AI product; Next.js 16.4 | Vercel | 79 / 19.8k | App Router, server APIs/auth; not yet Worker-backed |
+| api | Shared API Worker; Vite/native Worker | Cloudflare `wrangler.jsonc` | 0 / 2.6k | Preserve API contract/bindings; service needs Vite+ adoption, not React migration |
+| apps | App catalog; Next.js 16.4 | Vercel; staging Wrangler | 9 / 3.3k | Next APIs/session and routing; staging config is not cutover proof |
+| calendar | Calendar; Next.js 16.4 | Vercel | 134 / 78.8k | Large App Router/API surface, auth/provider sync; frontend candidate held to existing gates |
+| chat | Chat; Next.js 16.4 | Vercel | 28 / 2.4k | Next route handlers/auth and realtime integration |
+| cms | CMS; Next.js 16.4 | Vercel | 65 / 28.3k | Next APIs, server rendering/auth; not Worker-backed |
+| colab | Collaborative rooms; Vite React + Worker | Cloudflare Wrangler | 0 / 10.2k | Already Worker-backed first wave; adopt Vite+ while preserving Durable Objects/auth |
+| contacts | Contacts; Next.js 16.4 | Vercel | 631 / 103.3k | Large routes, server actions/middleware/cache and deep Supabase usage |
+| coordination | Coordination service; native Worker | Cloudflare publish config | 0 / 2.4k | Worker first wave; preserve protocol/auth/object identity; Vite+ already configured |
+| cron-control | Scheduler controller; native Worker | Cloudflare config in package/workflow | 0 / 3.9k | First wave; preserve triggers, recovery and deduplication; Vite+ configured |
+| database | DB tooling/package | No app host | 0 / 5.8k | Not a user-facing app; retain native purpose, adopt shared tooling where applicable |
+| devbox-control | Devbox control Worker | Cloudflare publish config | 0 / 1.0k | First wave; preserve leases/auth/state; Vite+ configured |
+| drive | Drive; Next.js 16.4 | Vercel | 75 / 6.3k | Next APIs, storage/auth/session; API ownership must remain shared backend |
+| external | External-facing pages; Next.js 16.4 | Vercel | 35 / 2.0k | Next routing/auth and API proxy behavior |
+| finance | Finance; Next.js 16.4 | Vercel | 175 / 23.1k | Server actions, API routes and finance authorization; start-bridge deps present |
+| forms | Forms; Next.js 16.4 | Vercel | 54 / 38.7k | Form submission handlers, auth/storage and Next cache behavior |
+| git | Git integration; Next.js 16.4 | Vercel | 31 / 6.7k | OAuth callbacks, server routes and secrets handling |
+| hive | Hive app; Next.js 16.4 | Vercel/workflow-owned | 66 / 17.4k | Next APIs, auth and realtime; verify canonical host from deploy workflow |
+| hive-realtime | Hive realtime service; native service | Workflow/runtime owned | 0 / 1.1k | Preserve realtime protocol; tooling adoption only |
+| infrastructure | Platform operations; Next.js 16.4 | Vercel | 722 / 196.5k | Very large admin/API surface, privileged auth, cron gateways; high risk |
+| inventory | Inventory; Next.js 16.4 | Vercel | 252 / 74.9k | Broad routes, auth and cache/server APIs |
+| learn | Learning platform; Next.js 16.4 | Vercel | 75 / 20.0k | Auth, server APIs and content rendering |
+| lettin | Publishing; Next.js 16.4 | Cloudflare OpenNext Worker | 47 / 33.2k | First-wave framework replacement; preserve D1/R2/session contracts and Next bridge gaps |
+| mail | Mail; Next.js 16.4 | Vercel plus email-routing Worker | 228 / 48.0k | Preserve email Worker separately; Next server/API/auth and held publication |
+| meet | Meetings; Next.js 16.4 | Vercel plus realtime Worker | 81 / 15.4k | Preserve media/DO/session/API contracts; held publication; bridge coverage |
+| meet-realtime | Realtime signaling/SFU; native Worker | Cloudflare Wrangler | 0 / 7.6k | Worker first wave; preserve DO classes, TURN/SFU health and signaling |
+| mind | Mind app; Next.js 16.4 | Vercel | 33 / 4.3k | Next APIs/auth; candidate after smallest satellites |
+| mobile | Native mobile; Flutter | App stores/Firebase (native workflows) | 15 / 567.3k | Not a web rewrite; native toolchain remains, shared services migrate independently |
+| nova | Nova app; Next.js 16.4 | Vercel | 234 / 45.4k | Many route-like modules; auth/API and bridge compatibility |
+| parley | Parley; Next.js 16.4 | Cloudflare OpenNext Worker | 39 / 2.8k | Preserve private reviews/snapshots/Meet bindings; Next bridge work |
+| pay | Payments; Next.js 16.4 | Vercel | 63 / 10.9k | Provider callbacks/webhooks, sensitive authorization and API behavior |
+| playground | Playground; Next.js 16.4 | Vercel | 8 / 0.3k | Small source, but sandbox/security boundaries and auth dominate risk |
+| redis | Redis integration package/service | No app host | 0 / 0 | Package/infra boundary, not an app runtime |
+| rewise | Rewise; Next.js 16.4 | Vercel | 62 / 9.7k | Next API/auth and content behavior |
+| shortener | URL shortener; Next.js 16.4 | Vercel | 2 / 2.0k | Small candidate; redirect/cache semantics, custom domains and auth |
+| storage-unzip-proxy | Storage unzip proxy; service | Workflow/host needs per-service verification | 0 / 1.3k | Preserve bounded archive/security behavior; identify owner/config before migration |
+| storefront | Storefront; Next.js 16.4 | Vercel | 42 / 5.8k | Payments/catalog/session and Next APIs |
+| supermemory | Shared memory package/service | No app host identified | 0 / 0.7k | Confirm whether deployed service or library; preserve current consumers |
+| tanstack-web | Retained TanStack Start/React Router tree | Wrangler/Vercel files retained | 150 / 88.1k | Explicitly paused; not an active migration target |
+| tasks | Tasks; Next.js 16.4 | Vercel | 292 / 80.8k | Large App Router/API/auth surface; bridge and authorization complexity |
+| teach | Teaching app; Next.js 16.4 | Vercel | 215 / 45.5k | Large routing/API/auth surface |
+| tools | Utilities; Next.js 16.4 | Vercel | 15 / 1.8k | Next APIs/auth and API proxy behavior |
+| track | Tracking app; Next.js 16.4 | Vercel | 170 / 43.1k | Server APIs/auth and route breadth |
+| turbo-cache | Build cache; Vite service | Workflow/service owned | 0 / 2.0k | Adopt Vite+ and Oxc where supported; preserve cache protocol |
+| web | Main platform; Next.js 16.4 | Vercel | 1,923 / 600.8k | Largest shared app; middleware/proxy, server actions, cache, route handlers, ISR and deep integrations; migrate last |
+
+Authentication across Next apps primarily uses Supabase SSR and app session
+cookies; exact per-app variants must be preserved and inventoried in each lane.
+The target mounted-app contract uses the shared apex session described by the
+runbook. API ownership remains with the existing shared API/Web suppliers; do not
+move or duplicate `/api` ownership as an incidental frontend migration. Worker
+services own their explicitly configured fetch/RPC/email/scheduled contracts.
+
+Counts are intentionally conservative source indicators; Next apps use
+App Router and have route handlers and middleware/proxy usage to varying degrees.
+`next/image`, `cacheComponents`, server actions, ISR and Next cache APIs must be
+measured per app by the owning migration lane; a repository-wide count is not a
+substitute for that compatibility review. `next/*` access in migrated apps is
+through `@tuturuuu/start-bridge`.
+
+## Recommended order
+
+1. **Shortener**: two route-like modules and ~2k LOC; narrow public redirect contract.
+   Validate redirect status, host/basePath handling, caching and abuse controls.
+2. **Playground**: tiny route count, but do not begin until sandbox and execution
+   isolation contracts are mapped; small source does not mean low security risk.
+   The current contract and its tests are in the
+   [Playground isolation contract](/build/devops/playground-isolation-contract).
+3. **Tools, external, mind, chat**: small surfaces; choose only after auth, API proxy,
+   and realtime boundaries are confirmed.
+4. **Parley and Lettin**: already Worker-hosted, giving direct artifact/hosting
+   continuity; do these after shared bridge and Worker acceptance patterns are proven.
+5. **Small/medium Vercel satellites**, grouped by domain and owner; then Apps, Drive,
+   Rewise, AI, Forms, Nova, Track, Finance, Storefront, Calendar, Mail, Meet,
+   Inventory, Tasks, Teach, Contacts and Infrastructure by verified compatibility
+   score, not LOC alone.
+6. **Native Workers/services** (Colab, coordination, cron-control, devbox-control,
+   Meet realtime, email routing, API and remaining services) adopt Vite+ / Oxc as
+   separate service-scoped changes preserving their entrypoint/resource identity.
+7. **Web last** because it is the largest route, package and API owner and has the
+   broadest middleware, cache, auth and integration compatibility surface.
+
+This ordering is a proposal. Exact ownership, private acceptance evidence and
+cutover sequencing follow the active runtime and per-app runbooks. Mobile remains
+native Flutter rather than joining a web framework migration.
+
+## First app plan: Shortener in four PRs
+
+1. **Inventory and contract tests**: capture current deployed response/status,
+   redirects, query preservation, custom domains, cache headers, abuse controls,
+   session assumptions and both subdomain/basePath behavior. Add route registry and
+   bridge compatibility findings; no hosting change.
+2. **TanStack/Void adapter**: add app-local Vite+ config, Start routes and Worker
+   entry; bridge only required `next/*`; port redirect logic behind a framework-free
+   function. Keep Vercel canonical.
+3. **Artifact and CI acceptance**: exact-head tests/type/lint/build, sealed Worker
+   artifact inspection, binding/config parity, basePath, auth and API ownership
+   checks; publish no production traffic.
+4. **Cutover**: follow the native runbook's private production smoke, explicit
+   reviewed routing change, immediate signed-in/public acceptance, rollback path
+   and 30–60 minute watch. Current Vercel remains canonical until this cutover
+   change is accepted; migration completion requires runtime evidence.
+
+Split any phase if the route contract or bridge gaps require shared package work.
+No production provisioning or cutover is implied by this inventory.
+
+## Vector Strike reusable patterns
+
+`gh api repos/vhpx/vector-strike/contents/...` was available. Its `vite.config.ts`
+uses `defineConfig` from `vite-plus`, then plugin order `voidPlugin()`,
+`tanstackStart()`, React; its `server.ts` exports Durable Object classes and
+dispatches `/api/` to an explicit API handler before forwarding other requests to
+`@tanstack/react-start/server-entry`. Its package scripts use `vp dev`, `vp build`,
+`vp preview`, and `void deploy --platform cloudflare`, with typecheck and Vitest.
+This is a useful adapter shape, not a drop-in template: app-specific auth, bindings,
+resource migrations, deployment workflows, artifact acceptance and API ownership
+need independent proof. The accessible repo listing did not establish its complete
+auth/session or production workflow contract.

@@ -264,6 +264,28 @@ export async function PATCH(
 
   try {
     const payload = updateAssetSchema.parse(await request.json());
+    for (const [table, id] of [
+      ['workspace_external_project_entries', payload.entry_id],
+      ['workspace_external_project_blocks', payload.block_id],
+    ] as const) {
+      if (!id) continue;
+      const { data: parent, error: parentError } = await access.admin
+        .from(table)
+        .select('id')
+        .eq('ws_id', access.normalizedWorkspaceId)
+        .eq('id', id)
+        .maybeSingle();
+      if (parentError)
+        return NextResponse.json(
+          { error: 'Failed to verify asset reference' },
+          { status: 500 }
+        );
+      if (!parent)
+        return NextResponse.json(
+          { error: 'Asset reference not found' },
+          { status: 404 }
+        );
+    }
     const asset = await updateWorkspaceExternalProjectAsset(
       assetId,
       {
@@ -272,7 +294,7 @@ export async function PATCH(
         asset_type: payload.asset_type,
         block_id: payload.block_id,
         entry_id: payload.entry_id,
-        metadata: payload.metadata as Json | undefined,
+        metadata: payload.metadata as NonNullable<Json> | undefined,
         sort_order: payload.sort_order,
         source_url: payload.source_url,
         storage_path: payload.storage_path,

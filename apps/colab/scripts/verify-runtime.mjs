@@ -51,6 +51,7 @@ const mf = new Miniflare({
         assert.ok(!request.headers.get('cookie').includes('colab_session'));
         return Response.json(
           {
+            staffVerified: true,
             user: {
               id: 'host',
               email: 'host@tuturuuu.com',
@@ -100,7 +101,13 @@ const mf = new Miniflare({
 });
 const token = (id, email, expires = Date.now() + 3600000) => {
   const payload = Buffer.from(
-    JSON.stringify({ id, email, name: id, expires })
+    JSON.stringify({
+      id,
+      email,
+      staffVerified: email.endsWith('@tuturuuu.com'),
+      name: id,
+      expires,
+    })
   ).toString('base64');
   return `${payload}.${createHmac('sha256', secret).update(payload).digest('base64')}`;
 };

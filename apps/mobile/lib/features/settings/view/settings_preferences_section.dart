@@ -91,8 +91,14 @@ class _PreferencesSection extends StatelessWidget {
       (
         'interaction',
         l10n.settingsNotificationsInteraction,
-        [notifications, interaction, const LinkBrowserSettingsTile()],
+        [
+          const PushSettingsTile(),
+          notifications,
+          interaction,
+          const LinkBrowserSettingsTile(),
+        ],
       ),
+      ('privacy', l10n.settingsPrivacy, [const TelemetrySettingsTile()]),
     ];
     final sections = [
       for (final group in groups)

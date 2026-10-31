@@ -19,6 +19,7 @@ extension InventoryCacheSnapshot on InventoryRepository {
   ({List<InventoryProduct> data, int count})? peekProducts(
     String wsId, {
     String query = '',
+    String status = 'active',
     int pageSize = 20,
   }) {
     final cached = _peekInventory(
@@ -33,7 +34,7 @@ extension InventoryCacheSnapshot on InventoryRepository {
       ),
       params: {
         'query': query.trim(),
-        'status': 'active',
+        'status': status,
         'page': '1',
         'pageSize': '$pageSize',
       },

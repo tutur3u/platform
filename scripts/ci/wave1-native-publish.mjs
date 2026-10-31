@@ -1,9 +1,16 @@
 // biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Direct CI entrypoint; deployment credentials never enter Turbo builds.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import {
+  appendFileSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from 'node:fs';
+import { basename, dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { ingressPreflight } from './wave1-ingress-preflight.mjs';
 import { stagingAdmission } from './wave1-native-admission.mjs';
 import {
   artifactDigest,
@@ -11,7 +18,16 @@ import {
   verify,
 } from './wave1-native-artifact.mjs';
 import { attemptLedger } from './wave1-native-attempt.mjs';
-import { profiles } from './wave1-native-profile.mjs';
+import { profileFor, profiles } from './wave1-native-profile.mjs';
+import {
+  NativeUploadError,
+  productionFailureMessage,
+} from './wave1-native-upload-error.mjs';
+import {
+  assertUploadLimits,
+  measureUpload,
+} from './wave1-native-upload-limits.mjs';
+import { recheckNext, requireVerifiedPair } from './wave1-web-next.mjs';
 
 export function publicationAdmission({
   environment,
@@ -144,16 +160,39 @@ export async function main({
   appRoot,
 } = {}) {
   const [mode, app, environment, sha] = argv;
-  appRoot ??= resolve('apps', app);
+  // The Web issuer candidate builds from its isolated cloudflare/ root.
+  appRoot ??=
+    app === 'web' ? resolve('apps/web/cloudflare') : resolve('apps', app);
+  if (mode === 'dry-run') {
+    assert.ok(
+      !env.CLOUDFLARE_API_TOKEN &&
+        !env.CLOUDFLARE_STAGING_API_TOKEN &&
+        !env.WAVE1_PRODUCTION_CLOUDFLARE_API_TOKEN,
+      'Provider credentials forbidden in dry-run'
+    );
+    const { receipt, config } = verify(appRoot, app, environment, sha);
+    const measurements = await uploadArtifact({
+      env,
+      app,
+      environment,
+      config,
+      sha,
+      digest: artifactDigest(receipt),
+      p: receipt.profile,
+      exec,
+      dryRun: true,
+    });
+    console.log(JSON.stringify({ uploadMeasurements: measurements }));
+    assertUploadLimits(measurements);
+    return;
+  }
   const request = (url, token, body) => boundedJson(url, token, fetcher, body);
   const { productionPublicationHold } = await import(
     './production-publication-policy.ts'
   );
   const admission = publicationAdmission({
     environment,
-    hold:
-      productionPublicationHold(`${app}-cloudflare.yaml`) ??
-      profiles.productionHold,
+    hold: productionPublicationHold(`${app}-cloudflare.yaml`) ?? null,
     ref: env.GITHUB_REF,
     event: env.GITHUB_EVENT_NAME,
     stagingEnabled: env.WAVE1_STAGING_PUBLISH_ENABLED,
@@ -210,7 +249,7 @@ export async function main({
   if (environment === 'staging')
     assert.equal(
       p.host,
-      `${p.name}.${env.CLOUDFLARE_WORKERS_SUBDOMAIN}.workers.dev`
+      profileFor(app, 'staging', env.CLOUDFLARE_WORKERS_SUBDOMAIN).host
     );
   const flag =
     environment === 'staging'
@@ -234,6 +273,32 @@ export async function main({
     );
   };
   await assertEnabled();
+  // Ingress-admitted identities (Access-protected Custom Domain) must prove
+  // their topology and the fresh serving intent before any ledger write.
+  await ingressPreflight({
+    app,
+    env,
+    request,
+    cfToken,
+    ghToken,
+    accountId: p.accountId,
+  });
+  // Web issuer (a): the admitted pair must be the signed `verified` Next entry
+  // for this SHA, deployment, project and sealed origin. Read-only here.
+  if (app === 'web') {
+    assert.equal(
+      admitted.nextDeploymentId,
+      p.nextFallback?.deploymentId,
+      'Admitted Next deployment differs from the sealed fallback'
+    );
+    await requireVerifiedPair({
+      env,
+      fetcher,
+      sha,
+      deploymentId: p.nextFallback.deploymentId,
+      origin: p.nextFallback.origin,
+    });
+  }
   const ledger = await attemptLedger({
     request,
     base: `https://api.cloudflare.com/client/v4/accounts/${p.accountId}`,
@@ -285,6 +350,41 @@ export async function main({
   const validate = () => verify(appRoot, app, environment, sha);
   const save = () =>
     writeFileSync(recordPath, `${JSON.stringify(record, null, 2)}\n`);
+  record.measurements = await uploadArtifact({
+    env,
+    app,
+    environment,
+    config,
+    sha,
+    digest,
+    p,
+    exec,
+    dryRun: true,
+    secretNames: names,
+  });
+  save();
+  try {
+    assertUploadLimits(record.measurements);
+  } catch (error) {
+    record.state = 'refused-before-upload';
+    save();
+    throw error;
+  }
+  const recheckWeb = async () => {
+    if (app === 'web') {
+      const fresh = await recheckNext({
+        env,
+        fetcher,
+        sha,
+        deploymentId: p.nextFallback.deploymentId,
+      });
+      assert.deepEqual(
+        fresh.failures,
+        [],
+        `Next protection changed since verification:\n${fresh.failures.join('\n')}`
+      );
+    }
+  };
   const accept = async (versionId) => {
     const active = await request(`${cfBase}/deployments`, cfToken);
     assert.equal(active.success, true);
@@ -337,6 +437,7 @@ export async function main({
     'Multiple matching versions require owner reconciliation'
   );
   if (identical.length) {
+    await recheckWeb();
     record.versionId = identical[0].id;
     if (ledger.prior?.state === 'activated') {
       // A terminal activation is never downgraded; a rerun only re-verifies it.
@@ -370,61 +471,35 @@ export async function main({
   try {
     await assertEnabled();
     validate();
+    await recheckWeb();
   } catch (error) {
     record.state = 'failed';
     save();
     await ledger.save('failed');
     throw error;
   }
-  const write = async () => {
-    const outputFile = resolve(
-      env.RUNNER_TEMP,
-      `${app}-${environment}-wrangler.ndjson`
-    );
-    try {
-      exec(
-        'bun',
-        [
-          'x',
-          '--no-install',
-          'wrangler',
-          'deploy',
-          '--config',
-          config,
-          '--message',
-          sha,
-          '--tag',
-          digest,
-        ],
-        {
-          env: {
-            ...env,
-            CLOUDFLARE_API_TOKEN: cfToken,
-            CLOUDFLARE_ACCOUNT_ID: p.accountId,
-            WRANGLER_OUTPUT_FILE_PATH: outputFile,
-            WRANGLER_SEND_METRICS: 'false',
-          },
-          stdio: ['ignore', 'pipe', 'pipe'],
-          timeout: 180000,
-          maxBuffer: 1024 * 1024,
-        }
-      );
-    } catch {
-      throw new Error(
-        'Wrangler publication outcome is uncertain; inspect the matching version and retained receipt before any retry'
-      );
+  const write = () =>
+    uploadArtifact({
+      env,
+      app,
+      environment,
+      config,
+      sha,
+      digest,
+      cfToken,
+      p,
+      measurements: record.measurements,
+      exec,
+    });
+  try {
+    record.versionId = await write();
+  } catch (error) {
+    if (error instanceof NativeUploadError) {
+      record.uploadFailure = error.uploadFailure;
+      save();
     }
-    const writes = readFileSync(outputFile, 'utf8')
-      .split('\n')
-      .filter(Boolean)
-      .map((line) => JSON.parse(line))
-      .filter((item) => item.type === 'deploy');
-    assert.equal(writes.length, 1, 'Expected one publication receipt');
-    assert.equal(writes[0].worker_name, p.name);
-    assert.match(writes[0].version_id, /^[a-f0-9-]{36}$/);
-    return writes[0].version_id;
-  };
-  record.versionId = await write();
+    throw error;
+  }
   record.state = 'uploaded';
   save();
   await ledger.save('uploaded', record.versionId);
@@ -436,15 +511,116 @@ export async function main({
     `Accepted ${p.name} version ${record.versionId} (private staging; public serving disabled)`
   );
 }
+export async function uploadArtifact({
+  env,
+  app,
+  environment,
+  config,
+  sha,
+  digest,
+  cfToken,
+  p,
+  exec = execFileSync,
+  dryRun = false,
+  measurements,
+  secretNames = [],
+}) {
+  if (dryRun)
+    assert.equal(
+      cfToken,
+      undefined,
+      'Deploy credential forbidden in measurement'
+    );
+  if (!dryRun) assertUploadLimits(measurements);
+  const outdir = dryRun
+    ? realpathSync(
+        mkdtempSync(resolve(env.RUNNER_TEMP, `${app}-${environment}-dry-run-`))
+      )
+    : undefined;
+  let outputFile = resolve(
+    env.RUNNER_TEMP,
+    `${app}-${environment}-wrangler.ndjson`
+  );
+  if (dryRun) outputFile += `.${basename(outdir)}`;
+  try {
+    exec(
+      'bun',
+      [
+        'x',
+        '--no-install',
+        'wrangler',
+        'deploy',
+        ...(dryRun ? ['--dry-run', '--outdir', outdir] : []),
+        '--config',
+        config,
+        '--message',
+        sha,
+        '--tag',
+        digest,
+      ],
+      {
+        cwd: resolve(dirname(config), '../..'),
+        env: {
+          ...Object.fromEntries(
+            [
+              'PATH',
+              'HOME',
+              'USER',
+              'TMPDIR',
+              'TMP',
+              'TEMP',
+              'LANG',
+              'LC_ALL',
+            ].flatMap((name) =>
+              env[name] === undefined ? [] : [[name, env[name]]]
+            )
+          ),
+          CI: 'true',
+          ...(cfToken ? { CLOUDFLARE_API_TOKEN: cfToken } : {}),
+          CLOUDFLARE_ACCOUNT_ID: p.accountId,
+          WRANGLER_OUTPUT_FILE_PATH: outputFile,
+          WRANGLER_SEND_METRICS: 'false',
+          WRANGLER_WRITE_LOGS: 'false',
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+        timeout: dryRun ? 60000 : 180000,
+        maxBuffer: 1024 * 1024,
+      }
+    );
+  } catch (error) {
+    throw new NativeUploadError(error, [cfToken]);
+  }
+  const writes = readFileSync(outputFile, 'utf8')
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => JSON.parse(line))
+    .filter((item) => item.type === 'deploy');
+  assert.equal(writes.length, 1, 'Expected one publication receipt');
+  assert.equal(writes[0].worker_name, p.name);
+  if (dryRun) {
+    assert.equal(
+      writes[0].version_id,
+      null,
+      'Dry-run must not upload a version'
+    );
+    assert.ok(writes[0].bundle_size, 'Missing exact CLI bundle measurements');
+    return measureUpload(config, outdir, secretNames, writes[0].bundle_size);
+  }
+  assert.match(writes[0].version_id, /^[a-f0-9-]{36}$/);
+  return writes[0].version_id;
+}
+
 if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(resolve(process.argv[1])).href
 ) {
   main().catch((error) => {
     console.error(
-      error instanceof Error
-        ? error.message
-        : 'Unknown native publication failure'
+      error instanceof NativeUploadError
+        ? productionFailureMessage(error)
+        : error instanceof Error
+          ? error.message
+          : 'Unknown native publication failure'
     );
     process.exitCode = 1;
   });

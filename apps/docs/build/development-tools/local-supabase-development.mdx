@@ -1,7 +1,7 @@
 ---
 title: 'Local Supabase Development'
 description: 'Learn how to work with Supabase locally in the Tuturuuu development workflow.'
-updatedAt: '2026-10-22'
+updatedAt: "2026-10-31"
 ---
 
 <Info>
@@ -16,6 +16,73 @@ Contract startup and type generation retry registry throttling and transient ima
 The E2E baseline keeps its existing service set, excluding only Edge Runtime and Functions. SQL-only contracts keep their existing narrower service sets. CI uses `public.ecr.aws`; no image archive cache is introduced.
 
 Regression coverage: `TMPDIR=/private/tmp node --test apps/database/scripts/run-supabase-image-retry.test.js`. Real cold/warm/corrupt baseline and contract acceptance runs in exact-commit CI.
+
+## Independent SQL session fixtures
+
+The pgTAP concurrency fixtures include `tests/helpers/local-dblink.inc` before
+starting their transactions or writing fixture data. On a stock `supabase start`
+stack, the helper connects through `db.supabase.internal:5432` with the CLI's
+local development credentials. No extra environment is required. PostgreSQL
+trusts loopback connections inside the container, so supplying a password to
+`127.0.0.1` still does not authenticate dblink for a non-superuser role.
+
+For a different **disposable test database**, configure the existing PostgreSQL
+session setting `test.dblink_connstr` with a password-authenticated connection to
+that same database (for example, via `PGOPTIONS` in a direct `pg_prove` runner).
+Do not use production credentials or point independent sessions at another
+instance. The local default has a three-second connection timeout; custom
+connection strings should also set a bounded `connect_timeout`.
+
+The helper probes and closes a connection before any fixtures run. If connection
+setup fails, the file emits a TAP skip with setup guidance and exits successfully
+instead of aborting halfway through committed fixture writes. Connection strings
+and server errors are not printed. A skip means concurrency was **not verified**;
+acceptance on the stock stack requires actual passing assertions. Subsequent SQL
+and assertion errors remain failures. Destroy the owned disposable stack and its
+volumes after running these fixtures, since some commit across sessions.
+
+Regression checks: run the five dblink fixtures with the default connection,
+then with `test.dblink_connstr` targeting an unavailable port and confirm each
+reports a clean skip before fixture setup.
+
+## CLI upgrade type drift
+
+Regenerate `packages/types/src/supabase.ts` from the complete applied migration
+snapshot with the upgraded workspace CLI, using `public,private,storage`, then
+format with the pinned Biome version. The isolated contract lifecycle uses those
+same schemas. Do not regenerate only the first failing table or hand-edit the
+generated declarations.
+
+To distinguish generator behavior from database changes, run both CLI generators
+against the same disposable database. The 2.117.0 to 2.121.0 upgrade changes
+postgres-meta from v0.99.0 to v0.100.0: the newer generator adds `ComputedFields`
+and computed row fields, excludes generated columns from writes, narrows non-null
+JSON columns, and emits `Record<PropertyKey, never>` for no-argument RPCs. The
+same-database comparison also distinguishes these changes from the newer service
+baseline's Storage lifecycle columns and version-aware function signatures.
+
+Check every active workspace after regeneration: Turbo can stop at the first
+failure. Use queued per-workspace type checks; when cold `dist` declarations are
+missing, use a temporary no-emit config mapping package exports to source while
+preserving the workspace's file exclusions. Do not build locally to fill `dist`.
+Narrow object-only JSON producers and validated write inputs to `NonNullable<Json>`;
+keep genuinely nullable columns and sanitized delivery values nullable. Include
+computed relationships in row fixtures, but never insert computed fields. Run
+focused tests and require the exact pushed commit's TypeScript CI to pass.
+
+The Connected Mail drift check compares three private tables with the committed
+types. Their upgrade delta is `ComputedFields: never`; their row columns,
+optionality and relationships are unchanged. The new generator also quotes
+property names, which Biome may unquote. Normalize these equivalent AST property
+keys without discarding actual contract differences. Regression coverage is
+`apps/database/scripts/connected-mail-types-drift.test.mjs`, including rejection
+of semantic changes in quoted output.
+
+On a disposable Linux devbox, keep Bun and the clone local to the task. Docker 29
+may require command-scoped `DOCKER_API_VERSION=1.41`; the CLI's volume prune can
+then fail because `--all` requires API 1.42. Verify the owned project has no
+containers, remove only its exact named volume and network, and verify absence
+before removing its retained disposable directory. Never run a global prune.
 
 ## Basic Commands
 
@@ -238,12 +305,6 @@ The generator includes the `public`, `private`, and `storage` schemas. Keep
 server-owned/private tables out of Supabase REST exposure, but still regenerate
 types after migrations so server-only helpers and storage paths can import
 accurate generated row shapes.
-
-Alternatively, you can use the shorthand:
-
-```bash
-bun typegen
-```
 
 <Info>
   This step is automatically performed when running `bun sb:reset`, making it
@@ -624,7 +685,7 @@ For better performance in your RLS policies:
 
 Tuturuuu ships a large suite of database tests in
 `apps/database/supabase/tests/`. These are [pgTAP](https://pgtap.org/) test files
-(each one wraps its assertions in a transaction and rolls back), and they run
+(most wrap their assertions in a transaction and roll back), and they run
 against the local Supabase instance through the Supabase CLI.
 
 To run the database test suite locally:
@@ -642,6 +703,23 @@ To run the database test suite locally:
    `supabase test db`, which executes every `tests/*.sql` file against the local
    database. There is no dedicated `bun sb:test` alias — the test runner is the
    Supabase CLI itself.
+
+Concurrency fixtures can commit data in independent connections. Reset the isolated
+database before repeating the full suite; assertions about provenance must filter
+by the fixture actor or target rather than count unrelated committed rows.
+
+The calendar and employee concurrency tests accept the database setting
+`test.dblink_connstr`. On local images where `postgres` is not a superuser, set it
+after reset, using the disposable database administrator, to a password-authenticated
+connection to that same database. A Docker-network address uses SCRAM; loopback
+trust does not satisfy `dblink`'s password requirement even when a password is
+supplied. Supply only disposable local credentials, never a linked project DSN.
+Stop the uniquely named project with `supabase stop --no-backup` after validation.
+
+When updating security tests, distinguish restrictive MFA policies from permissive
+access grants. Preserve denied-role assertions and seed real Auth identities for
+verified staff fixtures. A runtime contract rejecting its own migrated function
+metadata is a product regression, not a reason to relax the test.
 
 Each test file begins by enabling pgTAP, then uses helpers like `plan()`,
 `is()`, and `throws_ok()` to assert behavior. A trimmed example:
@@ -823,6 +901,21 @@ Database seeding is the process of populating your database with initial data. I
 
 In Tuturuuu, seed files are stored in `apps/database/supabase/seed.sql`. This file is automatically executed when you run `bun sb:reset` or start a fresh Supabase instance.
 
+### Replaying migrations with existing storage buckets
+
+An in-place remote `supabase db reset --linked` preserves managed storage
+tables while replaying migrations. Bucket creation must tolerate an existing
+bucket ID. Use `ON CONFLICT (id) DO NOTHING` for creation defaults; retain
+intentional upserts that apply later configuration changes. This preserves
+existing bucket settings and objects without changing fresh-database defaults.
+
+`node --test apps/database/scripts/storage-bucket-inserts.test.js` executes every
+migration bucket insert in a disposable PGlite database, replays each insert,
+and verifies that creation-only inserts preserve existing settings. This focused
+check does not replace full migration replay or authorize a remote reset. The
+database package's `sbr:reset` wrapper deletes buckets before resetting; use a
+separately approved, explicitly targeted procedure when storage must survive.
+
 ### Real Examples from Tuturuuu's Seed File
 
 Let's look at some real examples from Tuturuuu's seed.sql file:
@@ -999,7 +1092,7 @@ Sometimes you might want to create a custom seed file for specific testing scena
 3. Run it with the Supabase CLI:
 
 ```bash
-bun supabase db reset --db-url=postgresql://postgres:postgres@localhost:54322/postgres
+node apps/database/scripts/run-supabase.js db reset --db-url=postgresql://postgres:postgres@localhost:54322/postgres
 psql postgresql://postgres:postgres@localhost:54322/postgres -f apps/database/supabase/my_custom_seed.sql
 ```
 
@@ -1009,7 +1102,7 @@ You can also export your current database data to use as seed data:
 
 ```bash
 # Export only data (not schema) to seed.sql
-bun supabase db dump --db-url=postgresql://postgres:postgres@localhost:54322/postgres --data-only > apps/database/supabase/new_seed.sql
+node apps/database/scripts/run-supabase.js db dump --db-url=postgresql://postgres:postgres@localhost:54322/postgres --data-only > apps/database/supabase/new_seed.sql
 ```
 
 This is helpful when you've set up data manually and want to preserve it for future development environments.
@@ -1020,7 +1113,7 @@ For Tuturuuu development, we recommend:
 
 1. Start with a fresh database: `bun sb:reset`
 2. Make changes through the UI or your app
-3. When you're satisfied, export the data: `bun supabase db dump --data-only > apps/database/supabase/new_seed.sql`
+3. When you're satisfied, export the data: `node apps/database/scripts/run-supabase.js db dump --data-only > apps/database/supabase/new_seed.sql`
 4. Edit the generated SQL to keep only what you need
 5. Update the main `seed.sql` file with your changes
 6. Test by running `bun sb:reset` again
@@ -1218,3 +1311,41 @@ try {
 ```
 
 CI pulls Supabase images anonymously from `public.ecr.aws` through `SUPABASE_INTERNAL_IMAGE_REGISTRY`; no registry login or package-read permission is needed. Seven attempts allow at most 487.5 seconds of backoff, excluding command runtime. Throttling (`toomanyrequests`, `Rate exceeded` or HTTP 429) and classified transient pull transport errors retry; SQL never replays. The baseline fingerprint includes the registry, so a registry change invalidates existing snapshots once.
+
+### Backfills with historical payload violations
+
+A `NOT VALID` check still rejects updates to historical rows, even when the
+checked payload does not change. For notification email-copy cleanup, first
+batch rows that satisfy the exact catalog check expression (SQL NULL also passes).
+If legacy oversized rows remain, capture `pg_get_constraintdef`, drop the check,
+clear only their email copies and restore the same named check `NOT VALID` in
+the same transaction. Preserve payload bytes. Keep `lock_timeout = '1s'`; the
+constraint drop takes `ACCESS EXCLUSIVE` until commit, so perform it only after
+the regular batches finish. With no oversized rows, leave the constraint intact.
+
+On a disposable full chain, reproduce SQLSTATE `23514` with the original
+migration, then verify payload bytes, email removal, byte-identical constraint
+definition, unchanged name, `convalidated = false`, and rejection of a new
+oversized insert. Also compare constraint OIDs on the safe-only path. The batch
+regression is `apps/database/supabase/tests/notification-email-payload-cleanup.sql`;
+run the other notification pgTAP suites after applying the remaining migrations.
+
+
+### Task RPC user-client admission
+
+`apps/database/supabase/tests/time-task-rpc-scoping.sql` checks caller admission
+and service-only writer grants. Apply the migration snapshot to an isolated
+local stack before testing the actual Tasks dashboard and Mira Tasks handlers:
+
+```sh
+ttr resources run -- node apps/database/scripts/verify-task-rpc-user-callers.mjs --root <disposable-root>
+```
+
+The runner accepts only a disposable local root and loopback API URL. It obtains
+that stack's test credentials in memory and passes them only to the test process.
+The fixture creates disposable Auth users and tasks, invokes the real handlers
+with a real authenticated Supabase client, checks anonymous and different-user
+RPC denial through PostgREST, and removes its synthetic team workspace and user.
+Personal workspace cleanup remains owned by the Auth deletion lifecycle.
+The integration test skips unless the runner supplies its three `TEST_SUPABASE_*`
+variables; the ordinary unit suite does not require a running database.

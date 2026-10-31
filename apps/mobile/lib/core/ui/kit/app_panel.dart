@@ -33,7 +33,7 @@ class AppPanel extends StatelessWidget {
     final c = tokens.colorScheme;
     final type = tokens.typography;
     final solid = MediaQuery.highContrastOf(context);
-    final radius = BorderRadius.circular(AppRadius.card);
+    final radius = tokens.interface.borderRadius(AppRadius.card);
     final hasAction = actionLabel != null && onAction != null;
     final hasHeader = title != null || hasAction;
     final header = !hasHeader

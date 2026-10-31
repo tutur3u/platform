@@ -141,6 +141,39 @@ delay notifications do not produce automatic blacklist suggestions.
 
 ## Architecture
 
+### Native Start runtime
+
+The Mail candidate uses `@tuturuuu/start-bridge` for request context, middleware,
+route dispatch, function authentication, navigation and locale adapters. Mail
+keeps its own function-body bounds, API middleware matcher, action ports and
+response policy, including signed webhook exemptions and attachment framing.
+The Email Routing Worker remains a separate service.
+
+`apps/mail/start-bridge.routes.json` generates the API registry and page manifest.
+Run `bun run --cwd apps/mail bridge:generate` after adding or moving routes, then
+`bun run --cwd apps/mail bridge:check`. The owning Mail build runs the check
+before `vp build`; stale or unregistered routes fail closed. The page policy
+covers every generated `PagePattern`, so a new page also requires an explicit
+view policy. API regressions retain all 41 original routes and assert the
+authenticated request and decoded params reaching each handler.
+
+The bridge resolves the app base per request: the subdomain serves the root,
+while the apex serves `/mail`. Its head script hands the resolved base to the
+browser before hydration; asset, navigation and function URLs follow that base.
+Both hosts use one compiled artifact. Mount support is source readiness, not
+canonical-route admission. Keep production publication held until the release owner records
+the exact artifact, independent review, provider/webhook/attachment acceptance,
+mount/session acceptance and rollback evidence.
+
+Under `/mail`, Web owns shared-session writes: Mail rejects logout, token
+verification and session refresh before middleware or endpoint dispatch. The
+fence uses the bridge's route matcher, so trailing and repeated slash variants
+receive the same rejection without calling handlers or providers or emitting
+session cookies. Subdomain endpoints retain their existing methods and cookie
+behavior. `mounted-session-endpoints.test.ts` exercises this boundary through the
+real bridge dispatcher, including canonical paths and subdomain controls.
+
+
 - `apps/mail` owns the mailbox UI and protected app-local APIs under
   `/api/v1/workspaces/:wsId/mail/*`.
 - The mailbox mirror is stored in service-only `private.mail_*` tables. Browser
@@ -235,6 +268,14 @@ editable. Inline quoted images retain their attachment metadata. Selecting
 text exposes Enhance selection. AI previews replace only that passage after review;
 a document change invalidates the captured selection. Plain-text reading caps runs
 of blank lines without changing stored text or meaningful indentation.
+
+Draft attachment images are stored with raw `/api/v1/...` paths. The editor mounts
+them only for display, so a draft saved at `tuturuuu.com/mail` can reopen at
+`mail.tuturuuu.com` and vice versa. Previously saved `/mail/api/...` draft image
+references are normalized when the editor loads them. External image URLs retain
+their original value. The composer regression in
+`apps/mail/src/app/[locale]/(dashboard)/[wsId]/mail-composer-editor.test.ts`
+covers both directions and the legacy reference.
 
 ## SES Receiving Setup
 
@@ -430,7 +471,7 @@ Activate the bridge in this order:
 2. Open Mail settings as a root workspace operator, select
    `ingest.tutur3u.com`, choose the destination mailbox, and enable the logical
    catch-all route. The initial pilot destination is
-   `phucvo@tuturuuu.com` when that mailbox exists.
+   `<owner-mailbox>` when that mailbox exists.
 3. In Cloudflare Email Routing, select the already-onboarded
    `ingest.tutur3u.com` subdomain and set its catch-all action to the
    `tuturuuu-mail-email-routing` Worker. Keep explicit rules enabled; they take
@@ -491,7 +532,7 @@ Cloud resources; migrating their email does not authorize deleting those groups
 or changing their IAM membership.
 
 For the Tuturuuu migration, suspended accounts stay suspended while incoming
-mail for their addresses follows the domain catch-all to `phucvo@tuturuuu.com`.
+mail for their addresses follows the domain catch-all to `<owner-mailbox>`.
 An existing inactive mailbox must not be recreated by automatic provisioning.
 This delivery policy does not grant the suspended user mailbox access.
 
@@ -541,7 +582,7 @@ message-size limit before switching the application provider; domain activation
 alone does not prove application sends or recipient delivery.
 
 For `tuturuuu.com`, the requested catch-all destination is
-`phucvo@tuturuuu.com`. Configure the logical Mail destination first, route the
+`<owner-mailbox>`. Configure the logical Mail destination first, route the
 Cloudflare catch-all to the ingestion Worker, and retain explicit recipient
 routes. Prove delivery to a new random local part, the preserved original
 recipient, attachment storage, and duplicate handling before enabling the Google
@@ -629,7 +670,20 @@ local profile/session behavior, not Worker/provider/production/customer delivery
 
 Mail owns one settings entry in its sidebar. Its shell disables the shared
 settings utility with `showSettingsButton={false}`; other satellite apps keep
-the default. Mail settings continue using the `mailSettings` URL state.
+the default. Mail settings continue using the `mailSettings` URL state, and keep
+their tab in `mailSettingsTab`; the shared `settingsTab` parameter belongs to the
+account settings dialog, which would otherwise open on top of Mail settings.
+
+Settings → Mail source switches between managed mailboxes and connected Gmail
+or Outlook accounts; the inbox has no source tab bar. The `connected=1` URL
+parameter still selects connected accounts, and non-`@tuturuuu.com` accounts
+still default to them.
+
+The inbox sync icon is tied to the refresh request, not a timer. Refresh
+refetches the list, mailboxes and unread counts together; the icon spins until
+all of them settle, including background revalidation (but not loading an older
+page), then eases back to rest. With reduced motion it stays still and dims.
+`use-mail-refresh.test.ts` and `use-settling-spin.test.ts` cover this.
 
 Unread and attachment quick filters compose with the search query. The selection
 checkbox selects loaded conversations, and selection resets when the mailbox,
@@ -637,9 +691,27 @@ folder, label, or search changes. Message loading failures show an explicit retr
 state instead of appearing as an empty mailbox. Sending, draft autosave, protected
 attachments, and delivery settings remain behind the existing Mail APIs.
 
+Thread rows mark unread conversations with weight and a dot rather than a filled
+card. Their dates show the time for today, the day for this year and the full
+date otherwise, with the exact timestamp on hover (`mail-thread-date.test.ts`).
+
 The conversation pane constrains message width and keeps message details and
 attachments available without expanding them by default. Small screens show one
 pane at a time, with a back action returning to the message list.
+
+### Web inbox load path
+
+The thread list does not wait for bootstrap when the mailbox is already known:
+the `mailbox` URL parameter, or the default mailbox remembered from the
+previous bootstrap in this browser, starts the list request in parallel. After
+bootstrap, only returned mailboxes are used, and the server authorizes every
+mailbox ID. Per-mailbox unread counts wait while a first thread page is loading;
+on a first visit with no remembered mailbox they can start alongside it.
+
+Bootstrap is read-only in the common case. It reads the personal mailbox,
+memberships and display name in one parallel stage, and writes only to repair a
+stale identity, a missing owner membership, or missing or renamed system labels.
+`bootstrap-personal.test.ts` and `use-mail-bootstrap.test.ts` cover these rules.
 
 ## Distribution groups
 
@@ -1041,8 +1113,28 @@ Configure these server-only variables for the Mail deployment:
 - `MAIL_MICROSOFT_CLIENT_ID`, `MAIL_MICROSOFT_CLIENT_SECRET`,
   `MAIL_MICROSOFT_REDIRECT_URI`.
 
-Both registered callback URLs point to the Mail origin's
-`/api/v1/mail/connected/callback`. Enable the Gmail API and grant
+When the primary redirect URI is unset, both providers default to the canonical
+subdomain callback below. Malformed explicitly configured values fail closed.
+The existing provider callback stays at
+`https://mail.tuturuuu.com/api/v1/mail/connected/callback`. Before admitting the
+apex mount, register `https://tuturuuu.com/mail/api/v1/mail/connected/callback`
+**alongside** the old callback in both providers. Configure the additional
+server-only `MAIL_GOOGLE_APEX_REDIRECT_URI` and
+`MAIL_MICROSOFT_APEX_REDIRECT_URI` only after registration. Each request selects
+an exact configured callback by its serving origin and `/mail` mount; it never
+trusts a forwarded host or redirects authorization across hosts. The callback
+exchanges the code using that same registered URI, clears state at its matching
+cookie path, and returns to the inbox under the serving mount. An unconfigured
+host fails closed. Existing subdomain configuration remains the default.
+
+Webhooks, OAuth callbacks and WebSockets also continue to be served on the old
+subdomain until it only redirects. Provider registration and production routes
+remain separate owner operations.
+Callback selection and both providers' mounted start/completion behavior are
+covered by `oauth-callback-url.test.ts`, `oauth.test.ts` and
+`oauth-callback.test.ts` under `apps/mail/src/lib/mail/connected/`.
+
+Enable the Gmail API and grant
 `https://www.googleapis.com/auth/gmail.modify`. This is a restricted Google scope;
 complete the provider's required consent verification before public rollout.
 Register the Microsoft app for organizational and personal Microsoft accounts
@@ -1084,3 +1176,18 @@ After TAP succeeds, it generates actual `public`, `private` and `storage` schema
 Scope: Mail's native frontend defaults to strict noncomposite noemit app checking, then genuine Mail-only declarations, then the actual noDOM Worker check. Both app programs retain all current roots and imported-source checking; shared package export/build/check owners remain authoritative. `bun run type-check` sequences app, boundary and Worker. The boundary emits into `.typecheck/app` with rootDir `.`, noEmitOnError and incremental false. The Worker resolves only emitted `#mail-handler` declarations; Vite resolves that exact alias to the real source. Inherited Turbo prerequisites and `.typecheck/**` outputs are preserved. Direct Mail production/test imports use package exports: the narrow Supabase realtime-log-actions entry follows its existing dist-types/source-Bun/dist-JS convention and build roots; Satellite workspace/invitation entries already exist. The app-local resolver exempts server suppliers when porting client calls, avoiding recursive transport aliases. No supplier or shared producer is changed. Static edge regressions remain authored UNRUN; real compiler external-source classification still requires exact-source CI.
 
 Limits: generated binding-only declarations must come from the qualified emitted deployment config. Pinned compiler workspace-external classification/rootDir behavior, declaration closure and clean/restored-cache acceptance remain unproven. Missing bridge/ambient isolation regressions are authored UNRUN in `apps/mail/src/runtime/type-programs.test.ts`; source assertions do not establish compiler or workerd acceptance. Unexpected foreign emission or incompatible contracts stop qualification without source exclusions. Logger timer/buffer lifetime and all provider/runtime delivery gates remain parent-owned; this decision adds no scheduler or resource.
+
+Mounted Mail API helpers receive raw `/api/...` paths; the shared resolver adds `/mail`
+for Mail routes and leaves Web routes at root. Browser and server adapters register
+once and read request context at call time. Rendered attachment href/src values use
+the base helper; text/DOCX helpers receive raw protected URLs. CID images get the
+mount when serialized into preview HTML. See `mail-api-options.test.ts`,
+`mail-attachment-card.test.ts` and `mail-message-preview-utils.test.ts`.
+
+Mounted page, API and function middleware relies on the shared apex Supabase
+session. It skips cross-app token consumption, satellite session refresh and
+Supabase cookie clearing; OAuth state cookies remain scoped to their flow.
+Root-mode Mail keeps its existing satellite session behavior. The required
+`NEXT_PUBLIC_SUPABASE_URL` Worker secret is declared in the native artifact
+profile and remains separate from browser build-time configuration. See
+`proxy-auth.test.ts` for the no-session-cookie-write regression.

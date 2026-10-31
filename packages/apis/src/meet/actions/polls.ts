@@ -6,6 +6,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { getPlan } from '@tuturuuu/utils/plan-helpers';
 import { revalidatePath } from 'next/cache';
 import { resolveMeetGuestFromSession } from '../guest-session';
 
@@ -32,7 +33,7 @@ async function resolvePollActor(
     const supabase = await createClient();
     const { user } = await resolveAuthenticatedSessionUser(supabase);
 
-    if (!user?.id) {
+    if (!user?.id || !(await getPlan(planId, { actorUserId: user.id }))) {
       return { error: 'Unauthorized' };
     }
 
@@ -42,7 +43,11 @@ async function resolvePollActor(
     };
   }
 
-  if (!input.guestId || !input.guestSession) {
+  if (
+    !input.guestId ||
+    !input.guestSession ||
+    !(await getPlan(planId, { actorUserId: null }))
+  ) {
     return { error: 'Unauthorized' };
   }
 

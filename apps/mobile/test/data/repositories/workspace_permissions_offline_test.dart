@@ -26,6 +26,8 @@ void main() {
   late bool offline;
   late bool networkAvailable;
   late bool grant;
+  late bool creator;
+  late bool mastermind;
   late int status;
   late List<Uri> reads;
   Completer<void>? gate;
@@ -61,6 +63,8 @@ void main() {
     offline = false;
     networkAvailable = true;
     grant = true;
+    creator = false;
+    mastermind = false;
     status = 200;
     reads = [];
     gate = null;
@@ -93,12 +97,13 @@ void main() {
               'workspace_roles': {
                 'workspace_role_permissions': [
                   if (granted) {'permission': 'manage_inventory'},
+                  if (mastermind) {'permission': manageMastermindPermission},
                 ],
               },
             },
           ];
         } else if (request.url.path.endsWith('workspaces')) {
-          data = {'creator_id': 'someone-else'};
+          data = {'creator_id': creator ? 'user' : 'someone-else'};
         } else {
           data = [
             {'permission': 'view_inventory'},
@@ -125,6 +130,18 @@ void main() {
     await store.closeForTesting();
     await Hive.close();
     await directory.delete(recursive: true);
+  });
+
+  test('creator retains an explicit Mastermind role grant only', () async {
+    creator = true;
+    final denied = await repository.getPermissions(wsId: 'ws');
+    expect(denied.isCreator, isTrue);
+    expect(denied.containsPermission(manageMastermindPermission), isFalse);
+
+    mastermind = true;
+    final granted = await repository.getPermissions(wsId: 'ws');
+    expect(granted.isCreator, isTrue);
+    expect(granted.containsPermission(manageMastermindPermission), isTrue);
   });
 
   test(

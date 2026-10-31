@@ -7,9 +7,9 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/pending_collection_overlay.dart';
 import 'package:mobile/core/responsive/adaptive_sheet.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 import 'package:mobile/widgets/pending_sync_frame.dart';
 
 enum NoteLinkKind { task, event, finance, note, meeting }
@@ -411,7 +411,7 @@ class _NoteLinkPickerSheetState extends State<_NoteLinkPickerSheet> {
               const SizedBox(height: 12),
               Expanded(
                 child: _loading && _options.isEmpty
-                    ? const Center(child: NovaLoadingIndicator())
+                    ? const AppLoadingIndicator.page()
                     : _failed && _options.isEmpty
                     ? Center(child: Text(context.l10n.notesLoadError))
                     : _options.isEmpty

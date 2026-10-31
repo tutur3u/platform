@@ -5,6 +5,13 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        find: '@/lib/post-email-queue/enqueue-access',
+        replacement: resolve(
+          __dirname,
+          '../../apps/web/src/lib/post-email-queue/enqueue-access.ts'
+        ),
+      },
+      {
         find: '@/lib/post-email-queue',
         replacement: resolve(
           __dirname,

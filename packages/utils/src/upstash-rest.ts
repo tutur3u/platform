@@ -1,8 +1,21 @@
 import type { Redis } from '@upstash/redis';
+import type { GuardFairnessInput } from './abuse-guard/client';
+import type { AbuseGuardFamily } from './abuse-guard/protocol';
+import { createGuardRedisView } from './abuse-guard/redis-view';
+import { selectAbuseGuard } from './abuse-guard/select';
 
 export type UpstashRestRedisClient = Pick<
   Redis,
-  'decr' | 'del' | 'expire' | 'get' | 'incr' | 'mget' | 'scan' | 'set' | 'ttl'
+  | 'decr'
+  | 'del'
+  | 'eval'
+  | 'expire'
+  | 'get'
+  | 'incr'
+  | 'mget'
+  | 'scan'
+  | 'set'
+  | 'ttl'
 >;
 export type UpstashRatelimitRedisClient = Pick<
   Redis,
@@ -10,13 +23,114 @@ export type UpstashRatelimitRedisClient = Pick<
 >;
 
 export function hasUpstashRestEnv(): boolean {
-  return Boolean(
-    process.env.UPSTASH_REDIS_REST_URL?.trim() &&
-      process.env.UPSTASH_REDIS_REST_TOKEN?.trim()
-  );
+  const url = process.env.UPSTASH_REDIS_REST_URL?.trim();
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN?.trim();
+  return Boolean(url && token);
 }
 
-export async function getUpstashRestRedisClient(): Promise<UpstashRestRedisClient | null> {
+/**
+ * Replay-fence cutover: until ABUSE_GUARD_REPLAY_LEGACY_UNTIL (an ISO date set
+ * to cutover + the longest refresh-token TTL), fence keys consumed in the
+ * legacy Upstash store still count as used, so tokens spent before the cutover
+ * cannot be replayed against the new store. Legacy errors fail like store
+ * errors (callers fail closed once `replay` is assigned).
+ */
+type ReplayLegacyState = 'disabled' | 'active' | 'invalid';
+
+/**
+ * `disabled` when no deadline is set or it has passed; `active` for a future
+ * deadline with both legacy credentials; `invalid` for a malformed or blank
+ * deadline, or an active deadline missing a credential. An invalid migration
+ * must never silently skip the legacy check: callers treat it as unavailable.
+ */
+export function replayLegacyState(now = Date.now()): ReplayLegacyState {
+  const raw =
+    typeof process === 'undefined'
+      ? undefined
+      : process.env.ABUSE_GUARD_REPLAY_LEGACY_UNTIL;
+  if (raw === undefined || raw === '') return 'disabled';
+  const trimmed = raw.trim();
+  if (!/^\d{4}-\d{2}-\d{2}T[\d:.]+(?:Z|[+-]\d{2}:\d{2})$/u.test(trimmed)) {
+    return 'invalid';
+  }
+  const until = Date.parse(trimmed);
+  if (!Number.isFinite(until)) return 'invalid';
+  if (until <= now) return 'disabled';
+  return hasUpstashRestEnv() ? 'active' : 'invalid';
+}
+
+type ReplayView = {
+  get<T = unknown>(key: string): Promise<T | null>;
+  set(
+    key: string,
+    value: unknown,
+    options?: { ex?: number; px?: number; nx?: boolean; xx?: boolean }
+  ): Promise<'OK' | null>;
+};
+
+export function withLegacyReplayReads<TView extends ReplayView>(
+  view: TView,
+  legacy: Pick<UpstashRestRedisClient, 'get'>
+): TView {
+  return {
+    ...view,
+    async get<T = unknown>(key: string) {
+      const current = await view.get<T>(key);
+      return current ?? ((await legacy.get<T>(key)) as T | null);
+    },
+    async set(
+      key: string,
+      value: unknown,
+      options?: { ex?: number; px?: number; nx?: boolean; xx?: boolean }
+    ) {
+      if (options?.nx && (await legacy.get(key)) !== null) return null;
+      return view.set(key, value, options);
+    },
+  };
+}
+
+/**
+ * Returns the Redis-shaped client for abuse-protection state. A caller that
+ * names its `family` is served by the Durable Object guard store once that
+ * family is assigned to it, and gets null (store unavailable, so its own fail
+ * policy applies) when the assignment is misconfigured or switched off.
+ * Without a family, or for an unassigned one, this is the Upstash client.
+ */
+export async function getUpstashRestRedisClient(options?: {
+  family?: AbuseGuardFamily;
+  fairness?: GuardFairnessInput;
+}): Promise<UpstashRestRedisClient | null> {
+  if (options?.family) {
+    const selection = selectAbuseGuard(options.family);
+    if (selection.kind === 'off') return null;
+    if (selection.kind === 'durable-object') {
+      // Covers GET/MGET/SET/DEL/INCR/DECR/EXPIRE/TTL; SCAN throws.
+      const view = createGuardRedisView(
+        options.fairness
+          ? selection.client.withFairness(options.fairness)
+          : selection.client
+      );
+      if (options.family !== 'replay') {
+        return view as unknown as UpstashRestRedisClient;
+      }
+      const migration = replayLegacyState();
+      if (migration === 'disabled') {
+        return view as unknown as UpstashRestRedisClient;
+      }
+      // An active cutover needs a usable legacy client; anything else is
+      // unavailable, so the replay routes fail closed instead of skipping it.
+      const legacy = migration === 'active' ? await legacyRestClient() : null;
+      if (!legacy) return null;
+      return withLegacyReplayReads(
+        view,
+        legacy
+      ) as unknown as UpstashRestRedisClient;
+    }
+  }
+  return legacyRestClient();
+}
+
+async function legacyRestClient(): Promise<UpstashRestRedisClient | null> {
   if (!hasUpstashRestEnv()) {
     return null;
   }
@@ -27,6 +141,7 @@ export async function getUpstashRestRedisClient(): Promise<UpstashRestRedisClien
   const restClient: UpstashRestRedisClient = {
     del: (...keys) => client.del(...keys),
     decr: (key) => client.decr(key),
+    eval: (...args) => client.eval(...args),
     expire: (key, seconds) => client.expire(key, seconds),
     get: <T = unknown>(key: string) => client.get<T>(key),
     incr: (key) => client.incr(key),

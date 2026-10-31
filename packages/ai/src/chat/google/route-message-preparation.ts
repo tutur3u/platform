@@ -231,6 +231,7 @@ export async function prepareProcessedMessages(
   chatId: string,
   request?: Pick<Request, 'headers'>,
   options?: {
+    actorId?: string;
     attachYoutubeVideoInput?: boolean;
     excludeAudioVideoFiles?: boolean;
   }
@@ -250,7 +251,8 @@ export async function prepareProcessedMessages(
           wsId,
           chatId,
           request,
-          options?.excludeAudioVideoFiles
+          options?.excludeAudioVideoFiles,
+          options?.actorId
         )
       : modelMessages;
 
@@ -429,32 +431,6 @@ export async function persistLatestUserMessage({
 
   console.log('User message saved to database');
   return null;
-}
-
-export function splitSystemMessages(messages: ModelMessage[]) {
-  const systemMessages: string[] = [];
-  const nonSystemMessages: ModelMessage[] = [];
-  for (const message of messages) {
-    if (message.role === 'system') {
-      const systemMessage = getTextContent(message.content);
-      if (systemMessage) systemMessages.push(systemMessage);
-      continue;
-    }
-    nonSystemMessages.push(message);
-  }
-  return {
-    messages: nonSystemMessages,
-    system: systemMessages.join('\n\n').trim(),
-  };
-}
-function getTextContent(content: ModelMessage['content']) {
-  if (typeof content === 'string') return content.trim();
-  if (!Array.isArray(content)) return '';
-  return content
-    .map((part) => (part.type === 'text' ? part.text.trim() : ''))
-    .filter(Boolean)
-    .join('\n')
-    .trim();
 }
 
 export function mergeSystemInstructions(...instructions: Array<string | null>) {

@@ -6,11 +6,22 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
 
 - Prefer additive migrations.
 - Keep PR migration filenames ahead of latest `main` migrations after rebases.
+- When rebuilding a stale permission migration, compare each replacement with the
+  latest main definition. Preserve consolidated caller binding and explicit-grant
+  branches; enforce role workspace ownership with the composite foreign key rather
+  than restoring an older permission predicate. See the role ownership section in
+  `apps/docs/platform/architecture/workspaces-permissions.mdx`.
 - Every definer replacement must retain a privilege-checked search path with
   `pg_temp` explicitly last; use `pg_catalog, pg_temp` for qualified bodies.
   Run `security-definer-search-paths.sql` on the full chain: even trigger-only
   functions with revoked client EXECUTE can regress after earlier hardening.
 - Avoid seed-dependent backfills unless they tolerate missing reference rows.
+  Mastermind owner migration `20261030120000_grant_mastermind_owner.sql` skips
+  incomplete root creator data with NOTICE. After seed, a database owner may run
+  `SELECT private.grant_mastermind_root_creator();` with explicit production GO.
+  It grants only through the audited helper from `20261030113001`; never adopt
+  a namesake role. Cover bootstrap and reruns in `manage-mastermind-owner-grant.sql`
+  and rollback provenance with `scripts/mastermind-owner-rollback-test.py`.
 - Materialize replacement parent rows before rewiring child tables.
 - Update trigger helpers and underlying `CHECK` constraints together when tightening limits.
 - Audit reset/bootstrap scripts when strict limits change.
@@ -37,7 +48,16 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
 
 ## Verification
 
+- For SR-327 persisted-GUC fixtures, follow the
+  [administrator-seeded replay](../../../../../apps/docs/platform/architecture/system-design/security-architecture.mdx#immediate-notification-trigger-credentials-sr-327)
+  after an unmodified local reset; keep fixture SQL outside the migration chain.
+
 - Run local migration checks or focused pgTAP tests where available.
+- Inspect final-schema policies and ACLs after applying the full chain before
+  replacing RLS: dynamic migrations can remove policies without naming the table.
+  Distinguish permissive access policies from restrictive guards such as MFA;
+  retain those guards and compare function definitions, owners, ACLs and policies
+  across rollback and re-apply. Finance coverage: `finance-workspace-scoping.sql`.
 - Verify role contracts against the full migration chain, including existing
   grants. Assert intended permission denials with SQLSTATE `42501` and exercise
   supported RPCs as their caller roles; reduced schemas cannot prove this boundary.
@@ -49,6 +69,13 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
   the test extension.
 - Clear transaction-local JWT claims before privileged signup fixture inserts.
   `RESET ROLE` preserves `request.jwt.claims`, which signup/workspace triggers read.
+- For finance aggregates, use two synthetic workspaces with unequal amounts.
+  Exercise insert, update between wallets, and delete; assert both cached totals.
+  Reference checks must run before route writes and database trigger totals must
+  join wallets through the budget workspace. Run `finance-workspace-boundaries.sql`.
+- Verify effective table privileges before treating a permissive RLS policy as a
+  reachable boundary. For RPC path changes, exercise each supported overload and
+  its nested helper calls as the real caller role, in addition to catalog ACLs.
 - Run focused API/helper tests for affected code.
 - Run `bun check:changed` for TypeScript changes; `bun validate` runs in CI only.
 
@@ -61,3 +88,13 @@ and verify partial bytes, the last complete record and identical retry behavior.
 Run the retained proposal metadata suite explicitly from the repo root using the
 [local recovery command](../../../../../apps/docs/build/development-tools/local-supabase-development.mdx#validating-an-exact-worktree-in-isolation).
 It is outside active CI and root script discovery; database scripts globs do not cover it.
+
+### Full pgTAP baseline
+
+Reset the isolated database before each full run: independent-session concurrency
+fixtures commit data. Scope counts to fixture IDs. On non-superuser local images,
+configure `test.dblink_connstr` after reset with a password-authenticated connection
+to the same disposable database; loopback trust fails dblink authentication.
+See the local Supabase development runbook. Preserve security negatives, distinguish
+restrictive MFA policies from access-granting policies, and seed provider identities
+for verified staff. Report runtime/schema regressions instead of weakening assertions.

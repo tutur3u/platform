@@ -23,6 +23,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/[locale]/[wsId]/ai-credits` | Page | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/%5Blocale%5D/(dashboard)/%5BwsId%5D/ai-credits/page.tsx) |
 | `/[locale]/[wsId]/app-coordination` | Page | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/%5Blocale%5D/(dashboard)/%5BwsId%5D/app-coordination/page.tsx) |
 | `/[locale]/[wsId]/auth-recovery` | Page | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/%5Blocale%5D/(dashboard)/%5BwsId%5D/auth-recovery/page.tsx) |
+| `/[locale]/[wsId]/balancer` | Page | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/%5Blocale%5D/(dashboard)/%5BwsId%5D/balancer/page.tsx) |
 | `/[locale]/[wsId]/blocked-ips` | Page | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/%5Blocale%5D/(dashboard)/%5BwsId%5D/blocked-ips/page.tsx) |
 | `/[locale]/[wsId]/calendar-sync` | Page | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/%5Blocale%5D/(dashboard)/%5BwsId%5D/calendar-sync/page.tsx) |
 | `/[locale]/[wsId]/changelog/[id]` | Page | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/%5Blocale%5D/(dashboard)/%5BwsId%5D/changelog/%5Bid%5D/page.tsx) |
@@ -125,6 +126,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/infrastructure/auth-recovery/[overrideId]` | PATCH | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/auth-recovery/%5BoverrideId%5D/route.ts) |
 | `/api/v1/infrastructure/auth-recovery/[overrideId]/send-email` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/auth-recovery/%5BoverrideId%5D/send-email/route.ts) |
 | `/api/v1/infrastructure/auth-recovery` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/auth-recovery/route.ts) |
+| `/api/v1/infrastructure/balancer/runs` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/balancer/runs/route.ts) |
 | `/api/v1/infrastructure/bill-coupons` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/bill-coupons/route.ts) |
 | `/api/v1/infrastructure/bill-packages` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/bill-packages/route.ts) |
 | `/api/v1/infrastructure/bills` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/bills/route.ts) |
@@ -145,6 +147,7 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/infrastructure/devboxes` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/devboxes/route.ts) |
 | `/api/v1/infrastructure/devboxes/runners/[runnerId]/drain` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/devboxes/runners/%5BrunnerId%5D/drain/route.ts) |
 | `/api/v1/infrastructure/devboxes/runners/[runnerId]/features` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/devboxes/runners/%5BrunnerId%5D/features/route.ts) |
+| `/api/v1/infrastructure/devboxes/runs/reap-stale` | POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/devboxes/runs/reap-stale/route.ts) |
 | `/api/v1/infrastructure/email-blacklist/[entryId]` | DELETE, GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/email-blacklist/%5BentryId%5D/route.ts) |
 | `/api/v1/infrastructure/email-blacklist` | GET, POST | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/email-blacklist/route.ts) |
 | `/api/v1/infrastructure/entity-creation-limits` | GET | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/entity-creation-limits/route.ts) |
@@ -188,8 +191,5 @@ This inventory lists concrete Next page and handler files, including generated w
 | `/api/v1/infrastructure/migrate/inventory-suppliers` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/inventory-suppliers/route.ts) |
 | `/api/v1/infrastructure/migrate/lessons` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/lessons/route.ts) |
 | `/api/v1/infrastructure/migrate/package-stock-changes` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/package-stock-changes/route.ts) |
-| `/api/v1/infrastructure/migrate/packages` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/packages/route.ts) |
-| `/api/v1/infrastructure/migrate/payment-methods` | PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/payment-methods/route.ts) |
-| `/api/v1/infrastructure/migrate/post-email-queue` | GET, PUT | [Implementation](https://github.com/tutur3u/platform/blob/main/apps/infrastructure/src/app/api/v1/infrastructure/migrate/post-email-queue/route.ts) |
 
 [All apps and services](/reference/repository/catalog). [Versions](/reference/repository/versions).

@@ -309,6 +309,13 @@ admission and manage_chat for later explicit edits. Credit scope must follow the
 existing actor-personal/active-workspace billing rules, not arbitrary client IDs.
 Do not substitute model defaults for a rejected explicit selection.
 
+Empty-state Send bypasses only the follow-up queue debounce. `AssistantCreatedChat`
+is returned only after the repository durably saves the creation selection; the
+Cubit skips a duplicate selection write for that result. History/cache decoding
+must not recreate this marker. Keep origin checks before reply dispatch and retain
+explicit attachment-driven creation. `assistant_first_send_pipeline_test.dart`
+and `assistant_created_chat_test.dart` cover this boundary.
+
 A source fixture passing is not atomic SQL proof: retain migration execution under
 an admitted isolated exact-commit workflow as a separate gate. Malformed/stale or
 unknown sent outcomes retain the original creation hold and draft. Regression
@@ -330,3 +337,39 @@ Normalize validated PostgreSQL timestamptz receipts at active API boundaries bef
 strict mobile parsers. Preserve microseconds separately from Date milliseconds and
 validate calendar/offset/fraction before conversion. Cover actual creation and
 message handlers plus JSON/NDJSON adapters, not only hand-authored ISO fixtures.
+
+### Secure-storage accessibility upgrades
+
+Use `deviceSecureStorage` for device-bound cache keys and metadata that must
+remain readable after first unlock. Its per-key staged migration reads old iOS
+`unlocked` items before rewriting them, including dynamic scope keys. Explicit
+removal must delete staging as well. Keep unlock-only device MFA and note-lock
+secrets on `unlocked_this_device`. Exercise class-filtered reads, duplicate writes,
+locked reads and interruption recovery with
+`test/data/sources/keychain_accessibility_migration_test.dart`; a plain map fake
+cannot reproduce the native accessibility conflict.
+
+### Mastermind ask context and option replies
+
+Keep Home and Inbox on the shared `InboxItemTile` and `openAsks` projection so
+resolved identities and duplicate ids cannot reappear on Home. Preserve optional
+`created_at` when adapting v1 asks and copying resolved history. Display real
+titles or the first ask line through `itemDisplayTitle`; do not invent content
+when the hub only publishes a Mac pointer. Option buttons call the existing
+reply cubit's `submit` with the original option index; retry the stored entry
+rather than creating a new key. Keep capability and actor fences intact.
+`mastermind_ask_context_test.dart` covers the v1 fixture, real options, retries,
+metadata, previews, open-only deduplication and Needs-you navigation. See the
+[Mastermind product rules](../../../../../apps/docs/platform/features/mobile-mastermind.mdx).
+
+- **Firebase startup admission**: iOS FlutterFire Core registration can configure
+  the default app before Dart, and FirebaseCore can start Analytics even with
+  collection disabled. Keep generated SDK/plugin overlays worktree-local and
+  fail closed on changed upstream source. Admit Firebase only after sign-in with
+  authorized push or current telemetry Allow; keep Messaging and Analytics lazy
+  behind their separate choices. Stop Analytics hostname reachability monitors
+  on withdrawal and drain token/server unregister before best-effort FID deletion.
+  Recheck native fixtures after SDK updates, then verify fresh/upgrade requests
+  and app-attributed DNS on devices. The canonical policy, copy keys and evidence
+  boundaries live in
+  [mobile telemetry privacy](../../../../../apps/docs/platform/features/mobile-telemetry-privacy.mdx).

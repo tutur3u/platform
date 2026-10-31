@@ -6,11 +6,12 @@ description: Public and private inventory storefronts with Polar and Square Term
 `apps/storefront` is the buyer-facing Inventory commerce app. Operators manage
 catalog, stock, storefront visibility, and checkout-provider settings in
 `apps/inventory`; buyers browse, cart, and start checkout from
-`storefront.tuturuuu.com`.
+`store.tuturuuu.com`.
 
 ## Hosts
 
-- Production: `https://storefront.tuturuuu.com`
+- Canonical production: `https://store.tuturuuu.com`
+- Redirect aliases: `storefront.tuturuuu.com`, `stores.tuturuuu.com`, and `storefronts.tuturuuu.com` (307 to the canonical host)
 - Local Portless: `https://storefront.tuturuuu.localhost`
 - Local fallback port: `7822`
 
@@ -110,3 +111,80 @@ startup command changes. The `Inventory / Storefront cache contract` job in
 `.github/workflows/e2e-tests.yaml` runs this suite in parallel with the broader
 platform E2E matrix and uploads Playwright traces and the HTML report when it
 fails.
+
+## Native staging candidate
+
+Generate the TanStack Start adapters with
+`node scripts/start-bridge-codemod/cli.mjs storefront --apply`. Regenerate
+marked files instead of editing them. The bridge remains mount-aware, while this profile admits only the
+Storefront root hosts; it retains both `/store/<slug>`
+legacy redirects and the current `/<storeSlug>` pages. Login returns to the
+request's mounted verifier, with the configured origin retained by the legacy
+runtime. `src/lib/storefront-public-url.test.ts` covers concurrent root and
+mounted verifier URLs.
+
+Initial promotion serves the Storefront subdomain in root mode. Verify that
+browser inventory requests reach Storefront and are forwarded to Inventory,
+while other unowned APIs reach Web at root `/api`. The `/storefront` mount is rejected by this
+root-only profile; apex cutover waits for the shared-session decision and
+auth-boundary guard. The native adapter must retain the two-upstream fallback declared
+by `next.config.ts`, including order-token and payment callback admission. The
+emitted Worker must pass those checks as well as public browsing, bilingual
+routes, checkout return paths and apex/unknown-host rejection. Provider
+payment and device acceptance are separate from fixture tests. The candidate has no production publisher. A separate cutover-prep PR must add the production hold before a canonical traffic change.
+
+The generated `storefront-cloudflare.yaml` workflow uses the shared native
+template for binding types, sealing, and original/restored emitted-runtime
+acceptance. Run `bun run test:runtime` only after the native build, with the
+workflow's exact source identity. These fixture checks do not qualify a hosted
+payment provider or authorize a payment.
+
+Exact GET and HEAD `/api/build-info` requests expose only public build identity.
+The proxy strips ambient cookies and authorization before the existing API guard
+and local handler, without refreshing a session or writing cookies. Other methods,
+siblings and nested paths keep normal authentication. `proxy-build-info.test.ts`
+covers admission, guard denials and negative method/path controls; the emitted
+runtime suite still requires the exact compiled app name and source commit.
+
+### Root-only response and staging contract
+
+`start-bridge.config.ts` serves the app only on the canonical `store.tuturuuu.com`
+and `<app>.staging.tutur3u.com`. The Worker returns 307 redirects from
+`storefront.tuturuuu.com`, `stores.tuturuuu.com` and `storefronts.tuturuuu.com` to
+the canonical HTTPS host, preserving paths, methods and queries. Keep those
+alias routes pointing at this redirect behavior during cutover; they must never
+serve independent app copies or become 404s. Empty mount hosts and `unknownHost: 'reject'`
+reject apex and unknown hosts before route execution. These allowlist entries
+do not provision DNS or authorize publication. The shared generator derives and seals `workers_dev: false` from this
+fail-closed profile.
+
+Every native response denies framing and content sniffing, sets the strict-origin
+referrer policy, and remains noindex. Every response except GET/HEAD reads under `/assets/` or the enumerated
+`/robots.txt` file receives `Cache-Control: private, no-store` and varies by
+Cookie, overriding endpoint and upstream public cache headers. Only those static
+reads retain their cache policy; non-read asset requests remain private. Source tests cover the defaults,
+endpoint overrides and variation merging; `cloudflare/response-policy.runtime.mjs`
+checks the emitted Worker on every admitted host, rejects apex/unknown hosts,
+and probes upstream public cache headers and non-read asset paths.
+
+Staging profile verification is an explicit cutover-prep gate. Supply and verify
+`INVENTORY_APP_URL` and `INTERNAL_WEB_API_ORIGIN` for the admitted staging
+upstreams. Inventory forwarding fails closed when its origin is absent. No conversion PR publishes production or qualifies
+hosted auth, provider behavior or checkout. Keep credentials out of artifacts
+and receipts; record only variable names and verification outcomes.
+
+The anonymous root outcome is a redirect to `/demo`, matching the existing
+Storefront index page. The app-owned `runtime` declaration requires that
+redirect to stay on the requested root host, rather than accepting a generic
+non-error response. 
+
+Uploaded WebGL documents forwarded from central under
+`/api/v1/workspaces/<ws>/external-projects/assets/<asset>/webgl` retain the
+upstream CSP byte for byte and receive no X-Frame-Options. Central's sandbox
+is the security boundary for uploaded JavaScript. The wrapper never uses the
+handler-level CSP option. Neighbouring paths retain the normal framing denial;
+source and emitted regressions cover the exact path boundary and sandbox policy.
+
+Alias redirect destinations always use the fixed canonical origin, including
+when an incoming path begins with two slashes; user path text cannot replace
+the redirect host. Source and emitted alias regressions retain this boundary.

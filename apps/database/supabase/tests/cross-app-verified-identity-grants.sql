@@ -1,0 +1,12 @@
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions;
+select plan(4);
+select ok(not has_function_privilege('authenticated', 'private.cross_app_verified_session_data(uuid,jsonb)', 'execute'), 'authenticated cannot project arbitrary Auth identities');
+select ok(not has_function_privilege('anon', 'private.cross_app_verified_session_data(uuid,jsonb)', 'execute'), 'anon cannot project arbitrary Auth identities');
+select is((select proconfig from pg_proc where oid='public.validate_cross_app_token_with_session(text,text)'::regprocedure), array['search_path=pg_catalog, pg_temp']::text[], 'redemption pins its search path');
+set local role anon;
+select throws_ok($$select public.generate_cross_app_token('00000000-0000-4000-8000-00000000e101','cli','tasks',60,'{}')$$, '42501', null, 'anon cannot execute the generator');
+reset role;
+select * from finish();
+rollback;

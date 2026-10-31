@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -15,7 +16,9 @@ import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/assistant/cubit/assistant_chat_cubit.dart';
+import 'package:mobile/features/assistant/cubit/assistant_shell_cubit.dart';
 import 'package:mobile/features/assistant/data/assistant_chat_persistence_contract.dart';
+import 'package:mobile/features/assistant/data/assistant_first_message_creation.dart';
 import 'package:mobile/features/assistant/data/assistant_memory_file.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
 import 'package:mobile/features/assistant/data/assistant_reset_preferences.dart';
@@ -164,6 +167,9 @@ class NativeDispatchPort {
     }
     if (request.method == 'POST' && path.endsWith('/messages')) {
       final body = Map<String, dynamic>.from(jsonDecode(request.body) as Map);
+      final first = body['initialConversation'] as Map<String, dynamic>?;
+      final conversationId = request.url.pathSegments[6];
+      if (first != null) initialSettings = {...first};
       posts.add(body);
       authorizations.add(request.headers['authorization']);
       if (!postEntered.isCompleted) postEntered.complete();
@@ -174,7 +180,7 @@ class NativeDispatchPort {
           'id':
               '77777777-7777-4777-8777-'
               '${saved.length.toString().padLeft(12, '0')}',
-          'conversationId': repairChat,
+          'conversationId': conversationId,
           'senderId': actor,
           'kind': 'user',
           'content': body['content'],
@@ -229,7 +235,31 @@ class NativeDispatchPort {
       return http.Response(
         '${events.map(jsonEncode).join('\n')}\n',
         201,
-        headers: {'content-type': 'application/x-ndjson'},
+        headers: {
+          'content-type': 'application/x-ndjson',
+          if (first != null)
+            'x-mira-chat-creation': base64Url.encode(
+              utf8.encode(
+                jsonEncode({
+                  'creationRequestId': id,
+                  'conversation': {
+                    'id': conversationId,
+                    'wsId': repairWorkspace,
+                    'createdBy': actor,
+                    'type': 'ai',
+                    'createdAt': '2026-10-18T00:00:00.123456Z',
+                    'creationRequestId': id,
+                    'initialAiSettings': {
+                      ...first,
+                      'actorUserId': actor,
+                      'wsId': repairWorkspace,
+                      'conversationId': conversationId,
+                    },
+                  },
+                }),
+              ),
+            ),
+        },
       );
     }
     return http.Response('{}', 404);
@@ -283,6 +313,27 @@ class NativeDispatchRepository extends ReplyRepository {
     initialSettings: initialSettings,
     isCurrent: isCurrent,
   );
+  @override
+  Stream<AssistantStreamEvent> streamFirstChat({
+    required AssistantFirstMessageCreation creation,
+    required String chatId,
+    required String wsId,
+    required List<AssistantMessage> messages,
+    required String timezone,
+    required ApiMutationAdmission admission,
+  }) => real
+      .streamFirstChat(
+        creation: creation,
+        chatId: chatId,
+        wsId: wsId,
+        messages: messages,
+        timezone: timezone,
+        admission: admission,
+      )
+      .handleError((Object error, StackTrace stack) {
+        lastFailure = error;
+        Error.throwWithStackTrace(substituteFailure ?? error, stack);
+      });
   @override
   Future<AssistantRestoredChat?> restoreChat({
     required String wsId,
@@ -341,6 +392,7 @@ class NativeDispatchRepository extends ReplyRepository {
     required String wsId,
     required AssistantFilePickerResult file,
     String? chatId,
+    void Function(double progress)? onProgress,
   }) async => AssistantAttachment(
     id: file.id,
     name: file.name,
@@ -503,7 +555,11 @@ class NativeDispatchHarness extends BackgroundReplyHarness {
       files: [
         AssistantMemoryFile(name: name, bytes: Uint8List.fromList([1, 2, 3])),
       ],
-      modelId: 'synthetic/model-a',
+      modelId: pageContext
+          .read<AssistantShellCubit>()
+          .state
+          .selectedModel
+          .value,
       timezone: 'UTC',
     ),
   );

@@ -1,0 +1,233 @@
+---
+title: Mobile native pass plan
+description: Information architecture, components, the Appearance style system, Pomodoro and Focus Time, and the phased PR plan for a more native-feeling mobile app.
+---
+
+This plan turns an external contributor's mockup (seven iOS-style screens)
+into a delivery sequence for `apps/mobile`. It builds on the design-system
+stack that started with #6857:
+
+1. #6857: one sheet design and one loader;
+2. #6860: profile edit and timeline;
+3. #6861: Assistant settings IA;
+4. #6862: Mira Live redesign;
+5. #6863: drawers, toggles and dialogs.
+
+Every phase below sits above that stack and must not rewrite it. Product
+decisions are recorded on the feature pages linked in
+[Decisions](#decisions). This page owns the plan and the inventory.
+
+## Decisions
+
+| # | Decision | Recorded in |
+| --- | --- | --- |
+| 1 | Back stays on the floating bottom bar. No top-left back button; shell bodies inherit the shell title and background. | [Home and Notifications](/platform/features/mobile-home-notifications#native-pass-navigation-rules) |
+| 2 | Android and iOS look the same by default. Users choose a style, density, corner radius, accent, haptics and reduced motion in Appearance. These are stored per device and applied through the theme. | [Settings shell](/platform/features/mobile-settings-shell#interface-style-options-planned) |
+| 3 | Home workspace chips show pinned workspaces plus **More**. With fewer than five workspaces, every workspace gets a chip. | [Home and Notifications](/platform/features/mobile-home-notifications#native-pass-navigation-rules) |
+| 4 | Every new screen supports light mode and large Dynamic Type: text scales without clipping, and touch targets are at least 44pt. | [Home and Notifications](/platform/features/mobile-home-notifications#native-pass-navigation-rules) |
+| 5 | Focus Time is part of time tracking. Pomodoro becomes a first-class, cross-platform timer that writes ordinary tracking sessions. | [Native mobile Timer](/platform/features/mobile-timer#focus-time-and-pomodoro-planned) |
+
+## Information architecture
+
+The mockup proposes five tabs (Home, Apps, Mira, Inbox, You) plus a search
+action. Today the dock has Home, Apps and the centre Assistant (Mira) entry.
+Profile and Notifications are reachable from the shell.
+
+| Tab | Content | Source today |
+| --- | --- | --- |
+| **Home** | Header: date, title, filter and add actions. Workspace chips. **Today**, **Up Next** and **Calendar** sections, each with **See All** | Home widgets (assigned tasks, upcoming events) regrouped into the three sections |
+| **Apps** | The existing app grid and launcher | Unchanged |
+| **Mira** | Suggestion cards ("What should I focus on?", "Plan my day", "Clean up my backlog"), **Recent** conversations, and the composer | Existing native Chat `type="ai"` conversations; suggestions send ordinary prompts |
+| **Inbox** | The Notifications inbox, promoted to a tab | Existing Notifications page and its day grouping |
+| **You** | Profile header row, **Focus Time** card, then Workspaces, Activity and Settings rows | Profile, Timeline, Settings, plus Focus Time from time tracking |
+
+- **Search.** A screen's dock search action opens the existing shell search
+  field. It does not add a second search field in the body. Root tabs without
+  their own content to search (Home, Inbox, You) show no Search action.
+- **Back.** Back stays on the dock (decision 1). The task detail mockup's
+  top-left chevron is dropped. Its trailing check, share and overflow actions
+  become shell chrome actions.
+- **Workspace switcher.** Chips are All, then pinned workspaces, then
+  **More**. **More** opens a popover menu with:
+  - the remaining workspaces (initial tile and name);
+  - Find Workspace (opens the existing picker search);
+  - Manage Workspaces;
+  - New Workspace.
+
+  With fewer than five workspaces, every workspace gets a chip and **More**
+  holds only the three commands. Pins are stored per user (see
+  [Data and storage](#data-and-storage)).
+- **Tablet and desktop.** These widths keep the leading `ShellNavigationRail`
+  with the same five destinations. The dock and rail must not remount a
+  visited root tab.
+
+Promoting Inbox and You to tabs changes the root routes. That phase must
+update the route aliases in `core/router/routes.dart`, the shell
+chrome config titles, and the dock regression tests.
+
+## Component inventory
+
+Each component either exists in `core/ui` or is new and owned by the listed
+phase. Rows marked "exists" must be reused.
+
+| Component | Status | Used by |
+| --- | --- | --- |
+| `AppGroupedSection` / `AppGroupedCard` / `AppGroupedRow` / `AppIconTile` | exists | Task detail rows, You, Mira suggestions |
+| `AppSectionHeader` with **See All** | exists | Home sections, Mira Recent |
+| `AppFilterBar` / `AppChip` | exists | Workspace chips |
+| `showAppActionSheet` / `showAppChoiceSheet` | exists (#6857) | Long-press menus, priority, list and project pickers |
+| `AppSwipeActions` | new (phase 1) | Task rows, later notification and mail rows |
+| `AppContextMenu` (anchored popover with an action list) | new (phase 3) | Workspace **More**; later, a long-press preview on tablets |
+| `AppKeyValueRow` with a trailing value and chevron | exists (`kit`) | Task detail Due, Priority, Assignee, List, Project |
+| `AppStatTile` / `AppMeter` | exists (`kit`) | Focus Time totals |
+| `AppBarChart` (seven-day bars, tokens only) | new (phase 6) | Focus Time weekly chart |
+| `AppSuggestionCard` (icon, title, subtitle; one tap sends a prompt) | new (phase 5) | Mira tab |
+| `FocusTimerRing` (phase ring and remaining time; scales with text) | new (phase 6) | Pomodoro screen, Timer tab |
+| Shell dock with five destinations and trailing search | extend existing | Shell |
+
+Shared rules for all phases:
+
+- Colours come from `AppTokens`.
+- No emojis and no hard-coded hues. The mockup's green, orange and red swipe
+  fills map to `AppTone.success`, `warning` and `destructive`.
+- Every row action has a semantics action.
+- Every interactive target is at least 44pt.
+
+## Appearance style system
+
+Appearance already persists the mode, theme, accent, background, intensity,
+softness and card opacity on the device. This plan adds an **Interface**
+group. Its values are applied by the theme layer, not by per-widget platform
+forks.
+
+| Option | Choices | Default | Applied through |
+| --- | --- | --- | --- |
+| Style | Tuturuuu, iOS-like, Material-like | Tuturuuu, on both platforms | An `AppInterfaceStyle` `ThemeExtension`: page transitions (Cupertino or zoom), scroll physics (bouncing or clamping), switch and checkbox shapes, sheet corner treatment, list dividers (inset or full), and the action-sheet presentation (grouped card or menu) |
+| Density | Comfortable, Compact | Comfortable | `AppInterfaceTokens.rowMinHeight`: grouped row minimum height only (56dp or 48dp). Gaps and padding do not scale. Never below the 44pt target |
+| Corner radius | Rounded, Soft, Square | Rounded | `AppRadius` scale (card, sheet, pill) |
+| Accent | The existing accents | Match theme | Existing `AppearanceAccentId` (no change) |
+| Haptics | On, Off | On | Existing `AppHaptics.enabled` preference, moved into this group |
+| Reduce motion | Follow system, Always reduce | Follow system | `MediaQuery.disableAnimations` override at the app builder, so `AppSwipeActions`, ambient blobs and transitions all read one source |
+
+Design constraints:
+
+- **One extension, read through `AppTokens`.** Components read the active
+  style from `AppTokens.of(context)`. A widget never branches on
+  `Platform.isIOS`. The only remaining platform checks are system-owned
+  behaviours such as Android predictive Back and iOS edge-swipe
+  interception.
+- **Persisted per device.** The settings use the same storage as the existing
+  appearance payload: a versioned JSON field in `AppearanceSettings`, decoded
+  field by field so unknown values fall back. They are not synced to the
+  account.
+- **Contrast.** `appearance_contrast_test.dart` gains cases for every Style
+  and Radius combination, in light and dark.
+- **Preview.** The Appearance page shows a live sample row: a task row with
+  a swipe hint, a toggle and a sheet header.
+- **Reset to default** restores every option.
+
+## Pomodoro and Focus Time
+
+Focus Time is time tracking, not a separate store: all tracked time linked to
+a task. A Pomodoro focus interval is a normal `time_tracking_sessions` row
+(tagged `pomodoro`), so it counts toward Focus Time like any other
+task-linked session.
+
+### Proposed feature set
+
+- Configurable focus, short-break and long-break lengths, plus the number of
+  focus intervals before a long break. These are the existing
+  `PomodoroSettings` fields and the control foundation's config contract:
+  minutes 1–180, cycle 1–24.
+- Auto-start breaks and auto-start focus (existing booleans).
+- **Link to a task.** Starting focus from a task row (the context menu's
+  "Start focus", phase 6) or from task detail sets `task_id` on the session.
+- **Notifications.** At each phase end, the device schedules a local
+  notification (`flutter_local_notifications`, already a dependency) and
+  cancels it when the phase ends early. Cross-device delivery when every
+  client is closed needs the server deadline described below.
+- **Pause, resume and skip.** Pause uses the existing break model
+  (`time_tracking_breaks`). Skip ends the current phase.
+- **Focus Time stats.** Today, last week and the current month totals, a
+  seven-day bar chart, the completed-interval count and a streak, on the You
+  tab and in the Timer statistics.
+- **Web parity.** The web time tracker shows the same running phase and
+  remaining time. This waits for shared control activation.
+
+### Data model (reuse first)
+
+| Concern | Storage | Migration |
+| --- | --- | --- |
+| Focus interval | `time_tracking_sessions` row: `task_id`, `category_id`, `start_time`, `end_time`, `duration_seconds`; tag `pomodoro` in the existing `tags` column | None |
+| Pause during focus | `time_tracking_breaks` row on that session; `break_type_name='pause'` | None |
+| Short and long breaks | Not tracked work. Recorded as control phase transitions only, so billing and productivity totals stay unchanged | Needed (see below) |
+| Settings | Today: device-local `PomodoroSettings`. Target: `private.time_tracker_controls.config`, which already matches the field names and bounds | None for the config shape |
+| Live phase, deadline and cycle position | `private.time_tracker_controls` `mode`, `phase`, `deadline_at` | **Needed**: the foundation pins `mode='off'`, `phase='idle'` and `deadline_at is null` by check constraint |
+| Focus Time totals | The stats route's `taskLinked` filter (task-linked sessions), computed in TypeScript; `tag` stays as a filter | None |
+
+<Warning>
+A migration is required before cross-device Pomodoro can ship. It must relax
+the `mode`, `phase` and `deadline_at` checks on
+`private.time_tracker_controls`, add a pause/resume/skip command contract
+under the existing advisory-lock order, and optionally add a tag filter to the
+stats RPCs. This plan does not write that migration. As the
+[Timer page](/platform/features/mobile-timer#shared-pomodoro-preparation-is-inactive)
+says, activation needs its own reviewed contract that normalizes every
+lifecycle writer.
+</Warning>
+
+Phase deadlines that must fire while all clients are closed belong to a
+Cloudflare scheduler (Durable Object alarm per actor and workspace), not
+Vercel Cron, pg_cron or Edge Functions. That work must have:
+
+- bounded retries;
+- idempotent phase transitions keyed by the control revision;
+- a tested durable stop fence when the control returns to `off`.
+
+Until then, Pomodoro is device-driven: the client writes ordinary sessions,
+and local notifications fire on that device only.
+
+## Data and storage
+
+- **Workspace pins.** Pins are stored per user in `user_configs` under a
+  mobile pins key: an ordered JSON array of workspace IDs. That is no schema
+  change, but check the key against any `user_configs` id allowlist. Reads
+  drop IDs the user can no longer access. Pins are not shared with other
+  users.
+- **Appearance.** The new options are device-local (see above).
+- **Swipe and menu actions** reuse the board cubit mutations and add no
+  storage.
+
+## Phased PR breakdown
+
+Every phase is a native stack layer above #6863 (stack #6883). If a phase
+does not depend on the stack, it goes on its own branch from `main`. Each
+phase needs:
+
+- English and Vietnamese ARB strings and `flutter gen-l10n`;
+- widget tests at 320x568 with 2x text in light and dark;
+- Build-Mac `flutter analyze` and focused tests;
+- exact-commit CI.
+
+| Phase | Scope | Depends on | Migration |
+| --- | --- | --- | --- |
+| 0 | This plan (docs only) | `main` | No |
+| 1 | `AppSwipeActions` and the task-row long-press menu in board List view (#6882) | #6863 | No |
+| 2 | Appearance Interface group: `AppInterfaceStyle`, density, radius, haptics, reduce motion, preview and contrast tests | Phase 1 (swipe reads reduce motion and haptics) | No |
+| 3 | Home regrouped into Today, Up Next and Calendar; workspace chips with pins and **More**; `AppContextMenu` | Phase 2 | No (uses `user_configs`) |
+| 4 | Five-tab dock (Home, Apps, Mira, Inbox, You) with trailing search; route aliases and rail parity | Phase 3 | No |
+| 5 | Mira tab suggestion cards and Recent; You tab rows | Phase 4 | No |
+| 6 | Grouped-row task detail; "Start focus" from the task menu; device-driven Pomodoro screen, local notifications and Focus Time card (tagged sessions) | Phase 5 | No |
+| 7 | Shared Pomodoro activation: control mode, phase and deadline; pause/resume/skip contract; stats tag filter | Phase 6 and a reviewed database contract | **Yes, flagged, not written here** |
+| 8 | Cloudflare deadline scheduler, cross-device phase notifications and web parity | Phase 7 | No new tables expected |
+
+## Decisions (2026-10-26)
+
+- **Inbox replaces the notifications bell.** The overflow Notifications
+  entry goes; Inbox owns notifications.
+- **Focus Time is all task-linked tracked time**, not Pomodoro only. The
+  `tag` filter stays as a capability.
+- **Appearance follows the account**, through the existing user-config API
+  (as pins do), with a per-device override that wins when set.
+- **Kanban long-press opens the context menu**, unless that conflicts with
+  drag-to-reorder; then drag stays and the menu is reached another way.

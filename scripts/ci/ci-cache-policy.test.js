@@ -83,7 +83,8 @@ function isFiniteRoomLifecycleStep(step) {
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-lifecycle-race.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/room-do-recovery.test.ts" \\',
     '"$GITHUB_WORKSPACE/apps/meet-realtime/src/collaboration-retry-budget.test.ts" \\',
-    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-retry-budget.test.ts"',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-retry-budget.test.ts" \\',
+    '"$GITHUB_WORKSPACE/apps/meet-realtime/src/channel-checkpoint-request.test.ts"',
   ].join('\n');
   return (
     /^\s+- name: Test durable room lifecycle and recovery$/mu.test(step) &&
@@ -446,10 +447,16 @@ test('workflow remote-cache credentials stay narrow and untrusted jobs get none'
 test('cacheable JavaScript workflow commands use the remote-cache wrapper', () => {
   for (const workflowName of listWorkflowFiles()) {
     for (const step of readStepBlocks(readWorkflow(workflowName))) {
-      if (!/^\s+run:/mu.test(step)) {
+      // Qualify the cache Worker cold without depending on its own artifacts.
+      if (
+        !/^\s+run:/mu.test(step) ||
+        (workflowName === 'turbo-cache-cloudflare.yaml' &&
+          /^\s+- name: Build the Worker without restoring compiled artifacts\n\s+run: bun run build\n\s+working-directory: apps\/turbo-cache\s*$/u.test(
+            step
+          ))
+      ) {
         continue;
       }
-
       assert.doesNotMatch(
         step,
         /\bbun turbo:local run (?:build|test|type-check)\b/u,

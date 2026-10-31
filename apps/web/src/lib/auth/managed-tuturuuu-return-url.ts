@@ -1,17 +1,49 @@
-const MANAGED_TUTURUUU_HOSTNAME = 'tuturuuu.com';
+import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
+import {
+  getTuturuuuPrimarySharedCookieDomain,
+  resolveTuturuuuSharedCookieDomain,
+} from '@tuturuuu/utils/shared-cookie';
+
 const VERIFY_TOKEN_ROUTE_SEGMENT = 'verify-token';
 
-export function isManagedTuturuuuHostname(hostname: string) {
+/**
+ * Where the current web host comes from: a request (headers + url), a URL, or
+ * `null` for the ambient browser location / configured app URL. Server code
+ * should always pass the request; the `null` default is for browser code.
+ */
+export type ManagedCurrentHost = Parameters<
+  typeof resolveTuturuuuSharedCookieDomain
+>[0];
+
+/**
+ * A host is "managed" (no cross-app token needed, the session cookie is shared)
+ * only when BOTH the return host and the current web host sit under the
+ * configured primary shared cookie domain (`.tuturuuu.com` by default,
+ * `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN` elsewhere, for example
+ * `.staging.tutur3u.com`). Any host outside it must go through the token
+ * handoff, even if the other side is a managed host.
+ */
+export function isManagedTuturuuuHostname(
+  hostname: string,
+  currentHost: ManagedCurrentHost = null
+) {
   const normalizedHostname = hostname.toLowerCase();
+  const managedHostname = getTuturuuuPrimarySharedCookieDomain().hostname;
 
   return (
-    normalizedHostname === MANAGED_TUTURUUU_HOSTNAME ||
-    normalizedHostname.endsWith(`.${MANAGED_TUTURUUU_HOSTNAME}`)
+    (normalizedHostname === managedHostname ||
+      normalizedHostname.endsWith(`.${managedHostname}`)) &&
+    resolveTuturuuuSharedCookieDomain(currentHost)?.hostname === managedHostname
   );
 }
 
 export function isRootTuturuuuHostname(hostname: string) {
-  return hostname.toLowerCase() === MANAGED_TUTURUUU_HOSTNAME;
+  const normalizedHostname = hostname.toLowerCase();
+
+  return (
+    normalizedHostname === getTuturuuuPrimarySharedCookieDomain().hostname ||
+    getAppDomainByUrl(`https://${normalizedHostname}`)?.name === 'platform'
+  );
 }
 
 function hasAsciiControlCharacter(value: string) {
@@ -42,7 +74,10 @@ function normalizeRedirectPath(
   return value;
 }
 
-export function parseManagedTuturuuuReturnUrl(value: string) {
+export function parseManagedTuturuuuReturnUrl(
+  value: string,
+  currentHost: ManagedCurrentHost = null
+) {
   let url: URL;
 
   try {
@@ -55,7 +90,7 @@ export function parseManagedTuturuuuReturnUrl(value: string) {
     return null;
   }
 
-  if (!isManagedTuturuuuHostname(url.hostname)) {
+  if (!isManagedTuturuuuHostname(url.hostname, currentHost)) {
     return null;
   }
 
@@ -83,12 +118,14 @@ function getFlattenedVerifyTokenTargetPath(url: URL, fallbackPath: string) {
 export function normalizeManagedTuturuuuReturnUrl(
   value: string,
   {
+    currentHost = null,
     fallbackPath = '/',
   }: {
+    currentHost?: ManagedCurrentHost;
     fallbackPath?: string;
   } = {}
 ) {
-  const url = parseManagedTuturuuuReturnUrl(value);
+  const url = parseManagedTuturuuuReturnUrl(value, currentHost);
 
   if (!url) {
     return null;

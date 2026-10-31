@@ -1,16 +1,18 @@
 ---
 title: "Active runtime and scheduler ownership"
 description: "The live Next.js path, retired Docker cron runner, inactive migration targets, and current scheduling evidence."
-updatedAt: '2026-10-09'
+updatedAt: '2026-10-25'
 ---
 
 ## Current operating decision
 
-The supported application path is the maintained Next.js Web and satellite apps,
-shared TypeScript packages, and their owning hosted services. **The Docker cron
-runner is retired. Docker setup, `apps/backend` (Rust), and `apps/tanstack-web`
-(TanStack Start) are not in use.** They are not prerequisites for documentation,
-routine development, focused validation, or Next.js release delivery.
+The supported application path is `apps/web` on Next.js, the satellite apps
+(Next.js today, moving per app to native TanStack Start + Void + Vite+ on
+Cloudflare Workers), shared TypeScript packages, and their owning hosted
+services. **The Docker cron runner and `apps/tanstack-web` are retired; do not
+revive them. Docker setup and `apps/backend` (Rust) are not in use** until
+explicitly resumed. They are not prerequisites for documentation, routine
+development, focused validation, or release delivery.
 
 This applies to the live app surfaces, developer onboarding, and incident
 runbooks. Retained files, Compose services, scripts, dashboards, route manifests,
@@ -19,22 +21,29 @@ presence does not establish an active service. An explicitly isolated experiment
 or separately approved resumption can use those artifacts; it must not silently
 become a prerequisite for the active path.
 
-TanStack **Query** remains in use for client fetching/caching. It is independent
-of the inactive TanStack **Start** runtime. Migration-specific source refreshes, tests, dependency updates, and CI are
-paused until further notice. Shared contracts still belong in reusable packages;
-do not require updates to the inactive trees for a live Next.js change.
+TanStack **Query** remains in use for client fetching/caching. Per-app
+TanStack **Start** on Cloudflare Workers is the active target for every web app
+except `apps/web`; it is unrelated to the retired `apps/tanstack-web` tree,
+whose source refreshes, tests, dependency updates and CI stay disabled. Shared
+contracts still belong in reusable packages; do not require updates to the
+retired trees for a live change.
 
-Gradual Cloudflare adoption is the target direction, with scoped Vite-native
-Lettin/Parley candidates first. Their existing Next.js/OpenNext Worker hosting
-remains current. Portable first-party libraries and thin framework adapters must
-preserve identity, storage, localization and API contracts before canonical traffic
-changes. This does not resume the retained TanStack Start app or authorize cutover.
-See [Oxc and Cloudflare adoption](/build/development-tools/oxc-cloudflare-adoption).
+Each app migrates under the [native Start migration runbook](/build/devops/native-start-migration):
+one integration writer per app, `next/*` only through
+`@tuturuuu/start-bridge`, basePath readiness for
+both its subdomain and `tuturuuu.com/<app>`, and exact-commit CI, sealed
+emitted-Worker acceptance and the app's reviewed hosted cutover acceptance.
+Wave-1 uses a private production smoke before routing, then immediate signed-in
+production acceptance and a 30–60 minute watch; hosted staging is not a flip gate. Current
+hosting (Vercel or Next.js/OpenNext Workers) stays canonical until that app's
+explicit cutover PR. See
+[Oxc and Cloudflare adoption](/build/development-tools/oxc-cloudflare-adoption).
 
 ## Wave-1 production publication hold
 
-Meet, Calendar, Mail and Apps are **held for wave-1 cutover** in
-`productionPublicationHolds` in `tuturuuu.ci.ts`. The production planner reports
+Calendar frontend is admitted for route-free production preparation in
+`productionPublicationPolicy` in `tuturuuu.ci.ts`; Meet, Mail and Apps remain
+**held for wave-1 cutover**. The production planner reports
 **Held** with that reason and selects neither their native nor legacy publishers,
 including manual and package recovery selection. Native CI validation stays enabled.
 Meet's direct production job also checks the same policy before publication.
@@ -44,32 +53,34 @@ Worker versions and the existing Calendar/Mail/Apps Vercel deployments. Other ap
 and central API suppliers retain their normal production behavior; the hold is not
 an assertion of compatibility with newly published suppliers. Vercel Git deployment
 stays disabled; do not change framework, domains, bindings or scheduler ownership.
-See the [wave-1 cutover runbook](/build/devops/wave1-native-cutover).
+See the wave-1 cutover runbook.
 
 ## Runtime map
 
 | Boundary | Active source/owner | What to verify |
 | --- | --- | --- |
 | Main platform | `apps/web` Next.js | Exact commit build/deployment and authenticated route behavior |
-| Satellite products | Owning Next.js apps and shared packages | Per-app session audience, route owner, and deployment marker |
+| Satellite products | Owning Next.js apps, or native Start Workers after cutover | Per-app session audience, route owner, and deployment marker |
 | Database | Hosted Supabase and authorized migration workflows | Schema promotion results, RLS, and relevant domain records |
 | Realtime/edge services | Owning Cloudflare Worker/service configuration | Worker deployment, runtime health, and product result |
 | Documentation | `apps/docs` with pinned local Mintlify or hosted docs | Navigation, links, MDX, inventory freshness |
 | Mobile | `apps/mobile` Flutter | Owning analysis/test/release artifact evidence |
 | Docker cron runner | Retired | Do not restart it as incident recovery |
 | Docker setup | Not in use | Retained runbooks are optional historical references |
-| Rust/TanStack Start | Paused and not in use | Do not require their builds, services, or cutover gates |
+| Rust backend | Paused and not in use | Do not require its builds, services, or cutover gates |
+| `apps/tanstack-web` | Retired | Do not revive; native Start apps are per-app Workers |
 
 ## Wave-1 native staging publishers
 
-The explicitly admitted Meet, Calendar, Mail and Apps Start/Void source and scoped
-native CI are active. The retained `apps/tanstack-web` runtime remains paused; this
-exception does not resume its Rust/Docker stack or authorize canonical cutover.
+The Meet, Calendar, Mail and Apps Start/Void source and scoped native CI are
+active. This does not revive `apps/tanstack-web`, resume the Rust/Docker stack, or
+authorize canonical cutover.
 
 Calendar, Mail and Apps have separately sealed native staging/production profiles.
-Production remains held for wave-1 cutover. Only owner-provisioned, explicitly enabled
+Calendar has a separately gated private production publisher, which never attaches
+routes. Other wave-1 apps remain held. Only owner-provisioned, explicitly enabled
 staging can publish from trusted main runs; no workflow creates provider resources or
-changes DNS as setup. The [native publisher runbook](/build/devops/wave1-native-publishers)
+changes DNS as setup. The native publisher runbook
 records exact identities, secret names, resource continuity, archive/runtime gates,
 stop control, rollback receipts and remaining hosted acceptance. Meet's off-canonical
 profile is defined separately and has no automated staging publisher here.
@@ -86,7 +97,7 @@ profile is defined separately and has no automated staging publisher here.
 
 New schedules go to Cloudflare; the [background work inventory](/build/devops/background-work-inventory)
 lists every remaining legacy owner and its migration target.
-The [Cloudflare Cron Control guide](/build/devops/cloudflare-cron-control)
+The Cloudflare Cron Control guide
 explains the idle skip, requeue RPC, pending-batch check, and delivery token.
 Calendar's Infrastructure gateway authenticates the scheduler and uses its
 configured credential to reach Calendar. It must not be bypassed by adding a
@@ -157,3 +168,12 @@ its historical manifest version remains frozen. Renovate also ignores the inacti
 runtime and Docker workflow files, in addition to the paused source/Dockerfiles.
 Policy tests guard these exclusions. Do not reactivate them indirectly during
 ordinary active-package release maintenance.
+
+
+The only Docker CI exception is the trusted-main, self-hosted
+`e2e-smoke-report-only.yaml` Web browser workflow (authorized 2026-10-28).
+Its scoped launcher enforces admission, per-run identities and owned cleanup;
+the general paused commands and existing disabled jobs remain paused, including
+Rust, TanStack and the cron runner. See the GitHub Actions runbook's
+[Report-only Web E2E](/build/devops/github-actions-runbook#report-only-web-e2e)
+section for runtime bounds, host-lock recovery and report-only acceptance.

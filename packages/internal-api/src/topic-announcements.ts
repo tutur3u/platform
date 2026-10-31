@@ -4,6 +4,7 @@ import {
   type InternalApiClientOptions,
   type InternalApiQuery,
 } from './client';
+import { InternalApiError, parseInternalApiError } from './internal-api-error';
 import {
   createWorkspaceStorageUploadUrl,
   uploadFileWithSignedUrl,
@@ -14,6 +15,23 @@ export type TopicAnnouncementVerificationStatus =
   | 'needs_verification'
   | 'pending'
   | 'verified';
+
+export interface TopicAnnouncementUnverifiedContact {
+  email: string;
+  id: string;
+  name: string;
+}
+
+/** Thrown when a send is blocked because recipients have not verified their
+ * email. The announcement is left unchanged so it can be sent after they do. */
+export class TopicAnnouncementUnverifiedRecipientsError extends InternalApiError {
+  constructor(
+    public readonly unverifiedContacts: TopicAnnouncementUnverifiedContact[]
+  ) {
+    super('EMAIL_NOT_VERIFIED', 409, 'EMAIL_NOT_VERIFIED');
+    this.name = 'TopicAnnouncementUnverifiedRecipientsError';
+  }
+}
 
 export type TopicAnnouncementStatus =
   | 'cancelled'
@@ -70,6 +88,7 @@ export interface TopicAnnouncementRecord {
   body: string;
   class_label: string | null;
   contacts: TopicAnnouncementContact[];
+  course_book?: string | null;
   created_at: string;
   day_label: string | null;
   end_time: string | null;
@@ -80,14 +99,18 @@ export interface TopicAnnouncementRecord {
   place: string | null;
   room: string | null;
   scheduled_send_at: string | null;
+  /** 24h before the session in the workspace timezone; see topic-announcement-deadline. */
+  send_due_at?: string | null;
   sent_email_audit_id: string | null;
   sent_at: string | null;
   session_date: string | null;
   source_type: string;
   start_time: string | null;
   status: TopicAnnouncementStatus;
+  teacher_workspace_user_id?: string | null;
   title: string;
   topic: string;
+  video_url?: string | null;
 }
 
 export interface TopicAnnouncementTemplateRecord {
@@ -138,8 +161,19 @@ export interface TopicAnnouncementPayload {
   sourceType?: string;
   startTime?: string | null;
   status?: TopicAnnouncementStatus;
+  teacherWorkspaceUserId?: string | null;
+  courseBook?: string | null;
+  videoUrl?: string | null;
   title: string;
+  /** May be blank only while the announcement is saved as a draft. */
   topic: string;
+}
+
+export interface TopicAssignmentNotificationResult {
+  failedTeachers: number;
+  notifiedTeachers: number;
+  skippedUnlinkedTeachers: number;
+  unassignedAnnouncements: number;
 }
 
 export interface TopicAnnouncementEmailPreviewContent {
@@ -319,6 +353,23 @@ export async function updateTopicAnnouncement(
   );
 }
 
+/** Supervisor "save & notify": one in-app notification per assigned teacher. */
+export async function notifyTopicAnnouncementTeachers(
+  workspaceId: string,
+  announcementIds: string[],
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: TopicAssignmentNotificationResult }>(
+    `${basePath(workspaceId)}/notify-teachers`,
+    {
+      body: JSON.stringify({ announcementIds }),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
 export async function deleteTopicAnnouncement(
   workspaceId: string,
   announcementId: string,
@@ -407,7 +458,7 @@ export async function sendTopicAnnouncement(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ auditId: string | null; messageId: string | null }>(
+  const response = await client.fetch(
     `${basePath(workspaceId)}/announcements/${encodePathSegment(announcementId)}/send`,
     {
       body: JSON.stringify(payload),
@@ -415,6 +466,27 @@ export async function sendTopicAnnouncement(
       method: 'POST',
     }
   );
+
+  if (response.status === 409) {
+    const data = (await response
+      .clone()
+      .json()
+      .catch(() => null)) as {
+      code?: string;
+      unverifiedContacts?: TopicAnnouncementUnverifiedContact[];
+    } | null;
+    if (data?.code === 'EMAIL_NOT_VERIFIED') {
+      throw new TopicAnnouncementUnverifiedRecipientsError(
+        data.unverifiedContacts ?? []
+      );
+    }
+  }
+  if (!response.ok) throw await parseInternalApiError(response);
+
+  return (await response.json()) as {
+    auditId: string | null;
+    messageId: string | null;
+  };
 }
 
 export async function previewTopicAnnouncementEmail(
@@ -440,6 +512,18 @@ export async function listTopicAnnouncementTemplates(
   const client = getInternalApiClient(options);
   return client.json<{ data: TopicAnnouncementTemplateRecord[] }>(
     `${basePath(workspaceId)}/templates`,
+    { cache: 'no-store' }
+  );
+}
+
+/** Campus labels from the workspace tutoring policy, for the place picker. */
+export async function listTopicAnnouncementCampusOptions(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: string[] }>(
+    `${basePath(workspaceId)}/campus-options`,
     { cache: 'no-store' }
   );
 }
@@ -538,6 +622,7 @@ export async function sendTopicAnnouncementsBulk(
       error?: string;
       messageId?: string | null;
       status?: number;
+      unverifiedContacts?: TopicAnnouncementUnverifiedContact[];
     }>;
   }>(`${basePath(workspaceId)}/send-bulk`, {
     body: JSON.stringify(payload),
@@ -545,3 +630,5 @@ export async function sendTopicAnnouncementsBulk(
     method: 'POST',
   });
 }
+
+export * from './topic-schedule';

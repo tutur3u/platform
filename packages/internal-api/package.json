@@ -108,6 +108,11 @@
       "import": "./dist/programming.js",
       "require": "./dist/programming.js"
     },
+    "./tulearn": {
+      "types": "./dist/tulearn.d.ts",
+      "import": "./dist/tulearn.js",
+      "require": "./dist/tulearn.js"
+    },
     "./external-project-team": {
       "types": "./dist/external-project-team.d.ts",
       "import": "./dist/external-project-team.js",
@@ -352,6 +357,11 @@
       "types": "./dist/users-feedbacks.d.ts",
       "import": "./dist/users-feedbacks.js",
       "require": "./dist/users-feedbacks.js"
+    },
+    "./topic-announcements": {
+      "types": "./dist/topic-announcements.d.ts",
+      "import": "./dist/topic-announcements.js",
+      "require": "./dist/topic-announcements.js"
     },
     "./workspace-configs": {
       "types": "./dist/workspace-configs.d.ts",

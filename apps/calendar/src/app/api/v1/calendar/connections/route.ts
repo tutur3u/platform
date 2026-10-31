@@ -359,9 +359,21 @@ export async function PATCH(request: Request) {
     const normalizedWsId = wsId
       ? await normalizeWorkspaceId(wsId, supabase)
       : null;
-    const targetWsId =
-      normalizedWsId ??
-      (id ? await getConnectionWorkspaceId(supabase, id) : null);
+    // An id identifies the row on its own, so authorize against the row's
+    // workspace and reject a body wsId that points somewhere else.
+    const connectionWsId = id
+      ? await getConnectionWorkspaceId(supabase, id)
+      : null;
+    if (
+      id &&
+      (!connectionWsId || (normalizedWsId && connectionWsId !== normalizedWsId))
+    ) {
+      return NextResponse.json(
+        { error: 'Calendar connection not found' },
+        { status: 404 }
+      );
+    }
+    const targetWsId = connectionWsId ?? normalizedWsId;
 
     if (!targetWsId) {
       return NextResponse.json(
@@ -398,12 +410,15 @@ export async function PATCH(request: Request) {
     }
 
     // Build the query based on whether we have id or calendarId+wsId
-    let query = supabase.from('calendar_connections').update(updateData);
+    let query = supabase
+      .from('calendar_connections')
+      .update(updateData)
+      .eq('ws_id', targetWsId);
 
     if (id) {
       query = query.eq('id', id);
-    } else if (calendarId && normalizedWsId) {
-      query = query.eq('calendar_id', calendarId).eq('ws_id', normalizedWsId);
+    } else if (calendarId) {
+      query = query.eq('calendar_id', calendarId);
       query = authTokenId
         ? query.eq('auth_token_id', authTokenId)
         : query.is('auth_token_id', null);
@@ -465,17 +480,27 @@ export async function DELETE(request: Request) {
     });
     if (accessError) return accessError;
 
-    // Delete the calendar connection
-    const { error: deleteError } = await supabase
+    // Delete only inside the authorized workspace, so a row that moved or a
+    // stale lookup can never remove another workspace's connection.
+    const { data: deleted, error: deleteError } = await supabase
       .from('calendar_connections')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('ws_id', wsId)
+      .select('id');
 
     if (deleteError) {
       console.error('Error deleting calendar connection:', deleteError);
       return NextResponse.json(
         { error: 'Failed to delete calendar connection' },
         { status: 500 }
+      );
+    }
+
+    if (!deleted?.length) {
+      return NextResponse.json(
+        { error: 'Calendar connection not found' },
+        { status: 404 }
       );
     }
 

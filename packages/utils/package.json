@@ -35,6 +35,7 @@
     "dayjs": "^1.11.23",
     "diff": "^9.0.0",
     "effect": "^3.22.3",
+    "jose": "^6.2.13",
     "moment": "^2.31.0",
     "next": "^16.4.0",
     "prosemirror-model": "^1.25.12",
@@ -54,6 +55,7 @@
     "@types/node": "^26.6.5",
     "@types/react": "~19.2.18",
     "@vitejs/plugin-react": "^6.1.2",
+    "fast-check": "^4.10.2",
     "typescript": "7.0.2",
     "vite": "^8.3.5",
     "vitest": "^5.0.5"
@@ -73,6 +75,7 @@
     "./abuse-protection": "./src/abuse-protection/index.ts",
     "./abuse-protection/backend-rate-limit": "./src/abuse-protection/backend-rate-limit.ts",
     "./abuse-protection/client-ip": "./src/abuse-protection/client-ip.ts",
+    "./abuse-protection/origin-ip-proof": "./src/abuse-protection/origin-ip-proof.ts",
     "./abuse-protection/edge": "./src/abuse-protection/edge.ts",
     "./abuse-protection/edge-trust": "./src/abuse-protection/edge-trust.ts",
     "./abuse-protection/user-suspension": "./src/abuse-protection/user-suspension.ts",

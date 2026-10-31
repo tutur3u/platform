@@ -70,6 +70,51 @@ staff mailbox or root-workspace access.
   without the keyword.
 </Note>
 
+## Raw session tokens are native-only
+
+Password login and OTP verification (`/api/v1/auth/password-login`,
+`/api/v1/auth/otp/verify` and their `/api/v1/auth/mobile/*` aliases) return a
+raw Supabase access and refresh token pair only for `client: 'mobile'`, and only
+when the request carries no `Origin` and no `Sec-Fetch-*` header. Every browser
+sends at least one of those, so a browser page, including script injected into
+any `tuturuuu.com` app, gets `403 MOBILE_SESSION_BROWSER_REFUSED` before the
+credential is checked, and must sign in through the cookie session
+(`client: 'web'`). The Flutter app's `dart:io` HTTP client sends neither header,
+so native sign-in is unchanged.
+
+The fence is by design for any browser runtime: a Flutter web build would also
+get `403` (no Flutter web build ships today). It does not stop injected script
+from phishing a password and relaying it through its own server; native app
+attestation is the planned control for that.
+
+`GET /api/cli/auth/start` mints the CLI handoff token only for a top-level
+browser navigation (`Sec-Fetch-Mode: navigate`, `Sec-Fetch-Dest: document`).
+`fetch`, iframe loads and requests without Fetch Metadata get
+`403 CLI_LOGIN_NAVIGATION_REQUIRED` and mint nothing; the CLI only opens the URL
+in a browser. Browsers send Fetch Metadata only to trustworthy origins (HTTPS
+and `localhost`), so a CLI pointed at a non-localhost `http://` dev origin gets
+`403`; use HTTPS, `localhost` or `127.0.0.1`. The route has no JSON response
+and answers `404` for any non-canonical (percent-encoded) spelling of its path,
+which the config header rule would not match. Every response on the canonical
+path carries
+`Content-Security-Policy: sandbox; default-src 'none'; style-src 'unsafe-inline';
+frame-ancestors 'none'` and `Cross-Origin-Opener-Policy: same-origin`, set in
+`apps/web/next.config.ts` after the platform anti-framing rule (Next applies
+config headers before the handler, so a handler-set CSP alone would be
+dropped). The copy page renders in an opaque origin without script and a
+same-origin opener cannot read the token. The loopback callback is validated
+before a token is minted.
+
+`GET /api/auth/me/session`, which returned every `sb-*` cookie and the full
+session including the refresh token, has been removed.
+
+Scope: Web auth routes. Regression coverage: `lib/auth/password.test.ts`,
+`lib/auth/otp.test.ts`, `__tests__/mobile-session-browser-fence-route.test.ts`,
+`app/api/cli/auth/start/route.test.ts`, `apps/web/next.config.test.ts`. Remaining cookie-authenticated minting
+paths (cross-app handoff tokens, CLI device approval, API keys) are fenced by the
+shared-session plan's step-up and token-lifetime work; see
+[Start bridge](/build/devops/start-bridge).
+
 ## Email sign-in method preference
 
 The canonical web login (including satellite app redirects) and Flutter mobile
@@ -292,22 +337,19 @@ export async function signIn(formData: FormData) {
 
 ### OAuth Sign In
 
-The providers offered on the login page and in account linking come from
-`AUTH_OAUTH_PROVIDERS` in `apps/web/src/lib/auth/oauth-providers.ts` — one list
-drives the buttons, the `/api/v1/users/me/identities/link/[provider]` route, and
-the settings linked-accounts card. Adding a provider anywhere means adding it
-there.
+Customer OAuth providers are listed in `AUTH_OAUTH_PROVIDERS` in
+`apps/web/src/lib/auth/oauth-providers.ts`; this list drives automatic login and
+account linking. The web form separately offers the staff-only Azure entry.
 
 <Warning>
-  **The Supabase Azure provider must be pinned to a single tenant.** Microsoft
-  (`azure`) is offered with the `email` scope, and Supabase links an OAuth
-  identity into an existing account when the provider reports that address as
-  verified. On the shared multi-tenant `common` issuer that claim is only an
-  assertion by whichever directory the user signed in from, so anyone who
-  controls any Azure directory could claim a Tuturuuu address and take over the
-  matching account. Set the provider's URL override to your tenant, not
-  `common`.
+  Configure Microsoft's optional `xms_edov` ID-token claim as described in [Supabase's Azure guidance](https://supabase.com/docs/guides/auth/social-login/auth-azure#guarding-against-unverified-email-domains). GoTrue's `email_verified` alone also accepts an absent claim and cannot prove explicit verification.
 </Warning>
+
+Before inserting an `azure` identity for an existing account, including one whose only sign-in is another Microsoft identity, the database requires `identity_data.custom_claims.xms_edov` to be JSON `true`, `"true"`, or `"1"`. Missing, false, or malformed claims roll back the link with a generic permission error. This applies to web, linked-account settings, mobile, and other clients of the same Auth database.
+
+Existing Azure identities remain available for display and unlinking. A user row created more than five minutes before the link transaction counts as existing even without an identity, which absorbs Auth and database clock skew; other providers are unaffected. Microsoft sign-in is restricted to the approved Tuturuuu staff tenant; the hosted Azure authority must be pinned to that tenant. The generic `common` authority is not permitted.
+
+GoTrue v2.197.0 preserves the [raw provider claims](https://github.com/supabase/auth/blob/v2.197.0/internal/api/provider/oidc.go#L329) and [updates existing identities](https://github.com/supabase/auth/blob/v2.197.0/internal/api/external.go#L388). Recheck these mappings when upgrading Auth. Coverage: `apps/database/supabase/tests/azure-identity-link-verification*.sql`; the matching `20261027151480` rollback removes the trigger and private helper without restoring client grants.
 
 ```typescript
 "use server";
@@ -819,6 +861,17 @@ WEB_APP_URL })` so the handoff also stores the Web-issued app-session cookie.
 - Keep `generate_cross_app_token(...)` bound to the authenticated caller
   (`p_user_id = auth.uid()`) so verify endpoints cannot mint sessions for
   arbitrary users.
+- Cross-app tokens are short-lived handoffs. `generate_cross_app_token(...)`
+  clamps the requested lifetime to 60 s, or 300 s for the `cli` origin, where
+  a person copies the token into a terminal. It rejects a `NULL` or sub-second
+  expiry with `22023`. Redeem the token in the same redirect; never store it.
+- The target must be an internal app or an enabled external app registered in
+  the root workspace (`EXTERNAL_APP_REGISTRY:<id>:*` secrets); the origin must
+  be `web`, `cli` or an internal app. Anything else is rejected with `22023`.
+  The internal list lives in `private.cross_app_internal_app_names()`; when you
+  add an app to `packages/utils/src/internal-domains.ts`, add it there in a new
+  migration (`packages/utils/src/cross-app-token-apps.test.ts` fails until
+  you do).
 - Do not call `supabase.auth.setSession()` in registered internal apps. The
   verifier route sets the HttpOnly app-session cookie, and satellite UI should
   fetch user/profile data by forwarding that cookie to central internal APIs.
@@ -833,6 +886,30 @@ WEB_APP_URL })` so the handoff also stores the Web-issued app-session cookie.
   admin-backed client that would bypass workspace delete RLS.
 
 If either piece is missing, centralized login can stall on the web login spinner or land on `/verify-token` with no token-verification endpoint to finish the handoff.
+
+Signing out of Web (`POST /api/auth/logout`) and changing the password
+(`POST /api/v1/users/me/password`) revoke the user's outstanding cross-app tokens
+through `revokeAllCrossAppTokens`, before sign-out and after a successful
+password update respectively. A revocation failure is logged and never blocks
+either action. Coverage: `__tests__/cross-app-token-revocation-routes.test.ts`.
+
+### Apps mounted on the platform apex
+
+An app served at `tuturuuu.com/<app>` (one-origin super-app) returns from
+login through `tuturuuu.com/<app>/verify-token`. Web's login form and
+`POST /api/v1/auth/cross-app-return` treat that URL as `<app>` only when the
+app is listed in `NEXT_PUBLIC_TUTURUUU_ACTIVE_APP_MOUNTS` (comma-separated,
+**empty by default**). The cross-app token is then issued for `<app>`, and its
+`nextUrl` stays app-relative inside the mount. Add an app to the list only
+after the apex actually routes `/<app>/*` to it. Until then the URL keeps the
+existing platform flow, so a live token is never sent to a path nothing
+serves. Cross-app returns always use a full document navigation. Web's Vercel
+Analytics and Speed Insights redact `token`, `code` and OAuth token query
+parameters (and parameter-bearing fragments) before sending a URL. Regression
+coverage: `packages/utils/src/internal-app-mounts.test.ts`,
+`apps/web/src/app/[locale]/(auth)/login/form-mounted-return.test.tsx`,
+`apps/web/src/app/api/v1/auth/cross-app-return/route.test.ts`,
+`packages/vercel/src/core/redact-url.test.ts`.
 
 ### Generate Cross-App Token
 
@@ -849,12 +926,12 @@ import { createClient } from "@tuturuuu/supabase/next/server";
 export async function createShortenerLink() {
   const supabase = await createClient();
 
-  // Generate a token the shortener app can verify (default expiry: 300s).
+  // Generate a token the shortener app can verify. The database clamps the
+  // lifetime to 60 s for every origin except `cli` (300 s).
   const token = await generateCrossAppToken(
     supabase,
     "shortener", // targetApp
     "web", // originApp
-    3600, // expirySeconds (optional)
   );
 
   if (!token) {
@@ -874,6 +951,21 @@ The target app validates the token with
 `validate_cross_app_token_with_session` RPC and returns `{ userId }` (or `null`).
 The target app is responsible for establishing its own session/app-session from
 that `userId`; the token never carries access or refresh tokens.
+
+Cross-app minting, redemption, and refresh derive mailbox identity from the
+subject's current `auth.users.email` only when `email_confirmed_at` is set.
+An unconfirmed account can use subject-based sessions but receives no email
+identity. Caller session payloads and editable profile email fields are not
+mailbox authority. Web and Infrastructure invitation matching, the Infrastructure
+AI whitelist, and shared board/task recipient checks use the same confirmed Auth
+identity. Explicit recipient user ids and existing workspace membership remain
+valid independently of email confirmation.
+
+Regression coverage: `cross-app-token/verify/route.test.ts`,
+`cross-app-session/refresh/route.test.ts`, workspace invitation `status.test.ts`,
+`board-access-identity.test.ts`, shared-task `route.test.ts`, and database
+`cross-app-verified-identity.sql`.
+
 
 ```typescript
 import { validateCrossAppToken } from "@tuturuuu/auth/cross-app";
@@ -1200,6 +1292,19 @@ Realtime authorization tables. New RLS tables added after this migration must
 also include the `account_required_mfa` restrictive policy; do not assume the
 PostgREST hook protects Storage or Realtime traffic.
 
+The `Required account MFA database contract` workflow
+(`.github/workflows/required-account-mfa-contract.yaml`) enforces this. It applies
+the full migration history to an isolated database and runs the strict
+`required-account-mfa.sql` pgTAP fixture. The fixture requires every client-reachable
+relation in the `config.toml` `[api] schemas` (plus `realtime.messages`) to carry the
+exact restrictive policy, or to be an invoker view. A relation that anon and
+authenticated hold no table or column privilege on, or one with RLS enabled and no
+policy at all, cannot be reached and is not flagged. The only named exemption lives
+in the fixture's `mfa_exemptions` table with its tracking reference; the fixture
+fails when an exemption grants clients more than `SELECT` or is no longer needed.
+Changing `config.toml`, the fixture or the runner triggers the workflow and needs
+code-owner review.
+
 ### Cached clients and reconnect
 
 Optional accounts keep instant cached startup and offline access. Native startup
@@ -1241,3 +1346,57 @@ authentication, database and storage provider, without realtime subscriptions.
 See [the realtime runbook](/build/devops/programming-realtime-runbook).
 
 Administrative policy/recovery metadata transitions use a row-locked database compare-and-swap with a unique generation. A delayed completion cannot overwrite a newer recovery marker, even after the application coordination lease expires. Provider password changes remain GoTrue operations; optional-account password reset does not promise immediate revocation of every previously issued JWT, including when an administrator concurrently enables required MFA. Fresh required-policy and factor checks still apply to every protected request.
+
+## Satellite login return destinations
+
+Satellite login pages normalize untrusted `next` and `nextUrl` destinations with
+`normalizeAuthRedirectPath` before a signed-in redirect or a central login
+handoff. Origin-changing inputs, including slash-backslash authorities and
+encoded or control-character variants, use the app's existing fallback. Valid
+same-origin paths and encoded query data remain intact. Repeated parameters use
+the first value. Storefront, Inventory, Chat, Mind and Nova share this rule;
+Nova retains its central-only handoff and each app retains its existing landing
+path. Their colocated `redirect-security.test.ts` suites execute the real pages
+and shared normalizer for signed-in and central handoff paths.
+
+
+### Staff-only Microsoft sign-in
+
+Microsoft (`azure`) is no longer a customer sign-in or account-linking option.
+Central web login retains one bilingual “Tuturuuu staff (Microsoft)” entry;
+provider-hint auto-login does not accept Azure. Mobile login, signup, and account
+security do not offer Microsoft. Both web and mobile linking refuse Azure;
+existing identities can still be displayed and unlinked under the usual safeguards.
+Calendar and mail integration consent flows are unaffected.
+
+Customers who previously used Microsoft should sign in with the same email using
+the existing email OTP flow. No account migration or
+identity deletion is performed. Web OTP availability remains governed by the
+existing platform OTP settings.
+
+The hosted Supabase tenant pin is the primary control and is configured separately.
+The web callback additionally rejects Azure OAuth sessions with a missing,
+conflicting, or foreign tenant, or an unset `TUTURUUU_AZURE_TENANT_ID`, signs out
+locally, and directs the user to email sign-in with a localized error. Supabase
+resolves identity linking before this callback; rejection cannot undo an upstream
+link. Tenant membership is not staff authorization, including for tenant guests.
+Email recovery is allowed even when the account retains an Azure identity.
+
+Regression coverage:
+[login entry points](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/%5Blocale%5D/(auth)/login/form-return-url.test.tsx),
+[link route](https://github.com/tutur3u/platform/blob/main/apps/web/src/__tests__/settings-auth-routes.test.ts),
+[callback tenant guard](https://github.com/tutur3u/platform/blob/main/apps/web/src/__tests__/auth-callback-route.test.ts),
+[mobile login](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/features/auth/view/login_page_test.dart), and
+[mobile signup](https://github.com/tutur3u/platform/blob/main/apps/mobile/test/features/auth/view/signup_page_test.dart).
+
+## Optional replay-store fairness
+
+CLI refresh, cross-app refresh and registered app-token refresh keep their legacy
+store behavior by default. When the Durable Object `replay` family is assigned,
+trusted adapters send the verified token principal and resolved source network.
+Each may spend at most 5% of replay's daily command share, across token keys and
+instances. Missing IPs share an unknown-source bucket. A spent quota fails the
+refresh closed while other principals on other sources retain their allowance.
+This does not activate the unpublished Worker or replace cutover generation and
+legacy-read fences. See [durable command fairness](/build/devops/abuse-guard-store#durable-command-fairness)
+and `apps/abuse-guard/src/fairness.test.ts` for concurrency/restart coverage.

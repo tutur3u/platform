@@ -1,4 +1,55 @@
 {
+  "mastermindAskedBy": "From {by}",
+  "@mastermindAskedBy": {
+    "placeholders": {
+      "by": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindUnrecognisedValue": "Unrecognised value",
+  "mastermindAskTruncated": "Ask truncated; full text on the Mac",
+  "mastermindReplyFailedShort": "Not sent · tap to retry",
+  "mastermindReplySendingOption": "Sending “{option}”",
+  "@mastermindReplySendingOption": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindReplyWriteOwn": "Write your own",
+  "mastermindReplySendOption": "Send “{option}”",
+  "@mastermindReplySendOption": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskedAt": "Asked {age} · {time}",
+  "@mastermindAskedAt": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindReplyUndo": "Undo",
+  "mastermindReplyNotSentReview": "Couldn't send · open to review",
+  "mastermindAnswerExpand": "Show full answer",
+  "mastermindAnswerCollapse": "Show less",
+  "mastermindReplyQueuedAt": "Queued {time}",
+  "@mastermindReplyQueuedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "assistantDownloadPhasePending": "Pending",
   "assistantDownloadPhaseQueued": "Queued",
   "assistantDownloadPhaseTransferring": "Downloading",
@@ -418,6 +469,27 @@
       }
     }
   },
+  "@inventoryItemAvailable": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "@inventoryItemMoreLocations": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@inventoryScanMatches": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
   "@inventoryRedesignPendingCount": {
     "placeholders": {
       "count": {
@@ -715,34 +787,6 @@
     "placeholders": {
       "workspace": {
         "type": "String"
-      }
-    }
-  },
-  "@profileTimelineNotes": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineTasks": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineTransactions": {
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "@profileTimelineWorkspaceEvents": {
-    "placeholders": {
-      "count": {
-        "type": "int"
       }
     }
   },
@@ -1139,6 +1183,36 @@
       }
     }
   },
+  "@timerPomodoroCycle": {
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "@timerPomodoroRemaining": {
+    "placeholders": {
+      "minutes": {
+        "type": "String"
+      },
+      "seconds": {
+        "type": "String"
+      }
+    }
+  },
+  "@timerPomodoroSummary": {
+    "placeholders": {
+      "focus": {
+        "type": "int"
+      },
+      "rest": {
+        "type": "int"
+      }
+    }
+  },
   "@timerRequestActivityPageInfo": {
     "placeholders": {
       "current": {
@@ -1291,6 +1365,7 @@
   "appsHubInventoryDescription": "Run products, stock, sales, and booth operations in one place.",
   "appsHubListView": "List",
   "appsHubMailDescription": "Read and send email, manage drafts, and organize your inbox.",
+  "appsHubMastermindDescription": "Fleet status, decisions, releases and usage from Mastermind.",
   "appsHubMeetDescription": "Plan meetings, review schedules, and keep recordings visible.",
   "appsHubMoreTools": "More tools",
   "appsHubNotesDescription": "Capture ideas and connect them to your work.",
@@ -1318,6 +1393,41 @@
   "assistantAttachmentFailedShort": "Upload failed",
   "assistantAttachmentSheetTitle": "Attachments",
   "assistantAttachmentUploadFailed": "An attachment failed to upload. Remove it and try again before sending.",
+  "assistantAttachmentFailureForbidden": "This chat can't accept attachments. Remove it or start a new chat.",
+  "assistantAttachmentFailureNetwork": "Upload interrupted. Check your connection and tap Retry.",
+  "assistantAttachmentFailureNewChatRequired": "Start a new chat first, then attach the file again.",
+  "assistantAttachmentFailureServer": "Upload didn't finish. Tap Retry.",
+  "assistantAttachmentFailureTooLarge": "File is larger than 32 MB. Remove it or attach a smaller file.",
+  "assistantAttachmentFailureUnsupported": "This file type isn't supported. Remove it to send.",
+  "assistantAttachmentNotSentMany": "{count} attachments didn't upload. Retry or remove them to send.",
+  "@assistantAttachmentNotSentMany": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantAttachmentNotSentOne": "{name} didn't upload. {reason}",
+  "@assistantAttachmentNotSentOne": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "assistantAttachmentPreparing": "Preparing",
+  "assistantAttachmentRetry": "Retry",
+  "assistantAttachmentUploadingPercent": "{percent}%",
+  "@assistantAttachmentUploadingPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
   "assistantAttachmentUploadPending": "Wait for attachment uploads to finish before sending.",
   "assistantAudioUnavailable": "Audio was interrupted. Reconnect to continue this conversation.",
   "assistantCalendarLabel": "Calendar",
@@ -1403,7 +1513,6 @@
   "assistantLiveDraftAssistant": "Mira is replying",
   "assistantLiveDraftUser": "You are speaking",
   "assistantLiveHideCamera": "Hide camera",
-  "assistantLiveIdleHeading": "Ready to talk",
   "assistantLiveInfoAccessHeading": "Current access",
   "assistantLiveInfoDismiss": "Got it",
   "assistantLiveInfoTitle": "Live information",
@@ -1433,6 +1542,7 @@
   "assistantLiveStageAssistantSpeaking": "Voice response is streaming",
   "assistantLiveStageYouListening": "Your microphone is live",
   "assistantLiveStageYouMuted": "Tap the mic to speak again",
+  "assistantLiveStartTalking": "Start talking",
   "assistantLiveStartupAudio": "Audio initialization",
   "assistantLiveStartupDuration": "{milliseconds} ms",
   "assistantLiveStartupHistory": "Conversation history",
@@ -1455,9 +1565,7 @@
   "assistantLiveSubtitle": "Gemini 3.1 Flash Live with voice, camera, attachments, and unified chat history.",
   "assistantLiveTierRequired": "Live voice is available on PLUS and above.",
   "assistantLiveTitle": "Mira Live",
-  "assistantLiveTranscriptEmpty": "Start talking or type a message. Your conversation appears here.",
   "assistantLiveTranscriptPending": "Transcript changes are not yet synchronized.",
-  "assistantLiveTranscriptTitle": "Live transcript",
   "assistantLiveTypeMessage": "Type",
   "assistantLiveWorkspaceTierLabel": "Workspace {tier}",
   "assistantLocalBudget": "Model storage budget exceeded. Remove a model before installing another.",
@@ -1491,6 +1599,7 @@
   "assistantLocalSelected": "Selected for Mira",
   "assistantLocalSelectionUnknown": "A previously selected local model is no longer in the catalogue. Choose a model or explicitly choose remote mode.",
   "assistantLocalSize": "{size} MiB",
+  "assistantLocalSourceEmpty": "Download a model below",
   "assistantLocalStop": "Stop local generation",
   "assistantLocalStorageError": "Could not save local history or mode. Your conversation has not been uploaded.",
   "assistantLocalTextOnly": "Local mode supports text only",
@@ -1521,6 +1630,7 @@
   "assistantModelInputCost": "Input",
   "assistantModelLabel": "Model",
   "assistantModelOutputCost": "Output",
+  "assistantModelSourceTitle": "Model source",
   "assistantModelUnfavorite": "Remove from favorites",
   "assistantNewConversation": "New conversation",
   "assistantOutputLabel": "Output",
@@ -1538,7 +1648,7 @@
   "assistantRenameTitle": "Rename assistant",
   "assistantReplyFailed": "Mira's reply stopped. Your message is still here. Retry",
   "assistantSaveAction": "Save",
-  "assistantScrollToBottomAction": "Scroll to bottom",
+  "assistantScrollToBottomAction": "Jump to latest",
   "assistantSearchModels": "Search models",
   "assistantSeeLessLabel": "See less",
   "assistantSeeMoreLabel": "See more",
@@ -1558,7 +1668,6 @@
   "assistantStarterDraft": "Team update",
   "assistantStarterFocus": "Today's focus",
   "assistantStarterPlan": "Day plan",
-  "assistantStarterSubtitle": "Pick a quick starter or type your own.",
   "assistantStarterTitle": "Need a place to start?",
   "assistantTasksLabel": "Tasks",
   "assistantThinkingStatus": "Thinking...",
@@ -1569,6 +1678,90 @@
   "assistantToolNoActionNeeded": "No tools were needed for this reply.",
   "assistantToolSelectedTools": "Selected tools",
   "assistantToolsLabel": "Tools",
+  "assistantToolLabelTasksRead": "Checked your tasks",
+  "assistantToolLabelTasksReadRunning": "Checking your tasks",
+  "assistantToolLabelTaskCreate": "Created a task",
+  "assistantToolLabelTaskCreateRunning": "Creating a task",
+  "assistantToolLabelTaskUpdate": "Updated a task",
+  "assistantToolLabelTaskUpdateRunning": "Updating a task",
+  "assistantToolLabelTaskComplete": "Completed a task",
+  "assistantToolLabelTaskCompleteRunning": "Completing a task",
+  "assistantToolLabelTaskDelete": "Deleted a task",
+  "assistantToolLabelTaskDeleteRunning": "Deleting a task",
+  "assistantToolLabelBoardsRead": "Checked your boards",
+  "assistantToolLabelBoardsReadRunning": "Checking your boards",
+  "assistantToolLabelBoardsWrite": "Updated your boards",
+  "assistantToolLabelBoardsWriteRunning": "Updating your boards",
+  "assistantToolLabelCalendarRead": "Checked your calendar",
+  "assistantToolLabelCalendarReadRunning": "Checking your calendar",
+  "assistantToolLabelCalendarWrite": "Updated your calendar",
+  "assistantToolLabelCalendarWriteRunning": "Updating your calendar",
+  "assistantToolLabelEmailRead": "Checked your email",
+  "assistantToolLabelEmailReadRunning": "Checking your email",
+  "assistantToolLabelEmailDraft": "Drafted a reply",
+  "assistantToolLabelEmailDraftRunning": "Drafting a reply",
+  "assistantToolLabelFinanceRead": "Checked your finances",
+  "assistantToolLabelFinanceReadRunning": "Checking your finances",
+  "assistantToolLabelFinanceWrite": "Updated your finances",
+  "assistantToolLabelFinanceWriteRunning": "Updating your finances",
+  "assistantToolLabelTimeRead": "Checked your time tracking",
+  "assistantToolLabelTimeReadRunning": "Checking your time tracking",
+  "assistantToolLabelTimeWrite": "Updated your time tracking",
+  "assistantToolLabelTimeWriteRunning": "Updating your time tracking",
+  "assistantToolLabelHealthRead": "Checked your health and habits",
+  "assistantToolLabelHealthReadRunning": "Checking your health and habits",
+  "assistantToolLabelHealthWrite": "Logged your progress",
+  "assistantToolLabelHealthWriteRunning": "Logging your progress",
+  "assistantToolLabelDayOverview": "Reviewed your day",
+  "assistantToolLabelDayOverviewRunning": "Reviewing your day",
+  "assistantToolLabelMemorySave": "Saved to memory",
+  "assistantToolLabelMemorySaveRunning": "Saving to memory",
+  "assistantToolLabelMemoryRead": "Checked memory",
+  "assistantToolLabelMemoryReadRunning": "Checking memory",
+  "assistantToolLabelMemoryWrite": "Updated memory",
+  "assistantToolLabelMemoryWriteRunning": "Updating memory",
+  "assistantToolLabelImage": "Created an image",
+  "assistantToolLabelImageRunning": "Creating an image",
+  "assistantToolLabelQrCode": "Created a QR code",
+  "assistantToolLabelQrCodeRunning": "Creating a QR code",
+  "assistantToolLabelWebSearch": "Searched the web",
+  "assistantToolLabelWebSearchRunning": "Searching the web",
+  "assistantToolLabelChecks": "Ran checks",
+  "assistantToolLabelChecksRunning": "Running checks",
+  "assistantToolLabelFile": "Read a file",
+  "assistantToolLabelFileRunning": "Reading a file",
+  "assistantToolLabelWorkspace": "Checked your workspace",
+  "assistantToolLabelWorkspaceRunning": "Checking your workspace",
+  "assistantToolLabelSettings": "Updated your settings",
+  "assistantToolLabelSettingsRunning": "Updating your settings",
+  "assistantToolLabelOpenApp": "Opened an app",
+  "assistantToolLabelOpenAppRunning": "Opening an app",
+  "assistantToolLabelView": "Prepared a view",
+  "assistantToolLabelViewRunning": "Preparing a view",
+  "assistantToolStepCount": "{count, plural, =1{1 step} other{{count} steps}}",
+  "@assistantToolStepCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantToolStepResultCount": "{count, plural, =0{No results} =1{1 result} other{{count} results}}",
+  "@assistantToolStepResultCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "assistantToolStepWorking": "Working…",
+  "assistantToolStepDetails": "Details",
+  "assistantToolStepHideDetails": "Hide details",
+  "assistantToolStepRunning": "In progress",
+  "assistantToolStepDone": "Done",
+  "assistantToolStepFailed": "Couldn't finish this step",
+  "assistantToolStepsInProgress": "Steps in progress",
+  "assistantToolStepsDone": "Steps done",
   "assistantUntitledChat": "Untitled chat",
   "assistantUpcomingLabel": "upcoming",
   "assistantVideoAttachment": "Video",
@@ -1847,6 +2040,7 @@
   "commonLive": "Live",
   "commonLoadMore": "Load more",
   "commonLoading": "Loading",
+  "commonMoreOptions": "More options",
   "commonNext": "Next",
   "commonNoSearchResults": "No matching results",
   "commonOff": "Off",
@@ -1861,6 +2055,7 @@
   "commonRequired": "Required",
   "commonRetry": "Retry",
   "commonSave": "Save",
+  "commonSearch": "Search",
   "commonSelectDate": "Select a date",
   "commonShare": "Share",
   "commonShowLess": "Show less",
@@ -2526,6 +2721,7 @@
   "habitsWorkoutTotalSets": "Total sets",
   "habitsWorkoutTotalVolume": "Total volume",
   "habitsWorkoutWeight": "Weight",
+  "homeCalendarEmpty": "No events this week.",
   "homeCustomize": "Customize Home",
   "homeGreetingAfternoon": "Good afternoon",
   "homeGreetingAfternoonNamed": "Good afternoon, {name}",
@@ -2537,8 +2733,25 @@
   "homeHideWidget": "Hide widget",
   "homePersonalAgenda": "Agenda",
   "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
+  "homeSectionCalendar": "Calendar",
   "homeSectionLoadFailed": "Pull down to try again.",
+  "homeSectionToday": "Today",
+  "homeSectionUpNext": "Up next",
+  "homeSeeAll": "See all",
   "homeShowWidget": "Show widget",
+  "homeTodayEmpty": "Nothing due today.",
+  "homeUpNextEmpty": "Nothing coming up.",
+  "homeWidgetTasks": "Today and Up next",
+  "homeWorkspaceChipsLabel": "Workspaces",
+  "homeWorkspaceEditPins": "Edit pinned workspaces",
+  "homeWorkspaceFind": "Find workspace",
+  "homeWorkspaceMore": "More",
+  "homeWorkspaceNew": "New workspace",
+  "homeWorkspacePin": "Pin to Home",
+  "homeWorkspacePinsDescription": "Pinned workspaces appear as chips on Home.",
+  "homeWorkspacePinsFailed": "Couldn't save pinned workspaces.",
+  "homeWorkspacePinsTitle": "Pinned workspaces",
+  "homeWorkspaceUnpin": "Unpin from Home",
   "inventoryAddCategory": "Add category",
   "inventoryAddManufacturer": "Add manufacturer",
   "inventoryAddOwner": "Add owner",
@@ -2740,6 +2953,25 @@
   "inventorySalesTitle": "Title",
   "inventorySaveProduct": "Save product",
   "inventorySearchProducts": "Search products",
+  "inventoryItemArchived": "Archived",
+  "inventoryItemsLoadFailed": "Couldn't load products",
+  "inventoryItemsLoadMoreFailed": "Couldn't load more products",
+  "inventoryItemAvailable": "{amount} available",
+  "inventoryItemMoreLocations": "{count, plural, =1{1 more location} other{{count} more locations}}",
+  "inventoryItemNoStock": "No stock configured",
+  "inventoryItemStockHidden": "Stock hidden",
+  "inventoryItemsEmptyTitle": "No products yet",
+  "inventoryItemsNoMatch": "No products match",
+  "inventoryItemsNoMatchMessage": "Search matches product names. Try another name or clear the search.",
+  "inventoryItemsNoneArchived": "No archived products",
+  "inventoryScanAction": "Scan code",
+  "inventoryScanHint": "Point the camera at a product QR code or barcode.",
+  "inventoryScanMatches": "Name matches for “{code}”",
+  "inventoryScanNotFound": "No product in this workspace matches this code.",
+  "inventoryScanNotProduct": "This code can't be matched to a product.",
+  "inventoryScanSearchInstead": "Search instead",
+  "inventoryScanTitle": "Scan a code",
+  "inventoryScanUnavailable": "Camera unavailable",
   "inventorySeasonHistoricalReadOnly": "Scheduled sale history is read only here. Recorded prices are preserved.",
   "inventorySeasonPriceAsOf": "Season prices · {currency} · as of {asOf} (UTC) · season dates in {timeZone}",
   "inventorySeasonPriceCached": "Offline draft using saved season prices. Prices and availability will be checked when syncing.",
@@ -3090,10 +3322,13 @@
   "navFinance": "Finance",
   "navHabits": "Habits",
   "navHome": "Home",
+  "navInbox": "Inbox",
+  "navMira": "Mira",
   "navMore": "More",
   "navSettings": "Settings",
   "navTasks": "Tasks",
   "navTimer": "Timer",
+  "navYou": "You",
   "notesArchive": "Archive note",
   "notesArchiveEmpty": "Archived notes will appear here.",
   "notesArchiveTab": "Archive",
@@ -3328,6 +3563,7 @@
   "profileEmailHint": "example@tuturuuu.com",
   "profileEmailPendingChange": "Pending change to {email}",
   "profileEmailUpdateNote": "Confirmation emails will be sent to both addresses",
+  "profileFocusTime": "Focus Time",
   "profileFullName": "Full name",
   "profileFullNameDescription": "Use your legal or preferred full name for account records.",
   "profileFullNameHint": "Your full name",
@@ -3362,19 +3598,19 @@
   "profileTimelineEmpty": "No recent activity in this workspace",
   "profileTimelineHasActivity": "Activity in loaded snapshot",
   "profileTimelineHideDates": "Close dates and browse agenda",
+  "profileTimelineKindNote": "Note",
+  "profileTimelineKindTask": "Task",
+  "profileTimelineKindTransaction": "Transaction",
+  "profileTimelineKindWorkspaceEvent": "Workspace event",
   "profileTimelineLimited": "Showing recent activity only. Some sources reached the display limit.",
   "profileTimelineLoadedEnd": "All loaded activity shown",
   "profileTimelineMoreDays": "Show more loaded days",
-  "profileTimelineNotes": "{count, plural, one{Added 1 note} other{Added {count} notes}}",
   "profileTimelinePartial": "Some activity is unavailable.",
   "profileTimelineShowDates": "Show date selector",
   "profileTimelineTab": "Timeline",
-  "profileTimelineTasks": "{count, plural, one{Created 1 task} other{Created {count} tasks}}",
   "profileTimelineTitle": "Timeline",
   "profileTimelineToday": "Today",
-  "profileTimelineTransactions": "{count, plural, one{Created 1 transaction} other{Created {count} transactions}}",
   "profileTimelineUnavailable": "Activity could not be refreshed.",
-  "profileTimelineWorkspaceEvents": "{count, plural, one{1 workspace event added} other{{count} workspace events added}}",
   "profileTimelineYesterday": "Yesterday",
   "profileTitle": "Profile",
   "profileTrackedMinutes": "{minutes} min tracked",
@@ -3489,13 +3725,31 @@
   "appearanceBackgroundGradient": "Gradient",
   "appearanceBackgroundSolid": "Solid",
   "appearanceBackgroundTitle": "Background",
+  "appearanceCornersRounded": "Rounded",
+  "appearanceCornersSoft": "Soft",
+  "appearanceCornersSquare": "Square",
+  "appearanceCornersTitle": "Corners",
+  "appearanceDensityComfortable": "Comfortable",
+  "appearanceDensityCompact": "Compact",
+  "appearanceDensityTitle": "Density",
+  "appearanceDeviceOverride": "Use different appearance on this device",
+  "appearanceDeviceOverrideDescription": "Changes here stay on this device and don't sync to your account.",
+  "appearanceFeedbackTitle": "Feedback and motion",
+  "appearanceHapticsDescription": "Light vibrations when you choose, swipe or confirm.",
   "appearanceIntensity": "Intensity",
   "appearanceModeTitle": "Mode",
   "appearanceNew": "New",
   "appearancePreviewTitle": "Preview",
+  "appearanceReduceMotion": "Reduce motion",
+  "appearanceReduceMotionDescription": "Always reduce animations, even when the system setting is off.",
   "appearanceReset": "Reset to default",
   "appearanceResetDone": "Appearance reset to default",
   "appearanceSoftness": "Softness",
+  "appearanceStyleDescription": "Changes how pages slide and lists scroll. Colors and layout stay the same on every device.",
+  "appearanceStyleIos": "iOS-like",
+  "appearanceStyleMaterial": "Material-like",
+  "appearanceStyleTitle": "Style",
+  "appearanceStyleTuturuuu": "Tuturuuu",
   "appearanceSurfaceOpacity": "Card opacity",
   "appearanceSurfacesTitle": "Surfaces",
   "appearanceThemeAurora": "Aurora",
@@ -3919,6 +4173,7 @@
   "taskBoardDetailColorPurple": "Purple",
   "taskBoardDetailColorRed": "Red",
   "taskBoardDetailColorYellow": "Yellow",
+  "taskBoardDetailCompleteTask": "Complete",
   "taskBoardDetailCreateList": "Create list",
   "taskBoardDetailCreateTask": "Create task",
   "taskBoardDetailDaysAgo": "{count, plural, one{{count} day ago} other{{count} days ago}}",
@@ -3939,6 +4194,7 @@
   "taskBoardDetailDeletedAgo": "Deleted {time}",
   "taskBoardDetailDeletedTasksCount": "{count, plural, one{{count} deleted task} other{{count} deleted tasks}}",
   "taskBoardDetailDueAt": "Due {date}",
+  "taskBoardDetailDueDateUpdated": "Due date updated.",
   "taskBoardDetailEditList": "Edit list",
   "taskBoardDetailEditTask": "Edit task",
   "taskBoardDetailEditorDetailsTab": "Details",
@@ -3953,6 +4209,16 @@
   "taskBoardDetailFilterStatuses": "Statuses",
   "taskBoardDetailFilters": "Filters",
   "taskBoardDetailFiltersActive": "Filters active",
+  "taskBoardDetailFocusReplaceConfirm": "Stop and start",
+  "taskBoardDetailFocusReplaceMessage": "A timer is already running. Starting focus stops it and starts a new session for this task.",
+  "taskBoardDetailFocusReplacePausedMessage": "A paused timer is waiting to resume. Starting focus ends it and starts a new session for this task.",
+  "taskBoardDetailFocusReplacePausedTitle": "End the paused timer?",
+  "taskBoardDetailFocusReplaceTitle": "Stop the running timer?",
+  "taskBoardDetailFocusStartFailedPausedEnded": "Couldn't start focus, and your paused timer was ended. Open the timer to resume it.",
+  "taskBoardDetailFocusStartFailedRestored": "Couldn't start focus. Your paused timer is back as it was.",
+  "taskBoardDetailFocusStartFailedRunning": "Couldn't start focus. Your previous timer is running again.",
+  "taskBoardDetailFocusStartFailedUnknown": "Couldn't start focus, and the previous timer's state couldn't be confirmed. Open the timer to check it.",
+  "taskBoardDetailFocusStarted": "Timer started for this task.",
   "taskBoardDetailFromList": "from: {list}",
   "taskBoardDetailInDays": "{count, plural, one{in {count} day} other{in {count} days}}",
   "taskBoardDetailInformation": "Information",
@@ -3992,18 +4258,14 @@
   "taskBoardDetailNone": "None",
   "taskBoardDetailOpenFullDetails": "Open full details",
   "taskBoardDetailOpenRelatedTask": "Open related task",
+  "taskBoardDetailOpenTimer": "Open timer",
   "taskBoardDetailOverdue": "Overdue",
   "taskBoardDetailParentTask": "Parent task",
   "taskBoardDetailPoints": "{count, plural, one{{count} pt} other{{count} pts}}",
   "taskBoardDetailPriority": "Priority",
-  "taskBoardDetailPriorityCritical": "Critical",
-  "taskBoardDetailPriorityHigh": "High",
-  "taskBoardDetailPriorityLow": "Low",
   "taskBoardDetailPriorityNone": "No priority",
-  "taskBoardDetailPriorityNormal": "Normal",
   "taskBoardDetailPriorityUpdated": "Priority updated.",
   "taskBoardDetailProperties": "Properties",
-  "taskBoardDetailQuickActions": "Quick actions",
   "taskBoardDetailRecycleBin": "Recycle Bin",
   "taskBoardDetailRecycleBinDescription": "Deleted tasks from this board. Select tasks to restore or permanently delete them.",
   "taskBoardDetailRecycleBinEmpty": "No deleted tasks",
@@ -4016,7 +4278,9 @@
   "taskBoardDetailRemoveRelationship": "Remove relationship",
   "taskBoardDetailRenameBoard": "Rename board",
   "taskBoardDetailRenameList": "Rename list",
+  "taskBoardDetailReopenTask": "Reopen",
   "taskBoardDetailRestoreTasks": "Restore ({count})",
+  "taskBoardDetailScheduleTask": "Schedule",
   "taskBoardDetailSearchDone": "Done",
   "taskBoardDetailSearchPlaceholder": "Search tasks",
   "taskBoardDetailSearchTasks": "Search tasks",
@@ -4028,6 +4292,7 @@
   "taskBoardDetailSetCustomDate": "Set custom date",
   "taskBoardDetailSetDueDate": "Set due date",
   "taskBoardDetailSetEstimation": "Set estimation",
+  "taskBoardDetailStartFocus": "Start focus",
   "taskBoardDetailStartsAt": "Starts {date}",
   "taskBoardDetailStatusActive": "Active",
   "taskBoardDetailStatusCategoryLabel": "Status category",
@@ -4077,6 +4342,7 @@
   "taskBoardDetailTaskEstimation": "Estimation",
   "taskBoardDetailTaskEstimationNone": "No estimate",
   "taskBoardDetailTaskLabels": "Labels",
+  "taskBoardDetailTaskList": "List",
   "taskBoardDetailTaskListLabel": "List",
   "taskBoardDetailTaskListSelect": "Choose list",
   "taskBoardDetailTaskMoved": "Task moved.",
@@ -4321,6 +4587,42 @@
   "taskPortfolioUpdatePlaceholder": "Share the latest progress, blockers, or wins...",
   "taskPortfolioUpdatePosted": "Update posted.",
   "taskPortfolioUpdateSaved": "Update saved.",
+  "taskQuickActionsDueDate": "Due date",
+  "taskQuickActionsNoDate": "None",
+  "taskQuickActionsNoLabels": "No labels",
+  "taskQuickActionsRemoveStartDate": "Remove start date",
+  "taskQuickActionsStatus": "Status",
+  "taskQuickActionsUnassigned": "Unassigned",
+  "taskTimelineLoadingTasks": "Loading tasks…",
+  "taskTimelineNotAllLoaded": "Some tasks aren't loaded yet",
+  "taskTimelineNothingToday": "Nothing scheduled today",
+  "taskTimelineOngoing": "Day {day} of {total}, ends {date}",
+  "@taskTimelineOngoing": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "taskTimelineRangeAll": "All",
+  "taskTimelineRangeMonth": "Month",
+  "taskTimelineRangeWeek": "Week",
+  "taskTimelineShowLater": "Show later tasks",
+  "taskTimelineShowOverdue": "Show overdue",
+  "taskTimelineStarted": "Started {date}",
+  "@taskTimelineStarted": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
   "tasksAllCaughtUp": "You're all caught up!",
   "tasksAllCaughtUpSubtitle": "No pending tasks right now",
   "tasksCompleteByEndOfDay": "Complete by end of day",
@@ -4336,10 +4638,11 @@
   "tasksLoadError": "Couldn't load tasks right now",
   "tasksOverdue": "Overdue",
   "tasksPlanAhead": "Plan ahead",
-  "tasksPriorityCritical": "Critical",
   "tasksPriorityHigh": "High",
   "tasksPriorityLow": "Low",
-  "tasksPriorityNormal": "Normal",
+  "tasksPriorityMedium": "Medium",
+  "tasksPriorityNone": "None",
+  "tasksPriorityUrgent": "Urgent",
   "tasksRequiresAttention": "Requires attention",
   "tasksTitle": "Tasks",
   "tasksUntitled": "Untitled task",
@@ -4429,6 +4732,7 @@
   "timerHeatmapViewCompactCards": "Cards",
   "timerHeatmapViewHybrid": "Hybrid",
   "timerHeatmapViewOriginal": "Original",
+  "timerHeatmapViewTitle": "View",
   "timerHeatmapWed": "We",
   "timerHeatmapYearPattern": "Activity Pattern",
   "timerHistory": "History",
@@ -4453,8 +4757,19 @@
   "timerPause": "Pause",
   "timerPaused": "Paused",
   "timerPomodoro": "Pomodoro",
+  "timerPomodoroBreakDoneBody": "Ready for the next focus?",
+  "timerPomodoroBreakDoneTitle": "Break over",
+  "timerPomodoroCycle": "Focus {current} of {total}",
+  "timerPomodoroFocusDoneBody": "Time for a break.",
+  "timerPomodoroFocusDoneTitle": "Focus done",
+  "timerPomodoroOrphanedSession": "Focus couldn't start, and a timer it created may still be running. Check the Timer page.",
+  "timerPomodoroOtherRunning": "Another timer is running. Stop it on the Timer page to continue this focus.",
+  "timerPomodoroRemaining": "{minutes}:{seconds} left",
   "timerPomodoroSettings": "Pomodoro settings",
   "timerPomodoroSettingsDescription": "Tune focus sessions, breaks, and the automation between them.",
+  "timerPomodoroSkip": "Skip",
+  "timerPomodoroStart": "Start focus",
+  "timerPomodoroSummary": "{focus} min focus · {rest} min break",
   "timerProofOfWorkRequired": "At least one proof image is required.",
   "timerReasonOptional": "Reason (optional)",
   "timerRecentSessions": "Recent sessions",
@@ -4616,6 +4931,10 @@
   "workspaceHiddenDescription": "Only you can see this list. Hiding does not change membership or notifications.",
   "workspaceHiddenEmpty": "No Hidden workspaces",
   "workspaceHiddenLoadError": "Workspace visibility preferences are unavailable. Saved hidden choices are kept.",
+  "workspaceManageTitle": "Manage workspaces",
+  "workspaceVisibleTitle": "Visible workspaces",
+  "workspaceHiddenCurrentToast": "Workspace hidden. Switched to another visible workspace.",
+  "workspaceHiddenLastToast": "All workspaces are hidden. Show a workspace to continue.",
   "workspaceHiddenTitle": "Hidden workspaces",
   "workspaceHiddenUpdateError": "Unable to save this change. Try again when connected.",
   "workspaceHideAction": "Hide",
@@ -4737,7 +5056,6 @@
   "assistantPreviewPlay": "Play preview",
   "assistantPreviewPause": "Pause preview",
   "feedbackTitle": "Send feedback",
-  "feedbackPrivate": "Share product feedback privately with Tuturuuu staff. Do not include passwords or secrets. One optional PNG, JPEG or WebP screenshot, up to 2 MB.",
   "feedbackSubject": "Subject",
   "feedbackDetails": "Details",
   "feedbackAttach": "Attach screenshot",
@@ -4863,6 +5181,7 @@
   "profilePhoto": "Photo",
   "profileCoverBanner": "Cover banner",
   "profileMediaSet": "Set",
+  "profileYouWorkspaces": "Workspaces",
   "assistantSubmitSuccess": "Submitted successfully",
   "offlineDownloadsPaused": "Downloads paused. Saved data is still available. We will retry in the background.",
   "offlineDownloadsRetryLimit": "Downloads are still unavailable. Try again later; saved data is still available.",
@@ -4901,5 +5220,1861 @@
   "assistantReplyLiveUnavailable": "Replies are unavailable while Live is connected. End the call or cancel the reply before sending.",
   "assistantReplyChangedBeforeSend": "The reply changed before sending. Your draft was kept. Review it and send again.",
   "assistantLiveSendRefused": "Live did not accept this message. Your draft was kept. Check the connection before trying again.",
-  "assistantLiveSendUnknown": "Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates."
+  "assistantLiveSendUnknown": "Live delivery is uncertain. Your draft was kept. Check the conversation before resending to avoid duplicates.",
+  "inputPlaceholderAddress": "e.g. 12 Nguyen Hue, District 1",
+  "inputPlaceholderAssistantBoundaries": "e.g. Ask before changing or deleting my data",
+  "inputPlaceholderAssistantMemory": "e.g. Brief answers",
+  "inputPlaceholderAssistantName": "e.g. Mira",
+  "inputPlaceholderAssistantPersonality": "e.g. Patient, curious, and practical",
+  "inputPlaceholderAssistantTone": "e.g. Warm and professional",
+  "inputPlaceholderAssistantVerbosity": "e.g. Brief answers with key details",
+  "inputPlaceholderCmsCollectionDescription": "Describe what this collection contains",
+  "inputPlaceholderCmsCollectionTitle": "e.g. Product guides",
+  "inputPlaceholderCmsCollectionType": "e.g. article",
+  "inputPlaceholderCmsEntryTitle": "e.g. Getting started with your workspace",
+  "inputPlaceholderCmsSlug": "e.g. getting-started",
+  "inputPlaceholderCmsSubtitle": "Add a short line introducing this entry",
+  "inputPlaceholderCmsSummary": "Summarize the main points for readers",
+  "inputPlaceholderComment": "Write your comment here",
+  "inputPlaceholderCourseDescription": "Describe what learners will achieve",
+  "inputPlaceholderCourseName": "e.g. Everyday English",
+  "inputPlaceholderDate": "Tap to choose a date",
+  "inputPlaceholderDays": "e.g. 2",
+  "inputPlaceholderDisplayName": "e.g. Linh",
+  "inputPlaceholderDocumentName": "e.g. Weekly planning",
+  "inputPlaceholderEmailConfirmation": "Enter the account email to confirm",
+  "inputPlaceholderFeedback": "Describe what happened and what could improve",
+  "inputPlaceholderFieldKey": "e.g. water_intake",
+  "inputPlaceholderFieldLabel": "e.g. Water intake",
+  "inputPlaceholderFieldUnit": "e.g. ml, km, or minutes",
+  "inputPlaceholderFlashcardBack": "e.g. Paris",
+  "inputPlaceholderFlashcardFront": "e.g. What is the capital of France?",
+  "inputPlaceholderFullName": "e.g. Nguyen Minh Linh",
+  "inputPlaceholderHabitDescription": "Describe how you will practice this habit",
+  "inputPlaceholderHabitName": "e.g. Drink water",
+  "inputPlaceholderInventoryManufacturer": "e.g. Acme",
+  "inputPlaceholderInventoryName": "e.g. Office supplies",
+  "inputPlaceholderLinkText": "e.g. Project handbook",
+  "inputPlaceholderLinkUrl": "https://example.com",
+  "inputPlaceholderListingTitle": "e.g. Handmade notebook",
+  "inputPlaceholderMailCalendarUrl": "Paste a Google Calendar event link",
+  "inputPlaceholderMailDescription": "Describe which messages belong here",
+  "inputPlaceholderMailDraftInstructions": "e.g. Write a friendly follow-up about our meeting",
+  "inputPlaceholderMailLabelInstructions": "e.g. Apply to invoices and payment receipts",
+  "inputPlaceholderMailName": "e.g. Customer support",
+  "inputPlaceholderMailSubject": "e.g. Follow-up on our meeting",
+  "inputPlaceholderMeetingName": "e.g. Weekly team check-in",
+  "inputPlaceholderNote": "Add details you want to remember",
+  "inputPlaceholderPassphrase": "Enter at least 8 characters",
+  "inputPlaceholderPassphraseConfirmation": "Enter the same passphrase again",
+  "inputPlaceholderPassphraseUnlock": "Enter the passphrase for this note",
+  "inputPlaceholderPassword": "Use 12–72 characters",
+  "inputPlaceholderPhone": "e.g. +84 912 345 678",
+  "inputPlaceholderPin": "Enter a 6-digit PIN",
+  "inputPlaceholderPinConfirmation": "Enter the same 6-digit PIN again",
+  "inputPlaceholderPrice": "e.g. 150000",
+  "inputPlaceholderQuantity": "e.g. 10",
+  "inputPlaceholderQuizExplanation": "Explain why this answer is correct or incorrect",
+  "inputPlaceholderQuizOption": "e.g. Paris",
+  "inputPlaceholderQuizQuestion": "e.g. What is the capital of France?",
+  "inputPlaceholderQuizSetName": "e.g. World capitals",
+  "inputPlaceholderSaleTitle": "e.g. Office supplies order",
+  "inputPlaceholderSharedMessage": "Edit the message you want to share",
+  "inputPlaceholderStorefrontCurrency": "e.g. VND",
+  "inputPlaceholderStorefrontDescription": "Describe what customers can find here",
+  "inputPlaceholderStorefrontName": "e.g. Linh’s stationery",
+  "inputPlaceholderStorefrontSearch": "Search by storefront name",
+  "inputPlaceholderStorefrontSlug": "e.g. linh-stationery",
+  "inputPlaceholderTableCell": "Enter cell content",
+  "inputPlaceholderTargetValue": "e.g. 2000",
+  "inputPlaceholderTimeDescription": "Describe what you worked on",
+  "inputPlaceholderTimeTitle": "e.g. Prepare project proposal",
+  "inputPlaceholderUpdate": "Share progress, decisions, or next steps",
+  "inputPlaceholderUserId": "Paste the user ID",
+  "inputPlaceholderUsername": "e.g. minh_linh",
+  "inputPlaceholderWorkoutExercise": "e.g. Squats",
+  "inputPlaceholderWorkoutReps": "e.g. 12",
+  "inputPlaceholderWorkoutSets": "e.g. 3",
+  "inputPlaceholderWorkoutWeight": "e.g. 20",
+  "mailSenderNamePlaceholder": "e.g. Alex Nguyen",
+  "mailSignaturePlaceholder": "e.g. Best regards,\nAlex Nguyen\nProduct team",
+  "mailDraftInstructionsPlaceholder": "e.g. Keep replies short and friendly. Sign off with my first name.",
+  "mailForwardToPlaceholder": "name@example.com",
+  "feedbackSubjectPlaceholder": "e.g. Calendar doesn't sync on Wi-Fi",
+  "feedbackDetailsPlaceholder": "What happened, what you expected, and the steps to get there.",
+  "settingsWorkspaceCountValue": "{count, plural, =1{1 workspace} other{{count} workspaces}}",
+  "@settingsWorkspaceCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineStoredOnDevice": "Stored on this device",
+  "offlineStorageUsed": "Storage used",
+  "offlineQueuedChanges": "{count, plural, =0{No changes waiting to sync} =1{1 change waiting to sync} other{{count} changes waiting to sync}}",
+  "@offlineQueuedChanges": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineCollectionSummary": "{items, plural, =1{1 item} other{{items} items}} · {size} · Updated {time}",
+  "@offlineCollectionSummary": {
+    "placeholders": {
+      "items": {
+        "type": "int"
+      },
+      "size": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineManageData": "Manage data",
+  "offlineEvictRowDescription": "Frees space. Data downloads again when you are online.",
+  "offlineTechnicalDetails": "Technical details",
+  "mailSettingsReadingGroup": "Reading",
+  "mailSettingsComposeGroup": "Sender and signature",
+  "mailSettingsAiGroup": "AI drafts",
+  "mailSettingsDeliveryGroup": "Delivery and routing",
+  "mailSettingsGroupPermissions": "Group permissions",
+  "mailSettingsOrganizeGroup": "Organize",
+  "mailSenderNameHelper": "Recipients see this name next to your address.",
+  "mailSignatureHelper": "Added to the end of new messages and replies.",
+  "mailAutoDraftDescription": "Prepare reply drafts for you to review before sending.",
+  "mailDraftInstructions": "Draft instructions",
+  "mailDraftInstructionsHelper": "Tells the assistant how to write your reply drafts.",
+  "feedbackIntro": "Tell us what works and what doesn't. Only the Tuturuuu team reads your feedback.",
+  "feedbackYourFeedback": "Your feedback",
+  "feedbackDetailsHelper": "Do not include passwords or other secrets.",
+  "feedbackScreenshotGroup": "Screenshot (optional)",
+  "feedbackAttachDescription": "PNG, JPEG or WebP, up to 2 MB",
+  "workspacePickerCount": "{count, plural, =1{1 workspace} other{{count} workspaces}}",
+  "@workspacePickerCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "workspacePickerCreateDescription": "Start a new space for a team or project",
+  "workspacePickerCurrentLabel": "Current workspace",
+  "workspacePickerDefaultDescription": "Opens first when you launch the app",
+  "workspacePickerEmptyMessage": "Workspaces you create or are invited to appear here.",
+  "workspacePickerNoResultsMessage": "Try another name or plan, or clear the search.",
+  "workspacePickerTeamBadge": "Team",
+  "@mastermindAgeDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindAgeHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindAgeMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindCouldntReadShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindCouldntRefreshShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindCountState": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindDecidedByRole": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindDecisionsSkipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindDeployCiLine": {
+    "placeholders": {
+      "deploy": {
+        "type": "String"
+      },
+      "ci": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindDurationDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindDurationHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindDurationMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindFloor": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindForecastEmptyAt": {
+    "placeholders": {
+      "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindItemFor": {
+    "placeholders": {
+      "kind": {
+        "type": "String"
+      },
+      "subject": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLaneAgeLine": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLaneAgeUnknown": {
+    "placeholders": {
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLaneEta": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLaneEtaAbout": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLastPublished": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindListShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindLiveAgo": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindLiveFor": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindMeasuredRuns": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindNameProductArea": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "area": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindNeedsYouSeeAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindNotReportingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindOfflineShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindOptionRecommended": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindPublishedAgo": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindQueuedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindRepliesWaiting": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindReplyConfirmMessage": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "reply": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindReplyCounter": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindReplyCounterSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindReplyRateLimited": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindReplyYourReply": {
+    "placeholders": {
+      "reply": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindResetsAt": {
+    "placeholders": {
+      "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindRiskLine": {
+    "placeholders": {
+      "level": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSamples": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSectionWithBasis": {
+    "placeholders": {
+      "section": {
+        "type": "String"
+      },
+      "basis": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSecurityLine": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSelectedReadout": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "series": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSessionLeft": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipChecked": {
+    "placeholders": {
+      "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipCheckedAgo": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipCiBadge": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipCiQueued": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipCiRunning": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipDeployBadge": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipOpenCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindShipReleased": {
+    "placeholders": {
+      "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShipReleasedAgo": {
+    "placeholders": {
+      "age": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSnapshotAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSourcesDegraded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindStaffSummary": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "running": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSummaryAsOf": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryAtLeast": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSummaryFleetNow": {
+    "placeholders": {
+      "running": {
+        "type": "String"
+      },
+      "waiting": {
+        "type": "String"
+      },
+      "idle": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryModelsTop": {
+    "placeholders": {
+      "model": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "success": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryShipsLowerBound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindSummaryUsageLowest": {
+    "placeholders": {
+      "account": {
+        "type": "String"
+      },
+      "percent": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindSummaryUsageShort": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindTimeDaysShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeHoursShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeMinutesShort": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeSpoken": {
+    "placeholders": {
+      "relative": {
+        "type": "String"
+      },
+      "absolute": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindTimeSpokenDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeSpokenHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindTimeSpokenMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindUnitCredits": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitCreditsPerDay": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitHours": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitMinutes": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitPercent": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitPp": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitPpPerHour": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitSeconds": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUnitTokens": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUpdateAppShowing": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUpdatedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindUsageTableFor": {
+    "placeholders": {
+      "chart": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindWaitingOnYou": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@mastermindWeeklyLeft": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAccountFilter": "Account",
+  "mastermindActivityEmpty": "No recent activity",
+  "mastermindActivityFailed": "Failed",
+  "mastermindActivityIdle": "Idle",
+  "mastermindActivityRunning": "Running",
+  "mastermindActivityTitle": "Activity",
+  "mastermindActivityWaiting": "Waiting",
+  "mastermindAgeBasis": "Age basis",
+  "mastermindAgeDays": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "mastermindAgeHours": "{count, plural, =1{1 h ago} other{{count} h ago}}",
+  "mastermindAgeMinutes": "{count, plural, =0{just now} =1{1 min ago} other{{count} min ago}}",
+  "mastermindAllCaughtUp": "You're all caught up",
+  "mastermindAllFilter": "All",
+  "mastermindAppName": "Mastermind",
+  "mastermindAreaCi": "CI",
+  "mastermindAreaCost": "Cost",
+  "mastermindAreaEducation": "Education",
+  "mastermindAreaFinance": "Finance",
+  "mastermindAreaHub": "Hub",
+  "mastermindAreaInfra": "Infrastructure",
+  "mastermindAreaLabel": "Area",
+  "mastermindAreaMemory": "Memory",
+  "mastermindAreaOrg": "Organization",
+  "mastermindAreaPerf": "Performance",
+  "mastermindAreaProduct": "Product",
+  "mastermindAreaQuota": "Quota",
+  "mastermindAreaRelease": "Release",
+  "mastermindAreaTasks": "Tasks",
+  "mastermindAreaUsers": "Users",
+  "mastermindAreaUx": "UX",
+  "mastermindBackToDecisions": "Back to Decisions",
+  "mastermindBackToInbox": "Back to Inbox",
+  "mastermindBackToInsights": "Back to Insights",
+  "mastermindBacklogEmptyTitle": "Backlog is clear",
+  "mastermindBacklogLabel": "Backlog",
+  "mastermindBacklogNoMatches": "No matching backlog items",
+  "mastermindBacklogSearchPlaceholder": "Search backlog",
+  "mastermindBackToWork": "Back to Work",
+  "mastermindBasisCheckinWorkflow": "Check-in workflow",
+  "mastermindBasisGithubDeployment": "GitHub deployment",
+  "mastermindBasisVercelDeployment": "Vercel deployment",
+  "mastermindCategoryAuto": "Automatic",
+  "mastermindCategoryDelegated": "Delegated",
+  "mastermindCategoryLabel": "Category",
+  "mastermindCategoryUser": "You",
+  "mastermindChartBurn": "Burn rate",
+  "mastermindChartCiJobs": "CI jobs",
+  "mastermindChartCreditsBalance": "Credit balance",
+  "mastermindChartCreditsBurn": "Daily burn and target",
+  "mastermindChartCreditsVsTarget": "Burn vs target",
+  "mastermindChartDeliveryModes": "Delivery modes",
+  "mastermindChartFailures": "Run failures",
+  "mastermindChartFleetCounts": "Threads by role",
+  "mastermindChartFleetStates": "Thread states",
+  "mastermindChartFleetTree": "Fleet structure",
+  "mastermindChartGoneTitle": "This chart is no longer in Mastermind",
+  "mastermindChartLatency": "Result pickup time",
+  "mastermindChartMergeToLive": "Merge to live",
+  "mastermindChartMessageFlow": "Message flow",
+  "mastermindChartMessageHeatmap": "Messages by hour",
+  "mastermindChartModelDuration": "Median duration",
+  "mastermindChartModelRuns": "Runs by model",
+  "mastermindChartModelSuccess": "Success and rework",
+  "mastermindChartOpenPrs": "Open pull requests",
+  "mastermindChartPendingRuns": "Pending runs",
+  "mastermindChartProjection": "Projected at reset",
+  "mastermindChartQueueDepth": "Queue depth",
+  "mastermindChartSessionPerSuccess": "Session use per success",
+  "mastermindChartSessionRemaining": "Session budget left",
+  "mastermindChartShips": "Production releases",
+  "mastermindChartTokensPerSuccess": "Tokens per success",
+  "mastermindChartWeeklyRemaining": "Weekly budget left",
+  "mastermindCi": "CI",
+  "mastermindColumnChange7d": "Change 7 d",
+  "mastermindColumnChildrenPerRoot": "Children per root",
+  "mastermindColumnDay": "Day",
+  "mastermindColumnDeeperPerRoot": "Deeper per root",
+  "mastermindColumnDepth1": "Depth 1",
+  "mastermindColumnDepth2Plus": "Depth 2+",
+  "mastermindColumnFindings": "Findings",
+  "mastermindColumnHour": "Hour",
+  "mastermindColumnMedian": "Median",
+  "mastermindColumnMessages": "Messages",
+  "mastermindColumnReceiver": "Receiver",
+  "mastermindColumnRoots": "Roots",
+  "mastermindColumnSender": "Sender",
+  "mastermindColumnStatus": "Status",
+  "mastermindColumnTime": "Time",
+  "mastermindColumnTopLevel": "Top level",
+  "mastermindColumnTotal": "Total",
+  "mastermindCommit": "Commit",
+  "mastermindCouldntReadShowing": "Couldn't read the latest update · showing {time}",
+  "mastermindCouldntRefreshShowing": "Couldn't refresh · showing {time}",
+  "mastermindCountState": "{count} {state}",
+  "mastermindCoverageComplete": "Complete",
+  "mastermindCoverageMissing": "No source",
+  "mastermindCoveragePartial": "Partial data",
+  "mastermindCoverageStale": "Stale",
+  "mastermindDataSourcesAction": "Data sources",
+  "mastermindDecidedBy": "Decided by",
+  "mastermindDecidedByMastermind": "Mastermind",
+  "mastermindDecidedByRole": "Role: {role}",
+  "mastermindDecidedByUser": "You",
+  "mastermindDecidedOnLabel": "Decided on",
+  "mastermindDecisionGoneTitle": "This decision is no longer in Mastermind",
+  "mastermindDecisionUpdated": "This decision was updated",
+  "mastermindDecisionsEmpty": "No recent decisions",
+  "mastermindDecisionsJournalEmpty": "No decisions recorded yet.",
+  "mastermindDecisionsNoMatches": "No matching decisions",
+  "mastermindDecisionsSeeAll": "See all decisions",
+  "mastermindDecisionsSegment": "Decisions",
+  "mastermindDecisionsSkipped": "{count, plural, =1{1 older decision isn't included in this snapshot.} other{{count} older decisions aren't included in this snapshot.}}",
+  "mastermindDeploy": "Deploy",
+  "mastermindDeployCiLine": "Deploy {deploy} · CI {ci}",
+  "mastermindDeployError": "error",
+  "mastermindDeployFailedFact": "Deploy failed",
+  "mastermindDeployFailure": "failure",
+  "mastermindDeployInProgress": "in progress",
+  "mastermindDeployInactive": "inactive",
+  "mastermindDeployPending": "pending",
+  "mastermindDeployQueued": "queued",
+  "mastermindDeploySuccess": "success",
+  "mastermindDurationDays": "{count} d",
+  "mastermindDurationHours": "{count} h",
+  "mastermindDurationMinutes": "{count} min",
+  "mastermindEffortFilter": "Effort",
+  "mastermindEnvProduction": "Production",
+  "mastermindEnvStaging": "Staging",
+  "mastermindEnvironmentsTitle": "Environments",
+  "mastermindEventBacklog": "Backlog",
+  "mastermindEventDecision": "Decision",
+  "mastermindEventEnvironment": "Environment",
+  "mastermindEventLane": "Lane",
+  "mastermindEventNeedsYou": "Needs you",
+  "mastermindEventProduct": "Release",
+  "mastermindEventQuota": "Quota",
+  "mastermindEventReceipt": "Receipt",
+  "mastermindEvidence": "Evidence",
+  "mastermindFilterAll": "All",
+  "mastermindFilterButton": "Filter",
+  "mastermindFilterOther": "Other",
+  "mastermindFilterRunning": "Running",
+  "mastermindFilterWaiting": "Waiting",
+  "mastermindFloor": "Floor {value}",
+  "mastermindForbiddenMessage": "Ask a Mastermind owner for access.",
+  "mastermindForbiddenTitle": "This account isn't allowed to view Mastermind",
+  "mastermindForecastEmptyAt": "Projected empty {dateTime}",
+  "mastermindForecastNone": "Not projected to run out before reset",
+  "mastermindFreshCached": "cached",
+  "mastermindFreshFresh": "fresh",
+  "mastermindFromFleet": "From fleet reports",
+  "mastermindFromLanes": "From lane reports",
+  "mastermindGroupActions": "Actions",
+  "mastermindGroupDecisions": "Decisions for you",
+  "mastermindGroupFyi": "For your information",
+  "mastermindInboxNoMatches": "No matching items",
+  "mastermindInboxSearchPlaceholder": "Search asks",
+  "mastermindInsightsLabel": "Insights",
+  "mastermindItemAnsweredTitle": "This was answered or withdrawn",
+  "mastermindItemFor": "{kind} for {subject}",
+  "mastermindItemGoneTitle": "This item is no longer in Mastermind",
+  "mastermindItemUpdated": "This question was updated",
+  "mastermindKindAction": "Action",
+  "mastermindKindBacklog": "Backlog",
+  "mastermindKindDecision": "Decision",
+  "mastermindKindDesign": "Design",
+  "mastermindKindFyi": "FYI",
+  "mastermindKindImplementation": "Implementation",
+  "mastermindKindLane": "Lane",
+  "mastermindKindResearch": "Research",
+  "mastermindKindReview": "Review",
+  "mastermindKindStaff": "Staff",
+  "mastermindKindTest": "Test",
+  "mastermindLaneAge": "Age",
+  "mastermindLaneAgeLine": "{state} for {duration}",
+  "mastermindLaneAgeUnknown": "{state} · age not published",
+  "mastermindLaneArea": "Area",
+  "mastermindLaneEta": "ETA {duration}",
+  "mastermindLaneEtaAbout": "About {duration} left",
+  "mastermindLaneEtaLabel": "Estimated time left",
+  "mastermindLaneFinishedTitle": "This lane finished or was removed",
+  "mastermindLaneGoneTitle": "This lane is no longer in Mastermind",
+  "mastermindLaneKind": "Kind",
+  "mastermindLaneModel": "Model",
+  "mastermindLaneProduct": "Product",
+  "mastermindLaneRole": "Role",
+  "mastermindLaneState": "State",
+  "mastermindLanesAtAGlance": "Lanes at a glance",
+  "mastermindLanesEmpty": "No lanes in this view",
+  "mastermindLanesLabel": "Lanes",
+  "mastermindLaneUpdated": "This lane was updated",
+  "mastermindLastPublished": "Mastermind last published {age} · {time}",
+  "mastermindLess": "Less",
+  "mastermindListShowAll": "Show all {count}",
+  "mastermindListShowFewer": "Show fewer",
+  "mastermindLiveAgo": "Live {age}",
+  "mastermindLiveFor": "live {duration}",
+  "mastermindMeasuredRuns": "{count, plural, =1{1 measured run} other{{count} measured runs}}",
+  "mastermindModelNotReported": "Model not reported",
+  "mastermindMore": "More",
+  "mastermindNameProductArea": "{product} {area}",
+  "mastermindNeedsAttention": "Needs attention",
+  "mastermindNeedsYouHint": "Answer in the Inbox on your Mac.",
+  "mastermindNeedsYouSeeAll": "See all ({count})",
+  "mastermindNeedsYouTitle": "Needs you",
+  "mastermindNoDataInPeriod": "No data in this period",
+  "mastermindNoProduct": "No product",
+  "mastermindNoSnapshotTitle": "Mastermind hasn't published yet",
+  "mastermindNotConfiguredMessage": "Mastermind isn't connected on this build.",
+  "mastermindNotConnectedTitle": "Not connected",
+  "mastermindNotReported": "Not reported",
+  "mastermindNotReportingCount": "{count} not reporting",
+  "mastermindNotReversible": "Not reversible",
+  "mastermindNothingNeedsReply": "Nothing needs a reply",
+  "mastermindNothingNeedsYou": "Nothing needs you",
+  "mastermindNowLabel": "Now",
+  "mastermindObservedAt": "Observed",
+  "mastermindOfflineShowing": "Offline · showing {time}",
+  "mastermindOpensLanes": "Opens the lane list",
+  "mastermindOptionRecommended": "{option} · Recommended",
+  "mastermindOriginLabel": "Origin",
+  "mastermindPartialBucket": "partial bucket",
+  "mastermindProductFilter": "Product",
+  "mastermindProductsLabel": "Products",
+  "mastermindPublishedAgo": "Published {age}",
+  "mastermindQueuedCount": "{count} queued",
+  "mastermindQuotaEmpty": "Quota not reported",
+  "mastermindQuotaTitle": "Quota",
+  "mastermindRange24h": "24 h",
+  "mastermindRange7d": "7 days",
+  "mastermindReceiptRecorded": "Receipt recorded",
+  "mastermindRecentDecisionsTitle": "Recent decisions",
+  "mastermindRecentEmpty": "Nothing new.",
+  "mastermindRecommended": "Recommended",
+  "mastermindRejectedMessage": "It uses a format this app version doesn't read. Update the app.",
+  "mastermindRejectedOtherMessage": "The latest update couldn't be read.",
+  "mastermindRejectedTitle": "This snapshot can't be shown",
+  "mastermindReleasesTitle": "Releases",
+  "mastermindRepliesWaiting": "{count, plural, =1{1 reply waiting to send} other{{count} replies waiting to send}}",
+  "mastermindReplyCheckFailed": "Couldn't check whether replies are available.",
+  "mastermindReplyChecking": "Checking whether replies are available…",
+  "mastermindReplyChooseOrWrite": "Choose an option or write your own reply (up to 500 characters and 10 lines).",
+  "mastermindReplyConfirmMessage": "Reply to: {title}\nYour reply: {reply}",
+  "mastermindReplyConfirmTitle": "Send this reply?",
+  "mastermindReplyConflict": "Something went wrong with this reply. Review it and send it again.",
+  "mastermindReplyCounter": "{count}/{limit}",
+  "mastermindReplyCounterSemantics": "{count} of {limit} characters used",
+  "mastermindReplyDiscard": "Discard",
+  "mastermindReplyForbidden": "This account can't send replies.",
+  "mastermindReplyNotSaved": "Couldn't save the reply on this device, so it wasn't sent. Try again.",
+  "mastermindReplyOnMac": "Reply on your Mac",
+  "mastermindReplyOptionsTitle": "Your reply",
+  "mastermindReplyQueued": "Saved on this device. It will be sent when Mastermind is reachable.",
+  "mastermindReplyRateLimited": "{minutes, plural, =1{Too many replies. Try again in 1 min.} other{Too many replies. Try again in {minutes} min.}}",
+  "mastermindReplyRejected": "Mastermind could not accept this reply. Check it and try again.",
+  "mastermindReplySend": "Send reply",
+  "mastermindReplySending": "Sending…",
+  "mastermindReplySent": "Sent · waiting for Mastermind",
+  "mastermindReplyStale": "This question changed or was already answered. Review it again.",
+  "mastermindReplyTextPlaceholder": "Write a reply for Mastermind",
+  "mastermindReplyTooLarge": "That reply is too long. Keep it to 500 characters and 10 lines, then try again.",
+  "mastermindReplyUnauthorized": "We couldn't confirm your session. Try again.",
+  "mastermindReplyUnauthorizedAgain": "Your session can't reach Mastermind. Try again, or sign out and sign in again.",
+  "mastermindReplyUnsafeText": "That text can't be sent. Use plain words and punctuation only, without links, long numbers or personal details, in 10 lines or fewer.",
+  "mastermindReplyUseRecommended": "Use recommended",
+  "mastermindReplyYourReply": "Your reply: {reply}",
+  "mastermindReservePacing": "Reserve pacing (chart rule)",
+  "mastermindReservePacingInfo": "This is the chart reserve check, not the routing decision.",
+  "mastermindResetsAt": "Resets {dateTime}",
+  "mastermindReversibilityLabel": "Reversibility",
+  "mastermindReversible": "Reversible",
+  "mastermindReversibleNo": "Not reversible",
+  "mastermindReversibleYes": "Can be reversed",
+  "mastermindRiskHigh": "high",
+  "mastermindRiskLabel": "Risk",
+  "mastermindRiskLine": "Risk: {level}",
+  "mastermindRiskLow": "low",
+  "mastermindRiskMed": "medium",
+  "mastermindRoleFilter": "Role",
+  "mastermindSampleData": "Sample data",
+  "mastermindSamples": "{count, plural, =1{1 sample} other{{count} samples}}",
+  "mastermindScopeCoordination": "Coordination",
+  "mastermindScopeDelivery": "Delivery",
+  "mastermindScopeFleet": "Fleet",
+  "mastermindScopeModels": "Models",
+  "mastermindScopeUsage": "Usage",
+  "mastermindSectionWithBasis": "{section} · {basis}",
+  "mastermindSecurityGroup": "Security",
+  "mastermindSecurityIssue": "Security issue",
+  "mastermindSecurityLine": "{product} · security fix",
+  "mastermindSelectedReadout": "{date} · {series} · {value}",
+  "mastermindSeriesActive": "Active",
+  "mastermindSeriesBalance": "Balance",
+  "mastermindSeriesBurn": "Burn",
+  "mastermindSeriesCapacity": "Capacity",
+  "mastermindSeriesCompleted": "Completed",
+  "mastermindSeriesIdle": "idle",
+  "mastermindSeriesOtherError": "Other error",
+  "mastermindSeriesOtherTerminal": "Other finished",
+  "mastermindSeriesQueue": "Queue",
+  "mastermindSeriesQueued": "Queued",
+  "mastermindSeriesRework": "Rework",
+  "mastermindSeriesRunning": "running",
+  "mastermindSeriesStart": "Start",
+  "mastermindSeriesSteer": "Steer",
+  "mastermindSeriesSuccess": "Success",
+  "mastermindSeriesTarget": "Target",
+  "mastermindSeriesUnknown": "Not published yet",
+  "mastermindSeriesUsageLimit": "Usage limit",
+  "mastermindSeriesWaiting": "waiting",
+  "mastermindSession": "Session",
+  "mastermindSessionLeft": "Session {value} left",
+  "mastermindSessionRejectedMessage": "Try again. If it keeps happening, sign out and sign in again.",
+  "mastermindSessionRejectedTitle": "Mastermind couldn't verify your session",
+  "mastermindShipAllProducts": "All",
+  "mastermindShipCadenceTitle": "Release cadence",
+  "mastermindShipChecked": "Checked {dateTime}",
+  "mastermindShipCheckedAgo": "Checked {age}",
+  "mastermindShipCiBadge": "CI {status}",
+  "mastermindShipCiNow": "CI now",
+  "mastermindShipCiQueued": "Queued {value}",
+  "mastermindShipCiRunning": "Running {value}",
+  "mastermindShipCopySha": "Copy commit id",
+  "mastermindShipDeployBadge": "Deploy {status}",
+  "mastermindShipEmpty": "No releases reported",
+  "mastermindShipFailing": "Failing",
+  "mastermindShipNoCadence": "No release cadence reported",
+  "mastermindShipNoDeployments": "No deployments observed",
+  "mastermindShipNoEnvironments": "No environments reported.",
+  "mastermindShipNoProdRelease": "No production release observed",
+  "mastermindShipNoPullRequests": "No pull request data reported.",
+  "mastermindShipOpenCount": "{count} open",
+  "mastermindShipPullRequestsTitle": "Pull requests and merges",
+  "mastermindShipReleased": "Released {dateTime}",
+  "mastermindShipReleasedAgo": "Released {age}",
+  "mastermindShipShaCopied": "Commit id copied",
+  "mastermindShipUntracked": "Not tracked yet",
+  "mastermindShipWithheld": "Withheld, open on Mac",
+  "mastermindShipWithheldTooltip": "Details stay on the Mac",
+  "mastermindShowAll": "Show all {count}",
+  "mastermindSignOutAction": "Sign out and sign in again",
+  "mastermindSignOutConfirmAction": "Sign out",
+  "mastermindSignOutConfirmMessage": "This signs you out of Tuturuuu on this device, including every saved account. You'll need to sign in again.",
+  "mastermindSignOutConfirmTitle": "Sign out of Tuturuuu?",
+  "mastermindSnapshotAt": "Snapshot {time}",
+  "mastermindSnapshotOutOfDate": "Snapshot out of date",
+  "mastermindSnapshotSectionsTitle": "Sections",
+  "mastermindSourceCheckin": "Check-in",
+  "mastermindSourceCi": "CI",
+  "mastermindSourceDecisions": "Decisions",
+  "mastermindSourceDirectory": "Directory",
+  "mastermindSourceGithub": "GitHub",
+  "mastermindSourceInbox": "Inbox",
+  "mastermindSourceLedger": "Ledger",
+  "mastermindSourceOpenItems": "Open items",
+  "mastermindSourceQuotaCache": "Quota cache",
+  "mastermindSourceQuotaWatcher": "Quota watcher",
+  "mastermindSourceSpeed": "Speed",
+  "mastermindSourceStateOk": "OK",
+  "mastermindSourceT3": "T3",
+  "mastermindSourceWorkforce": "Workforce",
+  "mastermindSourcesDegraded": "{count, plural, =1{1 source degraded} other{{count} sources degraded}}",
+  "mastermindSourcesTitle": "Sources",
+  "mastermindStaffEmpty": "No staff roles reported.",
+  "mastermindStaffGroup": "Staff",
+  "mastermindStaffSummary": "{count, plural, =1{1 role} other{{count} roles}} · {running} running",
+  "mastermindStaffUnknownModel": "Not published yet",
+  "mastermindStateAnswered": "answered",
+  "mastermindStateCancelled": "cancelled",
+  "mastermindStateCompleted": "completed",
+  "mastermindStateFailed": "failed",
+  "mastermindStateIdle": "idle",
+  "mastermindStateOpen": "open",
+  "mastermindStateQueued": "queued",
+  "mastermindStateRunning": "running",
+  "mastermindStateStale": "stale",
+  "mastermindStateUnknown": "Not published yet",
+  "mastermindStateWaiting": "waiting",
+  "mastermindStateWithdrawn": "withdrawn",
+  "mastermindSummaryAsOf": "as of {time}",
+  "mastermindSummaryAtLeast": "at least {count}",
+  "mastermindSummaryCreditsNeedsTarget": "Needs a daily target.",
+  "mastermindSummaryCreditsNote": "Credits are not money or tokens.",
+  "mastermindSummaryCreditsTargetMissing": "Daily target unavailable.",
+  "mastermindSummaryDeliveryModesUnavailable": "Delivery mode counts unavailable.",
+  "mastermindSummaryEstimateNotCost": "Estimate, not a cost.",
+  "mastermindSummaryFleetNow": "Now: {running} running, {waiting} waiting, {idle} idle.",
+  "mastermindSummaryLatencyCaveat": "Measures recorded parent starts.",
+  "mastermindSummaryModelsTop": "{model} ran most: {count} runs, {success} success.",
+  "mastermindSummaryNoMessageStream": "Unavailable: no message stream recorded.",
+  "mastermindSummaryShipsLowerBound": "At least {count} production releases observed.",
+  "mastermindSummaryUsageLowest": "{account} has the least left: {percent}.",
+  "mastermindSummaryUsageShort": "Projected SHORT at reset {time}.",
+  "mastermindSummaryWeeklyNotReported": "Weekly window not reported.",
+  "mastermindTabHome": "Today",
+  "mastermindTabInbox": "Inbox",
+  "mastermindTabInsights": "Insights",
+  "mastermindTabShip": "Ship",
+  "mastermindTabWork": "Work",
+  "mastermindTableLink": "Table",
+  "mastermindTentative": "tentative",
+  "mastermindTimeZoneCaption": "GMT+7",
+  "mastermindTitle": "Mastermind",
+  "mastermindTryAgain": "Try again",
+  "mastermindTimeDaysShort": "{count}d",
+  "mastermindTimeHoursShort": "{count}h",
+  "mastermindTimeMinutesShort": "{count}m",
+  "mastermindTimeNow": "now",
+  "mastermindAskedTime": "Asked {time}",
+  "@mastermindAskedTime": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindTimeSpoken": "{relative}, {absolute}",
+  "mastermindTimeSpokenDays": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "mastermindTimeSpokenHours": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
+  "mastermindTimeSpokenMinutes": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
+  "mastermindTimeSpokenNow": "just now",
+  "mastermindQuotaUnreadable": "Out of service / unreadable",
+  "mastermindUnavailable": "Unavailable",
+  "mastermindUnitCredits": "{value} credits",
+  "mastermindUnitCreditsPerDay": "{value} credits/day",
+  "mastermindUnitHours": "{value} h",
+  "mastermindUnitMinutes": "{value} min",
+  "mastermindUnitPercent": "{value}%",
+  "mastermindUnitPp": "{value} pp",
+  "mastermindUnitPpPerHour": "{value} pp/h",
+  "mastermindUnitSeconds": "{value} s",
+  "mastermindUnitTokens": "{value} tokens",
+  "mastermindUnknown": "Not published yet",
+  "mastermindUnreachableMessage": "Retries wait a little longer after each failure.",
+  "mastermindUnreachableTitle": "Can't reach Mastermind",
+  "mastermindUpdateAppShowing": "Update the app to read the latest Mastermind data · showing {time}",
+  "mastermindUpdatedAt": "Updated {time}",
+  "mastermindUsageBudgetLeft": "Budget left",
+  "mastermindUsageBurnNotMeasured": "Burn not measured yet",
+  "mastermindUsageCreditsTitle": "Codex credits",
+  "mastermindUsageEmpty": "No usage data reported.",
+  "mastermindUsageForecastsTitle": "Forecasts",
+  "mastermindUsageLink": "Usage",
+  "mastermindUsagePacing": "Pacing",
+  "mastermindUsageSessionLeft": "Session left",
+  "mastermindUsageTableFor": "{chart} table",
+  "mastermindUsageTargetUnavailable": "Target unavailable",
+  "mastermindUsageVerdictNone": "No pacing data",
+  "mastermindUsageVerdictOk": "On pace",
+  "mastermindUsageVerdictShort": "Running short",
+  "mastermindUsageVerdictSurplus": "Surplus",
+  "mastermindUsageWeeklyLeft": "Weekly left",
+  "mastermindVersion": "Version",
+  "mastermindWaitingOnYou": "{count} on you",
+  "mastermindWeekly": "Weekly",
+  "mastermindWeeklyLeft": "Weekly {value} left",
+  "mastermindWhy": "Why",
+  "mastermindWhyMissing": "No reason recorded",
+  "mastermindWorkClearFilters": "Clear filters",
+  "mastermindWorkEmpty": "No lanes right now",
+  "mastermindWorkNoMatches": "No matching lanes",
+  "mastermindWorkSearchPlaceholder": "Search lanes",
+  "audienceModeGeneral": "General",
+  "audienceModeEducation": "Education",
+  "audienceModeGeneralDescription": "Tasks, calendar and money first",
+  "audienceModeEducationDescription": "Classes, attendance and reports first",
+  "settingsModeTitle": "Mode",
+  "settingsModeDescription": "Changes what the app shows first. It never changes what you can access.",
+  "settingsModeMine": "Your mode here",
+  "settingsModeWorkspaceDefault": "Workspace default ({mode})",
+  "settingsModeAccountDefault": "Your default ({mode})",
+  "settingsModeWorkspaceDefaultTitle": "Default for members",
+  "settingsModeWorkspaceDefaultSubtitle": "Members can still choose their own",
+  "settingsModeNotSet": "Not set",
+  "settingsModeSaveFailed": "Couldn't save the mode. Try again.",
+  "onboardingModeTitle": "How will you use Tuturuuu?",
+  "onboardingModeSubtitle": "This sets what Home shows first. You can change it for each workspace in Settings.",
+  "classesTodayTitle": "Today's classes",
+  "classesTodayAllTitle": "All classes today",
+  "classesTodayShowAll": "Show all",
+  "classesTodayShowMine": "My classes",
+  "classesTodayEmpty": "No classes today",
+  "classesUntitled": "Untitled class",
+  "classesInProgress": "In progress",
+  "classesDone": "Done",
+  "@settingsModeWorkspaceDefault": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "@settingsModeAccountDefault": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModeFallbackDefault": "Default ({mode})",
+  "classesTodayStale": "Couldn't refresh. Showing the last saved classes.",
+  "@settingsModeFallbackDefault": {
+    "placeholders": {
+      "mode": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindNotPublished": "Not published yet",
+  "mastermindNotConnected": "Not connected",
+  "mastermindSourceDown": "Source down",
+  "mastermindGapNoSamples": "No samples published",
+  "mastermindGapAccountSwitch": "Account switched",
+  "mastermindGapReset": "Quota reset",
+  "mastermindRecentlyResolved": "Recently resolved",
+  "mastermindReplyPendingShort": "Waiting to send",
+  "mastermindAskTitle": "Ask",
+  "mastermindOpensItem": "Opens the ask",
+  "mastermindItemOpenOnMacReason": "Mastermind didn't publish the full ask for this item. Read it in the Inbox on your Mac.",
+  "mastermindItemOpenOnMac": "Full details are on the Mac",
+  "mastermindResolvedOutcome": "Outcome",
+  "mastermindResolvedNoAnswer": "Mastermind closed this ask without recording an answer.",
+  "mastermindResolvedAnswer": "Answer: {answer}",
+  "mastermindResolvedWith": "Resolved · {answer}",
+  "mastermindResolvedState": "Resolved",
+  "mastermindNothingResolvedReason": "Asks appear here once Mastermind records an answer.",
+  "mastermindNothingResolved": "Nothing resolved recently",
+  "mastermindNothingNeedsYouReason": "Mastermind lists an ask here when a lane needs your answer.",
+  "mastermindInboxNoMatchesReason": "Nothing in this view matches your search or filter.",
+  "mastermindInboxClearFilters": "Clear search and filters",
+  "mastermindInboxSearchAction": "Search Inbox",
+  "mastermindInboxLoadingMore": "Loading more",
+  "mastermindInboxLoadMoreFailed": "Couldn't load more asks.",
+  "mastermindInboxEndOfList": "That's every ask",
+  "mastermindInboxResolvedSegment": "Resolved",
+  "mastermindLastChecked": "Last checked {time}",
+  "@mastermindLastChecked": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindGapSummary": "Gap {start}–{end}: {reason}",
+  "@mastermindGapSummary": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      },
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindThreadsTitle": "Threads",
+  "mastermindBackToThreads": "Back to Threads",
+  "@mastermindResolvedWith": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "@mastermindResolvedAnswer": {
+    "placeholders": {
+      "answer": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAnsweredOnPhone": "Answered on phone",
+  "mastermindAnsweredOnMac": "Answered on Mac",
+  "mastermindAnsweredInChat": "Answered in chat",
+  "mastermindAnsweredAutomatically": "Answered automatically",
+  "mastermindAnsweredElsewhere": "Answered elsewhere",
+  "mastermindAlreadyAnsweredOnPhone": "Already answered on phone",
+  "mastermindAlreadyAnsweredOnMac": "Already answered on Mac",
+  "mastermindAlreadyAnsweredInChat": "Already answered in chat",
+  "mastermindAlreadyAnsweredAutomatically": "Already answered automatically",
+  "mastermindAlreadyAnsweredElsewhere": "Already answered elsewhere",
+  "mastermindWithdrawnNoLongerNeeded": "Withdrawn · no longer needed",
+  "mastermindAnsweredByYou": "you",
+  "mastermindViaPhone": "on phone",
+  "mastermindViaMac": "on Mac",
+  "mastermindViaChat": "in chat",
+  "mastermindViaAuto": "automatically",
+  "mastermindAnsweredInBatch": "Answered in batch",
+  "mastermindAlreadyAnsweredInBatch": "Already answered in batch",
+  "mastermindViaBatch": "in batch",
+  "mastermindAskDeadlineWithinHours": "Answer within hours",
+  "mastermindAskDeadlineToday": "Answer today",
+  "mastermindAskDeadlineTonight": "Answer tonight",
+  "mastermindAskDeadlineThisWeek": "Answer this week",
+  "mastermindAskUrgencyHigh": "High priority",
+  "mastermindAskUrgencyUrgent": "Urgent",
+  "mastermindAskWhyRecommended": "Why recommended",
+  "mastermindAskIfNoAnswerTitle": "If you don't answer",
+  "mastermindAskIfNoAnswer": "If no answer: {option}",
+  "@mastermindAskIfNoAnswer": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskRisk": "Risk: {risk}",
+  "@mastermindAskRisk": {
+    "placeholders": {
+      "risk": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskReversible": "Can be undone later",
+  "mastermindAskNotReversible": "Can't be undone",
+  "mastermindAskBlocks": "{count, plural, =1{Blocks 1 lane} other{Blocks {count} lanes}}",
+  "@mastermindAskBlocks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindAskDueAt": "Due {time}",
+  "@mastermindAskDueAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskAnsweredPhone": "Answered on the phone",
+  "mastermindAskAnsweredMac": "Answered on the Mac",
+  "mastermindAskAnsweredChat": "Answered in chat",
+  "mastermindAskAnsweredAuto": "Answered automatically",
+  "mastermindAskAnsweredBatch": "Answered in a batch",
+  "mastermindAskAnsweredElsewhere": "Answered elsewhere",
+  "mastermindAskLinksTitle": "Links",
+  "mastermindAskLaneLink": "Lane ⟶",
+  "mastermindAskActionAnswer": "Answer here",
+  "mastermindAskActionRunOnMac": "Run at your Mac",
+  "mastermindAskActionPhysical": "Needs a physical step",
+  "mastermindAskActionFyi": "For your information",
+  "mastermindAskRemindAtMac": "Remind me at Mac",
+  "mastermindAskRemindAtMacSoon": "Coming soon",
+  "settingsShareTelemetry": "Share analytics and crash reports",
+  "settingsPrivacy": "Privacy",
+  "settingsTelemetryError": "Could not update sharing. Tap to retry.",
+  "mastermindMachineUpdated": "As of {time}",
+  "@mastermindMachineUpdated": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindMachineLastSeen": "Last seen {time}",
+  "@mastermindMachineLastSeen": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindMachineSummary": "{total} machines · {online} online · {attention} need attention",
+  "@mastermindMachineSummary": {
+    "placeholders": {
+      "total": {
+        "type": "int"
+      },
+      "online": {
+        "type": "int"
+      },
+      "attention": {
+        "type": "int"
+      }
+    }
+  },
+  "machineTextMachines": "Machines",
+  "machineTextAttention": "Needs attention",
+  "machineTextOnline": "Online",
+  "machineTextAsleep": "Asleep",
+  "machineTextOffline": "Offline",
+  "machineTextUnknown": "Unknown",
+  "machineTextOfflineGroup": "Asleep or offline",
+  "machineTextNotPublished": "Machine data is not published yet",
+  "machineTextEmpty": "No machines reported",
+  "machineTextGone": "This machine is no longer reported",
+  "machineTextUnavailable": "Unavailable",
+  "machineTextStale": "Collector data is stale; values are last known",
+  "machineTextPartial": "Collector coverage is partial",
+  "machineTextNow": "Now",
+  "machineTextRunning": "Running",
+  "machineTextRules": "Rules",
+  "machineTextAlerts": "Alerts",
+  "machineTextHistory": "History",
+  "machineTextKeepAwake": "Keep awake",
+  "machineTextSample": "SAMPLE data",
+  "machineTextSampleToggle": "Use sample machine data",
+  "machineTextStatus": "Status and specs",
+  "machineTextCpu": "CPU",
+  "machineTextRam": "Memory",
+  "machineTextDisk": "Disk free",
+  "machineTextSwap": "Swap",
+  "machineTextTemperature": "Temperature",
+  "machineTextBuild": "Build",
+  "machineTextStudio": "Studio",
+  "machineTextLaptop": "Laptop",
+  "machineTextDevbox": "Devbox",
+  "machineTextLane": "Lanes",
+  "machineTextTest": "Tests",
+  "machineTextActive": "Scheduling active",
+  "machineTextDraining": "Draining",
+  "machineTextPaused": "Scheduling paused",
+  "machineTextThermal": "Thermal alert",
+  "machineTextWarning": "Warning",
+  "machineTextCritical": "Critical",
+  "machineTextNominal": "Nominal",
+  "machineTextFair": "Fair",
+  "machineTextSerious": "Serious",
+  "machineTextMacos": "macOS",
+  "machineTextLinux": "Linux",
+  "machineTextWindows": "Windows",
+  "machineTextNone": "None reported",
+  "machineTextLastKnown": "Last-known values",
+  "machineTextDay": "24 h",
+  "machineTextWeek": "7 d",
+  "machineTextTable": "Table",
+  "machineTextTime": "Time",
+  "machineTextCores": "Cores",
+  "machineTextLoad": "Load (1 min)",
+  "machineTextMacGuide": "In System Settings, open Energy and prevent automatic sleeping on power. Plug in and keep the lid open. Mastermind does not control this machine.",
+  "machineTextLinuxGuide": "Use your desktop Power settings to prevent automatic suspend while plugged in. Mastermind does not control this machine.",
+  "machineTextWindowsGuide": "In Settings, open System > Power and battery > Screen and sleep. Choose the plugged-in sleep setting. Mastermind does not control this machine.",
+  "machineTextUnknownGuide": "Use the operating system power settings to keep the machine awake while plugged in. Mastermind does not control this machine.",
+  "machineTextOther": "Other",
+  "machineTextProdHost": "Production host",
+  "machineTextMergeTrain": "Merge train",
+  "machineTextFindingsOnly": "Findings only",
+  "machineTextProdReadsHereOnly": "Production reads only here",
+  "machineTextNeverBuilds": "Never builds",
+  "machineTextNoHeavyWork": "No heavy work",
+  "machineTextLightWorkOnly": "Light work only",
+  "machineTextProdHostReadOnly": "Production host: read-only",
+  "machineTextDiskLow": "Low disk space",
+  "machineTextLoadHigh": "Load above cores",
+  "machineTextSwapHigh": "High swap use",
+  "machineTextRamGb": "RAM (GB)",
+  "machineTextDiskGb": "Disk (GB)",
+  "mastermindCatchupTitle": "Since you last looked",
+  "mastermindCatchupWindowSince": "Since your last visit",
+  "mastermindCatchupWindowDay": "Last 24 hours",
+  "mastermindCatchupWelcome": "Welcome to Mastermind. Here's what happened in the last day.",
+  "mastermindCatchupQuiet": "Quiet since you last looked",
+  "mastermindCatchupQuietFirstRun": "Nothing has happened in the last day.",
+  "mastermindCatchupPartial": "Some updates may be missing",
+  "mastermindCatchupSectionShipped": "Shipped",
+  "mastermindCatchupSectionBlocked": "Blocked",
+  "mastermindCatchupSectionChanged": "Changed",
+  "mastermindCatchupSectionUsage": "Usage & health",
+  "mastermindCatchupSectionOther": "Other updates",
+  "mastermindCatchupCountNeedsYou": "{count, plural, =1{1 needs you} other{{count} need you}}",
+  "@mastermindCatchupCountNeedsYou": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountShipped": "{count} shipped",
+  "@mastermindCatchupCountShipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountBlocked": "{count} blocked",
+  "@mastermindCatchupCountBlocked": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupCountChanged": "{count} changed",
+  "@mastermindCatchupCountChanged": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupNewDivider": "New since your last visit",
+  "mastermindCatchupShowEarlier": "Show {count} earlier",
+  "@mastermindCatchupShowEarlier": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindCatchupSecurityUpdate": "Security update",
+  "mastermindCatchupOnIt": "{name} is on it",
+  "@mastermindCatchupOnIt": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindCatchupButton": "Catch me up",
+  "mastermindCatchupRefreshing": "Catching up…",
+  "mastermindCatchupUpToDate": "You're up to date",
+  "mastermindCatchupFailed": "Couldn't catch up. Try again.",
+  "mastermindCatchupOpensLink": "Opens in your browser",
+  "mastermindCatchupGroupLabel": "{product}, {count, plural, =1{1 update} other{{count} updates}}",
+  "@mastermindCatchupGroupLabel": {
+    "placeholders": {
+      "product": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelNow": "now",
+  "mastermindRelMinutes": "{count}m",
+  "@mastermindRelMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelHours": "{count}h",
+  "@mastermindRelHours": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelHoursMinutes": "{hours}h {minutes}m",
+  "@mastermindRelHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelDays": "{count}d",
+  "@mastermindRelDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindRelShowExact": "Show exact time",
+  "mastermindCatchupSettingsAction": "Catch-up settings",
+  "mastermindMorningCatchup": "Morning catch-up",
+  "mastermindMorningCatchupSubtitle": "A notification that says your catch-up is ready. Saved on this device; sent once the hub supports it.",
+  "mastermindMorningCatchupTime": "Time",
+  "mastermindCatchupPushBody": "Your catch-up is ready",
+  "mastermindSecurityFix": "Security fix",
+  "telemetryConsentTitle": "Help improve Tuturuuu?",
+  "telemetryConsentBody": "Share usage data and crash reports with Google Firebase Analytics and Crashlytics so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.",
+  "telemetryFirebaseInstallationDisclosure": "Allowing analytics and crash reports also creates a Firebase Installation ID on this device (iOS and Android), which Google uses to tell app installs apart. We do not send your account details to Google with it.",
+  "telemetryConsentAllow": "Allow",
+  "telemetryConsentDeny": "Don't allow",
+  "telemetryConsentLearnMore": "Privacy details",
+  "settingsShareTelemetryDescription": "Send usage data and crash reports to Google Firebase Analytics and Crashlytics to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.",
+  "settingsPushNotifications": "Push notifications",
+  "settingsPushFirebaseDisclosure": "Push notifications are delivered through Google Firebase Cloud Messaging, which registers this device with Firebase Installations. This creates a Firebase Installation ID and a push token for this device; we link the push token to your account so we can send you notifications. This is separate from your analytics choice. Turn push off and this device is no longer registered for notifications.",
+  "mastermindIrisChatSegment": "Chat",
+  "mastermindIrisChatEmpty": "No messages yet",
+  "mastermindIrisComposerPlaceholder": "Message Atlas",
+  "mastermindIrisSend": "Send",
+  "mastermindIrisReceiptSending": "Sending",
+  "mastermindIrisReceiptQueued": "Queued",
+  "mastermindIrisReceiptSent": "Sent",
+  "mastermindIrisReceiptSeen": "Seen",
+  "mastermindIrisReceiptFailed": "Not sent",
+  "mastermindIrisRetry": "Retry",
+  "mastermindIrisHidden": "Hidden message",
+  "mastermindIrisTruncated": "Open on Mac for the rest.",
+  "mastermindIrisLoadEarlier": "Load earlier messages",
+  "mastermindIrisKilledTitle": "Iris is paused",
+  "mastermindIrisKilledBody": "Sending is off until the kill switch is lifted. You can still read the chat.",
+  "mastermindIrisOffline": "Can't reach Iris. Retrying.",
+  "mastermindIrisRateLimited": "Iris is busy. Retrying shortly.",
+  "mastermindIrisAccessLost": "This device can't use Iris. Check its enrolment.",
+  "mastermindIrisAuthorOwner": "Owner",
+  "mastermindIrisAuthorAgent": "Atlas",
+  "mastermindIrisAuthorSystem": "System",
+  "mastermindIrisRedactedPath": "path",
+  "mastermindIrisRedactedLink": "link",
+  "mastermindIrisRedactedLinkHost": "link: {host}",
+  "@mastermindIrisRedactedLinkHost": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindIrisRedactedSecret": "secret withheld",
+  "mastermindIrisRedactedId": "id",
+  "mastermindIrisRedactedEmail": "email",
+  "mastermindIrisRedactedNumber": "number",
+  "mastermindIrisRedactedOther": "withheld",
+  "mastermindIrisActivityCommands": "{count, plural, =1{Ran 1 command} other{Ran {count} commands}}",
+  "@mastermindIrisActivityCommands": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisActivityEdits": "{count, plural, =1{Edited 1 file} other{Edited {count} files}}",
+  "@mastermindIrisActivityEdits": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisActivitySearches": "{count, plural, =1{Searched once} other{Searched {count} times}}",
+  "@mastermindIrisActivitySearches": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisActivitySubagents": "{count, plural, =1{Ran 1 subagent} other{Ran {count} subagents}}",
+  "@mastermindIrisActivitySubagents": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisWhatNeedsMe": "What needs me",
+  "mastermindIrisCountUrgent": "{count} urgent",
+  "@mastermindIrisCountUrgent": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisCountSoon": "{count} soon",
+  "@mastermindIrisCountSoon": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisCountFyi": "{count} FYI",
+  "@mastermindIrisCountFyi": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisCountOther": "{count} other",
+  "@mastermindIrisCountOther": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisNothingNeedsYou": "Nothing needs you right now",
+  "mastermindIrisRoleLine": "{role}: {status}",
+  "@mastermindIrisRoleLine": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindIrisRoleArmed": "armed",
+  "mastermindIrisRoleRunning": "running",
+  "mastermindIrisRoleStalled": "stalled",
+  "mastermindIrisRoleIdle": "idle",
+  "mastermindIrisUseRecommendations": "Use recommendations",
+  "mastermindIrisUseRecommendationsDescription": "Sends the recommended answer to each ask below. Each one can be undone on its card for a few seconds.",
+  "mastermindIrisUseRecommendationsConfirm": "{count, plural, =1{Send 1 answer} other{Send {count} answers}}",
+  "@mastermindIrisUseRecommendationsConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisRecommendationQueued": "Sending. Undo on its card.",
+  "mastermindIrisRecommendationSkipped": "Skipped: already answered, or replies are off",
+  "mastermindIrisRecommendationsResult": "{sent} of {total} sent",
+  "@mastermindIrisRecommendationsResult": {
+    "placeholders": {
+      "sent": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisDone": "Done",
+  "mastermindIrisDevicesTitle": "Iris devices",
+  "mastermindIrisDevicesAction": "Iris devices",
+  "mastermindIrisDevicesEmpty": "No devices enrolled yet",
+  "mastermindIrisDevicesLoadFailed": "Couldn't load devices. Try again.",
+  "mastermindIrisDeviceStatusPending": "Waiting for confirmation",
+  "mastermindIrisDeviceStatusConfirmed": "Enrolled",
+  "mastermindIrisDeviceStatusExpired": "Expired",
+  "mastermindIrisDeviceStatusRevoked": "Revoked",
+  "mastermindIrisDeviceQa": "QA",
+  "mastermindIrisDeviceFingerprint": "Key {prefix}",
+  "@mastermindIrisDeviceFingerprint": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindIrisRevoke": "Revoke",
+  "mastermindIrisRevokeConfirm": "Tap again to revoke",
+  "mastermindIrisEnrol": "Enrol this device",
+  "mastermindIrisEnrolUnavailable": "This build can't create a device key yet.",
+  "mastermindIrisEnrolCode": "Enrolment code",
+  "mastermindIrisEnrolInstructions": "Open the Iris enrol page and confirm with your passkey. Check that the key starts with {prefix}.",
+  "@mastermindIrisEnrolInstructions": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindIrisEnrolWaiting": "Waiting for you to confirm. The code expires in 15 minutes.",
+  "mastermindIrisEnrolConfirmed": "This device is enrolled.",
+  "mastermindIrisEnrolExpired": "The code expired. Start again for a new one.",
+  "mastermindIrisEnrolFailed": "Couldn't start enrolment. Try again.",
+  "mastermindIrisEnrolLimit": "Too many pending devices. Wait for one to expire."
 }

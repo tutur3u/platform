@@ -8,7 +8,7 @@ description: 'Tuturuuu Meet helps you find and finalize the best time to meet wi
 
 ## Usage
 
-To use [Tuturuuu Meet](https://tuturuuu.com/meet), create a plan and invite participants with its canonical sharing link.
+To use [Tuturuuu Meet](https://tuturuuu.com/meet), sign in with a [Tuturuuu Account](https://tuturuuu.com/login), create a plan, and invite participants with its canonical sharing link. Creating a plan requires a signed-in user; signed-out visitors see a sign-in prompt in place of the create button and return to the same page after signing in.
 
 This will require you to select the `dates` and `times` that you are available to meet, and optionally change the plan `original timezone` as needed.
 
@@ -17,11 +17,11 @@ This will require you to select the `dates` and `times` that you are available t
   that you can share with your friends and/or colleagues.
 </Info>
 
-They will be able to see the plan and select the dates and times that they are available to meet. Once everyone has selected their availability, you will be able to see the best time to meet with everyone.
+They will be able to see the plan and select the dates and times that they are available to meet. Participants do not need an account to join a public plan that is not attached to a workspace: anonymous guests can join it by link. Once everyone has selected their availability, you will be able to see the best time to meet with everyone.
 
 ## Saved Plans
 
-You can also save your plans by logging in with a [Tuturuuu Account](https://tuturuuu.com/login). This will allow you to access the plan at a later time without having to manage links. Plans that you have filled out will also be automatically saved under your account.
+Plans you create are saved under your account, so you can access them later without having to manage links. Plans that you have filled out as a signed-in participant are also automatically saved under your account.
 
 Workspace Meet plans are scoped to their owning workspace. A public workspace
 plan link is shareable with workspace members, but it is not globally readable
@@ -52,3 +52,33 @@ Everyone who has access to the plan will be able to see the plan details and the
   Mobile support is experimental, so it's recommended to use a desktop browser
   for the best experience.
 </Warning>
+
+## Plan creation access
+
+Product decision: creating a plan requires a signed-in user.
+
+- **Plans without a workspace:** any signed-in user can create one. Anonymous
+  guests can still join a public, non-workspace plan by link, but cannot create
+  plans.
+- **Workspace plans:** the creator must also have `MEMBER` membership in that
+  workspace. A non-member receives `403 Forbidden`, and a failed membership
+  lookup returns `500` before the plan or an associated poll is created.
+- **Surfaces:** the shared plan form on the web `/meet` page and the Meet app
+  root shows a sign-in prompt instead of the create button when no user is
+  signed in. `POST /api/v1/meet/plans` returns `401` for a signed-out caller.
+- **Updates:** only the plan creator can edit an unconfirmed plan, and only its
+  editable fields (name, dates, times, timezone, duration, location voting,
+  description and agenda). The workspace, creator and visibility cannot be
+  changed through an update.
+
+The shared Meet plan form and `POST /api/v1/meet/plans` use this same server
+boundary. Regression coverage: `packages/apis/src/meet/actions/plans.test.ts`,
+`apps/web/src/app/api/v1/meet/plans/route.test.ts` and
+`packages/ui/src/components/ui/legacy/meet/form.test.tsx`.
+
+## Participant removal scope
+
+Only a plan creator may remove another participant. Guest poll-vote cleanup is
+limited to the removed participant's votes on that plan. Votes on other plans
+remain intact. Coverage lives in
+`packages/apis/src/meet/actions/users.test.ts`.

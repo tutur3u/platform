@@ -24,6 +24,7 @@ test('security-sensitive paths require review by category', () => {
     ['scripts/ci/check-workflow-config.ts', 'ci'],
     ['tuturuuu.ci.ts', 'ci'],
     ['scripts/git-sync.js', 'ci'],
+    ['scripts/check-migration-timestamps.js', 'ci'],
     ['packages/auth/src/session.ts', 'auth'],
     ['apps/web/src/app/api/auth/callback/route.ts', 'auth'],
     ['apps/web/src/lib/sso/redirect.ts', 'auth'],
@@ -127,9 +128,11 @@ test('scan scope selects CodeQL languages and dependency audits', () => {
     ['actions']
   );
   assert.deepEqual(classifyScope(['docs/a.md']).codeqlLanguages, []);
-  // Unknown change sets and scheduled runs scan everything.
+  // Unknown or empty change sets and scheduled runs scan everything.
   for (const scope of [
     classifyScope(null),
+    classifyScope([]),
+    classifyScope(['', '  ']),
     classifyScope([], { full: true }),
   ]) {
     assert.deepEqual(scope.codeqlLanguages, [

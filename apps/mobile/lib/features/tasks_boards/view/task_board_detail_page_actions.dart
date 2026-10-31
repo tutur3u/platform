@@ -369,7 +369,7 @@ extension on _TaskBoardDetailPageViewState {
                     if (isLoading)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Center(child: NovaLoadingIndicator()),
+                        child: AppLoadingIndicator(),
                       )
                     else if (errorMessage.trim().isNotEmpty)
                       shad.Card(
@@ -911,42 +911,16 @@ class _TaskBoardBulkActionsDrawerState
 
         // Priority options
         final priorityOptions = [
-          _FilterMenuOption(
-            id: 'critical',
-            label: l10n.taskBoardDetailPriorityCritical,
-            kind: _FilterMenuOptionKind.priority,
-            foreground: _taskPriorityStyle(context, 'critical').foreground,
-            background: _taskPriorityStyle(context, 'critical').background,
-            border: _taskPriorityStyle(context, 'critical').border,
-            icon: _taskPriorityStyle(context, 'critical').icon,
-          ),
-          _FilterMenuOption(
-            id: 'high',
-            label: l10n.taskBoardDetailPriorityHigh,
-            kind: _FilterMenuOptionKind.priority,
-            foreground: _taskPriorityStyle(context, 'high').foreground,
-            background: _taskPriorityStyle(context, 'high').background,
-            border: _taskPriorityStyle(context, 'high').border,
-            icon: _taskPriorityStyle(context, 'high').icon,
-          ),
-          _FilterMenuOption(
-            id: 'normal',
-            label: l10n.taskBoardDetailPriorityNormal,
-            kind: _FilterMenuOptionKind.priority,
-            foreground: _taskPriorityStyle(context, 'normal').foreground,
-            background: _taskPriorityStyle(context, 'normal').background,
-            border: _taskPriorityStyle(context, 'normal').border,
-            icon: _taskPriorityStyle(context, 'normal').icon,
-          ),
-          _FilterMenuOption(
-            id: 'low',
-            label: l10n.taskBoardDetailPriorityLow,
-            kind: _FilterMenuOptionKind.priority,
-            foreground: _taskPriorityStyle(context, 'low').foreground,
-            background: _taskPriorityStyle(context, 'low').background,
-            border: _taskPriorityStyle(context, 'low').border,
-            icon: _taskPriorityStyle(context, 'low').icon,
-          ),
+          for (final level in TaskPriorityLevel.values)
+            _FilterMenuOption(
+              id: level.value,
+              label: level.label(l10n),
+              kind: _FilterMenuOptionKind.priority,
+              foreground: _taskPriorityStyle(context, level.value).foreground,
+              background: _taskPriorityStyle(context, level.value).background,
+              border: _taskPriorityStyle(context, level.value).border,
+              icon: level.icon,
+            ),
         ];
 
         // Label options

@@ -1,7 +1,7 @@
 ---
 title: "cf CLI and Void over Wrangler"
 description: "Per-operation parity matrix, native Worker template, rollback, the Wrangler usage guard and the per-service cutover checklist."
-updatedAt: '2026-10-24'
+updatedAt: '2026-10-26'
 ---
 
 ## Decision
@@ -74,9 +74,28 @@ The existing native profiles qualify only their declared configuration fields.
 | Cron, routes, custom domains | top-level `triggers`, `routes` | `worker.triggers`, `worker.domains`; `cf workers triggers deploy` | Parity in config; verify applied settings at cutover |
 | Durable Object migrations | `migrations` tags | `worker.exports` lifecycle declaration; `cf migrate` does not convert it | Manual conversion; needs a disposable rehearsal before production |
 | D1 migrations | `wrangler d1 migrations apply` | `cf d1 migrations apply <database-id> --dir <directory>`; remote unless `--local` | Requires UUID, migration directory/table and local-persistence parity; binding names are rejected |
+| Installed cf config conversion and drift helpers | `convertToWranglerConfig`, `wranglerConfig` names inside cf | Pinned cf exposes only these internal names | `cf-config-internals`: admit compatibility references until equivalent cf APIs replace them; no Wrangler CLI invocation |
+| Deployment-source snapshots | API value `last_deployed_from: wrangler` | `cf` and `cf_cli` are also accepted; `cf_cli` is what the API reports for cf CLI deploys; historical provenance values remain distinct | `deployment-source-compatibility`: retain recognition until supported snapshots stop reporting the legacy value; no Wrangler CLI invocation |
 | Live logs | `wrangler tail` | Not supported (cf docs) | Gap |
 | Prebuilt Void deploy | n/a | `void deploy` always builds and provisions; `--skip-build` is static-only (Void 1.1.12 and 1.2.1) | Gap for the exact-artifact contract |
 | OpenNext publication | `opennextjs-cloudflare deploy` invokes Wrangler | None | Gap until Start on Void |
+
+### Void emitted runtime qualification
+
+The native cf/Vite runtime harness accepts `cloudflare.config.ts` or cf Build
+Output under `.cloudflare/output/v0`. It does not accept Void's sealed
+`dist/server/wrangler.json` artifact. Mastermind retains an isolated
+`unstable_startWorker` acceptance fixture under the `void-emitted-runtime` gap
+with bundling and entrypoint processing disabled, disposable bindings, intercepted
+JWKS egress and denied provider authentication. Its pinned runtime dependency is
+covered by the same gap; cache ignores and source-audit exclusions are data-only
+`shared-toolchain` references. [PR #7301](https://github.com/tutur3u/platform/pull/7301)
+records the admission, exact usage counts and digests in the usage allowlist.
+
+Retire this gap only when a qualified cf/Void runner accepts the same sealed
+artifact and preserves the fixture's host, owner, session and bilingual rendering
+assertions, secret isolation and egress controls without rebuilding or publishing.
+This qualification does not admit production publication, DNS or Access changes.
 
 ### Capability limits before replacing a caller
 
@@ -271,7 +290,9 @@ CI
 compares the allowlist with its base commit (`HEAD^1` of the pull request merge ref)
 and fails if that commit is unavailable.
 
-Current gaps: `paused-runtime` (retained paused runtimes), `opennext-adapter`,
+Current gaps: `cf-config-internals` (installed cf API names),
+`deployment-source-compatibility` (historical Worker snapshot provenance),
+`paused-runtime` (retained paused runtimes), `opennext-adapter`,
 `void-wave1-publication`, `pending-migration` (services awaiting their parity PR),
 `shared-toolchain` (root CLI provider, trusted-dependency and policy files),
 `parity-tooling` (the migration parity checker, which reads former Wrangler configs),
@@ -289,7 +310,8 @@ data-only fixture; no CLI invocation). The latter recognizes both legacy and
 | Colab | Wrangler bundler with assets and AI | Local Worker preview uses Vite+; release build-output conversion pending | `pending-migration` |
 | Meet realtime | Wrangler, three SQLite DO classes | Needs DO `exports` and runtime fixtures | `pending-migration` |
 | Mail email routing | Wrangler config, email handler | Needs the email trigger mapping | `pending-migration` |
-| Meet, Apps, Calendar, Mail, Shortener | Void build, Wrangler publication | Wave 1 owner | `void-wave1-publication` |
+| API | None yet; Vite+ build from `wrangler.jsonc` | Needs `cloudflare.config.ts` and a cf runtime harness | `pending-migration` |
+| Meet, Apps, Calendar, Mail, Shortener; CMS, Finance, Tasks and Track native candidates | Void build, Wrangler publication | Wave 1 owner | `void-wave1-publication` |
 | Parley, Lettin | OpenNext, Wrangler | Start on Void migration | `opennext-adapter` |
 | Backend, TanStack Web | Paused | Excluded | `paused-runtime` |
 
@@ -333,6 +355,32 @@ instead of the fallback. Keep values in GitHub secrets; never attach token value
 to receipts. Actual token scope remains unverified until the bounded read-only
 preflight succeeds. Missing access, truncated lists and unsupported account size
 fail before publication; do not bypass that gate to deploy.
+
+Drift-relevant list snapshots (secrets, domains, zones and routes) follow locally constructed `page` URLs for at most eight pages
+of at most 50 entries each, sharing the unchanged 28-request snapshot budget.
+They reject repeated pages, inconsistent pagination metadata and incomplete
+reported totals. The 20-zone account limit still applies. Settings-object
+endpoints retain their full object even if the envelope includes list metadata;
+`result_info.total_pages` alone does not imply that an object was truncated.
+Pagination failures name the same safe request display path as HTTP failures.
+Regression coverage lives in `scripts/ci/cf-worker-settings.test.mjs`.
+
+Deployment history is an explicit exception to list completeness. The
+[deployment API](https://developers.cloudflare.com/api/resources/workers/subresources/scripts/subresources/deployments/methods/list/)
+defines the first deployment as the one currently serving traffic. Read only
+the first page and retain that deployment's id and complete version/percentage
+split for rollback. Historical deployments and their pagination totals do not
+describe current settings and are not captured. A missing first deployment,
+non-first page, missing versions, duplicate version ids or traffic percentages
+that do not total 100 fail closed; never substitute an older deployment. This
+uses one request inside the same 28-request budget. Domain, route and secret
+completeness and exact schedule comparison remain required. The twenty-page
+history and missing-active regressions cover this exception.
+
+Recovery requires a production commit containing the fixed script. Planner
+deploy jobs check out the triggering production SHA; re-running an older failed
+run retains its old script even after a fix merges into main. Promote the approved
+fix, then inspect the new planner run and its gated production migration result.
 
 Each snapshot phase first logs `Cloudflare API token fp:<12 hex> status <status>`
 from `/user/tokens/verify` (or the account-owned token endpoint); this diagnostic

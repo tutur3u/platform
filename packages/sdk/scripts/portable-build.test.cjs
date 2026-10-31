@@ -183,13 +183,17 @@ test('stages the actual SDK closure without server dependencies or test-only fil
     repoRoot: path.resolve(__dirname, '../../..'),
     destination: path.join(destination, 'src'),
   });
-  assert.equal(sources.length, 23);
+  assert.equal(sources.length, 25);
   assert.equal(
     fs.existsSync(path.join(destination, 'src/cli/resources-test-fixtures.ts')),
     false
   );
   assert.ok(sources.includes('packages/utils/src/task-description-codec.ts'));
   assert.ok(sources.includes('packages/internal-api/src/users.ts'));
+  assert.ok(
+    sources.includes('packages/internal-api/src/storage-export-links.ts')
+  );
+  assert.ok(sources.includes('packages/internal-api/src/internal-api-url.ts'));
   assert.equal(
     fs.existsSync(
       path.join(destination, 'src/cli/devbox-playground-runtime.acceptance.ts')
@@ -212,6 +216,32 @@ test('omits shared test fixtures that import test runners', (t) => {
   stagePortableSources({ repoRoot: f.root, destination: f.destination });
   assert.equal(
     fs.existsSync(path.join(f.destination, 'cli/example-test-fixtures.ts')),
+    false
+  );
+});
+
+test('check-only rejects an unapproved reachable source without emitting files', (t) => {
+  const { checkPortableSources } = require('./portable-build.cjs');
+  const f = fixture(t);
+  checkPortableSources(f.root);
+  assert.equal(
+    fs.existsSync(path.join(f.root, 'packages/sdk/.portable-check')),
+    false
+  );
+  f.write(
+    'packages/internal-api/src/client.ts',
+    "export * from './private-service';"
+  );
+  f.write(
+    'packages/internal-api/src/private-service.ts',
+    'export const value = 42;'
+  );
+  assert.throws(
+    () => checkPortableSources(f.root),
+    /Unapproved portable source: internal-api\/private-service.ts/
+  );
+  assert.equal(
+    fs.existsSync(path.join(f.root, 'packages/sdk/.portable-check')),
     false
   );
 });

@@ -1,0 +1,465 @@
+---
+title: "Calendar integration and runtime"
+description: "Calendar feature contracts, implementation guidance and regression coverage."
+---
+
+## Mobile continuous dates and offline refresh
+
+Mobile Day, Three days, and Week timelines scroll through adjoining dates with
+one continuous horizontal offset. Date headers, all-day rows, and time columns
+move together; the time gutter stays fixed. A bounded backing window recenters
+only after scrolling settles, preserving the visible dates and pixel position.
+Date picking and Today still move to the requested date. Month and Year retain
+their calendar-grid navigation.
+
+The mobile Calendar displays its actor/workspace-scoped encrypted snapshot first,
+then awaits a fresh repository read even when that snapshot is still fresh.
+Transport failures retain authorized events and pending edits. Pagination stores
+its extended range for offline revisits. Account/workspace changes fence pending
+responses and cache writes; definitive access denial clears Calendar snapshots,
+while MFA verification challenges preserve the last authorized snapshot.
+
+Regression coverage: `continuous_date_scroll_test.dart` and
+`calendar_cubit_test.dart` cover intermediate drag offsets, synchronized columns,
+fresh revalidation, workspace races, revoked access, and MFA retention. Exact
+commit mobile CI and authenticated device verification remain required for
+release evidence.
+
+## Native recurring series
+
+The Calendar API stores native Tuturuuu recurring events as one canonical series
+and a bounded set of exceptions. It expands instances for the requested viewport;
+it does not pre-create duplicate event rows or stop at a materialization horizon.
+Daily, weekly, monthly and yearly rules use a named timezone and preserve local
+wall-clock dates across daylight-saving changes. All-day ends are exclusive.
+Counts include cancelled occurrences, but exclude nonexistent DST times.
+
+`/api/v1/workspaces/{wsId}/calendar/series` creates and lists native series.
+A viewport read supplies `from`, `to` and optional `limit` (maximum 1,000).
+Reads reject oversized results instead of returning a silently incomplete list.
+The detail endpoint adds `/{seriesId}`. All routes require workspace membership
+and `manage_calendar`, including after a permission or membership change.
+
+A mutation supplies a unique `requestId`, the last `expectedRevision`, and
+`scope` (`this`, `all`, or `future`). Instance scopes additionally supply the
+immutable `originalStartLocal`, even if that instance has moved. Revision
+conflicts return 409; repeating the same completed request returns its receipt
+without another write. Encryption is applied to titles, descriptions and locations.
+Missing encryption keys fail closed instead of exposing encrypted strings.
+
+An edit to `this` changes only the exception at its original slot. An edit to
+`all` changes the master; changing the generating rule or anchor resets its
+exceptions. A `future` edit splits the series transactionally, preserves remaining
+COUNT, and resets exceptions at and after the split, returning their discarded
+count. A first-occurrence `future` edit behaves as `all`. Deletes use the same
+scope and concurrency contract.
+
+This API stage accepts native series only. Google and Outlook imports and writes
+retain their existing behavior until their recoverable series integration ships;
+unsupported provider rules must remain preserved and read-only. The canonical
+Google RRULE and Microsoft Graph adapters explicitly reject lossy conversions.
+
+Regression evidence: `calendar-native-recurrence.sql` tests authorization,
+idempotency, revision conflicts and atomic splitting. `recurrence/service.test.ts`
+and `calendar-recurrence-edit.test.ts` cover encrypted retries, immutable identity,
+DST slot counts, cancellation, exception edits and truthful bounded reads.
+
+### Outlook snapshot completeness
+
+Outlook calendar synchronization follows every `calendarView` continuation before
+reconciling removed events. Reads request UTC on every page and preserve the
+provider's opaque continuation query. Duplicate event identities across pages
+collapse to the latest returned version. A failed, malformed, looping or oversized
+snapshot fails the sync; a partial snapshot must never authorize deletion.
+
+Reads are bounded to 50 pages and 25,000 distinct events. Continuations must remain
+on the same Microsoft Graph calendar collection. This applies to existing Outlook
+single events, recurring occurrences and moved exceptions; it does not enable
+canonical series writes by itself. Regression coverage:
+`packages/microsoft/src/calendar/pagination.test.ts`.
+
+### Recoverable provider series admission
+
+The provider operation endpoints reserve an encrypted, actor-bound intent before
+remote effects and publish the canonical native result only after every provider
+step has a durable checkpoint. They preserve Google event IDs and Outlook
+immutable IDs, use revision preconditions, and keep original occurrence slots
+separate from moved start times. A partial “this and future” operation resumes from
+its completed trim instead of blindly repeating both provider writes.
+
+`POST /api/v1/workspaces/{wsId}/calendar/series/provider-operations` accepts
+`requestId`, `source` (`provider` and `connectionId`), `action`, and the native
+series creation or mutation fields. An update/delete also supplies `seriesId`.
+`GET .../provider-operations/{operationId}` returns actor-scoped status;
+`POST` to that detail endpoint retries the retained intent. A pending operation
+returns HTTP 202 with its `operationId`, not a false success. An applied operation
+returns the hydrated result. Journals, OAuth credentials and raw SDK errors never
+appear in those responses. Workspace membership, `manage_calendar`, current
+connection ownership and outbound-sync permission are checked again during
+recovery. Native mutation routes cannot bypass provider-bound series or a pending
+provider operation.
+
+New admission defaults to disabled unless
+`CALENDAR_PROVIDER_SERIES_OPERATIONS_ENABLED=true`. Keep it disabled until the
+canonical inbound reconciliation and provider UI integration have shipped and
+been verified together; the operation protocol alone is not full provider parity.
+Retained operations remain readable/retryable when new admission is disabled.
+Unsupported provider patterns are rejected rather than converted lossily; mailbox
+timezone support remains authoritative. Provider delivery and organizer receipts
+still require authenticated Google/Outlook verification.
+
+Regression evidence: `calendar-provider-series.sql`, provider `plan.test.ts` and
+`writer.test.ts`, plus `calendar-provider-series.test.ts` in Internal API cover
+permission revocation, leases, publication ordering, idempotent create recovery,
+revision conflicts, immutable identities, scope splitting and pending status.
+
+
+### Provider inbound recurrence observations
+
+Canonical provider import uses the same default-disabled admission flag as
+recoverable external series operations. When enabled for verification, the live
+Google and Outlook sync paths reconcile supported recurring masters before
+persisting ordinary expanded instances. This is a staged integration, not a claim
+that provider editing or full recurrence parity is enabled in production.
+
+Google reads complete non-expanded `iCalUID` exception lists, including cancelled
+and moved instances outside the viewport. Outlook expands master exceptions and
+reads complete bounded immutable-ID views twice. Separate occurrence snapshots
+and the master revision are compared before publication. Windows timezone names
+use CLDR's default territory mapping to IANA; unknown/custom names and nonzero
+fractional occurrence precision fail closed. There is no machine-timezone fallback.
+
+Reconciliation rechecks the token-owning actor, workspace membership,
+`manage_calendar`, source ownership and inbound permission throughout the read
+and before commit. The transaction compares the captured local binding ETag and
+defers while an outbound operation is pending. It publishes encrypted native
+fields and actor/source-bound encrypted provider metadata before suppressing
+explicitly represented legacy identities. Other calendars and unrepresented
+provider rows remain untouched. Outlook cancellations proven inside the complete
+view replace that covered range; known cancellations outside it survive if their
+original slots still belong to the current rule. Deleted bound masters are
+rechecked even when the Outlook view contains no remaining occurrences.
+
+Unsupported masters retain encrypted raw snapshots and visibly read-only projections;
+a previous canonical rule is hidden until safely supported again. Incomplete reads
+reject the refresh; see [read-only rules](/platform/features/native-calendar-recurrence#unsupported-provider-rules). Keep
+admission disabled until metadata-preserving future splits, full legacy identity
+suppression across ranges, provider UI, and authenticated Google/Outlook
+verification are completed together.
+
+Regression evidence: `calendar-provider-reconciliation.sql` applies the actual
+migration and covers actor/source revocation, pending-operation deferral, stale
+observations, replay, deletion, rollback and scoped legacy suppression. Provider
+inbound reader/connection/service tests cover complete snapshots, independently
+changed exceptions, immutable identity bridging, encrypted metadata, cancellation
+coverage and the disabled default. Microsoft pagination/timezone and shared
+recurrence-edit tests cover continuation authorization, Windows zones and DST
+interval boundaries.
+
+
+### Future provider split metadata
+
+A provider **this and following** edit reads and revision-checks the fresh master
+before reserving its trim. It retains supported writable metadata in the encrypted
+create step: guest identities/options, reminders, visibility/privacy, free-busy,
+Google guest rights and non-operation custom properties, or Outlook categories
+and response-request settings. Old organizer IDs, attendee RSVP replies, provider
+IDs and recovery markers are not copied to the new invitation. Outlook HTML notes
+keep their content type when unchanged; an explicitly edited description uses text.
+
+The current preflight rejects Google conferences, attachments, special event types,
+omitted attendee lists or a non-organizer copy, and Outlook online meetings,
+attachments, hidden guests or a non-organizer copy. It rejects malformed metadata
+instead of silently replacing privacy/reminder settings with provider defaults.
+These exceptions are rejected **before any trim**. Other edit scopes patch the
+existing provider event and do not create a replacement metadata copy. New external
+admission remains disabled; provider UI and authenticated end-to-end verification
+are still required before rollout.
+
+Regression evidence: `create-metadata.test.ts`, `future-admission.test.ts` and
+provider `writer.test.ts` cover preserved metadata, omitted replies/identities,
+HTML notes, strict journal shape, preflight-before-reservation, revision conflicts,
+source mismatch and actual provider create payloads. Recovery fingerprints include
+the retained metadata so retries cannot silently substitute a different tail.
+
+### Google future-series attachment references
+
+A future split preserves up to 25 Google attachment references from the freshly
+read organizer-owned master. The replacement event uses Google's
+`supportsAttachments` request option and excludes read-only file IDs. This copies
+links and display metadata, not file content or Drive permissions. Incomplete
+references fail before the original series is trimmed. Google conference
+reuse remains blocked because it can change access and expose meeting details;
+Outlook attachment and online-meeting splits also remain blocked. Provider
+editing admission stays disabled until the remaining parity checks pass.
+
+Regression coverage: `create-metadata.test.ts`, `future-admission.test.ts`, and
+`writer.test.ts` verify reference validation, preflight ordering, and create
+request options. See the [Google event resource](https://developers.google.com/workspace/calendar/api/v3/reference/events)
+for attachment limits and conference reuse restrictions.
+
+### Outlook legacy recurring-instance identity verification
+
+When provider-series admission is explicitly enabled, inbound reconciliation
+verifies older stored Outlook IDs outside the current viewport against their
+exact connected calendar. The bounded read-only pass selects IDs only, reads up
+to 1,000 source rows in batches of 20 with at most three batches in flight, and
+uses an explicit regular-to-immutable ID translation before requesting event and
+master identities. The translation requires the already requested `User.Read`
+Microsoft scope. Current source authorization is
+checked before each batch. Only explicitly verified IDs join the existing atomic
+canonical publication and legacy cleanup; single events, other masters, and
+missing remote resources are not attributed to the series. An incomplete batch,
+permission failure, throttling, or source overflow fails closed without
+publishing a partially verified series. This performs no provider mutation or
+calendar-wide deletion and does not enable provider editing.
+
+Regression coverage: `graph-legacy-identities.test.ts` verifies source filters,
+old-slot linkage, permission revocation, receipt completeness, foreign-master
+isolation, provider failures, and batch bounds.
+
+### Editable monthly and yearly weekday patterns
+
+The shared web recurrence editor supports first, second, third, fourth, or last
+weekday patterns for monthly and yearly native series. Yearly patterns have an
+explicit month. Selecting multiple weekdays uses the earliest matching date in
+the selected ordinal week, following the canonical Google/Outlook adapter
+semantics ([Graph recurrence patterns](https://learn.microsoft.com/en-us/graph/api/resources/recurrencepattern?view=graph-rest-1.0));
+the initial local date must match the pattern. The form does not
+silently move the first occurrence when the pattern changes.
+
+Absolute month-day rules offer skipping missing dates or using the month's last
+day. Details-only edits preserve imported month-end behavior, yearly month and
+weekly week-start boundaries without adding optional normalization that would
+reset exceptions. This-occurrence edits do not modify the rule; future edits
+retain the remaining occurrence count and immutable original slot. Unsupported
+provider rules stay read-only, and outbound provider admission remains disabled.
+
+Regression coverage: `native-recurrence-pattern-model.test.ts` checks all five
+ordinals against both provider serializers, multi-weekday patterns, inclusive end
+dates, imported week boundaries and month-end behavior, invalid input, and edit
+scopes. `native-recurrence-pattern-fields.test.tsx` covers the interactive monthly,
+yearly, month-end and weekly controls.
+
+### Smart-scheduling startup enrichment
+
+Calendar server startup loads the current actor's accessible tasks first. Once
+those IDs are known, list/workspace metadata and actor-scoped scheduling settings
+are read concurrently. Empty task sets do not trigger broad enrichment reads;
+missing settings and list metadata retain their existing defaults. This removes
+one sequential database stage without changing task visibility or provider
+admission. The actual production latency benefit still requires authenticated
+post-deployment timing; focused tests are not a browser performance measurement.
+
+Regression coverage: `load-smart-scheduling-tasks.test.ts` holds list metadata
+unresolved while proving that actor-filtered scheduling settings have already
+started, verifies accessible IDs and deduplicated lists, and covers empty/missing
+responses, settings defaults, and rejected reads.
+
+Calendar's dashboard permission check uses the UUID returned by the verified
+workspace read while retaining the exact satellite actor. This avoids resolving
+`personal` again inside the permission helper. Membership, roles and default
+permissions still use the same helper; denied navigation retains its URL slug.
+The page's scheduling reads begin only after workspace and permission verification.
+Coverage: dashboard `page.test.tsx` exercises aliases/UUIDs, actor preservation,
+verification ordering, permission denial, missing records and rejected reads;
+workspace-helper tests verify that UUID normalization needs no alias lookup.
+
+For notification/event deep links, the page starts token and scheduling reads
+alongside the scoped event-date lookup after permission verification. A valid
+explicit date skips the lookup as before; invalid or missing dates use a valid
+stored event instant when available. Date-query errors retain their original
+precedence, and concurrent resource failures are handled while that lookup is
+pending. No resource reads begin before authorization. Coverage:
+`page-date-loading.test.tsx` uses an unresolved event response to verify overlap,
+actor/workspace filters, date-only and DST-offset links, fallbacks and both error
+paths. Browser latency improvement still requires post-deployment measurement.
+
+## Mobile continuous schedule geometry
+
+Mobile three-day and week timelines retain their continuous buffered date window.
+Dragging remains continuous; releasing settles header, all-day strip and timed grid
+on the same day boundary. Selected-date navigation and window recentering preserve
+that alignment without replacing the loaded event range or cache.
+
+Timed event widths use connected overlap groups with half-open time intervals.
+Transitive overlaps share columns; an event starting exactly when a group ends
+belongs to a new group. Isolated groups receive the full available date-column
+width. This shared layout also applies to the mobile day timeline.
+
+All-day span backgrounds retain their date extent while their title and optional
+working-location icon stay inside the span's intersection with the current
+viewport, clear of the fixed time gutter. Labels truncate when the visible portion
+is narrow; offscreen spans do not expose duplicate visible labels. All-day rows
+reserve enough height for the current text scale. These are display rules and do
+not change event dates, actor permissions, recurrence, providers or cache scope.
+
+Regression coverage: `calendar_viewport_test.dart`,
+`date_snap_scroll_physics_test.dart` and `continuous_date_scroll_test.dart` cover
+connected groups, visible clipped labels, native scroll settling, synchronized
+surfaces, continuous month traversal and programmatic date navigation. Widget
+coverage is separate from native-device gesture and provider verification.
+
+
+## Mobile timeline overlap geometry
+
+Mobile day and multi-day timelines reserve columns for the painted minimum card
+height as well as timestamp overlap. This keeps adjacent short events and their
+tap targets separate, including enlarged text, while isolated groups still use
+the full column width. Card positions and durations retain sub-minute precision
+so rounded pixels cannot create an untracked overlap. Event timestamps, recurring rules, and provider writes
+remain unchanged. The fixed all-day gutter label stays on one ellipsized line;
+the complete localized label remains available to accessibility services.
+
+`calendar_rendered_overlap_test.dart` checks actual card bounds and bottom-edge
+taps at normal and enlarged text sizes, and the fixed all-day gutter. These
+widget checks require device gesture verification after delivery.
+
+### Mobile timeline zoom
+
+Day, three-day, and week timelines support smooth two-finger pinch zoom from
+65% to 250%, defaulting to 100%. The fractional time under the pinch stays under
+the fingers; shell-owned Timeline zoom controls offer accessible zoom in, zoom
+out, and reset actions with the same anchored geometry. Reduced motion applies
+control zoom and initial time positioning immediately, preserving the time/date anchor.
+One-finger scrolling, date snapping, event taps, timestamps and column widths retain their behavior.
+
+Completed zoom is stored in the existing account/workspace-scoped Calendar cache
+and reused across timeline modes and dates. Workspace/account switches cancel
+unfinished pinches and reject retained control callbacks, including return-to-same
+scope and logout races; unavailable preference storage leaves zoom usable locally.
+Month, year, and agenda views retain their existing layout. Shared minimum card
+height remains part of both painting and overlap grouping at every zoom level.
+`calendar_timeline_zoom_test.dart`, `calendar_zoom_lifecycle_test.dart`, and
+`calendar_timeline_zoom_state_test.dart` cover gestures, anchors and scoped restoration;
+`calendar_reduced_motion_test.dart` covers immediate positioning and interrupted animation.
+
+## Day highlighting, all-day spans and past events
+
+Mobile multi-day headers, timeline columns, month and year date fills highlight only the current civil
+calendar day in the resolved timezone. The first visible or selected navigation
+day remains neutral when it is not today; selection still drives navigation.
+All-day materials retain occurrence identity through row and viewport changes,
+using workspace, event identifier and start/end boundaries so recurring instances
+with reused provider identifiers stay distinct.
+
+Web and mobile preserve the stored UTC calendar dates of untagged legacy
+UTC-midnight all-day imports. Their original provider dates/timezone are absent
+from the current API. Other all-day boundaries project into the resolved display
+timezone; the end remains exclusive, including 23/25-hour DST days and long spans.
+Month, year, agenda and day/week lookup share those civil bounds with the all-day
+strip: the browser timezone never shifts a UTC-midnight import to the previous
+day, and an event is excluded from its exclusive end date.
+This rendering policy does not rewrite provider data or claim date-only provider
+write support.
+
+Past events fade consistently across native, Google and Microsoft providers on
+Web using an overlay over the opaque fill when their end is at or before the
+current instant. All-day spans fade at their displayed exclusive end midnight in
+the selected calendar timezone, including merged spans, using the shared calendar clock. Explicit adapter preservation,
+interaction, previews and pending optimistic writes remain exceptions. Mobile
+keeps its existing past-event presentation. Regression coverage is
+`calendar_day_identity_test.dart`, `calendar_viewport_test.dart`,
+`all-day-event-layout.test.ts`, `calendar-event-lookup.test.ts` (cross-browser zones
+and both DST transitions) and `past-event-treatment.test.ts`.
+
+## Mobile selected-view reset
+
+Tapping the selected floating Calendar view item resets its date and scroll
+position without changing the exact view mode. Day and three-day views start at
+today. Week starts at the current week's boundary using the effective first-day
+preference (personal, workspace, then locale); it does not force today into the
+first column. Timed views restore the current-time viewport. Agenda returns to
+today, month to the current month, and year to the current year.
+
+The reset and Today action use Calendar's projected timezone clock for both date
+selection and range loading. Repeated taps while already at today still reset
+scroll position. Reduced-motion settings use immediate scroll positioning.
+Other apps retain the shell's existing scroll-first and section-reset behavior;
+Calendar's existing explicit section reset still restores its default view.
+
+Coverage: `calendar_view_reselect_test.dart` exercises the real Calendar page and
+shared floating shell; `calendar_scroll_reset_test.dart` covers repeated resets,
+week preferences, timezone/year boundaries, reduced motion, and disposal. These
+source checks do not establish native-device or deployed runtime verification.
+
+## Native invitation replies
+
+Accept, Decline and Tentative use the invited account's native provider protocol.
+Google replies patch only the self attendee, with `attendeesOmitted`,
+`sendUpdates=all` and the fresh event's `If-Match` version. Missing versions fail
+with a private HTTP 409 before dispatch; stale versions are not automatically
+retried. The recoverable Google path seals the same response and version for
+replay. Graph replies use the account's native response action with
+`sendResponse=true`.
+
+`meeting-provider-response.test.ts`, `meeting-provider-protocol.test.ts` and the
+response route tests cover these boundaries. The protocol fixture uses the real
+Google SDK serializer with an injected transport and synthetic responses. It
+proves serialized requests and failure handling, not Google acceptance or organizer
+receipt. [Google's conditional modification contract](https://developers.google.com/workspace/calendar/api/guides/version-resources)
+defines the version precondition.
+
+Native provider delivery remains unverified until an authorized dedicated sandbox
+has an invited account, a separate organizer, a recurring event and an exact
+deployed source identity. Verify all three replies on the organizer's provider
+record, including occurrence identity and retained other attendees. A successful
+mutation response or HTML mail link is insufficient evidence. This does not enable
+the separately gated recurrence editor.
+
+## Mobile event descriptions
+
+Mobile Calendar details render provider HTML paragraphs, line breaks, headings,
+lists, emphasis and safe links through the existing native Markdown renderer.
+Markdown and plain descriptions use the same display path. Timed agenda cards and dashboard Calendar rows show
+a readable two-line text preview; the full formatting remains in event details.
+Malformed HTML retains recoverable text. Inline HTML code normalizes line breaks
+to spaces; preformatted code keeps its multiline content. Script, style and
+embedded executable content are omitted, remote images remain alt text, and links use the existing
+mobile launcher scheme and host policy. Theme and system text scaling apply;
+long detail content scrolls.
+
+This is display-only for native and provider events. The editor, stored
+source, recurrence and provider write payloads retain their original description.
+No description conversion is saved. Regression coverage:
+`apps/mobile/test/features/calendar/widgets/calendar_description_test.dart`
+checks the actual detail and agenda widgets, formatted Markdown spans, mixed and
+malformed content, links, image exclusion, light/dark themes and enlarged text.
+
+## Native Start runtime
+
+The native asset binding uses `html_handling: 'none'`. The offline worker precaches the exact `/offline.html` URL; extensionless redirects would send it into app routing. Calendar emits only that HTML asset and relies on no HTML auto-index or trailing-slash aliases. The emitted-runtime gate checks the exact fallback and a non-HTML stylesheet against their sealed bytes.
+
+Calendar consumes `@tuturuuu/start-bridge` for its request context, Next
+protocol adapters, function guard and generated App Router route registry.
+Run `bun packages/start-bridge/src/codegen/cli.ts generate apps/calendar`
+after changing a route, then run the same command with `check` for validation.
+
+The cutover candidate admits only `calendar.tuturuuu.com` and
+`<app>.staging.tutur3u.com`, configured in `start-bridge.config.ts`.
+Apex `/calendar`, workers.dev and unknown hosts return 404 before dispatch.
+The Wave 1 staging profile uses `<app>.staging.tutur3u.com` for public build
+inputs, OAuth callback URLs, the seal and original/restored local runtime probes.
+It keeps workers.dev, preview URLs and staging routes disabled; qualification
+does not create a custom domain or change DNS.
+Web and Tasks keep their API ownership, and Calendar retains telemetry,
+locale preference fallback and body-preserving legacy function retargeting.
+
+The handler carries a fresh CSP nonce through middleware and Start to the
+router. Normal responses deny framing and use nosniff, a strict-origin referrer
+policy and noindex. Non-assets force private, no-store, removing CDN overrides;
+successful static responses keep their existing cache policy. The retained
+Next policy's external-project WebGL framing exception stays owner-controlled.
+Tests cover these boundaries in `root-cutover.test.ts`, `response-policy.test.ts`
+and `handler-start-handoff.test.ts`.
+
+The exact `/offline.html` document uses a restrictive static CSP that permits its
+sealed same-origin script, stylesheet and image. SSR and private pages retain
+the per-request nonce policy, and both policies deny framing. The sealed-Worker
+browser regression loads the real fallback headers and clicks Retry to verify
+that the script reloads the document; byte equality alone cannot prove this.
+
+The offline worker caches only bounded public assets and fallback files.
+Existing crons stay on Infrastructure's Vercel gateway at Calendar's canonical
+URL. Production publication remains held until exact-source build, sealed
+artifact, signed-root EN/VI, browser and provider acceptance, with rollback ready.

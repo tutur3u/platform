@@ -3,9 +3,9 @@
   "version": "0.36.0",
   "private": true,
   "scripts": {
-    "type-check": "bun run type-check:app && bun run type-check:boundary && bun run type-check:worker && bun run type-check:sw",
+    "type-check": "bun run type-check:app && bun run type-check:boundary && bun run type-check:worker && bun run type-check:sw && bun run type-check:config",
     "dev": "node ../../scripts/portless-safe-dev.js",
-    "dev:app": "node ../../scripts/portless-dev-banner.js -- vp dev --port ${PORT:-7806}",
+    "dev:app": "CALENDAR_DEPLOYMENT_PROFILE=development node ../../scripts/portless-dev-banner.js -- vp dev --port ${PORT:-7806}",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
     "build": "vp build",
@@ -29,7 +29,8 @@
     "type-check:app": "tsc --noEmit --project tsconfig.json",
     "type-check:boundary": "tsc --project tsconfig.boundary.json",
     "type-check:worker": "tsc --noEmit --project tsconfig.worker.json",
-    "type-check:sw": "tsc --noEmit --project tsconfig.sw.json"
+    "type-check:sw": "tsc --noEmit --project tsconfig.sw.json",
+    "type-check:config": "tsc --noEmit --project tsconfig.config.json"
   },
   "dependencies": {
     "@fontsource-variable/noto-sans": "5.3.0",
@@ -48,6 +49,7 @@
     "@tuturuuu/microsoft": "workspace:*",
     "@tuturuuu/offline": "workspace:*",
     "@tuturuuu/satellite": "workspace:*",
+    "@tuturuuu/start-bridge": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/tasks-ui": "workspace:*",
     "@tuturuuu/trigger": "workspace:*",

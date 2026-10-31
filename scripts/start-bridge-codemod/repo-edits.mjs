@@ -218,3 +218,23 @@ export function addVercelProductionPolicyGate(source, app) {
     source.slice(ifAt + DEPLOY_IF.length),
   ].join('');
 }
+
+/** Local Void build output in the app root; never committed. */
+export const VOID_OUTPUT_IGNORES = ['.void/', '.void-wrangler.jsonc'];
+
+/**
+ * Appends missing ignore entries to an app `.gitignore` (created when absent)
+ * without touching existing lines. An entry already present in an equivalent
+ * form (`/.void`, `.void`) counts as present.
+ */
+export function addGitignoreEntries(source, entries) {
+  const normalize = (line) =>
+    line.trim().replace(/^\//u, '').replace(/\/$/u, '');
+  const present = new Set(
+    (source ?? '').split('\n').map(normalize).filter(Boolean)
+  );
+  const missing = entries.filter((entry) => !present.has(normalize(entry)));
+  if (missing.length === 0) return source ?? '';
+  const base = source ? (source.endsWith('\n') ? source : `${source}\n`) : '';
+  return `${base}${missing.join('\n')}\n`;
+}

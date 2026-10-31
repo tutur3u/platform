@@ -378,7 +378,7 @@ class _TaskListViewState extends State<_TaskListView> {
             if (state.status == TaskListStatus.loading &&
                 state.totalActiveTasks == 0 &&
                 state.completedTasks.isEmpty) {
-              return const Center(child: NovaLoadingIndicator());
+              return const AppLoadingIndicator.page();
             }
 
             if (state.status == TaskListStatus.error &&
@@ -480,7 +480,7 @@ class _TaskListViewState extends State<_TaskListView> {
                       state.isLoadingMoreCompleted)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
-                      child: Center(child: NovaLoadingIndicator()),
+                      child: AppLoadingIndicator(),
                     ),
                 ],
               ),

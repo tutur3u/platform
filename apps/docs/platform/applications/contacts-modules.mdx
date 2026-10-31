@@ -89,12 +89,25 @@ workspace, and `manage_users`. The module remains off by default; listing or
 previewing does not enable it or send email. Preview uses only contacts in the
 requested workspace that are not archived.
 
-Web retains its Supabase-session admission. Both apps use the same users-core
+Web accepts its normal Supabase sessions and verified Contacts app sessions,
+then checks workspace membership using that verified actor. App-session tokens
+for other satellites or the CLI are rejected before workspace lookup; real-verifier
+coverage lives in `apps/web/src/lib/topic-announcements-audience.test.ts`.
+The topic master flag remains an exact `true` check in the API. Both apps use the same users-core
 query, payload validation, recipient verification status, attachment filename
 normalization, and preview renderer. Contacts forwards collection mutations to
-Web after its existing session and API edge guards; other topic mutation routes
-and the delivery worker retain their current ownership. This read/preview repair
-does not establish satellite mutation or provider-delivery readiness.
+Web after its existing session and API edge guards. All nested topic API paths
+also forward explicitly to Web, except the local preview POST. Contacts, templates,
+create and send retain their existing manager permissions when teacher assignments
+are off. Schedule APIs and the sidebar schedule child require
+`ENABLE_TOPIC_TEACHER_ASSIGNMENTS=true`; the flag defaults off. Personal workspaces
+remain denied by the API. Teacher access still requires the per-route capability
+and assignment scope. Synthetic route regressions cover Contacts and Templates
+GET, Add Contact POST, the enabled monthly schedule with GVCN, and denied
+identity, membership, permissions, flags and personal workspaces in
+`apps/web/src/lib/topic-announcements-satellite.test.ts`. Proxy and sidebar
+regressions live in Contacts. These checks do not establish live deployment or
+provider-delivery readiness.
 
 Regression coverage exercises the local Contacts routes with the actual workspace
 access helper, denied sessions and membership/capabilities, shared recipient
@@ -110,6 +123,20 @@ not silently send to fewer recipients. Database read errors remain failures.
 This prerequisite does not change announcement history, statuses, or queue leases.
 Provider acceptance, durable receipt publication, and safe recovery from ambiguous
 processing remain separate delivery requirements.
+
+### Reusing an existing topic contact
+
+The Add Contact dialog in Contacts can search this workspace's existing topic
+announcement contacts by name or email through the manager-only contacts lookup,
+which excludes archived contacts. Options show the name with the email, so
+repeated names stay distinguishable. Picking one fills its stored email, tags and
+linked user read-only and keeps its exact contact ID; confirming closes the dialog
+without a create request. The default stays "Create a new contact", and manual
+entry is unchanged. A choice outside the current workspace results, an archived
+contact, or one without an email is rejected with an inline message. Reuse never
+creates, links or assigns a teacher, and it does not change verification status or
+the send gates above. Regression coverage lives in Contacts `contact-form.test.tsx`
+and `existing-contact-selection.test.ts`.
 
 ### Inert topic delivery ledger
 
@@ -186,3 +213,31 @@ source API serialization and persistent synthetic HTTP storage, then remounts fr
 stored rows. It covers multiple recipients, completion and explicit Save, pristine
 concurrent server updates, later edits/reverts, rejected saves/retries and explicit
 clearing. The synthetic store does not certify deployed database triggers.
+
+
+## Group data and workspace member controls
+
+Linked-product creation in Contacts and Inventory, and linked-product edits in
+Contacts, require the product, warehouse and unit to belong to the authorized
+workspace and to form an existing inventory combination. Reads also exclude
+pre-existing links to another workspace's product catalogue.
+
+Periodic report export, history and delivery diagnostics follow the same group
+access as the report list: readers need `view_user_groups_reports` and access to
+the report's group. `manage_users` permits workspace-wide group access. Both the
+report subject and group must belong to the authorized workspace. Delivery
+previews and the preview, test, send, retry and cancel actions apply the same
+rules on top of `send_user_group_report_emails`: a report outside the workspace
+or outside a group-limited sender's groups returns 404 with no preview and no
+queued email. Teach course
+member lists retain student names but mask email unless the reader has
+`view_users_private_info`.
+
+Workspace role assignment through Web or the CMS team adapter accepts only
+existing workspace members. Batch onboarding invitations require
+`manage_workspace_members` and honor the workspace's `DISABLE_INVITE` setting,
+matching individual invitations. Existing seat checks still apply.
+
+Regression coverage: `packages/users-core/tests/routes/group-scope-boundaries.test.ts`,
+`packages/users-core/src/routes/users/reports/delivery-group-scope.test.ts`
+and `apps/web/src/__tests__/member-access-boundaries.test.ts`.

@@ -14,6 +14,9 @@ import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
+import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
+import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/security/cubit/app_lock_cubit.dart';
 import 'package:mobile/features/settings/cubit/calendar_settings_cubit.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
@@ -32,6 +35,7 @@ import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
+import '../../../helpers/mastermind_view_harness.dart';
 import '../../../helpers/pump_app.dart';
 
 const _workspace = Workspace(id: 'smoke-workspace', name: 'Smoke workspace');
@@ -80,7 +84,10 @@ void main() {
   final destinations = <String>{
     for (final module in AppRegistry.allModules) ...[
       module.route,
-      for (final item in module.miniAppNavItems) item.route,
+      for (final item in module.miniAppNavItems)
+        // Threads replaces Work only behind a flag; with it off the route
+        // redirects to Work by design. threads_flag_test.dart builds it.
+        if (item.id != 'mastermind_threads') item.route,
     ],
   }.toList()..sort();
 
@@ -124,6 +131,7 @@ void main() {
             await tester.pump();
             await harness.dispose();
           });
+          await harness.mastermind.setAccess(TestAccess.enabled);
           await tester.pumpWidget(harness.build());
           for (var frame = 0; frame < 12; frame++) {
             await tester.pump(const Duration(milliseconds: 50));
@@ -232,6 +240,7 @@ class _DestinationHarness {
       education,
       inventory,
       apps,
+      mastermindAccessCubit: mastermind.access,
       initialLocation: destination,
     );
   }
@@ -244,6 +253,8 @@ class _DestinationHarness {
   final profile = _Profile();
   final timezone = _Timezone();
   final lock = _Lock();
+  // Real cubits over a fake hub: Mastermind is gated on a loaded access check.
+  final mastermind = MastermindViewHarness();
   final settings = SettingsRepository();
   late final apps = AppTabCubit(settingsRepository: settings);
   late final experiments = ExperimentalAppsCubit(settingsRepository: settings);
@@ -266,6 +277,9 @@ class _DestinationHarness {
       BlocProvider<ShellProfileCubit>.value(value: profile),
       BlocProvider<TimezoneSettingsCubit>.value(value: timezone),
       BlocProvider<AppLockCubit>.value(value: lock),
+      BlocProvider<MastermindAccessCubit>.value(value: mastermind.access),
+      BlocProvider<MastermindSnapshotCubit>.value(value: mastermind.snapshot),
+      RepositoryProvider<MastermindRuntime>.value(value: mastermind.runtime),
       BlocProvider.value(value: apps),
       BlocProvider.value(value: experiments),
       BlocProvider.value(value: finance),
@@ -290,6 +304,7 @@ class _DestinationHarness {
       profile.close(),
       timezone.close(),
       lock.close(),
+      mastermind.dispose(),
       apps.close(),
       experiments.close(),
       finance.close(),

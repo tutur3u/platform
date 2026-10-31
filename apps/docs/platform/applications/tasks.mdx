@@ -32,6 +32,37 @@ When validating this integration, check both locales, personal and team workspac
 links, board/task detail return paths, and mobile navigation with the sidebar
 closed. Mutations continue through the existing protected product APIs.
 
+## Recipient identity
+
+Task and board shares match either an explicit recipient user id or the
+recipient's current confirmed Auth email. Shared-task reads and edits use this
+rule, as do shared board navigation and access. Editable contact/profile email
+fields and app-session email claims do not select email shares. Public view links
+and workspace membership retain their existing access rules. Coverage lives in
+`packages/tasks-api/src/server/board-access-identity.test.ts` and the Tasks
+shared-task route tests.
+
+## Direct list and assignee access
+
+Task-list reads require a `MEMBER` workspace membership or an explicit board
+share. Creating, renaming, moving, archiving or deleting a list requires a
+`MEMBER` with `manage_projects`, or a board share with `edit` permission. A move
+must pass this check for both the source and destination boards. A workspace
+`GUEST` has no implicit list access; an explicit board share still applies.
+
+Direct assignee INSERT and DELETE use the same member permission or an explicit
+board/task `edit` share. Public view links and view shares permit no assignment
+changes. Email shares use the current confirmed Auth email, matching the share
+APIs; editable profile fields and token email claims cannot supply that identity.
+Existing view-authorized assignment reads and service-role API access remain.
+These database rules cover Web, Tasks, Calendar and AI tools wherever a user
+client accesses these tables; mobile continues through the product APIs.
+
+Task-list change subscriptions use Cloudflare, so `task_lists` is excluded from
+`supabase_realtime`. Regression coverage is
+`apps/database/supabase/tests/task-list-assignee-authorization.sql` (internal security
+reviews), alongside board access and shared-task route tests.
+
 ## Overview
 
 Tasks provides:
@@ -61,6 +92,28 @@ in task version history do not retain media after removal from the current
 description.
 The Tasks Vercel project schedules `/api/cron/tasks/cleanup-media` at 03:17 UTC;
 the route requires `CRON_SECRET` or `VERCEL_CRON_SECRET`.
+
+## Task read RPC identity
+
+`get_user_accessible_tasks` and `get_user_tasks_with_relations` accept an
+authenticated caller's own user ID or the service role. Anonymous and mismatched
+callers receive SQLSTATE `42501`. Signatures, filtering and successful self
+results remain unchanged across Tasks, Calendar, retained Web planning views
+and AI task tools. The database regression packet is
+`apps/database/supabase/tests/time-task-rpc-scoping.sql`.
+
+## Personal placement and template backgrounds
+
+Personal placement in Tasks requires current source-task access, including a
+valid board share where supported. An assignment or personal override alone does
+not authorize placement after source access is lost. Moving a task to a terminal
+status also requires source edit access. The personal-placement route scenario
+tests cover shared-board access and stale assignments or overrides.
+
+Template background keys must belong to the template's workspace under its
+`template-backgrounds` prefix. Tasks, shared template UI and retained Web routes
+apply the same rule before saving or signing a background. The helper regression
+cases live in `packages/utils/src/__tests__/template-background-path.test.ts`.
 
 ## Board And List Name Uniqueness
 
@@ -183,6 +236,25 @@ The task editor includes isolated React roots inside some Tiptap node views, esp
 - When reloading or recovering a task deep link, resolve the task through the workspace-scoped task API (`/api/v1/workspaces/{wsId}/tasks/{taskId}`) rather than the current-user task dialog API. The current-user endpoint can 404 for valid board tasks because it is optimized for dialog hydration, not route recovery.
 - Android opens supported links by default only after App Links verification succeeds. Keep `apps/web/public/.well-known/assetlinks.json` in sync with the production Android signing certificate fingerprint; if Play App Signing uses a different app-signing certificate than the repo release keystore, add the Play Console SHA-256 fingerprint before release.
 - Keep `GoRouter.overridePlatformDefaultLocation` enabled in mobile. iOS can provide a universal link URL as Flutter's platform default route on cold start, and GoRouter will show a no-route page unless `app_links` is allowed to normalize that URL first.
+
+## Mobile task estimation recovery
+
+Mobile Planning > Estimations accepts boards without estimation settings and
+uses the API defaults: no method, standard range, zero estimates allowed, and
+unestimated issues excluded. Invalid board fields or unsupported methods produce
+the existing error and Retry state instead of an uncaught cast. Invalid stored
+snapshots are discarded before seeding the route so entry can reload fresh data.
+Responses arriving after the estimation screen is disposed do not update it.
+A rejected save still reports failure after a workspace change. A successful
+PATCH with an unreadable response body is not replayed: the screen refetches
+boards from the server, and load failures use the translated error and Retry
+state.
+
+The estimation editor scrolls its controls and actions together on small screens
+with enlarged text. These rules apply to mobile estimation settings; web settings
+and sibling planning tabs are unchanged. Regression coverage lives in
+`task_estimate_board_test.dart`, `task_estimates_cubit_test.dart`, and
+`task_estimate_dialog_test.dart`.
 
 ## Mobile Board List Mode Notes
 
@@ -1429,3 +1501,17 @@ become free time merely because they are not native locked tasks.
 The shared decision lives in `calendar-preview-blocked.ts`; its unit tests and
 `unified-scheduler/provider-commitments.test.ts` in all three apps cover the
 preview integration. This does not add Google Tasks or Microsoft To Do sync.
+
+## Offline fallback on the native Worker
+
+The offline worker precaches the exact `/offline.html` (with `offline.css` and
+`offline.js`) and shows it when navigation fails without a network. The native
+Worker serves static assets with `html_handling: 'none'`, so `/offline.html`
+answers `200` at that exact URL in one asset read. The default handling answers
+it with an internal redirect to `/offline` that only the bridge's
+redirect-following hides. Tasks emits no other HTML and relies on no HTML
+auto-index or trailing-slash alias. The Next build is
+unchanged. Covered by `apps/tasks/cloudflare/offline-fallback.runtime.mjs` on
+the sealed native build, and by the artifact contract in
+`scripts/ci/tasks-native-artifact.test.py`, which rejects a missing or
+redirecting `html_handling`.

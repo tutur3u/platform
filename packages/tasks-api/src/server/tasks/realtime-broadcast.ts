@@ -1,5 +1,9 @@
 import { publishChannelBroadcast } from '@tuturuuu/realtime/channels/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import {
+  loadTaskReadScope,
+  type TaskReadScope,
+} from '@tuturuuu/utils/task-read-scope';
 
 export const BOARD_TASK_REALTIME_CHANNEL_PREFIX = 'board-realtime';
 export const TASK_USER_REALTIME_CHANNEL_PREFIX = 'task-user-realtime';
@@ -248,8 +252,26 @@ export async function loadTaskRealtimeFanoutContext({
     });
   }
 
+  const scopes = new Map<string, TaskReadScope>();
   for (const placement of (placementRows as TaskPlacementRow[] | null) ?? []) {
-    if (!placement.task_id) continue;
+    if (!placement.task_id || !placement.user_id) continue;
+    const source = sourcesByTaskId.get(placement.task_id);
+    if (!source?.sourceWorkspaceId || !source.sourceBoardId) continue;
+    const scopeKey = `${placement.user_id}:${source.sourceWorkspaceId}`;
+    let scope = scopes.get(scopeKey);
+    if (!scope) {
+      scope = await loadTaskReadScope({
+        sbAdmin,
+        userId: placement.user_id,
+        wsId: source.sourceWorkspaceId,
+      });
+      scopes.set(scopeKey, scope);
+    }
+    if (
+      scope.mode === 'boards' &&
+      !scope.boardIds.includes(source.sourceBoardId)
+    )
+      continue;
 
     const normalizedPlacement = {
       task_id: placement.task_id,
@@ -261,9 +283,6 @@ export async function loadTaskRealtimeFanoutContext({
     existing.push(normalizedPlacement);
     placementsByTaskId.set(placement.task_id, existing);
 
-    if (placement.personal_board_id) {
-      boardIds.add(placement.personal_board_id);
-    }
     if (placement.user_id) {
       userIds.add(placement.user_id);
     }
@@ -313,6 +332,7 @@ function buildTaskRealtimePayload({
 
   return {
     ...basePayload,
+    ...(basePayload?.taskIds ? { taskIds: [taskId] } : {}),
     __tuturuuuBoardRealtimeEventId: createTaskRealtimeEventId(),
     __tuturuuuBoardRealtimeOrigin: 'server',
     actor_user_id: actorUserId ?? null,
@@ -354,50 +374,58 @@ export async function publishTaskRealtime({
       taskIds: uniqueTaskIds,
     });
 
-    const channelNames = normalizeStringIds([
-      ...fanout.boardIds.map(boardRealtimeChannelName),
-      ...fanout.userIds.map(taskUserRealtimeChannelName),
-    ]);
-
-    if (channelNames.length === 0) return;
-
-    const payloads = uniqueTaskIds.map((taskId) =>
-      buildTaskRealtimePayload({
+    const messagesByChannel = new Map<
+      string,
+      ReturnType<typeof buildTaskRealtimePayload>[]
+    >();
+    for (const taskId of uniqueTaskIds) {
+      const source = fanout.sourcesByTaskId.get(taskId);
+      const placements = fanout.placementsByTaskId.get(taskId) ?? [];
+      const channelNames = normalizeStringIds([
+        source?.sourceBoardId
+          ? boardRealtimeChannelName(source.sourceBoardId)
+          : null,
+        actorUserId ? taskUserRealtimeChannelName(actorUserId) : null,
+        ...placements.map((placement) =>
+          taskUserRealtimeChannelName(placement.user_id)
+        ),
+      ]);
+      const message = buildTaskRealtimePayload({
         actorUserId,
         basePayload: payload,
         event,
-        placements: fanout.placementsByTaskId.get(taskId) ?? [],
-        source: fanout.sourcesByTaskId.get(taskId),
+        placements,
+        source,
         taskId,
         taskPayload: taskPayloadsById?.get(taskId),
-      })
-    );
-
-    if (payloads.length === 1) {
+      });
+      for (const channelName of channelNames) {
+        const messages = messagesByChannel.get(channelName) ?? [];
+        messages.push(message);
+        messagesByChannel.set(channelName, messages);
+      }
+    }
+    for (const [channelName, messages] of messagesByChannel) {
+      const message = messages[0];
+      if (!message) continue;
       await sendTaskBroadcast({
         sbAdmin,
-        channelNames,
-        event,
-        payload: payloads[0]!,
+        channelNames: [channelName],
         logWarning,
+        event: messages.length === 1 ? event : `${event}:batch`,
+        payload:
+          messages.length === 1
+            ? message
+            : {
+                __tuturuuuBoardRealtimeEventId: createTaskRealtimeEventId(),
+                __tuturuuuBoardRealtimeOrigin: 'server',
+                actor_user_id: actorUserId ?? null,
+                actorUserId: actorUserId ?? null,
+                payloads: messages,
+                taskIds: messages.map((entry) => entry.taskId),
+              },
       });
-      return;
     }
-
-    await sendTaskBroadcast({
-      sbAdmin,
-      channelNames,
-      event: `${event}:batch`,
-      payload: {
-        __tuturuuuBoardRealtimeEventId: createTaskRealtimeEventId(),
-        __tuturuuuBoardRealtimeOrigin: 'server',
-        actor_user_id: actorUserId ?? null,
-        actorUserId: actorUserId ?? null,
-        payloads,
-        taskIds: uniqueTaskIds,
-      },
-      logWarning,
-    });
   } catch (error) {
     logWarning?.('Task realtime fanout failed', {
       error,

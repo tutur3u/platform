@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
 const {
   copyFileSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -14,7 +15,7 @@ const { dirname, join } = require('node:path');
 const { repoRoot } = require('./workflow-config-test-helpers.js');
 const { readWorkflow } = require('./workflow-yaml-test-helper.js');
 
-const apps = ['meet', 'calendar', 'mail', 'apps', 'shortener'];
+const apps = ['meet', 'calendar', 'mail', 'apps', 'shortener', 'mastermind'];
 const heldPolicy = Object.fromEntries(
   apps.map((app) => [
     app,
@@ -35,6 +36,18 @@ function fixture(t, policy) {
     'tuturuuu.ci.ts',
     'scripts/ci/production-publication-policy.ts',
     'scripts/ci/wave1-native-publish.mjs',
+    // The real ingress preflight and its imports; never a stub.
+    'scripts/ci/wave1-ingress-preflight.mjs',
+    'scripts/ci/wave1-ingress-topology.mjs',
+    'scripts/ci/wave1-ingress-policies.mjs',
+    'scripts/native-cutover/route-pattern.mjs',
+    // The real Web issuer gates the publisher imports, and their imports.
+    'scripts/ci/wave1-web-next.mjs',
+    'scripts/ci/wave1-web-next-ledger.mjs',
+    'scripts/ci/wave1-web-vercel.mjs',
+    'scripts/wave1-staging/readback-probes.mjs',
+    'scripts/ci/wave1-native-upload-error.mjs',
+    'scripts/ci/wave1-native-upload-limits.mjs',
     'scripts/ci/wave1-native-admission.mjs',
     'scripts/ci/wave1-native-attempt.mjs',
     'scripts/ci/wave1-native-profile.mjs',
@@ -228,8 +241,9 @@ for (const app of apps) {
       surfaces: app === 'meet' ? ['frontend', 'realtime-do'] : ['frontend'],
     };
     const workflow = `${app}-cloudflare.yaml`;
-    // Only Meet currently has a native publisher in the production inventory.
-    const target = app === 'meet' ? workflow : `vercel-production-${app}.yaml`;
+    const target = ['meet', 'calendar'].includes(app)
+      ? workflow
+      : `vercel-production-${app}.yaml`;
     const root = fixture(t, policy);
     const [decision] = plan(root, [target]);
     assert.equal(decision.shouldRun, true);
@@ -249,11 +263,39 @@ test('known unrelated publisher retains normal selection even with malformed pro
   );
 });
 
+test('Calendar admission opens only its frontend while other wave-1 apps remain held', (t) => {
+  const root = fixture(t);
+  assert.equal(
+    runPolicy(root, 'calendar-cloudflare.yaml').output,
+    'allowed=true\n'
+  );
+  for (const event of ['push', 'workflow_dispatch']) {
+    const [native, legacy] = plan(
+      root,
+      ['calendar-cloudflare.yaml', 'vercel-production-calendar.yaml'],
+      event
+    );
+    assert.equal(native.shouldRun, true);
+    assert.equal(legacy.shouldRun, false);
+  }
+  for (const app of ['meet', 'mail', 'apps']) {
+    assert.equal(
+      runPolicy(
+        root,
+        app === 'meet' ? 'meet-cloudflare.yaml' : `${app}-cloudflare.yaml`
+      ).output,
+      'allowed=false\n'
+    );
+  }
+});
+
 const publishers = [
-  ...apps.map((app) => ({
-    workflow: `vercel-production-${app}.yaml`,
-    job: 'Deploy-Production',
-  })),
+  ...apps
+    .filter((app) => app !== 'mastermind')
+    .map((app) => ({
+      workflow: `vercel-production-${app}.yaml`,
+      job: 'Deploy-Production',
+    })),
   { workflow: 'meet-cloudflare.yaml', job: 'deploy' },
 ];
 for (const { workflow, job } of publishers) {
@@ -300,7 +342,7 @@ for (const { workflow, job } of publishers) {
       writes.map(([name]) => name),
       [job]
     );
-    const result = runPolicy(fixture(t), workflow, policy.run);
+    const result = runPolicy(fixture(t, heldPolicy), workflow, policy.run);
     assert.equal(result.output, 'allowed=false\n');
     assert.match(result.summary, heldReason);
   });
@@ -329,7 +371,7 @@ test('all unrelated real production targets retain planner selection with invali
 
 for (const app of ['calendar', 'mail', 'apps']) {
   test(`${app}: native staging policy allows trusted staging while shared production policy holds`, (t) => {
-    const directory = fixture(t);
+    const directory = fixture(t, heldPolicy);
     assert.equal(
       runPolicy(directory, `${app}-cloudflare.yaml`).output,
       'allowed=false\n'
@@ -382,3 +424,16 @@ for (const app of ['calendar', 'mail', 'apps']) {
     }
   });
 }
+
+test('Mastermind has qualification jobs only and no production publisher', () => {
+  assert.equal(
+    existsSync(
+      join(repoRoot, '.github/workflows/vercel-production-mastermind.yaml')
+    ),
+    false
+  );
+  const { jobs } = readWorkflow('mastermind-cloudflare.yaml');
+  assert.deepEqual(Object.keys(jobs), ['check-ci', 'native']);
+  assert.equal(jobs.native.uses, './.github/workflows/native-start-app.yaml');
+  assert.equal(jobs.native.with.app, 'mastermind');
+});

@@ -1,3 +1,5 @@
+import { getVerifiedAuthUser } from '@tuturuuu/supabase/next/user';
+import { isVerifiedTuturuuuStaffSession } from '@tuturuuu/utils/email/staff-session';
 import '@tanstack/react-start/server-only';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -12,7 +14,13 @@ export async function labModel(wsId: string) {
   const permissions = await getPermissions({ user, wsId });
   if (!permissions) notFound();
   if (
-    !user.email?.endsWith('@tuturuuu.com') ||
+    !isVerifiedTuturuuuStaffSession(
+      user &&
+        (await getVerifiedAuthUser(
+          await createAdminClient({ noCookie: true }),
+          user.id
+        ))
+    ) ||
     permissions.withoutPermission('manage_calendar')
   )
     redirect(`/${wsId}`);

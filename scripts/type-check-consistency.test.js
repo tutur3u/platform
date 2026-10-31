@@ -61,6 +61,13 @@ test('type-check workflow Bun version matches the repo packageManager pin', () =
 });
 
 test('workspace tsc build type-check scripts use the cache-invalidation wrapper', () => {
+  const wrapper = 'node ../../scripts/run-tsc-build.js --build';
+  // Tasks chains its native Start and host-config projects after the wrapper.
+  const chainedWrapperScripts = {
+    'apps/tasks/package.json': 'type-check:native',
+    // Forms also checks its Cloudflare project after the wrapped build check.
+    'apps/forms/package.json': 'type-check:cloudflare',
+  };
   const invalidScripts = [];
 
   for (const packageJsonPath of getWorkspacePackageJsonPaths()) {
@@ -71,8 +78,15 @@ test('workspace tsc build type-check scripts use the cache-invalidation wrapper'
       continue;
     }
 
+    const chainedScriptName = chainedWrapperScripts[packageJsonPath];
+    const chainedTarget = packageJson.scripts?.[chainedScriptName];
+    const isAllowedChain =
+      typeCheckScript === `${wrapper} && bun run ${chainedScriptName}` &&
+      typeof chainedTarget === 'string' &&
+      !/--build|--force/u.test(chainedTarget);
+
     if (
-      typeCheckScript !== 'node ../../scripts/run-tsc-build.js --build' ||
+      (typeCheckScript !== wrapper && !isAllowedChain) ||
       typeCheckScript.includes('--force')
     ) {
       invalidScripts.push({

@@ -22,11 +22,16 @@ class InventorySearchChrome extends StatefulWidget {
   final List<ShellActionSpec> actions;
 
   @override
-  State<InventorySearchChrome> createState() => _InventorySearchChromeState();
+  State<InventorySearchChrome> createState() => InventorySearchChromeState();
 }
 
-class _InventorySearchChromeState extends State<InventorySearchChrome> {
+class InventorySearchChromeState extends State<InventorySearchChrome> {
   bool _open = false;
+
+  /// Opens the navbar search field, for example after a failed scan.
+  void open() {
+    if (!_open) setState(() => _open = true);
+  }
 
   void _close() {
     widget.controller.clear();
@@ -49,13 +54,13 @@ class _InventorySearchChromeState extends State<InventorySearchChrome> {
     ownerId: 'inventory-search-${widget.location}',
     locations: {widget.location},
     actions: [
-      ShellActionSpec(
+      ShellActionSpec.search(
         id: '${widget.location}-search',
-        icon: _open ? Icons.close : Icons.search,
+        active: _open,
         tooltip: _open
             ? context.l10n.commonCancel
             : widget.hint ?? context.l10n.inventoryRedesignLoadedSearch,
-        searchController: _open ? widget.controller : null,
+        controller: widget.controller,
         searchHint: widget.hint ?? context.l10n.inventoryRedesignLoadedSearch,
         onSearchChanged: widget.onChanged,
         onSearchSubmitted: _submit,

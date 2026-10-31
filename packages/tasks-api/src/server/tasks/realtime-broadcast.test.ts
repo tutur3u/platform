@@ -1,15 +1,22 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  loadTaskRealtimeFanoutContext,
   publishBoardListRealtime,
   publishTaskRealtime,
 } from './realtime-broadcast';
 
+const readScope = vi.hoisted(() => vi.fn());
+vi.mock('@tuturuuu/utils/task-read-scope', () => ({
+  loadTaskReadScope: readScope,
+}));
 const publisher = vi.hoisted(() => vi.fn());
 vi.mock('@tuturuuu/realtime/channels/server', () => ({
   publishChannelBroadcast: publisher,
 }));
 beforeEach(() => {
   publisher.mockReset();
+  readScope.mockReset();
+  readScope.mockResolvedValue({ mode: 'workspace' });
 });
 afterEach(() => vi.useRealTimers());
 
@@ -197,4 +204,119 @@ describe('published-client realtime transition', () => {
     expect(sbAdmin.removeChannel).toHaveBeenCalledTimes(2);
     expect(vi.getTimerCount()).toBe(0);
   });
+});
+
+describe('personal recipient authorization', () => {
+  const task = (id: string, boardId: string) => ({
+    id,
+    list_id: `list-${id}`,
+    task_lists: {
+      board_id: boardId,
+      workspace_boards: {
+        id: boardId,
+        ws_id: 'source-workspace',
+        name: 'Source',
+        ticket_prefix: null,
+      },
+    },
+  });
+  it('does not deliver task data to a user whose override outlived source access', async () => {
+    readScope.mockResolvedValue({ mode: 'boards', boardIds: [] });
+    const { sbAdmin } = createRealtimeSupabaseMock({
+      tasks: { data: [task('private-task', 'private-board')] },
+      task_user_overrides: {
+        data: [
+          {
+            task_id: 'private-task',
+            user_id: 'outsider',
+            personal_board_id: null,
+            personal_list_id: null,
+          },
+        ],
+      },
+    });
+    const fanout = await loadTaskRealtimeFanoutContext({
+      sbAdmin: sbAdmin as never,
+      taskIds: ['private-task'],
+    });
+    expect(fanout.userIds).not.toContain('outsider');
+    expect(fanout.placementsByTaskId.get('private-task') ?? []).toEqual([]);
+  });
+  it('keeps an explicit source-board share usable', async () => {
+    readScope.mockResolvedValue({ mode: 'boards', boardIds: ['shared-board'] });
+    const { sbAdmin } = createRealtimeSupabaseMock({
+      tasks: { data: [task('shared-task', 'shared-board')] },
+      task_user_overrides: {
+        data: [
+          {
+            task_id: 'shared-task',
+            user_id: 'guest',
+            personal_board_id: null,
+            personal_list_id: null,
+          },
+        ],
+      },
+    });
+    const fanout = await loadTaskRealtimeFanoutContext({
+      sbAdmin: sbAdmin as never,
+      taskIds: ['shared-task'],
+    });
+    expect(fanout.userIds).toContain('guest');
+  });
+  it('does not send another task in a batch to a recipient of only one task', async () => {
+    const { sbAdmin } = createRealtimeSupabaseMock({
+      tasks: { data: [task('task-a', 'board-a'), task('task-b', 'board-b')] },
+      task_user_overrides: { data: [] },
+    });
+    await publishTaskRealtime({
+      sbAdmin: sbAdmin as never,
+      taskIds: ['task-a', 'task-b'],
+      payload: { taskIds: ['task-a', 'task-b'] },
+      event: 'task:upsert',
+      taskPayloadsById: new Map([
+        ['task-a', { description: 'A' }],
+        ['task-b', { description: 'B' }],
+      ]),
+    });
+    const messages = publisher.mock.calls.filter(
+      ([topic]) => topic === 'board-realtime-board-a'
+    );
+    expect(messages.length).toBeGreaterThan(0);
+    for (const [, message] of messages)
+      expect(JSON.stringify(message)).not.toContain('task-b');
+  });
+});
+
+it('keeps one publication per channel for a same-board batch', async () => {
+  const { sbAdmin } = createRealtimeSupabaseMock({
+    tasks: {
+      data: ['one', 'two'].map((id) => ({
+        id,
+        list_id: 'list',
+        task_lists: {
+          board_id: 'board',
+          workspace_boards: {
+            id: 'board',
+            ws_id: 'workspace',
+            name: 'Board',
+            ticket_prefix: null,
+          },
+        },
+      })),
+    },
+    task_user_overrides: { data: [] },
+  });
+  await publishTaskRealtime({
+    sbAdmin: sbAdmin as never,
+    event: 'task:upsert',
+    taskIds: ['one', 'two'],
+  });
+  expect(publisher).toHaveBeenCalledTimes(1);
+  expect(publisher).toHaveBeenCalledWith(
+    'board-realtime-board',
+    expect.objectContaining({
+      event: 'task:upsert:batch',
+      payload: expect.objectContaining({ taskIds: ['one', 'two'] }),
+    })
+  );
 });

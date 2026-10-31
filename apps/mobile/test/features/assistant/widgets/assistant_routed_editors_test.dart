@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/assistant/data/assistant_personal_settings_repository.dart';
 import 'package:mobile/features/assistant/models/assistant_models.dart';
@@ -102,7 +103,9 @@ Future<void> openPersonality(
     ),
   );
   await tester.pumpAndSettle();
-  await tester.tap(find.byType(AppListTile).first);
+  await tester.tap(
+    find.byKey(const ValueKey('assistant-settings-personality')),
+  );
   await tester.pumpAndSettle();
 }
 
@@ -132,7 +135,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(AssistantPersonalityEditor),
-        matching: find.byType(AppListTile),
+        matching: find.byType(AppGroupedRow),
       ),
       findsNWidgets(5),
     );
@@ -245,8 +248,6 @@ void main() {
           );
         } else {
           await tester.tap(find.byTooltip('Back'));
-          await tester.pumpAndSettle();
-          await tester.tap(find.text('Memory'));
           await tester.pumpAndSettle();
           final row = find.text('Synthetic preference');
           await tester.ensureVisible(row);

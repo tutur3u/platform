@@ -184,3 +184,79 @@ describe('private productivity app caching', () => {
     expect(entries.size).toBe(2);
   });
 });
+describe('apps mounted on the shared origin', () => {
+  function mountedWorker() {
+    createOfflineWorker({
+      staticAssetsOnly: false,
+      bypassPathPrefixes: ['/meet', '/mail'],
+    }).addEventListeners();
+  }
+  function dispatch(path: string, init: Record<string, unknown>) {
+    const respondWith = vi.fn();
+    listeners.get('fetch')!({
+      request: {
+        url: `https://calendar.test${path}`,
+        method: 'GET',
+        mode: 'cors',
+        destination: '',
+        ...init,
+      },
+      respondWith,
+      waitUntil: (promise: Promise<unknown>) => background.push(promise),
+      ...('preloadResponse' in init
+        ? { preloadResponse: init.preloadResponse }
+        : {}),
+    });
+    return respondWith;
+  }
+  it('leaves mounted app assets and API calls to the network', () => {
+    mountedWorker();
+    for (const path of [
+      '/meet/assets/app.js',
+      '/mail/api/v1/workspaces/personal/mail',
+      '/meet',
+    ])
+      expect(dispatch(path, { destination: 'script' }).mock.calls).toHaveLength(
+        0
+      );
+    expect(network).not.toHaveBeenCalled();
+    expect(put).not.toHaveBeenCalled();
+  });
+  it('answers a mounted navigation with its preload response only', async () => {
+    mountedWorker();
+    const respondWith = dispatch('/meet/vi/r/abc', {
+      mode: 'navigate',
+      preloadResponse: Promise.resolve(new Response('meet page')),
+    });
+    expect(await (await respondWith.mock.calls[0]![0]).text()).toBe(
+      'meet page'
+    );
+    expect(network).not.toHaveBeenCalled();
+    expect(put).not.toHaveBeenCalled();
+  });
+  it('never serves the Web offline page for a mounted app', async () => {
+    mountedWorker();
+    entries.set('/~offline', new Response('Web offline'));
+    network.mockRejectedValue(new Error('offline'));
+    const respondWith = dispatch('/mail/personal', {
+      mode: 'navigate',
+      preloadResponse: Promise.resolve(undefined),
+    });
+    await expect(respondWith.mock.calls[0]![0]).rejects.toThrow('offline');
+  });
+  it('still handles look-alike paths that the mounts do not own', async () => {
+    mountedWorker();
+    network.mockResolvedValue(new Response('web'));
+    const respondWith = dispatch('/meet-together', {
+      mode: 'navigate',
+      preloadResponse: Promise.resolve(undefined),
+    });
+    expect(await (await respondWith.mock.calls[0]![0]).text()).toBe('web');
+  });
+  it('rejects malformed prefixes', () => {
+    for (const prefix of ['meet', '/meet/', '/', '//meet'])
+      expect(() =>
+        createOfflineWorker({ bypassPathPrefixes: [prefix] })
+      ).toThrow(RangeError);
+  });
+});

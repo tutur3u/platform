@@ -1,0 +1,45 @@
+---
+title: Mastermind mobile Inbox
+description: Inbox paging, filtering, and lazy rendering rules.
+---
+
+## Every ask
+
+- **Every ask, loaded as you scroll.** The Inbox never hides asks behind "Show
+  all N" or a collapsed count. Each group lists every ask it holds, built lazily:
+  the first 20 appear, and the next 20 load when a row within three of the end
+  scrolls into reach. The bottom shows a loading indicator while a page loads, an
+  error row with Retry (never a toast) if it fails, and "That's every ask" once
+  a list longer than one page ends. The trailing Security group follows the last
+  page. A pull-down refresh, a segment change, a search and a product filter each
+  start over from the first page. Today every page is sliced on the device from
+  the accepted snapshot (the "Needs you" asks and the hub's resolved history);
+  the page loader is the one seam for the hub's `/v1/asks` (opaque cursor,
+  non-sensitive asks only, at most 50 per page). Grouping, search, the product
+  filter and the one-tap answer are unchanged. Regression coverage:
+  `mastermind_inbox_paging_test.dart` and `inbox_paging_test.dart`.
+
+This rule applies to the mobile Inbox Needs you and Resolved segments by default.
+Home keeps its capped previews. Decisions uses its existing list.
+
+Search and product filtering apply to the entire accepted segment before its
+visible prefix is sliced, including asks beyond the first page. Product choices
+come from the unfiltered segment. Pull refresh resets paging before refreshing;
+background snapshot refresh does not promise a paging reset.
+
+Security follows the final ask page and remains outside ask counts and filters.
+An injected page failure blocks reaching Security until Retry succeeds.
+
+Rows use SliverList.builder and the shared borderless Mastermind tint, radius,
+section headers, list rows and status chips. They retain one-tap inline options
+and the shared reply cubit's Undo timer even when scrolled offscreen. Detail
+keeps its separate select-then-Send behavior. Resolved rows retain answered-via
+attribution and GMT+7 day headings.
+
+## Regression evidence
+
+`inbox_paging_test.dart` checks prefixes across mixed-kind page boundaries,
+identity uniqueness, filtering before paging and stale in-flight reset results.
+`mastermind_inbox_paging_test.dart` checks reachability and lazy viewport building
+with 525 asks, refresh, product filtering, Retry and enlarged narrow layouts.
+These fixtures establish widget behavior, not device performance or server paging.

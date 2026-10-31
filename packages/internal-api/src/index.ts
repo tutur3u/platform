@@ -319,11 +319,6 @@ export {
   disconnectChatGPT,
   getChatGPTConnections,
 } from './chatgpt';
-export type {
-  InternalApiClientOptions,
-  InternalApiFetchInit,
-  InternalApiQuery,
-} from './client';
 export {
   createInternalApiClient,
   getConfiguredContactsApiBaseUrl,
@@ -332,8 +327,13 @@ export {
   getConfiguredLearnApiBaseUrl,
   getConfiguredPayApiBaseUrl,
   getConfiguredTeachApiBaseUrl,
+  type InternalApiAppBaseResolver,
+  type InternalApiClientOptions,
   InternalApiError,
+  type InternalApiFetchInit,
+  type InternalApiQuery,
   internalApiClient,
+  registerDefaultAppBaseResolver,
   resolveInternalApiUrl,
   withContactsApiBaseUrl,
   withForwardedInternalApiAuth,
@@ -1641,7 +1641,6 @@ export {
   getSharedCourseContent,
   getTulearnBootstrap,
   getTulearnCourse,
-  getTulearnCourseModule,
   getTulearnHome,
   getTulearnPractice,
   getTulearnTestAttempt,
@@ -1685,6 +1684,7 @@ export {
   type UpdateTulearnProfilePayload,
   updateTulearnProfile,
 } from './tulearn';
+export * from './tulearn-module-exports';
 export {
   createTutoringSession,
   exportTutoringSessions,

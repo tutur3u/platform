@@ -12,11 +12,15 @@ class AssistantAttachmentPreview extends StatelessWidget {
   const AssistantAttachmentPreview({
     required this.attachment,
     this.onRemove,
+    this.onRetry,
     super.key,
   });
 
   final AssistantAttachment attachment;
   final VoidCallback? onRemove;
+
+  /// Offered only for failures a retry can fix (connection or server).
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +39,24 @@ class AssistantAttachmentPreview extends StatelessWidget {
     final label = _displayName(context, attachment);
     final failed =
         attachment.uploadState == AssistantAttachmentUploadState.error;
+    final failure = failed
+        ? assistantAttachmentFailureMessage(context, attachment.failure)
+        : null;
+    final retry = failed && (attachment.failure?.retryable ?? true)
+        ? onRetry
+        : null;
+    final failedAction = retry != null
+        ? context.l10n.assistantAttachmentRetry
+        : context.l10n.assistantAttachmentFailedShort;
+    final status = switch (attachment.uploadState) {
+      AssistantAttachmentUploadState.uploading =>
+        attachment.uploadProgress == null
+            ? context.l10n.assistantAttachmentPreparing
+            : context.l10n.assistantAttachmentUploadingPercent(
+                (attachment.uploadProgress! * 100).round(),
+              ),
+      _ => null,
+    };
 
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 180),
@@ -42,31 +64,39 @@ class AssistantAttachmentPreview extends StatelessWidget {
         avatar: _thumbnail(context, localPath, url, isVideo),
         label: Text(
           failed
-              ? '$label · ${context.l10n.assistantAttachmentFailedShort}'
+              ? '$label · $failedAction'
+              : status != null
+              ? '$label · $status'
               : label,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        onPressed: canPreview
-            ? () => showAppSheet<void>(
-                context: context,
-                builder: (_) =>
-                    _MediaPreviewDialog(attachment: attachment, label: label),
-                size: AppSheetSize.full,
-                enableDrag: false,
-              )
-            : documentUri != null &&
-                  attachment.uploadState ==
-                      AssistantAttachmentUploadState.uploaded
-            ? () => unawaited(openAssistantDocument(context, documentUri))
-            : null,
+        // Retry takes the tap when offered; otherwise a failed local file can
+        // still be previewed before the user decides to remove it.
+        onPressed:
+            retry ??
+            (canPreview
+                ? () => showAppSheet<void>(
+                    context: context,
+                    builder: (_) => _MediaPreviewDialog(
+                      attachment: attachment,
+                      label: label,
+                    ),
+                    size: AppSheetSize.full,
+                    enableDrag: false,
+                  )
+                : documentUri != null &&
+                      attachment.uploadState ==
+                          AssistantAttachmentUploadState.uploaded
+                ? () => unawaited(openAssistantDocument(context, documentUri))
+                : null),
         onDeleted: onRemove,
         deleteTooltip:
             '${MaterialLocalizations.of(context).deleteButtonTooltip}: $label',
-        tooltip: failed
-            ? '$label · ${context.l10n.assistantAttachmentUploadFailed}'
-            : attachment.uploadState == AssistantAttachmentUploadState.uploading
-            ? '$label · ${context.l10n.commonLoading}'
+        tooltip: failure != null
+            ? '$label · $failure'
+            : status != null
+            ? '$label · $status'
             : label,
       ),
     );
@@ -79,11 +109,13 @@ class AssistantAttachmentPreview extends StatelessWidget {
     bool isVideo,
   ) {
     if (attachment.uploadState == AssistantAttachmentUploadState.uploading) {
-      return Semantics(
-        label: context.l10n.commonLoading,
-        child: const SizedBox.square(
-          dimension: 18,
-          child: CircularProgressIndicator(strokeWidth: 2),
+      final progress = attachment.uploadProgress;
+      return SizedBox.square(
+        dimension: 18,
+        // A determinate ring once bytes flow; indeterminate while preparing.
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          value: progress == null || progress <= 0 ? null : progress,
         ),
       );
     }
@@ -293,3 +325,21 @@ class _MediaPreviewDialogState extends State<_MediaPreviewDialog> {
     );
   }
 }
+
+String assistantAttachmentFailureMessage(
+  BuildContext context,
+  AssistantAttachmentFailure? failure,
+) => switch (failure) {
+  AssistantAttachmentFailure.tooLarge =>
+    context.l10n.assistantAttachmentFailureTooLarge,
+  AssistantAttachmentFailure.unsupported =>
+    context.l10n.assistantAttachmentFailureUnsupported,
+  AssistantAttachmentFailure.forbidden =>
+    context.l10n.assistantAttachmentFailureForbidden,
+  AssistantAttachmentFailure.network =>
+    context.l10n.assistantAttachmentFailureNetwork,
+  AssistantAttachmentFailure.newChatRequired =>
+    context.l10n.assistantAttachmentFailureNewChatRequired,
+  AssistantAttachmentFailure.server ||
+  null => context.l10n.assistantAttachmentFailureServer,
+};

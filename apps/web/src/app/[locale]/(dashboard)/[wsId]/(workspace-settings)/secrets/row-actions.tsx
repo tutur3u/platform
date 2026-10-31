@@ -19,7 +19,7 @@ import { useState } from 'react';
 import SecretForm from './form';
 
 interface SecretRowActionsProps {
-  row: Row<WorkspaceSecret>;
+  row: Pick<Row<WorkspaceSecret>, 'original'>;
 }
 
 export function SecretRowActions({ row }: SecretRowActionsProps) {
@@ -60,7 +60,7 @@ export function SecretRowActions({ row }: SecretRowActionsProps) {
             className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
+            <span className="sr-only">{t('common.open_menu')}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">

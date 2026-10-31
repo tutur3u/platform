@@ -1,0 +1,289 @@
+---
+title: "Finance and Pay Start migration"
+description: "Inventory Finance and Pay before adopting the shared Start bridge and qualifying direct cutover."
+---
+
+Finance retains its Next.js entrypoints and has a Start staging candidate.
+Pay remains on its Next.js entrypoints. Both consume the
+[shared Start bridge](/build/devops/start-bridge); neither app owns a copy of
+its Next adapters, request context, proxy, or server-function transport.
+Candidate source and route registration do not qualify hosted runtime behavior.
+
+## Refresh the source inventory
+
+Run these commands from the repository root after a frozen dependency install:
+
+```bash
+node apps/finance/migration/inventory.mjs finance > /tmp/finance-inventory.json
+node apps/finance/migration/inventory.mjs pay > /tmp/pay-inventory.json
+(cd apps/finance && bun run test migration/inventory.test.mjs)
+```
+
+The tool reuses the repository's Next route inventory and parses modules with
+the root's pinned Babel parser. It excludes declaration files and tests, records
+source hashes, and never evaluates app code. The JSON includes every page,
+layout, route handler with its exported methods, server-action declaration,
+direct framework import, and workspace import. Imported action implementations
+and transitive framework imports require a separate caller review.
+
+The initial inventory has these counts. Regenerate it when source changes:
+
+| App | Pages | Layouts | Local API handlers | Action modules | Direct framework imports |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Finance | 18 | 3 | 82 | 1 | 132 |
+| Pay | 6 | 1 | 26 | 1 | 79 |
+
+## Preserve Finance route ownership
+
+Finance has 17 workspace pages plus the token verification page. Workspace
+pages cover the overview, analytics, budgets, categories, debts and debt detail,
+invoices and invoice creation/detail, promotions, recurring transactions, tags,
+transactions and transaction detail/categories, and wallets and wallet detail.
+
+The 82 local handlers include both `/api/workspaces/*` and
+`/api/v1/workspaces/*`. Preserve every exported method and unsupported-method
+response. The Next configuration sends selected workspace routes to Web before
+local route matching and forwards unmatched `/api/*` requests to Web afterwards.
+Port that precedence with the bridge's guarded forwarding contract. A page
+catch-all must never capture an API request.
+
+The codemod reads Finance's Next configuration and generates `central-first.ts`
+from the reserved Web rewrite definitions. `/api/workspaces/invitations` reaches
+Web before the local `/api/workspaces/[wsId]` wildcard. The shared handler strips
+the mount and preserves method/body/query and each response cookie. Ordinary
+Finance routes retain their local handlers. `reserved-api.test.ts` exercises
+that actual dispatch boundary.
+
+The generated `app-base.ts`, API entry, page route and router register IA-BASE's
+shared resolver in each environment. The client-safe `appApiPatterns` list and
+reserved Web paths decide which API calls gain `/finance`. Server callbacks read
+the incoming request on each call; explicit caller base URLs retain precedence.
+`api-base.test.ts` covers generated registration, Web ownership and interleaved
+request isolation. App code does not maintain a competing registrar or RSC
+entry wrapper.
+
+`start-bridge.config.ts` owns Finance's response security policy. Every response
+sends `X-Robots-Tag: noindex, nofollow, nosnippet`, `X-Frame-Options: DENY`,
+`X-Content-Type-Options: nosniff`, and `Referrer-Policy:
+strict-origin-when-cross-origin`. The CSP includes `frame-ancestors 'none'`.
+The exact shared WebGL asset path is the framing exception:
+`^/api/v1/workspaces/[^/]+/external-projects/assets/[^/]+/webgl(/|$)`.
+Its upstream sandbox CSP passes through unchanged and Finance removes
+`X-Frame-Options`. Neighbouring paths retain framing denial. Both root hosts
+must pass the emitted forwarding and boundary regressions before cutover.
+Personalized SSR and API responses use `Cache-Control: private, no-store` and
+vary on Cookie, Authorization and Accept-Language. Compiled static assets keep
+their own caching policy. Root hosts are explicitly admitted; unlisted hosts and
+apex mounts fail closed.
+
+The codemod creates that config once and preserves its contents on regeneration.
+The Worker, router, Vite config, lazy API registry and registration remain
+fully generated. API dependencies load on the matching route's first request.
+Refresh the route registries with:
+
+```bash
+bun packages/start-bridge/src/codegen/cli.ts generate apps/finance
+```
+
+Keep the existing authorization and mutation behavior for invoices, wallet
+checkpoints and reconciliation, interest, budgets, promotions, inventory, and
+offline mutation replay. These handlers are not permission to change schemas,
+replay an uncertain write, or move a local handler to Web.
+
+`fetchWorkspaces` is Finance's app-owned server action. It calls
+`fetchSatelliteWorkspaces` in the shared satellite package, which reads request
+headers and forwards internal API authorization. Convert the complete call path
+with the bridge server-function transport. Preserve same-origin CSRF protection,
+session admission, and workspace visibility.
+
+The root layout needs replacements for `next/root-params`, the Next Nuqs
+adapter, shared font/metadata helpers, and Vercel analytics. Retain the current
+offline provider's `register={false}` behavior. The workspace layout reads
+request cookies and headers, checks membership and permissions, and renders
+async shared components. Verify those components through the bridge page adapter
+before expanding their children.
+
+The proxy currently pins Vercel's `__vdpl` cookie with `Path=/`. The native
+candidate must leave deployment pinning to the Vercel control path. Do not turn
+that cookie into cohort identity or copy it onto the shared origin.
+
+## Qualify both Finance URL modes
+
+Root mode at `finance.<host>` is the first release gate. Finance disables
+`workers_dev` for its fail-closed root hosts. The sealed artifact and emitted
+runtime checks enforce the same setting; staging uses its explicitly admitted
+custom hostname. `<host>/finance` remains
+compatibility coverage and does not admit apex traffic. The bridge owns
+request-based mount resolution and the shared session model. Preserve the
+external prefix on redirects, ordinary links, assets, action requests, and API
+calls while matching the internal route once.
+
+All apps on `tuturuuu.com` use one shared apex session. Finance must not add
+an app-specific session cookie name or path. The shared bridge and auth owner
+implement that model; app code consumes it. Preserve subdomain behavior until
+cutover. Session handover follows the shared bridge contract, with no cross-host
+token copy.
+
+A mounted request must retain the shared session during refresh and failure
+handling. Signing out on the apex is global. Require independent security
+acceptance of the mounted-auth implementation before any apex cutover. Root-mode
+session acceptance remains a separate gate. The bridge's proposal alone does
+not qualify authentication behavior.
+
+Acceptance covers English and Vietnamese URLs, anonymous login, cross-app token
+verification, refresh and logout, MFA recovery, personal/internal workspace
+aliases, invitations, permission denial, and query preservation. Inspect every
+`Set-Cookie` separately. Exercise parallel requests with different users and
+workspaces to detect request-context leakage.
+
+Before any hosted staging publish, declare and admit its exact account, Worker,
+hostname, bindings and rollback mapping. Finance declares two native profiles in
+`apps/finance/cloudflare/native-profiles.json`, selected at build time with
+`VITE_FINANCE_NATIVE_PROFILE`. Staging is the default: Worker
+`<staging-worker>`, root host `<app>.staging.tutur3u.com`,
+`INTERNAL_WEB_API_ORIGIN` and `NEXT_PUBLIC_WEB_APP_URL` set to
+`https://<app>.staging.tutur3u.com`, and the staging Supabase URL. `production` must be
+requested explicitly: Worker `tuturuuu-finance`, root host
+`finance.tuturuuu.com`, Web at `https://tuturuuu.com` and the production Supabase
+URL. Each profile admits only its own root host, so the staging-data Worker
+answers 404 for `finance.tuturuuu.com` and the production Worker answers 404 for
+the staging host. Both keep `workers_dev` off and declare no routes or custom
+domains; hostnames are attached by the operator at admission or flip time. The
+Vite config pins every `NEXT_PUBLIC_*` profile value before the browser bundle
+is built and fails on a conflicting shell value; production also requires a real
+publishable key. The qualifier seals each profile's identity, rejects the other's
+output, and scans the emitted bundles (source maps excepted) for the other
+profile's Supabase project and, for production, the staging Web origin and host.
+It also rejects any bundle that still carries the local development
+coordination secret. Secrets
+(`SUPABASE_SECRET_KEY`, `TUTURUUU_APP_COORDINATION_SECRET` and the Supabase
+publishable key) are provisioned on the Worker by the owner, never in source.
+Never forward staging tokens to production Web, and never attach the staging
+Worker to the production hostname.
+Keep `global_fetch_strictly_public` enabled and verify hosted same-zone SSR
+self-fetches reach the Finance Worker, including its public build identity;
+the retained Vercel origin must not answer those subrequests. Source configuration alone
+does not prove that a hosted staging environment exists. Follow the
+[Apps artifact and runtime contract](/build/devops/apps-viteplus-cloudflare)
+for sealed original/restored artifact and browser acceptance.
+
+## Prepare direct cutover and instant rollback
+
+The first Finance release targets `finance.tuturuuu.com` in root mode; Pay
+likewise targets `pay.tuturuuu.com`. Root-mode staging acceptance gates go-live.
+Apex-mounted cutover stays held until the shared auth-boundary guard ships and
+the user decides the shared-session model. Mounted evidence remains useful
+compatibility coverage.
+
+Finance and Pay cut over directly after their gates pass. There is no cohort
+selector, staged percentage, minimum session count, or canary operator.
+
+Before the flip, capture the current Vercel deployment, source identity, and
+routing configuration. Prepare and verify a single-step command that restores
+that deployment and routing. Record who owns that command and the regression
+signal that invokes it. Do not flip traffic without a ready rollback.
+
+Finance's root rollout retains the Vercel CNAME, enables its proxy, and attaches
+only `finance.tuturuuu.com/*` to the admitted Worker. Capture the prior immutable
+Vercel deployment and DNS record ID, content, proxy state, and TTL. The rollback
+assigns only the Finance hostname to that immutable deployment if necessary
+(project-wide promotion is prohibited), removes only the new Finance Worker
+route, and restores the captured DNS payload. Keep apex and shared routes out
+of this transition; a Custom Domain requires a different rollback plan.
+
+Use the zone-scoped DNS credential for DNS reads/edits and the existing Workers
+deploy credential for Worker route reads/edits. Keep the two tokens separate in
+capture and rollback clients. Validate provider identities before any write,
+keep the original route and DNS record IDs, and reconcile ambiguous responses
+with reads before continuing. Persist mutation intent before dispatch in one
+host-scoped journal, including outcomes that remain unknown across invocations.
+An old or stale read never authorizes replay. Reconcile the original operation
+or stop; preserve a campaign-wide request budget. A DNS-only partial cutover may
+restore DNS without a route ID only after proving no Finance route or Custom
+Domain exists. Require an exclusive provider-writer window and fresh full
+identity reads immediately before each write; send conditional updates where
+the provider exposes a strong revision. These APIs do not guarantee atomic CAS,
+so report that remaining check/write window explicitly.
+
+After cutover, run smoke checks and watch 5xx rates, authentication failures,
+and p95 latency for 30 to 60 minutes. Roll back immediately on regression and
+report the observed outcome. Keep telemetry free of session tokens, user
+identities, and payment data.
+
+## Require Pay sandbox acceptance
+
+Pay's six pages cover the locale root, dashboard, login, token verification,
+workspace billing, and billing success. Its billing action module exports six
+functions for billing details, payment methods, billing address, and the
+customer portal. Preserve each action's current actor and permission checks.
+
+The 26 handlers include payment webhooks, checkout, subscription changes,
+seat changes, billing invoices, credits, auth, existing cron endpoints, and
+subscription migration endpoints. Inventory is not authority to invoke those
+jobs or migrations. Preserve Web fallback and local payment-route precedence.
+
+Before staging sign-off, run payment-provider sandbox acceptance for checkout
+completion/cancellation, signed webhook rejection and replay, subscription and
+seat changes, billing details, customer portal, and invoice delivery. Reuse the
+original operation identity when a write outcome is unknown. Do not send live
+payments or enable live provider bindings to obtain acceptance.
+
+## Close the migration gates
+
+Before applying a codemod update, inspect its plan for Finance's app-owned
+runtime suite, CI caller, and artifact wrapper. Preserve their strict mounted
+auth and CDP-fence assertions when adopting generated changes. The generated
+Worker uses the bridge's portable `AssetsBinding`; do not substitute DOM or
+global Workers request types.
+
+`finance-cloudflare.yaml` calls the reviewed reusable native Start workflow.
+It supplies the Finance artifact wrapper, the native type check, and a bounded
+workerd/Chromium acceptance command. The wrapper reuses the Apps seal/restore
+implementation with Finance's Worker identity, public files and
+`FINANCE_SOURCE_SHA`; its source tests reject drift and a generic SHA fallback.
+The workflow repeats runtime acceptance after restoring the sealed bytes.
+
+Only exact GET/HEAD `/api/build-info` are public. The proxy strips ambient
+cookies and Authorization before forwarding them and retains the shared API
+guard. Other methods and path lookalikes remain protected. The cutover smoke
+must compare this endpoint's `commitHash` with the sealed artifact's source SHA.
+
+The emitted suite covers public GET/HEAD build identity, negative method/path
+controls, anonymous API denial, signed-in synthetic EN/VI SSR, security headers,
+private response caching, function
+method/content-type admission, reserved Web routing and separate response
+cookies, bilingual auth and verification redirects, wildcard `Accept-Language`, root-mode
+assets and browser navigation. Browser redirects use the existing CDP fence because Playwright
+page routing does not intercept every redirect hop. Anonymous host-admission probes send a raw HTTP `Host` header to the disposable
+listener. Functional SSR uses the HTTPS SDK transport; the plain loopback
+listener cannot prove HTTPS redirects. SDK fetch defaults must not turn an
+apex or unknown host into an admitted root host. Each signed-in fixture accepts credentials only for its configured
+Finance origin; cross-host calls stay unadmitted and fail the egress assertion. Every Worker and browser request is bounded and fixture-fenced; the
+suite never authenticates to Cloudflare or a real provider. Production token
+verification runs on the server, so a missing token redirects and does not
+render a public React shell. Signed-in SSR uses synthetic auth, database, profile, overview and transaction-list
+responses; it exercises the emitted page adapter without live identities. The
+suite does not qualify authenticated UI hydration, Finance operations or hosted
+shared-session behavior. Those remain
+required staging acceptance, including workspace and mutation flows.
+
+Run exact-head unit, type, lint, and real `vp build` checks on a remote build host through
+`ttr resources run`, then seal the output and transfer it through the local hub for
+restored-runtime and browser acceptance on a build Mac. Keep its heavy work within
+the shared six-ticket and two-build limits; Finance has priority for an admitted
+build-Mac slot when required. Install frozen dependencies. Keep the local hub for
+editing and focused source checks; it runs no builds, Docker, or local Supabase.
+If its `check:changed` gate refuses admission, run the same committed source
+through a remote-host bundle. Never bypass the gate.
+
+An independent Claude review is required before integration. Conversion runs
+without `--hold`, preserving the existing Vercel publisher. No CI workflow
+publishes either Finance profile. `finance-cloudflare.yaml` qualifies both: the
+staging job, and a same-repository `native-production` job that builds with
+`VITE_FINANCE_NATIVE_PROFILE=production` and the `PRODUCTION_SUPABASE_PUBLISHABLE_KEY`
+repository variable. Native deploys are operator actions inside an approved
+custody window. The Vercel publisher (`vercel-production-finance.yaml`) still
+runs on `production` pushes, so freeze production sync for the flip and watch;
+a new Vercel deployment would move the alias the DNS-only rollback relies on.
+Finance owns its CSP in the app config. Preparation cannot stand in for the real
+Start build, provider sandbox, hosted acceptance, or cutover.

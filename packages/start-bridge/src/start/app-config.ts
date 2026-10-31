@@ -1,3 +1,4 @@
+import type { AppSeoPolicy } from '@tuturuuu/utils/seo-robots';
 import type { AppMountConfig } from '../core/mounts';
 
 /**
@@ -8,8 +9,21 @@ import type { AppMountConfig } from '../core/mounts';
  * generated files.
  */
 export interface BridgeAppConfig<Env = unknown> {
-  /** Content-Security-Policy for each response's nonce (`createBridgeHandler` `csp`). */
-  csp?: (nonce: string) => string;
+  /**
+   * Content-Security-Policy for each response's nonce (`createBridgeHandler`
+   * `csp`); `null` keeps the response's own policy. Framable paths (Web's
+   * uploaded WebGL builds) always keep their upstream policy.
+   */
+  csp?: (
+    nonce: string,
+    context: { request: Request; response: Response; path: string }
+  ) => string | null | undefined;
+  /**
+   * App-relative paths other origins may frame, beyond the platform list
+   * (`@tuturuuu/utils/framable-paths`): the handler `csp` and the response
+   * policy leave their upstream CSP untouched and set no `X-Frame-Options`.
+   */
+  framablePaths?: readonly RegExp[];
   /** Overrides of the generated mounts: hosts, `basePath`, `unknownHost`. */
   mounts?: Partial<Omit<AppMountConfig, 'app'>>;
   /**
@@ -21,10 +35,36 @@ export interface BridgeAppConfig<Env = unknown> {
     request: Request,
     context: { env: Env; path: string }
   ) => string | undefined;
-  /** Decorates every response the Worker returns (e.g. a staging noindex header). */
+  /**
+   * Generated Worker settings, applied by the codemod to `void.config.ts`,
+   * the sealed artifact identity and the runtime test (re-run it after a
+   * change; the runtime test fails on drift). `workersDev` defaults to off
+   * when `mounts.unknownHost` is `reject`, otherwise on; `compatibilityFlags`
+   * add to the always-on `nodejs_compat` and `global_fetch_strictly_public`.
+   */
+  worker?: {
+    workersDev?: boolean;
+    compatibilityFlags?: readonly string[];
+  };
+  /**
+   * Decorates every response the Worker returns; use
+   * `createRootResponsePolicy` from `@tuturuuu/start-bridge/response-policy`
+   * (robots, framing, sniffing, referrer and private caching). The generated
+   * Worker passes its effective `mounts` and `publicAssets`, so the config
+   * never imports generated modules.
+   */
   wrapResponse?: (
     response: Response,
-    context: { request: Request; env: Env }
+    context: {
+      request: Request;
+      env: Env;
+      /** Passed by Workers generated since the shared response policy. */
+      mounts?: Omit<AppMountConfig, 'app'> & { app?: string };
+      publicAssets?: ReadonlySet<string>;
+      framablePaths?: readonly RegExp[];
+      /** The app's seo-policy.json entry, emitted into the generated Worker. */
+      seoPolicy?: AppSeoPolicy | null;
+    }
   ) => Response | Promise<Response>;
 }
 

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { runInNewContext } from 'node:vm';
+import { evaluateExpression } from '../ci/github-expression-test-helper.js';
 
 const workflow = await readFile(
   new URL('../../.github/workflows/desktop-beta.yaml', import.meta.url),
@@ -120,20 +120,40 @@ test('public releases keep selected-platform matrix, checked receipts and proven
 test('failed matrix still permits only an existing verified subset, never empty publication', () => {
   assert.match(publish, /needs: \[build, release-status\]/);
   const expression = publish.match(/^ {4}if: (.+)$/m)[1];
+  const events = [
+    { eventName: 'push', labels: [], admitted: true },
+    { eventName: 'workflow_dispatch', labels: [], admitted: true },
+    { eventName: 'pull_request', labels: [], admitted: false },
+    { eventName: 'pull_request', labels: ['unrelated'], admitted: false },
+    { eventName: 'pull_request', labels: ['ready-for-ci'], admitted: true },
+    {
+      eventName: 'pull_request',
+      labels: ['unrelated', 'ready-for-ci'],
+      admitted: true,
+    },
+  ];
   for (const result of ['success', 'failure', 'skipped', 'cancelled']) {
-    const allowed = runInNewContext(
-      expression.replaceAll('needs.release-status', 'needs["release-status"]'),
-      {
-        always: () => true,
-        cancelled: () => false,
+    for (const { eventName, labels, admitted } of events) {
+      const allowed = evaluateExpression(expression, {
         needs: {
           build: { result },
           'release-status': { outputs: { enabled: 'true' } },
         },
-        github: { ref: 'refs/heads/production' },
-      }
-    );
-    assert.equal(allowed, result === 'success' || result === 'failure');
+        github: {
+          ref: 'refs/heads/production',
+          event_name: eventName,
+          event:
+            eventName === 'pull_request'
+              ? { pull_request: { labels: labels.map((name) => ({ name })) } }
+              : {},
+        },
+      });
+      assert.equal(
+        allowed,
+        admitted && (result === 'success' || result === 'failure'),
+        `${eventName}, labels=${labels.join(',')}, build=${result}`
+      );
+    }
   }
   const names = [
     'Select successful verified platforms',
@@ -152,4 +172,51 @@ test('failed matrix still permits only an existing verified subset, never empty 
   );
   assert.match(publish, /pattern: desktop-beta-\*/);
   assert.doesNotMatch(publish, /continue-on-error:/);
+});
+
+test('version derivation sees drafts and concurrency queues racing publishers', () => {
+  const status = workflow
+    .split('\n  release-status:\n')[1]
+    .split('\n  build:\n')[0];
+  assert.match(status, /permissions:\n {6}contents: write/);
+  assert.match(status, /version: \$\{\{ steps.version.outputs.version \}\}/);
+  assert.match(status, /GH_TOKEN: \$\{\{ github.token \}\}/);
+  assert.match(
+    status,
+    /run: node scripts\/desktop-deployment\/release-version\.mjs/
+  );
+  assert.match(
+    workflow,
+    /concurrency:\n {2}group: desktop-beta-\$\{\{ github.ref \}\}[^\n]*\n {2}cancel-in-progress: false\n {2}queue: max/
+  );
+  assert.match(
+    publish,
+    /if: failure\(\) && steps.publication.outputs.draft_tag != ''/
+  );
+  assert.match(
+    publish,
+    /DESKTOP_DRAFT_TAG: \$\{\{ steps.publication.outputs.draft_tag \}\}/
+  );
+  assert.match(
+    publish,
+    /run: node scripts\/desktop-deployment\/cleanup-draft\.mjs/
+  );
+});
+
+test('derived DESKTOP_VERSION reaches all three platform builds and publication', () => {
+  for (const job of [build, publish])
+    assert.match(
+      job,
+      /DESKTOP_VERSION: \$\{\{ needs.release-status.outputs.version \}\}/
+    );
+  for (const [name, flag] of [
+    ['Build Windows beta', '--build-name="$env:DESKTOP_VERSION"'],
+    ['Build macOS beta', '--build-name="$DESKTOP_VERSION"'],
+    ['Build Linux beta', '--build-name="$DESKTOP_VERSION"'],
+  ])
+    assert.ok(
+      step(name).includes(flag),
+      `${name} must embed the derived version`
+    );
+  assert.match(publish, /run: node scripts\/desktop-deployment\/publish\.mjs/);
 });

@@ -70,3 +70,11 @@ on signaling reconnection; both publication and subscription work stop while sol
 Private search reserves multi-query planning headroom, then charges actual usage.
 The unit-test CI job allows 20 minutes: a measured full-suite run passed all 52
 tasks in 14m22s but its setup and cleanup exceeded the previous 15-minute job limit.
+
+## Transcription quality
+
+Meet transcription is available with one or more participants while joined. Gemini remains the only speech provider. Client capture skips chunks whose 20 ms frame energy stays below the configurable capture threshold (default 0.000001); this is an energy heuristic, not semantic voice detection.
+
+The chunk endpoint accepts optional language (auto, vi, en, vi+en), glossary (800 characters), and meeting context (400 characters). These are recognition hints only. The provider bounds and escapes them inside an untrusted data section and preserves the spoken language. Normal capture sends the meeting title as context and defaults its optional language setting to auto. The browser locale is exposed as a suggestion for the future language picker. The glossary stays empty until workspace_meet_settings integration (#7264); this does not add settings UI or persist hints. Short-frame energy avoids diluting brief utterances across a full capture window, but remains a heuristic that can drop very quiet speech.
+
+Regression coverage: meeting-ai/voice-gate.test.ts, meeting-ai/eligibility.test.ts, meetings/transcription-hints.test.ts, and meetings/stt-provider.test.ts.

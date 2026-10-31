@@ -42,6 +42,7 @@ class AssistantComposerDock extends StatelessWidget {
     required this.onMicrophoneTap,
     required this.onSend,
     required this.onRemoveAttachment,
+    this.onRetryAttachment,
     this.repository,
     this.chatCubit,
     this.voiceCapture,
@@ -91,12 +92,15 @@ class AssistantComposerDock extends StatelessWidget {
   final Future<void> Function() onMicrophoneTap;
   final Future<void> Function() onSend;
   final Future<void> Function(String attachmentId) onRemoveAttachment;
+  final Future<void> Function(String attachmentId)? onRetryAttachment;
 
   @override
   Widget build(BuildContext context) {
-    final content = Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
+    const promptStyle = TextStyle(fontSize: 16, height: 1.25);
+    final rowHeight = assistantComposerHeight(context);
+    final content = AppComposerRow(
+      minHeight: rowHeight,
+      leading: [
         AssistantComposerOptions(
           localOnly: localOnly,
           localModelLabel: localModelLabel,
@@ -113,26 +117,29 @@ class AssistantComposerDock extends StatelessWidget {
           onCloseComposer: onCloseComposer,
           onDismissKeyboard: focusNode.unfocus,
         ),
-        Expanded(
-          child: ListenableBuilder(
-            listenable: focusNode,
-            builder: (context, _) => AppTextField(
-              key: const ValueKey('assistant-composer-editor'),
-              style: const TextStyle(fontSize: 16, height: 1.25),
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              controller: controller,
-              focusNode: focusNode,
-              minLines: 1,
-              maxLines: 5,
-              keyboardType: TextInputType.multiline,
-              textInputAction: TextInputAction.newline,
-              onTapOutside: (_) => focusNode.unfocus(),
-              placeholder: context.l10n.assistantAskPlaceholder,
-              hintMaxLines: 1,
-              borderless: true,
-            ),
+      ],
+      field: ListenableBuilder(
+        listenable: focusNode,
+        builder: (context, _) => AppTextField(
+          key: const ValueKey('assistant-composer-editor'),
+          style: promptStyle,
+          contentPadding: AppComposerRow.fieldPadding(
+            minHeight: rowHeight,
+            lineHeight: AppComposerRow.lineHeightOf(context, promptStyle),
           ),
+          controller: controller,
+          focusNode: focusNode,
+          minLines: 1,
+          maxLines: 5,
+          keyboardType: TextInputType.multiline,
+          textInputAction: TextInputAction.newline,
+          onTapOutside: (_) => focusNode.unfocus(),
+          placeholder: context.l10n.assistantAskPlaceholder,
+          hintMaxLines: 1,
+          borderless: true,
         ),
+      ),
+      trailing: [
         ValueListenableBuilder<TextEditingValue>(
           valueListenable: controller,
           builder: (context, value, _) {
@@ -217,6 +224,7 @@ class AssistantComposerDock extends StatelessWidget {
             AssistantComposerAttachments(
               attachments: chatState.composerAttachments,
               onRemove: onRemoveAttachment,
+              onRetry: onRetryAttachment,
             ),
           composer,
         ],

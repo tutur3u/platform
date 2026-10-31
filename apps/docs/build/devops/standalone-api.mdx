@@ -1,0 +1,179 @@
+---
+title: Standalone API Worker
+description: Manifest, policy, client generation, and retained-origin boundaries for apps/api.
+---
+
+`apps/api` is the standalone Cloudflare Worker foundation for `/api/*`. Its
+entrypoint is `fetch(Request, env, ctx)`. It pins `nodejs_compat` and the
+compatibility date to `2026-06-20`. The committed configuration has no zone
+routes, custom domains, preview URLs, or workers.dev publication. Deployment and
+traffic changes belong to the release owner.
+
+## Registry and middleware
+
+Export domain operations from `src/domains/` through `src/routes.ts`. Use
+`defineRoute` with a unique operationId, HTTP method, `/api/...` pattern, explicit
+policy, Zod input/output schemas, limits, aliases, and error encoding. Route
+parameters use OpenAPI braces, such as `/api/v1/workspaces/{wsId}/documents`.
+Services receive the resolved principal, request ID and AbortSignal through
+`RequestContext`. Keep database access in existing domain services and inject it
+through adapters. Do not add framework imports to portable services.
+
+The pipeline canonicalizes and matches the request, checks CORS and body/deadline
+budgets, runs the shared guard, resolves the principal once, verifies authorization
+evidence, parses input, runs the handler, validates output, and emits allowlisted
+native console metrics. Logs omit URLs, resource IDs, identities, credentials,
+request/response bodies, and exception messages. Timeouts never retry a handler.
+A write that outlives a timeout needs reconciliation with its original operation
+or idempotency key.
+
+`SecurityAdapter.guard` must preserve the active Web proxy's malformed Supabase
+cookie, suspicious anonymous traffic, abuse/cost, bans, rate and payload controls.
+Its principal resolver must preserve cookie/Bearer, audience, capability and
+service distinctions. Its authorizer must verify membership and permissions,
+including guest restrictions and root-admin permissions. The pipeline checks
+workspace evidence and object ownership against path parameters; an API key or
+external app must also match its bound workspace and scope.
+
+**Protected routes return 503 until a verified concrete security adapter is
+installed.** The foundation does not claim Web proxy parity from interfaces or
+fixtures. Only the three named public metadata examples have a closed exemption.
+The `ratePolicy` descriptor is an adapter contract; production rate/cost parity
+still requires the concrete guard. No ordinary route may use this exemption.
+
+The initial `defineRoute` adapter supports JSON responses and absent/JSON request
+bodies. Streaming, signed raw webhooks, binary responses and redirects require
+explicit additional transport contracts before registration. Do not label those
+payloads `z.unknown()` or consume signed bytes in JSON middleware.
+
+## Dispatch and retained origin
+
+`API_WORKER_OPERATIONS` is a comma-separated allowlist of accepted operationIds.
+Its default is empty: registering or merging code does not activate an operation.
+Only an explicitly enabled operation wins over the retained inventory for its
+method/path. Removing its ID restores retained dispatch; an unenabled new path
+without a retained owner fails closed. Ops owns this per-operation flip and rollback.
+`generated/retained-routes.json` records every live Web route source and its
+SHA-256. These are retained Next operations, not completed Worker ports.
+Unregistered paths return 404. Retained requests require `RETAINED_API_ORIGIN`:
+an HTTPS deployment hostname outside `*.tuturuuu.com`, without credentials,
+query, fragment or path. Pin it to an origin that bypasses the public Worker.
+
+Forwarding preserves the raw body, method, auth and cookie headers. It strips
+hop-by-hop and untrusted internal/forwarding headers, tags one hop, follows no
+redirects, and performs no retries. A returned hop marker fails closed. The
+retained Next application continues owning its proxy and route authorization.
+Before any traffic flip, ops and the auth owner must verify trusted client IP,
+canonical host/CSRF, repeated Set-Cookie, redirects, signatures and origin
+availability against that exact retained deployment. The foundation alone does
+not establish those deployment-specific contracts.
+
+The dispatch table lives in `apps/api`; no extra router Worker is needed for
+workspace IDs in the middle of a path. Keep sharp, bcrypt, Firebase Admin and
+persistent ChatGPT filesystem graphs on their existing Node/self-hosted owner.
+Do not import their graphs into the Worker to claim registry coverage.
+
+## Mobile version contract
+
+The consolidated mobile endpoint is
+`GET /api/v1/mobile/version?platform=ios|android&build=<integer>`.
+`MOBILE_VERSION_POLICY` is JSON with both platform entries:
+
+```json
+{
+  "ios": {
+    "minimumSupportedBuild": 42,
+    "latestBuild": 50,
+    "storeUrl": "https://apps.apple.com/app/example"
+  },
+  "android": {
+    "minimumSupportedBuild": 12,
+    "latestBuild": 15,
+    "storeUrl": "https://play.google.com/store/apps/details?id=example"
+  }
+}
+```
+
+These are fixture values, not production thresholds. Missing/invalid policy
+returns 503. A build below its platform floor receives `requiresUpdate: true`
+and `status: update-required`. At the floor, the build is supported; below the
+latest build it receives `update-recommended`. Responses are never cached.
+The mobile lane owns the forced-update screen and switches to consolidated
+contracts immediately under the program decision. External non-mobile aliases
+retain their existing wire contracts. The old semantic-version endpoint remains
+on the retained origin until its separate disposition is reviewed.
+
+Regression coverage lives in `apps/api/src/pipeline.test.ts`, with real emitted
+Worker acceptance in `scripts/worker-runtime.test.mjs`.
+
+## Generation and verification
+
+Run `bun run --cwd apps/api generate` after changing contracts or the Web route
+inventory. Commit the OpenAPI 3.1 spec, manifest, retained inventory and generated
+TypeScript/Dart clients together. `registry:check` fails stale artifacts and
+unregistered authored operation IDs. The first client generator supports the
+foundation JSON schema subset and fails on unsupported schemas; extend it with
+contract tests before adding new transports or complex schemas. Shared app HTTP
+consumers remain under `packages/internal-api`; mobile may inject its HTTP
+transport into the generated Dart client.
+
+`.github/workflows/api-worker.yaml` checks the exact PR head with frozen
+installation, registry checks, unit/contract tests, type, lint, real Vite+ Worker
+build and an emitted-runtime smoke using Wrangler's local workerd harness. There
+is no deploy step. The build uses `vp build --configLoader runner` until the
+shared preset loader fix is accepted.
+
+Run heavy checks on a remote build host through one `ttr resources run -- <job>` admission.
+Never build on the local hub. If its disk admission rejects `check:changed`, transfer the
+owned commit using a git bundle, verify its SHA in an isolated remote checkout,
+and run the unchanged gate there. Never bypass the disk gate. Independent
+security review, staging contracts, rollback rehearsal and ops approval remain
+required before a direct per-unit production flip.
+
+
+## Retained-route safety and origin attribution
+
+Every retained entry declares `sideEffects` and `shadow`. Unknown operations are
+`shadow: "never"`; `/api/v1/exchange-rates` and `/api/cron/**` explicitly declare
+writes and prohibit shadow/replay. The exchange-rate GET can seed data through a
+cron POST. Any future shadow/replay consumer must call
+`assertShadowReplayAllowed`, which requires both an explicit `shadow: "safe"`
+and `sideEffects: "read-only"` marker plus GET/HEAD. Only the audited health and
+build-info metadata reads initially have that marker.
+
+Generation fails if a broad Worker pattern could capture a more specific retained
+pattern that has no Worker registration, including aliases and intersecting
+parameter patterns. Register the specific path before the generic path. A method
+or requested preflight method owned only by the retained origin is forwarded;
+new Worker-only paths still return 405 for unsupported methods.
+
+The retained inventory covers `apps/web/src/app/api/**/route.ts` source files.
+Rewrite-only and proxy-only destinations are not discovered by that scan. Check
+Next rewrites and proxy ownership separately before selecting a production cohort;
+the filesystem inventory is not a complete routing map.
+
+Worker forwarding requires the existing `TRUSTED_PROXY_ORIGIN_SECRET` and a valid
+Cloudflare ingress `cf-connecting-ip`. It replaces caller-supplied
+`x-tuturuuu-origin-auth` with a versioned HMAC-SHA256 proof of the canonical client
+IP and timestamp. The proof uses the existing origin secret, remains valid for
+60 seconds, and permits at most five seconds of future clock skew. It carries no
+raw key. Missing/weak keys or invalid ingress addresses stop forwarding with 503.
+
+The retained Next origin must use `TRUSTED_PROXY=cloudflare-origin` and the same
+secret. Its shared resolver verifies the proof before deriving rate-limit keys.
+The raw-secret apex Transform Rule and direct-origin Vercel fallback continue to
+work. The proof authenticates client-IP attribution; existing session, permission
+and provider signature verification still run. Rotation changes the existing
+secret on both ends through the origin-trust runbook. Do not activate an operation
+before this contract and the exact retained deployment have passed acceptance.
+
+The build-free `check:changed` gate may discover the emitted-runtime test in a
+cold checkout. When `dist/worker/wrangler.json` is absent, discovery reports a
+clear skip without loading Wrangler or creating a harness. Explicit
+`bun run --cwd apps/api test:runtime` requires the artifact and fails if it is
+missing; CI runs that strict command after the real Worker build. An existing
+artifact always runs the runtime assertions, so a skip is never runtime proof.
+
+Automatic Worker invocation logs are disabled because they can include URLs and
+queries. Application request events retain their allowlisted metadata and request
+IDs. This setting does not make a claim about other platforms' logs.

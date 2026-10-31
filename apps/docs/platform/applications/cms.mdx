@@ -57,6 +57,32 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - Only platform admins can open `/internal/projects`.
 - Workspace member and role management lives on `/{wsId}/members`. Read paths resolve through CMS workspace access so editors with CMS access can load people, invites, roles, member defaults, and guest defaults without requiring direct workspace settings-route access. Write paths still respect member and role management permissions.
 
+### Studio enablement and canonical projects
+
+Product decision: enabling External Project Studio for a workspace and
+creating or changing `canonical_external_projects` rows are root platform-admin
+actions.
+
+- **Scope:** the root linking console, the root admin external-project routes,
+  and `POST /api/v1/workspaces/{wsId}/external-projects/setup`.
+- **Default:** a workspace does not have the studio until a root
+  external-project admin (`manage_external_projects` or
+  `manage_workspace_roles` in the root workspace) binds it. Every binding a root
+  admin creates through setup writes the same
+  `workspace_external_project_binding_audits` row as the linking console.
+- **Workspace managers:** creators, admins, and holders of workspace-level
+  `manage_external_projects` manage content, collections, and sync inside a
+  studio that is already enabled. They cannot run setup, enable the studio for
+  their own workspace, or change shared canonical project metadata; setup
+  returns `403` for them, including through CMS sessions and app tokens.
+- **Linked apps:** a linked app authenticating with its app credentials may call
+  setup only for the studio it is already bound to. Setup then refreshes that
+  workspace's field definitions and template only; it never creates a binding
+  or creates or alters a canonical project.
+- **Regression coverage:**
+  `apps/web/src/lib/external-projects/studio-setup.test.ts` and
+  `apps/web/src/app/api/v1/workspaces/[wsId]/external-projects/setup/route.test.ts`.
+
 ## API Ownership
 
 - `apps/cms` owns host-local auth/session and build-info routes. It also owns
@@ -130,3 +156,52 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - Production deployments run through `.github/workflows/vercel-production-cms.yaml`.
 - Both workflows are gated through `ci-check.yml` and the `tuturuuu.ts` workflow allowlist.
 - The Vercel project must be configured through the `VERCEL_CMS_PROJECT_ID` repository secret.
+
+## Native Start candidate
+
+The app's retained App Router pages and layouts are compiled through the
+shared Start bridge RSC adapter. Generate the native candidate with
+`node scripts/start-bridge-codemod/cli.mjs cms --apply`; rerun the generator
+instead of editing marked generated files. `bun run --cwd apps/cms
+type-check:cloudflare` checks the native entry and `bun run --cwd apps/cms
+build:cloudflare` runs the real Vite+ build on an admitted build host.
+
+The route registry compiles in the RSC environment so server-only imports
+retain their boundary. Server actions use the shared bridge action transport
+and existing CSRF checks. The router carries the request CSP nonce.
+
+The candidate admits only the canonical CMS root and its explicit staging
+hosts from `start-bridge.config.ts`. Apex `/cms` and unknown hosts return 404
+before application dispatch or network access. Apex stays held until the
+shared-session decision and auth guard are admitted; the same artifact can
+support a mount after that separate review. This policy is covered by
+`apps/cms/src/runtime/root-host-policy.test.ts` and the emitted Worker gate.
+Hosted staging uses `<app>.staging.tutur3u.com`; `workers.dev` hosts are not admitted.
+Every response is noindex, nofollow and nosnippet. Non-assets force private,
+no-store and vary by Cookie, Authorization and Accept-Language; static cache
+exemptions require GET/HEAD, status 200 and non-HTML without cookies.
+The response wrapper preserves upstream CSP restrictions and denies framing.
+Only the exact workspace external-project asset `/webgl` path and descendants
+retain their upstream sandbox CSP unchanged and omit X-Frame-Options. A
+handler-level CSP would replace that sandbox, so this app uses the response
+wrapper instead. `response-policy.test.ts` covers both the sandbox exception
+and its neighbouring paths, cache overrides, indexing and response preservation.
+Production remains on its existing publisher until an explicit cutover-preparation PR. That PR
+requires an app-specific enforced CSP policy, exact-source sealed artifact,
+runtime and authenticated browser acceptance, and an immediate rollback.
+
+At `/cms`, middleware relies on Web's shared Supabase session and does not
+refresh, exchange or clear satellite sessions. Legacy session-writing API
+endpoints return 409 on that mount; the host-root flow keeps its existing
+behavior. Page loaders and API handlers still validate the actor and CMS
+permissions. Machine-key APIs retain their ambient-cookie removal and route
+authentication. Mounted-session and redirect regressions are covered by
+`apps/cms/src/proxy.test.ts`.
+
+## Machine credential binding
+
+Machine synchronization credentials must match the enabled workspace binding.
+Built-in projects match their registered adapter id; custom projects match the
+canonical project id. The shared `custom` adapter name grants no project access.
+This follows the same identity rule as app-token handoff. Coverage:
+`apps/web/src/lib/external-projects/app-credentials.test.ts`.

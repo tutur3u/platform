@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import {
+  captureAfter,
   captureSettings,
   compareSettings,
   describeToken,
@@ -26,13 +27,36 @@ const identity = {
 };
 function fixture(overrides = {}, target = identity) {
   const responses = {
+    service: {
+      default_environment: { script: { last_deployed_from: 'cf_cli' } },
+    },
     settings: {
       compatibility_date: target.compatibilityDate,
       compatibility_flags: target.compatibilityFlags,
       observability: { enabled: true, head_sampling_rate: 0.05 },
-      bindings: [
-        { name: 'ORIGIN', type: 'plain_text', text: 'private-fixture-value' },
-      ],
+      bindings: target.vars
+        ? [
+            ...Object.entries(target.vars).map(([name, text]) => ({
+              name,
+              type: 'plain_text',
+              text,
+            })),
+            ...target.secrets.map((name) => ({ name, type: 'secret_text' })),
+            ...Object.entries(target.durableObjects ?? {}).map(
+              ([name, { className }]) => ({
+                name,
+                type: 'durable_object_namespace',
+                class_name: className,
+              })
+            ),
+          ]
+        : [
+            {
+              name: 'ORIGIN',
+              type: 'plain_text',
+              text: 'private-fixture-value',
+            },
+          ],
     },
     subdomain: { enabled: true, previews_enabled: true },
     schedules: { schedules: target.crons.map((cron) => ({ cron })) },
@@ -54,7 +78,11 @@ function fixture(overrides = {}, target = identity) {
       assert.equal(init.redirect, 'error');
       assert.ok(init.signal instanceof AbortSignal);
       calls.push(url);
-      const key = url.includes('/zones?') ? 'zones' : url.split('/').at(-1);
+      const key = url.includes('/workers/services/')
+        ? 'service'
+        : url.includes('/zones?')
+          ? 'zones'
+          : url.split('/').at(-1);
       assert.ok(Object.hasOwn(responses, key), `unexpected endpoint ${url}`);
       return {
         ok: true,
@@ -73,7 +101,7 @@ const options = (api, target = identity) => ({
 test('settings readback retains rollback identity, compares settings, and omits text values', async () => {
   const api = fixture();
   const before = await captureSettings(options(api));
-  assert.equal(api.calls.length, 7);
+  assert.equal(api.calls.length, 8);
   assert.equal(before.rollback[0].versions[0].version_id, 'old');
   assert.ok(!JSON.stringify(before).includes('private-fixture-value'));
   const after = structuredClone(before);
@@ -83,6 +111,31 @@ test('settings readback retains rollback identity, compares settings, and omits 
   assert.throws(() => compareSettings(before, after), /acceptance is blocked/);
 });
 
+for (const source of ['cf_cli', 'cf', 'wrangler']) {
+  test(`strict after-check admits deployment source ${source}`, async () => {
+    const api = fixture({
+      service: {
+        default_environment: { script: { last_deployed_from: source } },
+      },
+    });
+    const after = await captureAfter({
+      plan: { target: identity },
+      ...options(api),
+    });
+    assert.equal(after.rollback[0].versions[0].version_id, 'old');
+  });
+}
+
+test('strict after-check rejects an unknown deployment source', async () => {
+  const api = fixture({
+    service: { default_environment: { script: { last_deployed_from: 'foo' } } },
+  });
+  await assert.rejects(
+    captureAfter({ plan: { target: identity }, ...options(api) }),
+    /Worker deployment source unavailable/
+  );
+});
+
 test('account mismatch fails before network access', async () => {
   const api = fixture();
   await assert.rejects(
@@ -90,6 +143,216 @@ test('account mismatch fails before network access', async () => {
     /account/
   );
   assert.equal(api.calls.length, 0);
+});
+
+test('object snapshots tolerate list metadata without discarding object fields', async () => {
+  const api = fixture();
+  const expected = await captureSettings(options(api));
+  const fetchImpl = async (url, init) => {
+    const response = await api.fetchImpl(url, init);
+    const body = await response.json();
+    if (!Array.isArray(body.result) && !url.endsWith('/deployments'))
+      body.result_info = { page: 1, per_page: 20, total_pages: 2 };
+    return { ok: true, json: async () => body };
+  };
+  assert.deepEqual(
+    await captureSettings({ ...options(api), fetchImpl }),
+    expected
+  );
+});
+
+function paginated(endpoint, pages, metadata = {}, field) {
+  const api = fixture();
+  const calls = [];
+  return {
+    calls,
+    fetchImpl: async (url, init) => {
+      const parsed = new URL(url);
+      if (!parsed.pathname.endsWith(endpoint)) return api.fetchImpl(url, init);
+      assert.equal(init.redirect, 'error');
+      assert.equal(init.method, 'GET');
+      calls.push(parsed);
+      const page = Number(parsed.searchParams.get('page') ?? 1);
+      return {
+        ok: true,
+        json: async () => ({
+          success: true,
+          result: field ? { [field]: pages[page - 1] } : pages[page - 1],
+          result_info: {
+            page,
+            per_page: 1,
+            total_pages: pages.length,
+            ...metadata,
+          },
+        }),
+      };
+    },
+  };
+}
+
+test('snapshot reads all secret pages before verifying required names', async () => {
+  const api = paginated('/secrets', [[{ name: 'EXTRA' }], [{ name: 'TOKEN' }]]);
+  const snapshot = await captureSettings(options(api));
+  assert.deepEqual(snapshot.secrets, ['EXTRA', 'TOKEN']);
+  assert.deepEqual(
+    api.calls.map((url) => url.searchParams.get('page')),
+    [null, '2']
+  );
+});
+
+test('a custom domain hidden on page two still blocks publication', async () => {
+  const api = paginated('/domains', [
+    [{ service: 'other' }],
+    [{ service: 'fixture', hostname: 'private.example' }],
+  ]);
+  await assert.rejects(
+    captureSettings(options(api)),
+    /unexpected Worker custom domains/
+  );
+  assert.equal(api.calls.length, 2);
+});
+
+test('twenty pages of deployment history retain only the current traffic split', async () => {
+  const api = paginated(
+    '/deployments',
+    [
+      [
+        {
+          id: 'current',
+          versions: [
+            { version_id: 'current-version', percentage: 75 },
+            { version_id: 'canary-version', percentage: 25 },
+          ],
+        },
+      ],
+      [
+        {
+          id: 'previous',
+          versions: [{ version_id: 'previous-version', percentage: 100 }],
+        },
+      ],
+    ],
+    { total_pages: 20 },
+    'deployments'
+  );
+  const snapshot = await captureSettings(options(api));
+  assert.deepEqual(snapshot.rollback, [
+    {
+      id: 'current',
+      versions: [
+        { percentage: 25, version_id: 'canary-version' },
+        { percentage: 75, version_id: 'current-version' },
+      ],
+    },
+  ]);
+  assert.equal(api.calls.length, 1);
+});
+
+for (const history of [
+  [],
+  [null],
+  [{ id: 'missing-versions' }],
+  [{ id: 'invalid-split', versions: [{ version_id: 'v', percentage: 90 }] }],
+]) {
+  test(`unavailable active deployment fails closed: ${JSON.stringify(history)}`, async () => {
+    const api = paginated(
+      '/deployments',
+      [history],
+      { total_pages: 20 },
+      'deployments'
+    );
+    await assert.rejects(
+      captureSettings(options(api)),
+      /active deployment rollback target unavailable for GET/
+    );
+    assert.equal(api.calls.length, 1);
+  });
+}
+
+test('a non-first deployment page is not accepted as current state', async () => {
+  const api = paginated(
+    '/deployments',
+    [[{ id: 'history', versions: [{ version_id: 'v', percentage: 100 }] }]],
+    { page: 2, total_pages: 20 },
+    'deployments'
+  );
+  await assert.rejects(
+    captureSettings(options(api)),
+    /active deployment rollback target unavailable/
+  );
+});
+
+for (const [label, pages, metadata, error] of [
+  [
+    'page budget',
+    [[{ name: 'TOKEN' }]],
+    { total_pages: 9 },
+    /page budget exceeded/,
+  ],
+  [
+    'repeated page',
+    [[{ name: 'TOKEN' }], [{ name: 'TOKEN' }]],
+    {},
+    /repeated a page/,
+  ],
+  [
+    'wrong page',
+    [[{ name: 'TOKEN' }], [{ name: 'EXTRA' }]],
+    { page: 1 },
+    /did not advance/,
+  ],
+  [
+    'invalid metadata',
+    [[{ name: 'TOKEN' }]],
+    { total_pages: 'private-canary' },
+    /invalid pagination/,
+  ],
+  [
+    'truncated count',
+    [[{ name: 'TOKEN' }]],
+    { total_count: 2 },
+    /total count differs/,
+  ],
+]) {
+  test(`list pagination rejects ${label} with a safe endpoint diagnostic`, async () => {
+    const api = paginated('/secrets', pages, metadata);
+    await assert.rejects(captureSettings(options(api)), (failure) => {
+      assert.match(failure.message, error);
+      assert.match(
+        failure.message,
+        /GET \/accounts\/fixture-account\/workers\/scripts\/fixture\/secrets$/
+      );
+      assert.ok(!failure.message.includes('private-canary'));
+      return true;
+    });
+    assert.ok(api.calls.length <= 2);
+  });
+}
+
+test('pagination preserves the shared 28-request snapshot budget', async () => {
+  const zones = Array.from({ length: 20 }, (_, index) => ({
+    id: index.toString(16).padStart(32, '0'),
+  }));
+  const api = fixture({ zones });
+  const secrets = paginated('/secrets', [
+    [{ name: 'A' }],
+    [{ name: 'B' }],
+    [{ name: 'TOKEN' }],
+  ]);
+  let calls = 0;
+  const fetchImpl = async (url, init) => {
+    calls++;
+    if (new URL(url).pathname.endsWith('/secrets'))
+      return secrets.fetchImpl(url, init);
+    if (url.endsWith('/workers/routes'))
+      return { ok: true, json: async () => ({ success: true, result: [] }) };
+    return api.fetchImpl(url, init);
+  };
+  await assert.rejects(
+    captureSettings({ ...options(api), fetchImpl }),
+    /request budget exceeded for GET/
+  );
+  assert.equal(calls, 28);
 });
 
 for (const [label, change, error] of [
@@ -378,7 +641,7 @@ test('Coordination snapshots retain the required token with one bounded secret r
       1,
       phase
     );
-    assert.equal(api.calls.length, 7, phase);
+    assert.equal(api.calls.length, 8, phase);
     assert.equal(
       api.calls.find((url) => url.endsWith('/secrets')),
       `https://api.cloudflare.com/client/v4/accounts/${coordination.accountId}/workers/scripts/${coordination.name}/secrets`,

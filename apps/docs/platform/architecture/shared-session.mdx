@@ -1,0 +1,68 @@
+---
+title: "Shared session"
+description: "Product rules for the one Tuturuuu session shared by Web and every app: who can read it, how logout works, and which credentials can be minted from it."
+---
+
+Every Tuturuuu web app, whether on its own subdomain or mounted at
+`tuturuuu.com/<app>`, uses one signed-in session. These are the customer-facing
+rules for that session. The implementation and rollout live in
+[Start bridge](/build/devops/start-bridge#shared-session-on-the-apex-decision-b-server-held-session).
+
+**Scope:** Web and every satellite app in a browser. **Exceptions:** the mobile
+app and the CLI hold bearer tokens in native secure storage and keep their own
+sign-in flows; see [Authentication](/platform/architecture/authentication#raw-session-tokens-are-native-only).
+
+Status: **Enforced** means the rule is live in code with the listed regression
+coverage. **Planned** means it is approved and scheduled in the shared-session
+plan, with its owner PR not yet merged.
+
+## Who can read the session
+
+| Rule | Default | Status |
+| --- | --- | --- |
+| The session cookie is `HttpOnly`, `Secure`, `SameSite=Lax`; page script cannot read it | Applies to every browser session | Planned (Stage A) |
+| No auth endpoint returns a raw access or refresh token to a browser request; only native clients (no `Origin`, no Fetch Metadata) receive token pairs | Always | Enforced: `lib/auth/password.test.ts`, `lib/auth/otp.test.ts`, `__tests__/mobile-session-browser-fence-route.test.ts` |
+| No endpoint exports the session or its cookies as JSON | Always | Enforced (`/api/auth/me/session` removed) |
+| Browser code never holds a session token in Web Storage, IndexedDB or the Cache API | Always | Planned (browser-surface guard) |
+
+## Logout
+
+| Rule | Default | Status |
+| --- | --- | --- |
+| **Log out** ends the session in this browser, for Web and every app in it at once | Default action | Partially enforced: Web logout signs out locally |
+| **Log out everywhere** ends every session of the account on every device | Explicit second action | Planned |
+| Logout clears site cookies with `Clear-Site-Data: "cookies"`, so subdomain app sessions in the same browser end too | Always | Planned |
+| Logout never clears local app data (`"storage"` is not sent), so unsent drafts survive | Always | Planned |
+| Logout and a password change revoke outstanding cross-app handoff tokens | Always | Enforced |
+| After logout, another app on a subdomain stops accepting the session within 15 minutes | 15 min bound | Planned (app access-token lifetime 8 h to 15 min) |
+| A signed-out session's access token stops working within 15 minutes | 15 min bound | Planned (hosted access-token lifetime 60 min to 15 min) |
+
+## Credentials minted from a signed-in session
+
+| Credential | Rule | Status |
+| --- | --- | --- |
+| Cross-app handoff token | Lasts at most 60 s (300 s for CLI copy-paste), is single use, and is only for a known app or an enabled registered external app | Pending (#6840) |
+| CLI login token | Issued only to a top-level browser navigation; the copy page renders in an isolated origin | Enforced: `app/api/cli/auth/start/route.test.ts`, `apps/web/next.config.test.ts` |
+| Realtime join ticket | Lasts 60 s, covers one topic, cannot become a session | Enforced (existing) |
+| Storage download/upload link | One object; private links last at most 15 minutes | Planned clamp |
+| API keys, CLI device approval, QR-login approval, external-app exchange, passkey registration, MFA changes, email or password change, account deletion | Require a recent step-up (passkey user verification, or password plus second factor, within 5 minutes) on a Web page | Planned |
+
+## Cross-site protection
+
+Cookie-authenticated changes are accepted only from the same origin. Requests
+from other sites and from sibling `*.tuturuuu.com` subdomains are rejected.
+Bearer (mobile, CLI) requests are unaffected. Status: Planned (report mode
+first, then enforce).
+
+## Local browser verification
+
+With `TUTURUUU_LOCAL_E2E_AUTH_BYPASS=1` and an HTTP loopback
+`NEXT_PUBLIC_SUPABASE_URL`, satellite cookie cleanup preserves the configured
+Supabase session cookie on `localhost` and `127.0.0.1`. Cookies are shared across
+ports, so expiring that cookie from Tasks also signs the browser out of Web.
+This applies to local verification across Web and satellites; the default
+without the bypass continues to clear unsupported cookies. Unrelated hosts and
+cloud Supabase configuration do not enable this exception. Production shared
+domain behavior is unchanged. Regression coverage lives in
+`packages/auth/src/app-session-local-cookies.test.ts`; the browser lifecycle spec
+covers signup, workspace creation, invitations and task CRUD.

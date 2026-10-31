@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/components/app_loading_indicator.dart';
 import 'package:mobile/data/models/time_tracking/stats.dart';
 import 'package:mobile/features/profile/view/profile_activity_chart.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class SharedActivitySheet extends StatefulWidget {
   const SharedActivitySheet({
@@ -71,7 +71,7 @@ class _SharedActivitySheetState extends State<SharedActivitySheet> {
               if (_failed)
                 Text(l10n.profileSharedActivityUnavailable)
               else if (stats == null)
-                const Center(child: NovaLoadingIndicator())
+                const AppLoadingIndicator()
               else ...[
                 for (final entry in [
                   (l10n.timerToday, stats.todayTime),

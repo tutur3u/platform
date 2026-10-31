@@ -8,7 +8,6 @@ import 'package:mobile/features/assistant/cubit/assistant_memory_editor_cubit.da
 import 'package:mobile/features/assistant/cubit/assistant_personal_settings_cubit.dart';
 import 'package:mobile/features/assistant/widgets/assistant_settings_action.dart';
 import 'package:mobile/l10n/l10n.dart';
-import 'package:mobile/widgets/nova_loading_indicator.dart';
 
 class AssistantMemoryEditor extends StatefulWidget {
   const AssistantMemoryEditor({
@@ -88,10 +87,11 @@ class _AssistantMemoryEditorState extends State<AssistantMemoryEditor> {
             if (state.loading && state.memory == null)
               Semantics(
                 label: l.commonLoading,
-                child: const Center(child: NovaLoadingIndicator(size: 20)),
+                child: const AppLoadingIndicator.page(),
               ),
             if (state.memory != null)
               AppTextFormField(
+                placeholder: context.l10n.inputPlaceholderAssistantMemory,
                 key: const ValueKey('assistant-memory-edit-field'),
                 controller: _text,
                 minLines: 3,

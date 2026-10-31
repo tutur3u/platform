@@ -1,3 +1,4 @@
+\ir helpers/local-dblink.inc
 -- Independent committed sessions exist only inside the owned disposable database.
 -- The canonical lifecycle destroys that entire database after this rollback packet.
 begin;
@@ -7,13 +8,17 @@ set local search_path=public,extensions;
 select plan(10);
 do $setup$
 begin
-  perform dblink_connect('profile_a',format('dbname=%L user=%L',current_database(),current_user));
-  perform dblink_connect('profile_b',format('dbname=%L user=%L',current_database(),current_user));
+  perform dblink_connect('profile_a',pg_temp.fixture_dblink_connstr());
+  perform dblink_connect('profile_b',pg_temp.fixture_dblink_connstr());
   perform dblink_exec('profile_a',$remote$
     begin;
     set local statement_timeout='10s'; set local lock_timeout='1s';
     insert into auth.users(id,email,email_confirmed_at,raw_app_meta_data,raw_user_meta_data) values
     ('00000000-0000-4000-8000-000000013001','concurrent-admin@tuturuuu.com',now(),'{}','{}');
+    -- A confirmed address alone is not a verified staff identity.
+    insert into auth.identities(provider_id,user_id,provider,identity_data)
+    select id::text,id,'email',jsonb_build_object('sub',id::text,'email',email)
+    from auth.users where id='00000000-0000-4000-8000-000000013001';
     insert into public.workspaces(id,name,creator_id,personal) values
     ('00000000-0000-0000-0000-000000000000','Concurrent profile fixture','00000000-0000-4000-8000-000000013001',false)
     on conflict(id) do update set creator_id=excluded.creator_id;
@@ -105,3 +110,4 @@ select dblink_disconnect('profile_a');
 select dblink_disconnect('profile_b');
 select * from finish();
 rollback;
+

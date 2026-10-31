@@ -12,8 +12,11 @@ import 'package:mobile/features/apps/view/apps_hub_results.dart';
 import 'package:mobile/features/apps/widgets/app_card_palette.dart';
 import 'package:mobile/features/apps/widgets/apps_picker_editor.dart';
 import 'package:mobile/features/apps/widgets/apps_reorder_grid.dart';
+import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/shell/view/floating_shell_dock.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 import 'package:mobile/widgets/staggered_entrance.dart';
 
 class AppsHubPage extends StatefulWidget {
@@ -59,6 +62,17 @@ class _AppsHubPageState extends State<AppsHubPage> {
     );
   }
 
+  // Pull-to-refresh re-checks the access-gated entries, so an access check
+  // that failed once does not keep an app hidden until the workspace changes.
+  Future<void> _refresh() async {
+    final access = context.read<MastermindAccessCubit?>();
+    if (access == null) return;
+    await access.sync(
+      context.read<WorkspaceCubit?>()?.state.currentWorkspace?.id,
+      quiet: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cubit = context.watch<AppTabCubit>();
@@ -74,58 +88,69 @@ class _AppsHubPageState extends State<AppsHubPage> {
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onTap: _ordering ? () => setState(() => _ordering = false) : null,
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(
-          parent: AlwaysScrollableScrollPhysics(),
-        ),
-        slivers: [
-          if (modules.isEmpty)
-            SliverAppPage(
-              kind: AppPageKind.root,
-              topInset: topInset,
-              sliver: SliverFillRemaining(
-                hasScrollBody: false,
-                child: Center(child: Text(context.l10n.appsNoMatches)),
-              ),
-            )
-          else
-            SliverAppPage(
-              kind: AppPageKind.root,
-              topInset: topInset,
-              sliver: SliverMainAxisGroup(
-                slivers: [
-                  if (shown.isNotEmpty)
-                    _modulesSliver(shown, hidden: false, hiddenModules: hidden),
-                  if (hidden.isNotEmpty) ...[
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          top: shown.isEmpty ? 0 : AppLayout.sectionGap,
-                          bottom: AppLayout.itemGap,
-                        ),
-                        child: Row(
-                          children: [
-                            const Expanded(child: Divider()),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
+      child: NovaRefreshIndicator(
+        onRefresh: _refresh,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(
+            parent: AlwaysScrollableScrollPhysics(),
+          ),
+          slivers: [
+            if (modules.isEmpty)
+              SliverAppPage(
+                kind: AppPageKind.root,
+                topInset: topInset,
+                sliver: SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(child: Text(context.l10n.appsNoMatches)),
+                ),
+              )
+            else
+              SliverAppPage(
+                kind: AppPageKind.root,
+                topInset: topInset,
+                sliver: SliverMainAxisGroup(
+                  slivers: [
+                    if (shown.isNotEmpty)
+                      _modulesSliver(
+                        shown,
+                        hidden: false,
+                        hiddenModules: hidden,
+                      ),
+                    if (hidden.isNotEmpty) ...[
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            top: shown.isEmpty ? 0 : AppLayout.sectionGap,
+                            bottom: AppLayout.itemGap,
+                          ),
+                          child: Row(
+                            children: [
+                              const Expanded(child: Divider()),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                ),
+                                child: Text(
+                                  context.l10n.appsHiddenSection,
+                                  style: Theme.of(context).textTheme.labelLarge,
+                                ),
                               ),
-                              child: Text(
-                                context.l10n.appsHiddenSection,
-                                style: Theme.of(context).textTheme.labelLarge,
-                              ),
-                            ),
-                            const Expanded(child: Divider()),
-                          ],
+                              const Expanded(child: Divider()),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    _modulesSliver(hidden, hidden: true, hiddenModules: hidden),
+                      _modulesSliver(
+                        hidden,
+                        hidden: true,
+                        hiddenModules: hidden,
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

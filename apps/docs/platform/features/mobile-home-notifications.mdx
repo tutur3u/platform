@@ -11,13 +11,37 @@ with the redesign.
 ## Home
 
 - **Header.** Today's date, a time-of-day greeting with the profile display
-  name when one is set ("Good morning, Linh"), and a workspace switcher pill
-  that opens the existing workspace picker. The shell navbar keeps the "Home"
-  title, so the greeting is not a second page title.
+  name when one is set ("Good morning, Linh"), and the workspace switcher: a
+  scrolling row of workspace chips followed by **More**. The shell navbar
+  keeps the "Home" title, so the greeting is not a second page title.
+- **Workspace chips.** With fewer than five workspaces, every workspace has a
+  chip. From five on, the chips are the user's pinned workspaces in pin order,
+  led by the current workspace when it is not pinned. Tapping a chip switches
+  the current workspace, as the picker does. **More** lists the workspaces
+  without a chip, then Find workspace (the existing picker and its search),
+  Edit pinned workspaces (from five workspaces) and New workspace. From five
+  workspaces, a long press on a chip (or its screen-reader action) pins or
+  unpins it. Pins are stored per user, not per device, in the
+  `MOBILE_PINNED_WORKSPACES` user config through `/api/v1/users/me/configs`.
+  They are fetched only from five workspaces, and edits wait until the stored
+  pins have loaded, so a failed load never overwrites them. A failed load
+  retries after 2, 8 and 30 seconds and again when the app resumes. Saves run
+  one at a time, and an edit made while a save is in flight (for example
+  behind a security check) replaces any queued edit, so only the latest list
+  is written and saves never race. The latest edit is still written if Home
+  closes meanwhile, but not after its account signs out or switches. A failed
+  latest save restores the last stored pins, and the Edit pinned workspaces checkboxes follow what is
+  stored, not the tap. Chip pills are 44dp tall with 48dp
+  touch targets, and long names ellipsize inside a chip while the row
+  scrolls.
 - **Widgets.** The existing widgets keep their order, visibility and
-  **Customize Home** editor: assigned tasks, upcoming events, mail, meetings,
-  finance, notes and the Today summary. Each widget is a caption with an
-  **Open** link above one grouped card.
+  **Customize Home** editor. The tasks widget shows two sections: **Today**
+  (overdue first, then due today) and **Up next** (later due dates), up to
+  three tasks each without repeats. The calendar widget is **Calendar** (timed
+  events in the next seven days). Mail, meetings, finance, notes and the Today
+  summary follow. Each section is a caption with a **See all** (task and
+  calendar sections) or **Open** link above one grouped card. Widget IDs did
+  not change, so saved Customize Home layouts carry over.
 - **Task rows** show the due state first: Overdue (destructive tone), Today
   (warning), Tomorrow (primary) or the localized date, then board and list.
   **Event rows** show a calendar-leaf date tile, weekday and time.
@@ -28,6 +52,29 @@ with the redesign.
   at least 340dp: one column on phones, two on portrait tablets and up to
   three on laptops and desktops. The header puts the switcher beside the
   greeting from 560dp of content width.
+
+## Native pass navigation rules
+
+These decisions govern the planned native pass
+([plan](/build/development-tools/mobile-native-pass-plan)). They apply to every
+new or reworked mobile screen on Android and iOS.
+
+- **Back stays on the floating dock.** Screens add no top-left back chevron,
+  and shell bodies add no second title bar. A screen's trailing actions (for
+  example task detail's complete, share and overflow) are shell chrome actions.
+  System Back and deep-link fallbacks keep working.
+- **Workspace chips on Home.** The chip row starts with All, then the user's
+  pinned workspaces, then **More**. **More** lists the remaining workspaces
+  plus Find, Manage and New Workspace. With fewer than five workspaces, every
+  workspace gets a chip and **More** holds only those commands. Pins belong to
+  the user and are never shared.
+- **Light mode and large text.** Every new screen ships in light and dark mode
+  and supports large Dynamic Type: text scales without clipping (wrapping or
+  scaling down inside its own control), and touch targets are at least 44pt.
+  Regression tests render at 320x568 with 2x text in both modes.
+
+These rules are planned, not shipped, except where a phase PR records its own
+coverage.
 
 ## Notifications
 
@@ -76,3 +123,11 @@ occurrence projected into a different calendar day.
   covers calendar-day bucketing and feed-order preservation.
 - `test/core/layout/grouped_rows_test.dart` covers tones, row targets and
   state actions.
+- `test/features/dashboard/view/home_workspace_chips_test.dart` covers the
+  chip rules (all chips below five workspaces, pins in order led by an
+  unpinned current workspace, stale pins skipped), switching, the More menu,
+  pinning per user, serialized latest-wins saves (kept after Home unmounts,
+  dropped after sign-out), failed-save rollback to the stored pins and
+  2x text at 320dp. The render
+  cases above assert the Today, Up next and Calendar sections and screen-reader
+  activation of More and See all.

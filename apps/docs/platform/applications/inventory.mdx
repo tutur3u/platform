@@ -45,6 +45,41 @@ also works when IntersectionObserver is unavailable. Regression evidence lives
 in `sale-picker-pagination.test.tsx` and `season-sale-integration.test.tsx`;
 these mounted tests do not establish live browser/provider success.
 
+## Browser offline behavior
+
+Inventory web keeps service-worker registration disabled. Its layout explicitly
+uses `OfflineProvider register={false}` because Inventory has no worker source or
+`/serwist/sw.js` route. Moving its routes onto the shared Start bridge does not
+enable a worker or add precaching. Mobile offline storage is a separate surface.
+
+The existing `inventory-offline-create-v1` mutation endpoint retains its contract
+header, stable operation identity, current actor/workspace permissions on every
+retry, HTTP 201 for a first commit and HTTP 200 for a receipt replay. Missing
+contract support returns its existing error; the bridge must not retry with a
+legacy create request. Offline or stale checkout stays blocked, and season-merge
+recovery retains its actor/workspace-scoped original request across reloads.
+
+The bridge route-port regression is `src/start-bridge/offline-handler.test.ts`;
+its domain and proxy boundaries use fixtures. The shared inventory-core offline
+tests, `season-sale-prices.test.tsx`, `use-season-merge-recovery.test.tsx` and the
+missing-worker registration regression remain required. These tests do not
+substitute for an emitted Worker and browser offline acceptance.
+
+## Storefront checkout return locations
+
+Cash receipts, Square Terminal receipts, Square POS fallback links and Polar
+return flows use the shopper's Storefront mount. On the apex this is
+`https://tuturuuu.com/storefront`; a Storefront subdomain retains its origin.
+The bridge request context supplies the current origin and mount. API forwarding
+also preserves the canonical apex shopper's `Origin`; unrelated Origin values
+cannot select a return host.
+
+An explicit `NEXT_PUBLIC_STOREFRONT_APP_URL` takes precedence, followed by
+`STOREFRONT_APP_URL`. These configured URLs retain their path and continue to
+override request-derived mounts. `route-return-urls.test.ts` covers each payment
+flow, configuration precedence, forwarded requests and the cash receipt returned
+after a completed payment's enrichment fails.
+
 ## Native Inventory presentation
 
 The Flutter mini-app keeps Overview, Products, Sales, Manage and Storefront
@@ -54,13 +89,44 @@ Manage keeps every setup collection and its permitted add action visible without
 a second counter dashboard. Season selection, creation, editing and archiving
 remain visible on Sales.
 
-Product summaries show metadata once and keep each quantity and price beside its
-warehouse and unit. Quantities across different units are not summed. A null
-quantity means unlimited stock and must never display as zero or a low-stock
-warning. An absent stock row is shown as unconfigured. The Products low-stock
-count covers loaded search results, not the entire catalog. Native presentation
-does not change server permissions, mutation authorization, or canonical workspace
-membership. Existing pending-sync indicators remain attached to their owning rows.
+Products is a scan-and-search item list. The shell navbar owns search (server
+`q`, which matches product names) and, on iOS and Android, a scan action. Each
+row shows the name, the category, an Archived label when relevant, and up to three
+locations as "warehouse · unit" with the quantity at the trailing edge, then
+"N more locations". Prices, manufacturer, owner and Finance category stay in the
+item editor. Quantities across different units are not summed. A null quantity
+means unlimited stock and must never display as zero or a low-stock warning.
+Low stock (`amount <= min_amount`) uses the warning tone and zero or less uses
+the destructive tone. An absent stock row is shown as "No stock configured" only
+when the actor may view stock; otherwise the row says "Stock hidden", because
+the products API omits stock without view-stock or create-sales permission.
+Active, Archived and All pills map to the API `status` parameter. There are no
+count chips: totals and loaded-page low-stock counts were removed as noise.
+Catalog managers open the editor on tap and get Edit and Delete on long-press;
+other actors have no row action until read-only item detail ships.
+
+Products have no barcode or SKU field. A scanned Tuturuuu product link
+(`https://tuturuuu.com/{ws}/inventory/products/{uuid}`) is fetched in the current
+workspace under normal server authorization. It opens the item editor only for
+catalog managers; other actors get a name search for that product, widened to
+all statuses when the product is archived. A plain code without a URI scheme, up
+to the API's 500-character search limit, becomes the name search, shown as
+"Name matches for ..." with a Clear action. Every other payload, including other
+links, product links without a UUID, Wi-Fi credentials, `otpauth:`, `mailto:`,
+`tel:`, app intents and custom schemes, is reported as an unusable code and is
+never sent to the server or shown as a query. Barcode lookup needs a schema
+field and API filter and is not implied by this scanner.
+
+Switching the status filter or query never shows rows from the previous filter:
+a slow or failed load starts empty. A failed first load shows an error with
+Retry rather than an empty catalog, and a failed next page shows a retry footer
+instead of retrying on every scroll.
+
+Native presentation does not change server permissions, mutation authorization,
+or canonical workspace membership. Existing pending-sync indicators remain
+attached to their owning rows. Regression evidence: `inventory_items_page_test.dart`,
+`inventory_items_states_test.dart`, `inventory_scan_test.dart`, and the
+compact/fractional stock widget tests.
 
 Native Overview analytics describe the loaded sample, not workspace-wide totals.
 Receipt activity groups unique dated receipts by device-local day for the selected

@@ -356,7 +356,7 @@ class _CalendarViewState extends State<_CalendarView> {
                 builder: (context, state) {
                   if (state.status == CalendarStatus.loading &&
                       state.events.isEmpty) {
-                    return const Center(child: NovaLoadingIndicator());
+                    return const AppLoadingIndicator.page();
                   }
 
                   if (state.status == CalendarStatus.error &&

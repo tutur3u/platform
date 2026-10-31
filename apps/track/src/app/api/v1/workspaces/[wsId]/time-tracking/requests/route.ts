@@ -1,9 +1,11 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase';
 import {
   createAdminClient,
   createDynamicClient,
 } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
+import { validateRequestReferences } from '@tuturuuu/utils/time-tracking-reference';
 import {
   getPermissions,
   verifyWorkspaceMembershipType,
@@ -30,6 +32,28 @@ const TimeTrackingRequestSchema = z.object({
   linkedSessionId: z.guid().nullable().optional(),
   imagePaths: z.array(z.string().min(1)).max(5).optional().default([]),
 });
+
+// A linked session must belong to the request owner in the request workspace;
+// approving or rejecting a request updates or deletes its linked session.
+async function isOwnedLinkedSession(
+  sbAdmin: TypedSupabaseClient,
+  {
+    sessionId,
+    userId,
+    wsId,
+  }: { sessionId: string; userId: string; wsId: string }
+): Promise<{ error: boolean; ok: boolean }> {
+  const { data, error } = await sbAdmin
+    .from('time_tracking_sessions')
+    .select('id')
+    .eq('id', sessionId)
+    .eq('ws_id', wsId)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) return { error: true, ok: false };
+  return { error: false, ok: Boolean(data) };
+}
 
 function validateImagePaths(
   imagePaths: string[],
@@ -120,6 +144,28 @@ export async function POST(
       );
     }
 
+    if (parsed.linkedSessionId) {
+      const linkedSession = await isOwnedLinkedSession(sbAdmin, {
+        sessionId: parsed.linkedSessionId,
+        userId: user.id,
+        wsId: normalizedWsId,
+      });
+
+      if (linkedSession.error) {
+        return NextResponse.json(
+          { error: 'Failed to verify linked session' },
+          { status: 500 }
+        );
+      }
+
+      if (!linkedSession.ok) {
+        return NextResponse.json(
+          { error: 'Linked session not found' },
+          { status: 400 }
+        );
+      }
+    }
+
     const storageClient = await createDynamicClient(request);
 
     const allowFutureSessions =
@@ -140,6 +186,18 @@ export async function POST(
         );
       }
     }
+
+    const referenceError = await validateRequestReferences({
+      client: sbAdmin,
+      categoryId: parsed.categoryId,
+      taskId: parsed.taskId,
+      wsId: normalizedWsId,
+    });
+    if (referenceError)
+      return NextResponse.json(
+        { error: referenceError.message },
+        { status: referenceError.status }
+      );
 
     // Create time tracking request (images already uploaded via signed URLs)
     const { data, error } = await sbAdmin

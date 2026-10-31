@@ -223,16 +223,13 @@ class _TransactionListViewState extends State<_TransactionListView> {
               ownerId: 'finance-transactions',
               locations: const {Routes.transactions},
               actions: [
-                ShellActionSpec(
+                ShellActionSpec.search(
                   id: 'finance-transactions-search',
-                  icon: _isSearchVisible
-                      ? Icons.close_rounded
-                      : Icons.search_rounded,
+                  active: _isSearchVisible,
                   tooltip: _isSearchVisible
                       ? l10n.financeActivityClearSearch
                       : l10n.financeSearchTransactions,
-                  highlighted: _isSearchVisible,
-                  searchController: _isSearchVisible ? _searchController : null,
+                  controller: _searchController,
                   searchHint: l10n.financeSearchTransactions,
                   onSearchChanged: _onSearchChanged,
                   onCloseSearch: _closeSearch,

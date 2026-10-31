@@ -173,6 +173,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                 key: const shad.FormKey<String>(#missedEntryTitle),
                 label: Text(l10n.timerSessionTitle),
                 child: shad.TextField(
+                  placeholder: Text(context.l10n.inputPlaceholderTimeTitle),
                   selectionControls: platformTextSelectionControls(),
                   contextMenuBuilder: platformTextContextMenuBuilder(),
                   controller: _titleCtrl,
@@ -183,6 +184,9 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                 key: const shad.FormKey<String>(#missedEntryDesc),
                 label: Text(l10n.timerDescription),
                 child: shad.TextField(
+                  placeholder: Text(
+                    context.l10n.inputPlaceholderTimeDescription,
+                  ),
                   selectionControls: platformTextSelectionControls(),
                   contextMenuBuilder: platformTextContextMenuBuilder(),
                   controller: _descCtrl,
@@ -399,7 +403,7 @@ class _MissedEntryDialogState extends State<MissedEntryDialog> {
                           if (!nestedContext.mounted) {
                             return;
                           }
-                          await shad.closeOverlay<void>(nestedContext);
+                          await Navigator.maybePop(nestedContext);
                           if (!mounted || !hostContext.mounted) {
                             return;
                           }

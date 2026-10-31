@@ -7,6 +7,8 @@
 # CI, workflow and repository automation
 /.github/                          @vhpx
 /scripts/ci/                       @vhpx
+# Owns the reviewed out-of-order migration exemption list read by both order checks
+/scripts/check-migration-timestamps.js @vhpx
 
 # Authentication, sessions, SSO and request guards
 /packages/auth/                    @vhpx
@@ -78,10 +80,18 @@
 
 # Database schema, migrations and RLS
 /apps/database/supabase/migrations/ @vhpx
+/apps/database/supabase/config.toml @vhpx
+/apps/database/supabase/tests/required-account-mfa.sql @vhpx
+/apps/database/scripts/verify-required-account-mfa-contract.mjs @vhpx
 
 # Code-execution infrastructure (devbox and Judge runners)
 /apps/devbox-control/              @vhpx
+/apps/ops-hub/                     @vhpx
 /packages/devbox/                  @vhpx
+
+# Abuse-protection store (Durable Object Worker and its clients)
+/apps/abuse-guard/                 @vhpx
+/packages/utils/src/abuse-guard/   @vhpx
 
 # Payments
 /packages/payment/                 @vhpx
@@ -91,3 +101,7 @@
 
 # Code ownership itself
 /.github/CODEOWNERS                @vhpx
+
+/apps/database/rollbacks/ @vhpx
+
+/apps/database/supabase/schemas/ @vhpx

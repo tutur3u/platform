@@ -8,10 +8,14 @@ const {
 } = require('./watch-blue-green/build-lock.js');
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
 const {
+  isReservedManagedProjectHostname,
+} = require('../packages/utils/src/managed-project-hostnames-core.cjs');
+const {
   DEFAULT_PLATFORM_BRANCH,
   getManagedProjectDeploymentEnv,
   normalizeProjectBranch,
   processManagedInfrastructureProjects,
+  isSafeProjectBranch,
   renderManagedProjectCompose,
   renderManagedProjectProxyServerBlocks,
   resolvePlatformProjectTarget,
@@ -19,7 +23,7 @@ const {
 
 test('normalizeProjectBranch defaults platform to production', () => {
   assert.equal(normalizeProjectBranch(''), DEFAULT_PLATFORM_BRANCH);
-  assert.equal(normalizeProjectBranch(' staging '), 'staging');
+  assert.throws(() => normalizeProjectBranch(' staging '), /unsafe/);
 });
 
 test('resolvePlatformProjectTarget blocks a dirty branch mismatch', async () => {
@@ -427,6 +431,10 @@ test('renderManagedProjectProxyServerBlocks drops reserved and invalid hostnames
         'https://docs.example.com/path',
         'tuturuuu.com',
         'hive.tuturuuu.com',
+        'DEV.tuturuuu.com',
+        'Forms.Tuturuuu.com.',
+        'calendar-staging.tuturuuu.com',
+        'web.staging.tutur3u.com',
         'bad host.example.com',
         'victim.example.com;\nreturn 200 "pwned";\n#',
       ],
@@ -436,9 +444,79 @@ test('renderManagedProjectProxyServerBlocks drops reserved and invalid hostnames
     },
   ]);
 
-  assert.match(config, /server_name docs\.example\.com;/);
-  assert.equal(config.includes('tuturuuu.com'), false);
-  assert.equal(config.includes('hive.tuturuuu.com'), false);
+  // Compare parsed server names exactly rather than searching the config text.
+  const served = [...config.matchAll(/^\s*server_name ([^;]+);$/gmu)].flatMap(
+    ([, names]) => names.trim().split(/\s+/u)
+  );
+  assert.deepEqual(served, ['docs.example.com']);
+  assert.equal(served.some(isReservedManagedProjectHostname), false);
   assert.doesNotMatch(config, /bad host\.example\.com/);
   assert.doesNotMatch(config, /return 200 "pwned"/);
 });
+
+test('managed project branches must be safe refnames before interpolation', () => {
+  for (const branch of ['main', 'production', 'feature/x-1', 'release/1.2'])
+    assert.equal(isSafeProjectBranch(branch), true, branch);
+  for (const branch of [
+    '',
+    '--upload-pack=touch /tmp/pwned',
+    'main"; return 200 "pwned',
+    'main;',
+    'a b',
+    'a..b',
+    'a//b',
+    'a/',
+    '.hidden',
+    'x'.repeat(201),
+    null,
+  ])
+    assert.equal(isSafeProjectBranch(branch), false, String(branch));
+
+  const config = renderManagedProjectProxyServerBlocks([
+    {
+      hostnames: ['docs.example.com'],
+      id: 'docs-app',
+      port: 3000,
+      selected_branch: 'main" always; return 200 "pwned',
+    },
+  ]);
+  assert.equal(config, '');
+  assert.throws(
+    () =>
+      renderManagedProjectCompose({
+        id: 'docs-app',
+        selected_branch: '--upload-pack=x',
+      }),
+    /unsafe selected branch/u
+  );
+});
+
+for (const selected_branch of [
+  '--upload-pack=evil',
+  '..',
+  '-main',
+  ' ',
+  'main branch',
+  ' main',
+]) {
+  test(`refuses unsafe platform branch ${JSON.stringify(selected_branch)} before git`, async () => {
+    const sql = async () => [{ selected_branch }];
+    sql.end = async () => {};
+    let calls = 0;
+    await assert.rejects(
+      resolvePlatformProjectTarget(
+        { branch: 'main', remote: 'origin' },
+        {
+          env: { PLATFORM_LOG_DRAIN_DATABASE_URL: 'postgres://local/test' },
+          postgresFactory: () => sql,
+          runCommand: async () => {
+            calls++;
+            return { code: 0 };
+          },
+        }
+      ),
+      /Refusing an unsafe selected branch/
+    );
+    assert.equal(calls, 0);
+  });
+}

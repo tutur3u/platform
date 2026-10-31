@@ -1,5 +1,13 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { FilePart, ImagePart, ModelMessage, TextPart } from 'ai';
+import { canAccessAiChatAttachments } from '../attachment-access';
+import {
+  AI_CHAT_ATTACHMENT_EXTENSIONS,
+  aiChatAttachmentExtension,
+  aiChatAttachmentTextEncoding,
+  inspectAiChatAttachment,
+  MAX_AI_CHAT_UPLOAD_BYTES,
+} from '../attachment-content-guard';
 
 type ChatFile = {
   fileName: string;
@@ -129,10 +137,21 @@ export async function listAllChatResourceFiles(
 async function getAllChatFiles(
   wsId: string,
   chatId: string,
-  _request?: Pick<Request, 'headers'>
+  _request?: Pick<Request, 'headers'>,
+  actorId?: string
 ): Promise<ChatFile[]> {
+  if (!actorId) return [];
   try {
     const sbAdmin = await createAdminClient();
+    if (
+      !(await canAccessAiChatAttachments({
+        supabase: sbAdmin,
+        wsId,
+        chatId,
+        actorId,
+      }))
+    )
+      return [];
 
     const storagePath = `${wsId}/chats/ai/resources/${chatId}`;
     const { files, truncated } = await listAllChatResourceFiles(
@@ -170,6 +189,15 @@ async function getAllChatFiles(
               (file.metadata?.mimetype as string | undefined)
           );
 
+          const declaredSize = Number(file.metadata?.size ?? 0);
+          if (declaredSize > MAX_AI_CHAT_UPLOAD_BYTES) {
+            console.warn('[Google Chat Files] skipped oversized file', {
+              fileName,
+              sizeBytes: declaredSize,
+            });
+            continue;
+          }
+
           const { data: fileData, error: downloadError } = await sbAdmin.storage
             .from('workspaces')
             .download(`${storagePath}/${file.name}`);
@@ -184,10 +212,32 @@ async function getAllChatFiles(
             continue;
           }
 
+          // Client uploads go through an unconstrained signed URL, so the
+          // real bytes decide eligibility, not the extension or declared size.
+          const bytes = await fileData.arrayBuffer();
+          if (
+            AI_CHAT_ATTACHMENT_EXTENSIONS.has(
+              aiChatAttachmentExtension(fileName)
+            ) &&
+            !inspectAiChatAttachment({
+              fileName,
+              head: new Uint8Array(bytes, 0, Math.min(bytes.byteLength, 64)),
+              sizeBytes: bytes.byteLength,
+            }).ok
+          ) {
+            console.warn('[Google Chat Files] skipped unverified file', {
+              fileName,
+              sizeBytes: bytes.byteLength,
+            });
+            continue;
+          }
+
           const content =
             mediaType.startsWith('text/') || mediaType === 'application/json'
-              ? await fileData.text()
-              : await fileData.arrayBuffer();
+              ? new TextDecoder(
+                  aiChatAttachmentTextEncoding(new Uint8Array(bytes))
+                ).decode(bytes)
+              : bytes;
 
           results[currentIndex] = {
             fileName,
@@ -318,9 +368,12 @@ export async function processMessagesWithFiles(
   wsId: string,
   chatId: string,
   request?: Pick<Request, 'headers'>,
-  excludeAudioVideoFiles = false
+  excludeAudioVideoFiles = false,
+  actorId?: string
 ): Promise<ModelMessage[]> {
-  const chatFiles = (await getAllChatFiles(wsId, chatId, request)).filter(
+  const chatFiles = (
+    await getAllChatFiles(wsId, chatId, request, actorId)
+  ).filter(
     (file) =>
       !excludeAudioVideoFiles || !/^(audio|video)\//.test(file.mediaType)
   );

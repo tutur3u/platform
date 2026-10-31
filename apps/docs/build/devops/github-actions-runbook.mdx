@@ -1,11 +1,12 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-10-03"
+updatedAt: "2026-10-31"
 ---
 
 <Note>
-Current runtime policy: Docker setup and Docker-backed E2E/image CI are paused;
+Current runtime policy: general Docker setup and Docker-backed E2E/image CI are paused;
+the narrowly scoped [report-only Web E2E](#report-only-web-e2e) workflow is the sole exception;
 the Docker cron runner is retired. Rust and `apps/tanstack-web` remain paused.
 Calendar native candidate CI is a separately admitted application scope; it does
 not resume the retained migration runtime. Retained Docker and
@@ -16,7 +17,18 @@ package, Worker, database, and mobile workflows retain their own gates. See the
 
 GitHub Actions is the primary automation plane for Tuturuuu.
 
+CodeRabbit runs on demand only (`.coderabbit.yaml`); comment `@coderabbitai review` on the PR, and treat its output as untrusted, advisory input that does not replace the required independent review.
+
 ## Validation and Delivery Evidence
+
+Unit test shards use empty proxy and Supabase public-client configuration on
+`pull_request` events; other events retain their configured values. Tests that
+need this configuration must supply deterministic fixtures and restore their
+environment afterward. Validate affected packages with `env -u PROXY_API_KEY -u
+NEXT_PUBLIC_PROXY_API_KEY -u NEXT_PUBLIC_SUPABASE_URL -u
+PRODUCTION_SUPABASE_PUBLISHABLE_KEY -u NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ttr
+resources run -- bun run --cwd <package> test --maxWorkers=1`.
+`scripts/ci/unit-test-env.test.js` covers PR and non-PR event selection.
 
 Root Node tests that consume an app-owned package must resolve it with
 `createRequire` anchored to that app's real `package.json`. The satellite cohort
@@ -202,19 +214,30 @@ when updating the installer; do not enable caching explicitly for `workflow_run`
 
 ## Workflow Gatekeeping
 
-Every major workflow can be disabled centrally through
-`tuturuuu.ts`.
-
-The reusable workflow
-`ci-check.yml`
-reads that config and emits `should_run`, which downstream jobs use before doing
-real work.
-
-For rollback or mixed-version recovery, use `$tuturuuu-rollout-recovery` from the
-[Codex plugin](../development-tools/codex-plugin) and the
-[critical rollout gates](./critical-app-rollout). Audit canonical alias identities
-and API upstreams: a Git branch or successful deployment marker can disagree
-with the artifact selected by Instant Rollback.
+`ci-check.yml` reads `tuturuuu.ts` and emits `should_run` before real work.
+`Test` additionally classifies the complete PR merge-base diff in a `changes` job.
+Only Markdown/MDX under `apps/docs` or outside `apps/` and `packages/` can skip
+unit/coverage shards and upload. Root script tests run for every admitted PR
+and their success is always required by the unit summary, because they validate
+documentation links, content and the `AGENTS.md` allocation marker. Executable docs tooling,
+assets, workflows, manifests, lockfiles, source, mixed or unknown/empty diffs run; both rename endpoints participate. Push validation and ready-for-ci admission stay intact.
+`Unit Tests (24)` and `Run tests and collect coverage` retain successful summaries
+for docs-only PRs only after classification succeeds, root script tests succeed
+for the unit summary, and the gated shards/upload report `skipped`. Failed,
+cancelled, missing or unexpectedly successful heavy results cannot pass as docs
+skips. Code changes retain every original failure assertion. Only these two
+summary contexts may ever be made required in branch protection or rulesets. A skipped matrix job reports its
+unexpanded `(${{ matrix.shard }})` name, so expanded shard contexts must never be
+required.
+Never use workflow-level path filters for required checks: they can remain pending.
+Security, CodeQL, secret scanning, i18n and deployment/release gates are unchanged.
+Regression coverage: `node --test scripts/ci/test-docs-only-gate.test.js` plus the
+complete root script suite discovered by `scripts/run-script-tests.js`. Summary
+contracts execute every applicable assertion step, including classification and
+root success; testing only the first step can miss shard failures.
+For rollback, use `$tuturuuu-rollout-recovery` from the [Codex plugin](../development-tools/codex-plugin)
+and [critical rollout gates](./critical-app-rollout). Audit canonical aliases and API upstreams:
+a branch or deployment marker can disagree with the artifact selected by Instant Rollback.
 
 For Vercel deployments, the production planner and platform preview perform
 affected-app gating before any install, build, or deploy step starts. They check
@@ -327,14 +350,45 @@ Cache archive restoration is separate from Turbo task reuse. Compare exact-head
 hosted runs before claiming push-to-green savings; removing runner demand does
 not promise a particular hosted queue delay.
 
+### Draft PR runner admission
+
+Heavy PR verification defers non-security database contracts, platform builds
+and runtime suites until the PR is ready. Heavy-only workflows skip their
+`check-ci` call before runner allocation. Mixed workflows retain light lint,
+type and translation checks. Security jobs always remain eligible on drafts,
+including CodeQL analysis and the security-egress contract and its preflight.
+The mobile aggregate skips on drafts and still requires every quality, test and
+realtime result on ready PRs.
+
+These workflows listen for `ready_for_review` to run the same checks without a
+new commit. `converted_to_draft` supersedes cancellable PR runs and starts
+replacement security checks even when the PR becomes a draft. Existing
+workflow/PR concurrency identities, pinned rerun isolation and serialized
+publication, environment, security-classifier and sandbox-cleanup locks remain
+unchanged. Push-only verification keeps its existing behavior.
+
+Draft PRs cannot merge. Before adding a required check, verify that its workflow
+reports on every merge-eligible PR. Keep path relevance in the existing
+`ci-check` switchboard or trusted security selectors instead of adding trigger
+filters that leave a required check pending. Regression coverage:
+`scripts/ci/pr-verification-scheduling.test.js` and
+`scripts/ci/protected-workflow-concurrency.test.js`. Supersession and draft
+admission reduce demand; they do not reserve hosted capacity for production.
+
 ### Mobile PR build selection
 
 Ordinary mobile PRs build Android as the portable application smoke. iOS, macOS,
 Linux and Windows builds run when their native directory changes. Dependency
 manifests, localization configuration, workflow/tooling inputs and unrecognized
 paths retain every platform build. Missing or empty changed-file data also runs
-all platforms. Every matching main push retains all five builds; release and
-production workflows are unchanged.
+all platforms. Matching main pushes retain Android and Linux builds. iOS, macOS
+and Windows development builds run nightly at 01:10, 01:30 and 01:50 (GMT+7),
+respectively, plus published releases and manual dispatch. Store publication and
+production workflows keep their existing triggers and gates.
+
+This is an explicit coverage exception: nightly builds validate the default-branch
+head selected for that run, rather than every merged SHA. Release and manual
+builds validate their selected snapshots.
 
 Keep all existing PR triggers and named checks. The reusable `ci-check` switchboard
 skips the heavy job before runner allocation; do not remove a required-check
@@ -350,20 +404,28 @@ not establish a guaranteed reduction in wall-clock merge or production delay.
 
 ## Coordination native Worker toolchain
 
-Coordination is a Vite+ workspace using the Cloudflare Vite plugin. The input
-`apps/coordination/wrangler.jsonc` remains the identity and binding authority;
-Vite writes the deployable configuration to `apps/coordination/dist/worker/wrangler.json`.
-The production workflow builds that artifact and deploys its generated config.
+Coordination is a Vite+ workspace using the Cloudflare Vite plugin and the `cf`
+CLI. `apps/coordination/cloudflare.config.ts` records the deployment identity
+(Worker name, `COORDINATION` Durable Object binding, `CoordinationObject`
+export); the build emits a Build Output under `apps/coordination/.cloudflare/output`.
+`.github/workflows/coordination-cloudflare.yaml` compares that output with the
+recorded identity fixture (`scripts/ci/cf-worker-parity.mjs`), then publishes the
+exact artifact with Wrangler using the retained publication profile
+`apps/coordination/wrangler.publish.jsonc`, prepared by
+`scripts/ci/cf-wrangler-publication.mjs`.
 Do not change the Worker name, `CoordinationObject` export, `COORDINATION` binding,
 or retained Durable Object migrations during a toolchain migration.
 
-Validation first runs the existing `node:test`/Wrangler lease regression suite
-against source. It then runs Vite+ lint and a real Worker build in CI, repeats
-that same suite with `COORDINATION_TEST_CONFIG` pointing to the generated config,
-and validates the artifact with Wrangler's deployment dry run. The fixture injects
-a disposable server token and uses local Durable Object storage. It verifies
-credentials, concurrent acquisition, fencing, replay and expiry behavior without
-production requests. The source and artifact runs must both pass on the exact head.
+Validation runs the `node:test` lease regression suites (`src/request-body.test.mjs`
+and `src/worker.test.mjs`) against source, then `tsc`, lint, and the proactive
+contract tests. CI then builds the Worker, repeats `src/worker.test.mjs` against
+the built Worker and Durable Object, and checks the prebuilt artifact with
+`cf deploy --prebuilt --dry-run` and a credential-free `wrangler deploy --dry-run`
+of the publication profile. The production job also captures Worker settings
+before and after publication and verifies the coordination token survived. The
+fixture injects a disposable server token and uses local Durable Object storage.
+It verifies credentials, concurrent acquisition, fencing, replay and expiry
+behavior without production requests.
 
 For focused local runtime verification, run `node --test
 apps/coordination/src/worker.test.mjs` from the root through `ttr resources run`.
@@ -397,6 +459,189 @@ because the pull request closed.
 Inspect the actual conclusion of each run when reporting validation. A cancelled
 run is not a successful check and does not by itself establish a repository
 failure. Cache retention continues to follow GitHub Actions retention settings.
+
+### Hosted runner reservation and PR queue pressure
+
+GitHub-hosted runners are reserved for `main`, `production` and release work.
+When PR CI fans out across many workflows, production deployments wait behind
+it in the same account queue. Concurrency serializes or replaces runs but never
+reserves capacity. Keep PR load small:
+
+- Verify PRs primarily with local or remote-fleet runs. An exact-head local
+  pass is green evidence under the delivery speed grant; hosted PR CI is a
+  backstop, not the primary gate.
+- Batch pushes. Push a reviewable head once instead of pushing WIP commits in
+  rapid succession. Each push still allocates a `check-ci` runner per workflow,
+  even when the newer head immediately supersedes the older one.
+- Every `pull_request` and `pull_request_target` workflow uses a PR-scoped
+  group with `cancel-in-progress` enabled, except the explicit exceptions in
+  `scripts/ci/protected-workflow-concurrency.test.js`. Calendar and Mail
+  Cloudflare cancel superseded PR revisions. Running main/manual jobs never
+  cancel; an older pending main/manual run is superseded by a newer one.
+  Uploads keep their independent, non-cancelling `queue: max` lock inside
+  `wave1-native-publish.yaml`.
+- Heavy PR workflows are path-filtered. The Cloudflare Source workflows, Mail
+  Calendar Tasks builds and Programming app builds exclude `**/*.md` and
+  `**/*.mdx` from their PR `paths`. i18n Check and CodeQL use PR `paths-ignore`
+  for docs and agent-instruction content. Their `main` push triggers stay
+  unchanged, so promotion baselines and CodeQL new-alert comparisons stay
+  complete.
+- No ruleset or branch protection requires a status check (verify with
+  `gh api repos/tutur3u/platform/rulesets`). If a filtered workflow becomes
+  required, replace its trigger filter with a job-level `check-ci` skip that
+  still reports success. A trigger-filtered required check never reports.
+
+### Consolidated cheap PR checks
+
+`pr-checks.yaml` is the sole PR entrypoint for Biome, i18n, docs/SEO,
+migration filenames and timestamps, mobile API mappings, plugin contracts,
+branch naming and CI admission. The former workflow files remain reusable;
+protected push and manual validation still use their existing entrypoints.
+Branch-name and plugin checks no longer create a separate run on each feature
+branch push. Plugin checks on protected and generated release branches remain.
+
+One SHA-pinned `dorny/paths-filter` job selects the affected callers. Biome,
+i18n and docs retain `ready-for-ci` admission; script-only checks remain ungated.
+Workflow/action changes select every category. Locale consumer source changes
+select i18n as well as bundle edits and `scripts/run-i18n-check.js`. Docs
+selection includes mobile pubspec files, Discord manifests/lockfiles and the
+safe-fs helper used by the inventory generator. Biome selects `.editorconfig`
+and `.gitignore`; plugin validation includes the Git conventions page.
+Migration guard edits select migration checks. Mobile API selection retains the original main-base restriction.
+Security Checks and its trusted base-commit scope are separate and unchanged:
+there is no path filter or readiness label on its PR trigger.
+
+The **Cheap PR Checks** gate runs with `!cancelled()`, succeeds for irrelevant
+path skips and fails for selected caller skips, failures or missing admission.
+Branch naming is an independent job, so a bad name fails the aggregate without
+hiding selected validation. CI admission stays red until this event and the
+live PR both carry `ready-for-ci`.
+Existing leaf job display names are retained; reusable calls add caller prefixes
+to GitHub check contexts. No current ruleset requires a status check. Before
+requiring a leaf in future, use an always-reporting gate or preserve that exact
+context on irrelevant paths. Recheck rulesets in the same change window.
+
+Among label events, only adding or removing `ready-for-ci` retriggers the
+consolidated validators.
+Other `labeled`/`unlabeled` events run only CI admission and its aggregate;
+each receives a unique non-cancelling group in both parent and admission callee.
+Those runs report **Cheap PR Checks (label event)**, preserving the latest
+**Cheap PR Checks** result for full validation on the same SHA. They do not
+establish a new validation pass. Unadmitted validation stays
+in a separate group and cannot cancel an admitted run. This exception applies
+to the consolidated workflow; other heavy workflows retain label-presence
+admission until separately migrated.
+
+Every selector pattern has a positive fixture in
+`scripts/ci/pr-checks-paths.test.js`, using `picomatch` with `{dot:true}` like
+dorny. Keep these fixtures aligned with actual validator inputs, including
+non-JavaScript manifests. Security Checks is also locked to the pinned PR base
+by a SHA-256 regression. New action pins must resolve to commits, not annotated
+tag objects; verify their object type with the owning repository's Git API.
+
+Called workflows inherit `github.workflow` from their caller, so each reusable
+workflow's concurrency group includes a distinct file namespace. Biome retains
+job-specific validation locks and its separate push-only mutation lock.
+
+See the [pinned workflow inventory](https://github.com/tutur3u/platform/blob/main/.github/pr-ci-inventory.md)
+for exact trigger paths, all job names, ruleset mapping and execution samples.
+Regression coverage is `scripts/ci/pr-checks.test.js` plus the admission,
+permissions, security and protected-concurrency workflow suites. Inventory
+estimates describe workflow runs; they do not establish hosted-runner priority,
+queue-latency improvement or an org concurrency reservation.
+
+### Label-gated heavy PR CI (`ready-for-ci`)
+
+Heavy PR workflows run their jobs only when the PR carries the `ready-for-ci`
+label for every human, bot and fleet actor, including stack layers. This covers
+`opened`, `synchronize`, `reopened` and `labeled`. These include Test, Type Check,
+Biome, CodeQL, i18n, docs/SEO and coverage,
+the per-app and Cloudflare Source builds, mobile builds and database contracts.
+`scripts/ci/pr-label-gate.js` is the inventory of record. On an unlabelled PR,
+every job is skipped by a job-level `if:`. The checks show as skipped rather
+than pending, and no runner is allocated. The gate sits on top-level caller
+jobs, including each `check-ci` switchboard call, so a skipped caller never
+starts its reusable callee.
+
+- **Add the label only when the PR is ready to merge.** Before that, verify
+  locally or on the remote fleet. An exact-head local pass (`bun check:changed`
+  plus the focused suites) still counts as green under the speed grant, so a
+  PR can merge on that evidence without hosted CI.
+- **Trigger CI** with `gh pr edit <number> --add-label ready-for-ci`. The
+  `labeled` event starts every heavy workflow immediately.
+- **Retrigger.** A new push to a labelled PR (`synchronize`) runs again, and
+  PR concurrency cancels the superseded run. To retrigger without a push,
+  remove and re-add the label (`gh pr edit <n> --remove-label ready-for-ci`,
+  then `--add-label ready-for-ci`). Do not use `gh run rerun` for this: a
+  rerun replays its original event, so a run started before the label was
+  added is skipped again. Use `gh run rerun` only to retry an admitted run,
+  for example after a flaky failure.
+- **Other labels on a ready PR rerun independent heavy workflows.** Cheap PR
+  Checks runs only admission and its aggregate for unrelated label changes.
+  Other heavy workflows check only that the label
+  is present, so any later `labeled` event on a labelled PR is a real admitted
+  run on the same SHA. It joins the same PR group and supersedes the
+  in-progress run. The newest check per name is therefore always genuine
+  evidence, never a skipped run masking an earlier red one. Labels added with
+  `GITHUB_TOKEN` (such as `security-review-required`) start no run.
+- **Masking caveat.** Skipped is not evidence. While a PR carries no
+  `ready-for-ci`, every later run skips its heavy jobs. GitHub shows only the
+  newest run per check name, so those skipped checks replace earlier results;
+  merge tooling such as `watch_pr_ready` counts `SKIPPED` as passing. Once the
+  label is removed, the PR has no hosted evidence. Re-add the label for a fresh
+  admitted run, or rely on the exact-head local pass.
+- **CI Admitted check (`pr-checks.yaml` → `ci-admitted.yaml`, always on).** One small job per PR
+  event reads the PR's *current* labels with a read-only token and runs the
+  admission script from the base commit. Using the base commit protects the
+  *script* from PR edits, but not the workflow file: on `pull_request` the
+  workflow YAML comes from the PR. The check is advisory, not a security
+  boundary. If the base commit lacks the script, it fails red as "admission
+  unverifiable" rather than passing. It is **red** when `ready-for-ci` is
+  missing, so skipped heavy checks never read as passing. It is also red when
+  the label is present now but was absent from this event's payload (the
+  push/label race). Draft and WIP PRs show it red, but it blocks nothing,
+  because no ruleset requires checks. Green means this event's heavy runs were
+  admitted.
+- **Push/label race.** A `synchronize` payload carries the labels present at
+  push time. PR runs whose payload lacks the label use a separate
+  `-unadmitted` concurrency group (`UNADMITTED_GROUP_SUFFIX`), so a late
+  unlabelled push run can never cancel the admitted `labeled` run. Its skipped
+  checks can still be the newest shown under the same names. CI Admitted then
+  turns red with "re-add" guidance: remove and re-add the label to admit the
+  current head. Adding the label only after the PR shows the new head SHA
+  avoids the race entirely.
+- **Residual ordering false green.** CI Admitted evaluates its own event, and
+  GitHub shows the newest run per check name. A green CI Admitted run (for
+  example from the `labeled` event) can therefore coexist with a heavy
+  workflow whose newest run on the same head is a skipped run from an earlier,
+  unlabelled event. Before treating the head as hosted-green, confirm that
+  its heavy checks are not skipped. If any are, remove and re-add
+  `ready-for-ci`.
+- **Why not a per-workflow admission job:** reading current labels in every
+  heavy workflow would allocate a hosted job on every unlabelled PR
+  push. One admission check per event keeps unlabelled pushes runner-free for
+  heavy workflows.
+- **Always on for every PR push:** Cheap PR Checks selects Branch Name Check,
+  migration checks, Mobile API Mappings and Codex Plugin Check by path without
+  readiness admission. Security Checks (gitleaks, dependency review and audit)
+  and Security Review Classification keep their separate always-on entrypoints. Paused
+  Docker, Rust, TanStack and E2E workflows keep their retained policy.
+- **Push admission:** heavy workflows have no feature-branch push trigger.
+  Mail/Calendar/Tasks pushes target only `main`; Programming has no push trigger;
+  i18n targets `main` and `production`. Keep these protected-ref triggers intact.
+  Test, Type Check, Biome, Discord Python CI and the Supabase baseline validated
+  every branch
+  push. They now push-validate only protected and generated refs, and validate
+  feature branches through gated PR events. The `release-please--branches--**`
+  selector includes production and release-notes branches. Manual, schedule and
+  reusable triggers remain independent of PR labels. Biome's
+  auto-format PR and outdated-PR cleanup stay push-only. Its PR comment is
+  limited to same-repository PRs.
+- `scripts/ci/pr-label-gate.test.js` enforces this. It checks that every heavy
+  job is gated for all actors/events, feature pushes cannot bypass admission,
+  always-on/paused checks carry no gate, and every PR workflow is classified. It also pins digests of each heavy
+  workflow's push, schedule, manual and reusable triggers. When adding a PR
+  workflow, classify it there and gate every job with `PR_LABEL_GATE`.
 
 ## Authorized CI Queue Cleanup
 
@@ -433,12 +678,16 @@ authorize recurring cancellation.
 ### Hosted web build and deployment checks
 
 - `vercel-preview-platform.yaml`
+- `vercel-preview-ai.yaml`
 - `vercel-preview-apps.yaml`
 - `vercel-preview-calendar.yaml`
 - `vercel-preview-chat.yaml`
 - `vercel-preview-cms.yaml`
+- `vercel-preview-contacts.yaml`
 - `vercel-preview-drive.yaml`
 - `vercel-preview-finance.yaml`
+- `vercel-preview-forms.yaml`
+- `vercel-preview-git.yaml`
 - `vercel-preview-inventory.yaml`
 - `vercel-preview-infrastructure.yaml`
 - `vercel-preview-learn.yaml`
@@ -446,12 +695,13 @@ authorize recurring cancellation.
 - `vercel-preview-meet.yaml`
 - `vercel-preview-mind.yaml`
 - `vercel-preview-nova.yaml`
-- `vercel-preview-qr.yaml`
+- `vercel-preview-pay.yaml`
 - `vercel-preview-rewise.yaml`
 - `vercel-preview-shortener.yaml`
 - `vercel-preview-storefront.yaml`
 - `vercel-preview-tasks.yaml`
 - `vercel-preview-teach.yaml`
+- `vercel-preview-tools.yaml`
 - `vercel-preview-track.yaml`
 - A matching `vercel-production-*.yaml` workflow exists for each app above
 
@@ -473,12 +723,12 @@ The Apps gateway uses the same pattern:
 - project secret: `VERCEL_APPS_PROJECT_ID`
 - environments: `vercel-preview-apps` and `vercel-production-apps`
 
-QR uses the same pattern:
+Tools (which now serves the QR generator) uses the same pattern:
 
-- preview workflow: `vercel-preview-qr.yaml`
-- production workflow: `vercel-production-qr.yaml`
-- project secret: `VERCEL_QR_PROJECT_ID`
-- environments: `vercel-preview-qr` and `vercel-production-qr`
+- preview workflow: `vercel-preview-tools.yaml`
+- production workflow: `vercel-production-tools.yaml`
+- project secret: `VERCEL_TOOLS_PROJECT_ID`
+- environments: `vercel-preview-tools` and `vercel-production-tools`
 
 Infrastructure uses the same deployment pattern:
 
@@ -568,9 +818,11 @@ failure, timeout, or output-buffer exhaustion. Other failures retain the generic
 diagnostic instruction. Never print the raw child error, stdout, or stderr to CI.
 Active Supabase-starting jobs run `.github/actions/cache-supabase-images` after
 the owning dependency install. Image versions come from the installed pinned CLI's
-`services -o json`, which includes local version overrides. The CLI omits Kong,
-Mailpit and imgproxy there; the helper carries their reviewed 2.117.0 Dockerfile
-pins and rejects a different CLI until those pins are reviewed. Registry rewriting
+`services -o json`, which includes local version overrides. CLI 2.121.0 omits Kong,
+Mailpit and imgproxy there; the helper carries their reviewed Dockerfile pins
+(2.8.1, v1.31.3 and v3.26.0) and rejects a different CLI until those pins are
+reviewed. Catalog entries take precedence over fallback pins, including local
+overrides; repeated catalog image names fail rather than silently choosing a tag. Registry rewriting
 matches the CLI, including `postgrest/postgrest` becoming `supabase/postgrest`.
 
 The exact image list, registry, OS and architecture form the SHA256 cache key;
@@ -1086,8 +1338,11 @@ Meet requires both compatibility fixes: the workerd scheduler prevents the
 anonymous login render from hanging, and cache-handler registration must return
 before Next's original dynamic loader accesses removed minified aliases. Otherwise
 even the local-metadata `/api/build-info` handler can fail before it executes.
-`node --test scripts/ci/meet-cloudflare-render.test.js` exercises the installed
-Next scheduler transformation, cache-handler method and React resume names.
+`scripts/ci/meet-cloudflare-render.runtime.mjs` carries the installed Next
+scheduler transformation, cache-handler method and React resume names that the
+Meet artifact gates (`scripts/ci/meet-build-metadata.test.js`,
+`scripts/ci/verify-meet-start-output.test.js`) require; the former standalone
+`meet-cloudflare-render.test.js` no longer exists.
 For retained-artifact diagnosis, preserve the original ZIP and hash; normalize
 only CI file imports and Wrangler's require shim in a private replay. Use the
 canonical URL and Host, local bindings, blocked outbound traffic and bounded
@@ -1587,6 +1842,14 @@ published only after their notes blob, tree, and final commit exist: recovery
 never first creates a ref at the production SHA. This prevents a second notes
 push from cancelling duplicate checks on the production commit.
 
+Release Please's own overflow rewrite is not atomic: it resets the notes branch
+to the target branch, then commits `release-notes.md`. If it fails in between,
+the still-open release PR points at a missing file and every later run fails
+with `Failed to find file: release-notes.md` while parsing that PR, freezing the
+release PR and its checks on a stale head. When no merged pending PR needs
+recovery, the script therefore also restores the notes of an open overflow
+release PR, reading its changelog entries from the PR head.
+
 For the exact production overflow-notes ref, CI verifies the committed delta
 against production history with `scripts/ci/overflow-notes-ci.js`. An ancestor
 bootstrap with no new work, or a generated notes-only addition/change, skips
@@ -1715,14 +1978,20 @@ cannot complete a release: the `Protected branches` ruleset covers `main` and
 `production` and its only bypass actor is `OrganizationAdmin`, so a run on
 `github.token` merges cleanly and then dies on
 `GH013: Changes must be made through a pull request`. `RELEASE_PLEASE_TOKEN`
-must therefore hold a personal access token (`repo` + `workflow` scopes) owned
-by an organization admin. Granting the Actions app a ruleset bypass is **not**
+must therefore hold a fine-grained personal access token for this repository
+(Contents, Pull requests, Issues and Workflows read/write; Actions and Commit
+statuses read) owned by an organization admin. It is an environment secret of `release-please`
+(branches `main` and `production`, admin bypass off), which both
+`release-please.yaml` and this job declare, so a workflow on any other branch
+cannot read it. Granting the Actions app a ruleset bypass is **not**
 an alternative: pushes made with `GITHUB_TOKEN` do not trigger `push`
 workflows, so the `production` push would silently skip
 `Production Deployment Planner` and the next `Release Please` run and
 stall the release chain. A run that would need to push checks for the secret up
 front and fails with an actionable error, rather than discovering it after
-`bun validate`.
+`bun validate`. Read-only gates (release PR readiness and exact-main CI waits) use the job's
+`github.token` with `checks: read` and `statuses: read`: a fine-grained PAT
+cannot be granted the Checks permission, so it cannot see check runs.
 
 The job also installs Flutter (`3.47.x`, the same pin as `mobile.yaml`) and runs
 `flutter pub get` in `apps/mobile` before the merge. When a release includes
@@ -1891,6 +2160,8 @@ defaults open so a later unrelated commit cannot hide an earlier app change.
 
   Keep the list to the current blob plus blobs from `main`'s history, and drop
   blobs from rejected or intermediate branch heads.
+  `bun check:changed` runs these contract tests whenever a pinned producer file
+  changes, but it is no substitute for the exact-head CI result before merge.
 - Every enabled admitted target, including app-only commits, links staging and runs
   `supabase db push --include-all` before emitting its exact-target marker. The
   exception is a target whose migrations a descendant `main` commit has already
@@ -2269,6 +2540,85 @@ PR/main must not skip validation; a failed or held production policy must block 
 Credential regressions live in `scripts/ci/production-publisher-secrets.test.js`.
 
 
+### PR runner pool: variable, canary and kill switch
+
+Selected PR checks can run on a dedicated self-hosted macOS pool. Routing is off
+unless the repository Actions variable `PR_SELF_HOSTED_RUNNERS` is set:
+
+| Value | Effect |
+| --- | --- |
+| unset, empty or `false` | Off (kill switch): every job uses `ubuntu-latest`. |
+| `pr:<number>` | Canary: only pull request `<number>` routes to the pool. |
+| `true` | On: every eligible pull request routes to the pool. |
+
+A job routes only for a `pull_request` event whose head branch is in this
+repository (no forks), with a non-Dependabot author, actor and triggering actor,
+on the single label `tuturuuu-pr-ephemeral` (`self-hosted, macOS, ARM64`). The
+label `tuturuuu-mac-studio` is never selected. Push, dispatch,
+`pull_request_target` and reusable-workflow contexts stay on `ubuntu-latest`.
+Routing never replaces the `ready-for-ci` gate.
+
+Routed jobs: `docs-seo-check.yaml` `validate`; `i18n-check.yaml`
+`i18n-sort-check`, `i18n-translation-check`, `i18n-key-parity-check` and
+`i18n-namespace-check`; `mobile-api-mappings.yaml` `verify`; `type-check.yaml`
+`type-check-pr`; `biome-check.yaml` `check-ci` (through the `pr_runner` input of
+`ci-check.yml`), `duplicate-validation`, `format` and `lint`;
+`turbo-unit-tests.yaml` `test-shards-pr`. Jobs with write tokens (Biome apply,
+close and comment jobs, the i18n comment job), the Codecov upload and every
+secret-bearing, deploy, release, migration or security job stay on
+`ubuntu-latest`. Pool jobs get no secrets, and the pool has no ambient
+credentials. GitHub ships every secret a job names to its runner even when a
+guard such as `github.event_name != 'pull_request'` evaluates to an empty
+string, so a pool-eligible job must not contain the substring `secrets.` at all
+(no guarded credential expressions), and a reusable workflow it calls receives no
+secrets.
+
+Type Check and the unit-test shards still need Turbo and Supabase credentials on
+push and dispatch, so each is split into two jobs that share one `name` and
+therefore one required check context: `type-check-pr` and `test-shards-pr` run
+only for `pull_request` events, may route to the pool and use fixtures or empty
+values; `type-check` and `test-shards` run only for other events on
+`ubuntu-latest` and keep their secrets. Exactly one of each pair runs, the other
+reports as skipped. Dependents of `test-shards` (`coverage-shards`,
+`coverage-upload`, `coverage-result`, `Unit Tests (24)`) need both variants and
+read the result of whichever one ran (the other is skipped), so a skipped variant
+never masks a failed one.
+`scripts/ci/workflow-pr-self-hosted.test.js` asserts that the raw text of every
+job able to select the pool has no `secrets.` substring and that the reusable
+workflows such jobs call take no secrets.
+
+Each routed job checks out without persisted credentials, runs
+`./.github/actions/pr-runner-hygiene` (disposable `HOME`, Git, Bun, npm and XDG
+state, `npm_config_ignore_scripts=true`) and installs with
+`bun install --frozen-lockfile --ignore-scripts`. Build and generation steps run
+explicitly from repository scripts, never from dependency lifecycle scripts. The
+action's post step (`post-if: always()`) empties the workspace and removes the
+job state. Caches are restored on pull requests and saved only by trusted
+non-PR runs.
+
+Canary procedure:
+
+1. Confirm the pool runners exist and carry only the `tuturuuu-pr-ephemeral`
+   label.
+2. Run `gh variable set PR_SELF_HOSTED_RUNNERS --repo tutur3u/platform --body 'pr:<number>'`.
+3. Push a commit to that pull request (new assignments only) and inspect the
+   exact-head jobs with `gh api repos/tutur3u/platform/actions/runs/<run-id>/jobs`:
+   runner labels, queue and execution time, conclusions.
+4. Widen to `true` only after the canary is clean.
+
+Kill switch: `gh variable delete PR_SELF_HOSTED_RUNNERS --repo tutur3u/platform`
+(or set `false`). New assignments fall back to hosted immediately; jobs already
+assigned keep running and need to be cancelled by run.
+
+The label-only pool split is an interim control. Allow at most 72 hours from the
+time the variable is first set to a value other than off: if a separate macOS
+user for the runners is not in place by then, unset the variable. Cleanup is not
+a sandbox; it does not stop malicious same-repository code from affecting the
+runner's service user.
+
+Regression coverage: `scripts/ci/workflow-pr-self-hosted.test.js` and
+`.github/actions/pr-runner-hygiene/index.test.js`.
+
 ### Calendar scheduling startup requests
 
 The Calendar priority panel reads per-user scheduling summaries through the Tasks
@@ -2370,3 +2720,75 @@ historical timeout. A timer callback proves deadline classification before
 settlement, not daemon failure or a Node/Bun adapter defect. Keep causal diagnosis
 UNKNOWN until same-invocation evidence distinguishes those hypotheses; source
 review and mock tests do not qualify hosted runtime acceptance.
+
+## Report-only Web E2E
+
+The sole Docker exception is `.github/workflows/e2e-smoke-report-only.yaml`:
+trusted main pushes run Web browser smoke; the nightly schedule runs the full
+non-quarantined Web browser suite at 19:17 UTC. Manual main dispatch runs smoke.
+A temporary CLI compatibility launcher forwards retained helpers' `bunx` calls
+to `bun x`; dependency installation uses the repository retry helper.
+The user authorized this workflow-specific exception on 2026-10-28. Existing
+disabled E2E/image/setup jobs, general Docker commands, Rust, TanStack, and the
+Docker cron runner remain paused. This is CI browser verification, not a
+deployment or permission to run arbitrary Docker tasks.
+
+The three Chromium smoke tests cover login rendering, seeded password sign-in,
+and signup through team onboarding, workspace, board, and persisted task creation.
+The full lifecycle test retains invitation and Kanban CRUD coverage. Collect
+from Web with `bunx playwright test --list --grep @smoke --grep-invert @quarantine`.
+The target is at most six minutes of Playwright time, enforced with a 330-second
+global budget and no retries. Provisioning is separate and can require image
+builds and database setup; total runtime is not yet measured. The nightly
+Playwright budget is 40 minutes.
+
+The registered fleet labels are `self-hosted, macOS, ARM64,
+tuturuuu-mac-studio`. There is no FLEET-labelled workflow template on main.
+The scoped `scripts/ci/run-web-e2e-report-only.js` launcher admits only this
+workflow at main on a self-hosted Mac. It calls the retained launcher directly;
+the general package aliases still refuse execution. Rust backend, native host
+builds, global BuildKit pruning, and the cron runner are forced off. Only Next
+and the services/satellites required by its browser fixtures run.
+
+### Fleet isolation and recovery
+
+Each run uses unique Compose and Supabase project identities and private
+`PORTLESS_STATE_DIR` state. The retained TLS-marker cleanup honors that private
+directory. A host lock at `~/.tuturuuu/ci-web-e2e.lock` serializes these jobs
+across runner registrations and event types. An already busy Docker daemon or
+required local port fails admission before any existing runtime is touched.
+Such a failure is diagnostic, not a green or skipped smoke result.
+
+Ordinary pushes supersede older ordinary pushes. Manual dispatches and reruns
+use distinct immutable concurrency groups. The host lock additionally protects
+fixed local auth origins across those groups. The always-running cleanup step
+checks the lock's run/attempt/workspace identity before stopping only its own
+Compose project, Supabase fixture and private Portless proxy. Cleanup failure
+retains the lock. After an interrupted runner, the CI owner must inspect
+`owner.json`, verify/stop the identified resources, and verify no fixture
+processes or containers remain before removing that specific stale lock.
+Do not automatically steal locks, kill unrelated workloads, or globally prune
+Docker to recover capacity.
+
+### Observation, quarantine and graduation
+
+The job is report-only with `continue-on-error: true` and must remain outside
+branch protection during the first observation week. Its summary records the
+actual smoke/nightly/cleanup step outcomes. Seven-day HTML reports and failure
+traces are uploaded on every outcome when available. Use only disposable local
+fixtures and inspect trace content before sharing. A green workflow wrapper
+alone does not establish a successful browser run; inspect the step outcomes.
+
+Append `@quarantine` to a flaky test title, retaining `@smoke` when applicable.
+Both commands exclude that tag. File one GitHub issue per quarantined test with
+its file and exact title, failing run/artifact link, observed failure, reproduction
+command, owner, and a review date within seven days. Link the issue in a nearby
+test comment. Fix the cause, verify repeated real runs, then remove the tag and
+close the issue. Do not quarantine setup failures or the entire suite.
+Collect quarantined tests with `bunx playwright test --list --grep @quarantine`.
+
+The observation week begins with the first successful enabled run. After seven
+consecutive days of green smoke runs, propose making smoke required in a separate
+reviewed change with exact-head reports, measured runtime, flake/quarantine
+inventory, and branch-protection approval. Missing, skipped, busy-runner, timed-out,
+or failed-cleanup runs do not count green. Nightly remains diagnostic.

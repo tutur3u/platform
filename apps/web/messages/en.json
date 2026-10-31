@@ -4511,6 +4511,7 @@
     "app": "App",
     "apps": {
       "ai": "AI",
+      "api": "API",
       "apps": "Apps",
       "backend": "backend",
       "calendar": "Calendar",
@@ -4589,6 +4590,7 @@
     },
     "feature": "Feature and scope",
     "features": {
+      "abuse-guard_0": "Abuse protection store",
       "ai_0": "AI chat and model access",
       "ai_1": "Prompts, agents and datasets",
       "ai_2": "Playground and runs",
@@ -4597,6 +4599,7 @@
       "ai_5": "API keys and integrations",
       "aiCredits": "Monthly AI credits",
       "aiLab": "AI lab",
+      "api_0": "Platform service and operations",
       "apps_0": "App discovery and switching",
       "attachments": "Finance attachments per transaction",
       "automation": "Monthly automation runs",
@@ -6778,14 +6781,28 @@
     "yesterday": "Yesterday"
   },
   "desktop_download": {
+    "android": {
+      "beta_action": "Join on Google Play",
+      "beta_meta": "Google Play beta",
+      "name": "Android",
+      "store_action": "Get it on Google Play",
+      "store_meta": "Google Play"
+    },
     "badge": "Tuturuuu early access",
-    "beta": "Beta",
-    "beta_notice": "All downloads are early-access beta versions. Features may change, and these builds may not be ready for production use.",
     "checksum": "SHA-256 checksum",
     "coming_soon": "Coming soon",
-    "description": "Your connected workspace on iPhone, iPad, Android, Windows, macOS, and Linux.",
-    "desktop_title": "On your computer",
+    "description": "Beta apps for your phone, tablet, and computer. Your workspace stays in sync everywhere.",
+    "details": "Install details",
+    "download": "Download",
     "download_for": "Download for {platform}",
+    "invite_only": "Invitation only",
+    "ios": {
+      "beta_action": "Join on TestFlight",
+      "beta_meta": "TestFlight beta",
+      "name": "iPhone and iPad",
+      "store_action": "Download on the App Store",
+      "store_meta": "App Store"
+    },
     "linux": {
       "name": "Linux",
       "requirements": "Ubuntu 24.04 or later · Intel / AMD 64-bit · .deb"
@@ -6794,28 +6811,29 @@
       "name": "macOS",
       "requirements": "macOS 12 or later · Apple silicon and Intel"
     },
-    "mobile": {
-      "android": {
-        "action": "Join Android beta",
-        "instructions": "Join the Google Play testing program with your invited Google account, then install the beta. If the testing page is unavailable, request an invitation first.",
-        "name": "Android"
-      },
-      "invitation": "Mobile beta access may require an invitation. Use the Apple or Google account you provided for early access. Installing TestFlight alone does not grant access to the Tuturuuu beta.",
-      "ios": {
-        "action": "Get TestFlight",
-        "instructions": "Install TestFlight, then open your invitation email to accept the invitation and install Tuturuuu. Beta availability and testing slots may be limited.",
-        "name": "iPhone and iPad"
-      },
-      "request_invitation": "Request early access",
-      "title": "On your phone or tablet"
-    },
+    "mobile_invite": "The beta may require an invitation. Use the Apple or Google account you gave us for early access.",
     "navigation_description": "Windows, macOS, and Linux apps",
-    "open_web": "Continue in your browser",
-    "package_size": "{size} MB · Beta",
-    "release_notes": "Release notes · {version}",
+    "opens_new_tab": "(opens in a new tab)",
+    "other_title": "Other platforms",
+    "primary_title": "Tuturuuu for {platform}",
+    "qr": {
+      "description": "Scan with your camera to open this page on your phone.",
+      "label": "QR code for the Tuturuuu download page",
+      "title": "Get it on your phone"
+    },
+    "recommended": "Recommended for this device",
+    "release_notes": "Release notes",
+    "request_access": "Request early access",
     "security": "Downloads are hosted on GitHub. Check the release notes and SHA-256 checksum before installing. Desktop builds are currently in beta.",
-    "title": "Your workspace, right at home.",
-    "unavailable": "Desktop beta is being prepared. You can use the web app now.",
+    "size": "{size} MB",
+    "title": "Download Tuturuuu",
+    "version": "Version {version}",
+    "web": {
+      "action": "Open in browser",
+      "meta": "Nothing to install",
+      "name": "Web",
+      "title": "Use Tuturuuu in your browser"
+    },
     "windows": {
       "installation": "Windows beta installers may be unsigned. Check the release notes and SHA-256 checksum. If SmartScreen warns, choose More info, then Run anyway only if you trust the download and Windows offers that option. If your device blocks it, use the web app.",
       "name": "Windows",
@@ -8630,6 +8648,12 @@
     "workspaces": "Workspaces"
   },
   "integrations-page": {
+    "discord-disconnect-cancel": "Cancel",
+    "discord-disconnect-confirm": "Disconnect and remove mappings",
+    "discord-disconnect-description": "This removes the connection between your workspace and the Discord server, and permanently deletes every Discord member mapping for this server. Reconnecting does not restore them; members must be mapped again. The bot stays in your Discord server but stops responding to commands.",
+    "discord-disconnect-pending": "Disconnecting...",
+    "discord-disconnect-title": "Disconnect Discord Integration",
+    "discord-disconnect-trigger": "Disconnect Integration",
     "sepay-connected-description": "SePay connected successfully. Bank-account sync and webhook provisioning are ready to verify from this workspace.",
     "sepay-connected-title": "SePay connected",
     "sepay-error-description": "SePay could not finish connecting. Review the integration status and retry the flow from this workspace.",
@@ -8855,9 +8879,9 @@
         "capabilities": {
           "contextAware": "Context-Aware",
           "learning": "Always Learning",
-          "proactive": "Proactive AI"
+          "proactive": "Takes action"
         },
-        "description": "Mira is your proactive AI companion. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, and communications to surface proactive recommendations.",
+        "description": "Mira is your AI assistant inside Tuturuuu. Ask her to plan your day, schedule tasks into your calendar, draft email replies or log your spending, all from what's already in your workspace.",
         "prompts": [
           "Schedule my standup for tomorrow at 9am",
           "Summarize my tasks for this week",
@@ -8926,7 +8950,7 @@
         "role": "Bridge to Humanity"
       },
       "mira": {
-        "description": "Mira is your proactive AI companion—the JARVIS we envisioned. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, finances, and communications to surface proactive recommendations instead of passive reminders.",
+        "description": "Mira is your AI assistant inside Tuturuuu. She works with your tasks, calendar, mail, finances and time tracking: ask, and she plans, schedules, drafts and logs for you.",
         "title": "Mira: Your AI Partner"
       },
       "nova": {
@@ -8978,7 +9002,7 @@
           "tasks": "Show my tasks"
         },
         "status": "Online",
-        "subtitle": "Your proactive AI companion",
+        "subtitle": "Your AI assistant for work",
         "title": "AI Assistant (Mira)",
         "toolCall": {
           "checking": "Checking 3 calendars",
@@ -9013,9 +9037,9 @@
         "mira": {
           "badges": {
             "learning": "Always Learning",
-            "proactive": "Proactive AI"
+            "proactive": "Takes action"
           },
-          "description": "Mira is your proactive AI companion—the JARVIS we envisioned. She plans, reasons, and acts on your behalf, synchronizing calendars, goals, finances, and communications to surface proactive recommendations instead of passive reminders.",
+          "description": "Mira is your AI assistant inside Tuturuuu. She works with your tasks, calendar, mail, finances and time tracking: ask, and she plans, schedules, drafts and logs for you.",
           "title": "Mira: Your AI Partner"
         },
         "subtitle": "Meet Mira and the AI core that makes Tuturuuu truly intelligent",
@@ -9647,6 +9671,28 @@
       "title": "Find the right workspace for your team"
     }
   },
+  "legalRedesign": {
+    "added": "Added",
+    "all": "All documents",
+    "changes": "What changed",
+    "compare": "Open the full redline",
+    "contents": "Contents",
+    "effective": "Effective",
+    "exact": "Show the exact wording change",
+    "from": "In force",
+    "language": "Language",
+    "navigation": "Legal documents",
+    "notice": "Not yet in effect",
+    "print": "Print or save as PDF",
+    "published": "Published",
+    "removed": "Removed",
+    "revised": "Revised",
+    "skip": "Skip to legal content",
+    "summary": "Summary, not legal text",
+    "to": "Proposed",
+    "unchanged": "Unchanged",
+    "version": "Version"
+  },
   "link-shortener": {
     "access_denied": "Access Denied",
     "active_creators": "Active Creators",
@@ -9854,6 +9900,8 @@
     "loading_account_profile_description": "Loading your Tuturuuu profile before returning to {app}.",
     "loading_account_profile_title": "Loading account profile",
     "loading_profile": "Loading profile",
+    "microsoft_email_recovery": "Used to sign in with Microsoft? Sign in with your email instead.",
+    "microsoft_tenant_restricted": "Microsoft sign-in is restricted to Tuturuuu staff. Sign in with your email instead.",
     "mobile_mfa_approved": "Mobile approval received.",
     "mobile_mfa_button": "Approve with mobile app",
     "mobile_mfa_description": "Open Tuturuuu mobile and enter the number below in the sign-in approval prompt. Confirm only a sign-in you started.",
@@ -9923,6 +9971,7 @@
     "sign_in_to_your_account": "Sign in to your account to continue",
     "signed_in_as": "Signed in as",
     "social_sign_in_failed": "Social sign-in failed. Please try again or contact support if the issue persists.",
+    "staff_microsoft": "Tuturuuu staff (Microsoft)",
     "success": "Success",
     "two_factor_authentication": "Two-Factor Authentication",
     "unknown_account": "Unknown account",
@@ -10277,6 +10326,10 @@
       "description": "Bring team tasks, calendars, documents, and business tools together in one open-source workspace. Plan and collaborate with AI assistance from Mira.",
       "title": "All-in-One Workspace for Teams"
     },
+    "legal_changes": {
+      "description": "Proposed — not yet in effect",
+      "title": "Upcoming changes"
+    },
     "legal_dpa": {
       "description": "Read the Tuturuuu data processing addendum and the responsibilities that apply when processing personal data.",
       "title": "Data Processing Addendum"
@@ -10441,6 +10494,8 @@
     "participants": "Participants",
     "registered_users": "Registered users",
     "select-time-zone": "Select time zone",
+    "sign_in_to_create_plan": "Sign in to create a plan",
+    "sign_in_to_create_plan_desc": "Creating a plan requires a signed-in Tuturuuu account. Anyone with a public plan link can still join without signing in.",
     "smart_scheduling": "Smart Scheduling",
     "something_went_wrong": "Something went wrong",
     "soonest-time-to-meet": "Soonest time",
@@ -11400,6 +11455,16 @@
       "permission-denied": "Browser notifications are blocked. Please enable them in your browser settings.",
       "permission-request": "Enable browser notifications to stay updated"
     },
+    "codes": {
+      "calendar_reconnect_required": {
+        "description": "Calendar sync paused because the provider stopped accepting access. Reconnect the account to resume.",
+        "title": "Reconnect your calendar"
+      },
+      "tutoring_session_completed": {
+        "description": "A tutor marked a tutoring session for a learner in your class as complete.",
+        "title": "Tutoring session completed"
+      }
+    },
     "date_earlier": "Earlier",
     "date_this_week": "This Week",
     "date_today": "Today",
@@ -11514,6 +11579,7 @@
         "time_tracking_request_rejected": "Time tracking request rejections",
         "time_tracking_request_resubmitted": "Time tracking request resubmissions",
         "time_tracking_request_submitted": "Time tracking requests awaiting approval",
+        "topic_assigned": "Topics assigned to you",
         "workspace_activity": "Workspace activity",
         "workspace_invite": "Workspace invitations"
       },
@@ -11599,6 +11665,7 @@
       "time_tracking_request_rejected": "Time Tracking Request Rejected",
       "time_tracking_request_resubmitted": "Time Tracking Request Resubmitted",
       "time_tracking_request_submitted": "Time Tracking Request Submitted",
+      "topic_assigned": "Topic assigned",
       "workspace_invite": "Workspace Invite"
     },
     "unified_view": "Unified",
@@ -13719,7 +13786,7 @@
         },
         "eyebrow": "The AI core",
         "mira": {
-          "description": "The assistant you talk to. She plans, reasons and acts on your behalf across calendar, goals, finances and communications, surfacing proactive recommendations rather than passive reminders.",
+          "description": "The assistant you talk to. Ask, and she plans, schedules, drafts and logs across your tasks, calendar, mail and finances.",
           "title": "Mira, your AI partner"
         },
         "nova": {
@@ -15121,8 +15188,8 @@
     "accessError": "Programming access is unavailable. Check your account or room access.",
     "accountId": "Collaborator account ID",
     "addFile": "Add file",
-    "backgroundSave": "Changes save in the background",
     "benefitHint": "Account benefits are managed in Infrastructure.",
+    "changeResource": "Change resource",
     "chooseResource": "The host can open a Learn problem or playground for this meeting.",
     "close": "Close coding room",
     "coding": "Co-programming",
@@ -15131,21 +15198,28 @@
     "console": "Console",
     "create": "Create project",
     "description": "Build and run projects on managed environments. Files belong to your personal Tuturuuu Drive.",
-    "driveHint": "Background saves write changed files to personal Drive.",
     "empty": "Your projects will appear here.",
+    "exitCode": "Exited with code {code}",
     "failed": "Request failed. Your unsaved edits remain in this room. Try again.",
+    "fileExists": "A file with this path already exists.",
     "files": "Project files",
+    "hideProblem": "Hide problem statement",
+    "hideSetup": "Hide resource controls",
+    "invalidFile": "Use letters, numbers, dots, dashes and slashes.",
     "invite": "Allow editing",
     "language": "Language",
     "loadMoreResources": "Load more problems",
+    "more": "More actions",
     "name": "Project name",
     "newFile": "New file path",
     "noRunners": "No managed language environments are ready.",
     "offline": "Reconnecting…",
     "open": "Open",
+    "outputEmpty": "Output appears here after a run.",
     "paidRequired": "A paid account or playground benefit is required",
     "playground": "Hosted playground",
     "preview": "Private preview",
+    "previewClose": "Close preview",
     "previewPort": "Preview port",
     "problem": "Learn problem",
     "resource": "Programming resource",
@@ -15156,8 +15230,10 @@
     "save": "Save to Drive",
     "saved": "Saved to Drive",
     "saveFailed": "Drive save failed. Keep this room open and retry.",
+    "setupTitle": "Open a Learn problem or playground",
     "share": "Invite collaborators",
     "shared": "Collaboration access updated.",
+    "showProblem": "Show problem statement",
     "stdin": "Standard input",
     "stop": "Stop environment",
     "test": "Run public tests",
@@ -21223,6 +21299,16 @@
     "ytd_interest": "Year to Date",
     "zalopay_tier": "ZaloPay Tier"
   },
+  "web_start_legal": {
+    "community_guidelines": "Community Guidelines",
+    "contact": "Contact legal",
+    "contents": "Contents",
+    "effective_date": "Effective",
+    "language": "Tiếng Việt",
+    "navigation": "Legal documents",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
   "workflow": {
     "afternoons": "Afternoons",
     "ai_analysis": "AI Analysis",
@@ -24459,6 +24545,10 @@
     "created_at": "This workspace was created ",
     "danger_zone": "Danger Zone",
     "delete": "Delete Workspace",
+    "delete_confirmation_description": "This action <strong>cannot be undone</strong>. This will permanently delete the <strong>{name}</strong> workspace and all of its data.",
+    "delete_confirmation_prompt": "Please type <strong>{name}</strong> to confirm.",
+    "delete_failed": "Failed to delete workspace",
+    "delete_failed_description": "The deletion could not be confirmed. Check the workspace before trying again, or contact support.",
     "delete_workspace_warning": "Once you delete a workspace, there is no going back. Please be certain.",
     "deleting": "Deleting Workspace",
     "description": "Manage the settings of your workspace.",

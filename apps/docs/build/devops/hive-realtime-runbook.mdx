@@ -1,13 +1,19 @@
 ---
 title: Hive Realtime Runbook
 description: Operating notes for the Hive WebSocket service and satellite app deployment.
-updatedAt: '2026-05-16'
+updatedAt: '2026-10-26'
 ---
 
 Hive realtime lives in `apps/hive-realtime`. It is a Bun WebSocket service used
 only by Hive; do not replace it with Supabase Realtime. The shared protocol and
 Yjs helpers live in `@tuturuuu/realtime/hive` so `apps/hive`,
 `apps/hive-realtime`, and `apps/web` use the same message schemas.
+
+The retained Bun/Docker service is not the native Cloudflare target. Follow the
+Cloudflare migration plan for replacement
+and the maintenance runbook for the
+separately approved interim response. Docker remains paused; these procedures do
+not authorize service restarts.
 
 ## Required Environment
 
@@ -104,14 +110,14 @@ messages:
 The durable shared world is a Yjs document per server. Clients send encoded Yjs
 deltas as base64 in `sync.update`, and the realtime service appends those bytes
 to `hive_crdt_updates`. State-vector sync lets a reconnecting client request
-only missing updates, while periodic compaction stores merged snapshots in
-`hive_world_states.crdt_snapshot`.
+only missing updates. The persistence adapter stores merged CRDT state and its
+state vector in `hive_world_states.crdt_state` and `crdt_state_vector`.
 
 `revision` is a compatibility display value backed by `op_seq`; it is not a
 write precondition for commutative CRDT world edits. Money, item ownership,
-warehouses, trades, LLM spend, and bankruptcy still go through the `apps/web`
-Hive APIs and Hive Postgres transactions. Realtime broadcasts only the committed
-visual projections for those authoritative writes.
+warehouses, trades, LLM spend, and bankruptcy still go through the local
+`apps/hive/src/app/api/v1/hive` APIs and Hive Postgres transactions. Realtime
+broadcasts only the committed visual projections for those authoritative writes.
 
 `world.event` and `world.event.applied` remain as temporary compatibility
 wrappers for older full-world edit flows. The service converts accepted payloads

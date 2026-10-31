@@ -3,6 +3,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { Json } from '@tuturuuu/types/db';
+import { isWorkspaceTemplateBackgroundPath } from '@tuturuuu/utils/template-background-path';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -102,6 +103,16 @@ export async function POST(req: NextRequest, { params }: Params) {
     if (!name || name.trim().length === 0) {
       return NextResponse.json(
         { error: 'Template name is required' },
+        { status: 400 }
+      );
+    }
+
+    if (
+      backgroundPath &&
+      !isWorkspaceTemplateBackgroundPath(backgroundPath, wsId)
+    ) {
+      return NextResponse.json(
+        { error: 'Invalid background path' },
         { status: 400 }
       );
     }
@@ -271,7 +282,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         name: name.trim(),
         description: description?.trim() || null,
         visibility,
-        content: content as unknown as Json,
+        content: content as unknown as NonNullable<Json>,
         background_path: backgroundPath || null,
       });
 

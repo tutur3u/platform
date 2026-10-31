@@ -9,6 +9,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Combobox } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import { Switch } from '@tuturuuu/ui/switch';
 import { useTranslations } from 'next-intl';
 
 interface Props {
@@ -22,6 +23,10 @@ export function TutoringWeakRules({ canConfigure, policy, onChange }: Props) {
   const matchOptions = (['contains', 'exact', 'prefix', 'suffix'] as const).map(
     (match) => ({ value: match, label: t(`policy_match_${match}`) })
   );
+  const targetOptions = (['name', 'tag'] as const).map((target) => ({
+    value: target,
+    label: t(`policy_target_${target}`),
+  }));
   const scopeOptions = (['all', 'make_up', 'weak_support'] as const).map(
     (scope) => ({ value: scope, label: t(`policy_scope_${scope}`) })
   );
@@ -82,6 +87,24 @@ export function TutoringWeakRules({ canConfigure, policy, onChange }: Props) {
           {t('policy_weak_review_help')}
         </p>
       </div>
+      <div className="flex max-w-xl items-start justify-between gap-3 rounded-lg border p-3">
+        <div className="space-y-1">
+          <Label htmlFor="policy-restrictWeakContentEditors">
+            {t('policy_restrict_weak_content')}
+          </Label>
+          <p className="text-muted-foreground text-xs">
+            {t('policy_restrict_weak_content_help')}
+          </p>
+        </div>
+        <Switch
+          checked={policy.restrictWeakContentEditors}
+          disabled={!canConfigure}
+          id="policy-restrictWeakContentEditors"
+          onCheckedChange={(checked) =>
+            onChange({ restrictWeakContentEditors: checked })
+          }
+        />
+      </div>
       {policy.groupExclusions.length === 0 ? (
         <p className="rounded-lg bg-muted/50 p-3 text-muted-foreground text-sm">
           {t('policy_no_weak_exclusions')}
@@ -103,6 +126,18 @@ export function TutoringWeakRules({ canConfigure, policy, onChange }: Props) {
             options={scopeOptions}
             placeholder={t('policy_scope')}
             selected={rule.scope}
+          />
+          <Combobox
+            className="w-full sm:w-36"
+            disabled={!canConfigure}
+            onChange={(value) =>
+              updateExclusion(index, {
+                target: value === 'tag' ? 'tag' : undefined,
+              })
+            }
+            options={targetOptions}
+            placeholder={t('policy_target')}
+            selected={rule.target ?? 'name'}
           />
           <Combobox
             className="w-full sm:w-40"
