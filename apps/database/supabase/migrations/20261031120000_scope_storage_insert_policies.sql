@@ -52,10 +52,13 @@ create policy storage_changelog_staff_delete on storage.objects
 as restrictive for delete to anon, authenticated
 using (bucket_id <> 'changelog');
 
+-- tuturuuu: reviewed(alter-routine-review): pins audit function search_path with pg_catalog first and pg_temp last; bodies are schema-qualified
 alter function audit.insert_update_delete_trigger()
-  set search_path = public, audit, pg_temp;
+  set search_path = pg_catalog, public, audit, pg_temp;
+-- tuturuuu: reviewed(alter-routine-review): pins audit function search_path with pg_catalog first and pg_temp last; bodies are schema-qualified
 alter function audit.find_workspace_user_status_audit_record(uuid, uuid, boolean, timestamptz, uuid, timestamptz)
-  set search_path = public, audit, pg_temp;
+  set search_path = pg_catalog, public, audit, pg_temp;
+-- tuturuuu: reviewed(alter-routine-review): pins audit function search_path with pg_catalog first and pg_temp last; bodies are schema-qualified
 alter function audit.link_workspace_user_status_audit_record()
-  set search_path = public, audit, pg_temp;
+  set search_path = pg_catalog, public, audit, pg_temp;
 commit;
