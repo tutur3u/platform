@@ -10,6 +10,7 @@ import { MeetAiError, type MeetAiParams } from './access';
 import { followupAccess } from './followup-context';
 import { prepareCalendarFollowup } from './followup-event';
 import { prepareTaskFollowup } from './followup-task';
+import { meetAiAvailable } from './workspace-gate';
 
 export const followupInputSchema = z.object({
   requestId: z.uuid(),
@@ -74,6 +75,13 @@ async function createFollowupAttempt(
     throw new MeetAiError(400, 'Invalid follow-up');
   }
   const access = await followupAccess(request, params, input.workspaceId);
+  // Creating follow-ups from Meet AI notes is a Meet AI write.
+  if (!(await meetAiAvailable(access.wsId)))
+    throw new MeetAiError(
+      403,
+      'Meeting AI is not available for this workspace',
+      'MEET_AI_WORKSPACE_NOT_ENABLED'
+    );
   if (input.userId !== access.user.id)
     throw new MeetAiError(409, 'Account changed; reopen review');
   let payload: ReturnType<typeof buildFollowupPayload>;
