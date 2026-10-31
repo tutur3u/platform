@@ -111,12 +111,15 @@ export async function cloneScheduleMonth(
 
   if (dryRun) return { createdIds: [], items };
 
+  /** `items` index of each write. */
+  const writeItemIndexes: number[] = [];
   const writes = plan.flatMap((planItem, index): ScheduleSessionWrite[] => {
     const item = items[index]!;
     const { source } = planItem;
     if (item.status !== 'create' || !item.targetDate || !source.groupId) {
       return [];
     }
+    writeItemIndexes.push(index);
     return [
       {
         classLabel: item.classLabel ?? source.groupId,
@@ -138,10 +141,21 @@ export async function cloneScheduleMonth(
     ];
   });
 
-  const createdIds = await insertScheduleSessions({
+  const insertedIds = await insertScheduleSessions({
     ...context,
     sessions: writes,
     sourceName: `clone ${sourceMonth} -> ${targetMonth}`,
   });
-  return { createdIds, items };
+  // A null id: a concurrent save or clone took the slot after this plan was
+  // made, so the session is already scheduled.
+  insertedIds.forEach((id, writeIndex) => {
+    const itemIndex = writeItemIndexes[writeIndex];
+    if (!id && itemIndex !== undefined) {
+      items[itemIndex] = { ...items[itemIndex]!, status: 'exists' };
+    }
+  });
+  return {
+    createdIds: insertedIds.flatMap((id) => (id ? [id] : [])),
+    items,
+  };
 }

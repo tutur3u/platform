@@ -169,6 +169,25 @@ describe('GVNN swap racing a send', () => {
 
   it('puts the previous GVNN back when the swap itself fails', async () => {
     const id = await created();
+    // private.set_topic_schedule_recipient (atomic; covered in pgTAP).
+    mocks.admin.rpc.mockImplementation(
+      async (name: string, args: Record<string, unknown>) => {
+        if (name !== 'set_topic_schedule_recipient') {
+          return { data: null, error: null };
+        }
+        mocks.admin.tables.topic_announcement_recipients = [
+          ...mocks.admin.tables.topic_announcement_recipients.filter(
+            (row: { announcement_id: string }) =>
+              row.announcement_id !== args.p_announcement_id
+          ),
+          {
+            announcement_id: args.p_announcement_id,
+            contact_id: args.p_contact_id,
+          },
+        ];
+        return { data: 'set', error: null };
+      }
+    );
     let failed = false;
     hook('topic_announcement_recipients', 'insert', () => {
       if (failed) return;

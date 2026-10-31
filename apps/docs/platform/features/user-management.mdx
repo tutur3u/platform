@@ -345,8 +345,27 @@ module unchanged.
   Retrying a save never duplicates: a new row whose slot already holds an
   identical session is reported as already saved, while a different session in
   that slot is a per-row conflict; removing an already removed session
-  succeeds. Two clones committed at exactly the same moment are not protected
-  by a database unique key.
+  succeeds. Requests committed at the same instant are refused by the
+  database too: `topic_announcements_schedule_slot_unique` (migration
+  `20261029194100`) allows one non-cancelled schedule session per workspace,
+  class, date and start time. When it refuses a row (another request took
+  the slot after this one checked it), the other sessions still save, the
+  save reports that row as a `duplicate_slot` conflict (409, with what did
+  save), and a clone marks the session "already scheduled". An edit refused
+  this way is a per-row `duplicate_slot` conflict that changes nothing: its
+  GVNN is put back through `private.set_topic_schedule_recipient`, one
+  transaction that locks the session row (a send's claim waits), re-checks it
+  is editable and checks the contact. If a send claimed the session or the
+  previous GVNN can no longer be a recipient (archived), nothing is rewritten
+  and the new GVNN stays, reported as a GVNN-only change; a session is never
+  left without a recipient. Only the slot index's violations are treated this
+  way; any other unique violation is an error.
+- **Applying the slot index.** The migration first looks for slots that
+  already hold more than one non-cancelled session. If any exist, in any
+  workspace, it stops with their count and session ids and changes nothing;
+  it never chooses or cancels a session. The read-only
+  `apps/database/verification/topic-schedule-slot-duplicates.sql` lists them
+  for the rehearsal and before the production apply.
 - **Edit and remove.** Start time, minutes, class, GVNN, room and campus are
   edited inline; "Move to date..." in a row's menu moves a session within the
   month and focuses it at its new date. Saves are validated as a whole before
@@ -390,9 +409,9 @@ module unchanged.
   teacher, nothing emailed. Teachers without a linked account are skipped
   and reported in a toast. Unchanged, retried or same-teacher saves assign
   nothing and notify nothing, so no extra state is stored; a notification
-  that fails after the save is reported and not retried. Known limits: two
-  tabs saving the same new session at once can each notify, and a session
-  moved from teacher A to B and back to A notifies A again. When part of a
+  that fails after the save is reported and not retried. Known limit: a
+  session moved from teacher A to B and back to A notifies A again (two tabs
+  saving the same new session at once can no longer both create it). When part of a
   conflicting save went through, its notification outcome is shown too.
 - **Removing.** Removing a session cancels it (`status = 'cancelled'`) like any
   announcement, keeping its topic and audit trail. Queued, sending and sent
@@ -425,6 +444,10 @@ link guards without stray history entries, rows kept in saved order,
 delivery-state labels), and
 `apps/web/src/lib/topic-schedule/schedule-races.test.ts` (GVNN swap racing a
 send, chunked recipient reads),
+`apps/web/src/lib/topic-schedule/schedule-slot-race.test.ts` (a slot
+taken by a concurrent request: other sessions save, the row conflicts, the
+clone marks it already scheduled),
+`apps/database/supabase/tests/topic-schedule-slot-unique.sql` (the slot index),
 `apps/web/src/lib/topic-schedule/schedule-notify.test.ts` (notify on new
 sessions and teacher changes, none on unchanged or retried saves, other
 workspace links and sessions ignored, flag off, clone),
