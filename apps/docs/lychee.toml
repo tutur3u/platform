@@ -1,21 +1,26 @@
 # Lychee link checker configuration for Mintlify docs
 # https://lychee.cli.rs/#/usage/config
+# Run from apps/docs: lychee --config lychee.toml --no-progress '**/*.mdx'
+# Written for lychee 0.24; internal Mintlify routes resolve against this
+# directory and fall back to .mdx, so renamed or deleted pages are caught.
+
+root_dir = "."
+fallback_extensions = ["mdx"]
 
 # Exclude patterns - regex patterns to exclude from checking
 exclude = [
-    # Exclude all paths starting with / (Mintlify internal routes)
-    '^/',
-    # Exclude relative paths without extensions (Mintlify resolves these to .mdx)
-    '^\\./',
-    # Exclude file:// URLs (these are Mintlify internal links)
+    # file:// URLs are Mintlify internal links
     '^file://',
+    # Bot-blocking or login-gated hosts that answer 202/403 to crawlers
+    '^https://chatgpt\.com/settings/',
+    '^https://eur-lex\.europa\.eu/',
+    '^https://developer\.squareup\.com/',
+    # Intermittent 503 to automated clients
+    '^https://azure\.microsoft\.com/',
 ]
 
 # Exclude all private/local networks and file system links
 exclude_all_private = true
-
-# Include localhost links (for local testing)
-include_localhost = false
 
 # Timeout for requests (in seconds)
 timeout = 30
