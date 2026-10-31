@@ -12,9 +12,11 @@ exclude = [
     # file:// URLs are Mintlify internal links
     '^file://',
     # Bot-blocking or login-gated hosts that answer 202/403 to crawlers
-    '^https://chatgpt\\.com/settings/',
-    '^https://eur-lex\\.europa\\.eu/',
-    '^https://developer\\.squareup\\.com/',
+    '^https://chatgpt\.com/settings/',
+    '^https://eur-lex\.europa\.eu/',
+    '^https://developer\.squareup\.com/',
+    # Intermittent 503 to automated clients
+    '^https://azure\.microsoft\.com/',
 ]
 
 # Exclude all private/local networks and file system links
