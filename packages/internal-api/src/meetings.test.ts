@@ -100,7 +100,7 @@ describe('meeting transcription client', () => {
       const fetchMock = vi.fn();
 
       await expect(
-        transcribeWorkspaceMeetingAudio(audio as Blob, {
+        transcribeWorkspaceMeetingAudio('workspace-1', audio as Blob, {
           baseUrl: 'https://internal.example.com',
           fetch: fetchMock as unknown as typeof fetch,
         })
@@ -130,7 +130,7 @@ describe('meeting transcription client', () => {
       const fetchMock = vi.fn().mockResolvedValue(successfulJsonResponse());
       const audio = new Blob(['audio'], { type });
 
-      await transcribeWorkspaceMeetingAudio(audio, {
+      await transcribeWorkspaceMeetingAudio('workspace-1', audio, {
         baseUrl: 'https://internal.example.com',
         fetch: fetchMock as unknown as typeof fetch,
       });
@@ -147,6 +147,7 @@ describe('meeting transcription client', () => {
           method: 'POST',
         })
       );
+      expect((init.body as FormData).get('wsId')).toBe('workspace-1');
       const uploadedAudio = (init.body as FormData).get('audio');
       expect(uploadedAudio).toBeInstanceOf(File);
       expect(uploadedAudio).toEqual(

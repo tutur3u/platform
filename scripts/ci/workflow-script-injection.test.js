@@ -235,6 +235,13 @@ test('migration checks treat PR file names as data', (t) => {
   git(repo, 'config', 'user.email', 'ci@example.com');
   git(repo, 'config', 'user.name', 'CI');
   fs.writeFileSync(path.join(migrations, '20260101000000_base.sql'), '');
+  // The step reads the reviewed order exemptions from the checked-out script
+  // (the actions/checkout tree), so the fixture carries the same file.
+  fs.mkdirSync(path.join(repo, 'scripts'));
+  fs.copyFileSync(
+    path.join(repoRoot, 'scripts/check-migration-timestamps.js'),
+    path.join(repo, 'scripts/check-migration-timestamps.js')
+  );
   git(repo, 'add', '.');
   git(repo, 'commit', '-q', '-m', 'base');
   const base = git(repo, 'rev-parse', 'HEAD');

@@ -3,8 +3,6 @@ import { createNonce } from '@tuturuuu/start-bridge/csp';
 import { APP_BASE_HEADER } from '@tuturuuu/start-bridge/mounts';
 import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
-import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
-import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { proxy } from '../proxy';
@@ -27,6 +25,7 @@ import {
 import { applyCalendarResponsePolicy } from './response-policy';
 import { reportCalendarSsrError } from './ssr-diagnostics';
 import { denyWithoutStagingAccess, fetchOwner } from './staging-access';
+import { resolveCalendarTasksOrigin } from './tasks-origin';
 import type {
   CalendarExecutionContext,
   CalendarWorkerEnvironment,
@@ -144,20 +143,12 @@ async function dispatchCalendarRequest(
               const origin =
                 owner === 'web'
                   ? resolveTuturuuuWebAppUrl()
-                  : resolveInternalAppUrl({
-                      appName: 'tasks',
-                      candidates: [
-                        process.env.TASKS_APP_URL,
-                        process.env.NEXT_PUBLIC_TASKS_APP_URL,
-                      ],
-                      fallback:
-                        process.env.NODE_ENV === 'production'
-                          ? 'https://tasks.tuturuuu.com'
-                          : getLocalInternalAppUrl(
-                              'tasks',
-                              'http://localhost:7809'
-                            ),
-                    });
+                  : resolveCalendarTasksOrigin();
+              if (!origin)
+                return Response.json(
+                  { error: 'Tasks is not configured for this deployment' },
+                  { status: 503, headers: { 'cache-control': 'no-store' } }
+                );
               return fetchOwner(
                 forwardToOwner(
                   base.stripRequest(forwarded) ?? forwarded,
