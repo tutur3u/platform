@@ -544,29 +544,45 @@ do not grant permission to transfer a Gemini key to a new destination.
 
 ### Pilot workspace allowlist
 
-Product decision (31 October 2026): Meet AI (transcription and post-call notes)
-is **default deny**. Until the 23-28 November pilot, only the internal team
-workspace may use it in production. Scope: the Meet app's session start/finish/
-sharing endpoint and the audio chunk endpoint (`/api/meet-ai/:wsId/:meetingId`
-and `/chunks`), checked on the server for the meeting's resolved workspace id.
-The Parley scenario product is outside this gate.
+Product decision (31 October 2026): Meet AI is **default deny**. Until the
+23-28 November pilot, only the internal team workspace may use it in production.
+Widening the allowlist beyond the team workspace needs an explicit user decision.
+
+Every check uses the workspace the server resolved (personal, handle and id
+lookups all resolve first), never the client-supplied value, and runs before any
+database write, credit reservation or provider call. Scope:
+
+| Surface | Gated |
+| --- | --- |
+| Transcription and notes | Session start/finish/sharing and audio chunks (`/api/meet-ai/:wsId/:meetingId`, `/chunks`) |
+| Live assistant (it transcribes audio) | `/api/meet-live` start and resume, its review route, and the Durable Object `/initialize`, `/control` resume, `/workspace-review`, the `/live-connect` upgrade, provider reconnect and alarm reconnect |
+| Note sharing | Turning `shareNotes` or `shareNotesAfterMeeting` on, at the authoritative write (`room.settings.update` and the room-state PATCH). Turning sharing off is always allowed |
+| Assistant writes | Assistant generation, personal assistant and review POSTs (including approve, deny, share, discard), and creating follow-ups from notes |
+
+Never gated, so existing sessions can always end and settle: Live stop, cleanup
+and billing settlement. Reads (state, transcripts, notes, assistant GETs) keep
+their existing participant rules. Parley scenario sessions are outside the gate.
 
 Meet production (`meet.tuturuuu.com`) is the Cloudflare Worker `tuturuuu-meet`,
-not a Vercel deployment. Set `MEET_AI_ENABLED_WORKSPACE_IDS` on that Worker, the
-same way as `GOOGLE_GENERATIVE_AI_API_KEY`, to a comma- or whitespace-separated
-list of workspace ids. A deployment of this code without the variable keeps Meet AI
-off for everyone. Unset, blank or unlisted means every
-mutation returns 403 `MEET_AI_WORKSPACE_NOT_ENABLED`; there is no wildcard.
-Keep the team workspace id in deployment configuration only, never in source.
-Transcripts and notes that already exist stay readable under the existing
-participant rules. The panel reads `available` from the state response and, when
-it is false, shows a neutral "not available for this workspace" message instead of
-the Start, Finish and Retry controls. Widening the allowlist beyond the team
-workspace needs an explicit user decision.
+not a Vercel deployment. Set `MEET_AI_ENABLED_WORKSPACE_IDS` to a comma- or
+whitespace-separated list of workspace ids on each runtime that enforces the gate:
+the `tuturuuu-meet` Worker (including its Live Durable Object), the Meet realtime
+room Worker, and the web app. The value is read only from each runtime's injected
+binding, never from ambient `process.env` in shared code. A deployment without the
+variable keeps Meet AI off everywhere. Unset, blank or unlisted denies with 403
+(`MEET_AI_WORKSPACE_NOT_ENABLED` for Meet AI routes); there is no wildcard. Keep
+the team workspace id in deployment configuration only, never in source.
 
-Regression coverage: `workspace-gate.test.ts`, `access.test.ts` (unset denies,
-unlisted denies, listed allows, reads unaffected) and `sessions.test.ts`
-(`available`).
+The panel reads `available` from the state response and, when it is false, shows a
+neutral "not available for this workspace" message instead of the Start, Finish
+and Retry controls. Finalize and finish-session paths added later (#7285) need the
+same gate.
+
+Regression coverage: `workspace-gate.test.ts`, `chunks-gate.test.ts` (real access
+path, zero writes and provider calls on deny), `access.test.ts`,
+`sessions.test.ts`, `followup-create.test.ts`, `assistant-gate.test.ts`, the
+Live `workspace-gate.test.ts` and `route.gate.test.ts`, `room-controls.test.ts`,
+and `room-do-empty-lifecycle.test.ts`.
 
 Apply `20260907040000_meet_ai_sessions.sql` through the normal database release
 process before enabling the feature. A missing schema produces a visible
