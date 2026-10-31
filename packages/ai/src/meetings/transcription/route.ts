@@ -1,7 +1,13 @@
 import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getRateLimiters } from '@tuturuuu/utils/api-proxy-rate-limiters';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import { checkAiCredits, deductAiCredits } from '../../credits/check-credits';
 import { withAiMemory } from '../../memory';
 import {
   hasOversizedDeclaredContentLength,
@@ -52,7 +58,65 @@ export function createPOST() {
 
       const formData = await req.formData();
       const audioFile = formData.get('audio');
-      const wsId = formData.get('wsId') as string | null;
+      const rawWsId = formData.get('wsId');
+      if (typeof rawWsId !== 'string' || !rawWsId.trim()) {
+        return new Response('Workspace ID is required', { status: 400 });
+      }
+
+      let wsId: string;
+      try {
+        wsId = await normalizeWorkspaceId(rawWsId.trim(), supabase);
+      } catch {
+        return new Response('Workspace access denied', { status: 403 });
+      }
+      if (!z.uuid().safeParse(wsId).success) {
+        return new Response('Workspace access denied', { status: 403 });
+      }
+      const membership = await verifyWorkspaceMembershipType({
+        wsId,
+        userId: user.id,
+        supabase,
+        requiredType: 'MEMBER',
+      });
+      if (!membership.ok) {
+        return new Response('Workspace access denied', { status: 403 });
+      }
+
+      const limiters = await getRateLimiters('ai:meeting-transcription', {
+        get: [],
+        mutate: [{ duration: '1 m', limit: 10, window: 'minute' }],
+      });
+      for (const { limiter } of limiters?.mutate ?? []) {
+        const result = await limiter.limit(user.id);
+        if (!result.success) {
+          return new Response('Too many requests', {
+            status: 429,
+            headers: {
+              'Retry-After': String(
+                Math.max(1, Math.ceil((result.reset - Date.now()) / 1000))
+              ),
+            },
+          });
+        }
+      }
+
+      const creditCheck = await checkAiCredits(
+        wsId,
+        DEFAULT_MODEL_NAME,
+        'generate',
+        {
+          userId: user.id,
+        }
+      );
+      if (!creditCheck.allowed) {
+        return Response.json(
+          {
+            error: creditCheck.errorMessage || 'AI credits insufficient',
+            code: creditCheck.errorCode,
+          },
+          { status: 403 }
+        );
+      }
 
       if (!(audioFile instanceof File)) {
         return new Response('No audio file provided', { status: 400 });
@@ -115,6 +179,20 @@ export function createPOST() {
           },
         },
       });
+
+      const deduction = await deductAiCredits({
+        wsId,
+        userId: user.id,
+        modelId: DEFAULT_MODEL_NAME,
+        feature: 'generate',
+        inputTokens: result.usage.inputTokens ?? 0,
+        outputTokens: result.usage.outputTokens ?? 0,
+        reasoningTokens: result.usage.outputTokenDetails?.reasoningTokens ?? 0,
+      });
+      if (!deduction.success) {
+        console.error('Meeting transcription credit deduction failed');
+        return new Response('Unable to record AI usage', { status: 500 });
+      }
 
       return new Response(
         JSON.stringify({

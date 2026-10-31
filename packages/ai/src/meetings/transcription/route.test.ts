@@ -6,9 +6,27 @@ import {
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
+  normalizeWorkspaceId: vi.fn(),
+  membership: vi.fn(),
+  credits: vi.fn(),
+  deduct: vi.fn(),
+  limiters: vi.fn(),
+  limit: vi.fn(),
   generateObject: vi.fn(),
   google: vi.fn(),
   withAiMemory: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  normalizeWorkspaceId: mocks.normalizeWorkspaceId,
+  verifyWorkspaceMembershipType: mocks.membership,
+}));
+vi.mock('@tuturuuu/utils/api-proxy-rate-limiters', () => ({
+  getRateLimiters: mocks.limiters,
+}));
+vi.mock('../../credits/check-credits', () => ({
+  checkAiCredits: mocks.credits,
+  deductAiCredits: mocks.deduct,
 }));
 
 vi.mock('@ai-sdk/google', () => ({
@@ -50,9 +68,11 @@ function createAudioFile({
 function createRequest({
   audio = null,
   contentLength,
+  wsId = 'personal',
 }: {
   audio?: FormDataEntryValue | null;
   contentLength?: string;
+  wsId?: FormDataEntryValue | null;
 } = {}) {
   const headers = new Headers();
   if (contentLength !== undefined) {
@@ -61,7 +81,7 @@ function createRequest({
   const formData = vi.fn().mockResolvedValue({
     get: vi.fn((key: string) => {
       if (key === 'audio') return audio;
-      if (key === 'wsId') return 'workspace-1';
+      if (key === 'wsId') return wsId;
       return null;
     }),
   });
@@ -79,7 +99,17 @@ function expectNoAiSetup() {
 
 describe('meeting transcription route input bounds', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    mocks.normalizeWorkspaceId.mockResolvedValue(
+      '11111111-1111-4111-8111-111111111111'
+    );
+    mocks.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
+    mocks.credits.mockResolvedValue({ allowed: true });
+    mocks.deduct.mockResolvedValue({ success: true });
+    mocks.limit.mockResolvedValue({ success: true });
+    mocks.limiters.mockResolvedValue({
+      mutate: [{ limiter: { limit: mocks.limit } }],
+    });
     mocks.createClient.mockResolvedValue({
       auth: {
         getUser: vi.fn().mockResolvedValue({
@@ -90,6 +120,7 @@ describe('meeting transcription route input bounds', () => {
     mocks.google.mockReturnValue('provider-model');
     mocks.withAiMemory.mockResolvedValue('metered-model');
     mocks.generateObject.mockResolvedValue({
+      usage: { inputTokens: 20, outputTokens: 10 },
       object: {
         durationInSeconds: 1,
         language: 'en',
@@ -98,6 +129,106 @@ describe('meeting transcription route input bounds', () => {
       },
     });
   });
+
+  it.each([null, '', ' ', new File(['x'], 'workspace')])(
+    'requires a workspace field %s before reading audio',
+    async (wsId) => {
+      const { arrayBuffer, file } = createAudioFile();
+      const { request } = createRequest({ audio: file, wsId });
+      expect((await createPOST()(request)).status).toBe(400);
+      expect(arrayBuffer).not.toHaveBeenCalled();
+      expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
+      expectNoAiSetup();
+    }
+  );
+
+  it.each([
+    'invalid',
+    'unresolved',
+    'non-member',
+    'guest',
+    'lookup-error',
+    'credits',
+    'rate-limit',
+  ])('rejects %s before audio allocation or provider setup', async (reason) => {
+    if (reason === 'invalid')
+      mocks.normalizeWorkspaceId.mockRejectedValue(new Error('not found'));
+    if (reason === 'unresolved')
+      mocks.normalizeWorkspaceId.mockResolvedValue('unknown-handle');
+    if (['non-member', 'guest', 'lookup-error'].includes(reason)) {
+      mocks.membership.mockResolvedValue({ ok: false, error: reason });
+    }
+    if (reason === 'credits')
+      mocks.credits.mockResolvedValue({
+        allowed: false,
+        errorCode: 'CREDITS_EXHAUSTED',
+        errorMessage: 'AI credits insufficient',
+      });
+    if (reason === 'rate-limit')
+      mocks.limit.mockResolvedValue({
+        success: false,
+        reset: Date.now() + 60_000,
+      });
+    const { arrayBuffer, file } = createAudioFile();
+    const { request } = createRequest({ audio: file });
+    const response = await createPOST()(request);
+    expect(response.status).toBe(reason === 'rate-limit' ? 429 : 403);
+    if (reason === 'rate-limit') {
+      expect(response.headers.get('Retry-After')).toBeTruthy();
+      expect(mocks.credits).not.toHaveBeenCalled();
+    }
+    expect(arrayBuffer).not.toHaveBeenCalled();
+    expect(mocks.deduct).not.toHaveBeenCalled();
+    expectNoAiSetup();
+  });
+
+  it.each(['personal', 'team-handle'])(
+    'attributes %s to its resolved workspace',
+    async (wsId) => {
+      const { file } = createAudioFile();
+      const { request } = createRequest({ audio: file, wsId });
+      const response = await createPOST()(request);
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({
+        text: 'Transcript',
+        segments: [],
+        language: 'en',
+        durationInSeconds: 1,
+      });
+      expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
+        wsId,
+        expect.anything()
+      );
+      expect(mocks.membership).toHaveBeenCalledWith(
+        expect.objectContaining({
+          wsId: '11111111-1111-4111-8111-111111111111',
+          userId: 'user-1',
+          requiredType: 'MEMBER',
+        })
+      );
+      expect(mocks.credits).toHaveBeenCalledWith(
+        '11111111-1111-4111-8111-111111111111',
+        'gemini-3.1-flash-lite',
+        'generate',
+        { userId: 'user-1' }
+      );
+      expect(mocks.withAiMemory).toHaveBeenCalledWith(
+        expect.objectContaining({
+          wsId: '11111111-1111-4111-8111-111111111111',
+          product: 'meetings',
+        })
+      );
+      expect(mocks.deduct).toHaveBeenCalledWith(
+        expect.objectContaining({
+          wsId: '11111111-1111-4111-8111-111111111111',
+          feature: 'generate',
+          inputTokens: 20,
+          outputTokens: 10,
+        })
+      );
+      expect(mocks.generateObject).toHaveBeenCalledOnce();
+    }
+  );
 
   it('authenticates before rejecting an oversized declared request', async () => {
     const getUser = vi.fn().mockResolvedValue({ data: { user: null } });

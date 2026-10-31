@@ -1658,3 +1658,23 @@ types in the call reducer's default branch, so realtime can ship first.
 Regression coverage lives in `transcription.test.ts`,
 `transcription-routing.test.ts`, and `transcription-compat.test.ts`.
 In-room consent survives DO hibernation only under the active session UUID and is cleared on session or room end. This is not the legal consent record; private.meet_ai_consents belongs to M1-B/M1-C. WebSocket messages over 256 KiB (UTF-8 bytes for text) are rejected before JSON parsing. Legal consent persistence, audio filtering and notices belong to subsequent milestones.
+
+## Recording transcription
+
+Recording transcription in Meet requires a signed-in workspace member and a
+workspace identifier. Personal and handle identifiers resolve on the server;
+credit allowance, usage attribution and deductions use the resolved workspace.
+The default Gemini transcription model uses the existing `generate` credit
+feature and `meetings` product attribution. Guests cannot transcribe recordings.
+
+The endpoint applies the shared API proxy limiter at ten requests per minute per
+user, across workspaces. Its configured store and unavailable-store behavior
+follow the shared limiter. Missing workspace identifiers return 400; invalid
+identifiers, non-members and insufficient credit allowance return 403; rate
+limits return 429 with `Retry-After`. Admission precedes audio byte-buffer
+allocation and provider execution. These rules apply to recording transcription,
+independently of live-call transcription consent.
+
+Regression coverage:
+`packages/ai/src/meetings/transcription/route.test.ts` and
+`packages/internal-api/src/meetings.test.ts`.
