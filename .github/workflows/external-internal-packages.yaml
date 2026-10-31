@@ -64,7 +64,7 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Build Project Artifacts (Fork)
         if: env.IS_FORK_PULL_REQUEST == 'true'

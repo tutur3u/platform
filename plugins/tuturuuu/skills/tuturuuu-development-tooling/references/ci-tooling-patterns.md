@@ -1441,3 +1441,15 @@ Run synthetic metrics, dataset-boundary and runner tests with the AI workspace's
 Vitest config before the build-free changed-files gate. Provider calls are a
 separate consented-data experiment; synthetic green does not confirm D1 or enable
 a production provider. Never attach content-bearing provider errors to evidence.
+
+## Frozen workflow dependency installs
+
+Use explicit `bun install --frozen-lockfile` in workflows; the retry helper also
+adds it for project installs. Lockfile regeneration and pinned global tool installs
+need an immediately preceding `# unfrozen-bun-install: <reason>` comment. Run
+`frozen-bun-install-guard.test.js` with the workflow-config, release-workflows,
+checkout-credentials and Wrangler usage tests after changing this boundary.
+Release formatting installs the locked Biome binary on trusted production content
+before checking out generated files. Keep checkout persistence disabled and push
+credentials in the push step environment. See the GitHub Actions runbook's
+frozen-install section for the operating policy.

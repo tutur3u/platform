@@ -96,10 +96,11 @@ jobs:
 
       - name: Install dependencies
         if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Install Vercel CLI
         if: steps.check_commits.outputs.skip_build != 'true' && steps.equivalent_build.outputs.found != 'true'
+        # unfrozen-bun-install: pinned global CLI has no project lockfile
         run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0
 
       - name: Pull Vercel Environment Information

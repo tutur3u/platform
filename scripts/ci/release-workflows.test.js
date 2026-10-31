@@ -15,16 +15,6 @@ const {
 } = require('./workflow-config-test-helpers.js');
 
 const PACKAGE_PROVENANCE_REPOSITORY_URL = 'https://github.com/tutur3u/platform';
-const rootPackageJson = JSON.parse(
-  fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')
-);
-const expectedBiomeCliVersion = rootPackageJson.devDependencies[
-  '@biomejs/biome'
-].replace(/^[^\d]*/u, '');
-const expectedBiomeCliVersionPattern = expectedBiomeCliVersion.replaceAll(
-  '.',
-  '\\.'
-);
 const tanstackWebVercelWorkflows = new Set([
   'vercel-preview-tanstack-web.yaml',
   'vercel-production-tanstack-web.yaml',
@@ -646,27 +636,16 @@ test('Biome workflow runs pinned npm Biome CLI and prints captured output when c
   }
 
   assert.doesNotMatch(workflow, /biomejs\/setup-biome@v2/u);
-  assert.match(
-    formatJob,
-    new RegExp(
-      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} format \\. 2>&1`,
-      'u'
-    )
-  );
-  assert.match(
-    lintJob,
-    new RegExp(
-      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} lint \\. 2>&1`,
-      'u'
-    )
-  );
-  assert.match(
-    applyFormatJob,
-    new RegExp(
-      `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} format --write \\.`,
-      'u'
-    )
-  );
+  // Biome must come from the frozen lockfile install, never a registry fetch.
+  assert.doesNotMatch(workflow, /npx\b[^\n]*biome/u);
+  for (const [job, command] of [
+    [formatJob, 'format \\. 2>&1'],
+    [lintJob, 'lint \\. 2>&1'],
+    [applyFormatJob, 'format --write \\.'],
+  ]) {
+    assert.match(job, /bun install --frozen-lockfile --ignore-scripts/u);
+    assert.match(job, new RegExp(`node_modules/\\.bin/biome ${command}`, 'u'));
+  }
 });
 
 test('Docker setup workflow pre-pulls the BuildKit image before Buildx setup', () => {
@@ -899,7 +878,7 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
   );
   assert.match(
     cleanupStep,
-    /git push origin --delete "\$\{RELEASE_NOTES_BRANCH\}"/
+    /git push "https:\/\/x-access-token:\$\{PUSH_TOKEN\}@github\.com\/\$\{GITHUB_REPOSITORY\}\.git" --delete "\$\{RELEASE_NOTES_BRANCH\}"/
   );
   assert.match(
     cleanupStep,
@@ -1246,7 +1225,7 @@ test('environment-scoped Vercel workflows scope project secrets to protected job
     const header = workflow.slice(0, workflow.indexOf('\njobs:'));
     const deployJob = readWorkflowJobBlock(workflowName, jobName);
     const installIndex = workflow.indexOf(
-      'run: bash scripts/ci/run-with-backoff.sh bun install\n'
+      'run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile\n'
     );
     const firstSecretInterpolationIndex = workflow.search(
       SECRET_INTERPOLATION_PATTERN

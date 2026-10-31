@@ -154,7 +154,7 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Restore secretless TanStack Turbo fallback
         uses: ./.github/actions/setup-turbo-fallback-cache
@@ -325,7 +325,7 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Check Cloudflare deployment config
         run: node scripts/check-cloudflare-workers.js
@@ -479,7 +479,7 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
@@ -540,7 +540,7 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Check Cloudflare deployment config
         run: node scripts/check-cloudflare-workers.js
@@ -586,7 +586,7 @@ jobs:
           node-version: 24
 
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
       - name: Check Cloudflare deployment config
         run: node scripts/check-cloudflare-workers.js
