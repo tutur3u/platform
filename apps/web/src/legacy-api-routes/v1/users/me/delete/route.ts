@@ -165,18 +165,21 @@ export const POST = withSessionAuth(
         );
       }
 
-      // --- Subscription cleanup (best-effort) ---
+      // --- Subscription cleanup ---
       const polar = createPolarClient();
 
       // Revoke seats in multi-member workspaces
       const seatRevocations = categorized.multiMember.map(async (ws) => {
         try {
-          await revokeSeatFromMember(polar, sbAdmin, ws.wsId, user.id);
+          await revokeSeatFromMember(polar, sbAdmin, ws.wsId, user.id, {
+            throwOnFailure: true,
+          });
         } catch (error) {
           console.error(
             `Failed to revoke seat in workspace ${ws.wsId}:`,
             error
           );
+          throw error;
         }
       });
 
@@ -196,13 +199,49 @@ export const POST = withSessionAuth(
               `Failed to revoke subscription for workspace ${ws.wsId}:`,
               error
             );
+            throw error;
           }
         });
 
-      await Promise.allSettled([
+      const subscriptionResults = await Promise.allSettled([
         ...seatRevocations,
         ...subscriptionCancellations,
       ]);
+      if (subscriptionResults.some((result) => result.status === 'rejected')) {
+        return NextResponse.json(
+          { message: 'Failed to clean up subscriptions' },
+          { status: 502 }
+        );
+      }
+
+      // Delete single-member non-personal workspaces before deleting the account
+      const workspaceDeletions = categorized.singleMemberFree
+        .filter((ws) => !ws.wsPersonal)
+        .map(async (ws) => {
+          try {
+            const { error } = await sbAdmin
+              .from('workspaces')
+              .delete()
+              .eq('id', ws.wsId);
+
+            if (error) {
+              throw error;
+            } else {
+              console.log(`Deleted orphaned workspace ${ws.wsId}`);
+            }
+          } catch (error) {
+            console.error(`Error deleting workspace ${ws.wsId}:`, error);
+            throw error;
+          }
+        });
+
+      const workspaceResults = await Promise.allSettled(workspaceDeletions);
+      if (workspaceResults.some((result) => result.status === 'rejected')) {
+        return NextResponse.json(
+          { message: 'Failed to clean up workspaces' },
+          { status: 502 }
+        );
+      }
 
       // Delete the user from auth.users
       // This fires the existing on_delete_user trigger which:
@@ -219,28 +258,6 @@ export const POST = withSessionAuth(
           { status: 500 }
         );
       }
-
-      // Post-deletion: hard-delete single-member non-personal workspaces
-      const workspaceDeletions = categorized.singleMemberFree
-        .filter((ws) => !ws.wsPersonal)
-        .map(async (ws) => {
-          try {
-            const { error } = await sbAdmin
-              .from('workspaces')
-              .delete()
-              .eq('id', ws.wsId);
-
-            if (error) {
-              console.error(`Failed to delete workspace ${ws.wsId}:`, error);
-            } else {
-              console.log(`Deleted orphaned workspace ${ws.wsId}`);
-            }
-          } catch (error) {
-            console.error(`Error deleting workspace ${ws.wsId}:`, error);
-          }
-        });
-
-      await Promise.allSettled(workspaceDeletions);
 
       return NextResponse.json({ message: 'Account deleted successfully' });
     } catch (error) {

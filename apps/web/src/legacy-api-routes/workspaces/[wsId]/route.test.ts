@@ -7,6 +7,8 @@ type DeleteWorkspaceResult = {
 
 const mocks = vi.hoisted(() => ({
   createPolarClient: vi.fn(),
+  subscription: vi.fn(),
+  revoke: vi.fn(),
   getPermissions: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   verifyHasSecrets: vi.fn(),
@@ -88,9 +90,7 @@ function mockWorkspaceLookup(personal = false) {
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
             neq: vi.fn(() => ({
-              maybeSingle: vi.fn(() =>
-                Promise.resolve({ data: null, error: null })
-              ),
+              maybeSingle: mocks.subscription,
             })),
           })),
         })),
@@ -107,10 +107,35 @@ describe('legacy workspace detail route DELETE', () => {
     vi.clearAllMocks();
     mocks.normalizeWorkspaceId.mockResolvedValue(WORKSPACE_ID);
     mocks.verifyHasSecrets.mockResolvedValue(false);
+    mocks.subscription.mockResolvedValue({ data: null, error: null });
     mocks.createPolarClient.mockReturnValue({
-      subscriptions: { revoke: vi.fn() },
+      subscriptions: { revoke: mocks.revoke },
     });
   });
+
+  it.each(['lookup', 'revoke'])(
+    'stops deletion when subscription %s fails',
+    async (failure) => {
+      mockWorkspaceLookup(false);
+      mocks.getPermissions.mockResolvedValue({
+        containsPermission: () => true,
+      });
+      mocks.subscription.mockResolvedValue(
+        failure === 'lookup'
+          ? { data: null, error: new Error('lookup failed') }
+          : { data: { polar_subscription_id: 'subscription' }, error: null }
+      );
+      mocks.revoke.mockRejectedValue(new Error('revoke failed'));
+      const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const route = await import('./route');
+      const response = await route.DELETE(createDeleteRequest(), {
+        params: Promise.resolve({ wsId: WORKSPACE_ID }),
+      });
+      expect(response.status).toBe(502);
+      expect(mocks.deleteWorkspace).not.toHaveBeenCalled();
+      log.mockRestore();
+    }
+  );
 
   it('opts GET, PUT, and DELETE into app-session auth', async () => {
     await import('./route');

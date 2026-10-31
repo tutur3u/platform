@@ -20,6 +20,22 @@ function client(subscription: unknown, product: unknown) {
 }
 
 describe('seat assignment accounting failures', () => {
+  it('reports subscription verification failure when required', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      await expect(
+        revokeSeatFromMember(
+          {} as Polar,
+          client({ data: null, error: { message: 'unavailable' } }, undefined),
+          'workspace',
+          'user',
+          { throwOnFailure: true }
+        )
+      ).rejects.toThrow('Seat subscription could not be verified');
+    } finally {
+      log.mockRestore();
+    }
+  });
   it('keeps seat revocation best-effort when subscription verification fails', async () => {
     const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     try {

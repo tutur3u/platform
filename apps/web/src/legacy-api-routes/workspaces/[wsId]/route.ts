@@ -249,8 +249,12 @@ export const DELETE = withSessionAuth<{ wsId: string }>(
           id: subscription.polar_subscription_id,
         });
       }
-    } catch {
-      // Continue with workspace deletion even if subscription cancellation fails
+    } catch (error) {
+      console.error('Workspace subscription cleanup failed:', error);
+      return NextResponse.json(
+        { message: 'Failed to clean up workspace subscription' },
+        { status: 502 }
+      );
     }
 
     const { error } = await supabase.from('workspaces').delete().eq('id', wsId);

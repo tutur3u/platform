@@ -155,7 +155,8 @@ export async function revokeSeatFromMember(
   polar: Polar,
   supabase: TypedSupabaseClient,
   wsId: string,
-  userId: string
+  userId: string,
+  options: { throwOnFailure?: boolean } = {}
 ): Promise<void> {
   try {
     const subscription = await getActiveSeatSubscription(supabase, wsId);
@@ -171,6 +172,7 @@ export async function revokeSeatFromMember(
     });
 
     if (!customer) {
+      if (options.throwOnFailure) throw new Error('Polar customer not found');
       console.warn(
         `No Polar customer found for user ${userId} - cannot revoke seat`
       );
@@ -203,8 +205,8 @@ export async function revokeSeatFromMember(
       `Revoked Polar seat ${userSeat.id} from user ${userId} in workspace ${wsId}`
     );
   } catch (error) {
-    // Best-effort: log error but don't throw
     console.error(`Failed to revoke Polar seat:`, error);
+    if (options.throwOnFailure) throw error;
   }
 }
 
