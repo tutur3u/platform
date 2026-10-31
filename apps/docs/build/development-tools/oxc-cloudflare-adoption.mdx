@@ -54,7 +54,7 @@ and Oxc tooling. A backend service does not need React or a router to qualify.
 | Colab | Vite React assets plus native Worker | Adopt Vite+ without changing auth, sponsorship, room Durable Objects or SPA routing |
 | Meet realtime | Native Worker and Durable Objects | Adopt shared tooling; preserve signalling, TURN/SFU contracts and realtime health checks |
 | Coordination | Native Worker service | Preserve coordination protocol, authentication, object identity and storage |
-| Ops Hub | New native Worker and per-user SQLite DO; publication held | Strict signed ingress, bounded storage/maintenance, durable stop fence; see [ops runbook](/build/devops/ops-hub) |
+| Ops Hub | New native Worker and per-user SQLite DO; publication held | Strict signed ingress, bounded storage/maintenance, durable stop fence; the operations runbook is internal |
 | Devbox control | Native Worker service | Preserve control authentication, lease/state transitions and deployment identity |
 | Cron control | Scheduled/native Worker | Preserve scheduler ownership, deduplication, recovery RPC and authenticated forwarding |
 | Mail email routing | Native email Worker within Mail | Preserve MIME ingestion, R2 permissions and the owning Mail webhook contract |

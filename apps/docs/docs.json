@@ -361,7 +361,6 @@
                 "group": "DevOps & Deployment",
                 "pages": [
                   "build/devops/overview",
-                  "build/devops/tuturuuu-bot",
                   "build/devops/active-runtime",
                   "build/devops/standalone-api",
                   "build/devops/wave1-native-cutover",
@@ -397,7 +396,6 @@
                   "build/devops/meet-transcript-retention",
                   "build/devops/critical-app-rollout",
                   "build/devops/github-actions-runbook",
-                  "build/devops/security-scans",
                   "build/devops/permission-parity",
                   "build/devops/caching",
                   "build/devops/code-owners",
@@ -409,7 +407,6 @@
                   "build/devops/turbo-remote-cache",
                   "build/devops/cloudflare-backend-ownership",
                   "build/devops/abuse-guard-store",
-                  "build/devops/ops-hub",
                   "build/devops/background-work-inventory",
                   "build/devops/cloudflare-processor-migration",
                   "build/devops/web-cloudflare-migration",
@@ -533,8 +530,7 @@
                 "pages": [
                   "reference/database/schema-overview",
                   "reference/database/rls-policies",
-                  "reference/database/migrations-guide",
-                  "reference/database/migration-incident-rollbacks"
+                  "reference/database/migrations-guide"
                 ]
               },
               {
@@ -681,6 +677,22 @@
     }
   },
   "redirects": [
+    {
+      "source": "/build/devops/ops-hub",
+      "destination": "/build/devops/overview"
+    },
+    {
+      "source": "/build/devops/tuturuuu-bot",
+      "destination": "/build/devops/overview"
+    },
+    {
+      "source": "/build/devops/security-scans",
+      "destination": "/build/devops/security-cadence"
+    },
+    {
+      "source": "/reference/database/migration-incident-rollbacks",
+      "destination": "/reference/database/migrations-guide"
+    },
     {
       "source": "/build/development-tools/thanh-local-e2e",
       "destination": "/build/development-tools/local-e2e"
