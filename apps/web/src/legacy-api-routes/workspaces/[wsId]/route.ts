@@ -1,3 +1,4 @@
+import { isPolarSubscriptionEnded } from '@tuturuuu/payment/polar/errors';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
@@ -241,16 +242,30 @@ export const DELETE = withSessionAuth<{ wsId: string }>(
         .neq('status', 'canceled')
         .maybeSingle();
 
+      if (subError?.code === 'PGRST116') {
+        return NextResponse.json(
+          { message: 'Workspace subscription state conflicts with deletion' },
+          { status: 409 }
+        );
+      }
       if (subError) throw subError;
 
       if (subscription?.polar_subscription_id) {
         const polar = createPolarClient();
-        await polar.subscriptions.revoke({
-          id: subscription.polar_subscription_id,
-        });
+        try {
+          await polar.subscriptions.revoke({
+            id: subscription.polar_subscription_id,
+          });
+        } catch (error) {
+          if (!isPolarSubscriptionEnded(error)) throw error;
+        }
       }
-    } catch {
-      // Continue with workspace deletion even if subscription cancellation fails
+    } catch (error) {
+      console.error('Workspace subscription cleanup failed:', error);
+      return NextResponse.json(
+        { message: 'Failed to clean up workspace subscription' },
+        { status: 502 }
+      );
     }
 
     const { error } = await supabase.from('workspaces').delete().eq('id', wsId);
