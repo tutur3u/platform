@@ -1,7 +1,7 @@
 # Agent quota routing
 
 T3 quota snapshots, shared-pool routing and single-shot safeguards for Codex,
-Claude and Antigravity. Read the [routing runbook](../../apps/docs/build/development-tools/agent-quota-routing.mdx)
+Claude and Antigravity. Read the [routing runbook](../../docs-internal/build/development-tools/agent-quota-routing.mdx)
 for JSON contracts, telemetry coverage, limitations and activation gates.
 
 ```sh

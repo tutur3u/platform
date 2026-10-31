@@ -1113,7 +1113,7 @@ implementation artifacts. Do not start or recreate the runner to restore cron
 processing, and do not interpret its stale heartbeat as an active service outage.
 
 Current scheduled work uses the owning app's hosted Vercel schedules and the
-[Cloudflare Cron Control Worker](/build/devops/cloudflare-cron-control). Calendar
+Cloudflare Cron Control Worker. Calendar
 provider sync and smart scheduling enter the Infrastructure gateway, then the
 Calendar app. Web cron configuration generation remains useful for Vercel;
 `vercel: false` means that Web does not schedule a job on Vercel, not that an

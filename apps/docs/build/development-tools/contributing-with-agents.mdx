@@ -1,0 +1,40 @@
+---
+title: "Contributing with AI agents"
+description: "How AI coding agents and people share the same repository rules, reviews and release path."
+updatedAt: '2026-10-31'
+---
+
+AI coding agents contribute to Tuturuuu under the same rules as people. The
+repository's root `AGENTS.md` is the single source for those rules; this page
+summarizes what that means for a contributor, human or agent.
+
+## Principles
+
+- **One set of rules.** Agents follow the conventions in
+  [Git conventions](/build/development-tools/git-conventions),
+  [Pre-push checks](/build/development-tools/pre-push-checks) and
+  [Documenting](/build/development-tools/documenting). An agent's change is
+  reviewed like any other change.
+- **Small, isolated changes.** Work happens on its own branch or worktree and is
+  published as a normal pull request; see
+  [Stacked pull requests](/build/development-tools/stacked-pull-requests) for
+  larger changes.
+- **Verify locally first.** Run the focused checks for the area you changed and
+  record the commands and results in the pull request.
+- **Docs ship with code.** A feature pull request updates the matching docs
+  page, or says why no documentation is needed.
+- **No secrets in the repository.** Never commit tokens, keys, credentials or
+  rendered environment dumps, and never paste them into docs, issues or pull
+  requests. See [Deployment configuration](/build/devops/deployment-configuration).
+- **Sensitive areas get a security review.** Changes to authentication,
+  authorization, data protection, billing or infrastructure are reviewed by a
+  human code owner before merge; see [Code owners](/build/devops/code-owners).
+- **Stay inside the active runtime.** Follow the
+  [active runtime map](/build/devops/active-runtime) and do not resume paused
+  runtimes unless a maintainer asks.
+
+## Where to start
+
+New contributors can begin with [Development](/build/development-tools/development),
+[Without Docker](/build/development-tools/without-docker) and the
+[monorepo architecture](/build/development-tools/monorepo-architecture).

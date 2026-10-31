@@ -67,7 +67,7 @@ for roles, independent review, publication, receipts and retirement.
   Record service-specific cost/stop evidence in the adoption guidance.
 - Put new crons, queues, schedulers and heavy backend work on Cloudflare, not Vercel
   Cron, Next `after()`, pg_cron, Edge Functions or Trigger.dev; see the shrink-only
-  [ownership guard](apps/docs/build/devops/cloudflare-backend-ownership.mdx).
+  [ownership guard](docs-internal/build/devops/cloudflare-backend-ownership.mdx).
 - Maintain first-party domain/service libraries independently of React frameworks.
   Inject request identity, storage, navigation and localization at framework
   adapters; keep portable entrypoints free of Next.js/React Router/Cloudflare
@@ -219,7 +219,7 @@ for roles, independent review, publication, receipts and retirement.
     preserve active app contracts; TanStack Query remains the active client
     library. `apps/web` stays on Next.js until separately scheduled.
   - Target platform is Cloudflare (Workers, Hyperdrive→Postgres, R2, DOs, Queues);
-    Supabase and Vercel are transitional. Follow the [stop-list](apps/docs/build/devops/cloudflare-backend-ownership.mdx#stop-list):
+    Supabase and Vercel are transitional. Follow the [stop-list](docs-internal/build/devops/cloudflare-backend-ownership.mdx#stop-list):
     no new Supabase-only features, Vercel crons/edge config or mobile direct-Supabase calls.
   - New or substantially reworked Web API handlers belong under
     `apps/web/src/app/api/**`, not `legacy-api-routes/**`. Move colocated tests

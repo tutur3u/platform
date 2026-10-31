@@ -183,7 +183,7 @@ The router Worker (b) is rejected for two reasons:
 - It buys flexibility we do not need. The flag lives in the app Worker (see
   [plan](#implementation-plan)), and cutover is direct, with no staged canaries.
 - It adds a Worker invocation to every Web request. The Cloudflare
-  [billable-operation rules](/build/devops/cloudflare-backend-ownership) would then
+  billable-operation rules would then
   require cost bounds that we otherwise avoid.
 
 ### How Web keeps `/` without a double hop
@@ -382,7 +382,7 @@ from `activationStart`.
 
 Every accepted beacon is a billable Worker request plus an Analytics Engine write,
 so ingestion follows the Cloudflare
-[billable-operation rules](/build/devops/cloudflare-backend-ownership). Client
+billable-operation rules. Client
 sampling is not a spend cap. No Analytics Engine binding is added to any Worker
 config until all of these exist and pass with exact-commit evidence:
 
