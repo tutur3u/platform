@@ -290,6 +290,14 @@ and in `apps/calendar/src/lib/calendar/calendar-oauth-*.test.ts`):
 - No environment variables beyond the existing provider credentials are
   required. The nonce ledger ships as a migration through the gated production
   migration workflow.
+- `PATCH` and `DELETE` on `/api/v1/calendar/connections` only change a
+  connection inside the caller's workspace. The route resolves the connection's
+  workspace, requires the caller's membership there (`403` otherwise), and the
+  write itself filters by both `id` and `ws_id`. A `PATCH` whose `wsId` does not
+  match the connection returns `404`. A `DELETE` that matches no row in the
+  authorized workspace, such as after a stale lookup, affects nothing and returns
+  `404` (regression coverage:
+  `apps/calendar/src/app/api/v1/calendar/connections/route.workspace-scope.test.ts`).
 
 To exercise the ledger against a disposable local Supabase with migrations
 applied, run the env-gated integration test from `apps/calendar` with
