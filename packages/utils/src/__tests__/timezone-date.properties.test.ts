@@ -30,6 +30,12 @@ const dstZone = fc.constantFrom(
   'Australia/Lord_Howe',
   'Pacific/Auckland'
 );
+// Zones with only whole-hour DST transitions (30 min for Lord Howe) and no
+// skipped calendar days, so strict day-level invariants hold for every instant.
+const sane = fc.oneof(
+  fc.constantFrom(...fixedOffsetZones.map(([zone]) => zone)),
+  dstZone
+);
 const anyZone = fc.constantFrom(
   ...(
     Intl as unknown as { supportedValuesOf: (key: string) => string[] }
@@ -122,7 +128,26 @@ describe('timezone offset properties', () => {
     );
   });
 
-  it('getTimezoneOffset changes by at most one hour between instants one day apart', () => {
+  it('getTimezoneOffset changes by at most one hour between instants one day apart in zones with ordinary DST', () => {
+    fc.assert(
+      fc.property(sane, instant, (zone, at) => {
+        const toMinutes = (offset: string) =>
+          (offset.startsWith('-') ? -1 : 1) *
+          (Number(offset.slice(1, 3)) * 60 + Number(offset.slice(4)));
+        const next = new Date(at.getTime() + 24 * 60 * 60 * 1000);
+        const shift = Math.abs(
+          toMinutes(getTimezoneOffset(zone, next)) -
+            toMinutes(getTimezoneOffset(zone, at))
+        );
+        expect(shift).toBeLessThanOrEqual(60);
+      }),
+      properties
+    );
+  });
+
+  it('getTimezoneOffset changes by at most 24 hours between instants one day apart in any zone', () => {
+    // Real tz history has day-skipping jumps (Pacific/Apia 2011-12-30,
+    // Pacific/Kiritimati 1994-12-31: -10:00 to +14:00), so 1h is not a bound.
     fc.assert(
       fc.property(anyZone, instant, (zone, at) => {
         const toMinutes = (offset: string) =>
@@ -133,7 +158,7 @@ describe('timezone offset properties', () => {
           toMinutes(getTimezoneOffset(zone, next)) -
             toMinutes(getTimezoneOffset(zone, at))
         );
-        expect(shift).toBeLessThanOrEqual(60);
+        expect(shift).toBeLessThanOrEqual(24 * 60);
       }),
       properties
     );
@@ -281,7 +306,7 @@ describe('task date timezone properties', () => {
 
   it('parseTaskDateToUTCISO places start of day at or before end of day for the same date and zone', () => {
     fc.assert(
-      fc.property(anyZone, localParts, (zone, parts) => {
+      fc.property(sane, localParts, (zone, parts) => {
         const date = `${pad(parts.year, 4)}-${pad(parts.month)}-${pad(parts.day)}`;
         const start = parseTaskDateToUTCISO(date, zone, false);
         const end = parseTaskDateToUTCISO(date, zone, true);

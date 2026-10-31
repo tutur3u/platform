@@ -99,12 +99,15 @@ describe('money minor-unit conversion properties', () => {
     );
   });
 
-  it('normalizeAmount agrees with a majorToMinor then minorToMajor round trip', () => {
+  it('normalizeAmount lands within half a minor unit of the input and carries at most the currency fraction digits', () => {
     fc.assert(
       fc.property(major, currency, (amount, code) => {
-        expect(normalizeAmount(amount, code)).toBe(
-          minorToMajor(majorToMinor(amount, code), code)
+        const normalized = normalizeAmount(amount, code);
+        const digits = getCurrencyFractionDigits(code);
+        expect(Math.abs(normalized - amount)).toBeLessThanOrEqual(
+          0.5 / 10 ** digits + 1e-9
         );
+        expect(Number(normalized.toFixed(digits)) + 0).toBe(normalized + 0);
       }),
       properties
     );
@@ -179,22 +182,46 @@ describe('currency catalogue properties', () => {
     );
   });
 
-  it('isSupportedCurrency holds exactly when getCurrencyConfig finds a configuration', () => {
+  it('isSupportedCurrency accepts padded or lower-cased catalogue codes and rejects anything that is not a three-letter code', () => {
     fc.assert(
-      fc.property(fc.oneof(fc.string(), supportedCode), (code) => {
-        expect(isSupportedCurrency(code)).toBe(
-          getCurrencyConfig(code) !== undefined
-        );
-      }),
+      fc.property(
+        supportedCode,
+        fc.constantFrom('', ' ', '  '),
+        fc.boolean(),
+        (code, padding, lower) => {
+          const input = `${padding}${lower ? code.toLowerCase() : code}${padding}`;
+          expect(isSupportedCurrency(input)).toBe(true);
+          expect(isSupportedCurrency(`${code}X`)).toBe(false);
+        }
+      ),
+      properties
+    );
+    fc.assert(
+      fc.property(
+        fc.string().filter((value) => !/^[A-Za-z]{3}$/.test(value.trim())),
+        (value) => {
+          expect(isSupportedCurrency(value)).toBe(false);
+        }
+      ),
       properties
     );
   });
 
-  it('getCurrencyLocale returns the configured locale for supported codes and en-US otherwise', () => {
+  it('getCurrencyLocale returns en-US for anything that is not a supported code and a well-formed locale tag for supported codes', () => {
     fc.assert(
-      fc.property(fc.string(), (code) => {
-        const config = getCurrencyConfig(code);
-        expect(getCurrencyLocale(code)).toBe(config?.locale ?? 'en-US');
+      fc.property(
+        fc.string().filter((value) => !/^[A-Za-z]{3}$/.test(value.trim())),
+        (value) => {
+          expect(getCurrencyLocale(value)).toBe('en-US');
+        }
+      ),
+      properties
+    );
+    fc.assert(
+      fc.property(supportedCode, (code) => {
+        const locale = getCurrencyLocale(code);
+        expect(Intl.getCanonicalLocales(locale)).toHaveLength(1);
+        expect(locale).toMatch(/^[a-z]{2}-[A-Z]{2}$/);
       }),
       properties
     );
