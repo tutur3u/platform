@@ -53,6 +53,10 @@ jobs:
           ref: production
           fetch-depth: 0
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+          # The admin token must not persist in .git/config where install and
+          # formatting commands could read it; the push steps below receive it
+          # through their own step-scoped environment instead.
+          persist-credentials: false
 
       - name: Recover overflow release notes
         env:
@@ -97,7 +101,13 @@ jobs:
         with:
           bun-version: 1.4.4
 
+      # Biome comes from the committed lockfile of the trusted production
+      # checkout, installed before any generated branch content is checked out.
+      - name: Install locked dependencies for release formatting
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+
       - name: Normalize generated release formatting
+        id: normalize
         shell: bash
         env:
           RELEASE_BRANCH: release-please--branches--production
@@ -112,6 +122,7 @@ jobs:
 
           git fetch origin "+refs/heads/${RELEASE_BRANCH}:refs/remotes/origin/${RELEASE_BRANCH}"
           release_sha="$(git rev-parse "origin/${RELEASE_BRANCH}")"
+          biome_bin="${PWD}/node_modules/.bin/biome"
           trusted_scripts=$(mktemp -d)
           cp -R scripts "${trusted_scripts}/scripts"
           mkdir -p "${trusted_scripts}/packages/utils/src"
@@ -133,10 +144,11 @@ jobs:
           node "${trusted_scripts}/scripts/ci/release-docs-inventory.js" --refresh origin/production HEAD "${PREVIOUS_RELEASE_SHA}"
           node "${trusted_scripts}/scripts/ci/release-workspace-lock.js" origin/production HEAD --working
           node "${trusted_scripts}/scripts/ci/normalize-release-notes.js" origin/production
-          npx --yes @biomejs/biome@2.5.13 format --write --files-ignore-unknown=true -- "${changed_files[@]}"
+          "${biome_bin}" format --write --files-ignore-unknown=true -- "${changed_files[@]}"
 
           # Refresh only manager-owned metadata: no dependency installation or
           # package lifecycle scripts. Independently reject any non-version delta.
+          # unfrozen-bun-install: intentionally rewrites bun.lock for the generated version bump
           bun install --lockfile-only --ignore-scripts
           node "${trusted_scripts}/scripts/ci/release-docs-inventory.js" --refresh origin/production HEAD "${PREVIOUS_RELEASE_SHA}"
           node "${trusted_scripts}/scripts/ci/release-workspace-lock.js" origin/production HEAD --working
@@ -154,8 +166,26 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- "${changed_files[@]}"
           git commit --amend --no-edit
-          git push origin "HEAD:refs/heads/${RELEASE_BRANCH}" \
-            --force-with-lease="refs/heads/${RELEASE_BRANCH}:${release_sha}"
+          # Keep the amended commit reachable after the trap detaches HEAD; the
+          # next step pushes it, because only that step holds the push token.
+          normalized_sha="$(git rev-parse HEAD)"
+          git update-ref refs/release-normalized/head "${normalized_sha}"
+          echo "normalized_sha=${normalized_sha}" >> "$GITHUB_OUTPUT"
+          echo "release_sha=${release_sha}" >> "$GITHUB_OUTPUT"
+
+      - name: Push normalized release branch
+        if: steps.normalize.outputs.normalized_sha != ''
+        shell: bash
+        env:
+          RELEASE_BRANCH: release-please--branches--production
+          NORMALIZED_SHA: ${{ steps.normalize.outputs.normalized_sha }}
+          RELEASE_SHA: ${{ steps.normalize.outputs.release_sha }}
+          PUSH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+        run: |
+          set -euo pipefail
+          git push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "${NORMALIZED_SHA}:refs/heads/${RELEASE_BRANCH}" \
+            --force-with-lease="refs/heads/${RELEASE_BRANCH}:${RELEASE_SHA}"
 
       - name: Normalize generated release description
         env:
@@ -170,6 +200,7 @@ jobs:
         if: steps.release.outputs.releases_created == 'true'
         env:
           RELEASE_NOTES_BRANCH: release-please--branches--production--release-notes
+          PUSH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
         run: |
           set -euo pipefail
 
@@ -178,7 +209,7 @@ jobs:
             exit 0
           fi
 
-          if git push origin --delete "${RELEASE_NOTES_BRANCH}" 2>&1; then
+          if git push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" --delete "${RELEASE_NOTES_BRANCH}" 2>&1; then
             echo "Deleted origin/${RELEASE_NOTES_BRANCH} after tagging."
             exit 0
           fi

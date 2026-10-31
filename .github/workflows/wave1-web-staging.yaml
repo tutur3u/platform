@@ -71,7 +71,9 @@ jobs:
           node-version: 24.22.0
       - run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
-      - run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0
+      - name: Install Vercel CLI
+        # unfrozen-bun-install: pinned global CLI has no project lockfile
+        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts
       - name: Bundle exact staging build identity
         env:
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}

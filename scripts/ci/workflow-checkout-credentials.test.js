@@ -11,10 +11,6 @@ const workflowsDir = path.resolve(__dirname, '../../.github/workflows');
 // ls-remote work for this public repository and need no exception.
 const persistedCredentialJobs = new Map([
   ['release-please-auto-merge.yaml:merge', 'git push of the release merge'],
-  [
-    'release-please.yaml:release-please',
-    'git push of the normalized release branch',
-  ],
 ]);
 // Blob-pinned producer contract for Supabase Production; the workflow_run
 // trust fix opts it out together with its allowlist update, so this entry is

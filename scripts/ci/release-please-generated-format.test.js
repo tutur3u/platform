@@ -10,13 +10,6 @@ const {
   repoRoot,
 } = require('./workflow-config-test-helpers.js');
 
-const rootPackageJson = JSON.parse(
-  fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')
-);
-const expectedBiomeVersion = rootPackageJson.devDependencies[
-  '@biomejs/biome'
-].replace(/^[^\d]*/u, '');
-const expectedBiomePattern = expectedBiomeVersion.replaceAll('.', '\\.');
 const releaseJob = readWorkflowJobBlock(
   'release-please.yaml',
   'release-please'
@@ -103,12 +96,12 @@ test('generated formatting is path-scoped and race-safe', () => {
     releaseJob.indexOf('Delete tagged overflow release notes')
   );
 
+  assert.doesNotMatch(releaseJob, /npx\b[^\n]*biome/u);
   assert.match(
-    formatStep,
-    new RegExp(
-      `npx --yes @biomejs/biome@${expectedBiomePattern} format --write`
-    )
+    releaseJob,
+    /run-with-backoff\.sh bun install --frozen-lockfile --ignore-scripts/
   );
+  assert.match(formatStep, /"\$\{biome_bin\}" format --write/);
   assert.match(
     formatStep,
     /git diff --name-only -z origin\/production\.\.\.HEAD/
@@ -122,8 +115,25 @@ test('generated formatting is path-scoped and race-safe', () => {
   assert.match(formatStep, /git commit --amend --no-edit/);
   assert.match(
     formatStep,
-    /--force-with-lease="refs\/heads\/\$\{RELEASE_BRANCH\}:\$\{release_sha\}"/
+    /--force-with-lease="refs\/heads\/\$\{RELEASE_BRANCH\}:\$\{RELEASE_SHA\}"/
   );
+});
+
+test('the admin token is not persisted and reaches only the push steps', () => {
+  assert.match(releaseJob, /persist-credentials: false/);
+  const steps = releaseJob.split(/\n {6}- name: /u);
+  const withPushToken = steps.filter((step) => /PUSH_TOKEN:/u.test(step));
+  assert.equal(withPushToken.length, 2);
+  for (const step of withPushToken) {
+    assert.match(
+      step,
+      /git push "https:\/\/x-access-token:\$\{PUSH_TOKEN\}@github\.com\/\$\{GITHUB_REPOSITORY\}\.git"/u
+    );
+  }
+  const formatStep = steps.find((step) =>
+    step.startsWith('Normalize generated release formatting')
+  );
+  assert.doesNotMatch(formatStep, /secrets\.RELEASE_PLEASE_TOKEN|git push/u);
 });
 
 test('generated lock refresh is bounded, version-only, and preserves authors', () => {

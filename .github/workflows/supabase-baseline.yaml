@@ -82,7 +82,7 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - uses: ./.github/actions/cache-supabase-images
         with:
           profile: full
@@ -140,7 +140,7 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
       - uses: ./.github/actions/cache-supabase-images
         with:
           profile: full

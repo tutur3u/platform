@@ -121,7 +121,8 @@ jobs:
             echo "::error file=bun.lock::bun.lock must be committed."
             exit 1
           fi
-          bun install --lockfile-only
+          # unfrozen-bun-install: regenerates bun.lock only to prove the committed one is canonical
+          bun install --lockfile-only --ignore-scripts
           # Assign separately so a failing `git status` aborts under `-e`.
           lock_status="$(git status --porcelain -- bun.lock)"
           if [ -n "$lock_status" ]; then
@@ -258,7 +259,8 @@ jobs:
             echo "::error file=bun.lock::bun.lock must be committed."
             exit 1
           fi
-          bun install --lockfile-only
+          # unfrozen-bun-install: regenerates bun.lock only to prove the committed one is canonical
+          bun install --lockfile-only --ignore-scripts
           # Assign separately so a failing `git status` aborts under `-e`.
           lock_status="$(git status --porcelain -- bun.lock)"
           if [ -n "$lock_status" ]; then
