@@ -1,11 +1,15 @@
 begin;
 set local lock_timeout = '5s';
 
--- Retain the existing per-bucket INSERT policies for workspaces,
--- support_inquiries, time_tracking_requests and root-workspace changelog media.
+-- Retain workspace and root-workspace changelog INSERT policies.
+-- Inquiry uploads use server-issued tickets; their legacy client policy queries
+-- a server-owned table and must not participate in other client bucket inserts.
 -- Avatars and banners continue to require server-issued upload tickets.
 drop policy if exists "Enable insert for authenticated users only" on storage.objects;
 drop policy if exists "Enable insert for authenticated users only" on storage.buckets;
+
+alter policy "Allow creators to upload to their inquiry folder"
+on storage.objects to service_role;
 
 create policy storage_buckets_server_insert_only on storage.buckets
 as restrictive for insert to anon, authenticated with check (false);
