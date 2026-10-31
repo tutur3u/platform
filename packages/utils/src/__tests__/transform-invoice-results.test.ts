@@ -228,7 +228,7 @@ describe('transformInvoiceData shaping', () => {
       fullInvoice({ id: 'c' }),
     ]);
     expect(results.map((r) => r.id)).toEqual(['a', 'b', 'c']);
-    expect(results.map((r) => r.creator.id)).toEqual([
+    expect(results.map((r) => r.creator?.id)).toEqual([
       'legacy-1',
       'platform-1',
       '',
@@ -293,9 +293,9 @@ describe('transformInvoiceSearchResults', () => {
       ]
     );
     expect(results.map((r) => r.id)).toEqual(['inv-2', 'inv-1']);
-    expect(results[0]?.creator.id).toBe('platform-1');
+    expect(results[0]?.creator?.id).toBe('platform-1');
     expect(results[0]?.wallet).toEqual({ name: 'Bank' });
-    expect(results[1]?.creator.id).toBe('legacy-1');
+    expect(results[1]?.creator?.id).toBe('legacy-1');
     expect(results[1]?.wallet).toEqual({ name: 'Cash' });
   });
 
@@ -309,8 +309,8 @@ describe('transformInvoiceSearchResults', () => {
         }),
       ]
     );
-    expect(result?.creator.id).toBe('platform-1');
-    expect(result?.creator.full_name).toBe('Pat Platform');
+    expect(result?.creator?.id).toBe('platform-1');
+    expect(result?.creator?.full_name).toBe('Pat Platform');
   });
 
   it('tolerates a missing full invoice list', () => {
@@ -319,6 +319,6 @@ describe('transformInvoiceSearchResults', () => {
       undefined as unknown as FullInvoiceData[]
     );
     expect(results).toHaveLength(1);
-    expect(results[0]?.creator.id).toBe('');
+    expect(results[0]?.creator?.id).toBe('');
   });
 });
