@@ -56,7 +56,7 @@ Wrangler conversion, matching Cloudflare's remote shape while preserving foreign
 targets. beta.20 rejects the unpatched addition inside the binding array. The
 Cron Control regression calls the installed Build Output normalizer and `bE`
 helper, requiring an empty diff and preserving the unpatched negative control.
-See the [Cron Control admission runbook](../../../../../docs-internal/build/devops/cloudflare-cron-control.mdx#dashboard-deployment-admission).
+See the [Cron Control admission runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/cloudflare-cron-control.mdx#dashboard-deployment-admission).
 
 Coordination's before/after token gates consume the verified snapshot's `secrets`
 array; avoid duplicate CLI reads. Settings tokens need Workers Scripts read on the
@@ -396,7 +396,7 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   checkouts, `preserve/*` refs, VM disks or unnamed Supabase volumes. Disk
   admission in `ttr resources` and the bucketed heartbeat `resources.disk`
   (strict on web and Worker) keep work off full disks. See
-  `docs-internal/build/development-tools/machine-storage-health.mdx`.
+  `tutur3u/internal-docs: docs-internal/build/development-tools/machine-storage-health.mdx`.
 - `bun rust-cache report|prune|auto` is the repo-owned Rust target cleanup
   wrapper. It owns only `apps/backend/target` by default, stores auto-run state
   under ignored `tmp/rust-cache/state.json`, skips CI unless explicitly enabled,
@@ -985,7 +985,7 @@ Runtime health fixtures do not dispatch scheduled work or contact production;
 repeat them against the CI-emitted configuration and verify identity, compatibility,
 trigger, vars and secret names. Deploy only the immutable artifact qualified by
 that CI run, using its emitted Wrangler config; preserve source config for named
-secret provisioning. See `docs-internal/build/devops/cloudflare-cron-control.mdx` for
+secret provisioning. See `tutur3u/internal-docs: docs-internal/build/devops/cloudflare-cron-control.mdx` for
 commands and the distinct downstream delivery/cost/stop acceptance boundaries.
 
 For Cron recovery cost review, count the requeue RPC and pending lookup even when
