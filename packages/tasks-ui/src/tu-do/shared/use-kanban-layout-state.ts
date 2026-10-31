@@ -7,18 +7,12 @@ import {
   useLayoutEffect,
   useState,
 } from 'react';
-import type {
-  KanbanDeadlineCollapsedState,
-  KanbanDeadlineSection,
-} from '../boards/boardId/kanban/rendering/kanban-deadline-panels';
 
 const EXTERNAL_TASKS_COLLAPSED_STORAGE_PREFIX =
   'personal-board-external-tasks-collapsed';
 const TASK_LIST_COLLAPSED_STORAGE_PREFIX = 'task-board-list-collapsed';
 const LEGACY_CLOSED_TASK_LIST_COLLAPSED_STORAGE_PREFIX =
   'task-board-closed-list-collapsed';
-const DEADLINE_SECTION_COLLAPSED_STORAGE_PREFIX =
-  'task-board-deadline-section-collapsed';
 
 function getTaskListCollapsedStorageKey(boardId: string, listId: string) {
   return `${TASK_LIST_COLLAPSED_STORAGE_PREFIX}:${boardId}:${listId}`;
@@ -29,13 +23,6 @@ function getLegacyClosedTaskListCollapsedStorageKey(
   listId: string
 ) {
   return `${LEGACY_CLOSED_TASK_LIST_COLLAPSED_STORAGE_PREFIX}:${boardId}:${listId}`;
-}
-
-function getDeadlineSectionCollapsedStorageKey(
-  boardId: string,
-  section: KanbanDeadlineSection
-) {
-  return `${DEADLINE_SECTION_COLLAPSED_STORAGE_PREFIX}:${boardId}:${section}`;
 }
 
 function parseStoredBoolean(value: string | null) {
@@ -65,8 +52,6 @@ export function useKanbanLayoutState({
   >({});
   const [taskListCollapsePreferences, setTaskListCollapsePreferences] =
     useState<Record<string, boolean>>({});
-  const [deadlineSectionsCollapsed, setDeadlineSectionsCollapsed] =
-    useState<KanbanDeadlineCollapsedState>({});
   const [restoredBoardId, setRestoredBoardId] = useState<string | null>(null);
 
   useLayoutEffect(() => {
@@ -120,21 +105,6 @@ export function useKanbanLayoutState({
     setTaskListCollapsePreferences((current) =>
       canReadStorage ? storedTaskListPreferences : sameBoard ? current : {}
     );
-
-    setDeadlineSectionsCollapsed((previous) => {
-      const next: KanbanDeadlineCollapsedState = {};
-      for (const section of ['overdue', 'upcoming'] as const) {
-        const stored = canReadStorage
-          ? parseStoredBoolean(
-              window.localStorage.getItem(
-                getDeadlineSectionCollapsedStorageKey(boardId, section)
-              )
-            )
-          : null;
-        next[section] = stored ?? (sameBoard ? previous[section] : true);
-      }
-      return next;
-    });
 
     setRestoredBoardId(boardId);
   }, [
@@ -197,25 +167,8 @@ export function useKanbanLayoutState({
     [manualCollapseChangeRef, persistTaskListCollapsed]
   );
 
-  const handleDeadlineSectionCollapsedChange = useCallback(
-    (section: KanbanDeadlineSection, collapsed: boolean) => {
-      setDeadlineSectionsCollapsed((previous) => ({
-        ...previous,
-        [section]: collapsed,
-      }));
-      if (!persistCollapsedTaskLists || typeof window === 'undefined') return;
-      window.localStorage.setItem(
-        getDeadlineSectionCollapsedStorageKey(boardId, section),
-        String(collapsed)
-      );
-    },
-    [boardId, persistCollapsedTaskLists]
-  );
-
   return {
-    deadlineSectionsCollapsed,
     externalTasksCollapsed,
-    handleDeadlineSectionCollapsedChange,
     handleExternalTasksCollapsedChange,
     handleTaskListCollapsedChange,
     kanbanLayoutRestored: restoredBoardId === boardId,
