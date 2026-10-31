@@ -7,7 +7,9 @@ import {
   closeBudgetPublications,
   createMeetRoomSnapshot,
   deferBudgetCleanup,
+  enablesNoteSharing,
   expireRoomBudget,
+  isMeetAiEnabledForWorkspace,
   MeetCommandExecutor,
   type MeetRealtimeServerMessage,
   type MeetRealtimeTokenPayload,
@@ -43,6 +45,8 @@ export interface MeetRoomEnv extends TurnEnv {
   CLOUDFLARE_REALTIME_APP_SECRET: string;
   MEET_REALTIME_TOKEN_SECRET: string;
   MEET_ROOM: DurableObjectNamespace;
+  /** Meet AI pilot allowlist; absent denies every workspace. */
+  MEET_AI_ENABLED_WORKSPACE_IDS?: string;
 }
 const SNAPSHOT_KEY = 'snapshot';
 const PRESENCE_SWEEP_MS = 10_000;
@@ -344,6 +348,12 @@ export class MeetRoomDurableObject implements DurableObject {
         if (!patch.success)
           return new Response('Invalid settings', { status: 400 });
         const settings = patch.data;
+        const requested = body as Parameters<typeof enablesNoteSharing>[0];
+        if (
+          enablesNoteSharing(requested) &&
+          !isMeetAiEnabledForWorkspace(token.wsId, this.env)
+        )
+          return new Response('Meeting AI is not available', { status: 403 });
         this.snapshot = { ...this.snapshot, settings };
         await this.persist();
         this.broadcast([{ type: 'room.settings', settings }]);
@@ -456,7 +466,12 @@ export class MeetRoomDurableObject implements DurableObject {
     }
 
     await this.commands.run(
-      { message: parsed.data, now: new Date().toISOString(), token },
+      {
+        message: parsed.data,
+        now: new Date().toISOString(),
+        token,
+        notesEligible: isMeetAiEnabledForWorkspace(token.wsId, this.env),
+      },
       {
         read: () => this.snapshot,
         commit: (result) => this.flush(socket, result),

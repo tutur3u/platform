@@ -21,7 +21,7 @@ const token = meetRealtimeTokenPayloadSchema.parse({
   wsId: '0f1a64f7-780f-4d30-9d72-5530f204e95c',
 });
 Object.assign(globalThis, { WebSocketRequestResponsePair: class {} });
-function fixture() {
+function fixture(env: Partial<MeetRoomEnv> = {}) {
   let clock = start;
   const OriginalDate = Date;
   globalThis.Date = class extends OriginalDate {
@@ -63,8 +63,9 @@ function fixture() {
     setWebSocketAutoResponse: () => {},
     getWebSockets: () => sockets,
     blockConcurrencyWhile: (run: () => Promise<void>) => run(),
+    waitUntil: (promise: Promise<unknown>) => void promise,
   } as unknown as DurableObjectState;
-  const room = new MeetRoomDurableObject(state, {} as MeetRoomEnv);
+  const room = new MeetRoomDurableObject(state, env as MeetRoomEnv);
   const sent: { type: string }[] = [];
   (
     room as unknown as { broadcast: (messages: { type: string }[]) => void }
@@ -184,5 +185,34 @@ test('failed storage prevents an uncommitted end broadcast', async () => {
     );
   } finally {
     f.restore();
+  }
+});
+test('note sharing writes follow the Meet AI workspace gate at the room state endpoint', async () => {
+  const patch = (room: MeetRoomDurableObject, body: unknown) =>
+    room.fetch(
+      new Request('https://room.internal/room-state', {
+        method: 'PATCH',
+        headers: { 'x-meet-token': JSON.stringify(token) },
+        body: JSON.stringify(body),
+      })
+    );
+  const denied = fixture();
+  const listed = fixture({ MEET_AI_ENABLED_WORKSPACE_IDS: `x, ${token.wsId}` });
+  try {
+    for (const body of [
+      { shareNotes: true },
+      { shareNotesAfterMeeting: true },
+    ]) {
+      assert.equal((await patch(denied.room, body)).status, 403);
+    }
+    assert.notEqual(denied.snapshot().settings?.shareNotes, true);
+    assert.notEqual(denied.snapshot().settings?.shareNotesAfterMeeting, true);
+    assert.equal((await patch(denied.room, { shareNotes: false })).status, 200);
+    assert.equal((await patch(denied.room, { saveChat: true })).status, 200);
+    assert.equal((await patch(listed.room, { shareNotes: true })).status, 200);
+    assert.equal(listed.snapshot().settings?.shareNotes, true);
+  } finally {
+    listed.restore();
+    denied.restore();
   }
 });
