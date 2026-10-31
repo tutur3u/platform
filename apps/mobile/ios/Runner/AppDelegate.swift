@@ -1,13 +1,19 @@
 import DeviceCheck
 import AudioToolbox
+import FirebaseAnalytics
 import FirebaseCore
 import FirebaseMessaging
+import FirebaseInstallations
 import Flutter
 import UIKit
 import UserNotifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate, MessagingDelegate {
+  private var analyticsStartupReady = false
+  private var firebaseSessionActive = false
+  private var analyticsStarted = false
+  private var pushAdmitted = false
   private var meetNoticeSound: SystemSoundID = 0
 
   deinit {
@@ -18,7 +24,10 @@ import UserNotifications
     _ application: UIApplication,
     willFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Must run before Firebase is configured here or by any plugin.
+    // Foundation-only reset before Firebase or a plugin can construct Measurement.
+    FirebaseAdmissionGate.reset()
+    analyticsStartupReady = AnalyticsStartupGate.disableBeforeInitialization()
+    UserDefaults.standard.set(false, forKey: "com.firebase.messaging.auto-init.enabled")
     TelemetryConsentGate.clearPersistedCrashCollection()
     return super.application(application, willFinishLaunchingWithOptions: launchOptions)
   }
@@ -27,12 +36,8 @@ import UserNotifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    if FirebaseApp.app() == nil {
-      FirebaseApp.configure()
-    }
+    // Dart configures Firebase after sign-in.
     UNUserNotificationCenter.current().delegate = self
-    Messaging.messaging().delegate = self
-    application.registerForRemoteNotifications()
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
@@ -40,12 +45,99 @@ import UserNotifications
     _ application: UIApplication,
     didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
   ) {
-    Messaging.messaging().apnsToken = deviceToken
+    if firebaseSessionActive && pushAdmitted {
+      Messaging.messaging().apnsToken = deviceToken
+    }
     super.application(application, didRegisterForRemoteNotificationsWithDeviceToken: deviceToken)
+  }
+
+  private func setAnalyticsCollection(_ requested: Bool) {
+    let enabled = requested && firebaseSessionActive && analyticsStartupReady
+      && TelemetryConsentGate.allowsCollection { UserDefaults.standard.object(forKey: $0) }
+    if enabled {
+      UserDefaults.standard.set(true, forKey: FirebaseAdmissionGate.analyticsKey)
+      NotificationCenter.default.post(name: NSNotification.Name("MobileStartAdmittedAnalytics"), object: nil)
+      NotificationCenter.default.post(name: NSNotification.Name("MobileTelemetryAdmissionChanged"), object: nil)
+      Analytics.setAnalyticsCollectionEnabled(true)
+      analyticsStarted = true
+    } else {
+      if analyticsStarted { Analytics.setAnalyticsCollectionEnabled(false) }
+      UserDefaults.standard.set(false, forKey: FirebaseAdmissionGate.analyticsKey)
+      NotificationCenter.default.post(name: NSNotification.Name("MobileTelemetryAdmissionChanged"), object: nil)
+      analyticsStartupReady = AnalyticsStartupGate.disableBeforeInitialization()
+    }
+  }
+
+  private func pushPermission(_ complete: @escaping (Bool) -> Void) {
+    UNUserNotificationCenter.current().getNotificationSettings { settings in
+      let allowed = settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional
+      DispatchQueue.main.async { complete(allowed) }
+    }
+  }
+
+  private func initializeFirebase(_ arguments: [String: Any], result: @escaping FlutterResult) {
+    guard analyticsStartupReady else {
+      result(FlutterError(code: "analytics_startup_reset", message: "Analytics preferences could not be disabled", details: nil))
+      return
+    }
+    pushPermission { permission in
+      self.firebaseSessionActive = arguments["signedIn"] as? Bool == true
+      self.pushAdmitted = arguments["pushAllowed"] as? Bool == true && permission && self.firebaseSessionActive
+        && UserDefaults.standard.object(forKey: "flutter.push-enabled") as? Bool != false
+      let telemetry = arguments["telemetryAllowed"] as? Bool == true
+        && TelemetryConsentGate.allowsCollection { UserDefaults.standard.object(forKey: $0) }
+      guard FirebaseAdmissionGate.allowsStartup(
+        signedIn: self.firebaseSessionActive, push: self.pushAdmitted, telemetry: telemetry
+      ) else { result(false); return }
+      UserDefaults.standard.set(true, forKey: FirebaseAdmissionGate.installationsKey)
+      if FirebaseApp.app() == nil { FirebaseApp.configure() }
+      FirebaseApp.app()?.isDataCollectionDefaultEnabled = false
+      result(true)
+    }
   }
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "FirebaseStartupGate") {
+      let channel = FlutterMethodChannel(name: "mobile/firebase_startup", binaryMessenger: registrar.messenger())
+      channel.setMethodCallHandler { call, result in
+        switch call.method {
+        case "initialize":
+          self.initializeFirebase(call.arguments as? [String: Any] ?? [:], result: result)
+          return
+        case "pushPermission":
+          self.pushPermission { result($0) }
+          return
+        case "deleteInstallation":
+          UserDefaults.standard.set(false, forKey: FirebaseAdmissionGate.installationsKey)
+          guard FirebaseApp.app() != nil else { result(nil); return }
+          Installations.installations().delete { error in
+            DispatchQueue.main.async {
+              if error != nil {
+                NSLog("Firebase Installation deletion failed")
+                result(FlutterError(code: "installation_delete", message: "Installation deletion failed", details: nil))
+              } else {
+                NSLog("Firebase Installation deletion completed")
+                result(nil)
+              }
+            }
+          }
+          return
+        case "setAnalyticsCollectionEnabled":
+          self.setAnalyticsCollection(call.arguments as? Bool == true)
+        case "endSession":
+          self.firebaseSessionActive = false
+          self.pushAdmitted = false
+          UserDefaults.standard.set(false, forKey: FirebaseAdmissionGate.installationsKey)
+          self.setAnalyticsCollection(false)
+        default:
+          result(FlutterMethodNotImplemented)
+          return
+        }
+        result(nil)
+      }
+    }
+
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "NativeIntegrity") {
       NativeIntegrityChannel.install(messenger: registrar.messenger())
     }
@@ -153,6 +245,15 @@ private enum TelemetryConsentGate {
   private static let key = "com.crashlytics.data_collection"
   private static let file = "com.crashlytics/CLSUserDefaults.plist"
 
+  /// Mirrors TelemetryPreference in Dart: shared_preferences stores its values in
+  /// NSUserDefaults under a `flutter.` prefix. Allowed only for an explicit
+  /// Allow under the current notice version; anything else means "not allowed".
+  static func allowsCollection(_ stored: (String) -> Any?) -> Bool {
+    stored("flutter.telemetry-consent-choice") as? Bool == true
+      && stored("flutter.telemetry-consent-notice-version") as? String == "telemetry-consent-v1"
+      && stored("flutter.telemetry-consent-copy-version") as? String == "telemetry-fid-copy-v1"
+  }
+
   static func clearPersistedCrashCollection() {
     UserDefaults.standard.removeObject(forKey: key)
     let manager = FileManager.default
@@ -170,5 +271,55 @@ private enum TelemetryConsentGate {
       // Match the SDK so Crashlytics can still read it while the device is locked.
       try? manager.setAttributes([.protectionKey: FileProtectionType.none], ofItemAtPath: url.path)
     }
+  }
+}
+
+
+// Mirrors GoogleAppMeasurement 12.18 APMPersistedConfig: 1 enabled, 2 disabled.
+// Foundation writes avoid constructing Measurement merely to reset its SDK override.
+enum AnalyticsStartupGate {
+  static let stateKey = "/google/measurement/measurement_enabled_state"
+  static let relativeFile = "Google/Measurement/com.google.gmp.measurement.plist"
+
+  @discardableResult
+  static func disableBeforeInitialization(
+    defaults: UserDefaults = .standard,
+    support: URL? = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).last
+  ) -> Bool {
+    defaults.set(2, forKey: stateKey)
+    defaults.synchronize()
+    guard let support else { return true }
+    let file = support.appendingPathComponent(relativeFile)
+    guard FileManager.default.fileExists(atPath: file.path) else { return true }
+    do {
+      let data = try? Data(contentsOf: file)
+      let parsed = data.flatMap { try? PropertyListSerialization.propertyList(from: $0, format: nil) }
+      var state = parsed as? [String: Any] ?? [:]
+      state[stateKey] = 2
+      let updated = try PropertyListSerialization.data(fromPropertyList: state, format: .binary, options: 0)
+      try updated.write(to: file, options: .atomic)
+      if !(parsed is [String: Any]) {
+        NSLog("Replaced unreadable Measurement preferences with disabled Analytics state")
+      }
+      return true
+    } catch {
+      NSLog("Cannot persist disabled Analytics state; Firebase startup remains blocked")
+      return false
+    }
+  }
+}
+
+// Launch always resets admission, including a stored Allow.
+enum FirebaseAdmissionGate {
+  static let analyticsKey = "mobile.firebase.analytics-admitted"
+  static let installationsKey = "mobile.firebase.installations-admitted"
+
+  static func allowsStartup(signedIn: Bool, push: Bool, telemetry: Bool) -> Bool {
+    signedIn && (push || telemetry)
+  }
+
+  static func reset(defaults: UserDefaults = .standard) {
+    defaults.set(false, forKey: analyticsKey)
+    defaults.set(false, forKey: installationsKey)
   }
 }

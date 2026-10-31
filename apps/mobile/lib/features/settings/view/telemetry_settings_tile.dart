@@ -36,7 +36,8 @@ class _TelemetrySettingsTileState extends State<TelemetrySettingsTile> {
         title: l10n.settingsShareTelemetry,
         subtitle: _failed
             ? l10n.settingsTelemetryError
-            : l10n.settingsShareTelemetryDescription,
+            : '${l10n.settingsShareTelemetryDescription}\n\n'
+                  '${l10n.telemetryFirebaseInstallationDisclosure}',
         showChevron: false,
         onTap: preference.ready && !preference.busy
             ? () => _change(preference, !preference.enabled)
