@@ -2781,8 +2781,12 @@ or failed-cleanup runs do not count green. Nightly remains diagnostic.
 
 Workflow dependency installs use `bun install --frozen-lockfile`. The retry
 helper adds the flag for project installs; workflows also state it explicitly.
-Deliberate lockfile regeneration and pinned global CLI installs require an
-`# unfrozen-bun-install: <reason>` comment immediately above the command.
+Deliberate lockfile regeneration and pinned global CLI installs must match an
+exact workflow file, step name and full command in
+`scripts/ci/frozen-bun-install-exceptions.json`. Every exception disables lifecycle
+scripts with `--ignore-scripts`; lockfile rewrites also use `--lockfile-only`.
+An immediately preceding `# unfrozen-bun-install: <reason>` comment documents
+the exception but grants no exemption. Copied markers outside the allowlist fail.
 Run `node --test scripts/ci/frozen-bun-install-guard.test.js` to check the policy.
 
 Release Please and Biome checks run the Biome binary from the frozen dependency
@@ -2790,3 +2794,7 @@ install with lifecycle scripts disabled. Release Please installs from the truste
 production checkout before switching to generated content, disables checkout
 credential persistence, and passes Git push credentials only to push steps.
 The checkout-credentials and generated-format tests cover those boundaries.
+
+The pre-existing overflow-recovery and generated-description Node scripts still
+receive the admin token in their step environments. Removing that exposure is
+a separate SR-393 follow-up; disabling persisted Git credentials does not close it.

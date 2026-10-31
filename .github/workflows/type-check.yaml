@@ -122,7 +122,7 @@ jobs:
             exit 1
           fi
           # unfrozen-bun-install: regenerates bun.lock only to prove the committed one is canonical
-          bun install --lockfile-only
+          bun install --lockfile-only --ignore-scripts
           # Assign separately so a failing `git status` aborts under `-e`.
           lock_status="$(git status --porcelain -- bun.lock)"
           if [ -n "$lock_status" ]; then
@@ -260,7 +260,7 @@ jobs:
             exit 1
           fi
           # unfrozen-bun-install: regenerates bun.lock only to prove the committed one is canonical
-          bun install --lockfile-only
+          bun install --lockfile-only --ignore-scripts
           # Assign separately so a failing `git status` aborts under `-e`.
           lock_status="$(git status --porcelain -- bun.lock)"
           if [ -n "$lock_status" ]; then

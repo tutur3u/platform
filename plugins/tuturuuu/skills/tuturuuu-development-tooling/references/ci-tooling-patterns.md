@@ -1446,7 +1446,10 @@ a production provider. Never attach content-bearing provider errors to evidence.
 
 Use explicit `bun install --frozen-lockfile` in workflows; the retry helper also
 adds it for project installs. Lockfile regeneration and pinned global tool installs
-need an immediately preceding `# unfrozen-bun-install: <reason>` comment. Run
+must match an exact workflow file, step name and full command in
+`scripts/ci/frozen-bun-install-exceptions.json`. Each command requires
+`--ignore-scripts`; lock rewrites also require `--lockfile-only`. The preceding
+`# unfrozen-bun-install: <reason>` documents the entry but grants no authority. Run
 `frozen-bun-install-guard.test.js` with the workflow-config, release-workflows,
 checkout-credentials and Wrangler usage tests after changing this boundary.
 Release formatting installs the locked Biome binary on trusted production content

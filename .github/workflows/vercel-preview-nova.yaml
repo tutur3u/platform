@@ -57,7 +57,7 @@ jobs:
       - name: Install Vercel CLI
         if: steps.check_commits.outputs.skip_build != 'true'
         # unfrozen-bun-install: pinned global CLI has no project lockfile
-        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0
+        run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts
 
       - name: Pull Vercel Environment Information
         if: steps.check_commits.outputs.skip_build != 'true'
