@@ -1,4 +1,4 @@
-import type { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   createTutoringRequestClient,
   type resolveTutoringRouteAccess,
@@ -13,7 +13,7 @@ export async function resolveTutoringReadScope({
 }: {
   request: Request;
   access: Awaited<ReturnType<typeof resolveTutoringRouteAccess>>;
-  sbAdmin: Awaited<ReturnType<typeof createAdminClient>>;
+  sbAdmin: TypedSupabaseClient;
   teacherId?: string;
 }): Promise<
   { allowed: false } | { allowed: true; teacherId: string | undefined }
