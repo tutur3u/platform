@@ -1,3 +1,4 @@
+import { constants } from 'node:fs';
 import { access, open, realpath, stat } from 'node:fs/promises';
 import { dirname, isAbsolute, join, parse, resolve } from 'node:path';
 import { z } from 'zod';
@@ -51,7 +52,14 @@ export async function externalPath(path: string): Promise<string> {
 
 async function boundedRead(path: string, bytes: number): Promise<Buffer> {
   const safe = await externalPath(path);
-  const file = await open(safe, 'r');
+  // Reject FIFOs, devices and directories before open(): opening a FIFO with
+  // no writer blocks. O_NONBLOCK plus the fstat below closes the race where
+  // the path is swapped after this check.
+  if (!(await stat(safe)).isFile()) throw new Error('input size');
+  const file = await open(
+    safe,
+    constants.O_RDONLY | (constants.O_NONBLOCK ?? 0)
+  );
   try {
     const info = await file.stat();
     if (!info.isFile() || info.size > bytes) throw new Error('input size');
