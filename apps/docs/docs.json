@@ -61,6 +61,7 @@
                   "platform/features/mobile-timer",
                   "platform/features/mira-health-planning-tools",
                   "platform/features/task-reminder-delivery",
+                  "platform/domain-gating-design",
                   "platform/features/mobile-chat",
                   "platform/features/mira-client-actions",
                   "platform/features/colab",
@@ -421,10 +422,7 @@
               "build/development-tools/seo-strategy",
               {
                 "group": "Skills",
-                "pages": [
-                  "build/skills/overview",
-                  "build/skills/installation"
-                ]
+                "pages": ["build/skills/overview", "build/skills/installation"]
               }
             ]
           },
@@ -434,9 +432,7 @@
               "learn/overview",
               {
                 "group": "Examples",
-                "pages": [
-                  "learn/examples/overview"
-                ]
+                "pages": ["learn/examples/overview"]
               },
               {
                 "group": "Workshops",
