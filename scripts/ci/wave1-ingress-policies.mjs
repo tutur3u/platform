@@ -27,8 +27,13 @@ export function staffSelector(rule, { groupId, emailListId } = {}) {
   switch (type) {
     case 'group':
       return Boolean(groupId) && value.id === groupId;
-    case 'email':
-      return /^[^\s@]+@[^\s@]+$/u.test(String(value.email ?? ''));
+    case 'email': {
+      const email = String(value.email ?? '').toLowerCase();
+      return (
+        /^[^\s@]+@[^\s@]+$/u.test(email) &&
+        email.endsWith(`@${STAFF_EMAIL_DOMAIN}`)
+      );
+    }
     case 'email_list':
       // Pinned like the group: only the configured staff list counts.
       return Boolean(emailListId) && value.id === emailListId;
@@ -106,7 +111,7 @@ export function evaluatePolicies(
           })
         )
           failures.push(
-            `Access: allow policy ${name} includes a non-staff selector (${Object.keys(rule ?? {}).join(',') || 'empty'})`
+            `Access: allow policy ${name} includes a non-staff selector (${Object.keys(rule ?? {}).join(',') || 'empty'}); staff emails must use @${STAFF_EMAIL_DOMAIN} exactly`
           );
     }
   }

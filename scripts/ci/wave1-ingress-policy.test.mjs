@@ -202,3 +202,29 @@ test('a service-auth policy with an empty include fails', () => {
   });
   assert.ok(result.some((line) => /must name service tokens/.test(line)));
 });
+
+test('accepts company email selectors case-insensitively', () => {
+  assert.deepEqual(
+    check('web', allowRule({ email: { email: 'A@TUTURUUU.COM' } })),
+    []
+  );
+});
+
+for (const email of [
+  'a@gmail.com',
+  'a@evil-tuturuuu.com',
+  'a@tuturuuu.com.evil',
+  'a@x.tuturuuu.com',
+  'a@tuturuuu.com.evil.com',
+  'a@tuturuuu.cоm',
+  'a@tuturuuu.com.',
+]) {
+  test(`refuses email outside the exact company domain: ${email}`, () => {
+    const failures = check('web', allowRule({ email: { email } }));
+    assert.ok(
+      failures.some((failure) =>
+        /staff emails must use @tuturuuu.com exactly/.test(failure)
+      )
+    );
+  });
+}

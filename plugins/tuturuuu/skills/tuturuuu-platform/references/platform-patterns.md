@@ -65,7 +65,7 @@ and its focused regression coverage before adding a reason or changing middlewar
   Trace the current handler before applying a historical Supabase world-event
   fix. A maintenance Worker is an approval-gated routing operation, not app
   restoration. See the [Hive migration plan](../../../../../docs-internal/build/devops/hive-cloudflare-migration.mdx)
-  and [maintenance runbook](../../../../../docs-internal/build/devops/hive-cloudflare-maintenance.mdx).
+  and [maintenance runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/hive-cloudflare-maintenance.mdx).
 
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings

@@ -149,7 +149,7 @@ With `--offload auto`, the command prefers a devbox runner. Offload skips
 runners whose heartbeat reports critical disk (`blockedBy=low_disk`).
 `ttr storage fleet` lists every runner's reported headroom and marks stale or
 offline runners `unknown`, never healthy. See
-`docs-internal/build/development-tools/machine-storage-health.mdx`.
+`tutur3u/internal-docs: docs-internal/build/development-tools/machine-storage-health.mdx`.
 
 Cross-machine offload: `ttr resources run --offload auto -- <cmd>` runs the
 exact pushed `HEAD` on a fresh, attested trusted-development `ttr box` runner

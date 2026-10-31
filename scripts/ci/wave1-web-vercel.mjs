@@ -10,6 +10,32 @@ export const VERCEL_API = 'https://api.vercel.com';
 export const ATTESTATION_HEADER = 'x-tuturuuu-staging-supabase-ref';
 export const STAGING_SUPABASE_REF = 'fxefojytwimjiqxseqag';
 
+/** Parse host-only values or HTTPS origins before any network request. */
+export function stagingHostname(value) {
+  if (typeof value !== 'string' || /[\s\\]/u.test(value)) return null;
+  try {
+    const raw = value.includes('://') ? value : `https://${value}`;
+    const url = new URL(raw);
+    const authority = raw.split('://')[1].split(/[/?#]/u)[0];
+    const hostname = url.hostname.toLowerCase();
+    if (
+      url.protocol !== 'https:' ||
+      url.username ||
+      url.password ||
+      url.port ||
+      /[:@]/u.test(authority) ||
+      url.pathname !== '/' ||
+      url.search ||
+      url.hash ||
+      !/^tuturuuu-web-staging-[a-z0-9-]+\.vercel\.app$/u.test(hostname)
+    )
+      return null;
+    return hostname;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Executable Next surfaces that Deployment Protection alone guards: the
  * proxy matcher excludes the image optimizer and the monitoring tunnel, so
@@ -75,33 +101,31 @@ export function evaluateDeployment(
     failures.push('Deployment target must never be production');
   if (deployment?.meta?.githubCommitSha !== sha)
     failures.push('Deployment SHA differs');
-  if (
-    !/^tuturuuu-web-staging-[a-z0-9-]+\.vercel\.app$/u.test(
-      deployment?.url ?? ''
-    )
-  )
+  if (!stagingHostname(deployment?.url))
     failures.push('Deployment URL is not a tuturuuu-web-staging URL');
   return failures;
 }
 
 /**
  * Every hostname that can reach the deployment: its URL, its aliases and the
- * project's domains. Anything outside `*.vercel.app` is a forbidden domain.
+ * project's domains. Every entry must name an allowed staging host.
  */
 export function deploymentHosts({ deployment, aliases, domains }) {
   const failures = [];
-  const hosts = new Set([deployment.url]);
-  for (const alias of aliases?.aliases ?? [])
-    hosts.add(String(alias.alias ?? '').toLowerCase());
-  for (const name of deployment.alias ?? [])
-    hosts.add(String(name).toLowerCase());
-  for (const domain of domains?.domains ?? []) {
-    const name = String(domain.name ?? '').toLowerCase();
-    if (!name.endsWith('.vercel.app'))
-      failures.push(`Project has a custom domain ${name}`);
-    hosts.add(name);
+  const hosts = new Set();
+  const candidates = [
+    deployment?.url,
+    ...(aliases?.aliases ?? []).map((alias) => alias.alias),
+    ...(deployment?.alias ?? []),
+    ...(domains?.domains ?? []).map((domain) => domain.name),
+  ];
+  for (const value of candidates) {
+    const host = stagingHostname(value);
+    if (host) hosts.add(host);
+    else
+      failures.push('Deployment has a forbidden staging host or custom domain');
   }
-  hosts.delete('');
+  if (!hosts.size) failures.push('No allowed staging host');
   if (
     (aliases?.aliases?.length ?? 0) >= 100 ||
     (domains?.domains?.length ?? 0) >= 100
@@ -148,6 +172,10 @@ export async function vercelProbes({
   bypassSecret,
   proofSecret,
 }) {
+  const allowed = hosts.map(stagingHostname);
+  if (!allowed.length || allowed.some((host) => !host))
+    throw new Error('Probes require only allowed staging hosts');
+  hosts = [...new Set(allowed)].sort();
   const checks = [];
   for (const host of hosts) {
     for (const path of ANONYMOUS_PATHS) {
