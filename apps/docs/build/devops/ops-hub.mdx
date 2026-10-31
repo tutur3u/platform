@@ -234,3 +234,65 @@ Run the focused gateway and authorizer tests from apps/infrastructure with
 These tests cover non-admin and non-allowlisted 404s, verified Bearer actor/root
 permission binding, cookie fallback prevention, fresh and expired assertions,
 credential stripping, CSRF and bounded upstream behavior.
+
+## Agent org contract v3
+
+Version 3 is accepted alongside the frozen v2 envelope. Only v3 may include
+`snapshot.org`; the rest of the envelope is unchanged. Both versions use the
+existing `ops-hub-publisher-v2` signature domain and exact signed body bytes
+(including `v`). Successful ingest echoes the submitted version. No new public
+route, deployment authorization or publication-hold change accompanies v3.
+
+`org` is a closed object with `nodes` (at most 100) and `edges` (at most 400).
+Each node requires `key`, `kind` (agent/lane), `label`, `role`, `status`
+(working/waiting/idle/blocked), and `activity` (now/lt1h/today/earlier).
+Optional fields on both variants are `team`, `pool`, `modelFamily`, `taskTitle`,
+`prRefs`, and the operator-set `area` enum (ec/meet/mobile/security/release/platform).
+Only agent nodes may additionally carry `roleKey`: 1–64 lowercase ASCII letters,
+digits or hyphens, matching `^[a-z0-9-]{1,64}$`. It runs through the same deny-scan
+as label and rejects on any hit. Lanes must omit roleKey entirely; it is an unknown
+field on that closed variant. The optional canonical roleKey never replaces the
+opaque HMAC-derived key required on both variants.
+Label, role, modelFamily and taskTitle have an 80-character limit; team and pool
+have a 64-character limit. Non-null strings are nonempty and reject controls.
+PR references are at most ten positive safe integers. Activity never contains
+an exact timestamp. Unknown fields reject the entire envelope at every depth.
+
+The publisher computes stable keys as the first 16 bytes of
+HMAC-SHA256(publisher secret, canonical role key), encoded as exactly 32 lowercase
+hex characters. The Worker validates this wire format, not the cryptographic
+provenance; the publisher secret stays on the publisher. Keys must be unique.
+Edges require `from`, `to`, and `kind` (reports_to/delegates_to/reviews).
+Endpoints must exist; self edges and duplicate edges reject the envelope.
+Human nodes and customer_of relations are never accepted. People belong to the
+separately authorized Contacts API join, never to snapshots or publisher input.
+
+Org text uses the existing Worker secret/personal/security deny-scan plus org
+path, branch, thread/run, synthetic customer-name and prompt checks. A label hit
+rejects the envelope. Any taskTitle hit drops the entire value to null before
+storage; it is never partially redacted. Role/team/pool/modelFamily also reject
+hits so they cannot bypass text refusal. Optional taskTitle may be omitted or
+null. Customer-name canaries are synthetic regression fixtures, not a directory
+of real customers or a general name detector. The real control is the publisher:
+`taskTitle` comes only from an allowlisted, operator-set field and defaults to
+null. Never derive it from chat, a PR body or branch text. B2 owns the regression
+test for this source restriction. Keep the generic `customer` / `khách hàng` word
+filter as an additional Worker safeguard. These scans cannot identify every
+possible personal name or prompt and do not replace publisher allowlisting.
+The shared synthetic corpus is exported as `@tuturuuu/ops-hub/org-canaries`
+from `src/org-canaries.ts` for B2 to apply before signing. B2 publication still
+requires SB-91 F1–F3 fixes and the existing security/release gates.
+
+The org graph is served through authenticated `/snapshot` only. Frequently polled
+`/status` remains minimal control metadata (v=2) and never includes org. Snapshot
+exports retain the v2 projection and omit org. Expired
+snapshots return null; paused snapshot reads remain denied. Retention,
+replacement, erasure, signature,
+gateway authorization and byte ceilings are unchanged. A subsequent v2 snapshot
+replaces the v3 snapshot and removes org; heartbeat-only envelopes retain it.
+
+Regression evidence: `src/contract-v3.test.ts` covers version compatibility,
+closed objects, enums, graph integrity, byte/cardinality limits and shared canary
+refusal. Its 100-node org cases include maximum-length roleKey and area fields, accept exactly 128 KiB and reject 128 KiB plus one
+byte, proving that the snapshot size refinement survives `safeExtend`. `scripts/verify-org-runtime.mjs` exercises signed ingest, persisted
+sanitization, authenticated reads, restart and pause/expiry fences in workerd.
