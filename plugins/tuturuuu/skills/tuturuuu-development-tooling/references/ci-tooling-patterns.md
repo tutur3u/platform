@@ -1259,7 +1259,10 @@ probing, reject ports/userinfo, and select the proof host from sorted allowed
 hostnames. Staff email domains must equal `tuturuuu.com` case-insensitively.
 Keep the focused Next, Vercel, ingress-policy and workflow tests aligned with the
 [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx#jobs-and-order),
-including its shared-runner limitation.
+including its shared-runner limitation. Assert probe destinations from recorded
+fetch calls after the run, since probe transport errors are intentionally captured.
+Reconciliation of an existing Web version requires the same fresh Next protection
+check as a new upload, before any uploaded/activated ledger transition.
 
 Keep the four-app production hold independent of staging. Same-account staging
 requires the reviewed `stagingAdmission` profile, only the named staging deploy
