@@ -170,11 +170,12 @@ describe('meeting transcription route input bounds', () => {
         reset: Date.now() + 60_000,
       });
     const { arrayBuffer, file } = createAudioFile();
-    const { request } = createRequest({ audio: file });
+    const { formData, request } = createRequest({ audio: file });
     const response = await createPOST()(request);
     expect(response.status).toBe(reason === 'rate-limit' ? 429 : 403);
     if (reason === 'rate-limit') {
       expect(response.headers.get('Retry-After')).toBeTruthy();
+      expect(formData).not.toHaveBeenCalled();
       expect(mocks.credits).not.toHaveBeenCalled();
     }
     expect(arrayBuffer).not.toHaveBeenCalled();

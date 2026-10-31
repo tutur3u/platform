@@ -1671,8 +1671,9 @@ The endpoint applies the shared API proxy limiter at ten requests per minute per
 user, across workspaces. Its configured store and unavailable-store behavior
 follow the shared limiter. Missing workspace identifiers return 400; invalid
 identifiers, non-members and insufficient credit allowance return 403; rate
-limits return 429 with `Retry-After`. Admission precedes audio byte-buffer
-allocation and provider execution. These rules apply to recording transcription,
+limits return 429 with `Retry-After`. Admission (workspace resolution,
+membership, rate limit, and credits) happens before any provider call and before
+any audio is sent to the provider. These rules apply to recording transcription,
 independently of live-call transcription consent.
 
 Regression coverage:

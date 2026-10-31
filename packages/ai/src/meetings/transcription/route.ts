@@ -56,6 +56,24 @@ export function createPOST() {
         return new Response('Audio file too large', { status: 413 });
       }
 
+      const limiters = await getRateLimiters('ai:meeting-transcription', {
+        get: [],
+        mutate: [{ duration: '1 m', limit: 10, window: 'minute' }],
+      });
+      for (const { limiter } of limiters?.mutate ?? []) {
+        const result = await limiter.limit(user.id);
+        if (!result.success) {
+          return new Response('Too many requests', {
+            status: 429,
+            headers: {
+              'Retry-After': String(
+                Math.max(1, Math.ceil((result.reset - Date.now()) / 1000))
+              ),
+            },
+          });
+        }
+      }
+
       const formData = await req.formData();
       const audioFile = formData.get('audio');
       const rawWsId = formData.get('wsId');
@@ -80,24 +98,6 @@ export function createPOST() {
       });
       if (!membership.ok) {
         return new Response('Workspace access denied', { status: 403 });
-      }
-
-      const limiters = await getRateLimiters('ai:meeting-transcription', {
-        get: [],
-        mutate: [{ duration: '1 m', limit: 10, window: 'minute' }],
-      });
-      for (const { limiter } of limiters?.mutate ?? []) {
-        const result = await limiter.limit(user.id);
-        if (!result.success) {
-          return new Response('Too many requests', {
-            status: 429,
-            headers: {
-              'Retry-After': String(
-                Math.max(1, Math.ceil((result.reset - Date.now()) / 1000))
-              ),
-            },
-          });
-        }
       }
 
       const creditCheck = await checkAiCredits(
