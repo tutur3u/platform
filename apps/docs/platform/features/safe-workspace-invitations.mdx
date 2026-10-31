@@ -1,0 +1,51 @@
+---
+title: "Safe workspace invitation email design"
+description: "Proposed sender, automation, and abuse controls for workspace invitations."
+---
+
+## Status and product decision
+
+This is a proposal, not a description of shipped controls. Workspace invitation emails are transactional and remain available without a marketing preference. The proposed default uses the existing Tuturuuu sender and generic template. Custom senders and automated project invitations remain off until approved. The scope covers web member invitations, their email and acceptance paths, and the new-client-project pipeline. Satellite clients must use the same server-side rules. Invite links and other notification types are not automatically changed; their acceptance and migration paths must be inventoried before rollout.
+
+A user must approve each project's client-facing sender change or new Tuturuuu subdomain or own-domain sender once. Real-recipient sends require the user's approval. Approval identifies the project, sender, reply-to, template version, intended audience, and caps; material changes require renewed approval. An approval never bypasses suppression, authorization, or safety controls.
+
+## Current implementation
+
+At source revision `691e9f70ad7a8c071c57b85752a4b8b56b8e4bc6`, the [immediate notification sender](https://github.com/tutur3u/platform/blob/691e9f70ad7a8c071c57b85752a4b8b56b8e4bc6/apps/web/src/app/api/notifications/send-immediate/route.ts#L429-L444) sets `Tuturuuu <notifications@tuturuuu.com>` without a per-send override. The [invitation subject](https://github.com/tutur3u/platform/blob/691e9f70ad7a8c071c57b85752a4b8b56b8e4bc6/apps/web/src/lib/notifications/immediate-helpers.ts#L330-L342) is derived from the workspace name. The [email template](https://github.com/tutur3u/platform/blob/691e9f70ad7a8c071c57b85752a4b8b56b8e4bc6/packages/transactional/emails/workspace-invite.tsx#L16-L37) accepts an optional invite URL but otherwise links to the workspace or home page. The helper shown above does not pass an invite URL. Separately, [invite-link validation](https://github.com/tutur3u/platform/blob/691e9f70ad7a8c071c57b85752a4b8b56b8e4bc6/apps/web/src/lib/invite/validate-invite.ts#L144-L152) checks expiry; do not assume it covers this email path. Existing [authorization guidance](/platform/architecture/authorization) keeps invitations transactional.
+
+## Proposed delivery
+
+A workspace administrator configures a sender name, address, and reply-to. Reuse the planned domain verification feature rather than creating another ownership registry. Require verified DNS ownership and provider-ready SPF and DKIM, with an appropriate DMARC policy and alignment checked before activation. Gate domain access on the separate domain-entitlement decision. Recheck verification and disable custom sending on loss of verification; never silently send as an unverified address. Validate reply-to ownership or route it through an approved inbound service. Keep the default sender until the project approval covers a replacement.
+
+A project owns a versioned template with constrained variables, escaped content, a fixed trusted acceptance URL, sender identity, and abuse links. Preview with synthetic data. Do not allow arbitrary HTML, external tracking, or recipient-controlled headers without a separate security review. Persist the approved version so later edits cannot change an approved campaign silently.
+
+The new-client-project pipeline creates a draft and records one explicit approval per project. After approval, it submits bounded, idempotent invite jobs through Cloudflare. Each job checks current authorization, approval, domain status, suppression, caps, and a durable stop switch immediately before sending. Use unique invitation and delivery keys, bounded retries, and terminal states. An ambiguous provider outcome requires reconciliation before retry to prevent duplicate sends. Revocation or a kill switch stops queued work as well as new submissions.
+
+## Abuse controls
+
+- Enforce atomic limits by workspace, inviter, IP, recipient, and day at the server boundary. Apply lower caps to new or low-trust workspaces and per-project send budgets. Choose thresholds before implementation and fail closed if the limiter is unavailable.
+- Validate recipient domains and block disposable domains using a maintained, versioned policy. Reject invalid or blocked destinations without exposing whether another workspace has invited them.
+- Share the planned design A suppression service across invitation and report sends. Hard bounces and complaints suppress immediately; soft-bounce policy and audited restoration belong to that service. Verify authenticated provider events and check suppression at send time.
+- Issue recipient-bound, single-use, expiring acceptance credentials. Enforce expiry, revocation, recipient identity, and membership authorization at every acceptance endpoint, including satellite flows. Existing generic workspace links must not bypass those checks. Define a migration for pending invitations before enabling expiry.
+- Protect public forms with server-verified Turnstile and a honeypot. Neither replaces authentication or authorization. Never expose an open relay.
+- Record privacy-minimized audit events for approvals, sends, denials, suppression, acceptance, and administrative changes. Avoid addresses, tokens, and message bodies in logs. Alert the security owner on anomalies and provide a workspace and global kill switch.
+- Include report-abuse and recipient opt-out links. Opt-out stops future invitation email from the relevant source without changing an existing membership; retain a minimal suppression record. Transactional invitations do not require marketing consent. Product and legal review must define scope and retention before launch.
+
+## Phases and estimates
+
+Ranges are engineering person-days, including focused tests and review, not calendar commitments. They assume existing infrastructure is usable; unknown provider and migration work can expand them.
+
+| Phase | Scope | Effort |
+| --- | --- | --- |
+| 1 | Rate limits, acceptance expiry, audit, and migration of pending invites | 5-10 days |
+| 2 | Shared suppression, recipient checks, disposable blocking, public-form defenses, alerts, and kill switch | 7-14 days |
+| 3 | Verified workspace sender and reply-to, using domain verification and entitlement decisions | 6-12 days |
+| 4 | Versioned project templates, approval, bounded pipeline automation, and opt-out/report-abuse | 8-15 days |
+
+The smallest safe first follow-up is phase 1: inventory all invite issuance and acceptance paths, then implement atomic limits, server-enforced expiry, privacy-minimized audit, and a pending-invite migration together. It does not authorize bulk or automated sending. Existing users need a clear renewal path for expired invitations.
+
+Before each phase ships, add behavior tests for concurrent limit enforcement, authorization, expiry and revocation, and relevant existing paths. Later phases also need provider-event authentication, suppression races, domain revocation, approval changes, retries after unknown outcomes, stop-switch behavior, and cross-workspace isolation tests. Test with synthetic identities and verify the real delivery path in a separately authorized environment.
+
+## Decisions needed
+
+Choose expiry and rate thresholds, low-trust criteria, recipient-domain policy, opt-out scope and retention, and the approval owner and renewal rules. Confirm domain entitlement and the shared suppression service contract with their owners. Decide the reply-to verification and inbound handling model. No real-recipient sends or custom client-facing sender changes are authorized by this design.

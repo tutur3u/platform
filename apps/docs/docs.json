@@ -61,6 +61,7 @@
                   "platform/features/mobile-timer",
                   "platform/features/mira-health-planning-tools",
                   "platform/features/task-reminder-delivery",
+                  "platform/features/safe-workspace-invitations",
                   "platform/features/mobile-chat",
                   "platform/features/mira-client-actions",
                   "platform/features/colab",
