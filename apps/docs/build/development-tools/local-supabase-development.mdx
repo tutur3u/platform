@@ -306,12 +306,6 @@ server-owned/private tables out of Supabase REST exposure, but still regenerate
 types after migrations so server-only helpers and storage paths can import
 accurate generated row shapes.
 
-Alternatively, you can use the shorthand:
-
-```bash
-bun sb:typegen
-```
-
 <Info>
   This step is automatically performed when running `bun sb:reset`, making it
   useful when catching up with a new branch's schema.

@@ -50,8 +50,9 @@ use the Tools Vercel workflows:
 - `.github/workflows/vercel-preview-tools.yaml`
 - `.github/workflows/vercel-production-tools.yaml`
 
-Both workflows use the shared `ci-check.yml` switchboard with affected-path
-gating. They require environment-scoped Vercel credentials:
+Both workflows are registered in `tuturuuu.ts` and use the shared
+`ci-check.yml` switchboard with affected-path gating. They require
+environment-scoped Vercel credentials:
 
 - preview environment: `vercel-preview-tools`
 - production environment: `vercel-production-tools`
