@@ -1436,6 +1436,21 @@ The export and crawler denial matrix is covered by
 When a role gate is added to an identity-policy test, mock its permission boundary
 and assert denied identities never call it; keep role-reader coverage separate.
 
+### Tutoring payroll
+
+Report and payroll export totals share internal-api's pure
+`calculateTutoringPayroll`. Preserve the duration-bearing slot key until a
+product decision changes it. Apply `view_payroll` or a verified actor-to-workspace
+teacher link before reading sessions with the admin client. Never trust a client
+teacher filter as authorization. Apply the same self scope to detailed exports,
+session lists and teacher pickers, which otherwise reveal reconstructible work
+hours. Require both export dates and an inclusive span of at most 366 days. See the tutoring feature page and export route
+permission/parity regressions.
+
+Parent-message previews also expose teacher work hours. Apply the shared teacher
+read scope to both the preview session lookup and save, and return no preview
+when a concurrent reassignment makes the scoped save miss. Keep the editor gate.
+
 ### Private native Worker admission
 
 For owner-only native apps, keep admission at the Worker entry before assets,
