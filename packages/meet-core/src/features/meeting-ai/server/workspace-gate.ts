@@ -1,32 +1,38 @@
+import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
+import {
+  isMeetAiEnabledForWorkspace,
+  type MeetAiGateEnv,
+} from '@tuturuuu/realtime/meet';
+
+export {
+  isMeetAiEnabledForWorkspace,
+  MEET_AI_WORKSPACE_ALLOWLIST_ENV,
+  type MeetAiGateEnv,
+  meetAiEnabledWorkspaceIds,
+} from '@tuturuuu/realtime/meet';
 
 /**
- * Meet AI pilot gate. A workspace may start or feed transcription and notes only
- * when its id appears in MEET_AI_ENABLED_WORKSPACE_IDS (comma or whitespace
- * separated). Unset, empty or unlisted denies; there is no wildcard, so widening
- * the pilot is always an explicit configuration change.
+ * The Worker env binding, never ambient process.env. Without a Cloudflare
+ * context (or without the binding) the gate has nothing to allow and denies.
  */
-export const MEET_AI_WORKSPACE_ALLOWLIST_ENV = 'MEET_AI_ENABLED_WORKSPACE_IDS';
-
-export function meetAiEnabledWorkspaceIds(
-  env: Record<string, string | undefined> = process.env
-) {
-  return new Set(
-    (env[MEET_AI_WORKSPACE_ALLOWLIST_ENV] ?? '')
-      .split(/[\s,]+/)
-      .map((id) => id.trim().toLowerCase())
-      .filter(Boolean)
-  );
-}
-
-export function isMeetAiEnabledForWorkspace(
-  wsId: string,
-  env?: Record<string, string | undefined>
-) {
-  return meetAiEnabledWorkspaceIds(env).has(wsId.toLowerCase());
+export async function meetAiGateEnv(): Promise<MeetAiGateEnv> {
+  try {
+    const { env } = await getCloudflareContext({ async: true });
+    return env as unknown as MeetAiGateEnv;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Parley scenario sessions are a separate product and are not part of the pilot. */
-export function isMeetAiAvailableForWorkspace(wsId: string) {
-  return MEETING_APP === 'parley' || isMeetAiEnabledForWorkspace(wsId);
+export function isMeetAiAvailableForWorkspace(
+  wsId: string | null | undefined,
+  env: MeetAiGateEnv
+) {
+  return MEETING_APP === 'parley' || isMeetAiEnabledForWorkspace(wsId, env);
+}
+
+export async function meetAiAvailable(wsId: string | null | undefined) {
+  return isMeetAiAvailableForWorkspace(wsId, await meetAiGateEnv());
 }

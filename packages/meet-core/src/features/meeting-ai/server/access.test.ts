@@ -3,9 +3,10 @@ vi.mock('@tuturuuu/meet-core/parley/repository', () => ({
 }));
 
 import { MeetAiGenerationError } from '@tuturuuu/ai/meetings/failure';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  cloudflare: vi.fn(),
   user: vi.fn(),
   membership: vi.fn(),
   admin: vi.fn(),
@@ -20,6 +21,13 @@ const mocks = vi.hoisted(() => ({
   ),
 }));
 vi.mock('server-only', () => ({}));
+vi.mock('@opennextjs/cloudflare', () => ({
+  getCloudflareContext: mocks.cloudflare,
+}));
+const bindAllowlist = (value?: string) =>
+  mocks.cloudflare.mockResolvedValue({
+    env: { MEET_AI_ENABLED_WORKSPACE_IDS: value },
+  });
 vi.mock('./room-access', () => ({ canReadSharedMeetingNotes: mocks.shared }));
 vi.mock('@tuturuuu/satellite/auth', () => ({
   getSatelliteAppSessionUser: mocks.user,
@@ -48,6 +56,7 @@ const request = (origin = 'https://meet.tuturuuu.com') =>
 describe('Meet AI satellite authorization', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    bindAllowlist('workspace');
     mocks.resolve.mockImplementation(async ({ wsId }) =>
       wsId === 'personal' ? 'workspace' : wsId
     );
@@ -103,9 +112,8 @@ describe('Meet AI satellite authorization', () => {
       mocks.user.mockResolvedValue({ id: 'actor' });
       mocks.membership.mockResolvedValue({ ok: true });
     };
-    afterEach(() => vi.unstubAllEnvs());
     it('denies every workspace when the allowlist is unset', async () => {
-      vi.stubEnv('MEET_AI_ENABLED_WORKSPACE_IDS', '');
+      bindAllowlist('');
       signedInHost();
       const response = await meetAiResponse(() =>
         meetAiAccess(request(), forWorkspace(allowed), true)
@@ -117,7 +125,7 @@ describe('Meet AI satellite authorization', () => {
       });
     });
     it('denies an unlisted workspace and allows a listed one', async () => {
-      vi.stubEnv('MEET_AI_ENABLED_WORKSPACE_IDS', allowed);
+      bindAllowlist(allowed);
       signedInHost();
       expect(
         (
@@ -129,8 +137,43 @@ describe('Meet AI satellite authorization', () => {
       const access = await meetAiAccess(request(), forWorkspace(allowed), true);
       expect(access.wsId).toBe(allowed);
     });
-    it('keeps reads of existing notes available for unlisted workspaces', async () => {
+    it('denies when the Worker config is absent even if ambient process.env lists the workspace', async () => {
       vi.stubEnv('MEET_AI_ENABLED_WORKSPACE_IDS', allowed);
+      bindAllowlist(undefined);
+      signedInHost();
+      const response = await meetAiResponse(() =>
+        meetAiAccess(request(), forWorkspace(allowed), true)
+      );
+      expect(response.status).toBe(403);
+      vi.unstubAllEnvs();
+    });
+    it('checks the allowlist against the resolved workspace for personal and handle lookups', async () => {
+      bindAllowlist(allowed);
+      signedInHost();
+      mocks.resolve.mockImplementation(async ({ wsId }) =>
+        wsId === 'personal' ? allowed : denied
+      );
+      expect(
+        (await meetAiAccess(request(), forWorkspace('personal'), true)).wsId
+      ).toBe(allowed);
+      // A raw value that happens to be listed does not admit a different workspace.
+      expect(
+        (
+          await meetAiResponse(() =>
+            meetAiAccess(request(), forWorkspace(allowed), true)
+          )
+        ).status
+      ).toBe(403);
+      expect(
+        (
+          await meetAiResponse(() =>
+            meetAiAccess(request(), forWorkspace('team-handle'), true)
+          )
+        ).status
+      ).toBe(403);
+    });
+    it('keeps reads of existing notes available for unlisted workspaces', async () => {
+      bindAllowlist(allowed);
       signedInHost();
       expect((await meetAiAccess(request(), forWorkspace(denied))).wsId).toBe(
         denied

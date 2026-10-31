@@ -1,7 +1,14 @@
 import { MeetAiGenerationError } from '@tuturuuu/ai/meetings/failure';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ access: vi.fn(), generate: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  access: vi.fn(),
+  cloudflare: vi.fn(),
+  generate: vi.fn(),
+}));
+vi.mock('@opennextjs/cloudflare', () => ({
+  getCloudflareContext: mocks.cloudflare,
+}));
 vi.mock('server-only', () => ({}));
 // Authorization is covered separately; avoid loading built auth packages here.
 vi.mock('@tuturuuu/satellite/auth', () => ({}));
@@ -306,13 +313,16 @@ describe('Meet notes finalization', () => {
 });
 
 it('reports workspace availability from the pilot allowlist', async () => {
-  vi.stubEnv('MEET_AI_ENABLED_WORKSPACE_IDS', '');
+  mocks.cloudflare.mockResolvedValue({
+    env: { MEET_AI_ENABLED_WORKSPACE_IDS: '' },
+  });
   dbWith([result([]), result([])]);
   expect((await readMeetAi(request(), params)).available).toBe(false);
-  vi.stubEnv('MEET_AI_ENABLED_WORKSPACE_IDS', id);
+  mocks.cloudflare.mockResolvedValue({
+    env: { MEET_AI_ENABLED_WORKSPACE_IDS: id },
+  });
   dbWith([result([]), result([])]);
   expect((await readMeetAi(request(), params)).available).toBe(true);
-  vi.unstubAllEnvs();
 });
 
 it('redacts all costs and raw usage from a shared-notes reader', async () => {

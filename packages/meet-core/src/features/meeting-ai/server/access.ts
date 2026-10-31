@@ -3,7 +3,7 @@ import { hasParleyAccess } from '@tuturuuu/meet-core/parley-access';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import { meetingAiGenerationFailureCode } from '../request-failure';
 import { canReadSharedMeetingNotes } from './room-access';
-import { isMeetAiAvailableForWorkspace } from './workspace-gate';
+import { meetAiAvailable } from './workspace-gate';
 import 'server-only';
 import { MeetAiGenerationError } from '@tuturuuu/ai/meetings/failure';
 import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
@@ -68,7 +68,7 @@ export async function meetAiAccess(
   }
   // Pilot gate: default deny. Existing notes stay readable; the read response
   // carries `available` so the UI can explain the disabled controls.
-  if (mutation && !isMeetAiAvailableForWorkspace(wsId))
+  if (mutation && !(await meetAiAvailable(wsId)))
     throw new MeetAiError(
       403,
       'Meeting AI is not available for this workspace',

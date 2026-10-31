@@ -16,7 +16,7 @@ import type { Json } from '@tuturuuu/types';
 import { Effect, Schedule } from '@tuturuuu/utils/effect';
 import { z } from 'zod';
 import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
-import { isMeetAiAvailableForWorkspace } from './workspace-gate';
+import { meetAiAvailable } from './workspace-gate';
 
 export async function readMeetAi(request: Request, params: MeetAiParams) {
   const { db, meetingId, wsId, canManage } = await meetAiAccess(
@@ -97,7 +97,7 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
       a.sequence - b.sequence
   );
   return {
-    available: isMeetAiAvailableForWorkspace(wsId),
+    available: await meetAiAvailable(wsId),
     configured:
       MEETING_APP === 'parley'
         ? await meetingProviderTransport().then(
