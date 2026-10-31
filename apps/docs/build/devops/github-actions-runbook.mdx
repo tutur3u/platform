@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-10-03"
+updatedAt: "2026-10-31"
 ---
 
 <Note>
@@ -404,20 +404,28 @@ not establish a guaranteed reduction in wall-clock merge or production delay.
 
 ## Coordination native Worker toolchain
 
-Coordination is a Vite+ workspace using the Cloudflare Vite plugin. The input
-`apps/coordination/wrangler.jsonc` remains the identity and binding authority;
-Vite writes the deployable configuration to `apps/coordination/dist/worker/wrangler.json`.
-The production workflow builds that artifact and deploys its generated config.
+Coordination is a Vite+ workspace using the Cloudflare Vite plugin and the `cf`
+CLI. `apps/coordination/cloudflare.config.ts` records the deployment identity
+(Worker name, `COORDINATION` Durable Object binding, `CoordinationObject`
+export); the build emits a Build Output under `apps/coordination/.cloudflare/output`.
+`.github/workflows/coordination-cloudflare.yaml` compares that output with the
+recorded identity fixture (`scripts/ci/cf-worker-parity.mjs`), then publishes the
+exact artifact with Wrangler using the retained publication profile
+`apps/coordination/wrangler.publish.jsonc`, prepared by
+`scripts/ci/cf-wrangler-publication.mjs`.
 Do not change the Worker name, `CoordinationObject` export, `COORDINATION` binding,
 or retained Durable Object migrations during a toolchain migration.
 
-Validation first runs the existing `node:test`/Wrangler lease regression suite
-against source. It then runs Vite+ lint and a real Worker build in CI, repeats
-that same suite with `COORDINATION_TEST_CONFIG` pointing to the generated config,
-and validates the artifact with Wrangler's deployment dry run. The fixture injects
-a disposable server token and uses local Durable Object storage. It verifies
-credentials, concurrent acquisition, fencing, replay and expiry behavior without
-production requests. The source and artifact runs must both pass on the exact head.
+Validation runs the `node:test` lease regression suites (`src/request-body.test.mjs`
+and `src/worker.test.mjs`) against source, then `tsc`, lint, and the proactive
+contract tests. CI then builds the Worker, repeats `src/worker.test.mjs` against
+the built Worker and Durable Object, and checks the prebuilt artifact with
+`cf deploy --prebuilt --dry-run` and a credential-free `wrangler deploy --dry-run`
+of the publication profile. The production job also captures Worker settings
+before and after publication and verifies the coordination token survived. The
+fixture injects a disposable server token and uses local Durable Object storage.
+It verifies credentials, concurrent acquisition, fencing, replay and expiry
+behavior without production requests.
 
 For focused local runtime verification, run `node --test
 apps/coordination/src/worker.test.mjs` from the root through `ttr resources run`.
@@ -670,12 +678,16 @@ authorize recurring cancellation.
 ### Hosted web build and deployment checks
 
 - `vercel-preview-platform.yaml`
+- `vercel-preview-ai.yaml`
 - `vercel-preview-apps.yaml`
 - `vercel-preview-calendar.yaml`
 - `vercel-preview-chat.yaml`
 - `vercel-preview-cms.yaml`
+- `vercel-preview-contacts.yaml`
 - `vercel-preview-drive.yaml`
 - `vercel-preview-finance.yaml`
+- `vercel-preview-forms.yaml`
+- `vercel-preview-git.yaml`
 - `vercel-preview-inventory.yaml`
 - `vercel-preview-infrastructure.yaml`
 - `vercel-preview-learn.yaml`
@@ -683,12 +695,13 @@ authorize recurring cancellation.
 - `vercel-preview-meet.yaml`
 - `vercel-preview-mind.yaml`
 - `vercel-preview-nova.yaml`
-- `vercel-preview-qr.yaml`
+- `vercel-preview-pay.yaml`
 - `vercel-preview-rewise.yaml`
 - `vercel-preview-shortener.yaml`
 - `vercel-preview-storefront.yaml`
 - `vercel-preview-tasks.yaml`
 - `vercel-preview-teach.yaml`
+- `vercel-preview-tools.yaml`
 - `vercel-preview-track.yaml`
 - A matching `vercel-production-*.yaml` workflow exists for each app above
 
@@ -710,12 +723,12 @@ The Apps gateway uses the same pattern:
 - project secret: `VERCEL_APPS_PROJECT_ID`
 - environments: `vercel-preview-apps` and `vercel-production-apps`
 
-QR uses the same pattern:
+Tools (which now serves the QR generator) uses the same pattern:
 
-- preview workflow: `vercel-preview-qr.yaml`
-- production workflow: `vercel-production-qr.yaml`
-- project secret: `VERCEL_QR_PROJECT_ID`
-- environments: `vercel-preview-qr` and `vercel-production-qr`
+- preview workflow: `vercel-preview-tools.yaml`
+- production workflow: `vercel-production-tools.yaml`
+- project secret: `VERCEL_TOOLS_PROJECT_ID`
+- environments: `vercel-preview-tools` and `vercel-production-tools`
 
 Infrastructure uses the same deployment pattern:
 
@@ -1325,8 +1338,11 @@ Meet requires both compatibility fixes: the workerd scheduler prevents the
 anonymous login render from hanging, and cache-handler registration must return
 before Next's original dynamic loader accesses removed minified aliases. Otherwise
 even the local-metadata `/api/build-info` handler can fail before it executes.
-`node --test scripts/ci/meet-cloudflare-render.test.js` exercises the installed
-Next scheduler transformation, cache-handler method and React resume names.
+`scripts/ci/meet-cloudflare-render.runtime.mjs` carries the installed Next
+scheduler transformation, cache-handler method and React resume names that the
+Meet artifact gates (`scripts/ci/meet-build-metadata.test.js`,
+`scripts/ci/verify-meet-start-output.test.js`) require; the former standalone
+`meet-cloudflare-render.test.js` no longer exists.
 For retained-artifact diagnosis, preserve the original ZIP and hash; normalize
 only CI file imports and Wrangler's require shim in a private replay. Use the
 canonical URL and Host, local bindings, blocked outbound traffic and bounded

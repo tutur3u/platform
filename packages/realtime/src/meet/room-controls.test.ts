@@ -36,8 +36,10 @@ const run = (
   state: ReturnType<typeof createMeetRoomSnapshot>,
   message: MeetRealtimeClientMessage,
   as = host,
-  time = now
-) => applyMeetRoomCommand(state, { message, token: as, now: time });
+  time = now,
+  notesEligible = true
+) =>
+  applyMeetRoomCommand(state, { message, token: as, now: time, notesEligible });
 function admitted() {
   const hosting = admitOrHold(createMeetRoomSnapshot(), host, now).state;
   const waiting = admitOrHold(hosting, guest, now).state;
@@ -133,6 +135,52 @@ describe('persistent room controls', () => {
         guest
       )
     ).toBe(false);
+  });
+  it('denies enabling note sharing outside the Meet AI workspace gate', () => {
+    const state = admitted();
+    for (const settings of [
+      { shareNotes: true },
+      { shareNotesAfterMeeting: true },
+    ]) {
+      const result = run(
+        state,
+        { type: 'room.settings.update', settings },
+        host,
+        now,
+        false
+      );
+      expect(result.reply[0]).toMatchObject({ error: 'permission_denied' });
+      expect(result.broadcast).toEqual([]);
+      expect(result.state.settings).toEqual(state.settings);
+    }
+    const defaulted = applyMeetRoomCommand(state, {
+      message: { type: 'room.settings.update', settings: { shareNotes: true } },
+      token: host,
+      now,
+    });
+    expect(defaulted.reply[0]).toMatchObject({ error: 'permission_denied' });
+  });
+  it('still lets the host turn note sharing off and change other settings without eligibility', () => {
+    const shared = run(admitted(), {
+      type: 'room.settings.update',
+      settings: { shareNotes: true },
+    }).state;
+    const off = run(
+      shared,
+      { type: 'room.settings.update', settings: { shareNotes: false } },
+      host,
+      now,
+      false
+    );
+    expect(off.state.settings?.shareNotes).toBe(false);
+    const other = run(
+      admitted(),
+      { type: 'room.settings.update', settings: { saveChat: true } },
+      host,
+      now,
+      false
+    );
+    expect(other.state.settings?.saveChat).toBe(true);
   });
   it('sends bounded reactions without accepting arbitrary markup', () => {
     expect(

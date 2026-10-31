@@ -10,11 +10,13 @@ import { processStartedAt } from '../src/process-identity';
 import { acquireSwitchLease } from '../src/switch-safety';
 
 const now = new Date();
+// Not a real pid: a hard-coded low pid can be a live system process on the host.
+const DEAD_PID = 2147483647;
 const lease = {
   threadId: 'owner',
   accountKey: 'codex:one',
   attemptId: 'first',
-  pid: 123,
+  pid: DEAD_PID,
   processStartedAt: '2026-10-23T00:00:00Z',
   ttlMs: 30_000,
 };
