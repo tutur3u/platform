@@ -230,3 +230,11 @@ b4ed5bcadb892097a20d83a0b7e248e8835e0be1:scripts/ci/sql-grant-guard-legacy.json:
 b4ed5bcadb892097a20d83a0b7e248e8835e0be1:scripts/ci/sql-grant-guard-legacy.json:generic-api-key:92
 b4ed5bcadb892097a20d83a0b7e248e8835e0be1:scripts/ci/sql-grant-guard-legacy.json:generic-api-key:94
 b4ed5bcadb892097a20d83a0b7e248e8835e0be1:scripts/ci/sql-grant-guard-legacy.json:generic-api-key:964
+
+# Firebase client config for the isolated development project; public by design
+# (client identifiers shipped in app binaries). Tess-confirmed false positive.
+# Exact fingerprints only.
+53cdd0a6de5943971a3f075d87a9891cde859187:apps/mobile/android/app/src/development/google-services.json:gcp-api-key:18
+b10217339a73ba4275d36908e31cd2630d7bdb57:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:46
+b10217339a73ba4275d36908e31cd2630d7bdb57:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:54
+b10217339a73ba4275d36908e31cd2630d7bdb57:apps/mobile/lib/firebase_options_development.dart:gcp-api-key:63
