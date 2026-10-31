@@ -213,9 +213,25 @@ function parseArgs(argv) {
     else if (arg === '--config-file') args.configFile = argv[++index];
     else if (arg === '--manifest-file') args.manifestFile = argv[++index];
     else if (arg === '--repository') args.repository = argv[++index];
+    else if (arg === '--dry-run') args.dryRun = true;
   }
 
   return args;
+}
+
+// Intended actions for `--dry-run`; pure, so it needs no token or network.
+function describeOverflowRecoveryPlan(args, env = process.env) {
+  const targetBranch = args.targetBranch ?? 'production';
+  const repository = args.repository || env.GITHUB_REPOSITORY || '(unset)';
+  const notesBranch = notesBranchFor(targetBranch);
+  return [
+    `[dry-run] Release Please overflow recovery for ${repository} (target branch ${targetBranch}):`,
+    `  config file: ${args.configFile ?? 'release-please-config.json'}`,
+    `  manifest file: ${args.manifestFile ?? '.release-please-manifest.json'}`,
+    '  1. find a merged (or open) release PR with pending overflow notes (read)',
+    `  2. if ${RELEASE_NOTES_FILENAME} is missing on ${notesBranch}, create that branch or file from the rebuilt notes (write)`,
+    '[dry-run] No token was resolved and no request was made.',
+  ];
 }
 
 function resolveToken() {
@@ -234,6 +250,10 @@ function resolveToken() {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
+  if (args.dryRun) {
+    for (const line of describeOverflowRecoveryPlan(args)) console.log(line);
+    return;
+  }
   const repository = args.repository || process.env.GITHUB_REPOSITORY;
   const token = resolveToken();
 
@@ -272,6 +292,7 @@ module.exports = {
   GitHubClient,
   buildReleaseNotesDocument,
   buildReleaseNotesFromPullRequest,
+  describeOverflowRecoveryPlan,
   extractChangelogEntry,
   extractOverflowBranchName,
   findMergedPendingOverflowPullRequest,
@@ -280,6 +301,7 @@ module.exports = {
   notesBranchFor,
   overflowRecoveryTarget,
   getComponent,
+  parseArgs,
   parseManifestVersionChanges,
   recoverReleasePleaseOverflowNotes,
   resolveToken,

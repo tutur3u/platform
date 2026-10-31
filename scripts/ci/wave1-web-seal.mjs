@@ -6,10 +6,13 @@
 //   prepare  <sha> <deploymentId> <origin>  # after next-verify, credential-free
 //   restored <sha>                          # recreate the Void pointer, verify
 //   verify   <sha>                          # byte and profile re-verification
+//
+// Append `--dry-run` to print the intended actions; nothing is read or written.
 import assert from 'node:assert/strict';
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { parseDryRunArgs } from './dry-run-args.mjs';
 import { artifactDigest, prepare, verify } from './wave1-native-artifact.mjs';
 
 export const WEB_APP_ROOT = 'apps/web/cloudflare';
@@ -63,12 +66,39 @@ export function main(
   throw new Error(`Unknown mode ${mode}`);
 }
 
+// Prints the intended actions without touching the filesystem (`--dry-run`).
+export function describeSealPlan(argv, root = WEB_APP_ROOT) {
+  const [mode, sha, deploymentId, origin] = argv;
+  if (mode === 'prepare')
+    return [
+      `[dry-run] Would seal the Web Start candidate under ${root}:`,
+      `  - bind source ${sha} to Next deployment ${deploymentId} at ${origin}`,
+      '  - write the sealed artifact and append artifact_sha256 to $GITHUB_OUTPUT',
+      '  - require no CLOUDFLARE_STAGING_API_TOKEN / VERCEL_TOKEN_WEB_STAGING',
+      '[dry-run] Nothing was written.',
+    ];
+  if (mode === 'restored')
+    return [
+      `[dry-run] Would verify the seal for ${sha} under ${root} and recreate ${root}/.wrangler/deploy/config.json`,
+      '[dry-run] Nothing was written.',
+    ];
+  if (mode === 'verify')
+    return [
+      `[dry-run] Would re-verify the sealed artifact bytes and profile for ${sha} under ${root}`,
+      '[dry-run] Nothing was read or written.',
+    ];
+  throw new Error(`Unknown mode ${mode}`);
+}
+
 if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   try {
-    console.log(`Web issuer artifact ${main()}`);
+    const cli = parseDryRunArgs(process.argv.slice(2));
+    if (cli.dryRun)
+      for (const line of describeSealPlan(cli.args)) console.log(line);
+    else console.log(`Web issuer artifact ${main()}`);
   } catch (error) {
     console.error(error instanceof Error ? error.message : 'Web seal failed');
     process.exitCode = 1;
