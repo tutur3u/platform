@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
-const { audit } = require('./docs-audit');
+const { audit, publicSafetyErrors } = require('./docs-audit');
 const {
   collect,
   generate,
@@ -72,4 +72,32 @@ test('audit catches broken and unregistered pages without treating examples as l
     result.errors.some((error) => error.includes('Unregistered page: orphan'))
   );
   assert.ok(result.errors.every((error) => !error.includes('/example')));
+});
+
+test('public-safety guard flags internal identifiers without echoing them', () => {
+  const unsafe = [
+    'See SR-123 for the finding.',
+    'Run it on `/Users/someone/work/repo/`.',
+    'ssh skr-example',
+    'https://worker.account.workers.dev/health',
+    'Connect to 192.168.1.20 or host.tailnet-name.ts.net',
+    'Easy Center asked for this.',
+    `token ghp_${'a'.repeat(36)}`,
+  ];
+  const errors = publicSafetyErrors(unsafe.join('\n'), 'page.mdx');
+  assert.equal(errors.length, unsafe.length + 1);
+  assert.ok(errors.every((error) => error.startsWith('Public-safety (')));
+  assert.ok(
+    errors.every((error) => !/SR-123|someone|skr-example|ghp_/.test(error))
+  );
+});
+
+test('public-safety guard allows placeholders and public examples', () => {
+  const safe = [
+    'Use `<repo-root>/apps/docs` and `ssh <build-mac>`.',
+    'https://<worker>.<account-subdomain>.workers.dev/health',
+    'The emulator reaches the host at 10.0.2.2; the Vietnamese memo says Thanh toan.',
+    'Rows SRC-1 and the SR column are not register IDs; /home/route.ts is a route.',
+  ];
+  assert.deepEqual(publicSafetyErrors(safe.join('\n'), 'page.mdx'), []);
 });

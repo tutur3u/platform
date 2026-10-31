@@ -20,6 +20,46 @@ function navigationPages(value, insidePages = false, result = []) {
   return result;
 }
 
+// Public docs must never name internal registers, hosts, paths, secrets or
+// customers without consent. Messages carry the rule and location only, so CI
+// logs never repeat the matched text.
+const PUBLIC_SAFETY_RULES = [
+  ['internal security register ID', /\bSR-\d{2,4}[a-z]?\b/],
+  [
+    'developer home-directory path',
+    /(?<![\w\]\[)}.\/-])\/(?:Users|home)\/(?!runner\b|user\b)[a-z][\w.-]*\//,
+  ],
+  ['fleet host or machine name', /\b(?:skr-[a-z0-9-]+|sokora[\w-]*)\b/i],
+  [
+    'fleet host or machine name',
+    /\b(?:Sonha|ThanhStudio)\b|\bThanh\b(?! toan\b)/,
+  ],
+  ['tailnet hostname', /\.ts\.net\b/],
+  [
+    'Cloudflare account workers.dev host',
+    /\b[a-z0-9][a-z0-9-]*\.[a-z0-9][a-z0-9-]*\.workers\.dev\b/i,
+  ],
+  [
+    'private network address',
+    /\b(?:192\.168|10\.(?!0\.2\.2\b)\d{1,3}|172\.(?:1[6-9]|2\d|3[01]))\.\d{1,3}\.\d{1,3}\b/,
+  ],
+  [
+    'token-shaped secret',
+    /\b(?:gh[pousr]_[A-Za-z0-9]{30,}|sk-[A-Za-z0-9_-]{30,}|AKIA[0-9A-Z]{16}|xox[bap]-[A-Za-z0-9-]{10,}|sbp_[a-z0-9]{30,})\b|-----BEGIN [A-Z ]*PRIVATE KEY-----/,
+  ],
+  ['customer name without consent', /\bEasy Center\b/],
+];
+
+function publicSafetyErrors(source, relative) {
+  const errors = [];
+  source.split(/\r?\n/).forEach((line, index) => {
+    for (const [label, pattern] of PUBLIC_SAFETY_RULES)
+      if (pattern.test(line))
+        errors.push(`Public-safety (${label}): ${relative}:${index + 1}`);
+  });
+  return errors;
+}
+
 function audit(root = ROOT) {
   const docs = path.join(root, 'apps/docs');
   const config = JSON.parse(
@@ -45,6 +85,7 @@ function audit(root = ROOT) {
     const relative = path.relative(docs, file).split(path.sep).join('/');
     const slug = relative.slice(0, -4);
     const source = fs.readFileSync(file, 'utf8');
+    errors.push(...publicSafetyErrors(source, relative));
     if (!registered.has(slug) && !redirects.has(slug))
       errors.push(`Unregistered page: ${slug}`);
     if (
@@ -105,7 +146,7 @@ function audit(root = ROOT) {
   };
 }
 
-module.exports = { audit, navigationPages };
+module.exports = { audit, navigationPages, publicSafetyErrors };
 if (require.main === module) {
   const result = audit();
   // The agent operating model page must agree with AGENTS.md and the plugin
