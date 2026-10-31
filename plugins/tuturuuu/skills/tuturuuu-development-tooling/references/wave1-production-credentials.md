@@ -13,5 +13,5 @@ failure or missing output must not admit a production credential-bearing job.
 
 Run `node --test scripts/ci/production-publisher-secrets.test.js` for the parsed-YAML
 credential boundary and original Meet independent-validation negative control.
-See the [cutover runbook](../../../../../docs-internal/build/devops/wave1-native-cutover.mdx)
+See the [cutover runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/wave1-native-cutover.mdx)
 for publication scope and remaining release gates.
