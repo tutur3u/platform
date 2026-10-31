@@ -183,7 +183,7 @@ Rolling back is unsetting the flag (earlier rule again); the grant can stay.
 ## Data source
 
 Fixture builds (development flavor with `MASTERMIND_FIXTURE`) read the bundled
-synthetic sample. Staging reads `mastermind-hub-staging.tutur3u.com`, production
+synthetic sample. Staging reads `<hub-staging-host>.tutur3u.com`, production
 reads `mastermind-hub.tutur3u.com`, and any build reads `MASTERMIND_HUB_URL`
 when it is set; an explicit value always wins over the flavor host, and a bad
 one never falls back to it. A build with neither (development without a
