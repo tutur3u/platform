@@ -70,7 +70,7 @@ export function publicInputsDigest(env) {
 export function artifactDigest(receipt) {
   return digest(JSON.stringify(receipt));
 }
-export function prepare(appRoot, app, environment, subdomain, sha, fallback) {
+export function prepare(appRoot, app, environment, subdomain, sha) {
   assert.match(sha ?? '', /^[a-f0-9]{40}$/);
   appRoot = realpathSync(appRoot);
   const dist = resolve(appRoot, 'dist');
@@ -100,7 +100,7 @@ export function prepare(appRoot, app, environment, subdomain, sha, fallback) {
   );
   assert.equal(assets, resolve(dist, 'client'));
   assertMailNodeImports(dist, app, Object.keys(inventory(dist)));
-  const profile = profileFor(app, environment, subdomain, fallback);
+  const profile = profileFor(app, environment, subdomain);
   const config = resolve(dist, 'wave1/wrangler.json');
   assert.ok(!existsSync(config), 'Publication profile already exists');
   mkdirSync(dirname(config), { recursive: true });
@@ -145,7 +145,7 @@ export function verify(appRoot, app, environment, sha) {
       : undefined;
   assert.deepEqual(
     receipt.profile,
-    profileFor(app, environment, subdomain, receipt.profile.nextFallback)
+    profileFor(app, environment, subdomain)
   );
   assert.equal(
     receipt.lockSha256,

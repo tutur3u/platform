@@ -6,7 +6,7 @@
 // Restores the staging issuer Worker to the deployment the publisher captured
 // before this SHA's upload, using the signed attempt ledger. It makes exactly
 // one Cloudflare write (a deployment of the prior versions) and touches
-// nothing else: no Access, DNS, domain, Vercel, ledger or variable change. It
+// nothing else: no Access, DNS, domain, ledger or variable change. It
 // refuses unless this SHA's version is what is actually serving. If the
 // rollback cannot be confirmed, the release owner applies S1/S1b.
 import assert from 'node:assert/strict';
@@ -15,6 +15,7 @@ import { pathToFileURL } from 'node:url';
 import { readAttemptRecord } from './wave1-native-attempt.mjs';
 import { profileFor } from './wave1-native-profile.mjs';
 import { boundedJson, requireRollback } from './wave1-native-publish.mjs';
+import { assertStagingIdentity } from './wave1-staging-guard.mjs';
 
 const sameVersions = (a, b) =>
   JSON.stringify(
@@ -43,6 +44,12 @@ export async function rollbackWeb({ env, sha, fetcher = fetch }) {
     p.accountId,
     'Staging account mismatch'
   );
+  // Allowlisted Worker and the one provisioned D1 only, before any API call.
+  assertStagingIdentity({
+    worker: p.name,
+    databaseId: env.WAVE1_STAGING_ATTEMPT_D1_ID,
+    env,
+  });
   const request = (url, bearer, body) =>
     boundedJson(url, bearer, fetcher, body);
   const account = `https://api.cloudflare.com/client/v4/accounts/${p.accountId}`;
@@ -51,6 +58,7 @@ export async function rollbackWeb({ env, sha, fetcher = fetch }) {
     base: account,
     token,
     databaseId: env.WAVE1_STAGING_ATTEMPT_D1_ID,
+    expectedDatabaseId: env.WAVE1_STAGING_ATTEMPT_D1_ID,
     app: 'web',
     scope: {
       databaseId: env.WAVE1_STAGING_ATTEMPT_D1_ID,

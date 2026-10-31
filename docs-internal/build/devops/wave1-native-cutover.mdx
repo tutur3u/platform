@@ -226,9 +226,9 @@ Order for the first hosted G3:
    Service Auth policy, and `STAGING_ACCESS_PHASE=bootstrap`.
 2. **Publish the issuer.** Run the
    [staging Web publisher](/build/devops/wave1-native-publishers#staging-web-publisher):
-   `next-verify`, then the manual domain attach and `WEB_STAGING_SERVING=on`,
-   then publish and `verify-ingress`. A red `verify-ingress` rolls the Worker
-   back automatically.
+   `preflight`, seal and restore, then the manual domain attach and
+   `WEB_STAGING_SERVING=on`, then publish and `verify-ingress`. A red
+   `verify-ingress` rolls the Worker back automatically.
 3. **Publish Calendar.** Use the existing wave-1 Calendar staging publisher.
    Its ingress preflight checks Access, the single Custom Domain, DNS and
    the phase. Read it back with

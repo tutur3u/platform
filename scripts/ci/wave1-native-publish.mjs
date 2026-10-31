@@ -27,7 +27,7 @@ import {
   assertUploadLimits,
   measureUpload,
 } from './wave1-native-upload-limits.mjs';
-import { recheckNext, requireVerifiedPair } from './wave1-web-next.mjs';
+import { assertStagingIdentity } from './wave1-staging-guard.mjs';
 
 export function publicationAdmission({
   environment,
@@ -246,6 +246,14 @@ export async function main({
     p.accountId,
     'Staging account admission mismatch'
   );
+  // Fail-closed Worker, route-host and D1 allowlists, before any API call.
+  if (app === 'web')
+    assertStagingIdentity({
+      worker: p.name,
+      hosts: [p.host],
+      databaseId: env.WAVE1_STAGING_ATTEMPT_D1_ID,
+      env,
+    });
   if (environment === 'staging')
     assert.equal(
       p.host,
@@ -283,27 +291,12 @@ export async function main({
     ghToken,
     accountId: p.accountId,
   });
-  // Web issuer (a): the admitted pair must be the signed `verified` Next entry
-  // for this SHA, deployment, project and sealed origin. Read-only here.
-  if (app === 'web') {
-    assert.equal(
-      admitted.nextDeploymentId,
-      p.nextFallback?.deploymentId,
-      'Admitted Next deployment differs from the sealed fallback'
-    );
-    await requireVerifiedPair({
-      env,
-      fetcher,
-      sha,
-      deploymentId: p.nextFallback.deploymentId,
-      origin: p.nextFallback.origin,
-    });
-  }
   const ledger = await attemptLedger({
     request,
     base: `https://api.cloudflare.com/client/v4/accounts/${p.accountId}`,
     token: cfToken,
     databaseId: env.WAVE1_STAGING_ATTEMPT_D1_ID,
+    expectedDatabaseId: env.WAVE1_STAGING_ATTEMPT_D1_ID,
     repository: env.GITHUB_REPOSITORY,
     runId: env.GITHUB_RUN_ID,
     runAttempt: env.GITHUB_RUN_ATTEMPT,
@@ -370,21 +363,6 @@ export async function main({
     save();
     throw error;
   }
-  const recheckWeb = async () => {
-    if (app === 'web') {
-      const fresh = await recheckNext({
-        env,
-        fetcher,
-        sha,
-        deploymentId: p.nextFallback.deploymentId,
-      });
-      assert.deepEqual(
-        fresh.failures,
-        [],
-        `Next protection changed since verification:\n${fresh.failures.join('\n')}`
-      );
-    }
-  };
   const accept = async (versionId) => {
     const active = await request(`${cfBase}/deployments`, cfToken);
     assert.equal(active.success, true);
@@ -437,7 +415,6 @@ export async function main({
     'Multiple matching versions require owner reconciliation'
   );
   if (identical.length) {
-    await recheckWeb();
     record.versionId = identical[0].id;
     if (ledger.prior?.state === 'activated') {
       // A terminal activation is never downgraded; a rerun only re-verifies it.
@@ -471,7 +448,6 @@ export async function main({
   try {
     await assertEnabled();
     validate();
-    await recheckWeb();
   } catch (error) {
     record.state = 'failed';
     save();

@@ -138,3 +138,18 @@ test('a tampered or foreign ledger is refused before any write', async () => {
   );
   assert.equal(w.writes.length, 0);
 });
+
+for (const [label, patch, message] of [
+  ['the D1 id is unset', { WAVE1_STAGING_ATTEMPT_D1_ID: undefined }, /D1/],
+  ['the D1 id is empty', { WAVE1_STAGING_ATTEMPT_D1_ID: '' }, /D1/],
+]) {
+  test(`rollback refuses before any API call when ${label}`, async () => {
+    const w = world();
+    await assert.rejects(
+      rollbackWeb({ env: { ...env, ...patch }, sha, fetcher: w.fetcher }),
+      message
+    );
+    assert.deepEqual(w.urls, []);
+    assert.equal(w.writes.length, 0);
+  });
+}

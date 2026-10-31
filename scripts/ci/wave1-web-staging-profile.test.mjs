@@ -42,19 +42,16 @@ test('the entry agrees with the candidate profile and admission inputs', () => {
   assert.equal(web.vars.WEB_START_CANDIDATE, 'staging');
   assert.equal(web.vars.WEB_START_NATIVE_LEGAL, 'off');
   assert.equal(web.vars.WEB_START_NATIVE_SECURITY, 'off');
-  // NEXT_FALLBACK_ORIGIN is sealed per publication (design §2.2), never a fixed var.
+  // Staging is Cloudflare-only: no Vercel fallback var or project is sealed.
   assert.equal(Object.hasOwn(web.vars, 'NEXT_FALLBACK_ORIGIN'), false);
+  assert.equal(Object.hasOwn(web, 'nextFallback'), false);
   for (const name of web.secrets)
     assert.match(profile, new RegExp(`${name}\\?: string`));
   assert.deepEqual([...web.secrets].sort(), [
     'CF_ACCESS_AUD',
     'CF_ACCESS_TEAM_DOMAIN',
     'TRUSTED_PROXY_ORIGIN_SECRET',
-    'VERCEL_AUTOMATION_BYPASS_SECRET',
   ]);
-  assert.equal(web.nextFallback.vercelProject, 'tuturuuu-web-staging');
-  assert.equal(web.nextFallback.target, 'staging');
-  JSON.parse(source(web.nextFallback.config));
 });
 
 // Every string (keys and values, recursively) in a JSON value.
