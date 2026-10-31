@@ -22,8 +22,13 @@
  * Locally, the order check uses MIGRATION_BASE_REF (default `main`) against
  * the existing `origin/<ref>` without fetching, and skips if it is missing.
  *
+ * The inline order check in .github/workflows/check-migrations.yml reads the
+ * same exemption list through `--print-exempt-versions`, so the list lives
+ * only in this file.
+ *
  * Usage:
  *   node scripts/check-migration-timestamps.js
+ *   node scripts/check-migration-timestamps.js --print-exempt-versions
  *
  * Exit codes:
  *   0 - All migrations have valid timestamps
@@ -375,6 +380,13 @@ function reportMigrationOrder(env = process.env) {
  * Main function
  */
 function main() {
+  if (process.argv.includes('--print-exempt-versions')) {
+    // One exact version per line and nothing else: the workflow matches these
+    // lines with a fixed-string, whole-line comparison.
+    for (const version of ORDER_EXEMPT_VERSIONS) console.log(version);
+    return;
+  }
+
   console.log('Checking migration timestamps...');
   console.log('(All timestamps are interpreted as GMT+7)\n');
 
