@@ -1,16 +1,14 @@
 // biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Direct CI entrypoint; credentials never enter Turbo builds.
-// Credential-free admission for the staging Web publisher: the exact SHA is
-// admitted by WEB_STAGING_NEXT_ADMISSION and its Web Start candidate
-// qualification (`web-start-candidate.yaml` job `candidate`) passed at that
-// SHA. Protected jobs re-read the fence and admission freshly before writing.
+// Credential-free admission for the staging Web publisher: the exact SHA's Web
+// Start candidate qualification (`web-start-candidate.yaml` job `candidate`)
+// passed at that SHA. Protected jobs re-read the fence and the artifact
+// admission freshly before writing.
 import assert from 'node:assert/strict';
 import { pathToFileURL } from 'node:url';
 import { boundedJson } from './wave1-native-publish.mjs';
-import { nextAdmission } from './wave1-web-next.mjs';
 
 export async function admit({ env, sha, fetcher = fetch }) {
   assert.match(sha ?? '', /^[a-f0-9]{40}$/u, 'Exact source SHA required');
-  nextAdmission(env.NEXT_ADMISSION, sha);
   const runs = await boundedJson(
     `https://api.github.com/repos/${env.GITHUB_REPOSITORY}/commits/${sha}/check-runs?check_name=candidate&per_page=20`,
     env.GH_TOKEN,

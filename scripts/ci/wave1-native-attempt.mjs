@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { assertStagingD1 } from './wave1-staging-guard.mjs';
 
 // The staging deploy token is also the signing authority, never a PR job token.
 export function signAttemptState(data, token) {
@@ -61,9 +62,11 @@ export async function readAttemptRecord({
   base,
   token,
   databaseId,
+  expectedDatabaseId,
   scope,
   app,
 }) {
+  assertStagingD1(databaseId, expectedDatabaseId);
   assert.match(
     databaseId ?? '',
     /^[a-f0-9-]{36}$/,
@@ -88,12 +91,14 @@ export async function attemptLedger({
   base,
   token,
   databaseId,
+  expectedDatabaseId,
   repository,
   app,
   identity,
   runId,
   runAttempt,
 }) {
+  assertStagingD1(databaseId, expectedDatabaseId);
   assert.match(
     databaseId ?? '',
     /^[a-f0-9-]{36}$/,

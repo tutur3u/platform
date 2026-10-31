@@ -514,147 +514,173 @@ Update `workerManagedRecord` from that evidence; never relax it to pass.
 ## Staging Web publisher
 
 `.github/workflows/wave1-web-staging.yaml` publishes the staging issuer
-(`tuturuuu-web-wave1-staging`) and its protected Next fallback. The fallback is
-one immutable deployment in the dedicated `tuturuuu-web-staging` Vercel
-project. The workflow runs only on `workflow_dispatch` from `main`, for one
-`source_sha`, with `cancel-in-progress: false`.
+(`tuturuuu-web-wave1-staging`). Staging is **Cloudflare-only**: no Vercel
+project, token, secret or deployment participates in it. The staging domain
+pattern is `<app>.tutur3u.com` for the staging of `<app>.tuturuuu.com`, in the
+`tutur3u.com` zone; the main web app stages on the `tutur3u.com` apex. The
+workflow runs only on `workflow_dispatch` from `main`, for one `source_sha`,
+with `cancel-in-progress: false`.
+
+### Fail-closed rules
+
+Everything below is credential-free and runs before any Cloudflare request.
+`scripts/ci/wave1-staging-guard.mjs` implements it, and
+`wave1-staging-guard.test.mjs` covers it.
+
+- **Unset is refused.** `WAVE1_STAGING_PUBLISH_ENABLED` must be exactly
+  `true`. `WAVE1_STAGING_PUBLICATION_ADMISSION`, `WAVE1_STAGING_ATTEMPT_D1_ID`
+  and `CLOUDFLARE_STAGING_ACCOUNT_ID` must be set, and the account must equal
+  the reviewed profile account. An unset, empty, `false`, or differently cased
+  value stops the run.
+- **Protected environment.** `wave1-web-staging` is the only required
+  environment; no job uses any other. The preflight reads the GitHub API
+  (`/environments/wave1-web-staging` and `/deployment-branch-policies`) and
+  requires that the environment exists, has a required-reviewers rule with
+  `prevent_self_review: true` and at least one reviewer entry (user or
+  team), and allows deployments from the custom branch policy `main` (type
+  `branch`, exactly one policy) only. A 404, a 403, a missing reviewer, a
+  rule that allows self-review (`prevent_self_review` false or missing),
+  `protected branches` mode, a second or wildcard branch policy, or a tag
+  policy stops the run. Any API error fails closed.
+- **Environment read token.** The preflight reads environments with
+  `secrets.WAVE1_ENV_READ_TOKEN` when it is set, else `github.token`. If
+  `github.token` cannot read environments (403 or 404 from the environments
+  API), the preflight fails closed and the fix is a **fine-grained,
+  read-only** token stored as `WAVE1_ENV_READ_TOKEN`: repository Actions
+  read (and Administration read only if the API still refuses), or the
+  minimal read scope that exposes environment protection rules. Never grant
+  a write scope or a classic broad token; the preflight performs only `GET`
+  requests, and the token is visible to no Cloudflare or publish step.
+- **One D1 database.** The attempt ledger and the rollback read refuse any D1
+  database id other than `vars.WAVE1_STAGING_ATTEMPT_D1_ID` (the
+  `expectedDatabaseId` argument), before the first query.
+- **Allowlisted Worker and host.** The reviewed allowlist in
+  `scripts/ci/wave1-native-profiles.json` (`webStaging.allowlist`) names the
+  staging Worker scripts and route hosts. A host must match
+  `^[a-z0-9-]+\.tutur3u\.com$` or be exactly `tutur3u.com`, and is never under
+  `tuturuuu.com`. The publisher and the rollback reject anything else (other
+  scripts, `tuturuuu.com` hosts, lookalikes such as `tutur3u.com.evil.example`,
+  a trailing dot, uppercase, ports) before any API call. A malformed allowlist
+  entry is itself refused.
+
+The GitHub token for the preflight is the job's `github.token` with
+`actions: read`. If that token cannot read environments, the preflight stops
+the run; it never falls back to an unchecked path.
 
 ### Jobs and order
 
-1. **`admit`** (no credentials):
-   - `source_sha` is an ancestor of the dispatched `main` commit;
-   - `WAVE1_STAGING_PUBLISH_ENABLED=true`;
-   - `WEB_STAGING_NEXT_ADMISSION` names exactly this SHA (one deployment, the
-     staging target, the `VERCEL_WEB_STAGING_PROJECT_ID` project);
-   - the `web-start-candidate.yaml` `candidate` check passed at this SHA.
-2. **`next-deploy`** (environment `wave1-web-next-staging`):
-   - bundles the build identity (`staging`, the exact SHA);
-   - runs `vercel pull --environment=staging` and
-     `vercel build --target=staging --local-config vercel.staging.json`;
-   - runs `wave1-web-next.mjs deploy`. That command re-reads the stop fence
-     and admission, CASes the signed `wave1-web-next-staging` row to
-     `pending`, and runs `vercel deploy --prebuilt --target=staging` once,
-     never with `--prod`. The Vercel CLI receives no Cloudflare or GitHub
-     credential.
+1. **`preflight`** (no credentials, `contents: read`, `actions: read`): the
+   rules above. Every other job runs after it; `publish-worker` and
+   `verify-ingress`, the only jobs with secrets, name it in `needs`.
+2. **`admit`** (no credentials): `source_sha` is an ancestor of the dispatched
+   `main` commit, the fence is `true`, and the `web-start-candidate.yaml`
+   `candidate` check passed at this SHA.
+3. **`seal-worker`** (no credentials): builds the candidate, runs the emitted
+   workerd suite and seals it. The artifact digest binds the exact Worker
+   bytes. The job summary prints the SHA and digest for admission.
+4. **`restored`**: restores the archive, recreates the Void pointer from the
+   seal, re-runs the emitted suite and the dry-run size guard, and re-verifies
+   the bytes.
+5. **`publish-worker`** (environment `wave1-web-staging`): first a step with
+   only the fence and admission variables runs `guard.mjs admission`, so an
+   unset admission stops before any credentialed step. Then
+   `wave1-native-publish.mjs publish web staging` requires the exact artifact
+   admission, the allowlisted Worker, host and D1, the ingress preflight (the
+   Custom Domain and `WEB_STAGING_SERVING=on`), and then makes one upload.
+6. **`verify-ingress`** (environment `wave1-web-staging`): runs the read-only
+   `readback.mjs --app web`. If it fails, the last step rolls **only** the
+   staging Worker back to the deployment the publisher captured, using the
+   signed attempt ledger. That is one Cloudflare deployment write, it refuses
+   unless this SHA's version is the one serving, and it touches no Access,
+   DNS, domain, ledger or variable state. The release owner then decides on
+   S1/S1b.
 
-   A lost receipt stays `pending`. A rerun reconciles it from Vercel by SHA
-   and never deploys again.
-3. **`next-verify`** (same environment). `wave1-web-next.mjs verify` must
-   pass every check below; only then is the entry CASed to `verified`, bound
-   to the SHA, deployment ID, project ID (the row scope), origin and verify
-   run ID. No other job writes `verified`. The Worker publisher repeats this
-   protection check when reconciling an already-uploaded version, before
-   recording uploaded/activated state; activated reruns also recheck without
-   downgrading the ledger if protection has changed.
-   - **V1b, project protection:** Vercel Authentication on **all**
-     deployments; no password protection, trusted IPs, OPTIONS allowlist or
-     shareable links; exactly one automation bypass, equal to the Worker
-     secret.
-   - **Deployment:** READY, non-production target, the exact SHA, a
-     `tuturuuu-web-staging-*` URL.
-   - **Hosts:** every alias and project domain is enumerated. Before any probe,
-     every parsed hostname must match `^tuturuuu-web-staging-[a-z0-9-]+\.vercel\.app$`.
-     Ports and userinfo refuse. The proof request uses the first sorted allowed
-     hostname; an empty allowed set refuses.
-   - **N16:** on every host, anonymous `/`, `/login`, `/api/v1/workspaces`,
-     `/_next/image?url=…` and `/monitoring` are denied.
-   - **N15:** the bypass without an origin proof gets 403.
-   - **N17:** no `_vercel*` cookie is ever set.
-   - **Attestation:** a relayed request with bypass and proof carries the
-     staging Supabase attestation.
+Build, install and seal steps get no `CLOUDFLARE_*` or
+`WAVE1_CONTROL_READ_TOKEN`, and every `bun install` passes
+`--ignore-scripts`. These are step-level controls on a shared runner.
+Regression coverage: `wave1-web-staging-workflow.test.js`,
+`wave1-staging-guard.test.mjs`, `wave1-web-publication.test.js`,
+`wave1-web-rollback.test.mjs` and `wave1-native-attempt.test.js`.
 
-   The `vercel build` step runs repository build code, so it gets **no**
-   Vercel token, Cloudflare credential or control-read token (M1). Only
-   `vercel pull` and the ledger-guarded deploy hold the Vercel token. The
-   Web staging workflow test checks explicit environment keys on build, install
-   and seal steps and checks `--ignore-scripts` on every `bun install` command
-   in that workflow. This does not cover install commands in other wave-1 workflows.
-   Pull/deploy pass `VERCEL_TOKEN`
-   through the environment only. These are step-level controls: build and deploy
-   still share a runner. A credential-free build job requires a reviewed transfer
-   of the authenticated pull output, including staging environment settings;
-   those settings must not be copied into a general build artifact.
-   Staff email selectors require exactly `@tuturuuu.com`, case-insensitively;
-   subdomains, trailing dots and other domains refuse. Focused coverage lives in
-   `scripts/ci/wave1-web-{next,vercel}.test.mjs`,
-   `wave1-web-staging-workflow.test.js` and `wave1-ingress-policy.test.mjs`.
-4. **`seal-worker`** (no credentials): builds the candidate, runs the
-   emitted workerd suite and seals it with `NEXT_FALLBACK_ORIGIN` set to the
-   verified origin. The artifact digest therefore binds the pair. The job
-   summary prints the SHA, digest and `nextDeploymentId` for admission.
-5. **`restored`**: restores the archive, recreates the Void pointer from the
-   seal, re-runs the emitted suite and the dry-run size guard, and
-   re-verifies the bytes.
-6. **`publish-worker`** (environment `wave1-web-staging`):
-   `wave1-native-publish.mjs publish web staging`. Before upload it requires:
-   - the exact Worker admission (`WAVE1_STAGING_PUBLICATION_ADMISSION`, app
-     `web`, with `nextDeploymentId`);
-   - the ingress preflight, which needs the Custom Domain and
-     `WEB_STAGING_SERVING=on`;
-   - (a) the signed `verified` entry matching this SHA, deployment, project
-     and sealed origin. It refuses on any mismatch, before the Worker
-     ledger.
+### Follow-up required: migrate the web staging host
 
-   Immediately before its single upload, it re-reads the Vercel protection,
-   aliases and probes (b), because `verified` is point-in-time. A change
-   consumes the admission as `failed`, and nothing is uploaded.
-7. **`verify-ingress`**: runs the read-only `readback.mjs --app web`
-   (R1–R4, N1–N5, N10, and N17 through the Worker with injected bypass
-   controls). It then re-runs the full Vercel recheck after publishing (c):
-   N15–N17, every alias, `_next/image` and monitoring. If any step fails, the
-   job's last step (R-d) rolls **only** the staging Worker back to the
-   deployment the publisher captured, using the signed attempt ledger. That
-   is one Cloudflare deployment write. It refuses unless this SHA's version
-   is the one serving, and it touches no Access, DNS, domain, Vercel, ledger
-   or variable state. The release owner then decides on S1/S1b. If the
-   rollback itself cannot be confirmed, apply S1/S1b immediately.
+This change deliberately leaves the profiles unchanged, so the pipeline **fails
+closed**: the reviewed web staging host is still `web.staging.tutur3u.com`,
+which the `<app>.tutur3u.com` rule rejects, so `publish-worker` refuses before
+any provider request. Do not re-admit the retired `*.staging.tutur3u.com`
+pattern in the guard. A follow-up must migrate web staging from
+`web.staging.tutur3u.com` to `tutur3u.com` and then add that host to the
+allowlist's route use:
 
-### What stays manual (d)
+- `scripts/ci/wave1-native-profiles.json` (`webStaging.stagingHost`, the
+  `AUTH_COOKIE_DOMAIN` var) and `scripts/ci/wave1-native-profile.mjs`;
+- `apps/web/cloudflare/profile.ts` (`stagingProfile.host`, `cookieDomain`,
+  and the `.staging.tutur3u.com` upstream rule), plus
+  `apps/web/cloudflare/emitted.runtime.mjs`, `handler.test.ts` and
+  `staging.env.example`;
+- the cookie domain `.tutur3u.com`, with no overlap with `tuturuuu.com`
+  (`packages/utils/src/shared-cookie*.ts`, `packages/auth/src/app-session-shared-cookie.test.ts`,
+  `packages/supabase/src/next/__tests__/common.test.ts`);
+- the ingress topology (`scripts/ci/wave1-ingress-topology.mjs`,
+  `wave1-ingress-fixture.mjs`, `scripts/wave1-staging/profiles.ts`,
+  `scripts/ci/wave1-native-runtime.mjs`) and their tests;
+- Calendar, Mail, Contacts, Finance and Meet staging hosts
+  (`apps/calendar/src/runtime/*`, `apps/mail/src/runtime/*`,
+  `apps/contacts/e2e-staging/policy.ts`, `apps/finance/cloudflare/native-profiles.json`,
+  `apps/meet/void.staging.config.ts`, `scripts/ci/calendar-host-scan.mjs`);
+- `apps/web/e2e-wave1-staging/policy.ts`, `.lychee.toml` and
+  `.github/workflows/wave1-native-app.yaml`.
 
-The workflow never attaches a Custom Domain, changes Access or DNS, writes
-`WEB_STAGING_SERVING` or `STAGING_ACCESS_PHASE`, aliases or promotes a
-deployment.
+The Worker still proxies non-native routes to a Next fallback origin
+(`NEXT_FALLBACK_ORIGIN`, `VERCEL_AUTOMATION_BYPASS_SECRET`, `admittedOrigin` in
+`apps/web/cloudflare/profile.ts`). This change does not alter that runtime
+behavior, and the sealed profile no longer provides those values. Until the
+follow-up decides the Cloudflare-hosted fallback, `admittedOrigin` returns
+`null` and the Worker refuses to serve (fail closed). `vercel.staging.json` and
+its test stay for that follow-up.
 
-The first publication runs with a **service-token-only bootstrap**: no
-human can reach either host until the pair is proven.
+### What stays manual
+
+The workflow never attaches a Custom Domain, changes Access or DNS, or writes
+`WEB_STAGING_SERVING` or `STAGING_ACCESS_PHASE`.
+
+The first publication runs with a **service-token-only bootstrap**: no human
+can reach the host until the Worker is proven.
 
 1. Set `STAGING_ACCESS_PHASE=bootstrap` and keep `WEB_STAGING_SERVING=off`.
    The Access app carries only the `staging-ci-health` service-auth policy:
    no staff allow, no bypass.
-2. Set `WEB_STAGING_NEXT_ADMISSION` and dispatch the workflow.
-3. After `next-verify` is green for the exact pair, the release owner
-   manually attaches `web.staging.tutur3u.com` behind that Access app and
-   sets `WEB_STAGING_SERVING=on`.
-4. Set `WAVE1_STAGING_PUBLICATION_ADMISSION` from the seal summary and
-   re-run the failed jobs. `verify-ingress` reads the pair back with the CI
-   service token only.
-5. Only after `verify-ingress` is green, the release owner adds the staff
+2. Dispatch the workflow. After `seal-worker` is green, set
+   `WAVE1_STAGING_PUBLICATION_ADMISSION` from the seal summary and re-run the
+   failed jobs.
+3. The release owner attaches the staging host behind that Access app and sets
+   `WEB_STAGING_SERVING=on`. `verify-ingress` then reads the Worker back with
+   the CI service token only.
+4. Only after `verify-ingress` is green, the release owner adds the staff
    allow policy, sets `STAGING_ACCESS_PHASE=staff`, and records that
    `verify-ingress` run ID in the private operations ledger (R-c).
 
-   A red `verify-ingress` has already rolled the Worker back. Stay in
-   `bootstrap`, and apply S1/S1b if the cause is not understood.
+A red `verify-ingress` has already rolled the Worker back. Stay in
+`bootstrap`, and apply S1/S1b if the cause is not understood.
 
 ### Rollback
 
-Run `wrangler rollback` to the version the publisher captured. That version's
-sealed origin points to the prior immutable deployment, so the pair rolls
-back together. There is no Next-only rollback: a Next fix is a new SHA and a
-new admission.
+Run `wrangler rollback` to the version the publisher captured. A fix is a new
+SHA and a new admission.
 
 ### Serving off-switch for ingress-admitted hosts
 
 Each layer below is durable on its own. Apply them in order, under
-release-owner custody. None of them is automated except the Worker
-rollback, which the workflow performs on a red `verify-ingress`.
+release-owner custody. None of them is automated except the Worker rollback,
+which the workflow performs on a red `verify-ingress`.
 
 | Layer | Action | Effect |
 | --- | --- | --- |
 | S0 intent | `WEB_STAGING_SERVING=off` | The publisher refuses every upload for both ingress hosts |
-| S1 Access | On **both** Access apps, put a **Block: Everyone** policy first, and remove the Service Auth policies in the same change | The edge denies every request before the Worker runs, including service-token holders. OPTIONS still reaches the issuer Worker through the preflight bypass, which answers it locally with zero Vercel calls |
+| S1 Access | On **both** Access apps, put a **Block: Everyone** policy first, and remove the Service Auth policies in the same change | The edge denies every request before the Worker runs, including service-token holders. OPTIONS still reaches the issuer Worker through the preflight bypass, which answers it locally |
 | S1b tokens | Revoke the `staging-ci-health` and `staging-calendar-to-web` service tokens | No remaining credential can pass Access |
 | S2 ingress | Detach the Custom Domain; its DNS record goes with it | There is no hostname. The publisher never re-attaches it |
-| S3 backend | Remove the Vercel automation bypass, or delete the staging deployments | The Worker gets 401 from Vercel and returns 502 |
+| S3 fence | Set `WAVE1_STAGING_PUBLISH_ENABLED` to anything but `true`, or clear it | The preflight and publisher refuse every run |
 | S4 Worker | Delete only the named staging Worker | Last resort, as for the no-ingress identities above |
 
 After any S-layer, the preflight refuses to publish until the release owner
@@ -663,11 +689,6 @@ phase.
 
 ### Credential rotation
 
-- **Vercel automation bypass (V1d).** Rotate it at least every 90 days, on
-  any suspicion, and whenever a staff member with access leaves. Update the
-  Vercel project, the Worker secret and both environment secrets together.
-  Record a names-only receipt. `next-verify` and the publisher's recheck
-  refuse until the Worker secret and the project's single bypass agree.
 - **Access service tokens.** Use a 30-day expiry and rotate them before it
   lapses. Update `STAGING_ACCESS_HEALTH_TOKEN_IDS` whenever the CI health
   token id changes; while in `bootstrap`, the preflight requires an exact
@@ -679,17 +700,15 @@ phase.
 ### Cost and stop model
 
 - **No public traffic.** Access denies unauthenticated requests before the
-  Worker runs. workers.dev, previews and routes are off, and the Vercel URL
-  needs both the bypass secret and an origin proof.
+  Worker runs. workers.dev, previews and routes are off.
 - **No scheduled work.** No cron, queue, Durable Object or alarm is added.
-  `vercel.staging.json` has no crons.
-- **Bounded runs.** Each run makes at most one Vercel deployment and one
-  Worker upload, plus the single R-d rollback write on failure. Every write
-  sits behind a fresh stop fence and a signed CAS.
+- **Bounded runs.** Each run makes at most one Worker upload, plus the single
+  R-d rollback write on failure. Every write sits behind a fresh stop fence
+  and a signed CAS.
 - **What spend remains.** Staff and CI requests only. Access is free for up
   to 50 seats, and service tokens use no seat. Set Workers usage
-  notifications on both staging scripts; they are alerts, not caps, and S1
-  is the seconds-level stop.
+  notifications on the staging script; they are alerts, not caps, and S1 is
+  the seconds-level stop.
 
 ### Release-owner checklist (names only)
 
@@ -706,35 +725,29 @@ into source, logs or evidence.
    - start in `bootstrap`: only the CI health Service Auth policy, no allow,
      no bypass.
 2. **Repository variables:**
+   - `WAVE1_STAGING_PUBLISH_ENABLED`, `WAVE1_STAGING_ATTEMPT_D1_ID`,
+     `CLOUDFLARE_STAGING_ACCOUNT_ID`, `WAVE1_STAGING_PUBLICATION_ADMISSION`;
    - `STAGING_ACCESS_PHASE`, `STAGING_ACCESS_APP_IDS`,
      `STAGING_ACCESS_HEALTH_TOKEN_IDS`, `STAGING_ACCESS_STAFF_GROUP_ID`;
    - `STAGING_ACCESS_STAFF_EMAIL_LIST_ID`, only if the staff allow policy
      uses an email list;
-   - `STAGING_TUTUR3U_ZONE_ID`, `WEB_STAGING_SERVING`,
-     `WEB_STAGING_NEXT_ADMISSION`, `WAVE1_STAGING_PUBLICATION_ADMISSION`.
-3. **Protected environments** (`main` only, release-owner review):
-   - `wave1-web-next-staging` and `wave1-web-staging` with the secret names
-     listed in [Staging Web publisher](#staging-web-publisher);
-   - the existing `wave1-calendar-staging`, plus the Calendar Access secret
-     names.
+   - `STAGING_TUTUR3U_ZONE_ID`, `WEB_STAGING_SERVING`.
+3. **Protected environment.** `wave1-web-staging` must have a required
+   reviewers rule (at least one user or team, `prevent_self_review: true`)
+   and a `main`-only deployment branch policy; the preflight enforces this.
+   If `github.token` cannot read environments, add the fine-grained,
+   read-only `WAVE1_ENV_READ_TOKEN` secret described in
+   [Fail-closed rules](#fail-closed-rules). Keep the existing
+   `wave1-calendar-staging`, plus the Calendar Access secret names.
 4. **Cloudflare:**
    - Bootstrap Worker `tuturuuu-web-wave1-staging` with an inert initial
      version: workers.dev, previews and routes off. Set its secret names.
    - Extend `CLOUDFLARE_STAGING_API_TOKEN` with **read** permission for
      Access Apps and Policies, Zone DNS, Workers Routes and Workers Custom
      Domains. Grant no Access or DNS write.
-   - Seed the D1 rows `wave1-web-next-staging` and `wave1-web-staging` with
-     signed empty history.
+   - Seed the D1 row `wave1-web-staging` with signed empty history.
    - Add Workers usage notifications.
-5. **Vercel:** create project `tuturuuu-web-staging`:
-   - a `staging` custom environment;
-   - Vercel Authentication on all deployments;
-   - no password protection, trusted IPs, OPTIONS allowlist or shareable
-     links;
-   - exactly one automation bypass;
-   - Git deployments off, no domains, preview retention of at least 90 days;
-   - staging-only environment values.
-6. **Order of operations:** follow [What stays manual](#what-stays-manual-d),
+5. **Order of operations:** follow [What stays manual](#what-stays-manual),
    then record the DNS record shape on the first readback.
 
 ## Meet off-canonical profile
