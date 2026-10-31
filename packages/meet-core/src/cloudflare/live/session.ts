@@ -13,7 +13,7 @@ import { verifyLiveSession } from '../../features/live-assistant/token';
 import { LiveActions } from './actions';
 import type { LiveAudioBatcher } from './audio-batcher';
 import { LiveAudioInput } from './audio-input';
-import { beginLiveBilling, settleLiveBilling } from './billing';
+import { beginLiveBilling } from './billing';
 import { executeLiveDecision } from './decision';
 import {
   finalizeSessionBilling,
@@ -35,6 +35,7 @@ import { normalizeSavedLiveSession, type SavedSession } from './session-state';
 import { executeLiveTool } from './session-tools';
 import { markInterruptedUsage, observeSessionUsage } from './session-usage';
 import { type LiveEnvironment, LiveTurnArchive } from './storage';
+import { settleTickBilling } from './tick-billing';
 import { replayLiveToolResponses } from './tool-responses';
 import { reportLiveUsage } from './usage-report';
 import { liveWorkspaceAllowed } from './workspace-gate';
@@ -615,62 +616,16 @@ export class MeetLiveDurableObject {
           this.saved.claims.mode === 'room' ? 'live.heartbeat' : 'live.context',
         sessionId: this.saved.claims.sessionId,
       });
-      if (this.saved.billing) {
-        const result = await settleLiveBilling(
+      if (
+        (await settleTickBilling(
           this.env,
-          this.saved.claims,
-          this.saved.billing,
-          false
-        );
-        this.saved.billing = result;
-        await this.persist();
-        await reportLiveUsage(
-          this.env,
-          this.saved.claims,
-          this.saved.identity,
-          result
-        );
-        this.emit({
-          type: 'usage',
-          costUsd: result.costUsd,
-          incomplete: result.incomplete,
-        });
-        if (result.closed || result.exhausted) {
-          await this.stop('quota_exhausted');
-          return;
-        }
-        if (result.renew) {
-          this.saved.billing = await settleLiveBilling(
-            this.env,
-            this.saved.claims,
-            result,
-            true
-          );
-          await this.persist();
-          await reportLiveUsage(
-            this.env,
-            this.saved.claims,
-            this.saved.identity,
-            this.saved.billing
-          );
-          this.saved.billingFinalized = true;
-          await this.persist();
-          this.saved.billing = await beginLiveBilling(
-            this.env,
-            this.saved.claims,
-            this.saved.billing.costUsd,
-            this.saved.identity.workspaceId
-          );
-          this.saved.coverageGap = false;
-          this.saved.billingFinalized = false;
-          await this.persist();
-          await reportLiveUsage(
-            this.env,
-            this.saved.claims,
-            this.saved.identity,
-            this.saved.billing
-          );
-        }
+          this.saved,
+          () => this.persist(),
+          (event) => this.emit(event)
+        )) === 'closed'
+      ) {
+        await this.stop('quota_exhausted');
+        return;
       }
       if (this.saved.toolResponses?.some((item) => !item.deliveredAt)) {
         this.provider?.close();
