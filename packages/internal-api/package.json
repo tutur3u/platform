@@ -308,6 +308,11 @@
       "import": "./dist/tutoring-queue-rules.js",
       "require": "./dist/tutoring-queue-rules.js"
     },
+    "./task-cycles": {
+      "types": "./dist/task-cycles.d.ts",
+      "import": "./dist/task-cycles.js",
+      "require": "./dist/task-cycles.js"
+    },
     "./task-templates": {
       "types": "./dist/task-templates.d.ts",
       "import": "./dist/task-templates.js",

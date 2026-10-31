@@ -6,10 +6,7 @@ import {
 } from '@tuturuuu/internal-api';
 import { headers } from '@tuturuuu/start-bridge/next/headers';
 import { notFound, redirect } from '@tuturuuu/start-bridge/next/navigation';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { loadSmartSchedulingTasks } from '@tuturuuu/tasks-ui/calendar/components/load-smart-scheduling-tasks';
 import { schedulingTaskTransport } from '@tuturuuu/tasks-ui/calendar/scheduling-task-transport';
 import type { TaskProgressView } from '@tuturuuu/tasks-ui/progress/task-progress-page';
@@ -128,7 +125,10 @@ export async function cyclesModel(scope: Scope) {
   const permissions = await getPermissions({ user: scope.user, wsId });
   if (!permissions) notFound();
   if (permissions.withoutPermission('manage_projects')) redirect(`/${wsId}`);
-  const cycles = await loadTaskCycles(await createClient(), wsId);
+  const cycles = await loadTaskCycles(
+    await createAdminClient({ noCookie: true }),
+    wsId
+  );
   if (!cycles) notFound();
   return { kind: 'cycles' as const, wsId, cycles };
 }
