@@ -1,4 +1,5 @@
 import type { Polar } from '@tuturuuu/payment/polar';
+import { PolarError } from '@tuturuuu/payment/polar/errors';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { describe, expect, it, vi } from 'vitest';
 import { assignSeatToMember, revokeSeatFromMember } from './polar-seat-helper';
@@ -94,5 +95,76 @@ describe('seat assignment accounting failures', () => {
         'user'
       )
     ).resolves.toEqual({ required: false });
+  });
+});
+
+describe('terminal seat cleanup states', () => {
+  const active = () =>
+    client(
+      {
+        data: { product_id: 'product', polar_subscription_id: 'subscription' },
+        error: null,
+      },
+      { data: { pricing_model: 'seat_based' }, error: null }
+    );
+  const httpError = (status: number) =>
+    new PolarError('provider response', {
+      response: new Response('', { status }),
+      request: new Request('https://example.test'),
+      body: '',
+    });
+
+  it.each(['missing customer', 'revoked seat', 'seat removed concurrently'])(
+    'accepts %s with throwOnFailure',
+    async (state) => {
+      const getExternal = vi.fn().mockResolvedValue({ id: 'customer' });
+      const revokeSeat = vi.fn().mockResolvedValue({});
+      if (state === 'missing customer')
+        getExternal.mockRejectedValue(httpError(404));
+      if (state === 'seat removed concurrently')
+        revokeSeat.mockRejectedValue(httpError(404));
+      const listSeats = vi.fn().mockResolvedValue({
+        seats: [
+          {
+            id: 'seat',
+            customerId: 'customer',
+            status: state === 'revoked seat' ? 'revoked' : 'claimed',
+          },
+        ],
+      });
+      const polar = {
+        customers: { getExternal },
+        customerSeats: { listSeats, revokeSeat },
+      } as unknown as Polar;
+      await expect(
+        revokeSeatFromMember(polar, active(), 'workspace', 'user', {
+          throwOnFailure: true,
+        })
+      ).resolves.toBeUndefined();
+      if (state === 'missing customer')
+        expect(listSeats).not.toHaveBeenCalled();
+      if (state !== 'seat removed concurrently')
+        expect(revokeSeat).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    httpError(503),
+    new TypeError('network failure'),
+    new Error('timeout'),
+  ])('propagates real provider failures', async (error) => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const polar = {
+        customers: { getExternal: vi.fn().mockRejectedValue(error) },
+      } as unknown as Polar;
+      await expect(
+        revokeSeatFromMember(polar, active(), 'workspace', 'user', {
+          throwOnFailure: true,
+        })
+      ).rejects.toBe(error);
+    } finally {
+      log.mockRestore();
+    }
   });
 });

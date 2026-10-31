@@ -1,4 +1,5 @@
 import type { Polar } from '@tuturuuu/payment/polar';
+import { isPolarNotFound } from '@tuturuuu/payment/polar/errors';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { SEAT_ACTIVE_STATUSES } from './subscription-constants';
 
@@ -172,7 +173,6 @@ export async function revokeSeatFromMember(
     });
 
     if (!customer) {
-      if (options.throwOnFailure) throw new Error('Polar customer not found');
       console.warn(
         `No Polar customer found for user ${userId} - cannot revoke seat`
       );
@@ -186,7 +186,7 @@ export async function revokeSeatFromMember(
 
     // Find the seat for this user (match by Polar's internal customerId)
     const userSeat = seatsList.seats.find((seat) => {
-      return seat.customerId === customer.id;
+      return seat.customerId === customer.id && seat.status !== 'revoked';
     });
 
     if (!userSeat) {
@@ -205,6 +205,7 @@ export async function revokeSeatFromMember(
       `Revoked Polar seat ${userSeat.id} from user ${userId} in workspace ${wsId}`
     );
   } catch (error) {
+    if (isPolarNotFound(error)) return;
     console.error(`Failed to revoke Polar seat:`, error);
     if (options.throwOnFailure) throw error;
   }

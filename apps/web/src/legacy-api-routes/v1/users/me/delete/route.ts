@@ -1,3 +1,4 @@
+import { isPolarSubscriptionEnded } from '@tuturuuu/payment/polar/errors';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
 import { revokeSeatFromMember } from '@tuturuuu/payment-core/polar-seat-helper';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
@@ -195,6 +196,7 @@ export const POST = withSessionAuth(
               `Revoked subscription ${ws.polarSubscriptionId} for workspace ${ws.wsId}`
             );
           } catch (error) {
+            if (isPolarSubscriptionEnded(error)) return;
             console.error(
               `Failed to revoke subscription for workspace ${ws.wsId}:`,
               error

@@ -33,6 +33,7 @@
                 "pages": [
                   "platform/data-protection-standard",
                   "platform/data-protection/inventory",
+                  "platform/data-protection/account-deletion",
                   "platform/data-protection/delivery-plan",
                   "platform/data-protection/schema-private",
                   "platform/data-protection/schema-public",

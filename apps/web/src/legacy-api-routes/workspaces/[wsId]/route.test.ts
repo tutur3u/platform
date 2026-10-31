@@ -1,3 +1,7 @@
+import {
+  AlreadyCanceledSubscription,
+  PolarError,
+} from '@tuturuuu/payment/polar/errors';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -240,4 +244,88 @@ describe('legacy workspace detail route DELETE', () => {
       log.mockRestore();
     }
   });
+
+  function providerError(status: number) {
+    const meta = {
+      response: new Response('', { status }),
+      request: new Request('https://example.test'),
+      body: '',
+    };
+    return status === 403
+      ? new AlreadyCanceledSubscription(
+          { error: 'AlreadyCanceledSubscription', detail: 'already canceled' },
+          meta
+        )
+      : new PolarError('private provider detail', meta);
+  }
+
+  it.each([404, 403])(
+    'deletes a workspace after terminal Polar status %s',
+    async (status) => {
+      mockWorkspaceLookup(false);
+      mocks.getPermissions.mockResolvedValue({
+        containsPermission: () => true,
+      });
+      mocks.subscription.mockResolvedValue({
+        data: { polar_subscription_id: 'subscription' },
+        error: null,
+      });
+      mocks.revoke.mockRejectedValue(providerError(status));
+      const route = await import('./route');
+      const response = await route.DELETE(createDeleteRequest(), {
+        params: Promise.resolve({ wsId: WORKSPACE_ID }),
+      });
+      expect(response.status).toBe(200);
+      expect(mocks.deleteWorkspace).toHaveBeenCalledOnce();
+    }
+  );
+
+  it('returns a non-leaky 409 for multiple subscription rows', async () => {
+    mockWorkspaceLookup(false);
+    mocks.getPermissions.mockResolvedValue({ containsPermission: () => true });
+    mocks.subscription.mockResolvedValue({
+      data: null,
+      error: {
+        code: 'PGRST116',
+        details: 'private rows',
+        message: 'private detail',
+      },
+    });
+    const route = await import('./route');
+    const response = await route.DELETE(createDeleteRequest(), {
+      params: Promise.resolve({ wsId: WORKSPACE_ID }),
+    });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      message: 'Workspace subscription state conflicts with deletion',
+    });
+    expect(mocks.deleteWorkspace).not.toHaveBeenCalled();
+    expect(mocks.revoke).not.toHaveBeenCalled();
+  });
+
+  it.each([providerError(503), new TypeError('network'), new Error('timeout')])(
+    'does not delete a workspace after a provider failure',
+    async (error) => {
+      mockWorkspaceLookup(false);
+      mocks.getPermissions.mockResolvedValue({
+        containsPermission: () => true,
+      });
+      mocks.subscription.mockResolvedValue({
+        data: { polar_subscription_id: 'subscription' },
+        error: null,
+      });
+      mocks.revoke.mockRejectedValue(error);
+      const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        const route = await import('./route');
+        const response = await route.DELETE(createDeleteRequest(), {
+          params: Promise.resolve({ wsId: WORKSPACE_ID }),
+        });
+        expect(response.status).toBe(502);
+        expect(mocks.deleteWorkspace).not.toHaveBeenCalled();
+      } finally {
+        log.mockRestore();
+      }
+    }
+  );
 });
