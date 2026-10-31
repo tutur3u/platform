@@ -3,10 +3,16 @@ import {
   createLegacyGetHandler,
   createLegacyHeadHandler,
 } from '@/legacy-api-routes/head';
+import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 import { getTutoringData } from '../export/data';
 
 export const GET = createLegacyGetHandler(
   async (request: Request, context: { params: Promise<{ wsId: string }> }) => {
+    const { wsId } = await context.params;
+    const access = await resolveTutoringRouteAccess(request, wsId);
+    if (!access.permissions) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
     const url = new URL(request.url);
     if (!url.searchParams.get('fromDate') || !url.searchParams.get('toDate')) {
       return NextResponse.json(
@@ -15,7 +21,7 @@ export const GET = createLegacyGetHandler(
       );
     }
     url.searchParams.set('mode', 'report');
-    return getTutoringData(new Request(url, request), context);
+    return getTutoringData(new Request(url, request), access);
   }
 );
 export const HEAD = createLegacyHeadHandler(GET);

@@ -4,7 +4,7 @@ import type { Tables } from '@tuturuuu/types/supabase';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveTutoringReadScope } from '@/lib/tutoring/read-scope';
-import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
+import type { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 import { readAllRows, readByIds } from '../queue/all-rows';
 
 const QuerySchema = z
@@ -31,9 +31,9 @@ const QuerySchema = z
     { message: 'Invalid date range' }
   );
 
-interface Params {
-  params: Promise<{ wsId: string }>;
-}
+export type TutoringAccess = Awaited<
+  ReturnType<typeof resolveTutoringRouteAccess>
+>;
 
 function nameOf(
   value: {
@@ -51,9 +51,11 @@ function nameOf(
   );
 }
 
-export async function getTutoringData(request: Request, { params }: Params) {
-  const { wsId } = await params;
-  const access = await resolveTutoringRouteAccess(request, wsId);
+/** `access` must come from `resolveTutoringRouteAccess` (the ENABLE_TUTORING gate). */
+export async function getTutoringData(
+  request: Request,
+  access: TutoringAccess
+) {
   const { normalizedWsId, permissions } = access;
 
   if (!permissions) {
