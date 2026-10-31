@@ -306,7 +306,13 @@ function sourceViolations(text) {
   return found;
 }
 
+// docs-internal/ is hidden from the docs site but public on GitHub, so its
+// Markdown is scanned like source; other Markdown stays skipped because docs
+// legitimately describe the rule.
+const DOCS_INTERNAL_MARKDOWN = /^docs-internal\/.+\.mdx?$/i;
+
 function scannedFile(file) {
+  if (DOCS_INTERNAL_MARKDOWN.test(file)) return true;
   return SCANNED_FILE.test(file) && !SKIPPED_FILE.test(file);
 }
 

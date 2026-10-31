@@ -66,9 +66,12 @@ const PUBLIC_SAFETY_RULES = [
   ['personal or staff email address', /[\w.+-]+@gmail\.com\b|\bphucvo@/i],
 ];
 
-// Extra rules for anything readable on the public docs site or shipped as
-// public plugin guidance (apps/docs and plugins/**). docs-internal/ may name
-// staging hosts; the public surfaces may not. Justified exceptions go in
+// Extra rules for anything readable on the public docs site, shipped as public
+// plugin guidance, or kept in the public repository's docs-internal/ folder
+// (apps/docs, plugins/** and docs-internal/**). Those hide runbooks from the
+// site, not from GitHub, so none of them may name staging hosts or credential
+// names; detail that needs them lives in the private internal-docs repo.
+// Justified exceptions go in
 // scripts/docs-safety-allowlist.json as {path, rule, reason}.
 const PUBLIC_ONLY_SAFETY_RULES = [
   [
@@ -150,7 +153,11 @@ function audit(root = ROOT) {
       errors.push(
         ...publicSafetyErrors(
           fs.readFileSync(file, 'utf8'),
-          path.relative(root, file).split(path.sep).join('/')
+          path.relative(root, file).split(path.sep).join('/'),
+          {
+            rules: [...PUBLIC_SAFETY_RULES, ...PUBLIC_ONLY_SAFETY_RULES],
+            allowed: safetyAllowlist.allowed,
+          }
         )
       );
   const exists = (slug) =>
