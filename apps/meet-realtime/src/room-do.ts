@@ -7,9 +7,7 @@ import {
   closeBudgetPublications,
   createMeetRoomSnapshot,
   deferBudgetCleanup,
-  enablesNoteSharing,
   expireRoomBudget,
-  isMeetAiEnabledForWorkspace,
   MeetCommandExecutor,
   type MeetRealtimeServerMessage,
   type MeetRealtimeTokenPayload,
@@ -32,7 +30,10 @@ import {
   expireRoomLive,
   liveRoomAnnouncements,
 } from '../../../packages/realtime/src/meet/room-live';
-import { parseMeetRoomSettingsPatch } from '../../../packages/realtime/src/meet/room-options';
+import {
+  resolveRoomSettingsPatch,
+  roomCommand,
+} from '../../../packages/realtime/src/meet/room-settings-gate';
 import { createRoomUsage } from '../../../packages/realtime/src/meet/room-usage';
 import { normalizeTranscriptionConsent } from '../../../packages/realtime/src/meet/transcription';
 import { personalReceiptStorage } from './personal-receipt-storage';
@@ -341,19 +342,13 @@ export class MeetRoomDurableObject implements DurableObject {
     }
     if (new URL(request.url).pathname === '/room-state') {
       if (request.method === 'PATCH') {
-        if (token.role !== 'host')
-          return new Response('Forbidden', { status: 403 });
-        const body = await request.json().catch(() => null);
-        const patch = parseMeetRoomSettingsPatch(body, this.snapshot.settings);
-        if (!patch.success)
-          return new Response('Invalid settings', { status: 400 });
-        const settings = patch.data;
-        const requested = body as Parameters<typeof enablesNoteSharing>[0];
-        if (
-          enablesNoteSharing(requested) &&
-          !isMeetAiEnabledForWorkspace(token.wsId, this.env)
-        )
-          return new Response('Meeting AI is not available', { status: 403 });
+        const settings = resolveRoomSettingsPatch(
+          await request.json().catch(() => null),
+          this.snapshot.settings,
+          token,
+          this.env
+        );
+        if (settings instanceof Response) return settings;
         this.snapshot = { ...this.snapshot, settings };
         await this.persist();
         this.broadcast([{ type: 'room.settings', settings }]);
@@ -465,19 +460,11 @@ export class MeetRoomDurableObject implements DurableObject {
       return;
     }
 
-    await this.commands.run(
-      {
-        message: parsed.data,
-        now: new Date().toISOString(),
-        token,
-        notesEligible: isMeetAiEnabledForWorkspace(token.wsId, this.env),
-      },
-      {
-        read: () => this.snapshot,
-        commit: (result) => this.flush(socket, result),
-        runSfu: (intent) => this.runSfuIntent(intent),
-      }
-    );
+    await this.commands.run(roomCommand(parsed.data, token, this.env), {
+      read: () => this.snapshot,
+      commit: (result) => this.flush(socket, result),
+      runSfu: (intent) => this.runSfuIntent(intent),
+    });
   }
 
   private async flush(socket: WebSocket, result: MeetRoomOutcome) {
