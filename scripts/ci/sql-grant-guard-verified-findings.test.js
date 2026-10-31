@@ -126,7 +126,7 @@ test('rollback records admit only source-bound rollback search-path diagnostics'
   );
   assert.ok(run().violations.some((f) => f.rule === 'function-acl'));
   assert.equal(
-    run({ readFile: () => sql + '\n-- changed' }).verified.length,
+    run({ readFile: () => `${sql}\n-- changed` }).verified.length,
     0
   );
   assert.equal(
