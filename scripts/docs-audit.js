@@ -102,6 +102,13 @@ function hashTerm(term, salt = TERM_SALT) {
     .digest('hex');
 }
 
+// Labels whose terms also match as the start of a longer single word (machine
+// names appear inside hostnames such as `<name>ubuntu`). Prefixes shorter than
+// MIN_PREFIX_LENGTH are never tested.
+const PREFIX_LABELS = new Set(['fleet host or machine name']);
+const MIN_PREFIX_LENGTH = 3;
+const MAX_PREFIX_LENGTH = 24;
+
 function hashedTermErrors(
   source,
   relative,
@@ -110,16 +117,27 @@ function hashedTermErrors(
     salt = TERM_SALT,
     allowed = new Set(),
     allowPath = relative,
+    prefixLabels = PREFIX_LABELS,
   } = {}
 ) {
   const lookup = new Map();
   for (const [label, hashes] of Object.entries(terms))
     for (const hash of hashes) lookup.set(hash, label);
+  const cache = new Map();
+  const labelOf = (text) => {
+    if (!cache.has(text)) cache.set(text, lookup.get(hashTerm(text, salt)));
+    return cache.get(text);
+  };
   const words = [...source.matchAll(/[a-z0-9]+/gi)].map((match) => ({
     text: match[0].toLowerCase(),
     index: match.index,
   }));
   const found = new Map();
+  const report = (label, wordIndex) => {
+    if (!label || allowed.has(`${allowPath}|${label}`)) return;
+    const line = source.slice(0, words[wordIndex].index).split('\n').length;
+    found.set(`${label}|${line}`, [label, line]);
+  };
   for (let start = 0; start < words.length; start += 1) {
     let joined = '';
     for (
@@ -128,10 +146,16 @@ function hashedTermErrors(
       end += 1
     ) {
       joined += words[end].text;
-      const label = lookup.get(hashTerm(joined, salt));
-      if (!label || allowed.has(`${allowPath}|${label}`)) continue;
-      const line = source.slice(0, words[start].index).split('\n').length;
-      found.set(`${label}|${line}`, [label, line]);
+      report(labelOf(joined), start);
+    }
+    const word = words[start].text;
+    for (
+      let length = MIN_PREFIX_LENGTH;
+      length < Math.min(word.length, MAX_PREFIX_LENGTH + 1);
+      length += 1
+    ) {
+      const label = labelOf(word.slice(0, length));
+      if (prefixLabels.has(label)) report(label, start);
     }
   }
   return [...found.values()].map(

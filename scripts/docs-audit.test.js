@@ -131,10 +131,12 @@ test('hashed terms are found across line breaks and dashes without echoing them'
   assert.equal(found('the alpha-bravo and ALPHA_BRAVO notes').length, 1);
   assert.equal(found('see CharlieClinic page').length, 1);
   assert.equal(found('ssh zzhost-two or zzhost.example').length, 1);
-  assert.equal(
-    found('alpha and bravo apart, zzhosting is different').length,
-    0
-  );
+  assert.equal(found('alpha and bravo apart, zzho and zzhos only').length, 0);
+  // Machine names also match as the start of a longer single word.
+  assert.equal(found('node zzhostubuntu01 is a host').length, 1);
+  assert.equal(found('ZZHOSTSTUDIO and zzhost-lan').length, 1);
+  // Customer names do not match as prefixes.
+  assert.equal(found('charlieclinics and alphabravos').length, 0);
   assert.ok(found('Alpha Bravo').every((error) => !/alpha|bravo/i.test(error)));
   const allowed = new Set(['p.mdx|fleet host or machine name']);
   assert.equal(
