@@ -9,8 +9,11 @@ const {
   check,
   normalizeHost,
   scannedFile,
+  stripCommentVariants,
   violations,
 } = require('./check-staging-hosts.js');
+
+const stripComments = (source) => stripCommentVariants(source)[0];
 for (const host of [
   'pay-staging',
   'contacts.staging',
@@ -304,4 +307,200 @@ test('detects hosts concatenated across comments', () => {
     violations('const host = "https://dev.staging.tutur3u.com";').length,
     0
   );
+});
+
+test('regex literals cannot open a block comment that hides a host', () => {
+  for (const source of [
+    "const re = /\\/*/;\nconst host = 'dev.tuturuuu.com';",
+    "if (/\\/*/.test(x)) host = 'dev.tuturuuu.com';",
+    "x = a ? /\\/*/ : 1; const h = 'staging.tuturuuu.com';",
+    "return /[/*]/g.test(s) && 'dev.tuturuuu.com';",
+    "const re = /\"/; const h = 'dev.tuturuuu.com';",
+    "const re = /'/; const h = 'dev.tuturuuu.com';",
+    "const re = /`/; const h = 'dev.tuturuuu.com';",
+    "if (ok) /\\/*/.test(s); const h = 'dev.tuturuuu.com';",
+  ])
+    assert.equal(violations(source).length, 1, source);
+});
+
+test('strings containing comment openers do not hide a host', () => {
+  for (const source of [
+    "const a = '/*'; const h = 'dev.tuturuuu.com';",
+    'const a = "/*"; const h = "dev.tuturuuu.com";',
+    'const a = `/*`; const h = `dev.tuturuuu.com`;',
+    "const a = '//'; const h = 'dev.tuturuuu.com';",
+  ])
+    assert.equal(violations(source).length, 1, source);
+});
+
+test('URLs with // do not start a comment', () => {
+  assert.equal(
+    violations('const u = "https://example.com"; const h = "dev.tuturuuu.com";')
+      .length,
+    1
+  );
+  assert.equal(
+    violations('URL=https://example.com\nHOST=dev.tuturuuu.com').length,
+    1
+  );
+  assert.equal(violations('url: https://dev.tuturuuu.com/path').length, 1);
+});
+
+test('real comments are still stripped', () => {
+  assert.equal(stripComments('a /* dev.tuturuuu.com */ b').trim(), 'a   b');
+  assert.equal(stripComments('a // dev.tuturuuu.com\nb'), 'a \nb');
+  assert.equal(
+    stripComments('x = 1 / 2; // dev.tuturuuu.com\n'),
+    'x = 1 / 2; \n'
+  );
+  assert.equal(stripComments('x = (a) / 2 /* c */;').includes('c'), false);
+  assert.deepEqual(violations('// dev.tuturuuu.com'), []);
+  assert.deepEqual(violations('/* dev.tuturuuu.com */'), []);
+  assert.deepEqual(violations('const re = /a+/g; // dev.tuturuuu.com'), []);
+  assert.deepEqual(violations('const n = a / b; /* dev.tuturuuu.com */'), []);
+});
+
+test('regex literals are kept verbatim', () => {
+  assert.equal(stripComments('const re = /\\/*/gi;'), 'const re = /\\/*/gi;');
+  assert.equal(stripComments('x = /[/]/;'), 'x = /[/]/;');
+  assert.equal(violations('const re = /dev\\.tuturuuu\\.com/;').length, 1);
+});
+
+test('division is not misread as a regex that hides a host', () => {
+  for (const source of [
+    'const n = (1) / "/ /*" / 1;\nconst host = "dev.tuturuuu.com";',
+    "const n = x / '/ /*' / 1; const host = 'dev.tuturuuu.com';",
+    'const n = a++ / "/ /*" / 1; const host = "dev.tuturuuu.com";',
+    'const n = {} / "/ /*" / 1;\nconst host = "dev.tuturuuu.com";',
+    'const n = [1] / "/ /*" / 1;\nconst host = "dev.tuturuuu.com";',
+  ])
+    assert.equal(violations(source).length, 1, source);
+});
+
+test('comments and whitespace after a keyword do not defeat regex detection', () => {
+  for (const source of [
+    'function f() { return /* explanation */ /\\/*/; }\nconst host = "dev.tuturuuu.com";',
+    `function f() { return${' '.repeat(40)}/\\/*/; }\nconst host = "dev.tuturuuu.com";`,
+    'function f() { return // why\n /\\/*/; }\nconst host = "dev.tuturuuu.com";',
+    'x = typeof /* c */ /\\/*/; const host = "dev.tuturuuu.com";',
+    'if (ok) /* c */ /\\/*/.test(s); const host = "dev.tuturuuu.com";',
+  ])
+    assert.equal(violations(source).length, 1, source);
+});
+
+test('mixed ambiguous sites cannot hide a host in every reading', () => {
+  assert.equal(
+    violations(
+      'const n = {} / "/ /*" / 1;\nfoo({}) /\\/*/.test(s);\nconst host = "dev.tuturuuu.com";\n/* end */'
+    ).length,
+    1
+  );
+});
+
+test('property names that look like keywords stay division', () => {
+  assert.equal(
+    violations('x = a.return / "/ /*" / 1; h = "dev.tuturuuu.com";').length,
+    1
+  );
+});
+
+test('an unterminated block comment is scanned, not stripped', () => {
+  assert.equal(violations("h = 'dev.tuturuuu.com'; /* never closed").length, 1);
+  assert.equal(violations("rm /tmp/*\nh = 'dev.tuturuuu.com'").length, 1);
+});
+
+test('too many ambiguous sites fail closed to scanning comments', () => {
+  const ambiguous = '{} /\\/*/ ;\n'.repeat(40);
+  assert.equal(violations(`${ambiguous}// dev.tuturuuu.com\n`).length, 1);
+});
+
+test('C-style comments are stripped only for JS, TS and CSS-family files', () => {
+  const commented = 'a /* dev.tuturuuu.com */ b';
+  for (const file of [
+    'a.js',
+    'a.mjs',
+    'a.cjs',
+    'a.ts',
+    'a.tsx',
+    'a.jsx',
+    'a.mts',
+    'a.css',
+    'a.scss',
+    'a.less',
+  ]) {
+    assert.equal(violations(commented, file).length, 0, file);
+    assert.equal(
+      stripCommentVariants(commented, file)[0].includes('dev'),
+      false
+    );
+  }
+  for (const file of [
+    'a.sh',
+    'a.sql',
+    'a.yaml',
+    'a.yml',
+    '.env',
+    'Dockerfile',
+  ]) {
+    assert.deepEqual(stripCommentVariants(commented, file), [commented], file);
+    assert.equal(violations(commented, file).length, 1, file);
+  }
+});
+
+test('a shell glob /* cannot swallow a staging host', () => {
+  const script =
+    'ls /var/log/*\nSTAGING=dev.tuturuuu.com\necho done # see /tmp/x */\n';
+  assert.equal(violations(script, 'deploy.sh').length, 1);
+  assert.equal(violations(script, 'scripts/run.bash').length, 1);
+  // Without a file the JS/TS reading applies, which would have hidden the host.
+  assert.equal(violations(script).length, 0);
+});
+
+test('SQL text containing /* cannot swallow a staging host', () => {
+  const sql =
+    "select '/*' as a;\ninsert into hosts values ('staging.tuturuuu.com');\nselect '*/';\n";
+  assert.equal(violations(sql, 'supabase/migrations/1_hosts.sql').length, 1);
+  assert.equal(
+    violations(
+      "-- /* note\nupdate t set h = 'preview.tuturuuu.com';\n-- */\n",
+      'a.sql'
+    ).length,
+    1
+  );
+});
+
+test('YAML text containing /* or // cannot swallow a staging host', () => {
+  const yaml =
+    'paths:\n  - src/*\nhost: next.tuturuuu.com\nglob: "docs/*/index.md" # */\n';
+  assert.equal(violations(yaml, '.github/workflows/ci.yaml').length, 1);
+  assert.equal(violations(yaml, 'config.yml').length, 1);
+  assert.equal(
+    violations('a: // x\nhost: qa.tuturuuu.com\n', 'config.yaml').length,
+    1
+  );
+});
+
+test('check() passes the file name so non-JS files are not stripped', (t) => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'staging-hosts-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  execFileSync('git', ['init', '-q'], { cwd: root });
+  writeFileSync(
+    path.join(root, 'run.sh'),
+    'ls /var/*\nH=dev.tuturuuu.com\n# */\n'
+  );
+  writeFileSync(path.join(root, 'ok.js'), '/* dev.tuturuuu.com */\n');
+  execFileSync('git', ['add', '.'], { cwd: root });
+  assert.deepEqual(check(root), ['run.sh: dev.tuturuuu.com']);
+});
+
+test('a comment between the pieces of a split string cannot hide a host', () => {
+  const dart = "const host = 'dev.' /* x */ + 'tuturuuu.com';\n";
+  const go = 'host := "dev." + // x\n  "tuturuuu.com"\n';
+  assert.equal(violations(dart, 'lib/config.dart').length, 1);
+  assert.equal(violations(go, 'cmd/main.go').length, 1);
+  // Verbatim source stays in the mix, so a glob-like `/*` cannot swallow a host.
+  const globbed = 'a := "/*"\nb := "dev.tuturuuu.com"\nc := "*/"\n';
+  assert.equal(violations(globbed, 'cmd/main.go').length, 1);
+  // Non-C-comment files are still scanned verbatim only.
+  assert.deepEqual(stripCommentVariants(dart, 'a.sh'), [dart]);
 });

@@ -2,7 +2,7 @@
 
 // Fails when a schedule or heavy background-work owner is added outside
 // Cloudflare. Existing owners are listed in the shrink-only allowlist.
-// Policy: apps/docs/build/devops/cloudflare-backend-ownership.mdx
+// Policy: docs-internal/build/devops/cloudflare-backend-ownership.mdx
 
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');

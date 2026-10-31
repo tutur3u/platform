@@ -5,6 +5,11 @@ import {
 } from '@tuturuuu/start-bridge/api-forward';
 import { createOriginClientIpProof } from '@tuturuuu/utils/abuse-protection/origin-ip-proof';
 import { stagingProfile } from './profile';
+import {
+  sanitizedSearch,
+  sanitizeForwardHeaders,
+  sanitizeUpstreamResponseHeaders,
+} from './request-sanitizer';
 
 export type Fetcher = NonNullable<ForwardOptions['fetcher']>;
 
@@ -19,6 +24,7 @@ export async function proxyNext(
   request: Request,
   origin: string,
   secret: string,
+  bypassSecret: string,
   fetcher: Fetcher
 ) {
   const ip = request.headers.get('cf-connecting-ip') ?? '';
@@ -26,24 +32,23 @@ export async function proxyNext(
   if (!proof) return new Response('Missing trusted client IP', { status: 400 });
   const headers = new Headers(request.headers);
   stripConnectionHeaders(headers);
-  for (const name of [...headers.keys()]) {
-    if (
-      ['forwarded', 'true-client-ip', 'cf-connecting-ip'].includes(name) ||
-      name.startsWith('x-vercel-')
-    )
-      headers.delete(name);
-  }
+  sanitizeForwardHeaders(headers);
   headers.set('x-tuturuuu-origin-auth', proof);
   headers.set('x-forwarded-for', ip);
   headers.set('x-real-ip', ip);
   headers.set('x-forwarded-host', stagingProfile.host);
   headers.set('x-forwarded-proto', 'https');
+  // Deployment Protection bypass for the admitted origin only. The Worker
+  // never asks Vercel to set a bypass cookie, so no `_vercel_jwt` is minted.
+  headers.set('x-vercel-protection-bypass', bypassSecret);
   const forwarded = new Request(request, { headers });
   const upstream = await forwardToCentralApi(forwarded, origin, {
+    search: sanitizedSearch(new URL(request.url)),
     fetcher: async (input, init) => {
       const response = await fetcher(input, init);
       const headers = new Headers(response.headers);
       stripConnectionHeaders(headers);
+      sanitizeUpstreamResponseHeaders(headers);
       return new Response(response.body, {
         status: response.status,
         statusText: response.statusText,

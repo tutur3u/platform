@@ -64,8 +64,8 @@ and its focused regression coverage before adding a reason or changing middlewar
   `HIVE_DATABASE_URL`; membership/platform roles still use platform services.
   Trace the current handler before applying a historical Supabase world-event
   fix. A maintenance Worker is an approval-gated routing operation, not app
-  restoration. See the [Hive migration plan](../../../../../apps/docs/build/devops/hive-cloudflare-migration.mdx)
-  and [maintenance runbook](../../../../../apps/docs/build/devops/hive-cloudflare-maintenance.mdx).
+  restoration. See the [Hive migration plan](../../../../../docs-internal/build/devops/hive-cloudflare-migration.mdx)
+  and [maintenance runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/hive-cloudflare-maintenance.mdx).
 
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
@@ -1450,3 +1450,18 @@ permission/parity regressions.
 Parent-message previews also expose teacher work hours. Apply the shared teacher
 read scope to both the preview session lookup and save, and return no preview
 when a concurrent reassignment makes the scoped save miss. Keep the editor gate.
+
+### Private native Worker admission
+
+For owner-only native apps, keep admission at the Worker entry before assets,
+Start server functions or rendering. Use the request-injected satellite auth
+core with an explicit app target and secret; legacy satellite helpers may
+fall back to database identity. Never permit that fallback before an owner
+gate that promises zero data reads on denial. Mastermind's binding/key rotation,
+short session and publication gates are documented in
+`apps/docs/build/devops/mastermind-web.mdx`.
+
+Keep emitted-Worker acceptance behind an explicit `test:runtime` command and
+`.acceptance.mjs` filename so source-only gates cannot invoke it without an
+artifact. Use `.invalid` hosts for isolated runtime preview fixtures; retain
+production-like preview refusal in the source auth matrix.

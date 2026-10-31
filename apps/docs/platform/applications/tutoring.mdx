@@ -254,7 +254,7 @@ renamed or deleted shift match nothing. They do not invalidate the policy.
 Applying a preset keeps campus and group shift assignments.
 
 The standard preset places a 45-minute session immediately before class. The
-Easy Center preset includes the eight named weekday and weekend shifts from
+learning-centre preset includes the eight named weekday and weekend shifts from
 the center's schedule. The Monday/Wednesday/Friday 18:00 class uses Wednesday
 and Friday 17:15–18:00 only: Monday is skipped, even when it is the next
 scheduled class. The Tuesday/Thursday class uses 17:15–18:00. The weekend
@@ -262,9 +262,9 @@ scheduled class. The Tuesday/Thursday class uses 17:15–18:00. The weekend
 exception to the usual 45 minutes. The weekend 19:00 class (Shift 8) uses
 18:15–19:00. Other weekend shifts keep the table below. An untouched saved
 seven-shift preset gains Shift 8 when read.
-Untouched older Easy Center preset shift rules adopt these corrections when
+Untouched older learning-centre preset shift rules adopt these corrections when
 read; staff-edited rules and the standard/custom policies keep their saved
-behavior, including generic before-class fallback. The canonical Easy Center
+behavior, including generic before-class fallback. The canonical learning-centre
 preset never falls back to an unlisted class day or time.
 
 | Shift | Class window | Class days | Tutoring time |
@@ -299,7 +299,7 @@ group; a clear `CS1`, `CS2`, `Cơ sở 1`, or `Cơ sở 2` marker in the group n
 is inferred when no override exists. The existing generic `Lớp học` group tag
 does not identify a campus. Ambiguous groups show no campus on the schedule
 and `Chưa xác định` in the parent draft until staff set an override. The
-Easy Center template uses the resolved label in the parent draft.
+learning-centre template uses the resolved label in the parent draft.
 
 Each workspace keeps its own campus list (`campusOptions` in the same
 `TUTORING_POLICY` config, default empty). Labels are trimmed, blank entries
@@ -402,7 +402,7 @@ The parent message is a per-workspace template. Besides `student`, `reason`,
 | `{{class_time}}` | The learner's official class time for that group on the tutoring date, `HH:MM-HH:MM` in the class session's own time zone, from scheduled `workspace_user_group_sessions`. With no class that day it is the next scheduled class after the tutoring time with its date, e.g. `16:00-17:30 ngày 02/11/2026`. With none, or when the class sessions cannot be read, `Chưa xác định`; the preview route only queries them when the template uses the field. |
 
 Parents often assume a learner attends only the tutoring slot and goes home, so
-the Easy Center default template also states the official class time:
+the learning-centre default template also states the official class time:
 
 ```text
 Trung tâm EASY xin được xếp lịch kèm cho bạn {{student}} như sau:
@@ -585,7 +585,7 @@ Existing workspaces need no migration.
 Status: database foundation only. No job, route, or screen sends these yet; the
 completion notice and the daily content check ship in later changes.
 
-These rules record Easy Center's answers and apply to any workspace that
+These rules are configurable and apply to any workspace that
 enables them.
 
 - **Recipients.** A class's homeroom teachers (GVCN) are its
@@ -597,8 +597,8 @@ enables them.
   (administrators, including the creator) or `approve_reports` (supervisors),
   checked with `has_workspace_permission`. No office role, recipient list, or
   column exists; grant or revoke those permissions to change who is notified.
-- **Weak-support content alert.** After the configured review period (Easy
-  Center: 14 days) with no homeroom-teacher action, all homeroom teachers of
+- **Weak-support content alert.** After the configured review period (default
+  14 days) with no homeroom-teacher action, all homeroom teachers of
   the class and the office are notified together, in one step. There is no
   separate reminder or later escalation. Each unchanged period alerts each
   recipient once.
@@ -642,7 +642,7 @@ Status: database foundation only, off for every workspace. No job, route, or
 screen uses it yet; the scheduled follow-up, the settings card, and the
 archived-absences view ship in later changes.
 
-These rules record Easy Center's request and apply to any workspace that
+These rules are configurable and apply to any workspace that
 enables them.
 
 - **Off by default.** `private.tutoring_automation_settings` holds one row per
@@ -691,9 +691,7 @@ enables them.
   service-role entry point; scheduled actions are refused while the workspace
   setting is off, and staff actions require current workspace membership.
 
-Open questions for Easy Center (who receives the reminder, exact delays) do not
-change this schema: delays are settings, and recipients are resolved by the
-later job.
+Delays are settings, and recipients are resolved by the later job.
 
 Regression coverage:
 `apps/database/supabase/tests/tutoring-automation-foundation.sql` and

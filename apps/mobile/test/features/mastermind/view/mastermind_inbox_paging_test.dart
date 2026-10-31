@@ -338,7 +338,12 @@ void main() {
       matching: find.byType(InboxItemTile),
     );
     final approve = find.descendant(of: tile, matching: find.text('Approve'));
+    // Lazy rows above can still change height as they build; settle, then
+    // bring the option into view again before tapping it.
     await tester.ensureVisible(approve);
+    await tester.pump();
+    await tester.ensureVisible(approve);
+    await tester.pump();
     await tester.tap(approve);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));

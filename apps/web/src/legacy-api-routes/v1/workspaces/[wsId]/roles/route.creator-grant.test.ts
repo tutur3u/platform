@@ -51,9 +51,12 @@ const writtenPermissions = (table: string) =>
     .flatMap((write) => write.rows as Array<{ permission: string }>)
     .map((row) => row.permission);
 
-function request(method: 'POST' | 'PUT') {
+function request(
+  method: 'POST' | 'PUT',
+  body: Array<{ enabled: boolean; id: string }> = permissions
+) {
   return new Request('http://localhost/roles', {
-    body: JSON.stringify({ name: 'Finance', permissions }),
+    body: JSON.stringify({ name: 'Finance', permissions: body }),
     method,
   });
 }
@@ -110,5 +113,43 @@ describe('workspace role writes with creator-grant permissions', () => {
       'manage_subscription',
       'manage_finance',
     ]);
+  });
+
+  // Explicit grants come only from the audited root procedure, so these writes
+  // strip manage_mastermind even for the creator, enabled or not.
+  const explicitGrantPayload = [
+    { enabled: true, id: 'manage_mastermind' },
+    { enabled: false, id: 'manage_mastermind' },
+    { enabled: true, id: 'manage_finance' },
+  ];
+
+  it('strips manage_mastermind when the creator creates a role', async () => {
+    mocks.creatorId = 'admin-user';
+    const response = await POST(request('POST', explicitGrantPayload), params);
+
+    expect(response.status).toBe(200);
+    expect(writtenPermissions('workspace_role_permissions')).toEqual([
+      'manage_finance',
+    ]);
+  });
+
+  it('strips manage_mastermind when the creator saves default permissions', async () => {
+    mocks.creatorId = 'admin-user';
+    const response = await PUT(request('PUT', explicitGrantPayload), params);
+
+    expect(response.status).toBe(200);
+    expect(writtenPermissions('workspace_default_permissions')).toEqual([
+      'manage_finance',
+    ]);
+  });
+
+  it('writes no rows when manage_mastermind is the only permission', async () => {
+    mocks.creatorId = 'admin-user';
+    const only = [{ enabled: true, id: 'manage_mastermind' }];
+    await POST(request('POST', only), params);
+    await PUT(request('PUT', only), params);
+
+    expect(writtenPermissions('workspace_role_permissions')).toEqual([]);
+    expect(writtenPermissions('workspace_default_permissions')).toEqual([]);
   });
 });

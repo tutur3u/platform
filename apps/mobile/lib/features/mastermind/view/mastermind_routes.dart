@@ -1,9 +1,15 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/features/mastermind/iris/data/fixture_iris_relay.dart';
+import 'package:mobile/features/mastermind/iris/data/iris_device_identity.dart';
+import 'package:mobile/features/mastermind/iris/iris_flag.dart';
+import 'package:mobile/features/mastermind/iris/view/iris_devices_page.dart';
 import 'package:mobile/features/mastermind/machines/machine_detail.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
+import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/mastermind/threads/mastermind_threads_page.dart';
 import 'package:mobile/features/mastermind/threads/threads_flag.dart';
 import 'package:mobile/features/mastermind/threads/threads_location.dart';
@@ -18,7 +24,7 @@ import 'package:mobile/features/mastermind/view/work/mastermind_work_page.dart';
 
 /// Tab routes other than Home, which the app registry owns at
 /// [Routes.mastermind], plus the pushed Needs-you, decision, lane and chart
-/// table details. Inside the shell route.
+/// table details, and Iris devices. Inside the shell route.
 final List<GoRoute> mastermindTabRoutes = [
   GoRoute(
     path: '/mastermind/work/machine/:machineId',
@@ -61,6 +67,19 @@ final List<GoRoute> mastermindTabRoutes = [
         onSegment: (segment) => router.go(inboxLocation(segment: segment)),
       );
     },
+  ),
+  GoRoute(
+    path: Routes.mastermindIrisDevices,
+    redirect: (context, state) =>
+        mastermindIrisEnabled ? null : Routes.mastermindInbox,
+    builder: (context, state) => IrisDevicesPage(
+      relay: context.read<MastermindRuntime>().iris,
+      // Fixture builds enrol with a synthetic key; the native key lane
+      // supplies the real one.
+      identity: FixtureIrisRelay.buildEnabled
+          ? const FakeIrisDeviceIdentity()
+          : null,
+    ),
   ),
   GoRoute(
     path: Routes.mastermindInboxItem,

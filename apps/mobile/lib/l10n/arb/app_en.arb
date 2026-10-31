@@ -6440,6 +6440,7 @@
   "mastermindTimeSpokenHours": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
   "mastermindTimeSpokenMinutes": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
   "mastermindTimeSpokenNow": "just now",
+  "mastermindQuotaUnreadable": "Out of service / unreadable",
   "mastermindUnavailable": "Unavailable",
   "mastermindUnitCredits": "{value} credits",
   "mastermindUnitCreditsPerDay": "{value} credits/day",
@@ -6896,5 +6897,181 @@
   "telemetryConsentAllow": "Allow",
   "telemetryConsentDeny": "Don't allow",
   "telemetryConsentLearnMore": "Privacy details",
-  "settingsShareTelemetryDescription": "Send usage data and crash reports to Google Firebase to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent."
+  "settingsShareTelemetryDescription": "Send usage data and crash reports to Google Firebase to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.",
+  "mastermindIrisChatSegment": "Chat",
+  "mastermindIrisChatEmpty": "No messages yet",
+  "mastermindIrisComposerPlaceholder": "Message Atlas",
+  "mastermindIrisSend": "Send",
+  "mastermindIrisReceiptSending": "Sending",
+  "mastermindIrisReceiptQueued": "Queued",
+  "mastermindIrisReceiptSent": "Sent",
+  "mastermindIrisReceiptSeen": "Seen",
+  "mastermindIrisReceiptFailed": "Not sent",
+  "mastermindIrisRetry": "Retry",
+  "mastermindIrisHidden": "Hidden message",
+  "mastermindIrisTruncated": "Open on Mac for the rest.",
+  "mastermindIrisLoadEarlier": "Load earlier messages",
+  "mastermindIrisKilledTitle": "Iris is paused",
+  "mastermindIrisKilledBody": "Sending is off until the kill switch is lifted. You can still read the chat.",
+  "mastermindIrisOffline": "Can't reach Iris. Retrying.",
+  "mastermindIrisRateLimited": "Iris is busy. Retrying shortly.",
+  "mastermindIrisAccessLost": "This device can't use Iris. Check its enrolment.",
+  "mastermindIrisAuthorOwner": "Owner",
+  "mastermindIrisAuthorAgent": "Atlas",
+  "mastermindIrisAuthorSystem": "System",
+  "mastermindIrisRedactedPath": "path",
+  "mastermindIrisRedactedLink": "link",
+  "mastermindIrisRedactedLinkHost": "link: {host}",
+  "@mastermindIrisRedactedLinkHost": {
+    "placeholders": {
+      "host": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindIrisRedactedSecret": "secret withheld",
+  "mastermindIrisRedactedId": "id",
+  "mastermindIrisRedactedEmail": "email",
+  "mastermindIrisRedactedNumber": "number",
+  "mastermindIrisRedactedOther": "withheld",
+  "mastermindIrisActivityCommands": "{count, plural, =1{Ran 1 command} other{Ran {count} commands}}",
+  "@mastermindIrisActivityCommands": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisActivityEdits": "{count, plural, =1{Edited 1 file} other{Edited {count} files}}",
+  "@mastermindIrisActivityEdits": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisActivitySearches": "{count, plural, =1{Searched once} other{Searched {count} times}}",
+  "@mastermindIrisActivitySearches": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisActivitySubagents": "{count, plural, =1{Ran 1 subagent} other{Ran {count} subagents}}",
+  "@mastermindIrisActivitySubagents": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisWhatNeedsMe": "What needs me",
+  "mastermindIrisCountUrgent": "{count} urgent",
+  "@mastermindIrisCountUrgent": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisCountSoon": "{count} soon",
+  "@mastermindIrisCountSoon": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisCountFyi": "{count} FYI",
+  "@mastermindIrisCountFyi": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisCountOther": "{count} other",
+  "@mastermindIrisCountOther": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisNothingNeedsYou": "Nothing needs you right now",
+  "mastermindIrisRoleLine": "{role}: {status}",
+  "@mastermindIrisRoleLine": {
+    "placeholders": {
+      "role": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindIrisRoleArmed": "armed",
+  "mastermindIrisRoleRunning": "running",
+  "mastermindIrisRoleStalled": "stalled",
+  "mastermindIrisRoleIdle": "idle",
+  "mastermindIrisUseRecommendations": "Use recommendations",
+  "mastermindIrisUseRecommendationsDescription": "Sends the recommended answer to each ask below. Each one can be undone on its card for a few seconds.",
+  "mastermindIrisUseRecommendationsConfirm": "{count, plural, =1{Send 1 answer} other{Send {count} answers}}",
+  "@mastermindIrisUseRecommendationsConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisRecommendationQueued": "Sending. Undo on its card.",
+  "mastermindIrisRecommendationSkipped": "Skipped: already answered, or replies are off",
+  "mastermindIrisRecommendationsResult": "{sent} of {total} sent",
+  "@mastermindIrisRecommendationsResult": {
+    "placeholders": {
+      "sent": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisDone": "Done",
+  "mastermindIrisDevicesTitle": "Iris devices",
+  "mastermindIrisDevicesAction": "Iris devices",
+  "mastermindIrisDevicesEmpty": "No devices enrolled yet",
+  "mastermindIrisDevicesLoadFailed": "Couldn't load devices. Try again.",
+  "mastermindIrisDeviceStatusPending": "Waiting for confirmation",
+  "mastermindIrisDeviceStatusConfirmed": "Enrolled",
+  "mastermindIrisDeviceStatusExpired": "Expired",
+  "mastermindIrisDeviceStatusRevoked": "Revoked",
+  "mastermindIrisDeviceQa": "QA",
+  "mastermindIrisDeviceFingerprint": "Key {prefix}",
+  "@mastermindIrisDeviceFingerprint": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindIrisRevoke": "Revoke",
+  "mastermindIrisRevokeConfirm": "Tap again to revoke",
+  "mastermindIrisEnrol": "Enrol this device",
+  "mastermindIrisEnrolUnavailable": "This build can't create a device key yet.",
+  "mastermindIrisEnrolCode": "Enrolment code",
+  "mastermindIrisEnrolInstructions": "Open the Iris enrol page and confirm with your passkey. Check that the key starts with {prefix}.",
+  "@mastermindIrisEnrolInstructions": {
+    "placeholders": {
+      "prefix": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindIrisEnrolWaiting": "Waiting for you to confirm. The code expires in 15 minutes.",
+  "mastermindIrisEnrolConfirmed": "This device is enrolled.",
+  "mastermindIrisEnrolExpired": "The code expired. Start again for a new one.",
+  "mastermindIrisEnrolFailed": "Couldn't start enrolment. Try again.",
+  "mastermindIrisEnrolLimit": "Too many pending devices. Wait for one to expire."
 }

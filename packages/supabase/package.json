@@ -39,9 +39,10 @@
       "default": "./dist/auth-errors.js"
     },
     "./shared-cookie-domains": {
-      "types": "./dist/shared-cookie-domains.d.ts",
+      "types": "./src/shared-cookie-domains.ts",
       "bun": "./src/shared-cookie-domains.ts",
-      "default": "./dist/shared-cookie-domains.js"
+      "import": "./src/shared-cookie-domains.ts",
+      "default": "./src/shared-cookie-domains.ts"
     },
     "./next/client": {
       "types": "./dist/next/client.d.ts",

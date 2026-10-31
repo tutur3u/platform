@@ -53,6 +53,7 @@ const PROTECTED_TRIGGERS = {
   'mail-calendar-tasks-builds.yaml': '25ba8eefde41880f',
   'mail-cloudflare.yaml': 'dd965acde3d1fd0a',
   'mail-profile-runtime-contract.yaml': '44136fa355b3678a',
+  'mastermind-cloudflare.yaml': 'a2d2aa460044fa45',
   'meet-cloudflare.yaml': '94511c89d2621e60',
   'mobile-build-android.yaml': 'ef27f9c72cee2485',
   'mobile-build-ios.yaml': '1223a8396111881f',
@@ -85,6 +86,7 @@ const PROTECTED_TRIGGERS = {
   'tutoring-teacher-hours-contract.yaml': 'cb666f22d4bbdc8f',
   'type-check.yaml': '47acd08d33c6cf4c',
   'web-start-candidate.yaml': '0a3cc2c97958f5cd',
+  'workspace-permission-scope-contract.yaml': '0a3cc2c97958f5cd',
 };
 
 function events(workflow) {

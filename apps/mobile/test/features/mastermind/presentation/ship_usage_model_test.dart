@@ -227,13 +227,14 @@ void main() {
     });
 
     test(
-      'quotas: least left first, unknown last; forecasts: soonest first',
+      'quotas: unreadable first, least left next; forecasts: soonest first',
       () {
         final model = MastermindUsageModel.from(snapshot);
         expect(model.quotas.map((q) => q.instance), [
-          'Claude pool B',
           'Claude pool A',
+          'Claude pool B',
         ]);
+        expect(model.quotas.first.remainingPercent, isNull);
         expect(model.forecasts.first.instance, 'Claude pool B');
       },
     );

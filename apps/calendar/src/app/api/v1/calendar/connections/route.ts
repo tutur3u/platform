@@ -480,17 +480,27 @@ export async function DELETE(request: Request) {
     });
     if (accessError) return accessError;
 
-    // Delete the calendar connection
-    const { error: deleteError } = await supabase
+    // Delete only inside the authorized workspace, so a row that moved or a
+    // stale lookup can never remove another workspace's connection.
+    const { data: deleted, error: deleteError } = await supabase
       .from('calendar_connections')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('ws_id', wsId)
+      .select('id');
 
     if (deleteError) {
       console.error('Error deleting calendar connection:', deleteError);
       return NextResponse.json(
         { error: 'Failed to delete calendar connection' },
         { status: 500 }
+      );
+    }
+
+    if (!deleted?.length) {
+      return NextResponse.json(
+        { error: 'Calendar connection not found' },
+        { status: 404 }
       );
     }
 

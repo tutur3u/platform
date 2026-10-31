@@ -6,11 +6,22 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
 
 - Prefer additive migrations.
 - Keep PR migration filenames ahead of latest `main` migrations after rebases.
+- When rebuilding a stale permission migration, compare each replacement with the
+  latest main definition. Preserve consolidated caller binding and explicit-grant
+  branches; enforce role workspace ownership with the composite foreign key rather
+  than restoring an older permission predicate. See the role ownership section in
+  `apps/docs/platform/architecture/workspaces-permissions.mdx`.
 - Every definer replacement must retain a privilege-checked search path with
   `pg_temp` explicitly last; use `pg_catalog, pg_temp` for qualified bodies.
   Run `security-definer-search-paths.sql` on the full chain: even trigger-only
   functions with revoked client EXECUTE can regress after earlier hardening.
 - Avoid seed-dependent backfills unless they tolerate missing reference rows.
+  Mastermind owner migration `20261030120000_grant_mastermind_owner.sql` skips
+  incomplete root creator data with NOTICE. After seed, a database owner may run
+  `SELECT private.grant_mastermind_root_creator();` with explicit production GO.
+  It grants only through the audited helper from `20261030113001`; never adopt
+  a namesake role. Cover bootstrap and reruns in `manage-mastermind-owner-grant.sql`
+  and rollback provenance with `scripts/mastermind-owner-rollback-test.py`.
 - Materialize replacement parent rows before rewiring child tables.
 - Update trigger helpers and underlying `CHECK` constraints together when tightening limits.
 - Audit reset/bootstrap scripts when strict limits change.

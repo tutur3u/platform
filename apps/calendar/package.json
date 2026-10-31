@@ -5,7 +5,7 @@
   "scripts": {
     "type-check": "bun run type-check:app && bun run type-check:boundary && bun run type-check:worker && bun run type-check:sw && bun run type-check:config",
     "dev": "node ../../scripts/portless-safe-dev.js",
-    "dev:app": "node ../../scripts/portless-dev-banner.js -- vp dev --port ${PORT:-7806}",
+    "dev:app": "CALENDAR_DEPLOYMENT_PROFILE=development node ../../scripts/portless-dev-banner.js -- vp dev --port ${PORT:-7806}",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
     "build": "vp build",

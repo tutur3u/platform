@@ -1,7 +1,7 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-09-23"
+updatedAt: "2026-10-31"
 ---
 
 <Note>
@@ -178,7 +178,7 @@ No package version, dependency resolution or published changelog is rewritten.
   `vercel-production-platform.yaml`; self-hosted machines still use the Docker
   release flow below for their own runtime deployment.
 - `apps/apps` production deploys are handled by `vercel-production-apps.yaml`.
-- `apps/qr` production deploys are handled by `vercel-production-qr.yaml`.
+- `apps/tools` (which serves the public QR generator at `/qr`) production deploys are handled by `vercel-production-tools.yaml`.
 - Each production app uses a workflow-and-branch concurrency group whose
   `cancel-in-progress` predicate matches only `production` push events, so the
   newest production SHA remains deployable without letting `main` commits or
@@ -478,3 +478,22 @@ empty legacy values retain the production default. Whitespace is rejected rather
 than trimmed. This applies to the infrastructure API and blue-green watcher.
 Regression coverage lives in `branch-validation.test.ts`,
 `managed-project-branch.test.ts`, and `watch-blue-green-projects.test.js`.
+
+
+Shared cookie scope uses one decision function in
+`@tuturuuu/supabase/shared-cookie-domains`, shared by utils and Supabase helpers.
+Servers explicitly admit staging with `TUTURUUU_DEPLOY_ENV=staging`. Browser
+bundles use the design's build-time `NEXT_PUBLIC_TUTURUUU_STAGING=1` signal
+when the private deploy environment is unavailable. Both require exactly
+`.staging.tutur3u.com` after domain normalization; invalid staging configuration
+throws rather than falling back to production. Vercel production markers veto the public flag. When the public flag is `1`,
+any defined private deploy environment other than `staging` throws, including
+empty, unknown, preview and production values, preventing divergent server and
+browser decisions. Without the public flag, private production markers reject
+and log an attempted staging cookie override once per process. Without staging admission, staging hosts get host-only cookies.
+Build staging server and browser artifacts with the same public flag and cookie
+domain to preserve refresh and sign-out scope across staging hosts.
+
+Regression coverage: `packages/utils/src/shared-cookie-deploy-env.test.ts` and
+`packages/utils/src/shared-cookie-browser-env.test.ts`. The Web fallback continues
+to reject mismatched upstream cookie domains with 502.

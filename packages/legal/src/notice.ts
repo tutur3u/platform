@@ -1,4 +1,5 @@
 import { legalNoticeCopy } from './notice-copy';
+import { requireMobilePrivacyReleaseDate } from './revisions';
 import type { LegalLocale } from './types';
 
 export type LegalNoticeConfig =
@@ -12,6 +13,7 @@ export type LegalNoticeConfig =
       published: true;
       noticeDate: string;
       laterDate: string;
+      mobilePrivacyEffectiveDate?: string;
       // Markdown for the "Previous text" link line, per locale. Publish gate:
       // Lex approves the real archive URLs before publication; do not invent
       // them. Publishing without the rendered locale's entry throws.
@@ -36,6 +38,9 @@ export function getLegalNotice(
   const archiveLinks = config.archiveLinks?.[locale]?.trim();
   if (!archiveLinks)
     throw new Error('Archive links are required to publish the notice');
+  const mobilePrivacyEffectiveDate = requireMobilePrivacyReleaseDate(
+    config.mobilePrivacyEffectiveDate
+  );
   const replace = (text: string) =>
     text
       .replaceAll('{N30}', config.laterDate)
@@ -46,6 +51,7 @@ export function getLegalNotice(
     summaryTitle: copy.summaryTitle,
     links: replace(copy.links.replace('{ARCHIVE_LINKS}', () => archiveLinks)),
     noticeDate: config.noticeDate,
+    mobilePrivacyEffectiveDate,
     binding: replace(copy.binding),
     tableHead: copy.tableHead,
     rows: copy.rows.map((row) => row.map(replace)),

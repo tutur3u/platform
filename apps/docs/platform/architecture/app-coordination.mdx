@@ -349,7 +349,7 @@ Workspace-scoped satellite apps (`drive`, `calendar`, `tasks`, `finance`, and
 similar) should reuse the shared satellite provider shell from
 `@tuturuuu/satellite/providers`. That shell mounts `next-themes` with
 `system`, `light`, and `dark`, wraps `NextIntlClientProvider`, and wires the
-shared TanStack Query client. Public or gateway-only apps such as `apps/qr` and
+shared TanStack Query client. Public or gateway-only apps such as `apps/tools` and
 `apps/apps` should use the same provider re-export so theme toggles and shared
 UI chrome behave consistently even when the app does not own workspace auth.
 

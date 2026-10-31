@@ -90,11 +90,20 @@ frontend and realtime versions. Calendar/Mail/Apps use the
 
 ### Calendar route and certificate continuity
 
-Calendar temporarily admits exactly `calendar-cutover.staging.tutur3u.com` alongside
-its canonical and staging root hosts. Unknown hosts remain rejected and one-origin
-mounts stay disabled. Remove this temporary host in an immediate follow-up commit
-or PR after the canonical flip is accepted; include that removal in the review
-brief. Attach the temporary domain only after the private publisher succeeds.
+Calendar admits exactly two root hosts: canonical `calendar.tuturuuu.com` and
+staging `calendar.staging.tutur3u.com`. Unknown hosts remain rejected and one-origin
+mounts stay disabled. The temporary production-smoke host
+`calendar-cutover.staging.tutur3u.com` is retired now that the canonical flip is
+accepted. `rootHosts` is shared source compiled into **both** the staging and the
+production artifact, so a temporary host can never be proved to bind only the
+production Worker; it must not outlive its smoke window. The former
+`calendar-staging.tuturuuu.com` and `calendar-cutover.tuturuuu.com` names stay
+reserved from managed projects and are rejected by the Calendar host boundary.
+A future app's production smoke host follows the same rule: admit it in its
+cutover PR, attach it only after the private publisher succeeds, detach its domain
+before the canonical switch, and remove it from `rootHosts` in an immediate
+follow-up after acceptance. Detach any `calendar-cutover.staging.tutur3u.com`
+Custom Domain or DNS record that remains on the `tutur3u.com` zone.
 
 Export the full zone and Vercel fallback before writes. Proxy only Calendar's
 existing CNAME, retaining its Vercel target. Verify HTTPS, legacy smoke, redirects,
@@ -143,7 +152,8 @@ requests end to end with uncached Vercel identity and no native Worker execution
 The production publisher filters attachments by `script === name`, so this
 scriptless exclusion does not attach the Worker or prevent its private upload.
 Regression coverage includes `calendar-routes.test.mjs`, `capture.test.mjs`, the
-cutover-host ACME negative case in `root-cutover.test.ts`, and the publisher's
+canonical-host ACME negative case and retired-host rejections in
+`root-cutover.test.ts`, and the publisher's
 scriptless-topology control. A currently valid certificate alone does not prove
 future renewal safety.
 
@@ -153,6 +163,86 @@ Reverting Worker code does not restore routing. Restore exact captured Route/Cus
 Domain and DNS/proxy topology before disabling a candidate. Never replay uncertain
 Mail sends or change ingestion/R2 ownership as a frontend rollback. Rehearse recovery;
 DNS TTLs and provider convergence prevent assuming instantaneous rollback.
+
+## Staging issuer and Calendar G3 canary
+
+G3 (central staging login handoff) runs first on Calendar: it is native in
+production and frontend-only. Source is ready for the Calendar side only. The
+staging profile publishes `tuturuuu-calendar-wave1-staging` for
+`calendar.staging.tutur3u.com` with `NEXT_PUBLIC_WEB_APP_URL=https://web.staging.tutur3u.com`
+and the `.staging.tutur3u.com` shared cookie domain. Nothing is under
+`tuturuuu.com`, and `node scripts/check-staging-hosts.js` enforces that.
+
+The four questions that blocked hosted G3 are now decided: public staging
+ingress, issuer hosting, the issuer hostname and staging Supabase Auth. See
+[Staging issuer and Calendar G3: decisions and order](#staging-issuer-and-calendar-g3-decisions-and-order)
+for the decisions and the bootstrap-to-staff order.
+
+After those decisions, the release owner performs the external steps. Agents and
+this repository perform none of them:
+
+- **Calendar Worker:** complete the [one-time owner provisioning](/build/devops/wave1-native-publishers#one-time-owner-provisioning)
+  for `wave1-calendar-staging`. Provision secret names from the profile's `secrets`
+  list. Register the staging Google and Microsoft OAuth callbacks
+  `https://calendar.staging.tutur3u.com/api/v1/calendar/auth/callback` and
+  `.../api/v1/calendar/auth/microsoft/callback`. Then set the exact admission and
+  `WAVE1_STAGING_PUBLISH_ENABLED=true`.
+- **DNS on `tutur3u.com`:** create only the approved records for
+  `calendar.staging.tutur3u.com` and the issuer host. Do not create wildcards or
+  third-party-claimable CNAMEs, because staging CORS trusts every
+  `*.staging.tutur3u.com` name. Remove any `calendar-cutover.staging.tutur3u.com`
+  record or Custom Domain.
+- **Issuer runtime:** set `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com`,
+  `NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS` with `platform:` (the issuer origin)
+  and `calendar:https://calendar.staging.tutur3u.com`, and the staging Supabase URL,
+  publishable key and `SUPABASE_SECRET_KEY`. Production keys never go here.
+  Allow the issuer host in staging Turnstile.
+- **Access:** apply the approved Access policy to both hosts before the first
+  publication.
+
+Rollback deletes only the staging Workers, Custom Domains and records. Production
+is untouched.
+
+## Staging issuer and Calendar G3: decisions and order
+
+These are the release-owner decisions of 30 October 2026. They settle the
+staging ingress questions that blocked hosted G3.
+
+| Question | Decision |
+| --- | --- |
+| Public staging ingress | None. `calendar.staging.tutur3u.com` and `web.staging.tutur3u.com` are reachable only through Cloudflare Access: a Google Workspace (`tuturuuu.com`) staff allowlist within the 50 free seats, plus named service tokens. There is no bypass policy, and workers.dev, previews and routes stay off |
+| Issuer hostname | `web.staging.tutur3u.com` is the only staging issuer |
+| Issuer hosting | The Web Start candidate Worker `tuturuuu-web-wave1-staging`, in front of one immutable deployment of the protected Vercel project `tuturuuu-web-staging`, published by `wave1-web-staging.yaml` |
+| Staging Supabase login | Email (OTP through a staging mailbox and staging SMTP sender) and Google only. Production auth is unchanged |
+| Calendar to issuer server calls | An Access service token, sent only to the exact issuer origin with manual redirects |
+
+Each Calendar artifact serves exactly one host, selected by the required
+`CALENDAR_DEPLOYMENT_PROFILE` build input. See
+[Calendar per-environment hosts and Access](/build/devops/wave1-native-publishers#calendar-per-environment-hosts-and-access).
+
+Order for the first hosted G3:
+
+1. **Access in `bootstrap`.** Both Access apps carry only the CI health
+   Service Auth policy, and `STAGING_ACCESS_PHASE=bootstrap`.
+2. **Publish the issuer.** Run the
+   [staging Web publisher](/build/devops/wave1-native-publishers#staging-web-publisher):
+   `next-verify`, then the manual domain attach and `WEB_STAGING_SERVING=on`,
+   then publish and `verify-ingress`. A red `verify-ingress` rolls the Worker
+   back automatically.
+3. **Publish Calendar.** Use the existing wave-1 Calendar staging publisher.
+   Its ingress preflight checks Access, the single Custom Domain, DNS and
+   the phase. Read it back with
+   `node scripts/wave1-staging/readback.mjs --app calendar`.
+4. **Switch to staff.** After both readbacks are green, the release owner
+   adds the staff allow policy and the Calendar-to-Web Service Auth policy,
+   sets `STAGING_ACCESS_PHASE=staff`, and records the run IDs.
+5. **Run G3** through the Calendar host with the disposable staging account.
+   Automated runs present the CI health service token. A staff member proves
+   Google sign-in once by hand.
+
+Known gap: Web's two Calendar event rewrites to `calendar.staging.tutur3u.com`
+are server-side Vercel rewrites that carry no Access credential, so Access
+denies them. G3 exercises Calendar events through the Calendar host.
 
 ## Subdomain cutover tools
 
@@ -306,7 +396,7 @@ comparable.
   Object store), its operator controls and the `APP_SWITCH_RUM` dataset binding
   (`ttr_app_switch`) ship together as one reviewed Worker configuration change.
   That change also needs exact-commit evidence that it meets the
-  [Cloudflare billable-operation rules](/build/devops/cloudflare-backend-ownership).
+  Cloudflare billable-operation rules.
 
 `scripts/perf/app-switch-lab.mjs` is the lab counterpart. Run it on a Studio host
 through `ttr resources run`.
