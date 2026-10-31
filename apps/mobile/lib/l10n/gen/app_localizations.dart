@@ -27462,6 +27462,438 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send usage data and crash reports to Google Firebase to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.'**
   String get settingsShareTelemetryDescription;
+
+  /// No description provided for @mastermindIrisChatSegment.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get mastermindIrisChatSegment;
+
+  /// No description provided for @mastermindIrisChatEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get mastermindIrisChatEmpty;
+
+  /// No description provided for @mastermindIrisComposerPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Message Atlas'**
+  String get mastermindIrisComposerPlaceholder;
+
+  /// No description provided for @mastermindIrisSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get mastermindIrisSend;
+
+  /// No description provided for @mastermindIrisReceiptSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get mastermindIrisReceiptSending;
+
+  /// No description provided for @mastermindIrisReceiptQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get mastermindIrisReceiptQueued;
+
+  /// No description provided for @mastermindIrisReceiptSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get mastermindIrisReceiptSent;
+
+  /// No description provided for @mastermindIrisReceiptSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen'**
+  String get mastermindIrisReceiptSeen;
+
+  /// No description provided for @mastermindIrisReceiptFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent'**
+  String get mastermindIrisReceiptFailed;
+
+  /// No description provided for @mastermindIrisRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get mastermindIrisRetry;
+
+  /// No description provided for @mastermindIrisHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden message'**
+  String get mastermindIrisHidden;
+
+  /// No description provided for @mastermindIrisTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'Open on Mac for the rest.'**
+  String get mastermindIrisTruncated;
+
+  /// No description provided for @mastermindIrisLoadEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Load earlier messages'**
+  String get mastermindIrisLoadEarlier;
+
+  /// No description provided for @mastermindIrisKilledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Iris is paused'**
+  String get mastermindIrisKilledTitle;
+
+  /// No description provided for @mastermindIrisKilledBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending is off until the kill switch is lifted. You can still read the chat.'**
+  String get mastermindIrisKilledBody;
+
+  /// No description provided for @mastermindIrisOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach Iris. Retrying.'**
+  String get mastermindIrisOffline;
+
+  /// No description provided for @mastermindIrisRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Iris is busy. Retrying shortly.'**
+  String get mastermindIrisRateLimited;
+
+  /// No description provided for @mastermindIrisAccessLost.
+  ///
+  /// In en, this message translates to:
+  /// **'This device can\'t use Iris. Check its enrolment.'**
+  String get mastermindIrisAccessLost;
+
+  /// No description provided for @mastermindIrisAuthorOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get mastermindIrisAuthorOwner;
+
+  /// No description provided for @mastermindIrisAuthorAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Atlas'**
+  String get mastermindIrisAuthorAgent;
+
+  /// No description provided for @mastermindIrisAuthorSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get mastermindIrisAuthorSystem;
+
+  /// No description provided for @mastermindIrisRedactedPath.
+  ///
+  /// In en, this message translates to:
+  /// **'path'**
+  String get mastermindIrisRedactedPath;
+
+  /// No description provided for @mastermindIrisRedactedLink.
+  ///
+  /// In en, this message translates to:
+  /// **'link'**
+  String get mastermindIrisRedactedLink;
+
+  /// No description provided for @mastermindIrisRedactedLinkHost.
+  ///
+  /// In en, this message translates to:
+  /// **'link: {host}'**
+  String mastermindIrisRedactedLinkHost(String host);
+
+  /// No description provided for @mastermindIrisRedactedSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'secret withheld'**
+  String get mastermindIrisRedactedSecret;
+
+  /// No description provided for @mastermindIrisRedactedId.
+  ///
+  /// In en, this message translates to:
+  /// **'id'**
+  String get mastermindIrisRedactedId;
+
+  /// No description provided for @mastermindIrisRedactedEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'email'**
+  String get mastermindIrisRedactedEmail;
+
+  /// No description provided for @mastermindIrisRedactedNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'number'**
+  String get mastermindIrisRedactedNumber;
+
+  /// No description provided for @mastermindIrisRedactedOther.
+  ///
+  /// In en, this message translates to:
+  /// **'withheld'**
+  String get mastermindIrisRedactedOther;
+
+  /// No description provided for @mastermindIrisActivityCommands.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Ran 1 command} other{Ran {count} commands}}'**
+  String mastermindIrisActivityCommands(int count);
+
+  /// No description provided for @mastermindIrisActivityEdits.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Edited 1 file} other{Edited {count} files}}'**
+  String mastermindIrisActivityEdits(int count);
+
+  /// No description provided for @mastermindIrisActivitySearches.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Searched once} other{Searched {count} times}}'**
+  String mastermindIrisActivitySearches(int count);
+
+  /// No description provided for @mastermindIrisActivitySubagents.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Ran 1 subagent} other{Ran {count} subagents}}'**
+  String mastermindIrisActivitySubagents(int count);
+
+  /// No description provided for @mastermindIrisWhatNeedsMe.
+  ///
+  /// In en, this message translates to:
+  /// **'What needs me'**
+  String get mastermindIrisWhatNeedsMe;
+
+  /// No description provided for @mastermindIrisCountUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} urgent'**
+  String mastermindIrisCountUrgent(int count);
+
+  /// No description provided for @mastermindIrisCountSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} soon'**
+  String mastermindIrisCountSoon(int count);
+
+  /// No description provided for @mastermindIrisCountFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} FYI'**
+  String mastermindIrisCountFyi(int count);
+
+  /// No description provided for @mastermindIrisCountOther.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} other'**
+  String mastermindIrisCountOther(int count);
+
+  /// No description provided for @mastermindIrisNothingNeedsYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing needs you right now'**
+  String get mastermindIrisNothingNeedsYou;
+
+  /// No description provided for @mastermindIrisRoleLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{role}: {status}'**
+  String mastermindIrisRoleLine(String role, String status);
+
+  /// No description provided for @mastermindIrisRoleArmed.
+  ///
+  /// In en, this message translates to:
+  /// **'armed'**
+  String get mastermindIrisRoleArmed;
+
+  /// No description provided for @mastermindIrisRoleRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'running'**
+  String get mastermindIrisRoleRunning;
+
+  /// No description provided for @mastermindIrisRoleStalled.
+  ///
+  /// In en, this message translates to:
+  /// **'stalled'**
+  String get mastermindIrisRoleStalled;
+
+  /// No description provided for @mastermindIrisRoleIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'idle'**
+  String get mastermindIrisRoleIdle;
+
+  /// No description provided for @mastermindIrisUseRecommendations.
+  ///
+  /// In en, this message translates to:
+  /// **'Use recommendations'**
+  String get mastermindIrisUseRecommendations;
+
+  /// No description provided for @mastermindIrisUseRecommendationsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sends the recommended answer to each ask below. Each one can be undone on its card for a few seconds.'**
+  String get mastermindIrisUseRecommendationsDescription;
+
+  /// No description provided for @mastermindIrisUseRecommendationsConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Send 1 answer} other{Send {count} answers}}'**
+  String mastermindIrisUseRecommendationsConfirm(int count);
+
+  /// No description provided for @mastermindIrisRecommendationQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending. Undo on its card.'**
+  String get mastermindIrisRecommendationQueued;
+
+  /// No description provided for @mastermindIrisRecommendationSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped: already answered, or replies are off'**
+  String get mastermindIrisRecommendationSkipped;
+
+  /// No description provided for @mastermindIrisRecommendationsResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{sent} of {total} sent'**
+  String mastermindIrisRecommendationsResult(int sent, int total);
+
+  /// No description provided for @mastermindIrisDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get mastermindIrisDone;
+
+  /// No description provided for @mastermindIrisDevicesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Iris devices'**
+  String get mastermindIrisDevicesTitle;
+
+  /// No description provided for @mastermindIrisDevicesAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Iris devices'**
+  String get mastermindIrisDevicesAction;
+
+  /// No description provided for @mastermindIrisDevicesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No devices enrolled yet'**
+  String get mastermindIrisDevicesEmpty;
+
+  /// No description provided for @mastermindIrisDevicesLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load devices. Try again.'**
+  String get mastermindIrisDevicesLoadFailed;
+
+  /// No description provided for @mastermindIrisDeviceStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for confirmation'**
+  String get mastermindIrisDeviceStatusPending;
+
+  /// No description provided for @mastermindIrisDeviceStatusConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrolled'**
+  String get mastermindIrisDeviceStatusConfirmed;
+
+  /// No description provided for @mastermindIrisDeviceStatusExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get mastermindIrisDeviceStatusExpired;
+
+  /// No description provided for @mastermindIrisDeviceStatusRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoked'**
+  String get mastermindIrisDeviceStatusRevoked;
+
+  /// No description provided for @mastermindIrisDeviceQa.
+  ///
+  /// In en, this message translates to:
+  /// **'QA'**
+  String get mastermindIrisDeviceQa;
+
+  /// No description provided for @mastermindIrisDeviceFingerprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Key {prefix}'**
+  String mastermindIrisDeviceFingerprint(String prefix);
+
+  /// No description provided for @mastermindIrisRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get mastermindIrisRevoke;
+
+  /// No description provided for @mastermindIrisRevokeConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap again to revoke'**
+  String get mastermindIrisRevokeConfirm;
+
+  /// No description provided for @mastermindIrisEnrol.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrol this device'**
+  String get mastermindIrisEnrol;
+
+  /// No description provided for @mastermindIrisEnrolUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This build can\'t create a device key yet.'**
+  String get mastermindIrisEnrolUnavailable;
+
+  /// No description provided for @mastermindIrisEnrolCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrolment code'**
+  String get mastermindIrisEnrolCode;
+
+  /// No description provided for @mastermindIrisEnrolInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the Iris enrol page and confirm with your passkey. Check that the key starts with {prefix}.'**
+  String mastermindIrisEnrolInstructions(String prefix);
+
+  /// No description provided for @mastermindIrisEnrolWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for you to confirm. The code expires in 15 minutes.'**
+  String get mastermindIrisEnrolWaiting;
+
+  /// No description provided for @mastermindIrisEnrolConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'This device is enrolled.'**
+  String get mastermindIrisEnrolConfirmed;
+
+  /// No description provided for @mastermindIrisEnrolExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'The code expired. Start again for a new one.'**
+  String get mastermindIrisEnrolExpired;
+
+  /// No description provided for @mastermindIrisEnrolFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start enrolment. Try again.'**
+  String get mastermindIrisEnrolFailed;
+
+  /// No description provided for @mastermindIrisEnrolLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many pending devices. Wait for one to expire.'**
+  String get mastermindIrisEnrolLimit;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

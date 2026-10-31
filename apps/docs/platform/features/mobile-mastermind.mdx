@@ -1049,3 +1049,78 @@ five rows. Missing chart series retain their window-not-reported description.
 Numeric readings, including a measured zero, retain their existing meaning.
 Regression coverage lives in `mastermind_insights_compact_test.dart` and
 `ship_usage_model_test.dart`; snapshot parsing preserves null quota rows.
+
+## Iris in the Inbox (M0)
+
+Iris, the owner's inbox to Atlas, is a first-class part of the mobile Inbox,
+behind a flag. Synthetic data only in fixtures and tests.
+
+- **Flag:** `mastermindIrisEnabled` is on when the `MASTERMIND_IRIS` Dart define
+  is set (dev, staging and tests) or when the hub's `GET /v1/capabilities`
+  returns `"iris": true` (TestFlight and Play internal). The capabilities parser
+  accepts that optional last key; a Worker without it, or a failed check, keeps
+  Iris off. `iris` says only that the relay is on, never anything about
+  enrolment. Tests use `debugOverrideMastermindIris`.
+- **Inbox segments:** with Iris on, **Chat** is the first and default segment
+  (`/mastermind/inbox`); Needs you is then written as `?segment=needs-you`, and
+  `?segment=chat` deep-links Chat. With Iris off nothing changes. If the hub
+  turns Iris off while Chat is open, the Inbox falls back to Needs you.
+- **Chat feed:** `GET /v1/iris/feed` returns the `threads-1` page and message
+  shape (oldest first, opaque `item-` thread ref and `m-` message refs, plus
+  `next_after` on a forward `?after=` poll; `before` and `after` together is
+  refused). The list is reversed so it opens at the newest message, newest
+  last, and holds its place. Rows reuse the #7182 plain-text renderer: bidi and
+  invisible characters stripped, redactions as neutral placeholders, and a
+  withheld row (`withheld: true`, empty text) reads "Hidden message". The feed
+  polls every 15 s with backoff, holds at most 500 rows in memory, is dropped
+  when the app leaves the foreground, and resets to the latest page on a 404
+  cursor. Author labels are display-only provenance: nothing owner-only
+  (answers, enrolment, un-kill) is granted by who a message says wrote it.
+- **Composer:** published into the shell's floating dock like Assistant, so
+  there is no second dock or inner bar and the dock keeps its Back while idle.
+  Text only in M0; voice is the OS keyboard's dictation. `POST /v1/iris/send`
+  sends exactly `{"target":"atlas","text":…}` (1 to 16,000 characters) with a
+  lowercase-UUID `Idempotency-Key`. Receipts from `GET /v1/iris/send/<id>` only
+  move forward: received reads "Sending", delivered via `queue` reads "Queued",
+  any other delivery reads "Sent", acked reads "Seen". Three failed attempts
+  show "Not sent" with Retry, which reuses the same key.
+- **Kill switch:** a 423 `killed` (or a 503 `iris_killed` from an older Worker)
+  keeps the chat readable, shows a banner and turns sending off.
+- **Signing:** every relay request carries the owner JWT plus `X-Iris-Device`,
+  `X-Iris-Ts`, `X-Iris-Nonce` and `X-Iris-Sig` from an injected signer over
+  method, path with query, sha256(body), timestamp, nonce, device id and the
+  Idempotency-Key. Until the native device-key lane lands, a fake signer stands
+  in; a real relay refuses it.
+- **Devices and enrolment:** `/mastermind/iris/devices` (Chat's navbar action)
+  lists enrolled devices with their status, QA mark and key prefix, and revokes
+  with a second tap on the same button, never a native dialog. Enrol shows the
+  6-digit code and the key fingerprint prefix and says to confirm on the Iris
+  enrol page with a passkey; the app then polls the device from pending to
+  confirmed, or expired after 15 minutes. No typed T3 command or chat message
+  confirms a device. Builds without a device key cannot enrol.
+- **Ask cards:** asks keep the hub snapshot and `POST /v1/replies`; the relay
+  never answers them. Inbox rows and detail share urgency badges ("Urgent",
+  "High priority", each with a glyph) and deadline labels beside the age. A
+  **What needs me** header (Needs you, Chat and the Home card) counts open asks
+  once each as urgent, soon (high), FYI or other; in Chat it also shows the
+  relay's role status and usage line. **Use recommendations** opens a confirm
+  sheet listing each open ask with a recommended option, then queues one held
+  reply per ask, each with its own Idempotency-Key and the existing durable
+  undo on its card, and reports each result. The recommended option is a filled
+  button beside its "Recommended" badge.
+- **Fixture mode:** the development flavor with `MASTERMIND_FIXTURE=true` serves
+  `assets/dev/mastermind/iris_fixture.json` (12 synthetic asks across
+  urgent, soon and FYI, with and without options, one expired; 40 messages)
+  through `FixtureIrisRelay`, with offline, 429, kill and slow-ack toggles.
+- **Not in M0:** attachments, secure input, push deep links to Chat, typed-code
+  approvals and the native device key. The summary and devices response shapes
+  are provisional until the relay fixes them.
+
+Regression coverage lives in `apps/mobile/test/features/mastermind/iris/`
+(`data/http_iris_relay_test.dart` for routes, shapes, signed headers and
+401/403/423/429 handling; `data/fixture_iris_relay_test.dart` for the fixture
+and its faults; `cubit/iris_cubits_test.dart`; `view/iris_chat_view_test.dart`
+for the feed, composer, receipts, retry, kill banner and dark mode;
+`iris_integration_test.dart` for the flag, capabilities, Chat segment and
+enrolment) and `view/what_needs_me_test.dart` for badges, counts and the
+recommendations sheet.
