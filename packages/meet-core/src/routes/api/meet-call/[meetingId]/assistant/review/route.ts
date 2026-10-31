@@ -7,6 +7,7 @@ import {
   callRoomService,
   roomRoute,
 } from '@tuturuuu/meet-core/features/call/server/room-service';
+import { assertMeetAiRoom } from '@tuturuuu/meet-core/features/meeting-ai/server/room-gate';
 import { connection } from 'next/server';
 import { z } from 'zod';
 export async function GET(
@@ -49,6 +50,7 @@ export async function POST(
       .safeParse(await request.json().catch(() => null));
     if (!input.success) throw new MeetCallAccessError(400, 'Invalid review');
     const { messageId, revision, action } = input.data;
+    await assertMeetAiRoom(access);
     if (action === 'approve' || action === 'deny')
       return generateMeetAssistant(access, {
         messageId,
