@@ -30,9 +30,10 @@ ALTER TABLE private.workspace_role_permissions_orphans_20261031
 ALTER TABLE private.workspace_role_permissions_orphans_20261031
   ENABLE ROW LEVEL SECURITY;
 
+-- service_role may read, add and remove quarantined rows; it never edits them.
 REVOKE ALL ON TABLE private.workspace_role_permissions_orphans_20261031
-  FROM PUBLIC, anon, authenticated;
-GRANT ALL ON TABLE private.workspace_role_permissions_orphans_20261031
+  FROM PUBLIC, anon, authenticated, service_role;
+GRANT SELECT, INSERT, DELETE ON TABLE private.workspace_role_permissions_orphans_20261031
   TO service_role;
 
 WITH moved AS (

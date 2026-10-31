@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(19);
+select plan(20);
 
 insert into auth.users (id, email, email_confirmed_at, raw_app_meta_data, raw_user_meta_data) values
   ('2c0a0000-0000-4000-8000-000000000001', 'qorp-a@example.com', now(), '{}', '{}'),
@@ -136,8 +136,17 @@ select is(
   0, 'PUBLIC has no table privilege'
 );
 select is(
-  has_table_privilege('service_role', 'private.workspace_role_permissions_orphans_20261031', 'SELECT,INSERT,UPDATE,DELETE'),
-  true, 'service_role keeps full table privilege'
+  has_table_privilege('service_role', 'private.workspace_role_permissions_orphans_20261031', 'SELECT')
+    and has_table_privilege('service_role', 'private.workspace_role_permissions_orphans_20261031', 'INSERT')
+    and has_table_privilege('service_role', 'private.workspace_role_permissions_orphans_20261031', 'DELETE'),
+  true, 'service_role can select, insert and delete quarantined rows'
+);
+select is(
+  has_table_privilege('service_role', 'private.workspace_role_permissions_orphans_20261031', 'UPDATE')
+    or has_table_privilege('service_role', 'private.workspace_role_permissions_orphans_20261031', 'TRUNCATE')
+    or has_table_privilege('service_role', 'private.workspace_role_permissions_orphans_20261031', 'REFERENCES')
+    or has_table_privilege('service_role', 'private.workspace_role_permissions_orphans_20261031', 'TRIGGER'),
+  false, 'service_role cannot update, truncate, reference or trigger on it'
 );
 select columns_are(
   'private', 'workspace_role_permissions_orphans_20261031',
