@@ -426,6 +426,7 @@
               "build/development-tools/git-conventions",
               "build/development-tools/contributing-with-agents",
               "build/development-tools/pre-push-checks",
+              "build/development-tools/web-font-subsets",
               "build/development-tools/browser-session-surface",
               "build/development-tools/tsrs-shadow-type-check",
               "build/development-tools/stacked-pull-requests",
