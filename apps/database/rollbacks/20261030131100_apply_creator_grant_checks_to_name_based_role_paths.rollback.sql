@@ -145,4 +145,8 @@ $$;
 
 
 
+-- Preserve the matching forward migration ACLs while restoring prior bodies.
+REVOKE ALL ON FUNCTION private.prepare_inventory_pos_operator_access(uuid, uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION private.prepare_inventory_pos_operator_access(uuid, uuid) TO service_role;
+
 COMMIT;

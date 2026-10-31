@@ -12,6 +12,7 @@ ALTER TABLE public.workspace_role_permissions VALIDATE CONSTRAINT public_workspa
 -- The separate public_workspace_role_permissions_ws_id_fkey was never dropped.
 
 -- Restore definition from 20261029012100_restrict_subscription_writes.sql
+-- tuturuuu: no-grant (trigger)
 CREATE OR REPLACE FUNCTION private.guard_creator_grant_role_member()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -60,5 +61,8 @@ DROP FUNCTION private.workspace_role_creator_grants_owned_by_actor(uuid, uuid, b
 DROP FUNCTION private.prevent_workspace_role_workspace_change();
 
 
+
+-- Preserve the matching forward migration ACLs while restoring prior bodies.
+REVOKE ALL ON FUNCTION private.guard_creator_grant_role_member() FROM PUBLIC, anon, authenticated, service_role;
 
 COMMIT;

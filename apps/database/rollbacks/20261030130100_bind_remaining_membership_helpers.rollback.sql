@@ -153,11 +153,35 @@ $$;
 alter function public.is_member_invited(uuid, uuid) set search_path = public;
 -- Restore subsequent function setting from 20261024023000_harden_definer_function_grants.sql
 alter function public.user_is_in_channel(uuid, uuid) set search_path = '';
--- Restore inherited EXECUTE from 20230202082703_remote_commit.sql (functions created
--- by 20251105152937_add_infrastructure_analytics_functions.sql).
-GRANT EXECUTE ON FUNCTION public.get_user_growth_stats(text) TO PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_user_growth_comparison() TO PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_user_activity_cohorts() TO PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.get_retention_rate(text) TO PUBLIC, anon, authenticated;
+-- Analytics functions retain the restricted forward ACL.
+
+-- Preserve the matching forward migration ACLs while restoring prior bodies.
+REVOKE ALL ON FUNCTION public.is_workspace_owner(uuid, uuid) FROM PUBLIC, anon, authenticated;
+-- tuturuuu: reviewed(function-grant): public.is_workspace_owner(uuid,uuid) review=https://github.com/tutur3u/platform/pull/7359
+GRANT EXECUTE ON FUNCTION public.is_workspace_owner(uuid, uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.is_member_invited(uuid, uuid) FROM PUBLIC, anon, authenticated;
+-- tuturuuu: reviewed(function-grant): public.is_member_invited(uuid,uuid) review=https://github.com/tutur3u/platform/pull/7359
+GRANT EXECUTE ON FUNCTION public.is_member_invited(uuid, uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.user_is_in_channel(uuid, uuid) FROM PUBLIC, anon, authenticated;
+-- tuturuuu: reviewed(function-grant): public.user_is_in_channel(uuid,uuid) review=https://github.com/tutur3u/platform/pull/7359
+GRANT EXECUTE ON FUNCTION public.user_is_in_channel(uuid, uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.is_hive_member(uuid) FROM PUBLIC, anon, authenticated;
+-- tuturuuu: reviewed(function-grant): public.is_hive_member(uuid) review=https://github.com/tutur3u/platform/pull/7359
+GRANT EXECUTE ON FUNCTION public.is_hive_member(uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.is_hive_platform_admin(uuid) FROM PUBLIC, anon, authenticated;
+-- tuturuuu: reviewed(function-grant): public.is_hive_platform_admin(uuid) review=https://github.com/tutur3u/platform/pull/7359
+GRANT EXECUTE ON FUNCTION public.is_hive_platform_admin(uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.can_create_workspace(uuid) FROM PUBLIC, anon, authenticated;
+-- tuturuuu: reviewed(function-grant): public.can_create_workspace(uuid) review=https://github.com/tutur3u/platform/pull/7359
+GRANT EXECUTE ON FUNCTION public.can_create_workspace(uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.count_user_workspaces(uuid) FROM PUBLIC, anon, authenticated;
+-- tuturuuu: reviewed(function-grant): public.count_user_workspaces(uuid) review=https://github.com/tutur3u/platform/pull/7359
+GRANT EXECUTE ON FUNCTION public.count_user_workspaces(uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.is_personal_workspace(uuid) FROM PUBLIC, anon, authenticated;
+-- tuturuuu: reviewed(function-grant): public.is_personal_workspace(uuid) review=https://github.com/tutur3u/platform/pull/7359
+GRANT EXECUTE ON FUNCTION public.is_personal_workspace(uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.is_task_plan_intended_workspace(uuid, uuid) FROM PUBLIC, anon, authenticated;
+-- tuturuuu: reviewed(function-grant): public.is_task_plan_intended_workspace(uuid,uuid) review=https://github.com/tutur3u/platform/pull/7359
+GRANT EXECUTE ON FUNCTION public.is_task_plan_intended_workspace(uuid, uuid) TO authenticated, service_role;
 
 COMMIT;

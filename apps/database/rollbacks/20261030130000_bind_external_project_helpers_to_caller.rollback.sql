@@ -95,4 +95,15 @@ $$;
 
 
 
+-- Preserve the matching forward migration ACLs while restoring prior bodies.
+REVOKE ALL ON FUNCTION public.is_root_external_project_admin(uuid) FROM PUBLIC, anon, authenticated;
+-- tuturuuu: reviewed(function-grant): public.is_root_external_project_admin(uuid) review=https://github.com/tutur3u/platform/pull/7359
+GRANT EXECUTE ON FUNCTION public.is_root_external_project_admin(uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.can_manage_workspace_external_projects(uuid, uuid) FROM PUBLIC, anon, authenticated;
+-- tuturuuu: reviewed(function-grant): public.can_manage_workspace_external_projects(uuid,uuid) review=https://github.com/tutur3u/platform/pull/7359
+GRANT EXECUTE ON FUNCTION public.can_manage_workspace_external_projects(uuid, uuid) TO authenticated, service_role;
+REVOKE ALL ON FUNCTION public.can_publish_workspace_external_projects(uuid, uuid) FROM PUBLIC, anon, authenticated;
+-- tuturuuu: reviewed(function-grant): public.can_publish_workspace_external_projects(uuid,uuid) review=https://github.com/tutur3u/platform/pull/7359
+GRANT EXECUTE ON FUNCTION public.can_publish_workspace_external_projects(uuid, uuid) TO authenticated, service_role;
+
 COMMIT;

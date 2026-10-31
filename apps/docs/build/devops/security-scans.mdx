@@ -39,6 +39,8 @@ The ten findings independently ruled false positives (the finance migrations, th
 
 PR and push scans load the guard, parser and baseline from the trusted base commit. The initial independently reviewed introduction uses checkout files only when the base does not yet contain the guard. Migrations are read as data, never executed. Regression fixtures copy the historical session migration and the unmodified `20261027021000` fix from #6993.
 
+Source-bound SQL grant records with `class: 'rollback'` admit only `definer-search-path` diagnostics in versioned `apps/database/rollbacks/*.rollback.sql` files. They pin the final file bytes and statement digest and name the forward migration and prior definition source. They cannot admit function ACL findings: rollback helpers retain the forward PUBLIC/anon revokes and authenticated/service-role grants. `sql-grant-guard-verified-findings.test.js` covers scope and source-byte rejection. Apply a reviewed body rollback only with its matching forward fix ready.
+
 ### Admitting new verified records after bootstrap
 
 Base records in `security-definer-verified-findings.json` are append-only: every record in the trusted base must still appear byte-identical (same keys, order and values), so the guard rejects an edited or removed record before scanning. Reviewed blocks and the historical inventory keep their existing rules. A new verified record is admitted only when the trusted base guard (`security-definer-admission.js`, loaded from the base commit) confirms all of the following:
