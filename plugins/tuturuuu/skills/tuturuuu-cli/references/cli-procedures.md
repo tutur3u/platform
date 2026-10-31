@@ -116,4 +116,4 @@ DerivedData repository-refusal exemptions require a literal, canonical
 passes lstat directory and effective-user ownership checks. Skip redirected or
 nonstandard roots and repeat the chain check at removal. Exercise real symlink
 fixtures with `src/cli/storage-derived-data.test.ts`; keep the normal removal
-positive control. See [machine storage health](../../../../../docs-internal/build/development-tools/machine-storage-health.mdx).
+positive control. See [machine storage health](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/development-tools/machine-storage-health.mdx).

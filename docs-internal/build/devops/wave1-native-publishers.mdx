@@ -549,8 +549,10 @@ project. The workflow runs only on `workflow_dispatch` from `main`, for one
      secret.
    - **Deployment:** READY, non-production target, the exact SHA, a
      `tuturuuu-web-staging-*` URL.
-   - **Hosts:** every alias and project domain is enumerated. A custom domain
-     refuses.
+   - **Hosts:** every alias and project domain is enumerated. Before any probe,
+     every parsed hostname must match `^tuturuuu-web-staging-[a-z0-9-]+\.vercel\.app$`.
+     Ports and userinfo refuse. The proof request uses the first sorted allowed
+     hostname; an empty allowed set refuses.
    - **N16:** on every host, anonymous `/`, `/login`, `/api/v1/workspaces`,
      `/_next/image?url=…` and `/monitoring` are denied.
    - **N15:** the bypass without an origin proof gets 403.
@@ -562,7 +564,15 @@ project. The workflow runs only on `workflow_dispatch` from `main`, for one
    Vercel token, Cloudflare credential or control-read token (M1). Only
    `vercel pull` and the ledger-guarded deploy hold the Vercel token. The
    workflow-shape test enforces this for every build, install and seal
-   step.
+   step. Installs disable lifecycle scripts, and pull/deploy pass `VERCEL_TOKEN`
+   through the environment only. These are step-level controls: build and deploy
+   still share a runner. A credential-free build job requires a reviewed transfer
+   of the authenticated pull output, including staging environment settings;
+   those settings must not be copied into a general build artifact.
+   Staff email selectors require exactly `@tuturuuu.com`, case-insensitively;
+   subdomains, trailing dots and other domains refuse. Focused coverage lives in
+   `scripts/ci/wave1-web-{next,vercel}.test.mjs`,
+   `wave1-web-staging-workflow.test.js` and `wave1-ingress-policy.test.mjs`.
 4. **`seal-worker`** (no credentials): builds the candidate, runs the
    emitted workerd suite and seals it with `NEXT_FALLBACK_ORIGIN` set to the
    verified origin. The artifact digest therefore binds the pair. The job

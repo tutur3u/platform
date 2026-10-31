@@ -56,7 +56,7 @@ Wrangler conversion, matching Cloudflare's remote shape while preserving foreign
 targets. beta.20 rejects the unpatched addition inside the binding array. The
 Cron Control regression calls the installed Build Output normalizer and `bE`
 helper, requiring an empty diff and preserving the unpatched negative control.
-See the [Cron Control admission runbook](../../../../../docs-internal/build/devops/cloudflare-cron-control.mdx#dashboard-deployment-admission).
+See the [Cron Control admission runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/cloudflare-cron-control.mdx#dashboard-deployment-admission).
 
 Coordination's before/after token gates consume the verified snapshot's `secrets`
 array; avoid duplicate CLI reads. Settings tokens need Workers Scripts read on the
@@ -396,7 +396,7 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   checkouts, `preserve/*` refs, VM disks or unnamed Supabase volumes. Disk
   admission in `ttr resources` and the bucketed heartbeat `resources.disk`
   (strict on web and Worker) keep work off full disks. See
-  `docs-internal/build/development-tools/machine-storage-health.mdx`.
+  `tutur3u/internal-docs: docs-internal/build/development-tools/machine-storage-health.mdx`.
 - `bun rust-cache report|prune|auto` is the repo-owned Rust target cleanup
   wrapper. It owns only `apps/backend/target` by default, stores auto-run state
   under ignored `tmp/rust-cache/state.json`, skips CI unless explicitly enabled,
@@ -985,7 +985,7 @@ Runtime health fixtures do not dispatch scheduled work or contact production;
 repeat them against the CI-emitted configuration and verify identity, compatibility,
 trigger, vars and secret names. Deploy only the immutable artifact qualified by
 that CI run, using its emitted Wrangler config; preserve source config for named
-secret provisioning. See `docs-internal/build/devops/cloudflare-cron-control.mdx` for
+secret provisioning. See `tutur3u/internal-docs: docs-internal/build/devops/cloudflare-cron-control.mdx` for
 commands and the distinct downstream delivery/cost/stop acceptance boundaries.
 
 For Cron recovery cost review, count the requeue RPC and pending lookup even when
@@ -1252,6 +1252,14 @@ Paused Docker E2E consumers reuse the shared `full` profile rather than a separa
 Only main pushes/main dispatches save; PRs restore only. Normal misses have three attempts and a two-minute total pull deadline, keeping the 15-minute cross-runner restore budget useful. Throttling and classified transport errors retry; SQL never replays. Summaries expose only known registry hosts and untagged image names. Trusted 600-second Linux x64 seeds can use the fixed `cli-2.121.0` catalog without future CLI/PR execution; preserve exact ECR tag keys and verify pinned platform/config digests before save. All ten seed-profile services across CLI 2.117.0/2.121.0 have source-allowlisted official GHCR platform/config-identical digests (19 unique tags); they may replace an existing retry slot only after classified ECR throttling; failed alternate transport or verification is terminal. Reject canonical/alternate platform or config disagreement before the alternate pull. No credentials or unreviewed images. Regenerate with `node scripts/ci/supabase-image-cache-registry.js`: anonymous ECR/GHCR manifest metadata only, byte-hashed platform manifests, fixed upstream CLI Dockerfiles, bounded requests and no image layers. Review output before updating seed data; missing/mismatched publications stay ECR-only. Edge-runtime/Logflare/Vector/pooling remain excluded, without cache-key expansion. PR misses remain ECR-only pending separate provenance/no-save review. Hosted registry access and shared-cache retention still need acceptance. Main-only `supabase-baseline.yaml` dispatch with `seed_images_only=true` seeds contract/HTTP/full keys with serial execution and fail-fast disabled, with seven attempts within ten minutes each; it requires working registry access. On a profile miss, restore the exact contract key only if its image set is a strict subset, load/inspect it and pull only missing local images. Apply this to PR misses too; save the complete requested set under its unchanged exact key. Matrix ordering is not guaranteed; rerun a partial seed to reuse completed keys. See the [CI runbook](../../../../../apps/docs/build/devops/github-actions-runbook.mdx) for bootstrap, scope, eviction and Linux reproduction. Run `TMPDIR=/private/tmp node --test scripts/ci/supabase-image-cache.test.js scripts/ci/supabase-image-cache-seed.test.js scripts/ci/supabase-image-cache-registry.test.js scripts/ci/supabase-registry.test.js scripts/ci/supabase-baseline-key.test.js apps/database/scripts/run-supabase-image-retry.test.js apps/database/scripts/run-supabase.test.js`; local checks do not establish exact-head hosted cache acceptance.
 
 ## Wave-1 staging publication admission
+
+Web staging installs use `--ignore-scripts`; Vercel CLI authentication uses only
+`VERCEL_TOKEN` in the child environment. Validate all parsed staging hosts before
+probing, reject ports/userinfo, and select the proof host from sorted allowed
+hostnames. Staff email domains must equal `tuturuuu.com` case-insensitively.
+Keep the focused Next, Vercel, ingress-policy and workflow tests aligned with the
+[publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx#jobs-and-order),
+including its shared-runner limitation.
 
 Keep the four-app production hold independent of staging. Same-account staging
 requires the reviewed `stagingAdmission` profile, only the named staging deploy

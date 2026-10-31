@@ -70,8 +70,8 @@ jobs:
         with:
           node-version: 24.22.0
       - run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
-      - run: bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - run: bash scripts/ci/run-with-backoff.sh bun install --global --ignore-scripts vercel@59.25.0
       - name: Bundle exact staging build identity
         env:
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
@@ -84,7 +84,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_STAGING_PROJECT_ID }}
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_WEB_STAGING }}
         working-directory: apps/web
-        run: vercel pull --yes --environment=staging --token="$VERCEL_TOKEN"
+        run: vercel pull --yes --environment=staging
       - name: Build the exact SHA locally with the staging-only Vercel config
         timeout-minutes: 40
         # M1: repo build code runs here, so no Vercel, Cloudflare or GitHub
