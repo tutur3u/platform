@@ -11,13 +11,20 @@
  */
 export const MEET_AI_WORKSPACE_ALLOWLIST_ENV = 'MEET_AI_ENABLED_WORKSPACE_IDS';
 
-export type MeetAiGateEnv =
-  | { readonly MEET_AI_ENABLED_WORKSPACE_IDS?: unknown }
-  | null
-  | undefined;
+/**
+ * Any runtime env object (Worker `CloudflareEnv`, Durable Object env, a test
+ * double). Typed as `object` so env interfaces without the optional binding
+ * still type-check; the binding is read defensively below.
+ */
+export type MeetAiGateEnv = object | null | undefined;
 
 export function meetAiEnabledWorkspaceIds(env: MeetAiGateEnv) {
-  const raw = env?.MEET_AI_ENABLED_WORKSPACE_IDS;
+  const raw = (
+    env as
+      | { readonly MEET_AI_ENABLED_WORKSPACE_IDS?: unknown }
+      | null
+      | undefined
+  )?.MEET_AI_ENABLED_WORKSPACE_IDS;
   return new Set(
     (typeof raw === 'string' ? raw : '')
       .split(/[\s,]+/)
