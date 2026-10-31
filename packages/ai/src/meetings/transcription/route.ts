@@ -38,7 +38,32 @@ const transcriptSchema = z.object({
     .describe('Total audio duration in seconds'),
 });
 
-export function createPOST() {
+export type MeetingTranscriptionOptions = {
+  /**
+   * Meet AI default-deny workspace gate, injected by the framework adapter
+   * (the allowlist binding lives in the runtime env, which this portable
+   * package must not read). Omitted means deny.
+   */
+  isMeetAiEnabled?: (wsId: string) => boolean | Promise<boolean>;
+};
+
+const RATE_LIMIT_UNAVAILABLE_RETRY_AFTER_SECONDS = 30;
+
+async function meetAiAllowed(
+  wsId: string,
+  isMeetAiEnabled: MeetingTranscriptionOptions['isMeetAiEnabled']
+) {
+  if (!isMeetAiEnabled) return false;
+  try {
+    return (await isMeetAiEnabled(wsId)) === true;
+  } catch {
+    return false;
+  }
+}
+
+export function createPOST({
+  isMeetAiEnabled,
+}: MeetingTranscriptionOptions = {}) {
   return async function handler(req: Request) {
     try {
       const supabase = await createClient();
@@ -56,12 +81,35 @@ export function createPOST() {
         return new Response('Audio file too large', { status: 413 });
       }
 
-      const limiters = await getRateLimiters('ai:meeting-transcription', {
-        get: [],
-        mutate: [{ duration: '1 m', limit: 10, window: 'minute' }],
-      });
-      for (const { limiter } of limiters?.mutate ?? []) {
-        const result = await limiter.limit(user.id);
+      // Fail closed: a missing or erroring limiter store must not skip the
+      // limit in front of a paid provider call.
+      let limiters: Awaited<ReturnType<typeof getRateLimiters>>;
+      try {
+        limiters = await getRateLimiters('ai:meeting-transcription', {
+          get: [],
+          mutate: [{ duration: '1 m', limit: 10, window: 'minute' }],
+        });
+      } catch {
+        limiters = null;
+      }
+      const buckets = limiters?.mutate ?? [];
+      const rateLimitUnavailable = () => {
+        console.error('Meeting transcription rate limiter unavailable');
+        return new Response('Service temporarily unavailable', {
+          status: 503,
+          headers: {
+            'Retry-After': String(RATE_LIMIT_UNAVAILABLE_RETRY_AFTER_SECONDS),
+          },
+        });
+      };
+      if (buckets.length === 0) return rateLimitUnavailable();
+      for (const { limiter } of buckets) {
+        let result: Awaited<ReturnType<typeof limiter.limit>>;
+        try {
+          result = await limiter.limit(user.id);
+        } catch {
+          return rateLimitUnavailable();
+        }
         if (!result.success) {
           return new Response('Too many requests', {
             status: 429,
@@ -97,6 +145,10 @@ export function createPOST() {
         requiredType: 'MEMBER',
       });
       if (!membership.ok) {
+        return new Response('Workspace access denied', { status: 403 });
+      }
+
+      if (!(await meetAiAllowed(wsId, isMeetAiEnabled))) {
         return new Response('Workspace access denied', { status: 403 });
       }
 
