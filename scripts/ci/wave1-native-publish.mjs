@@ -370,6 +370,21 @@ export async function main({
     save();
     throw error;
   }
+  const recheckWeb = async () => {
+    if (app === 'web') {
+      const fresh = await recheckNext({
+        env,
+        fetcher,
+        sha,
+        deploymentId: p.nextFallback.deploymentId,
+      });
+      assert.deepEqual(
+        fresh.failures,
+        [],
+        `Next protection changed since verification:\n${fresh.failures.join('\n')}`
+      );
+    }
+  };
   const accept = async (versionId) => {
     const active = await request(`${cfBase}/deployments`, cfToken);
     assert.equal(active.success, true);
@@ -422,6 +437,7 @@ export async function main({
     'Multiple matching versions require owner reconciliation'
   );
   if (identical.length) {
+    await recheckWeb();
     record.versionId = identical[0].id;
     if (ledger.prior?.state === 'activated') {
       // A terminal activation is never downgraded; a rerun only re-verifies it.
@@ -455,21 +471,7 @@ export async function main({
   try {
     await assertEnabled();
     validate();
-    // Web issuer (b): `verified` is point-in-time, so re-read the Vercel
-    // protection, aliases and N15–N17 immediately before the only upload.
-    if (app === 'web') {
-      const fresh = await recheckNext({
-        env,
-        fetcher,
-        sha,
-        deploymentId: p.nextFallback.deploymentId,
-      });
-      assert.deepEqual(
-        fresh.failures,
-        [],
-        `Next protection changed since verification:\n${fresh.failures.join('\n')}`
-      );
-    }
+    await recheckWeb();
   } catch (error) {
     record.state = 'failed';
     save();

@@ -5,16 +5,17 @@ import 'dart:ui';
 
 import 'package:bloc/bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/app_flavor.dart';
+import 'package:mobile/core/config/consent_gate.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/config/firebase_options_selector.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/observability/firebase_admission.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/startup/optional_startup.dart';
@@ -26,7 +27,7 @@ import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/assistant/local/assistant_model_downloads.dart';
-import 'package:mobile/features/notifications/push/push_background_handler.dart';
+import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/settings/cubit/appearance_resolution.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -99,22 +100,59 @@ Future<void> bootstrap(
     logChanges: appFlavor != AppFlavor.production,
   );
 
-  // Initialize Supabase with secure storage
+  final push = PushNotificationService.instance;
+  final firebaseAdmission = FirebaseAdmission(
+    initialize:
+        ({
+          required signedIn,
+          required pushAllowed,
+          required telemetryAllowed,
+        }) async {
+          if (Platform.isIOS || Platform.isAndroid) {
+            final admitted =
+                await const MethodChannel(
+                  'mobile/firebase_startup',
+                ).invokeMethod<bool>('initialize', {
+                  'signedIn': signedIn,
+                  'pushAllowed': pushAllowed,
+                  'telemetryAllowed': telemetryAllowed,
+                });
+            if (admitted != true) return false;
+          }
+          if (Firebase.apps.isEmpty) {
+            await Firebase.initializeApp(
+              options: firebaseOptionsForFlavor(appFlavor),
+            );
+            await Firebase.app().setAutomaticDataCollectionEnabled(false);
+          }
+          return true;
+        },
+    telemetry: ({required enabled}) => MobileObservability.instance.initialize(
+      appFlavor,
+      collectionEnabled: enabled,
+    ),
+    unregisterPush: () => push.prepareInstallationDeletion(strict: true),
+    deleteInstallation: () => const MethodChannel(
+      'mobile/firebase_startup',
+    ).invokeMethod<void>('deleteInstallation'),
+  );
+  push.firebaseInitializer = ({required pushAllowed}) =>
+      firebaseAdmission.update(
+        signedIn: push.hasActiveSession,
+        pushAllowed: pushAllowed,
+        telemetryAllowed:
+            consentGate.isEligible(appFlavor) &&
+            TelemetryPreference.instance.enabled,
+      );
+
   try {
     await TelemetryPreference.instance.initialize(
-      promptEligible: appFlavor == AppFlavor.production,
+      promptEligible: consentGate.isEligible(appFlavor),
       apply: ({required enabled}) async {
-        if (Firebase.apps.isEmpty) {
-          await Firebase.initializeApp(
-            options: firebaseOptionsForFlavor(appFlavor),
-          );
-          FirebaseMessaging.onBackgroundMessage(
-            firebaseMessagingBackgroundHandler,
-          );
-        }
-        await MobileObservability.instance.initialize(
-          appFlavor,
-          collectionEnabled: enabled,
+        await firebaseAdmission.update(
+          signedIn: push.hasActiveSession,
+          pushAllowed: push.pushAdmitted,
+          telemetryAllowed: consentGate.isEligible(appFlavor) && enabled,
         );
       },
     );

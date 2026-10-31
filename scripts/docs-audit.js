@@ -66,9 +66,58 @@ const PUBLIC_SAFETY_RULES = [
   ['personal or staff email address', /[\w.+-]+@gmail\.com\b|\bphucvo@/i],
 ];
 
-function publicSafetyErrors(source, relative) {
+// Extra rules for anything readable on the public docs site or shipped as
+// public plugin guidance (apps/docs and plugins/**). docs-internal/ may name
+// staging hosts; the public surfaces may not. Justified exceptions go in
+// scripts/docs-safety-allowlist.json as {path, rule, reason}.
+const PUBLIC_ONLY_SAFETY_RULES = [
+  [
+    'staging host',
+    /\b[a-z0-9][a-z0-9-]*(?:\.staging\.tutur3u\.com|-staging\.tutur3u\.com)\b/,
+  ],
+  ['staging worker name', /\btuturuuu-[a-z0-9-]*staging[a-z0-9-]*\b/],
+  [
+    'bypass secret name',
+    /\b[A-Z0-9_]*(?:AUTOMATION_BYPASS|BYPASS_SECRET|AUTH_BYPASS|PROTECTION_BYPASS)[A-Z0-9_]*\b/,
+  ],
+  ['workers.dev hostname', /\b[a-z0-9][a-z0-9-]*\.workers\.dev\b/],
+];
+
+const ALLOWLIST_FILE = 'scripts/docs-safety-allowlist.json';
+
+function loadSafetyAllowlist(root) {
+  const file = path.join(root, ALLOWLIST_FILE);
+  const allowed = new Set();
   const errors = [];
-  for (const [label, pattern] of PUBLIC_SAFETY_RULES) {
+  if (!fs.existsSync(file)) return { allowed, errors };
+  let entries;
+  try {
+    entries = JSON.parse(fs.readFileSync(file, 'utf8')).entries;
+  } catch {
+    return { allowed, errors: [`Invalid allowlist file: ${ALLOWLIST_FILE}`] };
+  }
+  for (const entry of entries ?? []) {
+    if (!entry?.path || !entry?.rule || !String(entry?.reason ?? '').trim())
+      errors.push(
+        `Invalid allowlist entry (needs path, rule, reason): ${ALLOWLIST_FILE}`
+      );
+    else allowed.add(`${entry.path}|${entry.rule}`);
+  }
+  return { allowed, errors };
+}
+
+function publicSafetyErrors(
+  source,
+  relative,
+  {
+    rules = PUBLIC_SAFETY_RULES,
+    allowed = new Set(),
+    allowPath = relative,
+  } = {}
+) {
+  const errors = [];
+  for (const [label, pattern] of rules) {
+    if (allowed.has(`${allowPath}|${label}`)) continue;
     const lines = new Set();
     for (const match of source.matchAll(
       new RegExp(pattern.source, `${pattern.flags}g`)
@@ -90,7 +139,8 @@ function audit(root = ROOT) {
   const redirects = new Set(
     (config.redirects ?? []).map((entry) => entry.source.replace(/^\//, ''))
   );
-  const errors = [];
+  const safetyAllowlist = loadSafetyAllowlist(root);
+  const errors = [...safetyAllowlist.errors];
   const files = walk(docs).filter((file) => file.endsWith('.mdx'));
   // docs-internal/ is hidden from the site but still public on GitHub, so it
   // gets the same public-safety scan (not the navigation or link checks).
@@ -107,6 +157,19 @@ function audit(root = ROOT) {
     ['.mdx', '.md'].some((extension) =>
       fs.existsSync(path.join(docs, slug + extension))
     );
+  const pluginsRoot = path.join(root, 'plugins');
+  if (fs.existsSync(pluginsRoot))
+    for (const file of walk(pluginsRoot).filter((f) => /\.mdx?$/.test(f)))
+      errors.push(
+        ...publicSafetyErrors(
+          fs.readFileSync(file, 'utf8'),
+          path.relative(root, file).split(path.sep).join('/'),
+          {
+            rules: PUBLIC_ONLY_SAFETY_RULES,
+            allowed: safetyAllowlist.allowed,
+          }
+        )
+      );
   for (const slug of pages)
     if (!exists(slug)) errors.push(`Missing navigation page: ${slug}`);
   for (const slug of pages)
@@ -116,7 +179,13 @@ function audit(root = ROOT) {
     const relative = path.relative(docs, file).split(path.sep).join('/');
     const slug = relative.slice(0, -4);
     const source = fs.readFileSync(file, 'utf8');
-    errors.push(...publicSafetyErrors(source, relative));
+    errors.push(
+      ...publicSafetyErrors(source, relative, {
+        rules: [...PUBLIC_SAFETY_RULES, ...PUBLIC_ONLY_SAFETY_RULES],
+        allowed: safetyAllowlist.allowed,
+        allowPath: `apps/docs/${relative}`,
+      })
+    );
     if (!registered.has(slug) && !redirects.has(slug))
       errors.push(`Unregistered page: ${slug}`);
     if (

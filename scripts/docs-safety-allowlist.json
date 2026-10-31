@@ -1,0 +1,14 @@
+{
+  "entries": [
+    {
+      "path": "apps/docs/build/development-tools/local-e2e.mdx",
+      "rule": "bypass secret name",
+      "reason": "Flag name is public in source; the bypass only activates with local web origins and a local Supabase URL (apps/web/src/lib/auth/local-e2e.ts); Desk-approved 31 Oct."
+    },
+    {
+      "path": "apps/docs/platform/architecture/shared-session.mdx",
+      "rule": "bypass secret name",
+      "reason": "Flag name is public in source; the bypass only activates with local web origins and a local Supabase URL (apps/web/src/lib/auth/local-e2e.ts); Desk-approved 31 Oct."
+    }
+  ]
+}

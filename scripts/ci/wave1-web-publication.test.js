@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const {
   publisher,
+  newId,
   sha,
   webFallback,
 } = require('./wave1-native-publication-harness.cjs');
@@ -45,11 +46,16 @@ async function webPublisher(t, mutate = () => {}) {
       verifyRunId: '7',
       verifyRunAttempt: '1',
     },
+    calls: [],
     vercelReads: 0,
     nextLedgerWrites: 0,
   };
   let nextRecord;
   const preFetch = async (u, options, _state) => {
+    world.calls.push({
+      host: u.hostname,
+      bypass: new Headers(options.headers).has('x-vercel-protection-bypass'),
+    });
     if (u.hostname === 'api.cloudflare.com' && u.pathname.endsWith('/query')) {
       const { sql, params } = JSON.parse(options.body);
       if (!params.includes(WEB_NEXT_LEDGER_KEY)) return null;
@@ -117,6 +123,8 @@ test('a verified pair with unchanged protection publishes exactly once', async (
   const { p, world } = await webPublisher(t);
   await p.run();
   assert.equal(p.state.writes, 1);
+  assert.ok(world.calls.some((call) => call.bypass));
+  assertBypassHosts(world.calls);
   assert.equal(p.getLedger().entries[0].state, 'activated');
   assert.ok(world.vercelReads >= 4, 'fresh Vercel recheck ran before upload');
   assert.equal(
@@ -214,13 +222,6 @@ for (const [label, mutate, message] of [
     },
     /N16/,
   ],
-  [
-    'a custom domain is attached to the project',
-    (w) => {
-      w.domains.domains.push({ name: 'web-next.staging.tutur3u.com' });
-    },
-    /custom domain/,
-  ],
 ]) {
   test(`(b) refuses the upload when ${label} after verification`, async (t) => {
     const { p } = await webPublisher(t, mutate);
@@ -243,3 +244,55 @@ test('the Web admission must name the sealed Next deployment', async (t) => {
   await assert.rejects(p.run);
   assert.equal(p.state.writes, 0);
 });
+
+const assertBypassHosts = (calls) => {
+  assert.deepEqual(
+    calls.filter(
+      (call) =>
+        call.bypass &&
+        !/^tuturuuu-web-staging-[a-z0-9-]+\.vercel\.app$/u.test(call.host)
+    ),
+    []
+  );
+};
+
+test('custom domains are refused before any probe sends a bypass header', async (t) => {
+  const { p, world } = await webPublisher(t, (w) => {
+    w.domains.domains.push({ name: 'web-next.example.com' });
+  });
+  await assert.rejects(p.run, /custom domain/);
+  assertBypassHosts(world.calls);
+  assert.ok(!world.calls.some((call) => call.host === 'web-next.example.com'));
+  assert.equal(p.state.writes, 0);
+  assert.equal(p.getLedger().entries[0].state, 'failed');
+});
+
+for (const prior of ['pending', 'activated', 'unrecorded']) {
+  test(`reconciled ${prior} Web versions require current protection`, async (t) => {
+    const { p, world } = await webPublisher(t);
+    if (prior !== 'activated') {
+      p.state.failUpload = true;
+      await assert.rejects(p.run);
+      p.state.active = newId;
+      if (prior === 'unrecorded')
+        p.setLedger({ ...p.getLedger(), entries: [] });
+    } else await p.run();
+    const writes = p.state.writes;
+    const ledgerWrites = p.state.ledgerWrites;
+    const reads = world.vercelReads;
+    world.project.ssoProtection.deploymentType = 'preview';
+    await assert.rejects(p.run, /ALL deployments/);
+    assert.ok(world.vercelReads >= reads + 4);
+    assert.equal(p.state.writes, writes);
+    assert.equal(p.state.ledgerWrites, ledgerWrites);
+    assert.equal(
+      p.getLedger().entries[0]?.state,
+      prior === 'unrecorded' ? undefined : prior
+    );
+    world.project.ssoProtection.deploymentType = 'all';
+    await p.run();
+    assert.equal(p.state.writes, writes);
+    assert.equal(p.getLedger().entries[0].state, 'activated');
+    assertBypassHosts(world.calls);
+  });
+}

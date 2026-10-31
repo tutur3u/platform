@@ -1259,7 +1259,10 @@ probing, reject ports/userinfo, and select the proof host from sorted allowed
 hostnames. Staff email domains must equal `tuturuuu.com` case-insensitively.
 Keep the focused Next, Vercel, ingress-policy and workflow tests aligned with the
 [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx#jobs-and-order),
-including its shared-runner limitation.
+including its shared-runner limitation. Assert probe destinations from recorded
+fetch calls after the run, since probe transport errors are intentionally captured.
+Reconciliation of an existing Web version requires the same fresh Next protection
+check as a new upload, before any uploaded/activated ledger transition.
 
 Keep the four-app production hold independent of staging. Same-account staging
 requires the reviewed `stagingAdmission` profile, only the named staging deploy
@@ -1276,7 +1279,7 @@ private-serving state rather than issuing a public HTTP probe. Preserve CI worke
 acceptance and obtain a separately approved private ingress plan for hosted UX.
 Never delete consumption history to renew admission or infer retry permission from a
 missing local receipt or inactive version. Reconcile listed versions by detail SHA/tag and retain unresolved attempts.
-The [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx)
+The [publisher runbook](../../../../../docs-internal/build/devops/wave1-native-publishers.mdx)
 owns the schema, bounded operation counts, residual account risk and recovery.
 For private production preparation, keep the read token confined to preflight and
 post-upload verification, and the deploy token confined to the upload step. Check

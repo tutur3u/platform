@@ -5,6 +5,7 @@ import {
   fixtureStaffGroupId,
   healthyTopology,
 } from './wave1-ingress-fixture.mjs';
+import { staffSelector } from './wave1-ingress-policies.mjs';
 
 const staffEmailListId = '44444444-4444-4444-8444-444444444444';
 
@@ -220,7 +221,9 @@ for (const email of [
   'a@tuturuuu.com.',
 ]) {
   test(`refuses email outside the exact company domain: ${email}`, () => {
-    const failures = check('web', allowRule({ email: { email } }));
+    const rule = { email: { email } };
+    assert.equal(staffSelector(rule), false, 'not counted as staff');
+    const failures = check('web', allowRule(rule));
     assert.ok(
       failures.some((failure) =>
         /staff emails must use @tuturuuu.com exactly/.test(failure)

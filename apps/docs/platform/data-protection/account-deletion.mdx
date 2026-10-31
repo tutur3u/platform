@@ -1,0 +1,19 @@
+---
+title: "Account and workspace deletion"
+description: "Billing cleanup and deletion failure behavior."
+---
+
+## Billing cleanup before deletion
+
+Web account deletion and manual workspace deletion complete billing cleanup before
+deleting workspace or Auth records. A missing Polar customer, a revoked or missing
+seat, and a missing or already canceled subscription count as completed cleanup.
+Use Polar SDK error types and HTTP status codes to identify these terminal states;
+other provider failures, including network errors, timeouts and 5xx responses,
+return 502 before database deletion. Multiple active subscription rows block manual
+workspace deletion with a generic 409 response. Existing permission, personal
+workspace and paid sole-member restrictions still apply.
+
+Regression coverage: the account and workspace deletion route tests under
+`apps/web/src/legacy-api-routes`, and
+`packages/payment-core/src/polar-seat-helper.test.ts`.

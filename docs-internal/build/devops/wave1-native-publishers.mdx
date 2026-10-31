@@ -451,7 +451,7 @@ variable read. `wave1-ingress-topology.mjs` evaluates the observations:
     permitted selectors are:
     - the configured `STAGING_ACCESS_STAFF_GROUP_ID` group;
     - the configured `STAGING_ACCESS_STAFF_EMAIL_LIST_ID` list;
-    - an explicit `email`;
+    - an explicit `email` whose domain is exactly `tuturuuu.com` (case-insensitive);
     - `email_domain` `tuturuuu.com` only.
 
     Any other domain, `login_method`, `any_valid_service_token`, IP, geo,
@@ -542,7 +542,10 @@ project. The workflow runs only on `workflow_dispatch` from `main`, for one
 3. **`next-verify`** (same environment). `wave1-web-next.mjs verify` must
    pass every check below; only then is the entry CASed to `verified`, bound
    to the SHA, deployment ID, project ID (the row scope), origin and verify
-   run ID. No other job writes `verified`.
+   run ID. No other job writes `verified`. The Worker publisher repeats this
+   protection check when reconciling an already-uploaded version, before
+   recording uploaded/activated state; activated reruns also recheck without
+   downgrading the ledger if protection has changed.
    - **V1b, project protection:** Vercel Authentication on **all**
      deployments; no password protection, trusted IPs, OPTIONS allowlist or
      shareable links; exactly one automation bypass, equal to the Worker
@@ -563,8 +566,10 @@ project. The workflow runs only on `workflow_dispatch` from `main`, for one
    The `vercel build` step runs repository build code, so it gets **no**
    Vercel token, Cloudflare credential or control-read token (M1). Only
    `vercel pull` and the ledger-guarded deploy hold the Vercel token. The
-   workflow-shape test enforces this for every build, install and seal
-   step. Installs disable lifecycle scripts, and pull/deploy pass `VERCEL_TOKEN`
+   Web staging workflow test checks explicit environment keys on build, install
+   and seal steps and checks `--ignore-scripts` on every `bun install` command
+   in that workflow. This does not cover install commands in other wave-1 workflows.
+   Pull/deploy pass `VERCEL_TOKEN`
    through the environment only. These are step-level controls: build and deploy
    still share a runner. A credential-free build job requires a reviewed transfer
    of the authenticated pull output, including staging environment settings;

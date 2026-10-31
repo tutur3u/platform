@@ -33,6 +33,7 @@
                 "pages": [
                   "platform/data-protection-standard",
                   "platform/data-protection/inventory",
+                  "platform/data-protection/account-deletion",
                   "platform/data-protection/delivery-plan",
                   "platform/data-protection/schema-private",
                   "platform/data-protection/schema-public",
@@ -365,7 +366,6 @@
                   "build/devops/deployment-configuration",
                   "build/devops/active-runtime",
                   "build/devops/standalone-api",
-                  "build/devops/wave1-native-cutover",
                   "build/devops/native-start-migration",
                   "build/devops/mastermind-web",
                   "build/devops/tanstack-cloudflare-migration-inventory",
@@ -373,13 +373,11 @@
                   "build/devops/contacts-start-candidate",
                   "build/devops/apps-viteplus-cloudflare",
                   "build/devops/start-bridge",
-                  "build/devops/web-start-candidate",
                   "build/devops/tasks-viteplus-cloudflare",
                   "build/devops/start-bridge-codemod",
                   "build/devops/finance-pay-start",
                   "build/devops/nova-inventory-start-bridge",
                   "build/devops/shortener-start-void",
-                  "build/devops/wave1-native-publishers",
                   "build/devops/environments-release-flow",
                   "build/devops/web-docker-deployment",
                   "build/devops/tanstack-rust-local-deploy",
@@ -669,6 +667,18 @@
     }
   },
   "redirects": [
+    {
+      "source": "/build/devops/web-start-candidate",
+      "destination": "/build/devops/native-start-migration"
+    },
+    {
+      "source": "/build/devops/wave1-native-cutover",
+      "destination": "/build/devops/active-runtime"
+    },
+    {
+      "source": "/build/devops/wave1-native-publishers",
+      "destination": "/build/devops/active-runtime"
+    },
     {
       "source": "/build/development-tools/agent-quota-routing",
       "destination": "/build/development-tools/contributing-with-agents"
