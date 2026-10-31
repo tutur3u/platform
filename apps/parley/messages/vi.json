@@ -3969,7 +3969,8 @@
       "transcript": "Bản chép lời trực tiếp",
       "unavailable": "AI cuộc họp chưa khả dụng. Vui lòng thử lại sau.",
       "unpriced": "Thiếu dữ liệu sử dụng của {count} yêu cầu; tổng chi phí chưa đầy đủ.",
-      "usage_details": "Chi tiết sử dụng"
+      "usage_details": "Chi tiết sử dụng",
+      "workspace_unavailable": "Trợ lý AI cho cuộc họp chưa khả dụng với không gian làm việc này."
     },
     "call": {
       "actions_action": "Việc cần làm",

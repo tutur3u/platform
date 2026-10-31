@@ -29,7 +29,7 @@ const PUBLIC_SAFETY_RULES = [
   ['internal security register ID', /\bSR-\d{2,4}[a-z]?\b/],
   [
     'developer home-directory path',
-    /(?<![\w\]\[)}.\/-])\/(?:Users|home)\/(?!runner\b|user\b)[A-Za-z][\w.-]*\//,
+    /(?<![\w\][)}./-])\/(?:Users|home)\/(?!runner\b|user\b)[A-Za-z][\w.-]*\//,
   ],
   ['fleet host or machine name', /\b(?:skr-[a-z0-9-]+|sokora[\w-]*)\b/i],
   [
