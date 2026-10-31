@@ -16,6 +16,8 @@ const reviewCategories = [
       /^\.github\//u,
       /^scripts\/ci\//u,
       /^scripts\/git-[\w-]+\.(?:c|m)?[jt]s$/u,
+      // Owns ORDER_EXEMPT_VERSIONS, which both migration order checks honour.
+      /^scripts\/check-migration-timestamps\.js$/u,
       /^tuturuuu(?:\.ci)?\.ts$/u,
       /^turbo\.json$/u,
       /(?:^|\/)CODEOWNERS$/u,
