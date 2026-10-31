@@ -23,7 +23,11 @@ import {
   isLinkedContentSession,
   loadLinkedLessonContent,
 } from '@/lib/tutoring/linked-content';
-import { resolveTutoringReadScope } from '@/lib/tutoring/read-scope';
+import {
+  isTeacherReassignmentAllowed,
+  resolveTutoringReadScope,
+  resolveTutoringWriteScope,
+} from '@/lib/tutoring/read-scope';
 import {
   createTutoringRequestClient,
   resolveTutoringRouteAccess,
@@ -216,8 +220,8 @@ async function getTutoringData(request: Request, { params }: Params) {
 
 export async function POST(request: Request, { params }: Params) {
   const { wsId } = await params;
-  const { normalizedWsId, permissions, user } =
-    await resolveTutoringRouteAccess(request, wsId);
+  const access = await resolveTutoringRouteAccess(request, wsId);
+  const { normalizedWsId, permissions, user } = access;
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -248,6 +252,31 @@ export async function POST(request: Request, { params }: Params) {
   const supabase = await createTutoringRequestClient(request, user);
   const sbAdmin = await createAdminClient();
   const tutoringSessionsClient = sbAdmin.schema('private');
+  // Without view_payroll a member may only create sessions they teach
+  // themselves; an omitted teacher defaults to them, never to someone else.
+  // Resolved before any lookup or write, whatever the status asks for.
+  const scope = await resolveTutoringWriteScope({
+    request,
+    access,
+    sbAdmin: sbAdmin as TypedSupabaseClient,
+  });
+  if (!scope.allowed) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+  if (scope.teacherId) {
+    const requestedTeachers = [
+      parsed.data.teacherUserId,
+      ...(parsed.data.sessions ?? []).map((slot) => slot.teacherUserId),
+    ];
+    if (
+      !requestedTeachers.every((teacherUserId) =>
+        isTeacherReassignmentAllowed(scope, teacherUserId ?? undefined)
+      )
+    ) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+    parsed.data.teacherUserId = scope.teacherId;
+  }
   const deniedWeakContent = await denyWeakContentEdit({
     permissions,
     sbAdmin,
