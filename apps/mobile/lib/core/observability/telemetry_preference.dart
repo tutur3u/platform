@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,8 +18,11 @@ class TelemetryPreference extends ChangeNotifier {
 
   static final instance = TelemetryPreference();
 
-  /// Bump with any wording change to the prompt or the Settings description.
+  /// Legal notice version is unchanged for the FID copy clarification.
   static const currentNoticeVersion = 'telemetry-consent-v1';
+  // Separate copy revision re-prompts Allows from unreleased dev/QA screens.
+  static const currentCopyVersion = 'telemetry-fid-copy-v1';
+  static const copyVersionKey = 'telemetry-consent-copy-version';
   static const choiceKey = 'telemetry-consent-choice';
   static const noticeVersionKey = 'telemetry-consent-notice-version';
   static const decidedAtKey = 'telemetry-consent-decided-at';
@@ -34,7 +39,7 @@ class TelemetryPreference extends ChangeNotifier {
   bool _promptEligible = false;
   late Future<void> Function({required bool enabled}) _apply;
 
-  /// The prompt is due: production only, and only while no answer is stored for
+  /// The prompt is due for eligible builds while no answer is stored for
   /// the current notice version.
   bool get consentPending => ready && _promptEligible && !hasExplicitChoice;
 
@@ -53,12 +58,40 @@ class TelemetryPreference extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Session transitions (sign-out, account switch) never carry collection over
+  /// on trust: it is revoked first, then enabled again only if the stored
+  /// choice, read afresh, is an explicit Allow for the current notice version.
+  /// Never throws, so a storage failure cannot block signing out.
+  Future<void> reloadConsent() async {
+    if (!ready || busy) return;
+    enabled = false;
+    bool? saved;
+    try {
+      await _apply(enabled: false);
+      saved = await _read();
+      hasExplicitChoice = saved != null;
+      if (saved ?? false) {
+        await _apply(enabled: true);
+        enabled = true;
+      }
+    } on Object catch (error) {
+      enabled = false;
+      log('Telemetry consent reload failed: ${error.runtimeType}');
+    }
+    notifyListeners();
+  }
+
   Future<bool?> _read() async {
     final prefs = await SharedPreferences.getInstance();
     // Older builds could leave a regional default or an "on" here.
     if (prefs.containsKey(legacyKey)) await prefs.remove(legacyKey);
     if (prefs.getString(noticeVersionKey) != noticeVersion) return null;
-    return prefs.getBool(choiceKey);
+    final choice = prefs.getBool(choiceKey);
+    if (choice == true &&
+        prefs.getString(copyVersionKey) != currentCopyVersion) {
+      return null;
+    }
+    return choice;
   }
 
   Future<void> setEnabled({required bool value}) async {
@@ -81,6 +114,7 @@ class TelemetryPreference extends ChangeNotifier {
             decidedAtKey,
             _clock().toUtc().toIso8601String(),
           ) &&
+          await prefs.setString(copyVersionKey, currentCopyVersion) &&
           await prefs.setString(noticeVersionKey, noticeVersion);
       if (!saved) {
         throw StateError('Telemetry preference could not be saved');

@@ -361,3 +361,15 @@ rather than creating a new key. Keep capability and actor fences intact.
 `mastermind_ask_context_test.dart` covers the v1 fixture, real options, retries,
 metadata, previews, open-only deduplication and Needs-you navigation. See the
 [Mastermind product rules](../../../../../apps/docs/platform/features/mobile-mastermind.mdx).
+
+- **Firebase startup admission**: iOS FlutterFire Core registration can configure
+  the default app before Dart, and FirebaseCore can start Analytics even with
+  collection disabled. Keep generated SDK/plugin overlays worktree-local and
+  fail closed on changed upstream source. Admit Firebase only after sign-in with
+  authorized push or current telemetry Allow; keep Messaging and Analytics lazy
+  behind their separate choices. Stop Analytics hostname reachability monitors
+  on withdrawal and drain token/server unregister before best-effort FID deletion.
+  Recheck native fixtures after SDK updates, then verify fresh/upgrade requests
+  and app-attributed DNS on devices. The canonical policy, copy keys and evidence
+  boundaries live in
+  [mobile telemetry privacy](../../../../../apps/docs/platform/features/mobile-telemetry-privacy.mdx).
