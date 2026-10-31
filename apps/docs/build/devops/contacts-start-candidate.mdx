@@ -84,7 +84,7 @@ traces, screenshots, passwords or raw handoff URLs belong in public artifacts.
 
 ## Verification and controls
 
-Use i9 or Thanh under `ttr resources`; do not build on M4. From the repository root:
+Use a remote build host under `ttr resources`; do not build on the local hub. From the repository root:
 
 ```bash
 bun run --cwd apps/contacts routes:candidate:check

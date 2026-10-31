@@ -541,7 +541,7 @@ fails closed. Dollar-quoted bodies cannot supply review markers.
 
 ## SQL grant end-state guard
 
-The ACL-replay companion to the guard above is `scripts/ci/sql-grant-end-state-guard.js`. It owns no baseline: the frozen inherited-ACL list, the SR-843 source-bound exception and the end-state rules below live only there, and the security definer guard imports them. The baseline guard and this one share no entries.
+The ACL-replay companion to the guard above is `scripts/ci/sql-grant-end-state-guard.js`. It owns no baseline: the frozen inherited-ACL list, the source-bound exception and the end-state rules below live only there, and the security definer guard imports them. The baseline guard and this one share no entries.
 
 `scripts/ci/sql-grant-end-state-guard.js` runs with the root script tests
 (`bun test:scripts`, CI job "Root script tests") and rejects two patterns in
@@ -603,12 +603,12 @@ Unversioned files are always checked.
 holds the one security-reviewed exception to the definer rule: the four
 invoice-total definers in `20261029040800_finance_workspace_boundaries.sql`,
 whose revoke sits in a pre-creation dynamic `DO` block (CREATE OR REPLACE
-preserves the ACL; bodies gate on `auth.role() = 'service_role'`, SR-843). It
+preserves the ACL; bodies gate on `auth.role() = 'service_role'`). It
 applies only while the exact path, the file's sha256, a per-finding digest
 (rule, creation line and signature, for each of the four findings) and a `DO`
 block whose normalized content digest matches all hold, so any byte change to the
 file, another file, another line or another signature gets nothing, and a later
-grant to `public` or `anon` still fails. SR-843 verified the end state is
+grant to `public` or `anon` still fails. An internal security review verified the end state is
 `service_role`-only (`proacl` of exactly `postgres` and `service_role`), covered
 by `supabase/tests/finance-invoice-totals-definer-acl.sql`.
 The guard prints each covered signature as a reviewed exception. Never add

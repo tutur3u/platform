@@ -1,23 +1,23 @@
 ---
-title: 'Thanh Local End-to-End Environment'
-description: 'Run the isolated Supabase stack, web, Playwright and mobile simulator/emulator end-to-end tests on the Thanh Mac Studio.'
+title: 'Local End-to-End Environment'
+description: 'Run the isolated Supabase stack, web, Playwright and mobile simulator/emulator end-to-end tests on a dedicated build Mac.'
 updatedAt: '2026-10-24'
 ---
 
-The Thanh Mac Studio (`ssh skr-studio`) hosts a repeatable local end-to-end
+A dedicated build Mac (reached over SSH) hosts a repeatable local end-to-end
 environment: an isolated Supabase project with migrations and seed data, the
 `apps/web` dev server, Playwright, and the mobile app on a dedicated iOS
 Simulator and Android Emulator. Use it to validate changes against real
 simulator/emulator runs instead of host-only widget tests.
 
 The entry point is `scripts/thanh-e2e/thanh-e2e.mjs`. It works on any macOS host
-with the same toolchain; Thanh defaults are baked in and overridable by
+with the same toolchain; the build Mac's defaults are baked in and overridable by
 environment variables.
 
 <Warning>
-  Use Thanh only for this lane. Queue heavy steps (`up`, `seed`, `web`,
+  Use the build Mac only for this lane. Queue heavy steps (`up`, `seed`, `web`,
   `web-e2e`, `mobile-e2e`) with `ttr resources run --` from a checkout under
-  `/Users/thanh/ci-lanes/tuturuuu-*`, and never stop Upskii or other lanes'
+  `<ci-lanes>/tuturuuu-*`, and never stop other projects' or lanes'
   containers, emulators or queue owners.
 </Warning>
 
@@ -31,7 +31,7 @@ or database setup is required.
 ## Toolchain
 
 Everything Tuturuuu-specific lives in user space under
-`/Users/thanh/ci-lanes/tuturuuu-tools` (`$T`). Source `$T/mobile-env.sh` first;
+`<ci-lanes>/tuturuuu-tools` (`$T`). Source `$T/mobile-env.sh` first;
 it sets `DEVELOPER_DIR`, `JAVA_HOME`, `ANDROID_HOME`/`ANDROID_AVD_HOME`,
 `PUB_CACHE`, `GRADLE_USER_HOME`, an isolated `XDG_CONFIG_HOME` for Flutter
 settings, and `PATH` (Flutter 3.47.7, Temurin 17, Android SDK tools, Bun,
@@ -46,7 +46,7 @@ Docker).
 | AVDs | `$T/android-avd` |
 | E2E state (Supabase workdir, env files, logs, screenshots) | `$T/e2e/<project>` |
 
-`xcode-select` on Thanh still points at the Command Line Tools. Dart
+`xcode-select` on the build Mac still points at the Command Line Tools. Dart
 native-asset build hooks run with a filtered environment that keeps `PATH` but
 drops `DEVELOPER_DIR`, so `$T/bin/xcrun` pins Xcode. Without it, iOS builds fail
 in `objective_c/hook/build.dart` with `Bad state: No element`. Remove the shim
@@ -84,9 +84,9 @@ anonymously and the keychain is never touched.
 ## Run it
 
 ```bash
-ssh skr-studio
-. ~/ci-lanes/tuturuuu-tools/mobile-env.sh
-cd ~/ci-lanes/tuturuuu-e2e          # any checkout under ci-lanes/tuturuuu-*
+ssh <build-mac>
+. <ci-lanes>/tuturuuu-tools/mobile-env.sh
+cd <ci-lanes>/tuturuuu-e2e          # any checkout under <ci-lanes>/tuturuuu-*
 bun install                         # once per checkout
 E2E=scripts/thanh-e2e/thanh-e2e.mjs
 
@@ -267,7 +267,7 @@ Playwright Chromium build first. Pass spec paths or Playwright flags after `--`.
 
 Production Meet and Mail redirect every signed-out request to the web login,
 so first-load metrics for their real surfaces need a signed-in session. The
-same isolated stack serves that: build the satellite on Thanh against the local
+same isolated stack serves that: build the satellite on the build Mac against the local
 Supabase values from `env/web.env` (`vp build` with `NEXT_PUBLIC_SUPABASE_URL`,
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL=http://localhost:<port>`
 and `NEXT_PUBLIC_WEB_APP_URL=http://localhost:7803` exported, because the client
@@ -288,7 +288,7 @@ emitted Worker in workerd. Three details make the handshake work:
   cookies from the browser context, and only then open that URL on the
   satellite origin.
 - Keep the Playwright run on `ttr resources run --` and point it at the
-  `playwright` package under `~/ci-lanes/tuturuuu-e2e/node_modules/.bun`; the
+  `playwright` package under `<ci-lanes>/tuturuuu-e2e/node_modules/.bun`; the
   Chromium build in `~/Library/Caches/ms-playwright` is shared.
 
 The satellite then serves `/personal/…` with a real session, and a CDP-based

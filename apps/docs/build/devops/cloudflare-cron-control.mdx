@@ -123,9 +123,8 @@ state. It has no alarms, so only Cron Triggers start work.
 ### Production operator token
 
 Provision the independent stop control before enabling a production job. Ops
-keeps the token on the M4 at
-`~/.config/tuturuuu-ops/cron-control-operator.token` with mode `600` in a private
-directory. Generate it directly into that file; never print it or pass its value
+keeps the token on the operator's machine in a file with mode `600` in a
+private directory. Generate it directly into that file; never print it or pass its value
 as a command argument. Create it once, retain it for incident response, and
 coordinate any later rotation with the production deployment owner.
 
@@ -138,7 +137,7 @@ production workflow requires this secret and includes it in its private
 `--secrets-file`, preserving the stop control on later publications.
 
 Verify `GET /control/jobs` on
-`https://tuturuuu-cron-control.tuturuuu-e89.workers.dev` returns `200` with
+`https://<cron-control-worker>.<account-subdomain>.workers.dev` returns `200` with
 the token and `404` without it. Keep credentials in a child environment or
 standard input, never a literal header in shell arguments. Before retention is
 published, the authenticated job list must show no enabled jobs. The immediate

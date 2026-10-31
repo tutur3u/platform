@@ -351,8 +351,8 @@ ttr resources run -- bunx --no-install vitest run --config apps/web/cloudflare/v
 bun apps/web/cloudflare/generate-inventory.ts --check
 ```
 
-On Studio (`skr-studio`) or
-the i9, in a separate exact-source checkout with dependencies restored, run:
+On a build Mac or
+another remote build host, in a separate exact-source checkout with dependencies restored, run:
 
 ```sh
 ttr resources run -- bun run --cwd apps/web build:candidate
