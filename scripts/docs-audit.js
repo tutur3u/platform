@@ -92,6 +92,17 @@ function audit(root = ROOT) {
   );
   const errors = [];
   const files = walk(docs).filter((file) => file.endsWith('.mdx'));
+  // docs-internal/ is hidden from the site but still public on GitHub, so it
+  // gets the same public-safety scan (not the navigation or link checks).
+  const internalRoot = path.join(root, 'docs-internal');
+  if (fs.existsSync(internalRoot))
+    for (const file of walk(internalRoot).filter((f) => /\.mdx?$/.test(f)))
+      errors.push(
+        ...publicSafetyErrors(
+          fs.readFileSync(file, 'utf8'),
+          path.relative(root, file).split(path.sep).join('/')
+        )
+      );
   const exists = (slug) =>
     ['.mdx', '.md'].some((extension) =>
       fs.existsSync(path.join(docs, slug + extension))

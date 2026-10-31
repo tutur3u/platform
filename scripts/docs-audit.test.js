@@ -131,3 +131,28 @@ test('public-safety guard allows placeholders and public examples', () => {
   ];
   assert.deepEqual(publicSafetyErrors(safe.join('\n'), 'page.mdx'), []);
 });
+
+test('audit also applies the public-safety scan to docs-internal', (t) => {
+  const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'docs-audit-'));
+  t.after(() => fs.rmSync(fixture, { recursive: true, force: true }));
+  const docs = path.join(fixture, 'apps/docs');
+  fs.mkdirSync(docs, { recursive: true });
+  fs.mkdirSync(path.join(fixture, 'docs-internal/build'), { recursive: true });
+  fs.writeFileSync(
+    path.join(docs, 'docs.json'),
+    JSON.stringify({ navigation: { pages: ['home'] } })
+  );
+  fs.writeFileSync(
+    path.join(docs, 'home.mdx'),
+    '---\ntitle: Home\ndescription: Test\n---\n'
+  );
+  fs.writeFileSync(
+    path.join(fixture, 'docs-internal/build/runbook.mdx'),
+    'Finding SR-123 on ssh skr-example\n'
+  );
+  const errors = audit(fixture).errors;
+  assert.ok(
+    errors.some((error) => error.endsWith('docs-internal/build/runbook.mdx:1'))
+  );
+  assert.ok(errors.every((error) => !error.includes('Unregistered')));
+});
