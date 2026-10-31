@@ -27,7 +27,7 @@ The root membership and secrets/roles permission gate also applies to CLI access
 bearer tokens. Browser mutations require the exact request Origin and reject
 cross-site fetch metadata. Only a verified CLI bearer may omit Origin, not an
 ambient CLI cookie. Regression coverage is colocated in the reaper's
-`access.test.ts`; see the [remote devbox runbook](../../../../../apps/docs/build/development-tools/remote-devboxes.mdx).
+`access.test.ts`; see the [remote devbox runbook](../../../../../docs-internal/build/development-tools/remote-devboxes.mdx).
 
 ## Temporary Runner Smoke
 
@@ -217,5 +217,5 @@ The launcher rejects malformed executable names and NUL arguments; do not turn
 these guardrails into a claimed executable allowlist. Use the SDK process-group,
 runner-trust and commit-run tests, and the API runs authorization tests. Separate
 source evidence from deployed grants, pool configuration and token custody.
-See `apps/docs/build/development-tools/remote-devboxes.mdx`, section
+See `docs-internal/build/development-tools/remote-devboxes.mdx`, section
 “Trusted command execution boundary”, for the complete boundary and exceptions.
