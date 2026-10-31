@@ -175,7 +175,7 @@ test('scans every configuration location, not only app and script sources', () =
     assert.equal(scannedFile(file), true, file);
   for (const file of [
     'scripts/check-staging-hosts.test.js',
-    'apps/docs/build/devops/wave1-native-publishers.mdx',
+    'docs-internal/build/devops/wave1-native-publishers.mdx',
     'packages/x/__tests__/hosts.ts',
     'bun.lock',
     'apps/web/public/logo.png',

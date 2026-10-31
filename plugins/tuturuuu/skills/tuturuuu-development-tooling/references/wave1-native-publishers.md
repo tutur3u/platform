@@ -15,7 +15,7 @@ Root `test:scripts` uses `scripts/run-script-tests.js` discovery, including `.te
 and `.test.mjs` under `scripts/`, excluding paused implementation suites. New tests
 there need no manifest list. Keep deployment credentials out of runtime/build steps.
 Meet has a separate isolated staging profile; canonical output never stands in for
-staging. See the [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx)
+staging. See the [publisher runbook](../../../../../docs-internal/build/devops/wave1-native-publishers.mdx)
 for provisioning, bounded-work limits and remaining hosted/cutover evidence.
 
 Use the shared validated production publication policy in native entrypoints; do not
@@ -49,7 +49,7 @@ checks and the timer-free import/expiry regression when changing this path.
 
 ## Subdomain rollback capture and smoke
 
-Follow the [cutover tools runbook](../../../../../apps/docs/build/devops/wave1-native-cutover.mdx#subdomain-cutover-tools).
+Follow the [cutover tools runbook](../../../../../docs-internal/build/devops/wave1-native-cutover.mdx#subdomain-cutover-tools).
 Capture every zone route, including wildcard routes and scriptless exclusions; a
 root-URL match cannot establish which routes serve deeper paths. Use the dedicated
 zone-scoped `CLOUDFLARE_READONLY_API_TOKEN` (DNS:Read and Workers Routes:Read),
