@@ -325,7 +325,8 @@ function check(root = process.cwd()) {
     } catch {
       continue;
     }
-    for (const host of violations(source, file)) failures.push(`${file}: ${host}`);
+    for (const host of violations(source, file))
+      failures.push(`${file}: ${host}`);
   }
   return failures;
 }
