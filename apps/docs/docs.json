@@ -62,6 +62,7 @@
                   "platform/features/mobile-timer",
                   "platform/features/mira-health-planning-tools",
                   "platform/features/task-reminder-delivery",
+                  "platform/domain-gating-design",
                   "platform/features/mobile-chat",
                   "platform/features/mobile-mastermind",
                   "platform/features/mobile-mastermind-inbox",
