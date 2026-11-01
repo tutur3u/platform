@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -102,5 +103,62 @@ describe('private evaluation inputs', () => {
     );
     await expect(loadDataset('relative')).rejects.toThrow('manifest path');
     expect(await reportDirectory(root)).toBeTruthy();
+  });
+  it.skipIf(process.platform === 'win32')(
+    'rejects a FIFO without blocking on open',
+    async () => {
+      const root = await directory();
+      execFileSync('mkfifo', [join(root, 'reference.txt')]);
+      await writeFile(join(root, 'sample.wav'), new Uint8Array([0]));
+      await writeFile(
+        join(root, 'manifest.json'),
+        JSON.stringify({
+          version: 1,
+          consented: true,
+          clips: [
+            {
+              audio: 'sample.wav',
+              reference: 'reference.txt',
+              mediaType: 'audio/wav',
+            },
+          ],
+        })
+      );
+      let timer: NodeJS.Timeout | undefined;
+      const guard = new Promise<string>((resolve) => {
+        timer = setTimeout(() => resolve('hung'), 2_000);
+      });
+      const outcome = await Promise.race([
+        loadDataset(join(root, 'manifest.json')).then(
+          () => 'loaded',
+          (error: Error) => error.message
+        ),
+        guard,
+      ]);
+      clearTimeout(timer);
+      expect(outcome).toBe('input size');
+    }
+  );
+  it('rejects a directory used as an input file', async () => {
+    const root = await directory();
+    await mkdir(join(root, 'reference.txt'));
+    await writeFile(join(root, 'sample.wav'), new Uint8Array([0]));
+    await writeFile(
+      join(root, 'manifest.json'),
+      JSON.stringify({
+        version: 1,
+        consented: true,
+        clips: [
+          {
+            audio: 'sample.wav',
+            reference: 'reference.txt',
+            mediaType: 'audio/wav',
+          },
+        ],
+      })
+    );
+    await expect(loadDataset(join(root, 'manifest.json'))).rejects.toThrow(
+      'input size'
+    );
   });
 });
