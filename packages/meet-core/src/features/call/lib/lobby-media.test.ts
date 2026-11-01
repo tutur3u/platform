@@ -83,6 +83,40 @@ it('subscribes to devicechange and updates snapshots only when devices or labels
   expect(removeEventListener).toHaveBeenCalledOnce();
 });
 
+it('publishes only the newest enumerateDevices result when calls settle out of order', async () => {
+  const pending: Array<(devices: MediaDeviceInfo[]) => void> = [];
+  const enumerateDevices = vi.fn(
+    () =>
+      new Promise<MediaDeviceInfo[]>((resolve) => {
+        pending.push(resolve);
+      })
+  );
+  const store = createMediaDeviceStore({ enumerateDevices });
+  const listener = vi.fn();
+  const unsubscribe = store.subscribe(listener);
+
+  const newer = store.refresh();
+  expect(pending).toHaveLength(2);
+
+  pending[1]?.([
+    { kind: 'audioinput', deviceId: 'mic-2', label: 'New Mic' },
+  ] as MediaDeviceInfo[]);
+  await newer;
+  expect(listener).toHaveBeenCalledTimes(1);
+  expect(store.getSnapshot()[0]?.deviceId).toBe('mic-2');
+
+  // The stale first enumeration (e.g. before a device was unplugged) settles last.
+  pending[0]?.([
+    { kind: 'audioinput', deviceId: 'mic-1', label: 'Old Mic' },
+  ] as MediaDeviceInfo[]);
+  await Promise.resolve();
+  await Promise.resolve();
+  expect(listener).toHaveBeenCalledTimes(1);
+  expect(store.getSnapshot()[0]?.deviceId).toBe('mic-2');
+
+  unsubscribe();
+});
+
 it('samples a live audio track through an unconnected AnalyserNode and cleans up', () => {
   vi.useFakeTimers();
   const disconnectSource = vi.fn();

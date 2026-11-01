@@ -190,11 +190,16 @@ export function createMediaDeviceStore(
 ): MediaDeviceStore {
   let snapshot: readonly MediaDeviceInfo[] = EMPTY_DEVICES;
   const listeners = new Set<() => void>();
+  // enumerateDevices() calls can settle out of order (devicechange bursts while
+  // a permission prompt resolves), so only the newest request may publish.
+  let latestRequest = 0;
 
   const refresh = async () => {
     if (typeof mediaDevices?.enumerateDevices !== 'function') return;
+    const request = ++latestRequest;
     try {
       const listed = await mediaDevices.enumerateDevices();
+      if (request !== latestRequest) return;
       const next = Array.isArray(listed) ? listed : EMPTY_DEVICES;
       if (sameDeviceList(snapshot, next)) return;
       snapshot = next;
