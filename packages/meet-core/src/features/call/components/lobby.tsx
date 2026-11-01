@@ -27,6 +27,20 @@ import {
 
 export type { LobbyParticipant } from './lobby-controls';
 
+/**
+ * Cap a name being typed to the profile limit without trimming, so spaces and
+ * IME (Telex/VNI) edits survive each keystroke; trimming happens on blur/join.
+ */
+function capTypedName(value: string): string {
+  if (value.length <= MAX_DISPLAY_NAME_LENGTH) return value;
+  let name = '';
+  for (const character of value) {
+    if (name.length + character.length > MAX_DISPLAY_NAME_LENGTH) break;
+    name += character;
+  }
+  return name;
+}
+
 export interface LobbyJoinOptions {
   previewStream: MediaStream | null;
   audioEnabled: boolean;
@@ -82,7 +96,9 @@ export function Lobby({
   waiting: boolean;
 }) {
   const t = useTranslations('meet.call');
+  // Raw text as typed; only prepareParticipantName() output leaves the lobby.
   const [customName, setCustomName] = useState<string | null>(null);
+  const composingName = useRef(false);
   const displayName = customName ?? prepareParticipantName(defaultDisplayName);
 
   const resourceKey = resourceErrorKey(error);
@@ -212,7 +228,7 @@ export function Lobby({
       onRetry();
       return;
     }
-    const trimmed = displayName.trim();
+    const trimmed = prepareParticipantName(displayName);
     if (isJoining || waiting || !trimmed) return;
     stopMediaStream(micStreamRef.current);
     micStreamRef.current = null;
@@ -369,12 +385,24 @@ export function Lobby({
                   id="lobby-display-name"
                   maxLength={MAX_DISPLAY_NAME_LENGTH}
                   onBlur={() => {
-                    const trimmed = displayName.trim();
+                    const trimmed = prepareParticipantName(displayName);
+                    if (customName !== null) setCustomName(trimmed);
                     if (trimmed) onDisplayNameChange?.(trimmed);
                   }}
-                  onChange={(event) =>
-                    setCustomName(prepareParticipantName(event.target.value))
-                  }
+                  onChange={(event) => {
+                    const { value } = event.target;
+                    // Leave IME composition text untouched until it commits.
+                    setCustomName(
+                      composingName.current ? value : capTypedName(value)
+                    );
+                  }}
+                  onCompositionEnd={(event) => {
+                    composingName.current = false;
+                    setCustomName(capTypedName(event.currentTarget.value));
+                  }}
+                  onCompositionStart={() => {
+                    composingName.current = true;
+                  }}
                   onKeyDown={(event) => {
                     if (
                       event.key === 'Enter' &&
