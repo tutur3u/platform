@@ -83,6 +83,38 @@ describe('resolveTaskDialogOpeningPresentation', () => {
     ).toBe('compact');
   });
 
+  it('opens task edits in the side panel on a board surface', () => {
+    const onBoard = { preferences, panelSurface: true };
+    expect(
+      resolveTaskDialogOpeningPresentation({
+        ...onBoard,
+        mode: 'edit',
+        selectedListStatus: 'active',
+      })
+    ).toBe('panel');
+    expect(
+      resolveTaskDialogOpeningPresentation({
+        ...onBoard,
+        mode: 'create',
+        selectedListStatus: 'active',
+      })
+    ).toBe('compact');
+    expect(
+      resolveTaskDialogOpeningPresentation({
+        ...onBoard,
+        mode: 'edit',
+        selectedListStatus: 'documents',
+      })
+    ).toBe(preferences.documentEdit);
+    expect(
+      resolveTaskDialogOpeningPresentation({
+        ...onBoard,
+        draftId: 'draft-1',
+        mode: 'edit',
+      })
+    ).toBe('fullscreen');
+  });
+
   it('keeps drafts fullscreen', () => {
     expect(
       resolveTaskDialogOpeningPresentation({

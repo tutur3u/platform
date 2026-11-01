@@ -66,7 +66,7 @@ import {
   listBoardTaskCountsForSearch,
   listBoardTasksForSearch,
 } from './board-task-search';
-import { KanbanPresentation } from './kanban-presentation';
+import { BoardPanelFrame, KanbanPresentation } from './kanban-presentation';
 import {
   parseSpecialTaskListPins,
   type SpecialTaskListPin,
@@ -1002,7 +1002,7 @@ export function BoardViews({
     idleBottomIsland &&
     (currentView !== 'kanban' || !kanbanBulkSelectionActive);
   return (
-    <div className="-m-2 -mb-4 flex h-[calc(100vh-0.5rem)] flex-1 flex-col md:-mx-4">
+    <BoardPanelFrame panelSurface={!localTaskState}>
       <KanbanPresentation
         boardId={board.id}
         currentView={currentView}
@@ -1042,6 +1042,6 @@ export function BoardViews({
         {renderView()}
       </KanbanPresentation>
       {showIdleBottomIsland ? idleBottomIsland : null}
-    </div>
+    </BoardPanelFrame>
   );
 }
