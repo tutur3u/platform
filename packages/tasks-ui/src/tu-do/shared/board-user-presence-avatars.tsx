@@ -16,9 +16,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTaskDialog } from '../hooks/useTaskDialog';
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import { useOptionalWorkspacePresenceContext } from '../providers/workspace-presence-provider';
+import {
+  type ListStatusFilter,
+  sanitizePresenceBoardView,
+} from './board-header/board-filter-state';
 import type { BoardFiltersMetadata, TaskFilters } from './task-filter.types';
 
-export type ListStatusFilter = 'all' | 'active' | 'not_started';
+export type { ListStatusFilter } from './board-header/board-filter-state';
 
 /**
  * Presence mode determines the avatar visual style:
@@ -174,20 +178,9 @@ export function BoardUserPresenceAvatarsComponent({
     }, [boardViewers]);
 
   const applyUserBoardView = (metadata: BoardFiltersMetadata) => {
-    if (metadata?.listStatusFilter) {
-      onListStatusFilterChange(metadata.listStatusFilter as ListStatusFilter);
-    }
-
-    const shouldIncludeMyTasks =
-      metadata?.filters?.assignees?.some((a) => a.id === currentUserId) ||
-      false;
-
-    if (metadata?.filters) {
-      onFiltersChange({
-        ...metadata.filters,
-        includeMyTasks: shouldIncludeMyTasks,
-      });
-    }
+    const next = sanitizePresenceBoardView(metadata, currentUserId);
+    onListStatusFilterChange(next.listStatusFilter);
+    onFiltersChange(next.filters);
   };
 
   return (

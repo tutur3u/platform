@@ -8799,6 +8799,20 @@
     "errors": {
       "name_exists": "A task board with this name already exists in this workspace."
     },
+    "header": {
+      "focus": "Focus",
+      "focus_hint": "My open tasks, highest priority first",
+      "more": "More board actions",
+      "more_people": "{count} more",
+      "new_task": "New task",
+      "no_projects": "No projects yet",
+      "project": "Project",
+      "projects_selected": "{count} projects",
+      "share": "Share",
+      "shift_click": "Shift-click",
+      "task_count": "{count, plural, one {# task} other {# tasks}}",
+      "you": "{name} (you)"
+    },
     "layout_settings": {
       "list_name_exists": "A list with this name already exists on this board."
     },
