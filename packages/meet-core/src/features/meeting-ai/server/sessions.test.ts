@@ -312,9 +312,9 @@ describe('Meet notes finalization', () => {
   });
 });
 
-it('reports workspace availability from the pilot allowlist', async () => {
+it('reports workspace availability from runtime controls', async () => {
   mocks.cloudflare.mockResolvedValue({
-    env: { MEET_AI_ENABLED_WORKSPACE_IDS: '' },
+    env: { MEET_AI_DISABLED: 'true' },
   });
   dbWith([result([]), result([])]);
   expect((await readMeetAi(request(), params)).available).toBe(false);

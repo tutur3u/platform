@@ -543,11 +543,12 @@ without it, the panel reports that Gemini is not configured. Do not put the key
 in public environment variables or the browser. Existing deployment credentials
 do not grant permission to transfer a Gemini key to a new destination.
 
-### Pilot workspace allowlist
+### Meet AI availability and kill switch
 
-Product decision (31 October 2026): Meet AI is **default deny**. Until the
-23-28 November pilot, only the internal team workspace may use it in production.
-Widening the allowlist beyond the team workspace needs an explicit user decision.
+Product decision (2 November 2026): Meet AI is available to **all workspaces by
+default**, subject to the existing credit admission and consumption rules. This
+supersedes the 31 October pilot allowlist decision. Authentication, workspace
+membership, host permissions and billing are unchanged.
 
 Every check uses the workspace the server resolved (personal, handle and id
 lookups all resolve first), never the client-supplied value, and runs before any
@@ -565,19 +566,32 @@ and billing settlement. Reads (state, transcripts, notes, assistant GETs) keep
 their existing participant rules. Parley scenario sessions are outside the gate.
 
 Meet production (`meet.tuturuuu.com`) is the Cloudflare Worker `tuturuuu-meet`,
-not a Vercel deployment. Set `MEET_AI_ENABLED_WORKSPACE_IDS` to a comma- or
-whitespace-separated list of workspace ids on each runtime that enforces the gate:
-the `tuturuuu-meet` Worker (including its Live Durable Object), the Meet realtime
-room Worker, and the web app. The value is read only from each runtime's injected
-binding, never from ambient `process.env` in shared code. A deployment without the
-variable keeps Meet AI off everywhere. Unset, blank or unlisted denies with 403
-(`MEET_AI_WORKSPACE_NOT_ENABLED` for Meet AI routes); there is no wildcard. Keep
-the team workspace id in deployment configuration only, never in source.
+not a Vercel deployment. Configure the following **server-only** controls on
+each gate runtime: the `tuturuuu-meet` Worker (including its Live Durable Object),
+the Meet realtime room Worker, and the web app. Never use public env variables.
 
-The panel reads `available` from the state response and, when it is false, shows a
-neutral "not available for this workspace" message instead of the Start, Finish
-and Retry controls. Finalize and finish-session paths added later (#7285) need the
-same gate.
+| Priority | Environment variable | Behavior |
+| --- | --- | --- |
+| 1 | `MEET_AI_DISABLED` | `1` or `true` disables Meet AI everywhere; `0` or `false` permits the next checks. Values are trimmed and case-insensitive. Unset permits; blank, malformed or non-string values deny. |
+| 2 | `MEET_AI_DISABLED_WORKSPACE_IDS` | Optional comma/whitespace-separated UUID deny list, case-insensitive. Unset/blank permits; malformed entries or non-string values deny everywhere. |
+| 3 | `MEET_AI_ENABLED_WORKSPACE_IDS` | Legacy optional rollout restriction. Nonempty lists admit only listed workspaces; unset/blank imposes no restriction. No wildcard. Remove this variable to enable all workspaces. |
+| 4 | No restriction applies | Allow; existing credit checks still apply. |
+
+The Worker and room DO read only injected bindings, never ambient `process.env`.
+The server-only web adapter reads server env on Vercel; injected bindings win per
+control (including malformed values). A deployment with no controls allows all
+workspaces. Denials retain existing HTTP 403/error codes and report
+"Meet AI is temporarily unavailable". Stop, cleanup and billing settlement remain
+available while disabled. Parley scenario sessions retain their exemption.
+
+For Rex: remove the legacy allowlist on **all three surfaces** for the all-workspace
+rollout; leave both new controls unset. To stop AI, set `MEET_AI_DISABLED=true`
+on all three surfaces. To exclude specific workspaces, set the same
+`MEET_AI_DISABLED_WORKSPACE_IDS` list on each. Clear the switch or set it to `false`
+to restore access. No deployment configuration or secrets are changed by this PR.
+
+The panel reads `available` from the state response; unavailable workspaces keep
+the temporary-unavailability message and hide Start, Finish and Retry controls.
 
 Regression coverage: `workspace-gate.test.ts`, `chunks-gate.test.ts` (real access
 path, zero writes and provider calls on deny), `access.test.ts`,

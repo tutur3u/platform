@@ -82,6 +82,7 @@ function fixture(allowlist?: string) {
     MEET_REALTIME_TOKEN_SECRET: secret,
     NEXT_PUBLIC_APP_URL: 'https://meet.tuturuuu.com',
     MEET_AI_ENABLED_WORKSPACE_IDS: allowlist,
+    MEET_AI_DISABLED: allowlist ? undefined : 'true',
   } as unknown as LiveEnvironment;
   const object = new MeetLiveDurableObject(state as never, env, mocks.provider);
   const events: unknown[] = [];
@@ -112,13 +113,13 @@ describe('Live (transcription) workspace gate', () => {
     mocks.begin.mockResolvedValue({ costUsd: 0 });
   });
 
-  it('is default deny and exempts only Parley sessions', () => {
+  it('allows by default, requires a session and exempts Parley sessions', () => {
     const session = (app?: 'meet' | 'parley') => ({
       claims: { app },
       identity: identity(team),
     });
-    expect(liveWorkspaceAllowed(undefined, session())).toBe(false);
-    expect(liveWorkspaceAllowed({}, session())).toBe(false);
+    expect(liveWorkspaceAllowed(undefined, session())).toBe(true);
+    expect(liveWorkspaceAllowed({}, session())).toBe(true);
     expect(liveWorkspaceAllowed({}, undefined)).toBe(false);
     expect(
       liveWorkspaceAllowed({ MEET_AI_ENABLED_WORKSPACE_IDS: team }, session())
@@ -146,6 +147,30 @@ describe('Live (transcription) workspace gate', () => {
     ).toBe(403);
   });
 
+  it('initializes with no configured controls', async () => {
+    const { object, env } = fixture(team);
+    delete env.MEET_AI_ENABLED_WORKSPACE_IDS;
+    delete env.MEET_AI_DISABLED;
+    expect((await initialize(object, team)).status).toBe(200);
+  });
+
+  it.each([
+    { MEET_AI_DISABLED: '1' },
+    { MEET_AI_DISABLED: 'garbage' },
+    { MEET_AI_DISABLED_WORKSPACE_IDS: team },
+    { MEET_AI_DISABLED_WORKSPACE_IDS: '*' },
+  ])('denies runtime controls before persistence: %j', async (controls) => {
+    const { object, env, storage } = fixture(team);
+    Object.assign(env, controls);
+    const response = await initialize(object, team);
+    expect(response.status).toBe(403);
+    expect(await response.text()).toBe('Meet AI is temporarily unavailable');
+    expect(storage.put).not.toHaveBeenCalled();
+    expect(storage.setAlarm).not.toHaveBeenCalled();
+    expect(mocks.provider).not.toHaveBeenCalled();
+    expect(mocks.begin).not.toHaveBeenCalled();
+  });
+
   it('initializes a listed workspace', async () => {
     const { object, storage } = fixture(`${team}, ${team}`);
     expect((await initialize(object, team)).status).toBe(200);
@@ -156,9 +181,7 @@ describe('Live (transcription) workspace gate', () => {
     const { object, env } = fixture(team);
     expect((await initialize(object, team)).status).toBe(200);
     expect((await control(object, 'resume')).status).toBe(200);
-    (
-      env as { MEET_AI_ENABLED_WORKSPACE_IDS?: string }
-    ).MEET_AI_ENABLED_WORKSPACE_IDS = undefined;
+    (env as { MEET_AI_DISABLED?: string }).MEET_AI_DISABLED = 'true';
     expect((await control(object, 'resume')).status).toBe(403);
     expect(
       (
@@ -179,9 +202,8 @@ describe('Live (transcription) workspace gate', () => {
   it('refuses the live-connect upgrade before any room or provider work', async () => {
     const { object } = fixture(team);
     await initialize(object, team);
-    (
-      object as unknown as { env: LiveEnvironment }
-    ).env.MEET_AI_ENABLED_WORKSPACE_IDS = '';
+    (object as unknown as { env: LiveEnvironment }).env.MEET_AI_DISABLED =
+      'true';
     const token = signLiveSession(claims, secret);
     const response = await object.fetch(
       new Request('https://live.internal/live-connect', {
@@ -201,9 +223,7 @@ describe('Live (transcription) workspace gate', () => {
     for (const trigger of ['connect', 'alarm'] as const) {
       const { object, env, events } = fixture(team);
       await initialize(object, team);
-      (
-        env as { MEET_AI_ENABLED_WORKSPACE_IDS?: string }
-      ).MEET_AI_ENABLED_WORKSPACE_IDS = '';
+      (env as { MEET_AI_DISABLED?: string }).MEET_AI_DISABLED = 'true';
       if (trigger === 'connect')
         await (object as unknown as { connect(): Promise<void> }).connect();
       else await object.alarm();

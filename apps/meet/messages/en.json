@@ -3983,7 +3983,7 @@
       "unavailable": "Meeting AI is unavailable. Please retry shortly.",
       "unpriced": "Usage unavailable for {count} requests; total is incomplete.",
       "usage_details": "Usage details",
-      "workspace_unavailable": "Meeting AI is not available for this workspace."
+      "workspace_unavailable": "Meet AI is temporarily unavailable."
     },
     "call": {
       "actions_action": "Action items",

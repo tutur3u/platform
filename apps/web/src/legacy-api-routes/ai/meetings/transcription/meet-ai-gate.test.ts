@@ -20,22 +20,24 @@ describe(isMeetAiEnabledOnWeb, () => {
   beforeEach(() => {
     meetAiGateEnv.mockResolvedValue(undefined);
     vi.stubEnv(ENV, '');
+    vi.stubEnv('MEET_AI_DISABLED', undefined);
+    vi.stubEnv('MEET_AI_DISABLED_WORKSPACE_IDS', undefined);
   });
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.clearAllMocks();
   });
 
-  it('denies when the env var is unset', async () => {
+  it('allows when controls are unset', async () => {
     delete process.env[ENV];
-    await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(false);
+    await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(true);
   });
 
   it.each(['', '   ', '\n\t', ' , ,'])(
-    'denies blank value %j',
+    'allows blank legacy value %j',
     async (value) => {
       vi.stubEnv(ENV, value);
-      await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(false);
+      await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(true);
     }
   );
 
@@ -48,6 +50,24 @@ describe(isMeetAiEnabledOnWeb, () => {
     ).resolves.toBe(false);
   });
 
+  it.each(['1', 'true', 'garbage', ''])(
+    'denies kill switch %j',
+    async (value) => {
+      vi.stubEnv('MEET_AI_DISABLED', value);
+      await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(false);
+    }
+  );
+  it('denies listed workspaces and malformed deny lists', async () => {
+    for (const value of [WS, `${WS},garbage`, '*']) {
+      vi.stubEnv('MEET_AI_DISABLED_WORKSPACE_IDS', value);
+      await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(false);
+    }
+  });
+  it('does not fall back from a malformed binding to an ambient allow', async () => {
+    vi.stubEnv('MEET_AI_DISABLED', 'false');
+    meetAiGateEnv.mockResolvedValue({ MEET_AI_DISABLED: 1 });
+    await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(false);
+  });
   it('denies a missing workspace id', async () => {
     vi.stubEnv(ENV, WS);
     await expect(isMeetAiEnabledOnWeb(null)).resolves.toBe(false);

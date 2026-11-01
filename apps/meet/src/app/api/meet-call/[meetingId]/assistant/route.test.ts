@@ -95,7 +95,10 @@ import { POST } from './route';
 // The Worker context crosses the app/core adapter package boundary.
 const allowlist = (value: string | undefined) =>
   vi.stubGlobal(Symbol.for('__cloudflare-context__'), {
-    env: { MEET_AI_ENABLED_WORKSPACE_IDS: value },
+    env: {
+      MEET_AI_ENABLED_WORKSPACE_IDS: value,
+      MEET_AI_DISABLED: value ? undefined : 'true',
+    },
   });
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -312,7 +315,10 @@ it('settles usage but never publishes a blank model answer', async () => {
   });
 });
 it('denies assistant generation outside the Meet AI allowlist before any quota, room or model work', async () => {
-  for (const env of [{}, { MEET_AI_ENABLED_WORKSPACE_IDS: 'other-ws' }]) {
+  for (const env of [
+    { MEET_AI_DISABLED: 'true' },
+    { MEET_AI_ENABLED_WORKSPACE_IDS: 'other-ws' },
+  ]) {
     vi.stubGlobal(Symbol.for('__cloudflare-context__'), { env });
     await expect(
       POST(request(), { params: Promise.resolve({ meetingId: 'room' }) })

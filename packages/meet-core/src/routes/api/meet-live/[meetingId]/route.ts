@@ -48,6 +48,8 @@ export async function POST(
       MEET_REALTIME_TOKEN_SECRET: string;
       GOOGLE_GENERATIVE_AI_API_KEY?: string;
       MEET_AI_ENABLED_WORKSPACE_IDS?: string;
+      MEET_AI_DISABLED?: string;
+      MEET_AI_DISABLED_WORKSPACE_IDS?: string;
     };
     if (
       !env.MEET_LIVE ||
@@ -61,10 +63,7 @@ export async function POST(
       command.action !== 'stop' &&
       !isMeetAiAvailableForWorkspace(access.meeting.ws_id, env)
     )
-      throw new MeetCallAccessError(
-        403,
-        'Meeting AI is not available for this workspace'
-      );
+      throw new MeetCallAccessError(403, 'Meet AI is temporarily unavailable');
     const sharedContext =
       command.action === 'stop'
         ? undefined

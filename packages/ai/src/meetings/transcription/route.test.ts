@@ -205,7 +205,7 @@ describe('meeting transcription route input bounds', () => {
           : createPOST({ isMeetAiEnabled: mocks.meetAi });
       const response = await handler(request);
       expect(response.status).toBe(403);
-      expect(await response.text()).toBe('Workspace access denied');
+      expect(await response.text()).toBe('Meet AI is temporarily unavailable');
       if (reason !== 'no-gate') {
         expect(mocks.meetAi).toHaveBeenCalledWith(
           '11111111-1111-4111-8111-111111111111'
