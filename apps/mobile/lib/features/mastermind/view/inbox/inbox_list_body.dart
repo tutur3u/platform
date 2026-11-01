@@ -119,6 +119,7 @@ class InboxListBody extends StatelessWidget {
         item: row.item,
         now: now,
         showKind: row.group.resolved,
+        askCard: true,
       ),
     );
   }

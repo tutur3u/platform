@@ -14853,4 +14853,93 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindIrisEnrolLimit => 'Có quá nhiều thiết bị đang chờ. Hãy đợi một thiết bị hết hạn.';
+
+  @override
+  String get mastermindAskCardTierDecision => 'Cần quyết định';
+
+  @override
+  String get mastermindAskCardTierFyi => 'Để biết';
+
+  @override
+  String mastermindAskCardDue(String when) {
+    return 'Hạn $when';
+  }
+
+  @override
+  String get mastermindAskCardOverdue => 'Quá hạn';
+
+  @override
+  String get mastermindAskCardReversible => 'Có thể hoàn tác';
+
+  @override
+  String get mastermindAskCardOneWay => 'Một chiều';
+
+  @override
+  String get mastermindAskCardNeedsBiometric => 'Cần Face ID hoặc vân tay';
+
+  @override
+  String get mastermindAskCardExpired => 'Đã hết hạn';
+
+  @override
+  String get mastermindAskCardAnsweredDiscord => 'Đã trả lời trên Discord';
+
+  @override
+  String get mastermindAskCardAnsweredAgent => 'Đã được tác tử trả lời';
+
+  @override
+  String get mastermindAskCardIncomplete => 'Thẻ thiếu nội dung';
+
+  @override
+  String get mastermindAskCardIncompleteMessage => 'Bên đăng chỉ gửi một phần của yêu cầu này. Đã tắt trả lời một chạm. Hãy mở câu hỏi đầy đủ, hoặc trả lời bằng lời của bạn.';
+
+  @override
+  String get mastermindAskCardExpiredMessage => 'Yêu cầu này đã hết hạn nên không thể trả lời nữa.';
+
+  @override
+  String get mastermindAskCardOpenFull => 'Mở câu hỏi đầy đủ';
+
+  @override
+  String get mastermindAskCardReplyInWords => 'Trả lời bằng lời của bạn';
+
+  @override
+  String get mastermindAskCardAnswerWithBiometric => 'Mở để trả lời bằng Face ID';
+
+  @override
+  String get mastermindAskCardShowFullText => 'Xem toàn văn';
+
+  @override
+  String get mastermindAskCardHideFullText => 'Thu gọn';
+
+  @override
+  String mastermindAskCardMoreOptions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count lựa chọn khác',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindAskCardFewerOptions => 'Ẩn bớt lựa chọn';
+
+  @override
+  String mastermindAskCardOptionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lựa chọn',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindAskCardRecommendedOption(String option) {
+    return 'Đề xuất: $option';
+  }
+
+  @override
+  String mastermindAskCardRecommendedWhy(String option, String why) {
+    return 'Đề xuất: $option. $why';
+  }
 }

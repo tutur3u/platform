@@ -1,3 +1,4 @@
+import 'package:mobile/features/mastermind/asks/ask_v2_fields.dart';
 import 'package:mobile/features/mastermind/asks/ask_v2_support.dart';
 import 'package:mobile/features/mastermind/model/enums.dart';
 
@@ -155,6 +156,7 @@ AskDetail? parseAskDetail(Object? json) {
     return null;
   }
   final options = _options(json['options']);
+  final v2 = AskV2Fields.read(json);
   final blocks = json['blocks_count'];
   final via = json['answered_via'];
   return AskDetail(
@@ -168,7 +170,7 @@ AskDetail? parseAskDetail(Object? json) {
     defaultOptionIndex: _index(json['default_option_index'], options),
     urgency: AskUrgency.fromWire(json['urgency']),
     deadline: AskDeadline.fromWire(json['deadline']),
-    deadlineAt: parseAskTimestamp(json['deadline_at']),
+    deadlineAt: v2.deadlineAt,
     reversible: json['reversible'] is bool ? json['reversible'] as bool : null,
     category: _text(json['category'], _maxLabel),
     blocksCount: blocks is int && blocks >= 0 ? blocks : null,
@@ -189,55 +191,21 @@ AskDetail? parseAskDetail(Object? json) {
     body: _text(json['body'], _maxAskText),
     kind: _enum(ItemKind.values, json['kind'], (v) => v.wireName),
     state: _enum(ItemState.values, json['state'], (v) => v.wireName),
-    status: _enum(AskStatus.values, json['status'], (v) => v.wireName),
+    status: v2.status,
     askTruncated: _flag(json['ask_truncated']),
-    textComplete: _flag(json['text_complete']),
-    optionsV2: _optionsV2(json['options_v2']),
-    recommendedId: _text(json['recommended_id'], maxAskOptionId),
-    recommendedWhy: _text(json['recommended_why'], maxAskWhy),
-    inboxClass: _enum(
-      AskInboxClass.values,
-      json['inbox_class'],
-      (v) => v.wireName,
-    ),
-    inboxUrgency: _enum(
-      AskInboxUrgency.values,
-      json['urgency'],
-      (v) => v.wireName,
-    ),
-    riskClass: _enum(
-      AskRiskClass.values,
-      json['risk_class'],
-      (v) => v.wireName,
-    ),
-    updatedAt: parseAskTimestamp(json['updated_at']),
-    resolvedVia: _enum(
-      AskResolvedVia.values,
-      json['resolved_via'],
-      (v) => v.wireName,
-    ),
+    textComplete: v2.textComplete,
+    optionsV2: v2.optionsV2,
+    recommendedId: v2.recommendedId,
+    recommendedWhy: v2.recommendedWhy,
+    inboxClass: v2.inboxClass,
+    inboxUrgency: v2.inboxUrgency,
+    riskClass: v2.riskClass,
+    updatedAt: v2.updatedAt,
+    resolvedVia: v2.resolvedVia,
   );
 }
 
 bool? _flag(Object? value) => value is bool ? value : null;
-
-/// All-or-nothing: one bad entry (or a duplicate id) voids the list, so an
-/// option is never silently dropped.
-List<AskOption> _optionsV2(Object? value) {
-  if (value is! List || value.length > _maxOptions) return const [];
-  final options = <AskOption>[];
-  for (final row in value) {
-    if (row is! Map<String, dynamic>) return const [];
-    final id = _text(row['id'], maxAskOptionId);
-    final label = _text(row['label'], _maxLabel);
-    if (id == null || label == null) return const [];
-    if (options.any((option) => option.id == id)) return const [];
-    options.add(
-      AskOption(id: id, label: label, note: _text(row['note'], maxAskNote)),
-    );
-  }
-  return List.unmodifiable(options);
-}
 
 T? _enum<T>(List<T> values, Object? wire, String Function(T) name) {
   for (final value in values) {

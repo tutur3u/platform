@@ -7076,5 +7076,66 @@
   "mastermindIrisEnrolConfirmed": "This device is enrolled.",
   "mastermindIrisEnrolExpired": "The code expired. Start again for a new one.",
   "mastermindIrisEnrolFailed": "Couldn't start enrolment. Try again.",
-  "mastermindIrisEnrolLimit": "Too many pending devices. Wait for one to expire."
+  "mastermindIrisEnrolLimit": "Too many pending devices. Wait for one to expire.",
+  "mastermindAskCardTierDecision": "Needs decision",
+  "mastermindAskCardTierFyi": "FYI",
+  "mastermindAskCardDue": "Due {when}",
+  "@mastermindAskCardDue": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskCardOverdue": "Overdue",
+  "mastermindAskCardReversible": "Reversible",
+  "mastermindAskCardOneWay": "One-way",
+  "mastermindAskCardNeedsBiometric": "Needs Face ID or fingerprint",
+  "mastermindAskCardExpired": "Expired",
+  "mastermindAskCardAnsweredDiscord": "Answered on Discord",
+  "mastermindAskCardAnsweredAgent": "Answered by an agent",
+  "mastermindAskCardIncomplete": "Incomplete card",
+  "mastermindAskCardIncompleteMessage": "The publisher sent only part of this ask. One-tap answers are off. Open the full question, or reply in your own words.",
+  "mastermindAskCardExpiredMessage": "This ask expired, so answering is closed.",
+  "mastermindAskCardOpenFull": "Open full question",
+  "mastermindAskCardReplyInWords": "Reply in your own words",
+  "mastermindAskCardAnswerWithBiometric": "Open to answer with Face ID",
+  "mastermindAskCardShowFullText": "Show full text",
+  "mastermindAskCardHideFullText": "Show less",
+  "mastermindAskCardMoreOptions": "{count, plural, =1{+1 more option} other{+{count} more options}}",
+  "@mastermindAskCardMoreOptions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindAskCardFewerOptions": "Show fewer options",
+  "mastermindAskCardOptionCount": "{count, plural, =1{1 option} other{{count} options}}",
+  "@mastermindAskCardOptionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindAskCardRecommendedOption": "Recommended: {option}",
+  "@mastermindAskCardRecommendedOption": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskCardRecommendedWhy": "Recommended: {option}. {why}",
+  "@mastermindAskCardRecommendedWhy": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      },
+      "why": {
+        "type": "String"
+      }
+    }
+  }
 }
