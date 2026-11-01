@@ -202,10 +202,7 @@ export function useMeetRoom({
         setState((current) => reduceCallState(current, message));
       },
       onReconnected: () => {
-        signalingRef.current?.send({
-          media: mediaRef.current,
-          type: 'presence.join',
-        });
+        actions.replayPresenceJoin(mediaRef.current);
         actions.replayAssistantAudio();
       },
       onStatusChange: setConnectionStatus,
@@ -246,7 +243,7 @@ export function useMeetRoom({
     resetSubscriber,
     token,
     deviceId,
-    actions.replayAssistantAudio,
+    actions,
   ]);
   const publishPresence = useCallback((next: MeetMediaState) => {
     signalingRef.current?.send({ media: next, type: 'presence.update' });

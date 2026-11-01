@@ -27,6 +27,7 @@ import {
   approvedParticipantsMessage,
   roomSettingsMessage,
 } from './room-controls';
+import { lobbyDisplayName } from './room-display-name';
 import { retireIdlePublication } from './room-idle';
 import { denied, outcome } from './room-outcome';
 import { applyRecording, recordingMessage } from './room-recording';
@@ -81,7 +82,25 @@ export function applyMeetRoomCommand(
     case 'presence.join': {
       const capacityError = roomCapacityError(state, token);
       if (capacityError) return denied(state, capacityError);
-      if (state.waiting[userId]) return outcome(state);
+      if (state.waiting[userId]) {
+        if (!message.displayName) return outcome(state);
+        const next: MeetRoomSnapshot = {
+          ...state,
+          waiting: {
+            ...state.waiting,
+            [userId]: {
+              ...state.waiting[userId],
+              displayName: lobbyDisplayName(
+                message.displayName,
+                !token.accountId
+              ),
+            },
+          },
+        };
+        return outcome(next, {
+          toManagers: [meetAdmissionPendingMessage(next)],
+        });
+      }
 
       const next = {
         ...state,
@@ -91,7 +110,13 @@ export function applyMeetRoomCommand(
             ...createMeetPresence(
               {
                 ...token,
-                displayName: message.displayName || token.displayName,
+                displayName:
+                  token.admission === 'lobby'
+                    ? (state.presence[userId]?.displayName ??
+                      state.approved?.[token.accountId ?? userId]
+                        ?.displayName ??
+                      token.displayName)
+                    : message.displayName || token.displayName,
               },
               now,
               message.media

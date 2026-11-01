@@ -65,7 +65,11 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     requestId,
   }),
   z.object({
-    displayName: z.string().trim().min(1).max(120).optional(),
+    displayName: z
+      .string()
+      .transform((value) => value.replace(/[\p{Cc}\p{Cf}]/gu, '').trim())
+      .pipe(z.string().min(1).max(120))
+      .optional(),
     media: meetMediaStateSchema.optional(),
     type: z.literal('presence.join'),
   }),
