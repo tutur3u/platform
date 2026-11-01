@@ -195,6 +195,12 @@ void main() {
         },
       );
       await _scrollTo(tester, find.text(_loadFailed));
+      // Built is not on screen: nudge the row into the viewport first.
+      for (var i = 0; i < 20; i++) {
+        if (tester.getCenter(find.text('Retry')).dy < 700) break;
+        await tester.drag(_scrollable, const Offset(0, -200));
+        await tester.pump();
+      }
       await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
       expect(find.text(_loadFailed), findsNothing);

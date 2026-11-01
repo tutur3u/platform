@@ -398,14 +398,17 @@ test('the protection assertion is pure and needs reviewers, no self-review and m
 });
 
 for (const status of [403, 404])
-  test(`a ${status} on the environments API fails closed and names the read-only token`, async () => {
+  test(`a ${status} on the environments API fails closed and explains the missing read`, async () => {
     const world = healthyWorld();
     world['wave1-web-staging'].status = status;
     await assert.rejects(
       preflight({ env: baseEnv(), fetcher: github(world).fetcher }),
       (error) => {
         assert.match(error.message, new RegExp(`answered ${status}`, 'u'));
-        assert.match(error.message, /read-only WAVE1_ENV_READ_TOKEN/u);
+        assert.match(
+          error.message,
+          /cannot read environment protection rules/u
+        );
         assert.doesNotMatch(error.message, /write/iu);
         return true;
       }
@@ -419,7 +422,7 @@ test('a non-permission API failure fails closed without the token hint', async (
     run(world),
     (error) =>
       /answered 500/u.test(error.message) &&
-      !/WAVE1_ENV_READ_TOKEN/u.test(error.message)
+      !/protection rules/u.test(error.message)
   );
 });
 

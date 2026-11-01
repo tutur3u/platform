@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/mastermind/iris/data/fixture_iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_device_identity.dart';
+import 'package:mobile/features/mastermind/iris/device/iris_device_trust.dart';
 import 'package:mobile/features/mastermind/iris/iris_flag.dart';
 import 'package:mobile/features/mastermind/iris/view/iris_devices_page.dart';
 import 'package:mobile/features/mastermind/machines/machine_detail.dart';
@@ -56,6 +57,18 @@ final List<GoRoute> mastermindTabRoutes = [
   ),
   GoRoute(
     path: Routes.mastermindInbox,
+    // `?tier=` only means something on Needs you and `?q=` on the segments
+    // that list asks; anything else is dropped so the URL stays canonical.
+    redirect: (context, state) {
+      final query = state.uri.queryParameters;
+      if (!query.containsKey('tier') && !query.containsKey('q')) return null;
+      final canonical = inboxLocation(
+        segment: inboxSegmentFromQuery(query['segment']),
+        tier: inboxTierFromQuery(query['tier']),
+        search: inboxSearchFromQuery(query['q']),
+      );
+      return canonical == state.uri.toString() ? null : canonical;
+    },
     builder: (context, state) {
       final router = GoRouter.of(context);
       return MastermindInboxPage(
@@ -74,11 +87,11 @@ final List<GoRoute> mastermindTabRoutes = [
         mastermindIrisEnabled ? null : Routes.mastermindInbox,
     builder: (context, state) => IrisDevicesPage(
       relay: context.read<MastermindRuntime>().iris,
-      // Fixture builds enrol with a synthetic key; the native key lane
-      // supplies the real one.
+      // Fixture builds enrol with a synthetic key; every other build with the
+      // hardware key, or not at all where there is none.
       identity: FixtureIrisRelay.buildEnabled
           ? const FakeIrisDeviceIdentity()
-          : null,
+          : IrisDeviceTrust.platform,
     ),
   ),
   GoRoute(

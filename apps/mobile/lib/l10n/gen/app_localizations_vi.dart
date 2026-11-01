@@ -14852,5 +14852,139 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindIrisEnrolFailed => 'Không thể bắt đầu đăng ký. Hãy thử lại.';
 
   @override
-  String get mastermindIrisEnrolLimit => 'Có quá nhiều thiết bị đang chờ. Hãy đợi một thiết bị hết hạn.';
+  String get mastermindIrisEnrolLimit => 'Có quá nhiều lượt đăng ký hoặc thiết bị đang chờ. Hãy thử lại sau.';
+
+  @override
+  String get mastermindIrisEnrolAgain => 'Đăng ký lại bằng khóa mới';
+
+  @override
+  String get mastermindIrisUnlockReason => 'Mở khóa Iris để đọc hộp thư';
+
+  @override
+  String get mastermindIrisConfirmReason => 'Xác nhận thao tác Iris này';
+
+  @override
+  String get mastermindIrisDeviceLocked => 'Iris đang bị khóa trên thiết bị này. Ứng dụng sẽ hỏi mở khóa lại sau vài phút.';
+
+  @override
+  String get mastermindIrisDeviceLockedEnrol => 'Nếu lỗi này lặp lại, hãy đăng ký lại bằng khóa mới.';
+
+  @override
+  String get mastermindIrisDeviceRevoked => 'Thiết bị này đã bị gỡ khỏi Iris. Hãy đăng ký lại để tiếp tục sử dụng.';
+
+  @override
+  String get mastermindIrisEnrolAgainAction => 'Đăng ký lại';
+
+  @override
+  String get mastermindIrisClockSkew => 'Hãy kiểm tra đồng hồ thiết bị. Giờ không khớp với Iris.';
+
+  @override
+  String get mastermindIrisEnrolCodeConflict => 'Mã này đang được dùng. Hãy thử lại.';
+
+  @override
+  String get mastermindIrisEnrolDeviceConflict => 'Khóa này đã được đăng ký. Hãy đăng ký lại bằng khóa mới.';
+
+  @override
+  String get mastermindIrisRelayStopped => 'Relay đã dừng. Hãy nhờ chủ sở hữu khôi phục.';
+
+  @override
+  String get mastermindIrisDevicesUnavailable => 'Danh sách thiết bị chưa khả dụng. Bạn vẫn có thể đăng ký thiết bị này.';
+
+  @override
+  String get mastermindIrisDeviceCurrent => 'Thiết bị này';
+
+  @override
+  String get mastermindIrisWritesOff => 'Tạm thời chưa thể gửi tin. Bạn vẫn có thể đọc cuộc trò chuyện.';
+
+  @override
+  String get mastermindIrisWritesNeedEnrol => 'Hãy đăng ký thiết bị này để gửi tin nhắn.';
+
+  @override
+  String get mastermindAskCardTierDecision => 'Cần quyết định';
+
+  @override
+  String get mastermindAskCardTierFyi => 'Để biết';
+
+  @override
+  String mastermindAskCardDue(String when) {
+    return 'Hạn $when';
+  }
+
+  @override
+  String get mastermindAskCardOverdue => 'Quá hạn';
+
+  @override
+  String get mastermindAskCardReversible => 'Có thể hoàn tác';
+
+  @override
+  String get mastermindAskCardOneWay => 'Một chiều';
+
+  @override
+  String get mastermindAskCardNeedsBiometric => 'Cần Face ID hoặc vân tay';
+
+  @override
+  String get mastermindAskCardExpired => 'Đã hết hạn';
+
+  @override
+  String get mastermindAskCardAnsweredDiscord => 'Đã trả lời trên Discord';
+
+  @override
+  String get mastermindAskCardAnsweredAgent => 'Đã được tác tử trả lời';
+
+  @override
+  String get mastermindAskCardIncomplete => 'Thẻ thiếu nội dung';
+
+  @override
+  String get mastermindAskCardIncompleteMessage => 'Bên đăng chỉ gửi một phần của yêu cầu này. Đã tắt trả lời một chạm. Hãy mở câu hỏi đầy đủ, hoặc trả lời bằng lời của bạn.';
+
+  @override
+  String get mastermindAskCardExpiredMessage => 'Yêu cầu này đã hết hạn nên không thể trả lời nữa.';
+
+  @override
+  String get mastermindAskCardOpenFull => 'Mở câu hỏi đầy đủ';
+
+  @override
+  String get mastermindAskCardReplyInWords => 'Trả lời bằng lời của bạn';
+
+  @override
+  String get mastermindAskCardAnswerWithBiometric => 'Mở để trả lời bằng Face ID';
+
+  @override
+  String get mastermindAskCardShowFullText => 'Xem toàn văn';
+
+  @override
+  String get mastermindAskCardHideFullText => 'Thu gọn';
+
+  @override
+  String mastermindAskCardMoreOptions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count lựa chọn khác',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindAskCardFewerOptions => 'Ẩn bớt lựa chọn';
+
+  @override
+  String mastermindAskCardOptionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lựa chọn',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindAskCardRecommendedOption(String option) {
+    return 'Đề xuất: $option';
+  }
+
+  @override
+  String mastermindAskCardRecommendedWhy(String option, String why) {
+    return 'Đề xuất: $option. $why';
+  }
 }

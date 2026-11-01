@@ -185,10 +185,9 @@ export async function preflightEnvironments({
       );
     } catch (error) {
       const reason = error instanceof Error ? error.message : 'unknown';
-      // github.token may be unable to read environments: the fix is a
-      // fine-grained, read-only WAVE1_ENV_READ_TOKEN, never a write scope.
+      // The preflight is credential-free: never widen github.token to fix this.
       const hint = /answered (?:403|404)\b/u.test(reason)
-        ? ' (a missing environment, or a token that cannot read environment protection rules: provide a fine-grained read-only WAVE1_ENV_READ_TOKEN secret)'
+        ? ' (a missing environment, or a workflow token that cannot read environment protection rules)'
         : '';
       throw new Error(
         `Environment ${name} could not be verified: ${reason}${hint}`

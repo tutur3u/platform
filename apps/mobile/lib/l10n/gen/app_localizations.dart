@@ -27910,8 +27910,236 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindIrisEnrolLimit.
   ///
   /// In en, this message translates to:
-  /// **'Too many pending devices. Wait for one to expire.'**
+  /// **'Too many enrolment attempts or pending devices. Try again later.'**
   String get mastermindIrisEnrolLimit;
+
+  /// No description provided for @mastermindIrisEnrolAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrol again with a new key'**
+  String get mastermindIrisEnrolAgain;
+
+  /// No description provided for @mastermindIrisUnlockReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Iris to read your inbox'**
+  String get mastermindIrisUnlockReason;
+
+  /// No description provided for @mastermindIrisConfirmReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm this Iris action'**
+  String get mastermindIrisConfirmReason;
+
+  /// No description provided for @mastermindIrisDeviceLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Iris is locked on this device. It will ask you to unlock again in a few minutes.'**
+  String get mastermindIrisDeviceLocked;
+
+  /// No description provided for @mastermindIrisDeviceLockedEnrol.
+  ///
+  /// In en, this message translates to:
+  /// **'If this keeps happening, enrol again with a new key.'**
+  String get mastermindIrisDeviceLockedEnrol;
+
+  /// No description provided for @mastermindIrisDeviceRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'This device was removed from Iris. Enrol again to keep using it.'**
+  String get mastermindIrisDeviceRevoked;
+
+  /// No description provided for @mastermindIrisEnrolAgainAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrol again'**
+  String get mastermindIrisEnrolAgainAction;
+
+  /// No description provided for @mastermindIrisClockSkew.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your device clock. It doesn\'t match Iris.'**
+  String get mastermindIrisClockSkew;
+
+  /// No description provided for @mastermindIrisEnrolCodeConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'That code is already in use. Try again.'**
+  String get mastermindIrisEnrolCodeConflict;
+
+  /// No description provided for @mastermindIrisEnrolDeviceConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This key is already registered. Enrol again with a new key.'**
+  String get mastermindIrisEnrolDeviceConflict;
+
+  /// No description provided for @mastermindIrisRelayStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Relay stopped. Ask the owner to restore it.'**
+  String get mastermindIrisRelayStopped;
+
+  /// No description provided for @mastermindIrisDevicesUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The device list isn\'t available yet. You can still enrol this device.'**
+  String get mastermindIrisDevicesUnavailable;
+
+  /// No description provided for @mastermindIrisDeviceCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get mastermindIrisDeviceCurrent;
+
+  /// No description provided for @mastermindIrisWritesOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending is off for now. You can still read the chat.'**
+  String get mastermindIrisWritesOff;
+
+  /// No description provided for @mastermindIrisWritesNeedEnrol.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrol this device to send messages.'**
+  String get mastermindIrisWritesNeedEnrol;
+
+  /// No description provided for @mastermindAskCardTierDecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs decision'**
+  String get mastermindAskCardTierDecision;
+
+  /// No description provided for @mastermindAskCardTierFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'FYI'**
+  String get mastermindAskCardTierFyi;
+
+  /// No description provided for @mastermindAskCardDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {when}'**
+  String mastermindAskCardDue(String when);
+
+  /// No description provided for @mastermindAskCardOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get mastermindAskCardOverdue;
+
+  /// No description provided for @mastermindAskCardReversible.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversible'**
+  String get mastermindAskCardReversible;
+
+  /// No description provided for @mastermindAskCardOneWay.
+  ///
+  /// In en, this message translates to:
+  /// **'One-way'**
+  String get mastermindAskCardOneWay;
+
+  /// No description provided for @mastermindAskCardNeedsBiometric.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs Face ID or fingerprint'**
+  String get mastermindAskCardNeedsBiometric;
+
+  /// No description provided for @mastermindAskCardExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get mastermindAskCardExpired;
+
+  /// No description provided for @mastermindAskCardAnsweredDiscord.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on Discord'**
+  String get mastermindAskCardAnsweredDiscord;
+
+  /// No description provided for @mastermindAskCardAnsweredAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered by an agent'**
+  String get mastermindAskCardAnsweredAgent;
+
+  /// No description provided for @mastermindAskCardIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete card'**
+  String get mastermindAskCardIncomplete;
+
+  /// No description provided for @mastermindAskCardIncompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The publisher sent only part of this ask. One-tap answers are off. Open the full question, or reply in your own words.'**
+  String get mastermindAskCardIncompleteMessage;
+
+  /// No description provided for @mastermindAskCardExpiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This ask expired, so answering is closed.'**
+  String get mastermindAskCardExpiredMessage;
+
+  /// No description provided for @mastermindAskCardOpenFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Open full question'**
+  String get mastermindAskCardOpenFull;
+
+  /// No description provided for @mastermindAskCardReplyInWords.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply in your own words'**
+  String get mastermindAskCardReplyInWords;
+
+  /// No description provided for @mastermindAskCardAnswerWithBiometric.
+  ///
+  /// In en, this message translates to:
+  /// **'Open to answer with Face ID'**
+  String get mastermindAskCardAnswerWithBiometric;
+
+  /// No description provided for @mastermindAskCardShowFullText.
+  ///
+  /// In en, this message translates to:
+  /// **'Show full text'**
+  String get mastermindAskCardShowFullText;
+
+  /// No description provided for @mastermindAskCardHideFullText.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get mastermindAskCardHideFullText;
+
+  /// No description provided for @mastermindAskCardMoreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{+1 more option} other{+{count} more options}}'**
+  String mastermindAskCardMoreOptions(int count);
+
+  /// No description provided for @mastermindAskCardFewerOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Show fewer options'**
+  String get mastermindAskCardFewerOptions;
+
+  /// No description provided for @mastermindAskCardOptionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 option} other{{count} options}}'**
+  String mastermindAskCardOptionCount(int count);
+
+  /// No description provided for @mastermindAskCardRecommendedOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended: {option}'**
+  String mastermindAskCardRecommendedOption(String option);
+
+  /// No description provided for @mastermindAskCardRecommendedWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended: {option}. {why}'**
+  String mastermindAskCardRecommendedWhy(String option, String why);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

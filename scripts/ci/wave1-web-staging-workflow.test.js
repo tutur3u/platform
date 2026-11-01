@@ -63,11 +63,8 @@ test('the preflight holds no Cloudflare credential and is root of every other jo
     contents: 'read',
     actions: 'read',
   });
-  // The only secret is the optional read-only GitHub token for environments.
-  const preflightSecrets = [
-    ...JSON.stringify(preflight).matchAll(/secrets\.([A-Z0-9_]+)/gu),
-  ].map((match) => match[1]);
-  assert.deepEqual([...new Set(preflightSecrets)], ['WAVE1_ENV_READ_TOKEN']);
+  // Credential-free: the preflight reads environments with github.token only.
+  assert.doesNotMatch(JSON.stringify(preflight), /secrets\./u);
   assert.doesNotMatch(JSON.stringify(preflight), /CLOUDFLARE_[A-Z_]*TOKEN/u);
   assert.match(
     runs('preflight'),
@@ -82,11 +79,7 @@ test('the preflight holds no Cloudflare credential and is root of every other jo
     'WAVE1_STAGING_ATTEMPT_D1_ID',
     'WAVE1_STAGING_PUBLISH_ENABLED',
   ]);
-  // Optional: the read-only token if provisioned, else the workflow token.
-  assert.equal(
-    env.GH_TOKEN,
-    '$' + '{{ secrets.WAVE1_ENV_READ_TOKEN || github.token }}'
-  );
+  assert.equal(env.GH_TOKEN, '$' + '{{ github.token }}');
   assert.deepEqual(needs('preflight'), []);
   for (const job of Object.keys(workflow.jobs).filter((j) => j !== 'preflight'))
     assert.ok(ancestors(job).has('preflight'), `${job} runs after preflight`);

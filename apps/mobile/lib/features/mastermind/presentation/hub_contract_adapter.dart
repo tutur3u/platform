@@ -4,6 +4,9 @@ Map<String, dynamic> adaptDecision(Map<String, dynamic> row) {
   final status = result.remove('status');
   if (status == 'open') result['state'] = 'open';
   if (status == 'resolved') result['state'] = 'answered';
+  // `expired` has no legacy state: keep it for the Inbox card, which closes
+  // the ask. Any other status is dropped here, never an error.
+  if (status == 'expired') result['status'] = 'expired';
   final text = result.remove('text');
   if (text is String && text.isNotEmpty) result['body'] = text;
   final recommended = result.remove('recommended');

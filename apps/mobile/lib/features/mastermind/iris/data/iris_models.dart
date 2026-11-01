@@ -88,6 +88,7 @@ final class IrisDevice {
     required this.status,
     required this.fingerprintPrefix,
     this.qa = false,
+    this.current = false,
     this.createdAt,
     this.lastSeenAt,
   });
@@ -99,12 +100,15 @@ final class IrisDevice {
   /// The first characters of the key fingerprint, to compare on the enrol page.
   final String fingerprintPrefix;
   final bool qa;
+
+  /// The device that asked: this phone.
+  final bool current;
   final DateTime? createdAt;
   final DateTime? lastSeenAt;
 }
 
-/// `POST /v1/iris/devices/enroll`: the 6-digit code the owner confirms on the
-/// Iris enrol page with their passkey. Pending until then; expires in 15 min.
+/// `POST /v1/iris/enrol`: the 6-digit code the owner confirms on the Iris
+/// enrol page with their passkey. Pending until then; expires in 15 min.
 final class IrisEnrollment {
   const IrisEnrollment({
     required this.deviceId,
@@ -123,6 +127,32 @@ final class IrisEnrollment {
 /// token or URL.
 enum IrisFailureKind {
   notConfigured,
+
+  /// This device has no confirmed hardware key, so nothing was sent.
+  notEnrolled,
+
+  /// The device key needs biometrics and the owner cancelled, is locked out,
+  /// or the app could not ask. Never retried automatically, so a cancelled
+  /// prompt does not come straight back.
+  deviceLocked,
+
+  /// The relay no longer knows this device (`device_revoked` or
+  /// `unknown_device`). A confirmed enrolment is cleared and must start over.
+  deviceRevoked,
+
+  /// The relay refused the signature's timestamp (`clock_skew`). Never
+  /// corrected automatically: the owner checks the device clock.
+  clockSkew,
+
+  /// Enrolment: another pending enrolment holds the 6-digit code.
+  codeConflict,
+
+  /// Enrolment: the relay already files this device id.
+  deviceConflict,
+
+  /// Enrolment while the kill switch is on (`assertion_required`): only the
+  /// owner can restore the relay. Never retried.
+  relayStopped,
   offline,
   unauthorized,
   forbidden,

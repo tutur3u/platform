@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show AppLifecycleState;
 
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_repository.dart';
@@ -15,6 +16,7 @@ import 'package:mobile/features/mastermind/data/snapshot_store_factory.dart';
 import 'package:mobile/features/mastermind/iris/data/http_iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay_factory.dart';
+import 'package:mobile/features/mastermind/iris/device/iris_device_trust.dart';
 import 'package:mobile/features/mastermind/iris/iris_flag.dart';
 import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/hub_reply_transport.dart';
@@ -39,6 +41,7 @@ final class MastermindRuntime {
     MastermindReplyTransport? replyTransport,
     this.askDetails,
     IrisRelay? iris,
+    this.irisTrust,
     Stream<bool>? onlineChanges,
   }) : iris = iris ?? const UnconfiguredIrisRelay(),
        replies = replies ?? MastermindRepliesCubit(store: MemoryOutboxStore()),
@@ -72,9 +75,13 @@ final class MastermindRuntime {
     MastermindOutboxStore? outboxStore,
     MastermindAskDetailSource? askDetails,
     IrisRelay? iris,
+    IrisDeviceTrust? irisTrust,
     Stream<bool>? onlineChanges,
   }) {
     final resolved = source ?? createMastermindSnapshotSource();
+    final trust =
+        irisTrust ??
+        (iris == null && source == null ? IrisDeviceTrust.platform : null);
     final cubit = MastermindSnapshotCubit(
       source: resolved,
       store: store ?? createMastermindSnapshotStore(userId: userId),
@@ -111,7 +118,8 @@ final class MastermindRuntime {
       askDetails:
           askDetails ??
           (source == null ? createMastermindAskDetailSource() : null),
-      iris: iris ?? (source == null ? createIrisRelay() : null),
+      iris: iris ?? (source == null ? createIrisRelay(trust: trust) : null),
+      irisTrust: trust,
       onlineChanges: onlineChanges ?? mastermindOnlineChanges(),
     );
   }
@@ -143,6 +151,11 @@ final class MastermindRuntime {
   /// The Iris relay (chat feed, composer, devices); unconfigured without a
   /// hub or fixture.
   final IrisRelay iris;
+
+  /// This device's Iris key, when it can hold one. Its read session ends when
+  /// the app leaves the foreground, and its key and enrolment go with the
+  /// account on logout or account switch.
+  final IrisDeviceTrust? irisTrust;
   final MastermindSnapshotSource? _source;
   final MastermindReplyTransport? _replyTransport;
   late final StreamSubscription<MastermindAccessState> _accessSub;
@@ -186,8 +199,29 @@ final class MastermindRuntime {
     // deep link on screen is held rather than redirected during the switch.
     final synced = access.sync(wsId);
     answered.clear();
-    await Future.wait([snapshot.clear(), replies.clear()]);
+    await Future.wait([
+      snapshot.clear(),
+      replies.clear(),
+      if (irisTrust case final trust?) trust.forget(),
+    ]);
     await synced;
+  }
+
+  /// Hidden or paused ends the Iris read session; resumed lets reads prompt
+  /// again. Not `inactive`: the biometric prompt itself makes iOS inactive,
+  /// and a lock queued behind that sign would drop the session it just
+  /// opened, so every poll would prompt again.
+  void irisLifecycle(AppLifecycleState state) {
+    final trust = irisTrust;
+    if (trust == null) return;
+    switch (state) {
+      case AppLifecycleState.hidden || AppLifecycleState.paused:
+        unawaited(trust.lock());
+      case AppLifecycleState.resumed:
+        trust.resumeReads();
+      case AppLifecycleState.inactive || AppLifecycleState.detached:
+        break;
+    }
   }
 
   /// App resume: a failed access check (offline, a Worker blip) must not hide

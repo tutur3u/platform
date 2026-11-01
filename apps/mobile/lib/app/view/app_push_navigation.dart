@@ -13,6 +13,7 @@ extension _AppPushNavigation on _AppState {
   }
 
   void _handleLifecycleState(AppLifecycleState state) {
+    _mastermind.irisLifecycle(state);
     if (state == AppLifecycleState.paused ||
         (state == AppLifecycleState.inactive &&
             _appLockCubit.state.delay != AppLockDelay.immediately) ||
