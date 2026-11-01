@@ -50,6 +50,7 @@ import { createInitialSuggestionState } from './mention-system/types';
 import { SyncWarningDialog } from './sync-warning-dialog';
 import {
   getTaskDialogContentClassName,
+  getTaskDialogContentPresentation,
   resolveTaskDialogOpeningPresentation,
   TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME,
   type TaskDialogPresentation,
@@ -310,13 +311,9 @@ export function TaskEditDialog({
     isCreateMode,
     isSaving,
   });
-  // The panel's own project list, so a new project's key shows straight away.
   const ticketLabel = isCreateMode
     ? null
-    : getTaskTicketLabel({
-        projects: formState.selectedProjects,
-        ticket_projects: task?.ticket_projects,
-      });
+    : getTaskTicketLabel({ ...task, projects: formState.selectedProjects });
 
   // Refs
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
@@ -2620,13 +2617,7 @@ export function TaskEditDialog({
       >
         <DialogContent
           showCloseButton={false}
-          presentation={
-            presentation === 'fullscreen'
-              ? 'fullscreen'
-              : isPanel
-                ? 'panel'
-                : 'default'
-          }
+          presentation={getTaskDialogContentPresentation(presentation, isPanel)}
           className={getTaskDialogContentClassName({
             compact: showCompactDialog,
             focused: showFocusedDialog,

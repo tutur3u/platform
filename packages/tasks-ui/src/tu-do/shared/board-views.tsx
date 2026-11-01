@@ -1,12 +1,7 @@
 'use client';
 
 import { useHotkey } from '@tanstack/react-hotkeys';
-import {
-  keepPreviousData,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
-import type { ListWorkspaceTasksOptions } from '@tuturuuu/internal-api/tasks';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID,
   TASK_LAST_BOARD_VIEW_CONFIG_ID,
@@ -52,7 +47,6 @@ import { RecycleBinContent } from '../shared/recycle-bin-panel';
 import { loadBoardConfig } from './board-config-storage';
 import {
   DEFAULT_BOARD_FILTERS,
-  getListStatusesForFilter,
   listMatchesStatusFilter,
   sanitizeListStatusFilter,
   sanitizeSavedBoardFilters,
@@ -60,16 +54,8 @@ import {
 import { useBoardHeaderData } from './board-header/use-board-header-data';
 import { useBoardSprintSurface } from './board-sprints/use-board-sprint-surface';
 import { useBoardSprints } from './board-sprints/use-board-sprints';
-import {
-  sortLocalTasks,
-  taskMatchesLocalFilters,
-} from './board-task-filtering';
-import {
-  listBoardTaskCountsForSearch,
-  listBoardTasksForSearch,
-} from './board-task-search';
+import { sortLocalTasks } from './board-task-filtering';
 import { BoardPanelFrame, KanbanPresentation } from './kanban-presentation';
-import { useProgressiveLoader } from './progressive-loader-context';
 import {
   parseSpecialTaskListPins,
   type SpecialTaskListPin,
@@ -80,6 +66,7 @@ import {
   normalizeTaskQuickCreateTargetList,
 } from './task-quick-create-target-list';
 import { useAutoCollapseEmptyTaskLists } from './use-auto-collapse-empty-task-lists';
+import { useBoardTaskSource } from './use-board-task-source';
 import { useBoardViewHotkeys } from './use-board-view-hotkeys';
 import { useKanbanLayoutState } from './use-kanban-layout-state';
 import { useRecycleBinTranslations } from './use-recycle-bin-translations';
@@ -233,166 +220,34 @@ export function BoardViews({
     (view: ViewType) => !enabledViews || enabledViews.includes(view),
     [enabledViews]
   );
-  const sourceScope = filters.sourceScope ?? 'all_visible';
-  const sourceWorkspaceIds = filters.sourceWorkspaceIds ?? [];
-  const sourceBoardIds = filters.sourceBoardIds ?? [];
-  const isExternalSourceScope =
-    sourceScope === 'external_current_workspace' ||
-    sourceScope === 'external_specific';
-  const listStatusesForQuery = useMemo(
-    () => getListStatusesForFilter(listStatusFilter),
-    [listStatusFilter]
-  );
-  const hasTaskFilters = useMemo(
-    () =>
-      filters.labels.length > 0 ||
-      filters.assignees.length > 0 ||
-      filters.projects.length > 0 ||
-      filters.priorities.length > 0 ||
-      !!filters.dueDateRange?.from ||
-      !!filters.dueDateRange?.to ||
-      typeof filters.estimationRange?.min === 'number' ||
-      typeof filters.estimationRange?.max === 'number' ||
-      !!filters.searchQuery?.trim() ||
-      filters.includeMyTasks ||
-      filters.includeUnassigned ||
-      sourceScope !== 'all_visible' ||
-      sourceWorkspaceIds.length > 0 ||
-      sourceBoardIds.length > 0,
-    [filters, sourceBoardIds.length, sourceScope, sourceWorkspaceIds.length]
-  );
-  const hasServerTaskQuery = hasTaskFilters || !!filters.sortBy;
-  // Filters, search and sort on this board run in the browser over one
-  // unfiltered copy of its tasks, so changing them sends no request. Only
-  // another source scope (tasks from other boards) is filtered on the server.
-  const filterOnServer = !localTaskState && sourceScope !== 'all_visible';
-  const { pagination } = useProgressiveLoader();
-  // Every list's pages are in the board cache, so it holds every task.
-  const boardLoaded = lists.every((list) => {
-    if (list.deleted) return true;
-    const state = pagination[list.id];
-    return Boolean(
-      state && !state.hasMore && !state.isInitialLoad && !state.isLoading
-    );
-  });
-  const taskQueryOptions = useMemo<ListWorkspaceTasksOptions>(
-    () => ({
-      assignedToMe: filters.includeMyTasks || undefined,
-      assigneeIds: filters.includeMyTasks
-        ? undefined
-        : filters.assignees.map((assignee) => assignee.id),
-      dueDateFrom: filters.dueDateRange?.from?.toISOString(),
-      dueDateTo: filters.dueDateRange?.to?.toISOString(),
-      estimationMax: filters.estimationRange?.max,
-      estimationMin: filters.estimationRange?.min,
-      includeUnassigned: filters.includeUnassigned || undefined,
-      labelIds: filters.labels.map((label) => label.id),
-      priorities: filters.priorities,
-      projectIds: filters.projects.map((project) => project.id),
-      q: filters.searchQuery?.trim() || undefined,
-      sortBy: filters.sortBy,
-      unprioritizedPosition,
-      sourceBoardIds,
-      sourceScope,
-      sourceWorkspaceIds,
-    }),
-    [
-      filters.assignees,
-      filters.dueDateRange?.from,
-      filters.dueDateRange?.to,
-      filters.estimationRange?.max,
-      filters.estimationRange?.min,
-      filters.includeMyTasks,
-      filters.includeUnassigned,
-      filters.labels,
-      filters.priorities,
-      filters.projects,
-      filters.searchQuery,
-      filters.sortBy,
-      unprioritizedPosition,
-      sourceBoardIds,
-      sourceScope,
-      sourceWorkspaceIds,
-    ]
-  );
-  const taskFilterKey = useMemo(
-    () =>
-      JSON.stringify({
-        listStatusFilter,
-        query: taskQueryOptions,
-        scope: sourceScope,
-        sourceBoardIds: [...sourceBoardIds].sort(),
-        sourceWorkspaceIds: [...sourceWorkspaceIds].sort(),
-      }),
-    [
-      listStatusFilter,
-      sourceBoardIds,
-      sourceScope,
-      sourceWorkspaceIds,
-      taskQueryOptions,
-    ]
-  );
-  // The unfiltered copy is keyed by list status only, so it is fetched once
-  // and reused by every filter, search and sort after it.
-  const boardCopyKey = useMemo(
-    () => JSON.stringify({ boardCopy: true, listStatusFilter }),
-    [listStatusFilter]
-  );
-  const fullTasksKey = filterOnServer ? taskFilterKey : boardCopyKey;
-  const shouldEagerLoadTasks =
-    currentView === 'list' ||
-    currentView === 'timeline' ||
-    (hasServerTaskQuery && (filterOnServer || !boardLoaded));
-  const fetchBoardTasks = useCallback(
-    () =>
-      listBoardTasksForSearch(effectiveWorkspaceId, {
-        ...(filterOnServer ? taskQueryOptions : {}),
-        boardId: board.id,
-        includeRelationshipSummary: false,
-        listStatuses: listStatusesForQuery,
-        limit: 200,
-      }),
-    [
-      board.id,
-      effectiveWorkspaceId,
-      filterOnServer,
-      listStatusesForQuery,
-      taskQueryOptions,
-    ]
-  );
-
-  const primeFullTaskCache = useCallback(
-    (nextView: ViewType) => {
-      if (localTaskState) return;
-      if (nextView !== 'list' && nextView !== 'timeline') return;
-
-      void queryClient.prefetchQuery({
-        queryKey: ['tasks-full', board.id, fullTasksKey],
-        queryFn: fetchBoardTasks,
-        staleTime: 5 * 60_000,
-      });
-    },
-    [board.id, fetchBoardTasks, fullTasksKey, localTaskState, queryClient]
-  );
-
-  // Fetch the unfiltered copy as soon as a filter looks likely, so the
-  // first filter, search or sort usually finds it already loaded.
-  const prefetchBoardCopy = useCallback(() => {
-    if (localTaskState || filterOnServer || boardLoaded) return;
-    void queryClient.prefetchQuery({
-      queryKey: ['tasks-full', board.id, boardCopyKey],
-      queryFn: fetchBoardTasks,
-      staleTime: 5 * 60_000,
-    });
-  }, [
-    board.id,
-    boardCopyKey,
-    boardLoaded,
-    fetchBoardTasks,
+  const {
+    baseTasks,
     filterOnServer,
+    hasTaskFilters,
+    isExternalSourceScope,
+    isFullTasksError,
+    isFullTasksLoading,
+    isSearching,
+    listCounts,
+    pagesCovered,
+    prefetchBoardCopy,
+    primeFullTaskCache,
+    ready: taskSourceReady,
+    sourceTasks,
+  } = useBoardTaskSource({
+    autoCollapseEmptyTaskLists,
+    board,
+    currentUserId,
+    currentView,
+    effectiveWorkspaceId,
+    filters,
+    listStatusFilter,
+    lists,
     localTaskState,
-    queryClient,
-  ]);
+    personal: Boolean(workspace.personal),
+    tasks,
+    unprioritizedPosition,
+  });
 
   const handleViewChange = useCallback(
     (nextView: ViewType) => {
@@ -434,22 +289,6 @@ export function BoardViews({
     ]
   );
 
-  const {
-    data: fullTasks = [],
-    isFetching: isFullTasksFetching,
-    isPending: isFullTasksPending,
-    isLoading: isFullTasksLoading,
-    isSuccess: isFullTasksSuccess,
-    isError: isFullTasksError,
-  } = useQuery({
-    queryKey: ['tasks-full', board.id, fullTasksKey],
-    enabled: !localTaskState && shouldEagerLoadTasks,
-    queryFn: fetchBoardTasks,
-    // A server-filtered result stays on screen until the next one lands.
-    placeholderData: filterOnServer ? keepPreviousData : undefined,
-    refetchOnMount: false,
-    staleTime: 5 * 60_000,
-  });
   const initialTaskLists = useMemo(
     () => lists.filter((list) => !list.deleted),
     [lists]
@@ -589,130 +428,16 @@ export function BoardViews({
       : realLists;
   }, [boardLists, externalStagingList, taskListsCollapsed]);
 
-  // The browser holds every task of the board: the board cache with all its
-  // pages, or the unfiltered copy. Until then, list counts come from the server.
-  const baseComplete =
-    localTaskState ||
-    boardLoaded ||
-    (!filterOnServer && shouldEagerLoadTasks && isFullTasksSuccess);
-  // While the unfiltered copy is on its way, its counts follow from it.
-  const countsOnServer =
-    !localTaskState &&
-    (filterOnServer || (!baseComplete && !shouldEagerLoadTasks));
-  const countsEnabled =
-    countsOnServer &&
-    Boolean(
-      hasTaskFilters || filters.hideEmptyTaskLists || autoCollapseEmptyTaskLists
-    );
-  const {
-    data: filteredListCounts,
-    isFetching: isFilteredListCountsFetching,
-    isPending: isFilteredListCountsPending,
-  } = useQuery({
-    queryKey: ['task-list-counts', board.id, taskFilterKey],
-    enabled: countsEnabled,
-    queryFn: () =>
-      listBoardTaskCountsForSearch(effectiveWorkspaceId, {
-        ...taskQueryOptions,
-        boardId: board.id,
-        includeListCounts: true,
-        includeRelationshipSummary: false,
-        limit: 0,
-        listStatuses: listStatusesForQuery,
-      }),
-    staleTime: 30_000,
-  });
-
   const initialKanbanLayoutReady =
     kanbanLayoutRestored &&
     taskBoardListPreferencesReady &&
     (localTaskState || !pinnedSpecialListsPending) &&
-    (localTaskState ||
-      ((!shouldEagerLoadTasks || !isFullTasksPending) &&
-        ((!hasTaskFilters &&
-          !filters.hideEmptyTaskLists &&
-          !autoCollapseEmptyTaskLists) ||
-          !countsEnabled ||
-          !isFilteredListCountsPending)));
-
-  // The board cache is what the board shows; the unfiltered copy fills in
-  // pages not loaded yet while a filter, search, sort or full view needs them.
-  const localBaseTasks = useMemo(() => {
-    if (localTaskState || filterOnServer || fullTasks.length === 0)
-      return tasks;
-    if (boardLoaded || !shouldEagerLoadTasks) return tasks;
-    const merged = new Map(fullTasks.map((task) => [task.id, task] as const));
-    for (const task of tasks) {
-      const copy = merged.get(task.id);
-      merged.set(task.id, copy ? ({ ...task, ...copy } as Task) : task);
-    }
-    return [...merged.values()];
-  }, [
-    boardLoaded,
-    filterOnServer,
-    fullTasks,
-    localTaskState,
-    shouldEagerLoadTasks,
-    tasks,
-  ]);
-  const locallyFilteredTasks = useMemo(
-    () =>
-      sortLocalTasks(
-        localBaseTasks.filter((task) =>
-          taskMatchesLocalFilters(
-            task,
-            filters,
-            currentUserId,
-            board.ticket_prefix
-          )
-        ),
-        filters.sortBy,
-        unprioritizedPosition
-      ),
-    [
-      board.ticket_prefix,
-      currentUserId,
-      filters,
-      localBaseTasks,
-      unprioritizedPosition,
-    ]
-  );
-
-  const localListCounts = useMemo(() => {
-    if (countsOnServer || !baseComplete) return null;
-    if (
-      !hasTaskFilters &&
-      !filters.hideEmptyTaskLists &&
-      !autoCollapseEmptyTaskLists
-    )
-      return null;
-
-    const counts = new Map<string, number>();
-    for (const task of locallyFilteredTasks) {
-      counts.set(task.list_id, (counts.get(task.list_id) ?? 0) + 1);
-    }
-
-    return [...counts.entries()].map(([list_id, count]) => ({
-      list_id,
-      count,
-    }));
-  }, [
-    autoCollapseEmptyTaskLists,
-    baseComplete,
-    countsOnServer,
-    filters.hideEmptyTaskLists,
-    hasTaskFilters,
-    locallyFilteredTasks,
-  ]);
+    (localTaskState || taskSourceReady);
 
   const recordManualCollapseChange = useAutoCollapseEmptyTaskLists({
     collapsed: taskListsCollapsed,
     enabled: autoCollapseEmptyTaskLists,
-    listCounts: localTaskState
-      ? null
-      : countsOnServer
-        ? filteredListCounts
-        : localListCounts,
+    listCounts: localTaskState ? null : listCounts,
     lists: boardLists,
     manualCollapsePreferences: taskListCollapsePreferences,
     setCollapsed: setTaskListsCollapsed,
@@ -732,7 +457,6 @@ export function BoardViews({
   }, [activeLists, listStatusFilter]);
 
   const filteredLists = useMemo(() => {
-    const listCounts = countsOnServer ? filteredListCounts : localListCounts;
     if ((!hasTaskFilters && !filters.hideEmptyTaskLists) || !listCounts)
       return statusFilteredLists;
 
@@ -744,11 +468,9 @@ export function BoardViews({
       (list) => (countByListId.get(list.id) ?? 0) > 0
     );
   }, [
-    countsOnServer,
-    filteredListCounts,
     filters.hideEmptyTaskLists,
     hasTaskFilters,
-    localListCounts,
+    listCounts,
     statusFilteredLists,
   ]);
 
@@ -760,18 +482,6 @@ export function BoardViews({
     );
     if (!stillSelectable) setHoveredTaskListId(null);
   }, [filteredLists, hoveredTaskListId]);
-
-  const sourceTasks = useMemo(() => {
-    if (!filterOnServer) return locallyFilteredTasks;
-    // Another source scope: the server's result, empty until it lands.
-    return shouldEagerLoadTasks ? fullTasks : tasks;
-  }, [
-    filterOnServer,
-    fullTasks,
-    locallyFilteredTasks,
-    shouldEagerLoadTasks,
-    tasks,
-  ]);
 
   const filteredTasks = useMemo(() => {
     const listIds = new Set(filteredLists.map((list) => list.id));
@@ -798,7 +508,7 @@ export function BoardViews({
     currentUserId,
     lists: boardLists,
     searchQuery: filters.searchQuery,
-    searchTasks: localBaseTasks,
+    searchTasks: baseTasks,
     sprints: boardSprints,
     tasks,
     wsId: effectiveWorkspaceId,
@@ -918,10 +628,7 @@ export function BoardViews({
             onHoveredTaskListChange={setHoveredTaskListId}
             readOnly={readOnly}
             searchEmptyAction={sprintSurface.searchEmptyAction}
-            // Filtering over the board's unfiltered copy needs no more pages.
-            pagesCovered={
-              !localTaskState && !filterOnServer && shouldEagerLoadTasks
-            }
+            pagesCovered={pagesCovered}
           />
         );
       case 'my_tasks':
@@ -1019,10 +726,7 @@ export function BoardViews({
             listStatusFilter={listStatusFilter}
             onListStatusFilterChange={setListStatusFilter}
             isPersonalWorkspace={workspace.personal}
-            isSearching={
-              !localTaskState &&
-              (isFullTasksFetching || isFilteredListCountsFetching)
-            }
+            isSearching={!localTaskState && isSearching}
             isMultiSelectMode={readOnly ? false : isMultiSelectMode}
             setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
             availableViews={enabledViews ?? undefined}

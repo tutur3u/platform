@@ -71,7 +71,8 @@ creation-date or estimate sorting.
 
 Filters, search and sort on the board's own tasks run in the browser. The first
 one loads an unfiltered copy of the board once (all its pages, a few at a time),
-or uses the board cache when every list is already loaded; every later filter,
+or uses the board cache when every list (and, on a personal board, the external
+tasks column) is already loaded; every later filter,
 search or sort change, and the per-list counts that hide empty lists, come from
 that copy with no request. Pointing at the search or filter row starts loading
 the copy early. While it loads, the loaded matches show and lists stop loading
@@ -116,6 +117,7 @@ Regression coverage:
 - `packages/tasks-ui/src/tu-do/shared/__tests__/board-header.test.tsx`
 - `packages/tasks-ui/src/tu-do/shared/__tests__/board-views.test.tsx`
 - `packages/tasks-ui/src/tu-do/shared/__tests__/board-task-search.test.ts`
+- `packages/tasks-ui/src/tu-do/shared/__tests__/use-board-task-source.test.tsx`
 - `packages/tasks-ui/src/tu-do/shared/board-user-presence-avatars.test.tsx`
 - `packages/tasks-ui/src/tu-do/projects/projectId/task-project-detail.test.tsx`
 - `packages/tasks-ui/src/tu-do/projects/projectId/components/__tests__/tasks-tab-layout.test.tsx`

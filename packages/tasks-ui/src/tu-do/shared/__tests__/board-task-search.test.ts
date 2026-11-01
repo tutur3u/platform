@@ -342,6 +342,31 @@ describe('listBoardTasksForSearch', () => {
     expect(listWorkspaceTasksMock).toHaveBeenCalledTimes(3);
   });
 
+  it('keeps paging when a personal board page also carries external tasks', async () => {
+    // 400 board tasks and 1 external task; each page holds up to 200 of each.
+    listWorkspaceTasksMock.mockImplementation(
+      async (_workspaceId: string, options: ListWorkspaceTasksOptions) => {
+        const offset = options.offset ?? 0;
+        const board = Array.from(
+          { length: Math.max(0, Math.min(200, 400 - offset)) },
+          (_, index) => buildTask({ id: `task-${offset + index}` })
+        );
+        const external = offset === 0 ? [buildTask({ id: 'external-0' })] : [];
+        return { tasks: [...board, ...external], count: 401 };
+      }
+    );
+
+    const tasks = await listBoardTasksForSearch('ws-1', {
+      boardId: 'board-1',
+      limit: 200,
+    });
+
+    expect(tasks).toHaveLength(401);
+    expect(listWorkspaceTasksMock.mock.calls.map(([, o]) => o.offset)).toEqual([
+      0, 200, 400,
+    ]);
+  });
+
   it('rejects a later-page failure instead of caching a partial board', async () => {
     listWorkspaceTasksMock
       .mockResolvedValueOnce({ tasks: [nameMatch], count: 2 })
