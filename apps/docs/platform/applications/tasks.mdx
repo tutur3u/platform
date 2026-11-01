@@ -1010,6 +1010,33 @@ under `apps/tasks/src/app/api/v1/workspaces/[wsId]/task-cycles/`.
 
 Malformed `wsId` or `cycleId` values return `404`.
 
+### Cycle planning view
+
+`/{wsId}/cycles/planning` lists one scope at a time: **Current cycle**, **Next**,
+or **Backlog**. It needs `manage_projects`, like the Cycles page.
+
+- **Scopes.** Current is the `active` cycle (the latest started, if several),
+  else a `planned` cycle whose dates include today. Next is the earliest
+  `planned` cycle starting after today. Backlog is every open task with no
+  cycle. The view opens on Current, or on Backlog when no cycle is scheduled.
+  "Today" is the viewer's local calendar day.
+- **Grouping.** Tasks are grouped by list status in the order In progress, In
+  review, Not started, Done, Closed. Closed starts collapsed, empty groups are
+  hidden, and tasks in `documents` lists are not shown.
+- **Filters.** Assignee (Me, Unassigned, people) comes first, then Project and
+  search. Priority and labels are under **More**. Filter choices come from the
+  loaded tasks.
+- **Moving tasks.** Use a row's menu, or drag the row onto a scope. The move
+  shows immediately and is undone, with an error toast, if the write fails.
+  Done and Closed tasks cannot move to the backlog, which lists open tasks only.
+- **Scope changes.** Filter values with no option in the new scope are dropped.
+  A scope at the 500-task cap shows a one-line note.
+- **Empty states.** Each is a single line with one action.
+
+Code: `packages/tasks-ui/src/tu-do/cycles/planning/`. Regression coverage:
+`__tests__/cycle-planning-model.test.ts` and
+`__tests__/cycle-planning-view.test.tsx`.
+
 ## Task Estimation
 
 ```sql
