@@ -41,6 +41,7 @@ begin
   return new;
 end;
 $$;
+-- tuturuuu: no-grant (trigger)
 revoke all on function private.assign_project_ticket_key() from public, anon, authenticated;
 create trigger assign_project_ticket_key before insert on public.task_projects
 for each row execute function private.assign_project_ticket_key();
@@ -48,6 +49,7 @@ for each row execute function private.assign_project_ticket_key();
 -- Reuse the insert derivation for deterministic, workspace-local backfill.
 create trigger backfill_project_ticket_key before update of ticket_key on public.task_projects
 for each row when (new.ticket_key is null) execute function private.assign_project_ticket_key();
+-- tuturuuu: reviewed(dynamic-sql-review): static backfill loop, no EXECUTE.
 do $$
 declare project record;
 begin
@@ -131,6 +133,7 @@ for each row execute function private.protect_project_ticket_identity();
 -- Preserve unchanged memberships when saving a task or restoring history.
 -- Patch only the relation block, retaining deployed authorization, actor/history
 -- logic, function settings and ACLs. Abort if the expected contract has drifted.
+-- tuturuuu: reviewed(dynamic-sql-review): EXECUTEs only pg_get_functiondef output of two fixed signatures after a fixed text patch; aborts on drift.
 do $migration$
 declare
   definition text;
