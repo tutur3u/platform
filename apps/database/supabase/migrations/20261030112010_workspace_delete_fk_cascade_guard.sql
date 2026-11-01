@@ -1,5 +1,3 @@
-BEGIN;
-
 -- IF NOT EXISTS must not accept an invalid index from an interrupted build.
 do $$
 begin
@@ -151,5 +149,3 @@ alter table private.team_members
     on delete cascade not valid;
 
 notify pgrst, 'reload schema';
-
-COMMIT;

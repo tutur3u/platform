@@ -4,6 +4,7 @@ BEGIN;
 -- creator-granted role membership tied to every workspace that owns a grant.
 -- Bound the ACCESS EXCLUSIVE lock on the hot RLS table (security review, sync packet M4).
 SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
 
 
 ALTER TABLE public.workspace_role_permissions
