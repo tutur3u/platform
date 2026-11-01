@@ -267,13 +267,14 @@ jobs:
       # secret is set.
       - name: Publish package
         env:
+          ARTIFACT_PATH: ${{ steps.artifact.outputs.path }}
           EXPECTED_PACKAGE_NAME: "@tuturuuu/realtime"
           EXPECTED_PACKAGE_VERSION: ${{ needs.prepare-publish-npm.outputs.package_version }}
         run: |
           set -o pipefail
           PUBLISH_LOG="${RUNNER_TEMP}/npm-publish.log"
 
-          if ! npm publish "${{ steps.artifact.outputs.path }}" --ignore-scripts 2>&1 | tee "$PUBLISH_LOG"; then
+          if ! npm publish "$ARTIFACT_PATH" --ignore-scripts 2>&1 | tee "$PUBLISH_LOG"; then
             if grep -Eiq 'E404|404 Not Found|not have permission|ENEEDAUTH' "$PUBLISH_LOG"; then
               echo "::error::npm could not publish ${EXPECTED_PACKAGE_NAME}@${EXPECTED_PACKAGE_VERSION}. Ensure the npm package exists when npm requires first-publish setup, package access is public, and the trusted publisher is configured for this repository, workflow filename, and environment."
             fi
