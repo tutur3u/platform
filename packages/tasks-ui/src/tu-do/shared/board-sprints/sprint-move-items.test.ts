@@ -1,6 +1,7 @@
 import type { BoardSprint } from '@tuturuuu/internal-api/task-sprints';
 import { describe, expect, it } from 'vitest';
-import { getSprintMoveOptions, NEW_SPRINT } from './sprint-move-items';
+import { getSprintMoveOptions } from './sprint-move-items';
+import { NEW_SPRINT } from './use-board-sprints';
 
 const sprint = (n: number, status: BoardSprint['status']) =>
   ({ id: `s${n}`, sequence_number: n, status }) as BoardSprint;

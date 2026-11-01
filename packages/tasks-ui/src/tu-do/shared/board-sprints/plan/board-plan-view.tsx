@@ -8,8 +8,9 @@ import { useTranslations } from 'next-intl';
 import { type DragEvent, useMemo, useState } from 'react';
 import { useTaskDialog } from '../../../hooks/useTaskDialog';
 import { taskMatchesBoardSearch } from '../../board-task-search';
-import { NEW_SPRINT, type SprintMoveTarget } from '../sprint-move-items';
 import {
+  NEW_SPRINT,
+  type SprintMoveTarget,
   useBoardSprintMutations,
   type useBoardSprints,
 } from '../use-board-sprints';
@@ -258,6 +259,7 @@ export function BoardPlanView({
         }
         isGhost={isGhost}
         lists={lists}
+        listsById={listsById}
         onCreate={
           canPlan && createListId && createTarget !== undefined
             ? (name) => create.mutateAsync(name)

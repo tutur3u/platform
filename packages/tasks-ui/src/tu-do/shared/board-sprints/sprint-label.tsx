@@ -1,5 +1,6 @@
 'use client';
 
+import { Circle, CircleCheck, CircleDashed } from '@tuturuuu/icons';
 import type { BoardSprint } from '@tuturuuu/internal-api/task-sprints';
 import { cn } from '@tuturuuu/utils/format';
 import { formatSprintShortRange } from '@tuturuuu/utils/task-helper/sprints';
@@ -36,5 +37,27 @@ export function SprintLabel({
         <span className="text-muted-foreground text-xs">{range}</span>
       ) : null}
     </span>
+  );
+}
+
+export function SprintStatusIcon({
+  sprint,
+}: {
+  sprint: Pick<BoardSprint, 'status'>;
+}) {
+  const Icon =
+    sprint.status === 'active'
+      ? Circle
+      : sprint.status === 'completed'
+        ? CircleCheck
+        : CircleDashed;
+  return (
+    <Icon
+      className={
+        sprint.status === 'active'
+          ? 'size-4 text-dynamic-green'
+          : 'size-4 text-muted-foreground'
+      }
+    />
   );
 }

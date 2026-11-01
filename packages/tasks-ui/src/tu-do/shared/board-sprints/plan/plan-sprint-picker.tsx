@@ -17,8 +17,7 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { isBoardSprintOpen } from '@tuturuuu/utils/task-helper/sprints';
 import { useTranslations } from 'next-intl';
-import { SprintLabel } from '../sprint-label';
-import { SprintStatusIcon } from '../sprint-move-items';
+import { SprintLabel, SprintStatusIcon } from '../sprint-label';
 
 /** The Plan view's value for every sprint at once. */
 export const ALL_SPRINTS = 'all';

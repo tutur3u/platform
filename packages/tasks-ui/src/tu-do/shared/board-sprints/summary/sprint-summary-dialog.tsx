@@ -1,10 +1,7 @@
 'use client';
 
 import { ArrowRight } from '@tuturuuu/icons';
-import type {
-  BoardSprint,
-  BoardSprintReport,
-} from '@tuturuuu/internal-api/task-sprints';
+import type { BoardSprint } from '@tuturuuu/internal-api/task-sprints';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
@@ -133,9 +130,7 @@ function SummaryBody({
   const finish = () =>
     end.mutate(sprint.id, {
       onSuccess: (data) => {
-        const { report: ended } = data as {
-          report: Pick<BoardSprintReport, 'backlog_tasks' | 'carried_tasks'>;
-        };
+        const { report: ended } = data;
         toast.success(
           t('ended_toast', {
             count: ended.carried_tasks + ended.backlog_tasks,

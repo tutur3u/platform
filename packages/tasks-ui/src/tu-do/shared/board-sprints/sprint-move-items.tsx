@@ -3,9 +3,6 @@
 import {
   ArrowRight,
   CalendarPlus,
-  Circle,
-  CircleCheck,
-  CircleDashed,
   CircleMinus,
   type LucideIcon,
   Plus,
@@ -22,13 +19,8 @@ import {
   DropdownMenuSubTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
-import { SprintLabel } from './sprint-label';
-
-/** A sprint that does not exist yet: the move adds it after the last one. */
-export const NEW_SPRINT = 'new';
-
-/** Where a task goes: an open sprint, a new one, or (null) out of every sprint. */
-export type SprintMoveTarget = BoardSprint | typeof NEW_SPRINT | null;
+import { SprintLabel, SprintStatusIcon } from './sprint-label';
+import { NEW_SPRINT, type SprintMoveTarget } from './use-board-sprints';
 
 export interface SprintMoveOption {
   icon: LucideIcon;
@@ -85,28 +77,6 @@ export function getSprintMoveOptions(
       target: next,
     });
   return options;
-}
-
-export function SprintStatusIcon({
-  sprint,
-}: {
-  sprint: Pick<BoardSprint, 'status'>;
-}) {
-  const Icon =
-    sprint.status === 'active'
-      ? Circle
-      : sprint.status === 'completed'
-        ? CircleCheck
-        : CircleDashed;
-  return (
-    <Icon
-      className={
-        sprint.status === 'active'
-          ? 'size-4 text-dynamic-green'
-          : 'size-4 text-muted-foreground'
-      }
-    />
-  );
 }
 
 /**

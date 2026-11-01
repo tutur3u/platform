@@ -22,7 +22,12 @@ import {
   isTaskInCurrentSprintView,
 } from '@tuturuuu/utils/task-helper/sprints';
 import { useMemo } from 'react';
-import { NEW_SPRINT } from './sprint-move-items';
+
+/** A sprint that does not exist yet: the move adds it after the last one. */
+export const NEW_SPRINT = 'new';
+
+/** Where a task goes: an open sprint, a new one, or (null) out of every sprint. */
+export type SprintMoveTarget = BoardSprint | typeof NEW_SPRINT | null;
 
 export function getBoardSprintsQueryKey(boardId: string) {
   return ['board-sprints', boardId] as const;
@@ -134,6 +139,8 @@ export function useBoardSprintMutations({
       return { sprintName: added.name };
     },
     onMutate: async ({ sprintId, taskIds }) => {
+      // The new sprint does not exist yet; the tasks stay put until it does.
+      if (sprintId === NEW_SPRINT) return { previous: undefined };
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<BoardSprintsResponse>(key);
       if (previous) {

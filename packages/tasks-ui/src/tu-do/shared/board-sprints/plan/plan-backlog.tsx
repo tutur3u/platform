@@ -39,6 +39,7 @@ interface PlanBacklogProps {
   /** Open tasks parked outside every sprint, shown as ghosts. */
   isGhost: (task: Task) => boolean;
   lists: TaskList[];
+  listsById: Map<string, TaskList>;
   onCreate?: (name: string) => Promise<unknown>;
   onDragEnd: () => void;
   onDragOver: (event: DragEvent) => void;
@@ -62,6 +63,7 @@ export function PlanBacklog({
   emptyLabel,
   isGhost,
   lists,
+  listsById,
   onCreate,
   onDragEnd,
   onDragOver,
@@ -74,10 +76,6 @@ export function PlanBacklog({
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_BOARD_FILTERS);
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState('');
-  const listsById = useMemo(
-    () => new Map(lists.map((list) => [list.id, list])),
-    [lists]
-  );
 
   const projectTaskCounts = useMemo(() => {
     const counts = new Map<string, number>();
