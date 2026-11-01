@@ -45,12 +45,13 @@ class FinanceOverviewSkeleton extends StatelessWidget {
   );
 }
 
-Future<void> _reload(BuildContext context) async {
+Future<void> _reload(BuildContext context, {bool retainError = false}) async {
   final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
   if (wsId != null) {
     await context.read<FinanceCubit>().loadFinanceData(
       wsId,
       forceRefresh: true,
+      retainError: retainError,
     );
   }
 }
@@ -110,7 +111,10 @@ class _FinanceView extends StatelessWidget {
             }
 
             if (state.status == FinanceStatus.error) {
-              return _FinanceError(error: state.error);
+              return NovaRefreshIndicator.state(
+                onRefresh: () => _reload(context, retainError: true),
+                child: _FinanceError(error: state.error),
+              );
             }
 
             if (!state.hasWorkspaceCurrency) {
@@ -124,8 +128,9 @@ class _FinanceView extends StatelessWidget {
                   locations: {Routes.finance},
                 ),
                 NovaRefreshIndicator(
-                  onRefresh: () => _reload(context),
+                  onRefresh: () => _reload(context, retainError: true),
                   child: AppPageListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     children: [
                       _OverviewHero(state: state, showAmounts: showAmounts),
                       const shad.Gap(AppLayout.sectionGap),

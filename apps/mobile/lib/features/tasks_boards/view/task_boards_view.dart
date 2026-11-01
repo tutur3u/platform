@@ -190,13 +190,16 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
           return Stack(
             children: [
               shellActionRegistration,
-              _ErrorView(error: state.error, onRetry: _reload),
+              NovaRefreshIndicator.state(
+                onRefresh: () => _reload(retainError: true),
+                child: _ErrorView(error: state.error, onRetry: _reload),
+              ),
             ],
           );
         }
 
         return NovaRefreshIndicator(
-          onRefresh: _reload,
+          onRefresh: () => _reload(retainError: true),
           child: AppPageListView(
             controller: _scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
@@ -344,7 +347,7 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
     return currentWsId == capturedWsId;
   }
 
-  Future<void> _reload() async {
+  Future<void> _reload({bool retainError = false}) async {
     if (_permissionsLoadFailed) {
       await _loadPermissions();
       return;
@@ -353,7 +356,10 @@ class _TaskBoardsViewState extends State<TaskBoardsView> {
 
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) return;
-    await context.read<TaskBoardsCubit>().loadBoards(wsId);
+    await context.read<TaskBoardsCubit>().loadBoards(
+      wsId,
+      retainError: retainError,
+    );
   }
 
   Future<void> _openCreateBoard() async {

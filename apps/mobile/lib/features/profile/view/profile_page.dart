@@ -115,14 +115,18 @@ class _ProfileView extends StatelessWidget {
           }
 
           if (state.status == ProfileStatus.error && state.profile == null) {
-            return AppPageBody(
-              child: AppStateMessage(
-                icon: LucideIcons.cloudOff,
-                tone: AppTone.destructive,
-                title: state.error ?? l10n.profileUpdateError,
-                actionLabel: l10n.commonRetry,
-                onAction: () => context.read<ProfileCubit>().loadProfile(
-                  forceRefresh: true,
+            return NovaRefreshIndicator.state(
+              onRefresh: () =>
+                  context.read<ProfileCubit>().loadProfile(forceRefresh: true),
+              child: AppPageBody(
+                child: AppStateMessage(
+                  icon: LucideIcons.cloudOff,
+                  tone: AppTone.destructive,
+                  title: state.error ?? l10n.profileUpdateError,
+                  actionLabel: l10n.commonRetry,
+                  onAction: () => context.read<ProfileCubit>().loadProfile(
+                    forceRefresh: true,
+                  ),
                 ),
               ),
             );

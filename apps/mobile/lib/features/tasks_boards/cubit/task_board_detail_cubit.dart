@@ -55,37 +55,6 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
   final Set<String> _pendingRealtimeListIds = <String>{};
   final Set<String> _seenRealtimeEventIds = <String>{};
 
-  static TaskBoardDetail _decodeBoardDetailCache(Object? json) {
-    if (json is! Map) {
-      throw const FormatException('Invalid task board detail cache payload.');
-    }
-    return TaskBoardDetail.fromJson(Map<String, dynamic>.from(json));
-  }
-
-  static List<TaskBoardTask> _decodeListTasksCache(Object? json) {
-    if (json is! List<dynamic>) {
-      throw const FormatException('Invalid task board list cache payload.');
-    }
-    return json
-        .whereType<Map<String, dynamic>>()
-        .map(TaskBoardTask.fromJson)
-        .toList(growable: false);
-  }
-
-  static CacheKey _detailCacheKey({
-    required String wsId,
-    required String boardId,
-  }) {
-    return CacheKey(
-      namespace: 'tasks.board_detail',
-      userId: currentCacheUserId(),
-      workspaceId: wsId,
-      locale: currentCacheLocaleTag(),
-      schemaVersion: 2,
-      params: {'boardId': boardId},
-    );
-  }
-
   static CacheKey _listTasksCacheKey({
     required String wsId,
     required String boardId,
@@ -270,9 +239,15 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
     required String wsId,
     required String boardId,
     bool forceRefresh = false,
+    bool retainError = false,
   }) async {
     final requestToken = ++_loadRequestToken;
     final targetChanged = state.workspaceId != wsId || state.boardId != boardId;
+    final keepError =
+        retainError &&
+        forceRefresh &&
+        !targetChanged &&
+        state.status == TaskBoardDetailStatus.error;
     final cacheKey = _detailCacheKey(wsId: wsId, boardId: boardId);
 
     if (targetChanged) {
@@ -347,7 +322,11 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
     if (!hasCachedDetail) {
       emit(
         state.copyWith(
-          status: TaskBoardDetailStatus.loading,
+          status:
+              targetChanged ||
+                  (state.status == TaskBoardDetailStatus.error && !keepError)
+              ? TaskBoardDetailStatus.loading
+              : state.status,
           workspaceId: wsId,
           boardId: boardId,
           board: targetChanged ? null : state.board,
@@ -381,7 +360,7 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
           selectedTaskIds: targetChanged
               ? const <String>{}
               : state.selectedTaskIds,
-          clearError: true,
+          clearError: !keepError,
         ),
       );
     }
@@ -465,7 +444,11 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
     }
   }
 
-  Future<void> reload({Iterable<String>? listIds, int? pageSizeHint}) async {
+  Future<void> reload({
+    Iterable<String>? listIds,
+    int? pageSizeHint,
+    bool retainError = false,
+  }) async {
     final wsId = state.workspaceId;
     final boardId = state.boardId;
     if (wsId == null || boardId == null) return;
@@ -474,7 +457,12 @@ class TaskBoardDetailCubit extends Cubit<TaskBoardDetailState>
       ...state.listTasksByListId.keys,
     };
 
-    await loadBoardDetail(wsId: wsId, boardId: boardId, forceRefresh: true);
+    await loadBoardDetail(
+      wsId: wsId,
+      boardId: boardId,
+      forceRefresh: true,
+      retainError: retainError,
+    );
 
     final refreshedBoard = state.board;
     if (refreshedBoard == null) return;

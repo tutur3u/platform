@@ -111,7 +111,6 @@ Native app work does not require the paused Rust/TanStack Start runtime or the
 retired Docker cron runner. Database-dependent test fixtures still need an
 appropriate isolated environment; see [Without Docker](/build/development-tools/without-docker).
 
-
 ## Private product feedback
 
 Settings → Send feedback opens an account-scoped form inside the existing shell;
@@ -237,3 +236,98 @@ handler coverage during session restoration.
 concurrency, both completion orders, queue ordering, sync/async cache and queue
 failure reporting, appearance fallback and unexpected-error propagation. These
 are orchestration fixtures, not native-plugin or device latency measurements.
+
+## Pull to refresh
+
+Remote list surfaces support pulling down from the top, including lists shorter
+than the viewport and actionable empty/error states. Refresh awaits the existing
+cubit or repository owner, retains its account/workspace fences and does not start
+a second data layer. The Nova refresh affordance adds clearance for scrollable floating headers;
+fixed headers already pad the body. Only the owning vertical scroll view opts
+into always-scrollable physics, preserving nested horizontal row swipes. Calendar refresh completes only when its event reload completes.
+
+The audit below covers routed lists and remote list overlays. Cold loaders already
+have a request in flight. Editable forms and composers, authentication/MFA forms,
+QR/media viewers, active calls, local preference/static navigation screens, and
+reverse realtime chat/Assistant message timelines retain their existing gestures.
+Apps reads its registry and local preferences; it has no remote feed.
+
+| Screen | Had it | Added or corrected |
+| --- | --- | --- |
+| Home feed | Yes | Indicator clears floating header; short lists scroll |
+| Home personal agenda | Yes | Shared short-list behavior |
+| Inbox and Archive | Yes | Visible indicator; empty/short/error gesture regressions |
+| Apps | Local only | No remote list; local preferences remain immediate |
+| Calendar agenda/day/week/multi-day/year | Partial | Await reload; short/error states refresh |
+| Calendar month | Partial | Parent pull gesture; month grid remains non-scrollable |
+| My Tasks | Partial | Error state refresh |
+| Task boards | Partial | Error state refresh |
+| Board detail list/kanban/timeline | Partial | Error/missing/no-list states; preserve nested canvas predicate |
+| Task planning estimates/labels/projects/initiatives | Yes | Shared short-list behavior |
+| Legacy estimates and labels | Partial | Error state refresh |
+| Portfolio projects/initiatives | Partial | Error state refresh |
+| Project detail tasks | Partial | Error/not-found refresh |
+| Board recycle bin | No | Loaded/empty/error lists use existing guarded reload |
+| Finance overview | Partial | Short/error states |
+| Finance checkpoints | Partial | Short/empty/error states |
+| Transactions | Partial | Empty/error states |
+| Wallets and wallet detail | Yes | Shared short-list behavior |
+| Categories and tags | Yes | Shared short-list behavior |
+| Timer current session | No | Existing cubit force-refresh |
+| Timer history | Partial | Short-list gesture |
+| Timer personal statistics | No | Existing cubit force-refresh |
+| Timer goals | No | Existing goals force-refresh |
+| Timer workspace statistics | Partial | Short/error states |
+| Time requests | Partial | Error state refresh |
+| Timer task-link picker | No | Loaded/empty/error search results |
+| Request comments | No | Existing comments loader |
+| Profile account overview | No | Await identity and personal activity owners |
+| Profile personal timeline | No | Existing scoped repository refresh |
+| Profile editor detail | Partial | Error state refresh |
+| Shared profile activity | No | Existing injected loader |
+| CRM list/overview | Yes | Shared short-list behavior |
+| CRM user feedback | No | Existing feedback loader |
+| CMS overview/collections/entries | Yes | Shared short-list behavior |
+| Documents | Partial | Short-list gesture |
+| Drive files/grid | Yes | Shared short-list behavior |
+| Education overview/courses/library/attempts | Yes | Shared short-list behavior |
+| Habits overview/activity/library | Partial | Error state refresh |
+| Habit tracker Entries/Leaderboard | No | Existing detail refresh owner, including empty tabs |
+| Inventory overview/products/sales/sales periods | Yes | Shared short-list behavior |
+| Inventory catalog management | Partial | Short/error states |
+| Mail inbox/folder messages | Yes | Shared short-list behavior |
+| Mail settings mailboxes | Yes | Shared short-list behavior |
+| Mail mailbox settings | Yes | Shared short-list behavior |
+| Mail labels/folders/members | No | Existing loader, including empty/error lists |
+| Meet meetings | Partial | Short-list gesture |
+| Storefronts | Partial | Short-list gesture |
+| Storefront listings | Yes | Shared short-list behavior |
+| Settings root/workspace | Yes | Shared short-list behavior |
+| Workspace members/invites/roles/secrets | Yes | Shared short-list behavior |
+| Account sessions/security | Partial | Short-list gesture |
+| Internal accounts | Yes | Shared short-list behavior |
+| Mobile version administration | Yes | Shared short-list behavior |
+| Offline stored modules | Yes | Shared short-list behavior |
+| Workspace selection | Partial | Error/empty/all-hidden states |
+| Notes active/archive | Partial | Short-list gesture |
+| Note-link picker | No | Force existing cached read-through; retain empty/error body |
+| Chat conversations | Yes | Shared short-list behavior |
+| Assistant history | No | Existing history cubit refresh |
+| Assistant model favorites | No | Existing favorites repository loader |
+
+Regression evidence: notifications_pull_to_refresh_test.dart exercises Inbox and
+Archive with empty, short and initial-error data, checks the selected cubit tab and refresh flag,
+holds the request to verify the refresh lifetime and then asserts new visible
+content. nova_refresh_indicator_test.dart covers short page physics, error
+viewports, canceled/upward gestures and actual floating-header geometry.
+
+The habit tracker detail Entries and Leaderboard tabs and the note-link picker
+also refresh through their existing owners. Explicit refresh retains empty/error
+presentation instead of restarting a full-page cold loader. Regression coverage
+includes both task-board row-action suites and exact indicator offsets for fixed
+and scrollable headers.
+
+Pull gestures retain the current error message while refreshing. Explicit Retry
+returns to loading feedback. Compact sheet empty/error states use a plain
+indicator with a shrink-wrapped scroll view. Regression coverage includes
+calendar_cubit_test.dart and nova_refresh_indicator_test.dart.
