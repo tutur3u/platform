@@ -2,7 +2,7 @@
 
 These patterns were moved out of root `AGENTS.md` so the root file can stay a
 hard-policy index. Load this reference when implementing broad `apps/web` or
-shared-package changes.
+shared-package changes. For web fonts, follow [manual subsetting and rendering acceptance](../../../../../apps/docs/build/development-tools/web-font-subsets.mdx).
 
 ## Web And Shared UI
 

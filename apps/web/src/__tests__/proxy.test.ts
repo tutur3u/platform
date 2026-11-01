@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { expectStaticAssetMatcher } from './proxy-static-assets';
 import { PUBLIC_MARKETING_ALIAS_CASES } from './public-marketing-alias-cases';
 import { AUTH_COOKIE_HEADER } from './required-mfa-proxy-fixture';
 import { createAuthenticatedSupabaseClient } from './staff-session-proxy-fixture';
@@ -1794,11 +1795,8 @@ describe('web proxy api handling', () => {
     expect(adminUpsert).not.toHaveBeenCalled();
   });
 
-  it('excludes audio assets from the proxy matcher so public media is served directly', async () => {
+  it('excludes public media and fonts while retaining protected routes', async () => {
     const { config } = await import('../proxy');
-
-    expect(config.matcher).toContain(
-      '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|manifest.webmanifest|sw.js|serwist|monitoring|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|mp3|wav|ogg|m4a|pdf|gif|webp)$).*)'
-    );
+    expectStaticAssetMatcher(config.matcher);
   });
 });
