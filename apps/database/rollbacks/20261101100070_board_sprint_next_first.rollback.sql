@@ -1,6 +1,6 @@
--- Manual rollback only: restores the 20261029060010 end_board_sprint and the
--- 20261029060020 membership sync, which assume one planned sprint per board.
--- Run before the 20261029060060 rollback.
+-- Manual rollback only: restores the 20261101100010 end_board_sprint and the
+-- 20261101100020 membership sync, which assume one planned sprint per board.
+-- Run before the 20261101100060 rollback.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '30s';

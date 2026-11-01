@@ -1,10 +1,10 @@
 -- Board sprints: planning several sprints ahead. A board keeps up to five open
 -- sprints, the running one and the planned ones after it. Planned sprints chain
 -- one after another, and only the earliest one, the next sprint, can start
--- (20261029060070_board_sprint_next_first.sql sends carried and rejoining work
+-- (20261101100070_board_sprint_next_first.sql sends carried and rejoining work
 -- to it). A task can also sit in no sprint, parked in Plan's backlog until
--- someone plans it. Builds on 20261029060000_board_sprints.sql through
--- 20261029060030_board_sprint_early_start.sql.
+-- someone plans it. Builds on 20261101100000_board_sprints.sql through
+-- 20261101100030_board_sprint_early_start.sql.
 
 -- 1. More than one planned sprint per board.
 DROP INDEX IF EXISTS public.task_cycles_one_planned_per_board;
