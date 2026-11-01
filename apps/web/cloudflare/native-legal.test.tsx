@@ -98,7 +98,7 @@ describe('native legal slice dispatch and rollback', () => {
     }
   );
   it.each([undefined, '', 'off', 'true', 'unknown'])(
-    'rolls back every public route to attested Next for %s',
+    'disables every public route to a static 404 for %s',
     async (flag) => {
       const { start, fetcher, handler } = setup();
       for (const path of paths) {
@@ -106,21 +106,17 @@ describe('native legal slice dispatch and rollback', () => {
           ...env,
           WEB_START_NATIVE_LEGAL: flag,
         });
-        expect(await response.text()).toBe('Next');
+        expect(await response.text()).toContain('Not migrated yet');
         expect(response.headers.get('x-tuturuuu-web-renderer')).toBe(
-          'Next-fallback'
+          'not-migrated'
         );
-        const forwarded = fetcher.mock.calls.at(-1)?.[0];
-        expect(forwarded).toBeInstanceOf(Request);
-        expect(forwarded instanceof Request ? forwarded.url : undefined).toBe(
-          `${env.NEXT_FALLBACK_ORIGIN}${path}?keep=%2f`
-        );
+        expect(response.status).toBe(404);
       }
       expect(start).not.toHaveBeenCalled();
-      expect(fetcher).toHaveBeenCalledTimes(paths.length);
+      expect(fetcher).not.toHaveBeenCalled();
     }
   );
-  it('keeps APIs, satellite routes, unknown locales, RSC and writes on Next', async () => {
+  it('returns 404 for APIs, satellite routes, unknown locales, RSC and writes', async () => {
     const { start, fetcher, handler } = setup();
     const requests = [
       request('/api/v1/legal'),
@@ -137,9 +133,11 @@ describe('native legal slice dispatch and rollback', () => {
       ].map((name) => request('/privacy', { headers: { [name]: '1' } })),
     ];
     for (const input of requests)
-      expect(await (await handler(input, env)).text()).toBe('Next');
+      expect(await (await handler(input, env)).text()).toContain(
+        'Not migrated yet'
+      );
     expect(start).not.toHaveBeenCalled();
-    expect(fetcher).toHaveBeenCalledTimes(requests.length);
+    expect(fetcher).not.toHaveBeenCalled();
   });
   it('does not bypass candidate admission, including signed-in requests', async () => {
     const { start, fetcher, handler } = setup();

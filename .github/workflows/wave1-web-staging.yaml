@@ -1,20 +1,13 @@
 name: Wave-1 staging Web publisher
-# Staging Web issuer and its protected Next fallback (staging-web-publisher
-# design §3, Tess conditions V1–V6 and §16). Dispatch only, from main, for one
-# exact admitted SHA. Ordering is fixed: one Vercel deployment, then
-# next-verify (V1b protection, every alias, N15–N17, _next/image and
-# monitoring) records `verified` in the signed D1 ledger, and only then may the
-# release owner MANUALLY attach the Custom Domain and set
-# WEB_STAGING_SERVING=on. This workflow never attaches domains, changes Access
-# or DNS, or writes WEB_STAGING_SERVING or STAGING_ACCESS_PHASE. The first pair
-# runs in the service-token-only `bootstrap` Access phase; the release owner
-# switches to `staff` only after verify-ingress is green. A red verify-ingress
-# rolls back only the staging Worker; the owner then decides on S1/S1b.
+# Native-only staging, dispatch-only from main for one exact admitted SHA.
+# This workflow never attaches domains, changes Access or DNS, or writes
+# WEB_STAGING_SERVING or STAGING_ACCESS_PHASE. Red ingress rolls back only
+# the staging Worker. Unmigrated paths return a static, no-store 404.
 on:
   workflow_dispatch:
     inputs:
       source_sha:
-        description: Full main commit SHA admitted by WEB_STAGING_NEXT_ADMISSION.
+        description: Full main commit SHA admitted by WAVE1_STAGING_PUBLICATION_ADMISSION.
         required: true
         type: string
 permissions:
@@ -43,7 +36,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           WAVE1_STAGING_PUBLISH_ENABLED: ${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}
-          WEB_STAGING_NEXT_ADMISSION: ${{ vars.WEB_STAGING_NEXT_ADMISSION }}
+          WAVE1_STAGING_PUBLICATION_ADMISSION: ${{ vars.WAVE1_STAGING_PUBLICATION_ADMISSION }}
         run: node scripts/ci/wave1-staging-preflight.mjs web web
   admit:
     needs: preflight
@@ -64,112 +57,15 @@ jobs:
       - name: Exact main ancestry, stop fence, admission and candidate qualification
         env:
           ENABLED: ${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}
-          NEXT_ADMISSION: ${{ vars.WEB_STAGING_NEXT_ADMISSION }}
+          PUBLICATION_ADMISSION: ${{ vars.WAVE1_STAGING_PUBLICATION_ADMISSION }}
           GH_TOKEN: ${{ github.token }}
         run: |
           [[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]
           git merge-base --is-ancestor "$SOURCE_SHA" "$GITHUB_SHA"
           test "$ENABLED" = true
           node scripts/ci/wave1-web-admit.mjs "$SOURCE_SHA"
-  next-deploy:
-    needs: admit
-    runs-on: ubuntu-latest
-    timeout-minutes: 50
-    environment: wave1-web-next-staging
-    outputs:
-      deployment_id: ${{ steps.deploy.outputs.deployment_id }}
-      origin: ${{ steps.deploy.outputs.origin }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ env.SOURCE_SHA }}
-          persist-credentials: false
-      - uses: ./.github/actions/setup-bun-with-retry
-        with:
-          bun-version: 1.4.4
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24.22.0
-      - run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
-      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
-      - run: bash scripts/ci/run-with-backoff.sh bun install --global --ignore-scripts vercel@59.25.0
-      - name: Bundle exact staging build identity
-        env:
-          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
-          PLATFORM_BUILD_REF_NAME: main
-          PLATFORM_BUILD_ENVIRONMENT: staging
-        run: bun run --silent scripts/ci/generate-build-metadata.ts
-      - name: Pull staging-target settings
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_WEB_STAGING_PROJECT_ID }}
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN_WEB_STAGING }}
-        working-directory: apps/web
-        run: vercel pull --yes --environment=staging
-      - name: Build the exact SHA locally with the staging-only Vercel config
-        timeout-minutes: 40
-        # M1: repo build code runs here, so no Vercel, Cloudflare or GitHub
-        # control credential is in scope; `vercel pull` already linked the
-        # project and staging settings into apps/web/.vercel.
-        env:
-          NODE_OPTIONS: --max-old-space-size=8192
-          TURBO_CONCURRENCY: '2'
-        uses: ./.github/actions/run-with-turbo-remote-cache
-        with:
-          # No remote cache for the staging identity build.
-          command: cd apps/web && vercel build --target=staging --local-config vercel.staging.json
-          token: ''
-          team: ''
-      - name: One ledger-guarded Vercel deployment for this SHA
-        id: deploy
-        timeout-minutes: 10
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_WEB_STAGING_PROJECT_ID: ${{ secrets.VERCEL_WEB_STAGING_PROJECT_ID }}
-          VERCEL_TOKEN_WEB_STAGING: ${{ secrets.VERCEL_TOKEN_WEB_STAGING }}
-          CLOUDFLARE_STAGING_API_TOKEN: ${{ secrets.CLOUDFLARE_STAGING_API_TOKEN }}
-          CLOUDFLARE_STAGING_ACCOUNT_ID: ${{ vars.CLOUDFLARE_STAGING_ACCOUNT_ID }}
-          WAVE1_STAGING_ATTEMPT_D1_ID: ${{ vars.WAVE1_STAGING_ATTEMPT_D1_ID }}
-          WAVE1_CONTROL_READ_TOKEN: ${{ secrets.WAVE1_CONTROL_READ_TOKEN }}
-        run: node scripts/ci/wave1-web-next.mjs deploy "$SOURCE_SHA"
-  next-verify:
-    needs: next-deploy
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    environment: wave1-web-next-staging
-    outputs:
-      deployment_id: ${{ steps.verify.outputs.deployment_id }}
-      origin: ${{ steps.verify.outputs.origin }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ env.SOURCE_SHA }}
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24.22.0
-      - name: V1b protection, every alias, N15–N17, _next/image and monitoring, then record verified
-        id: verify
-        timeout-minutes: 5
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_WEB_STAGING_PROJECT_ID: ${{ secrets.VERCEL_WEB_STAGING_PROJECT_ID }}
-          VERCEL_TOKEN_WEB_STAGING: ${{ secrets.VERCEL_TOKEN_WEB_STAGING }}
-          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
-          TRUSTED_PROXY_ORIGIN_SECRET: ${{ secrets.TRUSTED_PROXY_ORIGIN_SECRET }}
-          CLOUDFLARE_STAGING_API_TOKEN: ${{ secrets.CLOUDFLARE_STAGING_API_TOKEN }}
-          CLOUDFLARE_STAGING_ACCOUNT_ID: ${{ vars.CLOUDFLARE_STAGING_ACCOUNT_ID }}
-          WAVE1_STAGING_ATTEMPT_D1_ID: ${{ vars.WAVE1_STAGING_ATTEMPT_D1_ID }}
-          WAVE1_CONTROL_READ_TOKEN: ${{ secrets.WAVE1_CONTROL_READ_TOKEN }}
-        run: |
-          node scripts/ci/wave1-web-next.mjs verify "$SOURCE_SHA"
-          {
-            echo '## Next fallback verified'
-            echo 'The release owner may now, manually and only for this exact pair, attach the'
-            echo 'Custom Domain and set WEB_STAGING_SERVING=on before admitting the Worker.'
-          } >> "$GITHUB_STEP_SUMMARY"
   seal-worker:
-    needs: next-verify
+    needs: admit
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -177,8 +73,6 @@ jobs:
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.STAGING_SUPABASE_PUBLISHABLE_KEY }}
-      NEXT_DEPLOYMENT_ID: ${{ needs.next-verify.outputs.deployment_id }}
-      NEXT_ORIGIN: ${{ needs.next-verify.outputs.origin }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -194,9 +88,9 @@ jobs:
       - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - run: bun run --cwd apps/web build:candidate
       - run: bun run --cwd apps/web test:candidate:runtime
-      - name: Seal the candidate with the verified Next origin
+      - name: Seal the native-only staging candidate
         id: seal
-        run: node scripts/ci/wave1-web-seal.mjs prepare "$SOURCE_SHA" "$NEXT_DEPLOYMENT_ID" "$NEXT_ORIGIN"
+        run: node scripts/ci/wave1-web-seal.mjs prepare "$SOURCE_SHA"
       - run: python3 scripts/ci/wave1-native-archive.py pack apps/web/cloudflare "$RUNNER_TEMP/wave1-web.tar.gz"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -239,7 +133,7 @@ jobs:
           node scripts/ci/wave1-native-publish.mjs dry-run web staging "$SOURCE_SHA"
           node scripts/ci/wave1-web-seal.mjs verify "$SOURCE_SHA"
   publish-worker:
-    needs: [next-verify, restored]
+    needs: restored
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: wave1-web-staging
@@ -262,7 +156,7 @@ jobs:
       - run: |
           python3 scripts/ci/wave1-native-archive.py restore apps/web/cloudflare "$RUNNER_TEMP/publish/wave1-web.tar.gz"
           node scripts/ci/wave1-web-seal.mjs verify "$SOURCE_SHA"
-      - name: Verified pair, ingress preflight, fresh Vercel recheck, then one upload
+      - name: Exact artifact admission, ingress preflight, then one upload
         timeout-minutes: 5
         env:
           WAVE1_STAGING_ATTEMPT_D1_ID: ${{ vars.WAVE1_STAGING_ATTEMPT_D1_ID }}
@@ -276,16 +170,11 @@ jobs:
           STAGING_ACCESS_STAFF_GROUP_ID: ${{ vars.STAGING_ACCESS_STAFF_GROUP_ID }}
           STAGING_ACCESS_STAFF_EMAIL_LIST_ID: ${{ vars.STAGING_ACCESS_STAFF_EMAIL_LIST_ID }}
           STAGING_ACCESS_HEALTH_TOKEN_IDS: ${{ vars.STAGING_ACCESS_HEALTH_TOKEN_IDS }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_WEB_STAGING_PROJECT_ID: ${{ secrets.VERCEL_WEB_STAGING_PROJECT_ID }}
-          VERCEL_TOKEN_WEB_STAGING: ${{ secrets.VERCEL_TOKEN_WEB_STAGING }}
-          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
-          TRUSTED_PROXY_ORIGIN_SECRET: ${{ secrets.TRUSTED_PROXY_ORIGIN_SECRET }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.STAGING_SUPABASE_PUBLISHABLE_KEY }}
         run: node scripts/ci/wave1-native-publish.mjs publish web staging "$SOURCE_SHA"
   verify-ingress:
-    needs: [next-verify, publish-worker]
+    needs: publish-worker
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: wave1-web-staging
@@ -311,17 +200,6 @@ jobs:
           CF_ACCESS_HEALTH_CLIENT_SECRET: ${{ secrets.CF_ACCESS_HEALTH_CLIENT_SECRET }}
           WAVE1_CONTROL_READ_TOKEN: ${{ secrets.WAVE1_CONTROL_READ_TOKEN }}
         run: node scripts/wave1-staging/readback.mjs --app web --expect-sha "$SOURCE_SHA"
-      - name: Post-publication Vercel recheck (N15–N17, every alias, _next/image, monitoring)
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_WEB_STAGING_PROJECT_ID: ${{ secrets.VERCEL_WEB_STAGING_PROJECT_ID }}
-          VERCEL_TOKEN_WEB_STAGING: ${{ secrets.VERCEL_TOKEN_WEB_STAGING }}
-          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
-          TRUSTED_PROXY_ORIGIN_SECRET: ${{ secrets.TRUSTED_PROXY_ORIGIN_SECRET }}
-          CLOUDFLARE_STAGING_API_TOKEN: ${{ secrets.CLOUDFLARE_STAGING_API_TOKEN }}
-          CLOUDFLARE_STAGING_ACCOUNT_ID: ${{ vars.CLOUDFLARE_STAGING_ACCOUNT_ID }}
-          NEXT_DEPLOYMENT_ID: ${{ needs.next-verify.outputs.deployment_id }}
-        run: node scripts/ci/wave1-web-next.mjs recheck "$SOURCE_SHA" "$NEXT_DEPLOYMENT_ID"
       - name: Red verify-ingress rolls only the staging Worker back (R-d)
         if: failure()
         timeout-minutes: 3
