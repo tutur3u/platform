@@ -333,6 +333,36 @@ void main() {
     });
   });
 
+  group('unrecognised risk class', () {
+    testWidgets('is never one tap and opens the detail instead', (
+      tester,
+    ) async {
+      var opened = 0;
+      await _pump(
+        tester,
+        _item(
+          title: 'Rotate the production signing key?',
+          options: const ['Rotate now', 'Schedule for the weekend'],
+          recommended: 'Schedule for the weekend',
+          v2: _v2(
+            options: const [
+              AskOption(id: 'a', label: 'Rotate now'),
+              AskOption(id: 'b', label: 'Schedule for the weekend'),
+            ],
+            recommendedId: 'b',
+            risk: AskRiskClass.unknown,
+          ),
+        ),
+        onSelect: (_) => fail('an unrecognised risk is never one tap'),
+        onOpen: () => opened++,
+      );
+      expect(find.text('Needs Face ID or fingerprint'), findsOneWidget);
+      await tester.tap(find.text('Rotate now'), warnIfMissed: false);
+      await tester.tap(find.text('Open to answer with Face ID'));
+      expect(opened, 1);
+    });
+  });
+
   group('other phases', () {
     testWidgets('an expired ask is closed and says so', (tester) async {
       await _pump(

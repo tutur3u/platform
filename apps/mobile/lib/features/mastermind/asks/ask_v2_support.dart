@@ -13,12 +13,17 @@ enum AskInboxClass {
 }
 
 /// Why an ask needs extra care before it can be answered. `normal` is no risk.
+///
+/// [unknown] is never published: it is what a present but unrecognised
+/// `risk_class` (an unknown string, a number, an object) reads as, so the
+/// risk gate fails CLOSED. An absent `risk_class` stays null (old hub data).
 enum AskRiskClass {
   deploy('deploy'),
   spend('spend'),
   credential('credential'),
   security('security'),
-  normal('normal');
+  normal('normal'),
+  unknown('unknown');
 
   const AskRiskClass(this.wireName);
   final String wireName;

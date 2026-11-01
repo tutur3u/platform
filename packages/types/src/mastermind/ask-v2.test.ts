@@ -193,10 +193,52 @@ describe('field fallback', () => {
     });
     expect(card.recommended_why).toBeNull();
     expect(card.inbox_class).toBe('decision');
-    expect(card.risk_class).toBeNull();
+    expect(card.risk_class).toBe('unknown');
+    expect(card.risky).toBe(true);
     expect(card.urgency).toBeNull();
     expect(card.resolved_via).toBeNull();
     expect(card.deadline_at).toBeNull();
+  });
+
+  describe('risk gate fails closed', () => {
+    const open = { title: 'Q', body: 'B', options: ['A'] };
+
+    it.each([
+      ['an unknown string', 'lava'],
+      ['an empty string', ''],
+      ['a different-case published class', 'Deploy'],
+      ['a number', 5],
+      ['an object', { class: 'deploy' }],
+      ['an array', ['normal']],
+      ['a boolean', false],
+    ])('%s is unknown and risky', (_name, value) => {
+      const card = parse({ ...open, risk_class: value });
+      expect(card.risk_class).toBe('unknown');
+      expect(card.risky).toBe(true);
+    });
+
+    it('an explicit normal allows one tap', () => {
+      const card = parse({ ...open, risk_class: 'normal' });
+      expect(card.risk_class).toBe('normal');
+      expect(card.risky).toBe(false);
+    });
+
+    it.each(['deploy', 'spend', 'credential', 'security'])(
+      '%s is risky',
+      (value) => {
+        const card = parse({ ...open, risk_class: value });
+        expect(card.risk_class).toBe(value);
+        expect(card.risky).toBe(true);
+      }
+    );
+
+    it('an absent or null risk_class keeps the old behaviour', () => {
+      for (const extra of [{}, { risk_class: null }]) {
+        const card = parse({ ...open, ...extra });
+        expect(card.risk_class).toBeNull();
+        expect(card.risky).toBe(false);
+      }
+    });
   });
 
   it('rejects only a malformed identity', () => {

@@ -114,6 +114,26 @@ void main() {
       expect(ask.reversible, isFalse);
     });
 
+    test('an unrecognised risk_class is risky, never one tap', () {
+      for (final value in <Object?>[
+        'nuclear',
+        7,
+        <String, Object?>{'a': 1},
+      ]) {
+        final item = _one({..._row(1), 'risk_class': value});
+        expect(item.askV2.riskClass, AskRiskClass.unknown);
+        final ask = inboxAskFor(item, now: DateTime.utc(2026, 11, 2, 3));
+        expect(ask.card.risky, isTrue, reason: '$value');
+      }
+    });
+
+    test('an explicit normal risk_class stays one tap', () {
+      final item = _one({..._row(1), 'risk_class': 'normal'});
+      final ask = inboxAskFor(item, now: DateTime.utc(2026, 11, 2, 3));
+      expect(ask.card.risky, isFalse);
+      expect(ask.optionIndexes, [0, 1, 2]);
+    });
+
     test('keeps an expired status on an open row', () {
       final item = _one(_row(9));
       expect(item.askV2.status, AskStatus.expired);
@@ -152,7 +172,6 @@ void main() {
 
   group('malformed values', () {
     final bad = <String, Object?>{
-      'risk_class': 'nuclear',
       'inbox_class': 5,
       'resolved_via': 'pigeon',
       'deadline_at': '2026-11-02',
@@ -169,7 +188,6 @@ void main() {
         final item = _one({..._row(1), entry.key: entry.value});
         final v2 = item.askV2;
         expect(switch (entry.key) {
-          'risk_class' => v2.riskClass,
           'inbox_class' => v2.inboxClass,
           'resolved_via' => v2.resolvedVia,
           'deadline_at' => v2.deadlineAt,
@@ -222,6 +240,51 @@ void main() {
         ],
       });
       expect(inboxAskFor(item).optionIndexes, [0, null]);
+    });
+
+    test('duplicate option labels disable one-tap for the whole card', () {
+      final item = _one({
+        ..._row(1),
+        'options': ['Yes', 'No'],
+        'recommended_option': null,
+        'options_v2': [
+          {'id': 'a', 'label': 'Yes'},
+          {'id': 'b', 'label': 'Yes'},
+          {'id': 'c', 'label': 'No'},
+        ],
+        'recommended_id': null,
+      });
+      final ask = inboxAskFor(item, now: DateTime.utc(2026, 11, 2, 3));
+      expect(ask.card.options, hasLength(3));
+      expect(ask.optionIndexes, [null, null, null]);
+    });
+
+    test('duplicate plain wire labels disable one-tap even with unique v2', () {
+      final item = _one({
+        ..._row(1),
+        'options': ['entity_phuc', 'Entity phuc', 'No'],
+        'recommended_option': null,
+        'options_v2': [
+          {'id': 'a', 'label': 'Entity phuc'},
+          {'id': 'c', 'label': 'No'},
+        ],
+        'recommended_id': null,
+      });
+      final ask = inboxAskFor(item, now: DateTime.utc(2026, 11, 2, 3));
+      expect(ask.optionIndexes, [null, null]);
+    });
+
+    test('unique labels still map to their wire index by id order', () {
+      final item = _one({
+        ..._row(1),
+        'options_v2': [
+          {'id': 'x', 'label': 'Hold until Monday'},
+          {'id': 'y', 'label': 'Ship now'},
+        ],
+        'recommended_id': null,
+      });
+      final ask = inboxAskFor(item, now: DateTime.utc(2026, 11, 2, 3));
+      expect(ask.optionIndexes, [1, 0]);
     });
 
     test('an empty options list on a decision is an incomplete card', () {

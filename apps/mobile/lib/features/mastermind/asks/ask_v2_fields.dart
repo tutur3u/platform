@@ -10,9 +10,10 @@ const _maxOptions = 8;
 ///
 /// Read tolerantly and identically by the ask detail parser and the strict
 /// snapshot parser: an unknown enum, a malformed value or an oversized string
-/// leaves that field absent. Nothing here ever throws, and one bad `options_v2`
-/// entry voids the whole list (never a silently trimmed one) so the card falls
-/// back to the legacy `options`.
+/// leaves that field absent (except `risk_class`: a present but unrecognised
+/// value reads as [AskRiskClass.unknown], never as no risk). Nothing here ever
+/// throws, and one bad `options_v2` entry voids the whole list (never a
+/// silently trimmed one) so the card falls back to the legacy `options`.
 final class AskV2Fields {
   const AskV2Fields({
     this.status,
@@ -51,11 +52,7 @@ final class AskV2Fields {
       (v) => v.wireName,
     ),
     deadlineAt: parseAskTimestamp(json['deadline_at']),
-    riskClass: _enum(
-      AskRiskClass.values,
-      json['risk_class'],
-      (v) => v.wireName,
-    ),
+    riskClass: _riskClass(json['risk_class']),
     textComplete: json['text_complete'] is bool
         ? json['text_complete'] as bool
         : null,
@@ -110,6 +107,15 @@ List<AskOption> _optionsV2(Object? value) {
     );
   }
   return List.unmodifiable(options);
+}
+
+/// Absent (missing or null) is null: old hubs never send it, so one-tap keeps
+/// working. A PRESENT value that is not a published class reads as
+/// [AskRiskClass.unknown], which the card treats as risky (fail closed).
+AskRiskClass? _riskClass(Object? wire) {
+  if (wire == null) return null;
+  return _enum(AskRiskClass.values, wire, (v) => v.wireName) ??
+      AskRiskClass.unknown;
 }
 
 T? _enum<T>(List<T> values, Object? wire, String Function(T) name) {

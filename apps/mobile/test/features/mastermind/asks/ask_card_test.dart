@@ -146,10 +146,58 @@ void main() {
       });
       expect(card.recommendedWhy, isNull);
       expect(card.inboxClass, AskInboxClass.decision);
-      expect(card.riskClass, isNull);
+      expect(card.riskClass, AskRiskClass.unknown);
+      expect(card.risky, isTrue);
       expect(card.urgency, isNull);
       expect(card.resolvedVia, isNull);
       expect(card.deadlineAt, isNull);
+    });
+
+    group('risk gate fails closed', () {
+      for (final entry in <String, Object?>{
+        'an unknown string': 'lava',
+        'an empty string': '',
+        'a different-case class': 'Deploy',
+        'a number': 5,
+        'an object': {'class': 'deploy'},
+        'a list': ['normal'],
+        'a boolean': false,
+      }.entries) {
+        test('${entry.key} is unknown and risky', () {
+          final card = _card({..._ok, 'risk_class': entry.value});
+          expect(card.riskClass, AskRiskClass.unknown);
+          expect(card.risky, isTrue);
+          expect(card.toJson()['risk_class'], 'unknown');
+        });
+      }
+
+      test('an explicit normal allows one tap', () {
+        final card = _card({..._ok, 'risk_class': 'normal'});
+        expect(card.riskClass, AskRiskClass.normal);
+        expect(card.risky, isFalse);
+      });
+
+      test('a published class is risky', () {
+        for (final name in ['deploy', 'spend', 'credential', 'security']) {
+          expect(
+            _card({..._ok, 'risk_class': name}).risky,
+            isTrue,
+            reason: name,
+          );
+        }
+      });
+
+      test('an absent or null risk_class keeps the old behaviour', () {
+        for (final extra in <Map<String, dynamic>>[
+          {},
+          {'risk_class': null},
+        ]) {
+          final card = _card({..._ok, ...extra});
+          expect(card.riskClass, isNull);
+          expect(card.risky, isFalse);
+          expect(card.toJson()['risk_class'], isNull);
+        }
+      });
     });
 
     test('rejects only a malformed identity', () {

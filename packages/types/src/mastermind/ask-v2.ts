@@ -9,7 +9,9 @@ import { z } from 'zod';
  *
  * Reader rules (identical on both sides):
  * - unknown keys are ignored; an unknown enum or malformed optional field is
- *   absent, never fatal. Only a bad `id` / `version_hash` rejects the row;
+ *   absent, never fatal (except `risk_class`: present but unrecognised reads
+ *   as `unknown`, which is risky, never as no risk). Only a bad `id` /
+ *   `version_hash` rejects the row;
  * - `options_v2` / `recommended_id` win when `options_v2` is valid, otherwise
  *   `options` / `recommended_option` (a label) are used;
  * - `inbox_class` is derived when absent (see `deriveInboxClass`);
@@ -24,6 +26,14 @@ export const ASK_RISK_CLASSES = [
   'security',
   'normal',
 ] as const;
+/**
+ * What a card reports as `risk_class`: the published classes plus `unknown`,
+ * which is never published. A PRESENT but unrecognised `risk_class` (an
+ * unknown string, a number, an object) reads as `unknown`, which is risky, so
+ * the gate fails closed. An absent (or null) `risk_class` stays null (old hub
+ * data that never sent it).
+ */
+export const ASK_CARD_RISK_CLASSES = [...ASK_RISK_CLASSES, 'unknown'] as const;
 export const ASK_INBOX_URGENCIES = [
   'now',
   'today',
@@ -42,7 +52,7 @@ export const ASK_INCOMPLETE_REASONS = [
 ] as const;
 
 export type AskInboxClass = (typeof ASK_INBOX_CLASSES)[number];
-export type AskRiskClass = (typeof ASK_RISK_CLASSES)[number];
+export type AskRiskClass = (typeof ASK_CARD_RISK_CLASSES)[number];
 export type AskInboxUrgency = (typeof ASK_INBOX_URGENCIES)[number];
 export type AskIncompleteReason = (typeof ASK_INCOMPLETE_REASONS)[number];
 
@@ -67,6 +77,17 @@ const text = (max: number) =>
 
 const oneOf = <const T extends readonly [string, ...string[]]>(values: T) =>
   z.enum(values).optional().catch(undefined);
+
+const riskClass = z
+  .unknown()
+  .transform((value): AskRiskClass | undefined => {
+    if (value === undefined || value === null) return undefined;
+    return (ASK_RISK_CLASSES as readonly unknown[]).includes(value)
+      ? (value as AskRiskClass)
+      : 'unknown';
+  })
+  .optional()
+  .catch(undefined);
 
 const isLeap = (year: number) =>
   (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
@@ -192,7 +213,7 @@ const askInputSchema = z.object({
   status: oneOf(['open', 'resolved', 'expired']),
   urgency: oneOf(ASK_INBOX_URGENCIES),
   inbox_class: oneOf(ASK_INBOX_CLASSES),
-  risk_class: oneOf(ASK_RISK_CLASSES),
+  risk_class: riskClass,
   resolved_via: oneOf(ASK_RESOLVED_VIA),
   deadline_at: timestamp,
   updated_at: timestamp,
@@ -219,7 +240,7 @@ export const askCardSchema = z.object({
   inbox_class: z.enum(ASK_INBOX_CLASSES),
   urgency: z.enum(ASK_INBOX_URGENCIES).nullable(),
   deadline_at: z.string().nullable(),
-  risk_class: z.enum(ASK_RISK_CLASSES).nullable(),
+  risk_class: z.enum(ASK_CARD_RISK_CLASSES).nullable(),
   risky: z.boolean(),
   phase: z.enum(ASK_PHASES),
   kind: z.enum(ASK_KINDS).nullable(),

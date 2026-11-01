@@ -84,10 +84,7 @@ InboxAsk inboxAskFor(NeedsYou item, {DateTime? now}) {
   final card = AskCard.fromDetail(detail, now: now);
   final indexes = v2.optionsV2.isEmpty
       ? [for (final (index, _) in selectable) index]
-      : [
-          for (final option in card.options)
-            _wireIndex(item, selectable, option.label),
-        ];
+      : _v2WireIndexes(item, selectable, card.options);
   return InboxAsk(
     card: card,
     optionIndexes: List.unmodifiable(indexes),
@@ -119,9 +116,37 @@ String? _text(NeedsYou item) {
   return rest.isNotEmpty ? rest : item.body.trim();
 }
 
+/// Maps v2 options to wire `option_index`es. The hub publishes no index on
+/// `options_v2`, so the label is the only join key; it is trusted only when
+/// it is unambiguous. Any duplicate label (among the v2 options or among the
+/// wire options) disables one-tap for the whole card (every index null) so a
+/// tap can never send a different option than the one shown.
+List<int?> _v2WireIndexes(
+  NeedsYou item,
+  List<(int, String)> selectable,
+  List<AskOption> options,
+) {
+  final shown = [for (final option in options) option.label];
+  final ambiguous =
+      shown.toSet().length != shown.length ||
+      _hasDuplicates([for (final (_, plain) in selectable) plain]) ||
+      _hasDuplicates([
+        for (final (index, _) in selectable) item.options[index],
+      ]);
+  if (ambiguous) return List<int?>.filled(options.length, null);
+  return [for (final label in shown) _wireIndex(item, selectable, label)];
+}
+
+bool _hasDuplicates(List<String> labels) =>
+    labels.toSet().length != labels.length;
+
 int? _wireIndex(NeedsYou item, List<(int, String)> selectable, String label) {
+  int? match;
   for (final (index, plain) in selectable) {
-    if (plain == label || item.options[index] == label) return index;
+    if (plain == label || item.options[index] == label) {
+      if (match != null) return null;
+      match = index;
+    }
   }
-  return null;
+  return match;
 }

@@ -108,7 +108,9 @@ final class AskCard {
 
   bool get incomplete => incompleteReasons.isNotEmpty;
 
-  /// A non-null, non-`normal` risk class: never answered with one tap.
+  /// A non-null, non-`normal` risk class (including a present but
+  /// unrecognised one, [AskRiskClass.unknown]): never answered with one tap.
+  /// Only an explicit `normal`, or no `risk_class` at all, allows one tap.
   bool get risky => riskClass != null && riskClass != AskRiskClass.normal;
 
   /// The snapshot shape asserted against `ask-v2.normalized.json`.
