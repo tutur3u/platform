@@ -79,6 +79,10 @@ interface Props {
   onCreateTask?: () => void;
   /** Sprint pill shown after the board in the breadcrumb. */
   sprintSlot?: ReactNode;
+  /** Plan | Board tabs, shown first in the second row on sprint boards. */
+  planTabs?: ReactNode;
+  /** The Plan tab is open, so board-only controls hide. */
+  planActive?: boolean;
 }
 
 export function BoardHeader({
@@ -110,6 +114,8 @@ export function BoardHeader({
   countsComplete = true,
   onCreateTask,
   sprintSlot,
+  planTabs,
+  planActive = false,
 }: Props) {
   const t = useTranslations();
   const [shareBoardOpen, setShareBoardOpen] = useState(false);
@@ -267,11 +273,13 @@ export function BoardHeader({
             onListStatusFilterChange={onListStatusFilterChange}
           />
         ) : null}
-        <BoardSearchInput
-          isSearching={isSearching}
-          onSearchChange={handleSearchChange}
-          searchQuery={filters.searchQuery}
-        />
+        {planActive ? null : (
+          <BoardSearchInput
+            isSearching={isSearching}
+            onSearchChange={handleSearchChange}
+            searchQuery={filters.searchQuery}
+          />
+        )}
         {managerControlsVisible ? (
           <ToneButton onClick={() => setShareBoardOpen(true)} tone="cyan">
             <Share2 />
@@ -315,59 +323,64 @@ export function BoardHeader({
         />
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        {interactiveControlsVisible && people ? (
-          <BoardPeopleFilter
-            currentUserId={currentUserId}
-            filters={filters}
-            onFiltersChange={onFiltersChange}
-            people={people}
-            unassignedCount={unassignedCount}
-            countsComplete={countsComplete}
-          />
-        ) : null}
-        {interactiveControlsVisible && projectTaskCounts ? (
-          <BoardProjectFilter
-            filters={filters}
-            onFiltersChange={onFiltersChange}
-            projectTaskCounts={projectTaskCounts}
-            countsComplete={countsComplete}
-            workspaceId={workspaceId}
-          />
-        ) : null}
-        {interactiveControlsVisible && currentUserId ? (
-          <ToneButton
-            active={focusOn}
-            aria-pressed={focusOn}
-            onClick={handleFocus}
-            title={t('ws-task-boards.header.focus_hint')}
-            tone="blue"
-          >
-            <Zap className={cn(focusOn && 'fill-current')} />
-            {t('ws-task-boards.header.focus')}
-          </ToneButton>
-        ) : null}
-        <span className="min-w-0 flex-1" />
-        {filtersActive ? (
-          <Button
-            className="h-8 text-muted-foreground"
-            onClick={handleClear}
-            size="sm"
-            variant="ghost"
-          >
-            <X />
-            {t('common.clear')}
-          </Button>
-        ) : null}
-        <BoardSortMenu
-          onChange={(sortBy) => onFiltersChange({ ...filters, sortBy })}
-          sortBy={filters.sortBy}
-        />
-        <BoardViewMenu
-          availableViews={enabledViews}
-          currentView={currentView}
-          hotkeyLabels={viewHotkeyLabels}
-          onViewChange={onViewChange}
-        />
+        {planTabs}
+        {planActive ? null : (
+          <>
+            {interactiveControlsVisible && people ? (
+              <BoardPeopleFilter
+                currentUserId={currentUserId}
+                filters={filters}
+                onFiltersChange={onFiltersChange}
+                people={people}
+                unassignedCount={unassignedCount}
+                countsComplete={countsComplete}
+              />
+            ) : null}
+            {interactiveControlsVisible && projectTaskCounts ? (
+              <BoardProjectFilter
+                filters={filters}
+                onFiltersChange={onFiltersChange}
+                projectTaskCounts={projectTaskCounts}
+                countsComplete={countsComplete}
+                workspaceId={workspaceId}
+              />
+            ) : null}
+            {interactiveControlsVisible && currentUserId ? (
+              <ToneButton
+                active={focusOn}
+                aria-pressed={focusOn}
+                onClick={handleFocus}
+                title={t('ws-task-boards.header.focus_hint')}
+                tone="blue"
+              >
+                <Zap className={cn(focusOn && 'fill-current')} />
+                {t('ws-task-boards.header.focus')}
+              </ToneButton>
+            ) : null}
+            <span className="min-w-0 flex-1" />
+            {filtersActive ? (
+              <Button
+                className="h-8 text-muted-foreground"
+                onClick={handleClear}
+                size="sm"
+                variant="ghost"
+              >
+                <X />
+                {t('common.clear')}
+              </Button>
+            ) : null}
+            <BoardSortMenu
+              onChange={(sortBy) => onFiltersChange({ ...filters, sortBy })}
+              sortBy={filters.sortBy}
+            />
+            <BoardViewMenu
+              availableViews={enabledViews}
+              currentView={currentView}
+              hotkeyLabels={viewHotkeyLabels}
+              onViewChange={onViewChange}
+            />
+          </>
+        )}
       </div>
       <BoardShareDialog
         board={{ id: board.id, name: board.name }}

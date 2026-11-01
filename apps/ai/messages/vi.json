@@ -3082,6 +3082,7 @@
     },
     "sprints": {
       "active": "Đang chạy",
+      "backlog_move_failed": "Đã thêm vào sprint đang chạy: không thể chuyển vào backlog",
       "done_count": "{done}/{total} xong",
       "length_failed": "Không thể lưu độ dài sprint",
       "length_saved": "Đã lưu độ dài sprint",
@@ -3098,7 +3099,27 @@
       "task_count": "{count} công việc",
       "turned_off": "Đã tắt sprint",
       "unavailable": "Sprint chưa khả dụng",
-      "weeks": "{count} tuần"
+      "weeks": "{count} tuần",
+      "add_to_backlog": "Thêm vào backlog",
+      "assign": "Giao {name}",
+      "assign_failed": "Không thể giao công việc",
+      "assign_to": "Giao cho",
+      "backlog": "Backlog",
+      "backlog_empty": "Mọi người đều đã có việc.",
+      "board_tab": "Bảng",
+      "create_failed": "Không thể tạo công việc",
+      "end_first": "Kết thúc {name} trước",
+      "goal": "Mục tiêu sprint",
+      "goal_failed": "Không thể lưu mục tiêu",
+      "goal_placeholder": "Thêm mục tiêu sprint",
+      "new_backlog_task": "Công việc backlog mới",
+      "new_task_placeholder": "Tên công việc, rồi nhấn Enter",
+      "open_task": "Mở {name}",
+      "owner_empty": "Kéo từ backlog vào đây.",
+      "plan_hint": "Kéo công việc vào một người, hoặc dùng nút ảnh đại diện. Kéo về backlog để bỏ giao.",
+      "plan_tab": "Kế hoạch",
+      "search_backlog": "Tìm trong backlog...",
+      "tabs_label": "Chế độ sprint"
     }
   },
   "satellite-account-settings": {
