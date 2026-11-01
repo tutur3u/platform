@@ -3,7 +3,12 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const test = require('node:test');
-const { audit, publicSafetyErrors } = require('./docs-audit');
+const {
+  audit,
+  hashTerm,
+  hashedTermErrors,
+  publicSafetyErrors,
+} = require('./docs-audit');
 const {
   collect,
   generate,
@@ -74,49 +79,79 @@ test('audit catches broken and unregistered pages without treating examples as l
   assert.ok(result.errors.every((error) => !error.includes('/example')));
 });
 
+// Synthetic terms: the real list is hashed in docs-audit.js and never spelled
+// out here either.
+const TEST_SALT = 'test-salt';
+const TEST_TERMS = {
+  'fleet host or machine name': [hashTerm('zzhost', TEST_SALT)],
+  'customer name without consent': [
+    hashTerm('Alpha Bravo', TEST_SALT),
+    hashTerm('charlieclinic', TEST_SALT),
+  ],
+};
+const testOptions = { terms: TEST_TERMS, salt: TEST_SALT };
+
 test('public-safety guard flags internal identifiers without echoing them', () => {
   const unsafe = [
     'See SR-123 for the finding.',
     'Run it on `/Users/Someone/work/repo/`.',
-    'ssh skr-example',
     'https://worker.account.workers.dev/health',
     'Connect to 192.168.1.20 or host.tailnet-name.ts.net',
     'Tailnet peer 100.101.102.103',
     `token ghp_${'a'.repeat(36)}`,
     `jwt eyJ${'a'.repeat(20)}.eyJ${'b'.repeat(20)}.sig`,
     `https://${'a'.repeat(20)}.supabase.co`,
-    'ref nzamlzqfdwaaxdefwraj',
     'thread mcp:launch:abc',
     'agent mcp:0123abcd-0000',
-    'Easy\n  Center asked for this.',
-    'The bacsivy clinic and PKTM sites.',
-    'Mail owner@gmail.com or phucvo@example.test',
+    'Mail owner@gmail.com please',
   ];
   const errors = publicSafetyErrors(unsafe.join('\n'), 'page.mdx');
   const labels = new Set(errors.map((error) => error.split(':')[0]));
-  assert.ok(labels.size >= 13, [...labels].join('|'));
+  assert.ok(labels.size >= 10, [...labels].join('|'));
   assert.ok(errors.every((error) => error.startsWith('Public-safety (')));
   assert.ok(
-    errors.every(
-      (error) =>
-        !/SR-123|Someone|skr-example|ghp_|eyJ|nzamlz|bacsivy|PKTM|gmail/.test(
-          error
-        )
-    )
+    errors.every((error) => !/SR-123|Someone|ghp_|eyJ|gmail/.test(error))
   );
-  // Each new rule fires on its own line, and a wrapped name reports its start.
-  for (const [index, line] of unsafe.entries()) {
-    if (line.includes('\n')) continue;
+  // Each rule fires on its own line.
+  for (const [index, line] of unsafe.entries())
     assert.ok(
       publicSafetyErrors(line, 'p.mdx').length >= 1,
       `rule for line ${index}`
     );
-  }
-  assert.ok(
-    publicSafetyErrors('x\nEasy\n  Center', 'p.mdx').includes(
-      'Public-safety (customer name without consent): p.mdx:2'
-    )
+});
+
+test('hashed terms are found across line breaks and dashes without echoing them', () => {
+  const found = (text) =>
+    publicSafetyErrors(text, 'p.mdx', testOptions).filter((error) =>
+      /fleet host|customer name/.test(error)
+    );
+  assert.deepEqual(found('x\nAlpha\n  Bravo asked'), [
+    'Public-safety (customer name without consent): p.mdx:2',
+  ]);
+  assert.equal(found('the alpha-bravo and ALPHA_BRAVO notes').length, 1);
+  assert.equal(found('see CharlieClinic page').length, 1);
+  assert.equal(found('ssh zzhost-two or zzhost.example').length, 1);
+  assert.equal(found('alpha and bravo apart, zzho and zzhos only').length, 0);
+  // Machine names also match as the start of a longer single word.
+  assert.equal(found('node zzhostubuntu01 is a host').length, 1);
+  assert.equal(found('ZZHOSTSTUDIO and zzhost-lan').length, 1);
+  // Customer names do not match as prefixes.
+  assert.equal(found('charlieclinics and alphabravos').length, 0);
+  assert.ok(found('Alpha Bravo').every((error) => !/alpha|bravo/i.test(error)));
+  const allowed = new Set(['p.mdx|fleet host or machine name']);
+  assert.equal(
+    publicSafetyErrors('zzhost', 'p.mdx', { ...testOptions, allowed }).length,
+    0
   );
+  assert.equal(hashTerm('Alpha Bravo', 'a'), hashTerm('alpha-bravo', 'a'));
+  assert.notEqual(hashTerm('alpha', 'a'), hashTerm('alpha', 'b'));
+});
+
+test('the guard and its tests spell out no hashed term', () => {
+  for (const file of ['docs-audit.js', 'docs-audit.test.js']) {
+    const source = fs.readFileSync(path.join(__dirname, file), 'utf8');
+    assert.deepEqual(hashedTermErrors(source, file), [], file);
+  }
 });
 
 test('public-safety guard allows placeholders and public examples', () => {
@@ -124,7 +159,7 @@ test('public-safety guard allows placeholders and public examples', () => {
     'Use `<repo-root>/apps/docs` and `ssh <build-mac>`.',
     'https://<worker>.<account-subdomain>.workers.dev/health',
     'https://<staging-project-ref>.supabase.co',
-    'The emulator reaches the host at 10.0.2.2; the Vietnamese memo says Thanh toan.',
+    'The emulator reaches the host at 10.0.2.2.',
     'Rows SRC-1 and the SR column are not register IDs; /home/route.ts is a route.',
     'Contact support@tuturuuu.com or noreply@tuturuuu.com; use `<owner-mailbox>`.',
     'CGNAT-like 100.1.2.3 is a public address.',
@@ -148,7 +183,7 @@ test('audit also applies the public-safety scan to docs-internal', (t) => {
   );
   fs.writeFileSync(
     path.join(fixture, 'docs-internal/build/runbook.mdx'),
-    'Finding SR-123 on ssh skr-example\n'
+    'Finding SR-123 on 10.1.2.3\n'
   );
   const errors = audit(fixture).errors;
   assert.ok(

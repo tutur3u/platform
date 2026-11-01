@@ -808,7 +808,7 @@ Reset participation acknowledgement when switching scenarios. Keep filtered sele
 visible. Load private rubrics only after session-owner and meeting-host checks;
 render the session snapshot. See the Parley product guide and studio setup,
 invitation, review-route and Meet-link regression tests. Keep shared chat mention
-markers lazy and unguessable; see the [native import checks](../../../../../apps/docs/build/development-tools/thanh-local-e2e.mdx#native-worker-imports).
+markers lazy and unguessable; see the [native import checks](../../../../../apps/docs/build/development-tools/local-e2e.mdx#native-worker-imports).
 
 ## Calendar OAuth operator alerts
 

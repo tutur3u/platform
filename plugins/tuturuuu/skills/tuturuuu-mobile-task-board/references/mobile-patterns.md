@@ -14,8 +14,8 @@ localization changes.
   can defer that proof; record pending jobs and local results, then resume CI
   before calling the change release-ready.
 - For simulator/emulator validation against a seeded local backend, use the
-  Thanh local E2E environment (`scripts/thanh-e2e/thanh-e2e.mjs`, runbook
-  `apps/docs/build/development-tools/thanh-local-e2e.mdx`). On-device flows
+  local E2E environment (`scripts/thanh-e2e/thanh-e2e.mjs`, runbook
+  `apps/docs/build/development-tools/local-e2e.mdx`). On-device flows
   belong in `apps/mobile/integration_test/`; `flutter test -d` runs other test
   files on the host VM.
 - Do not manually bump `apps/mobile/pubspec.yaml` for ordinary authored mobile
