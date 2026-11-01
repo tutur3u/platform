@@ -1,7 +1,7 @@
 ---
 title: 'Local Supabase Development'
 description: 'Learn how to work with Supabase locally in the Tuturuuu development workflow.'
-updatedAt: '2026-10-23'
+updatedAt: "2026-10-31"
 ---
 
 <Info>
@@ -16,6 +16,34 @@ Contract startup and type generation retry registry throttling and transient ima
 The E2E baseline keeps its existing service set, excluding only Edge Runtime and Functions. SQL-only contracts keep their existing narrower service sets. CI uses `public.ecr.aws`; no image archive cache is introduced.
 
 Regression coverage: `TMPDIR=/private/tmp node --test apps/database/scripts/run-supabase-image-retry.test.js`. Real cold/warm/corrupt baseline and contract acceptance runs in exact-commit CI.
+
+## Independent SQL session fixtures
+
+The pgTAP concurrency fixtures include `tests/helpers/local-dblink.inc` before
+starting their transactions or writing fixture data. On a stock `supabase start`
+stack, the helper connects through `db.supabase.internal:5432` with the CLI's
+local development credentials. No extra environment is required. PostgreSQL
+trusts loopback connections inside the container, so supplying a password to
+`127.0.0.1` still does not authenticate dblink for a non-superuser role.
+
+For a different **disposable test database**, configure the existing PostgreSQL
+session setting `test.dblink_connstr` with a password-authenticated connection to
+that same database (for example, via `PGOPTIONS` in a direct `pg_prove` runner).
+Do not use production credentials or point independent sessions at another
+instance. The local default has a three-second connection timeout; custom
+connection strings should also set a bounded `connect_timeout`.
+
+The helper probes and closes a connection before any fixtures run. If connection
+setup fails, the file emits a TAP skip with setup guidance and exits successfully
+instead of aborting halfway through committed fixture writes. Connection strings
+and server errors are not printed. A skip means concurrency was **not verified**;
+acceptance on the stock stack requires actual passing assertions. Subsequent SQL
+and assertion errors remain failures. Destroy the owned disposable stack and its
+volumes after running these fixtures, since some commit across sessions.
+
+Regression checks: run the five dblink fixtures with the default connection,
+then with `test.dblink_connstr` targeting an unavailable port and confirm each
+reports a clean skip before fixture setup.
 
 ## CLI upgrade type drift
 
@@ -277,12 +305,6 @@ The generator includes the `public`, `private`, and `storage` schemas. Keep
 server-owned/private tables out of Supabase REST exposure, but still regenerate
 types after migrations so server-only helpers and storage paths can import
 accurate generated row shapes.
-
-Alternatively, you can use the shorthand:
-
-```bash
-bun typegen
-```
 
 <Info>
   This step is automatically performed when running `bun sb:reset`, making it
@@ -1070,7 +1092,7 @@ Sometimes you might want to create a custom seed file for specific testing scena
 3. Run it with the Supabase CLI:
 
 ```bash
-bun supabase db reset --db-url=postgresql://postgres:postgres@localhost:54322/postgres
+node apps/database/scripts/run-supabase.js db reset --db-url=postgresql://postgres:postgres@localhost:54322/postgres
 psql postgresql://postgres:postgres@localhost:54322/postgres -f apps/database/supabase/my_custom_seed.sql
 ```
 
@@ -1080,7 +1102,7 @@ You can also export your current database data to use as seed data:
 
 ```bash
 # Export only data (not schema) to seed.sql
-bun supabase db dump --db-url=postgresql://postgres:postgres@localhost:54322/postgres --data-only > apps/database/supabase/new_seed.sql
+node apps/database/scripts/run-supabase.js db dump --db-url=postgresql://postgres:postgres@localhost:54322/postgres --data-only > apps/database/supabase/new_seed.sql
 ```
 
 This is helpful when you've set up data manually and want to preserve it for future development environments.
@@ -1091,7 +1113,7 @@ For Tuturuuu development, we recommend:
 
 1. Start with a fresh database: `bun sb:reset`
 2. Make changes through the UI or your app
-3. When you're satisfied, export the data: `bun supabase db dump --data-only > apps/database/supabase/new_seed.sql`
+3. When you're satisfied, export the data: `node apps/database/scripts/run-supabase.js db dump --data-only > apps/database/supabase/new_seed.sql`
 4. Edit the generated SQL to keep only what you need
 5. Update the main `seed.sql` file with your changes
 6. Test by running `bun sb:reset` again

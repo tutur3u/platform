@@ -25,11 +25,19 @@ import {
   meetReactionSchema,
   meetRoomSettingsPatchSchema,
 } from './room-options';
+import {
+  type TranscriptionConsentMessage,
+  type TranscriptionStateMessage,
+  transcriptionConsentMessageSchema,
+  transcriptionStateMessageSchema,
+} from './transcription';
 
 const requestId = z.string().trim().min(1).max(120).optional();
 const participantId = z.string().uuid();
 
 export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
+  transcriptionStateMessageSchema,
+  transcriptionConsentMessageSchema,
   z.object({
     type: z.literal('usage.report'),
     reportId: z.uuid(),
@@ -173,6 +181,8 @@ export type MeetRealtimeRoomTrack = {
 };
 
 export type MeetRealtimeServerMessage =
+  | TranscriptionStateMessage
+  | TranscriptionConsentMessage
   | {
       type: 'assistant.live';
       sessionId: string;

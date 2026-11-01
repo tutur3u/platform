@@ -5,7 +5,7 @@ updatedAt: '2026-10-25'
 ---
 
 This inventory is the decision table for
-[Cloudflare backend ownership](/build/devops/cloudflare-backend-ownership). It
+Cloudflare backend ownership. It
 reflects checked-in source on 2026-10-25. A source definition is not proof that
 a hosted schedule runs or succeeds; confirm hosted state before a cutover.
 
@@ -196,7 +196,7 @@ a product decision because enabling it starts user-defined outbound requests.
 
 `apps/cron-control` runs every five minutes, requeues stale push batches and
 calls the Web immediate-delivery processor only when a pending immediate batch
-exists. See [Cloudflare Cron Control](/build/devops/cloudflare-cron-control).
+exists. See Cloudflare Cron Control.
 
 ## Phase 1: `pay-products` scheduler qualification
 
@@ -277,5 +277,5 @@ hosted trigger is enabled or healthy.
    is no remaining need.
 
 Per-job cutover steps live in the
-[Cron Control runbook](/build/devops/cloudflare-cron-control); processor targets
+Cron Control runbook; processor targets
 and cost bounds live in [processor migration](/build/devops/cloudflare-processor-migration).

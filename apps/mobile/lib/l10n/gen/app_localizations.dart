@@ -25111,12 +25111,6 @@ abstract class AppLocalizations {
   /// **'{section} · {basis}'**
   String mastermindSectionWithBasis(String section, String basis);
 
-  /// No description provided for @mastermindSecurityFix.
-  ///
-  /// In en, this message translates to:
-  /// **'Security fix'**
-  String get mastermindSecurityFix;
-
   /// No description provided for @mastermindSecurityGroup.
   ///
   /// In en, this message translates to:
@@ -25818,6 +25812,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get mastermindTryAgain;
+
+  /// No description provided for @mastermindTimeDaysShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}d'**
+  String mastermindTimeDaysShort(int count);
+
+  /// No description provided for @mastermindTimeHoursShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}h'**
+  String mastermindTimeHoursShort(int count);
+
+  /// No description provided for @mastermindTimeMinutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}m'**
+  String mastermindTimeMinutesShort(int count);
+
+  /// No description provided for @mastermindTimeNow.
+  ///
+  /// In en, this message translates to:
+  /// **'now'**
+  String get mastermindTimeNow;
+
+  /// No description provided for @mastermindAskedTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Asked {time}'**
+  String mastermindAskedTime(String time);
+
+  /// No description provided for @mastermindTimeSpoken.
+  ///
+  /// In en, this message translates to:
+  /// **'{relative}, {absolute}'**
+  String mastermindTimeSpoken(String relative, String absolute);
+
+  /// No description provided for @mastermindTimeSpokenDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 day ago} other{{count} days ago}}'**
+  String mastermindTimeSpokenDays(int count);
+
+  /// No description provided for @mastermindTimeSpokenHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 hour ago} other{{count} hours ago}}'**
+  String mastermindTimeSpokenHours(int count);
+
+  /// No description provided for @mastermindTimeSpokenMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 minute ago} other{{count} minutes ago}}'**
+  String mastermindTimeSpokenMinutes(int count);
+
+  /// No description provided for @mastermindTimeSpokenNow.
+  ///
+  /// In en, this message translates to:
+  /// **'just now'**
+  String get mastermindTimeSpokenNow;
+
+  /// No description provided for @mastermindQuotaUnreadable.
+  ///
+  /// In en, this message translates to:
+  /// **'Out of service / unreadable'**
+  String get mastermindQuotaUnreadable;
 
   /// No description provided for @mastermindUnavailable.
   ///
@@ -26677,6 +26737,468 @@ abstract class AppLocalizations {
   /// **'Coming soon'**
   String get mastermindAskRemindAtMacSoon;
 
+  /// No description provided for @settingsShareTelemetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Share analytics and crash reports'**
+  String get settingsShareTelemetry;
+
+  /// No description provided for @settingsPrivacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get settingsPrivacy;
+
+  /// No description provided for @settingsTelemetryError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update sharing. Tap to retry.'**
+  String get settingsTelemetryError;
+
+  /// No description provided for @mastermindMachineUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'As of {time}'**
+  String mastermindMachineUpdated(String time);
+
+  /// No description provided for @mastermindMachineLastSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'Last seen {time}'**
+  String mastermindMachineLastSeen(String time);
+
+  /// No description provided for @mastermindMachineSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{total} machines · {online} online · {attention} need attention'**
+  String mastermindMachineSummary(int total, int online, int attention);
+
+  /// No description provided for @machineTextMachines.
+  ///
+  /// In en, this message translates to:
+  /// **'Machines'**
+  String get machineTextMachines;
+
+  /// No description provided for @machineTextAttention.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs attention'**
+  String get machineTextAttention;
+
+  /// No description provided for @machineTextOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get machineTextOnline;
+
+  /// No description provided for @machineTextAsleep.
+  ///
+  /// In en, this message translates to:
+  /// **'Asleep'**
+  String get machineTextAsleep;
+
+  /// No description provided for @machineTextOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get machineTextOffline;
+
+  /// No description provided for @machineTextUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get machineTextUnknown;
+
+  /// No description provided for @machineTextOfflineGroup.
+  ///
+  /// In en, this message translates to:
+  /// **'Asleep or offline'**
+  String get machineTextOfflineGroup;
+
+  /// No description provided for @machineTextNotPublished.
+  ///
+  /// In en, this message translates to:
+  /// **'Machine data is not published yet'**
+  String get machineTextNotPublished;
+
+  /// No description provided for @machineTextEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No machines reported'**
+  String get machineTextEmpty;
+
+  /// No description provided for @machineTextGone.
+  ///
+  /// In en, this message translates to:
+  /// **'This machine is no longer reported'**
+  String get machineTextGone;
+
+  /// No description provided for @machineTextUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get machineTextUnavailable;
+
+  /// No description provided for @machineTextStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Collector data is stale; values are last known'**
+  String get machineTextStale;
+
+  /// No description provided for @machineTextPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Collector coverage is partial'**
+  String get machineTextPartial;
+
+  /// No description provided for @machineTextNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get machineTextNow;
+
+  /// No description provided for @machineTextRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'Running'**
+  String get machineTextRunning;
+
+  /// No description provided for @machineTextRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Rules'**
+  String get machineTextRules;
+
+  /// No description provided for @machineTextAlerts.
+  ///
+  /// In en, this message translates to:
+  /// **'Alerts'**
+  String get machineTextAlerts;
+
+  /// No description provided for @machineTextHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get machineTextHistory;
+
+  /// No description provided for @machineTextKeepAwake.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep awake'**
+  String get machineTextKeepAwake;
+
+  /// No description provided for @machineTextSample.
+  ///
+  /// In en, this message translates to:
+  /// **'SAMPLE data'**
+  String get machineTextSample;
+
+  /// No description provided for @machineTextSampleToggle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use sample machine data'**
+  String get machineTextSampleToggle;
+
+  /// No description provided for @machineTextStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status and specs'**
+  String get machineTextStatus;
+
+  /// No description provided for @machineTextCpu.
+  ///
+  /// In en, this message translates to:
+  /// **'CPU'**
+  String get machineTextCpu;
+
+  /// No description provided for @machineTextRam.
+  ///
+  /// In en, this message translates to:
+  /// **'Memory'**
+  String get machineTextRam;
+
+  /// No description provided for @machineTextDisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Disk free'**
+  String get machineTextDisk;
+
+  /// No description provided for @machineTextSwap.
+  ///
+  /// In en, this message translates to:
+  /// **'Swap'**
+  String get machineTextSwap;
+
+  /// No description provided for @machineTextTemperature.
+  ///
+  /// In en, this message translates to:
+  /// **'Temperature'**
+  String get machineTextTemperature;
+
+  /// No description provided for @machineTextBuild.
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get machineTextBuild;
+
+  /// No description provided for @machineTextStudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Studio'**
+  String get machineTextStudio;
+
+  /// No description provided for @machineTextLaptop.
+  ///
+  /// In en, this message translates to:
+  /// **'Laptop'**
+  String get machineTextLaptop;
+
+  /// No description provided for @machineTextDevbox.
+  ///
+  /// In en, this message translates to:
+  /// **'Devbox'**
+  String get machineTextDevbox;
+
+  /// No description provided for @machineTextLane.
+  ///
+  /// In en, this message translates to:
+  /// **'Lanes'**
+  String get machineTextLane;
+
+  /// No description provided for @machineTextTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Tests'**
+  String get machineTextTest;
+
+  /// No description provided for @machineTextActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduling active'**
+  String get machineTextActive;
+
+  /// No description provided for @machineTextDraining.
+  ///
+  /// In en, this message translates to:
+  /// **'Draining'**
+  String get machineTextDraining;
+
+  /// No description provided for @machineTextPaused.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduling paused'**
+  String get machineTextPaused;
+
+  /// No description provided for @machineTextThermal.
+  ///
+  /// In en, this message translates to:
+  /// **'Thermal alert'**
+  String get machineTextThermal;
+
+  /// No description provided for @machineTextWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Warning'**
+  String get machineTextWarning;
+
+  /// No description provided for @machineTextCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get machineTextCritical;
+
+  /// No description provided for @machineTextNominal.
+  ///
+  /// In en, this message translates to:
+  /// **'Nominal'**
+  String get machineTextNominal;
+
+  /// No description provided for @machineTextFair.
+  ///
+  /// In en, this message translates to:
+  /// **'Fair'**
+  String get machineTextFair;
+
+  /// No description provided for @machineTextSerious.
+  ///
+  /// In en, this message translates to:
+  /// **'Serious'**
+  String get machineTextSerious;
+
+  /// No description provided for @machineTextMacos.
+  ///
+  /// In en, this message translates to:
+  /// **'macOS'**
+  String get machineTextMacos;
+
+  /// No description provided for @machineTextLinux.
+  ///
+  /// In en, this message translates to:
+  /// **'Linux'**
+  String get machineTextLinux;
+
+  /// No description provided for @machineTextWindows.
+  ///
+  /// In en, this message translates to:
+  /// **'Windows'**
+  String get machineTextWindows;
+
+  /// No description provided for @machineTextNone.
+  ///
+  /// In en, this message translates to:
+  /// **'None reported'**
+  String get machineTextNone;
+
+  /// No description provided for @machineTextLastKnown.
+  ///
+  /// In en, this message translates to:
+  /// **'Last-known values'**
+  String get machineTextLastKnown;
+
+  /// No description provided for @machineTextDay.
+  ///
+  /// In en, this message translates to:
+  /// **'24 h'**
+  String get machineTextDay;
+
+  /// No description provided for @machineTextWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'7 d'**
+  String get machineTextWeek;
+
+  /// No description provided for @machineTextTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Table'**
+  String get machineTextTable;
+
+  /// No description provided for @machineTextTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get machineTextTime;
+
+  /// No description provided for @machineTextCores.
+  ///
+  /// In en, this message translates to:
+  /// **'Cores'**
+  String get machineTextCores;
+
+  /// No description provided for @machineTextLoad.
+  ///
+  /// In en, this message translates to:
+  /// **'Load (1 min)'**
+  String get machineTextLoad;
+
+  /// No description provided for @machineTextMacGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'In System Settings, open Energy and prevent automatic sleeping on power. Plug in and keep the lid open. Mastermind does not control this machine.'**
+  String get machineTextMacGuide;
+
+  /// No description provided for @machineTextLinuxGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Use your desktop Power settings to prevent automatic suspend while plugged in. Mastermind does not control this machine.'**
+  String get machineTextLinuxGuide;
+
+  /// No description provided for @machineTextWindowsGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'In Settings, open System > Power and battery > Screen and sleep. Choose the plugged-in sleep setting. Mastermind does not control this machine.'**
+  String get machineTextWindowsGuide;
+
+  /// No description provided for @machineTextUnknownGuide.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the operating system power settings to keep the machine awake while plugged in. Mastermind does not control this machine.'**
+  String get machineTextUnknownGuide;
+
+  /// No description provided for @machineTextOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get machineTextOther;
+
+  /// No description provided for @machineTextProdHost.
+  ///
+  /// In en, this message translates to:
+  /// **'Production host'**
+  String get machineTextProdHost;
+
+  /// No description provided for @machineTextMergeTrain.
+  ///
+  /// In en, this message translates to:
+  /// **'Merge train'**
+  String get machineTextMergeTrain;
+
+  /// No description provided for @machineTextFindingsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Findings only'**
+  String get machineTextFindingsOnly;
+
+  /// No description provided for @machineTextProdReadsHereOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Production reads only here'**
+  String get machineTextProdReadsHereOnly;
+
+  /// No description provided for @machineTextNeverBuilds.
+  ///
+  /// In en, this message translates to:
+  /// **'Never builds'**
+  String get machineTextNeverBuilds;
+
+  /// No description provided for @machineTextNoHeavyWork.
+  ///
+  /// In en, this message translates to:
+  /// **'No heavy work'**
+  String get machineTextNoHeavyWork;
+
+  /// No description provided for @machineTextLightWorkOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Light work only'**
+  String get machineTextLightWorkOnly;
+
+  /// No description provided for @machineTextProdHostReadOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Production host: read-only'**
+  String get machineTextProdHostReadOnly;
+
+  /// No description provided for @machineTextDiskLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low disk space'**
+  String get machineTextDiskLow;
+
+  /// No description provided for @machineTextLoadHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'Load above cores'**
+  String get machineTextLoadHigh;
+
+  /// No description provided for @machineTextSwapHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High swap use'**
+  String get machineTextSwapHigh;
+
+  /// No description provided for @machineTextRamGb.
+  ///
+  /// In en, this message translates to:
+  /// **'RAM (GB)'**
+  String get machineTextRamGb;
+
+  /// No description provided for @machineTextDiskGb.
+  ///
+  /// In en, this message translates to:
+  /// **'Disk (GB)'**
+  String get machineTextDiskGb;
+
   /// No description provided for @mastermindCatchupTitle.
   ///
   /// In en, this message translates to:
@@ -26898,6 +27420,498 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your catch-up is ready'**
   String get mastermindCatchupPushBody;
+
+  /// No description provided for @mastermindSecurityFix.
+  ///
+  /// In en, this message translates to:
+  /// **'Security fix'**
+  String get mastermindSecurityFix;
+
+  /// No description provided for @telemetryConsentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Help improve Tuturuuu?'**
+  String get telemetryConsentTitle;
+
+  /// No description provided for @telemetryConsentBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Share usage data and crash reports with Google Firebase Analytics and Crashlytics so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.'**
+  String get telemetryConsentBody;
+
+  /// No description provided for @telemetryFirebaseInstallationDisclosure.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowing analytics and crash reports also creates a Firebase Installation ID on this device (iOS and Android), which Google uses to tell app installs apart. We do not send your account details to Google with it.'**
+  String get telemetryFirebaseInstallationDisclosure;
+
+  /// No description provided for @telemetryConsentAllow.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow'**
+  String get telemetryConsentAllow;
+
+  /// No description provided for @telemetryConsentDeny.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t allow'**
+  String get telemetryConsentDeny;
+
+  /// No description provided for @telemetryConsentLearnMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy details'**
+  String get telemetryConsentLearnMore;
+
+  /// No description provided for @settingsShareTelemetryDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Send usage data and crash reports to Google Firebase Analytics and Crashlytics to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.'**
+  String get settingsShareTelemetryDescription;
+
+  /// No description provided for @settingsPushNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Push notifications'**
+  String get settingsPushNotifications;
+
+  /// No description provided for @settingsPushFirebaseDisclosure.
+  ///
+  /// In en, this message translates to:
+  /// **'Push notifications are delivered through Google Firebase Cloud Messaging, which registers this device with Firebase Installations. This creates a Firebase Installation ID and a push token for this device; we link the push token to your account so we can send you notifications. This is separate from your analytics choice. Turn push off and this device is no longer registered for notifications.'**
+  String get settingsPushFirebaseDisclosure;
+
+  /// No description provided for @mastermindIrisChatSegment.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get mastermindIrisChatSegment;
+
+  /// No description provided for @mastermindIrisChatEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get mastermindIrisChatEmpty;
+
+  /// No description provided for @mastermindIrisComposerPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Message Atlas'**
+  String get mastermindIrisComposerPlaceholder;
+
+  /// No description provided for @mastermindIrisSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get mastermindIrisSend;
+
+  /// No description provided for @mastermindIrisReceiptSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get mastermindIrisReceiptSending;
+
+  /// No description provided for @mastermindIrisReceiptQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Queued'**
+  String get mastermindIrisReceiptQueued;
+
+  /// No description provided for @mastermindIrisReceiptSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get mastermindIrisReceiptSent;
+
+  /// No description provided for @mastermindIrisReceiptSeen.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen'**
+  String get mastermindIrisReceiptSeen;
+
+  /// No description provided for @mastermindIrisReceiptFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent'**
+  String get mastermindIrisReceiptFailed;
+
+  /// No description provided for @mastermindIrisRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get mastermindIrisRetry;
+
+  /// No description provided for @mastermindIrisHidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden message'**
+  String get mastermindIrisHidden;
+
+  /// No description provided for @mastermindIrisTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'Open on Mac for the rest.'**
+  String get mastermindIrisTruncated;
+
+  /// No description provided for @mastermindIrisLoadEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Load earlier messages'**
+  String get mastermindIrisLoadEarlier;
+
+  /// No description provided for @mastermindIrisKilledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Iris is paused'**
+  String get mastermindIrisKilledTitle;
+
+  /// No description provided for @mastermindIrisKilledBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending is off until the kill switch is lifted. You can still read the chat.'**
+  String get mastermindIrisKilledBody;
+
+  /// No description provided for @mastermindIrisOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t reach Iris. Retrying.'**
+  String get mastermindIrisOffline;
+
+  /// No description provided for @mastermindIrisRateLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Iris is busy. Retrying shortly.'**
+  String get mastermindIrisRateLimited;
+
+  /// No description provided for @mastermindIrisAccessLost.
+  ///
+  /// In en, this message translates to:
+  /// **'This device can\'t use Iris. Check its enrolment.'**
+  String get mastermindIrisAccessLost;
+
+  /// No description provided for @mastermindIrisAuthorOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get mastermindIrisAuthorOwner;
+
+  /// No description provided for @mastermindIrisAuthorAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Atlas'**
+  String get mastermindIrisAuthorAgent;
+
+  /// No description provided for @mastermindIrisAuthorSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get mastermindIrisAuthorSystem;
+
+  /// No description provided for @mastermindIrisRedactedPath.
+  ///
+  /// In en, this message translates to:
+  /// **'path'**
+  String get mastermindIrisRedactedPath;
+
+  /// No description provided for @mastermindIrisRedactedLink.
+  ///
+  /// In en, this message translates to:
+  /// **'link'**
+  String get mastermindIrisRedactedLink;
+
+  /// No description provided for @mastermindIrisRedactedLinkHost.
+  ///
+  /// In en, this message translates to:
+  /// **'link: {host}'**
+  String mastermindIrisRedactedLinkHost(String host);
+
+  /// No description provided for @mastermindIrisRedactedSecret.
+  ///
+  /// In en, this message translates to:
+  /// **'secret withheld'**
+  String get mastermindIrisRedactedSecret;
+
+  /// No description provided for @mastermindIrisRedactedId.
+  ///
+  /// In en, this message translates to:
+  /// **'id'**
+  String get mastermindIrisRedactedId;
+
+  /// No description provided for @mastermindIrisRedactedEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'email'**
+  String get mastermindIrisRedactedEmail;
+
+  /// No description provided for @mastermindIrisRedactedNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'number'**
+  String get mastermindIrisRedactedNumber;
+
+  /// No description provided for @mastermindIrisRedactedOther.
+  ///
+  /// In en, this message translates to:
+  /// **'withheld'**
+  String get mastermindIrisRedactedOther;
+
+  /// No description provided for @mastermindIrisActivityCommands.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Ran 1 command} other{Ran {count} commands}}'**
+  String mastermindIrisActivityCommands(int count);
+
+  /// No description provided for @mastermindIrisActivityEdits.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Edited 1 file} other{Edited {count} files}}'**
+  String mastermindIrisActivityEdits(int count);
+
+  /// No description provided for @mastermindIrisActivitySearches.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Searched once} other{Searched {count} times}}'**
+  String mastermindIrisActivitySearches(int count);
+
+  /// No description provided for @mastermindIrisActivitySubagents.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Ran 1 subagent} other{Ran {count} subagents}}'**
+  String mastermindIrisActivitySubagents(int count);
+
+  /// No description provided for @mastermindIrisWhatNeedsMe.
+  ///
+  /// In en, this message translates to:
+  /// **'What needs me'**
+  String get mastermindIrisWhatNeedsMe;
+
+  /// No description provided for @mastermindIrisCountUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} urgent'**
+  String mastermindIrisCountUrgent(int count);
+
+  /// No description provided for @mastermindIrisCountSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} soon'**
+  String mastermindIrisCountSoon(int count);
+
+  /// No description provided for @mastermindIrisCountFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} FYI'**
+  String mastermindIrisCountFyi(int count);
+
+  /// No description provided for @mastermindIrisCountOther.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} other'**
+  String mastermindIrisCountOther(int count);
+
+  /// No description provided for @mastermindIrisNothingNeedsYou.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing needs you right now'**
+  String get mastermindIrisNothingNeedsYou;
+
+  /// No description provided for @mastermindIrisRoleLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{role}: {status}'**
+  String mastermindIrisRoleLine(String role, String status);
+
+  /// No description provided for @mastermindIrisRoleArmed.
+  ///
+  /// In en, this message translates to:
+  /// **'armed'**
+  String get mastermindIrisRoleArmed;
+
+  /// No description provided for @mastermindIrisRoleRunning.
+  ///
+  /// In en, this message translates to:
+  /// **'running'**
+  String get mastermindIrisRoleRunning;
+
+  /// No description provided for @mastermindIrisRoleStalled.
+  ///
+  /// In en, this message translates to:
+  /// **'stalled'**
+  String get mastermindIrisRoleStalled;
+
+  /// No description provided for @mastermindIrisRoleIdle.
+  ///
+  /// In en, this message translates to:
+  /// **'idle'**
+  String get mastermindIrisRoleIdle;
+
+  /// No description provided for @mastermindIrisUseRecommendations.
+  ///
+  /// In en, this message translates to:
+  /// **'Use recommendations'**
+  String get mastermindIrisUseRecommendations;
+
+  /// No description provided for @mastermindIrisUseRecommendationsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Sends the recommended answer to each ask below. Each one can be undone on its card for a few seconds.'**
+  String get mastermindIrisUseRecommendationsDescription;
+
+  /// No description provided for @mastermindIrisUseRecommendationsConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Send 1 answer} other{Send {count} answers}}'**
+  String mastermindIrisUseRecommendationsConfirm(int count);
+
+  /// No description provided for @mastermindIrisRecommendationQueued.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending. Undo on its card.'**
+  String get mastermindIrisRecommendationQueued;
+
+  /// No description provided for @mastermindIrisRecommendationSkipped.
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped: already answered, or replies are off'**
+  String get mastermindIrisRecommendationSkipped;
+
+  /// No description provided for @mastermindIrisRecommendationsResult.
+  ///
+  /// In en, this message translates to:
+  /// **'{sent} of {total} sent'**
+  String mastermindIrisRecommendationsResult(int sent, int total);
+
+  /// No description provided for @mastermindIrisDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get mastermindIrisDone;
+
+  /// No description provided for @mastermindIrisDevicesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Iris devices'**
+  String get mastermindIrisDevicesTitle;
+
+  /// No description provided for @mastermindIrisDevicesAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Iris devices'**
+  String get mastermindIrisDevicesAction;
+
+  /// No description provided for @mastermindIrisDevicesEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No devices enrolled yet'**
+  String get mastermindIrisDevicesEmpty;
+
+  /// No description provided for @mastermindIrisDevicesLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load devices. Try again.'**
+  String get mastermindIrisDevicesLoadFailed;
+
+  /// No description provided for @mastermindIrisDeviceStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for confirmation'**
+  String get mastermindIrisDeviceStatusPending;
+
+  /// No description provided for @mastermindIrisDeviceStatusConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrolled'**
+  String get mastermindIrisDeviceStatusConfirmed;
+
+  /// No description provided for @mastermindIrisDeviceStatusExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get mastermindIrisDeviceStatusExpired;
+
+  /// No description provided for @mastermindIrisDeviceStatusRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoked'**
+  String get mastermindIrisDeviceStatusRevoked;
+
+  /// No description provided for @mastermindIrisDeviceQa.
+  ///
+  /// In en, this message translates to:
+  /// **'QA'**
+  String get mastermindIrisDeviceQa;
+
+  /// No description provided for @mastermindIrisDeviceFingerprint.
+  ///
+  /// In en, this message translates to:
+  /// **'Key {prefix}'**
+  String mastermindIrisDeviceFingerprint(String prefix);
+
+  /// No description provided for @mastermindIrisRevoke.
+  ///
+  /// In en, this message translates to:
+  /// **'Revoke'**
+  String get mastermindIrisRevoke;
+
+  /// No description provided for @mastermindIrisRevokeConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap again to revoke'**
+  String get mastermindIrisRevokeConfirm;
+
+  /// No description provided for @mastermindIrisEnrol.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrol this device'**
+  String get mastermindIrisEnrol;
+
+  /// No description provided for @mastermindIrisEnrolUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This build can\'t create a device key yet.'**
+  String get mastermindIrisEnrolUnavailable;
+
+  /// No description provided for @mastermindIrisEnrolCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrolment code'**
+  String get mastermindIrisEnrolCode;
+
+  /// No description provided for @mastermindIrisEnrolInstructions.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the Iris enrol page and confirm with your passkey. Check that the key starts with {prefix}.'**
+  String mastermindIrisEnrolInstructions(String prefix);
+
+  /// No description provided for @mastermindIrisEnrolWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for you to confirm. The code expires in 15 minutes.'**
+  String get mastermindIrisEnrolWaiting;
+
+  /// No description provided for @mastermindIrisEnrolConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'This device is enrolled.'**
+  String get mastermindIrisEnrolConfirmed;
+
+  /// No description provided for @mastermindIrisEnrolExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'The code expired. Start again for a new one.'**
+  String get mastermindIrisEnrolExpired;
+
+  /// No description provided for @mastermindIrisEnrolFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start enrolment. Try again.'**
+  String get mastermindIrisEnrolFailed;
+
+  /// No description provided for @mastermindIrisEnrolLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many pending devices. Wait for one to expire.'**
+  String get mastermindIrisEnrolLimit;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

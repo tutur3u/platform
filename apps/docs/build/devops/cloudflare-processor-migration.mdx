@@ -4,10 +4,10 @@ description: "Per-job plan and cost bounds for moving scheduled processors off V
 updatedAt: '2026-10-23'
 ---
 
-Moving a job's **schedule** into [Cron Control](/build/devops/cloudflare-cron-control)
+Moving a job's **schedule** into Cron Control
 still invokes its Vercel function every slot. Moving its **processor** into a
 Worker, Queue consumer or Workflow removes that invocation. Follow
-[Cloudflare backend ownership](/build/devops/cloudflare-backend-ownership) and the
+Cloudflare backend ownership and the
 [runaway-work acceptance](/build/development-tools/oxc-cloudflare-adoption#runaway-work-and-cost-acceptance)
 rules for every move.
 

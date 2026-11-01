@@ -3,26 +3,27 @@ title: Mobile Mastermind
 description: Who sees the Mastermind section in the mobile app, how it behaves before data arrives, and what it never shows.
 ---
 
-Mastermind is an internal fleet overview. The mobile section reads one
-sanitized snapshot from the Mastermind hub Worker. This page records the
+Mastermind is an internal fleet overview. The mobile section reads one sanitized snapshot from the Mastermind hub Worker. This page records the
 product rules of the shell entry, the Home tab and the Inbox; later tabs extend it.
 
 ## Who sees it
 
-- **Scope:** the Apps hub offers Mastermind only when the active workspace is
-  the root workspace, the root permission set contains `view_infrastructure`
-  (the root workspace creator and `admin` count, as for every permission), and
-  the build has a hub source configured. Production, staging and any build with
-  `MASTERMIND_HUB_URL` have one; see Data source.
+- **Scope:** the Apps hub offers Mastermind when the active workspace is the
+  root workspace or the user's personal workspace, Web's
+  `GET /api/v1/mastermind/access` answers `enabled: true` (root
+  `manage_mastermind` once the rollout flag is on; see Access rule and
+  Rollout), and the build has a hub source configured. Production, staging and any build with
+  `MASTERMIND_HUB_URL` have one; see Data source. The personal workspace shows
+  the same fleet data; nothing in Mastermind is workspace-scoped.
 - **Default:** hidden. It is not an experimental module and cannot be enabled
-  from Settings. A user without root `view_infrastructure`, outside the root
-  workspace, or while access is loading or failed never sees the entry.
-- **Authority:** this check is cosmetic. The hub Worker's owner allowlist is the
-  real gate, and a 403 from the hub hides the entry until the next access sync.
+  from Settings. A user the access answer denies, in any other workspace, or
+  while access is loading or failed never sees the entry.
+- **Authority:** this check is cosmetic. The server-side gates in Access rule
+  decide, and a 403 from the hub hides the entry until the next access sync.
 - **Production beta:** the production app reads the hub for the beta behind
-  these gates: root workspace plus `view_infrastructure`, a configured source,
-  and the hub's owner allowlist. Replies stay off until the hub's
-  `GET /v1/capabilities` reports `replies: true`. Production reports
+  these gates: root or personal workspace plus the access answer, a
+  configured source, and the hub's owner allowlist. Replies stay off until the
+  hub's `GET /v1/capabilities` reports `replies: true`. Production reports
   `replies: false` today, so the Inbox is read-only there and the reply composer
   stays hidden; turning replies on needs no store release.
 - **Deep links and push taps:** any `/mastermind/**` location is held on a
@@ -35,10 +36,154 @@ product rules of the shell entry, the Home tab and the Inbox; later tabs extend 
   the app resumes and when the Apps hub is pulled to refresh; neither blinks a
   healthy entry while it checks.
 
+## Access rule
+
+Mastermind is restricted to one person, the platform owner account, through the dedicated workspace permission `manage_mastermind`.
+
+- **Scope:** every Tuturuuu-owned surface that serves Mastermind data or
+  actions: the mobile entry and its `/mastermind/**` routes, and
+  `POST /api/v1/mastermind/push-events`. The mobile app reads snapshots and
+  sends replies to the external hub Worker (`mastermind-hub.tutur3u.com`)
+  directly; Tuturuuu serves no other Mastermind API.
+- **Default:** deny. Migrations `20261030113000_manage_mastermind_enum` and
+  `20261030113001_manage_mastermind_grants` add the permission with no grants; the owner grant is a separate, later
+  change that needs an explicit GO (see Rollout). Unlike every other permission it is never
+  implied by being the workspace creator, by `admin`, or by a default
+  permission, and it counts only as membership of the one root role the grant
+  procedure created. Database triggers reject enabling it as a default
+  permission, in any other workspace or on any other role, and enabling it or
+  adding a member to that role from an API session (anon, authenticated,
+  service role). Re-saving an unchanged role and disabling or deleting grants
+  stay allowed. The web and mobile role editors omit it from their catalogs,
+  and every role write from either client (create, update, default
+  permissions) strips it, even for the workspace creator. CMS external-project team role creation, role updates and default-permission writes apply the same filter; `team-access.test.ts` covers enabled, disabled and explicit-only payloads.
+- **Granting:** for API sessions, only
+  `private.grant_mastermind_access(user_id, reason)`, which the database owner
+  alone may execute; a database-owner session is fully trusted and could also
+  write the rows directly, without an audit row. The grantee must be a root
+  `MEMBER` (not a guest). On first use the procedure creates its own root
+  `Mastermind` role and records the id in `private.mastermind_access_role`;
+  it never looks a role up by name, so renaming or creating another
+  `Mastermind` role selects nothing. It refuses (raises) when the recorded role
+  has a member other than the grantee or any permission row besides
+  `manage_mastermind`, so at most one person holds it; revoke the current
+  holder before granting another. API sessions cannot rename, re-date, move or
+  delete the recorded role, add another permission to it, or add a member; the
+  creator-grant guards still apply to it. It is idempotent and writes every call
+  to `private.mastermind_access_audit`. `private.revoke_mastermind_access`
+  (also database owner only) removes the user from the recorded role the same
+  way. Running a grant in production is a production write that needs an
+  explicit GO.
+- **Enforcement points:** the flag switches the Web, push and mobile
+  Mastermind gates. Database and Web-helper explicit-grant semantics always apply:
+  - Database: `public.has_workspace_permission(ws, user, 'manage_mastermind')`
+    is true only for an explicit root role grant.
+  - Web helpers: `getPermissions().containsPermission('manage_mastermind')`
+    (`packages/utils/src/workspace-helper.ts`) ignores creator, admin and
+    default permissions for explicit-grant permissions
+    (`packages/utils/src/explicit-grant-permissions.ts`).
+  - Push events: each recipient must be in `MASTERMIND_PUSH_OWNER_IDS` (kept as
+    defence in depth) and, with the flag on, hold root `manage_mastermind`; an
+    unreadable answer skips the owner.
+  - Hub: the external hub Worker enforces its own one-UUID owner allowlist on
+    the requests the app sends it. That allowlist lives in the hub repository,
+    is not changed here, and must name the same account.
+  - Mobile: the access cubit shows the entry only when
+    `GET /api/v1/mastermind/access` answers `enabled: true`; Web picks the
+    rule, so a store build never decides it. Offline, the cubit reuses that
+    user's last server answer. This hides the entry only; it is not
+    authorization.
+- **Exceptions:** none. Provisioning the recipient in the push allowlist and
+  the hub allowlist is separate from the grant and must name the same user.
+
+Migrations `20261030113000` and `20261030113001` grant the permission to
+nobody. Separate migration `20261030120000_grant_mastermind_owner.sql` grants only root's creator through `private.grant_mastermind_access`. Missing root, null creator, missing auth account or root MEMBER membership produces NOTICE without a grant. After seed, the database owner may idempotently run `SELECT private.grant_mastermind_root_creator();`. Production writes require explicit GO. Before this PR's production sync, Rex or Bea checks read-only that the creator exists in auth.users and is a root MEMBER, reporting names only. Rollback `20261030120000_grant_mastermind_owner.rollback.sql` uses audited revoke provenance, preserving later intentional operator grants. Missing provenance revokes nothing. Bootstrap coverage: `manage-mastermind-owner-grant.sql`; actual rollback coverage: `apps/database/scripts/mastermind-owner-rollback-test.py`.
+
+- **Regression coverage:** `apps/database/supabase/tests/manage-mastermind-permission.sql`
+  (no role, default permission, member or creator holds it after the
+  migration; creator and admin do not imply it; every guard; the audited,
+  idempotent grant and revoke),
+  `apps/database/supabase/tests/manage-mastermind-role-binding.sql` (root and outside-root pre-seeded, renamed,
+  older or staged `Mastermind`-named role is never selected; the recorded role
+  is root-owned, holds only `manage_mastermind` and cannot be edited outside the
+  procedure; an extra member, extra permission row, second grantee or guest is
+  refused),
+  `packages/utils/src/__tests__/workspace-helper-explicit-grants.test.ts`,
+  `packages/utils/src/__tests__/permissions.test.tsx` (absent from the web role
+  catalog), `roles/route.creator-grant.test.ts`, `roles/[roleId]/route.test.ts`
+  `roles/form/permission-payload.test.ts` and
+  `workspace_role_permission_payload_test.dart` (every role write strips it,
+  even for the creator; neither catalog lists it),
+  `api/v1/mastermind/access/route.test.ts` (flag off and on),
+  `route.delivery.test.ts` (flag off keeps the allowlist-only rule; flag on
+  skips an owner without the permission and a failed lookup),
+  `mastermind_access_cubit_test.dart` (root and personal workspace follow the
+  server answer) and `mastermind_access_repository_test.dart` (offline reuse
+  of the same user's last answer only).
+
+Removing the member or disabling the role's `manage_mastermind` row removes
+access immediately (fail closed); the recorded role itself cannot be deleted.
+The migration rollback removes the role, its members and its record, so a
+re-apply admits nobody. Restoring access requires the database owner to call
+`private.grant_mastermind_access(user_id, reason)` again; ordinary role edits
+cannot re-grant it. Role saves from web and mobile write permissions before the
+name, so a rejected permission save leaves the name unchanged.
+
+## Rollout
+
+Production applies migrations only after the deployment marker, so Web and a
+store build can be live before `manage_mastermind` exists there. Enforcement
+therefore waits for a server-side switch that defaults to the earlier rule.
+
+- **Scope:** `MASTERMIND_REQUIRE_EXPLICIT_GRANT` on Web, read by
+  `apps/web/src/lib/mastermind/access.ts`. It drives
+  `GET /api/v1/mastermind/access` (the mobile entry) and the push-events
+  permission check.
+- **Default:** off (unset or anything but `true`). The access answer is root
+  `view_infrastructure` (creator and admin imply it), and push events go to
+  every `MASTERMIND_PUSH_OWNER_IDS` owner without a permission lookup: the
+  behaviour before `manage_mastermind`. On, the answer is root
+  `manage_mastermind` and push recipients need it too.
+- **Grant:** `20261030113001` grants nobody, so a local reset, CI pgTAP and
+  staging apply unchanged and, with the flag off, nobody is locked out. The
+  owner grant ships separately, after an explicit GO.
+- **Exceptions:** none. The hub Worker's owner allowlist is separate and does
+  not read the flag.
+
+Flip procedure:
+
+1. Merge and let the gated production migration workflow apply
+   `20261030113000` and `20261030113001` for the exact SHA.
+2. After the separately approved owner grant, read back exactly one holder, the
+   owner, with this read-only query as the database owner. Any other result
+   means do not flip; fix the cause and grant with
+   `private.grant_mastermind_access` after an explicit GO. This query is the
+   only way to see who holds the permission: the web role editor never lists
+   it, and no RPC or route returns holders. `private` is revoked from anon,
+   authenticated and service role, so run it only from a database-owner
+   session (SQL editor or `psql`); `private.mastermind_access_audit` records
+   every grant and revoke with its reason.
+
+   ```sql
+   select count(distinct wrm.user_id) as holders, array_agg(distinct u.email) as emails
+   from private.mastermind_access_role mar
+   join public.workspace_role_permissions wrp on wrp.role_id = mar.role_id
+   join public.workspace_role_members wrm on wrm.role_id = mar.role_id
+   join auth.users u on u.id = wrm.user_id
+   where wrp.ws_id = '00000000-0000-0000-0000-000000000000'
+     and wrp.permission::text = 'manage_mastermind'
+     and wrp.enabled;
+   ```
+
+3. Set `MASTERMIND_REQUIRE_EXPLICIT_GRANT=true` on every runtime serving Web
+   and redeploy. In new app builds, everyone else loses the entry on the next
+   access sync. Older builds rely on the hub allowlist denial.
+
+Rolling back is unsetting the flag (earlier rule again); the grant can stay.
 ## Data source
 
 Fixture builds (development flavor with `MASTERMIND_FIXTURE`) read the bundled
-synthetic sample. Staging reads `mastermind-hub-staging.tutur3u.com`, production
+synthetic sample. Staging reads `<hub-staging-host>.tutur3u.com`, production
 reads `mastermind-hub.tutur3u.com`, and any build reads `MASTERMIND_HUB_URL`
 when it is set; an explicit value always wins over the flavor host, and a bad
 one never falls back to it. A build with neither (development without a
@@ -139,9 +284,13 @@ hold more than the cap; Inbox shows every ask (see below).
 - **Activity** and **recent decisions** show three each; decision rows push
   their detail and "See all decisions" opens the Decisions segment.
 
-**Security rows** render as a single non-tappable "`<Product>` · security fix"
-line in a trailing "Security" group with no count. They have no severity, title
-or detail anywhere, are never counted, and never reorder anything. Event
+**Security rows** render as a single non-tappable "Mastermind · security fix"
+line in a trailing "Security" group with no count. The label is the constant
+"Mastermind" (SB-100 S3): never a product name and never a product fallback, so
+the row cannot say which product is affected. Each list (Home, For you, Work,
+Backlog, the activity feed) shows at most one such line however many products
+have one, with no count. They have no severity, title or
+detail anywhere, are never counted, and never reorder anything. Event
 summaries apply the same collapse.
 
 ### Catch-up
@@ -420,7 +569,7 @@ and product, area and kind chips. State is always a glyph and a word.
 - **Not tracked yet.** A product with no release age whose every environment has
   deploy, CI, freshness and evidence `unknown` and no release time, version or
   commit id gets no card. All such products share one final "Not tracked yet"
-  row that names them ("MasteryAI, PKTM"). Tapping it lists each with the hub's
+  row that names them ("Product A, Product B"). Tapping it lists each with the hub's
   reason ("Not connected · Last checked 19:22") or "No deployments observed".
   The row is hidden while a product filter is on, and these products get no
   filter pill.
@@ -573,8 +722,9 @@ The web route `POST /api/v1/mastermind/push-events` (see the
 signed hub events and sends a mobile push to Mastermind owners.
 
 - **Scope:** `needs_you.new`, `decision.awaiting` and `pin_batch.new` only.
-  Recipients are the owners in `MASTERMIND_PUSH_OWNER_IDS` with a registered
-  device and the account push preference on.
+  Recipients are the owners in `MASTERMIND_PUSH_OWNER_IDS` who hold root
+  `manage_mastermind` (once the rollout flag is on), with a registered device
+  and the account push preference on.
 - **Copy:** always "Open Mastermind" (vi "Mở Mastermind") under the title
   "Mastermind". The event carries no title, product or text, so no item content,
   including security items, can reach a lock screen.
@@ -602,6 +752,28 @@ signed hub events and sends a mobile push to Mastermind owners.
   `apps/web/src/app/api/v1/mastermind/push-events/route.race.test.ts`,
   `route.delivery.test.ts` and, for the tap,
   `apps/mobile/test/features/notifications/push/mastermind_push_destination_test.dart`.
+
+## App-switcher privacy
+
+On every `/mastermind/**` route (Home, For you, Decided, Journal, item and
+decision detail, Work, Ship, Insights) the app covers its own content with a
+blur under a mostly opaque surface tint while it is not in the foreground
+(SB-100 L2). The cover is built on `inactive`, `hidden` and `paused`, so the
+OS-captured switcher thumbnail never holds hub text, and it does not depend on
+whether a screen has cards. Screenshots are deliberately not blocked: Mastermind
+is owner-only. The cover is a Flutter overlay, so a system sheet that only
+pauses the app (Control Centre, a biometric prompt) briefly covers it too.
+
+- **Deferred (SB-100 gate):** the neutral "A decision is waiting on your Mac"
+  card (S2, T7) and local "Later" notifications with a local quiet window
+  (L1/Q5, T8) wait for the hub's `display` field and S1 classification; the app
+  has no snooze notifications today.
+- **Regression coverage:**
+  `apps/mobile/test/features/mastermind/privacy/mastermind_privacy_shield_test.dart`
+  and, for the constant security label,
+  `apps/mobile/test/features/mastermind/view/mastermind_home_page_test.dart`;
+  for the single row per list,
+  `apps/mobile/test/features/mastermind/presentation/security_rows_test.dart`.
 
 ## Deferred to PR8
 
@@ -680,9 +852,12 @@ chart-spec gaps are deferred to PR8 with the remaining chart sections:
   real tabs. `presentation/ship_usage_model_test.dart`: the Ship and Usage
   models and chart ids.
 - `apps/mobile/test/features/mastermind/access/mastermind_access_cubit_test.dart`:
-  the root workspace, permission and configured-source matrix (the entry is off
-  without root `view_infrastructure`), unrelated permissions, the `admin`
-  permission, workspace ABA and error fail-closed.
+  the root workspace, server answer and configured-source matrix (the entry
+  follows `GET /api/v1/mastermind/access`), the personal workspace, creator and
+  `admin` never implying `manage_mastermind`, workspace ABA and error
+  fail-closed. `mastermind_access_repository_test.dart`: the server answer, a
+  malformed answer, signed out, and offline reuse of the same user's last
+  answer only.
 - `apps/mobile/test/features/mastermind/data/hub_http_snapshot_source_test.dart`:
   base URL by flavor and override (production, staging, development, a bad
   override never falling back) and the bare-HTTPS-origin rules: non-HTTPS,
@@ -864,3 +1039,88 @@ Full detail continues to show canonical ask text and choices.
 Regression coverage: `view/decision_cards_test.dart` (English/Vietnamese,
 320px, text scale 2.0, short-copy fallback, recommendation, canonical indices,
 Undo and delayed send) plus the existing reply cubit and Inbox/Home suites.
+
+### Unreadable quota pools
+
+On mobile Insights, a null pool percentage displays “Out of service / unreadable”
+in the quota table, percentage chart summaries, and session/weekly rows. Null
+quota rows sort before numeric readings so they remain visible in the initial
+five rows. Missing chart series retain their window-not-reported description.
+Numeric readings, including a measured zero, retain their existing meaning.
+Regression coverage lives in `mastermind_insights_compact_test.dart` and
+`ship_usage_model_test.dart`; snapshot parsing preserves null quota rows.
+
+## Iris in the Inbox (M0)
+
+Iris, the owner's inbox to Atlas, is a first-class part of the mobile Inbox,
+behind a flag. Synthetic data only in fixtures and tests.
+
+- **Flag:** `mastermindIrisEnabled` is on when the `MASTERMIND_IRIS` Dart define
+  is set (dev, staging and tests) or when the hub's `GET /v1/capabilities`
+  returns `"iris": true` (TestFlight and Play internal). The capabilities parser
+  accepts that optional last key; a Worker without it, or a failed check, keeps
+  Iris off. `iris` says only that the relay is on, never anything about
+  enrolment. Tests use `debugOverrideMastermindIris`.
+- **Inbox segments:** with Iris on, **Chat** is the first and default segment
+  (`/mastermind/inbox`); Needs you is then written as `?segment=needs-you`, and
+  `?segment=chat` deep-links Chat. With Iris off nothing changes. If the hub
+  turns Iris off while Chat is open, the Inbox falls back to Needs you.
+- **Chat feed:** `GET /v1/iris/feed` returns the `threads-1` page and message
+  shape (oldest first, opaque `item-` thread ref and `m-` message refs, plus
+  `next_after` on a forward `?after=` poll; `before` and `after` together is
+  refused). The list is reversed so it opens at the newest message, newest
+  last, and holds its place. Rows reuse the #7182 plain-text renderer: bidi and
+  invisible characters stripped, redactions as neutral placeholders, and a
+  withheld row (`withheld: true`, empty text) reads "Hidden message". The feed
+  polls every 15 s with backoff, holds at most 500 rows in memory, is dropped
+  when the app leaves the foreground, and resets to the latest page on a 404
+  cursor. Author labels are display-only provenance: nothing owner-only
+  (answers, enrolment, un-kill) is granted by who a message says wrote it.
+- **Composer:** published into the shell's floating dock like Assistant, so
+  there is no second dock or inner bar and the dock keeps its Back while idle.
+  Text only in M0; voice is the OS keyboard's dictation. `POST /v1/iris/send`
+  sends exactly `{"target":"atlas","text":…}` (1 to 16,000 characters) with a
+  lowercase-UUID `Idempotency-Key`. Receipts from `GET /v1/iris/send/<id>` only
+  move forward: received reads "Sending", delivered via `queue` reads "Queued",
+  any other delivery reads "Sent", acked reads "Seen". Three failed attempts
+  show "Not sent" with Retry, which reuses the same key.
+- **Kill switch:** a 423 `killed` (or a 503 `iris_killed` from an older Worker)
+  keeps the chat readable, shows a banner and turns sending off.
+- **Signing:** every relay request carries the owner JWT plus `X-Iris-Device`,
+  `X-Iris-Ts`, `X-Iris-Nonce` and `X-Iris-Sig` from an injected signer over
+  method, path with query, sha256(body), timestamp, nonce, device id and the
+  Idempotency-Key. Until the native device-key lane lands, a fake signer stands
+  in; a real relay refuses it.
+- **Devices and enrolment:** `/mastermind/iris/devices` (Chat's navbar action)
+  lists enrolled devices with their status, QA mark and key prefix, and revokes
+  with a second tap on the same button, never a native dialog. Enrol shows the
+  6-digit code and the key fingerprint prefix and says to confirm on the Iris
+  enrol page with a passkey; the app then polls the device from pending to
+  confirmed, or expired after 15 minutes. No typed T3 command or chat message
+  confirms a device. Builds without a device key cannot enrol.
+- **Ask cards:** asks keep the hub snapshot and `POST /v1/replies`; the relay
+  never answers them. Inbox rows and detail share urgency badges ("Urgent",
+  "High priority", each with a glyph) and deadline labels beside the age. A
+  **What needs me** header (Needs you, Chat and the Home card) counts open asks
+  once each as urgent, soon (high), FYI or other; in Chat it also shows the
+  relay's role status and usage line. **Use recommendations** opens a confirm
+  sheet listing each open ask with a recommended option, then queues one held
+  reply per ask, each with its own Idempotency-Key and the existing durable
+  undo on its card, and reports each result. The recommended option is a filled
+  button beside its "Recommended" badge.
+- **Fixture mode:** the development flavor with `MASTERMIND_FIXTURE=true` serves
+  `assets/dev/mastermind/iris_fixture.json` (12 synthetic asks across
+  urgent, soon and FYI, with and without options, one expired; 40 messages)
+  through `FixtureIrisRelay`, with offline, 429, kill and slow-ack toggles.
+- **Not in M0:** attachments, secure input, push deep links to Chat, typed-code
+  approvals and the native device key. The summary and devices response shapes
+  are provisional until the relay fixes them.
+
+Regression coverage lives in `apps/mobile/test/features/mastermind/iris/`
+(`data/http_iris_relay_test.dart` for routes, shapes, signed headers and
+401/403/423/429 handling; `data/fixture_iris_relay_test.dart` for the fixture
+and its faults; `cubit/iris_cubits_test.dart`; `view/iris_chat_view_test.dart`
+for the feed, composer, receipts, retry, kill banner and dark mode;
+`iris_integration_test.dart` for the flag, capabilities, Chat segment and
+enrolment) and `view/what_needs_me_test.dart` for badges, counts and the
+recommendations sheet.

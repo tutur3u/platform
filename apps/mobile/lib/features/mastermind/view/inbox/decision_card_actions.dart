@@ -47,17 +47,21 @@ class DecisionCardActions extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ReplyIssueBanner(issue: state.statusFor(item.id).issue),
+            // The recommended option is filled and carries the word, so the
+            // mark never rests on colour alone; the publisher's order stays.
             for (final (index, _) in selectableOptions(item))
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-                child: AppButton.outline(
-                  size: AppButtonSize.large,
+                child: _OptionButton(
+                  key: ValueKey('decision-option-${item.id}-$index'),
+                  recommended: item.optionRecommended(index),
                   onPressed: state.canReply
                       ? () =>
                             replies.queueOption(item: item, optionIndex: index)
                       : null,
                   child: Wrap(
                     alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     spacing: AppSpacing.sm,
                     runSpacing: AppSpacing.xs,
                     children: [
@@ -80,4 +84,30 @@ class DecisionCardActions extends StatelessWidget {
       },
     );
   }
+}
+
+class _OptionButton extends StatelessWidget {
+  const _OptionButton({
+    required this.recommended,
+    required this.onPressed,
+    required this.child,
+    super.key,
+  });
+
+  final bool recommended;
+  final VoidCallback? onPressed;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => recommended
+      ? AppButton.secondary(
+          size: AppButtonSize.large,
+          onPressed: onPressed,
+          child: child,
+        )
+      : AppButton.outline(
+          size: AppButtonSize.large,
+          onPressed: onPressed,
+          child: child,
+        );
 }

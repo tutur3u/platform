@@ -16,7 +16,7 @@ export async function requireExternalProjectRoleInWorkspace({
 }) {
   const { data: role, error } = await access.admin
     .from('workspace_roles')
-    .select('id')
+    .select('id,name')
     .eq('id', roleId)
     .eq('ws_id', access.normalizedWorkspaceId)
     .single();
@@ -31,7 +31,7 @@ export async function requireExternalProjectRoleInWorkspace({
     };
   }
 
-  return { ok: true as const };
+  return { ok: true as const, role };
 }
 
 export async function addExternalProjectRoleMembers({

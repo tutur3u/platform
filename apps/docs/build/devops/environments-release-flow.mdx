@@ -1,7 +1,7 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-09-23"
+updatedAt: "2026-10-31"
 ---
 
 <Note>
@@ -178,7 +178,7 @@ No package version, dependency resolution or published changelog is rewritten.
   `vercel-production-platform.yaml`; self-hosted machines still use the Docker
   release flow below for their own runtime deployment.
 - `apps/apps` production deploys are handled by `vercel-production-apps.yaml`.
-- `apps/qr` production deploys are handled by `vercel-production-qr.yaml`.
+- `apps/tools` (which serves the public QR generator at `/qr`) production deploys are handled by `vercel-production-tools.yaml`.
 - Each production app uses a workflow-and-branch concurrency group whose
   `cancel-in-progress` predicate matches only `production` push events, so the
   newest production SHA remains deployable without letting `main` commits or
@@ -259,8 +259,8 @@ no behavior in this section changes that.
 
 Staging is a separate, cookie-isolated environment. Every staging surface
 (web, Next satellites and Workers) lives on `https://<app>.staging.tutur3u.com`,
-for example `https://web.staging.tutur3u.com` and
-`https://tasks.staging.tutur3u.com`. Its shared cookie domain is exactly
+for example `https://<app>.staging.tutur3u.com` and
+`https://<app>.staging.tutur3u.com`. Its shared cookie domain is exactly
 `.staging.tutur3u.com`, never `.tutur3u.com` and never `.tuturuuu.com`.
 
 Two environment variables describe the staging host scheme. Both are
@@ -274,7 +274,7 @@ in the browser.
 
 ```text
 NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com
-NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS=platform:https://web.staging.tutur3u.com,tasks:https://tasks.staging.tutur3u.com,meet:https://meet.staging.tutur3u.com
+NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS=platform:https://<app>.staging.tutur3u.com,tasks:https://<app>.staging.tutur3u.com,meet:https://<app>.staging.tutur3u.com
 ```
 
 <Warning>
@@ -286,7 +286,7 @@ code ignores a mis-set value (see below) so a mistake cannot move production off
 
 Per-app alias template: `https://<app>.staging.tutur3u.com`, where `<app>` is the
 app name used in `PRODUCTION_INTERNAL_APP_DOMAINS` (the web app is registered as
-`platform`, for example `platform:https://web.staging.tutur3u.com`).
+`platform`, for example `platform:https://<app>.staging.tutur3u.com`).
 
 ### Shared cookie domain
 
@@ -467,3 +467,33 @@ and multiplayer auth), Mail, Tasks, Infrastructure, AI, Calendar, Track, Meet,
 Parley, Lettin and Rewise. Examples list the
 name without a value; an unset setting fails closed for Azure-linked staff
 sessions. See [staff authorization](/platform/architecture/authorization#staff-session-verification).
+
+### Managed project branch validation
+
+Infrastructure project creation and updates reject unsafe selected branches with
+HTTP 400. The API and watcher share the same branch allowlist. Stored platform
+branches are validated before Git is invoked; unsafe values stop the poll with a
+value-free error rather than silently deploying the default branch. Missing or
+empty legacy values retain the production default. Whitespace is rejected rather
+than trimmed. This applies to the infrastructure API and blue-green watcher.
+Regression coverage lives in `branch-validation.test.ts`,
+`managed-project-branch.test.ts`, and `watch-blue-green-projects.test.js`.
+
+
+Shared cookie scope uses one decision function in
+`@tuturuuu/supabase/shared-cookie-domains`, shared by utils and Supabase helpers.
+Servers explicitly admit staging with `TUTURUUU_DEPLOY_ENV=staging`. Browser
+bundles use the design's build-time `NEXT_PUBLIC_TUTURUUU_STAGING=1` signal
+when the private deploy environment is unavailable. Both require exactly
+`.staging.tutur3u.com` after domain normalization; invalid staging configuration
+throws rather than falling back to production. Vercel production markers veto the public flag. When the public flag is `1`,
+any defined private deploy environment other than `staging` throws, including
+empty, unknown, preview and production values, preventing divergent server and
+browser decisions. Without the public flag, private production markers reject
+and log an attempted staging cookie override once per process. Without staging admission, staging hosts get host-only cookies.
+Build staging server and browser artifacts with the same public flag and cookie
+domain to preserve refresh and sign-out scope across staging hosts.
+
+Regression coverage: `packages/utils/src/shared-cookie-deploy-env.test.ts` and
+`packages/utils/src/shared-cookie-browser-env.test.ts`. The Web fallback continues
+to reject mismatched upstream cookie domains with 502.

@@ -121,10 +121,18 @@ flutter {
     source = "../.."
 }
 
+// The app never collects an advertising identifier.
+configurations.configureEach {
+    exclude(group = "com.google.android.gms", module = "play-services-ads-identifier")
+}
+
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
     implementation(platform("com.google.firebase:firebase-bom:34.9.0"))
     implementation("com.google.firebase:firebase-analytics")
+    // Used natively by TelemetryCollectionLockProvider; the plugin's copy is not on this classpath.
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-messaging")
     implementation("org.jetbrains.kotlin:kotlin-stdlib:2.3.10")
     implementation("com.squareup.okhttp3:okhttp:5.3.2")
     testImplementation("junit:junit:4.13.2")
@@ -169,6 +177,42 @@ webRtcProject.plugins.withId("com.android.library") {
         webRtcProject.tasks.configureEach {
             if (name.startsWith("compile") || name.startsWith("lint")) {
                 dependsOn(prepareMeetWebRtc)
+            }
+        }
+    }
+}
+
+
+// FlutterFire Analytics eagerly constructs Measurement on engine attachment.
+// Patch only generated build storage; keep the SDK lazy until an admitted API call.
+val analyticsProject = project(":firebase_analytics")
+analyticsProject.plugins.withId("org.jetbrains.kotlin.android") {
+    analyticsProject.afterEvaluate {
+        analyticsProject.extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension> {
+            val kotlinSources = sourceSets.getByName("main").kotlin
+            val originalRoots = kotlinSources.srcDirs.toList()
+            val relativePlugin = "io/flutter/plugins/firebase/analytics/FlutterFirebaseAnalyticsPlugin.kt"
+            val upstream = analyticsProject.file("src/main/kotlin/" + relativePlugin)
+            val output = analyticsProject.layout.buildDirectory.dir("generated/consent-analytics/kotlin")
+            val patcher = rootProject.file("../tool/defer_analytics_startup.mjs")
+            val prepare = analyticsProject.tasks.register<Sync>("prepareConsentAnalyticsSources") {
+                inputs.file(upstream)
+                inputs.file(patcher)
+                from(originalRoots)
+                into(output)
+                doLast {
+                    val patched = output.get().file(relativePlugin).asFile
+                    analyticsProject.providers.exec {
+                        commandLine("node", patcher.absolutePath, upstream.absolutePath, patched.absolutePath)
+                    }.result.get().assertNormalExitValue()
+                }
+            }
+            kotlinSources.setSrcDirs(listOf(output))
+            analyticsProject.extensions.configure<com.android.build.gradle.LibraryExtension> {
+                sourceSets.getByName("main").java.setSrcDirs(listOf(output))
+            }
+            analyticsProject.tasks.configureEach {
+                if (name.startsWith("compile") || name.startsWith("lint")) dependsOn(prepare)
             }
         }
     }

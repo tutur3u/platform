@@ -34,12 +34,16 @@ The two dynamic-identifier helpers the batched phases call,
 `merge_workspace_users_batch_update` and `merge_workspace_users_table_batch`,
 are not client entry points: only `service_role` and the definer phase functions
 may execute them, and both raise `22023` for any (table, column) outside the
-fixed phase 1a–1d merge references.
+fixed phase 1a–1d merge references. Both pin `search_path` to
+`pg_catalog, pg_temp`: the allowlist carries each reference's owning schema
+(`public` or `private`) and the dynamic SQL uses schema-qualified identifiers, so
+no relation lookup depends on the caller or on the path.
 
-Regression coverage: `apps/database/supabase/tests/merge-phase-workspace-guards.sql`
-and `apps/database/supabase/tests/merge-workspace-users-null-guards.sql`.
+Regression coverage: `apps/database/supabase/tests/merge-phase-workspace-guards.sql`,
+`apps/database/supabase/tests/merge-workspace-users-null-guards.sql`, and
+`apps/database/supabase/tests/merge-batch-helper-search-path.sql`.
 Manual reversal is in the matching `apps/database/rollbacks/20261029050400`–`20261029050430`
-rollback files. A rollback removes these guards and reopens SR-108 for
+rollback files. A rollback removes these guards and reopens an internal security finding for
 authenticated callers of the phase functions; it never re-grants `PUBLIC` or
 `anon`, and the two helpers stay `service_role`-only.
 
@@ -631,7 +635,7 @@ listings that embed a role's permissions under a `ws_id`-filtered
 
 Infrastructure workspace-secret APIs require root MEMBER membership and either
 `manage_workspace_secrets` or `manage_workspace_roles` before using an admin client
-(SR-385). Tenant permissions alone do not
+(an internal security review). Tenant permissions alone do not
 grant infrastructure access. Creating, renaming, updating, or deleting
 `MANAGED_CRON_ENABLED` also requires a current subject-bound verified Auth user and verified Tuturuuu staff session.
 A matching email alone does not grant access.
@@ -640,3 +644,90 @@ Regression coverage: infrastructure's `infrastructure-admin-access.test.ts`,
 rate-limits `workspace-secrets/route.test.ts`, and workspace secrets
 `managed-cron.test.ts` (which also covers renaming a normal secret into
 `MANAGED_CRON_ENABLED` and the workspace and id binding of the lookup).
+
+## Workspace deletion and retained history
+
+For non-personal workspaces, deletion removes workspace-owned realtime log
+aggregations, documents including their meeting-document links, and team membership
+rows. Team member user accounts and memberships in other workspaces survive.
+Migration `20261030112010` repairs those three foreign keys with `ON DELETE CASCADE NOT VALID`;
+`20261030112020` validates them separately. New writes and cascading deletes are
+enforced immediately during the NOT VALID phase. The document `ws_id` index
+is created concurrently by `20261030112000` before the guarded foreign-key swap. Validation has a 15-minute statement timeout for the
+unpruned realtime log table, whose production size must be checked before release;
+its SHARE UPDATE EXCLUSIVE lock allows ordinary writes. Rollback first commits a
+NOT VALID swap, then validates the original definitions in a separate transaction
+using the `rollback-validate.sql` file, after swap/index locks are released.
+These database rules apply to
+all app surfaces using the shared workspace deletion path. Documents without a
+workspace, documents in another workspace, and the creator's account survive.
+
+This is not a blanket history-deletion policy. Immutable topic delivery receipts,
+billing reservations, provider-operation journals, bank events, cross-workspace
+chat attachments, healthcare measurements, and other retained references keep
+their existing guards. Their populated workspaces may still reject hard deletion.
+Mastermind must decide whether to retain a soft-deleted workspace or approve a
+durable archive and scoped reference migration before changing those rules.
+Personal-workspace deletion restrictions also remain in force.
+
+Regression coverage is
+`apps/database/supabase/tests/workspace-delete-fk-cascade.sql`: populated deletion,
+no document/log/meeting/membership orphans, surviving member accounts and unrelated
+data, immediate rejection of
+new FK orphans, and continued rejection for retained delivery/personal workspaces.
+The catalog audit and full-schema up/down/up verifier live under
+`apps/database/verification/workspace-delete-*`. These checks exercise local SQL
+and database roles; they do not establish HTTP, staging, or production acceptance.
+
+## Permission predicate caller scope
+
+`has_workspace_permission`, `is_org_member`,
+`can_manage_workspace_external_projects`, `can_publish_workspace_external_projects`,
+and `is_root_external_project_admin` answer only for `auth.uid()` under
+anonymous/authenticated JWT roles outside triggers; other-user queries return false.
+Service-role, owner and trigger evaluation retain their scope. Invites check the
+actual target membership row. Role-bearing invites require MEMBER type, member-
+and role-management permissions, and a same-workspace role. Rollbacks retain
+caller binding and grant helper execution only to authenticated/service roles.
+
+`manage_mastermind` requires the recorded root role and its enabled explicit grant.
+Creator/admin/default permissions never imply it. Only the audited owner procedure
+admits a member; this migration grants nobody access. The storage-limit RPC
+requires authenticated or service-role EXECUTE.
+
+Regression coverage: `has-workspace-permission-caller-scope.sql`,
+`manage-mastermind-*.sql`, `workspace-invite-role-binding.sql`, `meet-audio-chunk-read-boundary.sql`,
+`workspace-storage-limit-execute.sql`, and
+`workspace-permission-*.sql`. Apply the actual rollback before running
+`verification/workspace-permission-rollback.sql` and the invitation-role suite.
+
+The same JWT and trigger scope applies to `is_workspace_owner`, `is_member_invited`,
+`user_is_in_channel`, `is_hive_member`, `is_hive_platform_admin`,
+`can_create_workspace`, and `count_user_workspaces`. Non-self boolean checks return
+false; workspace counts return zero. Workspace creation limits query the caller's
+own count. `is_task_plan_intended_workspace` returns false for nonmembers.
+`is_personal_workspace` returns NULL for nonmembers outside triggers: neither a
+personal-only nor a nonpersonal-only predicate can authorize with a hidden value.
+Trigger checks retain the real personal flag. Analytics growth and retention RPCs
+are executable only by service_role.
+
+Regression coverage: `remaining-membership-helpers-caller-bound.sql` and
+`external-project-helpers-caller-bound.sql`; anonymous EXECUTE stays revoked.
+
+## Role workspace ownership
+
+Role permission rows reference the role's workspace through a composite foreign
+key. API database roles cannot move a role to another workspace. Service-role
+maintenance may move it, cascading its permission rows to the destination.
+
+Across Web role editors, external project teams and external app member tools,
+renaming a role with a subscription grant (including a disabled grant) requires
+the creator of every workspace holding that grant. Adding members checks enabled
+grants. Plain roles remain editable by role managers. Name-selected POS and
+external-app administrator roles cannot silently reuse subscription-granted roles.
+Explicit Mastermind permissions continue to be filtered from ordinary role writes.
+
+Regression coverage: `role-workspace-consistency.sql`,
+`name-based-role-creator-grant.sql`, `workspace-creator-grant-permissions.test.ts`,
+the role route tests, and external project/app member tests. Database checks must
+run against the applied migration chain; route mocks alone do not qualify SQL.

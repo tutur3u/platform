@@ -437,7 +437,7 @@ installer-owned; this reference ships through the canonical Tuturuuu plugin.
 ## Quota-aware delegation
 
 Use the existing `packages/agent-quota` router and its
-[runbook](../../../../../apps/docs/build/development-tools/agent-quota-routing.mdx)
+[runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/development-tools/agent-quota-routing.mdx)
 for provider headroom. Pass the current `orchestrator_capabilities` response via
 `--catalog-stdin` when ACP transport is unavailable. Prefer `--snapshots-only`
 for cached provider usage plus active T3 reservations without transcript reads.

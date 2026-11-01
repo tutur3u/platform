@@ -1,6 +1,7 @@
 import type { ProductionPublicationPolicy } from './scripts/ci/production-publication-policy.ts';
 
 export const ci = {
+  'mastermind-cloudflare.yaml': true,
   'contacts-start-candidate.yaml': true,
   'sso-persistence-contract.yaml': true,
   'employee-schema-contract.yaml': true,
@@ -24,6 +25,7 @@ export const ci = {
   'external-project-storage-analytics-contract.yaml': true,
   'tutoring-absence-credit-contract.yaml': true,
   'report-review-receipts-contract.yaml': true,
+  'workspace-permission-scope-contract.yaml': true,
   'programming-app-builds.yaml': true,
   'mail-calendar-tasks-builds.yaml': true,
   'playground-runtime-acceptance.yaml': true,
@@ -68,6 +70,8 @@ export const ci = {
   'release-sdk-package.yaml': true,
   'release-supabase-package.yaml': true,
   'release-please.yaml': true,
+  'release-realtime-package.yaml': true,
+  'release-turnstile-package.yaml': true,
   'release-types-package.yaml': true,
   'release-typescript-config-package.yaml': true,
   'release-ui-package.yaml': true,
@@ -133,6 +137,10 @@ export const ci = {
 // Publication only: native build and original/restored acceptance remain enabled.
 // Admit each app only in an explicitly reviewed wave cutover PR.
 export const productionPublicationPolicy = {
+  mastermind: {
+    state: 'held',
+    reason: 'held for wave-2 cutover: Mastermind security review required',
+  },
   meet: { state: 'held', reason: 'held for wave-1 cutover' },
   calendar: {
     state: 'admitted',

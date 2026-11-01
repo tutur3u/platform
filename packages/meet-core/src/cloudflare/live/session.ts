@@ -13,7 +13,7 @@ import { verifyLiveSession } from '../../features/live-assistant/token';
 import { LiveActions } from './actions';
 import type { LiveAudioBatcher } from './audio-batcher';
 import { LiveAudioInput } from './audio-input';
-import { beginLiveBilling, settleLiveBilling } from './billing';
+import { beginLiveBilling } from './billing';
 import { executeLiveDecision } from './decision';
 import {
   finalizeSessionBilling,
@@ -35,8 +35,10 @@ import { normalizeSavedLiveSession, type SavedSession } from './session-state';
 import { executeLiveTool } from './session-tools';
 import { markInterruptedUsage, observeSessionUsage } from './session-usage';
 import { type LiveEnvironment, LiveTurnArchive } from './storage';
+import { settleTickBilling } from './tick-billing';
 import { replayLiveToolResponses } from './tool-responses';
 import { reportLiveUsage } from './usage-report';
+import { liveWorkspaceAllowed } from './workspace-gate';
 import {
   controlWorkspaceReview,
   expireWorkspaceReviews,
@@ -93,6 +95,11 @@ export class MeetLiveDurableObject {
       }
     });
   }
+  private allowed(
+    session: Parameters<typeof liveWorkspaceAllowed>[1] = this.saved
+  ) {
+    return liveWorkspaceAllowed(this.env, session);
+  }
   private emit(event: LiveAssistantEvent) {
     if (this.socket?.readyState === WebSocket.OPEN)
       this.socket.send(JSON.stringify(event));
@@ -108,6 +115,8 @@ export class MeetLiveDurableObject {
       const input = (await request.json()) as Parameters<
         typeof controlWorkspaceReview
       >[0];
+      if (this.saved && !this.allowed())
+        return new Response('Meeting AI is not available', { status: 403 });
       const result = this.queue.then(() =>
         controlWorkspaceReview(
           input,
@@ -136,6 +145,8 @@ export class MeetLiveDurableObject {
         | 'workspace'
         | 'voice'
       >;
+      if (!this.allowed(input))
+        return new Response('Meeting AI is not available', { status: 403 });
       this.saved = {
         ...input,
         startedAt: Date.now(),
@@ -164,6 +175,8 @@ export class MeetLiveDurableObject {
       }
       if (this.saved.ended)
         return new Response('Session ended', { status: 410 });
+      if (!this.allowed())
+        return new Response('Meeting AI is not available', { status: 403 });
       return Response.json(this.saved.claims);
     }
     const protocols =
@@ -193,6 +206,8 @@ export class MeetLiveDurableObject {
       request.headers.get('Upgrade') !== 'websocket'
     )
       return new Response('Forbidden', { status: 403 });
+    if (!this.allowed(saved))
+      return new Response('Meeting AI is not available', { status: 403 });
     await liveRoomCommand(this.env, saved.claims, saved.identity, {
       action: 'live.context',
     });
@@ -251,6 +266,10 @@ export class MeetLiveDurableObject {
       !this.socket
     )
       return;
+    if (!this.allowed(saved)) {
+      await this.stop('workspace_not_enabled');
+      return;
+    }
     this.connecting = true;
     const generation = ++this.generation;
     try {
@@ -355,6 +374,10 @@ export class MeetLiveDurableObject {
       return;
     }
     if (!this.provider) return;
+    if (!this.allowed()) {
+      await this.stop('workspace_not_enabled');
+      return;
+    }
     if (message.type === 'audio.end') this.audioInput.end(this.provider);
     if (message.type === 'text')
       this.provider.sendRealtimeInput({ text: message.text });
@@ -550,6 +573,12 @@ export class MeetLiveDurableObject {
       await this.stop();
       return;
     }
+    // Revoked or never eligible: end the session instead of reconnecting the
+    // provider. Stopping stays ungated so billing settles and cleanup runs.
+    if (!this.allowed()) {
+      await this.stop('workspace_not_enabled');
+      return;
+    }
     await settlePublicBillings(
       this.env,
       this.saved,
@@ -587,62 +616,16 @@ export class MeetLiveDurableObject {
           this.saved.claims.mode === 'room' ? 'live.heartbeat' : 'live.context',
         sessionId: this.saved.claims.sessionId,
       });
-      if (this.saved.billing) {
-        const result = await settleLiveBilling(
+      if (
+        (await settleTickBilling(
           this.env,
-          this.saved.claims,
-          this.saved.billing,
-          false
-        );
-        this.saved.billing = result;
-        await this.persist();
-        await reportLiveUsage(
-          this.env,
-          this.saved.claims,
-          this.saved.identity,
-          result
-        );
-        this.emit({
-          type: 'usage',
-          costUsd: result.costUsd,
-          incomplete: result.incomplete,
-        });
-        if (result.closed || result.exhausted) {
-          await this.stop('quota_exhausted');
-          return;
-        }
-        if (result.renew) {
-          this.saved.billing = await settleLiveBilling(
-            this.env,
-            this.saved.claims,
-            result,
-            true
-          );
-          await this.persist();
-          await reportLiveUsage(
-            this.env,
-            this.saved.claims,
-            this.saved.identity,
-            this.saved.billing
-          );
-          this.saved.billingFinalized = true;
-          await this.persist();
-          this.saved.billing = await beginLiveBilling(
-            this.env,
-            this.saved.claims,
-            this.saved.billing.costUsd,
-            this.saved.identity.workspaceId
-          );
-          this.saved.coverageGap = false;
-          this.saved.billingFinalized = false;
-          await this.persist();
-          await reportLiveUsage(
-            this.env,
-            this.saved.claims,
-            this.saved.identity,
-            this.saved.billing
-          );
-        }
+          this.saved,
+          () => this.persist(),
+          (event) => this.emit(event)
+        )) === 'closed'
+      ) {
+        await this.stop('quota_exhausted');
+        return;
       }
       if (this.saved.toolResponses?.some((item) => !item.deliveredAt)) {
         this.provider?.close();

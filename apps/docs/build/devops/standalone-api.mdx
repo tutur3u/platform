@@ -123,9 +123,9 @@ build and an emitted-runtime smoke using Wrangler's local workerd harness. There
 is no deploy step. The build uses `vp build --configLoader runner` until the
 shared preset loader fix is accepted.
 
-Run heavy checks on Thanh through one `ttr resources run -- <job>` admission.
-Never build on the M4. If M4 disk admission rejects `check:changed`, transfer the
-owned commit using a git bundle, verify its SHA in an isolated Thanh checkout,
+Run heavy checks on a remote build host through one `ttr resources run -- <job>` admission.
+Never build on the local hub. If its disk admission rejects `check:changed`, transfer the
+owned commit using a git bundle, verify its SHA in an isolated remote checkout,
 and run the unchanged gate there. Never bypass the disk gate. Independent
 security review, staging contracts, rollback rehearsal and ops approval remain
 required before a direct per-unit production flip.

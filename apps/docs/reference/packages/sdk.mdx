@@ -588,7 +588,7 @@ ttr storage prune --category worktrees --apply
 Prune never removes dirty, unmerged, locked, busy, current or held worktrees,
 the primary checkout, `preserve/*` branches, or any path listed in a hold file
 (`~/.t3/cleanup/holds.d/*.txt`). See
-[Machine storage health](/build/development-tools/machine-storage-health) for
+Machine storage health for
 thresholds, categories and per-OS commands.
 
 ### Scoped Help
@@ -1734,7 +1734,7 @@ Setup includes linked Git worktrees. One canonical per-user FIFO queue defaults 
 
 Admission is reentrant. An admitted job exports `TTR_RESOURCES_ADMITTED=<owner token>` (and the legacy `TTR_RESOURCE_OWNER`). A nested `ttr resources run` or shim-admitted heavy command inside that job runs immediately with the owner's caps instead of queueing behind its own ancestor. The marker counts only while it names a live owner inside that owner's process tree (an ancestor PID or the owned launcher's process group). When `ps` ancestry is unavailable, the marker cannot be verified, so it is ignored with a warning and the command queues. On Linux without a trusted `ps`, lineage falls back to the kernel's `/proc/<pid>/stat`, which is not PATH-controlled. Where no ancestry evidence exists at all, a waiter whose marker names a live owner fails after 60 seconds with an actionable error (install `ps`, or use `TTR_RESOURCES_BYPASS=1`) instead of waiting forever behind its own ancestor (`resources-ancestry.test.ts`). Ancestry and process-group liveness come only from `/bin/ps` or `/usr/bin/ps`, run with an empty environment; `ps` is never resolved through the caller's PATH, so a fake `ps` cannot fabricate ancestry. Without a trusted `ps` there is no evidence and the command queues. Stale or copied markers are likewise ignored with a warning and queue normally. Children whose environment is filtered, such as under Turbo strict env, are matched by ancestry alone. Successful ancestry snapshots are cached per process, and failed `ps` probes are retried. A waiter also rechecks ancestry about once per second, so a transient probe failure cannot deadlock it behind its own ancestor. Regression coverage lives in `resources-reentrancy.test.ts`.
 
-Explicit `run` skips the queue only for a few read-only coreutils (`echo`, `pwd`, `true`, `false`, `whoami`, `uname`, `date`, `printenv`, `cat`, `head`, `tail`, `wc`). `ls` always queues because recursion hides in bundled flags (`-1R`) and GNU long-option abbreviations (`--rec`). The exemption is decided on the executable that would actually run: the first PATH match (or the given path) must resolve to the same-named binary directly inside `/bin`, `/usr/bin` or Ubuntu's rust-coreutils applet directory `/usr/lib/cargo/bin/coreutils` (exact directories, no subdirectories; the same basename keeps a multicall binary on the intended applet, so busybox-style targets queue), and that file and every directory above it must be root-owned and not writable by group or others, so an impostor script named `cat` or `/any/path/node` queues. On Ubuntu 26.04 (skr-linux-lan, verified 2026-10-23) `/bin` links to `usr/bin`, and `/usr/bin/{cat,echo,head,tail,wc,pwd,date,uname,printenv,whoami,false}` link to root-owned 755 applets in `/usr/lib/cargo/bin/coreutils`, with every directory up to `/` root:755. Those tools are trusted there; `true` links to `/usr/bin/gnutrue`, a different basename, so it queues. The host-gated test in `resources-trusted-path.test.ts` rechecks this on any such host. The CLI then spawns exactly that canonical path, never the original name or symlink, so swapping a symlink after classification cannot run a payload (`resources-race.test.ts`; Linux and macOS layouts in `resources-trusted-path.test.ts`). It is also refused while `LD_*`, `DYLD_*`, `GCONV_PATH` or `LOCPATH` is set. Runtimes and package managers queue even for `--version`/`--help`, because `NODE_OPTIONS=--require`, `npm_config_*` and preload settings load code before any flag is read. Every git command queues, because `status`/`ls-files` run `core.fsmonitor` (also injectable through `GIT_CONFIG_COUNT`), `branch` runs the `reference-transaction` hook and a pager, and `diff|log|show` run textconv or external diff drivers. Regression coverage lives in `resources-hardening.test.ts` and the occupied-slot dispatcher test in `resources-bypass.test.ts`. Shims already pass non-heavy commands straight through.
+Explicit `run` skips the queue only for a few read-only coreutils (`echo`, `pwd`, `true`, `false`, `whoami`, `uname`, `date`, `printenv`, `cat`, `head`, `tail`, `wc`). `ls` always queues because recursion hides in bundled flags (`-1R`) and GNU long-option abbreviations (`--rec`). The exemption is decided on the executable that would actually run: the first PATH match (or the given path) must resolve to the same-named binary directly inside `/bin`, `/usr/bin` or Ubuntu's rust-coreutils applet directory `/usr/lib/cargo/bin/coreutils` (exact directories, no subdirectories; the same basename keeps a multicall binary on the intended applet, so busybox-style targets queue), and that file and every directory above it must be root-owned and not writable by group or others, so an impostor script named `cat` or `/any/path/node` queues. On Ubuntu 26.04 (a Linux build host, verified 2026-10-23) `/bin` links to `usr/bin`, and `/usr/bin/{cat,echo,head,tail,wc,pwd,date,uname,printenv,whoami,false}` link to root-owned 755 applets in `/usr/lib/cargo/bin/coreutils`, with every directory up to `/` root:755. Those tools are trusted there; `true` links to `/usr/bin/gnutrue`, a different basename, so it queues. The host-gated test in `resources-trusted-path.test.ts` rechecks this on any such host. The CLI then spawns exactly that canonical path, never the original name or symlink, so swapping a symlink after classification cannot run a payload (`resources-race.test.ts`; Linux and macOS layouts in `resources-trusted-path.test.ts`). It is also refused while `LD_*`, `DYLD_*`, `GCONV_PATH` or `LOCPATH` is set. Runtimes and package managers queue even for `--version`/`--help`, because `NODE_OPTIONS=--require`, `npm_config_*` and preload settings load code before any flag is read. Every git command queues, because `status`/`ls-files` run `core.fsmonitor` (also injectable through `GIT_CONFIG_COUNT`), `branch` runs the `reference-transaction` hook and a pager, and `diff|log|show` run textconv or external diff drivers. Regression coverage lives in `resources-hardening.test.ts` and the occupied-slot dispatcher test in `resources-bypass.test.ts`. Shims already pass non-heavy commands straight through.
 
 Node shim classification consumes known runtime option values, including `--diagnostic-dir /tmp`, before identifying a tool entrypoint. Unknown or incomplete Node options queue conservatively, even when later arguments include `--help`. Recognized Vitest entrypoints retain their worker cap after runtime options and the Node `--` separator. Arguments after an ordinary script path remain that script's arguments. The Node 26.4 bare forms of `--experimental-config-file` and `--experimental-specifier-resolution` do not consume the next argv; only their `=` forms are accepted as value options. Any separate option value that itself identifies a tool, ttr launcher, or heavy script makes classification ambiguous and queues conservatively.
 
@@ -1776,14 +1776,14 @@ Offload full validation with `ttr box run --runner <remote-id> -- <command>` onl
 
 ### Cross-project budget on a shared host
 
-A shared host (for example skr-studio, shared by Tuturuuu and Upskii) can carry a `budget` block in `config.json`. It is a layer on the existing lane admission, not a second scheduler: tickets, owners, the resources home and the admission mutex are unchanged. The budget decides which waiter may claim the next lane, and how many worker tokens that job may fan out to.
+A shared host (for example a build Mac shared by two projects) can carry a `budget` block in `config.json`. It is a layer on the existing lane admission, not a second scheduler: tickets, owners, the resources home and the admission mutex are unchanged. The budget decides which waiter may claim the next lane, and how many worker tokens that job may fan out to.
 
 ```json
 "budget": {
   "lanes": 12, "tokens": 24, "memoryGiB": 320, "borrow": true,
   "projects": [
-    { "id": "tuturuuu", "roots": ["/Users/thanh/Documents/GitHub/tuturuuu"], "lanes": 6, "tokens": 12, "memoryGiB": 160 },
-    { "id": "upskii",   "roots": ["/Users/thanh/Documents/GitHub/upskii"],   "lanes": 6, "tokens": 12, "memoryGiB": 160 }
+    { "id": "tuturuuu", "roots": ["<repo-root>/tuturuuu"], "lanes": 6, "tokens": 12, "memoryGiB": 160 },
+    { "id": "upskii", "roots": ["<repo-root>/upskii"], "lanes": 6, "tokens": 12, "memoryGiB": 160 }
   ]
 }
 ```
@@ -1865,10 +1865,10 @@ real probe with deterministic pressure output and fixed host capacity/load;
 Linux CI skips those OS-specific cases. `resources-system-probes.test.ts`
 checks trusted paths, fallback, clean environment and bounded failure.
 
-Mastermind applied Studio's lane change on 2026-10-25: one pool A at 6 base/8
-max, physical ceiling 16; pool B was not created. Linux now has 3 lanes. This
+An operator applied a lane change on 2026-10-25: one pool A at 6 base/8
+max, physical ceiling 16; pool B was not created. The Linux runner now has 3 lanes. This
 records the operator change and does not request another drain-window raise.
-The private Studio runbook is `/Users/thanh/Documents/STUDIO_LANES.md`. Read
+The host's private runbook holds the operational detail. Read
 current status for worker caps; a declared total is not proof of effective
 admission caps. Future policy changes remain operator-owned and require an
 idle queue, preserved roots/settings and capacity evidence.
@@ -1884,7 +1884,7 @@ idle queue, preserved roots/settings and capacity evidence.
 - **Canonical reservations.** Tickets and reservations live in `<home>/hosts-state/` and are created only inside the host-wide admission mutex. Concurrent requesters on this machine therefore cannot double-assign a slot. Each reservation is tied to its broker PID (or owned child group). Cancellation (SIGINT/SIGTERM/SIGHUP) releases it, and a dead owner is pruned on the next round. A malformed entry closes admission. Only `scope: "host"` reservations claim capacity: a project-only lock never stands in for host-wide admission.
 - **Concurrent slot release.** Status and queue observations may overlap a release. A slot removed between its directory and owner reads is absent, including `ENOENT`/`ENOTDIR`, without retrying the observation. Recent ownerless directories still count as initializing. Malformed owners, invalid slot types, unreadable state and missing persistent budget fences keep admission closed. `resources-slots-observation.test.ts` injects a release between reads and checks these fail-closed controls.
 
-- **Preference.** An optional per-host `preference` rank in `hosts.json` (lower first) orders hosts that already passed every eligibility and capacity check; the capacity score breaks ties, and unranked hosts follow ranked ones. It is an ordering hint only: a preferred host that is stale, draining, degraded, low on or unknown disk, missing telemetry, or full is skipped, never forced, and preference never lets a dirty tree run remotely. Runners are degraded when their 1-minute load per CPU (agent telemetry `resources.loadAverage` / `resources.cpu.cores`) reaches `maxLoadPerCpu` (default 1); missing load telemetry fails closed, and the pre-dispatch revalidation re-checks it. The operator's order is skr-studio > skr-sonha > skr-linux-lan > M4; `ttr resources hosts --simulate` prints it with a scenario for today's health (skr-studio offline, skr-sonha degraded at load 27 to 32, both skipped) and one with every host healthy. skr-studio and skr-sonha capacities there are illustrative until Mastermind registers them (`resources-hosts-preference.test.ts`).
+- **Preference.** An optional per-host `preference` rank in `hosts.json` (lower first) orders hosts that already passed every eligibility and capacity check; the capacity score breaks ties, and unranked hosts follow ranked ones. It is an ordering hint only: a preferred host that is stale, draining, degraded, low on or unknown disk, missing telemetry, or full is skipped, never forced, and preference never lets a dirty tree run remotely. Runners are degraded when their 1-minute load per CPU (agent telemetry `resources.loadAverage` / `resources.cpu.cores`) reaches `maxLoadPerCpu` (default 1); missing load telemetry fails closed, and the pre-dispatch revalidation re-checks it. The operator's order is Build Mac A > Build Mac B > Linux build host > local hub; `ttr resources hosts --simulate` prints it with a scenario for today's health (Build Mac A offline, Build Mac B degraded at load 27 to 32, both skipped) and one with every host healthy. Build Mac A and Build Mac B capacities there are illustrative until an operator registers them (`resources-hosts-preference.test.ts`).
 - **Fairness.** Waiters are ordered by their project's live share, then age. A project is the repository's common Git directory, so all Upskii worktrees share one identity. A waiter overtaken `fairness.maxBypass` times (default 4) holds every host that could ever fit it until it is placed. This backpressure is what prevents starvation.
 - **Disk at dequeue (REV-6480-1/2).** Every lane-queued job re-checks free disk inside admission, immediately before claim and spawn, using a local `statfs` probe (`resources-disk-gate.ts`).
   - It uses `TTR_RESOURCES_MIN_FREE_GIB` (default 50 GiB absolute floor). Admission has no default percentage floor (`TTR_STORAGE_MIN_FREE_PERCENT` defaults to 0); explicit storage thresholds and inode checks still apply.
@@ -1898,15 +1898,15 @@ Limits from the 2026-10-23 measurements, old to new (`proposedHostRegistry()`, n
 
 | Host | Measured | Old | New |
 | --- | --- | --- | --- |
-| M4 (local) | 10 CPU, 24 GiB, 20 GiB of 460 GiB disk free (4.3%); load average 9 to 12; memory pressure normal; swap 0.6 GiB; disk IO idle. 2 Upskii owners and 5 to 9 waiters. | `validationLanes` 2 for every class (light work waits behind heavy), `vitestWorkers` 2, `buildJobs` 2, Turbo 1. No disk check at dequeue. | Heavy 2 (unchanged; still the lane ceiling) at 2 CPU / 5 GiB, 2 workers each. Light 0 to 1 at 1 CPU / 1 GiB, 1 worker. Reserved 4 CPU / 8 GiB / 15 GiB disk, leaving a 6 CPU / 16 GiB budget. Disk re-checked at dequeue. |
-| skr-linux-lan (runner) | 20 CPU, 31 GiB (about 23 GiB available), 398 GiB free; load average 2.5 to 9; IO PSI full 14 to 23%, iowait 12 to 17%; 8 GiB swap used. Live PKTM production, 4 Upskii runners, 4 Judge workers. No trusted-development runner is registered. | Not admitted by `ttr resources`. The early-merge validation script uses 2 heavy `flock` slots at nice 10. | Heavy 0 to 2 at 5 CPU / 6 GiB, 5 workers each (matches the existing two validation slots; IO-bound, so not raised). Light 0 to 2 at 1 CPU / 1 GiB. Reserved 8 CPU / 12 GiB / 50 GiB disk, leaving a 12 CPU / 19 GiB budget. |
-| Sonha | IO degraded | Not capacity | Not registered (0/0) |
-| ThanhStudio | Offline | Not capacity | Not registered (0/0) |
+| Local hub (Mac) | 10 CPU, 24 GiB, 20 GiB of 460 GiB disk free (4.3%); load average 9 to 12; memory pressure normal; swap 0.6 GiB; disk IO idle. 2 owners and 5 to 9 waiters. | `validationLanes` 2 for every class (light work waits behind heavy), `vitestWorkers` 2, `buildJobs` 2, Turbo 1. No disk check at dequeue. | Heavy 2 (unchanged; still the lane ceiling) at 2 CPU / 5 GiB, 2 workers each. Light 0 to 1 at 1 CPU / 1 GiB, 1 worker. Reserved 4 CPU / 8 GiB / 15 GiB disk, leaving a 6 CPU / 16 GiB budget. Disk re-checked at dequeue. |
+| Linux runner | 20 CPU, 31 GiB (about 23 GiB available), 398 GiB free; load average 2.5 to 9; IO PSI full 14 to 23%, iowait 12 to 17%; 8 GiB swap used. Shared with other workloads. No trusted-development runner is registered. | Not admitted by `ttr resources`. The early-merge validation script uses 2 heavy `flock` slots at nice 10. | Heavy 0 to 2 at 5 CPU / 6 GiB, 5 workers each (matches the existing two validation slots; IO-bound, so not raised). Light 0 to 2 at 1 CPU / 1 GiB. Reserved 8 CPU / 12 GiB / 50 GiB disk, leaving a 12 CPU / 19 GiB budget. |
+| Build Mac A | IO degraded | Not capacity | Not registered (0/0) |
+| Build Mac B | Offline | Not capacity | Not registered (0/0) |
 
 Only Linux gains slots. The M4 keeps its heavy ceiling and gains one light slot, because its CPU and disk are already the binding constraints. For the measured queue, the dry run cuts the makespan from 43 to 20 minutes and the maximum wait from 33 to 10 minutes, with every host within its ceiling. Raise Linux heavy slots only after IO PSI `full avg60` stays below 10%.
 
 Before activation:
-- register a trusted-development runner on skr-linux-lan that publishes `capabilities.disk.freeGiB`, because unknown runner disk fails closed;
+- register a trusted-development runner on the Linux runner that publishes `capabilities.disk.freeGiB`, because unknown runner disk fails closed;
 - reclaim disk on the M4, or set the floor deliberately: at 4.3% free, the 5% floor holds heavy lane jobs.
 
 Regression coverage:
@@ -1999,11 +1999,11 @@ stable operation identity and unknown-outcome refusal.
 
 #### Studio operator lane update
 
-Mastermind applied the 2026-10-25 lane change: Studio now has one pool A at
+An operator applied the 2026-10-25 lane change: Studio now has one pool A at
 6 base/8 max lanes, and Linux has 3 lanes. Pool B was not created. The physical
 Studio ceiling remains 16. No further lane raise is proposed by this change;
-configuration and activation remain Mastermind's custody. The Studio source of
-operational detail is `/Users/thanh/Documents/STUDIO_LANES.md`; re-read current
+configuration and activation remain operator-owned. The host's private
+runbook holds the operational detail; re-read current
 status before using declared worker totals as capacity evidence.
 
 Future changes require a full idle drain (zero owners, waiters, reservations
@@ -2149,20 +2149,20 @@ repeat the flag for multiple requirements. Direct `supabase start`, `reset`
 and `test` commands require both the Supabase toolchain and Docker. Apple jobs
 need a declared Darwin host. An unreachable fleet/runner, failed probe, stale
 heartbeat, unknown OS/load/disk, or capability mismatch excludes that host and
-appears in the dry-run explanation. Automatic remote hosts also require `sshHost` (for example `"skr-sonha"`)
+appears in the dry-run explanation. Automatic remote hosts also require `sshHost` (for example `"build-mac-a"`)
 for a bounded read-only admission probe. It reads the canonical ttr queue plus
 OS/load/disk headroom; direct SSH jobs are therefore counted even when they
 are absent from devbox activity. Probes use `ssh` with the configured alias,
 BatchMode and bounded timeouts, preserving the operator's SSH configuration
-(including Sonha's ProxyCommand and host-key checks). They interpolate no
+(including any ProxyCommand and host-key checks). They interpolate no
 workload command, environment or path into shell text. Probe failure excludes
 the host for the invocation. Remote execution still uses the devbox API.
 
-The free-lane order is Thanh (`preference: 1`), Sonha (`2`), Linux (`3`), then
-local M4 (`4`). A full Thanh never causes queueing while an eligible Sonha or
+The free-lane order in this example is Build Mac A (`preference: 1`), Build Mac B (`2`), Linux (`3`), then
+the local hub (`4`). A full Build Mac A never causes queueing while an eligible Build Mac B or
 another host has a free lane. Linux is considered only after the Studios
 cannot take the job, and its configured reserved CPU/memory/slots must preserve
-pktm production headroom. Set Sonha's slot ceiling to its admitted 2–4 lanes
+headroom for the host's other workloads. Set Build Mac B's slot ceiling to its admitted 2–4 lanes
 and keep its checkout footprint small. Free-lane counts use the registered slot/weight budget, live SSH-probed local
 queue occupancy and reported devbox running **and queued** jobs.
 

@@ -6,6 +6,7 @@ import type {
   WorkspaceDefaultPermissionsRole,
   WorkspaceRole,
 } from '@tuturuuu/types';
+import { isExplicitGrantPermission } from '@tuturuuu/utils/explicit-grant-permissions';
 import { NextResponse } from 'next/server';
 import { filterCreatorGrantPermissions } from '@/lib/workspace-creator-grant-permissions';
 import { resolveWorkspaceRouteAccess } from '@/lib/workspace-route-access';
@@ -145,14 +146,16 @@ export async function PUT(req: Request, { params }: Params) {
   });
 
   const { error } = await supabase.from('workspace_default_permissions').upsert(
-    permissions.map(
-      (permission): TablesInsert<'workspace_default_permissions'> => ({
-        ws_id: resolvedWsId,
-        permission: permission.id as WorkspaceRolePermissionValue,
-        member_type: bodyMemberType,
-        enabled: permission.enabled,
-      })
-    ),
+    permissions
+      .filter((permission) => !isExplicitGrantPermission(permission.id))
+      .map(
+        (permission): TablesInsert<'workspace_default_permissions'> => ({
+          ws_id: resolvedWsId,
+          permission: permission.id as WorkspaceRolePermissionValue,
+          member_type: bodyMemberType,
+          enabled: permission.enabled,
+        })
+      ),
     { onConflict: 'ws_id,permission,member_type' }
   );
 

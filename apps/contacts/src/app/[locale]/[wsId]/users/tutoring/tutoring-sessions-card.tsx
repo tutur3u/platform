@@ -178,6 +178,15 @@ export function TutoringSessionsCard({
     useState<TutoringSessionRecord | null>(null);
   const [draftContent, setDraftContent] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const canExport = Boolean(
+    exportQuery.fromDate &&
+      exportQuery.toDate &&
+      exportQuery.fromDate <= exportQuery.toDate &&
+      (Date.parse(exportQuery.toDate) - Date.parse(exportQuery.fromDate)) /
+        86_400_000 +
+        1 <=
+        366
+  );
   const updateContent = useMutation({
     mutationFn: ({ id, content }: { id: string; content: string }) =>
       updateTutoringSession(wsId, id, { content }),
@@ -276,7 +285,12 @@ export function TutoringSessionsCard({
         <div className="flex items-center gap-2">
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
-              <Button disabled={isExporting} size="sm" variant="outline">
+              <Button
+                disabled={isExporting || !canExport}
+                title={!canExport ? t('payroll_invalid_range') : undefined}
+                size="sm"
+                variant="outline"
+              >
                 <Download className="h-4 w-4" />
                 {tCommon('common.export')}
               </Button>

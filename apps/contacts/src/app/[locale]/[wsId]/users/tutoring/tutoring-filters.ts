@@ -7,6 +7,8 @@ export const TUTORING_DATE_RANGES = [
   'tomorrow',
   'week',
   'month',
+  'lastMonth',
+  'custom',
   'past',
   'all',
 ] as const;
@@ -71,7 +73,8 @@ export function endOfMonthIsoDate(isoDate: string) {
  */
 export function resolveTutoringDateBounds(
   range: TutoringDateRange,
-  today: string
+  today: string,
+  custom: TutoringDateBounds = {}
 ): TutoringDateBounds {
   switch (range) {
     case 'today':
@@ -89,6 +92,12 @@ export function resolveTutoringDateBounds(
         fromDate: startOfMonthIsoDate(today),
         toDate: endOfMonthIsoDate(today),
       };
+    case 'custom':
+      return custom;
+    case 'lastMonth': {
+      const last = addDaysToIsoDate(startOfMonthIsoDate(today), -1);
+      return { fromDate: startOfMonthIsoDate(last), toDate: last };
+    }
     case 'past':
       return { toDate: addDaysToIsoDate(today, -1) };
     default:
@@ -97,6 +106,8 @@ export function resolveTutoringDateBounds(
 }
 
 export interface TutoringSessionFilters {
+  fromDate?: string;
+  toDate?: string;
   attendanceStatus: string;
   dateRange: TutoringDateRange;
   groupId: string;
@@ -133,7 +144,10 @@ export function buildTutoringSessionQuery(
   today: string
 ): ListTutoringSessionsParams {
   return {
-    ...resolveTutoringDateBounds(filters.dateRange, today),
+    ...resolveTutoringDateBounds(filters.dateRange, today, {
+      fromDate: filters.fromDate,
+      toDate: filters.toDate,
+    }),
     sortOrder: resolveTutoringSortOrder(filters.dateRange),
     attendanceStatus: optional(
       filters.attendanceStatus

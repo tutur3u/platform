@@ -14,8 +14,8 @@ localization changes.
   can defer that proof; record pending jobs and local results, then resume CI
   before calling the change release-ready.
 - For simulator/emulator validation against a seeded local backend, use the
-  Thanh local E2E environment (`scripts/thanh-e2e/thanh-e2e.mjs`, runbook
-  `apps/docs/build/development-tools/thanh-local-e2e.mdx`). On-device flows
+  local E2E environment (`scripts/thanh-e2e/thanh-e2e.mjs`, runbook
+  `apps/docs/build/development-tools/local-e2e.mdx`). On-device flows
   belong in `apps/mobile/integration_test/`; `flutter test -d` runs other test
   files on the host VM.
 - Do not manually bump `apps/mobile/pubspec.yaml` for ordinary authored mobile
@@ -434,3 +434,82 @@ skip the queue on cache failure. Preserve branch fallbacks, error/stack reportin
 and the pre-`runApp` join. Completion-barrier tests live in
 `test/core/startup/startup_state_test.dart`. See the Mobile application guide's
 [ordering contract](../../../../../apps/docs/platform/applications/mobile.mdx#independent-startup-state-restoration).
+
+## Analytics and crash sharing
+
+- Keep collection changes behind `TelemetryPreference` and the production-only
+  gate in `MobileObservability`. Read the persisted device choice before Firebase
+  initialization; native defaults remain disabled. Collection is off until an
+  explicit Allow in every region: add no locale, region or network-based default.
+  The stored answer carries a notice version; bump it with any consent wording
+  change so users are asked again.
+- Keep no advertising identifier: the Android AD_ID and ACCESS_ADSERVICES_AD_ID and ACCESS_ADSERVICES_ATTRIBUTION permissions stay removed and
+  iOS keeps `$FirebaseAnalyticsWithoutAdIdSupport` and the ADID Info.plist key.
+- Older builds persisted SDK collection-on, which beats manifest/Info.plist
+  defaults. Keep the native gates (Android `TelemetryConsentGateProvider`
+  above `FirebaseInitProvider` and `TelemetryCollectionLockProvider` after it,
+  iOS `willFinishLaunching` and right after `FirebaseApp.configure()`) and Dart's
+  unsent-report deletion when collection is off; recheck the gate keys on SDK
+  upgrades. Session transitions call `TelemetryPreference.reloadConsent()`.
+- The first-run prompt (`TelemetryConsentPage`, `/telemetry-consent`) is driven by
+  `TelemetryPreference.consentPending` and the router redirect in
+  `app_router_telemetry_consent.dart`; it is production-only, opens above the
+  shell, has equal-weight answers (back gesture = Don't allow) and persists
+  through `setEnabled`.
+- See `apps/docs/platform/features/mobile-telemetry-privacy.mdx` for the consent
+  rules, notice versioning and exceptions. Verify startup ordering,
+  persistence, native defaults and Settings controls with the telemetry suites.
+
+## Mastermind Machines
+
+- The read-only Machines parser lives in `features/mastermind/machines/`. Keep
+  aliases and arbitrary collector prose outside the app model; display names use
+  the fixed neutral table, and production hosts always retain their read-only rule.
+- Missing machines and empty machines are distinct states. Preserve null metrics
+  and last-known offline values. The debug sample branch must remain guarded by
+  `kDebugMode`; release uses the real accepted snapshot only.
+- The machine regression fixtures include hostile aliases. Run the focused
+  `test/features/mastermind/machines/` suite along with Mastermind, shell and router
+  coverage. Collector schema freeze, hub acceptance and security review remain
+  separate from widget/parser verification; see the mobile Machines feature page.
+
+
+### Development Firebase consent QA
+
+Follow `apps/docs/platform/features/mobile-telemetry-privacy.mdx` for consent QA.
+Check both Dart options and native resources: differing app IDs do not imply
+separate Firebase projects. Development must use `tuturuuu-mobile-dev` before
+turning on `CONSENT_GATE_QA` in debug/profile mode; release ignores the flag.
+Apple flavor plists and Android development `google-services.json` are committed
+public client configuration. PR workflows must receive no Firebase CI secret.
+Do not substitute the production deployment bundle or a dummy config for device
+acceptance. Google OAuth client fields are optional for telemetry-only Firebase
+registrations; Google Sign-In acceptance needs separately provisioned clients.
+
+
+## Firebase startup and consent
+
+Keep Firebase unconfigured while signed out. The mobile startup callback belongs
+to PushNotificationService.startSession; telemetry preference loading must not
+configure SDKs. Keep app-wide collection and Messaging auto-init off natively,
+including persisted Messaging overrides. Android removes FirebaseInitProvider.
+iOS defers APNs registration through the worktree-local Podfile source patch;
+never edit the shared Pub cache. Verify that patch against upgraded FlutterFire
+source and require CI native compilation.
+
+Push needs a signed-in actor, the push setting and OS permission, independently
+of analytics consent. Push-off drains registration writes, deletes the FCM token
+and removes the server device row; sign-out performs cleanup before auth removal.
+See apps/docs/platform/features/mobile-telemetry-privacy.mdx and the focused
+push_token_permission_gate_test.dart. Device traffic capture remains necessary
+to establish network silence.
+
+
+Analytics can initialize independently of FirebaseApp: FlutterFire 12.5.0 does
+so on Android engine attachment. Keep its generated source lazy, disable the
+Measurement receiver/service/job until signed-in Allow, and reset both persisted
+Measurement enable flags synchronously before any SDK call. iOS12.18 also stores
+an enable enum in standard defaults and the Measurement plist; reset both before
+Firebase configuration. Native upgrade tests must seed enabled overrides, retain
+unrelated preferences and prove the first SDK read sees disabled. See the
+mobile telemetry privacy page for version-specific storage keys and commands.

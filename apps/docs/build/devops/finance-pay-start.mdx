@@ -140,9 +140,9 @@ Before any hosted staging publish, declare and admit its exact account, Worker,
 hostname, bindings and rollback mapping. Finance declares two native profiles in
 `apps/finance/cloudflare/native-profiles.json`, selected at build time with
 `VITE_FINANCE_NATIVE_PROFILE`. Staging is the default: Worker
-`tuturuuu-finance-vite-staging`, root host `finance.staging.tutur3u.com`,
+`<staging-worker>`, root host `<app>.staging.tutur3u.com`,
 `INTERNAL_WEB_API_ORIGIN` and `NEXT_PUBLIC_WEB_APP_URL` set to
-`https://web.staging.tutur3u.com`, and the staging Supabase URL. `production` must be
+`https://<app>.staging.tutur3u.com`, and the staging Supabase URL. `production` must be
 requested explicitly: Worker `tuturuuu-finance`, root host
 `finance.tuturuuu.com`, Web at `https://tuturuuu.com` and the production Supabase
 URL. Each profile admits only its own root host, so the staging-data Worker
@@ -267,14 +267,14 @@ suite does not qualify authenticated UI hydration, Finance operations or hosted
 shared-session behavior. Those remain
 required staging acceptance, including workspace and mutation flows.
 
-Run exact-head unit, type, lint, and real `vp build` checks on Sonha through
-`ttr resources run`, then seal the output and transfer it through the M4 for
-restored-runtime and browser acceptance on Thanh. Keep its heavy work within
+Run exact-head unit, type, lint, and real `vp build` checks on a remote build host through
+`ttr resources run`, then seal the output and transfer it through the local hub for
+restored-runtime and browser acceptance on a build Mac. Keep its heavy work within
 the shared six-ticket and two-build limits; Finance has priority for an admitted
-Thanh build slot when required. Install frozen dependencies. Keep the M4 for
+build-Mac slot when required. Install frozen dependencies. Keep the local hub for
 editing and focused source checks; it runs no builds, Docker, or local Supabase.
 If its `check:changed` gate refuses admission, run the same committed source
-through a Thanh bundle. Never bypass the gate.
+through a remote-host bundle. Never bypass the gate.
 
 An independent Claude review is required before integration. Conversion runs
 without `--hold`, preserving the existing Vercel publisher. No CI workflow

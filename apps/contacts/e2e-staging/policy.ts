@@ -10,7 +10,7 @@ export function required(env: Env, name: string): string {
 export function stagingOrigin(value: string, role: 'contacts' | 'issuer') {
   const url = new URL(value);
   const host =
-    role === 'contacts' ? stagingProfile.host : 'staging.tutur3u.com';
+    role === 'contacts' ? stagingProfile.host : 'web.staging.tutur3u.com';
   if (
     url.origin !== `https://${host}` ||
     url.username ||
@@ -58,7 +58,7 @@ export function readConfig(env: Env) {
       'contacts'
     ),
     webOrigin: stagingOrigin(
-      env.CONTACTS_STAGING_WEB_ORIGIN ?? 'https://staging.tutur3u.com',
+      env.CONTACTS_STAGING_WEB_ORIGIN ?? 'https://web.staging.tutur3u.com',
       'issuer'
     ),
     supabaseOrigin: stagingProfile.supabaseUrl,

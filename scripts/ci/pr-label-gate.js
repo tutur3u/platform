@@ -57,6 +57,7 @@ const HEAVY_PR_WORKFLOWS = [
   'mail-calendar-tasks-builds.yaml',
   'mail-cloudflare.yaml',
   'mail-profile-runtime-contract.yaml',
+  'mastermind-cloudflare.yaml',
   'meet-cloudflare.yaml',
   'mobile-build-android.yaml',
   'mobile-build-ios.yaml',
@@ -65,6 +66,7 @@ const HEAVY_PR_WORKFLOWS = [
   'mobile-build-windows.yaml',
   'mobile.yaml',
   'nova-cloudflare.yaml',
+  'ops-hub-cloudflare.yaml',
   'parley-cloudflare.yaml',
   'periodic-report-delivery-contract.yaml',
   'playground-runtime-acceptance.yaml',
@@ -88,6 +90,7 @@ const HEAVY_PR_WORKFLOWS = [
   'tutoring-teacher-hours-contract.yaml',
   'type-check.yaml',
   'web-start-candidate.yaml',
+  'workspace-permission-scope-contract.yaml',
 ];
 
 // Sub-minute, script-only or security checks that stay on for every PR push.

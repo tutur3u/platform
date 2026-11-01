@@ -494,7 +494,7 @@ test('package release caches and tarball handoffs follow the release policy', ()
       /^release-.+-package\.yaml$/u.test(fileName) &&
       fileName !== 'release-sdk-package.yaml'
   );
-  assert.equal(releaseWorkflows.length, 13);
+  assert.equal(releaseWorkflows.length, 15);
 
   for (const workflowName of releaseWorkflows) {
     const workflow = readWorkflow(workflowName);

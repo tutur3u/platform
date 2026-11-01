@@ -126,25 +126,41 @@ describe('Contacts native user API satellite authentication', () => {
     });
   });
 
-  it.each([429, 503])(
-    'propagates central avatar protection failure %s without a ticket',
-    async (status) => {
-      mocks.createWorkspaceUserAvatarUploadUrl.mockRejectedValue(
-        new InternalApiError('Synthetic protection failure', status)
-      );
-      const response = await avatarRoute.POST(
-        new Request('https://contacts.test/api/avatar', {
-          method: 'POST',
-          body: JSON.stringify({ contentType: 'image/png' }),
-        }),
-        workspaceContext
-      );
-      expect(response.status).toBe(status);
-      expect(await response.json()).toEqual({
-        message: 'Avatar upload unavailable',
-      });
-    }
-  );
+  it('propagates central avatar protection outage 503 without a ticket', async () => {
+    mocks.createWorkspaceUserAvatarUploadUrl.mockRejectedValue(
+      new InternalApiError('Synthetic protection failure', 503)
+    );
+    const response = await avatarRoute.POST(
+      new Request('https://contacts.test/api/avatar', {
+        method: 'POST',
+        body: JSON.stringify({ contentType: 'image/png' }),
+      }),
+      workspaceContext
+    );
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({
+      message: 'Avatar upload unavailable',
+    });
+  });
+
+  it('propagates the central avatar 429 with its reason and retry time', async () => {
+    mocks.createWorkspaceUserAvatarUploadUrl.mockRejectedValue(
+      new InternalApiError('Synthetic limit', 429, undefined, 90)
+    );
+    const response = await avatarRoute.POST(
+      new Request('https://contacts.test/api/avatar', {
+        method: 'POST',
+        body: JSON.stringify({ contentType: 'image/png' }),
+      }),
+      workspaceContext
+    );
+    expect(response.status).toBe(429);
+    expect(response.headers.get('Retry-After')).toBe('90');
+    expect(await response.json()).toMatchObject({
+      message: 'Synthetic limit',
+      retryAfter: 90,
+    });
+  });
 
   it.each([
     ['avatar GET', avatarRoute.GET, workspaceContext],

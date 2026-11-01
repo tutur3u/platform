@@ -45,6 +45,19 @@ the qualified bundle and invokes Wrangler without rebundling. Runtime fixtures
 allocate one temporary persistence directory per run, retain it across restarts,
 and remove it on failure/close; never reuse the app developer state directory.
 
+Dashboard-origin Worker admission must pin a reviewed live version and exact
+settings, including secret names/count, before strict publication. cf beta.20
+compares cron order and normalizes disabled traces to sampling 1; match the
+exact live API order and explicit sampling rather than dropping strict mode.
+Validate typed config through cf's schema as well as importing it: a self Durable
+Object binding still requires its Worker name. The Bun-managed
+`@cloudflare/config@0.27.0` patch omits only same-Worker `script_name` during
+Wrangler conversion, matching Cloudflare's remote shape while preserving foreign
+targets. beta.20 rejects the unpatched addition inside the binding array. The
+Cron Control regression calls the installed Build Output normalizer and `bE`
+helper, requiring an empty diff and preserving the unpatched negative control.
+See the [Cron Control admission runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/cloudflare-cron-control.mdx#dashboard-deployment-admission).
+
 Coordination's before/after token gates consume the verified snapshot's `secrets`
 array; avoid duplicate CLI reads. Settings tokens need Workers Scripts read on the
 pinned account and Zone/Workers Routes read on every zone; narrow visibility hides routes. Keep the bounded fail-closed checks and see
@@ -135,7 +148,7 @@ Legacy owners live in the shrink-only allowlist with owner/target/plan; the test
 pins the adopted baseline and fails stale entries, so delete an entry when its
 legacy definition is removed. Retained pg_cron jobs need a written pure-database
 justification; `pg_net` callers are not exceptions. Do not extend the baseline to
-admit new work. See `apps/docs/build/devops/cloudflare-backend-ownership.mdx`.
+admit new work. See `docs-internal/build/devops/cloudflare-backend-ownership.mdx`.
 
 ## Codex plugin native parallel pilot
 
@@ -200,7 +213,7 @@ local SARIF gate. Triage at the analyzed SHA and current main: trace validation
 rejections, same-descriptor reads and directory-only fsync before calling an alert real.
 Keep optional-reader defects distinct from default production reachability; test
 replacement negatives without enabling collection. The gate prints escaped rule IDs
-and locations, omits messages, and fails closed without a baseline. See [`security-cadence.mdx`](../../../../../apps/docs/build/devops/security-cadence.mdx).
+and locations, omits messages, and fails closed without a baseline. See [`security-cadence.mdx`](../../../../../apps/docs/build/devops/security-cadence.mdx). Definer policy, read-only daily inventory, historical exceptions and focused checks live in the internal security scans runbook (org/lanes/internal-docs).
 
 ## Bun runtime pins
 
@@ -383,7 +396,7 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   checkouts, `preserve/*` refs, VM disks or unnamed Supabase volumes. Disk
   admission in `ttr resources` and the bucketed heartbeat `resources.disk`
   (strict on web and Worker) keep work off full disks. See
-  `apps/docs/build/development-tools/machine-storage-health.mdx`.
+  `tutur3u/internal-docs: docs-internal/build/development-tools/machine-storage-health.mdx`.
 - `bun rust-cache report|prune|auto` is the repo-owned Rust target cleanup
   wrapper. It owns only `apps/backend/target` by default, stores auto-run state
   under ignored `tmp/rust-cache/state.json`, skips CI unless explicitly enabled,
@@ -972,7 +985,7 @@ Runtime health fixtures do not dispatch scheduled work or contact production;
 repeat them against the CI-emitted configuration and verify identity, compatibility,
 trigger, vars and secret names. Deploy only the immutable artifact qualified by
 that CI run, using its emitted Wrangler config; preserve source config for named
-secret provisioning. See `apps/docs/build/devops/cloudflare-cron-control.mdx` for
+secret provisioning. See `tutur3u/internal-docs: docs-internal/build/devops/cloudflare-cron-control.mdx` for
 commands and the distinct downstream delivery/cost/stop acceptance boundaries.
 
 For Cron recovery cost review, count the requeue RPC and pending lookup even when
@@ -1240,6 +1253,17 @@ Only main pushes/main dispatches save; PRs restore only. Normal misses have thre
 
 ## Wave-1 staging publication admission
 
+Web staging installs use `--ignore-scripts`; Vercel CLI authentication uses only
+`VERCEL_TOKEN` in the child environment. Validate all parsed staging hosts before
+probing, reject ports/userinfo, and select the proof host from sorted allowed
+hostnames. Staff email domains must equal `tuturuuu.com` case-insensitively.
+Keep the focused Next, Vercel, ingress-policy and workflow tests aligned with the
+[publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx#jobs-and-order),
+including its shared-runner limitation. Assert probe destinations from recorded
+fetch calls after the run, since probe transport errors are intentionally captured.
+Reconciliation of an existing Web version requires the same fresh Next protection
+check as a new upload, before any uploaded/activated ledger transition.
+
 Keep the four-app production hold independent of staging. Same-account staging
 requires the reviewed `stagingAdmission` profile, only the named staging deploy
 secret, isolated resource identities and the exact app/source/artifact repository
@@ -1255,7 +1279,7 @@ private-serving state rather than issuing a public HTTP probe. Preserve CI worke
 acceptance and obtain a separately approved private ingress plan for hosted UX.
 Never delete consumption history to renew admission or infer retry permission from a
 missing local receipt or inactive version. Reconcile listed versions by detail SHA/tag and retain unresolved attempts.
-The [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx)
+The [publisher runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/wave1-native-publishers.mdx)
 owns the schema, bounded operation counts, residual account risk and recovery.
 For private production preparation, keep the read token confined to preflight and
 post-upload verification, and the deploy token confined to the upload step. Check
@@ -1370,3 +1394,61 @@ the general paused commands and existing disabled jobs remain paused, including
 Rust, TanStack and the cron runner. See the GitHub Actions runbook's
 [Report-only Web E2E](/build/devops/github-actions-runbook#report-only-web-e2e)
 section for runtime bounds, host-lock recovery and report-only acceptance.
+
+### SQL grant guard review exceptions
+
+Run focused guard suites with `node --test scripts/ci/sql-grant-guard*.test.js`;
+`bun test` can enter the root Turbo wrapper. Keep git history fixtures synthetic,
+including tracked SQL directories needed by baseline bootstrap. Retain the single
+historical-debt baseline and its file pins, occurrence keys, stale-entry rejection,
+and pre-push comparison. Generate from current main only for reviewed bootstrap;
+ordinary fixes remove entries. Follow the migrations guide for signature-scoped
+client-grant markers and statement-scoped dynamic/ALTER review markers. Test both
+real line comments and forged markers in strings, dollar bodies and block comments.
+Reject an empty-string definer path: `pg_temp` is still searched implicitly, so
+only `pg_catalog` first with `pg_temp` last passes.
+Reviewed findings belong in `sql-grant-guard-verified-findings.js`, bound to path,
+line, rule, file SHA-256, finding digest and reason. Fixed-forward findings must
+name an existing hardening migration; test both its presence and its removal.
+A placeholder filename leaves the original diagnostic enforced.
+
+## SQL grant guard end-state evidence
+
+`sql-grant-end-state-guard.js` (the ACL-replay companion to the baseline guard; no shared entries) accepts an exact-signature EXECUTE/ALL revoke after the
+creation statement in the same or a later timestamped forward migration;
+migrations newer than the newest frozen file (`20261029030400`) need the
+revoke in the same file, while later migrations are still replayed so a later
+PUBLIC/anon grant fails them. Later EXECUTE grants invalidate that evidence, and
+manual rollbacks never count. Six frozen definers (single source:
+`sql-grant-frozen-definers.js`, exporting `FROZEN_DEFINERS` and
+`FROZEN_DEFINERS_CUTOFF`; import it, never copy it) may
+inherit an earlier revoke through `CREATE OR REPLACE` while no drop, rename
+(signature-free forms cover every overload), plain recreate or public/anon grant follows it; the guard prints each inherited
+pass with its evidence. Do not extend the allowlist. Run
+`node --test scripts/ci/sql-grant-*.test.js` and both guards (`sql-grant-guard.js`, `sql-grant-end-state-guard.js`), and report
+repository-wide failures instead of exempting them. See the
+[migrations guide](../../../../../apps/docs/reference/database/migrations-guide.mdx#sql-grant-end-state-guard).
+
+The definer guard also imports this frozen policy and checks surviving inherited
+revokes through the same ACL replay. Its dynamic-SQL check requires manual review
+for unresolved EXECUTE expressions, including split strings and format calls
+without visible privilege text. Reviewed block exceptions bind the migration
+path and raw block SHA-256 with a reason. Track role membership and EXECUTE grants
+in migration order, including transitive anon access and membership revokes.
+Report newly uncovered historical findings; never refresh a baseline to clear them.
+The definer guard's opaque-block inventory is `security-definer-historical-blocks.json`:
+only remove reviewed path/digest records. Trusted-base CI rejects growth or digest
+changes. Mixed hardening reviews additionally bind exact grant recipients; see
+`security-definer-blocks.test.js` and the security scans runbook. Keep every local
+guard dependency in the trusted CI loader so neither execution nor baseline checks
+depend on pull-request code.
+
+## Private Meet transcription evaluation
+
+The evaluation-only CLI and manifest/scoring contract live in
+[the AI package eval README](../../../../../packages/ai/src/meetings/eval/README.md).
+Keep consented audio, reference transcripts and reports outside every Git checkout.
+Run synthetic metrics, dataset-boundary and runner tests with the AI workspace's
+Vitest config before the build-free changed-files gate. Provider calls are a
+separate consented-data experiment; synthetic green does not confirm D1 or enable
+a production provider. Never attach content-bearing provider errors to evidence.

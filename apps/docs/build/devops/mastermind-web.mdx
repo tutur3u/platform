@@ -1,0 +1,97 @@
+---
+title: "Mastermind web"
+description: "Private owner shell, request authentication and held Worker publication."
+---
+
+Mastermind is a native TanStack Start + Void + Vite+ Cloudflare Worker in
+`apps/mastermind`, served only on `mastermind.tuturuuu.com`. Apex path hosting
+is deferred and requires a separate Selene design. The Worker rejects
+`tuturuuu.com/mastermind` and its children. It does not revive the retired app.
+W1 serves an English or Vietnamese owner shell at `/en` and `/vi`.
+Organization rendering follows in W2. There is no analytics or contact rendering.
+
+## Request admission
+
+Every path, including assets and server functions, passes the Worker first.
+Missing configuration fails closed with 403 before storage, API or hub reads.
+Signing keys come from the team Access certs endpoint over HTTPS. A JWKS fetch
+error denies the request with 403 before any application data reads.
+
+1. Require HTTPS and exactly `mastermind.tuturuuu.com`.
+   Preview and workers.dev hosts are refused regardless of forwarded headers.
+2. Verify `Cf-Access-Jwt-Assertion` using RS256, issuer
+   `https://<CF_ACCESS_TEAM_DOMAIN>`, `CF_ACCESS_AUD`, expiry and issue time.
+   jose's `createRemoteJWKSet` fetches
+   `https://<CF_ACCESS_TEAM_DOMAIN>/cdn-cgi/access/certs`. Its per-team,
+   per-isolate cache uses a five-minute refetch cooldown, a ten-minute maximum
+   cache age and a five-second fetch timeout. Unknown signing keys fail closed
+   during cooldown; a rotated key can be accepted after a successful refetch.
+   No static signing-key configuration or network-error fallback is used.
+3. Require the JWT email to equal `MASTERMIND_OWNER_EMAIL` exactly. Verify the
+   satellite access session with `TUTURUUU_APP_COORDINATION_SECRET`, target `mastermind`,
+   access scope and a maximum lifetime of 300 seconds. The request-injected
+   `getSatelliteAppSessionUser` adapter uses shared auth core without the legacy
+   helper's database fallback.
+4. Require `OWNER_IDS` membership on every request. Missing or empty IDs deny
+   access. This is the transitional owner-only fallback. Session permission
+   scopes are never treated as live permission evidence. Live
+   `manage_mastermind` integration remains a C1 release gate.
+
+Configure the existing issuer's per-app policy for a 300-second Mastermind
+access lifetime before staging. W1 does not mint sessions or expose login or
+refresh routes. The Access policy must cover all paths, use Google IdP, allow
+only the approved owner, cap sessions at 24 hours and enable audit logs.
+
+## Data boundaries and memo
+
+The shell performs no data reads. Uncalled W2 client scaffolds use a private
+ops-hub binding stub and the user's satellite bearer for the web org API,
+refusing redirects. Before W2 uses these clients, replace the hub stub with
+the gateway HMAC assertion path and validate org API responses against the
+allowlisted schema. C1 API acceptance is required before use. There is no second person store.
+
+The memo factory is per-isolate, keyed by owner ID, bounded to 32 entries and
+expires after 60 seconds or session expiry. Run authentication and the owner
+gate before consulting it. Removing an owner from the request environment
+revokes immediately. A future live permission memo must preserve the same
+maximum revocation window and test real permission removal with C1.
+All responses are `private, no-store`; no people data may use edge caches.
+
+## Security and verification
+
+CSP allows same-origin scripts only and forbids frames, objects and base changes.
+HSTS, nosniff, DENY and no-referrer apply to denied responses too.
+The W1 server-rendered shell needs no client hydration scripts; W2 must add
+nonce-based hydration with CSP runtime regression coverage.
+
+On an admitted host run
+`ttr resources run -- bun run --cwd apps/mastermind test`.
+The matrix signs real JWTs and app sessions and asserts 403 with zero reads.
+It also checks JWKS fetch failure, unknown keys, rotation after cooldown and
+apex-path refusal. It covers immediate owner revocation, memo expiry and isolation, user-credential
+forwarding and a recursive privileged-key-name scan.
+The owning native workflow builds in CI, then seals and restores the Worker.
+Its explicit test:runtime command runs the .acceptance.mjs suite against the
+emitted artifact; generic source-test discovery must not run that suite. Runtime
+fixtures use isolated .invalid preview hosts. The source auth matrix also checks
+the production-like preview hostname.
+The local emitted-Worker fixture sets `dev.origin.secure: true` while its
+listener remains on loopback HTTP. The runner otherwise rewrites HTTPS inputs to
+HTTP before the Worker sees them, and the required HTTPS guard correctly denies
+the owner before JWT verification. Preserve the hostname without an origin-host
+override so preview and apex hosts still fail. The source matrix separately
+asserts that a plaintext HTTP owner request returns 403 with zero reads.
+
+## Publication remains held
+
+`workers_dev:false`, `preview_urls:false`, no routes, no deploy job and the
+`mastermind` publication policy hold production. Deleting that entry fails closed.
+No DNS or Access application is provisioned by W1.
+
+Before an explicit cutover PR require exact-commit CI, sealed original/restored
+Worker acceptance on the dedicated hostname, staging behind Access, session issuance
+and refresh, MFA and live permission acceptance, C1 minimum-field serialization
+and revocation tests, approved sanitized publisher samples, Selene's design and
+implementation reviews, Bea's Access/DNS approval and Rex's gated release.
+Record immutable deployment and routing rollback.
+Follow the [native Start runbook](/build/devops/native-start-migration).

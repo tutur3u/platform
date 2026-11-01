@@ -56,6 +56,7 @@ export function toPayrollExportRows(rows: TutoringPayrollExportRow[]) {
     CompletedSessions: row.completed_sessions,
     Teacher: row.teacher_name,
     TotalMinutes: row.total_minutes,
+    TotalCong: row.total_cong,
   }));
 }
 

@@ -1,7 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   addExternalProjectRoleMembers,
+  createExternalProjectTeamRole,
   removeExternalProjectRoleMember,
+  updateExternalProjectTeamDefaultPermissions,
   updateExternalProjectTeamRole,
 } from './team-access';
 
@@ -30,8 +32,14 @@ function createAccess({ roleExists }: { roleExists: boolean }) {
     upsertedRolePermissions: null as unknown,
   };
 
-  const roleResult = (): QueryResult<{ id: string }> => ({
-    data: roleExists ? { id: 'role-1' } : null,
+  const roleResult = (): QueryResult<{
+    id: string;
+    name: string;
+    ws_id: string;
+  }> => ({
+    data: roleExists
+      ? { id: 'role-1', name: 'Publisher', ws_id: 'workspace-1' }
+      : null,
     error: roleExists ? null : { code: 'PGRST116' },
   });
   const createMutationFilterChain = (filters: Array<[string, string]>) => {
@@ -61,8 +69,27 @@ function createAccess({ roleExists }: { roleExists: boolean }) {
                 calls.roleFilters.push([column, value]);
                 return this;
               },
+              in() {
+                return this;
+              },
               single() {
                 return Promise.resolve(roleResult());
+              },
+              // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are intentionally awaitable.
+              then(resolve: (value: unknown) => unknown) {
+                return Promise.resolve({
+                  data: roleExists
+                    ? [{ id: 'role-1', ws_id: 'workspace-1' }]
+                    : [],
+                  error: null,
+                }).then(resolve);
+              },
+            };
+          },
+          insert() {
+            return {
+              select() {
+                return { single: async () => roleResult() };
               },
             };
           },
@@ -108,8 +135,15 @@ function createAccess({ roleExists }: { roleExists: boolean }) {
         };
       }
 
-      if (table === 'workspace_role_permissions') {
+      if (
+        table === 'workspace_role_permissions' ||
+        table === 'workspace_default_permissions'
+      ) {
         return {
+          insert(rows: unknown) {
+            calls.upsertedRolePermissions = rows;
+            return Promise.resolve({ error: null });
+          },
           select() {
             const query: Record<string, unknown> = {};
             for (const op of ['eq', 'in']) query[op] = () => query;
@@ -265,5 +299,58 @@ describe('external project role workspace binding', () => {
         ws_id: 'workspace-1',
       },
     ]);
+  });
+});
+
+describe('CMS explicit grant writes', () => {
+  it.each([true, false])(
+    'filters explicit grants set to %s in all writers',
+    async (enabled) => {
+      const payload = {
+        name: 'Role',
+        permissions: [
+          { id: 'admin' as const, enabled: true },
+          { id: 'manage_mastermind' as const, enabled },
+        ],
+      };
+      const writers = [
+        (access: unknown) =>
+          createExternalProjectTeamRole({ access: access as never, payload }),
+        (access: unknown) =>
+          updateExternalProjectTeamRole({
+            access: access as never,
+            payload,
+            roleId: 'role-1',
+          }),
+        (access: unknown) =>
+          updateExternalProjectTeamDefaultPermissions({
+            access: access as never,
+            payload,
+            memberType: 'MEMBER',
+          }),
+      ];
+      for (const write of writers) {
+        const { access, calls } = createAccess({ roleExists: true });
+        const response = await write(access);
+        expect(response.status).toBe(200);
+        expect(calls.upsertedRolePermissions).toEqual([
+          expect.objectContaining({ permission: 'admin', enabled: true }),
+        ]);
+      }
+    }
+  );
+
+  it('writes nothing for a payload holding only an explicit grant', async () => {
+    const { access, calls } = createAccess({ roleExists: true });
+    const response = await updateExternalProjectTeamRole({
+      access: access as never,
+      payload: {
+        name: 'Role',
+        permissions: [{ id: 'manage_mastermind', enabled: true }],
+      },
+      roleId: 'role-1',
+    });
+    expect(response.status).toBe(200);
+    expect(calls.upsertedRolePermissions).toEqual([]);
   });
 });

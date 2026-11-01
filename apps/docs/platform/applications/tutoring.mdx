@@ -1,7 +1,7 @@
 ---
 title: 'Tutoring'
 description: 'Schedule make-up and remedial sessions, work the support queue, and enable the module per workspace.'
-updatedAt: '2026-10-28'
+updatedAt: '2026-10-29'
 ---
 
 Tutoring lives in the Contacts satellite at `/{wsId}/users/tutoring`. It turns
@@ -45,7 +45,8 @@ payroll.
   draft. Save, Cancel, and editor inputs are disabled during a pending save; a
   failed save retains the draft for retry. Operators can adjust session length, lead time, support
   session count, absence lookback, reassessment and follow-up intervals, scheduling horizon,
-  class-time exceptions, named shifts, scoped group-name exclusion rules,
+  class-time exceptions, named shifts, scoped group-name or group-tag exclusion rules,
+  needs-tutoring groups,
   the unchanged-content review interval, group-to-campus labels, and the parent
   message template. Only members with
   `manage_workspace_settings` can save it.
@@ -68,6 +69,46 @@ session's lesson content after creation, so teaching notes from the separate
 content sheet can be kept with the attendance record. Managers can permanently
 delete a pending or cancelled session after an in-app confirmation. Completed
 and no-show sessions stay intact for attendance and payroll history.
+
+## Who the support queue lists
+
+The support queue lists a learner only under the classes they belong to now:
+a non-teacher row in `workspace_user_groups_users` for an unarchived learner.
+A learner who moved class, or was removed from one, no longer appears under
+the former class; their absences, flagged feedback and earlier sessions stay
+recorded and are not deleted. Pending make-ups for a class the learner left
+are not carried to the new class, because each make-up belongs to the missed
+class's lessons. This applies to every workspace and has no setting.
+
+**Exclusion rules** in Settings → weak support read either the class name (the
+default) or the class's group tags. A class format such as kindergarten, DDT
+or IELTS is not a class field, so staff who tag classes by format add a
+**Class tag** rule for each excluded format. Tags are read only when a tag rule
+exists. The English center preset still ships its name rules, with no tag rules.
+
+**Needs-tutoring groups** (Settings → weak support, empty by default) list
+learners who need tutoring without an absence or flagged feedback. Every
+current learner member of such a group appears as weak support under each of
+their current, unarchived classes, other than tutor and needs-tutoring
+groups. A learner with no other class appears under the needs-tutoring group
+itself. A class leaves the queue once a weak-support session is pending there,
+and returns only after the reassessment interval following a completed
+weak-support session, as with flagged feedback. Exclusion rules still apply.
+Rows come from group membership, so they carry no source feedback. They are
+marked "In a needs-tutoring group". **End tutoring** is offered on them only
+to clear flagged feedback the row also carries; staff take a learner off the
+list by removing them from the group. Filtering the queue by a group reads only
+that group and the needs-tutoring groups, plus, when filtering by a
+needs-tutoring group, its members' other classes. With no needs-tutoring group configured, the queue behaves exactly
+as before.
+
+The detailed and payroll exports page every session read and order it by
+date, start time and `id`. Sessions sharing one teacher slot therefore never
+skip or repeat across the 1,000-row PostgREST page. Group and person names are
+read in chunks of at most 100 ids. A read stops with an error after 200 pages
+instead of looping. Regression coverage:
+`queue/route.membership.test.ts`, `export/route.test.ts`, and
+`packages/internal-api/src/tutoring-group-rules.test.ts`.
 
 ## Weekly repeats in the session draft
 
@@ -213,7 +254,7 @@ renamed or deleted shift match nothing. They do not invalidate the policy.
 Applying a preset keeps campus and group shift assignments.
 
 The standard preset places a 45-minute session immediately before class. The
-Easy Center preset includes the eight named weekday and weekend shifts from
+learning-centre preset includes the eight named weekday and weekend shifts from
 the center's schedule. The Monday/Wednesday/Friday 18:00 class uses Wednesday
 and Friday 17:15–18:00 only: Monday is skipped, even when it is the next
 scheduled class. The Tuesday/Thursday class uses 17:15–18:00. The weekend
@@ -221,9 +262,9 @@ scheduled class. The Tuesday/Thursday class uses 17:15–18:00. The weekend
 exception to the usual 45 minutes. The weekend 19:00 class (Shift 8) uses
 18:15–19:00. Other weekend shifts keep the table below. An untouched saved
 seven-shift preset gains Shift 8 when read.
-Untouched older Easy Center preset shift rules adopt these corrections when
+Untouched older learning-centre preset shift rules adopt these corrections when
 read; staff-edited rules and the standard/custom policies keep their saved
-behavior, including generic before-class fallback. The canonical Easy Center
+behavior, including generic before-class fallback. The canonical learning-centre
 preset never falls back to an unlisted class day or time.
 
 | Shift | Class window | Class days | Tutoring time |
@@ -258,7 +299,7 @@ group; a clear `CS1`, `CS2`, `Cơ sở 1`, or `Cơ sở 2` marker in the group n
 is inferred when no override exists. The existing generic `Lớp học` group tag
 does not identify a campus. Ambiguous groups show no campus on the schedule
 and `Chưa xác định` in the parent draft until staff set an override. The
-Easy Center template uses the resolved label in the parent draft.
+learning-centre template uses the resolved label in the parent draft.
 
 Each workspace keeps its own campus list (`campusOptions` in the same
 `TUTORING_POLICY` config, default empty). Labels are trimmed, blank entries
@@ -361,7 +402,7 @@ The parent message is a per-workspace template. Besides `student`, `reason`,
 | `{{class_time}}` | The learner's official class time for that group on the tutoring date, `HH:MM-HH:MM` in the class session's own time zone, from scheduled `workspace_user_group_sessions`. With no class that day it is the next scheduled class after the tutoring time with its date, e.g. `16:00-17:30 ngày 02/11/2026`. With none, or when the class sessions cannot be read, `Chưa xác định`; the preview route only queries them when the template uses the field. |
 
 Parents often assume a learner attends only the tutoring slot and goes home, so
-the Easy Center default template also states the official class time:
+the learning-centre default template also states the official class time:
 
 ```text
 Trung tâm EASY xin được xếp lịch kèm cho bạn {{student}} như sau:
@@ -544,7 +585,7 @@ Existing workspaces need no migration.
 Status: database foundation only. No job, route, or screen sends these yet; the
 completion notice and the daily content check ship in later changes.
 
-These rules record Easy Center's answers and apply to any workspace that
+These rules are configurable and apply to any workspace that
 enables them.
 
 - **Recipients.** A class's homeroom teachers (GVCN) are its
@@ -556,8 +597,8 @@ enables them.
   (administrators, including the creator) or `approve_reports` (supervisors),
   checked with `has_workspace_permission`. No office role, recipient list, or
   column exists; grant or revoke those permissions to change who is notified.
-- **Weak-support content alert.** After the configured review period (Easy
-  Center: 14 days) with no homeroom-teacher action, all homeroom teachers of
+- **Weak-support content alert.** After the configured review period (default
+  14 days) with no homeroom-teacher action, all homeroom teachers of
   the class and the office are notified together, in one step. There is no
   separate reminder or later escalation. Each unchanged period alerts each
   recipient once.
@@ -594,6 +635,73 @@ Regression coverage:
 `apps/database/supabase/tests/tutoring-follow-up-notification-foundation.sql`.
 Rollback:
 `apps/database/rollbacks/20261026191000_tutoring_follow_up_notification_foundation.rollback.sql`.
+
+## Absence follow-up and automation settings
+
+Status: database foundation only, off for every workspace. No job, route, or
+screen uses it yet; the scheduled follow-up, the settings card, and the
+archived-absences view ship in later changes.
+
+These rules are configurable and apply to any workspace that
+enables them.
+
+- **Off by default.** `private.tutoring_automation_settings` holds one row per
+  workspace. A missing row, or a row with the defaults, keeps every rule off.
+  Turning a rule on stamps its enablement time, so absences older than that time
+  minus the absence lookback are never reminded about. The stamp changes only
+  when the rule switches on; it cannot be preset or backdated. Defaults: remind 3 days
+  after the absence, archive 3 days after the reminder, and flag 2 consecutive
+  incomplete lessons (for the later lesson-completion report).
+- **One reminder, then archive.** An absence with no make-up is reminded about
+  once, ever. If it is still not made up after the archive delay, the scheduled
+  job archives it. The job never archives an absence it has not reminded about.
+- **Archive hides the queue row only.** It does not archive the learner and
+  never deletes attendance, sessions, or the follow-up. Staff can restore an
+  archived absence. A restored absence is held: the job will not archive it
+  again, but staff can. Staff can also archive an absence manually. The state
+  machine (`reminded`, `archived`, `restored`) is enforced in the database for
+  every writer, and follow-ups cannot be hard-deleted. Reminder, archive and
+  restore times are always the database's `now()`; a caller cannot supply or
+  backdate them.
+- **Audit.** Every effective transition and settings change writes one row to
+  `private.tutoring_automation_events`, with the staff actor or null for the
+  scheduled job. No-op writes and upserts that change nothing write no event.
+  The settings actor comes from the `tutoring_automation.actor_user_id`
+  setting, never a stored `updated_by`. Required for the settings route: all
+  writes go through a service-role-only
+  `private.tutoring_automation_settings_save(...)` that checks the actor is a
+  member of that workspace and sets the setting with `is_local = true`; direct
+  table writes are then revoked. Until then, a session-level value could leave
+  a stale or unvalidated actor. The
+  audit is append-only: no role can update or truncate it, and the service role
+  cannot delete it.
+- **Actors.** Routes take the staff actor from the authenticated session and
+  never pass null for a user request; null is reserved for the scheduled job.
+  A staff actor must be a workspace `MEMBER` (not a guest) holding
+  `update_user_groups_scores`.
+- **Attendance link.** A follow-up may link the attendance row of the same
+  class, learner and date only.
+- **Notifications.** The types `tutoring_absence_makeup_reminder` and
+  `tutoring_lesson_incomplete_report` use the existing `create_notification` path.
+  `private.tutoring_notification_receipts` gains the kinds `absence_reminder`
+  (one per follow-up and recipient) and `lesson_report` (one per workspace,
+  local date, and recipient), so reruns never notify twice.
+- **Access.** All three tables are service-role only, with RLS enabled and no
+  client policies. `private.tutoring_absence_followup_apply` is the single
+  service-role entry point; scheduled actions are refused while the workspace
+  setting is off, and staff actions require current workspace membership.
+
+Delays are settings, and recipients are resolved by the later job.
+
+Regression coverage:
+`apps/database/supabase/tests/tutoring-automation-foundation.sql` and
+`tutoring-automation-hardening.sql`. Rollback: run
+`20261030051010_tutoring_automation_notifications.rollback.sql`, then
+`20261030051000_tutoring_automation_foundation.rollback.sql`, and prove it with
+`apps/database/verification/tutoring-automation-foundation-rollback-roundtrip.sql`.
+The rollback keeps both notification types, because a CHECK constraint is
+re-checked on every update and removing them would make existing
+notifications of those types fail mark-read.
 
 ## Exports
 
@@ -914,18 +1022,66 @@ to avoid ambiguous SQL references before admission. Regression evidence lives in
 `apps/database/supabase/tests/tutoring-absence-credit-lifecycle.sql`; the exact-head
 database contract must pass before this foundation is considered verified.
 
-## Group tutoring slots
+## Shared tutoring slots
 
-Every workspace allows multiple learners with one teacher in the same group,
-date, start time and duration by default. Each learner keeps a separate session
-row for attendance, absence recovery, lesson notes and payroll history; there is
-no shared-session identifier or capacity limit. Staff schedule each learner
+One teacher tutors many learners in the same session. Every workspace allows
+any number of learners with one teacher at the same date, start time and
+duration by default, whether the learners come from the same class group or
+from different ones. Each learner keeps a separate session row for attendance,
+absence recovery, lesson notes and payroll history; there is no
+shared-session identifier or capacity limit. Staff schedule each learner
 through the Contacts schedule or support queue. The create and edit APIs and
 draft teacher choices apply this same rule.
 
-A different group or any overlapping interval with a different start or duration
-still blocks the teacher. A learner cannot have overlapping bookings, including
-a duplicate booking in the same group slot. Existing cancellation conflict
-handling remains conservative. This rule does not imply room or contractual
-availability. Regression coverage lives in tutoring `shared.test.ts` and
-`packages/internal-api/src/tutoring-draft-plan.test.ts`.
+Booking the teacher for an overlapping interval with a different start or
+duration still blocks the teacher. A learner cannot have overlapping
+bookings, including a second booking in the same slot under any group.
+Slots match by date, start minute and duration; seconds in a start time are
+ignored by both the APIs and draft teacher choices. Payroll exports count a
+shared slot once for its teacher: completed sessions with the same teacher,
+date, start minute and duration add one session and one duration, however many
+learners attended. For every workspace, teacher payroll công defaults to teaching
+time divided by 45 minutes: 45 minutes is 1 công and 90 minutes is 2 công.
+The active Web payroll API returns `total_cong`; Contacts payroll CSV and XLSX
+include `TotalCong`. Fractional công are retained without rounding, matching
+the existing exact-minute aggregation. Detailed learner exports and attendance
+remain per learner. This conversion does not calculate currency or alter pay rates.
+Regression coverage: [payroll route tests](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/export/route.payroll.test.ts).
+Rows without a teacher are counted individually.
+Export filters apply before this count, so a slot shared across groups appears
+once in each group's payroll export, and per-group exports can add up to more
+than the unfiltered total. Re-exporting a past period that has shared slots
+gives lower totals than before this rule. The Rust export route keeps the
+earlier per-row count until it is ported. Existing cancellation conflict handling remains conservative. The rule is
+enforced in application conflict checks only; the database has no
+per-teacher uniqueness or exclusion constraint on tutoring sessions. It does
+not imply room or contractual availability. Regression coverage lives in
+tutoring `shared.test.ts`, `apps/web/src/lib/tutoring/teacher-assignment-routes.test.ts`,
+`packages/internal-api/src/tutoring-draft-plan.test.ts`, `export/route.payroll.test.ts` and the Contacts
+`use-tutoring-create.test.ts`.
+
+### Teacher công report
+
+Contacts tutoring includes a teacher công tab with a calendar-month default,
+previous-month and week presets, and inclusive custom dates. Schedule filters
+also accept previous month and custom dates. The report and payroll downloads
+share `calculateTutoringPayroll` in internal-api. Only DONE sessions pay;
+45 minutes equals one công, retaining fractions. The existing teacher/date/start
+minute/duration key remains unchanged: overlapping starts or different durations
+remain distinct, and unassigned rows remain independent. No-show and cancelled
+sessions pay zero. Past PENDING learner sessions are shown without pay.
+
+All-teacher payroll reports and downloads require `view_payroll` (including its
+existing admin implication). A member with only `view_user_groups` can read only
+their linked teacher row, enforced before session loading. Missing links deny
+access. Detailed session exports, session lists, and teacher picker lists also require `view_payroll` for all-teacher scope; holders of only `view_user_groups` receive their linked self scope. This intentionally tightens the previous staff-wide access. Every export mode and report requires both dates, with an inclusive span of at most 366 days. Open-ended schedule presets must be changed to a bounded range before export.
+Numbers display two decimals; spreadsheet totals retain full precision.
+Regression coverage: export `route.payroll.test.ts`, `route.access.test.ts`,
+the tutoring `read-scope.routes.test.ts` permission matrix, and Contacts `tutoring-filters.test.ts`.
+
+Parent-message previews retain the editor permission and also apply the same
+teacher read scope to both the session read and preview save. Editors without
+`view_payroll` can preview only their linked teacher sessions; missing links and
+other-teacher session IDs are denied. A concurrent reassignment cannot return a
+preview after a scoped save no longer matches. Regression coverage is the
+message-preview route test suite.

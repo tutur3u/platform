@@ -23,7 +23,7 @@ migration designs describe a possible future, not live traffic or a current
 setup requirement. See the [active runtime map](/build/devops/active-runtime).
 </Warning>
 
-## Immediate notification trigger credentials (SR-327)
+## Immediate notification trigger credentials
 
 The database trigger `trigger_send_immediate_notification` on
 `private.notification_batches` calls `public.trigger_immediate_notification_send`.
@@ -61,7 +61,7 @@ warning without exception details or credentials.
 Immediate batches retain one queued POST per batch; batched delivery does not
 use this trigger. This rule covers immediate email and push batches created by
 chat, inbound mail and other notification producers. The separate exchange-rate
-cron and the Web endpoint's accepted authorization methods are outside SR-327.
+cron and the Web endpoint's accepted authorization methods are outside this change.
 
 The manual containment rollback
 `apps/database/rollbacks/20261029030200_pin_notification_trigger_vault.rollback.sql`

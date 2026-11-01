@@ -149,7 +149,7 @@ With `--offload auto`, the command prefers a devbox runner. Offload skips
 runners whose heartbeat reports critical disk (`blockedBy=low_disk`).
 `ttr storage fleet` lists every runner's reported headroom and marks stale or
 offline runners `unknown`, never healthy. See
-`apps/docs/build/development-tools/machine-storage-health.mdx`.
+`tutur3u/internal-docs: docs-internal/build/development-tools/machine-storage-health.mdx`.
 
 Cross-machine offload: `ttr resources run --offload auto -- <cmd>` runs the
 exact pushed `HEAD` on a fresh, attested trusted-development `ttr box` runner
@@ -192,7 +192,7 @@ host probes (stale or missing telemetry is UNKNOWN, never idle). Each run
 executes in a fresh checkout inside that host's own `ttr resources run`
 queue. An UNKNOWN run is never rescheduled; settle it with
 `ttr balancer reconcile`. See
-`apps/docs/build/development-tools/fleet-balancer.mdx`.
+`docs-internal/build/development-tools/fleet-balancer.mdx`.
 
 ## Multi-host weighted admission
 
@@ -217,7 +217,7 @@ activate it from an agent session.
 - Optional per-host `preference` (lower first) orders only eligible hosts
   with capacity; degraded (load per CPU >= `maxLoadPerCpu`, default 1),
   stale, low-disk or full preferred hosts are skipped, never forced. Operator
-  order: skr-studio > skr-sonha > skr-linux-lan > M4.
+  order: Build Mac A > Build Mac B > Linux build host > local hub.
 - Fairness is by repository share with a bypass bound (`maxBypass`), so no
   waiter starves.
 - Every lane-queued job re-checks disk at dequeue: `TTR_RESOURCES_MIN_FREE_GIB`
@@ -231,8 +231,8 @@ has the measured old to new limits table.
 | Host | Old | New |
 | --- | --- | --- |
 | M4 | 2 lanes for every class | heavy 2 (2 CPU/5 GiB), light 1 (1 CPU/1 GiB), reserve 4 CPU/8 GiB/15 GiB |
-| skr-linux-lan | none (2 validation `flock` slots) | heavy 2 (5 CPU/6 GiB), light 2, reserve 8 CPU/12 GiB/50 GiB |
-| Sonha, ThanhStudio | none | not registered |
+| Linux build host | none (2 validation `flock` slots) | heavy 2 (5 CPU/6 GiB), light 2, reserve 8 CPU/12 GiB/50 GiB |
+| Build Mac A, Build Mac B | none | not registered |
 
 Capability-aware `--hosts` placement uses repeatable `--requires
 ios|macos|flutter|web|rust|docker|supabase`, host capability attestations and declared OS
@@ -361,7 +361,7 @@ Do not remove `packages/sdk` or its dist. A declared dependency can recreate ali
 
 Use `ttr resources run --host auto --dry-run -- COMMAND` to explain one
 invocation against the trusted registry. Without `--dry-run`, eligible free
-lanes are tried in Thanh, Sonha, Linux, M4 order. Never queue on a full host
+lanes are tried in Build Mac A, Build Mac B, Linux, local hub order. Never queue on a full host
 while another eligible host has a free lane. Only all-full eligible hosts may
 wait; report the shortest estimated wait and recheck for free lanes at admission.
 An unreachable runner/fleet or failed/unknown/stale probe is ineligible, with a
@@ -379,7 +379,7 @@ Local worker caps still apply. Preserve remote operation keys on unknown writes.
 New local jobs require 50 GiB free by default (`TTR_RESOURCES_MIN_FREE_GIB`);
 status reports the floor and verdict. Remote placement uses the larger of the
 host's reserved disk and `minDiskFreeGiB` (default 50). Resource admission does not impose a default percentage floor on large disks;
-explicit storage percentage thresholds and inode gates remain. Configure Sonha's 2–4 lanes and Linux's pktm reservation
+explicit storage percentage thresholds and inode gates remain. Configure Build Mac B's 2–4 lanes and the Linux host's reservation for its other workloads
 from current evidence. See the SDK reference's automatic placement section for
 activation, estimation limits and regression coverage.
 

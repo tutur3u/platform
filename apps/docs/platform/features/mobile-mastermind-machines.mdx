@@ -1,0 +1,52 @@
+---
+title: Mobile Mastermind Machines
+description: Read-only machine status, history, and collector coverage in the mobile Work tab.
+---
+
+Machines is the fourth Work segment. A row opens a pushed machine detail in the
+existing shell. Home shows a Machines row only when a published machine has an
+active collector alert. The collector owns alert thresholds; the phone computes none.
+
+## Product rules
+
+This view is read-only on every surface. There are no drain, pause, resume,
+remote keep-awake, or scheduler mutations. Keep-awake instructions are static OS
+guidance. Production hosts always show `prod_host_read_only`, including when the
+collector omits that rule. No rule permits production mutations.
+
+Names are selected from the fixed table in `machine_parser.dart`, such as Mac Studio,
+Linux server, Build Mac A, Build Mac B, Laptop, Devbox, Production host.
+Unrecognized display names become the neutral label Machine. Only opaque
+`m-<12hex>` identifiers are retained. Aliases, hostnames, addresses, users, paths,
+actions and arbitrary collector prose never enter the app model. Forge resolves
+aliases before publishing one record per machine id.
+
+## Snapshot contract and states
+
+The optional `machines` array and `machines_meta` are additive on snapshots 1.4
+and 1.5. Missing or malformed sections show not published yet; an empty array
+shows no machines reported. Unknown enums are discarded. Missing metrics show
+Unavailable, preserving genuine zero measurements. Offline and sleeping machines
+retain their last-known values and last-seen timestamp. Coverage stale or collection
+age over 15 minutes marks the data stale; partial coverage is explicit.
+
+Details show status, specs, Now, Running, Rules, Alerts, History and keep-awake
+guidance. Series refs `cpu`, `ram`, `disk` resolve against
+`observability.machine_series`: each entry has `id` and `points: [{t, value}]`.
+CPU and RAM use percentages; disk is percentage free. Null values preserve gaps.
+History filters the published points to 24 hours or 7 days and provides a table.
+Forge must freeze and publish this shape, including cadence (15 minutes / 2 hours),
+and pass the hub validator and Security review before live acceptance.
+
+## Samples and verification
+
+Production always reads the real snapshot and shows not published yet until
+Forge publishes. In debug builds the explicit Machines sample switch, or
+`MASTERMIND_MACHINES_SAMPLE=true`, selects a labeled sample; release compilation
+removes that branch. The existing Mastermind access and snapshot cache gates apply.
+
+Regression coverage is in `apps/mobile/test/features/mastermind/machines/`,
+including hostile aliases, unknown enums, missing/empty/stale/offline states,
+production rules, both locales and 320-pixel layout with 2x text. Run
+`flutter gen-l10n`, `flutter analyze`, focused Mastermind/shell/router tests and
+`bun check:changed` on an admitted Flutter host. No app build is required locally.

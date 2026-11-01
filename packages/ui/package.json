@@ -114,7 +114,6 @@
     "@tuturuuu/hooks": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
-    "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@types/debug": "^4.1.13",

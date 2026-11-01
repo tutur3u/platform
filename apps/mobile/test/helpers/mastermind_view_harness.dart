@@ -4,17 +4,19 @@ import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/features/mastermind/access/mastermind_access_cubit.dart';
+import 'package:mobile/features/mastermind/access/mastermind_access_repository.dart';
 import 'package:mobile/features/mastermind/asks/ask_detail_source.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_refresh_scheduler.dart';
 import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_cubit.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_store.dart';
+import 'package:mobile/features/mastermind/iris/data/iris_relay.dart';
 import 'package:mobile/features/mastermind/parse/snapshot_parser.dart';
 import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_clock.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -26,7 +28,7 @@ const testDigest =
 /// Two minutes after the synthetic snapshot's `generated_at`.
 final testNow = DateTime.utc(2026, 1, 31, 17, 32);
 
-class _Permissions extends Mock implements WorkspacePermissionsRepository {}
+class _Access extends Mock implements MastermindAccessRepository {}
 
 Uint8List snapshotBytes(Map<String, dynamic> json) =>
     Uint8List.fromList(utf8.encode(jsonEncode(json)));
@@ -88,10 +90,11 @@ final class MastermindViewHarness {
     MastermindRepliesCubit? replies,
     MastermindAnsweredElsewhereCubit? answered,
     MastermindAskDetailSource? askDetails,
+    IrisRelay? iris,
     Stream<bool>? onlineChanges,
   }) : source = source ?? FakeHubSource() {
     access = MastermindAccessCubit(
-      repository: permissions,
+      repository: accessRepository,
       source: this.source,
     );
     snapshot = MastermindSnapshotCubit(
@@ -111,12 +114,13 @@ final class MastermindViewHarness {
       replies: replies,
       answered: answered,
       askDetails: askDetails,
+      iris: iris,
       onlineChanges: onlineChanges,
     );
   }
 
   final FakeHubSource source;
-  final permissions = _Permissions();
+  final accessRepository = _Access();
   final store = MemorySnapshotStore();
   late final MastermindAccessCubit access;
   late final MastermindSnapshotCubit snapshot;
@@ -125,35 +129,34 @@ final class MastermindViewHarness {
 
   /// Drives the real access cubit into one of its observable states.
   Future<void> setAccess(TestAccess mode) async {
-    When<Future<WorkspacePermissions>> stub() =>
-        when(() => permissions.getPermissions(wsId: rootWorkspaceId));
+    When<Future<bool>> stub() => when(accessRepository.isEnabled);
     switch (mode) {
       case TestAccess.enabled:
-        stub().thenAnswer(
-          (_) async => const WorkspacePermissions(
-            permissions: {'view_infrastructure'},
-            isCreator: false,
-          ),
-        );
+        stub().thenAnswer((_) async => true);
         await access.sync(rootWorkspaceId);
       case TestAccess.disabled:
         await access.sync('other-workspace');
       case TestAccess.loading:
-        stub().thenAnswer((_) => Completer<WorkspacePermissions>().future);
+        stub().thenAnswer((_) => Completer<bool>().future);
         unawaited(access.sync(rootWorkspaceId));
       case TestAccess.error:
-        stub().thenThrow(Exception('permissions unavailable'));
+        stub().thenThrow(Exception('access unavailable'));
         await access.sync(rootWorkspaceId);
     }
   }
 
-  Widget wrap(Widget child) => MultiBlocProvider(
-    providers: [
-      BlocProvider<MastermindAccessCubit>.value(value: access),
-      BlocProvider<MastermindSnapshotCubit>.value(value: snapshot),
-      RepositoryProvider<MastermindRuntime>.value(value: runtime),
-    ],
-    child: child,
+  /// Relative times count from [testNow], so "2m" means two minutes after
+  /// the synthetic snapshot's `generated_at`.
+  Widget wrap(Widget child) => MastermindClockScope(
+    now: () => testNow,
+    child: MultiBlocProvider(
+      providers: [
+        BlocProvider<MastermindAccessCubit>.value(value: access),
+        BlocProvider<MastermindSnapshotCubit>.value(value: snapshot),
+        RepositoryProvider<MastermindRuntime>.value(value: runtime),
+      ],
+      child: child,
+    ),
   );
 
   Future<void> dispose() => runtime.close();

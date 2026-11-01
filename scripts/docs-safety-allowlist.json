@@ -1,0 +1,29 @@
+{
+  "entries": [
+    {
+      "path": "apps/docs/build/development-tools/local-e2e.mdx",
+      "rule": "bypass secret name",
+      "reason": "Flag name is public in source; the bypass only activates with local web origins and a local Supabase URL (apps/web/src/lib/auth/local-e2e.ts); Desk-approved 31 Oct."
+    },
+    {
+      "path": "apps/docs/platform/architecture/shared-session.mdx",
+      "rule": "bypass secret name",
+      "reason": "Flag name is public in source; the bypass only activates with local web origins and a local Supabase URL (apps/web/src/lib/auth/local-e2e.ts); Desk-approved 31 Oct."
+    },
+    {
+      "path": "apps/docs/build/development-tools/local-e2e.mdx",
+      "rule": "fleet host or machine name",
+      "reason": "Names the checked-in script path scripts/thanh-e2e/, a code path that is not renamed here."
+    },
+    {
+      "path": "plugins/tuturuuu/skills/tuturuuu-mobile-task-board/references/mobile-patterns.md",
+      "rule": "fleet host or machine name",
+      "reason": "Names the checked-in script path scripts/thanh-e2e/, a code path that is not renamed here."
+    },
+    {
+      "path": "apps/docs/build/devops/sepay-testing-guide.mdx",
+      "rule": "fleet host or machine name",
+      "reason": "Vietnamese sample payment text in a request body, not a machine name."
+    }
+  ]
+}

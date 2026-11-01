@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "90814255724",
+    "project_id": "tuturuuu-mobile-dev",
+    "storage_bucket": "tuturuuu-mobile-dev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:90814255724:android:049567a22fe2e1b5283e49",
+        "android_client_info": {
+          "package_name": "com.tuturuuu.app.mobile.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYOJ2VNZ1S2Vjksd1hfM8nVdXgbPH8zY4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

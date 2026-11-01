@@ -84,7 +84,7 @@ actual EN/VI heading markup in the SSR response; status 200 and metadata alone
 are insufficient.
 
 The native publication admits only `forms.tuturuuu.com` and the custom staging
-host `forms.staging.tutur3u.com`. Apex `/forms`, workers.dev and unknown hosts
+host `<app>.staging.tutur3u.com`. Apex `/forms`, workers.dev and unknown hosts
 are rejected before app dispatch. Apex admission remains a separate cutover.
 The app-owned `start-bridge.config.ts` supplies the nonce CSP and response
 headers. Non-assets force private, no-store caching, including removal of CDN

@@ -1,0 +1,940 @@
+{
+  "thread_ref": "item-b3b5fa12345a4abdb712",
+  "history_digest": "b98238a2729442835c72d0ab1d630e37b7184814202b2fa4d53ed34ff6f0c325",
+  "asks": [
+    {
+      "id": "item-bf80ac706a7cc1603ea4",
+      "kind": "decision",
+      "urgency": "urgent",
+      "title": "Approve the staging rollback for the sample app?",
+      "text": "Synthetic ask 1 for the Iris fixture. Approve the staging rollback for the sample app?",
+      "options": [
+        "Roll back",
+        "Hold"
+      ],
+      "recommended": "Roll back",
+      "deadline": "within_hours",
+      "created_at": "2026-10-31T00:30:00Z",
+      "expires_at": null
+    },
+    {
+      "id": "item-cca028c80766c779d009",
+      "kind": "decision",
+      "urgency": "urgent",
+      "title": "Pick a release window for the demo build",
+      "text": "Synthetic ask 2 for the Iris fixture. Pick a release window for the demo build",
+      "options": [
+        "Tonight",
+        "Tomorrow morning"
+      ],
+      "recommended": "Tonight",
+      "deadline": "tonight",
+      "created_at": "2026-10-31T00:55:00Z",
+      "expires_at": null
+    },
+    {
+      "id": "item-35fb6a47575414219717",
+      "kind": "action",
+      "urgency": "urgent",
+      "title": "Confirm the paused sample migration can resume",
+      "text": "Synthetic ask 3 for the Iris fixture. Confirm the paused sample migration can resume",
+      "options": [
+        "Resume",
+        "Keep paused"
+      ],
+      "recommended": "Keep paused",
+      "deadline": "within_hours",
+      "created_at": "2026-10-31T01:20:00Z",
+      "expires_at": null
+    },
+    {
+      "id": "item-c4bb7e5597061619cc6d",
+      "kind": "decision",
+      "urgency": "urgent",
+      "title": "Choose which lane takes the flaky demo test",
+      "text": "Synthetic ask 4 for the Iris fixture. Choose which lane takes the flaky demo test",
+      "options": [
+        "Forge",
+        "Mira"
+      ],
+      "recommended": null,
+      "deadline": "today",
+      "created_at": "2026-10-31T01:45:00Z",
+      "expires_at": null
+    },
+    {
+      "id": "item-c135dedfdaa7ead7f2aa",
+      "kind": "decision",
+      "urgency": "soon",
+      "title": "Merge order for two sample stacks",
+      "text": "Synthetic ask 5 for the Iris fixture. Merge order for two sample stacks",
+      "options": [
+        "Stack A first",
+        "Stack B first"
+      ],
+      "recommended": "Stack A first",
+      "deadline": "today",
+      "created_at": "2026-10-31T02:10:00Z",
+      "expires_at": null
+    },
+    {
+      "id": "item-def823c68f9f2345e950",
+      "kind": "decision",
+      "urgency": "soon",
+      "title": "Rename the placeholder dashboard card?",
+      "text": "Synthetic ask 6 for the Iris fixture. Rename the placeholder dashboard card?",
+      "options": [
+        "Rename",
+        "Keep"
+      ],
+      "recommended": "Rename",
+      "deadline": "this_week",
+      "created_at": "2026-10-31T02:35:00Z",
+      "expires_at": null
+    },
+    {
+      "id": "item-f491723ba27fb45fc4c9",
+      "kind": "action",
+      "urgency": "soon",
+      "title": "Write a short note for the demo changelog",
+      "text": "Synthetic ask 7 for the Iris fixture. Write a short note for the demo changelog",
+      "options": [],
+      "recommended": null,
+      "deadline": "today",
+      "created_at": "2026-10-31T03:00:00Z",
+      "expires_at": null
+    },
+    {
+      "id": "item-498e4a790bf359198a39",
+      "kind": "decision",
+      "urgency": "soon",
+      "title": "Retire the old sample export job?",
+      "text": "Synthetic ask 8 for the Iris fixture. Retire the old sample export job?",
+      "options": [
+        "Retire",
+        "Keep a week"
+      ],
+      "recommended": "Keep a week",
+      "deadline": "this_week",
+      "created_at": "2026-10-31T03:25:00Z",
+      "expires_at": "2026-10-31T04:25:00Z"
+    },
+    {
+      "id": "item-aef6d6c685bac090a120",
+      "kind": "fyi",
+      "urgency": "fyi",
+      "title": "Sample quota pool resets at 14:00",
+      "text": "Synthetic ask 9 for the Iris fixture. Sample quota pool resets at 14:00",
+      "options": [],
+      "recommended": null,
+      "deadline": null,
+      "created_at": "2026-10-31T03:50:00Z",
+      "expires_at": null
+    },
+    {
+      "id": "item-e6ae5c75ae510319faa8",
+      "kind": "fyi",
+      "urgency": "fyi",
+      "title": "Demo lane finished its review pass",
+      "text": "Synthetic ask 10 for the Iris fixture. Demo lane finished its review pass",
+      "options": [],
+      "recommended": null,
+      "deadline": null,
+      "created_at": "2026-10-31T04:15:00Z",
+      "expires_at": null
+    },
+    {
+      "id": "item-afafd22dce01168b3d3f",
+      "kind": "fyi",
+      "urgency": "fyi",
+      "title": "Synthetic backlog trimmed to twelve items",
+      "text": "Synthetic ask 11 for the Iris fixture. Synthetic backlog trimmed to twelve items",
+      "options": [],
+      "recommended": null,
+      "deadline": null,
+      "created_at": "2026-10-31T04:40:00Z",
+      "expires_at": null
+    },
+    {
+      "id": "item-24bf7124b8c8acd9a3bc",
+      "kind": "decision",
+      "urgency": "fyi",
+      "title": "Pick a color token for the sample badge",
+      "text": "Synthetic ask 12 for the Iris fixture. Pick a color token for the sample badge",
+      "options": [
+        "Primary",
+        "Muted"
+      ],
+      "recommended": "Muted",
+      "deadline": null,
+      "created_at": "2026-10-31T05:05:00Z",
+      "expires_at": null
+    }
+  ],
+  "messages": [
+    {
+      "msg_ref": "m-fbb3a6de39043b68",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T00:20:00Z",
+      "text": "Morning summary: three sample lanes are running and one is waiting on you.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-4ac5f55cd557e57b",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T00:32:00Z",
+      "text": "Started the demo test pass on the sample app.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": {
+        "commands": 3,
+        "edits": 1,
+        "searches": 0,
+        "subagents": 0
+      }
+    },
+    {
+      "msg_ref": "m-e9129193c1200e4f",
+      "author": "agent",
+      "author_label": "Iris",
+      "created_at": "2026-10-31T00:44:00Z",
+      "text": "Can you check the staging rollback ask when you have a minute?",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-db34cbac7750bd46",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T00:56:00Z",
+      "text": "The sample migration paused at step two; nothing was changed.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-8a261d320d765877",
+      "author": "user",
+      "author_label": "Owner",
+      "created_at": "2026-10-31T01:08:00Z",
+      "text": "Thanks, looking at it now.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-c7b99678fd8cc3a1",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T01:20:00Z",
+      "text": "Review pass on the placeholder dashboard is done.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-60a82815589b6c5d",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T01:32:00Z",
+      "text": "Queued the demo build for the evening window.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-9fdb12b036587e1c",
+      "author": "agent",
+      "author_label": "Iris",
+      "created_at": "2026-10-31T01:44:00Z",
+      "text": "Usage on the sample pool is at sixty percent.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-0a2d49a204397b94",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T01:56:00Z",
+      "text": "Forge picked up the flaky test lane.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-20c095eb542d8535",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T02:08:00Z",
+      "text": "Please keep the old export job one more week.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-bee5a6fefc6f4f58",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T02:20:00Z",
+      "text": "Morning summary: three sample lanes are running and one is waiting on you.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": {
+        "commands": 3,
+        "edits": 1,
+        "searches": 0,
+        "subagents": 0
+      }
+    },
+    {
+      "msg_ref": "m-287a22ed96fe6804",
+      "author": "user",
+      "author_label": "Owner",
+      "created_at": "2026-10-31T02:32:00Z",
+      "text": "Started the demo test pass on the sample app.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-dc9bab994ea470b5",
+      "author": "agent",
+      "author_label": "Iris",
+      "created_at": "2026-10-31T02:44:00Z",
+      "text": "The sample report is at ‹path› and the draft is on ‹link: example.com›.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 1,
+        "url": 1,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-27e0a30f26140028",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T02:56:00Z",
+      "text": "The sample migration paused at step two; nothing was changed.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-26f480b05ea238ed",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T03:08:00Z",
+      "text": "Thanks, looking at it now.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-0d3886a9e1856e33",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T03:20:00Z",
+      "text": "Review pass on the placeholder dashboard is done.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-97d991bf9baff0e8",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T03:32:00Z",
+      "text": "Queued the demo build for the evening window.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-1d8b6080fda08811",
+      "author": "agent",
+      "author_label": "Iris",
+      "created_at": "2026-10-31T03:44:00Z",
+      "text": "Usage on the sample pool is at sixty percent.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-015311d0e5bff237",
+      "author": "user",
+      "author_label": "Owner",
+      "created_at": "2026-10-31T03:56:00Z",
+      "text": "Forge picked up the flaky test lane.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-0a3b1dd720bdd055",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T04:08:00Z",
+      "text": "Please keep the old export job one more week.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": {
+        "commands": 3,
+        "edits": 1,
+        "searches": 0,
+        "subagents": 0
+      }
+    },
+    {
+      "msg_ref": "m-b1172e9edbe34044",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T04:20:00Z",
+      "text": "Morning summary: three sample lanes are running and one is waiting on you.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-3ab8d2ad010275fb",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T04:32:00Z",
+      "text": "Started the demo test pass on the sample app.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-17c9eeaf5ed63f11",
+      "author": "agent",
+      "author_label": "Iris",
+      "created_at": "2026-10-31T04:44:00Z",
+      "text": "Can you check the staging rollback ask when you have a minute?",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-6741fc60185a56c0",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T04:56:00Z",
+      "text": "The sample migration paused at step two; nothing was changed.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-dcc86b05506458a6",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T05:08:00Z",
+      "text": "Thanks, looking at it now.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-e40836336306900b",
+      "author": "user",
+      "author_label": "Owner",
+      "created_at": "2026-10-31T05:20:00Z",
+      "text": "Review pass on the placeholder dashboard is done.",
+      "truncated": true,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-9a736b464785a8b6",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T05:32:00Z",
+      "text": "Queued the demo build for the evening window.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-69b7195876cc686c",
+      "author": "agent",
+      "author_label": "Iris",
+      "created_at": "2026-10-31T05:44:00Z",
+      "text": "Usage on the sample pool is at sixty percent.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-00fc0d980a8a542a",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T05:56:00Z",
+      "text": "Forge picked up the flaky test lane.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": {
+        "commands": 3,
+        "edits": 1,
+        "searches": 0,
+        "subagents": 0
+      }
+    },
+    {
+      "msg_ref": "m-8f9a4f768bcf2c31",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T06:08:00Z",
+      "text": "Please keep the old export job one more week.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-8713809d9f2626c2",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T06:20:00Z",
+      "text": "Morning summary: three sample lanes are running and one is waiting on you.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-d10a9241ecde1842",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T06:32:00Z",
+      "text": "",
+      "truncated": false,
+      "withheld": true,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-fdcdf4e4866ea501",
+      "author": "user",
+      "author_label": "Owner",
+      "created_at": "2026-10-31T06:44:00Z",
+      "text": "Can you check the staging rollback ask when you have a minute?",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-64f824674894983b",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T06:56:00Z",
+      "text": "The sample migration paused at step two; nothing was changed.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-1d7e25d97d8f506c",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T07:08:00Z",
+      "text": "Thanks, looking at it now.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-0976a5edcfde88c7",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T07:20:00Z",
+      "text": "Review pass on the placeholder dashboard is done.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-d8d141316fb69a89",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T07:32:00Z",
+      "text": "Queued the demo build for the evening window.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-10d0e30bed5cf098",
+      "author": "agent",
+      "author_label": "Iris",
+      "created_at": "2026-10-31T07:44:00Z",
+      "text": "Usage on the sample pool is at sixty percent.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": {
+        "commands": 3,
+        "edits": 1,
+        "searches": 0,
+        "subagents": 0
+      }
+    },
+    {
+      "msg_ref": "m-216cc590c0562f2b",
+      "author": "agent",
+      "author_label": "Atlas",
+      "created_at": "2026-10-31T07:56:00Z",
+      "text": "Forge picked up the flaky test lane.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    },
+    {
+      "msg_ref": "m-21f8e3020c65d744",
+      "author": "user",
+      "author_label": "Owner",
+      "created_at": "2026-10-31T08:08:00Z",
+      "text": "Please keep the old export job one more week.",
+      "truncated": false,
+      "withheld": false,
+      "redactions": {
+        "path": 0,
+        "url": 0,
+        "secret": 0,
+        "id": 0,
+        "email": 0,
+        "number": 0
+      },
+      "activity": null
+    }
+  ],
+  "roles": [
+    {
+      "role": "Atlas",
+      "status": "running"
+    },
+    {
+      "role": "Forge",
+      "status": "armed"
+    },
+    {
+      "role": "Mira",
+      "status": "stalled"
+    },
+    {
+      "role": "Vera",
+      "status": "idle"
+    }
+  ],
+  "usage": "Sample pool 60% · resets 14:00"
+}

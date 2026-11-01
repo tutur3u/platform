@@ -17,6 +17,7 @@
     "build": "tsc --project tsconfig.build.json",
     "dev": "tsc --project tsconfig.build.json --watch --incremental",
     "type-check": "tsc --project tsconfig.build.json",
+    "test": "vitest run",
     "clean": "rm -rf dist .turbo",
     "prepublishOnly": "bun run clean && bun run build"
   },
@@ -30,7 +31,8 @@
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/node": "^26.6.5",
     "@types/react": "~19.2.18",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "^5.0.5"
   },
   "exports": {
     ".": {
@@ -52,6 +54,11 @@
       "types": "./dist/primitives/*.d.ts",
       "import": "./dist/primitives/*.js",
       "require": "./dist/primitives/*.js"
+    },
+    "./mastermind": {
+      "types": "./dist/mastermind/ask-v2.d.ts",
+      "import": "./dist/mastermind/ask-v2.js",
+      "require": "./dist/mastermind/ask-v2.js"
     },
     "./db": {
       "types": "./dist/db.d.ts",

@@ -1,0 +1,85 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('server-only', () => ({}));
+
+const meetAiGateEnv = vi.hoisted(() => vi.fn());
+vi.mock(
+  '@tuturuuu/meet-core/features/meeting-ai/server/workspace-gate',
+  () => ({ meetAiGateEnv })
+);
+
+import { isMeetAiEnabledOnWeb } from './meet-ai-gate';
+
+const ENV = 'MEET_AI_ENABLED_WORKSPACE_IDS';
+const WS = '11111111-1111-4111-8111-111111111111';
+const OTHER = '22222222-2222-4222-8222-222222222222';
+
+describe(isMeetAiEnabledOnWeb, () => {
+  beforeEach(() => {
+    meetAiGateEnv.mockResolvedValue(undefined);
+    vi.stubEnv(ENV, '');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.clearAllMocks();
+  });
+
+  it('denies when the env var is unset', async () => {
+    delete process.env[ENV];
+    await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(false);
+  });
+
+  it.each(['', '   ', '\n\t', ' , ,'])(
+    'denies blank value %j',
+    async (value) => {
+      vi.stubEnv(ENV, value);
+      await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(false);
+    }
+  );
+
+  it('allows a listed workspace and denies an unlisted one', async () => {
+    vi.stubEnv(ENV, `${WS}, ${OTHER.toUpperCase()}`);
+    await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(true);
+    await expect(isMeetAiEnabledOnWeb(OTHER)).resolves.toBe(true);
+    await expect(
+      isMeetAiEnabledOnWeb('33333333-3333-4333-8333-333333333333')
+    ).resolves.toBe(false);
+  });
+
+  it('denies a missing workspace id', async () => {
+    vi.stubEnv(ENV, WS);
+    await expect(isMeetAiEnabledOnWeb(null)).resolves.toBe(false);
+    await expect(isMeetAiEnabledOnWeb(undefined)).resolves.toBe(false);
+  });
+
+  it.each(['*', 'all', '*.*', `${WS.slice(0, 8)}*`, '.*'])(
+    'treats wildcard %j as no match',
+    async (value) => {
+      vi.stubEnv(ENV, value);
+      await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(false);
+    }
+  );
+
+  it('prefers the Cloudflare binding over process.env when it is set', async () => {
+    vi.stubEnv(ENV, OTHER);
+    meetAiGateEnv.mockResolvedValue({ [ENV]: WS });
+    await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(true);
+    await expect(isMeetAiEnabledOnWeb(OTHER)).resolves.toBe(false);
+  });
+
+  it('falls back to process.env when the binding is absent', async () => {
+    vi.stubEnv(ENV, WS);
+    meetAiGateEnv.mockResolvedValue({});
+    await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(true);
+  });
+
+  it('is server-only and never exposes the variable to client bundles', () => {
+    const source = readFileSync(join(__dirname, 'meet-ai-gate.ts'), 'utf8');
+    expect(source).toMatch(/^import 'server-only';/);
+    expect(source).not.toContain('NEXT_PUBLIC');
+    const route = readFileSync(join(__dirname, 'route.ts'), 'utf8');
+    expect(route).not.toContain('NEXT_PUBLIC');
+  });
+});

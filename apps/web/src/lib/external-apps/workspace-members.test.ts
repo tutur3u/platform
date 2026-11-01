@@ -6,10 +6,15 @@ import {
 
 const mocks = vi.hoisted(() => ({
   getWorkspaceMembers: vi.fn(),
+  roleHasCreatorGrantPermission: vi.fn(),
 }));
 
 vi.mock('@/lib/workspace-members', () => ({
   getWorkspaceMembers: mocks.getWorkspaceMembers,
+}));
+
+vi.mock('@/lib/workspace-creator-grant-permissions', () => ({
+  roleHasCreatorGrantPermission: mocks.roleHasCreatorGrantPermission,
 }));
 
 const splitRoleMember = {
@@ -113,5 +118,110 @@ describe('external app workspace member helpers', () => {
       'role-members',
       'role-roles',
     ]);
+  });
+
+  it('refuses to promote through a name-selected creator-granted role, even for its creator', async () => {
+    const memberRoleUpsert = vi.fn().mockResolvedValue({ error: null });
+    const query: Record<string, unknown> = {};
+    query.select = vi.fn(() => query);
+    query.eq = vi.fn(() => query);
+    query.maybeSingle = vi.fn(async () => ({
+      data: { id: 'role-external-admin', ws_id: 'workspace-1' },
+      error: null,
+    }));
+    query.upsert = memberRoleUpsert;
+    const admin = { from: vi.fn(() => query) };
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.getWorkspaceMembers.mockResolvedValue([
+      {
+        ...splitRoleMember,
+        roles: [],
+      },
+    ]);
+    mocks.roleHasCreatorGrantPermission.mockResolvedValue(true);
+
+    const response = await updateExternalAppWorkspaceMemberRole({
+      access: access({
+        admin,
+        user: { email: 'creator@example.com', id: 'creator-1' },
+      }),
+      request: new Request('http://localhost', {
+        body: JSON.stringify({ role: 'admin' }),
+        method: 'PATCH',
+      }),
+      userId: 'user-2',
+    });
+
+    expect(response.status).toBe(500);
+    expect(mocks.roleHasCreatorGrantPermission).toHaveBeenCalledWith(admin, {
+      includeDisabled: true,
+      roleId: 'role-external-admin',
+      wsId: 'workspace-1',
+    });
+    expect(memberRoleUpsert).not.toHaveBeenCalled();
+    errorLog.mockRestore();
+  });
+
+  it('refuses to promote through an admin role holding a disabled billing row', async () => {
+    const actual = await vi.importActual<
+      typeof import('@/lib/workspace-creator-grant-permissions')
+    >('@/lib/workspace-creator-grant-permissions');
+    mocks.roleHasCreatorGrantPermission.mockImplementation(
+      actual.roleHasCreatorGrantPermission
+    );
+    const upsert = vi.fn().mockResolvedValue({ error: null });
+    const admin = {
+      from: vi.fn((table: string) => {
+        const query: Record<string, unknown> = {};
+        let enabledOnly = false;
+        query.select = vi.fn(() => query);
+        query.in = vi.fn(() => query);
+        query.eq = vi.fn((column: string, value: unknown) => {
+          if (column === 'enabled') enabledOnly = value === true;
+          return query;
+        });
+        query.maybeSingle = vi.fn(async () => ({
+          data: { id: 'role-external-admin', ws_id: 'workspace-1' },
+          error: null,
+        }));
+        query.upsert = upsert;
+        // The disabled billing row is hidden only by an enabled-only filter.
+        const rows = () =>
+          table === 'workspace_roles'
+            ? [{ id: 'role-external-admin', ws_id: 'workspace-1' }]
+            : table === 'workspace_role_permissions' && !enabledOnly
+              ? [{ role_id: 'role-external-admin', ws_id: 'workspace-1' }]
+              : [];
+        // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.
+        query.then = (resolve: (value: unknown) => unknown) =>
+          Promise.resolve({ data: rows(), error: null }).then(resolve);
+        return query;
+      }),
+    };
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mocks.getWorkspaceMembers.mockResolvedValue([
+      { ...splitRoleMember, roles: [] },
+    ]);
+
+    const response = await updateExternalAppWorkspaceMemberRole({
+      access: access({ admin }),
+      request: new Request('http://localhost', {
+        body: JSON.stringify({ role: 'admin' }),
+        method: 'PATCH',
+      }),
+      userId: 'user-2',
+    });
+
+    expect(response.status).toBe(500);
+    expect(errorLog).toHaveBeenCalledWith(
+      'Error updating external app workspace member role',
+      expect.objectContaining({
+        error: expect.objectContaining({
+          message: 'creator_grant_role_requires_creator',
+        }),
+      })
+    );
+    expect(upsert).not.toHaveBeenCalled();
+    errorLog.mockRestore();
   });
 });
