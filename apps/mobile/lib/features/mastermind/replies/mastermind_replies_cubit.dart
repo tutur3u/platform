@@ -45,7 +45,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
        super(const MastermindRepliesState());
 
   /// How long a one-tap option reply can be undone before it is queued.
-  static const defaultOptionUndoWindow = Duration(seconds: 5);
+  static const defaultOptionUndoWindow = Duration(seconds: 30);
   static const _capabilityMaxAge = Duration(minutes: 5);
   static const _defaultRetryAfter = Duration(minutes: 1);
 
@@ -312,6 +312,34 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
       );
       unawaited(_persist());
     }
+  }
+
+  /// Cancels every reply still inside its undo window, as judged by the same
+  /// [MastermindRepliesState.heldEntries] the bar counts: one state emit and
+  /// one persist. Replies already committed or queued are untouched. Returns
+  /// how many were cancelled.
+  int undoAll() {
+    final held = state.heldEntries(_clock());
+    if (held.isEmpty) return 0;
+    final keys = {for (final entry in held) entry.idempotencyKey};
+    final items = {for (final entry in held) entry.itemId};
+    for (final id in items) {
+      _undoTimers.remove(id)?.cancel();
+    }
+    emit(
+      state.copyWith(
+        outbox: [
+          for (final entry in state.outbox)
+            if (!keys.contains(entry.idempotencyKey)) entry,
+        ],
+        pendingOptions: {
+          for (final entry in state.pendingOptions.entries)
+            if (!items.contains(entry.key)) entry.key: entry.value,
+        },
+      ),
+    );
+    unawaited(_persist());
+    return held.length;
   }
 
   Future<void> _persistHeldOption(OutboxEntry entry, int generation) async {

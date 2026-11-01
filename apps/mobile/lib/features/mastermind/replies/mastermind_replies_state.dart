@@ -131,6 +131,35 @@ final class MastermindRepliesState {
     return pending?.versionHash == versionHash ? pending : null;
   }
 
+  /// The ONE definition of "still undoable" shared by the count, the
+  /// countdown and Undo-all: a pending outbox entry whose hold ends after
+  /// [now], not already committed (being sent) and matching the pending
+  /// option's version. A reply restored after a restart has no pending option
+  /// or timer but is still held, so it counts.
+  List<OutboxEntry> heldEntries(DateTime now) => [
+    for (final entry in outbox)
+      if (entry.status == OutboxStatus.pending &&
+          (entry.holdUntil?.isAfter(now) ?? false) &&
+          _undoable(entry))
+        entry,
+  ];
+
+  bool _undoable(OutboxEntry entry) {
+    final pending = pendingOptions[entry.itemId];
+    return pending == null ||
+        (!pending.committed && pending.versionHash == entry.versionHash);
+  }
+
+  /// When the first still-undoable reply stops being undoable, or null.
+  DateTime? earliestHoldUntil(DateTime now) {
+    DateTime? earliest;
+    for (final entry in heldEntries(now)) {
+      final until = entry.holdUntil!;
+      if (earliest == null || until.isBefore(earliest)) earliest = until;
+    }
+    return earliest;
+  }
+
   ReplyItemStatus statusFor(String itemId) =>
       statuses[itemId] ?? ReplyItemStatus.idle;
 
