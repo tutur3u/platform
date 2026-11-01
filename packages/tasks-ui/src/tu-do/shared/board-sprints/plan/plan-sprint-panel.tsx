@@ -7,9 +7,12 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
-import { formatSprintDateRange } from '@tuturuuu/utils/task-helper/sprints';
+import {
+  formatSprintDateRange,
+  isBoardSprintOpen,
+} from '@tuturuuu/utils/task-helper/sprints';
 import { useLocale, useTranslations } from 'next-intl';
-import { type DragEvent, useState } from 'react';
+import { type DragEvent, type ReactNode, useState } from 'react';
 import { ToneButton } from '../../board-header/tone-button';
 import {
   MemberAvatar,
@@ -19,39 +22,48 @@ import {
 } from './plan-parts';
 import type { PlanOwner } from './use-sprint-plan-data';
 
-/** Sprint name, dates, the one sprint action, and the goal. */
+/** The sprint picker, dates, the one sprint action, and the goal. */
 export function PlanSprintHeader({
   activeSprint,
   canManage,
   canPlan,
+  isNext,
   onEndActive,
   onSaveGoal,
   onStart,
+  picker,
   sprint,
   starting,
 }: {
   activeSprint: BoardSprint | null;
   canManage: boolean;
   canPlan: boolean;
+  /** The shown sprint is the next one to start. */
+  isNext: boolean;
   onEndActive?: () => void;
   onSaveGoal: (goal: string) => void;
   onStart: () => void;
-  sprint: BoardSprint;
+  picker: ReactNode;
+  /** null while every sprint shows at once. */
+  sprint: BoardSprint | null;
   starting: boolean;
 }) {
   const t = useTranslations('ws-task-boards.sprints');
   const locale = useLocale();
+  const showsActive = Boolean(activeSprint && sprint?.id === activeSprint.id);
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="font-medium text-foreground text-lg">{sprint.name}</h2>
-        <span className="inline-flex h-6 items-center gap-1 rounded-md bg-muted px-2 text-muted-foreground text-xs">
-          <CalendarDays className="size-3" />
-          {formatSprintDateRange(sprint, locale)}
-        </span>
+        {picker}
+        {sprint ? (
+          <span className="inline-flex h-6 items-center gap-1 rounded-md bg-muted px-2 text-muted-foreground text-xs">
+            <CalendarDays className="size-3" />
+            {formatSprintDateRange(sprint, locale)}
+          </span>
+        ) : null}
         <span className="flex-1" />
-        {canManage && !activeSprint ? (
+        {canManage && !activeSprint && isNext && sprint ? (
           <Button
             className="h-8"
             disabled={starting}
@@ -62,19 +74,23 @@ export function PlanSprintHeader({
             {t('start', { name: sprint.name })}
           </Button>
         ) : null}
-        {canManage && activeSprint && onEndActive ? (
+        {canManage && activeSprint && onEndActive && (isNext || showsActive) ? (
           <ToneButton onClick={onEndActive} tone="green">
             <Flag />
-            {t('end_first', { name: activeSprint.name })}
+            {showsActive
+              ? t('end_sprint', { name: activeSprint.name })
+              : t('end_first', { name: activeSprint.name })}
           </ToneButton>
         ) : null}
       </div>
-      <SprintGoalInput
-        disabled={!canPlan}
-        key={`${sprint.id}:${sprint.goal ?? ''}`}
-        onSave={onSaveGoal}
-        value={sprint.goal ?? ''}
-      />
+      {sprint ? (
+        <SprintGoalInput
+          disabled={!canPlan || !isBoardSprintOpen(sprint)}
+          key={`${sprint.id}:${sprint.goal ?? ''}`}
+          onSave={onSaveGoal}
+          value={sprint.goal ?? ''}
+        />
+      ) : null}
     </div>
   );
 }
@@ -125,6 +141,8 @@ export function PlanOwnerSection({
   onDrop,
   onOpen,
   owner,
+  renderSprintMenu,
+  sprintTag,
 }: {
   canEdit: boolean;
   dropActive: boolean;
@@ -134,6 +152,9 @@ export function PlanOwnerSection({
   onDrop: (event: DragEvent) => void;
   onOpen: (task: Task) => void;
   owner: PlanOwner;
+  renderSprintMenu?: (task: Task) => ReactNode;
+  /** The task's sprint, when several sprints show at once. */
+  sprintTag: (task: Task) => string | null;
 }) {
   const t = useTranslations('ws-task-boards.sprints');
   const { member, tasks } = owner;
@@ -167,10 +188,16 @@ export function PlanOwnerSection({
           onDragStart={(event) => writePlanDrag(event, task.id, member.id)}
         >
           <PlanTaskTitle className="flex-1 text-sm" task={task} />
+          {sprintTag(task) ? (
+            <span className="whitespace-nowrap rounded-md border border-dashed px-1.5 text-muted-foreground text-xs">
+              {sprintTag(task)}
+            </span>
+          ) : null}
           <span className="whitespace-nowrap text-muted-foreground text-xs">
             {listsById.get(task.list_id)?.name}
           </span>
           <PlanOwnDueDate task={task} />
+          {renderSprintMenu?.(task)}
           <button
             aria-label={t('open_task', { name: task.name })}
             className="grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-background hover:text-foreground"

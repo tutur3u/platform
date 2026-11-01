@@ -50,7 +50,7 @@ export const POST = withSessionAuth<SprintRouteParams>(
         return sprintRpcErrorResponse(error, 'Failed to end sprint');
       }
 
-      const loaded = await loadBoardSprints(access.sbAdmin, access.boardId);
+      const loaded = await loadBoardSprints(access.sbAdmin, access);
       if (!loaded.ok) {
         return sprintRpcErrorResponse(loaded.error, 'Failed to load sprints');
       }
