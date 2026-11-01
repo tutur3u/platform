@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { describe, expect, it, vi } from 'vitest';
 import { CapacityRulesSettings } from './capacity-rules-settings';
@@ -103,7 +103,9 @@ describe('CapacityRulesSettings', () => {
       </QueryClientProvider>
     );
 
-    expect(container.querySelector('section')).toHaveClass('border');
+    expect(
+      container.querySelector('section .rounded-xl.border')
+    ).not.toBeNull();
 
     rerender(
       <QueryClientProvider
@@ -120,6 +122,32 @@ describe('CapacityRulesSettings', () => {
       </QueryClientProvider>
     );
 
-    expect(container.querySelector('section')).not.toHaveClass('border');
+    expect(container.querySelector('section .rounded-xl.border')).toBeNull();
+  });
+
+  it('keeps its compact project list out of the Projects panel cache', async () => {
+    // The Projects panel reads full project details from the bare key; a
+    // compact list there crashed it when opened after Board settings.
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <CapacityRulesSettings
+          boardId="board-1"
+          lists={[readyList]}
+          wsId="ws-1"
+        />
+      </QueryClientProvider>
+    );
+
+    await waitFor(() =>
+      expect(
+        queryClient.getQueryData(['task-projects-settings', 'ws-1', 'compact'])
+      ).toEqual([])
+    );
+    expect(
+      queryClient.getQueryData(['task-projects-settings', 'ws-1'])
+    ).toBeUndefined();
   });
 });

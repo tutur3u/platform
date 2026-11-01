@@ -10,6 +10,7 @@ import { useBoardBroadcast } from '../shared/board-broadcast-context';
 import {
   applyOptimisticTaskPatch,
   getTaskFromVisibleCaches,
+  patchSavedTaskProjects,
   restoreTaskFieldsFromVisibleCacheSnapshot,
   settleOptimisticTaskPatch,
   snapshotVisibleTaskCaches,
@@ -260,6 +261,11 @@ export function useTaskProjectManagement({
 
         if (result.status === 'fulfilled') {
           succeededTaskIds.push(operation.taskId);
+          patchSavedTaskProjects({
+            queryClient,
+            boardId,
+            task: result.value.task,
+          });
           return;
         }
 
@@ -408,7 +414,7 @@ export function useTaskProjectManagement({
           ]),
         ];
 
-        await updateWorkspaceTask(
+        const saved = await updateWorkspaceTask(
           workspaceId,
           canonicalTaskId,
           {
@@ -416,6 +422,7 @@ export function useTaskProjectManagement({
           },
           getInternalApiOptions()
         );
+        patchSavedTaskProjects({ queryClient, boardId, task: saved.task });
         linkSucceeded = true;
       } catch (applyErr: any) {
         if (cacheSnapshot) {

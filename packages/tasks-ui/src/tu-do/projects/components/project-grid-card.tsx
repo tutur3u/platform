@@ -68,6 +68,11 @@ export function ProjectGridCard({
             <HealthStatusBadge health={project.health_status} />
           </div>
           <h3 className="line-clamp-2 font-semibold text-lg leading-tight">
+            {project.ticket_key ? (
+              <span className="mr-2 font-mono font-normal text-muted-foreground text-sm">
+                {project.ticket_key}
+              </span>
+            ) : null}
             {project.name}
           </h3>
         </div>

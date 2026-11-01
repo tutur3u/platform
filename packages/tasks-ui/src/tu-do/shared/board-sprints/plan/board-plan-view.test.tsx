@@ -3,6 +3,7 @@ import type { Task } from '@tuturuuu/types/primitives/Task';
 import { describe, expect, it } from 'vitest';
 import {
   api,
+  assignFromBacklog,
   dataTransfer,
   renderPlan,
   sprint,
@@ -63,22 +64,21 @@ describe('BoardPlanView', () => {
             created_at: '2026-10-20T00:00:00Z',
           },
         ],
+        assignees: [{ id: 'u-binh', display_name: 'Binh' }],
       } as Partial<Task>),
       task('t2', { assignees: [{ id: 'u-ana', display_name: 'Ana' }] }),
     ]);
     renderPlan({ sprints: [planned] });
 
-    expect(await screen.findByText('[PLA-12]')).toBeInTheDocument();
+    const binh = await screen.findByRole('region', { name: 'Binh' });
+    expect(await within(binh).findByText('[PLA-12]')).toBeInTheDocument();
     const ana = screen.getByRole('region', { name: 'Ana' });
     expect(within(ana).getByText('Task t2').textContent).toBe('Task t2');
   });
 
-  it('assigns a backlog task from its avatar button', async () => {
+  it('assigns a backlog task dragged onto a person', async () => {
     renderPlan({ sprints: [planned] });
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'assign:Task t1' })
-    );
-    fireEvent.click(screen.getAllByRole('menuitem', { name: /Binh/ })[0]!);
+    await assignFromBacklog('t1', 'Binh');
     await waitFor(() =>
       expect(api.update).toHaveBeenCalledWith('ws-1', 't1', {
         assignee_ids: ['u-binh'],
@@ -104,12 +104,8 @@ describe('BoardPlanView', () => {
     });
     renderPlan({ sprints: [sprint(15, 'planned', ['t1', 't5'])] });
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'assign:Task t1' })
-    );
-    fireEvent.click(screen.getAllByRole('menuitem', { name: /Binh/ })[0]!);
-    fireEvent.click(screen.getByRole('button', { name: 'assign:Task t5' }));
-    fireEvent.click(screen.getAllByRole('menuitem', { name: /Ana/ }).at(-1)!);
+    await assignFromBacklog('t1', 'Binh');
+    await assignFromBacklog('t5', 'Ana');
     await waitFor(() => expect(api.update).toHaveBeenCalledTimes(2));
 
     failFirst(new Error('network'));
@@ -146,12 +142,8 @@ describe('BoardPlanView', () => {
     );
     renderPlan({ sprints: [sprint(15, 'planned', ['t1', 't5'])] });
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'assign:Task t1' })
-    );
-    fireEvent.click(screen.getAllByRole('menuitem', { name: /Binh/ })[0]!);
-    fireEvent.click(screen.getByRole('button', { name: 'assign:Task t5' }));
-    fireEvent.click(screen.getAllByRole('menuitem', { name: /Ana/ }).at(-1)!);
+    await assignFromBacklog('t1', 'Binh');
+    await assignFromBacklog('t5', 'Ana');
     await waitFor(() => expect(api.update).toHaveBeenCalledTimes(2));
     const fetchesBefore = api.listBoardTasksForSearch.mock.calls.length;
 
@@ -188,10 +180,7 @@ describe('BoardPlanView', () => {
     );
     renderPlan({ sprints: [sprint(15, 'planned', ['t1'])] });
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'assign:Task t1' })
-    );
-    fireEvent.click(screen.getAllByRole('menuitem', { name: /Ana/ })[0]!);
+    await assignFromBacklog('t1', 'Ana');
     const row = (
       await within(screen.getByRole('region', { name: 'Ana' })).findByText(
         'Task t1'
@@ -256,19 +245,21 @@ describe('BoardPlanView', () => {
     ).not.toBeInTheDocument();
   });
 
-  it('saves the sprint goal when the field loses focus', async () => {
-    api.updateSprint.mockResolvedValue({});
+  it('opens a planned task when its row is clicked', async () => {
+    api.listBoardTasksForSearch.mockResolvedValue([
+      task('t2', { assignees: [{ id: 'u-ana', display_name: 'Ana' }] }),
+    ]);
     renderPlan({ sprints: [planned] });
-    const goal = await screen.findByRole('textbox', { name: 'goal' });
-    fireEvent.change(goal, { target: { value: 'Ship sprint planning' } });
-    fireEvent.blur(goal);
-    await waitFor(() =>
-      expect(api.updateSprint).toHaveBeenCalledWith(
-        'ws-1',
-        'board-1',
-        'sprint-15',
-        { goal: 'Ship sprint planning' }
-      )
+    const ana = await screen.findByRole('region', { name: 'Ana' });
+    fireEvent.click(
+      await within(ana).findByRole('button', { name: 'open_task:Task t2' })
+    );
+    expect(api.openTask).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 't2' }),
+      'board-1',
+      expect.anything(),
+      false,
+      { taskWsId: 'ws-1' }
     );
   });
 

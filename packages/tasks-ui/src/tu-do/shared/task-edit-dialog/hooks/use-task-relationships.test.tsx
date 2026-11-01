@@ -258,4 +258,61 @@ describe('useTaskRelationships', () => {
       { project_ids: ['project-1'] }
     );
   });
+
+  it('shows the ticket number the server gives a new project link', async () => {
+    const project = { id: 'project-1', name: 'Platform', status: 'active' };
+    const numbered = { ...project, ticket_key: 'PLAT', ticket_number: 4 };
+    const task = {
+      id: 'task-1',
+      name: 'Hello',
+      list_id: 'list-1',
+      display_number: 1,
+      created_at: '2026-10-31T00:00:00Z',
+      projects: [],
+    } satisfies Task;
+    queryClient.setQueryData(['tasks-full', 'board-1', 'sprints'], [task]);
+    mocks.updateWorkspaceTask.mockResolvedValue({
+      task: { ...task, projects: [numbered] },
+    });
+    const setSelectedProjects = vi.fn();
+    const { result } = renderHook(
+      () =>
+        useTaskRelationships({
+          wsId: 'ws-1',
+          taskId: 'task-1',
+          isCreateMode: false,
+          boardId: 'board-1',
+          selectedLabels: [],
+          selectedAssignees: [],
+          selectedProjects: [],
+          newLabelName: '',
+          newLabelColor: '#14b8a6',
+          newProjectName: '',
+          setSelectedLabels: vi.fn(),
+          setSelectedAssignees: vi.fn(),
+          setSelectedProjects,
+          setAvailableLabels: vi.fn(),
+          setNewLabelName: vi.fn(),
+          setNewLabelColor: vi.fn(),
+          setNewProjectName: vi.fn(),
+          setShowNewLabelDialog: vi.fn(),
+          setShowNewProjectDialog: vi.fn(),
+          onUpdate: vi.fn(),
+        }),
+      { wrapper }
+    );
+
+    await act(async () => {
+      await result.current.toggleProject(project);
+    });
+
+    expect(
+      queryClient.getQueryData<Task[]>([
+        'tasks-full',
+        'board-1',
+        'sprints',
+      ])?.[0]?.projects
+    ).toEqual([numbered]);
+    expect(setSelectedProjects).toHaveBeenLastCalledWith([numbered]);
+  });
 });

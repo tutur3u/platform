@@ -17,6 +17,8 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { isBoardSprintOpen } from '@tuturuuu/utils/task-helper/sprints';
 import { useTranslations } from 'next-intl';
+import { SprintLabel } from '../sprint-label';
+import { SprintStatusIcon } from '../sprint-move-items';
 
 /** The Plan view's value for every sprint at once. */
 export const ALL_SPRINTS = 'all';
@@ -62,21 +64,22 @@ export function PlanSprintPicker({
       <DropdownMenuTrigger asChild>
         <button
           aria-label={t('switcher_label', { name: title })}
-          className="-ml-1.5 inline-flex h-8 min-w-0 items-center gap-1.5 rounded-md px-1.5 font-medium text-foreground text-lg transition-colors hover:bg-muted"
+          className="inline-flex h-8 min-w-0 items-center gap-1 rounded-md pr-1.5 pl-2 font-semibold text-foreground text-sm transition-colors hover:bg-muted"
           type="button"
         >
           <span className="truncate">{title}</span>
-          <ChevronDown className="size-4 shrink-0 opacity-60" />
+          <ChevronDown className="size-3.5 shrink-0 opacity-60" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-64">
+      <DropdownMenuContent align="start" className="w-72">
         <DropdownMenuRadioGroup
           onValueChange={onSelect}
           value={selected?.id ?? ALL_SPRINTS}
         >
           {open.map((sprint) => (
             <DropdownMenuRadioItem key={sprint.id} value={sprint.id}>
-              <span className="flex-1 truncate">{sprint.name}</span>
+              <SprintStatusIcon sprint={sprint} />
+              <SprintLabel className="flex-1" sprint={sprint} />
               {tag(sprint) ? (
                 <span className="text-muted-foreground text-xs">
                   {tag(sprint)}
@@ -92,7 +95,8 @@ export function PlanSprintPicker({
               </DropdownMenuLabel>
               {ended.map((sprint) => (
                 <DropdownMenuRadioItem key={sprint.id} value={sprint.id}>
-                  <span className="truncate">{sprint.name}</span>
+                  <SprintStatusIcon sprint={sprint} />
+                  <SprintLabel sprint={sprint} />
                 </DropdownMenuRadioItem>
               ))}
             </>

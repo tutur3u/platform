@@ -3,9 +3,13 @@
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { useState } from 'react';
+import { Button } from '@tuturuuu/ui/button';
+import { useTranslations } from 'next-intl';
+import { useMemo, useState } from 'react';
+import { taskMatchesBoardSearch } from '../board-task-search';
 import { BoardSprintPill } from './board-sprint-pill';
 import { BoardPlanView } from './plan/board-plan-view';
+import type { PlanBoardCardProps } from './plan/plan-backlog';
 import { BoardPlanTabs, type BoardTab } from './plan/plan-parts';
 import {
   SprintSummaryDialog,
@@ -20,23 +24,30 @@ import type { useBoardSprints } from './use-board-sprints';
  */
 export function useBoardSprintSurface({
   board,
+  boardCard,
   canManage,
   canPlan,
   currentUserId,
   lists,
+  searchQuery,
   sprints,
   tasks,
   wsId,
 }: {
   board: Pick<WorkspaceTaskBoard, 'id' | 'default_list_id'>;
+  /** What the Board passes its cards; the Plan backlog reuses them. */
+  boardCard?: PlanBoardCardProps;
   canManage: boolean;
   canPlan: boolean;
   currentUserId?: string;
   lists: TaskList[];
+  /** The header search; Plan applies it across every open sprint. */
+  searchQuery?: string;
   sprints: ReturnType<typeof useBoardSprints>;
   tasks: Task[];
   wsId: string;
 }) {
+  const t = useTranslations('ws-task-boards.sprints');
   const [boardTab, setBoardTab] = useState<BoardTab>('board');
   const [summary, setSummary] = useState<SprintSummaryTarget | null>(null);
   // The sprint Plan shows; null is the next one.
@@ -72,8 +83,48 @@ export function useBoardSprintSurface({
     />
   ) : undefined;
 
+  // Board search matches the Board hides: tasks in other sprints or none.
+  const showsOnBoard = sprints.showsOnBoard;
+  const hiddenMatches = useMemo(
+    () =>
+      showsOnBoard && searchQuery?.trim()
+        ? tasks.filter(
+            (task) =>
+              !task.deleted_at &&
+              !showsOnBoard(task) &&
+              (sprints.openSprintByTaskId.has(task.id) ||
+                sprints.unplannedTaskIds.has(task.id)) &&
+              taskMatchesBoardSearch(task, searchQuery)
+          ).length
+        : 0,
+    [
+      searchQuery,
+      showsOnBoard,
+      sprints.openSprintByTaskId,
+      sprints.unplannedTaskIds,
+      tasks,
+    ]
+  );
+  // In the Board's no-results state, the same matches as its one action.
+  const searchEmptyAction = hiddenMatches ? (
+    <Button onClick={() => setBoardTab('plan')} size="sm">
+      {t('show_in_plan', { count: hiddenMatches })}
+    </Button>
+  ) : undefined;
+  const searchExtra =
+    !planActive && hiddenMatches ? (
+      <button
+        className="h-8 shrink-0 rounded-md px-2 text-muted-foreground text-xs transition-colors hover:bg-muted hover:text-foreground"
+        onClick={() => setBoardTab('plan')}
+        type="button"
+      >
+        {t('more_in_plan', { count: hiddenMatches })}
+      </button>
+    ) : undefined;
+
   const planView = planActive ? (
     <BoardPlanView
+      boardCard={boardCard}
       boardId={board.id}
       canManage={canManage}
       canPlan={canPlan}
@@ -87,6 +138,7 @@ export function useBoardSprintSurface({
       }
       onSelectSprint={setPlanSprintId}
       onStarted={() => setBoardTab('board')}
+      searchQuery={searchQuery}
       selectedSprintId={planSprintId}
       sprints={sprints}
       wsId={wsId}
@@ -116,6 +168,8 @@ export function useBoardSprintSurface({
     planActive,
     planTabs,
     planView,
+    searchEmptyAction,
+    searchExtra,
     showBoard: () => setBoardTab('board'),
     sprintSlot,
     summaryDialog,

@@ -41,6 +41,7 @@ const relatedUserSchema = z.object({
 const projectSchema = z.object({
   id: z.string(),
   name: z.string(),
+  ticket_key: z.string().nullable().optional(),
   description: z.string().nullable(),
   ws_id: z.string(),
   creator_id: z.string(),
@@ -145,12 +146,18 @@ export function useTaskProjects({
       projectId,
       name,
       description,
+      ticket_key,
     }: {
       projectId: string;
       name: string;
       description?: string;
+      ticket_key?: string;
     }) => {
-      return updateWorkspaceTaskProject(wsId, projectId, { name, description });
+      return updateWorkspaceTaskProject(wsId, projectId, {
+        name,
+        description,
+        ticket_key,
+      });
     },
     onSuccess: () => {
       toast.success(t('success.project_updated'));

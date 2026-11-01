@@ -2,6 +2,7 @@
 import { AlertCircle, SearchX } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 
 export function shouldShowTaskSearchEmpty({
   query,
@@ -18,10 +19,13 @@ export function shouldShowTaskSearchEmpty({
 }
 
 export function TaskSearchEmptyState({
+  action,
   query,
   onClear,
   failed = false,
 }: {
+  /** The next step beside Clear, e.g. matches the current view hides. */
+  action?: ReactNode;
   query: string;
   onClear?: () => void;
   failed?: boolean;
@@ -44,11 +48,16 @@ export function TaskSearchEmptyState({
           “{query.trim()}”
         </p>
       </div>
-      {onClear && (
-        <Button variant="outline" size="sm" onClick={onClear}>
-          {t('clear_search')}
-        </Button>
-      )}
+      {action || onClear ? (
+        <div className="flex flex-wrap justify-center gap-2">
+          {action}
+          {onClear && (
+            <Button variant="outline" size="sm" onClick={onClear}>
+              {t('clear_search')}
+            </Button>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -7,11 +7,13 @@ import { isBoardSprintOpen } from '@tuturuuu/utils/task-helper/sprints';
 import { useTranslations } from 'next-intl';
 import { type DragEvent, useMemo, useState } from 'react';
 import { useTaskDialog } from '../../../hooks/useTaskDialog';
+import { taskMatchesBoardSearch } from '../../board-task-search';
+import { NEW_SPRINT, type SprintMoveTarget } from '../sprint-move-items';
 import {
   useBoardSprintMutations,
   type useBoardSprints,
 } from '../use-board-sprints';
-import { PlanBacklog } from './plan-backlog';
+import { PlanBacklog, type PlanBoardCardProps } from './plan-backlog';
 import { isPlanDrag, readPlanDrag } from './plan-parts';
 import { PlanSprintMenu } from './plan-sprint-menu';
 import { PlanOwnerSection, PlanSprintHeader } from './plan-sprint-panel';
@@ -27,12 +29,13 @@ import {
 const BACKLOG_DROP = 'backlog';
 
 /**
- * The Plan tab: the backlog of the shown sprint (the next one by default)
- * beside one section per person. Assigning is the planning; the sprint end is
+ * The Plan tab: the backlog of unowned work beside one section per person
+ * in the shown sprint (the next one by default). Assigning is the planning; the sprint end is
  * the default due date. Tasks move to any open sprint, or out of every sprint
  * into the backlog as ghosts.
  */
 export function BoardPlanView({
+  boardCard,
   boardId,
   canManage,
   canPlan,
@@ -42,10 +45,12 @@ export function BoardPlanView({
   onEndActive,
   onSelectSprint,
   onStarted,
+  searchQuery,
   selectedSprintId,
   sprints,
   wsId,
 }: {
+  boardCard?: PlanBoardCardProps;
   boardId: string;
   canManage: boolean;
   canPlan: boolean;
@@ -56,6 +61,8 @@ export function BoardPlanView({
   /** With selectedSprintId, the owner keeps which sprint shows. */
   onSelectSprint?: (sprintId: string | null) => void;
   onStarted?: () => void;
+  /** The header search: matches from every open sprint and the backlog. */
+  searchQuery?: string;
   selectedSprintId?: string | null;
   sprints: ReturnType<typeof useBoardSprints>;
   wsId: string;
@@ -75,6 +82,9 @@ export function BoardPlanView({
     [sprints.sprints]
   );
   const showAll = selectedId === ALL_SPRINTS;
+  const searching = Boolean(searchQuery?.trim());
+  // A search looks through every open sprint, as All sprints does.
+  const wide = showAll || searching;
   const selected = showAll
     ? null
     : (sprints.sprints.find((sprint) => sprint.id === selectedId) ?? planning);
@@ -82,10 +92,10 @@ export function BoardPlanView({
     selected && isBoardSprintOpen(selected) ? selected : null;
   const scope = useMemo(
     () =>
-      showAll
+      wide
         ? { tasks: openSprints.flatMap((sprint) => sprint.tasks) }
         : selected,
-    [openSprints, selected, showAll]
+    [openSprints, selected, wide]
   );
 
   const { data: tasks = [] } = useSprintTasks({
@@ -98,17 +108,33 @@ export function BoardPlanView({
     enabled: Boolean(planning),
     wsId,
   });
-  const { backlog, owners } = useSprintPlanGroups({
+  const groups = useSprintPlanGroups({
     currentUserId,
     members,
+    // A closed sprint's review keeps to its own tasks.
+    openSprintTaskIds:
+      wide || selectedOpen ? sprints.openSprintByTaskId : undefined,
     sprint: scope,
     tasks,
-    unfinishedOnly: showAll,
+    unfinishedOnly: wide,
     unplannedTaskIds: sprints.unplannedTaskIds,
   });
+  const { backlog, owners } = useMemo(() => {
+    if (!searching) return groups;
+    const matches = (task: Task) => taskMatchesBoardSearch(task, searchQuery);
+    // Every person stays, so a match can still be dragged onto anyone.
+    return {
+      backlog: groups.backlog.filter(matches),
+      owners: groups.owners.map((owner) => ({
+        ...owner,
+        tasks: owner.tasks.filter(matches),
+      })),
+    };
+  }, [groups, searchQuery, searching]);
   const { move } = usePlanAssignment({ boardId, members, wsId });
-  const { addSprint, moveTasks, removeSprint, start, updateGoal } =
-    useBoardSprintMutations({ boardId, wsId });
+  const { addSprint, moveTasks, removeSprint, start } = useBoardSprintMutations(
+    { boardId, wsId }
+  );
   const listsById = useMemo(
     () => new Map(lists.map((list) => [list.id, list])),
     [lists]
@@ -146,47 +172,60 @@ export function BoardPlanView({
     openTask(task, boardId, lists, false, { taskWsId: wsId });
   const canDrag = canPlan && (showAll || Boolean(selectedOpen));
   const isGhost = (task: Task) => sprints.unplannedTaskIds.has(task.id);
-  const sprintTag = (task: Task) =>
-    showAll ? (sprints.openSprintByTaskId.get(task.id)?.name ?? null) : null;
-  const moveToSprint = (task: Task, sprintId: string | null) => {
-    const name = openSprints.find((sprint) => sprint.id === sprintId)?.name;
+  const sprintOf = (task: Task) => sprints.openSprintByTaskId.get(task.id);
+  // Tag tasks from other sprints, or every task when all sprints show.
+  const sprintTag = (task: Task) => {
+    const sprint = sprintOf(task);
+    return sprint && (wide || sprint.id !== selectedOpen?.id) ? sprint : null;
+  };
+  const moveToSprint = (task: Task, target: SprintMoveTarget) =>
     moveTasks.mutate(
-      { sprintId, taskIds: [task.id] },
       {
-        onSuccess: () =>
+        sprintId: target === NEW_SPRINT ? NEW_SPRINT : (target?.id ?? null),
+        taskIds: [task.id],
+      },
+      {
+        onSuccess: (data) => {
+          const name = target === NEW_SPRINT ? data.sprintName : target?.name;
           toast.success(
             name ? t('moved_to_sprint', { name }) : t('moved_out_of_sprints')
-          ),
+          );
+        },
         onError: () => toast.error(t('move_failed')),
       }
     );
-  };
   const renderSprintMenu = canPlan
     ? (task: Task) => (
         <PlanSprintMenu
           current={sprints.openSprintByTaskId.get(task.id) ?? null}
           disabled={moveTasks.isPending}
-          onMove={(sprintId) => moveToSprint(task, sprintId)}
+          onMove={(target) => moveToSprint(task, target)}
           openSprints={openSprints}
           task={task}
         />
       )
     : undefined;
-  // Giving a ghost an owner plans it into the shown sprint, else the next.
-  // The owner changes only once it is in a sprint, so a failed move leaves
-  // the ghost as it was.
+  // Giving a ghost, or a task from another sprint, an owner plans it into
+  // the shown sprint, else the next. The owner changes only once the move
+  // lands, so a failed move leaves the task as it was.
   const plan = (task: Task, planMove: PlanMove) => {
-    if (planMove.to === null || !isGhost(task)) {
+    const elsewhere =
+      isGhost(task) ||
+      (!showAll && sprintOf(task)?.id !== (selectedOpen ?? planning).id);
+    if (planMove.to === null || !elsewhere) {
       move(task, planMove);
       return;
     }
     const target = selectedOpen ?? planning;
-    // mutateAsync, not mutate: overlapping mutate calls run only the
-    // latest onSuccess, which would drop an earlier ghost's owner.
-    moveTasks.mutateAsync({ sprintId: target.id, taskIds: [task.id] }).then(
-      () => move(task, planMove),
-      () => toast.error(t('move_failed'))
-    );
+    // The owner shows at once and is saved once the task is in the sprint;
+    // a failed move takes the owner back off. mutateAsync, not mutate:
+    // overlapping mutate calls run only the latest onSuccess.
+    const moved = moveTasks.mutateAsync({
+      sprintId: target.id,
+      taskIds: [task.id],
+    });
+    moved.catch(() => toast.error(t('move_failed')));
+    move(task, planMove, moved);
   };
 
   const dragOver = (key: string) => (event: DragEvent) => {
@@ -208,11 +247,17 @@ export function BoardPlanView({
   return (
     <div className="grid h-full min-h-0 gap-4 overflow-hidden p-2 md:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)]">
       <PlanBacklog
+        boardCard={boardCard}
+        boardId={boardId}
         canEdit={canDrag}
         dropActive={dropTarget === BACKLOG_DROP}
+        emptyLabel={
+          searching
+            ? t('search_empty_backlog', { query: searchQuery?.trim() ?? '' })
+            : t('backlog_empty')
+        }
         isGhost={isGhost}
-        members={members}
-        onAssign={(task, memberId) => plan(task, { from: null, to: memberId })}
+        lists={lists}
         onCreate={
           canPlan && createListId && createTarget !== undefined
             ? (name) => create.mutateAsync(name)
@@ -221,8 +266,6 @@ export function BoardPlanView({
         onDragEnd={dragEnd}
         onDragOver={dragOver(BACKLOG_DROP)}
         onDrop={drop(null)}
-        onOpen={openPlanTask}
-        renderSprintMenu={renderSprintMenu}
         sprintTag={sprintTag}
         tasks={backlog}
         workspaceId={wsId}
@@ -231,16 +274,8 @@ export function BoardPlanView({
         <PlanSprintHeader
           activeSprint={active ?? null}
           canManage={canManage}
-          canPlan={canPlan}
           isNext={selected?.id === planning.id}
           onEndActive={onEndActive}
-          onSaveGoal={(goal) =>
-            selectedOpen &&
-            updateGoal.mutate(
-              { goal, sprintId: selectedOpen.id },
-              { onError: () => toast.error(t('goal_failed')) }
-            )
-          }
           picker={
             <PlanSprintPicker
               canPlan={canPlan}
@@ -271,6 +306,11 @@ export function BoardPlanView({
           sprint={selected}
           starting={start.isPending}
         />
+        {searching && owners.every((owner) => owner.tasks.length === 0) ? (
+          <p className="rounded-lg border border-dashed px-3 py-2.5 text-muted-foreground text-sm">
+            {t('search_empty_owners', { query: searchQuery?.trim() ?? '' })}
+          </p>
+        ) : null}
         {owners.map((owner) => (
           <PlanOwnerSection
             canEdit={canDrag}

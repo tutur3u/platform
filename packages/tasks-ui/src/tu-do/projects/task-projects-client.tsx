@@ -102,6 +102,7 @@ export function TaskProjectsClient({
   const handleUpdateProject = (data: {
     name: string;
     description?: string;
+    ticket_key?: string;
   }) => {
     if (!editingProject) return;
     taskProjects.updateProject({

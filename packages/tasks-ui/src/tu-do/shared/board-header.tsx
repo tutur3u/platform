@@ -83,6 +83,10 @@ interface Props {
   planTabs?: ReactNode;
   /** The Plan tab is open, so board-only controls hide. */
   planActive?: boolean;
+  /** Shown after the search field, e.g. matches outside the shown sprint. */
+  searchExtra?: ReactNode;
+  /** The pointer or focus reached search or filters: a filter may follow. */
+  onFilterIntent?: () => void;
 }
 
 export function BoardHeader({
@@ -116,6 +120,8 @@ export function BoardHeader({
   sprintSlot,
   planTabs,
   planActive = false,
+  searchExtra,
+  onFilterIntent,
 }: Props) {
   const t = useTranslations();
   const [shareBoardOpen, setShareBoardOpen] = useState(false);
@@ -338,33 +344,41 @@ export function BoardHeader({
           />
         </div>
       </div>
-      <div className="flex min-w-0 items-center gap-2">
+      <div
+        className="flex min-w-0 items-center gap-2"
+        onFocusCapture={onFilterIntent}
+        onPointerEnter={onFilterIntent}
+      >
         {planTabs}
+        {/* One search for both tabs: Plan searches every open sprint. */}
+        <BoardSearchInput
+          isSearching={isSearching}
+          onSearchChange={handleSearchChange}
+          searchQuery={filters.searchQuery}
+        />
+        {searchExtra}
         {planActive ? null : (
-          <>
-            <BoardSearchInput
-              isSearching={isSearching}
-              onSearchChange={handleSearchChange}
-              searchQuery={filters.searchQuery}
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <BoardSortMenu
+              onChange={(sortBy) => onFiltersChange({ ...filters, sortBy })}
+              sortBy={filters.sortBy}
             />
-            <div className="ml-auto flex shrink-0 items-center gap-2">
-              <BoardSortMenu
-                onChange={(sortBy) => onFiltersChange({ ...filters, sortBy })}
-                sortBy={filters.sortBy}
-              />
-              <BoardViewMenu
-                availableViews={enabledViews}
-                currentView={currentView}
-                hotkeyLabels={viewHotkeyLabels}
-                onViewChange={onViewChange}
-              />
-            </div>
-          </>
+            <BoardViewMenu
+              availableViews={enabledViews}
+              currentView={currentView}
+              hotkeyLabels={viewHotkeyLabels}
+              onViewChange={onViewChange}
+            />
+          </div>
         )}
       </div>
       {/* Filters get their own row so people pills keep their names. */}
       {planActive || !interactiveControlsVisible ? null : (
-        <div className="flex min-w-0 items-center gap-2">
+        <div
+          className="flex min-w-0 items-center gap-2"
+          onFocusCapture={onFilterIntent}
+          onPointerEnter={onFilterIntent}
+        >
           {people ? (
             <BoardPeopleFilter
               currentUserId={currentUserId}

@@ -18,7 +18,9 @@ in the browser. The board follows the edge while dragging, so the two never
 leave a gap. The panel header stays on one line: the title truncates, and the
 sync label and viewer avatars drop out as the panel narrows.
 
-In the panel, Details > Properties is a two-column list: each property's name
+Details opens expanded, and a task with a project shows its key (for example
+`PLAT-4`) before the title; the key is not part of the editable name and goes
+only when the project does. In the panel, Details > Properties is a two-column list: each property's name
 (with its icon, except Priority, whose level icon stays on the value) on the
 left and its value on the right as colored text. The Sprint row heads the list
 on boards with sprints.
@@ -39,4 +41,6 @@ Regression coverage:
 - `packages/tasks-ui/src/tu-do/shared/kanban-presentation.test.tsx`
 - `packages/tasks-ui/src/tu-do/shared/task-panel-resize-handle.test.tsx`
 - `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/task-property-row.test.tsx`
+- `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/task-details-section.test.tsx`
+- `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/components/task-name-input.test.tsx`
 - `packages/ui/src/components/ui/dialog.test.tsx`

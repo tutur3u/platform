@@ -310,6 +310,13 @@ export function TaskEditDialog({
     isCreateMode,
     isSaving,
   });
+  // The panel's own project list, so a new project's key shows straight away.
+  const ticketLabel = isCreateMode
+    ? null
+    : getTaskTicketLabel({
+        projects: formState.selectedProjects,
+        ticket_projects: task?.ticket_projects,
+      });
 
   // Refs
   const titleInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
@@ -2677,6 +2684,7 @@ export function TaskEditDialog({
                   flushNameUpdate={flushNameUpdate}
                   disabled={taskTitleDisabled}
                   isHydrating={isAwaitingTaskHydration && !formState.name}
+                  ticketLabel={ticketLabel}
                   variant="compact"
                   onSubmit={
                     isCreateMode && !taskControlsDisabled
@@ -2733,7 +2741,7 @@ export function TaskEditDialog({
                     draftId={draftId}
                     isTitleVisible={isTitleVisible}
                     taskName={formState.name}
-                    ticketLabel={task ? getTaskTicketLabel(task) : null}
+                    ticketLabel={ticketLabel}
                     user={
                       user
                         ? {
@@ -2806,6 +2814,7 @@ export function TaskEditDialog({
                       flushNameUpdate={flushNameUpdate}
                       disabled={taskTitleDisabled || isDialogSettling}
                       isHydrating={isAwaitingTaskHydration && !formState.name}
+                      ticketLabel={ticketLabel}
                     />
 
                     {smartSuggestionsButton && (

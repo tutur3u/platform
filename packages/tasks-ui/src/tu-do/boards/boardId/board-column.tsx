@@ -194,6 +194,8 @@ interface BoardColumnProps {
   onSpecialPinnedChange?: (pinned: boolean) => void;
   onHoverTaskList?: (listId: string) => void;
   readOnly?: boolean;
+  /** The board already holds every task, so the column loads no more pages. */
+  pagesCovered?: boolean;
 }
 
 export function BoardColumn({
@@ -227,6 +229,7 @@ export function BoardColumn({
   onSpecialPinnedChange,
   onHoverTaskList,
   readOnly = false,
+  pagesCovered = false,
 }: BoardColumnProps) {
   const t = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
@@ -378,9 +381,10 @@ export function BoardColumn({
 
   // Load more pages (infinite scroll callback)
   const handleLoadMore = useCallback(() => {
-    if (!listState || listState.isLoading || !listState.hasMore) return;
+    if (pagesCovered || !listState || listState.isLoading || !listState.hasMore)
+      return;
     loadColumnPage(listState.page + 1);
-  }, [listState, loadColumnPage]);
+  }, [listState, loadColumnPage, pagesCovered]);
 
   const handleRefreshList = useCallback(async () => {
     if (isRefreshingList) return;
@@ -484,11 +488,12 @@ export function BoardColumn({
     tasks,
   ]);
 
-  const badgeCount = listState
-    ? listState.hasMore
+  // A filtered column holds every match, so the unfiltered page total
+  // would overstate it.
+  const badgeCount =
+    listState?.hasMore && !hasActiveFilters && !pagesCovered
       ? Math.max(listState.totalCount, visibleTasks.length)
-      : visibleTasks.length
-    : visibleTasks.length;
+      : visibleTasks.length;
   const selectedVisibleTaskCount = visibleTasks.reduce(
     (count, task) => count + (selectedTasks?.has(task.id) ? 1 : 0),
     0
@@ -961,7 +966,7 @@ export function BoardColumn({
           optimisticUpdateInProgress={optimisticUpdateInProgress}
           bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
           onLoadMore={handleLoadMore}
-          hasMore={listState?.hasMore ?? false}
+          hasMore={!pagesCovered && (listState?.hasMore ?? false)}
           isLoadingMore={Boolean(listState?.isLoading && listState.page > 0)}
           readOnly={readOnly}
         />
