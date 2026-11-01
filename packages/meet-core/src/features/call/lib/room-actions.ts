@@ -1,9 +1,11 @@
 import type {
+  MeetMediaState,
   MeetReaction,
   MeetRealtimeTrackKind,
   MeetRoomSettings,
 } from '@tuturuuu/realtime/meet';
 import { sendRecoverableChat } from './chat-delivery';
+import { prepareParticipantName } from './participant-name';
 import type { MeetSignaling } from './signaling';
 
 export function createRoomActions(signaling: {
@@ -16,8 +18,25 @@ export function createRoomActions(signaling: {
         sessionId?: string;
       }
     | undefined;
+  let customDisplayName: string | undefined;
   const pendingChat = new Map<string, string>();
   return {
+    setDisplayName: (displayName: string, media?: MeetMediaState) => {
+      const trimmed = prepareParticipantName(displayName);
+      if (!trimmed) return;
+      customDisplayName = trimmed;
+      signaling.current?.send({
+        type: 'presence.join',
+        displayName: trimmed,
+        ...(media ? { media } : {}),
+      });
+    },
+    replayPresenceJoin: (media: MeetMediaState) =>
+      signaling.current?.send({
+        type: 'presence.join',
+        media,
+        ...(customDisplayName ? { displayName: customDisplayName } : {}),
+      }),
     replayAssistantAudio: () => {
       if (assistantAudio)
         signaling.current?.send({
