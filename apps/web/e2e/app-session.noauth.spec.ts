@@ -249,7 +249,6 @@ test.describe('Gateway app-session JWT auth', () => {
         'rewise',
         'https://rewise.tuturuuu.localhost/verify-token?nextUrl=%2Fdashboard',
       ],
-      ['rewise', 'https://rewise.me/verify-token?nextUrl=%2Fdashboard'],
       ['tasks', 'http://localhost:7809/verify-token?nextUrl=%2Fdashboard'],
       [
         'tasks',

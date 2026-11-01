@@ -14,7 +14,7 @@ export default function RewiseMenuItem() {
         href={
           DEV_MODE
             ? getTuturuuuPortlessAppOrigin('rewise')
-            : 'https://rewise.me'
+            : 'https://rewise.tuturuuu.com'
         }
       >
         <DropdownMenuItem className="cursor-pointer">
