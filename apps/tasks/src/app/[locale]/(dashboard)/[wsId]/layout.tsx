@@ -16,6 +16,7 @@ import { TasksRouteProvider } from '@tuturuuu/tasks-ui/tu-do/tasks-route-context
 import { WorkspaceVisibilityProvider } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getRequestWorkspace as getWorkspace } from '@tuturuuu/utils/request-workspace';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { connection } from 'next/server';
@@ -80,8 +81,12 @@ export default async function Layout({ children, params }: LayoutProps) {
     cookieStore,
     sidebarBehavior
   );
+  const permissions = await getPermissions({ user, wsId });
   const navigationLinks = await getNavigationLinks({
     personalOrWsId: workspaceSlug,
+    access: {
+      canManageCycles: !!permissions?.containsPermission('manage_projects'),
+    },
   });
 
   return (
