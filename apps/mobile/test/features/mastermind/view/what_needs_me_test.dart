@@ -140,7 +140,7 @@ void main() {
     replies.undoOption(inboxItemId(1));
     await tester.pump();
     expect(replies.state.pendingOptions.keys, {inboxItemId(2)});
-    await tester.pump(const Duration(seconds: 6));
+    await tester.pump(const Duration(seconds: 31));
   });
 
   testWidgets('an ask answered meanwhile is reported as skipped', (

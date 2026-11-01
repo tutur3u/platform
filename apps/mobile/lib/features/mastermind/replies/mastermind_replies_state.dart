@@ -131,6 +131,30 @@ final class MastermindRepliesState {
     return pending?.versionHash == versionHash ? pending : null;
   }
 
+  /// Option replies still undoable (window not yet ended).
+  List<PendingOptionReply> get heldReplies => [
+    for (final pending in pendingOptions.values)
+      if (!pending.committed) pending,
+  ];
+
+  /// When the first still-undoable reply stops being undoable, or null.
+  DateTime? get earliestHoldUntil {
+    DateTime? earliest;
+    for (final entry in outbox) {
+      final until = entry.holdUntil;
+      final pending = pendingOptions[entry.itemId];
+      if (until == null ||
+          entry.status != OutboxStatus.pending ||
+          pending == null ||
+          pending.committed ||
+          pending.versionHash != entry.versionHash) {
+        continue;
+      }
+      if (earliest == null || until.isBefore(earliest)) earliest = until;
+    }
+    return earliest;
+  }
+
   ReplyItemStatus statusFor(String itemId) =>
       statuses[itemId] ?? ReplyItemStatus.idle;
 
