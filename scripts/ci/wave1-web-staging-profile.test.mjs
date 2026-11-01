@@ -12,7 +12,7 @@ test('the Web staging entry is ingress-admitted and outside the no-ingress publi
   // The legacy wave-1 publisher refuses ingress, so Web must never be listed there.
   assert.equal(Object.hasOwn(profiles.apps, 'web'), false);
   assert.equal(web.ingress, 'access-custom-domain');
-  assert.equal(web.stagingHost, 'web.staging.tutur3u.com');
+  assert.equal(web.stagingHost, 'web.tutur3u.com');
   assert.equal(web.zone, 'tutur3u.com');
   assert.equal(web.stagingWorker, 'tuturuuu-web-wave1-staging');
   assert.match(
@@ -107,8 +107,8 @@ test('the production-zone host scan flags every host form and spares package sco
     assert.notDeepEqual(productionZoneHosts(sample), [], sample);
   for (const sample of [
     '@tuturuuu/utils',
-    'web.staging.tutur3u.com',
-    'https://calendar.staging.tutur3u.com/x',
+    'web.tutur3u.com',
+    'https://calendar.tutur3u.com/x',
     'tuturuuu-web-staging',
     'tuturuuu-web-wave1-staging',
   ])

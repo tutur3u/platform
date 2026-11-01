@@ -1,5 +1,6 @@
+import { isStagingAppHostname } from '@tuturuuu/utils/staging-hosts';
 export const stagingProfile = {
-  host: 'contacts.staging.tutur3u.com',
+  host: 'contacts.tutur3u.com',
   zone: 'tutur3u.com',
   cookieDomain: '.staging.tutur3u.com',
   supabaseUrl: 'https://fxefojytwimjiqxseqag.supabase.co',
@@ -39,7 +40,7 @@ export function admittedOrigin(request: Request, env: ContactsCandidateEnv) {
       upstream.hostname === 'tuturuuu.com' ||
       upstream.hostname.endsWith('.tuturuuu.com') ||
       (!/^tuturuuu(?:-[a-z0-9-]+)?\.vercel\.app$/u.test(upstream.hostname) &&
-        !upstream.hostname.endsWith('.staging.tutur3u.com'))
+        !isStagingAppHostname(upstream.hostname))
     )
       return null;
     return upstream.origin;

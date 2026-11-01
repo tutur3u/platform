@@ -64,10 +64,10 @@ describe('Calendar cutover boundary', () => {
   it.each([
     'unknown.invalid',
     'tuturuuu-calendar.workers.dev',
-    'web.staging.tutur3u.com',
-    'calendar.staging.tutur3u.com',
+    'web.tutur3u.com',
+    'calendar.tutur3u.com',
     // Retired temporary production-smoke host; the canonical flip is accepted.
-    'calendar-cutover.staging.tutur3u.com',
+    'calendar-cutover.tutur3u.com',
     'calendar-cutover.tuturuuu.com',
     'calendar-staging.tuturuuu.com',
   ])('rejects %s before middleware, assets or SSR', async (host) => {

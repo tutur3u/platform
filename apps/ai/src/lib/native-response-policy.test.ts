@@ -13,7 +13,7 @@ function decorate(path: string, headers: HeadersInit = {}, method = 'GET') {
 describe('native root response policy', () => {
   it('rejects apex mounts and unknown hosts in the bridge configuration', () => {
     expect(config.mounts).toEqual({
-      rootHosts: ['ai.tuturuuu.com', 'ai.staging.tutur3u.com'],
+      rootHosts: ['ai.tuturuuu.com', 'ai.tutur3u.com'],
       mountHosts: [],
       unknownHost: 'reject',
     });

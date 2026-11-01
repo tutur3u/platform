@@ -68,7 +68,7 @@ describe('configured staging internal app registry', () => {
   it('registers env entries as internal apps with the token handoff', () => {
     vi.stubEnv(
       ENV_KEY,
-      'tasks:https://tasks.staging.tutur3u.com, platform:https://web.staging.tutur3u.com/'
+      'tasks:https://tasks.tutur3u.com, platform:https://web.tutur3u.com/'
     );
 
     expect(getConfiguredInternalAppDomains()).toEqual([
@@ -76,18 +76,18 @@ describe('configured staging internal app registry', () => {
         kind: 'internal',
         name: 'tasks',
         requiresExactOrigin: true,
-        url: 'https://tasks.staging.tutur3u.com',
+        url: 'https://tasks.tutur3u.com',
       },
       {
         kind: 'internal',
         name: 'platform',
         requiresExactOrigin: true,
-        url: 'https://web.staging.tutur3u.com',
+        url: 'https://web.tutur3u.com',
       },
     ]);
     expect(
       getInternalAppDomainByUrl(
-        'https://tasks.staging.tutur3u.com/verify-token?nextUrl=%2F'
+        'https://tasks.tutur3u.com/verify-token?nextUrl=%2F'
       )
     ).toMatchObject({ kind: 'internal', name: 'tasks' });
   });
@@ -95,7 +95,7 @@ describe('configured staging internal app registry', () => {
   it('accepts newline separated entries', () => {
     vi.stubEnv(
       ENV_KEY,
-      'tasks:https://tasks.staging.tutur3u.com\nmeet:https://meet.staging.tutur3u.com'
+      'tasks:https://tasks.tutur3u.com\nmeet:https://meet.tutur3u.com'
     );
 
     expect(
@@ -104,14 +104,14 @@ describe('configured staging internal app registry', () => {
   });
 
   it('matches only the exact registered origin', () => {
-    vi.stubEnv(ENV_KEY, 'tasks:https://tasks.staging.tutur3u.com');
+    vi.stubEnv(ENV_KEY, 'tasks:https://tasks.tutur3u.com');
 
     for (const url of [
-      'http://tasks.staging.tutur3u.com',
-      'https://tasks.staging.tutur3u.com:444',
-      'https://evil.tasks.staging.tutur3u.com',
-      'https://tasks.staging.tutur3u.com.evil.com',
-      'https://other.staging.tutur3u.com',
+      'http://tasks.tutur3u.com',
+      'https://tasks.tutur3u.com:444',
+      'https://evil.tasks.tutur3u.com',
+      'https://tasks.tutur3u.com.evil.com',
+      'https://other.tutur3u.com',
     ]) {
       expect(getInternalAppDomainByUrl(url)).toBeNull();
     }
@@ -124,35 +124,33 @@ describe('configured staging internal app registry', () => {
       ENV_KEY,
       [
         'no-separator',
-        ':https://missing-name.staging.tutur3u.com',
-        'Bad Name:https://bad-name.staging.tutur3u.com',
-        'cms:http://insecure-app.staging.tutur3u.com',
-        'cms:wss://socket.staging.tutur3u.com',
+        ':https://missing-name.tutur3u.com',
+        'Bad Name:https://bad-name.tutur3u.com',
+        'cms:http://insecure-app.tutur3u.com',
+        'cms:wss://socket.tutur3u.com',
         'cms:https://*.staging.tutur3u.com',
         'cms:https://*',
-        'cms:https://pathy-app.staging.tutur3u.com/some/path',
-        'cms:https://query-app.staging.tutur3u.com/?a=1',
-        'cms:https://user:pass@creds-app.staging.tutur3u.com',
+        'cms:https://pathy-app.tutur3u.com/some/path',
+        'cms:https://query-app.tutur3u.com/?a=1',
+        'cms:https://user:pass@creds-app.tutur3u.com',
         'cms:not a url',
-        'docs:https://ok-app.staging.tutur3u.com',
+        'cms:https://cms.tutur3u.com',
       ].join(',')
     );
 
     expect(getConfiguredInternalAppDomains()).toEqual([
       {
         kind: 'internal',
-        name: 'docs',
+        name: 'cms',
         requiresExactOrigin: true,
-        url: 'https://ok-app.staging.tutur3u.com',
+        url: 'https://cms.tutur3u.com',
       },
     ]);
     expect(warn).toHaveBeenCalled();
     expect(
-      getInternalAppDomainByUrl('http://insecure-app.staging.tutur3u.com')
+      getInternalAppDomainByUrl('http://insecure-app.tutur3u.com')
     ).toBeNull();
-    expect(
-      getAppDomainByUrl('https://pathy-app.staging.tutur3u.com')
-    ).toBeNull();
+    expect(getAppDomainByUrl('https://pathy-app.tutur3u.com')).toBeNull();
   });
 
   it('returns nothing when unset or blank', () => {
@@ -175,7 +173,7 @@ describe('configured staging internal app registry', () => {
       vi.stubEnv(COOKIE_ENV_KEY, cookieDomain);
       vi.stubEnv(
         ENV_KEY,
-        'tasks:https://tasks.staging.tutur3u.com,platform:https://tuturuuu.com'
+        'tasks:https://tasks.tutur3u.com,platform:https://tuturuuu.com'
       );
 
       expect(getConfiguredInternalAppDomains()).toEqual([]);
@@ -183,7 +181,7 @@ describe('configured staging internal app registry', () => {
         APP_DOMAIN_MAP.length + getConfiguredExternalAppDomains().length
       );
       expect(
-        getInternalAppDomainByUrl('https://tasks.staging.tutur3u.com/x')
+        getInternalAppDomainByUrl('https://tasks.tutur3u.com/x')
       ).toBeNull();
     }
   );
@@ -196,24 +194,21 @@ describe('configured staging internal app registry', () => {
       [
         'platform:https://tuturuuu.com',
         'tasks:https://tasks.tuturuuu.com',
-        'calendar:https://calendar.tutur3u.com',
+        'calendar:https://calendar.staging.tutur3u.com',
         'drive:https://drive.example.com',
         'chat:https://evil-staging.tutur3u.com',
-        'ai:https://tasks.staging.tutur3u.com.evil.test',
-        'cms:https://cms.staging.tutur3u.com:8443',
-        'docs:https://docs.staging.tutur3u.com:443',
-        'learn:https://learn.staging.tutur3u.com.',
-        'meet:https://meet.staging.tutur3u.com',
+        'ai:https://tasks.tutur3u.com.evil.test',
+        'cms:https://cms.tutur3u.com:8443',
+        'docs:https://docs.tutur3u.com:443',
+        'learn:https://learn.tutur3u.com.',
+        'meet:https://meet.tutur3u.com',
         'platform:https://staging.tutur3u.com',
       ].join(',')
     );
 
     expect(
       getConfiguredInternalAppDomains().map((entry) => [entry.name, entry.url])
-    ).toEqual([
-      ['meet', 'https://meet.staging.tutur3u.com'],
-      ['platform', 'https://staging.tutur3u.com'],
-    ]);
+    ).toEqual([['meet', 'https://meet.tutur3u.com']]);
     expect(warn).toHaveBeenCalled();
   });
 
@@ -222,7 +217,7 @@ describe('configured staging internal app registry', () => {
 
     vi.stubEnv(
       ENV_KEY,
-      'brand-new-app:https://new.staging.tutur3u.com,tasks:https://tasks.staging.tutur3u.com'
+      'brand-new-app:https://new.tutur3u.com,tasks:https://tasks.tutur3u.com'
     );
 
     expect(
@@ -253,7 +248,7 @@ describe('configured staging internal app registry', () => {
   it('stops resolving production app origins on the isolated staging deployment', () => {
     vi.stubEnv(
       ENV_KEY,
-      'tasks:https://tasks.staging.tutur3u.com,platform:https://web.staging.tutur3u.com'
+      'tasks:https://tasks.tutur3u.com,platform:https://web.tutur3u.com'
     );
 
     for (const url of [
@@ -263,7 +258,7 @@ describe('configured staging internal app registry', () => {
       expect(getAppDomainByUrl(url), url).toBeNull();
     }
     expect(
-      getAppDomainByUrl('https://tasks.staging.tutur3u.com/verify-token')
+      getAppDomainByUrl('https://tasks.tutur3u.com/verify-token')
     ).toMatchObject({ kind: 'internal', name: 'tasks' });
   });
 
@@ -273,7 +268,7 @@ describe('configured staging internal app registry', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const before = getAppDomainByUrl('https://tasks.tuturuuu.com/x');
 
-    vi.stubEnv(ENV_KEY, 'tasks:https://tasks.staging.tutur3u.com');
+    vi.stubEnv(ENV_KEY, 'tasks:https://tasks.tutur3u.com');
 
     expect(getAppDomainByUrl('https://tasks.tuturuuu.com/x')).toEqual(before);
   });

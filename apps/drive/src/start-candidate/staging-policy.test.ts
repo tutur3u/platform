@@ -63,7 +63,7 @@ describe('Drive staging isolation', () => {
       new Response('private', {
         headers: { 'Cache-Control': 'public, max-age=3600' },
       }),
-      { request: new Request('https://drive.staging.tutur3u.com'), env: {} }
+      { request: new Request('https://drive.tutur3u.com'), env: {} }
     );
     expect(response?.headers.get('Cache-Control')).toBe('private, no-store');
     expect(response?.headers.get('X-Frame-Options')).toBe('DENY');

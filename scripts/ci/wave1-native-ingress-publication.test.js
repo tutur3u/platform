@@ -33,7 +33,7 @@ for (const [label, mutate, message] of [
     'a capturing zone route',
     (s) => {
       s.topology.routes.result.push({
-        pattern: 'calendar.staging.tutur3u.com/*',
+        pattern: 'calendar.tutur3u.com/*',
         script: 'tuturuuu-calendar',
       });
     },

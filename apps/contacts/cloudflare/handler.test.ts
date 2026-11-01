@@ -61,10 +61,10 @@ describe('Contacts candidate admission', () => {
   );
   it.each([
     'https://tuturuuu.com',
-    'https://other.staging.tutur3u.com',
-    'https://contacts.staging.tutur3u.com.evil.test',
-    'http://contacts.staging.tutur3u.com',
-    'https://contacts.staging.tutur3u.com:444',
+    'https://other.tutur3u.com',
+    'https://contacts.tutur3u.com.evil.test',
+    'http://contacts.tutur3u.com',
+    'https://contacts.tutur3u.com:444',
   ])('rejects host %s', async (host) => {
     const { handler, fetcher } = setup();
     expect((await handler(new Request(`${host}/`), env)).status).toBe(503);

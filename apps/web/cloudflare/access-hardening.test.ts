@@ -100,10 +100,7 @@ describe('OPTIONS is answered locally (N20, V5b)', () => {
   it('never calls Next, Start or the Access verifier, even when Access would deny', async () => {
     const { handler, fetcher, start, verify } = setup(async () => false);
     for (const [path, extra] of [
-      [
-        '/api/v1/workspaces',
-        { origin: 'https://calendar.staging.tutur3u.com' },
-      ],
+      ['/api/v1/workspaces', { origin: 'https://calendar.tutur3u.com' }],
       ['/login', {}],
     ] as const) {
       const response = await handler(
@@ -138,9 +135,9 @@ describe('OPTIONS is answered locally (N20, V5b)', () => {
         }),
         env
       );
-    const allowed = await ask('https://calendar.staging.tutur3u.com');
+    const allowed = await ask('https://calendar.tutur3u.com');
     expect(allowed.headers.get('access-control-allow-origin')).toBe(
-      'https://calendar.staging.tutur3u.com'
+      'https://calendar.tutur3u.com'
     );
     expect(allowed.headers.get('access-control-allow-credentials')).toBe(
       'true'
@@ -150,10 +147,10 @@ describe('OPTIONS is answered locally (N20, V5b)', () => {
     );
     for (const denied of [
       'https://calendar.tuturuuu.com',
-      'https://a.b.staging.tutur3u.com',
-      'http://calendar.staging.tutur3u.com',
-      'https://calendar.staging.tutur3u.com:444',
-      'https://calendar.staging.tutur3u.com.evil.test',
+      'https://a.b.tutur3u.com',
+      'http://calendar.tutur3u.com',
+      'https://calendar.tutur3u.com:444',
+      'https://calendar.tutur3u.com.evil.test',
       'null',
     ])
       expect(

@@ -434,7 +434,7 @@ test('renderManagedProjectProxyServerBlocks drops reserved and invalid hostnames
         'DEV.tuturuuu.com',
         'Forms.Tuturuuu.com.',
         'calendar-staging.tuturuuu.com',
-        'web.staging.tutur3u.com',
+        'web.tutur3u.com',
         'bad host.example.com',
         'victim.example.com;\nreturn 200 "pwned";\n#',
       ],

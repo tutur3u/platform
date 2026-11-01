@@ -39,7 +39,7 @@ test('accepts each artifact carrying only its own folded host list', () => {
     // Shared URL constants may still name production hosts in staging bytes.
     [
       'staging',
-      ['calendar.staging.tutur3u.com'],
+      ['calendar.tutur3u.com'],
       'const og = "https://calendar.tuturuuu.com/og.png";',
     ],
   ]) {
@@ -48,7 +48,7 @@ test('accepts each artifact carrying only its own folded host list', () => {
       'client/assets/app.js': mounts(hosts),
       // Source maps embed both branches of source; they are never scanned.
       'server/index.js.map': mounts([
-        'calendar.staging.tutur3u.com',
+        'calendar.tutur3u.com',
         'calendar.tuturuuu.com',
       ]),
     });
@@ -66,16 +66,16 @@ test('rejects cross-environment hosts, the production Supabase ref and unfolded 
     [
       'production',
       {
-        'server/index.js': `${mounts(['calendar.tuturuuu.com'])} "calendar.staging.tutur3u.com"`,
+        'server/index.js': `${mounts(['calendar.tuturuuu.com'])} "calendar.tutur3u.com"`,
       },
-      /contains calendar\.staging/,
+      /contains calendar\.tutur3u/,
     ],
     // N9 bytes: the staging artifact keeps the production root host.
     [
       'staging',
       {
         'server/index.js': mounts([
-          'calendar.staging.tutur3u.com',
+          'calendar.tutur3u.com',
           'calendar.tuturuuu.com',
         ]),
       },
@@ -89,14 +89,14 @@ test('rejects cross-environment hosts, the production Supabase ref and unfolded 
     [
       'staging',
       {
-        'server/index.js': `${mounts(['calendar.staging.tutur3u.com'])} "https://nzamlzqfdwaaxdefwraj.supabase.co"`,
+        'server/index.js': `${mounts(['calendar.tutur3u.com'])} "https://nzamlzqfdwaaxdefwraj.supabase.co"`,
       },
       /nzamlzqfdwaaxdefwraj/,
     ],
     [
       'production',
       {
-        'server/index.js': `${mounts(['calendar.tuturuuu.com'])} "calendar-cutover.staging.tutur3u.com"`,
+        'server/index.js': `${mounts(['calendar.tuturuuu.com'])} "calendar-cutover.tutur3u.com"`,
       },
       /calendar-cutover/,
     ],

@@ -229,14 +229,14 @@ test('staging guard covers docs, plugins and docs-internal and honors the allowl
   );
   write(
     'apps/docs/home.mdx',
-    `${header}Use web.staging.tutur3u.com and tuturuuu-web-wave1-staging.\nSet VERCEL_AUTOMATION_BYPASS_SECRET and my.workers.dev.\n`
+    `${header}Use web.tutur3u.com and tuturuuu-web-wave1-staging.\nSet VERCEL_AUTOMATION_BYPASS_SECRET and my.workers.dev.\n`
   );
   write(
     'apps/docs/ok.mdx',
-    `${header}Placeholders <app>.staging.tutur3u.com and <sub>.workers.dev pass; AUTH_BYPASS is allowlisted.\n`
+    `${header}Placeholders <app>.tutur3u.com and <sub>.workers.dev pass; AUTH_BYPASS is allowlisted.\n`
   );
-  write('plugins/p/ref.md', 'Host calendar.staging.tutur3u.com\n');
-  write('docs-internal/runbook.mdx', 'Host web.staging.tutur3u.com\n');
+  write('plugins/p/ref.md', 'Host calendar.tutur3u.com\n');
+  write('docs-internal/runbook.mdx', 'Host web.tutur3u.com\n');
   write(
     'scripts/docs-safety-allowlist.json',
     JSON.stringify({

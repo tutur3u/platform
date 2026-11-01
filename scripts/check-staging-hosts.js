@@ -340,7 +340,7 @@ function check(root = process.cwd()) {
 if (require.main === module) {
   const failures = check();
   if (failures.length) {
-    console.error(`Use <app>.staging.tutur3u.com:\n${failures.join('\n')}`);
+    console.error(`Use <app>.tutur3u.com:\n${failures.join('\n')}`);
     process.exitCode = 1;
   }
 }

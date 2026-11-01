@@ -33,7 +33,7 @@ const access =
 const foreignHost =
   app === 'calendar'
     ? environment === 'production'
-      ? 'calendar.staging.tutur3u.com'
+      ? 'calendar.tutur3u.com'
       : 'calendar.tuturuuu.com'
     : null;
 let clean = false;
@@ -179,9 +179,7 @@ try {
         const target = new URL(page.headers.get('location'));
         assert.equal(
           target.hostname,
-          environment === 'production'
-            ? 'tuturuuu.com'
-            : 'web.staging.tutur3u.com'
+          environment === 'production' ? 'tuturuuu.com' : 'web.tutur3u.com'
         );
         assert.ok(target.pathname.includes('login'));
       }
