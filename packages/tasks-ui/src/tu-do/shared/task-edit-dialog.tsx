@@ -49,9 +49,9 @@ import { DescriptionOverflowWarningDialog } from './description-overflow-warning
 import { createInitialSuggestionState } from './mention-system/types';
 import { SyncWarningDialog } from './sync-warning-dialog';
 import {
+  getTaskDialogContentClassName,
   resolveTaskDialogOpeningPresentation,
   TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME,
-  TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME,
   type TaskDialogPresentation,
   type TaskDialogPresentationPreferences,
 } from './task-dialog-presentation';
@@ -157,6 +157,7 @@ import {
   resolveInlineTaskTargetWorkspaceId,
 } from './task-edit-dialog/utils/inline-task-target-list';
 import { getTaskMentionTranslations } from './task-edit-dialog/utils/mention-translations';
+import { TaskPanelResizeHandle } from './task-panel-resize-handle';
 import {
   setTaskPanelOpen,
   useIsTaskPanelSurfaceActive,
@@ -2619,13 +2620,11 @@ export function TaskEditDialog({
                 ? 'panel'
                 : 'default'
           }
-          className={
-            showCompactDialog
-              ? 'w-[min(calc(100vw-2rem),30rem)] max-w-[30rem] gap-0 overflow-visible rounded-lg border p-0 shadow-xl'
-              : showFocusedDialog
-                ? TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME
-                : undefined
-          }
+          className={getTaskDialogContentClassName({
+            compact: showCompactDialog,
+            focused: showFocusedDialog,
+            panel: isPanel,
+          })}
           onContextMenu={(e) => {
             if (shouldPreserveNativeContextMenu(e.target)) {
               return;
@@ -2654,6 +2653,7 @@ export function TaskEditDialog({
               e.preventDefault();
           }}
         >
+          {isPanel ? <TaskPanelResizeHandle /> : null}
           {showCompactDialog ? (
             <CompactTaskDialogPanel
               title={compactHeaderInfo.title}

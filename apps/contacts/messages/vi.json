@@ -8015,6 +8015,7 @@
     "create_description": "Tạo bảng nhiệm vụ",
     "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể.",
     "dialog": {
+      "resize_panel": "Đổi độ rộng bảng công việc",
       "after_deadline": "sau hạn chót",
       "all_changes_synced": "Đã đồng bộ tất cả thay đổi",
       "auto_schedule": "Tự động lên lịch (cho tôi)",

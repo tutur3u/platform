@@ -27,6 +27,27 @@ export interface TaskDialogPresentationPreferences {
 export const TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME =
   'h-[min(92dvh,60rem)] w-[min(calc(100vw-1.5rem),92rem)] max-w-[92rem] gap-0 overflow-hidden rounded-xl border p-0 shadow-2xl sm:max-w-5xl';
 
+const TASK_DIALOG_COMPACT_CONTENT_CLASS_NAME =
+  'w-[min(calc(100vw-2rem),30rem)] max-w-[30rem] gap-0 overflow-visible rounded-lg border p-0 shadow-xl';
+// The side panel's width follows the drag exactly; the slide-in is an animation.
+const TASK_PANEL_CONTENT_CLASS_NAME =
+  'transition-none sm:w-[var(--task-panel-width,36rem)]';
+
+/** The dialog content's classes for each presentation. */
+export function getTaskDialogContentClassName({
+  compact,
+  focused,
+  panel,
+}: {
+  compact: boolean;
+  focused: boolean;
+  panel: boolean;
+}) {
+  if (compact) return TASK_DIALOG_COMPACT_CONTENT_CLASS_NAME;
+  if (focused) return TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME;
+  return panel ? TASK_PANEL_CONTENT_CLASS_NAME : undefined;
+}
+
 /**
  * The dialog's content column, which owns its own scrolling.
  *
