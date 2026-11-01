@@ -13,6 +13,8 @@ import {
 import { mfaProofFromVerifiedClaims } from '@tuturuuu/utils/required-mfa-policy';
 import { checkRequiredAccountMfa } from '@tuturuuu/utils/required-mfa-request';
 import { createMfaTransfer } from '@tuturuuu/utils/required-mfa-transfer';
+import { sessionAssuranceFromVerifiedClaims } from '@tuturuuu/utils/session-assurance';
+import { createSessionAssuranceTransfer } from '@tuturuuu/utils/session-assurance-transfer';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
@@ -246,16 +248,25 @@ async function createCrossAppReturn(request: NextRequest) {
       { status: assurance.status === 'required' ? 403 : 503 }
     );
   const verifiedClaims = await supabase.auth.getClaims();
+  const sessionClaims =
+    verifiedClaims.data?.claims?.sub === user.id && !verifiedClaims.error
+      ? verifiedClaims.data.claims
+      : null;
   const proof =
     assurance.proof ??
-    (verifiedClaims.data?.claims?.sub === user.id && !verifiedClaims.error
-      ? mfaProofFromVerifiedClaims(verifiedClaims.data.claims)
-      : null);
+    (sessionClaims ? mfaProofFromVerifiedClaims(sessionClaims) : null);
   const mfaTransfer = createMfaTransfer(user.id, target.targetApp, proof);
+  // The handed-off session's own aal/amr, signed so exchange can trust it.
+  const assuranceTransfer = createSessionAssuranceTransfer(
+    user.id,
+    target.targetApp,
+    sessionAssuranceFromVerifiedClaims(sessionClaims)
+  );
   const mintArgs = {
     p_expiry_seconds: 300,
     p_origin_app: 'web',
     p_session_data: {
+      ...(assuranceTransfer ? { assuranceTransfer } : {}),
       email: user.email ?? null,
       ...(mfaTransfer ? { mfaTransfer } : {}),
     },

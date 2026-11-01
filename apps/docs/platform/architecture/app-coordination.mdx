@@ -206,7 +206,8 @@ CLI-only APIs.
    the user can accept or reject the invitation in Tuturuuu first.
 8. Tuturuuu validates the app secret and cross-app token, then returns a
    short-lived bearer token for Tuturuuu APIs plus the normalized authorized
-   `workspaceId`.
+   `workspaceId` and, when known, the session's `aal` and `amr` (see
+   [Session assurance](#session-assurance)).
 
 External apps should store only their own app secret and local session material.
 They should send Tuturuuu API calls with the returned bearer token and should
@@ -259,6 +260,34 @@ never receive a challenge-bound token. In the database,
 coverage lives in `apps/database/supabase/tests/cross-app-handoff-pkce.sql`,
 `apps/web/src/app/api/v1/auth/cross-app-return/route-pkce.test.ts` and
 `apps/web/src/app/api/v1/auth/app-token/exchange/route-pkce.test.ts`.
+
+### Session assurance
+
+The exchange response (and every refresh response, which has the same body)
+reports how strongly the handed-off Tuturuuu session was authenticated:
+
+| Field | Values | Meaning |
+| --- | --- | --- |
+| `aal` | `"aal1"` or `"aal2"` | Supabase authenticator assurance level of the session the handoff was minted from. `aal2` means the session completed a second factor. |
+| `amr` | string array, e.g. `["password", "totp"]` | Authentication method names from that session's `amr`, without timestamps. Present only when the session reported methods. |
+
+Both fields are derived server-side from the verified Supabase session claims
+when `POST /api/v1/auth/cross-app-return` mints the handoff. They travel in a
+signed, five-minute `assurance:transfer` token bound to the user and target app,
+then as signed `aal`/`amr` claims on the issued access and refresh tokens, so a
+refresh reports the original session's level. Request bodies and caller-written
+handoff session data are never trusted. When the level is unknown (for example
+a handoff or refresh token issued before this field existed) both fields are
+omitted.
+
+Apps must treat a missing `aal` as `aal1`. An app that requires MFA must check
+`aal === "aal2"` and otherwise send the user back through central login.
+`aal` reflects the Supabase session itself; an account-level MFA policy satisfied
+another way (for example a mobile approval) is still enforced by Tuturuuu but
+does not raise the reported `aal`. Regression coverage lives in
+`packages/utils/src/session-assurance.test.ts`,
+`apps/web/src/app/api/v1/auth/cross-app-return/route-assurance.test.ts` and
+`apps/web/src/app/api/v1/auth/app-token/exchange/route-assurance.test.ts`.
 
 ### App-owned Drive attachments
 

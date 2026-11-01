@@ -1,6 +1,11 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 
 import { isMfaSessionProof, type MfaSessionProof } from './required-mfa-policy';
+import {
+  isSessionAmr,
+  isSessionAssuranceLevel,
+  type SessionAssuranceLevel,
+} from './session-assurance';
 
 const TOKEN_PREFIX = 'ttr_app_';
 const TOKEN_ISSUER = 'tuturuuu';
@@ -10,6 +15,9 @@ const LOCAL_DEVELOPMENT_SECRET =
   'tuturuuu-local-development-app-coordination-secret';
 
 export type AppCoordinationTokenClaims = {
+  /** Supabase assurance level of the session the token was issued from. */
+  aal?: SessionAssuranceLevel;
+  amr?: string[];
   aud: typeof TOKEN_AUDIENCE;
   email: string | null;
   exp: number;
@@ -25,6 +33,8 @@ export type AppCoordinationTokenClaims = {
 };
 
 export type AppCoordinationTokenPayload = {
+  aal?: SessionAssuranceLevel;
+  amr?: string[];
   email?: string | null;
   expiresInSeconds?: number;
   mfa?: MfaSessionProof;
@@ -117,6 +127,9 @@ function isClaims(value: unknown): value is AppCoordinationTokenClaims {
 
   return (
     (claims.mfa === undefined || isMfaSessionProof(claims.mfa)) &&
+    (claims.aal === undefined || isSessionAssuranceLevel(claims.aal)) &&
+    (claims.amr === undefined ||
+      (claims.aal !== undefined && isSessionAmr(claims.amr))) &&
     claims.typ === 'app_coordination' &&
     claims.iss === TOKEN_ISSUER &&
     claims.aud === TOKEN_AUDIENCE &&
@@ -160,6 +173,13 @@ export function createAppCoordinationToken(
   if (payload.mfa !== undefined && !isMfaSessionProof(payload.mfa)) {
     throw new Error('Invalid MFA session proof');
   }
+  if (
+    (payload.aal !== undefined && !isSessionAssuranceLevel(payload.aal)) ||
+    (payload.amr !== undefined &&
+      (payload.aal === undefined || !isSessionAmr(payload.amr)))
+  ) {
+    throw new Error('Invalid session assurance');
+  }
   const secret = getSigningSecret(options.secret);
   const nowSeconds = Math.floor((options.now ?? new Date()).getTime() / 1000);
   const expiresInSeconds =
@@ -169,6 +189,8 @@ export function createAppCoordinationToken(
     typ: 'JWT',
   };
   const claims: AppCoordinationTokenClaims = {
+    ...(payload.aal ? { aal: payload.aal } : {}),
+    ...(payload.aal && payload.amr?.length ? { amr: payload.amr } : {}),
     aud: TOKEN_AUDIENCE,
     email: payload.email ?? null,
     exp: nowSeconds + expiresInSeconds,

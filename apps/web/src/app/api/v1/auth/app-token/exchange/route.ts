@@ -14,6 +14,11 @@ import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
 import { isRequiredMfaProofAllowed } from '@tuturuuu/utils/required-mfa-app-session';
 import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
 import { readMfaTransfer } from '@tuturuuu/utils/required-mfa-transfer';
+import type { SessionAssurance } from '@tuturuuu/utils/session-assurance';
+import {
+  readSessionAssuranceTransfer,
+  sessionAssuranceFromAppCoordinationClaims,
+} from '@tuturuuu/utils/session-assurance-transfer';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { BASE_URL } from '@/constants/common';
@@ -67,6 +72,7 @@ const exchangeSchema = z.object({
 
 type CrossAppValidationRow = {
   session_data?: {
+    assuranceTransfer?: unknown;
     email?: unknown;
     mfaTransfer?: unknown;
   } | null;
@@ -441,6 +447,8 @@ async function exchangeAppToken(request: NextRequest) {
   let authIdentity: AuthUserIdentity;
   let userId: string;
   let mfa: MfaSessionProof | null = null;
+  // Only server-signed claims; never request or caller-writable session data.
+  let assurance: SessionAssurance | null = null;
 
   if (refreshToken) {
     const refreshClaims = await verifyExchangeRefreshToken({
@@ -471,6 +479,7 @@ async function exchangeAppToken(request: NextRequest) {
 
     userId = refreshClaims.sub;
     mfa = refreshClaims.mfa ?? null;
+    assurance = sessionAssuranceFromAppCoordinationClaims(refreshClaims);
     authIdentity = await getAuthUserIdentity({
       sbAdmin,
       sessionData: null,
@@ -524,6 +533,11 @@ async function exchangeAppToken(request: NextRequest) {
     userId = validationRow?.user_id ?? '';
     mfa = readMfaTransfer(
       validationRow?.session_data?.mfaTransfer,
+      userId,
+      resolvedTarget.targetApp
+    );
+    assurance = readSessionAssuranceTransfer(
+      validationRow?.session_data?.assuranceTransfer,
       userId,
       resolvedTarget.targetApp
     );
@@ -621,6 +635,7 @@ async function exchangeAppToken(request: NextRequest) {
   });
 
   return createExchangeTokenResponse({
+    assurance,
     mfa,
     email: userProfile.email ?? authIdentity.email,
     normalizedWorkspaceId:
