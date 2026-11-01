@@ -77,6 +77,25 @@ function watchTracksEnded(stream: MediaStream, onEnded: () => void) {
   };
 }
 
+/**
+ * Owns the ~16 Hz meter level so sampling re-renders only the meter, not the
+ * whole lobby (preview, pickers, name form).
+ */
+function LiveMicMeter({
+  audioEnabled,
+  stream,
+}: {
+  audioEnabled: boolean;
+  stream: MediaStream | null;
+}) {
+  const [level, setLevel] = useState(0);
+  useEffect(() => {
+    if (!stream) return;
+    return startMicrophoneMeter(stream, setLevel);
+  }, [stream]);
+  return <LobbyMicMeter audioEnabled={audioEnabled} level={level} />;
+}
+
 export interface LobbyJoinOptions {
   previewStream: MediaStream | null;
   audioEnabled: boolean;
@@ -157,7 +176,7 @@ export function Lobby({
 
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
-  const [micLevel, setMicLevel] = useState(0);
+  const [micStream, setMicStream] = useState<MediaStream | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -243,7 +262,6 @@ export function Lobby({
 
     let cancelled = false;
     let acquired: MediaStream | null = null;
-    let stopMeter: (() => void) | undefined;
     let unwatch: (() => void) | undefined;
 
     navigator.mediaDevices
@@ -258,7 +276,7 @@ export function Lobby({
         }
         setMicError(null);
         micStreamRef.current = next;
-        stopMeter = startMicrophoneMeter(next, setMicLevel);
+        setMicStream(next);
         unwatch = watchTracksEnded(next, () => {
           if (cancelled || micStreamRef.current !== next) return;
           if (audioDeviceId) setAudioDeviceId('');
@@ -276,17 +294,15 @@ export function Lobby({
           return;
         }
         setMicError(micBlockedMessage);
-        setMicLevel(0);
         setAudioEnabled(false);
       });
 
     return () => {
       cancelled = true;
       unwatch?.();
-      stopMeter?.();
       stopMediaStream(acquired);
       if (micStreamRef.current === acquired) micStreamRef.current = null;
-      setMicLevel(0);
+      setMicStream((current) => (current === acquired ? null : current));
     };
   }, [
     audioDeviceId,
@@ -331,7 +347,7 @@ export function Lobby({
     if (isJoining || waiting || !trimmed) return;
     stopMediaStream(micStreamRef.current);
     micStreamRef.current = null;
-    setMicLevel(0);
+    setMicStream(null);
     transferred.current = activeStream;
     onJoin({
       previewStream: activeStream,
@@ -374,7 +390,7 @@ export function Lobby({
             )}
 
             <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-background/70 via-background/20 to-transparent p-3">
-              <LobbyMicMeter audioEnabled={audioEnabled} level={micLevel} />
+              <LiveMicMeter audioEnabled={audioEnabled} stream={micStream} />
               <div className="flex items-center gap-2">
                 <Button
                   aria-label={audioEnabled ? t('mute') : t('unmute')}
@@ -384,10 +400,7 @@ export function Lobby({
                     !audioEnabled &&
                       'bg-dynamic-red text-white hover:bg-dynamic-red/90'
                   )}
-                  onClick={() => {
-                    if (audioEnabled) setMicLevel(0);
-                    setAudioEnabled((value) => !value);
-                  }}
+                  onClick={() => setAudioEnabled((value) => !value)}
                   size="icon"
                   type="button"
                   variant={audioEnabled ? 'secondary' : 'default'}
