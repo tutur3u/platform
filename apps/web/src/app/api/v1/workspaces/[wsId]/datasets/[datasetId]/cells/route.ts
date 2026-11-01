@@ -4,6 +4,11 @@ import {
   datasetCellParentsMatch,
   withDatasetAccess,
 } from '../../dataset-access';
+import {
+  cellDeleteBodySchema,
+  cellWriteBodySchema,
+  parseJsonBody,
+} from '../../dataset-body';
 
 interface Params {
   params: Promise<{
@@ -38,7 +43,9 @@ export async function GET(_: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   return withDatasetAccess(req, await params, async (supabase, scope) => {
     const { wsId, datasetId } = scope;
-    const { rowId, columnId, data } = await req.json();
+    const body = await parseJsonBody(req, cellWriteBodySchema);
+    if (!body.ok) return body.response;
+    const { rowId, columnId, data } = body.data;
 
     if (
       !(await datasetCellParentsMatch(supabase, {
@@ -80,7 +87,9 @@ export async function POST(req: Request, { params }: Params) {
 export async function PUT(req: Request, { params }: Params) {
   return withDatasetAccess(req, await params, async (supabase, scope) => {
     const { wsId, datasetId } = scope;
-    const { rowId, columnId, data } = await req.json();
+    const body = await parseJsonBody(req, cellWriteBodySchema);
+    if (!body.ok) return body.response;
+    const { rowId, columnId, data } = body.data;
     if (
       !(await datasetCellParentsMatch(supabase, {
         wsId,
@@ -117,7 +126,9 @@ export async function PUT(req: Request, { params }: Params) {
 export async function DELETE(req: Request, { params }: Params) {
   return withDatasetAccess(req, await params, async (supabase, scope) => {
     const { wsId, datasetId } = scope;
-    const { rowId, columnId } = await req.json();
+    const body = await parseJsonBody(req, cellDeleteBodySchema);
+    if (!body.ok) return body.response;
+    const { rowId, columnId } = body.data;
     if (
       !(await datasetCellParentsMatch(supabase, {
         wsId,

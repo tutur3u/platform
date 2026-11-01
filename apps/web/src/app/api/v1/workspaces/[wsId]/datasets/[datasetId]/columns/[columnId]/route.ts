@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { withDatasetAccess } from '../../../dataset-access';
+import { columnNameBodySchema, parseJsonBody } from '../../../dataset-body';
 
 interface Params {
   params: Promise<{
@@ -84,7 +85,9 @@ export async function PUT(request: Request, { params }: Params) {
         { message: 'Column not found' },
         { status: 404 }
       );
-    const { name } = await request.json();
+    const body = await parseJsonBody(request, columnNameBodySchema);
+    if (!body.ok) return body.response;
+    const { name } = body.data;
 
     const { error: updateError } = await supabase
       .from('workspace_dataset_columns')
