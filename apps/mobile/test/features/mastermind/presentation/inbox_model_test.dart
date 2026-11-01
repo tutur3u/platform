@@ -2,6 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 
+import '../../../helpers/mastermind_home_fixture.dart';
+import '../../../helpers/mastermind_replies_fixture.dart';
+
 final _now = DateTime.utc(2026, 11, 2, 10);
 
 NeedsYou _ask(
@@ -116,6 +119,27 @@ void main() {
     test('equal keys fall back to id', () {
       final groups = groupByTier([_ask('b'), _ask('a')], now: _now);
       expect(_ids(groups, InboxTier.decision), ['a', 'b']);
+    });
+  });
+
+  group('asker search', () {
+    test('matches the asker (by), case-insensitively', () {
+      final snapshot = parsedSnapshot(
+        inboxJson([
+          {...inboxItem(1), 'by': 'Synthetic Atlas'},
+          {...inboxItem(2), 'by': 'Synthetic Forge'},
+        ], security: false),
+      );
+      List<String> found(String query) => [
+        for (final group in MastermindInboxModel.from(
+          snapshot,
+          query: query,
+        ).tiers)
+          for (final item in group.items) item.by ?? '',
+      ];
+      expect(found('atlas'), ['Synthetic Atlas']);
+      expect(found(' FORGE '), ['Synthetic Forge']);
+      expect(found('synthetic'), hasLength(2));
     });
   });
 }

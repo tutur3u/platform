@@ -265,6 +265,7 @@ List<NeedsYou> _newestFirst(List<NeedsYou> items) {
 bool _matches(NeedsYou item, String needle) =>
     item.title.toLowerCase().contains(needle) ||
     item.body.toLowerCase().contains(needle) ||
+    (item.by?.toLowerCase().contains(needle) ?? false) ||
     (item.product?.wireName.toLowerCase().contains(needle) ?? false) ||
     (item.resolution?.toLowerCase().contains(needle) ?? false) ||
     selectableOptions(

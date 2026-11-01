@@ -44,4 +44,26 @@ void main() {
       '/mastermind/inbox?segment=resolved',
     );
   });
+
+  test('?q= round-trips on ask segments and is dropped elsewhere', () {
+    final location = inboxLocation(
+      tier: InboxTier.fyi,
+      search: ' deploy atlas ',
+    );
+    expect(
+      inboxSearchFromQuery(Uri.parse(location).queryParameters['q']),
+      'deploy atlas',
+    );
+    expect(Uri.parse(location).queryParameters['tier'], 'fyi');
+    expect(inboxSearchFromQuery('   '), isNull);
+    expect(inboxLocation(search: ''), '/mastermind/inbox');
+    expect(
+      inboxLocation(segment: InboxSegment.decisions, search: 'x'),
+      '/mastermind/inbox?segment=decisions',
+    );
+    expect(
+      inboxLocation(segment: InboxSegment.resolved, search: 'x'),
+      '/mastermind/inbox?segment=resolved&q=x',
+    );
+  });
 }

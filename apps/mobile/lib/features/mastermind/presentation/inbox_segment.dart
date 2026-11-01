@@ -49,18 +49,27 @@ InboxTier? inboxTierFromQuery(String? value) {
   return null;
 }
 
+/// The search text a `?q=` query carries, trimmed; null when blank.
+String? inboxSearchFromQuery(String? value) {
+  final text = value?.trim() ?? '';
+  return text.isEmpty ? null : text;
+}
+
 /// The Inbox location for [segment]. The segment lives in the URL so a Home
 /// link can open it, and switching is a `go`, never a push, so Back does not
 /// walk the segments. [tier] only rides with the Needs you segment, where the
-/// tiers exist.
+/// tiers exist, and [search] only with the segments that list asks.
 String inboxLocation({
   InboxSegment segment = InboxSegment.needsYou,
   InboxTier? tier,
+  String? search,
 }) {
+  final text = inboxSearchFromQuery(search);
   final query = {
     if (segment != defaultInboxSegment) 'segment': segment.queryValue,
     if (tier != null && segment == InboxSegment.needsYou)
       'tier': tier.queryValue,
+    if (text != null && segment.listsAsks) 'q': text,
   };
   return Uri(
     path: Routes.mastermindInbox,
