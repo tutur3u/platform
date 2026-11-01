@@ -183,7 +183,7 @@ test('stages the actual SDK closure without server dependencies or test-only fil
     repoRoot: path.resolve(__dirname, '../../..'),
     destination: path.join(destination, 'src'),
   });
-  assert.equal(sources.length, 25);
+  assert.equal(sources.length, 26);
   assert.equal(
     fs.existsSync(path.join(destination, 'src/cli/resources-test-fixtures.ts')),
     false
@@ -194,6 +194,9 @@ test('stages the actual SDK closure without server dependencies or test-only fil
     sources.includes('packages/internal-api/src/storage-export-links.ts')
   );
   assert.ok(sources.includes('packages/internal-api/src/internal-api-url.ts'));
+  assert.ok(
+    sources.includes('packages/internal-api/src/task-project-mutations.ts')
+  );
   assert.equal(
     fs.existsSync(
       path.join(destination, 'src/cli/devbox-playground-runtime.acceptance.ts')

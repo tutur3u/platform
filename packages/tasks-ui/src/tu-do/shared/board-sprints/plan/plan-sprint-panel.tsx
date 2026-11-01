@@ -125,7 +125,6 @@ export function PlanOwnerSection({
   onDrop,
   onOpen,
   owner,
-  ticketPrefix,
 }: {
   canEdit: boolean;
   dropActive: boolean;
@@ -135,7 +134,6 @@ export function PlanOwnerSection({
   onDrop: (event: DragEvent) => void;
   onOpen: (task: Task) => void;
   owner: PlanOwner;
-  ticketPrefix?: string | null;
 }) {
   const t = useTranslations('ws-task-boards.sprints');
   const { member, tasks } = owner;
@@ -168,11 +166,7 @@ export function PlanOwnerSection({
           onDragEnd={onDragEnd}
           onDragStart={(event) => writePlanDrag(event, task.id, member.id)}
         >
-          <PlanTaskTitle
-            className="flex-1 text-sm"
-            task={task}
-            ticketPrefix={ticketPrefix}
-          />
+          <PlanTaskTitle className="flex-1 text-sm" task={task} />
           <span className="whitespace-nowrap text-muted-foreground text-xs">
             {listsById.get(task.list_id)?.name}
           </span>

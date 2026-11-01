@@ -16,10 +16,13 @@ import { useTranslations } from 'next-intl';
 import type { HealthStatus, TaskPriority } from '../types';
 import { ProjectLeadSelector } from './project-lead-selector';
 import { useProjectOverview } from './project-overview-context';
+import { ProjectTicketKeyField } from './project-ticket-key-field';
 
 export function ProjectConfiguration() {
   const {
     showConfiguration: show,
+    editedTicketKey,
+    setEditedTicketKey,
     editedStatus,
     setEditedStatus,
     editedPriority,
@@ -52,6 +55,10 @@ export function ProjectConfiguration() {
         <h2 className="mb-5 font-semibold text-base">{t('title')}</h2>
 
         <div className="grid gap-5 md:grid-cols-2">
+          <ProjectTicketKeyField
+            value={editedTicketKey}
+            onChange={setEditedTicketKey}
+          />
           {/* Status */}
           <div className="space-y-2">
             <Label className="text-foreground/70 text-sm">

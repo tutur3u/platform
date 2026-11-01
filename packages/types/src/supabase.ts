@@ -36290,20 +36290,23 @@ export type Database = {
       };
       task_project_tasks: {
         Row: {
-          created_at: string | null;
+          created_at: string;
           project_id: string;
           task_id: string;
+          ticket_number: number;
         };
         ComputedFields: never;
         Insert: {
-          created_at?: string | null;
+          created_at?: string;
           project_id: string;
           task_id: string;
+          ticket_number?: number;
         };
         Update: {
-          created_at?: string | null;
+          created_at?: string;
           project_id?: string;
           task_id?: string;
+          ticket_number?: number;
         };
         Relationships: [
           {
@@ -36564,9 +36567,11 @@ export type Database = {
           id: string;
           lead_id: string | null;
           name: string;
+          next_ticket_number: number;
           priority: Database['public']['Enums']['task_priority'] | null;
           start_date: string | null;
           status: string | null;
+          ticket_key: string;
           updated_at: string | null;
           ws_id: string;
         };
@@ -36583,9 +36588,11 @@ export type Database = {
           id?: string;
           lead_id?: string | null;
           name: string;
+          next_ticket_number?: number;
           priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: string | null;
           status?: string | null;
+          ticket_key?: string;
           updated_at?: string | null;
           ws_id: string;
         };
@@ -36601,9 +36608,11 @@ export type Database = {
           id?: string;
           lead_id?: string | null;
           name?: string;
+          next_ticket_number?: number;
           priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: string | null;
           status?: string | null;
+          ticket_key?: string;
           updated_at?: string | null;
           ws_id?: string;
         };

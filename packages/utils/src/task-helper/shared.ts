@@ -13,6 +13,32 @@ export function getTicketIdentifier(
   return `${effectivePrefix}-${displayNumber}`.toUpperCase();
 }
 
+/** Project links are ordered by first join, then project id for timestamp ties. */
+export function getTaskTicketLabel(task: {
+  projects?: Task['projects'] | null;
+  ticket_projects?: Task['projects'] | null;
+}): string | null {
+  const first = [...(task.ticket_projects ?? task.projects ?? [])].sort(
+    (a, b) => {
+      const time = (value?: string | null) => {
+        const parsed = value ? Date.parse(value) : Number.NaN;
+        return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
+      };
+      return (
+        time(a.created_at) - time(b.created_at) || a.id.localeCompare(b.id)
+      );
+    }
+  )[0];
+  if (
+    !first?.ticket_key ||
+    !/^[A-Z][A-Z0-9]{1,9}$/.test(first.ticket_key) ||
+    !Number.isSafeInteger(first.ticket_number) ||
+    (first.ticket_number ?? 0) < 1
+  )
+    return null;
+  return `${first.ticket_key}-${first.ticket_number}`;
+}
+
 export function normalizeTaskSearchValue(value: string) {
   return value.trim().toLowerCase();
 }
