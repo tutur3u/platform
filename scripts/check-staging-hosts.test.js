@@ -173,9 +173,11 @@ test('scans every configuration location, not only app and script sources', () =
     'apps/mobile/lib/config.dart',
   ])
     assert.equal(scannedFile(file), true, file);
+  assert.equal(scannedFile('docs-internal/build/devops/runbook.mdx'), true);
+  assert.equal(scannedFile('docs-internal/README.md'), true);
   for (const file of [
     'scripts/check-staging-hosts.test.js',
-    'docs-internal/build/devops/wave1-native-publishers.mdx',
+    'apps/docs/build/devops/environments-release-flow.mdx',
     'packages/x/__tests__/hosts.ts',
     'bun.lock',
     'apps/web/public/logo.png',

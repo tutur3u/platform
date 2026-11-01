@@ -192,7 +192,7 @@ test('audit also applies the public-safety scan to docs-internal', (t) => {
   assert.ok(errors.every((error) => !error.includes('Unregistered')));
 });
 
-test('staging guard covers docs and plugins, skips docs-internal and honors the allowlist', (t) => {
+test('staging guard covers docs, plugins and docs-internal and honors the allowlist', (t) => {
   const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'docs-audit-'));
   t.after(() => fs.rmSync(fixture, { recursive: true, force: true }));
   const header = '---\ntitle: Home\ndescription: Test\n---\n';
@@ -238,8 +238,8 @@ test('staging guard covers docs and plugins, skips docs-internal and honors the 
   assert.ok(has('bypass secret name', 'home.mdx:'));
   assert.ok(has('workers.dev hostname', 'home.mdx:'));
   assert.ok(has('staging host', 'plugins/p/ref.md:'));
-  assert.ok(!errors.some((error) => error.includes('docs-internal')));
-  assert.ok(!errors.some((error) => error.includes('ok.mdx')));
+  assert.ok(has('staging host', 'docs-internal/runbook.mdx:'));
+  assert.ok(!errors.some((error) => error.includes('): ok.mdx')));
   assert.ok(
     errors.some((error) => error.startsWith('Invalid allowlist entry'))
   );
