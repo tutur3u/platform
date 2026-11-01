@@ -13,6 +13,7 @@ const {
   collect,
   generate,
   parseLock,
+  plannedFiles,
   routePath,
 } = require('./generate-docs-inventory');
 
@@ -243,4 +244,29 @@ test('staging guard covers docs, plugins and docs-internal and honors the allowl
   assert.ok(
     errors.some((error) => error.startsWith('Invalid allowlist entry'))
   );
+});
+
+test('inventory regeneration preserves audience metadata and collapsed tab navigation', () => {
+  const root = path.resolve(__dirname, '..');
+  const files = plannedFiles(root);
+  assert.equal(files.has('../docs.json'), false);
+  for (const [file, source] of files) {
+    const current = fs.readFileSync(path.join(root, 'apps/docs', file), 'utf8');
+    for (const key of ['updatedAt', 'audience']) {
+      const pattern = new RegExp(`^${key}:.*$`, 'm');
+      assert.match(source, pattern, file);
+      assert.equal(source.match(pattern)[0], current.match(pattern)[0], file);
+    }
+  }
+  const config = JSON.parse(
+    fs.readFileSync(path.join(root, 'apps/docs/docs.json'), 'utf8')
+  );
+  const reference = config.navigation.tabs.find(
+    (tab) => tab.tab === 'Reference'
+  );
+  const inventory = reference.groups
+    .flatMap((group) => group.pages)
+    .find((group) => group?.group === 'Repository inventory');
+  assert.equal(inventory.expanded, false);
+  assert(inventory.pages.every((page) => typeof page === 'string'));
 });
