@@ -548,6 +548,7 @@
           {
             "group": "Agent tools and contribution",
             "pages": [
+              "agents/quickstart",
               "build/development-tools/contributing-with-agents",
               "build/development-tools/codex-plugin",
               "build/development-tools/chatgpt-mcp",

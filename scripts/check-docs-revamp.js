@@ -25,6 +25,10 @@ function pages(value) {
 }
 const oldPages = pages(old.navigation);
 const nextPages = pages(next.navigation);
+// P3a adds one public entrypoint and corrects one relative anchor URL.
+const quickstart = 'agents/quickstart';
+const isP3a = old.navigation.tabs?.some((tab) => tab.tab === 'For agents');
+const expectedPages = isP3a ? [...oldPages, quickstart] : oldPages;
 assert.equal(
   new Set(nextPages).size,
   nextPages.length,
@@ -32,7 +36,7 @@ assert.equal(
 );
 assert.deepEqual(
   [...nextPages].sort(),
-  [...oldPages].sort(),
+  [...expectedPages].sort(),
   'Navigation page set changed'
 );
 const outsideNavigation = (source) =>
@@ -61,7 +65,19 @@ function split(source) {
 for (const [index, tab] of next.navigation.tabs.entries()) {
   for (const slug of pages(tab)) {
     const file = `apps/docs/${slug}.mdx`;
+    if (isP3a && slug === quickstart) {
+      const source = fs.readFileSync(file, 'utf8');
+      assert.match(source, /^audience: agents$/m);
+      assert.match(source, /^updatedAt: "2026-11-01"$/m);
+      continue;
+    }
     const original = split(git('show', `${base}:${file}`));
+    if (isP3a && slug === 'build/development-tools/without-docker') {
+      original[3] = original[3].replace(
+        '(documenting#mintlify-runtime-compatibility)',
+        '(/build/development-tools/documenting#mintlify-runtime-compatibility)'
+      );
+    }
     const current = split(fs.readFileSync(file, 'utf8'));
     assert.equal(current[3], original[3], `${file}: body changed`);
     const added = current[2]
@@ -101,9 +117,11 @@ for (const [index, tab] of next.navigation.tabs.entries()) {
 }
 assert.deepEqual(
   next.navigation.tabs[4].groups[0],
-  old.navigation.anchors[0].groups.find((group) => group.group === 'Learn'),
+  isP3a
+    ? old.navigation.tabs[4].groups[0]
+    : old.navigation.anchors[0].groups.find((group) => group.group === 'Learn'),
   'Learn hierarchy changed'
 );
 console.log(
-  `PASS: ${nextPages.length} pages preserved exactly once; paths, bodies, existing metadata, redirects and other configuration unchanged`
+  `PASS: ${nextPages.length} pages preserved exactly once; existing paths, bodies (except the P3a anchor fix), metadata, redirects and other configuration preserved`
 );
