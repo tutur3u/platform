@@ -249,11 +249,13 @@ target origin is not registered or cannot be resolved, the page shows a warning
 and asks the user to clear the broken return URL instead of silently falling back
 to the generic login form.
 
-Rewise at `https://rewise.me` and Nova at `https://nova.ai.vn` are registered
-internal satellites even though their production domains are outside
-`tuturuuu.com`. Central login, cross-app return validation, and token targeting
-accept those exact HTTPS origins alongside their registered Tuturuuu subdomains.
-The external production origins require an exact origin match: HTTP, custom
+Nova at `https://nova.ai.vn` is a registered internal satellite even though
+its production domain is outside `tuturuuu.com`. Central login, cross-app
+return validation, and token targeting accept that exact HTTPS origin alongside
+its registered Tuturuuu subdomain. Rewise is served only at
+`https://rewise.tuturuuu.com`; the expired `rewise.me` domain is not trusted
+anywhere and stays reserved so no managed project can claim it.
+The external production origin requires an exact origin match: HTTP, custom
 ports, subdomains, hostname look-alikes, and URLs containing user credentials
 are rejected. Unregistered preview hosts such as `cms-tuturuuu.vercel.app` remain
 blocked; CMS uses `https://cms.tuturuuu.com`. Localhost and Portless development

@@ -11,7 +11,6 @@ import {
 
 describe('registered production satellite origins', () => {
   it.each([
-    ['rewise', 'https://rewise.me'],
     ['nova', 'https://nova.ai.vn'],
     ['rewise', 'https://rewise.tuturuuu.com'],
     ['nova', 'https://nova.tuturuuu.com'],
@@ -25,23 +24,25 @@ describe('registered production satellite origins', () => {
     });
   });
 
-  it.each(['rewise.me', 'nova.ai.vn'])(
-    'requires the exact HTTPS origin for %s',
-    (host) => {
-      for (const origin of [
-        `http://${host}`,
-        `https://${host}:444`,
-        `https://${host}.evil.com`,
-        `https://evil${host}`,
-        `https://preview.${host}`,
-        `https://${host}@evil.com`,
-        `https://evil.com@${host}`,
-        `https://user:password@${host}`,
-      ]) {
-        expect(getAppDomainByUrl(`${origin}/verify-token`), origin).toBeNull();
-      }
+  it.each(['nova.ai.vn'])('requires the exact HTTPS origin for %s', (host) => {
+    for (const origin of [
+      `http://${host}`,
+      `https://${host}:444`,
+      `https://${host}.evil.com`,
+      `https://evil${host}`,
+      `https://preview.${host}`,
+      `https://${host}@evil.com`,
+      `https://evil.com@${host}`,
+      `https://user:password@${host}`,
+    ]) {
+      expect(getAppDomainByUrl(`${origin}/verify-token`), origin).toBeNull();
     }
-  );
+  });
+
+  it('no longer trusts the expired rewise.me domain', () => {
+    expect(getAppDomainByUrl('https://rewise.me/verify-token')).toBeNull();
+    expect(getInternalAppDomainByUrl('https://rewise.me')).toBeNull();
+  });
 
   it('keeps unregistered Vercel deployments blocked', () => {
     expect(
@@ -258,7 +259,6 @@ describe('configured staging internal app registry', () => {
     for (const url of [
       'https://tasks.tuturuuu.com/verify-token',
       'https://tuturuuu.com/verify-token',
-      'https://rewise.me/verify-token',
     ]) {
       expect(getAppDomainByUrl(url), url).toBeNull();
     }

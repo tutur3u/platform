@@ -224,8 +224,9 @@ and its focused regression coverage before adding a reason or changing middlewar
   enforces it.
 - Central-login app identity comes from `packages/utils/src/internal-domains.ts`,
   not the infrastructure project's reserved-host list or shared-cookie domains.
-  Rewise (`https://rewise.me`) and Nova (`https://nova.ai.vn`) are internal
-  satellites with exact HTTPS production origins outside `tuturuuu.com`.
+  Nova (`https://nova.ai.vn`) is an internal satellite with an exact HTTPS
+  production origin outside `tuturuuu.com`. Rewise is served only at
+  `https://rewise.tuturuuu.com`; the expired `rewise.me` must never be trusted.
   Preserve their registrations when changing canonical SEO hosts; verify the
   domain, cross-app mapping, and web return-validation regression suites.
 - **Never copy the multi-account vault into another app.**
