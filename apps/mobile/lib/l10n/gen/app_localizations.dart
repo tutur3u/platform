@@ -28140,6 +28140,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Recommended: {option}. {why}'**
   String mastermindAskCardRecommendedWhy(String option, String why);
+
+  /// No description provided for @mastermindInboxTierUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get mastermindInboxTierUrgent;
+
+  /// No description provided for @mastermindInboxTierDecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a decision'**
+  String get mastermindInboxTierDecision;
+
+  /// No description provided for @mastermindInboxTierFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'For your information'**
+  String get mastermindInboxTierFyi;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

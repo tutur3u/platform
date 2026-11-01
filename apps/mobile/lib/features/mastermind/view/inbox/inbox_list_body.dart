@@ -28,6 +28,7 @@ class InboxListBody extends StatelessWidget {
     required this.paging,
     required this.onClearFilters,
     this.now,
+    this.tierKeys = const {},
     super.key,
   });
 
@@ -37,6 +38,9 @@ class InboxListBody extends StatelessWidget {
 
   /// The section clock, for resolved ages.
   final DateTime? now;
+
+  /// Scroll targets for the tier headings, for `?tier=`.
+  final Map<InboxTier, GlobalKey> tierKeys;
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
@@ -94,6 +98,7 @@ class InboxListBody extends StatelessWidget {
     InboxGroup group, {
     required bool first,
   }) => Padding(
+    key: tierKeys[group.tier],
     padding: EdgeInsets.only(top: first ? 0 : AppLayout.sectionGap),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -173,6 +178,13 @@ class InboxListBody extends StatelessWidget {
 
   static String _groupTitle(BuildContext context, InboxGroup group) {
     final l10n = context.l10n;
+    if (group.tier case final tier?) {
+      return switch (tier) {
+        InboxTier.urgent => l10n.mastermindInboxTierUrgent,
+        InboxTier.decision => l10n.mastermindInboxTierDecision,
+        InboxTier.fyi => l10n.mastermindInboxTierFyi,
+      };
+    }
     if (group.resolved) {
       return switch (group.day) {
         final day? => Gmt7.date(

@@ -14987,4 +14987,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String mastermindAskCardRecommendedWhy(String option, String why) {
     return 'Đề xuất: $option. $why';
   }
+
+  @override
+  String get mastermindInboxTierUrgent => 'Khẩn cấp';
+
+  @override
+  String get mastermindInboxTierDecision => 'Cần bạn quyết định';
+
+  @override
+  String get mastermindInboxTierFyi => 'Để bạn biết';
 }

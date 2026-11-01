@@ -104,6 +104,18 @@ class _MastermindUndoAllBarState extends State<MastermindUndoAllBar> {
     final l10n = context.l10n;
     final left = _secondsLeft;
     final clock = '${left ~/ 60}:${(left % 60).toString().padLeft(2, '0')}';
+    final undo = TextButton(
+      style: TextButton.styleFrom(
+        minimumSize: const Size(
+          AppInterfaceTokens.minTouchTarget,
+          AppInterfaceTokens.minTouchTarget,
+        ),
+      ),
+      onPressed: widget.onUndoAll,
+      child: Text('${l10n.mastermindReplyUndo} (${widget.count})'),
+    );
+    // Large text: Undo-all moves under the count, like [ReplyUndoBar].
+    final large = mastermindLargeText(context);
     return MastermindGroup(
       children: [
         AppGroupedRow(
@@ -112,16 +124,10 @@ class _MastermindUndoAllBarState extends State<MastermindUndoAllBar> {
             liveRegion: true,
             child: Text('${widget.count} · $clock'),
           ),
-          trailing: TextButton(
-            style: TextButton.styleFrom(
-              minimumSize: const Size(
-                AppInterfaceTokens.minTouchTarget,
-                AppInterfaceTokens.minTouchTarget,
-              ),
-            ),
-            onPressed: widget.onUndoAll,
-            child: Text('${l10n.mastermindReplyUndo} (${widget.count})'),
-          ),
+          subtitle: large
+              ? Align(alignment: AlignmentDirectional.centerStart, child: undo)
+              : null,
+          trailing: large ? null : undo,
         ),
       ],
     );

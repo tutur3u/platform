@@ -15149,4 +15149,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String mastermindAskCardRecommendedWhy(String option, String why) {
     return 'Recommended: $option. $why';
   }
+
+  @override
+  String get mastermindInboxTierUrgent => 'Urgent';
+
+  @override
+  String get mastermindInboxTierDecision => 'Needs a decision';
+
+  @override
+  String get mastermindInboxTierFyi => 'For your information';
 }

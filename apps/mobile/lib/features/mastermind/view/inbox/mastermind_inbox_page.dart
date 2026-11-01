@@ -23,6 +23,7 @@ import 'package:mobile/features/mastermind/view/inbox/decisions_body.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_filters.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_list_body.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_segment_bar.dart';
+import 'package:mobile/features/mastermind/view/inbox/inbox_undo_all.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_what_needs_me.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
 import 'package:mobile/features/mastermind/view/inbox/pending_replies_section.dart';
@@ -51,8 +52,16 @@ class MastermindInboxPage extends StatefulWidget {
     this.initialSegment,
     this.onSegment,
     this.pageLoader,
+    this.initialTier,
+    this.initialSearch,
     super.key,
   });
+
+  /// The `?tier=` to scroll to on Needs you; null scrolls nowhere.
+  final InboxTier? initialTier;
+
+  /// The `?q=` the search starts with; null starts empty.
+  final String? initialSearch;
 
   /// Null opens the default segment (Chat while Iris is on).
   final InboxSegment? initialSegment;
@@ -64,8 +73,16 @@ class MastermindInboxPage extends StatefulWidget {
 }
 
 class _MastermindInboxPageState extends State<MastermindInboxPage> {
-  final _search = MastermindSearchController();
-  String _query = '';
+  late final _search = MastermindSearchController(
+    query: widget.initialSearch ?? '',
+  );
+  final _scroll = ScrollController();
+  final Map<InboxTier, GlobalKey> _tierKeys = {
+    for (final tier in InboxTier.values) tier: GlobalKey(),
+  };
+  late String _query = widget.initialSearch ?? '';
+  late InboxTier? _seeking = widget.initialTier;
+  bool _seekScheduled = false;
   Product? _product;
   late InboxSegment _segment = widget.initialSegment ?? defaultInboxSegment;
   late final InboxPagingController _paging = InboxPagingController(
@@ -83,6 +100,47 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
       _segment = widget.initialSegment ?? defaultInboxSegment;
       _paging.reset();
     }
+    // A link to another tier or search while the page is open; a segment
+    // change drops both from the URL and must not clear what is typed.
+    final tier = widget.initialTier;
+    if (tier != null && tier != oldWidget.initialTier) {
+      _seeking = tier;
+      _seekScheduled = false;
+    }
+    final search = widget.initialSearch;
+    if (search != null && search != oldWidget.initialSearch) {
+      _search.text.text = search;
+      _search.reveal();
+      _paging.reset();
+      _query = search;
+    }
+  }
+
+  /// Scrolls to [_seeking]'s heading. The list is lazy, so step down a screen
+  /// at a time until the heading is built, then bring it to the top.
+  void _seekTier(int attempt) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final tier = _seeking;
+      if (!mounted || tier == null) return;
+      final heading = _tierKeys[tier]?.currentContext;
+      if (heading != null) {
+        _seeking = null;
+        unawaited(Scrollable.ensureVisible(heading));
+        return;
+      }
+      if (!_scroll.hasClients || attempt >= 40) {
+        _seeking = null;
+        return;
+      }
+      final position = _scroll.position;
+      _scroll.jumpTo(
+        (position.pixels + position.viewportDimension).clamp(
+          0,
+          position.maxScrollExtent,
+        ),
+      );
+      _seekTier(attempt + 1);
+    });
   }
 
   @override
@@ -106,6 +164,7 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
   void dispose() {
     mastermindIrisCapability.removeListener(_irisChanged);
     _search.dispose();
+    _scroll.dispose();
     _paging.dispose();
     super.dispose();
   }
@@ -142,7 +201,17 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
             final model = asks
                 ? _askModel(ready.snapshot, lingering.values)
                 : null;
+            final seeking = _seeking;
+            if (seeking != null && model != null && !_seekScheduled) {
+              if (model.tiers.any((group) => group.tier == seeking)) {
+                _seekScheduled = true;
+                _seekTier(0);
+              } else {
+                _seeking = null;
+              }
+            }
             final list = AppPageScrollView(
+              controller: _scroll,
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
                 SliverToBoxAdapter(
@@ -174,6 +243,7 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
                     model: model,
                     paging: _paging,
                     onClearFilters: _clearFilters,
+                    tierKeys: _tierKeys,
                     now: freshness.time.add(freshness.age),
                   ),
               ],
@@ -264,7 +334,10 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
   ) => [
     if (_segment == InboxSegment.needsYou)
       InboxWhatNeedsMe(open: openAsks(snapshot)),
-    if (_segment != InboxSegment.resolved) const PendingRepliesSection(),
+    if (_segment != InboxSegment.resolved) ...const [
+      InboxUndoAll(),
+      PendingRepliesSection(),
+    ],
     if (model.products.length > 1)
       InboxFilters(
         products: model.products,

@@ -7152,5 +7152,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "mastermindInboxTierUrgent": "Urgent",
+  "mastermindInboxTierDecision": "Needs a decision",
+  "mastermindInboxTierFyi": "For your information"
 }

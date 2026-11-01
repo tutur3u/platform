@@ -6644,5 +6644,8 @@
   "mastermindAskCardFewerOptions": "Ẩn bớt lựa chọn",
   "mastermindAskCardOptionCount": "{count, plural, other{{count} lựa chọn}}",
   "mastermindAskCardRecommendedOption": "Đề xuất: {option}",
-  "mastermindAskCardRecommendedWhy": "Đề xuất: {option}. {why}"
+  "mastermindAskCardRecommendedWhy": "Đề xuất: {option}. {why}",
+  "mastermindInboxTierUrgent": "Khẩn cấp",
+  "mastermindInboxTierDecision": "Cần bạn quyết định",
+  "mastermindInboxTierFyi": "Để bạn biết"
 }
