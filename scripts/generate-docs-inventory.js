@@ -426,23 +426,28 @@ function plannedFiles(root = ROOT) {
   const owner = groups.find((entry) =>
     entry.pages?.some((page) => page?.group === group.group)
   );
-  if (!owner)
+  if (owner) {
+    const existing = owner.pages.find((entry) => entry?.group === group.group);
+    const inventory = reference.tab
+      ? {
+          ...existing,
+          pages: [
+            `${GENERATED}/catalog`,
+            `${GENERATED}/versions`,
+            ...dependencyPages,
+            ...routePages,
+          ],
+        }
+      : group;
+    owner.pages = owner.pages.map((entry) =>
+      entry?.group === group.group ? inventory : entry
+    );
+  } else if (reference.tab) {
     throw new Error('Docs navigation is missing Repository inventory');
-  const existing = owner.pages.find((entry) => entry?.group === group.group);
-  const inventory = reference.tab
-    ? {
-        ...existing,
-        pages: [
-          `${GENERATED}/catalog`,
-          `${GENERATED}/versions`,
-          ...dependencyPages,
-          ...routePages,
-        ],
-      }
-    : group;
-  owner.pages = owner.pages.map((entry) =>
-    entry?.group === group.group ? inventory : entry
-  );
+  } else {
+    // A plain Reference group without an inventory yet: append it (pre-tab layout).
+    reference.pages = [...(reference.pages ?? []), group];
+  }
   for (const [file, source] of files) {
     const current = readOptionalFileSync(path.join(root, 'apps/docs', file), {
       encoding: 'utf8',
