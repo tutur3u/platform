@@ -30,6 +30,7 @@ export function useBoardSprintSurface({
   currentUserId,
   lists,
   searchQuery,
+  searchTasks,
   sprints,
   tasks,
   wsId,
@@ -43,6 +44,8 @@ export function useBoardSprintSurface({
   lists: TaskList[];
   /** The header search; Plan applies it across every open sprint. */
   searchQuery?: string;
+  /** Every task the board search can see, pages not loaded yet included. */
+  searchTasks?: Task[];
   sprints: ReturnType<typeof useBoardSprints>;
   tasks: Task[];
   wsId: string;
@@ -88,7 +91,7 @@ export function useBoardSprintSurface({
   const hiddenMatches = useMemo(
     () =>
       showsOnBoard && searchQuery?.trim()
-        ? tasks.filter(
+        ? (searchTasks ?? tasks).filter(
             (task) =>
               !task.deleted_at &&
               !showsOnBoard(task) &&
@@ -101,6 +104,7 @@ export function useBoardSprintSurface({
       searchQuery,
       showsOnBoard,
       sprints.openSprintByTaskId,
+      searchTasks,
       sprints.unplannedTaskIds,
       tasks,
     ]

@@ -798,6 +798,7 @@ export function BoardViews({
     currentUserId,
     lists: boardLists,
     searchQuery: filters.searchQuery,
+    searchTasks: localBaseTasks,
     sprints: boardSprints,
     tasks,
     wsId: effectiveWorkspaceId,

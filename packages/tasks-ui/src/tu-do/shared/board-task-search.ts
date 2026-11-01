@@ -140,10 +140,10 @@ export function mergeListCountsByListId(
   return [...merged.entries()].map(([list_id, count]) => ({ list_id, count }));
 }
 
-/** Sorted and filtered boards must not treat one page as the full task set. */
 /** Pages fetched at once when loading every page of a board. */
 const PARALLEL_PAGES = 4;
 
+/** Sorted and filtered boards must not treat one page as the full task set. */
 async function listAllBoardTaskPages(
   workspaceId: string,
   options: ListWorkspaceTasksOptions
@@ -160,28 +160,33 @@ async function listAllBoardTaskPages(
 
   const first = await page(start);
   const tasks: Task[] = [...first.tasks];
+  let offset = start + first.tasks.length;
+  let last = first.tasks.length;
+  let total = first.count;
 
-  if (typeof first.count === 'number') {
-    // The total is known, so the remaining pages load a few at a time.
-    const offsets: number[] = [];
-    for (
-      let offset = start + first.tasks.length;
-      first.tasks.length > 0 && offset < first.count;
-      offset += limit
-    ) {
-      offsets.push(offset);
-    }
-    for (let i = 0; i < offsets.length; i += PARALLEL_PAGES) {
-      const batch = offsets.slice(i, i + PARALLEL_PAGES);
-      for (const response of await Promise.all(batch.map(page))) {
+  if (typeof total === 'number') {
+    // The total is known, so its pages load a few at a time. Tasks added
+    // while loading raise the total, which adds pages.
+    while (last === limit && offset < total) {
+      const offsets: number[] = [];
+      for (
+        ;
+        offsets.length < PARALLEL_PAGES && offset < total;
+        offset += limit
+      ) {
+        offsets.push(offset);
+      }
+      for (const response of await Promise.all(offsets.map(page))) {
         tasks.push(...response.tasks);
+        last = response.tasks.length;
+        if (typeof response.count === 'number') {
+          total = Math.max(total, response.count);
+        }
       }
     }
     return mergeTasksById(tasks, []);
   }
 
-  let offset = start + first.tasks.length;
-  let last = first.tasks.length;
   while (last === limit) {
     const response = await page(offset);
     tasks.push(...response.tasks);

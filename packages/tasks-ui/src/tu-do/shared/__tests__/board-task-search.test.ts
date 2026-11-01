@@ -320,6 +320,28 @@ describe('listBoardTasksForSearch', () => {
     expect(most).toBe(3);
   });
 
+  it('keeps paging when tasks are added after the total was read', async () => {
+    const page = (offset: number) =>
+      Array.from({ length: offset === 400 ? 1 : 200 }, (_, index) =>
+        buildTask({ id: `task-${offset + index}` })
+      );
+    listWorkspaceTasksMock.mockImplementation(
+      async (_workspaceId: string, options: ListWorkspaceTasksOptions) => {
+        const offset = options.offset ?? 0;
+        return { tasks: page(offset), count: offset === 0 ? 400 : 401 };
+      }
+    );
+
+    const tasks = await listBoardTasksForSearch('ws-1', {
+      boardId: 'board-1',
+      limit: 200,
+    });
+
+    expect(tasks).toHaveLength(401);
+    expect(tasks.at(-1)?.id).toBe('task-400');
+    expect(listWorkspaceTasksMock).toHaveBeenCalledTimes(3);
+  });
+
   it('rejects a later-page failure instead of caching a partial board', async () => {
     listWorkspaceTasksMock
       .mockResolvedValueOnce({ tasks: [nameMatch], count: 2 })

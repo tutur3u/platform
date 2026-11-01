@@ -102,8 +102,16 @@ describe('BoardPlanView sprints', () => {
   it('takes a task out of every sprint, or on to a new sprint', async () => {
     api.unplan.mockResolvedValue({ moved: 1 });
     api.moveTasks.mockResolvedValue({ moved: 1 });
+    // Another planner added Sprint 17 at the same time; the task goes to the
+    // sprint this request created.
     api.addSprint.mockResolvedValue({
-      sprints: [active, planned, sprint(16, 'planned', [])],
+      addedSprintId: 'sprint-16',
+      sprints: [
+        active,
+        planned,
+        sprint(16, 'planned', []),
+        sprint(17, 'planned', []),
+      ],
     });
     renderPlan({ sprints: [active, planned] });
     await screen.findByText('Task t2');

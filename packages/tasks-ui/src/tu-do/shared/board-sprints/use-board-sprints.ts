@@ -121,13 +121,9 @@ export function useBoardSprintMutations({
           sprintId,
           taskIds
         );
-      const { sprints: after } = await addWorkspaceTaskBoardSprint(
-        wsId,
-        boardId
-      );
-      const added = after
-        .filter((sprint) => sprint.status === 'planned')
-        .sort((a, b) => b.sequence_number - a.sequence_number)[0];
+      const { addedSprintId, sprints: after } =
+        await addWorkspaceTaskBoardSprint(wsId, boardId);
+      const added = after.find((sprint) => sprint.id === addedSprintId);
       if (!added) throw new Error('SPRINT_NOT_ADDED');
       await moveTasksToWorkspaceTaskBoardSprint(
         wsId,
