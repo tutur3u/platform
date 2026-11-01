@@ -1,4 +1,4 @@
-BEGIN; -- Deadline notices for teacher-assigned topic announcements (inert; no sender
+BEGIN;-- Deadline notices for teacher-assigned topic announcements (inert; no sender
 -- is wired yet). The VN teacher in charge (GVCN) gets at most one reminder
 -- before a session's 24-hour send deadline (send_due_at) and one notice after
 -- it passes unsent, in-app and by email.

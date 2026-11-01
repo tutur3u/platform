@@ -10,7 +10,7 @@ SET LOCAL statement_timeout = '60s';
 ALTER TABLE public.workspace_role_permissions
   DROP CONSTRAINT IF EXISTS public_workspace_role_permissions_role_id_fkey;
 
--- Rerun-safe: VALIDATE runs in its own transaction at the end of this file.
+-- tuturuuu: reviewed(dynamic-sql-review): static catalog guard, fixed identifiers, no caller input; rerun-safe ADD NOT VALID (VALIDATE runs in its own transaction at the end)
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint
   WHERE conname = 'workspace_role_permissions_ws_role_fkey'
     AND conrelid = 'public.workspace_role_permissions'::regclass) THEN

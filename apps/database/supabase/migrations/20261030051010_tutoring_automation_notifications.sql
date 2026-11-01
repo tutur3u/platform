@@ -1,4 +1,4 @@
-BEGIN; -- Tutoring automation notifications (inert; nothing sends them yet).
+BEGIN;-- Tutoring automation notifications (inert; nothing sends them yet).
 --
 -- 1. Two notification types, appended to the current notifications_type_check
 --    list read from the catalog, so this composes with any other migration

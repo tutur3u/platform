@@ -9,7 +9,7 @@ module.exports = [
     line: 2,
     rule: 'dynamic-sql-review',
     fileDigest:
-      '87d95a8596299927a087633f6653b1b93a3c46de275ce077a9beb3fd90f6d425',
+      '5012a580f92535e5592cc848efd98215cfb47e44c0a5dfc51ada16d7005f2017',
     digest: 'd7b8f0b916c414e4be19dc041d1eb64a93e06146ca9ee51f2a069ef3456250cd',
     reason:
       'Reviewed static DO block: pg_catalog index validity lookup and exception only; no EXECUTE, routine creation, grants or caller-controlled SQL. Preserve unchanged migration bytes for PR6977 retiming.',

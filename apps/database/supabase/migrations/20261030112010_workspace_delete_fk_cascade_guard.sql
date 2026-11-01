@@ -1,4 +1,4 @@
-BEGIN; -- IF NOT EXISTS must not accept an invalid index from an interrupted build.
+BEGIN;-- IF NOT EXISTS must not accept an invalid index from an interrupted build.
 do $$
 begin
   if not exists (
