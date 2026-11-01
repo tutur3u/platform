@@ -34,12 +34,19 @@ describe(isMeetAiEnabledOnWeb, () => {
   });
 
   it.each(['', '   ', '\n\t', ' , ,'])(
-    'allows blank legacy value %j',
+    'denies every workspace for a present but blank legacy value %j',
     async (value) => {
       vi.stubEnv(ENV, value);
-      await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(true);
+      await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(false);
+      await expect(isMeetAiEnabledOnWeb(OTHER)).resolves.toBe(false);
     }
   );
+
+  it('allows every workspace when the legacy value is absent', async () => {
+    vi.stubEnv(ENV, undefined);
+    await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(true);
+    await expect(isMeetAiEnabledOnWeb(OTHER)).resolves.toBe(true);
+  });
 
   it('allows a listed workspace and denies an unlisted one', async () => {
     vi.stubEnv(ENV, `${WS}, ${OTHER.toUpperCase()}`);

@@ -574,7 +574,7 @@ the Meet realtime room Worker, and the web app. Never use public env variables.
 | --- | --- | --- |
 | 1 | `MEET_AI_DISABLED` | `1` or `true` disables Meet AI everywhere; `0` or `false` permits the next checks. Values are trimmed and case-insensitive. Unset permits; blank, malformed or non-string values deny. |
 | 2 | `MEET_AI_DISABLED_WORKSPACE_IDS` | Optional comma/whitespace-separated UUID deny list, case-insensitive. Unset/blank permits; malformed entries or non-string values deny everywhere. |
-| 3 | `MEET_AI_ENABLED_WORKSPACE_IDS` | Legacy optional rollout restriction. Nonempty lists admit only listed workspaces; unset/blank imposes no restriction. No wildcard. Remove this variable to enable all workspaces. |
+| 3 | `MEET_AI_ENABLED_WORKSPACE_IDS` | Legacy optional rollout restriction. While the variable is **present** it is an allowlist: only listed workspaces are admitted, and a blank or whitespace-only value denies every workspace. Only an **unset** (absent) variable imposes no restriction. No wildcard. To enable all workspaces, delete the variable; never set it to blank. |
 | 4 | No restriction applies | Allow; existing credit checks still apply. |
 
 The Worker and room DO read only injected bindings, never ambient `process.env`.
@@ -584,8 +584,10 @@ workspaces. Denials retain existing HTTP 403/error codes and report
 "Meet AI is temporarily unavailable". Stop, cleanup and billing settlement remain
 available while disabled. Parley scenario sessions retain their exemption.
 
-For Rex: remove the legacy allowlist on **all three surfaces** for the all-workspace
-rollout; leave both new controls unset. To stop AI, set `MEET_AI_DISABLED=true`
+For Rex: keep the legacy allowlist (team workspace) on all three surfaces until
+the fail-closed per-user Meet AI limiter is deployed and security-approved. For
+the all-workspace rollout, then UNSET (delete) the legacy allowlist on **all three
+surfaces**; a blank value denies everyone. Leave both new controls unset. To stop AI, set `MEET_AI_DISABLED=true`
 on all three surfaces. To exclude specific workspaces, set the same
 `MEET_AI_DISABLED_WORKSPACE_IDS` list on each. Clear the switch or set it to `false`
 to restore access. No deployment configuration or secrets are changed by this PR.

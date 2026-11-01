@@ -19,7 +19,7 @@ describe('Meet Worker AI controls', () => {
     {},
     { MEET_AI_DISABLED: '0' },
     { MEET_AI_DISABLED: 'false' },
-    { MEET_AI_ENABLED_WORKSPACE_IDS: '' },
+    { MEET_AI_ENABLED_WORKSPACE_IDS: undefined },
   ])('allows by default or explicit off: %j', async (env) => {
     mocks.context.mockResolvedValue({ env });
     expect(await meetAiAvailable(team)).toBe(true);
@@ -31,6 +31,20 @@ describe('Meet Worker AI controls', () => {
       expect(await meetAiAvailable(team)).toBe(false);
     }
   );
+  it.each(['', ' ', '\n', ' , '])(
+    'treats a present but blank legacy allowlist %j as deny-all',
+    (MEET_AI_ENABLED_WORKSPACE_IDS) => {
+      const env = { MEET_AI_ENABLED_WORKSPACE_IDS };
+      expect(isMeetAiEnabledForWorkspace(team, env)).toBe(false);
+      expect(isMeetAiEnabledForWorkspace(other, env)).toBe(false);
+    }
+  );
+  it('admits only listed workspaces while the legacy allowlist is present', () => {
+    const env = { MEET_AI_ENABLED_WORKSPACE_IDS: team };
+    expect(isMeetAiEnabledForWorkspace(team, env)).toBe(true);
+    expect(isMeetAiEnabledForWorkspace(other, env)).toBe(false);
+    expect(isMeetAiEnabledForWorkspace(other, {})).toBe(true);
+  });
   it('applies deny before legacy allow and matches case and separators', () => {
     const env = {
       MEET_AI_DISABLED_WORKSPACE_IDS: ` ${team.toUpperCase()},${team}\n`,

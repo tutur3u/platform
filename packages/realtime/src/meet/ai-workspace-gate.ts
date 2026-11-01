@@ -16,7 +16,11 @@ function workspaceIds(raw: string) {
     .filter(Boolean);
 }
 
-/** Optional legacy rollout restriction; blank and unset impose no restriction. */
+/**
+ * Optional legacy rollout restriction. When the key is PRESENT it is an
+ * allowlist (blank = deny all, matching main); only an ABSENT key imposes no
+ * restriction. Remove the variable entirely to widen, never blank it.
+ */
 export function meetAiEnabledWorkspaceIds(env: MeetAiGateEnv) {
   const raw = binding(env, MEET_AI_WORKSPACE_ALLOWLIST_ENV);
   return new Set(typeof raw === 'string' ? workspaceIds(raw) : []);
@@ -49,7 +53,7 @@ export function isMeetAiEnabledForWorkspace(
   }
 
   const legacy = binding(env, MEET_AI_WORKSPACE_ALLOWLIST_ENV);
-  if (legacy !== undefined && typeof legacy !== 'string') return false;
-  const enabled = meetAiEnabledWorkspaceIds(env);
-  return enabled.size === 0 || enabled.has(wsId.toLowerCase());
+  if (legacy === undefined) return true;
+  if (typeof legacy !== 'string') return false;
+  return meetAiEnabledWorkspaceIds(env).has(wsId.toLowerCase());
 }
