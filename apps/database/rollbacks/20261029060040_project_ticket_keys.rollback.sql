@@ -8,6 +8,7 @@ SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '30s';
 
 -- Undo only the relation-block patches; abort if the deployed bodies drifted.
+-- tuturuuu: reviewed(dynamic-sql-review): EXECUTEs only pg_get_functiondef output of two fixed signatures after a fixed text patch; aborts on drift.
 DO $rollback$
 DECLARE
   definition text;

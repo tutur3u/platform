@@ -500,9 +500,9 @@ as $$
   order by scoped_tasks.list_id;
 $$;
 
-REVOKE ALL ON FUNCTION private.list_task_source_filter_ids FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION private.count_task_source_filter_lists FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION private.list_task_source_filter_ids TO service_role;
-GRANT EXECUTE ON FUNCTION private.count_task_source_filter_lists TO service_role;
+REVOKE ALL ON FUNCTION private.list_task_source_filter_ids(uuid, uuid, uuid, uuid, text, uuid[], uuid[], text[], text, integer, text, boolean, text, text, boolean, text, boolean, text, integer, integer, uuid[], uuid[], uuid[], text[], smallint, smallint, timestamp with time zone, timestamp with time zone, boolean) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION private.count_task_source_filter_lists(uuid, uuid, uuid, uuid, text, uuid[], uuid[], text[], text, integer, text, boolean, text, text, boolean, text, boolean, uuid[], uuid[], uuid[], text[], smallint, smallint, timestamp with time zone, timestamp with time zone, boolean) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION private.list_task_source_filter_ids(uuid, uuid, uuid, uuid, text, uuid[], uuid[], text[], text, integer, text, boolean, text, text, boolean, text, boolean, text, integer, integer, uuid[], uuid[], uuid[], text[], smallint, smallint, timestamp with time zone, timestamp with time zone, boolean) TO service_role;
+GRANT EXECUTE ON FUNCTION private.count_task_source_filter_lists(uuid, uuid, uuid, uuid, text, uuid[], uuid[], text[], text, integer, text, boolean, text, text, boolean, text, boolean, uuid[], uuid[], uuid[], text[], smallint, smallint, timestamp with time zone, timestamp with time zone, boolean) TO service_role;
 
 COMMIT;
