@@ -23,6 +23,8 @@
 -- The replaced check constraint is added NOT VALID (a superset of the old
 -- list, so existing rows already pass) and no table scan runs under ACCESS
 -- EXCLUSIVE. The receipt table is service-role only.
+BEGIN;
+
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
 
@@ -202,3 +204,5 @@ grant select, insert, update, delete
   to service_role;
 
 notify pgrst, 'reload schema';
+
+COMMIT;

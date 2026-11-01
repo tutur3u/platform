@@ -10,6 +10,8 @@
 --
 -- Depends on 20261030051000_tutoring_automation_foundation.sql. No grants
 -- change: the receipts table stays service-role only.
+BEGIN;
+
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
 
@@ -139,3 +141,5 @@ alter table private.tutoring_notification_receipts
   );
 
 notify pgrst, 'reload schema';
+
+COMMIT;
