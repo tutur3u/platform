@@ -118,10 +118,18 @@ export function sprintRpcErrorResponse(
 }
 
 const SPRINT_SELECT =
-  'id, name, sequence_number, status, start_date, end_date, goal, goal_result, started_at, ended_at, task_cycle_tasks(task_id, added_after_start, carry_count, end_decision)';
+  'id, name, sequence_number, status, start_date, end_date, goal, goal_result, started_at, ended_at, task_cycle_tasks(task_id, added_after_start, carry_count, end_decision, task:tasks(completed_at, closed_at, deleted_at))';
 
 type SprintRow = Omit<BoardSprint, 'tasks' | 'report'> & {
-  task_cycle_tasks: BoardSprint['tasks'] | null;
+  task_cycle_tasks:
+    | (BoardSprint['tasks'][number] & {
+        task?: {
+          completed_at: string | null;
+          closed_at: string | null;
+          deleted_at: string | null;
+        } | null;
+      })[]
+    | null;
 };
 
 type SprintReportRow = BoardSprintReport & { cycle_id: string };
@@ -169,12 +177,16 @@ export function serializeSprint(
   const { task_cycle_tasks, ...sprint } = row;
   return {
     ...sprint,
-    tasks: (task_cycle_tasks ?? []).map((task) => ({
-      task_id: task.task_id,
-      added_after_start: task.added_after_start === true,
-      carry_count: toNumber(task.carry_count),
-      end_decision: task.end_decision ?? null,
-    })),
+    // Deleted tasks leave the sprint's numbers, as they do in its report.
+    tasks: (task_cycle_tasks ?? [])
+      .filter((task) => !task.task?.deleted_at)
+      .map((task) => ({
+        task_id: task.task_id,
+        added_after_start: task.added_after_start === true,
+        carry_count: toNumber(task.carry_count),
+        end_decision: task.end_decision ?? null,
+        done: Boolean(task.task?.completed_at || task.task?.closed_at),
+      })),
     report: serializeSprintReport(report),
   };
 }

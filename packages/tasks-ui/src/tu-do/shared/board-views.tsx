@@ -58,6 +58,8 @@ import {
   sanitizeSavedBoardFilters,
 } from './board-header/board-filter-state';
 import { useBoardHeaderData } from './board-header/use-board-header-data';
+import { BoardSprintPill } from './board-sprints/board-sprint-pill';
+import { useBoardSprints } from './board-sprints/use-board-sprints';
 import {
   sortLocalTasks,
   taskMatchesLocalFilters,
@@ -78,6 +80,7 @@ import {
 } from './task-quick-create-target-list';
 import { useAutoCollapseEmptyTaskLists } from './use-auto-collapse-empty-task-lists';
 import { useKanbanLayoutState } from './use-kanban-layout-state';
+import { useRecycleBinTranslations } from './use-recycle-bin-translations';
 import { useTaskBoardListPreferences } from './use-task-board-list-preferences';
 
 export type ViewType =
@@ -131,9 +134,7 @@ export function BoardViews({
   publicView = false,
   readOnly = false,
 }: Props) {
-  const t = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
-  const tBoards = useTranslations('ws-task-boards');
   const queryClient = useQueryClient();
   const effectiveWorkspaceId = board.ws_id ?? workspace.id;
   const [currentView, setCurrentView] = useState<ViewType>('kanban');
@@ -721,6 +722,12 @@ export function BoardViews({
       : sourceTasks.filter((task) => listIds.has(task.list_id));
   }, [filteredLists, isExternalSourceScope, sourceTasks]);
 
+  const boardSprints = useBoardSprints({
+    boardId: board.id,
+    enabled: !localTaskState,
+    wsId: effectiveWorkspaceId,
+  });
+
   // Apply optimistic overrides so views receive up-to-date edits (durations, name, dates) even before refetch.
   const effectiveTasks = useMemo(() => {
     let tasks = filteredTasks;
@@ -734,9 +741,18 @@ export function BoardViews({
     }
 
     tasks = tasks.filter((task) => !task.deleted_at);
+    // Sprint boards show the running sprint, else the one being planned.
+    const showsOnBoard = boardSprints.showsOnBoard;
+    if (showsOnBoard) tasks = tasks.filter(showsOnBoard);
 
     return sortLocalTasks(tasks, filters.sortBy, unprioritizedPosition);
-  }, [filteredTasks, filters.sortBy, taskOverrides, unprioritizedPosition]);
+  }, [
+    boardSprints.showsOnBoard,
+    filteredTasks,
+    filters.sortBy,
+    taskOverrides,
+    unprioritizedPosition,
+  ]);
 
   const handleTaskPartialUpdate = (taskId: string, partial: Partial<Task>) => {
     setTaskOverrides((prev) => ({
@@ -765,14 +781,20 @@ export function BoardViews({
     if (!targetList) return;
     createTask(board.id, targetList.id, selectableLists, filters);
   };
+  // Pills count what the board shows: the current sprint, when sprints are on.
+  const headerTasks = useMemo(() => {
+    const showsOnBoard = boardSprints.showsOnBoard;
+    return showsOnBoard ? tasks.filter(showsOnBoard) : tasks;
+  }, [boardSprints.showsOnBoard, tasks]);
   const headerData = useBoardHeaderData({
-    tasks,
+    tasks: headerTasks,
     lists,
     currentUserId,
     workspaceId: effectiveWorkspaceId,
     boardId: board.id,
     enabled: !localTaskState,
   });
+  const recycleBinTranslations = useRecycleBinTranslations();
 
   useHotkey(HOTKEY_CREATE_TASK, createTaskInBoard, {
     enabled: canCreateTask,
@@ -952,46 +974,7 @@ export function BoardViews({
             boardId={board.id}
             className="h-full"
             lists={boardLists}
-            translations={{
-              recycleBin: t('recycle_bin'),
-              recycleBinDescription: t('recycle_bin_description'),
-              noDeletedTasks: t('no_deleted_tasks'),
-              deletedTasksWillAppearHere: t('deleted_tasks_will_appear_here'),
-              selectedOfTotal: t('selected_of_total', {
-                selected: '{selected}',
-                total: '{total}',
-              }),
-              deletedTasksCount: t('deleted_tasks_count', { count: '{count}' }),
-              restore: t('restore'),
-              delete: t('delete'),
-              restoreTasksTitle: t('restore_tasks_title', { count: '{count}' }),
-              restoreTasksDescription: t('restore_tasks_description'),
-              cancel: t('cancel'),
-              restoring: t('restoring'),
-              permanentlyDeleteTitle: t('permanently_delete_title', {
-                count: '{count}',
-              }),
-              permanentlyDeleteDescription: t('permanently_delete_description'),
-              deleting: t('deleting'),
-              deletePermanently: t('delete_permanently'),
-              noListsAvailable: t('no_lists_available'),
-              restoredTasks: t('restored_tasks', { count: '{count}' }),
-              failedToRestore: t('failed_to_restore'),
-              permanentlyDeleted: t('permanently_deleted', {
-                count: '{count}',
-              }),
-              failedToDelete: t('failed_to_delete'),
-              deletedAgo: t('deleted_ago', { time: '{time}' }),
-              fromList: t('from_list', { list: '{list}' }),
-              nProjects: t('n_projects', { count: '{count}' }),
-              selectAllTasks: t('select_all_tasks'),
-              selectTask: t('select_task', { name: '{name}' }),
-              critical: tBoards('dialog.priority.critical'),
-              high: tBoards('dialog.priority.high'),
-              normal: tBoards('dialog.priority.normal'),
-              low: tBoards('dialog.priority.low'),
-              unknownList: t('unknown_list'),
-            }}
+            translations={recycleBinTranslations}
             wsId={effectiveWorkspaceId}
           />
         );
@@ -1035,6 +1018,17 @@ export function BoardViews({
             projectTaskCounts={headerData.projectTaskCounts}
             countsComplete={headerData.countsComplete}
             onCreateTask={canCreateTask ? createTaskInBoard : undefined}
+            sprintSlot={
+              boardSprints.currentSprint ? (
+                <BoardSprintPill
+                  boardId={board.id}
+                  canManage={canManageBoard && !readOnly}
+                  sprints={boardSprints}
+                  tasks={tasks}
+                  wsId={effectiveWorkspaceId}
+                />
+              ) : undefined
+            }
           />
         }
         initialLayoutReady={initialKanbanLayoutReady}
