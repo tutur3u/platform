@@ -130,5 +130,16 @@
     "classification": "verified false positive",
     "effectiveRoles": ["PUBLIC", "anon", "authenticated", "service_role"],
     "reason": "Preserves the existing PUBLIC EXECUTE contract required by 15 existing PUBLIC-targeted RLS policy dependencies. End-user JWT calls bind targets to auth.uid() outside any trigger context; same-file REVOKE precedes the explicit reviewed grant. Catalog policy-caller and caller-scope pgTAP provide positive and negative controls."
+  },
+  {
+    "file": "apps/database/supabase/migrations/20261101090000_bind_cross_app_handoff_pkce.sql",
+    "signature": "public.validate_cross_app_token_with_session(text,text)",
+    "rule": "public-execute",
+    "line": 207,
+    "digest": "d230e9e115cda76c913718a94d717b05e78879c7dc167402c231dad1690409fb",
+    "sourceDigest": "53139eb2d76e9cc0e5618253e1b5a62f9de9bb1e6147f305f06b1c3119fca048",
+    "classification": "verified false positive",
+    "effectiveRoles": ["anon", "authenticated", "service_role"],
+    "reason": "Redefined anon 2-arg validator passes a NULL verifier to private.redeem_cross_app_token, so it can never redeem a PKCE-bound token; single-use under FOR UPDATE; the 3-arg verifier overload is service_role only (reviewed in #7394)"
   }
 ]

@@ -3,6 +3,7 @@ import {
   createAppCoordinationToken,
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
+import { createSessionAssuranceTransferToken } from '@tuturuuu/utils/app-coordination-token';
 import { createSessionAssuranceTransfer } from '@tuturuuu/utils/session-assurance-transfer';
 import { describe, expect, it, vi } from 'vitest';
 import { POST } from './route';
@@ -104,7 +105,7 @@ describe('app token exchange session assurance', () => {
     [
       'a transfer signed with another secret',
       {
-        assuranceTransfer: createAppCoordinationToken(
+        assuranceTransfer: createSessionAssuranceTransferToken(
           {
             aal: 'aal2',
             scopes: ['assurance:transfer'],
@@ -113,6 +114,17 @@ describe('app token exchange session assurance', () => {
           },
           { secret: 'attacker-secret' }
         ).token,
+      },
+    ],
+    [
+      'a general app-coordination token',
+      {
+        assuranceTransfer: createAppCoordinationToken({
+          aal: 'aal2',
+          scopes: ['assurance:transfer'],
+          targetApp: 'yoola',
+          userId: victimUserId,
+        }).token,
       },
     ],
     [

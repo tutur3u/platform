@@ -1,7 +1,7 @@
 import {
   type AppCoordinationTokenClaims,
-  createAppCoordinationToken,
-  verifyAppCoordinationToken,
+  createSessionAssuranceTransferToken,
+  verifySessionAssuranceTransferToken,
 } from './app-coordination-token';
 import type { SessionAssurance } from './session-assurance';
 
@@ -15,7 +15,7 @@ export function createSessionAssuranceTransfer(
   assurance: SessionAssurance | null
 ) {
   return assurance
-    ? createAppCoordinationToken({
+    ? createSessionAssuranceTransferToken({
         aal: assurance.aal,
         amr: assurance.amr,
         expiresInSeconds: 300,
@@ -42,7 +42,7 @@ export function readSessionAssuranceTransfer(
   targetApp: string
 ): SessionAssurance | null {
   if (typeof value !== 'string') return null;
-  const verified = verifyAppCoordinationToken(value);
+  const verified = verifySessionAssuranceTransferToken(value);
   if (
     !verified.ok ||
     verified.claims.sub !== userId ||

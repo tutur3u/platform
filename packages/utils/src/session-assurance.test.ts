@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createAppCoordinationToken,
+  createSessionAssuranceTransferToken,
   verifyAppCoordinationToken,
 } from './app-coordination-token';
 import { createMfaTransfer } from './required-mfa-transfer';
@@ -52,7 +53,7 @@ describe('session assurance', () => {
   });
 
   it('refuses unsigned, foreign-secret or wrong-purpose transfers', () => {
-    const forged = createAppCoordinationToken(
+    const forged = createSessionAssuranceTransferToken(
       {
         aal: 'aal2',
         scopes: ['assurance:transfer'],

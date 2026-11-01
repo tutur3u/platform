@@ -6170,14 +6170,6 @@
     "rules": ["public-execute"]
   },
   {
-    "file": "apps/database/supabase/migrations/20261101090000_bind_cross_app_handoff_pkce.sql",
-    "signature": "public.validate_cross_app_token_with_session(text,text)",
-    "digest": "d230e9e115cda76c913718a94d717b05e78879c7dc167402c231dad1690409fb",
-    "sourceDigest": "53139eb2d76e9cc0e5618253e1b5a62f9de9bb1e6147f305f06b1c3119fca048",
-    "reason": "Intentional pre-session bearer-token redemption (app-token/exchange, packages/auth cross-app server), now a thin wrapper over private.redeem_cross_app_token with a NULL verifier: it checks token equality, target_app, expiry, used_at and is_revoked under a row lock and refuses every token minted with a PKCE code_challenge (those redeem only through the service_role-only three-argument overload). Same-file REVOKE ALL then reviewed anon-required grant; anonymous allowlist in 20261027151200_restrict_anon_definer_execute.sql retains this signature. Changing the body or grant invalidates this exception.",
-    "rules": ["public-execute"]
-  },
-  {
     "file": "apps/database/supabase/migrations/20261027151200_restrict_anon_definer_execute.sql",
     "signature": "<dynamic-execute-acl>",
     "digest": "fd98dcc2420c6e0d6f78a328000777b1a18dcbea21a513697c19f10fd7b6ef37",

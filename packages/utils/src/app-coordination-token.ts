@@ -32,6 +32,27 @@ export type AppCoordinationTokenClaims = {
   typ: 'app_coordination';
 };
 
+/**
+ * Purpose-bound handoff token type. Only `verifySessionAssuranceTransferToken`
+ * accepts it; `verifyAppCoordinationToken` (and every consumer built on it)
+ * rejects it, so a transfer can never act as an app session or bearer token.
+ */
+export const SESSION_ASSURANCE_TRANSFER_TOKEN_TYPE =
+  'session_assurance_transfer';
+
+export type SessionAssuranceTransferTokenClaims = Omit<
+  AppCoordinationTokenClaims,
+  'typ'
+> & { typ: typeof SESSION_ASSURANCE_TRANSFER_TOKEN_TYPE };
+
+type TokenType =
+  | AppCoordinationTokenClaims['typ']
+  | SessionAssuranceTransferTokenClaims['typ'];
+type TokenClaims =
+  | AppCoordinationTokenClaims
+  | SessionAssuranceTransferTokenClaims;
+type TokenOptions = { now?: Date; secret?: string };
+
 export type AppCoordinationTokenPayload = {
   aal?: SessionAssuranceLevel;
   amr?: string[];
@@ -118,19 +139,19 @@ function safeJsonParse(value: string): unknown {
   }
 }
 
-function isClaims(value: unknown): value is AppCoordinationTokenClaims {
+function isClaims(value: unknown, typ: TokenType): value is TokenClaims {
   if (!value || typeof value !== 'object') {
     return false;
   }
 
-  const claims = value as Partial<AppCoordinationTokenClaims>;
+  const claims = value as Partial<TokenClaims>;
 
   return (
     (claims.mfa === undefined || isMfaSessionProof(claims.mfa)) &&
     (claims.aal === undefined || isSessionAssuranceLevel(claims.aal)) &&
     (claims.amr === undefined ||
       (claims.aal !== undefined && isSessionAmr(claims.amr))) &&
-    claims.typ === 'app_coordination' &&
+    claims.typ === typ &&
     claims.iss === TOKEN_ISSUER &&
     claims.aud === TOKEN_AUDIENCE &&
     typeof claims.sub === 'string' &&
@@ -165,10 +186,27 @@ export function getBearerAppCoordinationToken(
 
 export function createAppCoordinationToken(
   payload: AppCoordinationTokenPayload,
-  options: {
-    now?: Date;
-    secret?: string;
-  } = {}
+  options: TokenOptions = {}
+) {
+  return signToken(payload, 'app_coordination', options) as {
+    claims: AppCoordinationTokenClaims;
+    expiresAt: string;
+    token: string;
+  };
+}
+
+/** Only `session-assurance-transfer.ts` may mint assurance transfers. */
+export function createSessionAssuranceTransferToken(
+  payload: AppCoordinationTokenPayload,
+  options: TokenOptions = {}
+) {
+  return signToken(payload, SESSION_ASSURANCE_TRANSFER_TOKEN_TYPE, options);
+}
+
+function signToken(
+  payload: AppCoordinationTokenPayload,
+  typ: TokenType,
+  options: TokenOptions
 ) {
   if (payload.mfa !== undefined && !isMfaSessionProof(payload.mfa)) {
     throw new Error('Invalid MFA session proof');
@@ -188,7 +226,7 @@ export function createAppCoordinationToken(
     alg: 'HS256',
     typ: 'JWT',
   };
-  const claims: AppCoordinationTokenClaims = {
+  const claims: TokenClaims = {
     ...(payload.aal ? { aal: payload.aal } : {}),
     ...(payload.aal && payload.amr?.length ? { amr: payload.amr } : {}),
     aud: TOKEN_AUDIENCE,
@@ -202,8 +240,8 @@ export function createAppCoordinationToken(
     scopes: payload.scopes ?? [],
     sub: payload.userId,
     target_app: payload.targetApp,
-    typ: 'app_coordination',
-  };
+    typ,
+  } as TokenClaims;
   const unsigned = `${encodeBase64Url(JSON.stringify(header))}.${encodeBase64Url(
     JSON.stringify(claims)
   )}`;
@@ -218,11 +256,32 @@ export function createAppCoordinationToken(
 
 export function verifyAppCoordinationToken(
   token: string,
-  options: {
-    now?: Date;
-    secret?: string;
-  } = {}
+  options: TokenOptions = {}
 ): AppCoordinationTokenVerification {
+  return verifyToken(
+    token,
+    'app_coordination',
+    options
+  ) as AppCoordinationTokenVerification;
+}
+
+/** Only `session-assurance-transfer.ts` may accept assurance transfers. */
+export function verifySessionAssuranceTransferToken(
+  token: string,
+  options: TokenOptions = {}
+):
+  | { claims: SessionAssuranceTransferTokenClaims; ok: true }
+  | { error: string; ok: false } {
+  return verifyToken(token, SESSION_ASSURANCE_TRANSFER_TOKEN_TYPE, options) as
+    | { claims: SessionAssuranceTransferTokenClaims; ok: true }
+    | { error: string; ok: false };
+}
+
+function verifyToken(
+  token: string,
+  typ: TokenType,
+  options: TokenOptions
+): { claims: TokenClaims; ok: true } | { error: string; ok: false } {
   if (!isAppCoordinationToken(token)) {
     return { error: 'Invalid token type', ok: false };
   }
@@ -260,7 +319,7 @@ export function verifyAppCoordinationToken(
 
   const claims = safeJsonParse(decodeBase64Url(encodedPayload));
 
-  if (!isClaims(claims)) {
+  if (!isClaims(claims, typ)) {
     return { error: 'Invalid token claims', ok: false };
   }
 

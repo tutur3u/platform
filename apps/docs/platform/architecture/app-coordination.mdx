@@ -251,6 +251,11 @@ and omitted fields keep their stored value):
 | `EXTERNAL_APP_REGISTRY:<appId>:requirePkce` | `false` | When `true`, cross-app-return refuses to mint without a valid S256 challenge and the exchange refuses a token exchange without `codeVerifier`; both return `400` with `code: "PKCE_REQUIRED"`. When `false`, the challenge is optional and existing apps are unaffected. |
 | `EXTERNAL_APP_REGISTRY:<appId>:callbackPaths` | `[]` | JSON array of exact return URL paths such as `"/auth/callback"`. When non-empty, a `returnUrl` on a registered origin must also match one of these paths (query strings are allowed); an empty list keeps the legacy origin-only check. |
 
+**Rollout rule:** Never set `requirePkce=true` for any app until migration
+`20261101090000` is applied in production; record it in the release receipt.
+Until then the seven-argument mint and the verifier overload do not exist, so
+every login for that app would fail.
+
 The challenge applies only to registered external apps; internal app verifiers
 never receive a challenge-bound token. In the database,
 `private.cross_app_tokens.code_challenge` stores the challenge, the seven-argument
@@ -273,7 +278,11 @@ reports how strongly the handed-off Tuturuuu session was authenticated:
 
 Both fields are derived server-side from the verified Supabase session claims
 when `POST /api/v1/auth/cross-app-return` mints the handoff. They travel in a
-signed, five-minute `assurance:transfer` token bound to the user and target app,
+signed, five-minute transfer token bound to the user and target app (token type
+`session_assurance_transfer`, which `verifyAppCoordinationToken` and every app
+session, bearer and refresh consumer reject; only `readSessionAssuranceTransfer`
+accepts it, enforced by
+`packages/utils/src/app-coordination-token-consumers.test.ts`),
 then as signed `aal`/`amr` claims on the issued access and refresh tokens, so a
 refresh reports the original session's level. Request bodies and caller-written
 handoff session data are never trusted. When the level is unknown (for example
