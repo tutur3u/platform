@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Quarantine workspace_role_permissions rows whose ws_id differs from the
 -- workspace of their role so the composite (ws_id, role_id) foreign key added
 -- by 20261030131000 can be validated against existing data.
@@ -48,3 +50,5 @@ WITH moved AS (
 )
 INSERT INTO private.workspace_role_permissions_orphans_20261031
 SELECT moved.* FROM moved;
+
+COMMIT;

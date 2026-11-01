@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Tutoring automation foundation (inert; no job, route, or screen calls it yet).
 --
 -- 1. private.tutoring_automation_settings: one row per workspace for the
@@ -635,3 +637,5 @@ grant select, insert on table private.tutoring_automation_events
   to service_role;
 
 notify pgrst, 'reload schema';
+
+COMMIT;

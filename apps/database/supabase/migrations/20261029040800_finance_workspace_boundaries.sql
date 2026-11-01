@@ -1,4 +1,4 @@
--- Finance workspace ownership and permission parity.
+BEGIN; SET LOCAL lock_timeout = '5s'; SET LOCAL statement_timeout = '60s';-- Finance workspace ownership and permission parity.
 CREATE OR REPLACE FUNCTION public.get_transaction_stats(
   p_ws_id uuid,
   p_user_id uuid DEFAULT auth.uid(),
@@ -180,7 +180,7 @@ UPDATE public.finance_budgets fb SET spent = (
     AND (fb.end_date IS NULL OR wt.taken_at::date <= fb.end_date)
     AND (fb.category_id IS NULL OR wt.category_id = fb.category_id)
     AND (fb.wallet_id IS NULL OR wt.wallet_id = fb.wallet_id)
-);
+) /* never write Easy Center rows */ WHERE fb.ws_id IS DISTINCT FROM '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid;
 DO $$
 DECLARE fn record;
 BEGIN
@@ -484,4 +484,4 @@ BEGIN
   ORDER BY wwc.week_start, wwc.wallet_name;
 END;
 $function$
-;
+; COMMIT;

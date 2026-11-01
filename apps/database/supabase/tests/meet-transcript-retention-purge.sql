@@ -1,11 +1,12 @@
 -- Contract for 20261029170000_meet_transcript_retention_purge.sql: service-role
 -- only entry points, a closed-by-default fence, count-only dry runs, bounded
 -- 365-day deletion that keeps newer data and everything outside the transcript
--- scope, plus explicit M1-B deadline and edited-notes adoption.
+-- scope, plus explicit M1-B deadline and edited-notes adoption. The Easy Center
+-- (EC) workspace is never selected or deleted (customer never-write rule).
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(40);
+select plan(44);
 
 insert into public.users(id) values ('00000000-0000-4000-8000-00000000e701');
 insert into public.workspaces(id, name, personal, creator_id) values
@@ -188,6 +189,26 @@ insert into public.meet_ai_sessions(id, meeting_id, user_id, created_at, ended_a
     now() - interval '31 days', now() - interval '30 days', 'completed', '{"summary":"short"}', '{"summary":"edit"}', now() - interval '1 day'),
   ('00000000-0000-4000-8000-00000000e734', '00000000-0000-4000-8000-00000000e721', '00000000-0000-4000-8000-00000000e701',
     now() - interval '501 days', now() - interval '500 days', 'completed', '{"summary":"old"}', '{"summary":"user edit"}', null);
+-- EC exclusion: due Easy Center sessions, chunks and recording transcripts.
+insert into public.workspaces(id, name, personal, creator_id) values
+  ('42529372-c669-4833-bb32-2cab1f4ffd83', 'Easy Center retention test', false, '00000000-0000-4000-8000-00000000e701')
+  on conflict (id) do nothing;
+insert into public.workspace_meetings(id, ws_id, creator_id, name, time) values
+  ('00000000-0000-4000-8000-00000000e722', '42529372-c669-4833-bb32-2cab1f4ffd83', '00000000-0000-4000-8000-00000000e701', 'EC retention', now());
+insert into public.meet_ai_sessions(id, meeting_id, user_id, created_at, ended_at, notes_status, notes, purge_after) values
+  ('00000000-0000-4000-8000-00000000e735', '00000000-0000-4000-8000-00000000e722', '00000000-0000-4000-8000-00000000e701',
+    now() - interval '401 days', now() - interval '400 days', 'completed', '{"summary":"ec chunks"}', now() - interval '1 day'),
+  ('00000000-0000-4000-8000-00000000e736', '00000000-0000-4000-8000-00000000e722', '00000000-0000-4000-8000-00000000e701',
+    now() - interval '401 days', now() - interval '400 days', 'completed', '{"summary":"ec notes"}', now() - interval '1 day');
+insert into public.meet_ai_chunks(id, session_id, sequence, start_seconds, duration_seconds, status, transcript)
+select gen_random_uuid(), '00000000-0000-4000-8000-00000000e735', n, n * 8, 8, 'completed', 'ec ' || n
+from generate_series(0, 1) n;
+insert into public.recording_sessions(id, user_id, meeting_id) values
+  ('00000000-0000-4000-8000-00000000e743', '00000000-0000-4000-8000-00000000e701', '00000000-0000-4000-8000-00000000e722'),
+  ('00000000-0000-4000-8000-00000000e744', '00000000-0000-4000-8000-00000000e701', '00000000-0000-4000-8000-00000000e721');
+insert into private.recording_transcripts(session_id, text, created_at) values
+  ('00000000-0000-4000-8000-00000000e743', 'ec recording', now() - interval '400 days'),
+  ('00000000-0000-4000-8000-00000000e744', 'old non-EC recording', now() - interval '400 days');
 set local role service_role;
 insert into r select 'static', private.purge_meet_transcripts_batch((select (result ->> 'run_id')::uuid from r where step = 'after_crash'), 500);
 reset role;
@@ -201,5 +222,26 @@ select ok((select proconfig @> array['search_path=pg_catalog, pg_temp'] from pg_
  where oid = 'private.purge_meet_transcripts_batch(uuid, integer)'::regprocedure), 'replacement retains hardened search path');
 select is((select visibility from public.meet_ai_sessions where id = '00000000-0000-4000-8000-00000000e733'), 'host', 'existing caller remains private by default');
 select is((select count(*)::int from private.meet_ai_consents where session_id='00000000-0000-4000-8000-00000000e731'),1,'transcript purge preserves session and consent evidence');
+
+-- EC exclusion
+select is((select result from r where step = 'static'),
+  '{"state":"done","chunks":0,"notes":1,"recording_transcripts":1}'::jsonb,
+  'the delete batch purges due non-EC data only');
+select ok((select bool_and(notes is not null and transcript_purged_at is null) and count(*) = 2
+    from public.meet_ai_sessions where id in ('00000000-0000-4000-8000-00000000e735', '00000000-0000-4000-8000-00000000e736'))
+  and (select count(*) = 2 from public.meet_ai_chunks where session_id = '00000000-0000-4000-8000-00000000e735'),
+  'due EC sessions keep their notes and chunks');
+select is((select array_agg(text) from private.recording_transcripts
+    where session_id in ('00000000-0000-4000-8000-00000000e743', '00000000-0000-4000-8000-00000000e744')),
+  array['ec recording'], 'the expired EC recording transcript is kept while the non-EC one is deleted');
+update private.meet_transcript_purge_control set delete_enabled = false;
+update private.meet_transcript_purge_runs set started_at = started_at - interval '25 hours', finished_at = finished_at - interval '25 hours';
+set local role service_role;
+insert into r select 'ec_dry_start', private.start_meet_transcript_purge_run();
+insert into r select 'ec_dry', private.purge_meet_transcripts_batch((select (result ->> 'run_id')::uuid from r where step = 'ec_dry_start'), 500);
+reset role;
+select is((select result from r where step = 'ec_dry'),
+  '{"state":"done","chunks":0,"sessions":0,"notes":0,"recording_transcripts":0,"workspaces":0}'::jsonb,
+  'a dry run never selects due EC data');
 select * from finish();
 rollback;

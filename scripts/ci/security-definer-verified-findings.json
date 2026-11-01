@@ -24,7 +24,7 @@
   {
     "file": "apps/database/supabase/migrations/20261029040800_finance_workspace_boundaries.sql",
     "line": 184,
-    "sourceDigest": "31973f08b14236f3ec1befe03897ff7787b40486d66848c7a1af8ccd499792c1",
+    "sourceDigest": "5b44616243ae335b025a09f8ff0037426dd4be19ca4c62230877157bfa2e0f53",
     "rule": "dynamic-execute-acl",
     "signature": "<dynamic-execute-acl>",
     "digest": "bda6640f22e39d588b637844184e8d5d69def07221cf4c769cb22faff457aca6",
@@ -35,7 +35,7 @@
   {
     "file": "apps/database/supabase/migrations/20261029050200_topic_teacher_deadline_notices.sql",
     "line": 29,
-    "sourceDigest": "b2483b6b59589199115abfbe6550053570f7a2543498414dbe2689873c1d58cb",
+    "sourceDigest": "d2504a1b14d0c09a4e5d1a3bf43ce2e338cdae2597ec2cd6e57331adb093bcda",
     "rule": "dynamic-execute-acl",
     "signature": "<dynamic-execute-acl>",
     "digest": "9e6f5301ecd66ecf036ee802e4d856dabb9bd0deaf03952a2dded70b3c30674e",
@@ -101,7 +101,7 @@
   {
     "file": "apps/database/supabase/migrations/20261030051010_tutoring_automation_notifications.sql",
     "line": 19,
-    "sourceDigest": "a548c18f8e3f13a5bf14c737cc155205bc306294fa0f883a3109bad8440141e0",
+    "sourceDigest": "33cc4ceef8e3ccd8c1b78cdb92d32c3dec42280503bb0da518649fdeddcff1e6",
     "rule": "dynamic-execute-acl",
     "signature": "<dynamic-execute-acl>",
     "digest": "a29adb0fb54d30a1d7ccc6e3073cb30abd67e1c0e9dab36f98e0e45b61f71e9f",

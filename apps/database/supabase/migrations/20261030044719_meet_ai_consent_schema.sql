@@ -15,7 +15,11 @@ alter table public.meet_ai_sessions
 -- Preserve the reviewed M0 expiry for existing sessions; NULL is forever only
 -- when explicitly chosen after this backfill. New sessions default to 365 days.
 update public.meet_ai_sessions
-  set purge_after = coalesce(ended_at, created_at) + interval '365 days';
+  set purge_after = coalesce(ended_at, created_at) + interval '365 days'
+  -- Excludes the EC workspace (customer never-write rule; security-approved)
+  where not exists (select 1 from public.workspace_meetings ec
+    where ec.id = meet_ai_sessions.meeting_id
+      and ec.ws_id = '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid);
 alter table public.meet_ai_sessions
   alter column purge_after set default (now() + interval '365 days');
 
@@ -212,6 +216,8 @@ begin
       join public.workspace_meetings m on m.id = s.meeting_id
       where s.transcript_purged_at is null
         and s.purge_after <= now_at
+        -- Excludes the EC workspace (customer never-write rule; security-approved)
+        and m.ws_id <> '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid
     ),
     sessions as (
       select d.ws_id, count(*) as sessions,
@@ -226,6 +232,8 @@ begin
       join public.recording_sessions r on r.id = t.session_id
       join public.workspace_meetings m on m.id = r.meeting_id
       where t.created_at <= cutoff
+        -- Excludes the EC workspace (customer never-write rule; security-approved)
+        and m.ws_id <> '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid
       group by m.ws_id
     ),
     per_ws as (
@@ -272,6 +280,9 @@ begin
     join public.meet_ai_chunks c on c.session_id = s.id
     where s.transcript_purged_at is null
       and s.purge_after <= now_at
+      -- Excludes the EC workspace (customer never-write rule; security-approved)
+      and not exists (select 1 from public.workspace_meetings ec
+        where ec.id = s.meeting_id and ec.ws_id = '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid)
     order by s.purge_after, s.id, c.sequence
     limit p_limit
     for update of c skip locked
@@ -287,6 +298,9 @@ begin
         and s.purge_after <= now_at
         and not exists (select 1 from public.meet_ai_chunks c
                         where c.session_id = s.id)
+        -- Excludes the EC workspace (customer never-write rule; security-approved)
+        and not exists (select 1 from public.workspace_meetings ec
+          where ec.id = s.meeting_id and ec.ws_id = '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid)
       order by s.purge_after, s.id
       limit remaining
       for update of s skip locked
@@ -302,6 +316,10 @@ begin
     with doomed as (
       select t.id from private.recording_transcripts t
       where t.created_at <= cutoff
+        -- Excludes the EC workspace (customer never-write rule; security-approved)
+        and not exists (select 1 from public.recording_sessions r
+          join public.workspace_meetings ec on ec.id = r.meeting_id
+          where r.id = t.session_id and ec.ws_id = '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid)
       order by t.created_at, t.id
       limit remaining
       for update skip locked

@@ -1,4 +1,4 @@
--- IF NOT EXISTS must not accept an invalid index from an interrupted build.
+BEGIN;-- IF NOT EXISTS must not accept an invalid index from an interrupted build.
 do $$
 begin
   if not exists (
@@ -148,4 +148,4 @@ alter table private.team_members
     foreign key (team_id) references public.workspace_teams(id)
     on delete cascade not valid;
 
-notify pgrst, 'reload schema';
+notify pgrst, 'reload schema'; COMMIT;

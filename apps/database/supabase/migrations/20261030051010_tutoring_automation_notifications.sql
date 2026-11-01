@@ -1,4 +1,4 @@
--- Tutoring automation notifications (inert; nothing sends them yet).
+BEGIN;-- Tutoring automation notifications (inert; nothing sends them yet).
 --
 -- 1. Two notification types, appended to the current notifications_type_check
 --    list read from the catalog, so this composes with any other migration
@@ -138,4 +138,4 @@ alter table private.tutoring_notification_receipts
     ws_id, report_date, recipient_user_id
   );
 
-notify pgrst, 'reload schema';
+notify pgrst, 'reload schema'; COMMIT;

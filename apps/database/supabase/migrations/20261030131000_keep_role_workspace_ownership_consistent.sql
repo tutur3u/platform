@@ -1,19 +1,25 @@
+BEGIN;
+
 -- Keep the workspace key on a role aligned with its permission rows and keep
 -- creator-granted role membership tied to every workspace that owns a grant.
+-- Bound the ACCESS EXCLUSIVE lock on the hot RLS table (security review, sync packet M4).
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+
 
 ALTER TABLE public.workspace_role_permissions
-  DROP CONSTRAINT public_workspace_role_permissions_role_id_fkey;
+  DROP CONSTRAINT IF EXISTS public_workspace_role_permissions_role_id_fkey;
 
-ALTER TABLE public.workspace_role_permissions
-  ADD CONSTRAINT workspace_role_permissions_ws_role_fkey
-  FOREIGN KEY (ws_id, role_id)
-  REFERENCES public.workspace_roles (ws_id, id)
-  ON UPDATE CASCADE
-  ON DELETE CASCADE
-  NOT VALID;
+-- tuturuuu: reviewed(dynamic-sql-review): static catalog guard, fixed identifiers, no caller input; rerun-safe ADD NOT VALID (VALIDATE runs in its own transaction at the end)
+DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint
+  WHERE conname = 'workspace_role_permissions_ws_role_fkey'
+    AND conrelid = 'public.workspace_role_permissions'::regclass) THEN
+  ALTER TABLE public.workspace_role_permissions
+    ADD CONSTRAINT workspace_role_permissions_ws_role_fkey
+    FOREIGN KEY (ws_id, role_id) REFERENCES public.workspace_roles (ws_id, id)
+    ON UPDATE CASCADE ON DELETE CASCADE NOT VALID;
+END IF; END $$;
 
-ALTER TABLE public.workspace_role_permissions
-  VALIDATE CONSTRAINT workspace_role_permissions_ws_role_fkey;
 
 -- tuturuuu: no-grant (trigger)
 CREATE OR REPLACE FUNCTION private.prevent_workspace_role_workspace_change()
@@ -232,3 +238,14 @@ CREATE TRIGGER prevent_workspace_role_creator_grant_rename
   BEFORE UPDATE OF name ON public.workspace_roles
   FOR EACH ROW
   EXECUTE FUNCTION private.prevent_workspace_role_creator_grant_rename();
+
+COMMIT;
+
+-- Validate separately: a failed VALIDATE leaves the NOT VALID FK in place and
+-- the whole file stays safe to rerun.
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '5min';
+ALTER TABLE public.workspace_role_permissions
+  VALIDATE CONSTRAINT workspace_role_permissions_ws_role_fkey;
+COMMIT;
