@@ -127,11 +127,15 @@ export async function POST(
       sessionId: crypto.randomUUID(),
       meetingId,
       ownerId: access.user.id,
-      billingWorkspaceId: await personalWorkspace(access.user.id),
+      billingWorkspaceId: access.meeting.ws_id,
       mode: command.mode,
       expiresAt: Date.now() + 120000,
     };
-    const workspaceId = command.workspaceId ?? claims.billingWorkspaceId;
+    const workspaceId =
+      command.workspaceId ??
+      (command.mode === 'personal'
+        ? await personalWorkspace(access.user.id)
+        : claims.billingWorkspaceId);
     const workspace =
       command.mode === 'personal'
         ? {

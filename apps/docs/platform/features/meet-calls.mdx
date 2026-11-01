@@ -1705,15 +1705,16 @@ In-room consent survives DO hibernation only under the active session UUID and i
 ## Recording transcription
 
 Recording transcription in Meet requires a signed-in workspace member and a
-workspace identifier. Personal and handle identifiers resolve on the server;
-credit allowance, usage attribution and deductions use the resolved workspace.
+workspace identifier and meeting ID. Personal and handle identifiers resolve on
+the server and must match the meeting row's workspace; mismatches are denied.
+Credit allowance, usage attribution and deductions use that meeting workspace.
 The default Gemini transcription model uses the existing `generate` credit
 feature and `meetings` product attribution. Guests cannot transcribe recordings.
 
 The endpoint applies the shared API proxy limiter at ten requests per minute per
 user, across workspaces. Its configured store and unavailable-store behavior
 follow the shared limiter. Missing workspace identifiers return 400; invalid
-identifiers, non-members and insufficient credit allowance return 403; rate
+identifiers and non-members return 403; insufficient credit allowance returns 402; rate
 limits return 429 with `Retry-After`. Admission (workspace resolution,
 membership, rate limit, and credits) happens before any provider call and before
 any audio is sent to the provider. These rules apply to recording transcription,
@@ -1722,3 +1723,17 @@ independently of live-call transcription consent.
 Regression coverage:
 `packages/ai/src/meetings/transcription/route.test.ts` and
 `packages/internal-api/src/meetings.test.ts`.
+
+
+## Meeting AI credit ownership
+
+User decision, 2 November 2026: "transcriptions and notes drain from the default allocated AI credits, so allow all workspaces with proper credit consumption".
+
+Meet transcription and AI notes charge the default AI credits allocated to the
+meeting's workspace, resolved on the server from `workspace_meetings.ws_id`.
+The acting user remains attached to admission and metering for per-user limits.
+Live participants, including guests and non-members, use the same meeting billing
+workspace. Existing host-only notes and recording membership permissions still
+apply. At zero credits, chunk uploads return 402 before reserving a chunk row,
+with an error identifying the meeting workspace. Personal "Talk to Mira" text
+assistant generation continues to use personal credits.

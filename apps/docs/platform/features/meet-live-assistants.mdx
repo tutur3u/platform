@@ -110,7 +110,10 @@ the service cannot be reconstructed after an outage.
 ## Usage and costs
 
 Live reservations and settlement use the platform's existing AI credit ledger
-and charge the initiating user's personal workspace. Usage is accumulated from
+and charge the meeting workspace (`workspace_meetings.ws_id`), including when
+the initiating participant is a guest or non-member. The initiating user remains
+attributed for per-user limits. A selected tool workspace does not change billing.
+The text-only personal assistant keeps its personal-workspace billing. Usage is accumulated from
 provider events by modality. Reservations use nine-minute holds and renew after eight minutes or before exhaustion; failed
 settlements remain durable and retry after the session ends. Final provider usage
 is collected during shutdown. Interrupted turns without a final usage receipt

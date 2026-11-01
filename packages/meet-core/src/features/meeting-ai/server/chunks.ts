@@ -61,7 +61,7 @@ export async function transcribeMeetChunk(
   )
     throw new MeetAiError(409, 'Transcription has ended');
   // A credit refusal must reject the upload before it can leave a failed row.
-  const admission = await admitMeetCredits(user.id);
+  const admission = await admitMeetCredits(user.id, meetingId);
   const resolved = await Effect.runPromise(
     Effect.either(
       Effect.forEach(
