@@ -593,7 +593,7 @@ INSERT INTO definer_added_later VALUES
   -- apps/database/supabase/migrations/20261101100010_board_sprint_lifecycle.sql
   ('public.end_board_sprint(uuid,uuid,jsonb,text)'),
   ('public.move_tasks_to_board_sprint(uuid,uuid[],uuid)'),
-  -- apps/database/supabase/migrations/20261029060060_board_sprint_horizon.sql
+  -- apps/database/supabase/migrations/20261101100060_board_sprint_horizon.sql
   ('public.add_board_sprint(uuid,uuid,uuid)'),
   ('public.remove_board_sprint(uuid,uuid,uuid,uuid)'),
   ('public.list_board_unplanned_task_ids(uuid,uuid)');

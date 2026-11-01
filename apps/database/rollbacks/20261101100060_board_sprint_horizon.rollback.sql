@@ -1,7 +1,7 @@
 -- Manual rollback only: returns boards to one planned sprint each. Drops the
--- add/remove sprint and parked-task RPCs, restores the 20261029060000 sprint
--- length change and the 20261029060030 sprint start, and restores the
--- one-planned-sprint index. Run the 20261029060070 rollback first, deploy app
+-- add/remove sprint and parked-task RPCs, restores the 20261101100000 sprint
+-- length change and the 20261101100030 sprint start, and restores the
+-- one-planned-sprint index. Run the 20261101100070 rollback first, deploy app
 -- code that no longer calls the dropped RPCs, and remove every extra planned
 -- sprint (keep the earliest) before running: the index refuses otherwise.
 -- Tasks parked outside every sprint stay parked until they next change.

@@ -1,5 +1,5 @@
 -- Board sprints: with several planned sprints (see
--- 20261029060060_board_sprint_horizon.sql), work that moves on goes to the
+-- 20261101100060_board_sprint_horizon.sql), work that moves on goes to the
 -- earliest planned one. Ending a sprint carries its open tasks there, and a new,
 -- moved or reopened task joins the running sprint, else that next sprint.
 

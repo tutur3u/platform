@@ -86,11 +86,13 @@ also take the route's workspace (and `remove_board_sprint` its board) and refuse
 ids from another workspace or board with `SPRINT_BOARD_NOT_FOUND` or
 `SPRINT_NOT_FOUND`; `task-board-sprint-horizon.sql` covers the refusals.
 
-Manual rollbacks for the planning-ahead and ticket key migrations live in
-`apps/database/rollbacks/`. Run them newest first: `20261029060070`, `20261029060060`
+Manual rollbacks for every sprint and ticket key migration live in
+`apps/database/rollbacks/`. Run them newest first: `20261101100070`, `20261101100060`
 (after removing every planned sprint but the earliest on each board), then
-`20261029060055`, `20261029060050` and `20261029060040` (export ticket keys and
-numbers first; they are dropped).
+`20261101100055`, `20261101100050` and `20261101100040` (export ticket keys and
+numbers first; they are dropped), then `20261101100030`, `20261101100020`,
+`20261101100010` and `20261101100000`. The last one drops sprints entirely and
+refuses while any board uses sprints or keeps sprint rows or reports.
 
 ## Board header and Board view
 
