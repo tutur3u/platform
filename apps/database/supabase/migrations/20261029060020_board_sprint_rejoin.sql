@@ -8,7 +8,7 @@ CREATE OR REPLACE FUNCTION private.sync_task_board_sprint_membership()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
   v_cycle RECORD;
@@ -102,7 +102,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION private.sync_task_board_sprint_membership() FROM PUBLIC;
+-- tuturuuu: no-grant (trigger)
+REVOKE ALL ON FUNCTION private.sync_task_board_sprint_membership() FROM PUBLIC, anon, authenticated;
 
 -- Reopening can clear completed_at or closed_at without a list change, and a
 -- restore clears deleted_at, so those columns fire the trigger too.
