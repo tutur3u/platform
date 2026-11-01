@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google';
-import { clampSignedUrlTtl } from '@tuturuuu/storage-core/signed-url-policy';
+import { clampSignedUrlTtl } from '@tuturuuu/utils/signed-url-policy';
 import { isGoogleModelId, toBareModelName } from '../../credits/model-mapping';
 import {
   PlanModelResolutionError,
