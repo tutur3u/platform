@@ -323,6 +323,7 @@
                   "platform/applications/finance",
                   "platform/applications/inventory",
                   "platform/applications/reports",
+                  "platform/applications/ec-reply-deliverability-design",
                   {
                     "group": "Square POS",
                     "pages": [
