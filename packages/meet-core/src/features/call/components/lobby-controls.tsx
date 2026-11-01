@@ -137,10 +137,12 @@ export function LobbyDevicePickers({
     <div className="grid gap-3 sm:grid-cols-3">
       {pickers.map(({ kind, id, Icon, label, value, onChange, supported }) => {
         const options = filterDevicesByKind(devices, kind);
-        const selectedValue =
-          value && options.some((device) => device.deviceId === value)
-            ? value
-            : 'default';
+        // A selected id missing from the list (unplugged, or not enumerated
+        // yet) stays the Select value so choosing "System default" is a real
+        // change Radix reports; the trigger still reads "System default".
+        const unlisted =
+          !!value && !options.some((device) => device.deviceId === value);
+        const selectedValue = value || 'default';
 
         return (
           <div className="min-w-0 space-y-1.5" key={kind}>
@@ -157,7 +159,9 @@ export function LobbyDevicePickers({
               value={selectedValue}
             >
               <SelectTrigger className="h-9 w-full text-xs" id={id}>
-                <SelectValue />
+                <SelectValue>
+                  {unlisted ? t('system_default') : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="default">{t('system_default')}</SelectItem>

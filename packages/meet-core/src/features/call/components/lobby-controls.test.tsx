@@ -1,5 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen, within } from '@testing-library/react';
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
@@ -99,4 +105,18 @@ it('gives each picker instance its own label/control ids', () => {
   expect(triggers).toHaveLength(2);
   expect(triggers[0]?.id).toBeTruthy();
   expect(triggers[0]?.id).not.toBe(triggers[1]?.id);
+});
+
+it('lets "System default" recover a selected device that is no longer listed', async () => {
+  const props = pickerProps({ audioDeviceId: 'mic-unplugged' });
+  render(localized(<LobbyDevicePickers {...props} />));
+
+  const trigger = screen.getByLabelText(en.meet.call.audio_input);
+  expect(trigger.textContent).toContain(en.meet.call.system_default);
+
+  fireEvent.click(trigger);
+  fireEvent.click(
+    await screen.findByRole('option', { name: en.meet.call.system_default })
+  );
+  expect(props.onAudioDeviceChange).toHaveBeenCalledWith('');
 });
