@@ -76,6 +76,7 @@ const PROTECTED_TRIGGERS = {
   'sso-persistence-contract.yaml': '939d2042696cddd9',
   'storefront-cloudflare.yaml': 'a9efe716b3f7059c',
   'supabase-baseline.yaml': 'dcdf48b8132ff123',
+  'task-board-database-contract.yaml': '0a3cc2c97958f5cd',
   'time-tracker-control-contract.yaml': '25ad429ead647fb8',
   'topic-delivery-foundation-contract.yaml': '6880af5bb579ac39',
   'track-cloudflare.yaml': '9c02c75a8da5ddae',

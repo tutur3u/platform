@@ -583,14 +583,32 @@ SELECT is((SELECT count(*)::integer FROM definer_execute_expected e
   WHERE to_regprocedure(e.signature) IS NULL
     OR e.service_role IS DISTINCT FROM has_function_privilege('service_role', to_regprocedure(e.signature), 'EXECUTE')),
   0, 'service_role EXECUTE matches the reviewed A/C expectations outside B');
+-- Public definers created by later migrations are service-only RPCs. Each
+-- owning migration lists its signatures here.
+CREATE TEMP TABLE definer_added_later (signature text PRIMARY KEY);
+INSERT INTO definer_added_later VALUES
+  -- apps/database/supabase/migrations/20261101100000_board_sprints.sql
+  ('public.set_board_sprint_length(uuid,smallint,uuid)'),
+  ('public.start_board_sprint(uuid,uuid)'),
+  -- apps/database/supabase/migrations/20261101100010_board_sprint_lifecycle.sql
+  ('public.end_board_sprint(uuid,uuid,jsonb,text)'),
+  ('public.move_tasks_to_board_sprint(uuid,uuid[],uuid)');
+SELECT is((SELECT count(*)::integer FROM definer_added_later l
+  WHERE to_regprocedure(l.signature) IS NULL
+    OR has_function_privilege('anon', to_regprocedure(l.signature), 'EXECUTE')
+    OR has_function_privilege('authenticated', to_regprocedure(l.signature), 'EXECUTE')
+    OR NOT has_function_privilege('service_role', to_regprocedure(l.signature), 'EXECUTE')),
+  0, 'public definers added by later migrations are service-only');
 SELECT is((SELECT count(*)::integer FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.prosecdef
     AND p.proname NOT IN ('sb19_default_probe')
     AND NOT EXISTS (SELECT 1 FROM definer_execute_expected e
       WHERE to_regprocedure(e.signature)::oid = p.oid)
     AND NOT EXISTS (SELECT 1 FROM definer_b_owned b
-      WHERE to_regprocedure(b.signature)::oid = p.oid)), 0,
-  'the snapshot and B-owned signatures cover every existing public definer');
+      WHERE to_regprocedure(b.signature)::oid = p.oid)
+    AND NOT EXISTS (SELECT 1 FROM definer_added_later l
+      WHERE to_regprocedure(l.signature)::oid = p.oid)), 0,
+  'the snapshot, B-owned and later signatures cover every existing public definer');
 SELECT ok(has_schema_privilege('supabase_auth_admin', 'public', 'USAGE')
   AND has_function_privilege('supabase_auth_admin', 'public.hook_mfa_verification_attempt(jsonb)', 'EXECUTE'),
   'Auth MFA hook retains schema USAGE and EXECUTE for supabase_auth_admin');
