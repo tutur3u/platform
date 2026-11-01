@@ -91,7 +91,7 @@ review prove baseline equivalence. Existing migration history stays immutable.
   defaults and user-client RPC callers before revoking EXECUTE. Run
   `security-definer-policy-callers.sql` to enforce policy-role EXECUTE, including
   PUBLIC policies and its failing privilege control. See the RPC
-  hardening section of `apps/docs/build/devops/secrets-and-configuration.mdx`.
+  hardening section of `tutur3u/internal-docs: docs-internal/build/devops/secrets-and-configuration.mdx`.
 - Catalog-wide anonymous EXECUTE changes must snapshot effective signed-in/service
   privileges before revocation and restore only previously available access.
   Preserve exact-signature anonymous exceptions for final policy/view and invoker
@@ -517,7 +517,7 @@ For the retained pure-SQL dashboard refresh, alter only the command to call
 New retention scheduling belongs in Cloudflare Cron Control. Its service-only
 `private.prune_cron_history(integer)` RPC bounds each table's oldest completed
 seven-day history batch; unfinished executions remain for recovery. See the
-[Cron Control runbook](../../../../../apps/docs/build/devops/cloudflare-cron-control.mdx#seven-day-database-cron-history)
+[Cron Control runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/cloudflare-cron-control.mdx#seven-day-database-cron-history)
 and `supabase/tests/cron-history-retention.sql` for the role, budget and replay
 regressions. Never add a cleanup pg_cron job to repair an accumulating history table.
 

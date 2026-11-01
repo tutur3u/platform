@@ -2,6 +2,7 @@
 title: "Develop and document without Docker"
 description: "Minimal Next.js setup, local documentation preview, focused checks, and remote database alternatives."
 updatedAt: '2026-10-08'
+audience: developers
 ---
 
 ## Choose the smallest environment
@@ -93,14 +94,14 @@ Supabase dev/staging services can support read-only application testing when
 configured, but they are not interchangeable with a disposable migration test
 fixture.
 
-See [Remote devboxes](/build/development-tools/remote-devboxes),
+See Remote devboxes,
 [Local Supabase development](/build/development-tools/local-supabase-development)
 for optional isolated fixtures, and the
 [active runtime map](/build/devops/active-runtime) for current ownership.
 
 The docs wrapper uses the Node patch pin in `apps/docs/mintlify-version.json`.
 Other host versions use an isolated `npx` runtime without changing the host
-installation. See [Mintlify runtime compatibility](documenting#mintlify-runtime-compatibility)
+installation. See [Mintlify runtime compatibility](/build/development-tools/documenting#mintlify-runtime-compatibility)
 for the cancellation mechanism, validation guarantees and pin removal criteria.
 
 

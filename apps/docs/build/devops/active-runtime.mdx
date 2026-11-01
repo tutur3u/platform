@@ -2,6 +2,7 @@
 title: "Active runtime and scheduler ownership"
 description: "The live Next.js path, retired Docker cron runner, inactive migration targets, and current scheduling evidence."
 updatedAt: '2026-10-25'
+audience: developers
 ---
 
 ## Current operating decision
@@ -53,7 +54,7 @@ Worker versions and the existing Calendar/Mail/Apps Vercel deployments. Other ap
 and central API suppliers retain their normal production behavior; the hold is not
 an assertion of compatibility with newly published suppliers. Vercel Git deployment
 stays disabled; do not change framework, domains, bindings or scheduler ownership.
-See the [wave-1 cutover runbook](/build/devops/wave1-native-cutover).
+See the wave-1 cutover runbook.
 
 ## Runtime map
 
@@ -80,7 +81,7 @@ Calendar, Mail and Apps have separately sealed native staging/production profile
 Calendar has a separately gated private production publisher, which never attaches
 routes. Other wave-1 apps remain held. Only owner-provisioned, explicitly enabled
 staging can publish from trusted main runs; no workflow creates provider resources or
-changes DNS as setup. The [native publisher runbook](/build/devops/wave1-native-publishers)
+changes DNS as setup. The native publisher runbook
 records exact identities, secret names, resource continuity, archive/runtime gates,
 stop control, rollback receipts and remaining hosted acceptance. Meet's off-canonical
 profile is defined separately and has no automated staging publisher here.
@@ -97,7 +98,7 @@ profile is defined separately and has no automated staging publisher here.
 
 New schedules go to Cloudflare; the [background work inventory](/build/devops/background-work-inventory)
 lists every remaining legacy owner and its migration target.
-The [Cloudflare Cron Control guide](/build/devops/cloudflare-cron-control)
+The Cloudflare Cron Control guide
 explains the idle skip, requeue RPC, pending-batch check, and delivery token.
 Calendar's Infrastructure gateway authenticates the scheduler and uses its
 configured credential to reach Calendar. It must not be bypassed by adding a

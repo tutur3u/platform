@@ -1,6 +1,8 @@
 ---
 title: Storefront
 description: Public and private inventory storefronts with Polar and Square Terminal checkout.
+updatedAt: "2026-11-01"
+audience: users
 ---
 
 `apps/storefront` is the buyer-facing Inventory commerce app. Operators manage
@@ -149,7 +151,7 @@ runtime suite still requires the exact compiled app name and source commit.
 ### Root-only response and staging contract
 
 `start-bridge.config.ts` serves the app only on the canonical `store.tuturuuu.com`
-and `storefront.staging.tutur3u.com`. The Worker returns 307 redirects from
+and `<app>.staging.tutur3u.com`. The Worker returns 307 redirects from
 `storefront.tuturuuu.com`, `stores.tuturuuu.com` and `storefronts.tuturuuu.com` to
 the canonical HTTPS host, preserving paths, methods and queries. Keep those
 alias routes pointing at this redirect behavior during cutover; they must never

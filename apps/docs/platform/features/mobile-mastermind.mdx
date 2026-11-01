@@ -1,6 +1,8 @@
 ---
 title: Mobile Mastermind
 description: Who sees the Mastermind section in the mobile app, how it behaves before data arrives, and what it never shows.
+updatedAt: "2026-11-01"
+audience: users
 ---
 
 Mastermind is an internal fleet overview. The mobile section reads one sanitized snapshot from the Mastermind hub Worker. This page records the
@@ -183,7 +185,7 @@ Rolling back is unsetting the flag (earlier rule again); the grant can stay.
 ## Data source
 
 Fixture builds (development flavor with `MASTERMIND_FIXTURE`) read the bundled
-synthetic sample. Staging reads `mastermind-hub-staging.tutur3u.com`, production
+synthetic sample. Staging reads `<hub-staging-host>.tutur3u.com`, production
 reads `mastermind-hub.tutur3u.com`, and any build reads `MASTERMIND_HUB_URL`
 when it is set; an explicit value always wins over the flavor host, and a bad
 one never falls back to it. A build with neither (development without a
@@ -569,7 +571,7 @@ and product, area and kind chips. State is always a glyph and a word.
 - **Not tracked yet.** A product with no release age whose every environment has
   deploy, CI, freshness and evidence `unknown` and no release time, version or
   commit id gets no card. All such products share one final "Not tracked yet"
-  row that names them ("MasteryAI, PKTM"). Tapping it lists each with the hub's
+  row that names them ("Product A, Product B"). Tapping it lists each with the hub's
   reason ("Not connected · Last checked 19:22") or "No deployments observed".
   The row is hidden while a product filter is on, and these products get no
   filter pill.

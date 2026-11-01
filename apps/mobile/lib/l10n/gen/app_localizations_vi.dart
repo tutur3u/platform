@@ -14562,7 +14562,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get telemetryConsentTitle => 'Giúp cải thiện Tuturuuu?';
 
   @override
-  String get telemetryConsentBody => 'Chia sẻ dữ liệu sử dụng và báo cáo sự cố với Google Firebase để chúng tôi sửa lỗi và cải thiện ứng dụng. Gồm mã định danh ứng dụng và thiết bị, sự kiện sử dụng, báo cáo sự cố, và thông tin thiết bị, hệ điều hành. Bạn có thể đổi lựa chọn bất cứ lúc nào tại Cài đặt > Tùy chọn > Quyền riêng tư.';
+  String get telemetryConsentBody => 'Chia sẻ dữ liệu sử dụng và báo cáo sự cố với Google Firebase Analytics và Crashlytics để chúng tôi sửa lỗi và cải thiện ứng dụng. Gồm mã định danh ứng dụng và thiết bị, sự kiện sử dụng, báo cáo sự cố, và thông tin thiết bị, hệ điều hành. Bạn có thể đổi lựa chọn bất cứ lúc nào tại Cài đặt > Tùy chọn > Quyền riêng tư.';
+
+  @override
+  String get telemetryFirebaseInstallationDisclosure => 'Cho phép phân tích và báo cáo sự cố cũng tạo một mã định danh bản cài đặt Firebase (Firebase Installation ID) trên thiết bị này (iOS và Android), giúp Google phân biệt các bản cài đặt ứng dụng. Chúng tôi không gửi thông tin tài khoản của bạn cho Google cùng với mã này.';
 
   @override
   String get telemetryConsentAllow => 'Cho phép';
@@ -14574,7 +14577,13 @@ class AppLocalizationsVi extends AppLocalizations {
   String get telemetryConsentLearnMore => 'Chi tiết về quyền riêng tư';
 
   @override
-  String get settingsShareTelemetryDescription => 'Gửi dữ liệu sử dụng và báo cáo sự cố tới Google Firebase để giúp chúng tôi sửa lỗi và cải thiện ứng dụng. Khi tắt, việc thu thập dừng lại và các báo cáo sự cố chưa gửi sẽ bị xóa.';
+  String get settingsShareTelemetryDescription => 'Gửi dữ liệu sử dụng và báo cáo sự cố tới Google Firebase Analytics và Crashlytics để giúp chúng tôi sửa lỗi và cải thiện ứng dụng. Khi tắt, việc thu thập dừng lại và các báo cáo sự cố chưa gửi sẽ bị xóa.';
+
+  @override
+  String get settingsPushNotifications => 'Thông báo đẩy';
+
+  @override
+  String get settingsPushFirebaseDisclosure => 'Thông báo đẩy được gửi qua Google Firebase Cloud Messaging, dịch vụ này đăng ký thiết bị này với Firebase Installations. Việc này tạo một mã định danh bản cài đặt Firebase (Firebase Installation ID) và một mã thông báo đẩy cho thiết bị này; chúng tôi gắn mã thông báo đẩy với tài khoản của bạn để gửi thông báo cho bạn. Việc này tách biệt với lựa chọn phân tích của bạn. Tắt thông báo đẩy thì thiết bị này không còn được đăng ký nhận thông báo.';
 
   @override
   String get mastermindIrisChatSegment => 'Trò chuyện';
@@ -14889,4 +14898,93 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindIrisWritesNeedEnrol => 'Hãy đăng ký thiết bị này để gửi tin nhắn.';
+
+  @override
+  String get mastermindAskCardTierDecision => 'Cần quyết định';
+
+  @override
+  String get mastermindAskCardTierFyi => 'Để biết';
+
+  @override
+  String mastermindAskCardDue(String when) {
+    return 'Hạn $when';
+  }
+
+  @override
+  String get mastermindAskCardOverdue => 'Quá hạn';
+
+  @override
+  String get mastermindAskCardReversible => 'Có thể hoàn tác';
+
+  @override
+  String get mastermindAskCardOneWay => 'Một chiều';
+
+  @override
+  String get mastermindAskCardNeedsBiometric => 'Cần Face ID hoặc vân tay';
+
+  @override
+  String get mastermindAskCardExpired => 'Đã hết hạn';
+
+  @override
+  String get mastermindAskCardAnsweredDiscord => 'Đã trả lời trên Discord';
+
+  @override
+  String get mastermindAskCardAnsweredAgent => 'Đã được tác tử trả lời';
+
+  @override
+  String get mastermindAskCardIncomplete => 'Thẻ thiếu nội dung';
+
+  @override
+  String get mastermindAskCardIncompleteMessage => 'Bên đăng chỉ gửi một phần của yêu cầu này. Đã tắt trả lời một chạm. Hãy mở câu hỏi đầy đủ, hoặc trả lời bằng lời của bạn.';
+
+  @override
+  String get mastermindAskCardExpiredMessage => 'Yêu cầu này đã hết hạn nên không thể trả lời nữa.';
+
+  @override
+  String get mastermindAskCardOpenFull => 'Mở câu hỏi đầy đủ';
+
+  @override
+  String get mastermindAskCardReplyInWords => 'Trả lời bằng lời của bạn';
+
+  @override
+  String get mastermindAskCardAnswerWithBiometric => 'Mở để trả lời bằng Face ID';
+
+  @override
+  String get mastermindAskCardShowFullText => 'Xem toàn văn';
+
+  @override
+  String get mastermindAskCardHideFullText => 'Thu gọn';
+
+  @override
+  String mastermindAskCardMoreOptions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count lựa chọn khác',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindAskCardFewerOptions => 'Ẩn bớt lựa chọn';
+
+  @override
+  String mastermindAskCardOptionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count lựa chọn',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindAskCardRecommendedOption(String option) {
+    return 'Đề xuất: $option';
+  }
+
+  @override
+  String mastermindAskCardRecommendedWhy(String option, String why) {
+    return 'Đề xuất: $option. $why';
+  }
 }

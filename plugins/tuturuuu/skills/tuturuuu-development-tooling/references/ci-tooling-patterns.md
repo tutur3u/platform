@@ -56,7 +56,7 @@ Wrangler conversion, matching Cloudflare's remote shape while preserving foreign
 targets. beta.20 rejects the unpatched addition inside the binding array. The
 Cron Control regression calls the installed Build Output normalizer and `bE`
 helper, requiring an empty diff and preserving the unpatched negative control.
-See the [Cron Control admission runbook](../../../../../apps/docs/build/devops/cloudflare-cron-control.mdx#dashboard-deployment-admission).
+See the [Cron Control admission runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/cloudflare-cron-control.mdx#dashboard-deployment-admission).
 
 Coordination's before/after token gates consume the verified snapshot's `secrets`
 array; avoid duplicate CLI reads. Settings tokens need Workers Scripts read on the
@@ -148,7 +148,7 @@ Legacy owners live in the shrink-only allowlist with owner/target/plan; the test
 pins the adopted baseline and fails stale entries, so delete an entry when its
 legacy definition is removed. Retained pg_cron jobs need a written pure-database
 justification; `pg_net` callers are not exceptions. Do not extend the baseline to
-admit new work. See `apps/docs/build/devops/cloudflare-backend-ownership.mdx`.
+admit new work. See `docs-internal/build/devops/cloudflare-backend-ownership.mdx`.
 
 ## Codex plugin native parallel pilot
 
@@ -213,7 +213,7 @@ local SARIF gate. Triage at the analyzed SHA and current main: trace validation
 rejections, same-descriptor reads and directory-only fsync before calling an alert real.
 Keep optional-reader defects distinct from default production reachability; test
 replacement negatives without enabling collection. The gate prints escaped rule IDs
-and locations, omits messages, and fails closed without a baseline. See [`security-cadence.mdx`](../../../../../apps/docs/build/devops/security-cadence.mdx). Definer policy, read-only daily inventory, historical exceptions and focused checks live in the [security scans runbook](../../../../../apps/docs/build/devops/security-scans.mdx).
+and locations, omits messages, and fails closed without a baseline. See [`security-cadence.mdx`](../../../../../apps/docs/build/devops/security-cadence.mdx). Definer policy, read-only daily inventory, historical exceptions and focused checks live in the internal security scans runbook (org/lanes/internal-docs).
 
 ## Bun runtime pins
 
@@ -396,7 +396,7 @@ for the diagnostic collector's legacy comparison field and remaining gates.
   checkouts, `preserve/*` refs, VM disks or unnamed Supabase volumes. Disk
   admission in `ttr resources` and the bucketed heartbeat `resources.disk`
   (strict on web and Worker) keep work off full disks. See
-  `apps/docs/build/development-tools/machine-storage-health.mdx`.
+  `tutur3u/internal-docs: docs-internal/build/development-tools/machine-storage-health.mdx`.
 - `bun rust-cache report|prune|auto` is the repo-owned Rust target cleanup
   wrapper. It owns only `apps/backend/target` by default, stores auto-run state
   under ignored `tmp/rust-cache/state.json`, skips CI unless explicitly enabled,
@@ -985,7 +985,7 @@ Runtime health fixtures do not dispatch scheduled work or contact production;
 repeat them against the CI-emitted configuration and verify identity, compatibility,
 trigger, vars and secret names. Deploy only the immutable artifact qualified by
 that CI run, using its emitted Wrangler config; preserve source config for named
-secret provisioning. See `apps/docs/build/devops/cloudflare-cron-control.mdx` for
+secret provisioning. See `tutur3u/internal-docs: docs-internal/build/devops/cloudflare-cron-control.mdx` for
 commands and the distinct downstream delivery/cost/stop acceptance boundaries.
 
 For Cron recovery cost review, count the requeue RPC and pending lookup even when
@@ -1253,6 +1253,17 @@ Only main pushes/main dispatches save; PRs restore only. Normal misses have thre
 
 ## Wave-1 staging publication admission
 
+Web staging installs use `--ignore-scripts`; Vercel CLI authentication uses only
+`VERCEL_TOKEN` in the child environment. Validate all parsed staging hosts before
+probing, reject ports/userinfo, and select the proof host from sorted allowed
+hostnames. Staff email domains must equal `tuturuuu.com` case-insensitively.
+Keep the focused Next, Vercel, ingress-policy and workflow tests aligned with the
+[publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx#jobs-and-order),
+including its shared-runner limitation. Assert probe destinations from recorded
+fetch calls after the run, since probe transport errors are intentionally captured.
+Reconciliation of an existing Web version requires the same fresh Next protection
+check as a new upload, before any uploaded/activated ledger transition.
+
 Keep the four-app production hold independent of staging. Same-account staging
 requires the reviewed `stagingAdmission` profile, only the named staging deploy
 secret, isolated resource identities and the exact app/source/artifact repository
@@ -1268,7 +1279,7 @@ private-serving state rather than issuing a public HTTP probe. Preserve CI worke
 acceptance and obtain a separately approved private ingress plan for hosted UX.
 Never delete consumption history to renew admission or infer retry permission from a
 missing local receipt or inactive version. Reconcile listed versions by detail SHA/tag and retain unresolved attempts.
-The [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx)
+The [publisher runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/wave1-native-publishers.mdx)
 owns the schema, bounded operation counts, residual account risk and recovery.
 For private production preparation, keep the read token confined to preflight and
 post-upload verification, and the deploy token confined to the upload step. Check

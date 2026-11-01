@@ -2,6 +2,7 @@
 title: 'Database Migrations Guide'
 description: 'Best practices for creating, testing, and deploying Supabase migrations'
 updatedAt: '2026-10-29'
+audience: developers
 ---
 
 The Tuturuuu platform uses Supabase migrations to manage database schema changes with version control and reproducibility.
@@ -697,7 +698,7 @@ bun sb:push
 
 ## Rollback Strategy
 
-See the [manual incident rollback runbook](/reference/database/migration-incident-rollbacks)
+See the internal manual incident rollback runbook
 for the per-migration inventory, reverse run order, timeout/transaction rules and
 forward-only cross-app token containment. These manual files do not alter the
 hosted migration ledger.

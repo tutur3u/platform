@@ -1,6 +1,8 @@
 ---
 title: 'One-origin super-app (design)'
 description: 'Proposed design for serving satellite apps at tuturuuu.com/<app> instead of <app>.tuturuuu.com, piloted with Meet and Mail.'
+updatedAt: "2026-11-01"
+audience: developers
 ---
 
 <Note>
@@ -52,7 +54,7 @@ Both apps already have TanStack Start + Void + Vite+ native source: `vite.config
 `void.config.ts`, `cloudflare/worker.ts`, and a single `src/routes/$.tsx` catch-all
 that dispatches to the retained Next page modules through `runtime/` adapters.
 Production for both is **held** by the
-[wave-1 publication hold](/build/devops/wave1-native-cutover). Meet keeps its
+wave-1 publication hold. Meet keeps its
 currently deployed Worker version. Mail keeps its Vercel deployment. The Mail native
 Worker (`tuturuuu-mail`) has no production route yet.
 
@@ -183,7 +185,7 @@ The router Worker (b) is rejected for two reasons:
 - It buys flexibility we do not need. The flag lives in the app Worker (see
   [plan](#implementation-plan)), and cutover is direct, with no staged canaries.
 - It adds a Worker invocation to every Web request. The Cloudflare
-  [billable-operation rules](/build/devops/cloudflare-backend-ownership) would then
+  billable-operation rules would then
   require cost bounds that we otherwise avoid.
 
 ### How Web keeps `/` without a double hop
@@ -382,7 +384,7 @@ from `activationStart`.
 
 Every accepted beacon is a billable Worker request plus an Analytics Engine write,
 so ingestion follows the Cloudflare
-[billable-operation rules](/build/devops/cloudflare-backend-ownership). Client
+billable-operation rules. Client
 sampling is not a spend cap. No Analytics Engine binding is added to any Worker
 config until all of these exist and pass with exact-commit evidence:
 
@@ -444,7 +446,7 @@ DNS/proxy lane.
 **Operations, each needing user approval through the orchestrator:**
 
 1. **O1.** Create a non-canonical proxied staging host (for example
-   `one-origin.staging.tutur3u.com`) pointing at Web staging, with staging Worker
+   `<app>.staging.tutur3u.com`) pointing at Web staging, with staging Worker
    routes for `/meet` and `/mail`.
 2. **O2.** Measure gate W1 and record a baseline ASI on O1.
 3. **O3.** Proxy the production apex through Cloudflare (no Worker routes yet).

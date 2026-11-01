@@ -2,6 +2,7 @@
 title: Tuturuuu Mail
 updatedAt: '2026-09-18'
 description: Multi-mailbox client with permanent SES and Cloudflare transports.
+audience: users
 ---
 
 `apps/mail` is the standalone Tuturuuu mailbox app. It runs on
@@ -471,7 +472,7 @@ Activate the bridge in this order:
 2. Open Mail settings as a root workspace operator, select
    `ingest.tutur3u.com`, choose the destination mailbox, and enable the logical
    catch-all route. The initial pilot destination is
-   `phucvo@tuturuuu.com` when that mailbox exists.
+   `<owner-mailbox>` when that mailbox exists.
 3. In Cloudflare Email Routing, select the already-onboarded
    `ingest.tutur3u.com` subdomain and set its catch-all action to the
    `tuturuuu-mail-email-routing` Worker. Keep explicit rules enabled; they take
@@ -532,7 +533,7 @@ Cloud resources; migrating their email does not authorize deleting those groups
 or changing their IAM membership.
 
 For the Tuturuuu migration, suspended accounts stay suspended while incoming
-mail for their addresses follows the domain catch-all to `phucvo@tuturuuu.com`.
+mail for their addresses follows the domain catch-all to `<owner-mailbox>`.
 An existing inactive mailbox must not be recreated by automatic provisioning.
 This delivery policy does not grant the suspended user mailbox access.
 
@@ -582,7 +583,7 @@ message-size limit before switching the application provider; domain activation
 alone does not prove application sends or recipient delivery.
 
 For `tuturuuu.com`, the requested catch-all destination is
-`phucvo@tuturuuu.com`. Configure the logical Mail destination first, route the
+`<owner-mailbox>`. Configure the logical Mail destination first, route the
 Cloudflare catch-all to the ingestion Worker, and retain explicit recipient
 routes. Prove delivery to a new random local part, the preserved original
 recipient, attachment storage, and duplicate handling before enabling the Google

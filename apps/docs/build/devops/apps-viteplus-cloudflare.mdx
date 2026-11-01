@@ -1,6 +1,8 @@
 ---
 title: "Apps native Start on Vite+ and Cloudflare"
 description: "Qualify native Apps SSR and its exact emitted artifact before staging or canonical promotion."
+updatedAt: "2026-11-01"
+audience: developers
 ---
 
 Apps has a native Start SSR candidate with the production catalogue, existing
@@ -75,7 +77,7 @@ object substitutes and unrelated fields, and check raw emitted config bytes
 through sealing and restore. Artifact validation does not qualify source-map
 upload, dry-run, hosted runtime or publication.
 
-The checked name `tuturuuu-apps-vite-staging` is the candidate's source-declared
+The checked name `<staging-worker>` is the candidate's source-declared
 sandbox name. This check does not establish an existing hosted Worker, account,
 route, binding, credential, rollback version or provisioning authority. Staging
 keeps `TUTURUUU_NOINDEX=1`. The candidate returns HTTP 503 for the canonical host

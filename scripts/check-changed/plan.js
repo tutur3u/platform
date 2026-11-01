@@ -288,6 +288,19 @@ function planChecks(changes, context) {
       steps.push(nodeStep(name, name, [script]));
     }
   }
+  if (
+    any(
+      /^packages\/[^/]+\/package\.json$|^\.github\/workflows\/release-.+-package\.ya?ml$|^scripts\/ci\/package-release-(dependency-guard|readiness)\.js$/
+    )
+  ) {
+    steps.push(
+      nodeStep(
+        'package-release-dependencies',
+        'published package dependencies',
+        ['scripts/ci/package-release-dependency-guard.js']
+      )
+    );
+  }
   if (any(/^apps\/[^/]+\/messages\/.*\.json$/)) {
     steps.push(
       nodeStep('i18n-sort', 'i18n sort', ['scripts/i18n-sort.js', '--check']),

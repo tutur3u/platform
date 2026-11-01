@@ -134,20 +134,20 @@ test('deployment readback binds id, project, READY, non-production target, SHA a
 test('every alias and project domain is enumerated; custom domains fail', () => {
   const deployment = {
     url: 'tuturuuu-web-staging-abc.vercel.app',
-    alias: ['tuturuuu-web-staging.vercel.app'],
+    alias: ['tuturuuu-web-staging-project.vercel.app'],
   };
   const { hosts, failures } = deploymentHosts({
     deployment,
     aliases: {
       aliases: [{ alias: 'tuturuuu-web-staging-git-main.vercel.app' }],
     },
-    domains: { domains: [{ name: 'tuturuuu-web-staging.vercel.app' }] },
+    domains: { domains: [{ name: 'tuturuuu-web-staging-project.vercel.app' }] },
   });
   assert.deepEqual(failures, []);
   assert.deepEqual(hosts, [
     'tuturuuu-web-staging-abc.vercel.app',
     'tuturuuu-web-staging-git-main.vercel.app',
-    'tuturuuu-web-staging.vercel.app',
+    'tuturuuu-web-staging-project.vercel.app',
   ]);
   assert.ok(
     deploymentHosts({
@@ -277,3 +277,67 @@ for (const [label, options, id] of [
     );
   });
 }
+
+for (const value of [
+  'tuturuuu-web-staging-x.vercel.app.evil.com',
+  'https://user@tuturuuu-web-staging-x.vercel.app',
+  'https://tuturuuu-web-staging-x.vercel.app:8443',
+  'https://tuturuuu-web-staging-x.vercel.app:443',
+  'web.example.com',
+  'other.vercel.app',
+  '',
+]) {
+  test(`refuses invalid staging origin ${value || '(empty)'} before fetching`, async () => {
+    const { fetcher, calls } = fixture();
+    await assert.rejects(
+      vercelProbes({
+        hosts: [...hosts, value],
+        fetcher,
+        bypassSecret: bypass,
+        proofSecret: 'p'.repeat(40),
+      }),
+      /allowed staging hosts/
+    );
+    assert.deepEqual(calls, []);
+    const result = deploymentHosts({
+      deployment: { url: hosts[0] },
+      aliases: { aliases: [{ alias: value }] },
+      domains: { domains: [] },
+    });
+    assert.ok(result.failures.length);
+    assert.deepEqual(result.hosts, [hosts[0]]);
+  });
+}
+
+test('requires at least one allowed staging host', async () => {
+  const { fetcher, calls } = fixture();
+  await assert.rejects(
+    vercelProbes({ hosts: [], fetcher, bypassSecret: bypass }),
+    /allowed staging hosts/
+  );
+  assert.deepEqual(calls, []);
+});
+
+test('normalizes staging hosts and chooses the same proof host in any order', async () => {
+  for (const order of [
+    hosts,
+    [...hosts].reverse(),
+    hosts.map((h) => `https://${h.toUpperCase()}`),
+  ]) {
+    const { fetcher, calls } = fixture();
+    await vercelProbes({
+      hosts: order,
+      fetcher,
+      bypassSecret: bypass,
+      proofSecret: 'p'.repeat(40),
+    });
+    assert.ok(calls.filter((c) => c.bypass).length);
+    assert.ok(
+      calls.filter((c) => c.bypass).every((c) => hosts.includes(c.host))
+    );
+    assert.deepEqual(
+      calls.filter((c) => c.proof).map((c) => c.host),
+      [hosts[0]]
+    );
+  }
+});

@@ -1,6 +1,8 @@
 ---
 title: AI Studio
 description: Operate Tuturuuu AI Studio policies, credentials, traces, and workspace credit metering.
+updatedAt: "2026-11-01"
+audience: developers
 ---
 
 AI Studio is the workspace-scoped development surface at
@@ -251,7 +253,7 @@ runtime suite still requires the exact compiled app name and source commit.
 ### Root-only response and staging contract
 
 `start-bridge.config.ts` admits only `ai.tuturuuu.com` and
-`ai.staging.tutur3u.com`. Empty mount hosts and `unknownHost: 'reject'`
+`<app>.staging.tutur3u.com`. Empty mount hosts and `unknownHost: 'reject'`
 reject apex and unknown hosts before route execution. These allowlist entries
 do not provision DNS or authorize publication. The shared generator derives `workers_dev: false` from this fail-closed
 profile and seals that setting with the app-owned request-signal flag.

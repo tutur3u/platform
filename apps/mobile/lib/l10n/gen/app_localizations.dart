@@ -27436,8 +27436,14 @@ abstract class AppLocalizations {
   /// No description provided for @telemetryConsentBody.
   ///
   /// In en, this message translates to:
-  /// **'Share usage data and crash reports with Google Firebase so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.'**
+  /// **'Share usage data and crash reports with Google Firebase Analytics and Crashlytics so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.'**
   String get telemetryConsentBody;
+
+  /// No description provided for @telemetryFirebaseInstallationDisclosure.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowing analytics and crash reports also creates a Firebase Installation ID on this device (iOS and Android), which Google uses to tell app installs apart. We do not send your account details to Google with it.'**
+  String get telemetryFirebaseInstallationDisclosure;
 
   /// No description provided for @telemetryConsentAllow.
   ///
@@ -27460,8 +27466,20 @@ abstract class AppLocalizations {
   /// No description provided for @settingsShareTelemetryDescription.
   ///
   /// In en, this message translates to:
-  /// **'Send usage data and crash reports to Google Firebase to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.'**
+  /// **'Send usage data and crash reports to Google Firebase Analytics and Crashlytics to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.'**
   String get settingsShareTelemetryDescription;
+
+  /// No description provided for @settingsPushNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Push notifications'**
+  String get settingsPushNotifications;
+
+  /// No description provided for @settingsPushFirebaseDisclosure.
+  ///
+  /// In en, this message translates to:
+  /// **'Push notifications are delivered through Google Firebase Cloud Messaging, which registers this device with Firebase Installations. This creates a Firebase Installation ID and a push token for this device; we link the push token to your account so we can send you notifications. This is separate from your analytics choice. Turn push off and this device is no longer registered for notifications.'**
+  String get settingsPushFirebaseDisclosure;
 
   /// No description provided for @mastermindIrisChatSegment.
   ///
@@ -27984,6 +28002,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enrol this device to send messages.'**
   String get mastermindIrisWritesNeedEnrol;
+
+  /// No description provided for @mastermindAskCardTierDecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs decision'**
+  String get mastermindAskCardTierDecision;
+
+  /// No description provided for @mastermindAskCardTierFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'FYI'**
+  String get mastermindAskCardTierFyi;
+
+  /// No description provided for @mastermindAskCardDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {when}'**
+  String mastermindAskCardDue(String when);
+
+  /// No description provided for @mastermindAskCardOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get mastermindAskCardOverdue;
+
+  /// No description provided for @mastermindAskCardReversible.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversible'**
+  String get mastermindAskCardReversible;
+
+  /// No description provided for @mastermindAskCardOneWay.
+  ///
+  /// In en, this message translates to:
+  /// **'One-way'**
+  String get mastermindAskCardOneWay;
+
+  /// No description provided for @mastermindAskCardNeedsBiometric.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs Face ID or fingerprint'**
+  String get mastermindAskCardNeedsBiometric;
+
+  /// No description provided for @mastermindAskCardExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get mastermindAskCardExpired;
+
+  /// No description provided for @mastermindAskCardAnsweredDiscord.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on Discord'**
+  String get mastermindAskCardAnsweredDiscord;
+
+  /// No description provided for @mastermindAskCardAnsweredAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered by an agent'**
+  String get mastermindAskCardAnsweredAgent;
+
+  /// No description provided for @mastermindAskCardIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete card'**
+  String get mastermindAskCardIncomplete;
+
+  /// No description provided for @mastermindAskCardIncompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The publisher sent only part of this ask. One-tap answers are off. Open the full question, or reply in your own words.'**
+  String get mastermindAskCardIncompleteMessage;
+
+  /// No description provided for @mastermindAskCardExpiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This ask expired, so answering is closed.'**
+  String get mastermindAskCardExpiredMessage;
+
+  /// No description provided for @mastermindAskCardOpenFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Open full question'**
+  String get mastermindAskCardOpenFull;
+
+  /// No description provided for @mastermindAskCardReplyInWords.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply in your own words'**
+  String get mastermindAskCardReplyInWords;
+
+  /// No description provided for @mastermindAskCardAnswerWithBiometric.
+  ///
+  /// In en, this message translates to:
+  /// **'Open to answer with Face ID'**
+  String get mastermindAskCardAnswerWithBiometric;
+
+  /// No description provided for @mastermindAskCardShowFullText.
+  ///
+  /// In en, this message translates to:
+  /// **'Show full text'**
+  String get mastermindAskCardShowFullText;
+
+  /// No description provided for @mastermindAskCardHideFullText.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get mastermindAskCardHideFullText;
+
+  /// No description provided for @mastermindAskCardMoreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{+1 more option} other{+{count} more options}}'**
+  String mastermindAskCardMoreOptions(int count);
+
+  /// No description provided for @mastermindAskCardFewerOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Show fewer options'**
+  String get mastermindAskCardFewerOptions;
+
+  /// No description provided for @mastermindAskCardOptionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 option} other{{count} options}}'**
+  String mastermindAskCardOptionCount(int count);
+
+  /// No description provided for @mastermindAskCardRecommendedOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended: {option}'**
+  String mastermindAskCardRecommendedOption(String option);
+
+  /// No description provided for @mastermindAskCardRecommendedWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended: {option}. {why}'**
+  String mastermindAskCardRecommendedWhy(String option, String why);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

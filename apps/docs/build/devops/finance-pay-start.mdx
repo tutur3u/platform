@@ -1,6 +1,8 @@
 ---
 title: "Finance and Pay Start migration"
 description: "Inventory Finance and Pay before adopting the shared Start bridge and qualifying direct cutover."
+updatedAt: "2026-11-01"
+audience: developers
 ---
 
 Finance retains its Next.js entrypoints and has a Start staging candidate.
@@ -140,9 +142,9 @@ Before any hosted staging publish, declare and admit its exact account, Worker,
 hostname, bindings and rollback mapping. Finance declares two native profiles in
 `apps/finance/cloudflare/native-profiles.json`, selected at build time with
 `VITE_FINANCE_NATIVE_PROFILE`. Staging is the default: Worker
-`tuturuuu-finance-vite-staging`, root host `finance.staging.tutur3u.com`,
+`<staging-worker>`, root host `<app>.staging.tutur3u.com`,
 `INTERNAL_WEB_API_ORIGIN` and `NEXT_PUBLIC_WEB_APP_URL` set to
-`https://web.staging.tutur3u.com`, and the staging Supabase URL. `production` must be
+`https://<app>.staging.tutur3u.com`, and the staging Supabase URL. `production` must be
 requested explicitly: Worker `tuturuuu-finance`, root host
 `finance.tuturuuu.com`, Web at `https://tuturuuu.com` and the production Supabase
 URL. Each profile admits only its own root host, so the staging-data Worker

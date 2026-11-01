@@ -5,6 +5,7 @@ import {
   fixtureStaffGroupId,
   healthyTopology,
 } from './wave1-ingress-fixture.mjs';
+import { staffSelector } from './wave1-ingress-policies.mjs';
 
 const staffEmailListId = '44444444-4444-4444-8444-444444444444';
 
@@ -202,3 +203,31 @@ test('a service-auth policy with an empty include fails', () => {
   });
   assert.ok(result.some((line) => /must name service tokens/.test(line)));
 });
+
+test('accepts company email selectors case-insensitively', () => {
+  assert.deepEqual(
+    check('web', allowRule({ email: { email: 'A@TUTURUUU.COM' } })),
+    []
+  );
+});
+
+for (const email of [
+  'a@gmail.com',
+  'a@evil-tuturuuu.com',
+  'a@tuturuuu.com.evil',
+  'a@x.tuturuuu.com',
+  'a@tuturuuu.com.evil.com',
+  'a@tuturuuu.cоm',
+  'a@tuturuuu.com.',
+]) {
+  test(`refuses email outside the exact company domain: ${email}`, () => {
+    const rule = { email: { email } };
+    assert.equal(staffSelector(rule), false, 'not counted as staff');
+    const failures = check('web', allowRule(rule));
+    assert.ok(
+      failures.some((failure) =>
+        /staff emails must use @tuturuuu.com exactly/.test(failure)
+      )
+    );
+  });
+}

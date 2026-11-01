@@ -15,6 +15,7 @@ import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
+import 'package:mobile/features/mastermind/view/inbox/ask_card_insight.dart';
 import 'package:mobile/features/mastermind/view/inbox/item_question_card.dart';
 import 'package:mobile/features/mastermind/view/inbox/item_reply_section.dart';
 import 'package:mobile/features/mastermind/view/inbox/item_withheld_card.dart';
@@ -247,6 +248,7 @@ class _Detail extends StatelessWidget {
           fullText: detail?.askText,
           deadline: detail?.deadline,
         ),
+        AskCardInsight(item: item, now: now),
         if ((detail, onOpenLink) case (final detail?, final open?))
           AskDetailSections(detail: detail, onOpenLink: open),
         if (lane case final lane?)

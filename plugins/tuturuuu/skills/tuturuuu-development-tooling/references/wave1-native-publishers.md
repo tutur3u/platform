@@ -15,7 +15,7 @@ Root `test:scripts` uses `scripts/run-script-tests.js` discovery, including `.te
 and `.test.mjs` under `scripts/`, excluding paused implementation suites. New tests
 there need no manifest list. Keep deployment credentials out of runtime/build steps.
 Meet has a separate isolated staging profile; canonical output never stands in for
-staging. See the [publisher runbook](../../../../../apps/docs/build/devops/wave1-native-publishers.mdx)
+staging. See the [publisher runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/wave1-native-publishers.mdx)
 for provisioning, bounded-work limits and remaining hosted/cutover evidence.
 
 Use the shared validated production publication policy in native entrypoints; do not
@@ -49,7 +49,7 @@ checks and the timer-free import/expiry regression when changing this path.
 
 ## Subdomain rollback capture and smoke
 
-Follow the [cutover tools runbook](../../../../../apps/docs/build/devops/wave1-native-cutover.mdx#subdomain-cutover-tools).
+Follow the [cutover tools runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/wave1-native-cutover.mdx#subdomain-cutover-tools).
 Capture every zone route, including wildcard routes and scriptless exclusions; a
 root-URL match cannot establish which routes serve deeper paths. Use the dedicated
 zone-scoped `CLOUDFLARE_READONLY_API_TOKEN` (DNS:Read and Workers Routes:Read),
@@ -121,7 +121,7 @@ Ops Hub uses the cf/Vite native Worker template with a SQLite OpsHub namespace.
 Its dedicated validation workflow has no deploy job or deployment credentials.
 Run source acceptance with apps/ops-hub/scripts/verify-worker-runtime.mjs; it
 uses isolated persistence and disposable fixture keys. The gateway shares only
-the portable protocol export. See the [ops runbook](../../../../../apps/docs/build/devops/ops-hub.mdx)
+the portable protocol export. See the internal ops runbook (org/lanes/internal-docs)
 for strict signed envelopes, request/storage budgets, retention, tombstone erasure
 and the disabled-state alarm fence. Hosted acceptance and publisher sample approval
 remain independent release gates. Do not infer deployment authority from CI wiring.

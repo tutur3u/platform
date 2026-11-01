@@ -25,6 +25,7 @@ extension _AppPushNavigation on _AppState {
     // Phases that ended while the app slept are settled before anything
     // else reads the Pomodoro.
     unawaited(_pomodoroController.reconcile());
+    unawaited(PushNotificationService.instance.refreshRegistration());
 
     final backgroundedAt = _backgroundedAt;
     _backgroundedAt = null;

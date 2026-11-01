@@ -2,14 +2,15 @@
 title: Hive
 description: Voxel research playground for CRDT worlds, farming simulation, NPC economies, and manual or autonomous society experiments.
 updatedAt: '2026-10-26'
+audience: users
 ---
 
 Hive is the Tuturuuu research satellite app at `https://hive.tuturuuu.com`.
 It uses the centralized Tuturuuu login handoff. Protected product APIs live in
 `apps/hive/src/app/api/v1/hive`; unmatched API paths fall back to `apps/web`.
-The [native Cloudflare plan](/build/devops/hive-cloudflare-migration) records the
+The native Cloudflare plan records the
 target architecture and delivery gates. The separately approved
-[maintenance Worker](/build/devops/hive-cloudflare-maintenance) returns bilingual
+maintenance Worker returns bilingual
 503 responses on the satellite host while the application is unavailable; it
 does not replace the embedded web host or restore product features.
 

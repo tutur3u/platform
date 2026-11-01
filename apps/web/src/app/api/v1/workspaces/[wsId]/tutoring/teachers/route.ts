@@ -6,6 +6,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { buildPostgrestIlikeOrFilter } from '@tuturuuu/utils/postgrest-filter';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveTutoringReadScope } from '@/lib/tutoring/read-scope';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 import {
   classifyWorkspaceTeacher,
@@ -29,10 +30,8 @@ export async function GET(
 ) {
   await connection();
   const { wsId } = await params;
-  const { normalizedWsId, permissions } = await resolveTutoringRouteAccess(
-    request,
-    wsId
-  );
+  const access = await resolveTutoringRouteAccess(request, wsId);
+  const { normalizedWsId, permissions } = access;
   if (!permissions)
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   if (permissions.withoutPermission('view_user_groups'))
@@ -47,6 +46,9 @@ export async function GET(
     return NextResponse.json({ message: 'Invalid query' }, { status: 400 });
   const { page, pageSize, q, tutorsOnly } = parsed.data;
   const sbAdmin = await createAdminClient();
+  const scope = await resolveTutoringReadScope({ request, access, sbAdmin });
+  if (!scope.allowed)
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   const { data: policyRows, error: policyError } = await sbAdmin
     .from('workspace_configs')
     .select('id,value')
@@ -68,6 +70,7 @@ export async function GET(
     policyError ? [] : (policyRows ?? [])
   );
   let query = workspaceTeachersQuery(sbAdmin, normalizedWsId);
+  if (scope.teacherId) query = query.eq('id', scope.teacherId);
   if (tutorsOnly ?? tutorGroupIds.length > 0) {
     const { tutorIds, error } = await listWorkspaceTutorIds({
       normalizedWsId,

@@ -14717,7 +14717,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get telemetryConsentTitle => 'Help improve Tuturuuu?';
 
   @override
-  String get telemetryConsentBody => 'Share usage data and crash reports with Google Firebase so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.';
+  String get telemetryConsentBody => 'Share usage data and crash reports with Google Firebase Analytics and Crashlytics so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.';
+
+  @override
+  String get telemetryFirebaseInstallationDisclosure => 'Allowing analytics and crash reports also creates a Firebase Installation ID on this device (iOS and Android), which Google uses to tell app installs apart. We do not send your account details to Google with it.';
 
   @override
   String get telemetryConsentAllow => 'Allow';
@@ -14729,7 +14732,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get telemetryConsentLearnMore => 'Privacy details';
 
   @override
-  String get settingsShareTelemetryDescription => 'Send usage data and crash reports to Google Firebase to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.';
+  String get settingsShareTelemetryDescription => 'Send usage data and crash reports to Google Firebase Analytics and Crashlytics to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.';
+
+  @override
+  String get settingsPushNotifications => 'Push notifications';
+
+  @override
+  String get settingsPushFirebaseDisclosure => 'Push notifications are delivered through Google Firebase Cloud Messaging, which registers this device with Firebase Installations. This creates a Firebase Installation ID and a push token for this device; we link the push token to your account so we can send you notifications. This is separate from your analytics choice. Turn push off and this device is no longer registered for notifications.';
 
   @override
   String get mastermindIrisChatSegment => 'Chat';
@@ -15049,4 +15058,95 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindIrisWritesNeedEnrol => 'Enrol this device to send messages.';
+
+  @override
+  String get mastermindAskCardTierDecision => 'Needs decision';
+
+  @override
+  String get mastermindAskCardTierFyi => 'FYI';
+
+  @override
+  String mastermindAskCardDue(String when) {
+    return 'Due $when';
+  }
+
+  @override
+  String get mastermindAskCardOverdue => 'Overdue';
+
+  @override
+  String get mastermindAskCardReversible => 'Reversible';
+
+  @override
+  String get mastermindAskCardOneWay => 'One-way';
+
+  @override
+  String get mastermindAskCardNeedsBiometric => 'Needs Face ID or fingerprint';
+
+  @override
+  String get mastermindAskCardExpired => 'Expired';
+
+  @override
+  String get mastermindAskCardAnsweredDiscord => 'Answered on Discord';
+
+  @override
+  String get mastermindAskCardAnsweredAgent => 'Answered by an agent';
+
+  @override
+  String get mastermindAskCardIncomplete => 'Incomplete card';
+
+  @override
+  String get mastermindAskCardIncompleteMessage => 'The publisher sent only part of this ask. One-tap answers are off. Open the full question, or reply in your own words.';
+
+  @override
+  String get mastermindAskCardExpiredMessage => 'This ask expired, so answering is closed.';
+
+  @override
+  String get mastermindAskCardOpenFull => 'Open full question';
+
+  @override
+  String get mastermindAskCardReplyInWords => 'Reply in your own words';
+
+  @override
+  String get mastermindAskCardAnswerWithBiometric => 'Open to answer with Face ID';
+
+  @override
+  String get mastermindAskCardShowFullText => 'Show full text';
+
+  @override
+  String get mastermindAskCardHideFullText => 'Show less';
+
+  @override
+  String mastermindAskCardMoreOptions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count more options',
+      one: '+1 more option',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindAskCardFewerOptions => 'Show fewer options';
+
+  @override
+  String mastermindAskCardOptionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count options',
+      one: '1 option',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindAskCardRecommendedOption(String option) {
+    return 'Recommended: $option';
+  }
+
+  @override
+  String mastermindAskCardRecommendedWhy(String option, String why) {
+    return 'Recommended: $option. $why';
+  }
 }

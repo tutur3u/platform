@@ -1,6 +1,8 @@
 ---
 title: Mobile analytics and crash report privacy
 description: Device consent for Firebase telemetry in the Flutter app.
+updatedAt: "2026-10-31"
+audience: users
 ---
 
 Settings > Preferences > Privacy exposes **Share analytics and crash reports**
@@ -18,8 +20,14 @@ the time. Changing the prompt or Settings wording bumps the version, which voids
 stored answers and asks again; nothing is collected in between. An answer stored
 by an older build (including the earlier regional-default key) is never trusted:
 those users see the prompt once on the first launch after the update, with no
-collection until they answer. The wording is DRAFT LEGAL COPY: not
-lawyer-reviewed; for testing, not release.
+collection until they answer. The FID clarification keeps the legal notice at
+telemetry-consent-v1. A separate telemetry-consent-copy-version value,
+telemetry-fid-copy-v1, re-prompts Allows from earlier unreleased dev/QA screens
+once; there was no distributed Allow screen requiring a production re-prompt.
+The EN/VI FID sentence is maintained in telemetryFirebaseInstallationDisclosure,
+shared by the prompt and Settings. The prompt explicitly names Google Firebase
+Analytics and Crashlytics and links the privacy policy at /privacy for English
+or /vi/privacy for Vietnamese, selected by the app locale.
 
 ## First-run prompt
 
@@ -33,47 +41,281 @@ exactly like the Settings switch (declining revokes before persisting) and the
 prompt is not shown again until the notice version changes. Settings stays the
 place to change the choice, and choosing there first also ends the prompt.
 Settings routes are never interrupted, and a deep link is restored after the
-answer. Development and staging builds never show the prompt and never collect.
+answer. Development and staging builds default to no prompt and no collection; the QA override below is the only exception.
 
 ## Advertising identifiers
 
 No advertising identifier (Android AD_ID, iOS IDFA) is collected. Android removes
 the merged `com.google.android.gms.permission.AD_ID` and
 `android.permission.ACCESS_ADSERVICES_AD_ID` permissions and sets
-`google_analytics_adid_collection_enabled` to false. iOS sets
+`google_analytics_adid_collection_enabled` to false. The app excludes the transitive play-services-ads-identifier module from all app configurations. iOS sets
 `GOOGLE_ANALYTICS_ADID_COLLECTION_ENABLED` to NO and links Firebase Analytics
 without ad-ID support (`$FirebaseAnalyticsWithoutAdIdSupport` in the Podfile, so
 the `GoogleAppMeasurement/IdentitySupport` subspec and AdSupport are not
 linked). The native-config test guards these settings.
 
-Native collection defaults are disabled. Startup reads the preference before
-Firebase initialization and explicitly configures both collection SDKs. Turning
-the toggle off revokes collection before waiting for preference persistence.
-Turning it on requires successful persistence first. Settings shows a
-description under the switch. A failed update shows an
-inline retry message. Non-production flavors never collect, even when the saved
-choice is on. This setting does not control push notifications, backend request
-logs or other app surfaces; it cannot retract reports already transmitted.
+## Firebase startup and push
 
-Whenever collection is disabled, at startup or on opt-out, the app deletes
-unsent Crashlytics reports, so crashes recorded without consent never upload
-later. Builds before this setting persisted Crashlytics collection on, and the
-SDK prefers that stored override over the platform default and acts on it before
-Dart runs. A native gate clears the override before Firebase starts: Android's
-`TelemetryConsentGateProvider` runs before `FirebaseInitProvider`, and iOS
-clears it in `willFinishLaunching` before `FirebaseApp.configure()`. Crashlytics
-then holds reports until Dart applies the stored choice. The gate mirrors
-SDK-internal storage, so recheck it when upgrading Crashlytics. Firebase
-Analytics also persists its collection flag, and no native gate clears it. On
-the first launch after upgrading, Analytics may record automatic events before
-Dart disables collection.
+On **both iOS and Android**, Firebase/Installations admission requires a signed-in
+session and either (a) push ON with OS authorization or (b) a current explicit
+telemetry Allow. Deny plus push OFF never configures Firebase or creates an FID.
+Consented Analytics and Crashlytics also use a Firebase Installation ID when
+push is OFF; Messaging stays dormant until push is admitted. The app does not
+send account details to Google with the telemetry FID. For push, it links the
+push token to the authenticated account to deliver notifications. The push
+setting disclosure states that distinction explicitly.
+
+A serialized admission controller runs the same policy for both platforms.
+When neither purpose remains, it disables telemetry, drains push token/server
+unregistration successfully, then invokes Installations.delete() at most once
+per transition. The durable firebase-installation-deletion-state-v1 ledger is
+claimed as attempted before invoking the SDK and marked deleted on success.
+Failure is logged without identifiers and never retried by the app, including
+after restart. If cleanup fails first, the SDK delete is skipped. Only a new signed-in purpose admission opens a new cleanup
+budget; reapplying Deny plus push OFF does not. Sign-out uses the same
+order before credentials are removed. Token/FID deletion may itself contact
+Firebase as cleanup; it does not authorize a new installation or token.
+Native process-start resets remain unconditional even with a stored Allow.
+
+The exception permits one app-level delete() invocation, with one HTTP DELETE
+on a successful network path. The SDK may retry only that same DELETE:
+
+- **Android Firebase Installations 19.1.2:** deleteFirebaseInstallationId reads
+  existing persisted state and its refresh credential, and calls the delete
+  transport only for a registered FID. It never calls getId/getToken or the
+  registration/refresh path. The transport uses `MAX_RETRIES=1` with a `<=` loop:
+  at most two HTTP attempts, on IOException, HTTP 429 or 5xx.
+  See [delete entrypoint](https://github.com/firebase/firebase-android-sdk/blob/master/firebase-installations/src/main/java/com/google/firebase/installations/FirebaseInstallations.java)
+  and [DELETE transport](https://github.com/firebase/firebase-android-sdk/blob/master/firebase-installations/src/main/java/com/google/firebase/installations/remote/FirebaseInstallationServiceClient.java).
+  These bounds were also checked against the installed 19.1.2 AAR bytecode.
+- **iOS Firebase Installations 12.18.0:** createDeleteInstallationPromise waits
+  for any existing operation or reads stored state; it does not create one.
+  sendDeleteInstallationRequestIfNeeded sends only for a registered FID, using
+  the stored refresh credential. sendURLRequest uses attempts:1 and delay:1,
+  retrying HTTP 500 once: at most two HTTP attempts. The Promise counter is a
+  retry budget, not the total attempt count.
+  See [delete controller](https://github.com/firebase/firebase-ios-sdk/blob/12.18.0/FirebaseInstallations/Source/Library/InstallationsIDController/FIRInstallationsIDController.m),
+  [request/retry implementation](https://github.com/firebase/firebase-ios-sdk/blob/12.18.0/FirebaseInstallations/Source/Library/InstallationsAPI/FIRInstallationsAPIService.m),
+  and [Promise retry counter](https://github.com/google/promises/blob/master/Sources/FBLPromises/FBLPromise%2BRetry.m).
+
+Admission stays serialized behind the SDK's final deletion callback, including
+its bounded internal retry. A new Allow/push request remains pending until that
+callback completes; Firebase is never re-admitted while an old DELETE retry is
+pending. No detached timeout releases admission early. Necessary collection
+disable setters run before cleanup; repeated denied reconciliations do not
+call Analytics/Crashlytics again after the cleanup budget has been spent.
+FirebaseAdmission tests cover no-FID denial, durable success/failure markers,
+restart silence, cleanup ordering/failure, and pending re-admission. Device QA
+must distinguish this cleanup exception from forbidden create/refresh/uploads.
+
+
+Firebase startup waits for an authenticated app session on both platforms.
+Removing FirebaseInitProvider alone is insufficient on Android:
+FlutterFire Analytics 12.5.0 calls FirebaseAnalytics.getInstance from
+onAttachedToEngine, independently starting Measurement. The generated Android
+source overlay replaces that eager instance with a lazy property while retaining
+plugin channel registration. It never changes the shared Pub cache and rejects
+unrecognized upstream startup code. The native startup provider unconditionally
+disables Measurement's receiver, service and job service before SDK startup.
+Only signed-in Allow enables their runtime overrides again. Their manifest
+declarations retain enabled=true because Android's ComponentInfo.enabled
+reflects the manifest bit, not the runtime override; Measurement 23.2.0's
+zzpp.zzax/zzT capability probes otherwise reject every event even after Allow.
+The no-pre-consent collection guarantee rests on the manifest default
+firebase_analytics_collection_enabled=false and the persisted collection override
+reset to false with commit() at every process start. ContentProviders run before
+Application.onCreate and before receiver, service or job callbacks, including
+broadcast- or job-triggered restarts, so the gate provider resets first.
+Disabling a component does not cancel an in-flight broadcast or job delivery;
+the component enabled bit is not the collection guarantee. The deferred plugin
+also prevents engine attachment from starting Measurement.
+See [Android's component-info generation](https://android.googlesource.com/platform/frameworks/base/+/android-16.0.0_r1/services/core/java/com/android/server/pm/parsing/PackageInfoUtils.java#890).
+Native startup assertions cover both the compatible manifest bit and the
+unconditional runtime disable; stored Allow never bypasses the reset.
+
+Android Allow first enables the components with PackageManager.DONT_KILL_APP,
+then resolves the lazy FlutterFire plugin, awaits its
+setAnalyticsCollectionEnabled(true), and dispatches the standard app_open event
+through that plugin once per Allow transition, including restored Allow after
+sign-in on a cold start. The collected event app_open has no custom parameters or
+identifiers. Each Allow, including a re-Allow after withdrawal, emits one
+app_open; no event is sent before Allow. Re-applying the same Allow does not
+duplicate it; withdrawal resets its guard. Before dispatch, the adapter waits 1,100 ms after collection is enabled:
+Measurement 23.2.0's upload-capability check (zzic.zzH) caches a disabled-component
+result for 1,000 ms, and its event path (zzlj.zzG) silently drops events during
+that window. The bounded wait makes no Firebase calls and checks for withdrawal
+before emitting the event. There is no event or network retry. The adapter's
+regression tests model that cache for in-session and cold-start Allow and verify
+withdrawal during the wait emits nothing. Merely changing the native flag does not
+exercise the deferred plugin's event path. This sequence runs both when Allow is selected
+in-session and when a signed-in session restores a current Allow after a cold
+start. No process restart or direct service launch is requested.
+
+The Android adapter serializes requests and fences stale Allow continuations.
+Withdrawal disables the existing plugin first, then the native gate persists
+false and disables the components. A stored Allow while signed out never
+resolves the plugin. Process-start preference resets remain unconditional,
+including for stored Allow. AndroidAnalyticsCollection tests cover the ordered
+start/stop calls, cold signed-out and signed-in starts, withdrawal during
+admission, and failed plugin startup. Actual uploads remain a device QA check.
+
+The native Android content provider synchronously writes false to
+measurement_enabled and measurement_enabled_from_api in
+com.google.android.gms.measurement.prefs before plugin registration.
+SharedPreferences.Editor.putBoolean plus commit avoids calling getInstance
+merely to disable collection. These are Measurement 23.2.0's persisted override
+keys, verified against the SDK and the seeded-upgrade fixture. No permanent
+collection-deactivated setting is used.
+
+On iOS, firebase_core 4.14.0's registration-time shared instance normally calls
+FirebaseApp.configure. A worktree-local source overlay removes that eager call.
+FirebaseCore's default-app configureCore also normally starts FIRAnalytics
+regardless of collection=false; Analytics starts a GULNetwork hostname
+reachability monitor and requests an Installation ID. The overlay defers that
+Analytics startup block until the native signed-in/current-Allow admission
+notification. FirebaseMessaging's eager default-app component becomes lazy,
+and FlutterFire's plugin constants read the persisted auto-init flag without
+constructing Messaging. Crashlytics registration also defers its Flutter platform
+metadata setter to post-auth plugin constants, avoiding an SDK getter before
+there is a configured app.
+
+The GoogleUtilities reachability overlay gates the Analytics hostname monitor
+before SCNetworkReachabilityCreateWithName or scheduling can run, and stops it
+on withdrawal/sign-out. Non-Analytics monitors retain upstream behavior.
+The installed SDK's APMAnalytics +load records a timestamp; APMMeasurement +load
+subscribes to launch notifications. Inspection found no hostname monitor in
+those pre-configure paths; exact-head device DNS acceptance remains required.
+The Installations overlay rejects ID/auth-token reads outside admission so an
+SDK observer cannot recreate an FID after deletion. All overlays fail pod install
+when expected source contracts change, and leave shared Pub/SDK sources intact.
+
+The persisted Analytics override also survives process restarts.
+Before super.willFinishLaunching, Foundation resets the legacy standard-defaults
+key and the existing Application Support/Google/Measurement/
+com.google.gmp.measurement.plist entry
+/google/measurement/measurement_enabled_state to 2 (disabled).
+GoogleAppMeasurement 12.18 uses 1 for enabled and 2 for disabled. The native
+fixture tests both stores and preserves unrelated preferences. Review these
+SDK-internal storage contracts whenever upgrading Firebase.
+
+Native Analytics collection commands require a signed-in session and the current explicit
+Allow. Sign-out and withdrawal call the SDK disable API if it is already active,
+synchronously persist the disable, and close background Measurement components
+on Android. A stored Allow is never enough to enable collection during native
+startup; Dart reapplies it only after authentication.
+
+Both platforms retain app-wide collection and Messaging auto-init defaults off.
+iOS defers APNs registration through the worktree-local Podfile source patch;
+CI must compile the actual app after FlutterFire updates.
+
+Settings > Preferences > Notifications & interaction > Push notifications
+(**Cài đặt > Tùy chọn > Thông báo và tương tác > Thông báo đẩy**) exposes the
+device-wide push switch. Push registration requires a signed-in user, an enabled
+push switch and authorized or provisional OS notification permission. Existing
+OS grants remain valid. Push is independent of the analytics choice: declining
+analytics still permits push.
+
+Turning push off disables auto-init, calls FirebaseMessaging.deleteToken and
+removes the authenticated device/flavor row from notification_push_devices
+through the push-devices DELETE API. It drains in-flight registration writes
+before deletion. Failures surface as a retry error. Sign-out also disables
+auto-init, deletes the token and attempts server unregistration before auth
+credentials are removed. OS permission revocation is reconciled on session
+startup/resume. Cleanup requests themselves may contact Firebase.
+
+Analytics/Crashlytics remain off until explicit Allow. Sign-out disables
+collection; a subsequent signed-in session applies the stored device choice.
+Declining or revoking telemetry deletes unsent crash reports after SDK startup.
+Native startup retains the persisted Crashlytics override reset. No Firebase SDK initialization is required
+to render a background local notification.
+
+The EN/VI push disclosure is maintained in the ARB keys
+settingsPushNotifications and settingsPushFirebaseDisclosure. There is no
+separate in-app About/privacy data-use document; the privacy-details link opens
+the external policy. The policy and store-console disclosures have separate
+publication owners.
+
+Regression evidence: push_token_permission_gate_test.dart covers signed-out
+startup, permission grants/denials, token refresh, push-off, sign-out and cleanup
+ordering; telemetry_preference_test.dart checks native defaults and deferred
+startup. Device QA must verify fresh/upgrade signed-out network silence and the
+Allow/Deny controls at the released commit. Unit tests do not establish network
+silence.
+
+Android also removes the merged `ACCESS_ADSERVICES_ATTRIBUTION` permission: the
+app does no ad measurement, so Privacy Sandbox attribution reporting stays
+unused.
+
+## iOS privacy manifest
+
+`ios/Runner/PrivacyInfo.xcprivacy` declares, as unlinked and not used for
+tracking, the data Firebase Analytics, Crashlytics and installation IDs may
+collect (device ID, product interaction, coarse location and diagnostics) and
+the UserDefaults required-reason API (`CA92.1`, the consent and Crashlytics
+gates read the app's own defaults). Purchase history and user ID are not
+declared: the app has no StoreKit purchases and never calls `setUserId`. The
+manifest states what the app may collect; the consent gate decides whether it
+does. The text is a draft that is not lawyer-reviewed; reconcile it with an Xcode
+Privacy Report from the CI archive and the App Store Connect labels before
+release.
 
 Regression coverage: `telemetry_consent_page_test.dart` covers prompt
 eligibility, no collection before Allow, redirect and both answers;
 `telemetry_preference_test.dart` covers no collection in any locale, stored
-version and time, version changes, legacy values and startup ordering; `telemetry_settings_tile_test.dart` covers
+version and time, version changes, legacy values, startup ordering, consent
+reloads and the native gates; `auth_cubit_consent_hook_test.dart` covers the
+reload on every session transition; `TelemetryConsentDecisionTest` (Android
+unit test) covers the native decision; `telemetry_settings_tile_test.dart` covers
 label and switch activation; `mobile_observability_test.dart` covers deletion of
 unsent reports at startup and on opt-out. The preference suite checks native
 defaults, duplicate keys and native gate ordering.
 Validation uses `flutter gen-l10n`, `flutter analyze`, focused `flutter test` and
 `bun check:changed` on an admitted Flutter host. No release build is required.
+
+## QA with development Firebase
+
+Use a development-flavor debug build to exercise the production consent flow
+without sending QA telemetry to production Firebase:
+
+```sh
+# Before the iOS run in a fresh clone:
+python3 ../../scripts/mobile-deployment/firebase-service-config.py --platform ios
+flutter run --flavor development --target lib/main_development.dart --dart-define=CONSENT_GATE_QA=true -d <sim>
+flutter run --flavor development --target lib/main_development.dart --dart-define=CONSENT_GATE_QA=true -d <emulator>
+```
+
+The const flag is ignored in release mode. It enables the same prompt, Settings
+Allow control and collection gate on non-production flavors; it never changes
+the flavor or Firebase options. Development still uses development Firebase.
+No user-facing wording changes. Native AppDelegate and Android providers already
+read stored consent irrespective of flavor.
+
+For iOS Analytics debug output, add launch argument
+`-FIRAnalyticsDebugEnabled` in the development Xcode scheme. For Android use
+`adb shell setprop debug.firebase.analytics.app <development-application-id>`;
+reset with `adb shell setprop debug.firebase.analytics.app .none.`.
+Enable Crashlytics debug logs with `-FIRDebugEnabled` on iOS or
+`adb shell setprop log.tag.FirebaseCrashlytics DEBUG` on Android.
+
+Use disposable simulator/emulator data. Capture network traffic from process
+start, through fresh Deny and relaunch, then Allow as a positive control.
+Repeat an upgrade preserving earlier persisted Firebase-enable overrides with
+missing, denied and stale-version consent. Before Allow, expect zero Analytics
+and Crashlytics requests; use a proxy alongside debug logs, since logs alone
+cannot prove zero requests. Run the focused observability suite both normally
+and with `flutter test --dart-define=CONSENT_GATE_QA=true`; the
+`consent_gate_qa_test.dart` regression covers release exclusion and development
+Firebase identity on both mobile platforms.
+
+Development iOS/macOS flavor plists and Android's
+`android/app/src/development/google-services.json` are committed public Firebase
+client configuration. PR builds receive no Firebase CI secret. Dart development
+options and native resources use `tuturuuu-mobile-dev`. Earlier development
+builds targeted `tuturuuu-mobile` for analytics and crash data; this corrects
+development only. Staging still targets production and is tracked separately.
+No development web/Windows registrations exist, so those targets fail explicitly.
+The supplied dev Firebase registration has no Google OAuth client; Google sign-in
+requires separate OAuth provisioning before it can be accepted on this flavor.
+For Android Analytics logs, use `adb shell setprop log.tag.FA VERBOSE` and
+`adb shell setprop log.tag.FA-SVC VERBOSE`. Vera re-runs iOS and Android device
+checks; unit tests do not establish device network acceptance.

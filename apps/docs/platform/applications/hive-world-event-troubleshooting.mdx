@@ -1,6 +1,8 @@
 ---
 title: Hive world event troubleshooting
 description: Fix ambiguous server_id errors when applying Hive world events.
+updatedAt: "2026-10-31"
+audience: developers
 ---
 
 ## Current source boundary
@@ -10,7 +12,7 @@ Current checked-in Hive event handlers call `createHiveWorldEvent()` against
 `HIVE_DATABASE_URL` inside the satellite. Confirm deployed source and database
 authority before applying a legacy-function fix; see the
 [Hive data model](/platform/applications/hive#data-model) and
-[Cloudflare migration plan](/build/devops/hive-cloudflare-migration).
+Cloudflare migration plan.
 
 ## Symptoms
 

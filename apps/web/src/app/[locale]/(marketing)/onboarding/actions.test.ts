@@ -93,6 +93,9 @@ function createFakeClient(resolve: (call: Call) => QueryResult) {
 
 function setup(adminResolve: (call: Call) => QueryResult) {
   const userClient = createFakeClient((call) => {
+    if (call.table === 'onboarding_progress') {
+      return { data: { user_id: USER_ID, completed_steps: [] }, error: null };
+    }
     if (call.table === 'workspaces' && call.op === 'insert') {
       return { data: { id: WORKSPACE_ID }, error: null };
     }
@@ -152,7 +155,7 @@ describe('createWorkspaceFromOnboarding', () => {
     );
     const { createWorkspaceFromOnboarding } = await import('./actions');
 
-    const result = await createWorkspaceFromOnboarding(USER_ID, 'Acme');
+    const result = await createWorkspaceFromOnboarding('Acme');
 
     expect(result).toEqual({ success: true, workspaceId: WORKSPACE_ID });
     expect(admin.calls.find(isMemberLookup)?.filters).toEqual([
@@ -170,7 +173,7 @@ describe('createWorkspaceFromOnboarding', () => {
     const { admin, user } = setup(() => ({ data: null, error: null }));
     const { createWorkspaceFromOnboarding } = await import('./actions');
 
-    const result = await createWorkspaceFromOnboarding(USER_ID, 'Acme');
+    const result = await createWorkspaceFromOnboarding('Acme');
 
     expect(result).toEqual({ success: true, workspaceId: WORKSPACE_ID });
     expect(admin.calls.find(isMemberInsert)?.payload).toEqual({
@@ -193,7 +196,7 @@ describe('createWorkspaceFromOnboarding', () => {
     });
     const { createWorkspaceFromOnboarding } = await import('./actions');
 
-    const result = await createWorkspaceFromOnboarding(USER_ID, 'Acme');
+    const result = await createWorkspaceFromOnboarding('Acme');
 
     expect(result).toEqual({
       success: false,
@@ -202,5 +205,56 @@ describe('createWorkspaceFromOnboarding', () => {
     expect(admin.calls.find(isWorkspaceDelete)?.filters).toEqual([
       ['id', WORKSPACE_ID],
     ]);
+  });
+
+  it('reports a failed workspace cleanup', async () => {
+    const { admin } = setup((call) => {
+      if (isMemberInsert(call))
+        return { data: null, error: { code: 'failure' } };
+      if (isWorkspaceDelete(call))
+        return { data: null, error: { code: 'failure' } };
+      return { data: null, error: null };
+    });
+    const { createWorkspaceFromOnboarding } = await import('./actions');
+    const result = await createWorkspaceFromOnboarding('Acme');
+    expect(result).toEqual({
+      success: false,
+      error: 'Failed to clean up workspace',
+    });
+    expect(admin.calls.some(isWorkspaceDelete)).toBe(true);
+    expect(console.error).toHaveBeenCalledWith('Error cleaning up workspace:', {
+      code: 'failure',
+    });
+  });
+
+  it('uses the session user even when an update includes a different user id', async () => {
+    const { user } = setup(() => ({ data: null, error: null }));
+    const { updateOnboardingProgress } = await import('./actions');
+    await updateOnboardingProgress({ user_id: 'other-user' } as never);
+    const update = user.calls.find(
+      (call) => call.table === 'onboarding_progress' && call.op === 'upsert'
+    );
+    expect(update?.payload).toMatchObject({ user_id: USER_ID });
+  });
+
+  it('reads onboarding progress for the authenticated user', async () => {
+    const { user } = setup(() => ({ data: null, error: null }));
+    const { getUserOnboardingProgress } = await import('./actions');
+    await getUserOnboardingProgress();
+    const read = user.calls.find(
+      (call) => call.table === 'onboarding_progress'
+    );
+    expect(read?.filters).toEqual([['user_id', USER_ID]]);
+  });
+
+  it('does not write onboarding progress without an authenticated user', async () => {
+    const { user } = setup(() => ({ data: null, error: null }));
+    user.auth.getUser.mockResolvedValue({
+      data: { user: null },
+      error: null,
+    } as never);
+    const { updateOnboardingProgress } = await import('./actions');
+    expect(await updateOnboardingProgress({})).toBeNull();
+    expect(user.calls).toEqual([]);
   });
 });

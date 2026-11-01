@@ -2,6 +2,7 @@
 title: "Personal data protection standard"
 description: "Platform-wide purpose, retention, subject-rights and deletion requirements, with current gaps and an approval-gated implementation plan."
 updatedAt: "2026-10-25"
+audience: developers
 ---
 
 ## Decision and implementation status
@@ -80,7 +81,7 @@ Every exception records the approving legal authority, legal basis, data subset,
 
 ## Enforcement and acceptance
 
-New scheduled purges run on Cloudflare under the [backend ownership guard](/build/devops/cloudflare-backend-ownership). Reuse Cron Control where appropriate. Do not add Vercel Cron, pg_cron, Edge Functions or Next `after()` jobs. Retained legacy maintenance is inventoried, not expanded by this standard.
+New scheduled purges run on Cloudflare under the backend ownership guard. Reuse Cron Control where appropriate. Do not add Vercel Cron, pg_cron, Edge Functions or Next `after()` jobs. Retained legacy maintenance is inventoried, not expanded by this standard.
 
 Purge jobs use bounded keyset pages, finite retries, idempotent progress, durable cursors, a tested stop fence and no rescheduling after a terminal state. Respect the request's deadline without unlimited cost or retries. Queue and DLQ retention, backup expiry and processor limits belong in acceptance, not only application counters.
 

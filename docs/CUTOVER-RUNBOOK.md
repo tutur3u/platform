@@ -1,5 +1,8 @@
 # TanStack/Rust Cutover Runbook
 
+> Retained inactive reference: Docker setup and Rust are paused. Use
+> `apps/docs/build/devops/active-runtime.mdx` for current operations.
+
 The full dual-stack cutover runbook now lives in the discoverable docs app:
 
 - `apps/docs/build/devops/tanstack-rust-cutover-runbook.mdx`

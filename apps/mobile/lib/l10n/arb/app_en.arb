@@ -6893,11 +6893,14 @@
   "mastermindCatchupPushBody": "Your catch-up is ready",
   "mastermindSecurityFix": "Security fix",
   "telemetryConsentTitle": "Help improve Tuturuuu?",
-  "telemetryConsentBody": "Share usage data and crash reports with Google Firebase so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.",
+  "telemetryConsentBody": "Share usage data and crash reports with Google Firebase Analytics and Crashlytics so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.",
+  "telemetryFirebaseInstallationDisclosure": "Allowing analytics and crash reports also creates a Firebase Installation ID on this device (iOS and Android), which Google uses to tell app installs apart. We do not send your account details to Google with it.",
   "telemetryConsentAllow": "Allow",
   "telemetryConsentDeny": "Don't allow",
   "telemetryConsentLearnMore": "Privacy details",
-  "settingsShareTelemetryDescription": "Send usage data and crash reports to Google Firebase to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.",
+  "settingsShareTelemetryDescription": "Send usage data and crash reports to Google Firebase Analytics and Crashlytics to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.",
+  "settingsPushNotifications": "Push notifications",
+  "settingsPushFirebaseDisclosure": "Push notifications are delivered through Google Firebase Cloud Messaging, which registers this device with Firebase Installations. This creates a Firebase Installation ID and a push token for this device; we link the push token to your account so we can send you notifications. This is separate from your analytics choice. Turn push off and this device is no longer registered for notifications.",
   "mastermindIrisChatSegment": "Chat",
   "mastermindIrisChatEmpty": "No messages yet",
   "mastermindIrisComposerPlaceholder": "Message Atlas",
@@ -7088,5 +7091,66 @@
   "mastermindIrisDevicesUnavailable": "The device list isn't available yet. You can still enrol this device.",
   "mastermindIrisDeviceCurrent": "This device",
   "mastermindIrisWritesOff": "Sending is off for now. You can still read the chat.",
-  "mastermindIrisWritesNeedEnrol": "Enrol this device to send messages."
+  "mastermindIrisWritesNeedEnrol": "Enrol this device to send messages.",
+  "mastermindAskCardTierDecision": "Needs decision",
+  "mastermindAskCardTierFyi": "FYI",
+  "mastermindAskCardDue": "Due {when}",
+  "@mastermindAskCardDue": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskCardOverdue": "Overdue",
+  "mastermindAskCardReversible": "Reversible",
+  "mastermindAskCardOneWay": "One-way",
+  "mastermindAskCardNeedsBiometric": "Needs Face ID or fingerprint",
+  "mastermindAskCardExpired": "Expired",
+  "mastermindAskCardAnsweredDiscord": "Answered on Discord",
+  "mastermindAskCardAnsweredAgent": "Answered by an agent",
+  "mastermindAskCardIncomplete": "Incomplete card",
+  "mastermindAskCardIncompleteMessage": "The publisher sent only part of this ask. One-tap answers are off. Open the full question, or reply in your own words.",
+  "mastermindAskCardExpiredMessage": "This ask expired, so answering is closed.",
+  "mastermindAskCardOpenFull": "Open full question",
+  "mastermindAskCardReplyInWords": "Reply in your own words",
+  "mastermindAskCardAnswerWithBiometric": "Open to answer with Face ID",
+  "mastermindAskCardShowFullText": "Show full text",
+  "mastermindAskCardHideFullText": "Show less",
+  "mastermindAskCardMoreOptions": "{count, plural, =1{+1 more option} other{+{count} more options}}",
+  "@mastermindAskCardMoreOptions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindAskCardFewerOptions": "Show fewer options",
+  "mastermindAskCardOptionCount": "{count, plural, =1{1 option} other{{count} options}}",
+  "@mastermindAskCardOptionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindAskCardRecommendedOption": "Recommended: {option}",
+  "@mastermindAskCardRecommendedOption": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskCardRecommendedWhy": "Recommended: {option}. {why}",
+  "@mastermindAskCardRecommendedWhy": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      },
+      "why": {
+        "type": "String"
+      }
+    }
+  }
 }
