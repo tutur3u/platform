@@ -18,7 +18,9 @@ export class MeetAiError extends Error {
   constructor(
     public status: number,
     message: string,
-    public code?: string
+    public code?: string,
+    /** Sent as `Retry-After` (seconds) on 429 and 503 refusals. */
+    public retryAfterSeconds?: number
   ) {
     super(message);
   }
@@ -156,7 +158,13 @@ export async function meetAiResponse(work: () => Promise<unknown>) {
           error instanceof MeetAiError || error instanceof MeetAiGenerationError
             ? error.status
             : 500,
-        headers: { 'Cache-Control': 'no-store' },
+        headers: {
+          'Cache-Control': 'no-store',
+          ...(error instanceof MeetAiError &&
+          error.retryAfterSeconds !== undefined
+            ? { 'Retry-After': String(error.retryAfterSeconds) }
+            : {}),
+        },
       }
     );
   }

@@ -138,13 +138,15 @@ export function createGuardEngine(sql: SqlRunner) {
             previous * (1 - (now % window.windowMs) / window.windowMs)
           ) + current
         : current;
+    const cost = window.cost ?? 1;
     return {
       window,
       index,
       current,
       previous,
-      allowed: total < window.limit,
-      remaining: Math.max(0, window.limit - total - 1),
+      cost,
+      allowed: total + cost <= window.limit,
+      remaining: Math.max(0, window.limit - total - cost),
       resetAt: (index + 1) * window.windowMs,
     };
   }
@@ -173,7 +175,7 @@ export function createGuardEngine(sql: SqlRunner) {
             entry.window.k,
             JSON.stringify({
               i: entry.index,
-              c: entry.current + 1,
+              c: entry.current + entry.cost,
               p: sliding ? entry.previous : 0,
             }),
             (entry.index + (sliding ? 2 : 1)) * entry.window.windowMs
