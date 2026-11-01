@@ -66,10 +66,10 @@ class FinanceArtifactTest(unittest.TestCase):
         self.assertEqual(artifact.IDENTITY["vars"], {
             "TUTURUUU_NOINDEX": "1",
             "NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN": ".staging.tutur3u.com",
-            "INTERNAL_WEB_API_ORIGIN": "https://web.staging.tutur3u.com",
-            "NEXT_PUBLIC_WEB_APP_URL": "https://web.staging.tutur3u.com",
-            "NEXT_PUBLIC_APP_URL": "https://finance.staging.tutur3u.com",
-            "FINANCE_APP_URL": "https://finance.staging.tutur3u.com",
+            "INTERNAL_WEB_API_ORIGIN": "https://web.tutur3u.com",
+            "NEXT_PUBLIC_WEB_APP_URL": "https://web.tutur3u.com",
+            "NEXT_PUBLIC_APP_URL": "https://finance.tutur3u.com",
+            "FINANCE_APP_URL": "https://finance.tutur3u.com",
             "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co",
         })
         self.assertEqual(artifact.IDENTITY["compatibility_flags"], ["nodejs_compat", "global_fetch_strictly_public"])
@@ -136,7 +136,7 @@ class FinanceArtifactTest(unittest.TestCase):
             "FINANCE_APP_URL": "https://finance.tuturuuu.com",
             "NEXT_PUBLIC_SUPABASE_URL": "https://nzamlzqfdwaaxdefwraj.supabase.co",
         })
-        self.assertEqual(wrapper.PROFILES["staging"]["rootHost"], "finance.staging.tutur3u.com")
+        self.assertEqual(wrapper.PROFILES["staging"]["rootHost"], "finance.tutur3u.com")
         self.assertEqual(wrapper.PROFILES["production"]["rootHost"], "finance.tuturuuu.com")
         self.assertEqual(set(wrapper.PROFILES), {"staging", "production"})
         with self.assertRaisesRegex(ValueError, "unknown VITE_FINANCE_NATIVE_PROFILE"):
@@ -183,8 +183,8 @@ class FinanceArtifactTest(unittest.TestCase):
     def test_bundles_carry_only_their_profile_values(self):
         cases = (
             (production, "client/assets/entry.js", "https://fxefojytwimjiqxseqag.supabase.co"),
-            (production, "native/chunk.js", "https://web.staging.tutur3u.com"),
-            (production, "client/assets/entry.js", "finance.staging.tutur3u.com"),
+            (production, "native/chunk.js", "https://web.tutur3u.com"),
+            (production, "client/assets/entry.js", "finance.tutur3u.com"),
             (artifact, "native/chunk.js", "https://nzamlzqfdwaaxdefwraj.supabase.co"),
         )
         for module, name, value in cases:

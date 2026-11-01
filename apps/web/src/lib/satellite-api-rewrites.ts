@@ -1,3 +1,5 @@
+import { isStagingAppOrigin } from '@tuturuuu/utils/staging-hosts';
+
 interface SatelliteApiRewriteOptions {
   calendarAppOrigin: string;
   infrastructureAppOrigin: string;
@@ -20,7 +22,7 @@ export function assertStagingRewriteOrigins(
   if (env.NEXT_PUBLIC_TUTURUUU_STAGING !== '1') return;
   for (const [name, value] of Object.entries(origins)) {
     const invalid = new Error(
-      `Staging Web rewrite ${name} must be an exact https://<app>.staging.tutur3u.com origin`
+      `Staging Web rewrite ${name} must be an exact https://<app>.tutur3u.com origin`
     );
     let url: URL;
     try {
@@ -37,7 +39,7 @@ export function assertStagingRewriteOrigins(
       withoutTrailingSlash(url.href) !== url.origin ||
       host === 'tuturuuu.com' ||
       host.endsWith('.tuturuuu.com') ||
-      !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.staging\.tutur3u\.com$/u.test(host)
+      !isStagingAppOrigin(url.origin)
     )
       throw invalid;
   }

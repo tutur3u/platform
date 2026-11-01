@@ -7,8 +7,13 @@ import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 export const TRACK_ROOT_HOSTS = ['track.tuturuuu.com'] as const;
 
 /** Staging Worker hostnames an operator may admit through a Worker var. */
-const STAGING_HOST =
-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:workers\.dev|staging\.tutur3u\.com)$/u;
+const STAGING_HOST = {
+  test: (host: string) =>
+    host === 'track.tutur3u.com' ||
+    /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+workers\.dev$/u.test(
+      host
+    ),
+};
 
 /** `PRIVATE_ROBOTS_HEADER`: Track's SEO policy has no public paths. */
 const ROBOTS = 'noindex, nofollow, nosnippet';

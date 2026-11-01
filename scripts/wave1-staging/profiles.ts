@@ -4,7 +4,7 @@ export const productionSupabaseProjectRefs: readonly string[] = [
 ];
 export const stagingApps = ['meet', 'calendar', 'mail', 'apps'] as const;
 export type StagingApp = (typeof stagingApps)[number];
-export const stagingWebOrigin = 'https://web.staging.tutur3u.com';
+export const stagingWebOrigin = 'https://web.tutur3u.com';
 export const stagingCookieDomain = '.staging.tutur3u.com';
 const requiredSecrets = {
   meet: ['MEET_REALTIME_TOKEN_SECRET', 'GOOGLE_GENERATIVE_AI_API_KEY'],
@@ -28,7 +28,7 @@ const requiredSecrets = {
   apps: [],
 };
 export function stagingHost(app: StagingApp) {
-  return `${app}.staging.tutur3u.com`;
+  return `${app}.tutur3u.com`;
 }
 export function stagingBuildInputs(
   env: Record<string, string | undefined>,

@@ -32,7 +32,7 @@ it('retires only legacy caches on Calendar, with no repeat deletion after migrat
 
 it.each([
   'https://tuturuuu.com',
-  'https://web.staging.tutur3u.com',
+  'https://web.tutur3u.com',
   'https://calendar.tuturuuu.com.attacker.invalid',
   'http://calendar.tuturuuu.com',
 ])('preserves every cache on %s', async (origin) => {

@@ -444,5 +444,5 @@ test('Calendar publishes only the explicit custom staging host from its sealed p
   const receipt = JSON.parse(
     fs.readFileSync(path.join(p.dir, 'wave1-artifact.json'))
   );
-  assert.equal(receipt.profile.host, 'calendar.staging.tutur3u.com');
+  assert.equal(receipt.profile.host, 'calendar.tutur3u.com');
 });

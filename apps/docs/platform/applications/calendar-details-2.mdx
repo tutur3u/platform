@@ -438,9 +438,9 @@ Run `bun packages/start-bridge/src/codegen/cli.ts generate apps/calendar`
 after changing a route, then run the same command with `check` for validation.
 
 The cutover candidate admits only `calendar.tuturuuu.com` and
-`<app>.staging.tutur3u.com`, configured in `start-bridge.config.ts`.
+`<app>.tutur3u.com`, configured in `start-bridge.config.ts`.
 Apex `/calendar`, workers.dev and unknown hosts return 404 before dispatch.
-The Wave 1 staging profile uses `<app>.staging.tutur3u.com` for public build
+The Wave 1 staging profile uses `<app>.tutur3u.com` for public build
 inputs, OAuth callback URLs, the seal and original/restored local runtime probes.
 It keeps workers.dev, preview URLs and staging routes disabled; qualification
 does not create a custom domain or change DNS.

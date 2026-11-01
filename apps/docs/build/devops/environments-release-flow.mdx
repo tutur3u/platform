@@ -259,9 +259,9 @@ Production keeps one shared cookie domain: web and every satellite live on
 no behavior in this section changes that.
 
 Staging is a separate, cookie-isolated environment. Every staging surface
-(web, Next satellites and Workers) lives on `https://<app>.staging.tutur3u.com`,
-for example `https://<app>.staging.tutur3u.com` and
-`https://<app>.staging.tutur3u.com`. Its shared cookie domain is exactly
+(web, Next satellites and Workers) lives on `https://<app>.tutur3u.com`,
+for example `https://<app>.tutur3u.com` and
+`https://<app>.tutur3u.com`. Its shared cookie domain is exactly
 `.staging.tutur3u.com`, never `.tutur3u.com` and never `.tuturuuu.com`.
 
 Two environment variables describe the staging host scheme. Both are
@@ -275,7 +275,7 @@ in the browser.
 
 ```text
 NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com
-NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS=platform:https://<app>.staging.tutur3u.com,tasks:https://<app>.staging.tutur3u.com,meet:https://<app>.staging.tutur3u.com
+NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS=platform:https://<app>.tutur3u.com,tasks:https://<app>.tutur3u.com,meet:https://<app>.tutur3u.com
 ```
 
 <Warning>
@@ -285,9 +285,9 @@ code ignores a mis-set value (see below) so a mistake cannot move production off
 `.tuturuuu.com`, but the deployment configuration must still never carry them.
 </Warning>
 
-Per-app alias template: `https://<app>.staging.tutur3u.com`, where `<app>` is the
+Per-app alias template: `https://<app>.tutur3u.com`, where `<app>` is the
 app name used in `PRODUCTION_INTERNAL_APP_DOMAINS` (the web app is registered as
-`platform`, for example `platform:https://<app>.staging.tutur3u.com`).
+`platform`, for example `platform:https://<app>.tutur3u.com`).
 
 ### Shared cookie domain
 

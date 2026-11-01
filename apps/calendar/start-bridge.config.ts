@@ -11,7 +11,7 @@ export default defineBridgeAppConfig({
       process.env.CALENDAR_DEPLOYMENT_PROFILE === 'production'
         ? ['calendar.tuturuuu.com']
         : process.env.CALENDAR_DEPLOYMENT_PROFILE === 'staging'
-          ? ['calendar.staging.tutur3u.com']
+          ? ['calendar.tutur3u.com']
           : process.env.CALENDAR_DEPLOYMENT_PROFILE === 'development'
             ? [
                 'calendar.tuturuuu.localhost',

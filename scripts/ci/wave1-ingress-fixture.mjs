@@ -5,8 +5,8 @@ export const fixtureZoneId = 'a'.repeat(32);
 export const fixtureStaffGroupId = '33333333-3333-4333-8333-333333333333';
 export const fixtureHealthTokenId = '77777777-7777-4777-8777-777777777777';
 export const fixtureAppIds = {
-  'calendar.staging.tutur3u.com': '11111111-1111-4111-8111-111111111111',
-  'web.staging.tutur3u.com': '22222222-2222-4222-8222-222222222222',
+  'calendar.tutur3u.com': '11111111-1111-4111-8111-111111111111',
+  'web.tutur3u.com': '22222222-2222-4222-8222-222222222222',
 };
 const list = (result) => ({
   success: true,

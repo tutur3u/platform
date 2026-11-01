@@ -180,7 +180,7 @@ describe('auth callback route', () => {
     );
     const response = await GET(
       new NextRequest(
-        `https://web.staging.tutur3u.com/api/auth/callback?returnUrl=${managedReturnUrl}`
+        `https://web.tutur3u.com/api/auth/callback?returnUrl=${managedReturnUrl}`
       )
     );
 
@@ -190,10 +190,10 @@ describe('auth callback route', () => {
   it('never acts on the staging registry when the shared cookie domain is the production default', async () => {
     vi.stubEnv(
       'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
-      'tasks:https://tasks.staging.tutur3u.com'
+      'tasks:https://tasks.tutur3u.com'
     );
     const satelliteReturnUrl = encodeURIComponent(
-      'https://tasks.staging.tutur3u.com/personal'
+      'https://tasks.tutur3u.com/personal'
     );
     const response = await GET(
       new NextRequest(
@@ -214,25 +214,25 @@ describe('auth callback route', () => {
     vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
     vi.stubEnv(
       'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
-      'tasks:https://tasks.staging.tutur3u.com'
+      'tasks:https://tasks.tutur3u.com'
     );
     const satelliteReturnUrl = encodeURIComponent(
-      'https://tasks.staging.tutur3u.com/personal'
+      'https://tasks.tutur3u.com/personal'
     );
     const response = await GET(
       new NextRequest(
-        `https://web.staging.tutur3u.com/api/auth/callback?returnUrl=${satelliteReturnUrl}`
+        `https://web.tutur3u.com/api/auth/callback?returnUrl=${satelliteReturnUrl}`
       )
     );
     const location = new URL(response.headers.get('location') ?? '');
 
     expect(location.pathname).toBe('/login');
     expect(location.searchParams.get('returnUrl')).toBe(
-      'https://tasks.staging.tutur3u.com/personal'
+      'https://tasks.tutur3u.com/personal'
     );
   });
 
-  it('keeps managed redirects inside the configured staging shared cookie domain', async () => {
+  it('rejects a managed legacy staging redirect from the new issuer', async () => {
     vi.stubEnv(
       'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
       '.staging.tutur3u.com'
@@ -243,12 +243,12 @@ describe('auth callback route', () => {
     );
     const response = await GET(
       new NextRequest(
-        `https://web.staging.tutur3u.com/api/auth/callback?returnUrl=${managedReturnUrl}`
+        `https://web.tutur3u.com/api/auth/callback?returnUrl=${managedReturnUrl}`
       )
     );
 
     expect(response.headers.get('location')).toBe(
-      'https://preview.staging.tutur3u.com/workspace/personal/plans'
+      'https://web.tutur3u.com/personal'
     );
   });
 
