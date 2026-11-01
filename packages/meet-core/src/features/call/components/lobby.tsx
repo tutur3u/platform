@@ -368,12 +368,7 @@ export function Lobby({
                       {initial}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="space-y-1">
-                    <p>{previewError ?? t('camera_is_off')}</p>
-                    {micError && !audioEnabled ? (
-                      <p className="text-xs">{micError}</p>
-                    ) : null}
-                  </div>
+                  <p>{previewError ?? t('camera_is_off')}</p>
                 </div>
               </div>
             )}
@@ -429,6 +424,13 @@ export function Lobby({
               <div aria-hidden="true" className="hidden w-20 sm:block" />
             </div>
           </div>
+
+          {/* Outside the camera-off placeholder so it shows with the camera on. */}
+          {micError && !audioEnabled ? (
+            <output className="block text-muted-foreground text-xs">
+              {micError}
+            </output>
+          ) : null}
 
           <LobbyDevicePickers
             audioDeviceId={audioDeviceId}

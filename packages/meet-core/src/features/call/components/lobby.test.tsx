@@ -305,3 +305,29 @@ it('falls back to the system default when a live preview track ends', async () =
   await waitFor(() => expect(tracks.video).toHaveLength(2));
   expect(screen.queryByText(en.meet.call.camera_blocked)).toBeNull();
 });
+
+it('announces a blocked microphone in a status region with the camera on too', async () => {
+  installMediaDevices({
+    reject: (constraints) =>
+      constraints.audio
+        ? new DOMException('denied', 'NotAllowedError')
+        : undefined,
+  });
+  render(localized(<Lobby {...lobbyProps()} />));
+
+  fireEvent.click(screen.getByRole('button', { name: en.meet.call.camera_on }));
+  await waitFor(() =>
+    expect(
+      screen.getByRole('button', { name: en.meet.call.camera_off })
+    ).toBeTruthy()
+  );
+  await waitFor(() =>
+    expect(
+      screen
+        .getAllByRole('status')
+        .some((region) =>
+          region.textContent?.includes(en.meet.call.lobby_mic_blocked)
+        )
+    ).toBe(true)
+  );
+});
