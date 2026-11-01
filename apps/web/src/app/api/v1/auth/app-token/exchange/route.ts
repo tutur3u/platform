@@ -29,6 +29,7 @@ import {
 import { consumeRefreshTokenWithGrace } from '@/lib/app-coordination/refresh-replay';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
 import { authorizeWorkspaceSessionAppTokenExchange } from '@/lib/app-coordination/workspace-session';
+import { PKCE_CODE_VERIFIER_PATTERN } from '@/lib/auth/cross-app-pkce';
 import {
   type AuthUserIdentity,
   getAuthUserIdentity,
@@ -51,6 +52,7 @@ const exchangeSchema = z.object({
     .regex(/^[a-z0-9_-]{1,64}$/u)
     .optional(),
   appSecret: z.string().min(1).max(200).optional(),
+  codeVerifier: z.string().regex(PKCE_CODE_VERIFIER_PATTERN).optional(),
   requestedScopes: z.array(z.string().min(1).max(80)).max(50).optional(),
   targetApp: z
     .string()
@@ -190,6 +192,7 @@ async function resolveExchangeTarget({
 
     return {
       allowedWorkspaceIds: verification.app.allowedWorkspaceIds,
+      requirePkce: verification.app.requirePkce === true,
       scopes: getAllowedAppTokenScopesWithWorkspaceSession({
         allowedScopes: verification.app.allowedScopes,
         allowedWorkspaceIds: verification.app.allowedWorkspaceIds,
@@ -390,6 +393,7 @@ async function exchangeAppToken(request: NextRequest) {
   const {
     appId,
     appSecret,
+    codeVerifier,
     refreshToken,
     requestedScopes = [],
     targetApp,
@@ -482,14 +486,28 @@ async function exchangeAppToken(request: NextRequest) {
       );
     }
 
-    const supabase = (await createClient(request)) as TypedSupabaseClient;
-    const { data, error } = await supabase.rpc(
-      'validate_cross_app_token_with_session',
-      {
-        p_target_app: resolvedTarget.targetApp,
-        p_token: crossAppToken,
-      }
-    );
+    if (resolvedTarget.requirePkce && !codeVerifier) {
+      return NextResponse.json(
+        { code: 'PKCE_REQUIRED', error: 'Missing code verifier' },
+        { status: 400 }
+      );
+    }
+
+    // A verifier redeems only through the service_role overload; without one,
+    // the anonymous overload refuses every challenge-bound token.
+    const { data, error } = codeVerifier
+      ? await sbAdmin.rpc('validate_cross_app_token_with_session', {
+          p_code_verifier: codeVerifier,
+          p_target_app: resolvedTarget.targetApp,
+          p_token: crossAppToken,
+        })
+      : await ((await createClient(request)) as TypedSupabaseClient).rpc(
+          'validate_cross_app_token_with_session',
+          {
+            p_target_app: resolvedTarget.targetApp,
+            p_token: crossAppToken,
+          }
+        );
 
     if (error) {
       console.warn('Failed to validate cross-app token for app exchange', {

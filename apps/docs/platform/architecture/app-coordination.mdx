@@ -178,7 +178,9 @@ CLI-only APIs.
    Infrastructure dashboard.
 2. Issue an app secret and store it in the external app runtime environment.
 3. Send users to the centralized web login with a `returnUrl` pointing back to
-   the registered external app origin.
+   the registered external app origin (and registered callback path, when
+   configured), plus the PKCE parameters described in
+   [PKCE-bound handoffs](#pkce-bound-handoffs).
 4. The external app receives a short-lived cross-app `token` on its return URL.
 5. The external app server calls
    `POST /api/v1/auth/app-token/exchange` with `appId`, `appSecret`, `token`,
@@ -217,6 +219,46 @@ should also revalidate stored local sessions against a protected
 external-project API route before rendering admin UI or proxying admin API
 calls; if Tuturuuu returns `401`, `403`, or `404`, the app must clear its local
 session and send the user through the central login flow again.
+
+### PKCE-bound handoffs
+
+The cross-app `token` is a one-time bearer credential. To bind it to the browser
+that started the login, an external app can add an RFC 7636 S256 challenge:
+
+1. Before redirecting, generate a `code_verifier` (43-128 characters from
+   `A-Z a-z 0-9 - . _ ~`) and keep it in the browser's own session (for example
+   an `HttpOnly` cookie set by the app's server).
+2. Add `code_challenge=BASE64URL(SHA256(code_verifier))` (43 characters, no
+   padding) and `code_challenge_method=S256` to the centralized login URL next
+   to `returnUrl`. The login page forwards both to
+   `POST /api/v1/auth/cross-app-return`, which stores the challenge with the
+   handoff token. Only `S256` is accepted; `plain`, a missing method or a
+   malformed challenge returns `400` with `code: "INVALID_CODE_CHALLENGE"`.
+3. On the callback, send the stored verifier as `codeVerifier` in the
+   `POST /api/v1/auth/app-token/exchange` body with `appId`, `appSecret` and
+   `token`. A wrong or missing verifier fails like an invalid token (`401`)
+   and does not consume the handoff; a verifier for a token minted without a
+   challenge is also refused.
+
+Registry fields in the root workspace secrets (edited only by root platform
+admins through `ttr external apps save --file app.json` or
+`POST /api/v1/admin/external-apps`; each save stamps `updatedAt`/`updatedBy`,
+and omitted fields keep their stored value):
+
+| Field | Default | Effect |
+| --- | --- | --- |
+| `EXTERNAL_APP_REGISTRY:<appId>:requirePkce` | `false` | When `true`, cross-app-return refuses to mint without a valid S256 challenge and the exchange refuses a token exchange without `codeVerifier`; both return `400` with `code: "PKCE_REQUIRED"`. When `false`, the challenge is optional and existing apps are unaffected. |
+| `EXTERNAL_APP_REGISTRY:<appId>:callbackPaths` | `[]` | JSON array of exact return URL paths such as `"/auth/callback"`. When non-empty, a `returnUrl` on a registered origin must also match one of these paths (query strings are allowed); an empty list keeps the legacy origin-only check. |
+
+The challenge applies only to registered external apps; internal app verifiers
+never receive a challenge-bound token. In the database,
+`private.cross_app_tokens.code_challenge` stores the challenge, the seven-argument
+`generate_cross_app_token` overload mints it, the anonymous two-argument
+`validate_cross_app_token_with_session` refuses challenge-bound tokens, and the
+`service_role`-only three-argument overload verifies the verifier. Regression
+coverage lives in `apps/database/supabase/tests/cross-app-handoff-pkce.sql`,
+`apps/web/src/app/api/v1/auth/cross-app-return/route-pkce.test.ts` and
+`apps/web/src/app/api/v1/auth/app-token/exchange/route-pkce.test.ts`.
 
 ### App-owned Drive attachments
 

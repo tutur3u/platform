@@ -68,6 +68,10 @@ describe('external app CLI', () => {
     );
     await run(['apps', 'save'], { file, confirm: 'CONFIGURE_EXTERNAL_APP' });
     expect(save).toHaveBeenCalledWith(configuration);
+    const pkce = { requirePkce: true, callbackPaths: ['/auth/callback'] };
+    await writeFile(file, JSON.stringify({ ...configuration, ...pkce }));
+    await run(['apps', 'save'], { file, confirm: 'CONFIGURE_EXTERNAL_APP' });
+    expect(save).toHaveBeenLastCalledWith({ ...configuration, ...pkce });
     await writeFile(
       file,
       JSON.stringify({ ...configuration, secret: 'do-not-print-this' })
