@@ -1,0 +1,102 @@
+import 'package:mobile/features/mastermind/asks/ask_card.dart';
+import 'package:mobile/features/mastermind/asks/ask_detail.dart';
+import 'package:mobile/features/mastermind/asks/ask_v2_support.dart';
+import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/display_names.dart';
+import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
+
+/// A hub snapshot ask as the Inbox [AskCard], plus how each card option maps
+/// back to the wire `option_index` the reply outbox sends.
+///
+/// The card is a view: the strict snapshot parser still owns what is accepted,
+/// and the X1 [AskCard] still owns what is normalized and what is incomplete.
+final class InboxAsk {
+  const InboxAsk({
+    required this.card,
+    required this.optionIndexes,
+    required this.reversible,
+  });
+
+  final AskCard card;
+
+  /// For each entry of [AskCard.options], its index in [NeedsYou.options], or
+  /// null when it cannot be matched to one (then it is never answerable).
+  final List<int?> optionIndexes;
+
+  /// `reversible`, when the hub said so.
+  final bool? reversible;
+}
+
+/// Reads [item] into an [InboxAsk]. [now] is injectable so the derived tier is
+/// deterministic in tests.
+InboxAsk inboxAskFor(NeedsYou item, {DateTime? now}) {
+  final v2 = item.askV2;
+  final selectable = selectableOptions(item);
+  final recommended = [
+    for (final (index, label) in selectable)
+      if (item.optionRecommended(index)) label,
+  ].firstOrNull;
+  final detail = AskDetail(
+    id: item.id,
+    versionHash: item.versionHash,
+    title: _title(item),
+    askText: _text(item),
+    options: [for (final (_, label) in selectable) label],
+    recommendedOption: recommended,
+    urgency: item.urgency,
+    deadline: item.deadline,
+    deadlineAt: v2.deadlineAt,
+    reversible: v2.reversible,
+    createdAt: item.createdAt,
+    kind: item.kind,
+    state: item.state,
+    status: v2.status,
+    askTruncated: item.askTruncated,
+    textComplete: v2.textComplete,
+    optionsV2: v2.optionsV2,
+    recommendedId: v2.recommendedId,
+    recommendedWhy: v2.recommendedWhy,
+    inboxClass: v2.inboxClass,
+    // A legacy `urgent` ask stays in the Urgent tier without `inbox_class`.
+    inboxUrgency:
+        v2.inboxUrgency ??
+        (item.urgency == AskUrgency.urgent ? AskInboxUrgency.now : null),
+    riskClass: v2.riskClass,
+    updatedAt: v2.updatedAt,
+    resolvedVia: v2.resolvedVia,
+  );
+  final card = AskCard.fromDetail(detail, now: now);
+  final indexes = v2.optionsV2.isEmpty
+      ? [for (final (index, _) in selectable) index]
+      : [
+          for (final option in card.options)
+            _wireIndex(item, selectable, option.label),
+        ];
+  return InboxAsk(
+    card: card,
+    optionIndexes: List.unmodifiable(indexes),
+    reversible: v2.reversible,
+  );
+}
+
+String? _title(NeedsYou item) {
+  final hub = item.hubTitle?.trim();
+  if (hub != null && hub.isNotEmpty) return hub;
+  final title = item.title.trim();
+  if (title.isNotEmpty && !isRedactedTitle(title)) return title;
+  final first = item.body.trim().split(RegExp(r'\r?\n')).first.trim();
+  return first.isEmpty ? null : first;
+}
+
+String? _text(NeedsYou item) {
+  final hub = item.hubText?.trim();
+  if (hub != null && hub.isNotEmpty) return hub;
+  return isOpenOnMacStandIn(item.body) ? null : item.body.trim();
+}
+
+int? _wireIndex(NeedsYou item, List<(int, String)> selectable, String label) {
+  for (final (index, plain) in selectable) {
+    if (plain == label || item.options[index] == label) return index;
+  }
+  return null;
+}

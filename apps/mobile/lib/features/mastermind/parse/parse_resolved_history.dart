@@ -63,6 +63,7 @@ NeedsYou _withResolution(NeedsYou item, Map<String, dynamic> row) {
     optionKeys: item.optionKeys,
     hubOptionKeys: item.hubOptionKeys,
     hubRecommended: item.hubRecommended,
+    askV2: item.askV2,
     by: item.by,
     answeredVia: withdrawn ? null : item.answeredVia,
     state: withdrawn ? ItemState.withdrawn : item.state,

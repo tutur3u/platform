@@ -34,6 +34,7 @@ final class NeedsYou implements NeedsYouItem {
     this.answeredVia,
     this.deadline,
     this.urgency,
+    this.askV2 = askV2FieldsEmpty,
   }) : options = List.unmodifiable(options),
        hubOptions = hubOptions == null ? null : List.unmodifiable(hubOptions),
        optionKeys = optionKeys == null ? null : List.unmodifiable(optionKeys),
@@ -75,6 +76,11 @@ final class NeedsYou implements NeedsYouItem {
   /// Optional publisher timing; absent when unpublished or unrecognised.
   final AskDeadline? deadline;
   final AskUrgency? urgency;
+
+  /// The hub's optional Inbox fields (`options_v2`, `recommended_id`,
+  /// `recommended_why`, `inbox_class`, `deadline_at`, `risk_class`,
+  /// `updated_at`, `status`, `resolved_via`, ...). Empty for an older hub.
+  final AskV2Fields askV2;
 
   String optionLabel(int index) {
     final labels = hubOptions;
