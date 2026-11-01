@@ -85,6 +85,26 @@ describe('BoardPlanView sprints', () => {
     }
   });
 
+  it('keeps the latest owner when a ghost moves again before it is placed', async () => {
+    const pending: Array<() => void> = [];
+    api.moveTasks.mockImplementation(
+      () => new Promise((resolve) => pending.push(() => resolve({ moved: 1 })))
+    );
+    api.update.mockResolvedValue({ task: task('t4') });
+    renderPlan({ sprints: [planned], unplanned: ['t4'] });
+    await assignFromBacklog('t4', 'Ana');
+    // Before the placement lands, drop it on Binh too; the later move is the
+    // last write, so the earlier one cannot overwrite it.
+    await assignFromBacklog('t4', 'Binh');
+    await waitFor(() => expect(pending).toHaveLength(2));
+    for (const place of pending) place();
+    await waitFor(() => expect(api.update).toHaveBeenCalledTimes(2));
+    expect(api.update.mock.calls.map(([, , patch]) => patch)).toEqual([
+      { assignee_ids: ['u-ana'] },
+      { assignee_ids: ['u-ana', 'u-binh'] },
+    ]);
+  });
+
   it('assigns each ghost when two join the sprint at once', async () => {
     const pending: Array<() => void> = [];
     api.moveTasks.mockImplementation(
