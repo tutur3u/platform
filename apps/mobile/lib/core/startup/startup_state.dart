@@ -1,3 +1,24 @@
+/// Overlaps platform service setup with independent local preference reads.
+///
+/// [initializePlatformServices] (Firebase and observability) and
+/// [loadLocalPreferences] share no state, so neither waits for the other. Both
+/// settle before returning, so required work never escapes into the first
+/// frame. Identity restoration must still start only after this returns, which
+/// keeps platform error handlers installed while the session is restored.
+Future<T> initializeBootstrapServices<T>({
+  required Future<void> Function() initializePlatformServices,
+  required Future<T> Function() loadLocalPreferences,
+}) async {
+  late T preferences;
+  await Future.wait<void>([
+    initializePlatformServices(),
+    () async {
+      preferences = await loadLocalPreferences();
+    }(),
+  ]);
+  return preferences;
+}
+
 /// Loads appearance alongside offline state after identity restoration.
 ///
 /// Call only after observability and Supabase initialization have settled.
@@ -26,4 +47,26 @@ Future<T> initializeStartupState<T>({
     }(),
   ]);
   return appearance;
+}
+
+/// Brings push up for whoever is signed in when this runs.
+///
+/// Scheduled after the first frame, so [currentUserId] is read now rather than
+/// when scheduling: a sign-out or account switch in between never registers a
+/// stale token. A signed-out launch still initializes push so a notification
+/// that opened the app is recorded and delivered after sign-in. Neither path
+/// touches Firebase before sign-in: a signed-out launch only sets up local
+/// notifications, and Firebase/FCM admission happens in `startSession`.
+/// [sessionAlreadyStarted] skips a duplicate session for the same account.
+Future<void> startPushForCurrentAccount({
+  required String? Function() currentUserId,
+  required Future<void> Function() initialize,
+  required Future<void> Function(String userId) startSession,
+  bool Function(String userId)? sessionAlreadyStarted,
+}) {
+  final userId = currentUserId();
+  if (userId == null) return initialize();
+  // An auth change before the first frame already started this session.
+  if (sessionAlreadyStarted?.call(userId) ?? false) return Future<void>.value();
+  return startSession(userId);
 }

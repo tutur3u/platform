@@ -221,6 +221,31 @@ constant glyphs in `core/icons/platform_icon_data.dart`; retain that contract
 when evaluating font subsets. Measure release size and startup timing separately
 in admitted CI/device workflows before claiming a numeric improvement.
 
+### First-frame critical path
+
+Before `runApp`, bootstrap reads the local preferences (haptics, theme mode,
+system chrome, last routes) together with the consent read and gated admission
+in `TelemetryPreference.instance.initialize`, via `initializeBootstrapServices`.
+Both settle before Supabase starts. The overlap never moves Firebase earlier:
+Firebase is initialized only through `FirebaseAdmission` (signed in, and push or
+telemetry allowed), so a signed-out launch initializes no Firebase and no FCM.
+Consent is read before collection is enabled, and unsent Crashlytics reports are
+deleted before it is, in `MobileObservability.initialize`; only the package
+metadata read overlaps the collection switches.
+
+Local-notification setup (`PushNotificationService.initialize`) and the
+signed-in session (`startSession`, which is where FCM and Firebase admission
+happen) start after the first painted frame through `scheduleOptionalStartup`.
+`startPushForCurrentAccount` reads the signed-in account when it runs and skips
+a session an auth change already started before the first frame. Failures are
+logged by type only. A notification that launched the app is delivered once the
+session starts.
+
+Regression coverage: `startup_state_test.dart` and
+`cold_start_firebase_contract_test.dart` (no Firebase/FCM before sign-in, slow
+or failing Firebase, cold-start notification tap). These are orchestration
+fixtures; no device timing is claimed.
+
 ### Independent startup state restoration
 
 After Firebase/observability handlers and Supabase have settled, bootstrap uses

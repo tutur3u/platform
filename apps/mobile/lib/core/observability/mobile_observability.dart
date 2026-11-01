@@ -72,6 +72,11 @@ class MobileObservability {
   }) async {
     final enabled = consentGate.isEligible(flavor) && collectionEnabled;
     _enabled = false;
+    // Package metadata is not telemetry and never throws, so it overlaps the
+    // collection switches. Consent was already read by the caller; collection
+    // stays off until unsent reports are deleted (below, strictly after the
+    // switches settle).
+    final reporter = _loadOperationalReporter();
     await Future.wait([
       _controls.setCrashCollection(enabled: enabled),
       _controls.setAnalyticsCollection(enabled: enabled),
@@ -86,6 +91,10 @@ class MobileObservability {
       }
     }
     _enabled = enabled;
+    await reporter;
+  }
+
+  Future<void> _loadOperationalReporter() async {
     try {
       final package = await PackageInfo.fromPlatform();
       _operationalReporter = OperationalErrorReporter(

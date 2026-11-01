@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:flutter/widgets.dart';
 
@@ -9,6 +10,14 @@ import 'package:flutter/widgets.dart';
 /// Its owning feature exposes errors and permits retries.
 void scheduleOptionalStartup(Future<void> Function() initialize) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    unawaited(Future<void>.sync(initialize).catchError((Object _) {}));
+    unawaited(
+      Future<void>.sync(initialize).catchError((
+        Object error,
+        StackTrace stack,
+      ) {
+        // Never include the message: it may carry user or token content.
+        log('Optional startup failed: ${error.runtimeType}', stackTrace: stack);
+      }),
+    );
   });
 }
