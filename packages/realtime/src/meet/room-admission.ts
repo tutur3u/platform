@@ -58,10 +58,7 @@ export function admitOrHold(
         [token.userId]: {
           accountId: token.accountId,
           avatarUrl: token.avatarUrl,
-          displayName: lobbyDisplayName(
-            getMeetDisplayName(token),
-            !token.accountId
-          ),
+          displayName: lobbyDisplayName(getMeetDisplayName(token)),
           requestedAt: now,
           userId: token.userId,
         },

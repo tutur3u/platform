@@ -431,3 +431,26 @@ it.each(['host', 'Member Name'])(
     });
   }
 );
+
+it('marks first-party lobby tokens with an accountId as guests', () => {
+  const visitor = {
+    ...guest,
+    accountId: guestId,
+    displayName: host.displayName,
+  };
+  const held = admitOrHold(
+    admitOrHold(createMeetRoomSnapshot(), host, now).state,
+    visitor,
+    now
+  );
+  expect(held.state.waiting[guestId]?.displayName).toBe('host (guest)');
+  const renamed = run(
+    held.state,
+    { type: 'presence.join', displayName: 'host' },
+    visitor
+  );
+  expect(renamed.state.waiting[guestId]?.displayName).toBe('host (guest)');
+  expect(renamed.toManagers[0]).toMatchObject({
+    participants: [expect.objectContaining({ displayName: 'host (guest)' })],
+  });
+});

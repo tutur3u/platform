@@ -90,10 +90,7 @@ export function applyMeetRoomCommand(
             ...state.waiting,
             [userId]: {
               ...state.waiting[userId],
-              displayName: lobbyDisplayName(
-                message.displayName,
-                !token.accountId
-              ),
+              displayName: lobbyDisplayName(message.displayName),
             },
           },
         };
