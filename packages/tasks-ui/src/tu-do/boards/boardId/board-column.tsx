@@ -194,8 +194,7 @@ interface BoardColumnProps {
   onSpecialPinnedChange?: (pinned: boolean) => void;
   onHoverTaskList?: (listId: string) => void;
   readOnly?: boolean;
-  /** The board already holds every task, so the column loads no more pages. */
-  pagesCovered?: boolean;
+  pagesCovered?: boolean; // The board holds every task: no more pages.
 }
 
 export function BoardColumn({
@@ -379,10 +378,8 @@ export function BoardColumn({
     onTaskListCollapsedChange,
   });
 
-  // Load more pages (infinite scroll callback)
   const handleLoadMore = useCallback(() => {
-    if (pagesCovered || !listState || listState.isLoading || !listState.hasMore)
-      return;
+    if (pagesCovered || !listState?.hasMore || listState.isLoading) return;
     loadColumnPage(listState.page + 1);
   }, [listState, loadColumnPage, pagesCovered]);
 
@@ -488,10 +485,8 @@ export function BoardColumn({
     tasks,
   ]);
 
-  // A filtered column holds every match, so the unfiltered page total
-  // would overstate it.
   const badgeCount =
-    listState?.hasMore && !hasActiveFilters && !pagesCovered
+    listState?.hasMore && !pagesCovered && !hasActiveFilters
       ? Math.max(listState.totalCount, visibleTasks.length)
       : visibleTasks.length;
   const selectedVisibleTaskCount = visibleTasks.reduce(
@@ -966,7 +961,7 @@ export function BoardColumn({
           optimisticUpdateInProgress={optimisticUpdateInProgress}
           bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
           onLoadMore={handleLoadMore}
-          hasMore={!pagesCovered && (listState?.hasMore ?? false)}
+          hasMore={!pagesCovered && !!listState?.hasMore}
           isLoadingMore={Boolean(listState?.isLoading && listState.page > 0)}
           readOnly={readOnly}
         />
