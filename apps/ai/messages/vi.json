@@ -3174,7 +3174,14 @@
       "unknown_estimate": "chưa ước lượng",
       "loading_tasks": "Đang tải công việc của sprint…",
       "retry": "Thử lại",
-      "tasks_failed": "Không thể tải công việc của sprint"
+      "tasks_failed": "Không thể tải công việc của sprint",
+      "due_with_sprint": "Hạn theo sprint · {date}",
+      "move_failed": "Không thể chuyển công việc",
+      "move_to_sprint": "Chuyển sang {name}",
+      "moved_to_sprint": "Đã chuyển sang {name}",
+      "not_in_sprint": "Không thuộc sprint nào",
+      "sprint_field": "Sprint",
+      "sprint_history": "Các sprint {list}"
     }
   },
   "satellite-account-settings": {
