@@ -53,6 +53,7 @@ export function TaskPanelResizeHandle() {
   return (
     // biome-ignore lint/a11y/useSemanticElements: Interactive splitter with a grip and keyboard range controls.
     <div
+      // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a focusable splitter with keyboard range controls, not a rule
       role="separator"
       tabIndex={0}
       aria-label={t('resize_panel')}

@@ -73,8 +73,8 @@ function SummaryChip({ children, className, icon }: SummaryChipProps) {
  * Properties, personal overrides and relationships used to be three stacked
  * collapsibles, which meant three chevrons, three headers and three decisions
  * before reaching the description. They are now a single "Details" disclosure:
- * collapsed it is one row that summarizes the task at a glance, expanded it is
- * one panel with a segmented control between the three groups.
+ * collapsed it is one row that summarizes the task at a glance, expanded (the
+ * default) it is one panel with a segmented control between the three groups.
  */
 export function TaskDetailsSection({
   activity,
@@ -93,7 +93,8 @@ export function TaskDetailsSection({
 }: TaskDetailsSectionProps) {
   const t = useTranslations();
   const panelId = useId();
-  const [isExpanded, setIsExpanded] = useState(false);
+  // Open by default, so the task's properties show without a click.
+  const [isExpanded, setIsExpanded] = useState(true);
   const [activeTab, setActiveTab] = useState<TaskDetailsTab>(defaultTab);
   const { override } = useTaskOverrides(taskId);
   const selfManaged = override?.self_managed ?? false;

@@ -6,13 +6,15 @@ import type React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import {
   getBoardSprintsQueryKey,
+  NEW_SPRINT,
   useBoardSprintMutations,
   useBoardSprints,
 } from './use-board-sprints';
 
-const api = vi.hoisted(() => ({ unplan: vi.fn() }));
+const api = vi.hoisted(() => ({ addSprint: vi.fn(), unplan: vi.fn() }));
 
 vi.mock('@tuturuuu/internal-api/task-sprints', () => ({
+  addWorkspaceTaskBoardSprint: api.addSprint,
   listWorkspaceTaskBoardSprints: vi.fn(() => new Promise(() => undefined)),
   moveTasksOutOfWorkspaceTaskBoardSprints: api.unplan,
 }));
@@ -88,5 +90,20 @@ describe('useBoardSprints', () => {
       )
     );
     expect(api.unplan).toHaveBeenCalledWith('w', 'b', ['in-sprint']);
+  });
+
+  it('keeps a task in its sprint until the new sprint it moves to exists', async () => {
+    api.addSprint.mockReturnValue(new Promise(() => undefined));
+    const { result } = setup();
+    act(() =>
+      result.current.mutations.moveTasks.mutate({
+        sprintId: NEW_SPRINT,
+        taskIds: ['in-sprint'],
+      })
+    );
+    await waitFor(() => expect(api.addSprint).toHaveBeenCalledWith('w', 'b'));
+    expect(result.current.sprints.openSprintByTaskId.get('in-sprint')?.id).toBe(
+      'sprint-1'
+    );
   });
 });

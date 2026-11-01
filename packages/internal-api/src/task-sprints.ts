@@ -187,10 +187,9 @@ export async function addWorkspaceTaskBoardSprint(
   boardId: string,
   options?: InternalApiClientOptions
 ) {
-  return getTaskApiClient(options).json<BoardSprintsResponse>(
-    sprintsPath(workspaceId, boardId),
-    jsonRequest('POST', {})
-  );
+  return getTaskApiClient(options).json<
+    BoardSprintsResponse & { addedSprintId?: string }
+  >(sprintsPath(workspaceId, boardId), jsonRequest('POST', {}));
 }
 
 export async function removeWorkspaceTaskBoardSprint(

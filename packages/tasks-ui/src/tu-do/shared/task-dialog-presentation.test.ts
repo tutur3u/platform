@@ -2,6 +2,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { describe, expect, it } from 'vitest';
 import {
   getTaskDialogContentClassName,
+  getTaskDialogContentPresentation,
   resolveTaskDialogOpeningPresentation,
   TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME,
   TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME,
@@ -138,5 +139,15 @@ describe('getTaskDialogContentClassName', () => {
     );
     expect(pick(false, false, true)).toContain('--task-panel-width');
     expect(pick(false, false, false)).toBeUndefined();
+  });
+});
+
+describe('getTaskDialogContentPresentation', () => {
+  it('keeps fullscreen, then the panel, else the centred dialog', () => {
+    expect(getTaskDialogContentPresentation('fullscreen', true)).toBe(
+      'fullscreen'
+    );
+    expect(getTaskDialogContentPresentation('panel', true)).toBe('panel');
+    expect(getTaskDialogContentPresentation('focused', false)).toBe('default');
   });
 });

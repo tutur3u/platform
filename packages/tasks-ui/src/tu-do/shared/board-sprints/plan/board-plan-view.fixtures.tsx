@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import type { BoardSprint } from '@tuturuuu/internal-api/task-sprints';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -18,9 +18,20 @@ const mocks = vi.hoisted(() => ({
   openTask: vi.fn(),
   removeSprint: vi.fn(),
   start: vi.fn(),
+  toastError: vi.fn(),
   unplan: vi.fn(),
   update: vi.fn(),
-  updateSprint: vi.fn(),
+}));
+
+// The Board's card has its own tests; here it only needs to show the task.
+vi.mock('../../../boards/boardId/task-card/task-card', () => ({
+  TaskCard: ({
+    canUseBoardAssignees,
+    task,
+  }: {
+    canUseBoardAssignees?: boolean;
+    task: Task;
+  }) => <p data-assignees={String(canUseBoardAssignees)}>{task.name}</p>,
 }));
 
 vi.mock('next-intl', () => ({
@@ -91,6 +102,15 @@ vi.mock('@tuturuuu/ui/dropdown-menu', async () => {
     DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => (
       <div>{children}</div>
     ),
+    DropdownMenuSub: ({ children }: { children: React.ReactNode }) => (
+      <div>{children}</div>
+    ),
+    DropdownMenuSubContent: ({ children }: { children: React.ReactNode }) => (
+      <div role="menu">{children}</div>
+    ),
+    DropdownMenuSubTrigger: ({ children }: { children: React.ReactNode }) => (
+      <div>{children}</div>
+    ),
     DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => (
       <>{children}</>
     ),
@@ -98,7 +118,7 @@ vi.mock('@tuturuuu/ui/dropdown-menu', async () => {
 });
 
 vi.mock('@tuturuuu/ui/sonner', () => ({
-  toast: { error: vi.fn(), success: vi.fn() },
+  toast: { error: mocks.toastError, success: vi.fn() },
 }));
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
@@ -126,11 +146,11 @@ vi.mock('@tuturuuu/internal-api/task-sprints', () => ({
   removeWorkspaceTaskBoardSprint: mocks.removeSprint,
   moveTasksToWorkspaceTaskBoardSprint: mocks.moveTasks,
   startWorkspaceTaskBoardSprint: mocks.start,
-  updateWorkspaceTaskBoardSprint: mocks.updateSprint,
   updateWorkspaceTaskBoardSprintLength: vi.fn(),
 }));
 
-vi.mock('../../board-task-search', () => ({
+vi.mock('../../board-task-search', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../board-task-search')>()),
   listBoardTasksForSearch: mocks.listBoardTasksForSearch,
 }));
 
@@ -208,11 +228,13 @@ export function sprintsState(sprints: BoardSprint[], unplanned: string[] = []) {
 export function renderPlan({
   canManage = true,
   defaultListId = 'list-todo',
+  searchQuery,
   sprints,
   unplanned,
 }: {
   canManage?: boolean;
   defaultListId?: string;
+  searchQuery?: string;
   sprints: BoardSprint[];
   unplanned?: string[];
 }) {
@@ -227,6 +249,7 @@ export function renderPlan({
         canPlan
         defaultListId={defaultListId}
         lists={lists}
+        searchQuery={searchQuery}
         sprints={sprintsState(sprints, unplanned)}
         wsId="ws-1"
       />
@@ -260,3 +283,13 @@ beforeEach(() => {
 
 /** The API doubles the mocked modules call. */
 export const api = mocks;
+
+/** Drags a backlog card onto a person, as planning does. */
+export async function assignFromBacklog(taskId: string, person: string) {
+  const card = await screen.findByRole('article', { name: `Task ${taskId}` });
+  const transfer = dataTransfer();
+  const target = screen.getByRole('region', { name: person });
+  fireEvent.dragStart(card, { dataTransfer: transfer });
+  fireEvent.dragOver(target, { dataTransfer: transfer });
+  fireEvent.drop(target, { dataTransfer: transfer });
+}

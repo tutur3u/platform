@@ -4,8 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   addWorkspaceTaskBoardSprint,
   type BoardSprint,
-  type BoardSprintEndDecision,
-  type BoardSprintGoalResult,
   type BoardSprintLengthWeeks,
   type BoardSprintsResponse,
   endWorkspaceTaskBoardSprint,
@@ -14,7 +12,6 @@ import {
   moveTasksToWorkspaceTaskBoardSprint,
   removeWorkspaceTaskBoardSprint,
   startWorkspaceTaskBoardSprint,
-  updateWorkspaceTaskBoardSprint,
   updateWorkspaceTaskBoardSprintLength,
 } from '@tuturuuu/internal-api/task-sprints';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -25,6 +22,12 @@ import {
   isTaskInCurrentSprintView,
 } from '@tuturuuu/utils/task-helper/sprints';
 import { useMemo } from 'react';
+
+/** A sprint that does not exist yet: the move adds it after the last one. */
+export const NEW_SPRINT = 'new';
+
+/** Where a task goes: an open sprint, a new one, or (null) out of every sprint. */
+export type SprintMoveTarget = BoardSprint | typeof NEW_SPRINT | null;
 
 export function getBoardSprintsQueryKey(boardId: string) {
   return ['board-sprints', boardId] as const;
@@ -105,25 +108,39 @@ export function useBoardSprintMutations({
     onSuccess: store,
   });
 
-  const updateGoal = useMutation({
-    mutationFn: ({ goal, sprintId }: { goal: string; sprintId: string }) =>
-      updateWorkspaceTaskBoardSprint(wsId, boardId, sprintId, { goal }),
-    onSettled: refresh,
-  });
-
   const moveTasks = useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       sprintId,
       taskIds,
     }: {
-      // null takes the tasks out of every sprint.
-      sprintId: string | null;
+      // null takes the tasks out of every sprint; NEW_SPRINT adds one first.
+      sprintId: string | typeof NEW_SPRINT | null;
       taskIds: string[];
-    }) =>
-      sprintId
-        ? moveTasksToWorkspaceTaskBoardSprint(wsId, boardId, sprintId, taskIds)
-        : moveTasksOutOfWorkspaceTaskBoardSprints(wsId, boardId, taskIds),
+    }): Promise<{ moved?: number; sprintName?: string }> => {
+      if (!sprintId)
+        return moveTasksOutOfWorkspaceTaskBoardSprints(wsId, boardId, taskIds);
+      if (sprintId !== NEW_SPRINT)
+        return moveTasksToWorkspaceTaskBoardSprint(
+          wsId,
+          boardId,
+          sprintId,
+          taskIds
+        );
+      const { addedSprintId, sprints: after } =
+        await addWorkspaceTaskBoardSprint(wsId, boardId);
+      const added = after.find((sprint) => sprint.id === addedSprintId);
+      if (!added) throw new Error('SPRINT_NOT_ADDED');
+      await moveTasksToWorkspaceTaskBoardSprint(
+        wsId,
+        boardId,
+        added.id,
+        taskIds
+      );
+      return { sprintName: added.name };
+    },
     onMutate: async ({ sprintId, taskIds }) => {
+      // The new sprint does not exist yet; the tasks stay put until it does.
+      if (sprintId === NEW_SPRINT) return { previous: undefined };
       await queryClient.cancelQueries({ queryKey: key });
       const previous = queryClient.getQueryData<BoardSprintsResponse>(key);
       if (previous) {
@@ -165,23 +182,12 @@ export function useBoardSprintMutations({
     onSettled: refresh,
   });
 
+  // Every open task moves to the next sprint with its owner.
   const end = useMutation({
-    mutationFn: ({
-      decisions,
-      goalResult,
-      sprintId,
-    }: {
-      decisions: Record<string, BoardSprintEndDecision>;
-      goalResult: BoardSprintGoalResult | null;
-      sprintId: string;
-    }) =>
-      endWorkspaceTaskBoardSprint(wsId, boardId, sprintId, {
-        decisions,
-        goal_result: goalResult,
-      }),
+    mutationFn: (sprintId: string) =>
+      endWorkspaceTaskBoardSprint(wsId, boardId, sprintId, {}),
     onSuccess: (data) => {
       store(data);
-      // Tasks sent to the backlog lost their owners on the server.
       void queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
       void queryClient.invalidateQueries({ queryKey: ['tasks-full', boardId] });
     },
@@ -206,6 +212,5 @@ export function useBoardSprintMutations({
     removeSprint,
     setLength,
     start,
-    updateGoal,
   };
 }

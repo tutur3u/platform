@@ -1,73 +1,78 @@
 'use client';
 
-import { Box, Inbox, Plus, Search, UserPlus } from '@tuturuuu/icons';
+import { Inbox, Plus } from '@tuturuuu/icons';
+import type { BoardSprint } from '@tuturuuu/internal-api/task-sprints';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type DragEvent, type ReactNode, useMemo, useState } from 'react';
-import { getPriorityIndicator } from '../../../utils/taskPriorityUtils';
+import { type DragEvent, useMemo, useState } from 'react';
+import {
+  TaskCard,
+  type TaskCardProps,
+} from '../../../boards/boardId/task-card/task-card';
 import { DEFAULT_BOARD_FILTERS } from '../../board-header/board-filter-state';
 import { BoardProjectFilter } from '../../board-header/board-project-filter';
 import { BoardSortMenu } from '../../board-header/board-sort-menu';
-import type { BoardMember } from '../../board-members-query';
 import { sortLocalTasks } from '../../board-task-filtering';
 import type { TaskFilters } from '../../task-filter.types';
-import {
-  MemberAvatar,
-  PlanOwnDueDate,
-  PlanTaskTitle,
-  writePlanDrag,
-} from './plan-parts';
+import { SprintLabel } from '../sprint-label';
+import { setPlanCardDragImage, writePlanDrag } from './plan-parts';
+
+/** What the Board passes its cards, so backlog cards behave the same. */
+export type PlanBoardCardProps = Pick<
+  TaskCardProps,
+  | 'assigneeMemberSource'
+  | 'canUseBoardAssignees'
+  | 'isPersonalWorkspace'
+  | 'readOnly'
+>;
 
 interface PlanBacklogProps {
+  boardCard?: PlanBoardCardProps;
+  boardId: string;
   canEdit: boolean;
   dropActive: boolean;
+  /** What an empty backlog says; a search says what found nothing. */
+  emptyLabel: string;
   /** Open tasks parked outside every sprint, shown as ghosts. */
   isGhost: (task: Task) => boolean;
-  members: BoardMember[];
-  onAssign: (task: Task, memberId: string) => void;
+  lists: TaskList[];
+  listsById: Map<string, TaskList>;
   onCreate?: (name: string) => Promise<unknown>;
   onDragEnd: () => void;
   onDragOver: (event: DragEvent) => void;
   onDrop: (event: DragEvent) => void;
-  onOpen: (task: Task) => void;
-  renderSprintMenu?: (task: Task) => ReactNode;
-  /** The task's sprint, when several sprints show at once. */
-  sprintTag: (task: Task) => string | null;
+  /** The task's sprint, when it is not the shown one. */
+  sprintTag: (task: Task) => BoardSprint | null;
   tasks: Task[];
   workspaceId: string;
 }
 
 /**
- * Unassigned open tasks of the shown sprint and open tasks in no sprint, with
- * priority sort and a Project filter.
+ * Open tasks nobody owns in any open sprint, tagged when not in the shown
+ * one, and open tasks in no sprint, with a Project filter and priority sort.
+ * The header search filters it from outside.
  */
 export function PlanBacklog({
+  boardCard,
+  boardId,
   canEdit,
   dropActive,
+  emptyLabel,
   isGhost,
-  members,
-  onAssign,
+  lists,
+  listsById,
   onCreate,
   onDragEnd,
   onDragOver,
   onDrop,
-  onOpen,
-  renderSprintMenu,
   sprintTag,
   tasks,
   workspaceId,
 }: PlanBacklogProps) {
   const t = useTranslations('ws-task-boards.sprints');
-  const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<TaskFilters>(DEFAULT_BOARD_FILTERS);
   const [composing, setComposing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -83,17 +88,15 @@ export function PlanBacklog({
   }, [tasks]);
 
   const visible = useMemo(() => {
-    const needle = query.trim().toLowerCase();
     const projectIds = new Set(filters.projects.map((project) => project.id));
     const matching = tasks.filter((task) => {
-      if (needle && !task.name.toLowerCase().includes(needle)) return false;
       if (projectIds.size === 0) return true;
       return (task.projects ?? []).some((project) =>
         projectIds.has(project.id)
       );
     });
     return sortLocalTasks(matching, filters.sortBy, 'last');
-  }, [filters, query, tasks]);
+  }, [filters, tasks]);
 
   async function submitDraft() {
     const name = draft.trim();
@@ -108,6 +111,7 @@ export function PlanBacklog({
   }
 
   return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- a drop zone; the row menus plan without a mouse
     <section
       aria-label={t('backlog')}
       className={cn(
@@ -117,8 +121,8 @@ export function PlanBacklog({
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
-      <div className="flex items-center gap-2 border-b p-3">
-        <Inbox className="size-4 text-muted-foreground" />
+      <div className="flex items-center gap-2 border-b p-2">
+        <Inbox className="ml-2 size-4 text-muted-foreground" />
         <h3 className="font-semibold text-foreground/90 text-sm">
           {t('backlog')}
         </h3>
@@ -126,27 +130,15 @@ export function PlanBacklog({
           {tasks.length}
         </Badge>
         <span className="flex-1" />
-        <BoardSortMenu
-          onChange={(sortBy) => setFilters({ ...filters, sortBy })}
-          sortBy={filters.sortBy}
-        />
-      </div>
-      <div className="flex items-center gap-2 p-2">
-        <label className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md border bg-background px-2 text-sm">
-          <Search className="size-3.5 shrink-0 text-muted-foreground" />
-          <input
-            aria-label={t('search_backlog')}
-            className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={t('search_backlog')}
-            value={query}
-          />
-        </label>
         <BoardProjectFilter
           filters={filters}
           onFiltersChange={setFilters}
           projectTaskCounts={projectTaskCounts}
           workspaceId={workspaceId}
+        />
+        <BoardSortMenu
+          onChange={(sortBy) => setFilters({ ...filters, sortBy })}
+          sortBy={filters.sortBy}
         />
       </div>
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-2">
@@ -175,23 +167,51 @@ export function PlanBacklog({
             value={draft}
           />
         ) : null}
-        {visible.map((task) => (
-          <BacklogCard
-            canEdit={canEdit}
-            ghost={isGhost(task)}
-            key={task.id}
-            members={members}
-            onAssign={(memberId) => onAssign(task, memberId)}
-            onDragEnd={onDragEnd}
-            onOpen={() => onOpen(task)}
-            sprintMenu={renderSprintMenu?.(task)}
-            sprintTag={sprintTag(task)}
-            task={task}
-          />
-        ))}
+        {visible.map((task) => {
+          const ghost = isGhost(task);
+          const tag = ghost ? null : sprintTag(task);
+          return (
+            // Native drag plans the task onto a person; the card is the
+            // Board's own, with its sortable drag off.
+            // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- the row menus plan without a mouse
+            <article
+              aria-label={task.name}
+              data-plan-ghost={ghost || undefined}
+              data-plan-task-id={task.id}
+              draggable={canEdit}
+              key={task.id}
+              onDragEnd={onDragEnd}
+              onDragStart={(event) => {
+                writePlanDrag(event, task.id, null);
+                setPlanCardDragImage(event);
+              }}
+            >
+              {ghost || tag ? (
+                <p className="flex px-1 pb-1 text-muted-foreground text-xs">
+                  {tag ? <SprintLabel sprint={tag} /> : t('not_in_sprint')}
+                </p>
+              ) : null}
+              <TaskCard
+                {...boardCard}
+                availableLists={lists}
+                // A task outside the shown sprint is planned by drag or its
+                // sprint menu, which move it here; an owner alone would not.
+                canUseBoardAssignees={
+                  tag || ghost ? false : boardCard?.canUseBoardAssignees
+                }
+                boardId={boardId}
+                dragDisabled
+                onUpdate={() => {}}
+                task={task}
+                taskList={listsById.get(task.list_id)}
+                workspaceId={workspaceId}
+              />
+            </article>
+          );
+        })}
         {visible.length === 0 ? (
-          <p className="px-1 py-4 text-center text-muted-foreground text-xs">
-            {t('backlog_empty')}
+          <p className="rounded-lg border border-dashed px-3 py-2.5 text-muted-foreground text-sm">
+            {emptyLabel}
           </p>
         ) : null}
       </div>
@@ -208,104 +228,5 @@ export function PlanBacklog({
         </div>
       ) : null}
     </section>
-  );
-}
-
-function BacklogCard({
-  canEdit,
-  ghost,
-  members,
-  onAssign,
-  onDragEnd,
-  onOpen,
-  sprintMenu,
-  sprintTag,
-  task,
-}: {
-  canEdit: boolean;
-  ghost: boolean;
-  members: BoardMember[];
-  onAssign: (memberId: string) => void;
-  onDragEnd: () => void;
-  onOpen: () => void;
-  sprintMenu?: ReactNode;
-  sprintTag: string | null;
-  task: Task;
-}) {
-  const t = useTranslations('ws-task-boards.sprints');
-  const project = task.projects?.[0];
-
-  return (
-    <article
-      aria-label={task.name}
-      className={cn(
-        'relative rounded-lg border bg-background p-3 shadow-xs transition-shadow focus-within:ring-2 focus-within:ring-ring hover:shadow-sm',
-        // In no sprint yet: a ghost until someone plans it.
-        ghost &&
-          'border-dashed bg-background/40 text-muted-foreground shadow-none'
-      )}
-      data-plan-ghost={ghost || undefined}
-      data-plan-task-id={task.id}
-      draggable={canEdit}
-      onDragEnd={onDragEnd}
-      onDragStart={(event) => writePlanDrag(event, task.id, null)}
-    >
-      <div className="flex items-start gap-2">
-        {/* The title button stretches over the card, so a click anywhere opens it. */}
-        <button
-          className="min-w-0 flex-1 text-left font-medium text-sm leading-5 after:absolute after:inset-0 focus-visible:outline-none"
-          onClick={onOpen}
-          type="button"
-        >
-          <PlanTaskTitle task={task} />
-        </button>
-        {sprintMenu}
-        {canEdit ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                aria-label={t('assign', { name: task.name })}
-                className="relative z-10 grid size-6 shrink-0 place-items-center rounded-full border border-dashed text-muted-foreground transition-colors hover:border-solid hover:text-foreground"
-                type="button"
-              >
-                <UserPlus className="size-3.5" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel className="text-muted-foreground text-xs">
-                {t('assign_to')}
-              </DropdownMenuLabel>
-              {members.map((member) => (
-                <DropdownMenuItem
-                  className="gap-2"
-                  key={member.id}
-                  onSelect={() => onAssign(member.id)}
-                >
-                  <MemberAvatar className="size-5" member={member} />
-                  <span className="truncate">{member.display_name}</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
-      </div>
-      {task.priority || project || task.end_date || ghost || sprintTag ? (
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {ghost || sprintTag ? (
-            <span className="inline-flex h-5 items-center rounded-md border border-dashed px-1.5 text-muted-foreground text-xs">
-              {ghost ? t('not_in_sprint') : sprintTag}
-            </span>
-          ) : null}
-          {getPriorityIndicator(task.priority)}
-          {project ? (
-            <span className="inline-flex h-5 max-w-40 items-center gap-1 rounded-md border border-dynamic-sky/30 bg-dynamic-sky/10 px-1.5 text-dynamic-sky text-xs">
-              <Box className="size-3 shrink-0" />
-              <span className="truncate">{project.name}</span>
-            </span>
-          ) : null}
-          <PlanOwnDueDate task={task} />
-        </div>
-      ) : null}
-    </article>
   );
 }

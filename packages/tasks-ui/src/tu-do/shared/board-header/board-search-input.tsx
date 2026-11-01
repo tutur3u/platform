@@ -17,7 +17,7 @@ export function BoardSearchInput({
 }) {
   const t = useTranslations();
   const [localQuery, setLocalQuery] = useState(searchQuery || '');
-  const committedRef = useRef(searchQuery || '');
+  const [syncedQuery, setSyncedQuery] = useState(searchQuery || '');
   const onSearchChangeRef = useRef(onSearchChange);
 
   useEffect(() => {
@@ -25,20 +25,19 @@ export function BoardSearchInput({
   });
 
   // Follow external changes (Clear, presence) without overwriting typing.
-  useEffect(() => {
-    const next = searchQuery || '';
-    committedRef.current = next;
-    setLocalQuery((current) => (current === next ? current : next));
-  }, [searchQuery]);
+  const committed = searchQuery || '';
+  if (committed !== syncedQuery) {
+    setSyncedQuery(committed);
+    setLocalQuery(committed);
+  }
 
   useEffect(() => {
+    if (localQuery === committed) return;
     const timeoutId = setTimeout(() => {
-      if (localQuery === committedRef.current) return;
-      committedRef.current = localQuery;
       onSearchChangeRef.current(localQuery || undefined);
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timeoutId);
-  }, [localQuery]);
+  }, [committed, localQuery]);
 
   return (
     <div className="relative min-w-20 flex-1 basis-60 sm:max-w-60">

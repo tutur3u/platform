@@ -37,8 +37,8 @@ walks every way a task enters, leaves or returns to a board's sprints, and
 several sprints ahead, the five-sprint cap, start order, removal and parked
 tasks.
 
-The backlog is not a separate list. It is the unassigned open tasks of the
-sprint Plan shows, plus every open task in no sprint.
+The backlog is not a separate list. It is the unassigned open tasks of every
+open sprint, plus every open task in no sprint.
 
 ## Due dates
 
@@ -49,24 +49,29 @@ a task rewrites nothing. Only an own due date can make a task overdue.
 The task panel shows a Sprint row on boards with sprints on: the task's open
 sprint and its dates, "Due with the sprint" and the sprint end when the task has
 no due date of its own, the sprints it went through, and, for people who can
-edit the task, a menu to move it to any other open sprint or to No sprint. Cards do not
-repeat the sprint end.
+edit the task, a menu with Move to next sprint and Remove from sprint (Add to
+current sprint and Move to next sprint for a task in no sprint), then Move to…
+listing every other open sprint and New sprint, each with its icon. Moving a
+task past the last sprint adds the next sprint first, up to five open sprints;
+sprints never need adding by hand. Cards do not repeat the sprint end.
 
-Regression coverage: `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/components/task-sprint-row.test.tsx`.
+Regression coverage: `packages/tasks-ui/src/tu-do/shared/task-edit-dialog/components/task-sprint-row.test.tsx`
+and `packages/tasks-ui/src/tu-do/shared/board-sprints/sprint-move-items.test.ts`.
 
 ## Starting and ending
 
 Starting and ending a sprint, and changing its length, are limited to workspace
-members who can edit the board; board guests can plan (goals and membership)
-but cannot start or end. Only the next sprint can start. Starting it keeps the
+members who can edit the board; board guests can plan (membership) but cannot
+start or end. Only the next sprint can start. Starting it keeps the
 later planned sprints, moved to follow its end, and plans a new sprint only
 when none is left. A sprint started before its planned Monday keeps its length: it
 starts that day and ends on the Friday of its last week (a weekend start counts
 from the next Monday), and the next sprint is planned after it.
 
-Ending is atomic and idempotent. Every open task gets a decision: carry it into
-the next sprint (the earliest planned one) with its owner, or send it to the backlog, which removes its
-assignees. A missing decision carries. The end stores a report: tasks in the
+Ending is atomic and idempotent. Every open task moves into the next sprint
+(the earliest planned one) with its owner; Plan unassigns it by dragging it
+back to the backlog. The RPC still accepts a per-task backlog decision, which
+removes the task's assignees, but the app no longer sends one. The end stores a report: tasks in the
 sprint, done, added mid-sprint, carried in from earlier sprints, carried on,
 sent to the backlog, the same totals in estimation points, and per-person
 totals. Ending twice returns the stored report.
@@ -124,21 +129,33 @@ Boards with sprints on get Plan and Board tabs at the start of the header's
 second row; boards with sprints off show neither. Plan shows the next sprint
 by default. Its title is a sprint picker: the open sprints (marked Active and
 Next), the ended sprints newest first, and All sprints. On the left, the
-backlog lists the shown sprint's unassigned open tasks and, as dashed ghosts,
-the open tasks in no sprint, with a search field, a priority sort and a Project
-filter. On the right are the sprint dates, the sprint goal, and one section per
-board member with the tasks they own in that sprint. All sprints lists the
-unfinished work of every open sprint, each task tagged with its sprint, without
-a goal. An ended sprint shows read-only, so its tasks can be found and moved
-from their sprint menu or the task panel.
+backlog lists the unassigned open tasks of every open sprint, those from
+another sprint tagged with it, and, as dashed ghosts, the open tasks in no
+sprint, with a Project filter and a priority sort. Backlog
+cards are the Board's own task cards, dragged with the Board's raised look. On
+the right are the sprint dates and one section per board member with the tasks
+they own in that sprint; clicking a task opens it in the task panel. Sprints
+have no goal in the app. All sprints lists the unfinished work of every open
+sprint, each task tagged with its sprint. An ended sprint shows read-only, so
+its tasks can be found and moved from their sprint menu or the task panel.
 
-Every task row has a sprint menu that moves it to any open sprint or to No
-sprint. People who can plan add a sprint from the picker, up to five open
+The header search serves both tabs. In Plan it looks through every open
+sprint and the backlog, each match tagged with its sprint. On Board, matches
+hidden in other sprints or in no sprint show as "N more in other sprints",
+which opens Plan with the same search; when the Board itself has no match, its
+empty state offers the same jump as its action.
+
+Every task row has the same sprint menu as the task panel. People who can plan add a sprint from the picker, up to five open
 sprints with the running one, or remove the last planned sprint; its tasks move
 to the sprint before it, and one planned sprint always stays.
 
-Planning is assigning. Dragging a backlog task onto a person, or picking a
-person from the task's avatar button, makes them its owner. Dragging a task
+Every sprint name in Plan, the sprint menus and the task tags carries its dates
+("Sprint 3 9 – 13 Nov"). Planning is assigning. Dragging a backlog task onto a
+person, or picking a person from the task's avatar button, makes them its owner.
+A task from another sprint or from no sprint shows its owner at once and is
+saved once it has moved into the shown sprint; if the move fails, the owner
+comes back off with one message. While searching, every person stays, so a
+match can still be dragged onto anyone; with no owned match, one line says so. Dragging a task
 between people swaps that owner and keeps co-owners. Dragging it back to the
 backlog removes every owner. Giving a ghost an owner also plans it into the
 shown sprint (the next one under All sprints). Add to backlog creates an
@@ -155,15 +172,12 @@ and `packages/tasks-ui/src/tu-do/shared/__tests__/board-views-sprints.test.tsx`.
 ## Sprint summary and reports
 
 Ending happens from a summary, opened by End in the sprint menu or by "End
-Sprint N first" on the Plan tab. It shows the goal with Met, Partly or Missed,
-four totals (delivered against committed, tasks done, added mid-sprint and
-carried in), done against assigned per person, and every open task with Carry
-to the next sprint or Backlog. Totals read in estimation points when the
-sprint has any, and in tasks otherwise. The End button stays disabled until
-each open task has a decision; Carry all and All to backlog set them in one
-click, and a task already carried twice is flagged. Ending switches the board
-to Plan. Choosing an ended sprint in the sprint menu opens its stored report
-with the same totals, read-only.
+Sprint N first" on the Plan tab. It shows tasks done out of all the sprint's
+tasks, and the unfinished tasks counted per status column, in board order. One
+line says they move to the next sprint with their owners; End is enabled once
+the sprint's tasks have loaded. Ending switches the board to Plan. Choosing an
+ended sprint in the sprint menu opens its stored report, read-only: tasks done
+and how many moved to the next sprint.
 
 Regression coverage: `packages/tasks-ui/src/tu-do/shared/board-sprints/summary/sprint-summary-dialog.test.tsx`,
 `packages/tasks-ui/src/tu-do/shared/board-sprints/summary/sprint-summary-model.test.ts`

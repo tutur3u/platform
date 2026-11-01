@@ -1,6 +1,12 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { api, renderPlan, sprint, task } from './board-plan-view.fixtures';
+import {
+  api,
+  assignFromBacklog,
+  renderPlan,
+  sprint,
+  task,
+} from './board-plan-view.fixtures';
 
 describe('BoardPlanView sprints', () => {
   const planned = sprint(15, 'planned', ['t1', 't2', 't3']);
@@ -20,6 +26,35 @@ describe('BoardPlanView sprints', () => {
     await waitFor(async () => expect(await backlogIds()).toEqual(['t1', 't4']));
     expect(card('t4')).toHaveAttribute('data-plan-ghost', 'true');
     expect(card('t1')).not.toHaveAttribute('data-plan-ghost');
+    // Only tasks in the shown sprint take an owner from the card itself.
+    const assignees = (id: string) =>
+      within(card(id)).getByText(`Task ${id}`).dataset.assignees;
+    expect(assignees('t4')).toBe('false');
+    expect(assignees('t1')).not.toBe('false');
+  });
+
+  it('lists unowned tasks of the running sprint while planning the next', async () => {
+    api.moveTasks.mockResolvedValue({ moved: 1 });
+    renderPlan({ sprints: [active, planned] });
+    await waitFor(async () => expect(await backlogIds()).toEqual(['t1', 't4']));
+    expect(card('t4')).not.toHaveAttribute('data-plan-ghost');
+    // Only tasks from another sprint name their sprint.
+    expect(within(card('t4')).getByText('Sprint 14')).toBeInTheDocument();
+    expect(within(card('t4')).getByText('Task t4').dataset.assignees).toBe(
+      'false'
+    );
+    expect(within(card('t1')).queryByText('Sprint 15')).toBeNull();
+
+    // Giving it an owner here plans it into the shown sprint first.
+    await assignFromBacklog('t4', 'Binh');
+    await waitFor(() =>
+      expect(api.update).toHaveBeenCalledWith('ws-1', 't4', {
+        assignee_ids: ['u-binh'],
+      })
+    );
+    expect(api.moveTasks).toHaveBeenCalledWith('ws-1', 'board-1', 'sprint-15', [
+      't4',
+    ]);
   });
 
   it.each([
@@ -29,10 +64,7 @@ describe('BoardPlanView sprints', () => {
     if (moveWorks) api.moveTasks.mockResolvedValue({ moved: 1 });
     else api.moveTasks.mockRejectedValue(new Error('network'));
     renderPlan({ sprints: [planned], unplanned: ['t4'] });
-    fireEvent.click(
-      await screen.findByRole('button', { name: 'assign:Task t4' })
-    );
-    fireEvent.click(within(card('t4')).getByRole('menuitem', { name: /Binh/ }));
+    await assignFromBacklog('t4', 'Binh');
     await waitFor(() =>
       expect(api.moveTasks).toHaveBeenCalledWith(
         'ws-1',
@@ -53,6 +85,26 @@ describe('BoardPlanView sprints', () => {
     }
   });
 
+  it('keeps the latest owner when a ghost moves again before it is placed', async () => {
+    const pending: Array<() => void> = [];
+    api.moveTasks.mockImplementation(
+      () => new Promise((resolve) => pending.push(() => resolve({ moved: 1 })))
+    );
+    api.update.mockResolvedValue({ task: task('t4') });
+    renderPlan({ sprints: [planned], unplanned: ['t4'] });
+    await assignFromBacklog('t4', 'Ana');
+    // Before the placement lands, drop it on Binh too; the later move is the
+    // last write, so the earlier one cannot overwrite it.
+    await assignFromBacklog('t4', 'Binh');
+    await waitFor(() => expect(pending).toHaveLength(2));
+    for (const place of pending) place();
+    await waitFor(() => expect(api.update).toHaveBeenCalledTimes(2));
+    expect(api.update.mock.calls.map(([, , patch]) => patch)).toEqual([
+      { assignee_ids: ['u-ana'] },
+      { assignee_ids: ['u-ana', 'u-binh'] },
+    ]);
+  });
+
   it('assigns each ghost when two join the sprint at once', async () => {
     const pending: Array<() => void> = [];
     api.moveTasks.mockImplementation(
@@ -61,10 +113,7 @@ describe('BoardPlanView sprints', () => {
     api.listBoardTasksForSearch.mockResolvedValue([task('t4'), task('t5')]);
     renderPlan({ sprints: [planned], unplanned: ['t4', 't5'] });
     for (const id of ['t4', 't5']) {
-      fireEvent.click(
-        await screen.findByRole('button', { name: `assign:Task ${id}` })
-      );
-      fireEvent.click(within(card(id)).getByRole('menuitem', { name: /Binh/ }));
+      await assignFromBacklog(id, 'Binh');
     }
     await waitFor(() => expect(pending).toHaveLength(2));
     for (const resolve of pending) resolve();
@@ -78,26 +127,106 @@ describe('BoardPlanView sprints', () => {
     });
   });
 
-  it('moves a task to any open sprint or out of every sprint', async () => {
-    api.moveTasks.mockResolvedValue({ moved: 1 });
+  it('takes a task out of every sprint, or on to a new sprint', async () => {
     api.unplan.mockResolvedValue({ moved: 1 });
+    api.moveTasks.mockResolvedValue({ moved: 1 });
+    // Another planner added Sprint 17 at the same time; the task goes to the
+    // sprint this request created.
+    api.addSprint.mockResolvedValue({
+      addedSprintId: 'sprint-16',
+      sprints: [
+        active,
+        planned,
+        sprint(16, 'planned', []),
+        sprint(17, 'planned', []),
+      ],
+    });
     renderPlan({ sprints: [active, planned] });
-    await screen.findByText('Task t1');
-    const menu = within(card('t1'));
+    await screen.findByText('Task t2');
+    const menu = within(screen.getByRole('region', { name: 'Ana' }));
+    fireEvent.click(menu.getByRole('menuitem', { name: 'remove_from_sprint' }));
+    await waitFor(() =>
+      expect(api.unplan).toHaveBeenCalledWith('ws-1', 'board-1', ['t2'])
+    );
+
+    // Sprint 15 is the last one, so moving on adds Sprint 16 first.
     fireEvent.click(
-      menu.getByRole('menuitem', { name: 'move_to_sprint:Sprint 14' })
+      menu.getByRole('menuitem', { name: 'move_to_next_sprint' })
     );
     await waitFor(() =>
       expect(api.moveTasks).toHaveBeenCalledWith(
         'ws-1',
         'board-1',
-        'sprint-14',
-        ['t1']
+        'sprint-16',
+        ['t2']
       )
     );
-    fireEvent.click(menu.getByRole('menuitem', { name: 'no_sprint' }));
+    expect(api.addSprint).toHaveBeenCalledWith('ws-1', 'board-1');
+  });
+
+  it('searches every open sprint from the header search', async () => {
+    api.listBoardTasksForSearch.mockResolvedValue([
+      task('t1'),
+      task('t2', { assignees: [{ id: 'u-ana', display_name: 'Ana' }] }),
+      task('t4', { assignees: [{ id: 'u-ana', display_name: 'Ana' }] }),
+    ]);
+    renderPlan({ searchQuery: 'task t4', sprints: [active, planned] });
+
+    const ana = await screen.findByRole('region', { name: 'Ana' });
+    expect(await within(ana).findByText('Task t4')).toBeInTheDocument();
+    expect(within(ana).getAllByText('Sprint 14').length).toBeGreaterThan(0);
+    expect(within(ana).queryByText('Task t2')).toBeNull();
+    const backlog = screen.getByRole('region', { name: 'backlog' });
+    expect(within(backlog).queryAllByRole('article')).toHaveLength(0);
+  });
+
+  // The fixture's sprint list is fixed, so these follow the owner through
+  // the backlog: a task with an owner leaves it.
+  it('gives the task its owner at once and saves it once it is in the sprint', async () => {
+    let land: (value: unknown) => void = () => undefined;
+    api.moveTasks.mockReturnValue(
+      new Promise((resolve) => {
+        land = resolve;
+      })
+    );
+    renderPlan({ sprints: [active, planned] });
+    await assignFromBacklog('t4', 'Binh');
+
+    await waitFor(async () => expect(await backlogIds()).toEqual(['t1']));
+    expect(api.update).not.toHaveBeenCalled();
+
+    land({ moved: 1 });
     await waitFor(() =>
-      expect(api.unplan).toHaveBeenCalledWith('ws-1', 'board-1', ['t1'])
+      expect(api.update).toHaveBeenCalledWith('ws-1', 't4', {
+        assignee_ids: ['u-binh'],
+      })
+    );
+  });
+
+  it('takes the owner back off with one message when the move fails', async () => {
+    api.moveTasks.mockRejectedValue(new Error('network'));
+    renderPlan({ sprints: [active, planned] });
+    await assignFromBacklog('t4', 'Binh');
+
+    await waitFor(() => expect(api.toastError).toHaveBeenCalled());
+    await waitFor(async () => expect(await backlogIds()).toEqual(['t1', 't4']));
+    expect(api.update).not.toHaveBeenCalled();
+    expect(api.toastError).toHaveBeenCalledTimes(1);
+    expect(api.toastError).toHaveBeenCalledWith('move_failed');
+  });
+
+  it('keeps every person while searching, so a match can still be planned', async () => {
+    renderPlan({ searchQuery: 'task t1', sprints: [active, planned] });
+
+    expect(
+      await screen.findByRole('region', { name: 'Ana' })
+    ).toBeInTheDocument();
+    expect(screen.getByText('search_empty_owners:task t1')).toBeInTheDocument();
+    await assignFromBacklog('t1', 'Binh');
+    await waitFor(() =>
+      expect(api.update).toHaveBeenCalledWith('ws-1', 't1', {
+        assignee_ids: ['u-binh'],
+      })
     );
   });
 
@@ -108,13 +237,10 @@ describe('BoardPlanView sprints', () => {
     await screen.findByText('Task t1');
     fireEvent.click(screen.getByRole('menuitemradio', { name: /all_sprints/ }));
     await waitFor(async () => expect(await backlogIds()).toEqual(['t1', 't4']));
-    // Each card names its sprint (and its sprint menu repeats it).
-    expect(within(card('t4')).getAllByText('Sprint 14')).toHaveLength(2);
-    expect(within(card('t1')).getAllByText('Sprint 15')).toHaveLength(2);
+    // Each card names its sprint.
+    expect(within(card('t4')).getByText('Sprint 14')).toBeInTheDocument();
+    expect(within(card('t1')).getByText('Sprint 15')).toBeInTheDocument();
     expect(screen.queryByText('Task t3')).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('textbox', { name: 'goal' })
-    ).not.toBeInTheDocument();
 
     // A task created here sits in no sprint.
     fireEvent.click(screen.getByRole('button', { name: 'add_to_backlog' }));

@@ -69,11 +69,14 @@ export const POST = withSessionAuth<SprintRouteParams>(
       const access = await requireSprintAccess(request, params, auth, 'plan');
       if ('error' in access) return access.error;
 
-      const { error } = await access.sbAdmin.rpc('add_board_sprint', {
-        p_actor_id: access.user.id,
-        p_board_id: access.boardId,
-        p_ws_id: access.wsId,
-      });
+      const { data: added, error } = await access.sbAdmin.rpc(
+        'add_board_sprint',
+        {
+          p_actor_id: access.user.id,
+          p_board_id: access.boardId,
+          p_ws_id: access.wsId,
+        }
+      );
       if (error) {
         return sprintRpcErrorResponse(error, 'Failed to add sprint');
       }
@@ -83,7 +86,7 @@ export const POST = withSessionAuth<SprintRouteParams>(
         return sprintRpcErrorResponse(loaded.error, 'Failed to load sprints');
       }
 
-      return NextResponse.json(loaded.data);
+      return NextResponse.json({ ...loaded.data, addedSprintId: added?.id });
     } catch (error) {
       return sprintRouteErrorResponse(error, 'Error adding sprint:');
     }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildOpenSprintByTaskId,
   formatSprintDateRange,
+  formatSprintShortRange,
   getCurrentBoardSprint,
   getDaysUntilSprintEnd,
   getLoadedSprintProgress,
@@ -113,6 +114,16 @@ describe('board sprint helpers', () => {
     // The app's English locale reads day first too.
     expect(formatSprintDateRange(active, 'en')).toBe(
       '19 Oct 2026 - 30 Oct 2026'
+    );
+  });
+
+  it('shortens the range for labels beside a sprint name', () => {
+    // ICU spaces ranges with thin spaces; compare the visible text.
+    const short = (range: { start_date: string; end_date: string }) =>
+      formatSprintShortRange(range, 'en').replace(/\s/g, ' ');
+    expect(short(active)).toBe('19 – 30 Oct');
+    expect(short({ start_date: '2026-10-27', end_date: '2026-11-06' })).toBe(
+      '27 Oct – 6 Nov'
     );
   });
 
