@@ -194,6 +194,11 @@ export function PlanBacklog({
               <TaskCard
                 {...boardCard}
                 availableLists={lists}
+                // A task outside the shown sprint is planned by drag or its
+                // sprint menu, which move it here; an owner alone would not.
+                canUseBoardAssignees={
+                  tag || ghost ? false : boardCard?.canUseBoardAssignees
+                }
                 boardId={boardId}
                 dragDisabled
                 onUpdate={() => {}}

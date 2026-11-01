@@ -25,7 +25,13 @@ const mocks = vi.hoisted(() => ({
 
 // The Board's card has its own tests; here it only needs to show the task.
 vi.mock('../../../boards/boardId/task-card/task-card', () => ({
-  TaskCard: ({ task }: { task: Task }) => <p>{task.name}</p>,
+  TaskCard: ({
+    canUseBoardAssignees,
+    task,
+  }: {
+    canUseBoardAssignees?: boolean;
+    task: Task;
+  }) => <p data-assignees={String(canUseBoardAssignees)}>{task.name}</p>,
 }));
 
 vi.mock('next-intl', () => ({

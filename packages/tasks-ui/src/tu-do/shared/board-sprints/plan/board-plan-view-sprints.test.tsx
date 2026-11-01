@@ -26,6 +26,11 @@ describe('BoardPlanView sprints', () => {
     await waitFor(async () => expect(await backlogIds()).toEqual(['t1', 't4']));
     expect(card('t4')).toHaveAttribute('data-plan-ghost', 'true');
     expect(card('t1')).not.toHaveAttribute('data-plan-ghost');
+    // Only tasks in the shown sprint take an owner from the card itself.
+    const assignees = (id: string) =>
+      within(card(id)).getByText(`Task ${id}`).dataset.assignees;
+    expect(assignees('t4')).toBe('false');
+    expect(assignees('t1')).not.toBe('false');
   });
 
   it('lists unowned tasks of the running sprint while planning the next', async () => {
@@ -35,6 +40,9 @@ describe('BoardPlanView sprints', () => {
     expect(card('t4')).not.toHaveAttribute('data-plan-ghost');
     // Only tasks from another sprint name their sprint.
     expect(within(card('t4')).getByText('Sprint 14')).toBeInTheDocument();
+    expect(within(card('t4')).getByText('Task t4').dataset.assignees).toBe(
+      'false'
+    );
     expect(within(card('t1')).queryByText('Sprint 15')).toBeNull();
 
     // Giving it an owner here plans it into the shown sprint first.

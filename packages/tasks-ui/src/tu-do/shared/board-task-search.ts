@@ -158,16 +158,19 @@ async function listAllBoardTaskPages(
       offset,
     });
 
+  // A personal board's page holds up to `limit` board tasks plus up to
+  // `limit` external ones, both paged by the same offset, so pages step by
+  // `limit` and loading continues while a page comes back at least full.
   const first = await page(start);
   const tasks: Task[] = [...first.tasks];
-  let offset = start + first.tasks.length;
+  let offset = start + limit;
   let last = first.tasks.length;
   let total = first.count;
 
   if (typeof total === 'number') {
     // The total is known, so its pages load a few at a time. Tasks added
     // while loading raise the total, which adds pages.
-    while (last === limit && offset < total) {
+    while (last >= limit && offset < total) {
       const offsets: number[] = [];
       for (
         ;
@@ -187,10 +190,10 @@ async function listAllBoardTaskPages(
     return mergeTasksById(tasks, []);
   }
 
-  while (last === limit) {
+  while (last >= limit) {
     const response = await page(offset);
     tasks.push(...response.tasks);
-    offset += response.tasks.length;
+    offset += limit;
     last = response.tasks.length;
   }
 

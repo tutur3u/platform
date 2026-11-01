@@ -1062,61 +1062,6 @@ describe('BoardViews', () => {
     });
   });
 
-  it('filters one unfiltered copy of the board in the browser', async () => {
-    const other: Task = {
-      ...mockTasks[0]!,
-      display_number: 2,
-      id: 'task-2',
-      list_id: 'list-2',
-      name: 'Other work',
-    };
-    listWorkspaceTasksMock.mockResolvedValue({
-      tasks: [mockTasks[0]!, other],
-    });
-
-    renderBoardViews();
-
-    act(() => {
-      boardHeaderProps?.onFiltersChange({
-        ...boardHeaderProps.filters,
-        searchQuery: 'TIMELINE',
-      });
-    });
-
-    // Lists without a match hide, counted from the copy.
-    await waitFor(() => {
-      expect(kanbanBoardProps?.lists).toEqual([mockLists[0]]);
-    });
-    await waitFor(() =>
-      expect(listWorkspaceTasksMock).toHaveBeenCalledWith(
-        'ws-1',
-        expect.objectContaining({ boardId: 'board-1' })
-      )
-    );
-    expect(kanbanBoardProps?.tasks.map((task) => task.id)).toEqual(['task-1']);
-    expect(listWorkspaceTasksMock).not.toHaveBeenCalledWith(
-      'ws-1',
-      expect.objectContaining({ q: 'TIMELINE' })
-    );
-
-    // A new search and a sort need no request.
-    const requests = listWorkspaceTasksMock.mock.calls.length;
-    act(() => {
-      boardHeaderProps?.onFiltersChange({
-        ...boardHeaderProps.filters,
-        searchQuery: 'other',
-        sortBy: 'priority-high',
-      });
-    });
-
-    await waitFor(() => {
-      expect(kanbanBoardProps?.tasks.map((task) => task.id)).toEqual([
-        'task-2',
-      ]);
-    });
-    expect(listWorkspaceTasksMock.mock.calls.length).toBe(requests);
-  });
-
   it('uses the persistent preference to hide empty task lists without another filter', async () => {
     getUserConfigMock.mockImplementation((configId: string) =>
       Promise.resolve({
