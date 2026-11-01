@@ -40,12 +40,12 @@ void main() {
     cubit
       ..queueOption(item: a, optionIndex: 0)
       ..queueOption(item: b, optionIndex: 1);
-    expect(cubit.state.heldReplies, hasLength(2));
-    expect(cubit.state.earliestHoldUntil, isNotNull);
+    expect(cubit.state.heldEntries(cubit.now()), hasLength(2));
+    expect(cubit.state.earliestHoldUntil(cubit.now()), isNotNull);
     expect(cubit.undoAll(), 2);
     await Future<void>.delayed(Duration.zero);
-    expect(cubit.state.heldReplies, isEmpty);
-    expect(cubit.state.earliestHoldUntil, isNull);
+    expect(cubit.state.heldEntries(cubit.now()), isEmpty);
+    expect(cubit.state.earliestHoldUntil(cubit.now()), isNull);
     expect(cubit.state.outbox, isEmpty);
     expect(await store.inner.read(), isEmpty);
     await _wait();
@@ -77,7 +77,7 @@ void main() {
     await _wait();
     expect(transport.sent, isEmpty);
     expect(cubit.state.outbox, isEmpty);
-    expect(cubit.state.heldReplies, isEmpty);
+    expect(cubit.state.heldEntries(cubit.now()), isEmpty);
   });
 
   test('a surviving hold keeps its idempotency key through the send', () async {

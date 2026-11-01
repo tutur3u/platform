@@ -314,15 +314,31 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     }
   }
 
-  /// Cancels every option reply still inside its undo window (one batch, one
-  /// persist). Replies already committed or queued are untouched. Returns how
-  /// many were cancelled.
+  /// Cancels every reply still inside its undo window, as judged by the same
+  /// [MastermindRepliesState.heldEntries] the bar counts: one state emit and
+  /// one persist. Replies already committed or queued are untouched. Returns
+  /// how many were cancelled.
   int undoAll() {
-    final held = [
-      for (final entry in state.pendingOptions.entries)
-        if (!entry.value.committed && _undoTimers.containsKey(entry.key))
-          entry.key,
-    ]..forEach(undoOption);
+    final held = state.heldEntries(_clock());
+    if (held.isEmpty) return 0;
+    final keys = {for (final entry in held) entry.idempotencyKey};
+    final items = {for (final entry in held) entry.itemId};
+    for (final id in items) {
+      _undoTimers.remove(id)?.cancel();
+    }
+    emit(
+      state.copyWith(
+        outbox: [
+          for (final entry in state.outbox)
+            if (!keys.contains(entry.idempotencyKey)) entry,
+        ],
+        pendingOptions: {
+          for (final entry in state.pendingOptions.entries)
+            if (!items.contains(entry.key)) entry.key: entry.value,
+        },
+      ),
+    );
+    unawaited(_persist());
     return held.length;
   }
 

@@ -20,8 +20,9 @@ void main() {
 
   test('reply_hold is read when present, alone or with iris', () {
     expect(
-      MastermindCapabilities.parse(_body({...base, 'reply_hold': true}))
-          ?.replyHold,
+      MastermindCapabilities.parse(
+        _body({...base, 'reply_hold': true}),
+      )?.replyHold,
       isTrue,
     );
     final both = MastermindCapabilities.parse(
