@@ -27,10 +27,7 @@ test('Calendar staging seal restores its explicit host without a provider subdom
     config.vars.NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN,
     '.staging.tutur3u.com'
   );
-  assert.equal(
-    config.vars.NEXT_PUBLIC_WEB_APP_URL,
-    'https://web.staging.tutur3u.com'
-  );
+  assert.equal(config.vars.NEXT_PUBLIC_WEB_APP_URL, 'https://tutur3u.com');
   assert.equal(config.workers_dev, false);
   assert.equal(config.preview_urls, false);
   assert.deepEqual(config.routes, []);

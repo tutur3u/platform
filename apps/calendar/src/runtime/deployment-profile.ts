@@ -13,7 +13,7 @@ export type CalendarDeploymentProfile =
   | 'development';
 
 /** The staging issuer origin. Service tokens attach to this origin only. */
-export const CALENDAR_STAGING_ISSUER_ORIGIN = 'https://web.staging.tutur3u.com';
+export const CALENDAR_STAGING_ISSUER_ORIGIN = 'https://tutur3u.com';
 
 export function resolveCalendarDeploymentProfile(
   value: string | undefined,

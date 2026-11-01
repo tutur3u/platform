@@ -12,7 +12,7 @@ test('the Web staging entry is ingress-admitted and outside the no-ingress publi
   // The legacy wave-1 publisher refuses ingress, so Web must never be listed there.
   assert.equal(Object.hasOwn(profiles.apps, 'web'), false);
   assert.equal(web.ingress, 'access-custom-domain');
-  assert.equal(web.stagingHost, 'web.staging.tutur3u.com');
+  assert.equal(web.stagingHost, 'tutur3u.com');
   assert.equal(web.zone, 'tutur3u.com');
   assert.equal(web.stagingWorker, 'tuturuuu-web-wave1-staging');
   assert.match(
@@ -27,11 +27,27 @@ test('the entry agrees with the candidate profile and admission inputs', () => {
     profile,
     new RegExp(`host: '${web.stagingHost.replaceAll('.', '\\.')}'`)
   );
-  assert.match(
-    profile,
-    new RegExp(
-      `cookieDomain: '${web.vars.AUTH_COOKIE_DOMAIN.replaceAll('.', '\\.')}'`
-    )
+  // Web staging cookies are host-only for tutur3u.com: no Domain attribute, so
+  // never `.tutur3u.com` and never `.staging.tutur3u.com`. The sealed vars, the
+  // source config and the candidate profile therefore carry no cookie domain.
+  assert.equal(Object.hasOwn(web.vars, 'AUTH_COOKIE_DOMAIN'), false);
+  assert.equal(
+    Object.hasOwn(web.vars, 'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN'),
+    false
+  );
+  assert.match(profile, /cookies: 'host-only'/u);
+  assert.doesNotMatch(profile, /cookieDomain/u);
+  assert.doesNotMatch(
+    source('apps/web/cloudflare/void.config.ts'),
+    /COOKIE_DOMAIN/u
+  );
+  assert.doesNotMatch(
+    source('apps/web/cloudflare/staging.env.example'),
+    /^AUTH_COOKIE_DOMAIN=/mu
+  );
+  assert.deepEqual(
+    Object.keys(web.vars).filter((key) => /cookie/iu.test(key)),
+    []
   );
   assert.match(
     profile,
@@ -42,19 +58,16 @@ test('the entry agrees with the candidate profile and admission inputs', () => {
   assert.equal(web.vars.WEB_START_CANDIDATE, 'staging');
   assert.equal(web.vars.WEB_START_NATIVE_LEGAL, 'off');
   assert.equal(web.vars.WEB_START_NATIVE_SECURITY, 'off');
-  // NEXT_FALLBACK_ORIGIN is sealed per publication (design §2.2), never a fixed var.
+  // Staging is Cloudflare-only: no Vercel fallback var or project is sealed.
   assert.equal(Object.hasOwn(web.vars, 'NEXT_FALLBACK_ORIGIN'), false);
+  assert.equal(Object.hasOwn(web, 'nextFallback'), false);
   for (const name of web.secrets)
     assert.match(profile, new RegExp(`${name}\\?: string`));
   assert.deepEqual([...web.secrets].sort(), [
     'CF_ACCESS_AUD',
     'CF_ACCESS_TEAM_DOMAIN',
     'TRUSTED_PROXY_ORIGIN_SECRET',
-    'VERCEL_AUTOMATION_BYPASS_SECRET',
   ]);
-  assert.equal(web.nextFallback.vercelProject, 'tuturuuu-web-staging');
-  assert.equal(web.nextFallback.target, 'staging');
-  JSON.parse(source(web.nextFallback.config));
 });
 
 // Every string (keys and values, recursively) in a JSON value.
@@ -110,7 +123,7 @@ test('the production-zone host scan flags every host form and spares package sco
     assert.notDeepEqual(productionZoneHosts(sample), [], sample);
   for (const sample of [
     '@tuturuuu/utils',
-    'web.staging.tutur3u.com',
+    'tutur3u.com',
     'https://calendar.staging.tutur3u.com/x',
     'tuturuuu-web-staging',
     'tuturuuu-web-wave1-staging',

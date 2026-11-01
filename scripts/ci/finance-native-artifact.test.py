@@ -66,8 +66,8 @@ class FinanceArtifactTest(unittest.TestCase):
         self.assertEqual(artifact.IDENTITY["vars"], {
             "TUTURUUU_NOINDEX": "1",
             "NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN": ".staging.tutur3u.com",
-            "INTERNAL_WEB_API_ORIGIN": "https://web.staging.tutur3u.com",
-            "NEXT_PUBLIC_WEB_APP_URL": "https://web.staging.tutur3u.com",
+            "INTERNAL_WEB_API_ORIGIN": "https://tutur3u.com",
+            "NEXT_PUBLIC_WEB_APP_URL": "https://tutur3u.com",
             "NEXT_PUBLIC_APP_URL": "https://finance.staging.tutur3u.com",
             "FINANCE_APP_URL": "https://finance.staging.tutur3u.com",
             "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co",
@@ -183,7 +183,7 @@ class FinanceArtifactTest(unittest.TestCase):
     def test_bundles_carry_only_their_profile_values(self):
         cases = (
             (production, "client/assets/entry.js", "https://fxefojytwimjiqxseqag.supabase.co"),
-            (production, "native/chunk.js", "https://web.staging.tutur3u.com"),
+            (production, "native/chunk.js", "https://tutur3u.com"),
             (production, "client/assets/entry.js", "finance.staging.tutur3u.com"),
             (artifact, "native/chunk.js", "https://nzamlzqfdwaaxdefwraj.supabase.co"),
         )

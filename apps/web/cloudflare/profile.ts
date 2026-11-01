@@ -1,9 +1,12 @@
 import { cloudflareAccessIssuer } from '@tuturuuu/utils/cloudflare-access';
 
 export const stagingProfile = {
-  host: 'web.staging.tutur3u.com',
+  host: 'tutur3u.com',
   zone: 'tutur3u.com',
-  cookieDomain: '.staging.tutur3u.com',
+  // Cookies are HOST-ONLY: the Worker never configures or accepts a Domain
+  // attribute, so a session cookie is bound to this exact host and is never
+  // sent to <app>.tutur3u.com or any tuturuuu.com host.
+  cookies: 'host-only',
   supabaseUrl: 'https://fxefojytwimjiqxseqag.supabase.co',
   supabaseRef: 'fxefojytwimjiqxseqag',
   upstreamProjectHeader: 'x-tuturuuu-staging-supabase-ref',
@@ -16,6 +19,7 @@ export interface WebCandidateEnv {
   WEB_START_NATIVE_SECURITY?: string;
   NEXT_FALLBACK_ORIGIN?: string;
   NEXT_PUBLIC_SUPABASE_URL?: string;
+  /** Must stay unset: web staging cookies are host-only (no Domain). */
   AUTH_COOKIE_DOMAIN?: string;
   TRUSTED_PROXY_ORIGIN_SECRET?: string;
   /** Vercel Protection Bypass for Automation; sent only to the admitted origin. */
@@ -41,7 +45,7 @@ export function admittedOrigin(request: Request, env: WebCandidateEnv) {
     env.WEB_START_CANDIDATE !== 'staging' ||
     url.origin !== `https://${stagingProfile.host}` ||
     env.NEXT_PUBLIC_SUPABASE_URL !== stagingProfile.supabaseUrl ||
-    env.AUTH_COOKIE_DOMAIN !== stagingProfile.cookieDomain ||
+    env.AUTH_COOKIE_DOMAIN ||
     !env.TRUSTED_PROXY_ORIGIN_SECRET ||
     env.TRUSTED_PROXY_ORIGIN_SECRET.length < 32 ||
     !headerSafeSecret(env.VERCEL_AUTOMATION_BYPASS_SECRET) ||
@@ -60,8 +64,7 @@ export function admittedOrigin(request: Request, env: WebCandidateEnv) {
       upstream.hostname === stagingProfile.host ||
       upstream.hostname === 'tuturuuu.com' ||
       upstream.hostname.endsWith('.tuturuuu.com') ||
-      (!/^tuturuuu(?:-[a-z0-9-]+)?\.vercel\.app$/u.test(upstream.hostname) &&
-        !upstream.hostname.endsWith('.staging.tutur3u.com'))
+      !/^tuturuuu(?:-[a-z0-9-]+)?\.vercel\.app$/u.test(upstream.hostname)
     )
       return null;
     return upstream.origin;

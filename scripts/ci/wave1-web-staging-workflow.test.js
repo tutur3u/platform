@@ -1,4 +1,5 @@
-// Shape of the staging Web publisher workflow (design §3, Tess §16 ordering).
+// Shape of the Cloudflare-only staging Web publisher workflow: a fail-closed
+// preflight precedes every credential-bearing job, and no Vercel path remains.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -11,7 +12,22 @@ const text = fs.readFileSync(
   path.join(__dirname, '../../.github/workflows', file),
   'utf8'
 );
+// Comments explain the design; only executable lines are scanned for paths.
+const code = text
+  .split('\n')
+  .filter((line) => !/^\s*#/u.test(line))
+  .join('\n');
 const needs = (job) => [workflow.jobs[job].needs ?? []].flat();
+const ancestors = (job, seen = new Set()) => {
+  for (const parent of needs(job))
+    if (!seen.has(parent)) {
+      seen.add(parent);
+      ancestors(parent, seen);
+    }
+  return seen;
+};
+const runs = (job) =>
+  workflow.jobs[job].steps.map((s) => s.run ?? '').join('\n');
 
 test('dispatch-only from main, serialized, read-only by default', () => {
   assert.deepEqual(Object.keys(workflow.on), ['workflow_dispatch']);
@@ -22,24 +38,78 @@ test('dispatch-only from main, serialized, read-only by default', () => {
     'cancel-in-progress': false,
   });
   assert.equal(workflow.jobs.admit.if, "github.ref == 'refs/heads/main'");
+  assert.equal(workflow.jobs.preflight.if, "github.ref == 'refs/heads/main'");
 });
 
-test('the serving-order gate: verify before seal, publish and readback', () => {
-  assert.deepEqual(needs('next-deploy'), ['admit']);
-  assert.deepEqual(needs('next-verify'), ['next-deploy']);
-  assert.deepEqual(needs('seal-worker'), ['next-verify']);
+test('staging is Cloudflare-only: no Vercel job, secret, CLI or deployment', () => {
+  assert.deepEqual(Object.keys(workflow.jobs), [
+    'preflight',
+    'admit',
+    'seal-worker',
+    'restored',
+    'publish-worker',
+    'verify-ingress',
+  ]);
+  assert.doesNotMatch(code, /vercel/iu);
+  assert.doesNotMatch(code, /next-deploy|next-verify|wave1-web-next/u);
+  assert.doesNotMatch(code, /WEB_STAGING_NEXT_ADMISSION|NEXT_FALLBACK/u);
+  assert.doesNotMatch(code, /wave1-web-next-staging/u);
+});
+
+test('the preflight holds no Cloudflare credential and is root of every other job', () => {
+  const preflight = workflow.jobs.preflight;
+  assert.equal(preflight.environment, undefined);
+  assert.deepEqual(preflight.permissions, {
+    contents: 'read',
+    actions: 'read',
+  });
+  // Credential-free: the preflight reads environments with github.token only.
+  assert.doesNotMatch(JSON.stringify(preflight), /secrets\./u);
+  assert.doesNotMatch(JSON.stringify(preflight), /CLOUDFLARE_[A-Z_]*TOKEN/u);
+  assert.match(
+    runs('preflight'),
+    /^node scripts\/ci\/wave1-staging-guard\.mjs preflight$/mu
+  );
+  const env = preflight.steps.find((s) =>
+    /guard\.mjs preflight/u.test(s.run ?? '')
+  ).env;
+  assert.deepEqual(Object.keys(env).sort(), [
+    'CLOUDFLARE_STAGING_ACCOUNT_ID',
+    'GH_TOKEN',
+    'WAVE1_STAGING_ATTEMPT_D1_ID',
+    'WAVE1_STAGING_PUBLISH_ENABLED',
+  ]);
+  assert.equal(env.GH_TOKEN, '$' + '{{ github.token }}');
+  assert.deepEqual(needs('preflight'), []);
+  for (const job of Object.keys(workflow.jobs).filter((j) => j !== 'preflight'))
+    assert.ok(ancestors(job).has('preflight'), `${job} runs after preflight`);
+});
+
+test('every secret-bearing or environment job directly needs the preflight', () => {
+  let secretBearing = 0;
+  for (const [name, job] of Object.entries(workflow.jobs)) {
+    // The preflight is the root; its only secret is the read-only env token.
+    if (name === 'preflight') continue;
+    if (!job.environment && !JSON.stringify(job).includes('secrets.')) continue;
+    secretBearing++;
+    assert.ok(needs(name).includes('preflight'), `${name} needs preflight`);
+  }
+  assert.equal(secretBearing, 2);
+});
+
+test('the serving-order gate: admit, seal and restore before the one upload', () => {
+  assert.deepEqual(needs('admit'), ['preflight']);
+  assert.deepEqual(needs('seal-worker'), ['admit']);
   assert.deepEqual(needs('restored'), ['seal-worker']);
-  assert.deepEqual(needs('publish-worker').sort(), ['next-verify', 'restored']);
+  assert.deepEqual(needs('publish-worker').sort(), ['preflight', 'restored']);
   assert.deepEqual(needs('verify-ingress').sort(), [
-    'next-verify',
+    'preflight',
     'publish-worker',
   ]);
 });
 
-test('credentials live only in their protected environments', () => {
+test('credentials live only in the protected staging environment', () => {
   const env = (job) => workflow.jobs[job].environment;
-  assert.equal(env('next-deploy'), 'wave1-web-next-staging');
-  assert.equal(env('next-verify'), 'wave1-web-next-staging');
   assert.equal(env('publish-worker'), 'wave1-web-staging');
   assert.equal(env('verify-ingress'), 'wave1-web-staging');
   for (const job of ['admit', 'seal-worker', 'restored']) {
@@ -49,17 +119,44 @@ test('credentials live only in their protected environments', () => {
       `${job} must be credential-free`
     );
   }
+  assert.equal(env('preflight'), undefined);
+  assert.ok(
+    !/secrets\.CLOUDFLARE_|secrets: inherit/u.test(
+      JSON.stringify(workflow.jobs.preflight)
+    )
+  );
   assert.ok(!/secrets\.CLOUDFLARE_API_TOKEN\b|secrets: inherit/u.test(text));
 });
 
-test('only next-verify can record verified, and only publish-worker uploads', () => {
-  const runs = (job) =>
-    workflow.jobs[job].steps.map((s) => s.run ?? '').join('\n');
-  assert.match(runs('next-verify'), /wave1-web-next\.mjs verify/);
-  for (const job of Object.keys(workflow.jobs).filter(
-    (j) => j !== 'next-verify'
-  ))
-    assert.doesNotMatch(runs(job), /wave1-web-next\.mjs verify/, job);
+test('the fence and admission are checked before any credentialed step', () => {
+  const steps = workflow.jobs['publish-worker'].steps;
+  const guard = steps.findIndex((s) =>
+    /guard\.mjs admission/u.test(s.run ?? '')
+  );
+  const upload = steps.findIndex((s) =>
+    /wave1-native-publish\.mjs publish web staging/u.test(s.run ?? '')
+  );
+  assert.ok(
+    guard >= 0 && upload > guard,
+    'admission guard precedes the upload'
+  );
+  assert.ok(!JSON.stringify(steps[guard]).includes('secrets.'));
+  assert.deepEqual(Object.keys(steps[guard].env).sort(), [
+    'WAVE1_STAGING_PUBLICATION_ADMISSION',
+    'WAVE1_STAGING_PUBLISH_ENABLED',
+  ]);
+  for (const [index, step] of steps.entries())
+    if (JSON.stringify(step).includes('secrets.'))
+      assert.ok(index > guard, `${step.name ?? index} follows the guard`);
+  assert.match(runs('admit'), /test "\$ENABLED" = true/u);
+  assert.equal(
+    workflow.jobs.admit.steps.find((s) => /ENABLED/u.test(s.run ?? '')).env
+      .ENABLED,
+    '$' + '{{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}'
+  );
+});
+
+test('only publish-worker uploads, and verify-ingress reads back through the Worker', () => {
   assert.match(
     runs('publish-worker'),
     /wave1-native-publish\.mjs publish web staging/
@@ -69,7 +166,6 @@ test('only next-verify can record verified, and only publish-worker uploads', ()
   ))
     assert.doesNotMatch(runs(job), /wave1-native-publish\.mjs publish/, job);
   assert.match(runs('verify-ingress'), /readback\.mjs --app web/);
-  assert.match(runs('verify-ingress'), /wave1-web-next\.mjs recheck/);
 });
 
 test('the workflow never performs serving, domain, Access or DNS changes', () => {
@@ -79,8 +175,6 @@ test('the workflow never performs serving, domain, Access or DNS changes', () =>
     /workers\/domains[^\n]*(PUT|POST)/iu,
     /dns_records[^\n]*(PUT|POST|PATCH|DELETE)/iu,
     /access\/apps[^\n]*(PUT|POST|PATCH|DELETE)/iu,
-    /vercel (alias|domains|promote|remove|rm)\b/iu,
-    /--prod\b/u,
     // No package CLI runs directly: every Cloudflare write goes through the
     // reviewed publisher, and no Cloudflare CLI may touch domains or routes.
     /\b(?:bunx|npx|bun x)\b/u,
@@ -91,11 +185,10 @@ test('the workflow never performs serving, domain, Access or DNS changes', () =>
 });
 
 // Check explicit step environments; this does not isolate a shared runner.
-const forbiddenCredential =
-  /^(VERCEL_TOKEN|CLOUDFLARE_|WAVE1_CONTROL_READ_TOKEN)/u;
+const forbiddenCredential = /^(CLOUDFLARE_|WAVE1_CONTROL_READ_TOKEN)/u;
 const buildCode =
-  /vercel build|build:candidate|test:candidate|bun install|turbo|generate-build-metadata|wave1-native-archive|wave1-web-seal/u;
-test('no build step sees VERCEL_TOKEN*, CLOUDFLARE_* or WAVE1_CONTROL_READ_TOKEN', () => {
+  /build:candidate|test:candidate|bun install|turbo|wave1-native-archive|wave1-web-seal/u;
+test('no build step sees CLOUDFLARE_* or WAVE1_CONTROL_READ_TOKEN', () => {
   let builds = 0;
   for (const [name, job] of Object.entries(workflow.jobs))
     for (const step of job.steps ?? []) {
@@ -115,7 +208,7 @@ test('no build step sees VERCEL_TOKEN*, CLOUDFLARE_* or WAVE1_CONTROL_READ_TOKEN
         );
         assert.doesNotMatch(
           String(value),
-          /secrets\.(VERCEL_TOKEN|CLOUDFLARE_|WAVE1_CONTROL_READ_TOKEN)/u,
+          /secrets\.(CLOUDFLARE_|WAVE1_CONTROL_READ_TOKEN)/u,
           `${name}: ${key}`
         );
       }
@@ -126,12 +219,6 @@ test('no build step sees VERCEL_TOKEN*, CLOUDFLARE_* or WAVE1_CONTROL_READ_TOKEN
       );
     }
   assert.ok(builds >= 6, 'build steps were found');
-  const deploy = workflow.jobs['next-deploy'].steps;
-  const build = deploy.find((s) => /vercel build/u.test(s.with?.command ?? ''));
-  assert.ok(build && !build.env?.VERCEL_TOKEN && !build.env?.VERCEL_ORG_ID);
-  assert.ok(
-    deploy.find((s) => /vercel pull/u.test(s.run ?? '')).env.VERCEL_TOKEN
-  );
 });
 
 // R-c: neither the workflow nor any publisher/readback source changes the
@@ -141,7 +228,7 @@ test('the Access phase and serving intent are never written', () => {
   const sources = [
     'wave1-native-publish.mjs',
     'wave1-ingress-preflight.mjs',
-    'wave1-web-next.mjs',
+    'wave1-staging-guard.mjs',
     'wave1-web-rollback.mjs',
     '../wave1-staging/readback.mjs',
   ].map((name) => fs.readFileSync(path.join(__dirname, name), 'utf8'));
@@ -174,7 +261,7 @@ test('a red verify-ingress rolls back only the staging Worker', () => {
       assert.ok(!JSON.stringify(job).includes('wave1-web-rollback'), name);
 });
 
-test('all Web staging jobs disable install scripts and pull uses environment authentication', () => {
+test('all Web staging jobs disable install scripts', () => {
   let installs = 0;
   for (const [name, job] of Object.entries(workflow.jobs))
     for (const step of job.steps ?? [])
@@ -185,9 +272,5 @@ test('all Web staging jobs disable install scripts and pull uses environment aut
         installs++;
         assert.match(command, /(?:^|\s)--ignore-scripts(?:\s|$)/u, name);
       }
-  assert.ok(installs >= 5, 'all Web staging installs were scanned');
-  const steps = workflow.jobs['next-deploy'].steps;
-  const pull = steps.find((s) => /vercel pull/u.test(s.run ?? ''));
-  assert.ok(pull.env.VERCEL_TOKEN);
-  assert.doesNotMatch(pull.run, /--token/u);
+  assert.ok(installs >= 3, 'all Web staging installs were scanned');
 });

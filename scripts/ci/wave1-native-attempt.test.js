@@ -22,6 +22,7 @@ async function ledgerFixture(t) {
     base: 'https://fixture.invalid/accounts/fixture-account',
     token: 'staging-only-fixture',
     databaseId: '33333333-3333-3333-3333-333333333333',
+    expectedDatabaseId: '33333333-3333-3333-3333-333333333333',
     repository: 'fixture/repo',
     app: 'mail',
     identity,
@@ -152,4 +153,35 @@ test('unresolved earlier operation blocks another artifact even with a fresh run
   f.options.runId = '456';
   await assert.rejects(f.open(), /Earlier publication attempt is unresolved/);
   assert.equal(f.read().entries.length, 1);
+});
+test('a D1 database other than the configured staging one is refused before any query', async (t) => {
+  const { attemptLedger, readAttemptRecord } = await import(
+    './wave1-native-attempt.mjs'
+  );
+  const f = await ledgerFixture(t);
+  const other = '44444444-4444-4444-4444-444444444444';
+  for (const patch of [
+    { databaseId: other },
+    { expectedDatabaseId: other },
+    { expectedDatabaseId: undefined },
+    { expectedDatabaseId: '' },
+  ]) {
+    await assert.rejects(attemptLedger({ ...f.options, ...patch }), /D1/);
+    await assert.rejects(
+      readAttemptRecord({
+        request: async () => assert.fail('no query before the D1 guard'),
+        base: f.options.base,
+        token: f.options.token,
+        app: f.options.app,
+        scope: {},
+        databaseId: patch.databaseId ?? f.options.databaseId,
+        expectedDatabaseId:
+          'expectedDatabaseId' in patch
+            ? patch.expectedDatabaseId
+            : f.options.expectedDatabaseId,
+      }),
+      /D1/
+    );
+  }
+  assert.equal(f.queries(), 0);
 });

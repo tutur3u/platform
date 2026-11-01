@@ -156,7 +156,7 @@ describe('stripCloudflareAccessCredentials', () => {
 });
 
 describe('withCloudflareAccessServiceToken', () => {
-  const issuer = 'https://web.staging.tutur3u.com';
+  const issuer = 'https://tutur3u.com';
   const credentials = { clientId: 'id', clientSecret: 'secret' };
   it('requires an exact origin and a non-following redirect mode', () => {
     const ok = withCloudflareAccessServiceToken(

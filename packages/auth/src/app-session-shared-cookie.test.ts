@@ -35,7 +35,7 @@ describe('shared Supabase auth cookie hosts', () => {
     (runtime) => {
       expect(
         hasSupportedSupabaseAuthCookie(
-          createRequest('https://web.staging.tutur3u.com/personal')
+          createRequest('https://sample.staging.tutur3u.com/personal')
         )
       ).toBe(false);
 
@@ -51,7 +51,9 @@ describe('shared Supabase auth cookie hosts', () => {
         runtime === 'server' ? 'staging' : '1'
       );
 
-      const request = createRequest('https://web.staging.tutur3u.com/personal');
+      const request = createRequest(
+        'https://sample.staging.tutur3u.com/personal'
+      );
 
       expect(hasSupportedSupabaseAuthCookie(request)).toBe(true);
       expect(
@@ -77,7 +79,7 @@ describe('shared Supabase auth cookie hosts', () => {
       ).toBe(true);
       expect(
         hasSupportedSupabaseAuthCookie(
-          createRequest('https://web.staging.tutur3u.com/')
+          createRequest('https://sample.staging.tutur3u.com/')
         ),
         override
       ).toBe(false);
@@ -116,7 +118,7 @@ describe('shared Supabase auth cookie hosts', () => {
       '.staging.tutur3u.com'
     );
     for (const [hostname, shared] of [
-      ['web.staging.tutur3u.com', false],
+      ['sample.staging.tutur3u.com', false],
       ['tasks.tuturuuu.com', true],
       ['tasks.tuturuuu.localhost', true],
     ] as const) {

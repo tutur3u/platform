@@ -175,7 +175,10 @@ export async function signIn(page: Page, locale: Locale, path: string) {
   );
   expect(auth.length, 'Signed-in cookies must exist').toBeGreaterThan(0);
   for (const cookie of auth) {
-    expect(cookie.domain).toBe('.staging.tutur3u.com');
+    // Web staging cookies are host-only (no leading dot, no Domain attribute).
+    expect(cookie.domain).toBe(
+      config.app === 'web' ? 'tutur3u.com' : '.staging.tutur3u.com'
+    );
     expect(cookie.secure).toBe(true);
   }
   if (config.app !== 'apps' && config.app !== 'web') {

@@ -10,12 +10,14 @@ import {
   stagingOrigin,
 } from './policy.ts';
 
+// The web app is the tutur3u.com apex; every other app is <app>.staging.
+const hostFor = (app: string) =>
+  app === 'web' ? 'tutur3u.com' : `${app}.staging.tutur3u.com`;
+
 for (const app of apps) {
+  const host = hostFor(app);
   test(`${app}: accepts only that app's explicit staging identity`, () => {
-    assert.equal(
-      stagingOrigin(`https://${app}.staging.tutur3u.com`, app),
-      `https://${app}.staging.tutur3u.com`
-    );
+    assert.equal(stagingOrigin(`https://${host}`, app), `https://${host}`);
     assert.throws(() =>
       stagingOrigin(
         `https://tuturuuu-${app}-wave1-staging.example.workers.dev`,
@@ -29,18 +31,20 @@ for (const app of apps) {
       new URL(`https://${app}.staging.tutur3u.cоm`).href,
       `https://${app}.stаging.tutur3u.com`,
       new URL(`https://${app}.stаging.tutur3u.com`).href,
+      'https://web.staging.tutur3u.com',
+      'https://tutur3u.com.evil.invalid',
       'https://tuturuuu.com',
       'https://www.tuturuuu.com',
       `https://tuturuuu-${app}.example.workers.dev`,
-      `https://${app}.staging.tutur3u.com.evil.invalid`,
-      `https://${app}.staging.tutur3u.com@evil.invalid`,
-      `https://${app}.staging.tutur3u.com./`,
-      `https://${app}.staging.tutur3u.com:8443`,
-      `http://${app}.staging.tutur3u.com`,
-      `https://${app}.staging.tutur3u.com/path`,
-      `https://${app}.staging.tutur3u.com?next=prod`,
-      `https://${app}.staging.tutur3u.com#prod`,
-      `https://user:pass@${app}.staging.tutur3u.com`,
+      `https://${host}.evil.invalid`,
+      `https://${host}@evil.invalid`,
+      `https://${host}./`,
+      `https://${host}:8443`,
+      `http://${host}`,
+      `https://${host}/path`,
+      `https://${host}?next=prod`,
+      `https://${host}#prod`,
+      `https://user:pass@${host}`,
       'http://127.0.0.1',
       'not a URL',
     ])
@@ -50,8 +54,8 @@ for (const app of apps) {
 
 test('web issuer has its own off-canonical fence', () => {
   assert.equal(
-    stagingOrigin('https://web.staging.tutur3u.com', 'issuer'),
-    'https://web.staging.tutur3u.com'
+    stagingOrigin('https://tutur3u.com', 'issuer'),
+    'https://tutur3u.com'
   );
   assert.throws(() => stagingOrigin('https://staging.tutur3u.com', 'issuer'));
   assert.throws(() => stagingOrigin('https://tuturuuu.com', 'issuer'));
@@ -82,7 +86,7 @@ const config = {
   WAVE1_PRODUCTION_SUPABASE_PROJECT_REF: 'p'.repeat(20),
   WAVE1_STAGING_APP: 'mail',
   WAVE1_STAGING_BASE_URL: 'https://mail.staging.tutur3u.com',
-  WAVE1_STAGING_WEB_ORIGIN: 'https://web.staging.tutur3u.com',
+  WAVE1_STAGING_WEB_ORIGIN: 'https://tutur3u.com',
   WAVE1_STAGING_DISPOSABLE_ACCOUNT: 'confirmed',
   WAVE1_STAGING_SOURCE_SHA: 'a'.repeat(40),
   WAVE1_STAGING_WORKSPACE_ID: 'disposable-workspace',
@@ -210,13 +214,13 @@ test('Meet pre-join token issuance is scoped to the staging Meet endpoint', () =
 
 test('HTTPS origins normalize uppercase hosts and the default :443 port', () => {
   for (const app of apps) {
-    const origin = `https://${app}.staging.tutur3u.com`;
+    const origin = `https://${hostFor(app)}`;
     assert.equal(stagingOrigin(origin.toUpperCase(), app), origin);
     assert.equal(stagingOrigin(`${origin}:443/`, app), origin);
   }
   assert.equal(
-    stagingOrigin('HTTPS://WEB.STAGING.TUTUR3U.COM:443/', 'issuer'),
-    'https://web.staging.tutur3u.com'
+    stagingOrigin('HTTPS://TUTUR3U.COM:443/', 'issuer'),
+    'https://tutur3u.com'
   );
 });
 
@@ -235,8 +239,8 @@ test('web candidate and central staging issuer share the canonical exact host', 
     WAVE1_STAGING_APP: 'web',
     WAVE1_STAGING_BASE_URL: undefined,
   });
-  assert.equal(cfg.baseURL, 'https://web.staging.tutur3u.com');
-  assert.equal(cfg.webOrigin, 'https://web.staging.tutur3u.com');
+  assert.equal(cfg.baseURL, 'https://tutur3u.com');
+  assert.equal(cfg.webOrigin, 'https://tutur3u.com');
   assert.throws(() =>
     readConfig({
       ...config,
@@ -246,7 +250,7 @@ test('web candidate and central staging issuer share the canonical exact host', 
   );
   assert.throws(() => stagingOrigin('https://staging.tutur3u.com', 'web'));
   assert.equal(
-    stagingOrigin('https://web.staging.tutur3u.com', 'issuer'),
-    'https://web.staging.tutur3u.com'
+    stagingOrigin('https://tutur3u.com', 'issuer'),
+    'https://tutur3u.com'
   );
 });

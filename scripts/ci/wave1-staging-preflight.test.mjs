@@ -250,7 +250,11 @@ function assertGuarded(workflow) {
   assert.deepEqual(gate.permissions, { contents: 'read', actions: 'read' });
   const gateText = JSON.stringify(gate);
   assert.ok(!gateText.includes('continue-on-error'));
-  assert.match(gateText, /node scripts\/ci\/wave1-staging-preflight.mjs/u);
+  // Web staging is Cloudflare-only and runs the stricter staging guard.
+  assert.match(
+    gateText,
+    /node scripts\/ci\/wave1-staging-(?:preflight\.mjs|guard\.mjs preflight)/u
+  );
   for (const secret of gateText.matchAll(/secrets\.([\w]+)/gu))
     assert.equal(secret[1], 'GITHUB_TOKEN');
   function depends(id, seen = new Set()) {
@@ -267,12 +271,17 @@ function assertGuarded(workflow) {
     }
   }
   const step = gate.steps.find((s) =>
-    s.run?.includes('wave1-staging-preflight')
+    /wave1-staging-(?:preflight|guard\.mjs preflight)/u.test(s.run ?? '')
   );
-  const admissionKey = step.run.includes(' web ')
-    ? 'WEB_STAGING_NEXT_ADMISSION'
-    : 'WAVE1_STAGING_PUBLICATION_ADMISSION';
-  assert.equal(step.env[admissionKey], '$' + '{{ vars.' + admissionKey + ' }}');
+  if (step.run.includes('wave1-staging-preflight')) {
+    const admissionKey = step.run.includes(' web ')
+      ? 'WEB_STAGING_NEXT_ADMISSION'
+      : 'WAVE1_STAGING_PUBLICATION_ADMISSION';
+    assert.equal(
+      step.env[admissionKey],
+      '$' + '{{ vars.' + admissionKey + ' }}'
+    );
+  }
   assert.equal(
     step.env.WAVE1_STAGING_PUBLISH_ENABLED,
     '$' + '{{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}'
@@ -283,7 +292,7 @@ for (const file of ['wave1-web-staging.yaml', 'wave1-native-publish.yaml']) {
     const workflow = readWorkflow(file, { raw: true });
     assertGuarded(workflow);
     const broken = structuredClone(workflow);
-    const id = file.includes('web') ? 'next-deploy' : 'publish';
+    const id = file.includes('web') ? 'publish-worker' : 'publish';
     delete broken.jobs[id].needs;
     assert.throws(() => assertGuarded(broken));
     const secret = structuredClone(workflow);

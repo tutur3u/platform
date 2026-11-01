@@ -327,7 +327,7 @@ describe('cross-app return route', () => {
   });
 
   describe('staging hosts outside the shared cookie domain', () => {
-    const stagingWebOrigin = 'https://web.staging.tutur3u.com';
+    const stagingWebOrigin = 'https://sample.staging.tutur3u.com';
     const stagingTasksOrigin = 'https://tasks.staging.tutur3u.com';
 
     it('hands off a token to a registered staging satellite from the staging web host', async () => {

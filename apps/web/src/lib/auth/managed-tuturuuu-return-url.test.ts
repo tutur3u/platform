@@ -44,7 +44,7 @@ describe('managed Tuturuuu return URLs', () => {
         'tuturuuu.com.evil.test',
         'tuturuuu.vercel.app',
         'localhost',
-        'web.staging.tutur3u.com',
+        'sample.staging.tutur3u.com',
         'staging.tutur3u.com',
       ]) {
         expect(isRootTuturuuuHostname(hostname), hostname).toBe(
@@ -100,7 +100,7 @@ describe('managed Tuturuuu return URLs', () => {
   });
 
   describe('hosts outside the shared cookie domain require the token handoff', () => {
-    const stagingWeb = 'https://web.staging.tutur3u.com';
+    const stagingWeb = 'https://sample.staging.tutur3u.com';
 
     it('is not managed between staging hosts while no staging cookie domain is configured', () => {
       expect(
@@ -161,7 +161,7 @@ describe('managed Tuturuuu return URLs', () => {
   });
 
   describe('configured staging shared cookie domain', () => {
-    const stagingWeb = 'https://web.staging.tutur3u.com';
+    const stagingWeb = 'https://sample.staging.tutur3u.com';
 
     beforeEach(() => {
       vi.stubEnv('NEXT_PUBLIC_TUTURUUU_STAGING', '1');
@@ -191,7 +191,7 @@ describe('managed Tuturuuu return URLs', () => {
       );
       expect(
         isManagedTuturuuuHostname(
-          'web.staging.tutur3u.com',
+          'sample.staging.tutur3u.com',
           'https://tuturuuu.com'
         )
       ).toBe(false);

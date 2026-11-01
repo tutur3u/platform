@@ -180,7 +180,7 @@ describe('auth callback route', () => {
     );
     const response = await GET(
       new NextRequest(
-        `https://web.staging.tutur3u.com/api/auth/callback?returnUrl=${managedReturnUrl}`
+        `https://sample.staging.tutur3u.com/api/auth/callback?returnUrl=${managedReturnUrl}`
       )
     );
 
@@ -221,7 +221,7 @@ describe('auth callback route', () => {
     );
     const response = await GET(
       new NextRequest(
-        `https://web.staging.tutur3u.com/api/auth/callback?returnUrl=${satelliteReturnUrl}`
+        `https://sample.staging.tutur3u.com/api/auth/callback?returnUrl=${satelliteReturnUrl}`
       )
     );
     const location = new URL(response.headers.get('location') ?? '');
@@ -243,7 +243,7 @@ describe('auth callback route', () => {
     );
     const response = await GET(
       new NextRequest(
-        `https://web.staging.tutur3u.com/api/auth/callback?returnUrl=${managedReturnUrl}`
+        `https://sample.staging.tutur3u.com/api/auth/callback?returnUrl=${managedReturnUrl}`
       )
     );
 

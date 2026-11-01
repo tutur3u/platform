@@ -67,7 +67,7 @@ describe('configured staging internal app registry', () => {
   it('registers env entries as internal apps with the token handoff', () => {
     vi.stubEnv(
       ENV_KEY,
-      'tasks:https://tasks.staging.tutur3u.com, platform:https://web.staging.tutur3u.com/'
+      'tasks:https://tasks.staging.tutur3u.com, platform:https://tutur3u.com/'
     );
 
     expect(getConfiguredInternalAppDomains()).toEqual([
@@ -81,7 +81,7 @@ describe('configured staging internal app registry', () => {
         kind: 'internal',
         name: 'platform',
         requiresExactOrigin: true,
-        url: 'https://web.staging.tutur3u.com',
+        url: 'https://tutur3u.com',
       },
     ]);
     expect(
@@ -89,6 +89,28 @@ describe('configured staging internal app registry', () => {
         'https://tasks.staging.tutur3u.com/verify-token?nextUrl=%2F'
       )
     ).toMatchObject({ kind: 'internal', name: 'tasks' });
+  });
+
+  it('admits the tutur3u.com apex only as the platform issuer', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubEnv(
+      ENV_KEY,
+      [
+        'platform:https://tutur3u.com',
+        'tasks:https://tutur3u.com',
+        'docs:https://app.tutur3u.com',
+        'cms:https://web.tutur3u.com',
+      ].join(',')
+    );
+
+    expect(getConfiguredInternalAppDomains()).toEqual([
+      {
+        kind: 'internal',
+        name: 'platform',
+        requiresExactOrigin: true,
+        url: 'https://tutur3u.com',
+      },
+    ]);
   });
 
   it('accepts newline separated entries', () => {
@@ -252,7 +274,7 @@ describe('configured staging internal app registry', () => {
   it('stops resolving production app origins on the isolated staging deployment', () => {
     vi.stubEnv(
       ENV_KEY,
-      'tasks:https://tasks.staging.tutur3u.com,platform:https://web.staging.tutur3u.com'
+      'tasks:https://tasks.staging.tutur3u.com,platform:https://tutur3u.com'
     );
 
     for (const url of [

@@ -21,7 +21,7 @@ afterEach(() => {
   vi.restoreAllMocks();
   resetProductionOverrideErrorLogForTests();
 });
-const url = 'https://web.staging.tutur3u.com';
+const url = 'https://sample.staging.tutur3u.com';
 const supabase = 'https://fxefojytwimjiqxseqag.supabase.co';
 
 it('browser public staging signal shares the server cookie scope', () => {

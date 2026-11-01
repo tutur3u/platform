@@ -38,7 +38,7 @@ test('ingress targets are exactly the Access-protected staging hosts', () => {
         'tuturuuu-calendar-wave1-staging',
         false,
       ],
-      ['web', 'web.staging.tutur3u.com', 'tuturuuu-web-wave1-staging', true],
+      ['web', 'tutur3u.com', 'tuturuuu-web-wave1-staging', true],
     ]
   );
   assert.equal(ingressTarget('mail'), null);
@@ -62,7 +62,7 @@ const failures = [
     'R1 a second Worker on the host',
     (o) => {
       o.domains.result.push({
-        hostname: 'web.staging.tutur3u.com',
+        hostname: 'tutur3u.com',
         service: 'other',
         zone_name: 'tutur3u.com',
       });
@@ -102,7 +102,7 @@ const failures = [
     'R2 capturing route',
     (o) => {
       o.routes.result.push({
-        pattern: 'web.staging.tutur3u.com/api/*',
+        pattern: 'tutur3u.com/api/*',
         script: 'other',
       });
     },
@@ -138,7 +138,7 @@ const failures = [
       o.hostRecords.result = [
         {
           type: 'CNAME',
-          name: 'web.staging.tutur3u.com',
+          name: 'tutur3u.com',
           content: 'x.vercel-dns.com',
         },
       ];
@@ -155,9 +155,9 @@ const failures = [
   [
     'path-only Access coverage',
     (o) => {
-      o.app.result.domain = 'web.staging.tutur3u.com/login';
+      o.app.result.domain = 'tutur3u.com/login';
       o.app.result.destinations = [
-        { type: 'public', uri: 'web.staging.tutur3u.com/login' },
+        { type: 'public', uri: 'tutur3u.com/login' },
       ];
     },
     /does not cover all/,
@@ -275,29 +275,79 @@ test('wildcard classification covers every name that could mint a staging host',
     '*.x.staging.tutur3u.com',
   ])
     assert.equal(isStagingWildcard(name), true, name);
-  for (const name of [
-    '*.docs.tutur3u.com',
-    'web.staging.tutur3u.com',
-    '*.tuturuuu.com',
-  ])
+  for (const name of ['*.docs.tutur3u.com', 'tutur3u.com', '*.tuturuuu.com'])
     assert.equal(isStagingWildcard(name), false, name);
 });
 
 test('Access application ids parse strictly', () => {
   const id = '22222222-2222-4222-8222-222222222222';
-  assert.deepEqual(
-    accessAppIds(JSON.stringify({ 'web.staging.tutur3u.com': id })),
-    {
-      'web.staging.tutur3u.com': id,
-    }
-  );
+  assert.deepEqual(accessAppIds(JSON.stringify({ 'tutur3u.com': id })), {
+    'tutur3u.com': id,
+  });
   for (const value of [
     undefined,
     '',
     '[]',
     'web=1',
     JSON.stringify({ 'web.tuturuuu.com': id }),
-    JSON.stringify({ 'web.staging.tutur3u.com': 'x' }),
+    JSON.stringify({ 'tutur3u.com': 'x' }),
   ])
     assert.throws(() => accessAppIds(value));
+});
+
+test('the web apex tolerates non-routing apex records but still fails routing-capable ones', () => {
+  const apexRecord = (type) => ({
+    type,
+    name: 'tutur3u.com',
+    content: 'x',
+    proxied: false,
+  });
+  for (const type of ['MX', 'TXT', 'CAA', 'NS'])
+    assert.deepEqual(
+      check('web', (o) => {
+        o.hostRecords.result.push(apexRecord(type));
+      }),
+      [],
+      type
+    );
+  for (const type of ['A', 'AAAA', 'CNAME', 'HTTPS', 'SVCB'])
+    assert.ok(
+      check('web', (o) => {
+        o.hostRecords.result.push(apexRecord(type));
+      }).some((line) => /^DNS:/u.test(line)),
+      type
+    );
+  // The tolerance is apex-only: a subdomain host never tolerates a TXT record.
+  assert.ok(
+    check('calendar', (o) => {
+      o.hostRecords.result.push({
+        type: 'TXT',
+        name: 'calendar.staging.tutur3u.com',
+        proxied: false,
+      });
+    }).some((line) => /^DNS:/u.test(line))
+  );
+});
+
+test('the web staging target is exactly the tutur3u.com apex', () => {
+  const web = ingressTarget('web');
+  assert.equal(web.host, 'tutur3u.com');
+  assert.equal(web.worker, 'tuturuuu-web-wave1-staging');
+  assert.equal(web.issuer, true);
+  // The retired web.staging host is neither a target nor an Access app key.
+  assert.throws(() =>
+    accessAppIds(
+      JSON.stringify({
+        'web.tuturuuu.com': '22222222-2222-4222-8222-222222222222',
+      })
+    )
+  );
+  assert.ok(
+    check('web', (o) => {
+      o.app.result.domain = 'web.staging.tutur3u.com';
+      o.app.result.destinations = [
+        { type: 'public', uri: 'web.staging.tutur3u.com' },
+      ];
+    }).some((line) => /Access/u.test(line))
+  );
 });

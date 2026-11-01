@@ -156,7 +156,10 @@ export function evaluateIngress(
   if (!hostRecords.length)
     failures.push(`DNS: ${host} has no Custom Domain record`);
   for (const record of hostRecords)
-    if (!workerManagedRecord(record, host))
+    if (
+      !apexNonRoutingRecord(record, host) &&
+      !workerManagedRecord(record, host)
+    )
       failures.push(
         `DNS: ${host} ${record.type ?? 'record'} is not the proxied Worker-managed Custom Domain record`
       );
@@ -208,6 +211,21 @@ export function evaluateIngress(
   return failures;
 }
 
+/**
+ * The zone apex also carries mail and ownership records (MX, TXT, CAA, NS).
+ * They cannot route HTTP, so only the apex host tolerates them; every
+ * routing-capable type (A, AAAA, CNAME, HTTPS, SVCB, ...) must still be the
+ * Worker-managed record, and a subdomain tolerates nothing else.
+ */
+export const APEX_NON_ROUTING_RECORD_TYPES = ['MX', 'TXT', 'CAA', 'NS'];
+export function apexNonRoutingRecord(record, host) {
+  return (
+    host === STAGING_ZONE &&
+    String(record?.name ?? '').toLowerCase() === host &&
+    APEX_NON_ROUTING_RECORD_TYPES.includes(record.type)
+  );
+}
+
 /** The proxied, read-only DNS record Cloudflare manages for a Custom Domain. */
 export function workerManagedRecord(record, host) {
   return (
@@ -235,7 +253,7 @@ export function accessAppIds(value) {
   for (const [host, id] of Object.entries(parsed))
     if (
       !/^[a-f0-9-]{36}$/u.test(String(id)) ||
-      !host.endsWith(`.${STAGING_PARENT}`)
+      !(host === STAGING_ZONE || host.endsWith(`.${STAGING_PARENT}`))
     )
       throw new Error(`Invalid Access application entry for ${host}`);
   return parsed;

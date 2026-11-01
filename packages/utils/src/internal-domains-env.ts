@@ -9,6 +9,8 @@ const INTERNAL_APP_DOMAINS_ENV_KEY =
 
 const warnedInternalAppDomainEntries = new Set<string>();
 
+const STAGING_ISSUER_HOSTNAME = 'tutur3u.com';
+
 function warnIgnoredInternalAppDomainEntry(entry: string, reason: string) {
   if (warnedInternalAppDomainEntries.has(entry)) {
     return;
@@ -93,14 +95,22 @@ function parseInternalAppDomainEntry(
     return null;
   }
 
+  // The staging issuer (`platform`) is the `tutur3u.com` apex, which serves
+  // host-only cookies and sits outside the shared cookie domain: satellites
+  // reach it only through the token handoff. No other app may use the apex.
+  const issuerApex =
+    name === 'platform' && url.hostname === STAGING_ISSUER_HOSTNAME;
+
   if (
     url.hostname.endsWith('.') ||
-    (url.hostname !== override.hostname &&
+    (!issuerApex &&
+      url.hostname !== override.hostname &&
       !url.hostname.endsWith(`.${override.hostname}`))
   ) {
     warnIgnoredInternalAppDomainEntry(
       trimmed,
-      `host must be ${override.hostname} or a subdomain of it`
+      `host must be ${override.hostname} or a subdomain of it` +
+        (name === 'platform' ? ` (or ${STAGING_ISSUER_HOSTNAME})` : '')
     );
     return null;
   }

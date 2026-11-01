@@ -17,7 +17,7 @@
   "ignored": {},
   "runtime": {
     "/": {
-      "redirect": "https://web.staging.tutur3u.com/login"
+      "redirect": "https://tutur3u.com/login"
     }
   }
 }

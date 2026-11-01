@@ -81,25 +81,22 @@
   "webStaging": {
     "sourceWorker": "tuturuuu-web-start-candidate",
     "stagingWorker": "tuturuuu-web-wave1-staging",
-    "stagingHost": "web.staging.tutur3u.com",
+    "stagingHost": "tutur3u.com",
     "zone": "tutur3u.com",
     "ingress": "access-custom-domain",
-    "nextFallback": {
-      "vercelProject": "tuturuuu-web-staging",
-      "config": "apps/web/vercel.staging.json",
-      "target": "staging"
+    "allowlist": {
+      "scripts": ["tuturuuu-web-wave1-staging"],
+      "hosts": ["tutur3u.com"]
     },
     "vars": {
       "WEB_START_CANDIDATE": "staging",
       "WEB_START_NATIVE_LEGAL": "off",
       "WEB_START_NATIVE_SECURITY": "off",
-      "AUTH_COOKIE_DOMAIN": ".staging.tutur3u.com",
       "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co",
       "TUTURUUU_NOINDEX": "1"
     },
     "secrets": [
       "TRUSTED_PROXY_ORIGIN_SECRET",
-      "VERCEL_AUTOMATION_BYPASS_SECRET",
       "CF_ACCESS_TEAM_DOMAIN",
       "CF_ACCESS_AUD"
     ]

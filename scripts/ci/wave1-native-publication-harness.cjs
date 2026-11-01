@@ -13,12 +13,6 @@ const publicEnv = {
 };
 Object.assign(process.env, publicEnv);
 
-// Web issuer fixtures: the sealed Next fallback pair (design §2.2).
-const webFallback = {
-  deploymentId: 'dpl_fixture0001',
-  origin: 'https://tuturuuu-web-staging-abc123-fixture.vercel.app',
-};
-
 async function publisher(t, app = 'mail', { preFetch } = {}) {
   const { prepare, artifactDigest } = await import(
     './wave1-native-artifact.mjs'
@@ -26,20 +20,12 @@ async function publisher(t, app = 'mail', { preFetch } = {}) {
   const { profiles } = await import('./wave1-native-profile.mjs');
   const ingress = await import('./wave1-ingress-fixture.mjs');
   const dir = fixture(t, app);
-  const receipt = prepare(
-    dir,
-    app,
-    'staging',
-    'owner-example',
-    sha,
-    app === 'web' ? webFallback : undefined
-  );
+  const receipt = prepare(dir, app, 'staging', 'owner-example', sha);
   const admission = {
     schema: 1,
     app,
     sourceSha: sha,
     artifactSha256: artifactDigest(receipt),
-    ...(app === 'web' ? { nextDeploymentId: webFallback.deploymentId } : {}),
     ...profiles.stagingAdmission,
   };
   const env = {
@@ -62,10 +48,6 @@ async function publisher(t, app = 'mail', { preFetch } = {}) {
     STAGING_ACCESS_HEALTH_TOKEN_IDS: ingress.fixtureHealthTokenId,
     ...(app === 'web'
       ? {
-          VERCEL_ORG_ID: 'team_fixture',
-          VERCEL_WEB_STAGING_PROJECT_ID: 'prj_fixture0001',
-          VERCEL_TOKEN_WEB_STAGING: 'vercel-fixture',
-          VERCEL_AUTOMATION_BYPASS_SECRET: 'b'.repeat(32),
           TRUSTED_PROXY_ORIGIN_SECRET: 'p'.repeat(40),
         }
       : {}),
@@ -304,4 +286,4 @@ async function publisher(t, app = 'mail', { preFetch } = {}) {
   };
 }
 
-module.exports = { newId, oldId, publicEnv, publisher, sha, webFallback };
+module.exports = { newId, oldId, publicEnv, publisher, sha };
