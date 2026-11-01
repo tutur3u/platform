@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Keep the workspace key on a role aligned with its permission rows and keep
 -- creator-granted role membership tied to every workspace that owns a grant.
 -- Bound the ACCESS EXCLUSIVE lock on the hot RLS table (security review, sync packet M4).
@@ -235,3 +237,5 @@ CREATE TRIGGER prevent_workspace_role_creator_grant_rename
   BEFORE UPDATE OF name ON public.workspace_roles
   FOR EACH ROW
   EXECUTE FUNCTION private.prevent_workspace_role_creator_grant_rename();
+
+COMMIT;

@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Separate validation phase for 20261030112010_workspace_delete_fk_cascade_guard.
 -- This file may be held for a later release independently of the NOT VALID swap.
 -- Normal migration discovery applies BOTH files if both are promoted together;
@@ -16,3 +18,5 @@ alter table private.team_members
   validate constraint project_members_project_id_fkey;
 
 notify pgrst, 'reload schema';
+
+COMMIT;

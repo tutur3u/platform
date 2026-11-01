@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Tutoring automation notifications (inert; nothing sends them yet).
 --
 -- 1. Two notification types, appended to the current notifications_type_check
@@ -139,3 +141,5 @@ alter table private.tutoring_notification_receipts
   );
 
 notify pgrst, 'reload schema';
+
+COMMIT;
