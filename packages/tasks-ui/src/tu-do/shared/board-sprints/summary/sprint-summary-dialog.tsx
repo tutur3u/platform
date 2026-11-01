@@ -5,6 +5,7 @@ import type {
   BoardSprint,
   BoardSprintReport,
 } from '@tuturuuu/internal-api/task-sprints';
+import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -30,6 +31,8 @@ import {
   summaryFromReport,
 } from './sprint-summary-model';
 import { SummaryDone, SummaryUnfinished } from './summary-stats';
+
+const NO_TASKS: Task[] = [];
 
 export interface SprintSummaryTarget {
   mode: 'live' | 'report';
@@ -109,7 +112,7 @@ function SummaryBody({
   const t = useTranslations('ws-task-boards.sprints');
   const locale = useLocale();
   const tasksQuery = useSprintTasks({ boardId, enabled: live, wsId });
-  const tasks = tasksQuery.data ?? [];
+  const tasks = tasksQuery.data ?? NO_TASKS;
   // The live numbers need the sprint's tasks, so End waits for them.
   const tasksReady = !live || tasksQuery.isSuccess;
   const { end } = useBoardSprintMutations({ boardId, wsId });

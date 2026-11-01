@@ -23,7 +23,7 @@ vi.mock('next-intl', () => ({
 
 vi.mock('@tuturuuu/ui/dialog', () => ({
   Dialog: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
-    open ? <div role="dialog">{children}</div> : null,
+    open ? <dialog open>{children}</dialog> : null,
   DialogContent: ({ children }: { children: React.ReactNode }) => (
     <>{children}</>
   ),

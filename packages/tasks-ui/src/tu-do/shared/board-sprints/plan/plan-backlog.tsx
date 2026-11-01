@@ -113,6 +113,7 @@ export function PlanBacklog({
   }
 
   return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- a drop zone; the row menus plan without a mouse
     <section
       aria-label={t('backlog')}
       className={cn(
@@ -174,6 +175,7 @@ export function PlanBacklog({
           return (
             // Native drag plans the task onto a person; the card is the
             // Board's own, with its sortable drag off.
+            // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- the row menus plan without a mouse
             <article
               aria-label={task.name}
               data-plan-ghost={ghost || undefined}

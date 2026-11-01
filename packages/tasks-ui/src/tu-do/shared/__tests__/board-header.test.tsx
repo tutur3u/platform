@@ -127,17 +127,17 @@ vi.mock('../board-user-presence-avatars', () => ({
 
 vi.mock('../../boards/boardId/kanban/planner/kanban-planner-dialog', () => ({
   KanbanPlannerDialog: ({ open }: { open: boolean }) =>
-    open ? <div role="dialog">planner-dialog</div> : null,
+    open ? <dialog open>planner-dialog</dialog> : null,
 }));
 
 vi.mock('../../boards/board-share-dialog', () => ({
   BoardShareDialog: ({ open }: { open: boolean }) =>
-    open ? <div role="dialog">share-dialog</div> : null,
+    open ? <dialog open>share-dialog</dialog> : null,
 }));
 
 vi.mock('../../boards/create-board-anywhere-dialog', () => ({
   CreateBoardAnywhereDialog: ({ open }: { open?: boolean }) =>
-    open ? <div role="dialog">create-board-dialog</div> : null,
+    open ? <dialog open>create-board-dialog</dialog> : null,
 }));
 
 const mockBoard = {
