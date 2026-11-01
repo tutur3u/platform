@@ -382,6 +382,13 @@ it.each([
       (screen.getByLabelText(en.meet.call.audio_input) as HTMLButtonElement)
         .disabled
     ).toBe(false);
+    expect(
+      (
+        screen.getByRole('button', {
+          name: en.meet.call.camera_on,
+        }) as HTMLButtonElement
+      ).disabled
+    ).toBe(false);
     const mute = screen.getByRole('button', {
       name: en.meet.call.mute,
     }) as HTMLButtonElement;
