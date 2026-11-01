@@ -2,6 +2,7 @@
 
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { useRef } from 'react';
 import type { MeetRoomController } from '../lib/room-controller';
 import { Lobby, type LobbyParticipant } from './lobby';
 
@@ -46,6 +47,14 @@ export function ConnectedLobby({
 }) {
   const t = useTranslations('meet.call');
   const selected = room.getSelectedDevices();
+  // Last name sent with presence.join, so a blur followed by join (or a
+  // blur without edits) does not resend the same name.
+  const sentDisplayName = useRef<string | null>(null);
+  const sendDisplayName = (name: string) => {
+    if (name === sentDisplayName.current) return;
+    sentDisplayName.current = name;
+    room.setDisplayName(name, room.media);
+  };
 
   return (
     <Lobby
@@ -59,7 +68,7 @@ export function ConnectedLobby({
       isJoining={room.state.admission === 'connecting'}
       joined={joined}
       meetingName={room.state.title ?? meetingName}
-      onDisplayNameChange={(name) => room.setDisplayName(name, room.media)}
+      onDisplayNameChange={sendDisplayName}
       onJoin={({
         audioDeviceId,
         audioEnabled,
@@ -71,7 +80,7 @@ export function ConnectedLobby({
       }) => {
         onOutputDeviceChange(nextOutputDeviceId);
         if (!canReadWorkspace || displayName !== defaultDisplayName) {
-          room.setDisplayName(displayName, room.media);
+          sendDisplayName(displayName);
         }
         const enableMicrophone = prepareJoin(audioEnabled);
         onJoined();

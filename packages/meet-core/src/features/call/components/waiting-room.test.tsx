@@ -318,6 +318,94 @@ it('lets guests edit their display name, blocks blank names, and orders Connecte
   ]);
 });
 
+it('sends the guest name on blur only when it changed and skips the duplicate on join', async () => {
+  const room = {
+    connectionStatus: 'open',
+    media: { audioEnabled: false, videoEnabled: false, screenEnabled: false },
+    state: { ...INITIAL_CALL_STATE, admission: 'admitted' },
+    getSelectedDevices: () => ({ audio: '', video: '', microphoneRevision: 0 }),
+    setDisplayName: vi.fn(),
+    selectDevice: vi.fn(async () => {}),
+    adoptPreview: vi.fn(async () => {}),
+    toggleMicrophone: vi.fn(async () => {}),
+    toggleCamera: vi.fn(async () => {}),
+  } as unknown as MeetRoomController;
+
+  render(
+    localized(
+      <ConnectedLobby
+        canReadWorkspace={false}
+        defaultDisplayName="Guest"
+        meetingName="Standup"
+        onJoined={vi.fn()}
+        onLeave={vi.fn()}
+        onOutputDeviceChange={vi.fn()}
+        onRetry={vi.fn()}
+        outputDeviceId=""
+        participants={[]}
+        prepareJoin={(enabled) => enabled}
+        room={room}
+        runMediaAction={(action) => action()}
+      />
+    )
+  );
+
+  const nameInput = screen.getByLabelText(
+    en.meet.call.your_name
+  ) as HTMLInputElement;
+  fireEvent.change(nameInput, { target: { value: 'Linh Anh' } });
+  fireEvent.blur(nameInput);
+  fireEvent.blur(nameInput);
+  fireEvent.change(nameInput, { target: { value: 'Linh Anh ' } });
+  fireEvent.blur(nameInput);
+  expect(room.setDisplayName).toHaveBeenCalledOnce();
+  expect(room.setDisplayName).toHaveBeenLastCalledWith('Linh Anh', room.media);
+
+  fireEvent.keyDown(nameInput, { key: 'Enter' });
+  await waitFor(() => expect(room.adoptPreview).toHaveBeenCalled());
+  expect(room.setDisplayName).toHaveBeenCalledOnce();
+});
+
+it('sends a changed guest name again after an earlier blur', () => {
+  const room = {
+    connectionStatus: 'open',
+    media: { audioEnabled: false, videoEnabled: false, screenEnabled: false },
+    state: { ...INITIAL_CALL_STATE, admission: 'admitted' },
+    getSelectedDevices: () => ({ audio: '', video: '', microphoneRevision: 0 }),
+    setDisplayName: vi.fn(),
+  } as unknown as MeetRoomController;
+
+  render(
+    localized(
+      <ConnectedLobby
+        canReadWorkspace={false}
+        defaultDisplayName="Guest"
+        meetingName="Standup"
+        onJoined={vi.fn()}
+        onLeave={vi.fn()}
+        onOutputDeviceChange={vi.fn()}
+        onRetry={vi.fn()}
+        outputDeviceId=""
+        participants={[]}
+        prepareJoin={(enabled) => enabled}
+        room={room}
+        runMediaAction={(action) => action()}
+      />
+    )
+  );
+
+  const nameInput = screen.getByLabelText(
+    en.meet.call.your_name
+  ) as HTMLInputElement;
+  fireEvent.change(nameInput, { target: { value: 'Linh' } });
+  fireEvent.blur(nameInput);
+  fireEvent.change(nameInput, { target: { value: 'Linh Anh' } });
+  fireEvent.blur(nameInput);
+  expect(
+    vi.mocked(room.setDisplayName).mock.calls.map(([name]) => name)
+  ).toEqual(['Linh', 'Linh Anh']);
+});
+
 it('handles blocked camera/mic permissions, unsupported speaker selection, and read-only member identity', async () => {
   Reflect.deleteProperty(HTMLMediaElement.prototype, 'setSinkId');
   const getUserMedia = vi.fn(async () => {
