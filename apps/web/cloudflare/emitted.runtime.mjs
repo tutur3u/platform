@@ -26,10 +26,6 @@ const messageCopy = Object.fromEntries(
   )
 );
 const base = 'https://web.staging.tutur3u.com';
-const secret = 'disposable-emitted-worker-proof-secret';
-const upstream = 'https://tuturuuu-next-fixture.vercel.app';
-const ref = 'fxefojytwimjiqxseqag';
-const bypass = 'disposable-emitted-vercel-bypass-0001';
 const access = accessFixture();
 
 const legalPages = [
@@ -146,7 +142,6 @@ test(description, { timeout: 30000 }, async (t) => {
       .filter((file) => file !== entry),
   ].map((path) => ({ type: 'ESModule', path }));
   const egress = [];
-  let attest = true;
   function instance(bindings) {
     const worker = new Miniflare(
       convertV4MiniflareOptions({
@@ -160,51 +155,7 @@ test(description, { timeout: 30000 }, async (t) => {
           if (request.url === access.certsUrl)
             return Response.json(access.jwks);
           egress.push(request.url);
-          assert.equal(
-            new URL(request.url).origin,
-            upstream,
-            'Unexpected egress'
-          );
-          assert.match(
-            request.headers.get('x-tuturuuu-origin-auth'),
-            /^hmac-v1;/u
-          );
-          assert.equal(request.headers.get('cookie'), 'sb-auth=fixture');
-          // N13/N17 on real workerd: client Access, server-owned and Vercel
-          // control headers never reach Next; only the Worker's bypass does.
-          for (const name of [
-            'cf-access-jwt-assertion',
-            'cf-access-client-id',
-            'x-tuturuuu-runtime',
-            'x-forwarded-prefix',
-            'x-vercel-set-bypass-cookie',
-          ])
-            assert.equal(request.headers.has(name), false, name);
-          assert.equal(
-            request.headers.get('x-vercel-protection-bypass'),
-            bypass
-          );
-          assert.doesNotMatch(new URL(request.url).search, /vercel/iu);
-          const headers = new Headers({
-            'content-type': 'text/event-stream',
-            'service-worker-allowed': '/',
-            'retry-after': '5',
-          });
-          if (attest) headers.set('x-tuturuuu-staging-supabase-ref', ref);
-          headers.append(
-            'set-cookie',
-            'sb-auth.0=one; Domain=.staging.tutur3u.com; Path=/; Secure; HttpOnly'
-          );
-          headers.append(
-            'set-cookie',
-            'sb-auth.1=two; Domain=.staging.tutur3u.com; Path=/; Secure; HttpOnly'
-          );
-          headers.append('set-cookie', '_vercel_jwt=minted; Path=/; Secure');
-          headers.set('x-vercel-id', 'fixture');
-          return new Response(`Next fixture:${await request.text()}`, {
-            status: 429,
-            headers,
-          });
+          throw new Error('Native staging must not make upstream calls');
         },
       })
     );
@@ -213,9 +164,7 @@ test(description, { timeout: 30000 }, async (t) => {
   }
   const admitted = {
     ...access.bindings,
-    NEXT_FALLBACK_ORIGIN: upstream,
-    TRUSTED_PROXY_ORIGIN_SECRET: secret,
-    VERCEL_AUTOMATION_BYPASS_SECRET: bypass,
+    TRUSTED_PROXY_ORIGIN_SECRET: 'disposable-emitted-worker-proof-secret',
   };
   const disabled = instance(config.vars);
   const enabled = instance({
@@ -289,7 +238,7 @@ test(description, { timeout: 30000 }, async (t) => {
     assert.deepEqual(await response.json(), {
       app: 'web',
       status: 'candidate',
-      pages: 'Next-fallback',
+      pages: 'not-migrated',
     });
     assert.deepEqual(egress, []);
   });
@@ -334,18 +283,17 @@ test(description, { timeout: 30000 }, async (t) => {
     }
   );
   await t.test(
-    'route rollback reaches only the attested Next fixture with the original query',
+    'disabled native routes return a static 404 with no egress',
     async () => {
       const response = await rollback.dispatchFetch(
-        `${base}/vi/legal/dpa?raw=%2f&x=1&x=2`,
+        `${base}/vi/legal/dpa?raw=%2f`,
         { headers }
       );
-      assert.equal(response.status, 429);
-      assert.equal(
-        response.headers.get('x-tuturuuu-web-renderer'),
-        'Next-fallback'
-      );
-      assert.equal(egress.at(-1), `${upstream}/vi/legal/dpa?raw=%2f&x=1&x=2`);
+      assert.equal(response.status, 404);
+      assert.equal(response.headers.get('x-tuturuuu-native'), 'not-migrated');
+      assert.equal(response.headers.get('cache-control'), 'no-store');
+      assert.match(await response.text(), /Not migrated yet/u);
+      assert.deepEqual(egress, []);
     }
   );
 
@@ -409,9 +357,10 @@ test(description, { timeout: 30000 }, async (t) => {
             );
             assert.equal(
               fallback.headers.get('x-tuturuuu-web-renderer'),
-              'Next-fallback'
+              'not-migrated'
             );
-            assert.equal(egress.at(-1), `${upstream}${path}?keep=%2f`);
+            assert.equal(fallback.status, 404);
+            assert.deepEqual(egress, []);
           }
         }
       }
@@ -434,45 +383,43 @@ test(description, { timeout: 30000 }, async (t) => {
     }
   );
   await t.test(
-    'Next fallback preserves body, error, cookie and service-worker boundaries',
+    'all unmigrated methods and paths return 404 without upstream bindings',
     async () => {
-      const response = await enabled.dispatchFetch(
-        `${base}/api/a?x=1&x=2&raw=%2f`,
-        { method: 'POST', body: 'write-once', headers }
-      );
-      assert.equal(response.status, 429);
-      assert.equal(await response.text(), 'Next fixture:write-once');
-      // N17: the minted _vercel_jwt and x-vercel-* never reach the browser.
-      assert.equal(response.headers.getSetCookie().length, 2);
-      assert.ok(
-        response.headers.getSetCookie().every((c) => !c.startsWith('_vercel'))
-      );
-      assert.equal(response.headers.has('x-vercel-id'), false);
-      assert.equal(response.headers.get('retry-after'), '5');
-      assert.equal(egress.at(-1), `${upstream}/api/a?x=1&x=2&raw=%2f`);
-      const sw = await enabled.dispatchFetch(`${base}/serwist/sw.js?v=exact`, {
-        headers,
-      });
-      assert.equal(sw.headers.get('service-worker-allowed'), '/');
-      assert.equal(egress.at(-1), `${upstream}/serwist/sw.js?v=exact`);
-    }
-  );
-  await t.test(
-    'wrong project and canonical hosts fail closed in the emitted Worker',
-    async () => {
-      attest = false;
-      const response = await enabled.dispatchFetch(`${base}/login`, {
-        headers,
-      });
-      assert.equal(response.status, 502);
-      assert.equal(response.headers.has('set-cookie'), false);
-      const calls = egress.length;
+      for (const path of [
+        '/login',
+        '/api/a',
+        '/serwist/sw.js',
+        '/_next/image',
+      ]) {
+        for (const method of ['GET', 'HEAD', 'POST']) {
+          const response = await enabled.dispatchFetch(base + path, {
+            method,
+            headers,
+          });
+          assert.equal(response.status, 404);
+          assert.equal(
+            response.headers.get('x-tuturuuu-native'),
+            'not-migrated'
+          );
+          assert.equal(response.headers.get('cache-control'), 'no-store');
+          const html = await response.text();
+          if (method === 'HEAD') assert.equal(html, '');
+          else {
+            assert.match(html, /Not migrated yet/u);
+            assert.match(
+              html,
+              /<meta name="color-scheme" content="light dark">/u
+            );
+            assert.doesNotMatch(html, /<script|src=|href=/u);
+          }
+        }
+      }
       assert.equal(
         (await enabled.dispatchFetch('https://tuturuuu.com/login', { headers }))
           .status,
         503
       );
-      assert.equal(egress.length, calls);
+      assert.deepEqual(egress, []);
     }
   );
   await t.test(

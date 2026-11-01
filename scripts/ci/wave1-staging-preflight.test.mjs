@@ -10,7 +10,6 @@ const env = {
   GITHUB_REPOSITORY: 'tutur3u/platform',
   GITHUB_TOKEN: 'test-token',
   WAVE1_STAGING_PUBLISH_ENABLED: 'true',
-  WEB_STAGING_NEXT_ADMISSION: '{"admitted":true}',
   WAVE1_STAGING_PUBLICATION_ADMISSION: '{"admitted":true}',
 };
 const protectedEnvironment = (name) => ({
@@ -57,11 +56,9 @@ for (const mode of ['web', 'native']) {
     const names = await preflight({ env, mode, app: 'mail', ...mock });
     assert.deepEqual(
       names,
-      mode === 'web'
-        ? ['wave1-web-next-staging', 'wave1-web-staging']
-        : ['wave1-mail-staging']
+      mode === 'web' ? ['wave1-web-staging'] : ['wave1-mail-staging']
     );
-    assert.equal(mock.calls.length, mode === 'web' ? 4 : 2);
+    assert.equal(mock.calls.length, 2);
   });
 }
 for (const [name, options] of [
@@ -155,7 +152,7 @@ for (const [name, options] of [
     );
   });
 }
-test('failure on second Web environment refuses the pair', async () => {
+test('unprotected Web environment refuses native-only publication', async () => {
   const mock = api({
     mutateEnvironment: (e) => {
       if (e.name === 'wave1-web-staging') e.protection_rules = [];
@@ -178,9 +175,7 @@ test('network failure refuses publication', async () => {
 for (const mode of ['web', 'native']) {
   for (const key of [
     'WAVE1_STAGING_PUBLISH_ENABLED',
-    mode === 'web'
-      ? 'WEB_STAGING_NEXT_ADMISSION'
-      : 'WAVE1_STAGING_PUBLICATION_ADMISSION',
+    'WAVE1_STAGING_PUBLICATION_ADMISSION',
   ]) {
     for (const value of [undefined, '', ' ']) {
       test(`${mode}: ${key}=${JSON.stringify(value)} refuses before API`, async () => {
@@ -269,10 +264,10 @@ function assertGuarded(workflow) {
   const step = gate.steps.find((s) =>
     s.run?.includes('wave1-staging-preflight')
   );
-  const admissionKey = step.run.includes(' web ')
-    ? 'WEB_STAGING_NEXT_ADMISSION'
-    : 'WAVE1_STAGING_PUBLICATION_ADMISSION';
-  assert.equal(step.env[admissionKey], '$' + '{{ vars.' + admissionKey + ' }}');
+  assert.equal(
+    step.env.WAVE1_STAGING_PUBLICATION_ADMISSION,
+    '$' + '{{ vars.WAVE1_STAGING_PUBLICATION_ADMISSION }}'
+  );
   assert.equal(
     step.env.WAVE1_STAGING_PUBLISH_ENABLED,
     '$' + '{{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}'
@@ -283,7 +278,7 @@ for (const file of ['wave1-web-staging.yaml', 'wave1-native-publish.yaml']) {
     const workflow = readWorkflow(file, { raw: true });
     assertGuarded(workflow);
     const broken = structuredClone(workflow);
-    const id = file.includes('web') ? 'next-deploy' : 'publish';
+    const id = file.includes('web') ? 'publish-worker' : 'publish';
     delete broken.jobs[id].needs;
     assert.throws(() => assertGuarded(broken));
     const secret = structuredClone(workflow);

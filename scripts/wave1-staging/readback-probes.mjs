@@ -126,7 +126,8 @@ export async function hostProbes({
   });
   // R4: the CI service token reaches the exact admitted build.
   if (serviceToken?.clientId && serviceToken?.clientSecret) {
-    const identity = await probe(fetcher, `${base}/api/build-info`, {
+    const identityPath = target.issuer ? '/__web1' : '/api/build-info';
+    const identity = await probe(fetcher, `${base}${identityPath}`, {
       readBody: true,
       headers: {
         'cf-access-client-id': serviceToken.clientId,
@@ -140,9 +141,15 @@ export async function hostProbes({
     add(
       'R4',
       identity.status === 200 &&
-        info?.environment === 'staging' &&
-        (!expectedSha || info?.commitHash === expectedSha),
-      `build-info -> ${identity.status || identity.error}`
+        (target.issuer
+          ? info?.app === 'web' &&
+            info?.status === 'candidate' &&
+            info?.pages === 'not-migrated' &&
+            (!expectedSha ||
+              identity.headers?.get('x-tuturuuu-source-sha') === expectedSha)
+          : info?.environment === 'staging' &&
+            (!expectedSha || info?.commitHash === expectedSha)),
+      `${identityPath} -> ${identity.status || identity.error}`
     );
     // N17 through the issuer Worker: client-injected Vercel bypass controls
     // (header and query) never mint a `_vercel*` cookie or leak `x-vercel-*`.
@@ -164,7 +171,9 @@ export async function hostProbes({
       );
       add(
         'N17',
-        injected.status > 0 &&
+        injected.status === 404 &&
+          injected.headers?.get('x-tuturuuu-native') === 'not-migrated' &&
+          injected.headers?.get('cache-control') === 'no-store' &&
           !injected.setCookie.some((cookie) => /^\s*_vercel/iu.test(cookie)) &&
           leaked.length === 0,
         `injected bypass controls -> ${injected.status || injected.error}${leaked.length ? ` leaked ${leaked.join(',')}` : ''}`

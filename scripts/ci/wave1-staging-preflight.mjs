@@ -10,10 +10,7 @@ export async function preflight({ env, mode, app, fetcher = fetch }) {
     'true',
     'Staging fence refuses publication'
   );
-  const admission =
-    mode === 'web'
-      ? env.WEB_STAGING_NEXT_ADMISSION
-      : env.WAVE1_STAGING_PUBLICATION_ADMISSION;
+  const admission = env.WAVE1_STAGING_PUBLICATION_ADMISSION;
   assert.ok(
     typeof admission === 'string' && admission.trim(),
     'Missing staging admission'
@@ -26,9 +23,7 @@ export async function preflight({ env, mode, app, fetcher = fetch }) {
   );
   assert.ok(env.GITHUB_TOKEN, 'Missing GITHUB_TOKEN');
   const names =
-    mode === 'web'
-      ? ['wave1-web-next-staging', 'wave1-web-staging']
-      : [`wave1-${app}-staging`];
+    mode === 'web' ? ['wave1-web-staging'] : [`wave1-${app}-staging`];
   async function get(path) {
     const response = await fetcher(
       `https://api.github.com/repos/${env.GITHUB_REPOSITORY}/environments/${path}`,

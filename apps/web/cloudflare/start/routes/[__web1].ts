@@ -7,7 +7,7 @@ export const Route = createFileRoute('/__web1')({
         Response.json({
           app: 'web',
           status: 'candidate',
-          pages: 'Next-fallback',
+          pages: 'not-migrated',
         }),
     },
   },
