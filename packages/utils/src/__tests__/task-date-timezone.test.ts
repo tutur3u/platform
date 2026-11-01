@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   buildDateInTimezone,
   dateInTimezoneToUTCISO,
@@ -266,4 +266,21 @@ describe('parseTaskDateToUTCISO', () => {
       RangeError
     );
   });
+});
+
+describe('ambiguous wall times', () => {
+  it.each(['2026-10-31T12:00:00Z', '2026-11-02T12:00:00Z'])(
+    'selects the first occurrence with the clock at %s',
+    (now) => {
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(new Date(now));
+        expect(buildDateInTimezone(2026, 11, 1, 1, 30, NY).toISOString()).toBe(
+          '2026-11-01T05:30:00.000Z'
+        );
+      } finally {
+        vi.useRealTimers();
+      }
+    }
+  );
 });
