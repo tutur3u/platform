@@ -68,7 +68,10 @@ const upload = () => {
 };
 const bind = (value?: string) =>
   mocks.cloudflare.mockResolvedValue({
-    env: { MEET_AI_ENABLED_WORKSPACE_IDS: value },
+    env: {
+      MEET_AI_ENABLED_WORKSPACE_IDS: value,
+      MEET_AI_DISABLED: value ? undefined : 'true',
+    },
   });
 
 describe('chunk upload workspace gate (real access path)', () => {
@@ -83,8 +86,8 @@ describe('chunk upload workspace gate (real access path)', () => {
   });
 
   it.each([
-    ['unset', undefined],
-    ['blank', ''],
+    ['kill switch', undefined],
+    ['kill switch with blank legacy list', ''],
     ['not listed', listed],
   ])(
     'denies %s with zero database writes and zero provider calls',

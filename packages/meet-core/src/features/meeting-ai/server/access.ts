@@ -73,7 +73,7 @@ export async function meetAiAccess(
   if (mutation && !(await meetAiAvailable(wsId)))
     throw new MeetAiError(
       403,
-      'Meeting AI is not available for this workspace',
+      'Meet AI is temporarily unavailable',
       'MEET_AI_WORKSPACE_NOT_ENABLED'
     );
   const membership = await verifyWorkspaceMembershipType({

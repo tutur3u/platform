@@ -203,7 +203,9 @@ export function createPOST({
       }
 
       if (!(await meetAiAllowed(wsId, isMeetAiEnabled))) {
-        return new Response('Workspace access denied', { status: 403 });
+        return new Response('Meet AI is temporarily unavailable', {
+          status: 403,
+        });
       }
 
       if (!(audioFile instanceof File)) {
