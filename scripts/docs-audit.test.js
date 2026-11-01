@@ -40,6 +40,27 @@ test('repository inventories are reproducible and omit paused implementation tre
   }
 });
 
+test('generated reference stays in navigation but opts out of search and LLM indexes', () => {
+  const root = path.resolve(__dirname, '..');
+  const config = JSON.parse(
+    fs.readFileSync(path.join(root, 'apps/docs/docs.json'), 'utf8')
+  );
+  assert.notEqual(config.seo?.indexing, 'all');
+  const navigation = JSON.stringify(config.navigation);
+  const files = plannedFiles(root);
+  for (const [file, source] of files) {
+    if (!file.startsWith('reference/repository/')) continue;
+    const frontmatter = source.match(/^---\n([\s\S]*?)\n---/)[1];
+    assert.match(frontmatter, /^noindex: true$/m, file);
+    assert.doesNotMatch(frontmatter, /^hidden: true$/m, file);
+    assert.ok(
+      navigation.includes(JSON.stringify(file.replace(/\.mdx$/, ''))),
+      file
+    );
+  }
+  assert.ok(files.size > 0);
+});
+
 test('route URLs omit groups and preserve dynamic parameters', () => {
   assert.equal(
     routePath('[locale]/(dashboard)/[wsId]/tasks/page.tsx'),
