@@ -102,6 +102,7 @@ export function PlanOwnerSection({
   const { member, tasks } = owner;
 
   return (
+    // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- a drop zone; the row menus plan without a mouse
     <section
       aria-label={member.display_name}
       className={cn(
