@@ -3,7 +3,7 @@
 -- task_cycle_tasks and workspace_boards, and restores main's task cycle
 -- policies (20250929060000_add_task_cycles.sql, with the task cycle task
 -- policy as 20260701070408_wrap_rls_perf_initplan.sql left it). Run the
--- 20261029060010 rollback first, and deploy app code without board sprints.
+-- 20261101100010 rollback first, and deploy app code without board sprints.
 -- Refuses while any board still uses sprints, has a sprint or has a sprint
 -- report: turn sprints off and delete those rows first, since this drops them.
 BEGIN;
