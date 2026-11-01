@@ -75,6 +75,8 @@ final List<GoRoute> mastermindTabRoutes = [
         initialSegment: inboxSegmentFromQuery(
           state.uri.queryParameters['segment'],
         ),
+        initialTier: inboxTierFromQuery(state.uri.queryParameters['tier']),
+        initialSearch: inboxSearchFromQuery(state.uri.queryParameters['q']),
         // The segment lives in the URL, so a Home link can open Decisions and
         // switching never pushes: Back does not walk the segments.
         onSegment: (segment) => router.go(inboxLocation(segment: segment)),

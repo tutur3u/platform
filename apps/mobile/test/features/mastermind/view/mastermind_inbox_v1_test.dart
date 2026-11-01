@@ -143,7 +143,7 @@ void main() {
     ) async {
       await _pump(tester, const MastermindInboxPage(), _v1());
       expect(find.byType(InboxItemTile), findsNWidgets(2));
-      expect(find.text('Decisions for you'), findsOneWidget);
+      expect(find.text('Needs a decision'), findsOneWidget);
       expect(find.text('Recently resolved'), findsNothing);
 
       await _segment(tester, 'Resolved');

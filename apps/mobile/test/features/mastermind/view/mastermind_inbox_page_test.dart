@@ -90,16 +90,9 @@ Iterable<String> _allText(WidgetTester tester) =>
 
 void main() {
   group('grouping', () {
-    testWidgets('groups by kind: decisions, actions, then information', (
-      tester,
-    ) async {
+    testWidgets('groups by tier: decision, then information', (tester) async {
       await _pump(tester, inboxJson(_mixed));
-      final order = [
-        'Decisions for you',
-        'Actions',
-        'For your information',
-        'Security',
-      ];
+      final order = ['Needs a decision', 'For your information', 'Security'];
       final tops = [for (final label in order) _top(tester, label)];
       expect([...tops]..sort(), tops, reason: order.join(' < '));
       expect(tops.toSet(), hasLength(order.length));
@@ -115,8 +108,8 @@ void main() {
 
     testWidgets('shows a count per group, normal items only', (tester) async {
       await _pump(tester, inboxJson(_mixed));
-      expect(find.text('2'), findsOneWidget); // two decisions
-      expect(find.text('1'), findsNWidgets(2)); // one action, one fyi
+      expect(find.text('3'), findsOneWidget); // decisions and the action
+      expect(find.text('1'), findsOneWidget); // one fyi
     });
 
     testWidgets('a long body is a four-line preview, with no More', (
@@ -178,8 +171,8 @@ void main() {
 
     testWidgets('are not counted, filtered or searched', (tester) async {
       await _pump(tester, inboxJson(_mixed));
-      // 2 + 1 + 1 = 4 normal items; the security row adds nothing.
-      expect(find.text('2'), findsOneWidget);
+      // 3 + 1 = 4 normal items; the security row adds nothing.
+      expect(find.text('3'), findsOneWidget);
       await _revealSearch(tester);
       await tester.enterText(find.byType(TextField), 'zzz-no-match');
       await tester.pumpAndSettle();

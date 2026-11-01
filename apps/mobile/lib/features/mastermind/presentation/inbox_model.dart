@@ -86,11 +86,24 @@ List<InboxTierGroup> groupByTier(
 final class InboxGroup {
   const InboxGroup({required this.kind, required this.items})
     : resolved = false,
-      day = null;
+      day = null,
+      tier = null;
 
   const InboxGroup.resolved({required this.items, this.day})
     : kind = null,
-      resolved = true;
+      resolved = true,
+      tier = null;
+
+  /// One Urgent / Needs a decision / FYI section of open asks.
+  InboxGroup.tiered(InboxTierGroup group)
+    : kind = null,
+      resolved = false,
+      day = null,
+      tier = group.tier,
+      items = group.items;
+
+  /// Set for tier sections; null for kind and resolved groups.
+  final InboxTier? tier;
 
   /// Null for resolved groups, and for the rare open item the publisher
   /// left without a kind.
@@ -103,7 +116,9 @@ final class InboxGroup {
   final DateTime? day;
 
   /// Stable across rebuilds, for remembering which groups were expanded.
-  String get key => resolved
+  String get key => tier != null
+      ? 'tier-${tier!.queryValue}'
+      : resolved
       ? switch (day) {
           final day? => 'resolved-${_dayKey(day)}',
           null => 'resolved',
@@ -203,6 +218,15 @@ final class MastermindInboxModel {
 
   /// Products present among this segment's asks, for the filter chips.
   final List<Product> products;
+
+  /// What the list renders: the open asks by tier (kind groups when there are
+  /// none), then any resolved day groups.
+  List<InboxGroup> get displayGroups => tiers.isEmpty
+      ? groups
+      : [
+          for (final tier in tiers) InboxGroup.tiered(tier),
+          ...groups.where((group) => group.resolved),
+        ];
 
   int get shownCount =>
       groups.fold(0, (sum, group) => sum + group.items.length);
