@@ -51,7 +51,30 @@ function sessionColumns(
   };
 }
 
-/** Inserts sessions as topic-less drafts in one batch, plus their GVNN. */
+/** Unique violation: here, the topic_announcements_schedule_slot_unique index. */
+const UNIQUE_VIOLATION = '23505';
+const SLOT_INDEX = 'topic_announcements_schedule_slot_unique';
+
+/**
+ * A refusal by the slot uniqueness index only. Other unique violations are
+ * real errors and propagate.
+ */
+function isSlotConflict(
+  error: { code?: string; details?: string; message?: string } | null
+) {
+  return (
+    error?.code === UNIQUE_VIOLATION &&
+    `${error.message ?? ''} ${error.details ?? ''}`.includes(SLOT_INDEX)
+  );
+}
+
+/**
+ * Inserts sessions as topic-less drafts in one batch, plus their GVNN.
+ * Returns the new ids in input order, with null where the slot was taken:
+ * another save or clone committed the same class, date and start time after
+ * this request checked it, and the slot uniqueness index refused the row.
+ * The other sessions are still inserted (one by one after such a refusal).
+ */
 export async function insertScheduleSessions({
   actorUserId,
   normalizedWsId,
@@ -66,7 +89,7 @@ export async function insertScheduleSessions({
   sessions: readonly ScheduleSessionWrite[];
   sourceName: string;
   timeZone: string | null;
-}): Promise<string[]> {
+}): Promise<(string | null)[]> {
   if (sessions.length === 0) return [];
 
   const { data: batch, error: batchError } = await sbAdmin
@@ -82,31 +105,46 @@ export async function insertScheduleSessions({
     .single();
   if (batchError) throw batchError;
 
+  const rows = sessions.map((session, index) => ({
+    ...sessionColumns(session, timeZone),
+    batch_id: batch.id,
+    body: '',
+    created_by: actorUserId,
+    source_row_number: index + 1,
+    source_type: SCHEDULE_SOURCE_TYPE,
+    status: 'draft',
+    topic: null,
+    updated_by: actorUserId,
+    ws_id: normalizedWsId,
+  }));
+
+  const idByRow = new Map<number, string>();
   const { data: inserted, error } = await sbAdmin
     .from('topic_announcements')
-    .insert(
-      sessions.map((session, index) => ({
-        ...sessionColumns(session, timeZone),
-        batch_id: batch.id,
-        body: '',
-        created_by: actorUserId,
-        source_row_number: index + 1,
-        source_type: SCHEDULE_SOURCE_TYPE,
-        status: 'draft',
-        topic: null,
-        updated_by: actorUserId,
-        ws_id: normalizedWsId,
-      }))
-    )
+    .insert(rows)
     .select('id,source_row_number');
-  if (error) throw error;
+  if (isSlotConflict(error)) {
+    for (const row of rows) {
+      const { data: single, error: rowError } = await sbAdmin
+        .from('topic_announcements')
+        .insert(row)
+        .select('id,source_row_number')
+        .single();
+      if (isSlotConflict(rowError)) continue;
+      if (rowError) throw rowError;
+      idByRow.set(single.source_row_number, single.id);
+    }
+  } else if (error) {
+    throw error;
+  } else {
+    for (const row of (inserted ?? []) as {
+      id: string;
+      source_row_number: number;
+    }[]) {
+      idByRow.set(row.source_row_number, row.id);
+    }
+  }
 
-  const idByRow = new Map<number, string>(
-    (inserted ?? []).map((row: { id: string; source_row_number: number }) => [
-      row.source_row_number,
-      row.id,
-    ])
-  );
   const recipients = sessions.flatMap((session, index) => {
     const announcementId = idByRow.get(index + 1);
     return announcementId && session.gvnnContactId
@@ -120,7 +158,7 @@ export async function insertScheduleSessions({
     if (recipientsError) throw recipientsError;
   }
 
-  return sessions.flatMap((_, index) => idByRow.get(index + 1) ?? []);
+  return sessions.map((_, index) => idByRow.get(index + 1) ?? null);
 }
 
 async function isStillEditableUnsent(
@@ -160,6 +198,37 @@ async function setRecipient(
 /** Fields a conflicting save may still have changed on a session. */
 export type ScheduleSessionPartialField = 'gvnn';
 
+type RecipientRestoreResult =
+  | 'contact_unavailable'
+  | 'locked'
+  | 'not_found'
+  | 'set';
+
+/**
+ * Puts a session's GVNN back through private.set_topic_schedule_recipient:
+ * one transaction that locks the session row, re-checks it is editable and
+ * unsent, checks the contact, and only then swaps the recipient.
+ */
+async function restoreScheduleRecipient({
+  contactId,
+  id,
+  normalizedWsId,
+  sbAdmin,
+}: {
+  contactId: string | null;
+  id: string;
+  normalizedWsId: string;
+  sbAdmin: TopicAnnouncementsSupabaseClient;
+}): Promise<RecipientRestoreResult> {
+  const { data, error } = await sbAdmin.rpc('set_topic_schedule_recipient', {
+    p_announcement_id: id,
+    p_contact_id: contactId,
+    p_ws_id: normalizedWsId,
+  });
+  if (error) throw error;
+  return data as RecipientRestoreResult;
+}
+
 export type ScheduleSessionUpdateResult =
   /** Fields and GVNN saved. */
   | { kind: 'updated' }
@@ -170,7 +239,15 @@ export type ScheduleSessionUpdateResult =
    * GVNN changed, and a send may have used either GVNN. Nothing is restored,
    * because a send may already have read the recipients.
    */
-  | { fields: ScheduleSessionPartialField[]; kind: 'partial' };
+  | { fields: ScheduleSessionPartialField[]; kind: 'partial' }
+  /**
+   * Another request took the class, date and start time this edit moves to
+   * (the slot uniqueness index refused it). Nothing changed: the fields stay
+   * and a swapped GVNN is put back.
+   */
+  | { kind: 'slot_taken' };
+
+type FieldWriteResult = 'locked' | 'slot_taken' | 'updated';
 
 async function updateFieldsIfEditable({
   actorUserId,
@@ -186,7 +263,7 @@ async function updateFieldsIfEditable({
   sbAdmin: TopicAnnouncementsSupabaseClient;
   session: ScheduleSessionWrite;
   timeZone: string | null;
-}) {
+}): Promise<FieldWriteResult> {
   const { data, error } = await sbAdmin
     .from('topic_announcements')
     .update({
@@ -199,8 +276,9 @@ async function updateFieldsIfEditable({
     .eq('source_type', SCHEDULE_SOURCE_TYPE)
     .in('status', [...SCHEDULE_EDITABLE_STATUSES])
     .select('id');
+  if (isSlotConflict(error)) return 'slot_taken';
   if (error) throw error;
-  return (data ?? []).length > 0;
+  return (data ?? []).length > 0 ? 'updated' : 'locked';
 }
 
 /**
@@ -215,6 +293,8 @@ async function updateFieldsIfEditable({
  *    never both;
  * 3. write the fields, conditional on the session still being editable.
  *
+ * If step 3 is refused because another request took the slot the edit moves
+ * to, nothing applies: the previous GVNN is put back (`slot_taken`).
  * If step 3 finds the session claimed, a send started during the swap: the
  * fields stay as they were and the result is `partial` (only the GVNN
  * changed). Nothing is restored then, since that send may have read either
@@ -241,23 +321,34 @@ export async function updateScheduleSession({
   const writeFields = () =>
     updateFieldsIfEditable({ ...context, id, sbAdmin, session });
 
-  if (!gvnnChanged) {
-    return (await writeFields()) ? { kind: 'updated' } : { kind: 'locked' };
-  }
+  if (!gvnnChanged) return { kind: await writeFields() };
+
+  const restorePrevious = () =>
+    restoreScheduleRecipient({
+      contactId: previousGvnnContactId,
+      id,
+      normalizedWsId: context.normalizedWsId,
+      sbAdmin,
+    });
 
   if (!(await isStillEditableUnsent(sbAdmin, id))) return { kind: 'locked' };
   try {
     await setRecipient(sbAdmin, id, session.gvnnContactId);
   } catch (error) {
-    if (await isStillEditableUnsent(sbAdmin, id)) {
-      await setRecipient(sbAdmin, id, previousGvnnContactId);
-    }
+    await restorePrevious();
     throw error;
   }
 
-  return (await writeFields())
-    ? { kind: 'updated' }
-    : { fields: ['gvnn'], kind: 'partial' };
+  const written = await writeFields();
+  if (written === 'updated') return { kind: 'updated' };
+  // The edit did not apply, so neither does its GVNN change. The restore is
+  // one locked transaction: it rewrites nothing when a send claimed the
+  // session meanwhile or the previous GVNN can no longer be a recipient, and
+  // then the new GVNN stays (reported as a GVNN-only change).
+  if (written === 'slot_taken' && (await restorePrevious()) === 'set') {
+    return { kind: 'slot_taken' };
+  }
+  return { fields: ['gvnn'], kind: 'partial' };
 }
 
 /**

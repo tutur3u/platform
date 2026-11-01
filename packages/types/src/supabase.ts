@@ -25280,6 +25280,14 @@ export type Database = {
         };
         Returns: boolean;
       };
+      set_topic_schedule_recipient: {
+        Args: {
+          p_announcement_id: string;
+          p_contact_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       set_workspace_invitation_roles: {
         Args: {
           p_actor_id?: string;
