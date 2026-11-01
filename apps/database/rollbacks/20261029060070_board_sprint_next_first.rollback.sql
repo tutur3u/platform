@@ -313,6 +313,7 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.end_board_sprint(UUID, UUID, JSONB, TEXT) FROM PUBLIC, anon, authenticated;
+-- tuturuuu: no-grant (trigger)
 REVOKE ALL ON FUNCTION private.sync_task_board_sprint_membership() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.end_board_sprint(UUID, UUID, JSONB, TEXT) TO service_role;
 

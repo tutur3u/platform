@@ -59,6 +59,7 @@ BEGIN
 END;
 $$;
 
+-- tuturuuu: no-grant (internal)
 REVOKE ALL ON FUNCTION private.rechain_planned_board_sprints(UUID) FROM PUBLIC, anon, authenticated;
 
 -- 3. A length change moves every planned sprint, and only turning sprints on
