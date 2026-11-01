@@ -234,7 +234,7 @@ export function LobbyParticipantSummary({
         </p>
         <p className="truncate text-muted-foreground text-xs">
           {overflow > 0
-            ? `${names} (${t('lobby_overflow_more', { count: overflow })})`
+            ? t('lobby_people_names_overflow', { names, count: overflow })
             : names}
         </p>
       </div>
