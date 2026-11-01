@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tuturuuu.com/schemas/mastermind/ask-v2.schema.json",
+  "title": "Mastermind Inbox ask-v2 (one hub snapshot needs_you / decision row)",
+  "description": "Old keys stay; every ask-v2 key is optional. Readers ignore unknown keys, so additional properties are allowed here. Hub-side fields behind `inbox_fields` (updated_at, resolved_via, status expired) default OFF.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "id",
+    "title",
+    "body",
+    "options",
+    "recommended_option",
+    "state",
+    "version_hash"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^item-[a-f0-9]{20}$" },
+    "version_hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "title": { "type": "string", "maxLength": 100 },
+    "body": { "type": "string", "maxLength": 2000 },
+    "ask_text": { "type": "string", "maxLength": 2000 },
+    "ask_truncated": { "type": "boolean" },
+    "text_complete": { "type": "boolean" },
+    "options": {
+      "type": "array",
+      "maxItems": 8,
+      "uniqueItems": true,
+      "items": { "type": "string", "maxLength": 80 }
+    },
+    "recommended_option": {
+      "anyOf": [{ "type": "string", "maxLength": 80 }, { "type": "null" }]
+    },
+    "state": { "enum": ["open", "answered", "withdrawn"] },
+    "status": { "enum": ["open", "resolved", "expired"] },
+    "kind": { "enum": ["decision", "action", "fyi"] },
+    "urgency": { "enum": ["now", "today", "soon", "whenever"] },
+    "created_at": { "$ref": "#/$defs/utcTimestamp" },
+    "updated_at": { "$ref": "#/$defs/utcTimestamp" },
+    "resolved_via": { "enum": ["mobile", "discord", "mac", "agent"] },
+    "options_v2": {
+      "type": "array",
+      "maxItems": 8,
+      "items": { "$ref": "#/$defs/optionV2" }
+    },
+    "recommended_id": { "type": "string", "minLength": 1, "maxLength": 64 },
+    "recommended_why": { "type": "string", "maxLength": 280 },
+    "inbox_class": { "enum": ["urgent", "decision", "fyi"] },
+    "deadline_at": { "$ref": "#/$defs/isoTimestamp" },
+    "risk_class": {
+      "enum": ["deploy", "spend", "credential", "security", "normal"]
+    }
+  },
+  "$defs": {
+    "utcTimestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?\\+00:00$"
+    },
+    "isoTimestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})$"
+    },
+    "optionV2": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "label": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "note": { "type": "string", "maxLength": 200 }
+      }
+    }
+  }
+}
