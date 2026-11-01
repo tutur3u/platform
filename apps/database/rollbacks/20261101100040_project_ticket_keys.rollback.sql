@@ -1,6 +1,6 @@
 -- Manual rollback only: removes project ticket keys and per-project ticket
 -- numbers, and restores the task save and history restore functions that
--- replace every project link. Run the 20261029060055 and 20261029060050
+-- replace every project link. Run the 20261101100055 and 20261101100050
 -- rollbacks first. Export task_projects.ticket_key and
 -- task_project_tasks.ticket_number before running: they are dropped.
 BEGIN;
