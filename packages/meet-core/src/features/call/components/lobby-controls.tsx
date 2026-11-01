@@ -143,6 +143,9 @@ export function LobbyDevicePickers({
         const unlisted =
           !!value && !options.some((device) => device.deviceId === value);
         const selectedValue = value || 'default';
+        // Firefox implements setSinkId() but lists speakers only after
+        // selectAudioOutput(); with nothing to pick, stay on System default.
+        const nothingToPick = kind === 'audiooutput' && options.length === 0;
 
         return (
           <div className="min-w-0 space-y-1.5" key={kind}>
@@ -154,7 +157,7 @@ export function LobbyDevicePickers({
               <span className="truncate">{label}</span>
             </Label>
             <Select
-              disabled={disabled || !supported}
+              disabled={disabled || !supported || nothingToPick}
               onValueChange={(next) => onChange(next === 'default' ? '' : next)}
               value={selectedValue}
             >

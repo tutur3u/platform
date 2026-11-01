@@ -120,3 +120,26 @@ it('lets "System default" recover a selected device that is no longer listed', a
   );
   expect(props.onAudioDeviceChange).toHaveBeenCalledWith('');
 });
+
+it('disables the speaker picker when setSinkId exists but no outputs are enumerable (Firefox)', () => {
+  render(
+    localized(
+      <LobbyDevicePickers
+        {...pickerProps({
+          devices: devices.filter((device) => device.kind !== 'audiooutput'),
+        })}
+      />
+    )
+  );
+
+  const output = screen.getByLabelText(
+    en.meet.call.audio_output
+  ) as HTMLButtonElement;
+  expect(output.disabled).toBe(true);
+  expect(output.textContent).toContain(en.meet.call.system_default);
+  expect(screen.queryByText(en.meet.call.output_unsupported)).toBeNull();
+  expect(
+    (screen.getByLabelText(en.meet.call.audio_input) as HTMLButtonElement)
+      .disabled
+  ).toBe(false);
+});
