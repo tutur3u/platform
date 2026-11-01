@@ -58,6 +58,7 @@ BEGIN
 END;
 $$;
 
+-- tuturuuu: no-grant (trigger)
 REVOKE ALL ON FUNCTION private.sync_task_board_sprint_membership() FROM PUBLIC, anon, authenticated;
 
 DROP TRIGGER IF EXISTS sync_task_board_sprint_membership ON public.tasks;

@@ -243,7 +243,7 @@ CREATE OR REPLACE FUNCTION private.create_planned_board_sprint(
 RETURNS public.task_cycles
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
   v_board RECORD;
@@ -291,9 +291,11 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION private.board_sprint_next_monday(DATE) FROM PUBLIC;
-REVOKE ALL ON FUNCTION private.board_sprint_end_date(DATE, INTEGER) FROM PUBLIC;
-REVOKE ALL ON FUNCTION private.create_planned_board_sprint(UUID, DATE, UUID) FROM PUBLIC;
+-- Internal helpers, called only by the sprint RPCs below.
+-- tuturuuu: no-grant (internal)
+REVOKE ALL ON FUNCTION private.board_sprint_next_monday(DATE) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION private.board_sprint_end_date(DATE, INTEGER) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION private.create_planned_board_sprint(UUID, DATE, UUID) FROM PUBLIC, anon, authenticated;
 
 -- 7. Turning sprints on, off or changing their length.
 CREATE OR REPLACE FUNCTION public.set_board_sprint_length(
@@ -304,7 +306,7 @@ CREATE OR REPLACE FUNCTION public.set_board_sprint_length(
 RETURNS public.task_cycles
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
   v_active public.task_cycles%ROWTYPE;
@@ -382,7 +384,7 @@ CREATE OR REPLACE FUNCTION public.start_board_sprint(
 RETURNS public.task_cycles
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
   v_cycle public.task_cycles%ROWTYPE;
