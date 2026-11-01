@@ -14,7 +14,7 @@ vi.mock('@tuturuuu/ui/tooltip', () => ({
 }));
 
 describe('TaskCardIdentifierRow', () => {
-  it('renders the selection checkbox before the external source and task identifier', () => {
+  it('renders the selection checkbox before the external source', () => {
     const onSelect = vi.fn();
 
     render(
@@ -30,9 +30,6 @@ describe('TaskCardIdentifierRow', () => {
         selectTaskTooltipLabel="Select task"
         selectionCheckboxClassName={getTaskCardSelectionIconToneClasses('BLUE')}
         taskListStatus="active"
-        ticketBadgeClassName="text-dynamic-blue"
-        ticketIdentifier="OH-167"
-        ticketTitle="Task OH-167"
       />
     );
 
@@ -41,14 +38,11 @@ describe('TaskCardIdentifierRow', () => {
     const checkbox = screen.getByRole('checkbox', {
       name: 'Select Draft response',
     });
-    const ticket = screen.getByTestId('task-card-ticket-identifier');
 
     expect(checkboxControl.compareDocumentPosition(source)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
-    expect(source.compareDocumentPosition(ticket)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING
-    );
+    expect(screen.queryByTestId('task-card-ticket-identifier')).toBeNull();
     expect(checkboxControl).toHaveClass(
       'border-dynamic-blue/70',
       'bg-dynamic-blue/5'
@@ -60,7 +54,7 @@ describe('TaskCardIdentifierRow', () => {
     expect(checkboxControl).not.toHaveClass('bg-background/80');
     expect(
       screen.getAllByTestId('tooltip-content').map((node) => node.textContent)
-    ).toEqual(['Select task', 'Upskii / Roadmap / Review', 'Task OH-167']);
+    ).toEqual(['Select task', 'Upskii / Roadmap / Review']);
 
     fireEvent.click(checkbox);
     expect(onSelect).toHaveBeenCalledTimes(1);
@@ -77,8 +71,6 @@ describe('TaskCardIdentifierRow', () => {
         selectTaskLabel="Select task"
         selectionCheckboxClassName={getTaskCardSelectionIconToneClasses('RED')}
         taskListStatus="active"
-        ticketIdentifier="OH-175"
-        ticketTitle="Task OH-175"
       />
     );
 
@@ -99,7 +91,7 @@ describe('TaskCardIdentifierRow', () => {
     expect(selectionIcon).toHaveClass('size-4');
   });
 
-  it('renders the selection checkbox before an internal task identifier', () => {
+  it('renders only the selection checkbox for an internal task', () => {
     render(
       <TaskCardIdentifierRow
         documentLabel="Document"
@@ -112,21 +104,17 @@ describe('TaskCardIdentifierRow', () => {
           'GREEN'
         )}
         taskListStatus="active"
-        ticketIdentifier="OH-174"
-        ticketTitle="Task OH-174"
       />
     );
 
-    const checkbox = screen.getByTestId('task-card-selection-checkbox');
-    const ticket = screen.getByTestId('task-card-ticket-identifier');
-
-    expect(checkbox.compareDocumentPosition(ticket)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING
-    );
+    expect(
+      screen.getByTestId('task-card-selection-checkbox')
+    ).toBeInTheDocument();
     expect(screen.queryByTestId('task-card-external-source')).toBeNull();
+    expect(screen.queryByTestId('task-card-ticket-identifier')).toBeNull();
   });
 
-  it('keeps document selection and compact badges on one row without a ticket id', () => {
+  it('keeps document selection and compact badges on one row', () => {
     render(
       <TaskCardIdentifierRow
         documentLabel="Document"
@@ -140,8 +128,6 @@ describe('TaskCardIdentifierRow', () => {
           'PURPLE'
         )}
         taskListStatus="documents"
-        ticketIdentifier="WEB-54"
-        ticketTitle="Task WEB-54"
       />
     );
 
@@ -188,8 +174,6 @@ describe('TaskCardIdentifierRow', () => {
         isSelected={false}
         selectTaskLabel="Select task"
         taskListStatus="active"
-        ticketIdentifier={null}
-        ticketTitle=""
       />
     );
 
@@ -207,8 +191,8 @@ describe('TaskCardIdentifierRow', () => {
     );
   });
 
-  it('omits the selector outside multi-select mode', () => {
-    render(
+  it('renders nothing for a plain task outside multi-select mode', () => {
+    const { container } = render(
       <TaskCardIdentifierRow
         documentLabel="Document"
         externalSourceLabel="Source"
@@ -217,14 +201,10 @@ describe('TaskCardIdentifierRow', () => {
         isSelected={false}
         selectTaskLabel="Select task"
         taskListStatus="active"
-        ticketIdentifier="OH-174"
-        ticketTitle="Task OH-174"
       />
     );
 
-    expect(screen.queryByTestId('task-card-selection-checkbox')).toBeNull();
-    expect(screen.getByTestId('task-card-ticket-identifier')).toHaveTextContent(
-      'OH-174'
-    );
+    // The ticket ID now prefixes the card title instead of sitting here.
+    expect(container).toBeEmptyDOMElement();
   });
 });

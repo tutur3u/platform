@@ -167,3 +167,11 @@ export function getTaskCardHydratingOpenOptions({
       : {}),
   };
 }
+
+/** The card title's accessible name keeps the visible "[ID] Title" prefix. */
+export function getTaskCardTitleName(
+  name: string,
+  ticketIdentifier: string | null | undefined
+) {
+  return ticketIdentifier ? `[${ticketIdentifier}] ${name}` : name;
+}
