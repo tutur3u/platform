@@ -13,15 +13,21 @@ import {
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { PROJECT_TICKET_KEY_PATTERN } from '@tuturuuu/utils/task-project-ticket-key';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
+import { ProjectTicketKeyField } from '../projectId/components/project-ticket-key-field';
 import type { TaskProject } from '../types';
 
 interface EditProjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   project: TaskProject | null;
-  onSubmit: (data: { name: string; description?: string }) => void;
+  onSubmit: (data: {
+    name: string;
+    description?: string;
+    ticket_key?: string;
+  }) => void;
   isUpdating: boolean;
 }
 
@@ -35,21 +41,28 @@ export function EditProjectDialog({
   const t = useTranslations('task-projects.edit_dialog');
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [ticketKey, setTicketKey] = useState('');
+  const ticketKeyValid =
+    ticketKey === (project?.ticket_key ?? '') ||
+    PROJECT_TICKET_KEY_PATTERN.test(ticketKey);
 
   useEffect(() => {
     if (project) {
       setName(project.name);
       setDescription(project.description || '');
+      setTicketKey(project.ticket_key ?? '');
     }
   }, [project]);
 
   const handleSubmit = () => {
     const trimmedName = name.trim();
-    if (!trimmedName) return; // Prevent empty names
+    if (!trimmedName || !ticketKeyValid) return;
 
     onSubmit({
       name: trimmedName,
       description: description.trim() || undefined,
+      // Only send a changed key: choosing one needs project management.
+      ticket_key: ticketKey !== project?.ticket_key ? ticketKey : undefined,
     });
   };
 
@@ -82,6 +95,7 @@ export function EditProjectDialog({
               disabled={isUpdating}
             />
           </div>
+          <ProjectTicketKeyField value={ticketKey} onChange={setTicketKey} />
           <div className="space-y-2">
             <Label
               htmlFor="edit-project-description"
@@ -108,7 +122,10 @@ export function EditProjectDialog({
           >
             {t('cancel')}
           </Button>
-          <Button onClick={handleSubmit} disabled={isUpdating || !name.trim()}>
+          <Button
+            onClick={handleSubmit}
+            disabled={isUpdating || !name.trim() || !ticketKeyValid}
+          >
             {isUpdating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

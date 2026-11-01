@@ -288,6 +288,38 @@ describe('listBoardTasksForSearch', () => {
     });
   });
 
+  it('loads the remaining pages side by side, in order, once the total is known', async () => {
+    const page = (offset: number) =>
+      Array.from({ length: offset === 600 ? 50 : 200 }, (_, index) =>
+        buildTask({ id: `task-${offset + index}` })
+      );
+    let inFlight = 0;
+    let most = 0;
+    listWorkspaceTasksMock.mockImplementation(
+      async (_workspaceId: string, options: ListWorkspaceTasksOptions) => {
+        inFlight += 1;
+        most = Math.max(most, inFlight);
+        // Later pages answer first; the result still keeps page order.
+        await new Promise((resolve) =>
+          setTimeout(resolve, 30 - (options.offset ?? 0) / 40)
+        );
+        inFlight -= 1;
+        return { tasks: page(options.offset ?? 0), count: 650 };
+      }
+    );
+
+    const tasks = await listBoardTasksForSearch('ws-1', {
+      boardId: 'board-1',
+      limit: 200,
+    });
+
+    expect(tasks).toHaveLength(650);
+    expect(tasks[0]?.id).toBe('task-0');
+    expect(tasks.at(-1)?.id).toBe('task-649');
+    expect(listWorkspaceTasksMock).toHaveBeenCalledTimes(4);
+    expect(most).toBe(3);
+  });
+
   it('rejects a later-page failure instead of caching a partial board', async () => {
     listWorkspaceTasksMock
       .mockResolvedValueOnce({ tasks: [nameMatch], count: 2 })

@@ -69,6 +69,17 @@ Sort offers only highest priority first, lowest priority first, and clearing the
 sort to return to the board's normal order. It does not offer due-date, name,
 creation-date or estimate sorting.
 
+Filters, search and sort on the board's own tasks run in the browser. The first
+one loads an unfiltered copy of the board once (all its pages, a few at a time),
+or uses the board cache when every list is already loaded; every later filter,
+search or sort change, and the per-list counts that hide empty lists, come from
+that copy with no request. Pointing at the search or filter row starts loading
+the copy early. While it loads, the loaded matches show and lists stop loading
+more pages. Search here also matches labels, projects and assignee names.
+Tasks from other boards (another source scope) are still filtered on the
+server, and the previous result stays on screen until the next one arrives.
+A filtered list's count is its matches, not the unfiltered list total.
+
 ## More and button styles
 
 More contains Choose tasks, Board settings, Refresh, Hide sidebar, Create board
@@ -104,6 +115,7 @@ Regression coverage:
 - `packages/tasks-ui/src/tu-do/shared/board-header/use-board-header-data.test.tsx`
 - `packages/tasks-ui/src/tu-do/shared/__tests__/board-header.test.tsx`
 - `packages/tasks-ui/src/tu-do/shared/__tests__/board-views.test.tsx`
+- `packages/tasks-ui/src/tu-do/shared/__tests__/board-task-search.test.ts`
 - `packages/tasks-ui/src/tu-do/shared/board-user-presence-avatars.test.tsx`
 - `packages/tasks-ui/src/tu-do/projects/projectId/task-project-detail.test.tsx`
 - `packages/tasks-ui/src/tu-do/projects/projectId/components/__tests__/tasks-tab-layout.test.tsx`

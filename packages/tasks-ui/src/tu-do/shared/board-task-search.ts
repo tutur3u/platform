@@ -141,38 +141,57 @@ export function mergeListCountsByListId(
 }
 
 /** Sorted and filtered boards must not treat one page as the full task set. */
+/** Pages fetched at once when loading every page of a board. */
+const PARALLEL_PAGES = 4;
+
 async function listAllBoardTaskPages(
   workspaceId: string,
   options: ListWorkspaceTasksOptions
 ): Promise<Task[]> {
   const limit = Math.min(200, Math.max(1, options.limit ?? 200));
-  let offset = options.offset ?? 0;
-  const tasks: Task[] = [];
-
-  while (true) {
-    const response = await listWorkspaceTasks(workspaceId, {
+  const start = options.offset ?? 0;
+  const page = (offset: number) =>
+    listWorkspaceTasks(workspaceId, {
       ...options,
       includeCount: true,
       limit,
       offset,
     });
+
+  const first = await page(start);
+  const tasks: Task[] = [...first.tasks];
+
+  if (typeof first.count === 'number') {
+    // The total is known, so the remaining pages load a few at a time.
+    const offsets: number[] = [];
+    for (
+      let offset = start + first.tasks.length;
+      first.tasks.length > 0 && offset < first.count;
+      offset += limit
+    ) {
+      offsets.push(offset);
+    }
+    for (let i = 0; i < offsets.length; i += PARALLEL_PAGES) {
+      const batch = offsets.slice(i, i + PARALLEL_PAGES);
+      for (const response of await Promise.all(batch.map(page))) {
+        tasks.push(...response.tasks);
+      }
+    }
+    return mergeTasksById(tasks, []);
+  }
+
+  let offset = start + first.tasks.length;
+  let last = first.tasks.length;
+  while (last === limit) {
+    const response = await page(offset);
     tasks.push(...response.tasks);
     offset += response.tasks.length;
-
-    if (response.tasks.length === 0) break;
-    if (
-      typeof response.count === 'number'
-        ? offset >= response.count
-        : response.tasks.length < limit
-    ) {
-      break;
-    }
+    last = response.tasks.length;
   }
 
   return mergeTasksById(tasks, []);
 }
 
-/** Loads every name-search page and merges exact-identifier hits first. */
 export async function listBoardTasksForSearch(
   workspaceId: string,
   options: ListWorkspaceTasksOptions

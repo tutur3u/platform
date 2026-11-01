@@ -17,6 +17,9 @@ import { getSprintTasksQueryKey } from './use-sprint-plan-data';
 
 type TaskAssignee = NonNullable<Task['assignees']>[number];
 
+/** The move the owner waited for failed; its own toast already said so. */
+class PlanMoveFailed extends Error {}
+
 /** Where a dragged or picked task comes from and goes to; null is the backlog. */
 export interface PlanMove {
   from: string | null;
@@ -60,9 +63,12 @@ export function usePlanAssignment({
 
   const mutation = useMutation({
     mutationFn: ({
+      after,
       assigneeIds,
       taskId,
     }: {
+      /** A sprint move that must land first; the owner shows meanwhile. */
+      after?: Promise<unknown>;
       assigneeIds: string[];
       previousAssignees: TaskAssignee[];
       taskId: string;
@@ -70,6 +76,11 @@ export function usePlanAssignment({
       const previous = requestChain.current.get(taskId) ?? Promise.resolve();
       const request = previous
         .catch(() => undefined)
+        .then(() =>
+          after?.catch(() => {
+            throw new PlanMoveFailed();
+          })
+        )
         .then(() =>
           updateWorkspaceTask(wsId, taskId, { assignee_ids: assigneeIds })
         );
@@ -106,7 +117,7 @@ export function usePlanAssignment({
       inFlight.current.pending += 1;
       return { mutationId };
     },
-    onError: (_error, { previousAssignees, taskId }, context) => {
+    onError: (error, { previousAssignees, taskId }, context) => {
       inFlight.current.failed = true;
       // Roll back only this task's owners, and only if no newer move replaced them.
       if (
@@ -120,7 +131,7 @@ export function usePlanAssignment({
           updater: (task) => ({ ...task, assignees: previousAssignees }),
         });
       }
-      toast.error(t('assign_failed'));
+      if (!(error instanceof PlanMoveFailed)) toast.error(t('assign_failed'));
     },
     onSuccess: (_data, { taskId }) => {
       broadcast?.('task:relations-changed', { taskId });
@@ -148,7 +159,7 @@ export function usePlanAssignment({
     },
   });
 
-  const move = (task: Task, plan: PlanMove) => {
+  const move = (task: Task, plan: PlanMove, after?: Promise<unknown>) => {
     const current = (task.assignees ?? []).map((assignee) => assignee.id);
     const next = getPlanMoveAssigneeIds(current, plan);
     const unchanged =
@@ -156,6 +167,7 @@ export function usePlanAssignment({
       next.every((id) => current.includes(id));
     if (unchanged) return;
     mutation.mutate({
+      after,
       assigneeIds: next,
       previousAssignees: task.assignees ?? [],
       taskId: task.id,

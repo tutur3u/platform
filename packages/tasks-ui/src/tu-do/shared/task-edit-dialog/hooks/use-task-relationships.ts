@@ -13,7 +13,10 @@ import {
   getActiveBroadcast,
   useBoardBroadcast,
 } from '../../board-broadcast-context';
-import { patchTaskInVisibleCaches } from '../../task-cache-patches';
+import {
+  patchSavedTaskProjects,
+  patchTaskInVisibleCaches,
+} from '../../task-cache-patches';
 import type {
   WorkspaceTaskAssignee,
   WorkspaceTaskLabel,
@@ -336,11 +339,12 @@ export function useTaskRelationships({
           ? selectedProjects.filter((entry) => entry.id !== project.id)
           : [...selectedProjects, project];
 
-        await updateWorkspaceTask(metadataWorkspaceId, taskId, {
+        const saved = await updateWorkspaceTask(metadataWorkspaceId, taskId, {
           project_ids: nextSelectedProjects.map((entry) => entry.id),
         });
 
-        setSelectedProjects(nextSelectedProjects);
+        // The saved copy carries the key and number the server gave a new link.
+        setSelectedProjects(saved.task.projects ?? nextSelectedProjects);
         patchTaskInVisibleCaches({
           queryClient,
           boardId,
@@ -350,6 +354,7 @@ export function useTaskRelationships({
             projects: normalizeTaskProjects(nextSelectedProjects),
           }),
         });
+        patchSavedTaskProjects({ queryClient, boardId, task: saved.task });
         queryClient.invalidateQueries({ queryKey: ['task-history'] });
         broadcast?.('task:relations-changed', { taskId });
         getActiveBoardRefresh()?.({ invalidateTasks: false });
@@ -499,11 +504,12 @@ export function useTaskRelationships({
       } else if (taskId) {
         const nextSelectedProjects = [...selectedProjects, newProject];
 
-        await updateWorkspaceTask(metadataWorkspaceId, taskId, {
+        const saved = await updateWorkspaceTask(metadataWorkspaceId, taskId, {
           project_ids: nextSelectedProjects.map((entry) => entry.id),
         });
 
-        setSelectedProjects(nextSelectedProjects);
+        // The saved copy carries the key and number the server gave a new link.
+        setSelectedProjects(saved.task.projects ?? nextSelectedProjects);
         patchTaskInVisibleCaches({
           queryClient,
           boardId,
@@ -513,6 +519,7 @@ export function useTaskRelationships({
             projects: normalizeTaskProjects(nextSelectedProjects),
           }),
         });
+        patchSavedTaskProjects({ queryClient, boardId, task: saved.task });
         broadcast?.('task:relations-changed', { taskId });
         getActiveBoardRefresh()?.({ invalidateTasks: false });
         onUpdate();
