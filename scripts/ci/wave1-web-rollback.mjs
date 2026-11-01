@@ -1,7 +1,7 @@
 // biome-ignore-all lint/suspicious/noUndeclaredEnvVars: Direct CI entrypoint; credentials never enter Turbo builds.
 // Worker-scoped automatic rollback after a red verify-ingress (Tess R-d).
 //
-//   node scripts/ci/wave1-web-rollback.mjs <sha>
+//   node scripts/ci/wave1-web-rollback.mjs <sha> [--dry-run]
 //
 // Restores the staging issuer Worker to the deployment the publisher captured
 // before this SHA's upload, using the signed attempt ledger. It makes exactly
@@ -12,6 +12,7 @@
 import assert from 'node:assert/strict';
 import { appendFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+import { parseDryRunArgs } from './dry-run-args.mjs';
 import { readAttemptRecord } from './wave1-native-attempt.mjs';
 import { profileFor } from './wave1-native-profile.mjs';
 import { boundedJson, requireRollback } from './wave1-native-publish.mjs';
@@ -106,24 +107,53 @@ export async function rollbackWeb({ env, sha, fetcher = fetch }) {
   return { worker: p.name, restored: target };
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
-  rollbackWeb({ env: process.env, sha: process.argv[2] })
-    .then(({ worker, restored }) => {
-      const line = `Rolled ${worker} back to ${restored.map((v) => `${v.version_id}@${v.percentage}%`).join(', ')}. Release owner: decide on S1/S1b.`;
-      console.log(line);
-      if (process.env.GITHUB_STEP_SUMMARY)
-        appendFileSync(
-          process.env.GITHUB_STEP_SUMMARY,
-          `## Worker rolled back\n\n${line}\n`
-        );
-    })
-    .catch((error) => {
-      const line = `Automatic Worker rollback failed: ${error instanceof Error ? error.message : 'unknown'}. Apply S1/S1b now.`;
-      console.error(line);
-      if (process.env.GITHUB_STEP_SUMMARY)
-        appendFileSync(
-          process.env.GITHUB_STEP_SUMMARY,
-          `## Rollback FAILED\n\n${line}\n`
-        );
+// Prints the intended actions without any network access (`--dry-run`).
+export function describeRollbackPlan({ sha }) {
+  assert.match(sha ?? '', /^[a-f0-9]{40}$/u, 'Exact source SHA required');
+  return [
+    `[dry-run] Would roll the staging web issuer Worker back for ${sha}:`,
+    '  1. read the signed attempt ledger for this SHA (read)',
+    '  2. read the active Worker deployment and refuse unless this SHA is serving (read)',
+    '  3. POST one Cloudflare Worker deployment of the captured prior versions (the only write)',
+    '  4. re-read the deployment and confirm the prior versions are active (read)',
+    '[dry-run] No request was made.',
+  ];
+}
+
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  const cli = parseDryRunArgs(process.argv.slice(2));
+  if (cli.dryRun) {
+    try {
+      for (const line of describeRollbackPlan({ sha: cli.args[0] }))
+        console.log(line);
+    } catch (error) {
+      console.error(
+        error instanceof Error ? error.message : 'Web rollback dry run failed'
+      );
       process.exitCode = 1;
-    });
+    }
+  } else
+    rollbackWeb({ env: process.env, sha: process.argv[2] })
+      .then(({ worker, restored }) => {
+        const line = `Rolled ${worker} back to ${restored.map((v) => `${v.version_id}@${v.percentage}%`).join(', ')}. Release owner: decide on S1/S1b.`;
+        console.log(line);
+        if (process.env.GITHUB_STEP_SUMMARY)
+          appendFileSync(
+            process.env.GITHUB_STEP_SUMMARY,
+            `## Worker rolled back\n\n${line}\n`
+          );
+      })
+      .catch((error) => {
+        const line = `Automatic Worker rollback failed: ${error instanceof Error ? error.message : 'unknown'}. Apply S1/S1b now.`;
+        console.error(line);
+        if (process.env.GITHUB_STEP_SUMMARY)
+          appendFileSync(
+            process.env.GITHUB_STEP_SUMMARY,
+            `## Rollback FAILED\n\n${line}\n`
+          );
+        process.exitCode = 1;
+      });
+}
