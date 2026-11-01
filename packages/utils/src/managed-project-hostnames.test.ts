@@ -36,6 +36,8 @@ describe('managed project hostname reservation', () => {
     'meet.tuturuuu.com',
     'dev.tuturuuu.com',
     'a.b.tuturuuu.com',
+    'tutur3u.com',
+    'app.tutur3u.com',
     'web.staging.tutur3u.com',
     'staging.tutur3u.com',
     'localhost',
@@ -50,6 +52,10 @@ describe('managed project hostname reservation', () => {
     'forms.tuturuuu.com.',
     ' HTTPS://Meet.Tuturuuu.com./room ',
     'TUTURUUU.COM..',
+    'TUTUR3U.COM',
+    'tutur3u.com.',
+    'App.Tutur3u.COM.',
+    'HTTPS://Web.Tutur3u.com./x',
   ])('normalizes case, scheme, path and trailing dots for %s', (host) => {
     expect(isReservedManagedProjectHostname(host)).toBe(true);
   });
@@ -59,10 +65,30 @@ describe('managed project hostname reservation', () => {
     'tuturuuu.com.example.org',
     'nottuturuuu.com',
     'tuturuuu.co',
-    'tutur3u.com',
-    'app.tutur3u.com',
+    'tutur3u.com.evil.example',
+    'xtutur3u.com',
+    'tutur3u.co',
+    'tutur3u.com-evil.example',
+    'app.tutur3u.com.evil.example',
   ])('still allows customer hostname %s', (host) => {
     expect(isReservedManagedProjectHostname(host)).toBe(false);
+  });
+
+  it.each([
+    'a.b.tutur3u.com',
+    'one.two.three.tutur3u.com',
+    'xn--e1afmkfd.tutur3u.com',
+    'xn--tutur3u-9ya.tutur3u.com',
+  ])('reserves nested or punycode subdomain %s of the staging apex', (host) => {
+    expect(isReservedManagedProjectHostname(host)).toBe(true);
+  });
+
+  it.each([
+    'tutur\u0430u.com',
+    '\uff54\uff55\uff54\uff55\uff52\u0033\uff55.com',
+    'app.tutur3u\uff0ecom',
+  ])('fails closed for non-ASCII lookalike %j', (host) => {
+    expect(isReservedManagedProjectHostname(host)).toBe(true);
   });
 
   it('normalizes to a bare lowercase hostname', () => {
