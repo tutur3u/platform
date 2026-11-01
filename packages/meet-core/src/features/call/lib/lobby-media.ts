@@ -3,6 +3,12 @@ import { useSyncExternalStore } from 'react';
 const NOISE_FLOOR = 0.004;
 const RMS_GAIN = 5;
 const EMPTY_DEVICES: readonly MediaDeviceInfo[] = [];
+/**
+ * Browser alias entries that duplicate a real device: `default` everywhere and
+ * Chrome-on-Windows' `communications` endpoint. The pickers expose a separate
+ * "System default" choice instead.
+ */
+const PSEUDO_DEVICE_IDS = new Set(['default', 'communications']);
 
 export type MediaDevicesLike = Pick<MediaDevices, 'enumerateDevices'> &
   Partial<Pick<MediaDevices, 'addEventListener' | 'removeEventListener'>>;
@@ -50,7 +56,7 @@ export function filterDevicesByKind(
     if (
       device.kind !== kind ||
       !device.deviceId ||
-      device.deviceId === 'default' ||
+      PSEUDO_DEVICE_IDS.has(device.deviceId) ||
       seen.has(device.deviceId)
     )
       continue;

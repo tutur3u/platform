@@ -21,9 +21,14 @@ it('maps silence to zero and normal speech RMS to a bounded [0, 1] level', () =>
   expect(computeRmsLevel([0.9, -0.9, 0.9, -0.9])).toBe(1);
 });
 
-it('filters duplicate and default device entries while preserving order', () => {
+it('filters duplicate, default and communications entries while preserving order', () => {
   const devices = [
     { kind: 'audioinput', deviceId: 'default', label: 'Default' },
+    {
+      kind: 'audioinput',
+      deviceId: 'communications',
+      label: 'Communications - Headset',
+    },
     { kind: 'audioinput', deviceId: '', label: 'Blank' },
     { kind: 'audioinput', deviceId: 'mic-1', label: 'USB Mic' },
     { kind: 'audioinput', deviceId: 'mic-1', label: 'USB Mic duplicate' },
