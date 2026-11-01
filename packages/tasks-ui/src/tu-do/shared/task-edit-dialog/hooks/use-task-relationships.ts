@@ -13,10 +13,7 @@ import {
   getActiveBroadcast,
   useBoardBroadcast,
 } from '../../board-broadcast-context';
-import {
-  patchSavedTaskProjects,
-  patchTaskInVisibleCaches,
-} from '../../task-cache-patches';
+import { patchTaskInVisibleCaches } from '../../task-cache-patches';
 import type {
   WorkspaceTaskAssignee,
   WorkspaceTaskLabel,
@@ -351,10 +348,11 @@ export function useTaskRelationships({
           taskId,
           updater: (task) => ({
             ...task,
-            projects: normalizeTaskProjects(nextSelectedProjects),
+            projects:
+              saved.task.projects ??
+              normalizeTaskProjects(nextSelectedProjects),
           }),
         });
-        patchSavedTaskProjects({ queryClient, boardId, task: saved.task });
         queryClient.invalidateQueries({ queryKey: ['task-history'] });
         broadcast?.('task:relations-changed', { taskId });
         getActiveBoardRefresh()?.({ invalidateTasks: false });
@@ -516,10 +514,11 @@ export function useTaskRelationships({
           taskId,
           updater: (task) => ({
             ...task,
-            projects: normalizeTaskProjects(nextSelectedProjects),
+            projects:
+              saved.task.projects ??
+              normalizeTaskProjects(nextSelectedProjects),
           }),
         });
-        patchSavedTaskProjects({ queryClient, boardId, task: saved.task });
         broadcast?.('task:relations-changed', { taskId });
         getActiveBoardRefresh()?.({ invalidateTasks: false });
         onUpdate();

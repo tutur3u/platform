@@ -12,7 +12,8 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { SprintMoveItems, type SprintMoveTarget } from '../sprint-move-items';
+import { SprintMoveItems } from '../sprint-move-items';
+import type { SprintMoveTarget } from '../use-board-sprints';
 
 /** Moves one task to another open sprint, a new one, or out of every sprint. */
 export function PlanSprintMenu({

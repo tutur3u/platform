@@ -16,12 +16,10 @@ import {
 } from '@tuturuuu/utils/task-helper/sprints';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { SprintMoveItems } from '../../board-sprints/sprint-move-items';
 import {
   NEW_SPRINT,
-  SprintMoveItems,
   type SprintMoveTarget,
-} from '../../board-sprints/sprint-move-items';
-import {
   useBoardSprintMutations,
   useBoardSprints,
 } from '../../board-sprints/use-board-sprints';

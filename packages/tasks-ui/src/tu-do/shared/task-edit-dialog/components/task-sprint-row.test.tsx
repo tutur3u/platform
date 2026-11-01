@@ -61,6 +61,7 @@ vi.mock('@tuturuuu/ui/sonner', () => ({
 }));
 
 vi.mock('../../board-sprints/use-board-sprints', () => ({
+  NEW_SPRINT: 'new',
   useBoardSprints: () => state.sprints,
   useBoardSprintMutations: () => ({
     moveTasks: { isPending: state.pending, mutate: state.mutate },
