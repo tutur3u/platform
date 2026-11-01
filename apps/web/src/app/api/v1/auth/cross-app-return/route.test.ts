@@ -77,45 +77,45 @@ describe('cross-app return route', () => {
     });
   });
 
-  it.each([
-    ['rewise', 'https://rewise.me'],
-    ['nova', 'https://nova.ai.vn'],
-  ])('verifies the canonical %s origin before sign-in', async (app, origin) => {
-    const response = await POST(
-      createRequest(`${origin}/verify-token?nextUrl=%2F`, {
-        generateToken: false,
-      })
-    );
+  it.each([['nova', 'https://nova.ai.vn']])(
+    'verifies the canonical %s origin before sign-in',
+    async (app, origin) => {
+      const response = await POST(
+        createRequest(`${origin}/verify-token?nextUrl=%2F`, {
+          generateToken: false,
+        })
+      );
 
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ appName: app, targetApp: app });
-    expect(mocks.getExternalAppByReturnUrl).not.toHaveBeenCalled();
-    expect(mocks.rpc).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ appName: app, targetApp: app });
+      expect(mocks.getExternalAppByReturnUrl).not.toHaveBeenCalled();
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    }
+  );
 
-  it.each([
-    ['rewise', 'https://rewise.me'],
-    ['nova', 'https://nova.ai.vn'],
-  ])('returns a %s token to its canonical verifier', async (app, origin) => {
-    const response = await POST(
-      createRequest(`${origin}/verify-token?nextUrl=%2Fpersonal`)
-    );
+  it.each([['nova', 'https://nova.ai.vn']])(
+    'returns a %s token to its canonical verifier',
+    async (app, origin) => {
+      const response = await POST(
+        createRequest(`${origin}/verify-token?nextUrl=%2Fpersonal`)
+      );
 
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    const returnUrl = new URL(body.returnUrl);
-    expect(body.targetApp).toBe(app);
-    expect(returnUrl.origin).toBe(origin);
-    expect(returnUrl.pathname).toBe('/verify-token');
-    expect(returnUrl.searchParams.get('nextUrl')).toBe('/personal');
-    expect(returnUrl.searchParams.get('token')).toBe('cross-app-token');
-    expect(returnUrl.searchParams.get('targetApp')).toBe(app);
-    expect(mocks.rpc).toHaveBeenCalledWith(
-      'generate_cross_app_token',
-      expect.objectContaining({ p_target_app: app })
-    );
-    expect(mocks.getExternalAppByReturnUrl).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      const returnUrl = new URL(body.returnUrl);
+      expect(body.targetApp).toBe(app);
+      expect(returnUrl.origin).toBe(origin);
+      expect(returnUrl.pathname).toBe('/verify-token');
+      expect(returnUrl.searchParams.get('nextUrl')).toBe('/personal');
+      expect(returnUrl.searchParams.get('token')).toBe('cross-app-token');
+      expect(returnUrl.searchParams.get('targetApp')).toBe(app);
+      expect(mocks.rpc).toHaveBeenCalledWith(
+        'generate_cross_app_token',
+        expect.objectContaining({ p_target_app: app })
+      );
+      expect(mocks.getExternalAppByReturnUrl).not.toHaveBeenCalled();
+    }
+  );
 
   it('routes internal app login return URLs through the local verifier', async () => {
     const response = await POST(

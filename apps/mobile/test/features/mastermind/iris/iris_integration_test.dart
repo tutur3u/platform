@@ -65,12 +65,15 @@ void main() {
       expect(inboxLocation(), '/mastermind/inbox');
     });
 
-    test('on: Chat is first and the default; Needs you is explicit', () {
+    test('on: Chat is first but Needs you stays the default', () {
       debugOverrideMastermindIris(enabled: true);
       expect(availableInboxSegments.first, InboxSegment.chat);
-      expect(inboxSegmentFromQuery(null), InboxSegment.chat);
-      expect(inboxLocation(), '/mastermind/inbox?segment=needs-you');
-      expect(inboxLocation(segment: InboxSegment.chat), '/mastermind/inbox');
+      expect(inboxSegmentFromQuery(null), InboxSegment.needsYou);
+      expect(inboxLocation(), '/mastermind/inbox');
+      expect(
+        inboxLocation(segment: InboxSegment.chat),
+        '/mastermind/inbox?segment=chat',
+      );
     });
 
     test('the hub capability turns it on without a define', () {
@@ -80,7 +83,7 @@ void main() {
     });
   });
 
-  testWidgets('with Iris on, the Inbox opens on Chat with What needs me', (
+  testWidgets('with Iris on, the Chat segment shows What needs me', (
     tester,
   ) async {
     debugOverrideMastermindIris(enabled: true);
@@ -105,7 +108,7 @@ void main() {
       harness.wrap(
         BlocProvider(
           create: (_) => ShellChromeActionsCubit(),
-          child: const MastermindInboxPage(),
+          child: const MastermindInboxPage(initialSegment: InboxSegment.chat),
         ),
       ),
     );

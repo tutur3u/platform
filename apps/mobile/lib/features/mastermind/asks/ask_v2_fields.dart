@@ -89,6 +89,17 @@ final class AskV2Fields {
   final AskRiskClass? riskClass;
   final bool? textComplete;
   final bool? reversible;
+
+  /// Whether the hub sent any p2 inbox field. A hub that sends them also
+  /// sends `risk_class`, so a null `risk_class` next to these is suspect.
+  bool get hasP2Fields =>
+      optionsV2.isNotEmpty ||
+      recommendedId != null ||
+      recommendedWhy != null ||
+      inboxClass != null ||
+      deadlineAt != null ||
+      textComplete != null ||
+      reversible != null;
 }
 
 const askV2FieldsEmpty = AskV2Fields();

@@ -6,6 +6,7 @@ import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_state.dart'
 import 'package:mobile/features/mastermind/data/hub_capabilities.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/ask_card_source.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_state.dart';
 import 'package:mobile/features/mastermind/replies/reply_idempotency_key.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
@@ -45,7 +46,7 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
        super(const MastermindRepliesState());
 
   /// How long a one-tap option reply can be undone before it is queued.
-  static const defaultOptionUndoWindow = Duration(seconds: 5);
+  static const defaultOptionUndoWindow = Duration(seconds: 30);
   static const _capabilityMaxAge = Duration(minutes: 5);
   static const _defaultRetryAfter = Duration(minutes: 1);
 
@@ -247,7 +248,8 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
   /// it. At most one window exists per item.
   bool queueOption({required NeedsYou item, required int optionIndex}) {
     final options = item.options;
-    if (optionIndex < 0 ||
+    if (isRiskyAsk(item) ||
+        optionIndex < 0 ||
         optionIndex >= options.length ||
         options[optionIndex] == mastermindReplyPlaceholderOption ||
         !state.canReply ||
@@ -312,6 +314,34 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
       );
       unawaited(_persist());
     }
+  }
+
+  /// Cancels every reply still inside its undo window, as judged by the same
+  /// [MastermindRepliesState.heldEntries] the bar counts: one state emit and
+  /// one persist. Replies already committed or queued are untouched. Returns
+  /// how many were cancelled.
+  int undoAll() {
+    final held = state.heldEntries(_clock());
+    if (held.isEmpty) return 0;
+    final keys = {for (final entry in held) entry.idempotencyKey};
+    final items = {for (final entry in held) entry.itemId};
+    for (final id in items) {
+      _undoTimers.remove(id)?.cancel();
+    }
+    emit(
+      state.copyWith(
+        outbox: [
+          for (final entry in state.outbox)
+            if (!keys.contains(entry.idempotencyKey)) entry,
+        ],
+        pendingOptions: {
+          for (final entry in state.pendingOptions.entries)
+            if (!items.contains(entry.key)) entry.key: entry.value,
+        },
+      ),
+    );
+    unawaited(_persist());
+    return held.length;
   }
 
   Future<void> _persistHeldOption(OutboxEntry entry, int generation) async {
@@ -398,7 +428,9 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     int? optionIndex,
     String? text,
   }) async {
-    if ((optionIndex == null) == (text == null)) return false;
+    if ((optionIndex == null) == (text == null) || isRiskyAsk(item)) {
+      return false;
+    }
     final options = item.options;
     if (optionIndex != null &&
         (optionIndex < 0 ||

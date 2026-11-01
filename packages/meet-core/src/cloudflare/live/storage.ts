@@ -18,8 +18,10 @@ export interface LiveEnvironment {
   NEXT_PUBLIC_APP_URL: string;
   PARLEY_APP_URL?: string;
   MEET_REALTIME_URL: string;
-  /** Meet AI pilot allowlist; absent denies every workspace. */
+  /** Server-only Meet AI controls; absent allows every workspace. */
   MEET_AI_ENABLED_WORKSPACE_IDS?: string;
+  MEET_AI_DISABLED?: string;
+  MEET_AI_DISABLED_WORKSPACE_IDS?: string;
 }
 export class LiveDatabaseError extends Error {
   constructor(readonly status: number) {

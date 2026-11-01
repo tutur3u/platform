@@ -12,6 +12,7 @@ export const stagingProfile = {
 
 export interface WebCandidateEnv {
   WEB_START_CANDIDATE?: string;
+  WEB_STAGING_SOURCE_SHA?: string;
   WEB_START_NATIVE_LEGAL?: string;
   WEB_START_NATIVE_SECURITY?: string;
   NEXT_FALLBACK_ORIGIN?: string;
@@ -68,4 +69,17 @@ export function admittedOrigin(request: Request, env: WebCandidateEnv) {
   } catch {
     return null;
   }
+}
+
+/** Native staging needs Access and its isolated identity, never an upstream. */
+export function admittedNativeStaging(request: Request, env: WebCandidateEnv) {
+  return (
+    env.WEB_START_CANDIDATE === 'staging' &&
+    new URL(request.url).origin === `https://${stagingProfile.host}` &&
+    env.NEXT_PUBLIC_SUPABASE_URL === stagingProfile.supabaseUrl &&
+    env.AUTH_COOKIE_DOMAIN === stagingProfile.cookieDomain &&
+    headerSafeSecret(env.TRUSTED_PROXY_ORIGIN_SECRET) &&
+    !!cloudflareAccessIssuer(env.CF_ACCESS_TEAM_DOMAIN) &&
+    !!env.CF_ACCESS_AUD?.trim()
+  );
 }

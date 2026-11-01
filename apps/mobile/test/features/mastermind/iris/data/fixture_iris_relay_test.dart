@@ -1,10 +1,15 @@
+import 'dart:convert';
 import 'dart:io';
+
+import 'package:crypto/crypto.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/features/mastermind/iris/data/fixture_iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_models.dart';
+import 'package:mobile/features/mastermind/iris/device/iris_key_codec.dart';
 import 'package:mobile/features/mastermind/threads/history/thread_history_models.dart';
 
+import '../../../../helpers/mastermind_iris_device.dart';
 import '../../../../helpers/mastermind_iris_fixture.dart';
 
 void main() {
@@ -152,32 +157,95 @@ void main() {
     },
   );
 
-  test('enrolment is pending until confirmed; at most 3 pending', () async {
-    final relay = irisFixtureRelay();
-    final enrolment = (await relay.enroll('pk', 'ab12cd34ef')).valueOrNull!;
-    expect(enrolment.code, matches(RegExp(r'^\d{6}$')));
-    expect(enrolment.fingerprintPrefix, 'AB12:CD34');
-    expect(
-      (await relay.device(enrolment.deviceId)).valueOrNull!.status,
-      IrisDeviceStatus.pending,
-    );
-    relay.confirmDevice(enrolment.deviceId);
-    expect(
-      (await relay.device(enrolment.deviceId)).valueOrNull!.status,
-      IrisDeviceStatus.confirmed,
-    );
-    await relay.enroll('pk', 'ff');
-    await relay.enroll('pk', 'ff');
-    await relay.enroll('pk', 'ff');
-    expect(
-      (await relay.enroll('pk', 'ff')).failureOrNull!.kind,
-      IrisFailureKind.rateLimited,
-    );
-    await relay.revoke(enrolment.deviceId);
-    expect(
-      (await relay.devices()).valueOrNull!.first.status,
-      IrisDeviceStatus.revoked,
-    );
+  group('enrolment follows the relay contract', () {
+    // A base64url SPKI per device, and the sha256 of its DER bytes.
+    ({String key, String fingerprint, String id}) device(int n) {
+      final spki = [...irisSyntheticSpki]..[irisSyntheticSpki.length - 1] = n;
+      final fingerprint = sha256.convert(spki).toString();
+      return (
+        key: irisBase64Url(spki),
+        fingerprint: fingerprint,
+        id: irisDeviceIdFor(fingerprint),
+      );
+    }
+
+    Future<IrisResult<IrisEnrollment>> enrol(
+      FixtureIrisRelay relay,
+      int n, {
+      String code = '123456',
+    }) {
+      final d = device(n);
+      return relay.enroll(d.key, d.fingerprint, deviceId: d.id, code: code);
+    }
+
+    test('pending under the device id until confirmed', () async {
+      final relay = irisFixtureRelay();
+      final d = device(1);
+      final enrolment = (await enrol(relay, 1)).valueOrNull!;
+      expect(enrolment.deviceId, d.id);
+      expect(enrolment.code, '123456');
+      expect(enrolment.fingerprintPrefix, d.fingerprint.substring(0, 8));
+      expect(
+        (await relay.device(d.id)).valueOrNull!.status,
+        IrisDeviceStatus.pending,
+      );
+      relay.confirmDevice(d.id);
+      expect(
+        (await relay.device(d.id)).valueOrNull!.status,
+        IrisDeviceStatus.confirmed,
+      );
+      // A known device needs a new key.
+      expect(
+        (await enrol(relay, 1, code: '999999')).failureOrNull!.kind,
+        IrisFailureKind.deviceConflict,
+      );
+      await relay.revoke(d.id);
+      expect(
+        (await relay.devices()).valueOrNull!.first.status,
+        IrisDeviceStatus.revoked,
+      );
+    });
+
+    test('a fingerprint of anything but the SPKI bytes is refused', () async {
+      final relay = irisFixtureRelay();
+      final d = device(1);
+      final wrong = sha256.convert(utf8.encode(d.key)).toString();
+      expect(
+        (await relay.enroll(
+          d.key,
+          wrong,
+          deviceId: d.id,
+          code: '123456',
+        )).failureOrNull!.kind,
+        IrisFailureKind.badRequest,
+      );
+      expect(
+        (await relay.enroll(
+          d.key,
+          d.fingerprint,
+          deviceId: d.id.toUpperCase(),
+          code: '123456',
+        )).failureOrNull!.kind,
+        IrisFailureKind.badRequest,
+      );
+    });
+
+    test('a held code conflicts; at most 3 pending', () async {
+      final relay = irisFixtureRelay();
+      await enrol(relay, 1, code: '111111');
+      expect(
+        (await enrol(relay, 2, code: '111111')).failureOrNull!.kind,
+        IrisFailureKind.codeConflict,
+      );
+      await enrol(relay, 2, code: '222222');
+      await enrol(relay, 3, code: '333333');
+      expect(
+        (await enrol(relay, 4, code: '444444')).failureOrNull!.kind,
+        IrisFailureKind.rateLimited,
+      );
+      // The same device may re-enrol its own pending key.
+      expect((await enrol(relay, 1, code: '555555')).valueOrNull, isNotNull);
+    });
   });
 
   test('a build without the fixture define is not configured', () async {

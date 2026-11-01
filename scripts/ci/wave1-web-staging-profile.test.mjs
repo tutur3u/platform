@@ -50,11 +50,8 @@ test('the entry agrees with the candidate profile and admission inputs', () => {
     'CF_ACCESS_AUD',
     'CF_ACCESS_TEAM_DOMAIN',
     'TRUSTED_PROXY_ORIGIN_SECRET',
-    'VERCEL_AUTOMATION_BYPASS_SECRET',
   ]);
-  assert.equal(web.nextFallback.vercelProject, 'tuturuuu-web-staging');
-  assert.equal(web.nextFallback.target, 'staging');
-  JSON.parse(source(web.nextFallback.config));
+  assert.equal(web.nextFallback, undefined);
 });
 
 // Every string (keys and values, recursively) in a JSON value.

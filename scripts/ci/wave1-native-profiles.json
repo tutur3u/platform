@@ -84,11 +84,6 @@
     "stagingHost": "web.staging.tutur3u.com",
     "zone": "tutur3u.com",
     "ingress": "access-custom-domain",
-    "nextFallback": {
-      "vercelProject": "tuturuuu-web-staging",
-      "config": "apps/web/vercel.staging.json",
-      "target": "staging"
-    },
     "vars": {
       "WEB_START_CANDIDATE": "staging",
       "WEB_START_NATIVE_LEGAL": "off",
@@ -99,7 +94,6 @@
     },
     "secrets": [
       "TRUSTED_PROXY_ORIGIN_SECRET",
-      "VERCEL_AUTOMATION_BYPASS_SECRET",
       "CF_ACCESS_TEAM_DOMAIN",
       "CF_ACCESS_AUD"
     ]

@@ -4,19 +4,106 @@ import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/presentation/open_asks.dart';
 import 'package:mobile/features/mastermind/presentation/option_labels.dart';
 import 'package:mobile/features/mastermind/presentation/security_rows.dart';
+import 'package:mobile/features/mastermind/presentation/what_needs_me.dart';
 import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
+
+/// The three Needs-you tiers, in display order, with their `?tier=` value.
+enum InboxTier {
+  urgent('urgent'),
+  decision('decision'),
+  fyi('fyi');
+
+  const InboxTier(this.queryValue);
+
+  final String queryValue;
+}
+
+/// An ask due within this long (or already overdue) is promoted to Urgent.
+const inboxUrgentWindow = Duration(hours: 2);
+
+/// Urgent pressure, or a `deadline_at` inside [inboxUrgentWindow], is Urgent;
+/// FYI pressure is FYI; soon and everything else is Needs a decision.
+InboxTier inboxTierOf(NeedsYou item, DateTime now) {
+  final deadline = item.askV2.deadlineAt;
+  if (deadline != null && deadline.difference(now) < inboxUrgentWindow) {
+    return InboxTier.urgent;
+  }
+  return switch (askPressure(item)) {
+    AskPressure.urgent => InboxTier.urgent,
+    AskPressure.fyi => InboxTier.fyi,
+    AskPressure.soon || AskPressure.other => InboxTier.decision,
+  };
+}
+
+/// Open asks of one tier, already in display order.
+final class InboxTierGroup {
+  const InboxTierGroup({required this.tier, required this.items});
+
+  final InboxTier tier;
+  final List<NeedsYou> items;
+
+  /// Stable across rebuilds, for scroll targets and remembered state.
+  String get key => 'tier-${tier.queryValue}';
+}
+
+/// Groups [items] by tier and sorts each deterministically: deadline soonest
+/// first (no deadline last), then blocking the most lanes, then oldest, then
+/// id. Empty tiers are omitted. [blocks] is the lane count waiting on an ask.
+List<InboxTierGroup> groupByTier(
+  Iterable<NeedsYou> items, {
+  required DateTime now,
+  int Function(NeedsYou item)? blocks,
+}) {
+  int blockedBy(NeedsYou item) => blocks?.call(item) ?? 0;
+  int byTime(DateTime? a, DateTime? b) => switch ((a, b)) {
+    (null, null) => 0,
+    (null, _) => 1,
+    (_, null) => -1,
+    (final a?, final b?) => a.compareTo(b),
+  };
+  int order(NeedsYou a, NeedsYou b) {
+    var c = byTime(a.askV2.deadlineAt, b.askV2.deadlineAt);
+    c = c != 0 ? c : blockedBy(b).compareTo(blockedBy(a));
+    c = c != 0 ? c : byTime(a.createdAt, b.createdAt);
+    return c != 0 ? c : a.id.compareTo(b.id);
+  }
+
+  final groups = <InboxTierGroup>[];
+  for (final tier in InboxTier.values) {
+    final tiered = [
+      for (final item in items)
+        if (inboxTierOf(item, now) == tier) item,
+    ]..sort(order);
+    if (tiered.isEmpty) continue;
+    groups.add(InboxTierGroup(tier: tier, items: tiered));
+  }
+  return groups;
+}
 
 /// One run of asks: open items of the same kind in publisher order, or one
 /// GMT+7 day of resolved history newest first.
 final class InboxGroup {
   const InboxGroup({required this.kind, required this.items})
     : resolved = false,
-      day = null;
+      day = null,
+      tier = null;
 
   const InboxGroup.resolved({required this.items, this.day})
     : kind = null,
-      resolved = true;
+      resolved = true,
+      tier = null;
+
+  /// One Urgent / Needs a decision / FYI section of open asks.
+  InboxGroup.tiered(InboxTierGroup group)
+    : kind = null,
+      resolved = false,
+      day = null,
+      tier = group.tier,
+      items = group.items;
+
+  /// Set for tier sections; null for kind and resolved groups.
+  final InboxTier? tier;
 
   /// Null for resolved groups, and for the rare open item the publisher
   /// left without a kind.
@@ -29,7 +116,9 @@ final class InboxGroup {
   final DateTime? day;
 
   /// Stable across rebuilds, for remembering which groups were expanded.
-  String get key => resolved
+  String get key => tier != null
+      ? 'tier-${tier!.queryValue}'
+      : resolved
       ? switch (day) {
           final day? => 'resolved-${_dayKey(day)}',
           null => 'resolved',
@@ -58,6 +147,7 @@ final class MastermindInboxModel {
   const MastermindInboxModel._({
     required this.segment,
     required this.groups,
+    required this.tiers,
     required this.security,
     required this.total,
     required this.products,
@@ -69,6 +159,7 @@ final class MastermindInboxModel {
     String query = '',
     Product? product,
     Iterable<AnsweredElsewhere> answeredElsewhere = const [],
+    DateTime? now,
   }) {
     final open = segment == InboxSegment.resolved
         ? const <NeedsYou>[]
@@ -94,6 +185,13 @@ final class MastermindInboxModel {
             InboxGroup(kind: kind, items: items),
         ..._byDay(resolvedShown),
       ],
+      tiers: groupByTier(
+        openShown,
+        now: now ?? DateTime.now(),
+        blocks: (item) => snapshot.lanes
+            .where((lane) => lane is Lane && lane.waitingOnAskId == item.id)
+            .length,
+      ),
       security: segment == InboxSegment.resolved
           ? const []
           : singleSecurityRow(snapshot.now.needsYou),
@@ -108,6 +206,10 @@ final class MastermindInboxModel {
   final InboxSegment segment;
   final List<InboxGroup> groups;
 
+  /// The open asks again, grouped Urgent / Needs a decision / FYI; empty on
+  /// Resolved.
+  final List<InboxTierGroup> tiers;
+
   /// At most one row for the whole list, never counted, filtered or searched.
   final List<SecurityItem> security;
 
@@ -116,6 +218,15 @@ final class MastermindInboxModel {
 
   /// Products present among this segment's asks, for the filter chips.
   final List<Product> products;
+
+  /// What the list renders: the open asks by tier (kind groups when there are
+  /// none), then any resolved day groups.
+  List<InboxGroup> get displayGroups => tiers.isEmpty
+      ? groups
+      : [
+          for (final tier in tiers) InboxGroup.tiered(tier),
+          ...groups.where((group) => group.resolved),
+        ];
 
   int get shownCount =>
       groups.fold(0, (sum, group) => sum + group.items.length);
@@ -178,6 +289,7 @@ List<NeedsYou> _newestFirst(List<NeedsYou> items) {
 bool _matches(NeedsYou item, String needle) =>
     item.title.toLowerCase().contains(needle) ||
     item.body.toLowerCase().contains(needle) ||
+    (item.by?.toLowerCase().contains(needle) ?? false) ||
     (item.product?.wireName.toLowerCase().contains(needle) ?? false) ||
     (item.resolution?.toLowerCase().contains(needle) ?? false) ||
     selectableOptions(

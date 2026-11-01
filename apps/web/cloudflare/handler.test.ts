@@ -1,7 +1,7 @@
 import { resolveClientIp } from '@tuturuuu/utils/abuse-protection/client-ip';
 import { verifyOriginClientIpProof } from '@tuturuuu/utils/abuse-protection/origin-ip-proof';
 import { describe, expect, it, vi } from 'vitest';
-import type { Fetcher } from './fallback';
+import { type Fetcher, proxyNext } from './fallback';
 import { createWebCandidateHandler } from './handler';
 import { stagingProfile, type WebCandidateEnv } from './profile';
 
@@ -78,28 +78,6 @@ describe('Web candidate admission', () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
   it.each([
-    '',
-    base,
-    'https://tuturuuu.com',
-    'https://web.tuturuuu.com',
-    'https://evil.test',
-    'https://drive-next-fixture.vercel.app',
-    'https://eviltuturuuu-next.vercel.app',
-    'https://tuturuuu-next.vercel.app.evil.test',
-    'https://nested.tuturuuu-next.vercel.app',
-    `${origin}/path`,
-    `${origin}/?a=1`,
-    'http://tuturuuu-next-fixture.vercel.app',
-    'https://user:pass@tuturuuu-next-fixture.vercel.app',
-  ])('rejects upstream %s', async (upstream) => {
-    const { handler, fetcher } = setup();
-    expect(
-      (await handler(request('/'), { ...env, NEXT_FALLBACK_ORIGIN: upstream }))
-        .status
-    ).toBe(503);
-    expect(fetcher).not.toHaveBeenCalled();
-  });
-  it.each([
     { NEXT_PUBLIC_SUPABASE_URL: 'https://production.supabase.co' },
     { AUTH_COOKIE_DOMAIN: '.tuturuuu.com' },
     { TRUSTED_PROXY_ORIGIN_SECRET: 'short' },
@@ -110,30 +88,77 @@ describe('Web candidate admission', () => {
     );
     expect(fetcher).not.toHaveBeenCalled();
   });
-  it('admits only the exact Start probe; all other paths go to Next', async () => {
+
+  it('serves only the probe natively and returns a static 404 without upstream inputs', async () => {
     const { handler, fetcher, start } = setup();
-    expect((await handler(request('/__web1'), env)).status).toBe(200);
-    expect(start).toHaveBeenCalledOnce();
+    const nativeEnv = {
+      ...env,
+      WEB_STAGING_SOURCE_SHA: 'a'.repeat(40),
+      NEXT_FALLBACK_ORIGIN: undefined,
+      VERCEL_AUTOMATION_BYPASS_SECRET: undefined,
+    };
+    expect((await handler(request('/__web1'), nativeEnv)).status).toBe(200);
+    for (const path of ['/login', '/api/a', '/_next/static/a', '/__web1/']) {
+      const response = await handler(request(path), nativeEnv);
+      expect(response.status).toBe(404);
+      expect(response.headers.get('x-tuturuuu-source-sha')).toBe(
+        'a'.repeat(40)
+      );
+      expect(response.headers.get('x-tuturuuu-native')).toBe('not-migrated');
+      expect(response.headers.get('cache-control')).toBe('no-store');
+      const html = await response.text();
+      expect(html).toContain('Not migrated yet');
+      expect(html).toContain('<meta name="color-scheme" content="light dark">');
+      expect(html).toContain('noindex');
+      expect(html).not.toMatch(/<script|src=|href=/);
+    }
+    expect(
+      await (
+        await handler(request('/login', { method: 'HEAD' }), nativeEnv)
+      ).text()
+    ).toBe('');
     expect(fetcher).not.toHaveBeenCalled();
-    for (const path of [
-      '/__web1/child',
-      '/_serverFn/a',
-      '/_next/static/a',
-      '/__web1/',
-    ])
-      await handler(request(path), env);
-    await handler(request('/__web1', { method: 'POST' }), env);
-    expect(fetcher).toHaveBeenCalledTimes(5);
+    expect(start).toHaveBeenCalledOnce();
   });
-  it('requires an attested staging Next project on every response', async () => {
-    const { handler } = setup(() => new Response('production'));
-    const response = await handler(request('/'), env);
-    expect(response.status).toBe(502);
-    expect(await response.text()).not.toContain('production');
+  it.each([
+    undefined,
+    'not a URL',
+    'https://tuturuuu.com',
+    'https://untrusted.example',
+  ])('ignores stale fallback origin %s in staging', async (fallback) => {
+    const { handler, fetcher } = setup();
+    const response = await handler(request('/login'), {
+      ...env,
+      NEXT_FALLBACK_ORIGIN: fallback,
+      VERCEL_AUTOMATION_BYPASS_SECRET: undefined,
+    });
+    expect(response.status).toBe(404);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it('keeps the production host disabled in this isolated staging candidate', async () => {
+    const { handler, fetcher, start } = setup();
+    expect(
+      (await handler(new Request('https://tuturuuu.com/login'), env)).status
+    ).toBe(503);
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(start).not.toHaveBeenCalled();
   });
 });
 
-describe('Next compatibility', () => {
+describe('retained forwarding helper compatibility', () => {
+  function setup(response: () => Response | Promise<Response> = () => reply()) {
+    const fetcher = vi.fn<Fetcher>(async () => response());
+    const start = vi.fn();
+    const handler = (input: Request, _env: WebCandidateEnv) =>
+      proxyNext(
+        input,
+        origin,
+        secret,
+        'test-bypass-secret-00000000000000000000',
+        fetcher
+      );
+    return { fetcher, start, handler };
+  }
   it('retains raw queries, encoded paths, server actions and session headers', async () => {
     const { handler, fetcher } = setup();
     const headers = {
@@ -247,10 +272,6 @@ describe('Next compatibility', () => {
       "default-src 'self'"
     );
     expect(response.headers.get('vary')).toBe('RSC, Cookie');
-    expect(response.headers.get('strict-transport-security')).toBe(
-      stagingProfile.hsts
-    );
-    expect(response.headers.get('cache-control')).toBe('no-store');
   });
   it.each([
     'Domain=.staging.tutur3u.com; Domain=.tutur3u.com',
@@ -268,7 +289,6 @@ describe('Next compatibility', () => {
     const response = await handler(request('/login'), env);
     expect(response.status).toBe(502);
     expect(response.headers.has('set-cookie')).toBe(false);
-    expect(response.headers.get('cache-control')).toBe('no-store');
     expect(await response.text()).toBe('Upstream cookie domain rejected');
   });
   it.each(['Domain=.staging.tutur3u.com', 'dOmAiN\t=\t.STAGING.TUTUR3U.COM  '])(
@@ -386,16 +406,13 @@ describe('Next compatibility', () => {
       expect(response.headers.get('retry-after')).toBe('7');
     }
   );
-  it('returns bounded 502 without retrying failed writes', async () => {
+  it('does not retry failed writes in the retained proxy', async () => {
     const { handler, fetcher } = setup(async () => {
       throw new Error('private origin detail');
     });
-    const response = await handler(
-      request('/api/a', { method: 'POST', body: 'one write' }),
-      env
-    );
-    expect(response.status).toBe(502);
-    expect(await response.text()).not.toContain('private origin detail');
+    await expect(
+      handler(request('/api/a', { method: 'POST', body: 'one write' }), env)
+    ).rejects.toThrow('private origin detail');
     expect(fetcher).toHaveBeenCalledOnce();
   });
   it('removes hop-by-hop headers including Connection nominations', async () => {
@@ -417,11 +434,5 @@ describe('Next compatibility', () => {
     expect(forwarded(fetcher).headers.has('x-request-hop')).toBe(false);
     expect(forwarded(fetcher).headers.has('host')).toBe(false);
     expect(response.headers.has('x-response-hop')).toBe(false);
-  });
-  it('forwards HEAD without a response body', async () => {
-    const { handler, fetcher } = setup();
-    const response = await handler(request('/login', { method: 'HEAD' }), env);
-    expect(forwarded(fetcher).method).toBe('HEAD');
-    expect(await response.text()).toBe('');
   });
 });

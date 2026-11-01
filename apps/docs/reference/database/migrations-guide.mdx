@@ -980,3 +980,17 @@ original finding failing. Replace `HARDENING_MIGRATION_FILENAME` in that file
 with the actual migration basename after the hardening PR exists, merge its
 source, and rerun the guard. Never apply the time-tracking rollback after that
 hardening migration. Coverage: `sql-grant-guard-verified-findings.test.js`.
+
+The definer guard's verified records (`scripts/ci/security-definer-verified-findings.json`)
+are admitted by `scripts/ci/security-definer-admission.js`, which CI loads from
+the base commit. Base records are append-only. A pull request may add a record
+only for a migration it adds. It may rebind a base record only by changing its
+`sourceDigest`, and only for a migration it modifies. Every added or rebound
+record must match a finding the trusted guard recomputes over the head bytes.
+A `security/definer-record-admission` success from `tuturuuu-release-bot` on
+the exact head SHA must carry the digest printed by
+`node scripts/ci/security-definer-admission.js digest <base-ledger> <head-ledger>`.
+Additions alone use `definer-records sha256:…`; any rebind switches to
+`definer-rebinds sha256:…` over both lists. Admitted rebinds join the trusted
+records the guard scans with. Coverage: `security-definer-admission.test.js`,
+`security-definer-attestation.test.js` and `security-definer-rebind.test.js`.

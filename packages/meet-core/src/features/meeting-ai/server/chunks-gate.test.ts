@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   speaker: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
+// Limiter behavior is covered by usage-limit and chunks-limit tests.
+vi.mock('./usage-limit', () => ({ enforceMeetAiUsage: async () => {} }));
 vi.mock('@opennextjs/cloudflare', () => ({
   getCloudflareContext: mocks.cloudflare,
 }));
@@ -66,7 +68,10 @@ const upload = () => {
 };
 const bind = (value?: string) =>
   mocks.cloudflare.mockResolvedValue({
-    env: { MEET_AI_ENABLED_WORKSPACE_IDS: value },
+    env: {
+      MEET_AI_ENABLED_WORKSPACE_IDS: value,
+      MEET_AI_DISABLED: value ? undefined : 'true',
+    },
   });
 
 describe('chunk upload workspace gate (real access path)', () => {
@@ -81,8 +86,8 @@ describe('chunk upload workspace gate (real access path)', () => {
   });
 
   it.each([
-    ['unset', undefined],
-    ['blank', ''],
+    ['kill switch', undefined],
+    ['kill switch with blank legacy list', ''],
     ['not listed', listed],
   ])(
     'denies %s with zero database writes and zero provider calls',

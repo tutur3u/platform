@@ -95,7 +95,7 @@ void main() {
         _timed(3),
       ], security: false),
     );
-    expect(find.text('Urgent'), findsOneWidget);
+    expect(find.text('Urgent'), findsNWidgets(2)); // badge + tier heading
     expect(find.text('High priority'), findsOneWidget);
     expect(find.text('Answer within hours'), findsOneWidget);
     expect(find.text('Answer this week'), findsOneWidget);
@@ -140,7 +140,7 @@ void main() {
     replies.undoOption(inboxItemId(1));
     await tester.pump();
     expect(replies.state.pendingOptions.keys, {inboxItemId(2)});
-    await tester.pump(const Duration(seconds: 6));
+    await tester.pump(const Duration(seconds: 31));
   });
 
   testWidgets('an ask answered meanwhile is reported as skipped', (

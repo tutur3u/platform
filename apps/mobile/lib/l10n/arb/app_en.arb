@@ -7042,6 +7042,19 @@
     }
   },
   "mastermindIrisDone": "Done",
+  "mastermindIrisUseRecommendationsOthers": "{count, plural, =1{+1 other option} other{+{count} other options}}",
+  "@mastermindIrisUseRecommendationsOthers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisNotIncludedTitle": "Not included: answer these one by one",
+  "mastermindIrisNotIncludedRisky": "Needs approval on a trusted device",
+  "mastermindIrisNotIncludedIncomplete": "Incomplete: open it to read the full ask",
+  "mastermindRiskyComingSoon": "Approve on a trusted device: coming soon",
+  "mastermindRiskyComingSoonHint": "This ask touches deploy, spend, credentials or security. It can't be answered from the phone yet.",
   "mastermindIrisDevicesTitle": "Iris devices",
   "mastermindIrisDevicesAction": "Iris devices",
   "mastermindIrisDevicesEmpty": "No devices enrolled yet",
@@ -7076,7 +7089,22 @@
   "mastermindIrisEnrolConfirmed": "This device is enrolled.",
   "mastermindIrisEnrolExpired": "The code expired. Start again for a new one.",
   "mastermindIrisEnrolFailed": "Couldn't start enrolment. Try again.",
-  "mastermindIrisEnrolLimit": "Too many pending devices. Wait for one to expire.",
+  "mastermindIrisEnrolLimit": "Too many enrolment attempts or pending devices. Try again later.",
+  "mastermindIrisEnrolAgain": "Enrol again with a new key",
+  "mastermindIrisUnlockReason": "Unlock Iris to read your inbox",
+  "mastermindIrisConfirmReason": "Confirm this Iris action",
+  "mastermindIrisDeviceLocked": "Iris is locked on this device. It will ask you to unlock again in a few minutes.",
+  "mastermindIrisDeviceLockedEnrol": "If this keeps happening, enrol again with a new key.",
+  "mastermindIrisDeviceRevoked": "This device was removed from Iris. Enrol again to keep using it.",
+  "mastermindIrisEnrolAgainAction": "Enrol again",
+  "mastermindIrisClockSkew": "Check your device clock. It doesn't match Iris.",
+  "mastermindIrisEnrolCodeConflict": "That code is already in use. Try again.",
+  "mastermindIrisEnrolDeviceConflict": "This key is already registered. Enrol again with a new key.",
+  "mastermindIrisRelayStopped": "Relay stopped. Ask the owner to restore it.",
+  "mastermindIrisDevicesUnavailable": "The device list isn't available yet. You can still enrol this device.",
+  "mastermindIrisDeviceCurrent": "This device",
+  "mastermindIrisWritesOff": "Sending is off for now. You can still read the chat.",
+  "mastermindIrisWritesNeedEnrol": "Enrol this device to send messages.",
   "mastermindAskCardTierDecision": "Needs decision",
   "mastermindAskCardTierFyi": "FYI",
   "mastermindAskCardDue": "Due {when}",
@@ -7137,5 +7165,8 @@
         "type": "String"
       }
     }
-  }
+  },
+  "mastermindInboxTierUrgent": "Urgent",
+  "mastermindInboxTierDecision": "Needs a decision",
+  "mastermindInboxTierFyi": "For your information"
 }

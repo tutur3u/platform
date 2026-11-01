@@ -133,16 +133,17 @@ describe('mapUrlToApp', () => {
     ).toBe('meet');
   });
 
-  it.each([
-    ['nova', 'https://nova.ai.vn'],
-    ['rewise', 'https://rewise.me'],
-  ])('maps the %s canonical external production origin', (app, origin) => {
-    expect(mapUrlToApp(`${origin}/verify-token?nextUrl=%2Fdashboard`)).toBe(
-      app
-    );
-  });
+  it.each([['nova', 'https://nova.ai.vn']])(
+    'maps the %s canonical external production origin',
+    (app, origin) => {
+      expect(mapUrlToApp(`${origin}/verify-token?nextUrl=%2Fdashboard`)).toBe(
+        app
+      );
+    }
+  );
 
   it.each([
+    'https://rewise.me',
     'https://rewise.me.evil.com',
     'https://nova.ai.vn.evil.com',
     'https://evilrewise.me',

@@ -77,6 +77,7 @@ const PROTECTED_TRIGGERS = {
   'storefront-cloudflare.yaml': 'a9efe716b3f7059c',
   'supabase-baseline.yaml': 'dcdf48b8132ff123',
   'time-tracker-control-contract.yaml': '25ad429ead647fb8',
+  'tools-cloudflare.yaml': '6dd83e0e67660aad',
   'topic-delivery-foundation-contract.yaml': '6880af5bb579ac39',
   'track-cloudflare.yaml': '9c02c75a8da5ddae',
   'tsrs-shadow.yaml': '0b7a9bf95294a1fd',

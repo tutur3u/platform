@@ -1093,6 +1093,10 @@ behind a flag. Synthetic data only in fixtures and tests.
   method, path with query, sha256(body), timestamp, nonce, device id and the
   Idempotency-Key. Until the native device-key lane lands, a fake signer stands
   in; a real relay refuses it.
+  Platform difference: iOS can drop the biometric read session early (`lock`),
+  but on Android `lock` is a no-op and the Keystore's 300 s auth window stays
+  open after any strong biometric. Writes stay disabled; a write-only second
+  key (M1 gate) closes the gap. See `iris/device/SECURITY.md`.
 - **Devices and enrolment:** `/mastermind/iris/devices` (Chat's navbar action)
   lists enrolled devices with their status, QA mark and key prefix, and revokes
   with a second tap on the same button, never a native dialog. Enrol shows the

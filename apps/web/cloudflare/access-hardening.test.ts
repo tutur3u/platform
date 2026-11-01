@@ -1,6 +1,6 @@
 import { verifyOriginClientIpProof } from '@tuturuuu/utils/abuse-protection/origin-ip-proof';
 import { describe, expect, it, vi } from 'vitest';
-import type { Fetcher } from './fallback';
+import { type Fetcher, proxyNext } from './fallback';
 import { type AccessVerifier, createWebCandidateHandler } from './handler';
 import { stagingProfile, type WebCandidateEnv } from './profile';
 
@@ -55,12 +55,12 @@ function sent(fetcher: ReturnType<typeof setup>['fetcher']) {
 describe('Access JWT verification in the issuer Worker (N19, V2b)', () => {
   it('passes the configured team and AUD to the verifier', async () => {
     const { handler, verify, fetcher } = setup();
-    expect((await handler(request('/login'), env)).status).toBe(200);
+    expect((await handler(request('/login'), env)).status).toBe(404);
     expect(verify).toHaveBeenCalledWith(expect.any(Request), {
       teamDomain: env.CF_ACCESS_TEAM_DOMAIN,
       audience: env.CF_ACCESS_AUD,
     });
-    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher).not.toHaveBeenCalled();
   });
   it.each([
     ['rejects', async () => false],
@@ -86,20 +86,14 @@ describe('Access JWT verification in the issuer Worker (N19, V2b)', () => {
     { CF_ACCESS_TEAM_DOMAIN: undefined },
     { CF_ACCESS_TEAM_DOMAIN: 'evil.example.com' },
     { CF_ACCESS_AUD: ' ' },
-    { VERCEL_AUTOMATION_BYPASS_SECRET: undefined },
-    { VERCEL_AUTOMATION_BYPASS_SECRET: 'short' },
-    { VERCEL_AUTOMATION_BYPASS_SECRET: `${'a'.repeat(32)} b` },
-  ])(
-    'stays disabled without complete Access and bypass inputs: %j',
-    async (gap) => {
-      const { handler, fetcher, verify } = setup();
-      expect(
-        (await handler(request('/login'), { ...env, ...gap })).status
-      ).toBe(503);
-      expect(fetcher).not.toHaveBeenCalled();
-      expect(verify).not.toHaveBeenCalled();
-    }
-  );
+  ])('stays disabled without complete Access inputs: %j', async (gap) => {
+    const { handler, fetcher, verify } = setup();
+    expect((await handler(request('/login'), { ...env, ...gap })).status).toBe(
+      503
+    );
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(verify).not.toHaveBeenCalled();
+  });
 });
 
 describe('OPTIONS is answered locally (N20, V5b)', () => {
@@ -169,6 +163,23 @@ describe('OPTIONS is answered locally (N20, V5b)', () => {
 });
 
 describe('forwarded request hygiene (N13, V2a, V1c)', () => {
+  function setup(
+    _verify?: AccessVerifier,
+    upstream: () => Response = () =>
+      new Response('Next', {
+        headers: {
+          [stagingProfile.upstreamProjectHeader]: stagingProfile.supabaseRef,
+        },
+      })
+  ) {
+    const fetcher = vi.fn<Fetcher>(async () => upstream());
+    return {
+      fetcher,
+      handler: (request: Request, _env: WebCandidateEnv) =>
+        proxyNext(request, origin, secret, bypass, fetcher),
+    };
+  }
+
   it('strips Access credentials, client forwarding claims and server-owned names', async () => {
     const { handler, fetcher } = setup();
     await handler(
@@ -267,6 +278,23 @@ describe('forwarded request hygiene (N13, V2a, V1c)', () => {
 });
 
 describe('Vercel platform state never reaches the browser (N17)', () => {
+  function setup(
+    _verify?: AccessVerifier,
+    upstream: () => Response = () =>
+      new Response('Next', {
+        headers: {
+          [stagingProfile.upstreamProjectHeader]: stagingProfile.supabaseRef,
+        },
+      })
+  ) {
+    const fetcher = vi.fn<Fetcher>(async () => upstream());
+    return {
+      fetcher,
+      handler: (request: Request, _env: WebCandidateEnv) =>
+        proxyNext(request, origin, secret, bypass, fetcher),
+    };
+  }
+
   it('drops _vercel cookies and x-vercel-* headers and never requests a bypass cookie', async () => {
     const { handler, fetcher } = setup(undefined, () => {
       const headers = new Headers({

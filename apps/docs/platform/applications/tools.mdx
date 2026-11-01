@@ -1,7 +1,7 @@
 ---
 title: "Tools"
 description: "Public QR and random utilities with stable canonical URLs."
-updatedAt: '2026-10-08'
+updatedAt: '2026-11-02'
 audience: users
 ---
 
@@ -31,3 +31,19 @@ shared indexing policy.
 [Tools routes](/reference/repository/routes/tools) and
 [SEO strategy](/build/development-tools/seo-strategy) describe implementation
 and public-discovery expectations.
+
+## Staging
+
+The TanStack Start + Void candidate (`build:cloudflare`) is staging-only. Staging runs on Cloudflare
+alone, at `tools.tutur3u.com` (the staging counterpart of
+`tools.tuturuuu.com`); it does not use Vercel previews or `*.workers.dev`.
+The Worker serves `tools.tuturuuu.com`, `tools.tutur3u.com` and the
+`tuturuuu.com/tools` mount, and answers every other host with 404
+(`mounts.unknownHost: 'reject'` in `start-bridge.config.ts`, from which the
+codemod derives `workers_dev: false`). Production hosts and the Vercel
+production deploy are unchanged until a reviewed cutover PR.
+
+Links to other Tuturuuu apps come from the build-time `NEXT_PUBLIC_*_APP_URL`
+and internal-domain inputs, never from hard-coded production hosts, so a
+staging build keeps its links on the same environment. Regression coverage:
+`apps/tools/src/runtime/root-host-policy.test.ts`.
