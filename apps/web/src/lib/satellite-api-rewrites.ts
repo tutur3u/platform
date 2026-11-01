@@ -11,7 +11,7 @@ function withoutTrailingSlash(origin: string) {
 
 /**
  * A staging Web build (NEXT_PUBLIC_TUTURUUU_STAGING=1) may rewrite only to
- * exact HTTPS `*.staging.tutur3u.com` origins, never into the production
+ * exact registered HTTPS staging app origins, never into the production
  * zone. Throws at config time so the staging build fails instead of
  * forwarding staging sessions to production satellites.
  */

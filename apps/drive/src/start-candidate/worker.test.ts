@@ -23,6 +23,7 @@ vi.mock('@tuturuuu/start-bridge/function-proxy', () => ({
 }));
 
 import worker from '../../cloudflare/worker';
+import appConfig from '../../start-bridge.config';
 import { stagingVars } from './staging-policy';
 
 const ctx = { waitUntil: vi.fn() };
@@ -35,12 +36,16 @@ beforeEach(() => {
   vi.clearAllMocks();
   runtime.proxy.mockImplementation(() => NextResponse.next());
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe('Drive Worker bridge boundary (Start/RSC adapters are fixtures)', () => {
   it.each([
     'https://tuturuuu.com/drive/personal',
     'https://drive.tuturuuu.com/personal',
+    'https://drive.staging.tutur3u.com/personal',
     'https://web.tutur3u.com/drive/personal',
     'https://drive.tutur3u.com.evil.test/personal',
     'https://evil.drive.tutur3u.com/personal',
@@ -54,6 +59,23 @@ describe('Drive Worker bridge boundary (Start/RSC adapters are fixtures)', () =>
     expect(response.headers.get('Strict-Transport-Security')).toBe(
       'max-age=63072000'
     );
+  });
+
+  it('rejects Domain cookies at the Worker exit even if the response wrapper regresses', async () => {
+    vi.spyOn(appConfig, 'wrapResponse').mockReturnValueOnce(
+      new Response('private', {
+        headers: { 'Set-Cookie': 'session=x; Domain=.tutur3u.com; Secure' },
+      })
+    );
+    vi.stubGlobal('__driveTestRsc', { loadModule: runtime.loadModule });
+    const response = await worker.fetch(
+      new Request('https://drive.tutur3u.com/personal'),
+      env,
+      ctx
+    );
+    expect(response.status).toBe(500);
+    expect(response.headers.has('set-cookie')).toBe(false);
+    expect(await response.text()).toBe('Staging cookie domain rejected');
   });
 
   it('rejects a production database before loading routes', async () => {

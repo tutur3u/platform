@@ -132,6 +132,8 @@ test(description, { timeout: 30000 }, async (t) => {
   assert.equal(config.vars.WEB_START_CANDIDATE, 'off');
   assert.equal(config.vars.WEB_START_NATIVE_LEGAL, 'off');
   assert.equal(config.vars.WEB_START_NATIVE_SECURITY, 'off');
+  assert.equal(config.vars.AUTH_COOKIE_DOMAIN, undefined);
+  assert.equal(config.vars.AUTH_COOKIE_PREFIX, '__Host-');
   const entry = resolve(dirname(configPath), config.main);
   assert.match(await readFile(entry, 'utf8'), /Web candidate disabled/u);
   const modules = [
@@ -164,7 +166,6 @@ test(description, { timeout: 30000 }, async (t) => {
   }
   const admitted = {
     ...access.bindings,
-    TRUSTED_PROXY_ORIGIN_SECRET: 'disposable-emitted-worker-proof-secret',
   };
   const disabled = instance(config.vars);
   const enabled = instance({

@@ -6,6 +6,7 @@ import { answerPreflight } from './preflight';
 import {
   admittedNativeStaging,
   admittedOrigin,
+  hasHostOnlyStagingCookies,
   stagingProfile,
   type WebCandidateEnv,
 } from './profile';
@@ -114,6 +115,23 @@ export function createWebCandidateHandler({
       response.status === 403
     )
       headers.set('cache-control', 'no-store');
+    if (staging && !hasHostOnlyStagingCookies(headers)) {
+      void response.body?.cancel().catch(() => {});
+      for (const name of [
+        'set-cookie',
+        'content-length',
+        'content-encoding',
+        'content-type',
+        'location',
+        'etag',
+      ])
+        headers.delete(name);
+      headers.set('cache-control', 'no-store');
+      return new Response('Staging cookie scope rejected', {
+        status: 500,
+        headers,
+      });
+    }
     return new Response(request.method === 'HEAD' ? null : response.body, {
       status: response.status,
       statusText: response.statusText,

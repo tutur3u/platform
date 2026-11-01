@@ -16,6 +16,7 @@
  */
 import { createFramablePathMatcher } from '@tuturuuu/utils/framable-paths';
 import { type AppSeoPolicy, robotsForUrl } from '@tuturuuu/utils/seo-robots';
+import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
 
 export interface ResponsePolicyContext<Env = unknown> {
   request: Request;
@@ -138,6 +139,7 @@ export function createRootResponsePolicy<Env = unknown>(
     response: Response,
     context: ResponsePolicyContext<Env>
   ): Response {
+    response = enforceStagingCookiePolicy(context.request, response);
     // A WebSocket upgrade cannot be rebuilt; it carries no document.
     if (response.status === 101) return response;
     const secured = new Response(response.body, response);

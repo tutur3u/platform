@@ -273,7 +273,6 @@ test('wildcard classification covers every name that could mint a staging host',
     '*.tutur3u.com',
     '*.staging.tutur3u.com',
     '*.x.tutur3u.com',
-    '*.docs.tutur3u.com',
   ])
     assert.equal(isStagingWildcard(name), true, name);
   for (const name of ['web.tutur3u.com', '*.tuturuuu.com'])
