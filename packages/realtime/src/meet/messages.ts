@@ -18,6 +18,7 @@ import {
   meetRealtimeStreamStateSchema,
   meetRealtimeTrackKindSchema,
 } from './primitives';
+import { normalizeDisplayNameText } from './room-display-name';
 import {
   type MeetApprovedParticipant,
   type MeetReaction,
@@ -67,7 +68,7 @@ export const meetRealtimeClientMessageSchema = z.discriminatedUnion('type', [
   z.object({
     displayName: z
       .string()
-      .transform((value) => value.replace(/[\p{Cc}\p{Cf}]/gu, '').trim())
+      .transform(normalizeDisplayNameText)
       .pipe(z.string().min(1).max(120))
       .optional(),
     media: meetMediaStateSchema.optional(),

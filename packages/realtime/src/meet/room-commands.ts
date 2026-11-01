@@ -84,13 +84,17 @@ export function applyMeetRoomCommand(
       if (capacityError) return denied(state, capacityError);
       if (state.waiting[userId]) {
         if (!message.displayName) return outcome(state);
+        const displayName = lobbyDisplayName(message.displayName);
+        // An unchanged name never re-notifies managers (limits prompt spam).
+        if (displayName === state.waiting[userId].displayName)
+          return outcome(state);
         const next: MeetRoomSnapshot = {
           ...state,
           waiting: {
             ...state.waiting,
             [userId]: {
               ...state.waiting[userId],
-              displayName: lobbyDisplayName(message.displayName),
+              displayName,
             },
           },
         };

@@ -450,7 +450,19 @@ it('marks first-party lobby tokens with an accountId as guests', () => {
     visitor
   );
   expect(renamed.state.waiting[guestId]?.displayName).toBe('host (guest)');
-  expect(renamed.toManagers[0]).toMatchObject({
-    participants: [expect.objectContaining({ displayName: 'host (guest)' })],
+  // An unchanged name does not re-notify managers.
+  expect(renamed.toManagers).toHaveLength(0);
+  const changed = run(
+    renamed.state,
+    { type: 'presence.join', displayName: 'host\u3000\u3000again' },
+    visitor
+  );
+  expect(changed.state.waiting[guestId]?.displayName).toBe(
+    'host again (guest)'
+  );
+  expect(changed.toManagers[0]).toMatchObject({
+    participants: [
+      expect.objectContaining({ displayName: 'host again (guest)' }),
+    ],
   });
 });
