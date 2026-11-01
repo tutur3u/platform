@@ -13,11 +13,13 @@ direct authenticated SQL inserts are not their supported upload contract.
 request tickets. Neither requires authenticated SELECT grants on the underlying
 inquiry or private time request tables.
 
-The legacy inquiry INSERT policy is scoped to `service_role` so its table query
-does not participate in unrelated client bucket inserts. Workspace path policies
-and root-workspace changelog membership continue to authorize client inserts.
-Avatars and banners use server-issued tickets; artifact buckets and bucket
-creation remain server-owned. Regression coverage:
+Client (anon and authenticated) inserts are limited to the `workspaces` bucket
+by a restrictive policy, and bucket creation is server-only. The legacy inquiry
+INSERT policy and the root-workspace changelog upload, update and delete
+policies are dropped, so client uploads to the changelog and inquiry buckets are
+denied; inquiry uploads go through the server (service role) or issued tickets.
+Avatars and banners use server-issued tickets; artifact buckets remain
+server-owned. Regression coverage:
 `apps/database/supabase/tests/storage-insert-policies.sql`.
 
 ## Access model

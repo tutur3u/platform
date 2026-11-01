@@ -105,7 +105,9 @@ beforeEach(() => {
 async function exportRows(mode = 'detailed') {
   const { GET } = await import('./route');
   const response = await GET(
-    new Request(`http://localhost/tutoring/export?mode=${mode}`),
+    new Request(
+      `http://localhost/tutoring/export?fromDate=2026-11-01&toDate=2026-11-30&mode=${mode}`
+    ),
     { params: Promise.resolve({ wsId }) }
   );
   if (!response) throw new Error('Tutoring export returned no response');

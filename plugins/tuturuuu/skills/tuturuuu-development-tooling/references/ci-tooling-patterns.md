@@ -1279,7 +1279,7 @@ private-serving state rather than issuing a public HTTP probe. Preserve CI worke
 acceptance and obtain a separately approved private ingress plan for hosted UX.
 Never delete consumption history to renew admission or infer retry permission from a
 missing local receipt or inactive version. Reconcile listed versions by detail SHA/tag and retain unresolved attempts.
-The [publisher runbook](../../../../../docs-internal/build/devops/wave1-native-publishers.mdx)
+The [publisher runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/wave1-native-publishers.mdx)
 owns the schema, bounded operation counts, residual account risk and recovery.
 For private production preparation, keep the read token confined to preflight and
 post-upload verification, and the deploy token confined to the upload step. Check

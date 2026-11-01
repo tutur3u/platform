@@ -23,4 +23,4 @@ as positive controls. Use scoped workflow parsing/actionlint without dispatching
 Old-source reruns retain their original policy. A source fix cannot retrofit an
 already-admitted run. Release-owner reconciliation and hosted acceptance remain
 separate from these source checks; see
-`docs-internal/build/devops/wave1-native-cutover.mdx` for the cutover gates.
+`tutur3u/internal-docs: docs-internal/build/devops/wave1-native-cutover.mdx` for the cutover gates.
