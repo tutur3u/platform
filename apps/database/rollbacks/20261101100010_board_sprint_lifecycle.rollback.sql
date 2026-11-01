@@ -1,8 +1,8 @@
 -- Manual rollback only: drops the end-sprint and move-tasks RPCs and the
 -- trigger that keeps tasks in their board's current sprint. Run the
--- 20261029060020 rollback first, and deploy app code that no longer calls
+-- 20261101100020 rollback first, and deploy app code that no longer calls
 -- end_board_sprint or move_tasks_to_board_sprint before running. Sprint
--- reports and memberships already written stay until the 20261029060000
+-- reports and memberships already written stay until the 20261101100000
 -- rollback.
 BEGIN;
 SET LOCAL lock_timeout = '5s';

@@ -3,7 +3,7 @@
 -- was left in no open sprint, so it vanished from the Board view and from
 -- Plan. It now rejoins the board's current sprint when no open sprint holds
 -- it: the running one, flagged as added mid-sprint, else the one being
--- planned. Builds on 20261029060010_board_sprint_lifecycle.sql.
+-- planned. Builds on 20261101100010_board_sprint_lifecycle.sql.
 CREATE OR REPLACE FUNCTION private.sync_task_board_sprint_membership()
 RETURNS TRIGGER
 LANGUAGE plpgsql

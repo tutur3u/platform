@@ -1,6 +1,6 @@
--- Manual rollback only: restores the 20261029060010 task sprint membership
+-- Manual rollback only: restores the 20261101100010 task sprint membership
 -- trigger, which fires on list moves only. Reopened, un-closed and restored
--- tasks stop rejoining the board's current sprint. Run the 20261029060070
+-- tasks stop rejoining the board's current sprint. Run the 20261101100070
 -- rollback first (it restores this migration's version), then this one. No
 -- data changes.
 BEGIN;
