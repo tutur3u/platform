@@ -244,6 +244,30 @@ const UNAVAILABLE: BoardSprintsResponse = {
   unplannedTaskIds: [],
 };
 
+/** PostgREST caps every response, set-returning RPCs included, at this. */
+const UNPLANNED_PAGE_SIZE = 1000;
+
+/** Every parked task id, read page by page past the API's row cap. */
+async function listUnplannedTaskIds(
+  sbAdmin: TypedSupabaseClient,
+  { boardId, wsId }: { boardId: string; wsId: string }
+): Promise<{ data: string[] | null; error: SprintQueryError | null }> {
+  const ids = new Set<string>();
+  for (let from = 0; ; from += UNPLANNED_PAGE_SIZE) {
+    const { data, error } = await sbAdmin
+      .rpc('list_board_unplanned_task_ids', {
+        p_board_id: boardId,
+        p_ws_id: wsId,
+      })
+      .range(from, from + UNPLANNED_PAGE_SIZE - 1);
+    if (error) return { data: null, error };
+    const page = (data ?? []) as string[];
+    for (const id of page) ids.add(id);
+    if (page.length < UNPLANNED_PAGE_SIZE)
+      return { data: [...ids], error: null };
+  }
+}
+
 export async function loadBoardSprints({
   boardId,
   sbAdmin,
@@ -271,10 +295,7 @@ export async function loadBoardSprints({
         .not('deleted', 'is', true)
         .order('sequence_number', { ascending: true }),
       sbAdmin.from('task_sprint_reports').select('*').eq('board_id', boardId),
-      sbAdmin.rpc('list_board_unplanned_task_ids', {
-        p_board_id: boardId,
-        p_ws_id: wsId,
-      }),
+      listUnplannedTaskIds(sbAdmin, { boardId, wsId }),
     ]);
 
   for (const result of [
