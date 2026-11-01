@@ -220,7 +220,7 @@ describe('configurable shared cookie domain', () => {
         expect(
           getSupabaseCookieOptions(
             'https://fxefojytwimjiqxseqag.supabase.co',
-            url
+            typeof url === 'string' ? url : url.url
           )
         ).not.toHaveProperty('domain');
       }
