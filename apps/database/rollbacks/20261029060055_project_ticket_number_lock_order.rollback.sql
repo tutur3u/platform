@@ -18,6 +18,7 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+-- tuturuuu: no-grant (trigger)
 REVOKE ALL ON FUNCTION private.assign_project_ticket_number() FROM PUBLIC, anon, authenticated;
 
 COMMIT;

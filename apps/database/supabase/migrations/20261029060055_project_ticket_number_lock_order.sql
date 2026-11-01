@@ -23,4 +23,5 @@ begin
   return new;
 end;
 $$;
+-- tuturuuu: no-grant (trigger)
 revoke all on function private.assign_project_ticket_number() from public, anon, authenticated;
