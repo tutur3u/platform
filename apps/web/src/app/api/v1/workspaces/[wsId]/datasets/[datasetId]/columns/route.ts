@@ -1,6 +1,7 @@
 import { connection, NextResponse } from 'next/server';
 import { createLegacyHeadHandler } from '@/legacy-api-routes/head';
 import { withDatasetAccess } from '../../dataset-access';
+import { columnNameBodySchema, parseJsonBody } from '../../dataset-body';
 
 interface Params {
   params: Promise<{
@@ -35,7 +36,9 @@ export async function GET(_: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   return withDatasetAccess(req, await params, async (supabase, scope) => {
     const { datasetId } = scope;
-    const { name } = await req.json();
+    const body = await parseJsonBody(req, columnNameBodySchema);
+    if (!body.ok) return body.response;
+    const { name } = body.data;
 
     // Create the column first
     const { data: column, error: columnError } = await supabase
