@@ -16,6 +16,7 @@ describe('Staging cookie zone', () => {
       'https://staging.tutur3u.com',
       'https://other.staging.tutur3u.com',
     ])('shares secure cookies within the staging zone: %s', (origin) => {
+      vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
       vi.stubEnv('NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN', STAGING_DOMAIN);
       expect(getSupabaseCookieOptions(supabase, origin)).toMatchObject({
         domain: STAGING_DOMAIN,
@@ -28,6 +29,7 @@ describe('Staging cookie zone', () => {
       'https://evil-staging.tutur3u.com',
       'https://tutur3u.com',
     ])('keeps hosts outside the zone isolated: %s', (origin) => {
+      vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
       vi.stubEnv('NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN', STAGING_DOMAIN);
       expect(getSupabaseCookieOptions(supabase, origin).domain).toBeUndefined();
     });
