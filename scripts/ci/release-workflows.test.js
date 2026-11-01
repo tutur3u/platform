@@ -1638,6 +1638,36 @@ const packageReleaseWorkflows = [
     workflowName: 'release-utils-package.yaml',
   },
   {
+    artifactDir: 'realtime-package',
+    artifactName: 'tuturuuu-realtime-npm-package',
+    environment: 'realtime-release-production',
+    packageName: '@tuturuuu/realtime',
+    packagePath: 'packages/realtime',
+    rejectMessagePattern:
+      /@tuturuuu\/realtime releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /working-directory: packages\/realtime/,
+      /bun turbo:local run type-check --concurrency=4 --filter=@tuturuuu\/realtime/,
+      /bun turbo:local run test --concurrency=4 --filter=@tuturuuu\/realtime/,
+    ],
+    workflowName: 'release-realtime-package.yaml',
+  },
+  {
+    artifactDir: 'turnstile-package',
+    artifactName: 'tuturuuu-turnstile-npm-package',
+    environment: 'turnstile-release-production',
+    packageName: '@tuturuuu/turnstile',
+    packagePath: 'packages/turnstile',
+    rejectMessagePattern:
+      /@tuturuuu\/turnstile releases can only run from refs\/heads\/production/,
+    requiredBuildPatterns: [
+      /working-directory: packages\/turnstile/,
+      /bun turbo:local run type-check --concurrency=4 --filter=@tuturuuu\/turnstile/,
+      /bun turbo:local run test --concurrency=4 --filter=@tuturuuu\/turnstile/,
+    ],
+    workflowName: 'release-turnstile-package.yaml',
+  },
+  {
     artifactDir: 'sdk-package',
     artifactName: 'tuturuuu-sdk-npm-package',
     environment: 'sdk-release-production',

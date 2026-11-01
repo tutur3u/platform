@@ -70,6 +70,8 @@ export const ci = {
   'release-sdk-package.yaml': true,
   'release-supabase-package.yaml': true,
   'release-please.yaml': true,
+  'release-realtime-package.yaml': true,
+  'release-turnstile-package.yaml': true,
   'release-types-package.yaml': true,
   'release-typescript-config-package.yaml': true,
   'release-ui-package.yaml': true,
