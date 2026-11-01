@@ -6,6 +6,7 @@ import {
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
+  meeting: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   membership: vi.fn(),
   credits: vi.fn(),
@@ -72,10 +73,12 @@ function createRequest({
   audio = null,
   contentLength,
   wsId = 'personal',
+  meetingId = '22222222-2222-4222-8222-222222222222',
 }: {
   audio?: FormDataEntryValue | null;
   contentLength?: string;
   wsId?: FormDataEntryValue | null;
+  meetingId?: FormDataEntryValue | null;
 } = {}) {
   const headers = new Headers();
   if (contentLength !== undefined) {
@@ -85,6 +88,7 @@ function createRequest({
     get: vi.fn((key: string) => {
       if (key === 'audio') return audio;
       if (key === 'wsId') return wsId;
+      if (key === 'meetingId') return meetingId;
       return null;
     }),
   });
@@ -114,7 +118,17 @@ describe('meeting transcription route input bounds', () => {
     mocks.limiters.mockResolvedValue({
       mutate: [{ limiter: { limit: mocks.limit } }],
     });
+    mocks.meeting.mockResolvedValue({
+      data: { ws_id: '11111111-1111-4111-8111-111111111111' },
+      error: null,
+    });
+    const query = {
+      select: () => query,
+      eq: () => query,
+      maybeSingle: mocks.meeting,
+    };
     mocks.createClient.mockResolvedValue({
+      from: () => query,
       auth: {
         getUser: vi.fn().mockResolvedValue({
           data: { user: { id: 'user-1' } },
@@ -176,7 +190,9 @@ describe('meeting transcription route input bounds', () => {
     const { arrayBuffer, file } = createAudioFile();
     const { formData, request } = createRequest({ audio: file });
     const response = await post()(request);
-    expect(response.status).toBe(reason === 'rate-limit' ? 429 : 403);
+    expect(response.status).toBe(
+      reason === 'rate-limit' ? 429 : reason === 'credits' ? 402 : 403
+    );
     if (reason === 'rate-limit') {
       expect(response.headers.get('Retry-After')).toBeTruthy();
       expect(formData).not.toHaveBeenCalled();
@@ -186,6 +202,30 @@ describe('meeting transcription route input bounds', () => {
     expect(mocks.deduct).not.toHaveBeenCalled();
     expectNoAiSetup();
   });
+
+  it('denies a forged workspace even when the actor belongs to it', async () => {
+    mocks.normalizeWorkspaceId.mockResolvedValue(
+      '33333333-3333-4333-8333-333333333333'
+    );
+    const { request } = createRequest({
+      audio: createAudioFile().file,
+      wsId: 'other-team',
+    });
+    expect((await post()(request)).status).toBe(403);
+    expect(mocks.credits).not.toHaveBeenCalled();
+    expect(mocks.deduct).not.toHaveBeenCalled();
+    expectNoAiSetup();
+  });
+
+  it.each([null, '', 'invalid'])(
+    'requires a valid meeting ID (%s)',
+    async (meetingId) => {
+      const { request } = createRequest({ meetingId });
+      expect((await post()(request)).status).toBe(400);
+      expect(mocks.credits).not.toHaveBeenCalled();
+      expectNoAiSetup();
+    }
+  );
 
   it.each(['not-allowlisted', 'lookup-throws', 'lookup-rejects', 'no-gate'])(
     'fails closed on the Meet AI allowlist (%s) before credits, file reads or the provider',

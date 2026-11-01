@@ -138,6 +138,25 @@ export function createPOST({
       if (!z.uuid().safeParse(wsId).success) {
         return new Response('Workspace access denied', { status: 403 });
       }
+      const meetingId = formData.get('meetingId');
+      if (
+        !z.uuid().safeParse(meetingId).success ||
+        typeof meetingId !== 'string'
+      ) {
+        return new Response('Meeting ID is required', { status: 400 });
+      }
+      const { data: meeting, error: meetingError } = await supabase
+        .from('workspace_meetings')
+        .select('ws_id')
+        .eq('id', meetingId)
+        .maybeSingle();
+      if (meetingError) {
+        return new Response('Meeting lookup unavailable', { status: 503 });
+      }
+      if (!meeting || meeting.ws_id !== wsId) {
+        return new Response('Meeting access denied', { status: 403 });
+      }
+      wsId = meeting.ws_id;
       const membership = await verifyWorkspaceMembershipType({
         wsId,
         userId: user.id,
@@ -163,10 +182,13 @@ export function createPOST({
       if (!creditCheck.allowed) {
         return Response.json(
           {
-            error: creditCheck.errorMessage || 'AI credits insufficient',
+            error:
+              creditCheck.errorCode === 'CREDITS_EXHAUSTED'
+                ? 'The meeting workspace is out of AI credits'
+                : 'AI credits unavailable for the meeting workspace',
             code: creditCheck.errorCode,
           },
-          { status: 403 }
+          { status: 402 }
         );
       }
 

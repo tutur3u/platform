@@ -120,6 +120,12 @@ export async function POST(
         409,
         'Refresh Meet before starting a room assistant'
       );
+    // Personal "Talk to Mira" stays on the actor's personal credits; only the
+    // room assistant (meeting transcription/notes) bills the meeting workspace.
+    const billingWorkspaceId =
+      command.mode === 'personal'
+        ? await personalWorkspace(access.user.id)
+        : access.meeting.ws_id;
     const claims: LiveSessionClaims = {
       audioPolicy: command.audioPolicy,
       audience: 'meet-live',
@@ -127,7 +133,7 @@ export async function POST(
       sessionId: crypto.randomUUID(),
       meetingId,
       ownerId: access.user.id,
-      billingWorkspaceId: await personalWorkspace(access.user.id),
+      billingWorkspaceId,
       mode: command.mode,
       expiresAt: Date.now() + 120000,
     };
