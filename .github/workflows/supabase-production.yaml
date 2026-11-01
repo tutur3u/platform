@@ -627,7 +627,7 @@ jobs:
 
   deploy:
     name: Migrate production database
-    timeout-minutes: 15
+    timeout-minutes: 30
     runs-on: ubuntu-latest
     # Branch-restricted (main for workflow_run, production for dispatch) so
     # other branches cannot read the Management API token or DB password.
