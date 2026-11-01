@@ -186,6 +186,8 @@ export function Lobby({
   // While a join request waits for the host, the room already owns the mic and
   // camera; the lobby must not open a second capture or switch devices.
   const mediaHandedOff = waiting;
+  // Join pressed: the room is about to take the devices, so no toggling.
+  const mediaLocked = mediaHandedOff || isJoining;
 
   const cameraBlockedMessage = t('camera_blocked');
   const micBlockedMessage = t('lobby_mic_blocked');
@@ -410,7 +412,7 @@ export function Lobby({
                     !audioEnabled &&
                       'bg-dynamic-red text-white hover:bg-dynamic-red/90'
                   )}
-                  disabled={mediaHandedOff}
+                  disabled={mediaLocked}
                   onClick={() => setAudioEnabled((value) => !value)}
                   size="icon"
                   type="button"
@@ -430,7 +432,7 @@ export function Lobby({
                     !videoEnabled &&
                       'bg-dynamic-red text-white hover:bg-dynamic-red/90'
                   )}
-                  disabled={mediaHandedOff}
+                  disabled={mediaLocked}
                   onClick={() => {
                     if (videoEnabled) setStream(null);
                     setVideoEnabled((value) => !value);
@@ -460,7 +462,7 @@ export function Lobby({
           <LobbyDevicePickers
             audioDeviceId={audioDeviceId}
             devices={devices}
-            disabled={isJoining || mediaHandedOff}
+            disabled={mediaLocked}
             onAudioDeviceChange={setAudioDeviceId}
             onOutputDeviceChange={(next) => {
               setLocalOutputId(next);

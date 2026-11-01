@@ -363,3 +363,17 @@ it('opens no second capture and locks media controls while a join request waits'
   await Promise.resolve();
   expect(getUserMedia).not.toHaveBeenCalled();
 });
+
+it('locks the media toggles while the join request is in flight', async () => {
+  installMediaDevices({
+    devices: [
+      { kind: 'audioinput', deviceId: 'mic-usb', label: 'USB Mic' },
+    ] as MediaDeviceInfo[],
+  });
+  render(localized(<Lobby {...lobbyProps()} isJoining />));
+  for (const name of [en.meet.call.mute, en.meet.call.camera_on]) {
+    expect(
+      (screen.getByRole('button', { name }) as HTMLButtonElement).disabled
+    ).toBe(true);
+  }
+});
