@@ -254,118 +254,49 @@ for the same commit.
 
 ## Staging Host Scheme And Login Handoff
 
-Production keeps one shared cookie domain: web and every satellite live on
-`tuturuuu.com` / `*.tuturuuu.com`, share the `.tuturuuu.com` session cookie, and
-no behavior in this section changes that.
-
-Staging is a separate, cookie-isolated environment. Every staging surface
-(web, Next satellites and Workers) lives on `https://<app>.tutur3u.com`,
-for example `https://<app>.tutur3u.com` and
-`https://<app>.tutur3u.com`. Its shared cookie domain is exactly
-`.staging.tutur3u.com`, never `.tutur3u.com` and never `.tuturuuu.com`.
-
-Two environment variables describe the staging host scheme. Both are
-`NEXT_PUBLIC_` values because the login form and the app-domain registry also run
-in the browser.
-
-| Variable | Format | Default |
-| --- | --- | --- |
-| `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN` | Exactly `.staging.tutur3u.com` | Unset: production `.tuturuuu.com` |
-| `NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS` | Comma or newline separated `name:https://origin` entries | Unset: no extra apps |
-
-```text
-NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com
-NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS=platform:https://<app>.tutur3u.com,tasks:https://<app>.tutur3u.com,meet:https://<app>.tutur3u.com
-```
+Production retains its `.tuturuuu.com` shared cookies and existing host identities.
+Staging apps use exact `https://<app>.tutur3u.com` origins behind Cloudflare Access.
+Staging profiles and routes must not contain wildcard hosts. Credentialed CORS
+uses the exact app-host registry.
 
 <Warning>
-Neither variable may be set on production. Production deployments, previews that
-serve production data and every `*.tuturuuu.com` host must leave both unset. The
-code ignores a mis-set value (see below) so a mistake cannot move production off
-`.tuturuuu.com`, but the deployment configuration must still never carry them.
+The native-only Web staging publisher serves probes and enabled native legal and
+security pages. Login and auth API paths return a static 404. Cross-app sign-in
+therefore requires a separate issuer auth migration before acceptance. Keep the
+global cookie-scope and cookie-name migration on hold until that flow is available
+and verified. Do not restore an upstream proxy to work around this hold.
 </Warning>
 
-Per-app alias template: `https://<app>.tutur3u.com`, where `<app>` is the
-app name used in `PRODUCTION_INTERNAL_APP_DOMAINS` (the web app is registered as
-`platform`, for example `platform:https://<app>.tutur3u.com`).
+The native Web profile uses `AUTH_COOKIE_PREFIX=__Host-` and leaves
+`AUTH_COOKIE_DOMAIN` unset. Its response boundary rejects every Domain attribute.
+App-session cookie names must start with `__Host-`, and prefixed cookies must use
+Secure and Path=/. Shared Start response boundaries and the Apps, Contacts, and Meet Worker exits
+also reject Domain-bearing cookies on registered staging hosts. These checks do not implement the held
+issuer or migrate global cookie readers.
 
-### Shared cookie domain
+The native Web profile requires only the Cloudflare Access team domain and AUD.
+The environment owner must delete `TRUSTED_PROXY_ORIGIN_SECRET` from
+`wave1-web-staging`. Source configuration changes do not delete that live secret.
+The profile does not require an upstream or a Vercel bypass secret.
 
-`packages/utils/src/shared-cookie.ts` owns the shared cookie domain. The override
-is an exact allowlist containing only `.staging.tutur3u.com`. Anything else
-(`.foo.tutur3u.com`, `.staging.tuturuuu.com`, `.tutur3u.com`, `.tuturuuu.com`, a
-wildcard, a value without a leading dot) is ignored with a `console.warn`, and
-production behavior stays in force. With no accepted override the cookie and
-deletion options are identical to production. The override replaces
-`.tuturuuu.com` for that deployment, so a staging host never sets or reads a
-production cookie; `.tuturuuu.localhost` stays for local development.
+The existing Next issuer code generates a token valid for 300 seconds, builds a
+return to the registered app origin's `/verify-token`, and redeems the token once
+under a database row lock. Redemption binds the token to an app name. The native
+staging host currently does not serve those issuer endpoints. After the separate
+auth migration, each satellite must keep its own host-only app-session cookies,
+and all cookie readers must use the same prefixed names as the writers. Never
+configure a parent `.tutur3u.com` cookie domain.
 
-`@tuturuuu/utils` depends on `@tuturuuu/supabase`, so the Supabase cookie helpers
-(`packages/supabase/src/next/common.ts`) cannot import it. They read the same
-allowlist from the dependency-free `packages/supabase/src/shared-cookie-domains.ts`,
-and a parity test in `packages/utils/src/shared-cookie.test.ts` fails if the two
-resolve a host differently. `packages/auth/src/app-session.ts` imports
-`getTuturuuuSharedCookieDomains()` directly. Production still resolves to
-`.tuturuuu.com` and `.tuturuuu.localhost` exactly.
+Reserved zone names cannot be staging profiles or staging app origins: the apex,
+`www`, `ingest`, `mastermind-hub`, `mastermind-hub-staging`, `iris-relay`,
+`iris-relay-staging`, `cf-bounce`, `_dmarc`, `_vercel`, `docs`, and any
+`*._domainkey` name. The CI reservation test loads native profiles, hosted staging
+profiles, Worker profiles and Start root hosts.
 
-### Managed shortcut versus token handoff
-
-The tokenless "managed" return path (`apps/web/src/lib/auth/managed-tuturuuu-return-url.ts`,
-used by `/api/v1/auth/cross-app-return`, `/api/auth/callback` and the login form)
-applies only when the return host and the current web host both sit under the
-configured shared cookie domain. Any other combination is not managed, so
-cross-environment returns (production to staging or staging to production) are
-rejected rather than shortcut. With neither variable set the behavior is
-byte-for-byte the production behavior.
-
-`isRootTuturuuuHostname` keeps its production result (`tuturuuu.com` only). It
-additionally treats a registered `platform` host as the root, which on staging is
-the web host and in local development includes `tuturuuu.localhost`; no
-production hostname changes.
-
-### Internal app registry
-
-`NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS` registers staging apps as `internal`
-apps so they receive `/verify-token` (unlike
-`NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS`, which registers `external` apps).
-The registry exists only on a staging deployment:
-
-- It is empty unless the shared cookie domain is the accepted override, so a
-  production deployment never acts on it, even if the variable is set by mistake.
-- Each entry's host must equal `staging.tutur3u.com` or be a subdomain of it, with
-  no explicit port and no trailing dot.
-- Each entry name must be an existing app name from the known app map
-  (`APP_DOMAIN_MAP`); the variable cannot introduce new names.
-- Entries must be `https`, exact origins with no path, query, credentials or
-  wildcards, and are matched on the exact origin only.
-
-Rejected entries are ignored with a `console.warn`.
-
-With the staging override active the built-in production app origins
-(`PRODUCTION_INTERNAL_APP_DOMAINS`) are dropped from the registry, so a staging
-host cannot mint a token for, or redirect to, a production app. Local development
-(Portless and localhost) entries remain. External apps are not filtered: entries
-from `NEXT_PUBLIC_TUTURUUU_EXTERNAL_APP_DOMAINS` and DB-registered external apps
-still apply on staging, so they must never point at production hosts there.
-
-The override fails closed on production: when `VERCEL_ENV` is `production` (server)
-or `NEXT_PUBLIC_VERCEL_ENV` is `production` (browser bundles, which cannot see
-`VERCEL_ENV`), `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN` is ignored, the
-production default applies, the registry stays empty, and a single
-`console.error` is logged per process.
-
-### DNS requirement for credentialed CORS
-
-Credentialed CORS on staging trusts `*.staging.tutur3u.com`. The staging DNS zone
-must therefore contain no wildcard record and no host delegated to or controlled
-by a third party (for example a hosted-service CNAME that someone else can
-claim); every `*.staging.tutur3u.com` name must be one we operate, because any such
-host can send credentialed requests to staging.
-
-Regression coverage: `packages/utils/src/shared-cookie.test.ts`,
-`packages/utils/src/internal-domains.test.ts`,
-`apps/web/src/lib/auth/managed-tuturuuu-return-url.test.ts` and the
-`cross-app-return` and `auth/callback` route tests.
+Regression coverage includes the reserved-name CI test, native Web profile and
+seal tests, Web admission and cookie-boundary tests, and the shared staging
+cookie-policy tests. Hosted Access, DNS and sign-in acceptance remain separate
+release checks.
 
 ## Self-Hosted Web Release Flow
 
@@ -481,12 +412,15 @@ Regression coverage lives in `branch-validation.test.ts`,
 `managed-project-branch.test.ts`, and `watch-blue-green-projects.test.js`.
 
 
-Shared cookie scope uses one decision function in
+The legacy shared-cookie configuration remains deferred to the issuer migration;
+app Workers reject outgoing Domain cookies. The legacy scope uses one decision
+function in
 `@tuturuuu/supabase/shared-cookie-domains`, shared by utils and Supabase helpers.
 Servers explicitly admit staging with `TUTURUUU_DEPLOY_ENV=staging`. Browser
 bundles use the design's build-time `NEXT_PUBLIC_TUTURUUU_STAGING=1` signal
 when the private deploy environment is unavailable. Both require exactly
-`.staging.tutur3u.com` after domain normalization; invalid staging configuration
+the legacy staging cookie domain after domain normalization; invalid staging
+configuration
 throws rather than falling back to production. Vercel production markers veto the public flag. When the public flag is `1`,
 any defined private deploy environment other than `staging` throws, including
 empty, unknown, preview and production values, preventing divergent server and

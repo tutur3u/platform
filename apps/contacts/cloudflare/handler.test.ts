@@ -231,7 +231,7 @@ describe('Next fallback compatibility', () => {
   });
   it('keeps rotated session cookies separately and preserves rewrite/security headers', async () => {
     const cookies = [
-      'sb-auth.0=rotated; Domain=.staging.tutur3u.com; Path=/; Secure; HttpOnly; SameSite=Lax',
+      'sb-auth.0=rotated; Path=/; Secure; HttpOnly; SameSite=Lax',
       '__Host-csrf=token; Path=/; Secure; SameSite=Strict',
     ];
     const headers = new Headers({
@@ -273,16 +273,16 @@ describe('Next fallback compatibility', () => {
     expect(await response.text()).toBe('Upstream cookie domain rejected');
   });
   it.each(['Domain=.staging.tutur3u.com', 'dOmAiN\t=\t.STAGING.TUTUR3U.COM  '])(
-    'preserves a single staging cookie domain: %s',
+    'rejects a single staging cookie domain: %s',
     async (attributes) => {
       const cookie = `sb-auth=fixture; ${attributes}; Secure`;
       const { handler } = setup(() =>
         reply('auth', { headers: { 'set-cookie': cookie } })
       );
       const response = await handler(request('/login'), env);
-      expect(response.status).toBe(200);
-      expect(response.headers.getSetCookie()).toEqual([cookie]);
-      expect(await response.text()).toBe('auth');
+      expect(response.status).toBe(500);
+      expect(response.headers.getSetCookie()).toEqual([]);
+      expect(await response.text()).toBe('Staging cookie domain rejected');
     }
   );
   it('rejects production cookie domains', async () => {

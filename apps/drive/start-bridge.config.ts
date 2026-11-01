@@ -16,5 +16,5 @@ export default defineBridgeAppConfig({
   worker: { workersDev: false },
   csp: defaultContentSecurityPolicy,
   wrapResponse: (response, context) =>
-    scopeStagingCookies(decorate(response, context)),
+    scopeStagingCookies(context.request, decorate(response, context)),
 });

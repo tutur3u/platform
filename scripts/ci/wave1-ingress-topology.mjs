@@ -53,14 +53,28 @@ export function productionWorkers() {
 const inZone = (hostname) =>
   hostname === STAGING_ZONE || hostname.endsWith(`.${STAGING_ZONE}`);
 
-/**
- * A wildcard that could answer an unknown `<x>.tutur3u.com` name.
- * The issuer trusts every single-label staging origin for CORS, which is safe
- * only while no wildcard can mint such a host (R1/N10).
- */
+/** Wildcard bindings in the app namespace, excluding reserved service trees. */
 export function isStagingWildcard(name) {
   if (!name.startsWith('*')) return false;
   const base = name.replace(/^\*\.?/u, '');
+  const protectedServices = new Set([
+    'www',
+    'ingest',
+    'mastermind-hub',
+    'mastermind-hub-staging',
+    'iris-relay',
+    'iris-relay-staging',
+    'cf-bounce',
+    '_dmarc',
+    '_vercel',
+    '_domainkey',
+    'docs',
+  ]);
+  if (base.endsWith(`.${STAGING_ZONE}`)) {
+    const service = base.slice(0, -`.${STAGING_ZONE}`.length).split('.').at(-1);
+    if (service && protectedServices.has(service)) return false;
+  }
+
   return (
     base === STAGING_PARENT ||
     base === STAGING_ZONE ||

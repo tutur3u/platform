@@ -12,7 +12,11 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    include: ['src/native/**/*.test.{ts,tsx}', 'src/lib/**/*.test.ts'],
+    include: [
+      'src/native/**/*.test.{ts,tsx}',
+      'src/lib/**/*.test.ts',
+      'cloudflare/**/*.test.ts',
+    ],
     maxWorkers: 1,
   },
 });

@@ -95,12 +95,13 @@ admitted at the Worker root. No DNS, custom domain,
 production route, publisher or infrastructure provisioning is part of this candidate.
 
 The candidate uses the staging Supabase project pinned in `supabase-staging.yaml`,
-forwards storage to `https://staging.tutur3u.com`, and refuses missing or mismatched
+forwards storage to the central staging API, and refuses missing or mismatched
 runtime origins before loading routes. The Vite config also rejects non-staging
 build origins. Supply only the staging publishable key and staging server secrets;
-never reuse production credentials. Session cookies use `.staging.tutur3u.com`
-exactly, with Secure and HSTS. Browser Supabase cookies admit this exact Drive
-host only. Staging responses are private and unindexable. English and Vietnamese
+never reuse production credentials. Candidate response cookies stay host-only,
+with Secure and HSTS. Outgoing Domain cookies are rejected, including prefixed cookies. Global
+Supabase cookie configuration remains deferred to the issuer migration. Staging
+responses are private and unindexable. English and Vietnamese
 routes, Drive session audience and central API ownership remain unchanged.
 
 Storage still uses the existing central APIs, path guards and storage RLS from

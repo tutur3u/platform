@@ -11,8 +11,7 @@ const env: WebCandidateEnv = {
   WEB_START_CANDIDATE: 'staging',
   NEXT_FALLBACK_ORIGIN: origin,
   NEXT_PUBLIC_SUPABASE_URL: stagingProfile.supabaseUrl,
-  AUTH_COOKIE_DOMAIN: stagingProfile.cookieDomain,
-  TRUSTED_PROXY_ORIGIN_SECRET: secret,
+  AUTH_COOKIE_PREFIX: stagingProfile.cookiePrefix,
   VERCEL_AUTOMATION_BYPASS_SECRET: 'test-bypass-secret-00000000000000000000',
   CF_ACCESS_TEAM_DOMAIN: 'fixture-team.cloudflareaccess.com',
   CF_ACCESS_AUD: 'fixture-aud',
@@ -80,7 +79,7 @@ describe('Web candidate admission', () => {
   it.each([
     { NEXT_PUBLIC_SUPABASE_URL: 'https://production.supabase.co' },
     { AUTH_COOKIE_DOMAIN: '.tuturuuu.com' },
-    { TRUSTED_PROXY_ORIGIN_SECRET: 'short' },
+    { AUTH_COOKIE_PREFIX: 'unsafe-' },
   ])('rejects unsafe identity %j', async (override) => {
     const { handler, fetcher } = setup();
     expect((await handler(request('/'), { ...env, ...override })).status).toBe(
@@ -434,5 +433,44 @@ describe('retained forwarding helper compatibility', () => {
     expect(forwarded(fetcher).headers.has('x-request-hop')).toBe(false);
     expect(forwarded(fetcher).headers.has('host')).toBe(false);
     expect(response.headers.has('x-response-hop')).toBe(false);
+  });
+});
+
+describe('native staging cookie scope', () => {
+  it.each([
+    ['__Host-tuturuuu_app_session=fixture; Path=/; Secure; HttpOnly', 200],
+    ['tuturuuu_app_session=fixture; Path=/; Secure', 500],
+    ['__Host-tuturuuu_app_session=fixture; Path=/', 500],
+    ['__Host-tuturuuu_app_session=fixture; Path=/other; Secure', 500],
+    [
+      '__Host-tuturuuu_app_session=fixture; Path=/; Secure; Domain=.tutur3u.com',
+      500,
+    ],
+    [
+      'sb-fixture-auth-token=fixture; Path=/; Secure; Domain=.staging.tutur3u.com',
+      500,
+    ],
+  ])('enforces the native cookie contract for %s', async (cookie, status) => {
+    const handler = createWebCandidateHandler({
+      start: async () =>
+        new Response('native', { headers: { 'set-cookie': cookie } }),
+      verifyAccess: async () => true,
+    });
+    const result = await handler(request('/__web1'), env);
+    expect(result.status).toBe(status);
+    expect(result.headers.getSetCookie()).toEqual(
+      status === 200 ? [cookie] : []
+    );
+  });
+  it('keeps auth endpoints unmigrated with no proxy secret or upstream', async () => {
+    const { handler, fetcher, start } = setup();
+    for (const path of [
+      '/login',
+      '/api/v1/auth/cross-app-return',
+      '/api/v1/auth/cross-app-token/verify',
+    ])
+      expect((await handler(request(path), env)).status).toBe(404);
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(start).not.toHaveBeenCalled();
   });
 });
