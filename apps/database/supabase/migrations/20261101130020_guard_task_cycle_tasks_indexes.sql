@@ -1,6 +1,7 @@
 -- IF NOT EXISTS can skip an INVALID index left by a failed concurrent build,
--- and 20261027000200/000300 are recorded once they run, so they never rerun.
+-- and 20261101130000/130010 are recorded once they run, so they never rerun.
 -- Do not advance past this point without enforced one-cycle-per-task.
+-- tuturuuu: reviewed(dynamic-sql-review): fixed catalog checks only; no EXECUTE or interpolated SQL.
 do $$
 begin
   if not exists (
@@ -17,7 +18,7 @@ begin
     raise exception using
       errcode = '55000',
       message = 'Task cycle one-cycle-per-task unique index is missing or invalid',
-      hint = 'Resolve duplicate task_id rows first (audit: apps/database/verification/task-cycle-duplicate-links.sql; cleanup needs release-authority approval). Drop an invalid index concurrently outside a transaction, rebuild it with psql -f apps/database/supabase/migrations/20261027000200_index_task_cycle_tasks_one_cycle_per_task.sql in autocommit, then retry pending migrations.';
+      hint = 'Resolve duplicate task_id rows first (audit: apps/database/verification/task-cycle-duplicate-links.sql; cleanup needs release-authority approval). Drop an invalid index concurrently outside a transaction, rebuild it with psql -f apps/database/supabase/migrations/20261101130000_index_task_cycle_tasks_one_cycle_per_task.sql in autocommit, then retry pending migrations.';
   end if;
 
   if not exists (
@@ -33,7 +34,7 @@ begin
     raise exception using
       errcode = '55000',
       message = 'Task cycle cycle_id index is missing or invalid',
-      hint = 'Drop an invalid index concurrently outside a transaction, rebuild it with psql -f apps/database/supabase/migrations/20261027000300_index_task_cycle_tasks_cycle_id.sql in autocommit, then retry pending migrations.';
+      hint = 'Drop an invalid index concurrently outside a transaction, rebuild it with psql -f apps/database/supabase/migrations/20261101130010_index_task_cycle_tasks_cycle_id.sql in autocommit, then retry pending migrations.';
   end if;
 end;
 $$;
