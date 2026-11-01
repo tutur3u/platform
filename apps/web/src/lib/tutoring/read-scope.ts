@@ -39,3 +39,30 @@ export async function resolveTutoringReadScope({
     return { allowed: false };
   return { allowed: true, teacherId: linked.virtual_user_id };
 }
+
+/** Writes follow the read scope: managers act on any session, others on their own. */
+export function resolveTutoringWriteScope(
+  args: Omit<Parameters<typeof resolveTutoringReadScope>[0], 'teacherId'>
+) {
+  return resolveTutoringReadScope(args);
+}
+
+/** A scoped actor may only touch sessions they teach; managers have no limit. */
+export function isSessionInTutoringScope(
+  scope: { teacherId: string | undefined },
+  sessionTeacherId: string | null
+) {
+  return !scope.teacherId || sessionTeacherId === scope.teacherId;
+}
+
+/** A scoped actor may never hand a session to anyone else, or unassign it. */
+export function isTeacherReassignmentAllowed(
+  scope: { teacherId: string | undefined },
+  nextTeacherId: string | null | undefined
+) {
+  return (
+    !scope.teacherId ||
+    nextTeacherId === undefined ||
+    nextTeacherId === scope.teacherId
+  );
+}
