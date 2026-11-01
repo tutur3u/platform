@@ -1177,8 +1177,17 @@ ttr external binding get --workspace <workspace-id> --json
 ```
 
 App JSON requires `id`, `displayName`, `enabled`, `origins`, `allowedScopes`,
-and `allowedWorkspaceIds` (explicit UUID allowlist). Do not include secrets or
-audit fields. Save updates these fields without rotating credentials. Scope
+and `allowedWorkspaceIds` (explicit UUID allowlist). Optional `requirePkce` and
+`callbackPaths` configure [PKCE-bound handoffs](/platform/architecture/app-coordination#pkce-bound-handoffs);
+omitting them keeps the stored values. Do not include secrets or
+audit fields.
+
+**Rollout rule:** Never set `requirePkce=true` for any app until migration
+`20261101090000` is applied in production; record it in the release receipt.
+Until then `generate_cross_app_token_pkce` and
+`validate_cross_app_token_with_session_pkce` do not exist, so every login for
+that app would fail.
+ Save updates these fields without rotating credentials. Scope
 changes replace the whole approved list; `--clear-scopes` revokes all scopes.
 Custom template JSON can be
 `{"id":"rennu","display_name":"Ren Everheart","adapter":"custom"}`;

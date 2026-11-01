@@ -14,6 +14,11 @@ import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
 import { isRequiredMfaProofAllowed } from '@tuturuuu/utils/required-mfa-app-session';
 import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
 import { readMfaTransfer } from '@tuturuuu/utils/required-mfa-transfer';
+import type { SessionAssurance } from '@tuturuuu/utils/session-assurance';
+import {
+  readSessionAssuranceTransfer,
+  sessionAssuranceFromAppCoordinationClaims,
+} from '@tuturuuu/utils/session-assurance-transfer';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { BASE_URL } from '@/constants/common';
@@ -29,6 +34,7 @@ import {
 import { consumeRefreshTokenWithGrace } from '@/lib/app-coordination/refresh-replay';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
 import { authorizeWorkspaceSessionAppTokenExchange } from '@/lib/app-coordination/workspace-session';
+import { PKCE_CODE_VERIFIER_PATTERN } from '@/lib/auth/cross-app-pkce';
 import {
   type AuthUserIdentity,
   getAuthUserIdentity,
@@ -51,6 +57,7 @@ const exchangeSchema = z.object({
     .regex(/^[a-z0-9_-]{1,64}$/u)
     .optional(),
   appSecret: z.string().min(1).max(200).optional(),
+  codeVerifier: z.string().regex(PKCE_CODE_VERIFIER_PATTERN).optional(),
   requestedScopes: z.array(z.string().min(1).max(80)).max(50).optional(),
   targetApp: z
     .string()
@@ -65,6 +72,7 @@ const exchangeSchema = z.object({
 
 type CrossAppValidationRow = {
   session_data?: {
+    assuranceTransfer?: unknown;
     email?: unknown;
     mfaTransfer?: unknown;
   } | null;
@@ -190,6 +198,7 @@ async function resolveExchangeTarget({
 
     return {
       allowedWorkspaceIds: verification.app.allowedWorkspaceIds,
+      requirePkce: verification.app.requirePkce === true,
       scopes: getAllowedAppTokenScopesWithWorkspaceSession({
         allowedScopes: verification.app.allowedScopes,
         allowedWorkspaceIds: verification.app.allowedWorkspaceIds,
@@ -390,6 +399,7 @@ async function exchangeAppToken(request: NextRequest) {
   const {
     appId,
     appSecret,
+    codeVerifier,
     refreshToken,
     requestedScopes = [],
     targetApp,
@@ -437,6 +447,8 @@ async function exchangeAppToken(request: NextRequest) {
   let authIdentity: AuthUserIdentity;
   let userId: string;
   let mfa: MfaSessionProof | null = null;
+  // Only server-signed claims; never request or caller-writable session data.
+  let assurance: SessionAssurance | null = null;
 
   if (refreshToken) {
     const refreshClaims = await verifyExchangeRefreshToken({
@@ -467,6 +479,7 @@ async function exchangeAppToken(request: NextRequest) {
 
     userId = refreshClaims.sub;
     mfa = refreshClaims.mfa ?? null;
+    assurance = sessionAssuranceFromAppCoordinationClaims(refreshClaims);
     authIdentity = await getAuthUserIdentity({
       sbAdmin,
       sessionData: null,
@@ -482,14 +495,28 @@ async function exchangeAppToken(request: NextRequest) {
       );
     }
 
-    const supabase = (await createClient(request)) as TypedSupabaseClient;
-    const { data, error } = await supabase.rpc(
-      'validate_cross_app_token_with_session',
-      {
-        p_target_app: resolvedTarget.targetApp,
-        p_token: crossAppToken,
-      }
-    );
+    if (resolvedTarget.requirePkce && !codeVerifier) {
+      return NextResponse.json(
+        { code: 'PKCE_REQUIRED', error: 'Missing code verifier' },
+        { status: 400 }
+      );
+    }
+
+    // A verifier redeems only through the service_role _pkce function; without
+    // one, the anonymous validator refuses every challenge-bound token.
+    const { data, error } = codeVerifier
+      ? await sbAdmin.rpc('validate_cross_app_token_with_session_pkce', {
+          p_code_verifier: codeVerifier,
+          p_target_app: resolvedTarget.targetApp,
+          p_token: crossAppToken,
+        })
+      : await ((await createClient(request)) as TypedSupabaseClient).rpc(
+          'validate_cross_app_token_with_session',
+          {
+            p_target_app: resolvedTarget.targetApp,
+            p_token: crossAppToken,
+          }
+        );
 
     if (error) {
       console.warn('Failed to validate cross-app token for app exchange', {
@@ -506,6 +533,11 @@ async function exchangeAppToken(request: NextRequest) {
     userId = validationRow?.user_id ?? '';
     mfa = readMfaTransfer(
       validationRow?.session_data?.mfaTransfer,
+      userId,
+      resolvedTarget.targetApp
+    );
+    assurance = readSessionAssuranceTransfer(
+      validationRow?.session_data?.assuranceTransfer,
       userId,
       resolvedTarget.targetApp
     );
@@ -603,6 +635,7 @@ async function exchangeAppToken(request: NextRequest) {
   });
 
   return createExchangeTokenResponse({
+    assurance,
     mfa,
     email: userProfile.email ?? authIdentity.email,
     normalizedWorkspaceId:

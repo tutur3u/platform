@@ -203,6 +203,9 @@ export interface ApproveMfaMobileApprovalResponse {
 }
 
 export interface CreateCrossAppReturnUrlPayload {
+  /** RFC 7636 S256 challenge forwarded from the login redirect. */
+  codeChallenge?: string;
+  codeChallengeMethod?: string;
   returnUrl: string;
 }
 

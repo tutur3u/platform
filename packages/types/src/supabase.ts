@@ -3709,6 +3709,8 @@ export type Database = {
       };
       cross_app_tokens: {
         Row: {
+          code_challenge: string | null;
+          code_challenge_method: string | null;
           created_at: string;
           expires_at: string;
           id: string;
@@ -3722,6 +3724,8 @@ export type Database = {
         };
         ComputedFields: never;
         Insert: {
+          code_challenge?: string | null;
+          code_challenge_method?: string | null;
           created_at?: string;
           expires_at: string;
           id?: string;
@@ -3734,6 +3738,8 @@ export type Database = {
           user_id: string;
         };
         Update: {
+          code_challenge?: string | null;
+          code_challenge_method?: string | null;
           created_at?: string;
           expires_at?: string;
           id?: string;
@@ -24979,6 +24985,17 @@ export type Database = {
           p_user_id: string;
         };
         Returns: undefined;
+      };
+      redeem_cross_app_token: {
+        Args: {
+          p_code_verifier: string;
+          p_target_app: string;
+          p_token: string;
+        };
+        Returns: {
+          session_data: Json;
+          user_id: string;
+        }[];
       };
       refresh_posts_dashboard_view: {
         Args: Record<PropertyKey, never>;
@@ -49800,6 +49817,18 @@ export type Database = {
             };
             Returns: string;
           };
+      generate_cross_app_token_pkce: {
+        Args: {
+          p_code_challenge: string;
+          p_code_challenge_method: string;
+          p_expiry_seconds: number;
+          p_origin_app: string;
+          p_session_data: Json;
+          p_target_app: string;
+          p_user_id: string;
+        };
+        Returns: string;
+      };
       get_action_frequency_by_hour: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -53498,6 +53527,17 @@ export type Database = {
       };
       validate_cross_app_token_with_session: {
         Args: { p_target_app: string; p_token: string };
+        Returns: {
+          session_data: Json;
+          user_id: string;
+        }[];
+      };
+      validate_cross_app_token_with_session_pkce: {
+        Args: {
+          p_code_verifier: string;
+          p_target_app: string;
+          p_token: string;
+        };
         Returns: {
           session_data: Json;
           user_id: string;

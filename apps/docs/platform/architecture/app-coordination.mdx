@@ -180,7 +180,9 @@ CLI-only APIs.
    Infrastructure dashboard.
 2. Issue an app secret and store it in the external app runtime environment.
 3. Send users to the centralized web login with a `returnUrl` pointing back to
-   the registered external app origin.
+   the registered external app origin (and registered callback path, when
+   configured), plus the PKCE parameters described in
+   [PKCE-bound handoffs](#pkce-bound-handoffs).
 4. The external app receives a short-lived cross-app `token` on its return URL.
 5. The external app server calls
    `POST /api/v1/auth/app-token/exchange` with `appId`, `appSecret`, `token`,
@@ -206,7 +208,8 @@ CLI-only APIs.
    the user can accept or reject the invitation in Tuturuuu first.
 8. Tuturuuu validates the app secret and cross-app token, then returns a
    short-lived bearer token for Tuturuuu APIs plus the normalized authorized
-   `workspaceId`.
+   `workspaceId` and, when known, the session's `aal` and `amr` (see
+   [Session assurance](#session-assurance)).
 
 External apps should store only their own app secret and local session material.
 They should send Tuturuuu API calls with the returned bearer token and should
@@ -219,6 +222,87 @@ should also revalidate stored local sessions against a protected
 external-project API route before rendering admin UI or proxying admin API
 calls; if Tuturuuu returns `401`, `403`, or `404`, the app must clear its local
 session and send the user through the central login flow again.
+
+### PKCE-bound handoffs
+
+The cross-app `token` is a one-time bearer credential. To bind it to the browser
+that started the login, an external app can add an RFC 7636 S256 challenge:
+
+1. Before redirecting, generate a `code_verifier` (43-128 characters from
+   `A-Z a-z 0-9 - . _ ~`) and keep it in the browser's own session (for example
+   an `HttpOnly` cookie set by the app's server).
+2. Add `code_challenge=BASE64URL(SHA256(code_verifier))` (43 characters, no
+   padding) and `code_challenge_method=S256` to the centralized login URL next
+   to `returnUrl`. The login page forwards both to
+   `POST /api/v1/auth/cross-app-return`, which stores the challenge with the
+   handoff token. Only `S256` is accepted; `plain`, a missing method or a
+   malformed challenge returns `400` with `code: "INVALID_CODE_CHALLENGE"`.
+3. On the callback, send the stored verifier as `codeVerifier` in the
+   `POST /api/v1/auth/app-token/exchange` body with `appId`, `appSecret` and
+   `token`. A wrong or missing verifier fails like an invalid token (`401`)
+   and does not consume the handoff; a verifier for a token minted without a
+   challenge is also refused.
+
+Registry fields in the root workspace secrets (edited only by root platform
+admins through `ttr external apps save --file app.json` or
+`POST /api/v1/admin/external-apps`; each save stamps `updatedAt`/`updatedBy`,
+and omitted fields keep their stored value):
+
+| Field | Default | Effect |
+| --- | --- | --- |
+| `EXTERNAL_APP_REGISTRY:<appId>:requirePkce` | `false` | When `true`, cross-app-return refuses to mint without a valid S256 challenge and the exchange refuses a token exchange without `codeVerifier`; both return `400` with `code: "PKCE_REQUIRED"`. When `false`, the challenge is optional and existing apps are unaffected. |
+| `EXTERNAL_APP_REGISTRY:<appId>:callbackPaths` | `[]` | JSON array of exact return URL paths such as `"/auth/callback"`. When non-empty, a `returnUrl` on a registered origin must also match one of these paths (query strings are allowed); an empty list keeps the legacy origin-only check. |
+
+**Rollout rule:** Never set `requirePkce=true` for any app until migration
+`20261101090000` is applied in production; record it in the release receipt.
+Until then `generate_cross_app_token_pkce` and
+`validate_cross_app_token_with_session_pkce` do not exist, so every login for
+that app would fail.
+
+The challenge applies only to registered external apps; internal app verifiers
+never receive a challenge-bound token. In the database,
+`private.cross_app_tokens.code_challenge` stores the challenge,
+`generate_cross_app_token_pkce` mints it, the anonymous
+`validate_cross_app_token_with_session` refuses challenge-bound tokens, and the
+`service_role`-only `validate_cross_app_token_with_session_pkce` verifies the
+verifier. The PKCE variants have distinct names rather than overloads: extra
+overload unions in the generated `Database` types push Supabase client generics
+past TypeScript's instantiation depth (TS2589). Regression
+coverage lives in `apps/database/supabase/tests/cross-app-handoff-pkce.sql`,
+`apps/web/src/app/api/v1/auth/cross-app-return/route-pkce.test.ts` and
+`apps/web/src/app/api/v1/auth/app-token/exchange/route-pkce.test.ts`.
+
+### Session assurance
+
+The exchange response (and every refresh response, which has the same body)
+reports how strongly the handed-off Tuturuuu session was authenticated:
+
+| Field | Values | Meaning |
+| --- | --- | --- |
+| `aal` | `"aal1"` or `"aal2"` | Supabase authenticator assurance level of the session the handoff was minted from. `aal2` means the session completed a second factor. |
+| `amr` | string array, e.g. `["password", "totp"]` | Authentication method names from that session's `amr`, without timestamps. Present only when the session reported methods. |
+
+Both fields are derived server-side from the verified Supabase session claims
+when `POST /api/v1/auth/cross-app-return` mints the handoff. They travel in a
+signed, five-minute transfer token bound to the user and target app (token type
+`session_assurance_transfer`, which `verifyAppCoordinationToken` and every app
+session, bearer and refresh consumer reject; only `readSessionAssuranceTransfer`
+accepts it, enforced by
+`packages/utils/src/app-coordination-token-consumers.test.ts`),
+then as signed `aal`/`amr` claims on the issued access and refresh tokens, so a
+refresh reports the original session's level. Request bodies and caller-written
+handoff session data are never trusted. When the level is unknown (for example
+a handoff or refresh token issued before this field existed) both fields are
+omitted.
+
+Apps must treat a missing `aal` as `aal1`. An app that requires MFA must check
+`aal === "aal2"` and otherwise send the user back through central login.
+`aal` reflects the Supabase session itself; an account-level MFA policy satisfied
+another way (for example a mobile approval) is still enforced by Tuturuuu but
+does not raise the reported `aal`. Regression coverage lives in
+`packages/utils/src/session-assurance.test.ts`,
+`apps/web/src/app/api/v1/auth/cross-app-return/route-assurance.test.ts` and
+`apps/web/src/app/api/v1/auth/app-token/exchange/route-assurance.test.ts`.
 
 ### App-owned Drive attachments
 
