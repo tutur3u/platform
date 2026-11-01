@@ -5,8 +5,8 @@
     "vars": {
       "TUTURUUU_NOINDEX": "1",
       "NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN": ".staging.tutur3u.com",
-      "INTERNAL_WEB_API_ORIGIN": "https://web.staging.tutur3u.com",
-      "NEXT_PUBLIC_WEB_APP_URL": "https://web.staging.tutur3u.com",
+      "INTERNAL_WEB_API_ORIGIN": "https://tutur3u.com",
+      "NEXT_PUBLIC_WEB_APP_URL": "https://tutur3u.com",
       "NEXT_PUBLIC_APP_URL": "https://finance.staging.tutur3u.com",
       "FINANCE_APP_URL": "https://finance.staging.tutur3u.com",
       "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co"

@@ -68,12 +68,9 @@ export async function proxyNext(
     });
   }
   for (const cookie of upstream.headers.getSetCookie()) {
-    const domains = [...cookie.matchAll(/;\s*domain\s*=\s*([^;]*)/giu)];
-    const domain = domains[0]?.[1]?.trim().toLowerCase();
-    if (
-      domains.length > 1 ||
-      (domains.length === 1 && domain !== stagingProfile.cookieDomain)
-    ) {
+    // Staging cookies are host-only: any Domain attribute, whatever its value
+    // (including an empty or repeated one), widens or obscures the scope.
+    if (/;\s*domain\s*=/iu.test(cookie)) {
       await upstream.body?.cancel();
       return new Response('Upstream cookie domain rejected', { status: 502 });
     }

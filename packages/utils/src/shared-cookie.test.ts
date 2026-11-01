@@ -143,7 +143,7 @@ describe('configurable shared cookie domain', () => {
       secure: true,
     });
     expect(
-      resolveTuturuuuSharedCookieDomain('https://web.staging.tutur3u.com')
+      resolveTuturuuuSharedCookieDomain('https://sample.staging.tutur3u.com')
     ).toBeNull();
   });
 
@@ -152,7 +152,7 @@ describe('configurable shared cookie domain', () => {
     vi.stubEnv(ENV_KEY, '.staging.tutur3u.com');
 
     for (const url of [
-      'https://web.staging.tutur3u.com',
+      'https://sample.staging.tutur3u.com',
       'https://tasks.staging.tutur3u.com/personal',
       'https://staging.tutur3u.com',
     ]) {
@@ -165,7 +165,7 @@ describe('configurable shared cookie domain', () => {
     expect(
       getTuturuuuSharedCookieOptions<CookieOptionsLike>(
         {},
-        'https://web.staging.tutur3u.com'
+        'https://sample.staging.tutur3u.com'
       ).domain
     ).toBe('.staging.tutur3u.com');
   });
@@ -178,7 +178,7 @@ describe('configurable shared cookie domain', () => {
       'https://tutur3u.com',
       'https://app.tutur3u.com',
       'https://evil-staging.tutur3u.com',
-      'https://web.staging.tutur3u.com.evil.test',
+      'https://sample.staging.tutur3u.com.evil.test',
       'https://tuturuuu.com',
       'https://tasks.tuturuuu.com',
     ]) {
@@ -191,6 +191,41 @@ describe('configurable shared cookie domain', () => {
       ).domain
     ).toBeUndefined();
   });
+
+  it.each([
+    ['no override', undefined],
+    ['the staging override leaking onto web staging', '.staging.tutur3u.com'],
+  ])(
+    'issues host-only cookies with no Domain attribute for the tutur3u.com web staging host (%s)',
+    (_label, override) => {
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
+      vi.stubEnv('VERCEL_ENV', '');
+      vi.stubEnv('NEXT_PUBLIC_VERCEL_ENV', '');
+      if (override) {
+        vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
+        vi.stubEnv(ENV_KEY, override);
+      }
+
+      for (const url of [
+        'https://tutur3u.com',
+        'https://tutur3u.com/login',
+        { headers: { host: 'tutur3u.com' }, url: 'https://tutur3u.com/' },
+      ]) {
+        expect(resolveTuturuuuSharedCookieDomain(url)).toBeNull();
+        const shared = getTuturuuuSharedCookieOptions<CookieOptionsLike>(
+          { path: '/' },
+          url
+        );
+        expect(shared).not.toHaveProperty('domain');
+        expect(
+          getSupabaseCookieOptions(
+            'https://fxefojytwimjiqxseqag.supabase.co',
+            url
+          )
+        ).not.toHaveProperty('domain');
+      }
+    }
+  );
 
   it('keeps the local portless domain when staging is configured', () => {
     vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
@@ -207,7 +242,7 @@ describe('configurable shared cookie domain', () => {
     '.tuturuuu.com',
     '.foo.tutur3u.com',
     '.staging.tuturuuu.com',
-    '.web.staging.tutur3u.com',
+    '.sample.staging.tutur3u.com',
     '.staging.tutur3u.com.',
     '.com',
     '.vercel.app',
@@ -227,7 +262,7 @@ describe('configurable shared cookie domain', () => {
       resolveTuturuuuSharedCookieDomain('https://app.tutur3u.com')
     ).toBeNull();
     expect(
-      resolveTuturuuuSharedCookieDomain('https://web.staging.tutur3u.com')
+      resolveTuturuuuSharedCookieDomain('https://sample.staging.tutur3u.com')
     ).toBeNull();
     expect(warn).toHaveBeenCalled();
   });

@@ -150,8 +150,8 @@ guards. Listing them or passing policy unit tests is not hosted acceptance.
 ## Staging profile
 
 `apps/web/cloudflare/profile.ts` declares the exact host
-`web.staging.tutur3u.com`, zone `tutur3u.com`, cookie domain
-`.staging.tutur3u.com`, HSTS `max-age=31536000`, and staging Supabase project
+`tutur3u.com` (the zone apex), zone `tutur3u.com`, host-only cookies (no
+cookie domain), HSTS `max-age=31536000`, and staging Supabase project
 `<staging-project-ref>`. There are no wildcard hosts. The checked Void config has
 no routes, custom domains, schedules or external resource bindings;
 `workers_dev` and preview URLs are disabled. No provider resources are created.
@@ -159,12 +159,12 @@ no routes, custom domains, schedules or external resource bindings;
 Requests fail closed unless all of these runtime settings are admitted:
 
 - `WEB_START_CANDIDATE=staging` (checked default: `off`).
-- `AUTH_COOKIE_DOMAIN=.staging.tutur3u.com` and
+- `AUTH_COOKIE_DOMAIN` unset (host-only cookies; any value fails admission) and
   `NEXT_PUBLIC_SUPABASE_URL=https://<staging-project-ref>.supabase.co`.
 - `NEXT_FALLBACK_ORIGIN` is one exact HTTPS staging Next deployment origin,
   with no path, credentials or query. The hostname filter accepts
-  `tuturuuu.vercel.app`, the `tuturuuu-*.vercel.app` prefix, or a staging-domain
-  hostname; canonical Tuturuuu hosts are rejected. The Vercel prefix is not
+  `tuturuuu.vercel.app` or the `tuturuuu-*.vercel.app` prefix; no `tutur3u.com`
+  host is accepted as a fallback and canonical Tuturuuu hosts are rejected. The Vercel prefix is not
   bound to our Vercel team, project or deployment ID and does not prove ownership.
   It has no default.
 
@@ -198,16 +198,14 @@ Vercel team ownership or prevent credentials and the signed proof from reaching
 an incorrectly admitted origin. Verify ownership before any request is sent.
 This requirement deliberately blocks enabling the candidate against an
 unqualified Next deployment; Web 1 does not change the current Next deployment
-or add its marker. Domain cookies must specify exactly
-`.staging.tutur3u.com`; host-only cookies, including `__Host-` cookies, retain
-host-only semantics on `web.staging.tutur3u.com`, the browser-facing response
-host. They are not shared with central staging or other satellites; the proxy
-does not widen them to the staging zone. Other or empty cookie domains return
-502. Each Set-Cookie may contain at most one Domain attribute; duplicates are
-rejected even when their values match, regardless of attribute name casing or
-whitespace. The entire response is rejected without its body or any cookies.
-`handler.test.ts` covers multiple/mixed-case/equal domains, host-only cookies,
-and preservation of a single staging domain.
+or add its marker. Cookies must be host-only: any `Domain` attribute, whatever
+its value or casing, an empty value, or a duplicate, is rejected. Host-only
+cookies, including `__Host-` cookies, retain host-only semantics on
+`tutur3u.com`, the browser-facing response host. They are not shared with
+central staging or other satellites, and the proxy never widens them to a
+zone. The entire response is rejected (502) without its body or any cookies.
+`handler.test.ts` covers every Domain form, rejection of any configured
+`AUTH_COOKIE_DOMAIN`, and preservation of host-only cookies.
 
 The Worker preserves auth, session, webhook, `x-cron-secret`, RSC and action
 headers. It removes hop-by-hop headers, `forwarded`, `true-client-ip`,
@@ -302,7 +300,7 @@ lists every name; the publisher verifies what it can on each run.
 | Resource or input | Required scope and admission |
 | --- | --- |
 | Cloudflare account and scoped token | `CLOUDFLARE_STAGING_API_TOKEN`: Workers deployment for the staging Workers, D1 for the control database, and **read** permission for Access Apps and Policies, Zone DNS, Workers Routes and Custom Domains on `tutur3u.com`; no Access or DNS write; never the production token |
-| Staging Worker and ingress | An inert, owner-bootstrapped `tuturuuu-web-wave1-staging` with workers.dev, previews and routes off. One Workers Custom Domain, `web.staging.tutur3u.com`, attached manually behind the `staging-web` Access app only after `next-verify` is green. The publisher's preflight checks the binding, DNS, Access phase and policies on every run |
+| Staging Worker and ingress | An inert, owner-bootstrapped `tuturuuu-web-wave1-staging` with workers.dev, previews and routes off. One Workers Custom Domain, `tutur3u.com`, attached manually behind the `staging-web` Access app only after `next-verify` is green. The publisher's preflight checks the binding, DNS, Access phase and policies on every run |
 | Staging Supabase keys | Confirm project `<staging-project-ref>`, publishable key, fallback-only service secret, staging schema/fixtures, auth callback URLs and disposable account/workspace; never production keys |
 | Staging Next fallback | Staging is Cloudflare-only: `wave1-web-staging.yaml` has no Vercel project, token or deployment. The Worker's non-native fallback origin is decided in the host-migration follow-up (see the follow-up section of the Wave-1 native publishers page); until then the Worker refuses to serve |
 | Origin proof secret | Staging-only `TRUSTED_PROXY_ORIGIN_SECRET` and private evidence that it differs from production; matching trusted-proxy settings on Next |
@@ -311,9 +309,9 @@ lists every name; the publisher verifies what it can on each run.
 | Acceptance identity | Exact source SHA, non-production Supabase refs, owner-confirmed disposable account/workspace and credentials supplied through the approved secret store |
 
 Run the #7093 Playwright config with `WAVE1_STAGING_APP=web`,
-`WAVE1_STAGING_BASE_URL=https://web.staging.tutur3u.com` and its required
+`WAVE1_STAGING_BASE_URL=https://tutur3u.com` and its required
 private inputs. Enable each slice flag only for an accepted staging deployment.
-The canonical staging session issuer is `https://web.staging.tutur3u.com`
+The canonical staging session issuer is `https://tutur3u.com`
 for both satellite suites and the Web suite.
 Production/canonical hosts still fail before Chromium launches; request and
 WebSocket fences reject production egress and non-auth writes. The suite does

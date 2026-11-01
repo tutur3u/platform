@@ -39,7 +39,7 @@ test('hard host guard rejects prod and confusable destinations before browser la
     );
   }
   assert.equal(stagingOrigin(config.baseURL, 'contacts'), config.baseURL);
-  assert.equal(config.webOrigin, 'https://web.staging.tutur3u.com');
+  assert.equal(config.webOrigin, 'https://tutur3u.com');
   assert.throws(() => stagingOrigin('https://tuturuuu.com', 'issuer'));
 });
 test('requires exact source, disposable consent and pinned non-production DB', () => {

@@ -169,8 +169,9 @@ DNS TTLs and provider convergence prevent assuming instantaneous rollback.
 G3 (central staging login handoff) runs first on Calendar: it is native in
 production and frontend-only. Source is ready for the Calendar side only. The
 staging profile publishes `tuturuuu-calendar-wave1-staging` for
-`calendar.staging.tutur3u.com` with `NEXT_PUBLIC_WEB_APP_URL=https://web.staging.tutur3u.com`
-and the `.staging.tutur3u.com` shared cookie domain. Nothing is under
+`calendar.staging.tutur3u.com` with `NEXT_PUBLIC_WEB_APP_URL=https://tutur3u.com`
+and the `.staging.tutur3u.com` shared cookie domain (the issuer itself issues
+host-only cookies; satellite sessions use the token handoff). Nothing is under
 `tuturuuu.com`, and `node scripts/check-staging-hosts.js` enforces that.
 
 The four questions that blocked hosted G3 are now decided: public staging
@@ -210,8 +211,8 @@ staging ingress questions that blocked hosted G3.
 
 | Question | Decision |
 | --- | --- |
-| Public staging ingress | None. `calendar.staging.tutur3u.com` and `web.staging.tutur3u.com` are reachable only through Cloudflare Access: a Google Workspace (`tuturuuu.com`) staff allowlist within the 50 free seats, plus named service tokens. There is no bypass policy, and workers.dev, previews and routes stay off |
-| Issuer hostname | `web.staging.tutur3u.com` is the only staging issuer |
+| Public staging ingress | None. `calendar.staging.tutur3u.com` and `tutur3u.com` are reachable only through Cloudflare Access: a Google Workspace (`tuturuuu.com`) staff allowlist within the 50 free seats, plus named service tokens. There is no bypass policy, and workers.dev, previews and routes stay off |
+| Issuer hostname | `tutur3u.com` (the zone apex) is the only staging issuer; its cookies are host-only |
 | Issuer hosting | The Web Start candidate Worker `tuturuuu-web-wave1-staging`, in front of one immutable deployment of the protected Vercel project `tuturuuu-web-staging`, published by `wave1-web-staging.yaml` |
 | Staging Supabase login | Email (OTP through a staging mailbox and staging SMTP sender) and Google only. Production auth is unchanged |
 | Calendar to issuer server calls | An Access service token, sent only to the exact issuer origin with manual redirects |

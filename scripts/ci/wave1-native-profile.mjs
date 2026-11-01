@@ -42,7 +42,6 @@ function webPublicationConfig(base, profile, { main, assets }) {
       WEB_START_CANDIDATE: 'off',
       WEB_START_NATIVE_LEGAL: 'off',
       WEB_START_NATIVE_SECURITY: 'off',
-      AUTH_COOKIE_DOMAIN: web.vars.AUTH_COOKIE_DOMAIN,
       NEXT_PUBLIC_SUPABASE_URL: web.vars.NEXT_PUBLIC_SUPABASE_URL,
     },
     'Source vars require explicit profile review'
@@ -223,13 +222,13 @@ export function publicationConfig(base, profile, { main, assets }) {
       [`NEXT_PUBLIC_${profile.app.toUpperCase()}_APP_URL`]: `https://${profile.host}`,
       NEXT_PUBLIC_WEB_APP_URL: production
         ? 'https://tuturuuu.com'
-        : 'https://web.staging.tutur3u.com',
+        : 'https://tutur3u.com',
       ...(profile.app === 'apps'
         ? {
             APPS_CANONICAL_HOST_ENABLED: production ? '1' : '0',
             INTERNAL_WEB_API_ORIGIN: production
               ? 'https://tuturuuu.com'
-              : 'https://web.staging.tutur3u.com',
+              : 'https://tutur3u.com',
           }
         : {}),
       ...(profile.app === 'calendar'

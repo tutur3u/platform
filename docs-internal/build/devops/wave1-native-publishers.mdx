@@ -60,7 +60,7 @@ There is no D1, KV, DO, queue or scheduler binding for these three frontends.
 The publisher uses a separate owner-provisioned D1 control database; it is never
 bound to application Workers.
 
-Staging uses `https://web.staging.tutur3u.com` and staging Supabase/public configuration.
+Staging uses `https://tutur3u.com` and staging Supabase/public configuration.
 It does not activate production callbacks or processors. Mail's production R2 S3
 access continues to the existing `tuturuuu-mail` bucket; its staging descriptor names
 `tuturuuu-mail-wave1-staging` with separate credentials. Never repoint the existing
@@ -376,7 +376,7 @@ verifies the `Cf-Access-Jwt-Assertion` header itself:
   before any middleware or asset work.
 - **Service token:** server-side forwards to the issuer carry the Calendar
   service token only when the target origin is exactly
-  `https://web.staging.tutur3u.com` and the fetch uses `redirect: 'manual'`.
+  `https://tutur3u.com` and the fetch uses `redirect: 'manual'`.
   If the token is missing, the forward fails with 503 without contacting the
   issuer.
 - **Credential stripping:** every forward removes client Access headers
@@ -399,7 +399,7 @@ Domain. Their profile entries set `"ingress": "access-custom-domain"`:
 
 - Calendar: `tuturuuu-calendar-wave1-staging` on `calendar.staging.tutur3u.com`.
 - The Web issuer: `webStaging`, `tuturuuu-web-wave1-staging` on
-  `web.staging.tutur3u.com`.
+  `tutur3u.com`.
 
 Their configs keep `workers_dev=false`, `preview_urls=false` and
 `routes=[]`. The release owner attaches the one Custom Domain. The publisher
@@ -602,42 +602,44 @@ Regression coverage: `wave1-web-staging-workflow.test.js`,
 `wave1-staging-guard.test.mjs`, `wave1-web-publication.test.js`,
 `wave1-web-rollback.test.mjs` and `wave1-native-attempt.test.js`.
 
-### Follow-up required: migrate the web staging host
+### Web staging host: `tutur3u.com`, host-only cookies
 
-This change deliberately leaves the profiles unchanged, so the pipeline **fails
-closed**: the reviewed web staging host is still `web.staging.tutur3u.com`,
-which the `<app>.tutur3u.com` rule rejects, so `publish-worker` refuses before
-any provider request. Do not re-admit the retired `*.staging.tutur3u.com`
-pattern in the guard. A follow-up must migrate web staging from
-`web.staging.tutur3u.com` to `tutur3u.com` and then add that host to the
-allowlist's route use:
+Rule: `<app>.tutur3u.com` is staging for `<app>.tuturuuu.com`, and the main web
+app (`tuturuuu.com`) stages on the `tutur3u.com` apex. The reviewed web staging
+host is therefore `tutur3u.com` (`webStaging.stagingHost`, zone `tutur3u.com`),
+and the retired `web.staging.tutur3u.com` is refused by every guard. The staging
+guard allowlist admits exactly `tutur3u.com` for the web Worker and is otherwise
+unchanged.
 
-- `scripts/ci/wave1-native-profiles.json` (`webStaging.stagingHost`, the
-  `AUTH_COOKIE_DOMAIN` var) and `scripts/ci/wave1-native-profile.mjs`;
-- `apps/web/cloudflare/profile.ts` (`stagingProfile.host`, `cookieDomain`,
-  and the `.staging.tutur3u.com` upstream rule), plus
-  `apps/web/cloudflare/emitted.runtime.mjs`, `handler.test.ts` and
-  `staging.env.example`;
-- the cookie domain `.tutur3u.com`, with no overlap with `tuturuuu.com`
-  (`packages/utils/src/shared-cookie*.ts`, `packages/auth/src/app-session-shared-cookie.test.ts`,
-  `packages/supabase/src/next/__tests__/common.test.ts`);
-- the ingress topology (`scripts/ci/wave1-ingress-topology.mjs`,
-  `wave1-ingress-fixture.mjs`, `scripts/wave1-staging/profiles.ts`,
-  `scripts/ci/wave1-native-runtime.mjs`) and their tests;
-- Calendar, Mail, Contacts, Finance and Meet staging hosts
-  (`apps/calendar/src/runtime/*`, `apps/mail/src/runtime/*`,
-  `apps/contacts/e2e-staging/policy.ts`, `apps/finance/cloudflare/native-profiles.json`,
-  `apps/meet/void.staging.config.ts`, `scripts/ci/calendar-host-scan.mjs`);
-- `apps/web/e2e-wave1-staging/policy.ts`, `.lychee.toml` and
-  `.github/workflows/wave1-native-app.yaml`.
+**Cookies are host-only.** The web staging Worker has no cookie domain: the
+sealed profile, the source `void.config.ts` and `staging.env.example` carry no
+`AUTH_COOKIE_DOMAIN` and no `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN`, and
+`stagingProfile.cookies` is `'host-only'`. Never use `.tutur3u.com` or
+`.staging.tutur3u.com` as the web staging cookie domain. The Worker refuses to
+admit a request if `AUTH_COOKIE_DOMAIN` is set to any value, and rejects (502)
+an upstream response whose `Set-Cookie` carries any `Domain` attribute,
+whatever its value. `tutur3u.com` never matches a shared cookie domain, so the
+shared cookie helpers issue it no `Domain` (covered by
+`packages/utils/src/shared-cookie.test.ts` and `handler.test.ts`). Production
+cookie behavior (`.tuturuuu.com`) is unchanged. Because the issuer's cookie is
+not shared, every staging satellite uses the cross-app token handoff.
 
-The Worker still proxies non-native routes to a Next fallback origin
+**Ingress.** The apex also carries mail and ownership records, so the ingress
+preflight tolerates MX, TXT, CAA and NS records on the apex host only; any
+routing-capable record there (A, AAAA, CNAME, HTTPS, SVCB) must still be the
+proxied, Worker-managed Custom Domain record. `tutur3u.com` and everything
+under it is a reserved platform hostname for managed projects.
+
+**Still open.** The Worker proxies non-native routes to a Next fallback origin
 (`NEXT_FALLBACK_ORIGIN`, `VERCEL_AUTOMATION_BYPASS_SECRET`, `admittedOrigin` in
-`apps/web/cloudflare/profile.ts`). This change does not alter that runtime
-behavior, and the sealed profile no longer provides those values. Until the
-follow-up decides the Cloudflare-hosted fallback, `admittedOrigin` returns
-`null` and the Worker refuses to serve (fail closed). `vercel.staging.json` and
-its test stay for that follow-up.
+`apps/web/cloudflare/profile.ts`). The sealed profile provides neither and the
+Cloudflare-hosted fallback is undecided, so `admittedOrigin` returns `null` and
+the Worker refuses to serve (fail closed). The `.staging.tutur3u.com` upstream
+branch was removed rather than widened; the follow-up that decides the
+fallback adds its exact origin rule. Staging satellites still use
+`<app>.staging.tutur3u.com` and their own shared cookie domain until they
+migrate to `<app>.tutur3u.com`. `vercel.staging.json` and its test stay for the
+fallback follow-up.
 
 ### What stays manual
 
@@ -1075,7 +1077,7 @@ Exact-commit CI and hosted provider acceptance remain separate gates.
 ### Staging cookie isolation
 
 All app staging hosts use `<app>.staging.tutur3u.com`. Web staging uses
-`web.staging.tutur3u.com`. Preview and canary hosts must also stay outside the
+the `tutur3u.com` apex with host-only cookies (no Domain attribute). Preview and canary hosts must also stay outside the
 production cookie zone. Production hosts are unchanged.
 
 Staging sets `NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com`

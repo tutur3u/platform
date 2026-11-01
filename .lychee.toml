@@ -86,5 +86,5 @@ insecure = false
 # Remap URLs (useful for local development or staging environments)
 # Example: Remap staging URLs to production for link checking
 # remap = [
-#   "https://web.staging.tutur3u.com https://tuturuuu.com",
+#   "https://tutur3u.com https://tuturuuu.com",
 # ]

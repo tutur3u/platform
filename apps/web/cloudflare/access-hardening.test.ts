@@ -11,7 +11,6 @@ const env: WebCandidateEnv = {
   WEB_START_CANDIDATE: 'staging',
   NEXT_FALLBACK_ORIGIN: origin,
   NEXT_PUBLIC_SUPABASE_URL: stagingProfile.supabaseUrl,
-  AUTH_COOKIE_DOMAIN: stagingProfile.cookieDomain,
   TRUSTED_PROXY_ORIGIN_SECRET: secret,
   VERCEL_AUTOMATION_BYPASS_SECRET: bypass,
   CF_ACCESS_TEAM_DOMAIN: 'fixture-team.cloudflareaccess.com',
@@ -279,16 +278,13 @@ describe('Vercel platform state never reaches the browser (N17)', () => {
         '_vercel_jwt=token; Path=/; Secure; HttpOnly'
       );
       headers.append('set-cookie', '_vercel_session=x; Path=/');
-      headers.append(
-        'set-cookie',
-        'sb-auth.0=one; Domain=.staging.tutur3u.com; Path=/; Secure'
-      );
+      headers.append('set-cookie', 'sb-auth.0=one; Path=/; Secure');
       return new Response('Next', { headers });
     });
     const response = await handler(request('/login'), env);
     expect(response.status).toBe(200);
     expect(response.headers.getSetCookie()).toEqual([
-      'sb-auth.0=one; Domain=.staging.tutur3u.com; Path=/; Secure',
+      'sb-auth.0=one; Path=/; Secure',
     ]);
     expect(
       [...response.headers.keys()].filter((n) => n.startsWith('x-vercel-'))

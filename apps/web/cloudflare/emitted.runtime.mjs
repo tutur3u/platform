@@ -25,7 +25,7 @@ const messageCopy = Object.fromEntries(
     ])
   )
 );
-const base = 'https://web.staging.tutur3u.com';
+const base = 'https://tutur3u.com';
 const secret = 'disposable-emitted-worker-proof-secret';
 const upstream = 'https://tuturuuu-next-fixture.vercel.app';
 const ref = 'fxefojytwimjiqxseqag';
@@ -193,11 +193,11 @@ test(description, { timeout: 30000 }, async (t) => {
           if (attest) headers.set('x-tuturuuu-staging-supabase-ref', ref);
           headers.append(
             'set-cookie',
-            'sb-auth.0=one; Domain=.staging.tutur3u.com; Path=/; Secure; HttpOnly'
+            'sb-auth.0=one; Path=/; Secure; HttpOnly'
           );
           headers.append(
             'set-cookie',
-            'sb-auth.1=two; Domain=.staging.tutur3u.com; Path=/; Secure; HttpOnly'
+            'sb-auth.1=two; Path=/; Secure; HttpOnly'
           );
           headers.append('set-cookie', '_vercel_jwt=minted; Path=/; Secure');
           headers.set('x-vercel-id', 'fixture');

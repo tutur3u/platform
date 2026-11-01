@@ -8,7 +8,6 @@ const env = {
   WEB_START_NATIVE_SECURITY: 'on',
   NEXT_FALLBACK_ORIGIN: 'https://tuturuuu-next-fixture.vercel.app',
   NEXT_PUBLIC_SUPABASE_URL: stagingProfile.supabaseUrl,
-  AUTH_COOKIE_DOMAIN: stagingProfile.cookieDomain,
   TRUSTED_PROXY_ORIGIN_SECRET: 'disposable-test-origin-proof-key-123456',
   VERCEL_AUTOMATION_BYPASS_SECRET: 'test-bypass-secret-00000000000000000000',
   CF_ACCESS_TEAM_DOMAIN: 'fixture-team.cloudflareaccess.com',

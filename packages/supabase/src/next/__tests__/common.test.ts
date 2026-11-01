@@ -166,7 +166,7 @@ describe('common', () => {
           expect(
             getSupabaseCookieOptions(
               supabaseUrl,
-              'https://web.staging.tutur3u.com'
+              'https://sample.staging.tutur3u.com'
             )
           ).toEqual({
             name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
@@ -190,7 +190,10 @@ describe('common', () => {
         '.staging.tutur3u.com';
 
       expect(
-        getSupabaseCookieOptions(supabaseUrl, 'https://web.staging.tutur3u.com')
+        getSupabaseCookieOptions(
+          supabaseUrl,
+          'https://sample.staging.tutur3u.com'
+        )
       ).toEqual({
         domain: '.staging.tutur3u.com',
         name: 'sb-nzamlzqfdwaaxdefwraj-auth-token',
@@ -213,7 +216,10 @@ describe('common', () => {
         getSupabaseCookieOptions(supabaseUrl, 'https://tasks.tuturuuu.com')
       ).toMatchObject({ domain: '.tuturuuu.com', secure: true });
       expect(
-        getSupabaseCookieOptions(supabaseUrl, 'https://web.staging.tutur3u.com')
+        getSupabaseCookieOptions(
+          supabaseUrl,
+          'https://sample.staging.tutur3u.com'
+        )
       ).not.toHaveProperty('domain');
     });
 
@@ -229,7 +235,10 @@ describe('common', () => {
         getSupabaseCookieOptions(supabaseUrl, 'https://tasks.tuturuuu.com')
       ).toMatchObject({ domain: '.tuturuuu.com', secure: true });
       expect(
-        getSupabaseCookieOptions(supabaseUrl, 'https://web.staging.tutur3u.com')
+        getSupabaseCookieOptions(
+          supabaseUrl,
+          'https://sample.staging.tutur3u.com'
+        )
       ).not.toHaveProperty('domain');
     });
 

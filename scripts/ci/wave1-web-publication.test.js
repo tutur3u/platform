@@ -5,14 +5,11 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const { publisher } = require('./wave1-native-publication-harness.cjs');
 
-test('the unmigrated staging host is refused before any provider request', async (t) => {
-  // The reviewed profile still names web.staging.tutur3u.com; the
-  // <app>.tutur3u.com rule rejects it until the host migration lands, so the
-  // pipeline fails closed rather than publishing to a retired hostname.
+test('the migrated tutur3u.com host passes the identity gates and publishes once', async (t) => {
+  // The reviewed profile names the tutur3u.com apex, which the staging guard
+  // allowlist admits exactly; the retired web.staging host is refused by the
+  // guard tests. The sealed profile carries no cookie domain (host-only).
   const p = await publisher(t, 'web');
-  await assert.rejects(p.run, /allowlisted staging host|Staging host/u);
-  assert.equal(p.state.writes, 0);
-  assert.equal(p.state.reads, 0);
-  assert.equal(p.state.flagReads, 0);
-  assert.equal(p.state.ledgerQueries, 0);
+  await p.run();
+  assert.equal(p.state.writes, 1);
 });

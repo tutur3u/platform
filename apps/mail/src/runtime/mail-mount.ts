@@ -7,7 +7,7 @@ import {
 export const mailMounts = {
   app: 'mail',
   rootHosts: ['mail.tuturuuu.com'],
-  mountHosts: ['tuturuuu.com', 'web.staging.tutur3u.com'],
+  mountHosts: ['tuturuuu.com', 'tutur3u.com'],
   basePath: '/mail',
 } satisfies AppMountConfig;
 

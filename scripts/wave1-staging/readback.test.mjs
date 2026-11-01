@@ -99,7 +99,7 @@ function world(overrides = {}) {
         environment: 'staging',
         appName: 'x',
       });
-    if (init.method === 'OPTIONS' && u.hostname === 'web.staging.tutur3u.com')
+    if (init.method === 'OPTIONS' && u.hostname === 'tutur3u.com')
       return new Response(null, { status: 204 });
     return new Response(null, {
       status: 302,
@@ -152,7 +152,7 @@ const failing = [
   [
     'an anonymous 200 (N1)',
     (u, i) =>
-      u.hostname === 'web.staging.tutur3u.com' &&
+      u.hostname === 'tutur3u.com' &&
       !i.method &&
       !new Headers(i.headers).has('cf-access-client-id')
         ? new Response('open')
@@ -170,7 +170,7 @@ const failing = [
   [
     'an issuer OPTIONS with a body (N3)',
     (u, i) =>
-      u.hostname === 'web.staging.tutur3u.com' && i.method === 'OPTIONS'
+      u.hostname === 'tutur3u.com' && i.method === 'OPTIONS'
         ? new Response('data', { status: 204 })
         : null,
     'N3',

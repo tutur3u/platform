@@ -22,9 +22,10 @@ export function stagingOrigin(
     throw new Error('Staging origin must be an absolute HTTPS origin');
   }
   const host = url.hostname;
+  // The web app and the issuer are the same host: the tutur3u.com apex.
   const named =
-    role === 'issuer'
-      ? 'web.staging.tutur3u.com'
+    role === 'issuer' || role === 'web'
+      ? 'tutur3u.com'
       : `${role}.staging.tutur3u.com`;
   if (
     url.protocol !== 'https:' ||
@@ -87,11 +88,14 @@ export function readConfig(env: Env) {
     supabaseOrigin: `https://${supabaseRef}.supabase.co`,
     app,
     baseURL: stagingOrigin(
-      env.WAVE1_STAGING_BASE_URL ?? `https://${app}.staging.tutur3u.com`,
+      env.WAVE1_STAGING_BASE_URL ??
+        (app === 'web'
+          ? 'https://tutur3u.com'
+          : `https://${app}.staging.tutur3u.com`),
       app
     ),
     webOrigin: stagingOrigin(
-      env.WAVE1_STAGING_WEB_ORIGIN ?? 'https://web.staging.tutur3u.com',
+      env.WAVE1_STAGING_WEB_ORIGIN ?? 'https://tutur3u.com',
       'issuer'
     ),
     sha,
