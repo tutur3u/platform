@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   google: vi.fn(),
   withAiMemory: vi.fn(),
   meetAi: vi.fn(),
+  usage: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -52,7 +53,8 @@ vi.mock('../../memory', () => ({
 
 import { createPOST } from './route';
 
-const post = () => createPOST({ isMeetAiEnabled: mocks.meetAi });
+const post = () =>
+  createPOST({ isMeetAiEnabled: mocks.meetAi, limitMeetAiUsage: mocks.usage });
 
 function createAudioFile({
   size = 1,
@@ -112,6 +114,7 @@ describe('meeting transcription route input bounds', () => {
     );
     mocks.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
     mocks.meetAi.mockResolvedValue(true);
+    mocks.usage.mockResolvedValue({ ok: true });
     mocks.credits.mockResolvedValue({ allowed: true });
     mocks.deduct.mockResolvedValue({ success: true });
     mocks.limit.mockResolvedValue({ success: true });
@@ -475,4 +478,127 @@ describe('meeting transcription route input bounds', () => {
       );
     }
   );
+});
+
+describe('meeting transcription Meet AI usage limiter', () => {
+  const wsId = '11111111-1111-4111-8111-111111111111';
+  const meetingId = '22222222-2222-4222-8222-222222222222';
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    mocks.normalizeWorkspaceId.mockResolvedValue(wsId);
+    mocks.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
+    mocks.meetAi.mockResolvedValue(true);
+    mocks.usage.mockResolvedValue({ ok: true });
+    mocks.credits.mockResolvedValue({ allowed: true });
+    mocks.deduct.mockResolvedValue({ success: true });
+    mocks.limit.mockResolvedValue({ success: true });
+    mocks.limiters.mockResolvedValue({
+      mutate: [{ limiter: { limit: mocks.limit } }],
+    });
+    mocks.meeting.mockResolvedValue({ data: { ws_id: wsId }, error: null });
+    const query = {
+      select: () => query,
+      eq: () => query,
+      maybeSingle: mocks.meeting,
+    };
+    mocks.createClient.mockResolvedValue({
+      from: () => query,
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: 'user-1' } },
+        }),
+      },
+    });
+    mocks.google.mockReturnValue('provider-model');
+    mocks.withAiMemory.mockResolvedValue('metered-model');
+    mocks.generateObject.mockResolvedValue({
+      usage: { inputTokens: 20, outputTokens: 10 },
+      object: { text: 'Transcript' },
+    });
+  });
+
+  it('charges the session user, meeting workspace and an audio estimate', async () => {
+    const { file } = createAudioFile({ size: 64_001 });
+    const { request } = createRequest({ audio: file });
+    expect((await post()(request)).status).toBe(200);
+    expect(mocks.usage).toHaveBeenCalledExactlyOnceWith({
+      kind: 'recording',
+      userId: 'user-1',
+      meetingId,
+      workspaceId: wsId,
+      audioSeconds: 33,
+    });
+    expect(mocks.usage.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.credits.mock.invocationCallOrder[0] ?? 0
+    );
+  });
+
+  it.each([
+    [
+      'a reached limit',
+      {
+        ok: false,
+        status: 429,
+        code: 'MEET_AI_RATE_LIMITED',
+        retryAfterSeconds: 12,
+        scope: 'user',
+      },
+      429,
+      '12',
+    ],
+    [
+      'an unavailable limiter',
+      {
+        ok: false,
+        status: 503,
+        code: 'MEET_AI_LIMITER_UNAVAILABLE',
+        retryAfterSeconds: 30,
+        reason: 'timeout',
+      },
+      503,
+      '30',
+    ],
+  ])(
+    'refuses %s before credits, audio read or provider setup',
+    async (_, decision, status, retryAfter) => {
+      mocks.usage.mockResolvedValue(decision);
+      const { arrayBuffer, file } = createAudioFile();
+      const { request } = createRequest({ audio: file });
+      const response = await post()(request);
+      expect(response.status).toBe(status);
+      expect(response.headers.get('Retry-After')).toBe(retryAfter);
+      expect(await response.json()).toMatchObject({ code: decision.code });
+      expect(mocks.credits).not.toHaveBeenCalled();
+      expect(arrayBuffer).not.toHaveBeenCalled();
+      expectNoAiSetup();
+    }
+  );
+
+  it.each([
+    ['throws', () => mocks.usage.mockRejectedValue(new Error('boom'))],
+    ['returns garbage', () => mocks.usage.mockResolvedValue(undefined)],
+  ])('fails closed when the limiter %s', async (_, arrange) => {
+    arrange();
+    const { file } = createAudioFile();
+    const { request } = createRequest({ audio: file });
+    const response = await post()(request);
+    expect(response.status).toBe(503);
+    expect(mocks.credits).not.toHaveBeenCalled();
+    expectNoAiSetup();
+  });
+
+  it('fails closed when no limiter is injected', async () => {
+    const { file } = createAudioFile();
+    const { request } = createRequest({ audio: file });
+    const response = await createPOST({ isMeetAiEnabled: mocks.meetAi })(
+      request
+    );
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({
+      code: 'MEET_AI_LIMITER_UNAVAILABLE',
+    });
+    expect(mocks.credits).not.toHaveBeenCalled();
+    expectNoAiSetup();
+  });
 });

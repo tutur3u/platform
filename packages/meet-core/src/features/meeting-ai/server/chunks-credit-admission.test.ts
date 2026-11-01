@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
+// Limiter behavior is covered by usage-limit and chunks-limit tests.
+vi.mock('./usage-limit', () => ({ enforceMeetAiUsage: async () => {} }));
 // Authorization is covered separately; avoid loading built auth packages here.
 vi.mock('@tuturuuu/satellite/auth', () => ({}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({

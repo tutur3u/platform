@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
   speaker: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
+// Limiter behavior is covered by usage-limit and chunks-limit tests.
+vi.mock('./usage-limit', () => ({ enforceMeetAiUsage: async () => {} }));
 vi.mock('@opennextjs/cloudflare', () => ({
   getCloudflareContext: mocks.cloudflare,
 }));
