@@ -53,7 +53,7 @@ const { default: appConfig } = await import(
 const MOUNTS = { ...DEFAULT_MOUNTS, ...appConfig.mounts };
 // The Worker settings the codemod emitted from start-bridge.config.ts `worker`.
 const WORKER_CONFIG = {
-  workersDev: true,
+  workersDev: false,
   compatibilityFlags: ['nodejs_compat', 'global_fetch_strictly_public'],
 };
 const APEX = 'tuturuuu.com';

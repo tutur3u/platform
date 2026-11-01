@@ -37,9 +37,10 @@ const seoPolicy = {
 // One artifact: the subdomain root and the tuturuuu.com/tools mount.
 const mounts = {
   app: 'tools',
-  rootHosts: ['tools.tuturuuu.com'],
+  rootHosts: ['tools.tuturuuu.com', 'tools.tutur3u.com'],
   mountHosts: ['tuturuuu.com'],
   basePath: '/tools',
+  unknownHost: 'reject' as const,
   ...appConfig.mounts,
 };
 
