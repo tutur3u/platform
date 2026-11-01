@@ -452,10 +452,12 @@ describe('board sprint routes', () => {
       task_sprint_reports: { data: [], error: null },
     });
     grantAccess(sbAdmin, 'guest');
-    sbAdmin.rpc.mockResolvedValueOnce({
-      data: { id: SPRINT_ID },
-      error: null,
-    } as never);
+    sbAdmin.rpc.mockReturnValueOnce(
+      rpcResult({
+        data: { id: SPRINT_ID },
+        error: null,
+      } as TableResult)
+    );
 
     const added = await ADD(request('POST', {}), params());
     expect(added.status).toBe(200);
