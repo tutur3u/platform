@@ -49816,19 +49816,19 @@ export type Database = {
               p_user_id: string;
             };
             Returns: string;
-          }
-        | {
-            Args: {
-              p_code_challenge: string;
-              p_code_challenge_method: string;
-              p_expiry_seconds: number;
-              p_origin_app: string;
-              p_session_data: Json;
-              p_target_app: string;
-              p_user_id: string;
-            };
-            Returns: string;
           };
+      generate_cross_app_token_pkce: {
+        Args: {
+          p_code_challenge: string;
+          p_code_challenge_method: string;
+          p_expiry_seconds: number;
+          p_origin_app: string;
+          p_session_data: Json;
+          p_target_app: string;
+          p_user_id: string;
+        };
+        Returns: string;
+      };
       get_action_frequency_by_hour: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -53525,25 +53525,24 @@ export type Database = {
         Args: { p_target_app: string; p_token: string };
         Returns: string;
       };
-      validate_cross_app_token_with_session:
-        | {
-            Args: { p_target_app: string; p_token: string };
-            Returns: {
-              session_data: Json;
-              user_id: string;
-            }[];
-          }
-        | {
-            Args: {
-              p_code_verifier: string;
-              p_target_app: string;
-              p_token: string;
-            };
-            Returns: {
-              session_data: Json;
-              user_id: string;
-            }[];
-          };
+      validate_cross_app_token_with_session: {
+        Args: { p_target_app: string; p_token: string };
+        Returns: {
+          session_data: Json;
+          user_id: string;
+        }[];
+      };
+      validate_cross_app_token_with_session_pkce: {
+        Args: {
+          p_code_verifier: string;
+          p_target_app: string;
+          p_token: string;
+        };
+        Returns: {
+          session_data: Json;
+          user_id: string;
+        }[];
+      };
       workspace_has_available_seats: {
         Args: { target_ws_id: string };
         Returns: boolean;

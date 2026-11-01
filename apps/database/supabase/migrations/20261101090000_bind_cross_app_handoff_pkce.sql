@@ -4,11 +4,14 @@
 -- code_verifier, so an intercepted token is useless on its own.
 --
 -- * private.cross_app_tokens stores the optional challenge.
--- * generate_cross_app_token gains a seven-argument overload that stores it;
---   the four- and five-argument overloads are unchanged.
+-- * generate_cross_app_token_pkce mints a token that stores it; the existing
+--   generate_cross_app_token overloads are unchanged.
 -- * Redemption moves into private.redeem_cross_app_token. The anonymous
---   two-argument validator now refuses every challenge-bound token, and the
---   new three-argument validator (service_role only) requires the verifier.
+--   validate_cross_app_token_with_session now refuses every challenge-bound
+--   token, and validate_cross_app_token_with_session_pkce (service_role only)
+--   requires the verifier.
+-- * The PKCE variants use distinct names instead of overloads so the
+--   generated Database['public']['Functions'] types stay shallow.
 --   A verifier for a token minted without a challenge is refused (PKCE
 --   downgrade guard, OAuth 2.1). A failed verification consumes nothing.
 
@@ -28,7 +31,7 @@ alter table private.cross_app_tokens
     )
   );
 
-create or replace function public.generate_cross_app_token(
+create or replace function public.generate_cross_app_token_pkce(
   p_user_id uuid,
   p_origin_app text,
   p_target_app text,
@@ -214,14 +217,14 @@ security definer
 set search_path = pg_catalog, pg_temp
 as $$
 begin
-  -- No verifier: challenge-bound tokens never redeem through this overload.
+  -- No verifier: challenge-bound tokens never redeem through this function.
   return query
   select r.user_id, r.session_data
   from private.redeem_cross_app_token(p_token, p_target_app, null) r;
 end;
 $$;
 
-create or replace function public.validate_cross_app_token_with_session(
+create or replace function public.validate_cross_app_token_with_session_pkce(
   p_token text,
   p_target_app text,
   p_code_verifier text
@@ -241,14 +244,14 @@ $$;
 revoke all on function private.redeem_cross_app_token(text, text, text)
   from public, anon, authenticated, service_role;
 
-revoke all on function public.generate_cross_app_token(uuid, text, text, integer, jsonb, text, text)
+revoke all on function public.generate_cross_app_token_pkce(uuid, text, text, integer, jsonb, text, text)
   from public, anon, authenticated, service_role;
--- tuturuuu: reviewed(function-grant): public.generate_cross_app_token(uuid,text,text,integer,jsonb,text,text) review=SR-M1-pkce-handoff
-grant execute on function public.generate_cross_app_token(uuid, text, text, integer, jsonb, text, text)
+-- tuturuuu: reviewed(function-grant): public.generate_cross_app_token_pkce(uuid,text,text,integer,jsonb,text,text) review=SR-M1-pkce-handoff
+grant execute on function public.generate_cross_app_token_pkce(uuid, text, text, integer, jsonb, text, text)
   to authenticated;
 
 -- Redemption authenticates possession of the one-time bearer token; tokens
--- minted with a code challenge also need the verifier (three-argument form).
+-- minted with a code challenge also need the verifier (the _pkce variant).
 revoke all on function public.validate_cross_app_token_with_session(text, text)
   from public, anon, authenticated, service_role;
 -- allow-anon-grant: pre-session bearer redemption; refuses challenge-bound tokens.
@@ -256,7 +259,7 @@ grant execute on function public.validate_cross_app_token_with_session(text, tex
   -- tuturuuu: reviewed(function-grant): public.validate_cross_app_token_with_session(text,text) anon-required review=SR-M1-pkce-handoff
   to anon, authenticated, service_role;
 
-revoke all on function public.validate_cross_app_token_with_session(text, text, text)
+revoke all on function public.validate_cross_app_token_with_session_pkce(text, text, text)
   from public, anon, authenticated, service_role;
-grant execute on function public.validate_cross_app_token_with_session(text, text, text)
+grant execute on function public.validate_cross_app_token_with_session_pkce(text, text, text)
   to service_role;

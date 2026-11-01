@@ -273,16 +273,13 @@ async function createCrossAppReturn(request: NextRequest) {
     p_target_app: target.targetApp,
     p_user_id: user.id,
   };
-  const { data, error } = await supabase.rpc(
-    'generate_cross_app_token',
-    boundChallenge
-      ? {
-          ...mintArgs,
-          p_code_challenge: boundChallenge.codeChallenge,
-          p_code_challenge_method: boundChallenge.codeChallengeMethod,
-        }
-      : mintArgs
-  );
+  const { data, error } = boundChallenge
+    ? await supabase.rpc('generate_cross_app_token_pkce', {
+        ...mintArgs,
+        p_code_challenge: boundChallenge.codeChallenge,
+        p_code_challenge_method: boundChallenge.codeChallengeMethod,
+      })
+    : await supabase.rpc('generate_cross_app_token', mintArgs);
 
   if (error || !data) {
     console.warn('Failed to generate cross-app return token', {

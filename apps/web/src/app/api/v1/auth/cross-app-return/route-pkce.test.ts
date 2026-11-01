@@ -97,7 +97,7 @@ describe('cross-app return PKCE binding', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.rpc).toHaveBeenCalledWith(
-      'generate_cross_app_token',
+      'generate_cross_app_token_pkce',
       expect.objectContaining({
         p_code_challenge: challenge,
         p_code_challenge_method: 'S256',
@@ -157,7 +157,7 @@ describe('cross-app return PKCE binding', () => {
     expect(returnUrl.searchParams.get('token')).toBe('handoff-token');
     expect(returnUrl.searchParams.get('state')).toBe('s1');
     expect(mocks.rpc).toHaveBeenCalledWith(
-      'generate_cross_app_token',
+      'generate_cross_app_token_pkce',
       expect.objectContaining({ p_code_challenge: challenge })
     );
   });

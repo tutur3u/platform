@@ -79,14 +79,14 @@ describe('app token exchange PKCE verification', () => {
     expect(adminRpc).not.toHaveBeenCalled();
   });
 
-  it('redeems a verifier through the service_role overload', async () => {
+  it('redeems a verifier through the service_role _pkce validator', async () => {
     await registerApp(true);
     const adminRpc = useAdminRpc();
     const response = await exchange({ codeVerifier: verifier });
 
     expect(response.status).toBe(200);
     expect(adminRpc).toHaveBeenCalledWith(
-      'validate_cross_app_token_with_session',
+      'validate_cross_app_token_with_session_pkce',
       {
         p_code_verifier: verifier,
         p_target_app: 'yoola',
@@ -131,7 +131,7 @@ describe('app token exchange PKCE verification', () => {
 
     expect(response.status).toBe(200);
     expect(adminRpc).toHaveBeenCalledWith(
-      'validate_cross_app_token_with_session',
+      'validate_cross_app_token_with_session_pkce',
       expect.objectContaining({ p_code_verifier: verifier })
     );
   });

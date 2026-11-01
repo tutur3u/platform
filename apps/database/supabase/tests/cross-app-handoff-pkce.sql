@@ -11,12 +11,12 @@ insert into auth.users(id, email, email_confirmed_at) values
 insert into public.users(id) values
 ('00000000-0000-4000-8000-00000000e201') on conflict do nothing;
 
-select ok(not has_function_privilege('anon', 'public.generate_cross_app_token(uuid,text,text,integer,jsonb,text,text)', 'execute'), 'anon cannot mint PKCE handoffs');
-select ok(has_function_privilege('authenticated', 'public.generate_cross_app_token(uuid,text,text,integer,jsonb,text,text)', 'execute'), 'signed-in users mint PKCE handoffs');
-select ok(not has_function_privilege('service_role', 'public.generate_cross_app_token(uuid,text,text,integer,jsonb,text,text)', 'execute'), 'service_role cannot mint PKCE handoffs');
-select ok(not has_function_privilege('anon', 'public.validate_cross_app_token_with_session(text,text,text)', 'execute')
-  and not has_function_privilege('authenticated', 'public.validate_cross_app_token_with_session(text,text,text)', 'execute')
-  and has_function_privilege('service_role', 'public.validate_cross_app_token_with_session(text,text,text)', 'execute'),
+select ok(not has_function_privilege('anon', 'public.generate_cross_app_token_pkce(uuid,text,text,integer,jsonb,text,text)', 'execute'), 'anon cannot mint PKCE handoffs');
+select ok(has_function_privilege('authenticated', 'public.generate_cross_app_token_pkce(uuid,text,text,integer,jsonb,text,text)', 'execute'), 'signed-in users mint PKCE handoffs');
+select ok(not has_function_privilege('service_role', 'public.generate_cross_app_token_pkce(uuid,text,text,integer,jsonb,text,text)', 'execute'), 'service_role cannot mint PKCE handoffs');
+select ok(not has_function_privilege('anon', 'public.validate_cross_app_token_with_session_pkce(text,text,text)', 'execute')
+  and not has_function_privilege('authenticated', 'public.validate_cross_app_token_with_session_pkce(text,text,text)', 'execute')
+  and has_function_privilege('service_role', 'public.validate_cross_app_token_with_session_pkce(text,text,text)', 'execute'),
   'verifier redemption is service_role-only');
 select ok(not has_function_privilege('anon', 'private.redeem_cross_app_token(text,text,text)', 'execute')
   and not has_function_privilege('authenticated', 'private.redeem_cross_app_token(text,text,text)', 'execute'),
@@ -24,17 +24,17 @@ select ok(not has_function_privilege('anon', 'private.redeem_cross_app_token(tex
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-00000000e201","role":"authenticated"}', true);
-select public.generate_cross_app_token('00000000-0000-4000-8000-00000000e201','cli','tasks',60,'{}'::jsonb,:'challenge','S256') as bound \gset
+select public.generate_cross_app_token_pkce('00000000-0000-4000-8000-00000000e201','cli','tasks',60,'{}'::jsonb,:'challenge','S256') as bound \gset
 select throws_ok(
-  format($$select public.generate_cross_app_token('00000000-0000-4000-8000-00000000e201','cli','tasks',60,'{}'::jsonb,%L,'plain')$$, :'challenge'),
+  format($$select public.generate_cross_app_token_pkce('00000000-0000-4000-8000-00000000e201','cli','tasks',60,'{}'::jsonb,%L,'plain')$$, :'challenge'),
   '22023', null, 'plain challenge method is refused');
 select throws_ok(
-  $$select public.generate_cross_app_token('00000000-0000-4000-8000-00000000e201','cli','tasks',60,'{}'::jsonb,'too-short','S256')$$,
+  $$select public.generate_cross_app_token_pkce('00000000-0000-4000-8000-00000000e201','cli','tasks',60,'{}'::jsonb,'too-short','S256')$$,
   '22023', null, 'malformed challenge is refused');
 select throws_ok(
-  $$select public.generate_cross_app_token('00000000-0000-4000-8000-00000000e201','cli','tasks',60,'{}'::jsonb,null,'S256')$$,
+  $$select public.generate_cross_app_token_pkce('00000000-0000-4000-8000-00000000e201','cli','tasks',60,'{}'::jsonb,null,'S256')$$,
   '22023', null, 'method without challenge is refused');
-select public.generate_cross_app_token('00000000-0000-4000-8000-00000000e201','cli','tasks',60,'{}'::jsonb,null,null) as unbound \gset
+select public.generate_cross_app_token_pkce('00000000-0000-4000-8000-00000000e201','cli','tasks',60,'{}'::jsonb,null,null) as unbound \gset
 reset role;
 
 select is((select code_challenge || ':' || code_challenge_method from private.cross_app_tokens where token = :'bound'), :'challenge' || ':S256', 'mint stores the S256 challenge');
@@ -47,14 +47,14 @@ set local role anon;
 select is((select user_id from public.validate_cross_app_token_with_session(:'bound', 'tasks')), null::uuid, 'anonymous redemption refuses a challenge-bound token');
 reset role;
 set local role service_role;
-select is((select user_id from public.validate_cross_app_token_with_session(:'bound', 'tasks', :'wrong_verifier')), null::uuid, 'wrong verifier is refused');
-select is((select user_id from public.validate_cross_app_token_with_session(:'bound', 'tasks', 'short')), null::uuid, 'malformed verifier is refused');
+select is((select user_id from public.validate_cross_app_token_with_session_pkce(:'bound', 'tasks', :'wrong_verifier')), null::uuid, 'wrong verifier is refused');
+select is((select user_id from public.validate_cross_app_token_with_session_pkce(:'bound', 'tasks', 'short')), null::uuid, 'malformed verifier is refused');
 reset role;
 select is((select used_at from private.cross_app_tokens where token = :'bound'), null::timestamptz, 'failed verification consumes nothing');
 set local role service_role;
-select is((select user_id from public.validate_cross_app_token_with_session(:'bound', 'tasks', :'verifier')), '00000000-0000-4000-8000-00000000e201'::uuid, 'matching verifier redeems the handoff');
-select is((select user_id from public.validate_cross_app_token_with_session(:'bound', 'tasks', :'verifier')), null::uuid, 'challenge-bound handoff stays single use');
-select is((select user_id from public.validate_cross_app_token_with_session(:'unbound', 'tasks', :'verifier')), null::uuid, 'verifier for a handoff minted without a challenge is refused');
+select is((select user_id from public.validate_cross_app_token_with_session_pkce(:'bound', 'tasks', :'verifier')), '00000000-0000-4000-8000-00000000e201'::uuid, 'matching verifier redeems the handoff');
+select is((select user_id from public.validate_cross_app_token_with_session_pkce(:'bound', 'tasks', :'verifier')), null::uuid, 'challenge-bound handoff stays single use');
+select is((select user_id from public.validate_cross_app_token_with_session_pkce(:'unbound', 'tasks', :'verifier')), null::uuid, 'verifier for a handoff minted without a challenge is refused');
 reset role;
 select is((select used_at from private.cross_app_tokens where token = :'unbound'), null::timestamptz, 'downgrade refusal consumes nothing');
 set local role anon;

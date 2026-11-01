@@ -502,10 +502,10 @@ async function exchangeAppToken(request: NextRequest) {
       );
     }
 
-    // A verifier redeems only through the service_role overload; without one,
-    // the anonymous overload refuses every challenge-bound token.
+    // A verifier redeems only through the service_role _pkce function; without
+    // one, the anonymous validator refuses every challenge-bound token.
     const { data, error } = codeVerifier
-      ? await sbAdmin.rpc('validate_cross_app_token_with_session', {
+      ? await sbAdmin.rpc('validate_cross_app_token_with_session_pkce', {
           p_code_verifier: codeVerifier,
           p_target_app: resolvedTarget.targetApp,
           p_token: crossAppToken,

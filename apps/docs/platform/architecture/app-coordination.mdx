@@ -253,15 +253,19 @@ and omitted fields keep their stored value):
 
 **Rollout rule:** Never set `requirePkce=true` for any app until migration
 `20261101090000` is applied in production; record it in the release receipt.
-Until then the seven-argument mint and the verifier overload do not exist, so
-every login for that app would fail.
+Until then `generate_cross_app_token_pkce` and
+`validate_cross_app_token_with_session_pkce` do not exist, so every login for
+that app would fail.
 
 The challenge applies only to registered external apps; internal app verifiers
 never receive a challenge-bound token. In the database,
-`private.cross_app_tokens.code_challenge` stores the challenge, the seven-argument
-`generate_cross_app_token` overload mints it, the anonymous two-argument
+`private.cross_app_tokens.code_challenge` stores the challenge,
+`generate_cross_app_token_pkce` mints it, the anonymous
 `validate_cross_app_token_with_session` refuses challenge-bound tokens, and the
-`service_role`-only three-argument overload verifies the verifier. Regression
+`service_role`-only `validate_cross_app_token_with_session_pkce` verifies the
+verifier. The PKCE variants have distinct names rather than overloads: extra
+overload unions in the generated `Database` types push Supabase client generics
+past TypeScript's instantiation depth (TS2589). Regression
 coverage lives in `apps/database/supabase/tests/cross-app-handoff-pkce.sql`,
 `apps/web/src/app/api/v1/auth/cross-app-return/route-pkce.test.ts` and
 `apps/web/src/app/api/v1/auth/app-token/exchange/route-pkce.test.ts`.

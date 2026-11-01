@@ -13,8 +13,8 @@ set is_revoked = true
 where code_challenge is not null
   and used_at is null;
 
-drop function if exists public.validate_cross_app_token_with_session(text, text, text);
-drop function if exists public.generate_cross_app_token(uuid, text, text, integer, jsonb, text, text);
+drop function if exists public.validate_cross_app_token_with_session_pkce(text, text, text);
+drop function if exists public.generate_cross_app_token_pkce(uuid, text, text, integer, jsonb, text, text);
 
 -- tuturuuu: no-grant (internal)
 create or replace function private.redeem_cross_app_token(
