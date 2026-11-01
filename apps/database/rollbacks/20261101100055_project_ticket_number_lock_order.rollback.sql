@@ -1,4 +1,4 @@
--- Manual rollback only: restores the 20261029060040 ticket-number allocator,
+-- Manual rollback only: restores the 20261101100040 ticket-number allocator,
 -- which locks the project counter row before the board capacity lock. That
 -- order can deadlock against a task save; prefer a forward fix.
 BEGIN;
