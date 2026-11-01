@@ -38,6 +38,29 @@ import {
 } from './use-my-tasks-query';
 import { loadCanonicalWorkspaceBoardCatalog } from './workspace-board-catalog';
 
+interface ListLike {
+  id: string;
+  name?: string | null;
+  deleted?: boolean | null;
+  position?: number | null;
+}
+
+interface BoardWithLists {
+  id: string;
+  name?: string | null;
+  task_lists?: ListLike[];
+}
+
+interface MemberLike {
+  id: string;
+  user_id: string;
+  display_name: string;
+  email: string;
+  avatar_url: string;
+}
+
+type ErrorWithCode = Error & { code?: string; status?: number };
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -376,9 +399,10 @@ export function useMyTasksState({
     enabled: boardSelectorOpen && !!selectedWorkspaceId,
   });
 
-  const boardsData = Array.isArray(boardsDataRaw)
+  const boardsData = (Array.isArray(boardsDataRaw)
     ? boardsDataRaw
-    : ((boardsDataRaw as any)?.boards ?? []);
+    : ((boardsDataRaw as unknown as { boards?: unknown[] } | undefined)
+        ?.boards ?? [])) as unknown as BoardWithLists[];
 
   const allWorkspaceIds = useMemo(
     () =>
@@ -432,7 +456,7 @@ export function useMyTasksState({
     queryKey: ['workspace', wsId, 'members'],
     queryFn: async () => {
       const data = await listWorkspaceMembers(wsId);
-      return (data || []).map((member: any) => ({
+      return ((data || []) as MemberLike[]).map((member) => ({
         id: member.id || member.user_id,
         display_name: member.display_name,
         email: member.email,
@@ -450,20 +474,20 @@ export function useMyTasksState({
   // Available lists for selected board
   const availableLists = useMemo(() => {
     if (!selectedBoardId) return [];
-    const board = boardsData.find((b: any) => b.id === selectedBoardId);
+    const board = boardsData.find((b) => b.id === selectedBoardId);
     if (!board?.task_lists) {
       if (selectedBoardId !== initialBoard?.id) return [];
       return (initialLists ?? [])
         .filter((list) => !list.deleted)
         .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
     }
-    return (board.task_lists as any[])
-      .filter((l: any) => !l.deleted)
-      .sort((a: any, b: any) => (a.position || 0) - (b.position || 0));
+    return board.task_lists
+      .filter((l) => !l.deleted)
+      .sort((a, b) => (a.position || 0) - (b.position || 0));
   }, [selectedBoardId, boardsData, initialBoard?.id, initialLists]);
 
   const hasValidSelectedList = useMemo(
-    () => availableLists.some((list: any) => list.id === selectedListId),
+    () => availableLists.some((list) => list.id === selectedListId),
     [availableLists, selectedListId]
   );
 
@@ -502,12 +526,12 @@ export function useMyTasksState({
       boardsData.length > 0 &&
       !selectedBoardId
     ) {
-      const firstBoard = boardsData[0] as any;
+      const firstBoard = boardsData[0] as BoardWithLists;
       setSelectedBoardId(firstBoard.id);
-      const lists = (firstBoard.task_lists as any[]) || [];
+      const lists = firstBoard.task_lists || [];
       const firstList = lists
-        .filter((l: any) => !l.deleted)
-        .sort((a: any, b: any) => (a.position || 0) - (b.position || 0))[0];
+        .filter((l) => !l.deleted)
+        .sort((a, b) => (a.position || 0) - (b.position || 0))[0];
       if (firstList) setSelectedListId(firstList.id);
     }
   }, [boardSelectorOpen, boardsData, selectedBoardId]);
@@ -516,10 +540,11 @@ export function useMyTasksState({
   useEffect(() => {
     if (selectedBoardId && availableLists.length > 0) {
       const currentListExists = availableLists.some(
-        (l: any) => l.id === selectedListId
+        (l) => l.id === selectedListId
       );
-      if (!currentListExists) {
-        setSelectedListId(availableLists[0].id);
+      const firstAvailableList = availableLists[0];
+      if (!currentListExists && firstAvailableList) {
+        setSelectedListId(firstAvailableList.id);
       }
     }
   }, [selectedBoardId, availableLists, selectedListId]);
@@ -575,8 +600,9 @@ export function useMyTasksState({
           code?: string;
         } | null;
         const err = new Error(errorObj?.error || 'Failed to generate preview');
-        (err as any).code = errorObj?.code;
-        (err as any).status = response.status;
+        const typedErr = err as ErrorWithCode;
+        typedErr.code = errorObj?.code;
+        typedErr.status = response.status;
         throw err;
       }
       return payload;
@@ -592,8 +618,8 @@ export function useMyTasksState({
       queryClient.invalidateQueries({ queryKey: [AI_CREDITS_QUERY_KEY] });
     },
     onError: (mutationError: Error) => {
-      const code = (mutationError as any).code;
-      const status = (mutationError as any).status;
+      const code = (mutationError as ErrorWithCode).code;
+      const status = (mutationError as ErrorWithCode).status;
 
       // Handle credit-specific 403 errors
       if (status === 403 && code) {
@@ -731,9 +757,12 @@ export function useMyTasksState({
         toast.error(t('ws-tasks.errors.failed_create_task'));
         return false;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating task:', error);
-      toast.error(error.message || t('ws-tasks.errors.failed_create_task'));
+      toast.error(
+        (error as { message?: string })?.message ||
+          t('ws-tasks.errors.failed_create_task')
+      );
       return false;
     } finally {
       setCommandBarLoading(false);
@@ -831,12 +860,12 @@ export function useMyTasksState({
   // Selected destination details for CommandBar
   const selectedDestination = useMemo(() => {
     if (!selectedBoardId || !selectedListId) return null;
-    const board = boardsData.find((b: any) => b.id === selectedBoardId);
+    const board = boardsData.find((b) => b.id === selectedBoardId);
     const isInitialBoard = selectedBoardId === initialBoard?.id;
     const lists =
-      (board?.task_lists as any[]) ||
+      (board?.task_lists as ListLike[] | undefined) ||
       (isInitialBoard ? (initialLists ?? []) : []);
-    const list = lists.find((l: any) => l.id === selectedListId);
+    const list = lists.find((l) => l.id === selectedListId);
     return {
       boardName: board?.name || initialBoard?.name || 'Unknown Board',
       listName: list?.name || 'Unknown List',
@@ -889,9 +918,12 @@ export function useMyTasksState({
       setNewLabelColor((previousColor) =>
         getRandomNewLabelColor(previousColor)
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating label:', error);
-      toast.error(error.message || t('ws-tasks.errors.failed_create_label'));
+      toast.error(
+        (error as { message?: string })?.message ||
+          t('ws-tasks.errors.failed_create_label')
+      );
     } finally {
       setCreatingLabel(false);
     }
@@ -909,9 +941,12 @@ export function useMyTasksState({
       toast.success(t('ws-tasks.project_created'));
       setNewProjectDialogOpen(false);
       setNewProjectName('');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating project:', error);
-      toast.error(error.message || t('ws-tasks.errors.failed_create_project'));
+      toast.error(
+        (error as { message?: string })?.message ||
+          t('ws-tasks.errors.failed_create_project')
+      );
     } finally {
       setCreatingProject(false);
     }
