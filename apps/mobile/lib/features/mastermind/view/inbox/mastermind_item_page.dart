@@ -12,6 +12,7 @@ import 'package:mobile/features/mastermind/asks/ask_detail.dart';
 import 'package:mobile/features/mastermind/asks/ask_detail_sections.dart';
 import 'package:mobile/features/mastermind/asks/ask_detail_source.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/ask_card_source.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
@@ -125,7 +126,11 @@ class _MastermindItemPageState extends State<MastermindItemPage> {
       return MastermindRepliesWatcher(
         child: MastermindStickyActionLayout(
           // The primary action stays above the dock while the ask scrolls.
-          action: item == null || item.state != ItemState.open || withheld
+          action:
+              item == null ||
+                  item.state != ItemState.open ||
+                  withheld ||
+                  isRiskyAsk(item)
               ? null
               : ReplyActionBar(
                   item: item,

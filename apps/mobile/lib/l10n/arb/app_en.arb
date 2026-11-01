@@ -7042,6 +7042,19 @@
     }
   },
   "mastermindIrisDone": "Done",
+  "mastermindIrisUseRecommendationsOthers": "{count, plural, =1{+1 other option} other{+{count} other options}}",
+  "@mastermindIrisUseRecommendationsOthers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisNotIncludedTitle": "Not included: answer these one by one",
+  "mastermindIrisNotIncludedRisky": "Needs approval on a trusted device",
+  "mastermindIrisNotIncludedIncomplete": "Incomplete: open it to read the full ask",
+  "mastermindRiskyComingSoon": "Approve on a trusted device: coming soon",
+  "mastermindRiskyComingSoonHint": "This ask touches deploy, spend, credentials or security. It can't be answered from the phone yet.",
   "mastermindIrisDevicesTitle": "Iris devices",
   "mastermindIrisDevicesAction": "Iris devices",
   "mastermindIrisDevicesEmpty": "No devices enrolled yet",

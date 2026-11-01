@@ -6,6 +6,7 @@ import 'package:mobile/features/mastermind/cubit/mastermind_snapshot_state.dart'
 import 'package:mobile/features/mastermind/data/hub_capabilities.dart';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/ask_card_source.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_state.dart';
 import 'package:mobile/features/mastermind/replies/reply_idempotency_key.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
@@ -247,7 +248,8 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
   /// it. At most one window exists per item.
   bool queueOption({required NeedsYou item, required int optionIndex}) {
     final options = item.options;
-    if (optionIndex < 0 ||
+    if (isRiskyAsk(item) ||
+        optionIndex < 0 ||
         optionIndex >= options.length ||
         options[optionIndex] == mastermindReplyPlaceholderOption ||
         !state.canReply ||
@@ -426,7 +428,9 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
     int? optionIndex,
     String? text,
   }) async {
-    if ((optionIndex == null) == (text == null)) return false;
+    if ((optionIndex == null) == (text == null) || isRiskyAsk(item)) {
+      return false;
+    }
     final options = item.options;
     if (optionIndex != null &&
         (optionIndex < 0 ||

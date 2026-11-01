@@ -6586,6 +6586,19 @@
   "mastermindIrisRecommendationSkipped": "Đã bỏ qua: đã được trả lời hoặc đang tắt trả lời",
   "mastermindIrisRecommendationsResult": "Đã gửi {sent}/{total}",
   "mastermindIrisDone": "Xong",
+  "mastermindIrisUseRecommendationsOthers": "{count, plural, other{+{count} lựa chọn khác}}",
+  "@mastermindIrisUseRecommendationsOthers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisNotIncludedTitle": "Không gồm trong lô: hãy trả lời từng câu",
+  "mastermindIrisNotIncludedRisky": "Cần phê duyệt trên thiết bị tin cậy",
+  "mastermindIrisNotIncludedIncomplete": "Chưa đầy đủ: mở để đọc toàn bộ câu hỏi",
+  "mastermindRiskyComingSoon": "Phê duyệt trên thiết bị tin cậy: sắp ra mắt",
+  "mastermindRiskyComingSoonHint": "Câu hỏi này liên quan đến triển khai, chi tiêu, thông tin xác thực hoặc bảo mật. Chưa thể trả lời từ điện thoại.",
   "mastermindIrisDevicesTitle": "Thiết bị Iris",
   "mastermindIrisDevicesAction": "Thiết bị Iris",
   "mastermindIrisDevicesEmpty": "Chưa có thiết bị nào được đăng ký",

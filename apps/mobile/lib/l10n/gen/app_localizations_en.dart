@@ -14948,6 +14948,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindIrisDone => 'Done';
 
   @override
+  String mastermindIrisUseRecommendationsOthers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count other options',
+      one: '+1 other option',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindIrisNotIncludedTitle => 'Not included: answer these one by one';
+
+  @override
+  String get mastermindIrisNotIncludedRisky => 'Needs approval on a trusted device';
+
+  @override
+  String get mastermindIrisNotIncludedIncomplete => 'Incomplete: open it to read the full ask';
+
+  @override
+  String get mastermindRiskyComingSoon => 'Approve on a trusted device: coming soon';
+
+  @override
+  String get mastermindRiskyComingSoonHint => 'This ask touches deploy, spend, credentials or security. It can\'t be answered from the phone yet.';
+
+  @override
   String get mastermindIrisDevicesTitle => 'Iris devices';
 
   @override

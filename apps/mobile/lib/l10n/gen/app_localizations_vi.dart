@@ -14788,6 +14788,31 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindIrisDone => 'Xong';
 
   @override
+  String mastermindIrisUseRecommendationsOthers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count lựa chọn khác',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindIrisNotIncludedTitle => 'Không gồm trong lô: hãy trả lời từng câu';
+
+  @override
+  String get mastermindIrisNotIncludedRisky => 'Cần phê duyệt trên thiết bị tin cậy';
+
+  @override
+  String get mastermindIrisNotIncludedIncomplete => 'Chưa đầy đủ: mở để đọc toàn bộ câu hỏi';
+
+  @override
+  String get mastermindRiskyComingSoon => 'Phê duyệt trên thiết bị tin cậy: sắp ra mắt';
+
+  @override
+  String get mastermindRiskyComingSoonHint => 'Câu hỏi này liên quan đến triển khai, chi tiêu, thông tin xác thực hoặc bảo mật. Chưa thể trả lời từ điện thoại.';
+
+  @override
   String get mastermindIrisDevicesTitle => 'Thiết bị Iris';
 
   @override
