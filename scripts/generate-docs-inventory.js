@@ -401,7 +401,7 @@ function plannedFiles(root = ROOT) {
   const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
   const findReference = (value) => {
     if (!value || typeof value !== 'object') return null;
-    if (value.group === 'Reference') return value;
+    if (value.group === 'Reference' || value.tab === 'Reference') return value;
     for (const child of Object.values(value)) {
       if (child && typeof child === 'object') {
         const found = findReference(child);
@@ -422,10 +422,45 @@ function plannedFiles(root = ROOT) {
       { group: 'Routes by app', pages: routePages },
     ],
   };
-  reference.pages = [
-    ...reference.pages.filter((entry) => entry?.group !== group.group),
-    group,
-  ];
+  const groups = reference.groups ?? [reference];
+  const owner = groups.find((entry) =>
+    entry.pages?.some((page) => page?.group === group.group)
+  );
+  if (owner) {
+    const existing = owner.pages.find((entry) => entry?.group === group.group);
+    const inventory = reference.tab
+      ? {
+          ...existing,
+          pages: [
+            `${GENERATED}/catalog`,
+            `${GENERATED}/versions`,
+            ...dependencyPages,
+            ...routePages,
+          ],
+        }
+      : group;
+    owner.pages = owner.pages.map((entry) =>
+      entry?.group === group.group ? inventory : entry
+    );
+  } else if (reference.tab) {
+    throw new Error('Docs navigation is missing Repository inventory');
+  } else {
+    // A plain Reference group without an inventory yet: append it (pre-tab layout).
+    reference.pages = [...(reference.pages ?? []), group];
+  }
+  for (const [file, source] of files) {
+    const current = readOptionalFileSync(path.join(root, 'apps/docs', file), {
+      encoding: 'utf8',
+    });
+    const metadata =
+      current
+        ?.match(/^---\n([\s\S]*?)\n---/)?.[1]
+        .split('\n')
+        .filter((line) => /^(updatedAt|audience):/.test(line)) ?? [];
+    if (metadata.length) {
+      files.set(file, source.replace(/\n---/, `\n${metadata.join('\n')}\n---`));
+    }
+  }
   const currentConfig = fs.readFileSync(configFile, 'utf8');
   if (JSON.stringify(JSON.parse(currentConfig)) !== JSON.stringify(config))
     files.set('../docs.json', `${JSON.stringify(config, null, 2)}\n`);

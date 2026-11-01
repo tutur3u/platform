@@ -24,350 +24,149 @@
   },
   "favicon": "/favicon.svg",
   "navigation": {
-    "anchors": [
+    "tabs": [
       {
-        "anchor": "Documentation",
-        "icon": "book-open",
+        "tab": "Guides",
         "groups": [
           {
-            "group": "Overview",
+            "group": "Get started",
             "pages": [
               "overview/start-here",
               "overview/whats-new",
               "overview/vision",
-              "overview/organization-guide"
+              "overview/organization-guide",
+              "platform/overview"
             ]
           },
           {
-            "group": "Platform",
+            "group": "User guides",
             "pages": [
-              "platform/overview",
-              {
-                "group": "Data protection",
-                "pages": [
-                  "platform/data-protection-standard",
-                  "platform/data-protection/inventory",
-                  "platform/data-protection/account-deletion",
-                  "platform/data-protection/delivery-plan",
-                  "platform/data-protection/schema-private",
-                  "platform/data-protection/schema-public",
-                  "platform/data-protection/schema-storage"
-                ]
-              },
-              {
-                "group": "User guides",
-                "pages": [
-                  "platform/guides/getting-started",
-                  "platform/guides/workflows",
-                  "platform/guides/troubleshooting"
-                ]
-              },
-              {
-                "group": "Features",
-                "pages": [
-                  "platform/features/search-indexing",
-                  "platform/features/legal-publications",
-                  "platform/features/command-center-dashboard",
-                  "platform/personal-journal",
-                  "platform/features/assistant-live",
-                  "platform/features/mira-mail-tools",
-                  "platform/features/assistant-reaction-retention",
-                  "platform/features/assistant-local-models",
-                  "platform/personal-proactive-execution",
-                  "platform/features/mobile-timer",
-                  "platform/features/mira-health-planning-tools",
-                  "platform/features/task-reminder-delivery",
-                  "platform/features/mobile-chat",
-                  "platform/features/mobile-mastermind",
-                  "platform/features/mobile-mastermind-inbox",
-                  "platform/features/mobile-mastermind-machines",
-                  "platform/features/mobile-mastermind-answered-elsewhere",
-                  "platform/features/mobile-mastermind-decision-detail",
-                  "platform/features/mira-client-actions",
-                  "platform/features/colab",
-                  "platform/features/lettin",
-                  "platform/features/cms-site-contract-v1",
-                  "platform/features/external-project-studio",
-                  "platform/features/forms-embedding-and-seo",
-                  "platform/features/forms-studio-layouts",
-                  "platform/features/meet-calls",
-                  "platform/features/native-calendar-recurrence",
-                  "platform/features/native-calendar-preferences",
-                  "platform/features/notes-voice-analysis",
-                  "platform/features/programming-playgrounds",
-                  "platform/features/account-benefits",
-                  "platform/features/meet-followups",
-                  "platform/features/meet-live-assistants",
-                  "platform/features/meet-solo-mode",
-                  "platform/features/meet-together",
-                  "platform/features/mobile-workspace-tools",
-                  "platform/features/mobile-settings-shell",
-                  "platform/features/mobile-telemetry-privacy",
-                  "platform/features/mobile-home-notifications",
-                  "platform/features/mobile-profile",
-                  "platform/features/hidden-workspaces",
-                  "platform/features/settings-dialog",
-                  "platform/features/notification-access",
-                  "platform/features/sso",
-                  "platform/features/inventory-stock-health",
-                  "platform/features/inventory-season-pricing-mobile",
-                  "platform/features/user-management",
-                  {
-                    "group": "Smart Scheduling",
-                    "pages": [
-                      "platform/features/smart-scheduling/overview",
-                      "platform/features/smart-scheduling/priority-system",
-                      "platform/features/smart-scheduling/duration-optimization",
-                      "platform/features/smart-scheduling/api-reference"
-                    ]
-                  },
-                  "platform/features/progress-goals-leaderboards",
-                  "platform/features/pitch-deck",
-                  "platform/features/commercial-controls",
-                  "platform/features/usage-accounting-guards"
-                ]
-              },
-              {
-                "group": "Architecture",
-                "pages": [
-                  "platform/architecture/routing",
-                  "platform/architecture/tanstack-rust-migration",
-                  "platform/architecture/tanstack-rust-migration-plan",
-                  "platform/architecture/data-fetching",
-                  "platform/architecture/effect",
-                  "platform/architecture/api-routes",
-                  "platform/architecture/trpc",
-                  "platform/architecture/authentication",
-                  "platform/architecture/shared-session",
-                  "platform/architecture/satellite-apps",
-                  "platform/architecture/one-origin-super-app",
-                  "platform/architecture/one-origin-security",
-                  "platform/architecture/app-coordination",
-                  "platform/architecture/sepay-integration",
-                  "platform/architecture/authorization",
-                  "platform/architecture/workspaces-permissions",
-                  {
-                    "group": "System Design",
-                    "pages": [
-                      "platform/architecture/system-design/overview",
-                      "platform/architecture/system-design/architectural-decisions",
-                      "platform/architecture/system-design/layering-patterns",
-                      "platform/architecture/system-design/architectural-patterns-comparison",
-                      "platform/architecture/system-design/event-driven-architecture",
-                      "platform/architecture/system-design/extensibility-resilience-scalability",
-                      "platform/architecture/system-design/encapsulation-patterns",
-                      "platform/architecture/system-design/quality-attributes",
-                      "platform/architecture/system-design/security-architecture",
-                      "platform/architecture/system-design/observability-monitoring",
-                      "platform/architecture/system-design/hexagonal-architecture",
-                      "platform/architecture/system-design/microservices-patterns"
-                    ]
-                  },
-                  {
-                    "group": "Components",
-                    "pages": [
-                      "platform/components/overview",
-                      "platform/components/workspace-wrapper",
-                      "platform/components/workspace-wrapper-quick-reference",
-                      {
-                        "group": "UI Components",
-                        "pages": [
-                          "platform/components/ui/overview",
-                          {
-                            "group": "Actions",
-                            "pages": [
-                              "platform/components/ui/button",
-                              "platform/components/ui/toggle",
-                              "platform/components/ui/toggle-group"
-                            ]
-                          },
-                          {
-                            "group": "Inputs",
-                            "pages": [
-                              "platform/components/ui/calendar",
-                              "platform/components/ui/checkbox",
-                              "platform/components/ui/color-picker",
-                              "platform/components/ui/currency-input",
-                              "platform/components/ui/date-time-picker",
-                              "platform/components/ui/optional-time-picker",
-                              "platform/components/ui/form",
-                              "platform/components/ui/form-required-indicator",
-                              "platform/components/ui/input",
-                              "platform/components/ui/input-otp",
-                              "platform/components/ui/label",
-                              "platform/components/ui/radio-group",
-                              "platform/components/ui/select",
-                              "platform/components/ui/slider",
-                              "platform/components/ui/switch",
-                              "platform/components/ui/textarea",
-                              "platform/components/ui/time-picker-input"
-                            ]
-                          },
-                          {
-                            "group": "Overlays",
-                            "pages": [
-                              "platform/components/ui/alert-dialog",
-                              "platform/components/ui/context-menu",
-                              "platform/components/ui/dialog",
-                              "platform/components/ui/drawer",
-                              "platform/components/ui/dropdown-menu",
-                              "platform/components/ui/hover-card",
-                              "platform/components/ui/popover",
-                              "platform/components/ui/sheet",
-                              "platform/components/ui/tooltip"
-                            ]
-                          },
-                          {
-                            "group": "Navigation",
-                            "pages": [
-                              "platform/components/ui/breadcrumb",
-                              "platform/components/ui/command",
-                              "platform/components/ui/quick-command-center",
-                              "platform/components/ui/menubar",
-                              "platform/components/ui/navbar",
-                              "platform/components/ui/navigation-menu",
-                              "platform/components/ui/pagination",
-                              "platform/components/ui/sidebar",
-                              "platform/components/ui/tabs"
-                            ]
-                          },
-                          {
-                            "group": "Feedback",
-                            "pages": [
-                              "platform/components/ui/alert",
-                              "platform/components/ui/avatar",
-                              "platform/components/ui/badge",
-                              "platform/components/ui/progress",
-                              "platform/components/ui/skeleton",
-                              "platform/components/ui/sonner",
-                              "platform/components/ui/sticky-bottom-bar",
-                              "platform/components/ui/toast",
-                              "platform/components/ui/toaster"
-                            ]
-                          },
-                          {
-                            "group": "Data",
-                            "pages": [
-                              "platform/components/ui/chart",
-                              "platform/components/ui/diff-viewer",
-                              "platform/components/ui/table"
-                            ]
-                          },
-                          {
-                            "group": "Layout",
-                            "pages": [
-                              "platform/components/ui/accordion",
-                              "platform/components/ui/aspect-ratio",
-                              "platform/components/ui/card",
-                              "platform/components/ui/carousel",
-                              "platform/components/ui/collapsible",
-                              "platform/components/ui/resizable",
-                              "platform/components/ui/scroll-area",
-                              "platform/components/ui/separator"
-                            ]
-                          },
-                          {
-                            "group": "Typography",
-                            "pages": [
-                              "platform/components/ui/codeblock",
-                              "platform/components/ui/kbd",
-                              "platform/components/ui/markdown"
-                            ]
-                          },
-                          {
-                            "group": "Advanced",
-                            "pages": [
-                              "platform/components/ui/report-problem-dialog"
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "group": "AI",
-                "pages": [
-                  "platform/ai/ai-agent-deployment",
-                  "platform/ai/ai-studio",
-                  "platform/ai/chatgpt-subscriptions",
-                  "platform/ai/memory-service",
-                  "platform/ai/model-catalog",
-                  "platform/ai/omni-channel-chat-sdk",
-                  "platform/ai/structured-data"
-                ]
-              },
-              {
-                "group": "Personalization",
-                "pages": [
-                  "platform/personalization/themes",
-                  "platform/personalization/language",
-                  "platform/personalization/sidebar-navigation"
-                ]
-              },
-              {
-                "group": "Applications",
-                "pages": [
-                  "platform/applications/overview",
-                  "platform/applications/apps",
-                  "platform/applications/calendar",
-                  "platform/applications/calendar-details-1",
-                  "platform/applications/calendar-details-2",
-                  "platform/features/calendar-scheduling-summary",
-                  "platform/features/shared-secret-password-reset",
-                  "platform/applications/chat",
-                  "platform/applications/cms",
-                  "platform/applications/drive",
-                  "platform/applications/git",
-                  "platform/applications/finance",
-                  "platform/applications/inventory",
-                  "platform/applications/reports",
-                  {
-                    "group": "Square POS",
-                    "pages": [
-                      "platform/applications/inventory-square-pos",
-                      "platform/applications/inventory-square-pos/customer-setup",
-                      "platform/applications/inventory-square-pos/sandbox-testing",
-                      "platform/applications/inventory-square-pos/catalog-sync",
-                      "platform/applications/inventory-square-pos/production-launch",
-                      "platform/applications/inventory-square-pos/operations",
-                      "platform/applications/inventory-square-pos/troubleshooting"
-                    ]
-                  },
-                  "platform/applications/storefront",
-                  "platform/applications/mail",
-                  "platform/applications/native-release-identity",
-                  "platform/applications/mail-inbound-notifications",
-                  "platform/applications/shiraoki",
-                  "platform/applications/nova",
-                  "platform/applications/qr",
-                  "platform/applications/tasks",
-                  "platform/applications/task-board-access",
-                  "platform/applications/contacts-modules",
-                  "platform/applications/tutoring",
-                  "platform/applications/learn",
-                  "platform/applications/teach",
-                  "platform/applications/upskii",
-                  "platform/applications/hive",
-                  "platform/applications/mind",
-                  "platform/applications/hive-world-event-troubleshooting",
-                  "platform/applications/contacts",
-                  "platform/applications/forms",
-                  "platform/applications/track",
-                  "platform/applications/meet",
-                  "platform/applications/pay",
-                  "platform/applications/rewise",
-                  "platform/applications/parley",
-                  "platform/applications/infrastructure",
-                  "platform/applications/tools",
-                  "platform/applications/shortener",
-                  "platform/applications/mobile"
-                ]
-              },
-              "platform/apps/parley"
+              "platform/guides/getting-started",
+              "platform/guides/workflows",
+              "platform/guides/troubleshooting"
             ]
           },
+          {
+            "group": "Applications",
+            "pages": [
+              "platform/applications/overview",
+              "platform/applications/apps",
+              "platform/applications/calendar",
+              "platform/applications/calendar-details-1",
+              "platform/applications/calendar-details-2",
+              "platform/features/calendar-scheduling-summary",
+              "platform/features/shared-secret-password-reset",
+              "platform/applications/chat",
+              "platform/applications/cms",
+              "platform/applications/drive",
+              "platform/applications/git",
+              "platform/applications/finance",
+              "platform/applications/inventory",
+              "platform/applications/reports",
+              "platform/applications/storefront",
+              "platform/applications/mail",
+              "platform/applications/shiraoki",
+              "platform/applications/nova",
+              "platform/applications/qr",
+              "platform/applications/tasks",
+              "platform/applications/task-board-access",
+              "platform/applications/contacts-modules",
+              "platform/applications/tutoring",
+              "platform/applications/learn",
+              "platform/applications/teach",
+              "platform/applications/upskii",
+              "platform/applications/hive",
+              "platform/applications/mind",
+              "platform/applications/contacts",
+              "platform/applications/forms",
+              "platform/applications/track",
+              "platform/applications/meet",
+              "platform/applications/pay",
+              "platform/applications/rewise",
+              "platform/applications/parley",
+              "platform/applications/infrastructure",
+              "platform/applications/tools",
+              "platform/applications/shortener",
+              "platform/applications/mobile"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "platform/features/search-indexing",
+              "platform/features/legal-publications",
+              "platform/features/command-center-dashboard",
+              "platform/personal-journal",
+              "platform/features/assistant-live",
+              "platform/features/mira-mail-tools",
+              "platform/features/assistant-reaction-retention",
+              "platform/features/assistant-local-models",
+              "platform/personal-proactive-execution",
+              "platform/features/mobile-timer",
+              "platform/features/mira-health-planning-tools",
+              "platform/features/task-reminder-delivery",
+              "platform/features/mobile-chat",
+              "platform/features/mobile-mastermind",
+              "platform/features/mobile-mastermind-inbox",
+              "platform/features/mobile-mastermind-machines",
+              "platform/features/mobile-mastermind-answered-elsewhere",
+              "platform/features/mobile-mastermind-decision-detail",
+              "platform/features/mira-client-actions",
+              "platform/features/colab",
+              "platform/features/lettin",
+              "platform/features/cms-site-contract-v1",
+              "platform/features/external-project-studio",
+              "platform/features/forms-embedding-and-seo",
+              "platform/features/forms-studio-layouts",
+              "platform/features/meet-calls",
+              "platform/features/native-calendar-recurrence",
+              "platform/features/native-calendar-preferences",
+              "platform/features/notes-voice-analysis",
+              "platform/features/programming-playgrounds",
+              "platform/features/account-benefits",
+              "platform/features/meet-followups",
+              "platform/features/meet-live-assistants",
+              "platform/features/meet-solo-mode",
+              "platform/features/meet-together",
+              "platform/features/mobile-workspace-tools",
+              "platform/features/mobile-settings-shell",
+              "platform/features/mobile-telemetry-privacy",
+              "platform/features/mobile-home-notifications",
+              "platform/features/mobile-profile",
+              "platform/features/hidden-workspaces",
+              "platform/features/settings-dialog",
+              "platform/features/notification-access",
+              "platform/features/sso",
+              "platform/features/inventory-stock-health",
+              "platform/features/inventory-season-pricing-mobile",
+              "platform/features/user-management",
+              {
+                "group": "Smart Scheduling",
+                "pages": [
+                  "platform/features/smart-scheduling/overview",
+                  "platform/features/smart-scheduling/priority-system",
+                  "platform/features/smart-scheduling/duration-optimization"
+                ]
+              },
+              "platform/features/progress-goals-leaderboards",
+              "platform/features/pitch-deck",
+              "platform/features/commercial-controls",
+              "platform/features/usage-accounting-guards"
+            ]
+          },
+          {
+            "group": "Personalization",
+            "pages": [
+              "platform/personalization/themes",
+              "platform/personalization/language",
+              "platform/personalization/sidebar-navigation"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Developers",
+        "groups": [
           {
             "group": "Build",
             "pages": [
@@ -432,13 +231,10 @@
               "build/development-tools/development",
               "build/development-tools/node-runtime",
               "build/development-tools/without-docker",
-              "build/development-tools/codex-plugin",
-              "build/development-tools/chatgpt-mcp",
               "build/development-tools/monorepo-architecture",
               "build/development-tools/oxc-cloudflare-adoption",
               "build/development-tools/cf-cli-wrangler-parity",
               "build/development-tools/git-conventions",
-              "build/development-tools/contributing-with-agents",
               "build/development-tools/pre-push-checks",
               "build/development-tools/browser-session-surface",
               "build/development-tools/tsrs-shadow-type-check",
@@ -461,13 +257,309 @@
               "build/development-tools/mobile-native-pass-plan",
               "build/development-tools/mobile-shadcn-migration",
               "build/development-tools/public-seo",
-              "build/development-tools/seo-strategy",
+              "build/development-tools/seo-strategy"
+            ]
+          },
+          {
+            "group": "Platform",
+            "pages": [
               {
-                "group": "Skills",
-                "pages": ["build/skills/overview", "build/skills/installation"]
+                "group": "Data protection",
+                "pages": [
+                  "platform/data-protection-standard",
+                  "platform/data-protection/inventory",
+                  "platform/data-protection/account-deletion",
+                  "platform/data-protection/delivery-plan",
+                  "platform/data-protection/schema-private",
+                  "platform/data-protection/schema-public",
+                  "platform/data-protection/schema-storage"
+                ]
+              },
+              {
+                "group": "Architecture",
+                "pages": [
+                  "platform/architecture/routing",
+                  "platform/architecture/tanstack-rust-migration",
+                  "platform/architecture/tanstack-rust-migration-plan",
+                  "platform/architecture/data-fetching",
+                  "platform/architecture/effect",
+                  "platform/architecture/api-routes",
+                  "platform/architecture/trpc",
+                  "platform/architecture/authentication",
+                  "platform/architecture/shared-session",
+                  "platform/architecture/satellite-apps",
+                  "platform/architecture/one-origin-super-app",
+                  "platform/architecture/one-origin-security",
+                  "platform/architecture/app-coordination",
+                  "platform/architecture/sepay-integration",
+                  "platform/architecture/authorization",
+                  "platform/architecture/workspaces-permissions",
+                  {
+                    "group": "System Design",
+                    "pages": [
+                      "platform/architecture/system-design/overview",
+                      "platform/architecture/system-design/architectural-decisions",
+                      "platform/architecture/system-design/layering-patterns",
+                      "platform/architecture/system-design/architectural-patterns-comparison",
+                      "platform/architecture/system-design/event-driven-architecture",
+                      "platform/architecture/system-design/extensibility-resilience-scalability",
+                      "platform/architecture/system-design/encapsulation-patterns",
+                      "platform/architecture/system-design/quality-attributes",
+                      "platform/architecture/system-design/security-architecture",
+                      "platform/architecture/system-design/observability-monitoring",
+                      "platform/architecture/system-design/hexagonal-architecture",
+                      "platform/architecture/system-design/microservices-patterns"
+                    ]
+                  }
+                ]
+              },
+              {
+                "group": "AI",
+                "pages": [
+                  "platform/ai/ai-agent-deployment",
+                  "platform/ai/ai-studio",
+                  "platform/ai/chatgpt-subscriptions",
+                  "platform/ai/memory-service",
+                  "platform/ai/model-catalog",
+                  "platform/ai/omni-channel-chat-sdk",
+                  "platform/ai/structured-data"
+                ]
+              },
+              {
+                "group": "Application integrations",
+                "pages": [
+                  {
+                    "group": "Square POS",
+                    "pages": [
+                      "platform/applications/inventory-square-pos",
+                      "platform/applications/inventory-square-pos/customer-setup",
+                      "platform/applications/inventory-square-pos/sandbox-testing",
+                      "platform/applications/inventory-square-pos/catalog-sync",
+                      "platform/applications/inventory-square-pos/production-launch",
+                      "platform/applications/inventory-square-pos/operations",
+                      "platform/applications/inventory-square-pos/troubleshooting"
+                    ]
+                  },
+                  "platform/applications/native-release-identity",
+                  "platform/applications/mail-inbound-notifications",
+                  "platform/applications/hive-world-event-troubleshooting",
+                  "platform/apps/parley"
+                ]
               }
             ]
           },
+          {
+            "group": "Components",
+            "pages": [
+              "platform/components/overview",
+              "platform/components/workspace-wrapper",
+              "platform/components/workspace-wrapper-quick-reference",
+              {
+                "group": "UI Components",
+                "pages": [
+                  "platform/components/ui/overview",
+                  "platform/components/ui/button",
+                  "platform/components/ui/toggle",
+                  "platform/components/ui/toggle-group",
+                  "platform/components/ui/calendar",
+                  "platform/components/ui/checkbox",
+                  "platform/components/ui/color-picker",
+                  "platform/components/ui/currency-input",
+                  "platform/components/ui/date-time-picker",
+                  "platform/components/ui/optional-time-picker",
+                  "platform/components/ui/form",
+                  "platform/components/ui/form-required-indicator",
+                  "platform/components/ui/input",
+                  "platform/components/ui/input-otp",
+                  "platform/components/ui/label",
+                  "platform/components/ui/radio-group",
+                  "platform/components/ui/select",
+                  "platform/components/ui/slider",
+                  "platform/components/ui/switch",
+                  "platform/components/ui/textarea",
+                  "platform/components/ui/time-picker-input",
+                  "platform/components/ui/alert-dialog",
+                  "platform/components/ui/context-menu",
+                  "platform/components/ui/dialog",
+                  "platform/components/ui/drawer",
+                  "platform/components/ui/dropdown-menu",
+                  "platform/components/ui/hover-card",
+                  "platform/components/ui/popover",
+                  "platform/components/ui/sheet",
+                  "platform/components/ui/tooltip",
+                  "platform/components/ui/breadcrumb",
+                  "platform/components/ui/command",
+                  "platform/components/ui/quick-command-center",
+                  "platform/components/ui/menubar",
+                  "platform/components/ui/navbar",
+                  "platform/components/ui/navigation-menu",
+                  "platform/components/ui/pagination",
+                  "platform/components/ui/sidebar",
+                  "platform/components/ui/tabs",
+                  "platform/components/ui/alert",
+                  "platform/components/ui/avatar",
+                  "platform/components/ui/badge",
+                  "platform/components/ui/progress",
+                  "platform/components/ui/skeleton",
+                  "platform/components/ui/sonner",
+                  "platform/components/ui/sticky-bottom-bar",
+                  "platform/components/ui/toast",
+                  "platform/components/ui/toaster",
+                  "platform/components/ui/chart",
+                  "platform/components/ui/diff-viewer",
+                  "platform/components/ui/table",
+                  "platform/components/ui/accordion",
+                  "platform/components/ui/aspect-ratio",
+                  "platform/components/ui/card",
+                  "platform/components/ui/carousel",
+                  "platform/components/ui/collapsible",
+                  "platform/components/ui/resizable",
+                  "platform/components/ui/scroll-area",
+                  "platform/components/ui/separator",
+                  "platform/components/ui/codeblock",
+                  "platform/components/ui/kbd",
+                  "platform/components/ui/markdown",
+                  "platform/components/ui/report-problem-dialog"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Reference",
+            "pages": [
+              "reference/overview",
+              {
+                "group": "Database",
+                "pages": [
+                  "reference/database/schema-overview",
+                  "reference/database/rls-policies",
+                  "reference/database/migrations-guide"
+                ]
+              },
+              {
+                "group": "Packages",
+                "pages": [
+                  "reference/packages/sdk",
+                  "reference/packages/cli-operational-state",
+                  "reference/packages/masonry",
+                  "reference/packages/utils-effect",
+                  "reference/packages/supabase",
+                  "reference/packages/trigger"
+                ]
+              },
+              {
+                "group": "API Reference",
+                "pages": [
+                  "reference/api-reference/introduction",
+                  "reference/api-reference/ai-studio",
+                  "reference/api-reference/mastermind-push-events",
+                  "reference/api-reference/endpoint/generate"
+                ]
+              },
+              {
+                "group": "Repository inventory",
+                "pages": [
+                  "reference/repository/catalog",
+                  "reference/repository/versions",
+                  "reference/repository/dependencies-1",
+                  "reference/repository/dependencies-2",
+                  "reference/repository/dependencies-3",
+                  "reference/repository/dependencies-4",
+                  "reference/repository/python-dependencies-1",
+                  "reference/repository/python-dependencies-2",
+                  "reference/repository/dart-dependencies-1",
+                  "reference/repository/dart-dependencies-2",
+                  "reference/repository/dart-dependencies-3",
+                  "reference/repository/dart-dependencies-4",
+                  "reference/repository/routes/abuse-guard",
+                  "reference/repository/routes/ai",
+                  "reference/repository/routes/api",
+                  "reference/repository/routes/apps",
+                  "reference/repository/routes/calendar",
+                  "reference/repository/routes/chat",
+                  "reference/repository/routes/chat-realtime",
+                  "reference/repository/routes/cms",
+                  "reference/repository/routes/colab",
+                  "reference/repository/routes/contacts",
+                  "reference/repository/routes/coordination",
+                  "reference/repository/routes/cron-control",
+                  "reference/repository/routes/database",
+                  "reference/repository/routes/devbox-control",
+                  "reference/repository/routes/discord",
+                  "reference/repository/routes/docs",
+                  "reference/repository/routes/drive",
+                  "reference/repository/routes/external",
+                  "reference/repository/routes/finance",
+                  "reference/repository/routes/forms",
+                  "reference/repository/routes/git",
+                  "reference/repository/routes/hive",
+                  "reference/repository/routes/hive-realtime",
+                  "reference/repository/routes/infrastructure-1",
+                  "reference/repository/routes/infrastructure-2",
+                  "reference/repository/routes/inventory",
+                  "reference/repository/routes/learn",
+                  "reference/repository/routes/lettin",
+                  "reference/repository/routes/mail",
+                  "reference/repository/routes/mastermind",
+                  "reference/repository/routes/meet",
+                  "reference/repository/routes/meet-realtime",
+                  "reference/repository/routes/mind",
+                  "reference/repository/routes/mobile",
+                  "reference/repository/routes/nova",
+                  "reference/repository/routes/ops-hub",
+                  "reference/repository/routes/parley",
+                  "reference/repository/routes/pay",
+                  "reference/repository/routes/playground",
+                  "reference/repository/routes/redis",
+                  "reference/repository/routes/rewise",
+                  "reference/repository/routes/shortener",
+                  "reference/repository/routes/storage-unzip-proxy",
+                  "reference/repository/routes/storefront",
+                  "reference/repository/routes/supermemory",
+                  "reference/repository/routes/tasks",
+                  "reference/repository/routes/teach",
+                  "reference/repository/routes/tools",
+                  "reference/repository/routes/track",
+                  "reference/repository/routes/turbo-cache",
+                  "reference/repository/routes/web-1",
+                  "reference/repository/routes/web-2",
+                  "reference/repository/routes/web-3",
+                  "reference/repository/routes/web-4",
+                  "reference/repository/routes/web-5"
+                ],
+                "expanded": false
+              }
+            ]
+          },
+          {
+            "group": "Smart Scheduling API",
+            "pages": ["platform/features/smart-scheduling/api-reference"]
+          }
+        ]
+      },
+      {
+        "tab": "For agents",
+        "groups": [
+          {
+            "group": "Agent tools and contribution",
+            "pages": [
+              "build/development-tools/contributing-with-agents",
+              "build/development-tools/codex-plugin",
+              "build/development-tools/chatgpt-mcp",
+              "build/skills/overview",
+              "build/skills/installation"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Learn",
+        "groups": [
           {
             "group": "Learn",
             "pages": [
@@ -519,122 +611,6 @@
                       "learn/guides/prompt-engineering/prompt-design-strategies/modular-prompts",
                       "learn/guides/prompt-engineering/prompt-design-strategies/parameters-iteration",
                       "learn/guides/prompt-engineering/prompt-design-strategies/fallback-caution"
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "group": "Reference",
-            "pages": [
-              "reference/overview",
-              {
-                "group": "Database",
-                "pages": [
-                  "reference/database/schema-overview",
-                  "reference/database/rls-policies",
-                  "reference/database/migrations-guide"
-                ]
-              },
-              {
-                "group": "Packages",
-                "pages": [
-                  "reference/packages/sdk",
-                  "reference/packages/cli-operational-state",
-                  "reference/packages/masonry",
-                  "reference/packages/utils-effect",
-                  "reference/packages/supabase",
-                  "reference/packages/trigger"
-                ]
-              },
-              {
-                "group": "API Reference",
-                "pages": [
-                  "reference/api-reference/introduction",
-                  "reference/api-reference/ai-studio",
-                  "reference/api-reference/mastermind-push-events",
-                  "reference/api-reference/endpoint/generate"
-                ]
-              },
-              {
-                "group": "Repository inventory",
-                "pages": [
-                  "reference/repository/catalog",
-                  "reference/repository/versions",
-                  {
-                    "group": "Dependencies",
-                    "pages": [
-                      "reference/repository/dependencies-1",
-                      "reference/repository/dependencies-2",
-                      "reference/repository/dependencies-3",
-                      "reference/repository/dependencies-4",
-                      "reference/repository/python-dependencies-1",
-                      "reference/repository/python-dependencies-2",
-                      "reference/repository/dart-dependencies-1",
-                      "reference/repository/dart-dependencies-2",
-                      "reference/repository/dart-dependencies-3",
-                      "reference/repository/dart-dependencies-4"
-                    ]
-                  },
-                  {
-                    "group": "Routes by app",
-                    "pages": [
-                      "reference/repository/routes/abuse-guard",
-                      "reference/repository/routes/ai",
-                      "reference/repository/routes/api",
-                      "reference/repository/routes/apps",
-                      "reference/repository/routes/calendar",
-                      "reference/repository/routes/chat",
-                      "reference/repository/routes/chat-realtime",
-                      "reference/repository/routes/cms",
-                      "reference/repository/routes/colab",
-                      "reference/repository/routes/contacts",
-                      "reference/repository/routes/coordination",
-                      "reference/repository/routes/cron-control",
-                      "reference/repository/routes/database",
-                      "reference/repository/routes/devbox-control",
-                      "reference/repository/routes/discord",
-                      "reference/repository/routes/docs",
-                      "reference/repository/routes/drive",
-                      "reference/repository/routes/external",
-                      "reference/repository/routes/finance",
-                      "reference/repository/routes/forms",
-                      "reference/repository/routes/git",
-                      "reference/repository/routes/hive",
-                      "reference/repository/routes/hive-realtime",
-                      "reference/repository/routes/infrastructure-1",
-                      "reference/repository/routes/infrastructure-2",
-                      "reference/repository/routes/inventory",
-                      "reference/repository/routes/learn",
-                      "reference/repository/routes/lettin",
-                      "reference/repository/routes/mail",
-                      "reference/repository/routes/mastermind",
-                      "reference/repository/routes/meet",
-                      "reference/repository/routes/meet-realtime",
-                      "reference/repository/routes/mind",
-                      "reference/repository/routes/mobile",
-                      "reference/repository/routes/nova",
-                      "reference/repository/routes/ops-hub",
-                      "reference/repository/routes/parley",
-                      "reference/repository/routes/pay",
-                      "reference/repository/routes/playground",
-                      "reference/repository/routes/redis",
-                      "reference/repository/routes/rewise",
-                      "reference/repository/routes/shortener",
-                      "reference/repository/routes/storage-unzip-proxy",
-                      "reference/repository/routes/storefront",
-                      "reference/repository/routes/supermemory",
-                      "reference/repository/routes/tasks",
-                      "reference/repository/routes/teach",
-                      "reference/repository/routes/tools",
-                      "reference/repository/routes/track",
-                      "reference/repository/routes/turbo-cache",
-                      "reference/repository/routes/web-1",
-                      "reference/repository/routes/web-2",
-                      "reference/repository/routes/web-3",
-                      "reference/repository/routes/web-4",
-                      "reference/repository/routes/web-5"
                     ]
                   }
                 ]
