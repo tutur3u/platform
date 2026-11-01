@@ -88,14 +88,10 @@
       "WEB_START_CANDIDATE": "staging",
       "WEB_START_NATIVE_LEGAL": "off",
       "WEB_START_NATIVE_SECURITY": "off",
-      "AUTH_COOKIE_DOMAIN": ".staging.tutur3u.com",
       "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co",
-      "TUTURUUU_NOINDEX": "1"
+      "TUTURUUU_NOINDEX": "1",
+      "AUTH_COOKIE_PREFIX": "__Host-"
     },
-    "secrets": [
-      "TRUSTED_PROXY_ORIGIN_SECRET",
-      "CF_ACCESS_TEAM_DOMAIN",
-      "CF_ACCESS_AUD"
-    ]
+    "secrets": ["CF_ACCESS_TEAM_DOMAIN", "CF_ACCESS_AUD"]
   }
 }

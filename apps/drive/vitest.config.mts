@@ -29,6 +29,13 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      {
+        find: /^@tuturuuu\/internal-api$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/index.ts'
+        ),
+      },
       { find: '@', replacement: resolve(__dirname, './src') },
       {
         find: '@tuturuuu/supabase/next/common',

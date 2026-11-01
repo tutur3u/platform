@@ -1,3 +1,4 @@
+import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
 import { installAppBaseResolver } from './app-url';
 
 /**
@@ -152,5 +153,5 @@ export function appendContextCookies(response: Response) {
   const result = new Response(response.body, response);
   for (const cookie of bridgeRequest().responseHeaders.getSetCookie())
     result.headers.append('Set-Cookie', cookie);
-  return result;
+  return enforceStagingCookiePolicy(bridgeRequest().request, result);
 }

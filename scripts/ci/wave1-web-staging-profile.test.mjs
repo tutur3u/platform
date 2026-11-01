@@ -29,9 +29,7 @@ test('the entry agrees with the candidate profile and admission inputs', () => {
   );
   assert.match(
     profile,
-    new RegExp(
-      `cookieDomain: '${web.vars.AUTH_COOKIE_DOMAIN.replaceAll('.', '\\.')}'`
-    )
+    new RegExp(`cookiePrefix: '${web.vars.AUTH_COOKIE_PREFIX}'`)
   );
   assert.match(
     profile,
@@ -39,6 +37,12 @@ test('the entry agrees with the candidate profile and admission inputs', () => {
       `supabaseUrl: '${web.vars.NEXT_PUBLIC_SUPABASE_URL.replaceAll('.', '\\.')}'`
     )
   );
+  assert.equal(web.vars.AUTH_COOKIE_PREFIX, '__Host-');
+  assert.equal(Object.hasOwn(web.vars, 'AUTH_COOKIE_DOMAIN'), false);
+  const native = profile.slice(
+    profile.indexOf('export function admittedNativeStaging')
+  );
+  assert.doesNotMatch(native, /TRUSTED_PROXY_ORIGIN_SECRET/);
   assert.equal(web.vars.WEB_START_CANDIDATE, 'staging');
   assert.equal(web.vars.WEB_START_NATIVE_LEGAL, 'off');
   assert.equal(web.vars.WEB_START_NATIVE_SECURITY, 'off');
@@ -49,7 +53,6 @@ test('the entry agrees with the candidate profile and admission inputs', () => {
   assert.deepEqual([...web.secrets].sort(), [
     'CF_ACCESS_AUD',
     'CF_ACCESS_TEAM_DOMAIN',
-    'TRUSTED_PROXY_ORIGIN_SECRET',
   ]);
   assert.equal(web.nextFallback, undefined);
 });

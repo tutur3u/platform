@@ -1,3 +1,4 @@
+import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
 import { type Fetcher, proxyNext } from './fallback';
 import {
   admittedOrigin,
@@ -45,10 +46,13 @@ export function createContactsCandidateHandler({
       );
     if (headers.has('set-cookie') || response.status >= 500)
       headers.set('cache-control', 'no-store');
-    return new Response(request.method === 'HEAD' ? null : response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
+    return enforceStagingCookiePolicy(
+      request,
+      new Response(request.method === 'HEAD' ? null : response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers,
+      })
+    );
   };
 }
