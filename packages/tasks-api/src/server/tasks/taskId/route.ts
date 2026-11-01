@@ -20,12 +20,12 @@ import {
   replacePersonalTaskProjects,
 } from '../personal-overlays';
 import { publishTaskRealtime } from '../realtime-broadcast';
-import { getWorkspaceTask } from './load-workspace-task';
 import {
   requireWorkspaceAccess,
   type TaskDetailRouteAuthContext,
   type TaskDetailRouteContext,
 } from './access';
+import { getWorkspaceTask } from './load-workspace-task';
 import {
   restoreTaskSchema,
   type TaskPriority,
