@@ -117,6 +117,7 @@ export function Lobby({
   error,
   isGuest = false,
   isJoining,
+  joined = false,
   meetingName,
   participants = [],
   transcriptionNotice,
@@ -134,6 +135,8 @@ export function Lobby({
   avatarUrl?: string;
   isGuest?: boolean;
   isJoining: boolean;
+  /** True once Join was pressed; the room then owns the devices. */
+  joined?: boolean;
   meetingName: string;
   participants?: readonly LobbyParticipant[];
   transcriptionNotice?: string;
@@ -183,11 +186,11 @@ export function Lobby({
   const transferred = useRef<MediaStream | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
 
-  // While a join request waits for the host, the room already owns the mic and
-  // camera; the lobby must not open a second capture or switch devices.
-  const mediaHandedOff = waiting;
-  // Join pressed: the room is about to take the devices, so no toggling.
-  const mediaLocked = mediaHandedOff || isJoining;
+  // Only once Join was pressed does the room own the mic and camera (the shell
+  // re-shows the lobby if a joined participant is held in the waiting room).
+  // Before that, `waiting` and `isJoining` describe the socket, not a join, so
+  // the guest keeps a live preview and can always mute or switch devices.
+  const mediaHandedOff = joined;
 
   const cameraBlockedMessage = t('camera_blocked');
   const micBlockedMessage = t('lobby_mic_blocked');
@@ -412,7 +415,7 @@ export function Lobby({
                     !audioEnabled &&
                       'bg-dynamic-red text-white hover:bg-dynamic-red/90'
                   )}
-                  disabled={mediaLocked}
+                  disabled={mediaHandedOff}
                   onClick={() => setAudioEnabled((value) => !value)}
                   size="icon"
                   type="button"
@@ -432,7 +435,7 @@ export function Lobby({
                     !videoEnabled &&
                       'bg-dynamic-red text-white hover:bg-dynamic-red/90'
                   )}
-                  disabled={mediaLocked}
+                  disabled={mediaHandedOff}
                   onClick={() => {
                     if (videoEnabled) setStream(null);
                     setVideoEnabled((value) => !value);
@@ -462,7 +465,7 @@ export function Lobby({
           <LobbyDevicePickers
             audioDeviceId={audioDeviceId}
             devices={devices}
-            disabled={mediaLocked}
+            disabled={mediaHandedOff}
             onAudioDeviceChange={setAudioDeviceId}
             onOutputDeviceChange={(next) => {
               setLocalOutputId(next);

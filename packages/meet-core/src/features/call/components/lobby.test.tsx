@@ -332,7 +332,7 @@ it('announces a blocked microphone in a status region with the camera on too', a
   );
 });
 
-it('opens no second capture and locks media controls while a join request waits', async () => {
+it('opens no second capture and locks media once a joined participant is held', async () => {
   const { getUserMedia, tracks } = installMediaDevices({
     devices: [
       { kind: 'audioinput', deviceId: 'mic-usb', label: 'USB Mic' },
@@ -343,7 +343,7 @@ it('opens no second capture and locks media controls while a join request waits'
   await waitFor(() => expect(tracks.audio).toHaveLength(1));
   expect(screen.getByRole('meter')).toBeTruthy();
 
-  view.rerender(localized(<Lobby {...props} waiting />));
+  view.rerender(localized(<Lobby {...props} joined waiting />));
   expect(tracks.audio[0]?.stop).toHaveBeenCalled();
   expect(screen.queryByRole('meter')).toBeNull();
   for (const name of [en.meet.call.mute, en.meet.call.camera_on]) {
@@ -359,21 +359,34 @@ it('opens no second capture and locks media controls while a join request waits'
   // The shell re-mounts the lobby for joined + waiting: still no capture.
   view.unmount();
   getUserMedia.mockClear();
-  render(localized(<Lobby {...props} waiting />));
+  render(localized(<Lobby {...props} joined waiting />));
   await Promise.resolve();
   expect(getUserMedia).not.toHaveBeenCalled();
 });
 
-it('locks the media toggles while the join request is in flight', async () => {
-  installMediaDevices({
-    devices: [
-      { kind: 'audioinput', deviceId: 'mic-usb', label: 'USB Mic' },
-    ] as MediaDeviceInfo[],
-  });
-  render(localized(<Lobby {...lobbyProps()} isJoining />));
-  for (const name of [en.meet.call.mute, en.meet.call.camera_on]) {
+it.each([
+  ['waiting for the host', { waiting: true }],
+  ['still connecting', { isJoining: true }],
+] as const)(
+  'keeps a live preview and working controls while %s before Join',
+  async (_label, state) => {
+    const { tracks } = installMediaDevices({
+      devices: [
+        { kind: 'audioinput', deviceId: 'mic-usb', label: 'USB Mic' },
+      ] as MediaDeviceInfo[],
+    });
+    render(localized(<Lobby {...lobbyProps()} {...state} />));
+    await waitFor(() => expect(tracks.audio).toHaveLength(1));
+    expect(screen.getByRole('meter')).toBeTruthy();
     expect(
-      (screen.getByRole('button', { name }) as HTMLButtonElement).disabled
-    ).toBe(true);
+      (screen.getByLabelText(en.meet.call.audio_input) as HTMLButtonElement)
+        .disabled
+    ).toBe(false);
+    const mute = screen.getByRole('button', {
+      name: en.meet.call.mute,
+    }) as HTMLButtonElement;
+    expect(mute.disabled).toBe(false);
+    fireEvent.click(mute);
+    await waitFor(() => expect(tracks.audio[0]?.stop).toHaveBeenCalled());
   }
-});
+);
