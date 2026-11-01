@@ -25,8 +25,13 @@ describe('random generator page', () => {
       generateMetadata({
         params: Promise.resolve({ locale: 'en' }),
       })
-    ).resolves.toEqual({
+    ).resolves.toMatchObject({
+      alternates: { canonical: expect.stringMatching(/\/random$/) },
       description: 'Generate secure random values in your browser.',
+      openGraph: {
+        siteName: 'Tuturuuu Tools',
+        title: 'Secure Random Generator',
+      },
       title: 'Secure Random Generator',
     });
   });
