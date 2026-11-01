@@ -137,6 +137,8 @@ final AskV2Fields _threeOptions = _v2(
   inboxClass: AskInboxClass.urgent,
   deadline: DateTime.utc(2026, 11, 2, 3, 30),
   reversible: true,
+  // A hub that sends p2 fields always sends risk_class; null would be risky.
+  risk: AskRiskClass.normal,
 );
 
 Finder _tiles() => find.byType(AskOptionTile);
