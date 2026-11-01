@@ -44,7 +44,7 @@ returns table (
 language sql
 stable
 security definer
-set search_path = public
+set search_path = pg_catalog, public, pg_temp
 as $$
   with normalized as (
     select
@@ -329,7 +329,7 @@ returns table (
 language sql
 stable
 security definer
-set search_path = public
+set search_path = pg_catalog, public, pg_temp
 as $$
   with normalized as (
     select
