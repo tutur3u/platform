@@ -10,6 +10,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import {
+  filterDevicesByKind,
   startMicrophoneMeter,
   stopMediaStream,
   useLobbyMediaDevices,
@@ -39,6 +40,41 @@ function capTypedName(value: string): string {
     name += character;
   }
   return name;
+}
+
+/**
+ * getUserMedia rejections meaning the requested device id no longer exists
+ * (unplugged, or a stale id from a previous session), not a permission block.
+ */
+function isMissingDeviceError(error: unknown): boolean {
+  const name = (error as { name?: unknown } | null)?.name;
+  return name === 'OverconstrainedError' || name === 'NotFoundError';
+}
+
+/**
+ * A selected id the browser no longer lists. Only trust the list once it has
+ * labels for that kind (permission granted); before that ids may be hidden.
+ */
+function isUnlistedDevice(
+  devices: readonly MediaDeviceInfo[],
+  kind: MediaDeviceKind,
+  deviceId: string
+): boolean {
+  if (!deviceId) return false;
+  if (!devices.some((device) => device.kind === kind && device.label))
+    return false;
+  return !filterDevicesByKind(devices, kind).some(
+    (device) => device.deviceId === deviceId
+  );
+}
+
+/** Call `onEnded` when any track of `stream` ends (device unplugged/revoked). */
+function watchTracksEnded(stream: MediaStream, onEnded: () => void) {
+  const tracks = stream.getTracks?.() ?? [];
+  for (const track of tracks) track.addEventListener?.('ended', onEnded);
+  return () => {
+    for (const track of tracks) track.removeEventListener?.('ended', onEnded);
+  };
 }
 
 export interface LobbyJoinOptions {
@@ -115,6 +151,9 @@ export function Lobby({
   const [videoDeviceId, setVideoDeviceId] = useState(initialVideoDeviceId);
   const [localOutputId, setLocalOutputId] = useState('');
   const activeOutputId = outputDeviceId ?? localOutputId;
+  // Bumped to re-acquire the system default after its track ended.
+  const [micAttempt, setMicAttempt] = useState(0);
+  const [cameraAttempt, setCameraAttempt] = useState(0);
 
   const [previewError, setPreviewError] = useState<string | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
@@ -128,6 +167,7 @@ export function Lobby({
   const cameraBlockedMessage = t('camera_blocked');
   const micBlockedMessage = t('lobby_mic_blocked');
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: cameraAttempt re-acquires the system default camera after its track ended.
   useEffect(() => {
     if (!videoEnabled) return;
     if (
@@ -138,6 +178,7 @@ export function Lobby({
 
     let cancelled = false;
     let acquired: MediaStream | null = null;
+    let unwatch: (() => void) | undefined;
     const videoConstraint = videoDeviceId
       ? {
           deviceId: { exact: videoDeviceId },
@@ -157,21 +198,41 @@ export function Lobby({
         }
         setPreviewError(null);
         setStream(next);
+        unwatch = watchTracksEnded(next, () => {
+          if (cancelled || transferred.current === next) return;
+          setStream(null);
+          if (videoDeviceId) setVideoDeviceId('');
+          else setCameraAttempt((attempt) => attempt + 1);
+          void refreshDevices();
+        });
         void refreshDevices();
       })
-      .catch(() => {
-        if (!cancelled) {
-          setPreviewError(cameraBlockedMessage);
-          setVideoEnabled(false);
+      .catch((cause: unknown) => {
+        if (cancelled) return;
+        if (videoDeviceId && isMissingDeviceError(cause)) {
+          // Stale or unplugged camera: retry with the system default.
+          setVideoDeviceId('');
+          void refreshDevices();
+          return;
         }
+        setPreviewError(cameraBlockedMessage);
+        setVideoEnabled(false);
       });
 
     return () => {
       cancelled = true;
+      unwatch?.();
       if (transferred.current !== acquired) stopMediaStream(acquired);
     };
-  }, [cameraBlockedMessage, refreshDevices, videoDeviceId, videoEnabled]);
+  }, [
+    cameraAttempt,
+    cameraBlockedMessage,
+    refreshDevices,
+    videoDeviceId,
+    videoEnabled,
+  ]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: micAttempt re-acquires the system default microphone after its track ended.
   useEffect(() => {
     if (!audioEnabled) return;
     if (
@@ -183,6 +244,7 @@ export function Lobby({
     let cancelled = false;
     let acquired: MediaStream | null = null;
     let stopMeter: (() => void) | undefined;
+    let unwatch: (() => void) | undefined;
 
     navigator.mediaDevices
       .getUserMedia({
@@ -197,24 +259,61 @@ export function Lobby({
         setMicError(null);
         micStreamRef.current = next;
         stopMeter = startMicrophoneMeter(next, setMicLevel);
+        unwatch = watchTracksEnded(next, () => {
+          if (cancelled || micStreamRef.current !== next) return;
+          if (audioDeviceId) setAudioDeviceId('');
+          else setMicAttempt((attempt) => attempt + 1);
+          void refreshDevices();
+        });
         void refreshDevices();
       })
-      .catch(() => {
-        if (!cancelled) {
-          setMicError(micBlockedMessage);
-          setMicLevel(0);
-          setAudioEnabled(false);
+      .catch((cause: unknown) => {
+        if (cancelled) return;
+        if (audioDeviceId && isMissingDeviceError(cause)) {
+          // Stale or unplugged microphone: retry with the system default.
+          setAudioDeviceId('');
+          void refreshDevices();
+          return;
         }
+        setMicError(micBlockedMessage);
+        setMicLevel(0);
+        setAudioEnabled(false);
       });
 
     return () => {
       cancelled = true;
+      unwatch?.();
       stopMeter?.();
       stopMediaStream(acquired);
       if (micStreamRef.current === acquired) micStreamRef.current = null;
       setMicLevel(0);
     };
-  }, [audioDeviceId, audioEnabled, micBlockedMessage, refreshDevices]);
+  }, [
+    audioDeviceId,
+    audioEnabled,
+    micAttempt,
+    micBlockedMessage,
+    refreshDevices,
+  ]);
+
+  // Once the browser lists labelled devices, drop selections it no longer has
+  // (e.g. the initial id from a previous session) so pickers and capture agree.
+  useEffect(() => {
+    if (isUnlistedDevice(devices, 'audioinput', audioDeviceId))
+      setAudioDeviceId('');
+    if (isUnlistedDevice(devices, 'videoinput', videoDeviceId))
+      setVideoDeviceId('');
+    if (isUnlistedDevice(devices, 'audiooutput', activeOutputId)) {
+      setLocalOutputId('');
+      onOutputDeviceChange?.('');
+    }
+  }, [
+    activeOutputId,
+    audioDeviceId,
+    devices,
+    onOutputDeviceChange,
+    videoDeviceId,
+  ]);
 
   const activeStream = videoEnabled ? stream : null;
   useEffect(() => {
