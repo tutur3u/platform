@@ -68,6 +68,14 @@ export function getShownTicketIdentifier(
   return listStatus === 'documents' ? null : ticketIdentifier;
 }
 
+/** A task's ticket ID as its card shows it. */
+export function getShownTaskTicketLabel(
+  task: Task,
+  listStatus: TaskList['status'] | null | undefined
+) {
+  return getShownTicketIdentifier(getTaskTicketLabel(task), listStatus);
+}
+
 /**
  * Projects to show as a card badge. The `[KEY-N]` prefix already names the
  * project it comes from, so a card whose only project is that one drops the

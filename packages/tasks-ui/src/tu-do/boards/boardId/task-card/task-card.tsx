@@ -66,7 +66,6 @@ import { cn } from '@tuturuuu/utils/format';
 import {
   createTask,
   getPersonalExternalStagingListId,
-  getTaskTicketLabel,
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
@@ -157,10 +156,9 @@ import { mergeTaskCardLabelOptions } from './task-card-label-options';
 import { useTaskCardMenuGuard } from './task-card-menu-guard';
 import { TaskCardMetadataTooltip } from './task-card-metadata-tooltip';
 import {
-  getShownTicketIdentifier,
+  getShownTaskTicketLabel,
   getTaskCardBadgeProjects,
   getTaskCardHydratingOpenOptions,
-  getTaskCardTicketIdentifier,
   getTaskCardTitleName,
   isExternalTaskSnapshot,
 } from './task-card-open-options';
@@ -209,11 +207,7 @@ function ReadOnlyTaskCard({ task, taskList }: TaskCardProps) {
   const priorityT = useTranslations('ws-task-boards.dialog.priority');
   const locale = useLocale();
   const dateLocale = locale === 'vi' ? vi : enUS;
-  // Documents lists show no ticket ID, so the project badge stays there.
-  const ticketIdentifier = getShownTicketIdentifier(
-    getTaskTicketLabel(task),
-    taskList?.status
-  );
+  const ticketIdentifier = getShownTaskTicketLabel(task, taskList?.status);
   const dueDate = task.end_date
     ? format(new Date(task.end_date), 'MMM d, yyyy', { locale: dateLocale })
     : null;
@@ -935,16 +929,8 @@ function TaskCardInner({
   ].filter(
     (item): item is { href: string | undefined; label: string } => item !== null
   );
-  const cardTicketIdentifier = getTaskCardTicketIdentifier({
-    boardConfig,
-    isExternalTask: isPersonalExternalTask,
-    task,
-  });
   // Documents lists show no ticket ID, so the project badge stays there.
-  const taskTicketIdentifier = getShownTicketIdentifier(
-    cardTicketIdentifier,
-    taskList?.status
-  );
+  const taskTicketIdentifier = getShownTaskTicketLabel(task, taskList?.status);
   const externalSourceLabel =
     task.source_workspace_name ??
     task.source_board_name ??

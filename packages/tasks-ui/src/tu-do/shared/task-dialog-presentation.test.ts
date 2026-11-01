@@ -1,6 +1,7 @@
 import { cn } from '@tuturuuu/utils/format';
 import { describe, expect, it } from 'vitest';
 import {
+  getTaskDialogContentClassName,
   resolveTaskDialogOpeningPresentation,
   TASK_DIALOG_CONTENT_COLUMN_CLASS_NAME,
   TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME,
@@ -124,5 +125,18 @@ describe('resolveTaskDialogOpeningPresentation', () => {
         selectedListStatus: 'documents',
       })
     ).toBe('fullscreen');
+  });
+});
+
+describe('getTaskDialogContentClassName', () => {
+  it('picks one class set per presentation', () => {
+    const pick = (compact: boolean, focused: boolean, panel: boolean) =>
+      getTaskDialogContentClassName({ compact, focused, panel });
+    expect(pick(true, true, true)).toContain('max-w-[30rem]');
+    expect(pick(false, true, true)).toBe(
+      TASK_DIALOG_FOCUSED_CONTENT_CLASS_NAME
+    );
+    expect(pick(false, false, true)).toContain('--task-panel-width');
+    expect(pick(false, false, false)).toBeUndefined();
   });
 });

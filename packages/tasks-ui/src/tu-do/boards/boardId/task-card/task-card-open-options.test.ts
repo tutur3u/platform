@@ -1,7 +1,9 @@
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { getTaskTicketLabel } from '@tuturuuu/utils/task-helper';
 import { describe, expect, it } from 'vitest';
 import {
+  getShownTaskTicketLabel,
   getShownTicketIdentifier,
   getTaskCardBadgeProjects,
   getTaskCardHydratingOpenOptions,
@@ -273,5 +275,19 @@ describe('getShownTicketIdentifier', () => {
   it('shows no ticket ID in Documents lists, so their project badge stays', () => {
     expect(getShownTicketIdentifier('PLA-2', 'documents')).toBeNull();
     expect(getShownTicketIdentifier('PLA-2', 'active')).toBe('PLA-2');
+  });
+
+  it('reads the ticket ID off the task', () => {
+    const task = {
+      id: 't1',
+      projects: [{ id: 'p1', name: 'Platform', ticket_key: 'PLA' }],
+      ticket_projects: [
+        { id: 'p1', name: 'Platform', ticket_key: 'PLA', ticket_number: 2 },
+      ],
+    } as unknown as Task;
+    expect(getShownTaskTicketLabel(task, 'documents')).toBeNull();
+    expect(getShownTaskTicketLabel(task, 'active')).toBe(
+      getTaskTicketLabel(task)
+    );
   });
 });
