@@ -183,12 +183,16 @@ export function Lobby({
   const transferred = useRef<MediaStream | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
 
+  // While a join request waits for the host, the room already owns the mic and
+  // camera; the lobby must not open a second capture or switch devices.
+  const mediaHandedOff = waiting;
+
   const cameraBlockedMessage = t('camera_blocked');
   const micBlockedMessage = t('lobby_mic_blocked');
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: cameraAttempt re-acquires the system default camera after its track ended.
   useEffect(() => {
-    if (!videoEnabled) return;
+    if (!videoEnabled || mediaHandedOff) return;
     if (
       typeof navigator === 'undefined' ||
       typeof navigator.mediaDevices?.getUserMedia !== 'function'
@@ -246,6 +250,7 @@ export function Lobby({
   }, [
     cameraAttempt,
     cameraBlockedMessage,
+    mediaHandedOff,
     refreshDevices,
     videoDeviceId,
     videoEnabled,
@@ -253,7 +258,7 @@ export function Lobby({
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: micAttempt re-acquires the system default microphone after its track ended.
   useEffect(() => {
-    if (!audioEnabled) return;
+    if (!audioEnabled || mediaHandedOff) return;
     if (
       typeof navigator === 'undefined' ||
       typeof navigator.mediaDevices?.getUserMedia !== 'function'
@@ -307,6 +312,7 @@ export function Lobby({
   }, [
     audioDeviceId,
     audioEnabled,
+    mediaHandedOff,
     micAttempt,
     micBlockedMessage,
     refreshDevices,
@@ -390,7 +396,11 @@ export function Lobby({
             )}
 
             <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-background/70 via-background/20 to-transparent p-3">
-              <LiveMicMeter audioEnabled={audioEnabled} stream={micStream} />
+              {mediaHandedOff ? (
+                <div aria-hidden="true" className="w-20" />
+              ) : (
+                <LiveMicMeter audioEnabled={audioEnabled} stream={micStream} />
+              )}
               <div className="flex items-center gap-2">
                 <Button
                   aria-label={audioEnabled ? t('mute') : t('unmute')}
@@ -400,6 +410,7 @@ export function Lobby({
                     !audioEnabled &&
                       'bg-dynamic-red text-white hover:bg-dynamic-red/90'
                   )}
+                  disabled={mediaHandedOff}
                   onClick={() => setAudioEnabled((value) => !value)}
                   size="icon"
                   type="button"
@@ -419,6 +430,7 @@ export function Lobby({
                     !videoEnabled &&
                       'bg-dynamic-red text-white hover:bg-dynamic-red/90'
                   )}
+                  disabled={mediaHandedOff}
                   onClick={() => {
                     if (videoEnabled) setStream(null);
                     setVideoEnabled((value) => !value);
@@ -448,7 +460,7 @@ export function Lobby({
           <LobbyDevicePickers
             audioDeviceId={audioDeviceId}
             devices={devices}
-            disabled={isJoining}
+            disabled={isJoining || mediaHandedOff}
             onAudioDeviceChange={setAudioDeviceId}
             onOutputDeviceChange={(next) => {
               setLocalOutputId(next);

@@ -331,3 +331,35 @@ it('announces a blocked microphone in a status region with the camera on too', a
     ).toBe(true)
   );
 });
+
+it('opens no second capture and locks media controls while a join request waits', async () => {
+  const { getUserMedia, tracks } = installMediaDevices({
+    devices: [
+      { kind: 'audioinput', deviceId: 'mic-usb', label: 'USB Mic' },
+    ] as MediaDeviceInfo[],
+  });
+  const props = lobbyProps();
+  const view = render(localized(<Lobby {...props} />));
+  await waitFor(() => expect(tracks.audio).toHaveLength(1));
+  expect(screen.getByRole('meter')).toBeTruthy();
+
+  view.rerender(localized(<Lobby {...props} waiting />));
+  expect(tracks.audio[0]?.stop).toHaveBeenCalled();
+  expect(screen.queryByRole('meter')).toBeNull();
+  for (const name of [en.meet.call.mute, en.meet.call.camera_on]) {
+    expect(
+      (screen.getByRole('button', { name }) as HTMLButtonElement).disabled
+    ).toBe(true);
+  }
+  expect(
+    (screen.getByLabelText(en.meet.call.audio_input) as HTMLButtonElement)
+      .disabled
+  ).toBe(true);
+
+  // The shell re-mounts the lobby for joined + waiting: still no capture.
+  view.unmount();
+  getUserMedia.mockClear();
+  render(localized(<Lobby {...props} waiting />));
+  await Promise.resolve();
+  expect(getUserMedia).not.toHaveBeenCalled();
+});
