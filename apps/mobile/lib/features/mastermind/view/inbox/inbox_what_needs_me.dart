@@ -25,9 +25,13 @@ class InboxWhatNeedsMe extends StatelessWidget {
     return BlocBuilder<MastermindRepliesCubit, MastermindRepliesState>(
       bloc: replies,
       builder: (context, state) {
-        final recommendable = state.canReply && state.loaded
-            ? recommendableAsks(open, state)
-            : const <NeedsYou>[];
+        final plan = state.canReply && state.loaded
+            ? batchPlan(open, state)
+            : (
+                included: <NeedsYou>[],
+                excluded: <(NeedsYou, BatchExclusion)>[],
+              );
+        final recommendable = plan.included;
         return WhatNeedsMeHeader(
           counts: WhatNeedsMeCounts.from(open),
           summary: summary,
@@ -37,6 +41,7 @@ class InboxWhatNeedsMe extends StatelessWidget {
                   showUseRecommendationsSheet(
                     context,
                     items: recommendable,
+                    excluded: plan.excluded,
                     replies: replies,
                   ),
                 ),

@@ -27787,6 +27787,42 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get mastermindIrisDone;
 
+  /// No description provided for @mastermindIrisUseRecommendationsOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{+1 other option} other{+{count} other options}}'**
+  String mastermindIrisUseRecommendationsOthers(int count);
+
+  /// No description provided for @mastermindIrisNotIncludedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not included: answer these one by one'**
+  String get mastermindIrisNotIncludedTitle;
+
+  /// No description provided for @mastermindIrisNotIncludedRisky.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs approval on a trusted device'**
+  String get mastermindIrisNotIncludedRisky;
+
+  /// No description provided for @mastermindIrisNotIncludedIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete: open it to read the full ask'**
+  String get mastermindIrisNotIncludedIncomplete;
+
+  /// No description provided for @mastermindRiskyComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve on a trusted device: coming soon'**
+  String get mastermindRiskyComingSoon;
+
+  /// No description provided for @mastermindRiskyComingSoonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This ask touches deploy, spend, credentials or security. It can\'t be answered from the phone yet.'**
+  String get mastermindRiskyComingSoonHint;
+
   /// No description provided for @mastermindIrisDevicesTitle.
   ///
   /// In en, this message translates to:

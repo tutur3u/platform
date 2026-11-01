@@ -150,3 +150,11 @@ int? _wireIndex(NeedsYou item, List<(int, String)> selectable, String label) {
   }
   return match;
 }
+
+/// Whether [item] needs approval on a trusted device, so it is never answered
+/// by one tap or in a batch: the card is risky, or `risk_class` is null while
+/// the snapshot carries other p2 inbox fields (fail closed). Iris writes are
+/// still off, so such an ask cannot be answered from the phone yet.
+bool isRiskyAsk(NeedsYou item) =>
+    inboxAskFor(item).card.risky ||
+    (item.askV2.riskClass == null && item.askV2.hasP2Fields);
