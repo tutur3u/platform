@@ -12,6 +12,7 @@ final class MastermindCapabilities {
     required this.replies,
     required this.push,
     this.iris = false,
+    this.replyHold = false,
   }) : schemaVersions = List.unmodifiable(schemaVersions);
 
   final List<String> schemaVersions;
@@ -22,6 +23,10 @@ final class MastermindCapabilities {
   /// about this device's enrolment.
   final bool iris;
 
+  /// Forge F2 honours `not_before` on POST /v1/replies (`reply_hold`). Absent
+  /// means off. Nothing sends `not_before` yet: the 30 s hold is client-side.
+  final bool replyHold;
+
   bool get supportsSchema14 => schemaVersions.contains('1.4');
 
   /// Closed body; null for anything else so a drifting Worker fails closed.
@@ -30,7 +35,9 @@ final class MastermindCapabilities {
       final decoded = jsonDecode(utf8.decode(bytes));
       if (decoded is! Map<String, dynamic>) return null;
       final hasIris = decoded.containsKey('iris');
-      if (decoded.length != (hasIris ? 4 : 3) ||
+      final hasHold = decoded.containsKey('reply_hold');
+      if (decoded.length != 3 + (hasIris ? 1 : 0) + (hasHold ? 1 : 0) ||
+          (hasHold && decoded['reply_hold'] is! bool) ||
           decoded['replies'] is! bool ||
           decoded['push'] is! bool ||
           (hasIris && decoded['iris'] is! bool)) {
@@ -47,6 +54,7 @@ final class MastermindCapabilities {
         replies: decoded['replies'] as bool,
         push: decoded['push'] as bool,
         iris: hasIris && decoded['iris'] as bool,
+        replyHold: hasHold && decoded['reply_hold'] as bool,
       );
     } on FormatException {
       return null;
