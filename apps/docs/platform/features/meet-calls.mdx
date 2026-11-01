@@ -1732,8 +1732,8 @@ User decision, 2 November 2026: "transcriptions and notes drain from the default
 Meet transcription and AI notes charge the default AI credits allocated to the
 meeting's workspace, resolved on the server from `workspace_meetings.ws_id`.
 The acting user remains attached to admission and metering for per-user limits.
-Live participants, including guests and non-members, use the same meeting billing
-workspace. Existing host-only notes and recording membership permissions still
+Meeting transcription for every participant, including guests and non-members,
+uses the meeting billing workspace. Existing host-only notes and recording membership permissions still
 apply. At zero credits, chunk uploads return 402 before reserving a chunk row,
-with an error identifying the meeting workspace. Personal "Talk to Mira" text
-assistant generation continues to use personal credits.
+with an error identifying the meeting workspace. Personal "Talk to Mira"
+assistant sessions (voice and text) continue to use personal credits.

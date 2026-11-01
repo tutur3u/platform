@@ -88,7 +88,7 @@ describe('meet-live meeting workspace billing', () => {
   });
 
   it.each(['host', 'member', 'guest'])(
-    'charges the meeting workspace for %s despite a supplied tool workspace',
+    'keeps personal assistant billing on the personal workspace for %s',
     async (actor) => {
       mocks.actor.id = actor;
       mocks.actor.isHost = actor === 'host';
@@ -104,7 +104,8 @@ describe('meet-live meeting workspace billing', () => {
       );
       expect(initialize).toBeDefined();
       const body = JSON.parse(initialize?.[1].body);
-      expect(body.claims.billingWorkspaceId).toBe('meeting-ws');
+      expect(body.claims.billingWorkspaceId).toBe('personal-ws');
+      expect(body.claims.billingWorkspaceId).not.toBe('meeting-ws');
       expect(body.claims.ownerId).toBe(actor);
       expect(body.workspace.id).toBe(sessionId);
     }
