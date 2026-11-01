@@ -13,7 +13,7 @@ CREATE OR REPLACE FUNCTION public.end_board_sprint(
 RETURNS public.task_sprint_reports
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
   v_cycle public.task_cycles%ROWTYPE;
@@ -222,7 +222,7 @@ CREATE OR REPLACE FUNCTION private.sync_task_board_sprint_membership()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
   v_cycle RECORD;
@@ -317,5 +317,5 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.end_board_sprint(UUID, UUID, JSONB, TEXT) FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON FUNCTION private.sync_task_board_sprint_membership() FROM PUBLIC;
+REVOKE ALL ON FUNCTION private.sync_task_board_sprint_membership() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.end_board_sprint(UUID, UUID, JSONB, TEXT) TO service_role;

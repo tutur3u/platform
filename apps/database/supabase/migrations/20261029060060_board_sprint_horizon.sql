@@ -15,7 +15,7 @@ CREATE OR REPLACE FUNCTION private.rechain_planned_board_sprints(p_board_id UUID
 RETURNS VOID
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
   v_weeks INTEGER;
@@ -59,7 +59,7 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION private.rechain_planned_board_sprints(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION private.rechain_planned_board_sprints(UUID) FROM PUBLIC, anon, authenticated;
 
 -- 3. A length change moves every planned sprint, and only turning sprints on
 -- sweeps open tasks into the next sprint, so parked tasks stay parked.
@@ -71,7 +71,7 @@ CREATE OR REPLACE FUNCTION public.set_board_sprint_length(
 RETURNS public.task_cycles
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
   v_active public.task_cycles%ROWTYPE;
@@ -159,7 +159,7 @@ CREATE OR REPLACE FUNCTION public.start_board_sprint(
 RETURNS public.task_cycles
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, pg_temp
+SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
   v_cycle public.task_cycles%ROWTYPE;
