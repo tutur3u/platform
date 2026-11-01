@@ -12,6 +12,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { useId } from 'react';
 import {
   filterDevicesByKind,
   isAudioOutputSelectionSupported,
@@ -99,12 +100,13 @@ export function LobbyDevicePickers({
   disabled?: boolean;
 }) {
   const t = useTranslations('meet.call');
+  const idPrefix = useId();
   const outputSupported = isAudioOutputSelectionSupported();
 
   const pickers = [
     {
       kind: 'audioinput' as const,
-      id: 'lobby-audioinput',
+      id: `${idPrefix}-audioinput`,
       Icon: Mic,
       label: t('audio_input'),
       value: audioDeviceId,
@@ -113,7 +115,7 @@ export function LobbyDevicePickers({
     },
     {
       kind: 'videoinput' as const,
-      id: 'lobby-videoinput',
+      id: `${idPrefix}-videoinput`,
       Icon: Video,
       label: t('video_input'),
       value: videoDeviceId,
@@ -122,7 +124,7 @@ export function LobbyDevicePickers({
     },
     {
       kind: 'audiooutput' as const,
-      id: 'lobby-audiooutput',
+      id: `${idPrefix}-audiooutput`,
       Icon: Headphones,
       label: t('audio_output'),
       value: outputDeviceId,
