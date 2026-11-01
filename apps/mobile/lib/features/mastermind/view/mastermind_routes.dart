@@ -56,6 +56,17 @@ final List<GoRoute> mastermindTabRoutes = [
   ),
   GoRoute(
     path: Routes.mastermindInbox,
+    // `?tier=` only means something on Needs you; an unknown tier, or a tier
+    // on another segment, is dropped so the URL stays canonical.
+    redirect: (context, state) {
+      final query = state.uri.queryParameters;
+      if (!query.containsKey('tier')) return null;
+      final canonical = inboxLocation(
+        segment: inboxSegmentFromQuery(query['segment']),
+        tier: inboxTierFromQuery(query['tier']),
+      );
+      return canonical == state.uri.toString() ? null : canonical;
+    },
     builder: (context, state) {
       final router = GoRouter.of(context);
       return MastermindInboxPage(
