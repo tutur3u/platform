@@ -37,7 +37,14 @@ deletes the key and its enrolment record, and the owner enrols again.
     makes the app inactive, and a lock queued behind that sign would drop the
     session it just opened, so every poll would prompt.
   - Android: the Keystore's 300-second auth window (`lock` has nothing to
-    drop).
+    drop). **Platform difference:** iOS can end the read session early (hide,
+    pause, `lock`); on Android `lock` is a no-op, so after any strong
+    biometric the key stays usable for up to 300 s even if the app is hidden.
+    A write's prompt also opens this window, so reads and writes inside it
+    need no new prompt on Android. This is accepted while writes stay
+    disabled. The window is not shortened and writes do not use per-use auth
+    here: with one key every signed read would then prompt on each poll. The
+    fix is the write-only second key in the M1 gate below.
 - If the owner cancels a read prompt, reads fail as `deviceLocked` for 5
   minutes instead of prompting on every poll. Writes still prompt.
 - When the key reports "locked" (on iOS this includes `errSecAuthFailed`
