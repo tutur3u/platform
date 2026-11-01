@@ -15012,7 +15012,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindIrisEnrolFailed => 'Couldn\'t start enrolment. Try again.';
 
   @override
-  String get mastermindIrisEnrolLimit => 'Too many pending devices. Wait for one to expire.';
+  String get mastermindIrisEnrolLimit => 'Too many enrolment attempts or pending devices. Try again later.';
+
+  @override
+  String get mastermindIrisEnrolAgain => 'Enrol again with a new key';
+
+  @override
+  String get mastermindIrisUnlockReason => 'Unlock Iris to read your inbox';
+
+  @override
+  String get mastermindIrisConfirmReason => 'Confirm this Iris action';
+
+  @override
+  String get mastermindIrisDeviceLocked => 'Iris is locked on this device. It will ask you to unlock again in a few minutes.';
+
+  @override
+  String get mastermindIrisDeviceLockedEnrol => 'If this keeps happening, enrol again with a new key.';
+
+  @override
+  String get mastermindIrisDeviceRevoked => 'This device was removed from Iris. Enrol again to keep using it.';
+
+  @override
+  String get mastermindIrisEnrolAgainAction => 'Enrol again';
+
+  @override
+  String get mastermindIrisClockSkew => 'Check your device clock. It doesn\'t match Iris.';
+
+  @override
+  String get mastermindIrisEnrolCodeConflict => 'That code is already in use. Try again.';
+
+  @override
+  String get mastermindIrisEnrolDeviceConflict => 'This key is already registered. Enrol again with a new key.';
+
+  @override
+  String get mastermindIrisRelayStopped => 'Relay stopped. Ask the owner to restore it.';
+
+  @override
+  String get mastermindIrisDevicesUnavailable => 'The device list isn\'t available yet. You can still enrol this device.';
+
+  @override
+  String get mastermindIrisDeviceCurrent => 'This device';
+
+  @override
+  String get mastermindIrisWritesOff => 'Sending is off for now. You can still read the chat.';
+
+  @override
+  String get mastermindIrisWritesNeedEnrol => 'Enrol this device to send messages.';
 
   @override
   String get mastermindAskCardTierDecision => 'Needs decision';

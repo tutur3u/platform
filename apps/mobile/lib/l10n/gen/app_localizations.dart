@@ -27910,8 +27910,98 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindIrisEnrolLimit.
   ///
   /// In en, this message translates to:
-  /// **'Too many pending devices. Wait for one to expire.'**
+  /// **'Too many enrolment attempts or pending devices. Try again later.'**
   String get mastermindIrisEnrolLimit;
+
+  /// No description provided for @mastermindIrisEnrolAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrol again with a new key'**
+  String get mastermindIrisEnrolAgain;
+
+  /// No description provided for @mastermindIrisUnlockReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Iris to read your inbox'**
+  String get mastermindIrisUnlockReason;
+
+  /// No description provided for @mastermindIrisConfirmReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm this Iris action'**
+  String get mastermindIrisConfirmReason;
+
+  /// No description provided for @mastermindIrisDeviceLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Iris is locked on this device. It will ask you to unlock again in a few minutes.'**
+  String get mastermindIrisDeviceLocked;
+
+  /// No description provided for @mastermindIrisDeviceLockedEnrol.
+  ///
+  /// In en, this message translates to:
+  /// **'If this keeps happening, enrol again with a new key.'**
+  String get mastermindIrisDeviceLockedEnrol;
+
+  /// No description provided for @mastermindIrisDeviceRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'This device was removed from Iris. Enrol again to keep using it.'**
+  String get mastermindIrisDeviceRevoked;
+
+  /// No description provided for @mastermindIrisEnrolAgainAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrol again'**
+  String get mastermindIrisEnrolAgainAction;
+
+  /// No description provided for @mastermindIrisClockSkew.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your device clock. It doesn\'t match Iris.'**
+  String get mastermindIrisClockSkew;
+
+  /// No description provided for @mastermindIrisEnrolCodeConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'That code is already in use. Try again.'**
+  String get mastermindIrisEnrolCodeConflict;
+
+  /// No description provided for @mastermindIrisEnrolDeviceConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This key is already registered. Enrol again with a new key.'**
+  String get mastermindIrisEnrolDeviceConflict;
+
+  /// No description provided for @mastermindIrisRelayStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Relay stopped. Ask the owner to restore it.'**
+  String get mastermindIrisRelayStopped;
+
+  /// No description provided for @mastermindIrisDevicesUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The device list isn\'t available yet. You can still enrol this device.'**
+  String get mastermindIrisDevicesUnavailable;
+
+  /// No description provided for @mastermindIrisDeviceCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get mastermindIrisDeviceCurrent;
+
+  /// No description provided for @mastermindIrisWritesOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending is off for now. You can still read the chat.'**
+  String get mastermindIrisWritesOff;
+
+  /// No description provided for @mastermindIrisWritesNeedEnrol.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrol this device to send messages.'**
+  String get mastermindIrisWritesNeedEnrol;
 
   /// No description provided for @mastermindAskCardTierDecision.
   ///

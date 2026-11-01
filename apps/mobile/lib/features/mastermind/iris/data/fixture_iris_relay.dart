@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_models.dart';
@@ -23,7 +24,7 @@ final class IrisFixtureFaults extends ChangeNotifier {
   bool get rateLimited => _rateLimited;
   set rateLimited(bool value) => _set(() => _rateLimited = value);
 
-  /// The kill switch: every call is a 423 `killed`.
+  /// The kill switch: every call is a 503 `killed`.
   bool get killed => _killed;
   set killed(bool value) => _set(() => _killed = value);
 
@@ -237,33 +238,68 @@ final class FixtureIrisRelay implements IrisRelay {
   @override
   Future<IrisResult<IrisEnrollment>> enroll(
     String publicKey,
-    String fingerprint,
-  ) => _guard(() async {
-    final pending = _devices.where((d) => d.status == IrisDeviceStatus.pending);
+    String fingerprint, {
+    required String deviceId,
+    required String code,
+  }) => _guard(() async {
+    // The relay's checks: a lowercase-UUID device id, a base64url P-256 SPKI
+    // whose sha256 is the fingerprint, and a 6-digit code.
+    if (!irisIdempotencyKeyPattern.hasMatch(deviceId) ||
+        !RegExp(r'^[0-9]{6}$').hasMatch(code) ||
+        !_fingerprintMatches(publicKey, fingerprint)) {
+      return const IrisErr(IrisFailure(IrisFailureKind.badRequest));
+    }
+    final known = _devices.where((d) => d.id == deviceId).firstOrNull;
+    if (known != null && known.status != IrisDeviceStatus.pending) {
+      return const IrisErr(IrisFailure(IrisFailureKind.deviceConflict));
+    }
+    final pending = _devices.where(
+      (d) => d.status == IrisDeviceStatus.pending && d.id != deviceId,
+    );
     if (pending.length >= 3) {
       return const IrisErr(IrisFailure(IrisFailureKind.rateLimited));
     }
-    final id = 'dev_${(++_seq).toString().padLeft(4, '0')}';
+    if (pending.any((d) => _codes[d.id] == code)) {
+      return const IrisErr(IrisFailure(IrisFailureKind.codeConflict));
+    }
     final prefix = _prefix(fingerprint);
-    _devices.add(
-      IrisDevice(
-        id: id,
-        label: 'Fixture phone',
-        status: IrisDeviceStatus.pending,
-        fingerprintPrefix: prefix,
-        qa: true,
-        createdAt: _clock().toUtc(),
-      ),
-    );
+    _devices
+      ..removeWhere((d) => d.id == deviceId)
+      ..add(
+        IrisDevice(
+          id: deviceId,
+          label: 'Phone',
+          status: IrisDeviceStatus.pending,
+          fingerprintPrefix: prefix,
+          qa: true,
+          createdAt: _clock().toUtc(),
+        ),
+      );
+    _codes[deviceId] = code;
     return IrisOk(
       IrisEnrollment(
-        deviceId: id,
-        code: (100000 + _seq * 7919 % 900000).toString(),
+        deviceId: deviceId,
+        code: code,
         fingerprintPrefix: prefix,
         expiresAt: _clock().toUtc().add(const Duration(minutes: 15)),
       ),
     );
   });
+
+  final _codes = <String, String>{};
+
+  static bool _fingerprintMatches(String publicKey, String fingerprint) {
+    if (!RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(publicKey) ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(fingerprint)) {
+      return false;
+    }
+    try {
+      final bytes = base64Url.decode(base64Url.normalize(publicKey));
+      return sha256.convert(bytes).toString() == fingerprint;
+    } on FormatException {
+      return false;
+    }
+  }
 
   /// QA helper: the owner confirmed [id] on the enrol page.
   void confirmDevice(String id) =>
@@ -302,11 +338,8 @@ final class FixtureIrisRelay implements IrisRelay {
     return const IrisOk(null);
   });
 
-  String _prefix(String fingerprint) {
-    final hex = fingerprint.toUpperCase().replaceAll(RegExp('[^0-9A-F]'), '');
-    final head = (hex.length < 8 ? hex.padRight(8, '0') : hex).substring(0, 8);
-    return '${head.substring(0, 4)}:${head.substring(4)}';
-  }
+  /// The relay's prefix: the first 8 lowercase hex of the fingerprint.
+  String _prefix(String fingerprint) => fingerprint.substring(0, 8);
 }
 
 final class _FixtureData {

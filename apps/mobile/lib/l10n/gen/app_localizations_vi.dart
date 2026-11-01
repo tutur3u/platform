@@ -14852,7 +14852,52 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindIrisEnrolFailed => 'Không thể bắt đầu đăng ký. Hãy thử lại.';
 
   @override
-  String get mastermindIrisEnrolLimit => 'Có quá nhiều thiết bị đang chờ. Hãy đợi một thiết bị hết hạn.';
+  String get mastermindIrisEnrolLimit => 'Có quá nhiều lượt đăng ký hoặc thiết bị đang chờ. Hãy thử lại sau.';
+
+  @override
+  String get mastermindIrisEnrolAgain => 'Đăng ký lại bằng khóa mới';
+
+  @override
+  String get mastermindIrisUnlockReason => 'Mở khóa Iris để đọc hộp thư';
+
+  @override
+  String get mastermindIrisConfirmReason => 'Xác nhận thao tác Iris này';
+
+  @override
+  String get mastermindIrisDeviceLocked => 'Iris đang bị khóa trên thiết bị này. Ứng dụng sẽ hỏi mở khóa lại sau vài phút.';
+
+  @override
+  String get mastermindIrisDeviceLockedEnrol => 'Nếu lỗi này lặp lại, hãy đăng ký lại bằng khóa mới.';
+
+  @override
+  String get mastermindIrisDeviceRevoked => 'Thiết bị này đã bị gỡ khỏi Iris. Hãy đăng ký lại để tiếp tục sử dụng.';
+
+  @override
+  String get mastermindIrisEnrolAgainAction => 'Đăng ký lại';
+
+  @override
+  String get mastermindIrisClockSkew => 'Hãy kiểm tra đồng hồ thiết bị. Giờ không khớp với Iris.';
+
+  @override
+  String get mastermindIrisEnrolCodeConflict => 'Mã này đang được dùng. Hãy thử lại.';
+
+  @override
+  String get mastermindIrisEnrolDeviceConflict => 'Khóa này đã được đăng ký. Hãy đăng ký lại bằng khóa mới.';
+
+  @override
+  String get mastermindIrisRelayStopped => 'Relay đã dừng. Hãy nhờ chủ sở hữu khôi phục.';
+
+  @override
+  String get mastermindIrisDevicesUnavailable => 'Danh sách thiết bị chưa khả dụng. Bạn vẫn có thể đăng ký thiết bị này.';
+
+  @override
+  String get mastermindIrisDeviceCurrent => 'Thiết bị này';
+
+  @override
+  String get mastermindIrisWritesOff => 'Tạm thời chưa thể gửi tin. Bạn vẫn có thể đọc cuộc trò chuyện.';
+
+  @override
+  String get mastermindIrisWritesNeedEnrol => 'Hãy đăng ký thiết bị này để gửi tin nhắn.';
 
   @override
   String get mastermindAskCardTierDecision => 'Cần quyết định';
