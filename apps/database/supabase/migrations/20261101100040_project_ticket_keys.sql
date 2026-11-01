@@ -1,3 +1,7 @@
+-- Trigger inventory addendum (has_workspace_permission callers added here; both
+-- pass auth.uid() for manage_projects):
+--   private.assign_project_ticket_key()
+--   private.protect_project_ticket_identity()
 -- Project ticket identity is independent of the retained board display number.
 alter table public.task_projects
   add column ticket_key text default null,
