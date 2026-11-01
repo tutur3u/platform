@@ -263,7 +263,7 @@ void main() {
   });
 
   group('rows', () {
-    testWidgets('read as one node: kind, title, state, then the hint', (
+    testWidgets('read as one node: tier, title, options, then the hint', (
       tester,
     ) async {
       final handle = tester.ensureSemantics();
@@ -272,12 +272,16 @@ void main() {
       await _pump(tester, const MastermindInboxPage(), json);
       // The first ask line is the title, so it is not read a second time.
       expect(
-        find.bySemanticsLabel('Decision. Review the plan. open'),
+        find.bySemanticsLabel(
+          RegExp('^Needs decision. Incomplete card. Review the plan'),
+        ),
         findsOneWidget,
       );
       expect(find.textContaining('Mastermind · hub ·'), findsNothing);
       final node = tester.getSemantics(
-        find.bySemanticsLabel(RegExp('^Decision. Review the plan')),
+        find.bySemanticsLabel(
+          RegExp('^Needs decision. Incomplete card. Review the plan'),
+        ),
       );
       expect(node.hint, 'Opens the ask');
       handle.dispose();

@@ -15013,4 +15013,95 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindIrisEnrolLimit => 'Too many pending devices. Wait for one to expire.';
+
+  @override
+  String get mastermindAskCardTierDecision => 'Needs decision';
+
+  @override
+  String get mastermindAskCardTierFyi => 'FYI';
+
+  @override
+  String mastermindAskCardDue(String when) {
+    return 'Due $when';
+  }
+
+  @override
+  String get mastermindAskCardOverdue => 'Overdue';
+
+  @override
+  String get mastermindAskCardReversible => 'Reversible';
+
+  @override
+  String get mastermindAskCardOneWay => 'One-way';
+
+  @override
+  String get mastermindAskCardNeedsBiometric => 'Needs Face ID or fingerprint';
+
+  @override
+  String get mastermindAskCardExpired => 'Expired';
+
+  @override
+  String get mastermindAskCardAnsweredDiscord => 'Answered on Discord';
+
+  @override
+  String get mastermindAskCardAnsweredAgent => 'Answered by an agent';
+
+  @override
+  String get mastermindAskCardIncomplete => 'Incomplete card';
+
+  @override
+  String get mastermindAskCardIncompleteMessage => 'The publisher sent only part of this ask. One-tap answers are off. Open the full question, or reply in your own words.';
+
+  @override
+  String get mastermindAskCardExpiredMessage => 'This ask expired, so answering is closed.';
+
+  @override
+  String get mastermindAskCardOpenFull => 'Open full question';
+
+  @override
+  String get mastermindAskCardReplyInWords => 'Reply in your own words';
+
+  @override
+  String get mastermindAskCardAnswerWithBiometric => 'Open to answer with Face ID';
+
+  @override
+  String get mastermindAskCardShowFullText => 'Show full text';
+
+  @override
+  String get mastermindAskCardHideFullText => 'Show less';
+
+  @override
+  String mastermindAskCardMoreOptions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count more options',
+      one: '+1 more option',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindAskCardFewerOptions => 'Show fewer options';
+
+  @override
+  String mastermindAskCardOptionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count options',
+      one: '1 option',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindAskCardRecommendedOption(String option) {
+    return 'Recommended: $option';
+  }
+
+  @override
+  String mastermindAskCardRecommendedWhy(String option, String why) {
+    return 'Recommended: $option. $why';
+  }
 }

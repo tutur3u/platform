@@ -15,6 +15,11 @@ final class InboxAsk {
     required this.card,
     required this.optionIndexes,
     required this.reversible,
+    this.by,
+    this.createdAt,
+    this.deadlineBucket,
+    this.product,
+    this.legacyUrgency,
   });
 
   final AskCard card;
@@ -25,6 +30,17 @@ final class InboxAsk {
 
   /// `reversible`, when the hub said so.
   final bool? reversible;
+
+  /// The asker (`by`), when published.
+  final String? by;
+  final DateTime? createdAt;
+
+  /// The coarse deadline bucket, for an ask without an absolute `deadline_at`.
+  final AskDeadline? deadlineBucket;
+  final Product? product;
+
+  /// The publisher's `low|normal|high|urgent`, distinct from the hub's tier.
+  final AskUrgency? legacyUrgency;
 }
 
 /// Reads [item] into an [InboxAsk]. [now] is injectable so the derived tier is
@@ -76,6 +92,11 @@ InboxAsk inboxAskFor(NeedsYou item, {DateTime? now}) {
     card: card,
     optionIndexes: List.unmodifiable(indexes),
     reversible: v2.reversible,
+    by: item.by,
+    createdAt: item.createdAt,
+    deadlineBucket: item.deadline,
+    product: item.product,
+    legacyUrgency: item.urgency,
   );
 }
 
@@ -91,7 +112,11 @@ String? _title(NeedsYou item) {
 String? _text(NeedsYou item) {
   final hub = item.hubText?.trim();
   if (hub != null && hub.isNotEmpty) return hub;
-  return isOpenOnMacStandIn(item.body) ? null : item.body.trim();
+  if (isOpenOnMacStandIn(item.body)) return null;
+  // When the first ask line is the title, the text starts after it; a
+  // one-line ask keeps its line so it is not mistaken for missing text.
+  final rest = askPreviewText(item);
+  return rest.isNotEmpty ? rest : item.body.trim();
 }
 
 int? _wireIndex(NeedsYou item, List<(int, String)> selectable, String label) {

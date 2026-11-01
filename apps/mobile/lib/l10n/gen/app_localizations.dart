@@ -27912,6 +27912,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Too many pending devices. Wait for one to expire.'**
   String get mastermindIrisEnrolLimit;
+
+  /// No description provided for @mastermindAskCardTierDecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs decision'**
+  String get mastermindAskCardTierDecision;
+
+  /// No description provided for @mastermindAskCardTierFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'FYI'**
+  String get mastermindAskCardTierFyi;
+
+  /// No description provided for @mastermindAskCardDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {when}'**
+  String mastermindAskCardDue(String when);
+
+  /// No description provided for @mastermindAskCardOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get mastermindAskCardOverdue;
+
+  /// No description provided for @mastermindAskCardReversible.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversible'**
+  String get mastermindAskCardReversible;
+
+  /// No description provided for @mastermindAskCardOneWay.
+  ///
+  /// In en, this message translates to:
+  /// **'One-way'**
+  String get mastermindAskCardOneWay;
+
+  /// No description provided for @mastermindAskCardNeedsBiometric.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs Face ID or fingerprint'**
+  String get mastermindAskCardNeedsBiometric;
+
+  /// No description provided for @mastermindAskCardExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get mastermindAskCardExpired;
+
+  /// No description provided for @mastermindAskCardAnsweredDiscord.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on Discord'**
+  String get mastermindAskCardAnsweredDiscord;
+
+  /// No description provided for @mastermindAskCardAnsweredAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered by an agent'**
+  String get mastermindAskCardAnsweredAgent;
+
+  /// No description provided for @mastermindAskCardIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete card'**
+  String get mastermindAskCardIncomplete;
+
+  /// No description provided for @mastermindAskCardIncompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The publisher sent only part of this ask. One-tap answers are off. Open the full question, or reply in your own words.'**
+  String get mastermindAskCardIncompleteMessage;
+
+  /// No description provided for @mastermindAskCardExpiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This ask expired, so answering is closed.'**
+  String get mastermindAskCardExpiredMessage;
+
+  /// No description provided for @mastermindAskCardOpenFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Open full question'**
+  String get mastermindAskCardOpenFull;
+
+  /// No description provided for @mastermindAskCardReplyInWords.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply in your own words'**
+  String get mastermindAskCardReplyInWords;
+
+  /// No description provided for @mastermindAskCardAnswerWithBiometric.
+  ///
+  /// In en, this message translates to:
+  /// **'Open to answer with Face ID'**
+  String get mastermindAskCardAnswerWithBiometric;
+
+  /// No description provided for @mastermindAskCardShowFullText.
+  ///
+  /// In en, this message translates to:
+  /// **'Show full text'**
+  String get mastermindAskCardShowFullText;
+
+  /// No description provided for @mastermindAskCardHideFullText.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get mastermindAskCardHideFullText;
+
+  /// No description provided for @mastermindAskCardMoreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{+1 more option} other{+{count} more options}}'**
+  String mastermindAskCardMoreOptions(int count);
+
+  /// No description provided for @mastermindAskCardFewerOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Show fewer options'**
+  String get mastermindAskCardFewerOptions;
+
+  /// No description provided for @mastermindAskCardOptionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 option} other{{count} options}}'**
+  String mastermindAskCardOptionCount(int count);
+
+  /// No description provided for @mastermindAskCardRecommendedOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended: {option}'**
+  String mastermindAskCardRecommendedOption(String option);
+
+  /// No description provided for @mastermindAskCardRecommendedWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended: {option}. {why}'**
+  String mastermindAskCardRecommendedWhy(String option, String why);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
