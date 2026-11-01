@@ -40,6 +40,7 @@ import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
 import { encodeRoomCode } from '../lib/room-code';
 import { CallEnded } from './call-ended';
 import { CallExtras } from './call-extras';
+import { ConnectedLobby } from './call-lobby';
 import { CallResourceNotice } from './call-resource-notice';
 import { CallSettings } from './call-settings';
 import { type CallLayout, CallStage } from './call-stage';
@@ -49,7 +50,6 @@ import { CopyInvite } from './copy-invite';
 import { DocumentPanel } from './document-panel';
 import { CallConnectionNotice, JoinOutcome } from './join-outcome';
 import { LeaveDialog } from './leave-dialog';
-import { Lobby } from './lobby';
 import { MeetingActionHint } from './meeting-action-hint';
 import { MeetingTitle } from './meeting-title';
 import { PersonalToolsPanel } from './personal-tools-panel';
@@ -308,16 +308,24 @@ function CallShellContent({
     );
   if (!joined || state.admission === 'waiting')
     return (
-      <Lobby
-        avatarUrl={defaultAvatarUrl}
+      <ConnectedLobby
+        canReadWorkspace={canReadWorkspace}
+        defaultAvatarUrl={defaultAvatarUrl}
         defaultDisplayName={defaultDisplayName}
-        connectionStatus={room.connectionStatus}
-        error={state.error}
-        onRetry={retryConnection}
-        isJoining={state.admission === 'connecting'}
         joined={joined}
         meetingName={meetingName}
-        waiting={state.admission === 'waiting'}
+        onJoined={() => setJoined(true)}
+        onLeave={() => {
+          room.leave();
+          router.push(backHref);
+        }}
+        onOutputDeviceChange={setOutputDeviceId}
+        onRetry={retryConnection}
+        outputDeviceId={outputDeviceId}
+        participants={others}
+        prepareJoin={sharedAudio.prepareJoin}
+        room={room}
+        runMediaAction={runMediaAction}
         transcriptionNotice={
           !canReadNotes && !canReadWorkspace
             ? t('guest_transcription_notice')
@@ -327,27 +335,6 @@ function CallShellContent({
               ? aiT('join_notice')
               : undefined
         }
-        onLeave={() => {
-          room.leave();
-          router.push(backHref);
-        }}
-        onJoin={({ audioEnabled, videoEnabled, previewStream }) => {
-          const enableMicrophone = sharedAudio.prepareJoin(audioEnabled);
-          setJoined(true);
-          void room
-            .adoptPreview(previewStream)
-            .then(() =>
-              Promise.all([
-                ...(enableMicrophone
-                  ? [runMediaAction(room.toggleMicrophone, 'microphone')]
-                  : []),
-                ...(videoEnabled
-                  ? [runMediaAction(room.toggleCamera, 'camera')]
-                  : []),
-              ])
-            )
-            .catch(() => toast.error(t('media_failed')));
-        }}
       />
     );
 
