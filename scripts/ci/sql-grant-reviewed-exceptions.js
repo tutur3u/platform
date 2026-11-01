@@ -19,7 +19,7 @@ const REVIEWED_EXCEPTIONS = Object.freeze([
       '0d097e687c1e74b2af83fcfb379aea72f91f2ea2d652e323e244300a68dc9af7',
     rule: 'definer-public',
     fileSha256:
-      '31973f08b14236f3ec1befe03897ff7787b40486d66848c7a1af8ccd499792c1',
+      'bdeb4ea4f6e97c3c6e4177531af6c8dcb2c83cecd05ebe9c43c07c4feab6cc05',
     findings: Object.freeze([
       Object.freeze({
         signature:
