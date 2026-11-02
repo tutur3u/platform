@@ -68,10 +68,8 @@ class DriveOfflinePreparation {
       ),
       data,
     );
-    await manifest.reconcile(
-      workspaceId: workspaceId,
-      namespaces: {'drive.directory'},
-    );
+    // The root page is not authoritative for other directories or queries.
+    await manifest.verify();
     manifest.retain('drive', workspaceId);
   }
 }

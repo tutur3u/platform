@@ -359,3 +359,13 @@ shared auth and bridge with fixture Start/RSC and provider adapters;
 `staging-policy.test.ts` and Supabase's `staging-cookie-domain.test.ts` cover
 cookie rotations, deletions, Domain rejection and production parity. Hosted login and provider
 sessions still require staging acceptance before publication.
+
+## Mobile offline directory preparation
+
+Mobile preparation is opt-in behind `mobile_offline` and
+`offline_read_drive_list`, both default OFF. It retains the default root page
+for the current account/workspace without downloading files. Other cached
+directories, searches and pages survive preparation. Workspace permission and
+access-denial fences still apply; this does not grant new access. Regression:
+`drive_offline_preparation_test.dart` opens the real cold page offline and
+checks preservation of a directory outside the prepared page.

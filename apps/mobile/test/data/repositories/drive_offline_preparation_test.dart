@@ -1,17 +1,39 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/feature_flags/mobile_flag.dart';
+import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/drive_offline_preparation.dart';
+import 'package:mobile/data/repositories/drive_repository.dart';
+import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
+import 'package:mobile/features/auth/cubit/auth_state.dart';
+import 'package:mobile/features/drive/view/drive_page.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../helpers/helpers.dart';
+
+class _Workspace extends Mock implements WorkspaceCubit {}
+
+class _Auth extends Mock implements AuthCubit {}
+
+class _Permissions extends Mock implements WorkspacePermissionsRepository {}
 
 class _Api extends Mock implements ApiClient {}
 
@@ -104,7 +126,22 @@ void main() {
     currentUser: () => owner,
   ).prepare('ws');
   test('preparer key equals the directory key read by the screen', () async {
+    const other = CacheKey(
+      namespace: 'drive.directory',
+      userId: 'user',
+      workspaceId: 'ws',
+      params: {'path': 'other-folder'},
+    );
+    await store.write(
+      key: other,
+      policy: CachePolicies.offlineCatalog,
+      payload: {'data': <Object?>[]},
+    );
     await prepare();
+    expect(
+      (await store.read<Object?>(key: other, decode: (v) => v)).hasValue,
+      isTrue,
+    );
     final path = DriveEndpoints.list(
       'ws',
       path: '',
@@ -126,6 +163,84 @@ void main() {
     expect(data['data'], [
       {'name': 'folder'},
     ]);
+  });
+  testWidgets('prepared Drive opens the real cold page offline', (
+    tester,
+  ) async {
+    FlutterSecureStorage.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({});
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('com.llfbandit.app_links/events'),
+      (_) async => null,
+    );
+    final cache = CacheStore.instance;
+    await tester.runAsync(() async {
+      await initSupabase();
+      await supabase.auth.setInitialSession(
+        jsonEncode({
+          'access_token': 'synthetic',
+          'token_type': 'bearer',
+          'user': {
+            'id': owner,
+            'aud': 'authenticated',
+            'created_at': '2026-01-01T00:00:00Z',
+          },
+        }),
+      );
+      await cache.init();
+      await cache.clearScope();
+      await DriveOfflinePreparation(
+        api: api,
+        store: cache,
+        currentUser: () => owner,
+      ).prepare('ws');
+    });
+    addTearDown(() async {
+      await cache.closeForTesting();
+      await supabase.dispose();
+    });
+    when(() => api.getJson(any())).thenThrow(const SocketException('offline'));
+    final workspace = _Workspace();
+    when(() => workspace.state).thenReturn(
+      WorkspaceState(
+        currentWorkspace: Workspace.fromJson(const {
+          'id': 'ws',
+          'name': 'Test',
+        }),
+      ),
+    );
+    when(() => workspace.stream).thenAnswer((_) => const Stream.empty());
+    final auth = _Auth();
+    when(
+      () => auth.state,
+    ).thenReturn(AuthState.authenticated(supabase.auth.currentUser!));
+    when(() => auth.stream).thenAnswer((_) => const Stream.empty());
+    final permissions = _Permissions();
+    when(() => permissions.getPermissions(wsId: 'ws')).thenAnswer(
+      (_) async => const WorkspacePermissions(
+        permissions: {'manage_drive'},
+        isCreator: false,
+      ),
+    );
+    await tester.pumpApp(
+      BlocProvider<WorkspaceCubit>.value(
+        value: workspace,
+        child: BlocProvider<AuthCubit>.value(
+          value: auth,
+          child: DrivePage(
+            repository: DriveRepository(apiClient: api),
+            permissionsRepository: permissions,
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('folder'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
   for (final bytes in [false, true]) {
     test('over ${bytes ? "bytes" : "items"} cap stores nothing', () async {
