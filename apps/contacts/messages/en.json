@@ -9304,6 +9304,13 @@
     "view_description": "View transaction details"
   },
   "ws-tutoring": {
+    "student_tutoring": "Tutoring",
+    "student_month": "Month",
+    "student_loading": "Loading tutoring sessions…",
+    "student_retry": "Retry loading tutoring sessions",
+    "student_no_shows": "Tutoring no-shows",
+    "student_class_absences": "Class absences",
+    "student_empty": "No tutoring sessions this month.",
     "absent_recovery": "Absent recovery",
     "actions": "Actions",
     "activate": "Activate",

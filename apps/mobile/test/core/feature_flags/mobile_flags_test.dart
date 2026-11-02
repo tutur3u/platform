@@ -182,7 +182,15 @@ void main() {
           for (final flag in MobileFlag.values)
             flag: flag != MobileFlag.mobileOffline,
         };
-        expect(MobileFlag.values.any(flags.enabled), isFalse);
+        expect(
+          {for (final flag in MobileFlag.values) flag: flags.enabled(flag)},
+          {
+            for (final flag in MobileFlag.values)
+              flag:
+                  flag == MobileFlag.tutoringTutorComments ||
+                  flag == MobileFlag.tutoringStudentView,
+          },
+        );
       },
     );
     test('scope switch ignores late responses', () async {

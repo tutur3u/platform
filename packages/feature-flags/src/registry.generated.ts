@@ -137,4 +137,13 @@ export const registry = [
     default: false,
     removeBy: '2027-01-31',
   },
+  {
+    key: 'tutoring_student_view',
+    description:
+      'Workspace-scoped via workspace_configs. Kill switch: set tutoring_student_view false or remove it; learner profile tutoring reads retain staff authorization.',
+    owner: 'pax',
+    class: 'read',
+    default: false,
+    removeBy: '2027-01-31',
+  },
 ] as const;

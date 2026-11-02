@@ -9304,6 +9304,13 @@
     "view_description": "Xem chi tiết giao dịch"
   },
   "ws-tutoring": {
+    "student_tutoring": "Phụ đạo",
+    "student_month": "Tháng",
+    "student_loading": "Đang tải buổi phụ đạo…",
+    "student_retry": "Thử tải lại buổi phụ đạo",
+    "student_no_shows": "Vắng buổi phụ đạo",
+    "student_class_absences": "Vắng lớp chính",
+    "student_empty": "Không có buổi phụ đạo trong tháng này.",
     "absent_recovery": "Bù buổi vắng",
     "actions": "Hành động",
     "activate": "Kích hoạt",

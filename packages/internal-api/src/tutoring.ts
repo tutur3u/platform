@@ -4,6 +4,7 @@ import {
   type InternalApiClientOptions,
   type InternalApiQuery,
 } from './client';
+import { InternalApiError } from './internal-api-error';
 import type { TutoringPolicy } from './tutoring-policy';
 
 export type TutoringReasonType = 'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'CUSTOM';
@@ -390,4 +391,83 @@ export function getTutoringSessionComment(
     `${basePath(workspaceId)}/sessions/${encodePathSegment(sessionId)}/comment`,
     { cache: 'no-store' }
   );
+}
+
+export async function getTutoringStudentView(
+  workspaceId: string,
+  params: {
+    enabled: boolean;
+    commentsEnabled: boolean;
+    studentUserId: string;
+    month: string;
+    currentGroupIds: string[] | null;
+  },
+  options?: InternalApiClientOptions
+) {
+  if (!params.enabled) return null;
+  const { studentUserId, month, currentGroupIds } = params;
+  const fromDate = `${month}-01`;
+  const last = new Date(`${fromDate}T00:00:00Z`);
+  last.setUTCMonth(last.getUTCMonth() + 1);
+  last.setUTCDate(0);
+  const rows: TutoringSessionRecord[] = [];
+  for (let page = 1; ; page++) {
+    const result = await listTutoringSessions(
+      workspaceId,
+      {
+        studentUserId,
+        fromDate,
+        toDate: last.toISOString().slice(0, 10),
+        page,
+        pageSize: 100,
+      },
+      options
+    );
+    rows.push(...result.data);
+    if (page >= result.totalPages) break;
+  }
+  const client = getInternalApiClient(options);
+  let classAbsences: number | null = null;
+  if (currentGroupIds !== null) {
+    classAbsences = 0;
+    if (currentGroupIds.length) {
+      const result = await client.json<{
+        attendance: { status: string; groups: { id: string } | null }[];
+      }>(
+        `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/${encodePathSegment(studentUserId)}/attendance`,
+        { cache: 'no-store', query: { month } }
+      );
+      classAbsences = result.attendance.filter(
+        (row) =>
+          row.status === 'ABSENT' &&
+          row.groups &&
+          currentGroupIds.includes(row.groups.id)
+      ).length;
+    }
+  }
+  const sessions = [];
+  for (const row of rows) {
+    let tutor_comment: string | null = null;
+    if (params.commentsEnabled) {
+      try {
+        const result = await client.json<{ tutorComment: string | null }>(
+          `${basePath(workspaceId)}/sessions/${encodePathSegment(row.id)}/comment`,
+          { cache: 'no-store' }
+        );
+        tutor_comment = result.tutorComment;
+      } catch (error) {
+        if (
+          !(error instanceof InternalApiError) ||
+          ![403, 404].includes(error.status)
+        )
+          throw error;
+      }
+    }
+    sessions.push({ ...row, tutor_comment });
+  }
+  return {
+    sessions,
+    noShows: rows.filter((row) => row.attendance_status === 'NO_SHOW').length,
+    classAbsences,
+  };
 }
