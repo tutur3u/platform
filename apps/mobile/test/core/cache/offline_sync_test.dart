@@ -9,6 +9,7 @@ import 'package:hive/hive.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
+import 'package:mobile/core/cache/offline_edit_flags.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/cache/pending_mutation_record.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -91,6 +92,75 @@ void main() {
     await queue.synchronize();
   });
 
+  for (final feature in ['tasks', 'calendar', 'finance']) {
+    for (final code in [409, 412, 404]) {
+      test('$feature conflict $code preserves terminal recovery', () async {
+        OfflineEditFlags.debugOverride = {feature: true};
+        var writes = 0;
+        queue.registerDispatcher(feature, (_) async {
+          writes++;
+          throw ApiException(message: 'changed', statusCode: code);
+        });
+        await queue.enqueue(edit('conflict-$feature-$code', feature: feature));
+        online = true;
+        await queue.drain();
+        await queue.drain();
+        final records = await queue.listPending();
+        expect(writes, 1);
+        expect(records.first.serverWon, isTrue);
+        expect(records.every((item) => !item.canRetry), isTrue);
+        if (feature == 'finance') {
+          expect(records.single.conflictResolution, 'draft');
+          expect(records.single.payload?['needs_review'], isTrue);
+          await queue.retry(records.single.id);
+          expect(writes, 1);
+        } else {
+          expect(records.length, 2);
+          expect(
+            records.last.payload?['name'] ?? records.last.payload?['title'],
+            contains('(offline copy)'),
+          );
+        }
+      });
+    }
+  }
+
+  for (final feature in ['finance', 'tasks', 'calendar']) {
+    test('$feature flag off preserves current conflict and retry', () async {
+      OfflineEditFlags.debugOverride = {feature: false};
+      queue.registerDispatcher(feature, (_) async {
+        throw const ApiException(message: 'changed', statusCode: 409);
+      });
+      await queue.enqueue(edit('off-$feature', feature: feature));
+      online = true;
+      await queue.drain();
+      final record = (await queue.listPending()).single;
+      expect(record.conflictResolution, isNull);
+      expect(record.status, PendingMutationStatus.conflict);
+      expect(record.canRetry, isTrue);
+    });
+  }
+
+  for (final feature in ['finance', 'tasks', 'calendar']) {
+    test('$feature server edit drops offline delete', () async {
+      OfflineEditFlags.debugOverride = {feature: true};
+      queue.registerDispatcher(feature, (_) async {
+        throw const ApiException(message: 'changed', statusCode: 412);
+      });
+      await queue.enqueue(
+        PendingMutationRecord.fromJson({
+          ...edit('delete-$feature', feature: feature).toJson(),
+          'method': 'DELETE',
+        }),
+      );
+      online = true;
+      await queue.drain();
+      final record = (await queue.listPending()).single;
+      expect(record.conflictResolution, 'delete');
+      expect(record.canRetry, isFalse);
+    });
+  }
+
   test('discard cannot delete an edit already being sent', () async {
     final entered = Completer<void>();
     final release = Completer<void>();
@@ -112,6 +182,7 @@ void main() {
   });
 
   tearDown(() async {
+    OfflineEditFlags.debugOverride = null;
     await queue.synchronize();
     await queue.dispose();
     await connectivity.close();

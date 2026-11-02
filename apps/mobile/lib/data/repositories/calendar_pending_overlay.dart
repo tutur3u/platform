@@ -10,6 +10,9 @@ List<CalendarEvent> overlayPendingCalendarEvents(
 }) {
   final rows = {for (final event in source) event.id: event};
   for (final mutation in pending) {
+    if (mutation.serverWon && mutation.conflictResolution != 'local_copy') {
+      continue;
+    }
     final base = '/api/v1/workspaces/$workspaceId/calendar/events';
     if (mutation.feature != 'calendar' ||
         mutation.workspaceId != workspaceId ||

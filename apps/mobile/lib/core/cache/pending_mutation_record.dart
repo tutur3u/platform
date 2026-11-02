@@ -21,10 +21,12 @@ class PendingMutationRecord {
     this.acknowledgedWrite = false,
     this.acknowledgedDeletedId,
     this.dependencyIssue,
+    this.conflictResolution,
   });
 
   factory PendingMutationRecord.fromJson(Map<dynamic, dynamic> json) {
     return PendingMutationRecord(
+      conflictResolution: json['conflictResolution'] as String?,
       id: json['id'] as String,
       feature: json['feature'] as String,
       method: json['method'] as String,
@@ -59,6 +61,9 @@ class PendingMutationRecord {
           .firstOrNull,
     );
   }
+
+  final String? conflictResolution;
+  bool get serverWon => conflictResolution != null;
 
   final String id;
   final String feature;
@@ -113,12 +118,14 @@ class PendingMutationRecord {
   final OfflineDependencyIssue? dependencyIssue;
 
   bool get canRetry =>
+      !serverWon &&
       method != 'INVALID' &&
       dependencyIssue != OfflineDependencyIssue.invalidPayload;
 
   String? get entityId => optimisticPatch?['entityId'] as String?;
 
   PendingMutationRecord copyWith({
+    String? conflictResolution,
     int? attemptCount,
     String? lastError,
     PendingMutationStatus? status,
@@ -131,6 +138,7 @@ class PendingMutationRecord {
     bool clearDependencyIssue = false,
   }) {
     return PendingMutationRecord(
+      conflictResolution: conflictResolution ?? this.conflictResolution,
       id: id,
       feature: feature,
       method: method,
@@ -157,6 +165,7 @@ class PendingMutationRecord {
   }
 
   Map<String, dynamic> toJson() => {
+    'conflictResolution': conflictResolution,
     'id': id,
     'feature': feature,
     'method': method,

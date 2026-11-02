@@ -20,6 +20,9 @@ List<Map<String, dynamic>> overlayPendingCollection({
         row['id'] as String: Map<String, dynamic>.from(row),
   };
   for (final mutation in pending) {
+    if (mutation.serverWon && mutation.conflictResolution != 'local_copy') {
+      continue;
+    }
     if (mutation.feature != feature ||
         mutation.workspaceId != workspaceId ||
         !mutation.path.contains(pathContains)) {

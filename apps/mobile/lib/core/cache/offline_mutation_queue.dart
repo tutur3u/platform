@@ -12,7 +12,9 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/chat_attachment_delivery.dart';
 import 'package:mobile/core/cache/crm_avatar_delivery.dart';
 import 'package:mobile/core/cache/drive_upload_delivery.dart';
+import 'package:mobile/core/cache/local_replica_query.dart';
 import 'package:mobile/core/cache/offline_dependency_graph.dart';
+import 'package:mobile/core/cache/offline_edit_flags.dart';
 import 'package:mobile/core/cache/offline_id_reconciliation.dart';
 import 'package:mobile/core/cache/offline_inventory_create.dart';
 import 'package:mobile/core/cache/offline_inventory_mutation.dart';
@@ -27,9 +29,11 @@ import 'package:mobile/core/cache/workspace_avatar_delivery.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/l10n/gen/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 part 'offline_mutation_dispatch.dart';
+part 'offline_edit_conflicts.dart';
 part 'offline_mutation_dependencies.dart';
 part 'offline_inventory_replay.dart';
 
@@ -363,11 +367,12 @@ class OfflineMutationQueue with WidgetsBindingObserver {
       throw StateError('An authenticated account is required to queue edits');
     }
     _checkOpen();
-    await _registerInventoryProvenance(record);
+    final captured = await _captureEditBase(record);
+    await _registerInventoryProvenance(captured);
     _checkOpen();
     checkScope?.call();
     await _store.savePendingMutation(
-      record,
+      captured,
       checkScope: () {
         _checkOpen();
         checkScope?.call();
@@ -564,6 +569,7 @@ class OfflineMutationQueue with WidgetsBindingObserver {
             // A cache failure after acknowledgment must never resend a write.
           }
         } on Exception catch (error) {
+          if (await _resolveEditConflict(record, error)) continue;
           final status = switch (error) {
             ApiException(statusCode: 409 || 412) =>
               PendingMutationStatus.conflict,

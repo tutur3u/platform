@@ -15040,4 +15040,18 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindInboxTierJump => 'Cuộn tới mục này';
+
+  @override
+  String offlineCopyTitle(String title) {
+    return '$title (bản sao ngoại tuyến)';
+  }
+
+  @override
+  String get offlineConflictDraft => 'Giữ bản máy chủ. Bản nháp cần xem lại và sẽ không tự gửi.';
+
+  @override
+  String get offlineConflictDelete => 'Máy chủ đã thay đổi. Đã bỏ thao tác xóa ngoại tuyến.';
+
+  @override
+  String get offlineConflictCopy => 'Giữ bản máy chủ. Thay đổi được lưu thành bản sao ngoại tuyến.';
 }
