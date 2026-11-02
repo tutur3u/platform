@@ -8257,6 +8257,12 @@ abstract class AppLocalizations {
   /// **'Habits'**
   String get habitsTitle;
 
+  /// No description provided for @habitsOfflineUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get habitsOfflineUnavailable;
+
   /// No description provided for @habitsTodayLabel.
   ///
   /// In en, this message translates to:

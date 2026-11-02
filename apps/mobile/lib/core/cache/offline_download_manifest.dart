@@ -107,6 +107,12 @@ class OfflineDownloadManifest {
     _keys.add(key);
   }
 
+  /// Track a snapshot published through its feature authorization fence.
+  void trackPublished(CacheKey key) {
+    checkScope();
+    _keys.add(key);
+  }
+
   Future<void> verify() async {
     checkScope();
     for (final key in _keys) {

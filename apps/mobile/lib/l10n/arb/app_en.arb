@@ -2704,6 +2704,7 @@
   "habitsTeamSummaryTitle": "Team summary",
   "habitsTemplateLabel": "Start from a template",
   "habitsTitle": "Habits",
+  "habitsOfflineUnavailable": "Not available offline",
   "habitsTodayLabel": "Today",
   "habitsTodayTotalHint": "Today's total",
   "habitsTopStreakLabel": "Top streak",
