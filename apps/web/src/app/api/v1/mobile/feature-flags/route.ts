@@ -7,8 +7,10 @@ import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 const workspaceIdSchema = z.string().uuid();
 const cacheHeaders = {
-  'Cache-Control': 'private, max-age=0, must-revalidate',
+  'Cache-Control': 'private, no-cache',
   Vary: 'Authorization, Cookie',
+  'CDN-Cache-Control': 'no-store',
+  'Vercel-CDN-Cache-Control': 'no-store',
 };
 
 export async function GET(request: NextRequest) {
@@ -16,7 +18,12 @@ export async function GET(request: NextRequest) {
   const auth = await resolveSessionAuthContext(request, {
     allowAppSessionAuth: true,
   });
-  if (!auth.ok) return auth.response;
+  if (!auth.ok) {
+    for (const [key, value] of Object.entries(cacheHeaders)) {
+      auth.response.headers.set(key, value);
+    }
+    return auth.response;
+  }
 
   const wsId = request.nextUrl.searchParams.get('wsId');
   if (wsId !== null) {
@@ -47,7 +54,7 @@ export async function GET(request: NextRequest) {
   }
 
   const payload = {
-    ttlSeconds: 300,
+    ttlSeconds: 30,
     flags: evaluateFlags(registry, {
       userId: auth.user.id,
       ...(wsId === null ? {} : { wsId }),

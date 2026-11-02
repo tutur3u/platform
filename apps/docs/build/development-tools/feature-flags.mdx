@@ -33,7 +33,7 @@ A 200 response contains only:
 ```json
 {
   "version": "<sha256>",
-  "ttlSeconds": 300,
+  "ttlSeconds": 30,
   "flags": { "mobile_offline": false, "offline_read_notes": false }
 }
 ```
@@ -42,9 +42,14 @@ The example abbreviates `flags`; the response includes **every registry key**.
 `version` hashes the JSON payload `{ttlSeconds, flags}` with SHA-256, excluding
 `version` itself. `ETag` is that version in double quotes. A matching
 `If-None-Match` returns 304 with no body, after authentication and membership
-checks. Responses use `Cache-Control: private, max-age=0, must-revalidate` and
-`Vary: Authorization, Cookie`. The mobile reader polls using the 300-second TTL
-and retains the last payload on 304. No user or workspace identifiers are returned.
+checks. Responses use `Cache-Control: private, no-cache` and
+`Vary: Authorization, Cookie`. The mobile reader polls using the 30-second TTL
+and retains the last payload on 304. No user or workspace identifiers are
+returned. User identity comes only from the authenticated session; query
+parameters cannot select a user. The handler uses
+`await connection()` for request-time evaluation, with no shared output cache.
+Both `CDN-Cache-Control` and `Vercel-CDN-Cache-Control` are `no-store`, including
+304 and error responses.
 
 ## v0 semantics
 

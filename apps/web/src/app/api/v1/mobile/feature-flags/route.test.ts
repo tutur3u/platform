@@ -1,11 +1,16 @@
 // @vitest-environment node
 import { createHash } from 'node:crypto';
-import { registry } from '@tuturuuu/feature-flags';
+import { evaluateFlags, registry } from '@tuturuuu/feature-flags';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { GET } from './route';
 
 const mocks = vi.hoisted(() => ({ auth: vi.fn(), membership: vi.fn() }));
+vi.mock('@tuturuuu/feature-flags', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@tuturuuu/feature-flags')>();
+  return { ...actual, evaluateFlags: vi.fn(actual.evaluateFlags) };
+});
 vi.mock('@/lib/api-auth', () => ({ resolveSessionAuthContext: mocks.auth }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: mocks.membership,
@@ -84,7 +89,7 @@ describe('GET mobile feature flags', () => {
     const body = await response.json();
     expect(body).toEqual({
       version: expect.stringMatching(/^[a-f0-9]{64}$/),
-      ttlSeconds: 300,
+      ttlSeconds: 30,
       flags: Object.fromEntries(registry.map(({ key }) => [key, false])),
     });
     expect(body.version).toBe(
@@ -95,10 +100,10 @@ describe('GET mobile feature flags', () => {
         .digest('hex')
     );
     expect(response.headers.get('etag')).toBe(`"${body.version}"`);
-    expect(response.headers.get('cache-control')).toBe(
-      'private, max-age=0, must-revalidate'
-    );
+    expect(response.headers.get('cache-control')).toBe('private, no-cache');
     expect(response.headers.get('vary')).toBe('Authorization, Cookie');
+    expect(response.headers.get('cdn-cache-control')).toBe('no-store');
+    expect(response.headers.get('vercel-cdn-cache-control')).toBe('no-store');
     expect(mocks.membership).not.toHaveBeenCalled();
   });
 
@@ -129,7 +134,65 @@ describe('GET mobile feature flags', () => {
       expect(response.headers.get('cache-control')).toBe(
         initial.headers.get('cache-control')
       );
+      expect(response.headers.get('vary')).toBe('Authorization, Cookie');
+      expect(response.headers.get('cdn-cache-control')).toBe('no-store');
+      expect(response.headers.get('vercel-cdn-cache-control')).toBe('no-store');
       expect(mocks.membership).toHaveBeenCalledTimes(1);
+    }
+  );
+
+  it('derives each evaluation and membership check only from the authenticated session', async () => {
+    const query = `?wsId=${wsId}&userId=query-user&user_id=query-user`;
+    await GET(request(query));
+    expect(evaluateFlags).toHaveBeenLastCalledWith(registry, {
+      userId: 'user-1',
+      wsId,
+    });
+    mocks.auth.mockResolvedValue({
+      ok: true,
+      user: { id: 'user-2' },
+      supabase: {},
+    });
+    await GET(request(query));
+    expect(evaluateFlags).toHaveBeenLastCalledWith(registry, {
+      userId: 'user-2',
+      wsId,
+    });
+    expect(mocks.membership).toHaveBeenLastCalledWith({
+      wsId,
+      userId: 'user-2',
+      supabase: {},
+      requiredType: 'ANY',
+    });
+    expect(evaluateFlags).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([401, 400, 403, 500])(
+    'prevents shared caching of %s rejections',
+    async (status) => {
+      if (status === 401)
+        mocks.auth.mockResolvedValue({
+          ok: false,
+          response: NextResponse.json({ error: 'Unauthorized' }, { status }),
+        });
+      if (status === 403)
+        mocks.membership.mockResolvedValue({
+          ok: false,
+          error: 'membership_missing',
+        });
+      if (status === 500)
+        mocks.membership.mockResolvedValue({
+          ok: false,
+          error: 'membership_lookup_failed',
+        });
+      const response = await GET(
+        request(status === 400 ? '?wsId=invalid' : `?wsId=${wsId}`)
+      );
+      expect(response.status).toBe(status);
+      expect(response.headers.get('cache-control')).toBe('private, no-cache');
+      expect(response.headers.get('vary')).toBe('Authorization, Cookie');
+      expect(response.headers.get('cdn-cache-control')).toBe('no-store');
+      expect(response.headers.get('vercel-cdn-cache-control')).toBe('no-store');
     }
   );
 

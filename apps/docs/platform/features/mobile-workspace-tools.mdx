@@ -2222,7 +2222,10 @@ individual `offline_` flag; the master switch forces reads, writes and status UI
 OFF. The v0 endpoint returns registry defaults without targeting or overrides.
 This registry does not change authorization or existing offline implementations
 that have not adopted the reader. Workspace context requires membership, and
-conditional responses perform the same access checks as full responses.
+conditional responses perform the same access checks as full responses. The TTL
+is 30 seconds; the browser response is private and requires revalidation, and
+shared/CDN output caching is disabled. Identity comes only from the authenticated
+session, never a query parameter.
 
 Regression evidence: `packages/feature-flags/src/index.test.ts` covers defaults
 and the master switch; the colocated mobile feature-flags route tests cover
