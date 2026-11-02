@@ -41,10 +41,7 @@ const {
 function isAllowed(statement, comments, rule) {
   const marker = new RegExp(`^\\s*${ALLOW_MARKERS[rule]}\\s*:\\s*\\S`, 'i');
   return comments.some(
-    (comment) =>
-      comment.line >= statement.startLine - 1 &&
-      comment.line <= statement.endLine &&
-      marker.test(comment.text)
+    (comment) => comment.statement === statement && marker.test(comment.text)
   );
 }
 

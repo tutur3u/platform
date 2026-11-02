@@ -7,7 +7,8 @@ function nestedBodyGrants(sql) {
   const pending = outer.bodies.flatMap((text, index) => {
     const line = outer.bodyLines[index];
     const owner = statements.find(
-      (s) => s.startLine <= line && s.endLine >= line
+      (s) =>
+        s.start <= outer.bodyStarts[index] && s.end >= outer.bodyStarts[index]
     );
     return owner &&
       /^(?:do|create (?:or replace )?(?:function|procedure))\b/.test(owner.text)
@@ -27,8 +28,8 @@ function nestedBodyGrants(sql) {
       const roles = grant[1].split(',').map((role) =>
         role
           .trim()
-          .replace(/^"|"$/g, '')
           .replace(/\s+with\s+.*$/, '')
+          .replace(/^"([^"\n]*)"$/, '$1')
       );
       const open = roles.filter((role) => ['anon', 'public'].includes(role));
       if (open.length)

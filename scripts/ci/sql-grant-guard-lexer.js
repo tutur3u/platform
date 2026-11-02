@@ -5,6 +5,7 @@ function lexSql(sql) {
   const comments = [];
   const bodies = [];
   const bodyLines = [];
+  const bodyStarts = [];
   const configurations = [];
   const emit = (end, keep) => {
     const chunk = sql.slice(index, end);
@@ -18,7 +19,7 @@ function lexSql(sql) {
     if (sql.startsWith('--', index)) {
       const newline = sql.indexOf('\n', index);
       const end = newline < 0 ? sql.length : newline;
-      comments.push({ line, text: sql.slice(index + 2, end) });
+      comments.push({ line, start: index, text: sql.slice(index + 2, end) });
       emit(end, false);
     } else if (sql.startsWith('/*', index)) {
       let depth = 0;
@@ -65,8 +66,9 @@ function lexSql(sql) {
         code += literal.padEnd(cursor - index, ' ');
         index = cursor;
       } else emit(Math.min(cursor, sql.length), false);
-    } else if (char === '"') {
-      let cursor = index + 1;
+    } else if (char === '"' || /^[uU]&"/.test(sql.slice(index, index + 3))) {
+      const unicode = char !== '"';
+      let cursor = index + (unicode ? 3 : 1);
       while (cursor < sql.length) {
         if (sql[cursor] !== '"') cursor++;
         else if (sql[cursor + 1] === '"') cursor += 2;
@@ -74,6 +76,10 @@ function lexSql(sql) {
           cursor++;
           break;
         }
+      }
+      if (unicode) {
+        const clause = /^\s+uescape\s+'(.)'/i.exec(sql.slice(cursor));
+        if (clause) cursor += clause[0].length;
       }
       emit(Math.min(cursor, sql.length), true);
     } else {
@@ -86,6 +92,7 @@ function lexSql(sql) {
       if (tag) {
         const close = sql.indexOf(tag[0], index + tag[0].length);
         bodyLines.push(line);
+        bodyStarts.push(index);
         bodies.push(
           sql.slice(index + tag[0].length, close < 0 ? sql.length : close)
         );
@@ -97,7 +104,7 @@ function lexSql(sql) {
       }
     }
   }
-  return { code, comments, bodies, bodyLines, configurations };
+  return { code, comments, bodies, bodyLines, bodyStarts, configurations };
 }
 
 function splitStatements(code) {
@@ -136,31 +143,64 @@ function countNewlines(text) {
 
 // Splits lexed SQL into normalized (lowercase, single-spaced) statements.
 function parseStatements(sql) {
-  let { code, comments } = lexSql(sql);
-  // Normalize Unicode identifiers before any keyword or configuration matching.
-  // Custom UESCAPE and malformed encodings remain explicit review findings.
-  code = code.replace(
-    /u&"((?:[^"]|"")*)"/gi,
-    (_, value) =>
-      '"' +
-      value.replace(/\\(?:\+([0-9a-f]{6})|([0-9a-f]{4}))/gi, (_, six, four) =>
-        String.fromCodePoint(parseInt(six || four, 16))
-      ) +
-      '"'
-  );
+  const { code, comments } = lexSql(sql);
   const statements = [];
   let line = 1;
+  let offset = 0;
   for (const part of splitStatements(code)) {
     const startLine = line + countNewlines(/^\s*/.exec(part)[0]);
     const body = part.trim();
     if (body) {
       statements.push({
-        text: foldSql(body),
+        text: foldSql(
+          body.replace(
+            /u&"((?:[^"]|"")*)"(?:\s+uescape\s+'(.)')?/gi,
+            (_, value, escapeChar = '\\') => {
+              const escaped = escapeChar.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const pattern = new RegExp(
+                `${escaped}(?:${escaped}|\\+([0-9a-f]{6})|([0-9a-f]{4}))`,
+                'gi'
+              );
+              return (
+                '"' +
+                value.replace(pattern, (match, six, four) => {
+                  if (!six && !four) return escapeChar;
+                  const point = parseInt(six || four, 16);
+                  return point <= 0x10ffff
+                    ? String.fromCodePoint(point)
+                    : match;
+                }) +
+                '"'
+              );
+            }
+          )
+        ),
+        start: offset + part.indexOf(body),
+        end: offset + part.length,
         startLine,
         endLine: line + countNewlines(part),
       });
     }
     line += countNewlines(part);
+    offset += part.length + 1;
+  }
+  for (const comment of comments) {
+    comment.statement = statements.find(
+      (statement) =>
+        comment.start >= statement.start && comment.start <= statement.end
+    );
+    if (comment.statement) continue;
+    const previous = statements
+      .filter((statement) => statement.end < comment.start)
+      .at(-1);
+    comment.statement =
+      previous?.endLine === comment.line
+        ? previous
+        : statements.find(
+            (statement) =>
+              statement.start > comment.start &&
+              statement.startLine === comment.line + 1
+          );
   }
   return { statements, comments };
 }
