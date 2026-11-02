@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { TUTORING_PARENT_MESSAGE_CENTRE_NAME_CONFIG_ID } from '@tuturuuu/internal-api/tutoring-policy';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const sessionId = 'f0747f37-bf6d-4263-a5df-a11c57bdc762';
@@ -76,12 +77,12 @@ function query(table: string, result: () => unknown) {
         ? {
             data: {
               value:
-                configId === 'tutoring_parent_message_centre_name'
+                configId === TUTORING_PARENT_MESSAGE_CENTRE_NAME_CONFIG_ID
                   ? centreOverride
                   : flagValue,
             },
             error: (
-              configId === 'tutoring_parent_message_centre_name'
+              configId === TUTORING_PARENT_MESSAGE_CENTRE_NAME_CONFIG_ID
                 ? overrideError
                 : flagError
             )
@@ -360,7 +361,7 @@ describe('workspace parent message v2', () => {
       expect(calls).toContainEqual({
         table: 'workspace_configs',
         method: 'eq',
-        args: ['id', 'tutoring_parent_message_centre_name'],
+        args: ['id', TUTORING_PARENT_MESSAGE_CENTRE_NAME_CONFIG_ID],
       });
     }
   );

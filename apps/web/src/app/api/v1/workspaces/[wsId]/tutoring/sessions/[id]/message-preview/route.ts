@@ -3,6 +3,7 @@ import {
   PARENT_MESSAGE_TEMPLATE_V2,
   readTutoringPolicyConfigRows,
   renderTutoringParentMessage,
+  TUTORING_PARENT_MESSAGE_CENTRE_NAME_CONFIG_ID,
   TUTORING_PARENT_MESSAGE_V2_CONFIG_ID,
   TUTORING_POLICY_CONFIG_ID,
 } from '@tuturuuu/internal-api/tutoring-policy';
@@ -149,7 +150,7 @@ export async function POST(request: Request, { params }: Params) {
       .from('workspace_configs')
       .select('value')
       .eq('ws_id', normalizedWsId)
-      .eq('id', 'tutoring_parent_message_centre_name')
+      .eq('id', TUTORING_PARENT_MESSAGE_CENTRE_NAME_CONFIG_ID)
       .maybeSingle(),
     sbAdmin
       .from('workspaces')
