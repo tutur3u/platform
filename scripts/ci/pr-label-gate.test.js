@@ -71,6 +71,7 @@ const PROTECTED_TRIGGERS = {
   'parley-cloudflare.yaml': 'f1777123fb48e37c',
   'pay-cloudflare.yaml': '5dd48f4674f6d239',
   'periodic-report-delivery-contract.yaml': 'dc372af9059d0c07',
+  'playground-cloudflare.yaml': 'e81df4561f7d0962',
   'playground-runtime-acceptance.yaml': '0a3cc2c97958f5cd',
   'programming-app-builds.yaml': '0a3cc2c97958f5cd',
   'programming-database-contract.yaml': '0a3cc2c97958f5cd',

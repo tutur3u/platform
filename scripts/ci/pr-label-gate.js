@@ -70,6 +70,7 @@ const HEAVY_PR_WORKFLOWS = [
   'parley-cloudflare.yaml',
   'pay-cloudflare.yaml',
   'periodic-report-delivery-contract.yaml',
+  'playground-cloudflare.yaml',
   'playground-runtime-acceptance.yaml',
   'programming-app-builds.yaml',
   'programming-database-contract.yaml',

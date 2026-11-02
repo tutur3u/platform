@@ -134,6 +134,7 @@ export const ci = {
   'inventory-cloudflare.yaml': true,
   'tools-cloudflare.yaml': true,
   'pay-cloudflare.yaml': true,
+  'playground-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.

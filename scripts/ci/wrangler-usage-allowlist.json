@@ -1073,6 +1073,46 @@
       },
       "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
     },
+    "apps/playground/.gitignore": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7438",
+        "reason": "Playground follows the Wave 1 Start + Void template (codemod): Void rebuilds on deploy, so the exact Void-emitted Worker is qualified with the pinned Wrangler adapter (generated .void-wrangler.jsonc ignored, built-Worker harness, dependency pin). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
+      },
+      "digest": "eaa5c36b89bb2cc16b4b93bbe4ccfdddcddacc00b12726e591d57c46be30f9e8"
+    },
+    "apps/playground/cloudflare/native-built-worker.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7438",
+        "reason": "Playground follows the Wave 1 Start + Void template (codemod): Void rebuilds on deploy, so the exact Void-emitted Worker is qualified with the pinned Wrangler adapter (generated .void-wrangler.jsonc ignored, built-Worker harness, dependency pin). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
+      },
+      "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
+    },
+    "apps/playground/cloudflare/staff-auth.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7438",
+        "reason": "Playground staff-auth runtime fixture qualifies the exact Void-emitted Worker with the pinned Wrangler adapter (same as the generated gate); test-only, no publication. Remove with the Apps gap when cf deploy --prebuilt parity is proven."
+      },
+      "digest": "92ac9f70d750cdcea067d2eee2f6f7bc2aafb114a4b0d1c61907d2683c4b2ed0"
+    },
+    "apps/playground/package.json": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7438",
+        "reason": "Playground follows the Wave 1 Start + Void template (codemod): Void rebuilds on deploy, so the exact Void-emitted Worker is qualified with the pinned Wrangler adapter (generated .void-wrangler.jsonc ignored, built-Worker harness, dependency pin). Publication stays held; remove with the Apps gap when cf deploy --prebuilt parity is proven."
+      },
+      "digest": "1f6fc0c17236885fd25a391298f3d3c48d869ec8d057a0c47692394f921ace4b"
+    },
     "apps/shortener/cloudflare/native-built-worker.test.mjs": {
       "lines": 1,
       "uses": 1,
