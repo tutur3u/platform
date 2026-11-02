@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/download_network_consent.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/core/feature_flags/mobile_flags.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -18,14 +19,13 @@ import 'package:mobile/l10n/l10n.dart';
 class OfflinePreparationSection extends StatefulWidget {
   const OfflinePreparationSection({
     this.coordinator,
-    this.offlineStatusUiEnabled = false,
+    this.offlineStatusUiEnabled,
     this.productId,
     this.showModuleDetails = false,
     this.connectivity,
     super.key,
   });
-  // TODO(MONA-24): Inject MobileFlags.isOn(FeatureFlag.offline_status_ui).
-  final bool offlineStatusUiEnabled;
+  final bool? offlineStatusUiEnabled;
   final String? productId;
   final bool showModuleDetails;
 
@@ -120,12 +120,34 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final offlineStatusUiEnabled =
+        widget.offlineStatusUiEnabled ??
+        context.select<MobileFlags?, bool>(
+          (flags) => flags?.enabled(MobileFlag.offlineStatusUi) ?? false,
+        );
     return ValueListenableBuilder<OfflinePreparationState>(
       valueListenable: _coordinator.state,
       builder: (context, state, _) {
         final enabled = _userId != null && _workspaceId != null;
         final ids = widget.productId == null
-            ? OfflinePreparationCoordinator.productIds
+            ? [
+                ...OfflinePreparationCoordinator.productIds,
+                if (context.watch<MobileFlags?>()?.enabled(
+                      MobileFlag.offlineReadChat,
+                    ) ??
+                    false)
+                  'chat',
+                if (context.watch<MobileFlags?>()?.enabled(
+                      MobileFlag.offlineReadTimeTracker,
+                    ) ??
+                    false)
+                  'time_tracker',
+                if (context.watch<MobileFlags?>()?.enabled(
+                      MobileFlag.offlineReadHabits,
+                    ) ??
+                    false)
+                  'habits',
+              ]
             : [widget.productId!];
         final servicePaused = state.retryAt != null;
         final canDownload =
@@ -158,7 +180,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                 ),
               ],
             ),
-            if (widget.offlineStatusUiEnabled && widget.productId == null)
+            if (offlineStatusUiEnabled && widget.productId == null)
               Semantics(
                 key: const ValueKey('offline-status-summary'),
                 liveRegion: true,
@@ -188,8 +210,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
               ),
             if (!state.running &&
                 state.completed > 0 &&
-                state.completed <
-                    OfflinePreparationCoordinator.productIds.length &&
+                state.completed < ids.length &&
                 widget.productId == null)
               Align(
                 alignment: Alignment.centerLeft,
@@ -242,7 +263,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                 for (final id in ids)
                   _OfflineProductRow(
                     id: id,
-                    enhanced: widget.offlineStatusUiEnabled,
+                    enhanced: offlineStatusUiEnabled,
                     product:
                         state.products[id] ?? const OfflineProductPreparation(),
                     running: state.running || servicePaused,
@@ -301,6 +322,9 @@ class _OfflineProductRow extends StatelessWidget {
       'finance' => l10n.financeTitle,
       'inventory' => l10n.inventoryTitle,
       'tasks' => l10n.tasksTitle,
+      'time_tracker' => l10n.timerTitle,
+      'habits' => l10n.habitsTitle,
+      'chat' => l10n.chatTitle,
       _ => l10n.calendarTitle,
     };
     final legacyStatus = switch (product.status) {
@@ -319,7 +343,11 @@ class _OfflineProductRow extends StatelessWidget {
       OfflinePreparationStatus.ready => l10n.offlinePreparationReady,
       OfflinePreparationStatus.failed => l10n.offlinePreparationFailed,
       OfflinePreparationStatus.unavailable =>
-        l10n.offlinePreparationUnavailable,
+        id == 'time_tracker'
+            ? l10n.timerOfflineUnavailable
+            : id == 'habits'
+            ? l10n.habitsOfflineUnavailable
+            : l10n.offlinePreparationUnavailable,
     };
     final locale = Localizations.localeOf(context).toString();
     final preparing = product.status == OfflinePreparationStatus.downloading;
@@ -338,7 +366,11 @@ class _OfflineProductRow extends StatelessWidget {
             OfflinePreparationStatus.ready => l10n.offlineStatusReady,
             // Queued keeps its own label (waiting / needs refresh / queued).
             OfflinePreparationStatus.unavailable =>
-              l10n.offlinePreparationUnavailable,
+              id == 'time_tracker'
+                  ? l10n.timerOfflineUnavailable
+                  : id == 'habits'
+                  ? l10n.habitsOfflineUnavailable
+                  : l10n.offlinePreparationUnavailable,
             _ => legacyStatus,
           };
     final lastSuccess = product.lastSuccess;

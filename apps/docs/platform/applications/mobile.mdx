@@ -70,6 +70,37 @@ no access means absent from Home and the customization sheet),
 onboarding mode-slide cases in `test/features/onboarding/onboarding_page_test.dart`,
 and the Home order case in `dashboard_layout_cubit_test.dart`.
 
+## Offline rollout flags
+
+Mobile rollout flags default to false and are cached per account and workspace.
+The app refreshes `/api/v1/mobile/feature-flags?wsId=<workspace>` at startup,
+on login, account/workspace changes, resume, network reconnect, and every server
+`ttlSeconds` while foregrounded, clamped to 15–3600 seconds with a 30-second
+fallback when no payload is known. The boundary cases are covered by
+`mobile_flags_test.dart`. Backgrounding cancels
+polling; resume requests fresh flags. Requests use Bearer authentication
+and the cached `version` as `If-None-Match`; HTTP 304 retains the payload.
+An unreachable server keeps the last known cached values without time expiry;
+a cold cache enables nothing. Logout clears all flag snapshots for that account
+and fences late responses. Workspace snapshots remain isolated. A server kill
+applies on the next successful refresh; losing connectivity does not disable flags.
+Unknown keys are ignored. `mobile_offline` is the master switch: when false,
+every `offline_*` flag is false, including test overrides.
+
+There is zero behaviour change while flags are off for the existing explicit
+Finance, Tasks, Calendar, and Inventory downloads. These register with a null
+flag. New app preparers register once through
+`OfflinePreparationCoordinator.instance.registry.register(appKey, flagKey, preparer)`.
+The coordinator requires both the registered flag and master switch before
+running a flagged preparer. Existing permission and retention checks still apply.
+
+The web app owns `config/feature-flags.json`. From `apps/mobile`, run
+`dart tool/generate_mobile_flags.dart` when that manifest changes, then format
+the generated Dart file. The mobile manifest parity test skips explicitly while
+the manifest is absent. Reader regression coverage lives in
+`test/core/feature_flags/mobile_flags_test.dart`; registry/coordinator gating
+coverage lives in `test/core/cache/offline_preparer_registry_test.dart`.
+
 ## Shell and offline expectations
 
 Screens inherit the app shell's background and single top title/actions bar.

@@ -8257,6 +8257,12 @@ abstract class AppLocalizations {
   /// **'Habits'**
   String get habitsTitle;
 
+  /// No description provided for @habitsOfflineUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get habitsOfflineUnavailable;
+
   /// No description provided for @habitsTodayLabel.
   ///
   /// In en, this message translates to:
@@ -8436,6 +8442,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Calendar'**
   String get homeSectionCalendar;
+
+  /// No description provided for @homeNotAvailableOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get homeNotAvailableOffline;
 
   /// No description provided for @homeSectionLoadFailed.
   ///
@@ -21181,6 +21193,12 @@ abstract class AppLocalizations {
   /// **'Timer'**
   String get timerTitle;
 
+  /// No description provided for @timerOfflineUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get timerOfflineUnavailable;
+
   /// No description provided for @timerToday.
   ///
   /// In en, this message translates to:
@@ -23250,6 +23268,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Technical details'**
   String get offlineTechnicalDetails;
+
+  /// No description provided for @offlineWaitingWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for Wi-Fi'**
+  String get offlineWaitingWifi;
+
+  /// No description provided for @offlineWaitingRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to retry at {time}'**
+  String offlineWaitingRetry(String time);
+
+  /// No description provided for @offlineStatusPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing'**
+  String get offlineStatusPreparing;
+
+  /// No description provided for @offlineStatusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready offline'**
+  String get offlineStatusReady;
+
+  /// No description provided for @offlineStatusNeverSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Never synced'**
+  String get offlineStatusNeverSynced;
+
+  /// No description provided for @offlineStatusLastSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Last synced: {time}'**
+  String offlineStatusLastSynced(String time);
+
+  /// No description provided for @offlineStatusSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{ready} of {total} apps ready offline'**
+  String offlineStatusSummary(int ready, int total);
 
   /// No description provided for @mailSettingsReadingGroup.
   ///
@@ -28225,6 +28285,30 @@ abstract class AppLocalizations {
   /// **'Scrolls to this section'**
   String get mastermindInboxTierJump;
 
+  /// No description provided for @mastermindUndoWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo window'**
+  String get mastermindUndoWindow;
+
+  /// No description provided for @mastermindUndoOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get mastermindUndoOff;
+
+  /// No description provided for @mastermindUndoSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s'**
+  String mastermindUndoSeconds(int seconds);
+
+  /// No description provided for @mastermindReplySendNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Send now'**
+  String get mastermindReplySendNow;
+
   /// No description provided for @settingsPushSummary.
   ///
   /// In en, this message translates to:
@@ -28254,72 +28338,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Listen to this voice message and respond.'**
   String get assistantVoiceMessagePrompt;
-
-  /// No description provided for @offlineWaitingWifi.
-  ///
-  /// In en, this message translates to:
-  /// **'Waiting for Wi-Fi'**
-  String get offlineWaitingWifi;
-
-  /// No description provided for @offlineWaitingRetry.
-  ///
-  /// In en, this message translates to:
-  /// **'Waiting to retry at {time}'**
-  String offlineWaitingRetry(String time);
-
-  /// No description provided for @mastermindUndoWindow.
-  ///
-  /// In en, this message translates to:
-  /// **'Undo window'**
-  String get mastermindUndoWindow;
-
-  /// No description provided for @mastermindUndoOff.
-  ///
-  /// In en, this message translates to:
-  /// **'Off'**
-  String get mastermindUndoOff;
-
-  /// No description provided for @mastermindUndoSeconds.
-  ///
-  /// In en, this message translates to:
-  /// **'{seconds} s'**
-  String mastermindUndoSeconds(int seconds);
-
-  /// No description provided for @mastermindReplySendNow.
-  ///
-  /// In en, this message translates to:
-  /// **'Send now'**
-  String get mastermindReplySendNow;
-
-  /// No description provided for @offlineStatusPreparing.
-  ///
-  /// In en, this message translates to:
-  /// **'Preparing'**
-  String get offlineStatusPreparing;
-
-  /// No description provided for @offlineStatusReady.
-  ///
-  /// In en, this message translates to:
-  /// **'Ready offline'**
-  String get offlineStatusReady;
-
-  /// No description provided for @offlineStatusNeverSynced.
-  ///
-  /// In en, this message translates to:
-  /// **'Never synced'**
-  String get offlineStatusNeverSynced;
-
-  /// No description provided for @offlineStatusLastSynced.
-  ///
-  /// In en, this message translates to:
-  /// **'Last synced: {time}'**
-  String offlineStatusLastSynced(String time);
-
-  /// No description provided for @offlineStatusSummary.
-  ///
-  /// In en, this message translates to:
-  /// **'{ready} of {total} apps ready offline'**
-  String offlineStatusSummary(int ready, int total);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
