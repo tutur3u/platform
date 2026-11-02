@@ -12,6 +12,7 @@ import 'package:mobile/features/mastermind/view/mastermind_home_page.dart';
 import 'package:mobile/features/workspace/workspace_presentation.dart';
 
 import '../../../helpers/helpers.dart';
+import '../../../helpers/mastermind_home_fixture.dart';
 import '../../../helpers/mastermind_view_harness.dart';
 
 void main() {
@@ -69,14 +70,26 @@ void main() {
     expect(ready.digest, saved.digest);
   });
 
-  testWidgets('offline Home renders retained snapshot and sync time', (
+  testWidgets('cold offline Home renders prepared data and sync time', (
     tester,
   ) async {
+    h.source.bytes = snapshotBytes(homeJson());
     register(enabled: true);
     await tester.runAsync(() => registry['mastermind']!(rootWorkspaceId));
     h.source.fetcher = () async =>
         const SnapshotFetch.unavailable(SnapshotUnavailableKind.unavailable);
-    await tester.runAsync(h.snapshot.refresh);
+    final cold = MastermindSnapshotCubit(
+      source: h.source,
+      store: h.store,
+      clock: () => testNow,
+      parser: (bytes) async => parseMastermindSnapshot(bytes),
+    );
+    addTearDown(cold.close);
+    expect(cold.state, isA<MastermindSnapshotInitial>());
+    await tester.runAsync(cold.ensureLoaded);
+    final ready = cold.state as MastermindSnapshotReady;
+    expect(ready.origin, SnapshotOrigin.cache);
+    expect(ready.refreshFailure, isNotNull);
     final mobileFlags = MobileFlags(networkEvents: const Stream.empty())
       ..debugOverride = {
         MobileFlag.mobileOffline: true,
@@ -86,12 +99,16 @@ void main() {
     await tester.pumpApp(
       BlocProvider.value(
         value: mobileFlags,
-        child: h.wrap(const MastermindHomePage()),
+        child: h.wrap(
+          BlocProvider.value(value: cold, child: const MastermindHomePage()),
+        ),
       ),
     );
     await tester.pumpAndSettle();
     expect(find.textContaining('Last synced:'), findsOneWidget);
-    expect(h.snapshot.state, isA<MastermindSnapshotReady>());
+    expect(find.text('First decision'), findsOneWidget);
+    expect(find.text('Second decision'), findsOneWidget);
+    expect(cold.state, isA<MastermindSnapshotReady>());
     expect(tester.takeException(), isNull);
   });
 
