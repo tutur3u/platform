@@ -74,9 +74,14 @@ and the Home order case in `dashboard_layout_cubit_test.dart`.
 
 Mobile rollout flags default to false and are cached per account and workspace.
 The app refreshes `/api/v1/mobile/feature-flags?wsId=<workspace>` at startup,
-on resume, and after the server's `ttlSeconds`. Requests use Bearer authentication
+on login, account/workspace changes, resume, network reconnect, and every server
+`ttlSeconds` while foregrounded (currently 30 seconds). Backgrounding cancels
+polling; resume requests fresh flags. Requests use Bearer authentication
 and the cached `version` as `If-None-Match`; HTTP 304 retains the payload.
-An unreachable server keeps the last cached payload; a cold cache enables nothing.
+An unreachable server keeps the last known cached values without time expiry;
+a cold cache enables nothing. Logout clears all flag snapshots for that account
+and fences late responses. Workspace snapshots remain isolated. A server kill
+applies on the next successful refresh; losing connectivity does not disable flags.
 Unknown keys are ignored. `mobile_offline` is the master switch: when false,
 every `offline_*` flag is false, including test overrides.
 

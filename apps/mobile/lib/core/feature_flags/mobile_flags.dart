@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
@@ -27,11 +28,29 @@ class MobileFlagsState {
 
 /// Account/workspace-scoped cached flags. Network work never blocks app startup.
 class MobileFlags extends Cubit<MobileFlagsState> {
-  MobileFlags({CacheStore? cache, MobileFlagsFetch? fetch})
-    : _cache = cache ?? CacheStore.instance,
-      _api = fetch == null ? ApiClient() : null,
-      _fetch = fetch,
-      super(MobileFlagsState());
+  MobileFlags({
+    CacheStore? cache,
+    MobileFlagsFetch? fetch,
+    Stream<List<ConnectivityResult>>? networkEvents,
+  }) : _cache = cache ?? CacheStore.instance,
+       _api = fetch == null ? ApiClient() : null,
+       _fetch = fetch,
+       super(MobileFlagsState()) {
+    _networkSubscription =
+        (networkEvents ?? Connectivity().onConnectivityChanged).listen(
+          (interfaces) {
+            final connected = interfaces.any(
+              (value) => value != ConnectivityResult.none,
+            );
+            final reconnect = connected && !_connected;
+            _connected = connected;
+            if (reconnect && _foreground) unawaited(refresh());
+          },
+          onError: (Object _) {
+            // Resume and TTL polling remain available without platform events.
+          },
+        );
+  }
 
   final CacheStore _cache;
   final ApiClient? _api;
@@ -41,6 +60,21 @@ class MobileFlags extends Cubit<MobileFlagsState> {
   Map<String, dynamic>? _payload;
   Map<MobileFlag, bool>? _override;
   Timer? _timer;
+  StreamSubscription<List<ConnectivityResult>>? _networkSubscription;
+  Future<void> _clearing = Future<void>.value();
+  bool _foreground = true;
+  bool _connected = true;
+
+  void setForeground({required bool foreground}) {
+    if (_foreground == foreground) return;
+    _foreground = foreground;
+    if (foreground) {
+      unawaited(refresh());
+    } else {
+      _timer?.cancel();
+    }
+  }
+
   int _revision = 0;
   int? _refreshing;
 
@@ -57,12 +91,23 @@ class MobileFlags extends Cubit<MobileFlagsState> {
 
   Future<void> setScope({String? userId, String? workspaceId}) async {
     if (_userId == userId && _workspaceId == workspaceId) return;
+    final previousUser = _userId;
     _revision++;
     _timer?.cancel();
     _userId = userId;
     _workspaceId = workspaceId;
     _payload = null;
+    if (userId == null) {
+      _override = null;
+    }
     _publish();
+    if (userId == null && previousUser != null) {
+      _clearing = _cache.clearScope(
+        userId: previousUser,
+        namespace: 'mobile.featureFlags',
+      );
+      await _clearing;
+    }
     if (userId != null && workspaceId != null) {
       await _restore(_revision, userId, workspaceId);
     }
@@ -76,6 +121,8 @@ class MobileFlags extends Cubit<MobileFlagsState> {
 
   Future<void> _restore(int revision, String user, String workspace) async {
     try {
+      await _clearing;
+      if (!_current(revision)) return;
       final cached = await _cache.read<Map<String, dynamic>>(
         key: _key(user, workspace),
         decode: (json) => _validate(Map<String, dynamic>.from(json! as Map)),
@@ -83,6 +130,10 @@ class MobileFlags extends Cubit<MobileFlagsState> {
       if (!_current(revision)) return;
       _payload = cached.data;
       _publish();
+      if (_payload != null) {
+        // Upgrade snapshots written with the former finite retention policy.
+        await _persist(revision, user, workspace);
+      }
     } on Object {
       // An unavailable cache must not prevent a fresh request.
     }
@@ -96,6 +147,7 @@ class MobileFlags extends Cubit<MobileFlagsState> {
     final workspace = _workspaceId;
     final revision = _revision;
     if (isClosed ||
+        !_foreground ||
         user == null ||
         workspace == null ||
         _refreshing == revision) {
@@ -118,29 +170,37 @@ class MobileFlags extends Cubit<MobileFlagsState> {
       if (payload != null) {
         _payload = _validate(payload);
         _publish();
-        await _cache.write(
-          key: _key(user, workspace),
-          policy: CachePolicies.offlineCatalog,
-          payload: _payload,
-          checkScope: () {
-            if (!_current(revision)) {
-              throw StateError('Flags scope changed');
-            }
-          },
-        );
+        await _persist(revision, user, workspace);
       }
     } on Object {
       // Offline or invalid responses retain the last scoped payload.
     } finally {
       if (_refreshing == revision) _refreshing = null;
-      if (_current(revision)) {
+      if (_current(revision) && _foreground) {
         _timer = Timer(
-          Duration(seconds: _payload?['ttlSeconds'] as int? ?? 300),
+          Duration(seconds: _payload?['ttlSeconds'] as int? ?? 30),
           () => unawaited(refresh()),
         );
       }
     }
   }
+
+  Future<void> _persist(int revision, String user, String workspace) =>
+      _cache.write(
+        key: _key(user, workspace),
+        policy: const CachePolicy(
+          staleAfter: Duration.zero,
+          expireAfter: Duration.zero,
+          neverExpires: true,
+          refreshOnResume: false,
+          refreshOnReconnect: false,
+          allowBackgroundRefresh: false,
+        ),
+        payload: _payload,
+        checkScope: () {
+          if (!_current(revision)) throw StateError('Flags scope changed');
+        },
+      );
 
   static Map<String, dynamic> _validate(Map<String, dynamic> payload) {
     if (payload['version'] is! String ||
@@ -174,10 +234,11 @@ class MobileFlags extends Cubit<MobileFlagsState> {
   }
 
   @override
-  Future<void> close() {
+  Future<void> close() async {
     _revision++;
     _timer?.cancel();
+    await _networkSubscription?.cancel();
     _api?.dispose();
-    return super.close();
+    await super.close();
   }
 }
