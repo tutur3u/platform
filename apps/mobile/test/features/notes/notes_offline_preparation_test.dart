@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
@@ -7,9 +10,20 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/feature_flags/mobile_flag.dart';
+import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/notes/note_repository.dart';
 import 'package:mobile/features/notes/notes_offline_preparation.dart';
+import 'package:mobile/features/notes/notes_page.dart';
+import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
+import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../helpers/helpers.dart';
+
+class _Workspace extends Mock implements WorkspaceCubit {}
 
 class _Api extends Mock implements ApiClient {}
 
@@ -127,6 +141,78 @@ void main() {
       }
     },
   );
+  testWidgets('prepared Notes opens the real cold page offline', (
+    tester,
+  ) async {
+    FlutterSecureStorage.setMockInitialValues({});
+    SharedPreferences.setMockInitialValues({});
+    for (final channel in [
+      'com.llfbandit.app_links/events',
+      'com.llfbandit.record/messages',
+    ]) {
+      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        MethodChannel(channel),
+        (_) async => null,
+      );
+    }
+    final cache = CacheStore.instance;
+    await tester.runAsync(() async {
+      await initSupabase();
+      await supabase.auth.setInitialSession(
+        jsonEncode({
+          'access_token': 'synthetic',
+          'token_type': 'bearer',
+          'user': {
+            'id': owner,
+            'aud': 'authenticated',
+            'created_at': '2026-01-01T00:00:00Z',
+          },
+        }),
+      );
+      await cache.init();
+      await cache.clearScope();
+      await NotesOfflinePreparation(
+        api: api,
+        store: cache,
+        currentUser: () => owner,
+      ).prepare('ws');
+    });
+    addTearDown(() async {
+      await cache.closeForTesting();
+      await supabase.dispose();
+    });
+    when(
+      () => api.getJsonList(any()),
+    ).thenThrow(const SocketException('offline'));
+    final workspace = _Workspace();
+    when(() => workspace.state).thenReturn(
+      WorkspaceState(
+        currentWorkspace: Workspace.fromJson(const {
+          'id': 'ws',
+          'name': 'Test',
+        }),
+      ),
+    );
+    when(() => workspace.stream).thenAnswer((_) => const Stream.empty());
+    await tester.pumpApp(
+      BlocProvider<WorkspaceCubit>.value(
+        value: workspace,
+        child: NotesPage(
+          repository: NoteRepository(apiClient: api),
+          localAiActor: () => null,
+          localAiAuthEvents: const Stream.empty(),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Note'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    verify(() => api.getJsonList(listPath)).called(2);
+  });
   for (final oversized in [
     List.generate(201, (i) => {'id': '$i'}),
     [
