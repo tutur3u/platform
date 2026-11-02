@@ -738,6 +738,25 @@ placeholders while data is in flight.
 The create button stays disabled until the group, learner, and every slot
 (date, time, 1–480 minutes, teacher) are complete and no two slots overlap.
 
+### Student picker group scope
+
+By default the **Student** picker searches every workspace user. The workspace
+flag `tutoring_student_picker_group_only` (default OFF, owner `pax`) narrows it
+to members of the selected group, any role, through the users list's optional
+`groupId` filter. With no group selected the picker still lists every
+workspace user. While the flag is on, changing the group clears a learner
+picked for the previous group; with it off the selection is kept, as before.
+
+The flag is read from `workspace_configs` on the server when the page renders.
+Only the exact string `true` enables it; a missing row, any other value or a
+read failure keeps the workspace-wide list. Kill switch: set the config to
+`false` or delete it. The picker scope is a convenience; session writes keep
+their existing server-side learner and group checks.
+
+Regression coverage: the Contacts `tutoring-create-card.test.tsx`,
+`tutoring-people-picker.test.tsx` and `tutoring-student-picker-flag.test.ts`,
+and the users-core `routes/users/list.test.ts`.
+
 ## Tutoring teacher assignment
 
 In Contacts, a tutoring teacher is selected separately from the student's

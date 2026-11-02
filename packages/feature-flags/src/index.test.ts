@@ -3,6 +3,15 @@ import sourceRegistry from '../../../config/feature-flags.json';
 import { evaluateFlags, registry } from './index';
 
 describe('registry', () => {
+  it('registers the tutoring student picker group scope as workspace-scoped and default off', () => {
+    expect(
+      registry.find(({ key }) => key === 'tutoring_student_picker_group_only')
+    ).toMatchObject({
+      owner: 'pax',
+      scope: 'workspace',
+      default: false,
+    });
+  });
   it('matches the generated typed registry', () => {
     expect(registry).toEqual(sourceRegistry);
   });
@@ -12,7 +21,7 @@ describe('registry', () => {
     for (const flag of registry) {
       expect(flag.key).toMatch(/^[a-z]+(?:_[a-z]+)*$/);
       expect(flag.description.length).toBeGreaterThan(0);
-      expect(flag.owner).toBe('mona');
+      expect(flag.owner.length).toBeGreaterThan(0);
       expect(['read', 'write', 'ui', 'kill']).toContain(flag.class);
       expect(flag.default).toBe(false);
       expect(flag.removeBy).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -36,7 +45,9 @@ describe('evaluateFlags', () => {
     );
     overrides.mobile_offline = false;
     expect(Object.values(evaluateFlags(registry, {}, overrides))).toEqual(
-      registry.map(() => false)
+      registry.map(
+        ({ key }) => key !== 'mobile_offline' && !key.startsWith('offline_')
+      )
     );
   });
 

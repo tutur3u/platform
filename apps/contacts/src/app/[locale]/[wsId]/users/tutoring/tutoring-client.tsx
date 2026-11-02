@@ -54,9 +54,16 @@ interface Props {
   wsId: string;
   canManage: boolean;
   canConfigure: boolean;
+  /** `tutoring_student_picker_group_only`, read server-side; default OFF. */
+  studentPickerGroupOnly?: boolean;
 }
 
-export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
+export function TutoringClient({
+  wsId,
+  canManage,
+  canConfigure,
+  studentPickerGroupOnly = false,
+}: Props) {
   const t = useTranslations('ws-tutoring');
   const locale = useLocale();
   const queryClient = useQueryClient();
@@ -506,6 +513,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
               form,
               isSubmitting: createMutation.isPending,
               open: createDialogOpen,
+              studentPickerGroupOnly,
             }}
             exportQuery={sessionQuery}
             filters={filters}

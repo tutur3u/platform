@@ -3,6 +3,7 @@ import {
   getUserConfig,
   getUserWorkspaceConfig,
   linkWorkspaceUserPlatformProfile,
+  listWorkspaceBasicUsers,
   listWorkspaceUserLinkCandidates,
   repairWorkspaceUserPlatformLinks,
   TASK_DEFAULT_BOARD_ID_CONFIG_ID,
@@ -24,6 +25,46 @@ describe('users internal-api helpers', () => {
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
+  });
+
+  it('lists basic users without a group filter by default', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ count: 0, data: [] }));
+
+    await listWorkspaceBasicUsers(
+      'ws-1',
+      { from: 20, limit: 20, q: 'Ada' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    const url = new URL(fetchMock.mock.calls[0]?.[0] as string);
+    expect(url.pathname).toBe('/api/v1/workspaces/ws-1/users');
+    expect(url.searchParams.get('q')).toBe('Ada');
+    expect(url.searchParams.has('groupId')).toBe(false);
+  });
+
+  it('passes an optional group filter to the basic users route', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ count: 0, data: [] }));
+
+    await listWorkspaceBasicUsers(
+      'ws-1',
+      { groupId: '11111111-1111-4111-8111-111111111111', limit: 20 },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    const url = new URL(fetchMock.mock.calls[0]?.[0] as string);
+    expect(url.searchParams.get('groupId')).toBe(
+      '11111111-1111-4111-8111-111111111111'
+    );
   });
 
   it('saves nullable user config payloads through the stable route', async () => {

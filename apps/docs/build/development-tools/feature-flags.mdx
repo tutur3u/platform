@@ -8,6 +8,12 @@ The root `config/feature-flags.json` owns the flag inventory. Each array entry h
 `kill`), `default: false`, and `removeBy` (ISO date). The initial 16 mobile flags
 belong to `mona` and expire on `2027-01-31`.
 
+An entry may also set `scope: "workspace"`. Workspace-scoped flags are read per
+workspace from `workspace_configs` by the feature that owns them; the mobile
+endpoint lists them as inventory with their default only. For example,
+`tutoring_student_picker_group_only` (owner `pax`) limits the tutoring student
+picker to the selected group's members.
+
 ## Add a flag
 
 Name the flag in its PR, add its registry entry with default OFF, assign an owner

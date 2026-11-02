@@ -23,10 +23,13 @@ const PAGE_SIZE = 20;
 export function useWorkspacePeopleOptions({
   enabled = true,
   extraOptions,
+  groupId,
   wsId,
 }: {
   enabled?: boolean;
   extraOptions?: ComboboxOption[];
+  /** Server-side scope to one user group's members; omit for everyone. */
+  groupId?: string;
   wsId: string;
 }) {
   const [search, setSearch] = useState('');
@@ -35,10 +38,13 @@ export function useWorkspacePeopleOptions({
   const query = useInfiniteQuery({
     enabled,
     initialPageParam: 0,
-    queryKey: ['tutoring-people', wsId, debouncedSearch],
+    queryKey: groupId
+      ? ['tutoring-people', wsId, debouncedSearch, groupId]
+      : ['tutoring-people', wsId, debouncedSearch],
     queryFn: ({ pageParam }) =>
       listWorkspaceBasicUsers(wsId, {
         from: pageParam,
+        ...(groupId ? { groupId } : {}),
         limit: PAGE_SIZE,
         q: debouncedSearch || undefined,
       }),
@@ -115,6 +121,7 @@ export function WorkspacePersonPicker({
   emptyText,
   enabled,
   extraOptions,
+  groupId,
   onChange,
   placeholder,
   searchPlaceholder,
@@ -126,6 +133,7 @@ export function WorkspacePersonPicker({
   emptyText: string;
   enabled?: boolean;
   extraOptions?: ComboboxOption[];
+  groupId?: string;
   onChange: (value: string, option?: ComboboxOption) => void;
   placeholder: string;
   searchPlaceholder: string;
@@ -135,6 +143,7 @@ export function WorkspacePersonPicker({
   const { comboboxProps } = useWorkspacePeopleOptions({
     enabled,
     extraOptions,
+    groupId,
     wsId,
   });
 

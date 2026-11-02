@@ -8,6 +8,7 @@ import {
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { validateWorkspaceApiKey } from '../../lib/workspace-api-key';
 import {
   canReadWorkspaceUsers,
@@ -23,18 +24,40 @@ interface Params {
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
+const GroupIdSchema = z.string().uuid();
+
+/**
+ * Optional `groupId` narrows the list to members of one user group (any role)
+ * through the RPC's existing `included_groups` filter. Absent keeps the
+ * workspace-wide list; a malformed value is rejected rather than ignored so a
+ * caller never silently receives every workspace user.
+ */
+function parseGroupFilter(
+  searchParams: URLSearchParams
+): { ok: true; includedGroups: string[] } | { ok: false } {
+  const raw = searchParams.get('groupId');
+  if (raw === null || raw === '') return { ok: true, includedGroups: [] };
+  const parsed = GroupIdSchema.safeParse(raw);
+  return parsed.success
+    ? { ok: true, includedGroups: [parsed.data] }
+    : { ok: false };
+}
+
+const invalidGroupResponse = () =>
+  NextResponse.json({ message: 'Invalid groupId' }, { status: 400 });
 
 function buildWorkspaceUsersRpcQuery(
   sbAdmin: TypedSupabaseClient,
   wsId: string,
-  searchQuery: string
+  searchQuery: string,
+  includedGroups: string[] = []
 ) {
   return sbAdmin
     .rpc(
       'get_workspace_users',
       {
         _ws_id: wsId,
-        included_groups: [],
+        included_groups: includedGroups,
         excluded_groups: [],
         search_query: searchQuery,
         include_archived: true,
@@ -94,13 +117,21 @@ async function getDataWithApiKey(
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
   const searchParams = req.nextUrl.searchParams;
 
+  const groupFilter = parseGroupFilter(searchParams);
+  if (!groupFilter.ok) return invalidGroupResponse();
+
   const apiCheckQuery = validateWorkspaceApiKey(wsId, apiKey);
 
   const query = searchParams.get('q') || searchParams.get('query');
   const from = parseInt(searchParams.get('from') || '0', 10);
   const to = parseInt(searchParams.get('to') || '-1', 10);
   const limit = parseInt(searchParams.get('limit') || '50', 10);
-  const mainQuery = buildWorkspaceUsersRpcQuery(sbAdmin, wsId, query ?? '');
+  const mainQuery = buildWorkspaceUsersRpcQuery(
+    sbAdmin,
+    wsId,
+    query ?? '',
+    groupFilter.includedGroups
+  );
   applyPagination({ query: mainQuery, from, to, limit });
 
   const [apiCheck, response] = await Promise.all([apiCheckQuery, mainQuery]);
@@ -146,11 +177,19 @@ async function getDataFromSession(
     );
   }
   const searchParams = new URLSearchParams(req.nextUrl.search);
+  const groupFilter = parseGroupFilter(searchParams);
+  if (!groupFilter.ok) return invalidGroupResponse();
+
   const query = searchParams.get('q') || searchParams.get('query');
   const from = parseInt(searchParams.get('from') || '0', 10);
   const to = parseInt(searchParams.get('to') || '-1', 10);
   const limit = parseInt(searchParams.get('limit') || '50', 10);
-  const mainQuery = buildWorkspaceUsersRpcQuery(sbAdmin, wsId, query ?? '');
+  const mainQuery = buildWorkspaceUsersRpcQuery(
+    sbAdmin,
+    wsId,
+    query ?? '',
+    groupFilter.includedGroups
+  );
   applyPagination({ query: mainQuery, from, to, limit });
 
   const { data, count, error } = await mainQuery;

@@ -16,6 +16,10 @@ import {
   TutoringForbiddenGate,
   TutoringUnavailableGate,
 } from './tutoring-gate';
+import {
+  isTutoringStudentPickerGroupOnly,
+  TUTORING_STUDENT_PICKER_GROUP_ONLY_CONFIG_ID,
+} from './tutoring-student-picker-flag';
 
 export const metadata: Metadata = {
   title: 'Tutoring',
@@ -33,12 +37,15 @@ export default async function TutoringPage({ params }: PageProps) {
     <WorkspaceWrapper params={params}>
       {async ({ wsId, isPersonal }) => {
         const permissions = await getContactsWorkspacePermissions(wsId);
-        const configValue = permissions
-          ? await getContactsWorkspaceConfigValue(
-              wsId,
-              ENABLE_TUTORING_CONFIG_ID
-            )
-          : null;
+        const [configValue, studentPickerGroupOnlyValue] = permissions
+          ? await Promise.all([
+              getContactsWorkspaceConfigValue(wsId, ENABLE_TUTORING_CONFIG_ID),
+              getContactsWorkspaceConfigValue(
+                wsId,
+                TUTORING_STUDENT_PICKER_GROUP_ONLY_CONFIG_ID
+              ),
+            ])
+          : [null, null];
 
         const access = resolveWorkspaceFeatureAccess({
           canEnableFeature: Boolean(
@@ -76,6 +83,9 @@ export default async function TutoringPage({ params }: PageProps) {
             canManage={access.canManage}
             canConfigure={Boolean(
               permissions?.containsPermission('manage_workspace_settings')
+            )}
+            studentPickerGroupOnly={isTutoringStudentPickerGroupOnly(
+              studentPickerGroupOnlyValue
             )}
           />
         );

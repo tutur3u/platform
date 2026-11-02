@@ -68,6 +68,7 @@ interface TutoringSessionsCreateState {
   form: TutoringFormValues;
   isSubmitting: boolean;
   open: boolean;
+  studentPickerGroupOnly?: boolean;
 }
 
 interface TutoringSessionsPagination {
@@ -399,6 +400,7 @@ export function TutoringSessionsCard({
             onSubmit={actions.onCreate}
             policy={policy}
             students={students}
+            studentPickerGroupOnly={create.studentPickerGroupOnly}
             wsId={wsId}
           />
         </DialogContent>

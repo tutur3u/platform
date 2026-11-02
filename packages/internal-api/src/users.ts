@@ -680,10 +680,13 @@ export async function listWorkspaceBasicUsers(
   workspaceId: string,
   {
     from = 0,
+    groupId,
     limit = 200,
     q,
   }: {
     from?: number;
+    /** Only members of this user group; omitted lists every workspace user. */
+    groupId?: string;
     limit?: number;
     q?: string;
   } = {},
@@ -696,6 +699,7 @@ export async function listWorkspaceBasicUsers(
       cache: 'no-store',
       query: {
         from,
+        groupId,
         limit,
         q,
       },
