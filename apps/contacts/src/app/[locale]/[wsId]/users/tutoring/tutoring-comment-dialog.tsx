@@ -55,6 +55,10 @@ export function TutoringCommentDialog({
         'tutoring-queue',
       ])
         void client.invalidateQueries({ queryKey: [key, wsId] });
+      if (complete) {
+        void client.invalidateQueries({ queryKey: ['tutoring-payroll', wsId] });
+        toast.success(t('marked'));
+      }
       onClose();
     },
   });
@@ -69,7 +73,9 @@ export function TutoringCommentDialog({
         <DialogHeader>
           <DialogTitle>{t('tutor_comment')}</DialogTitle>
         </DialogHeader>
-        {save.isError ? <p role="alert">{t('comment_failed')}</p> : null}
+        {save.isError ? (
+          <p role="alert">{t(complete ? 'mark_failed' : 'comment_failed')}</p>
+        ) : null}
         {comment.isSuccess ? (
           <Textarea
             aria-label={t('tutor_comment')}
