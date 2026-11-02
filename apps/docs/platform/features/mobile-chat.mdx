@@ -622,3 +622,15 @@ These tests apply the actual migration, execute its rollback, compare the
 restored function definition, owner, settings and ACL with main, assert client
 execution denial and receipt-table absence, then re-apply it. A retained-receipt
 control requires explicit failure without losing the identity.
+
+## Optional offline preparation
+
+Mobile Chat preparation requires `mobile_offline` and `offline_read_chat`
+(default off). It retains the first 40 active conversations and the latest
+60 messages for up to 10 conversations, with a 2 MiB JSON payload cap per run.
+It uses bounded first pages without older pages or attachment bodies.
+The existing account/workspace encrypted read-through cache opens these snapshots;
+Offline settings displays preparation status and last successful sync. Disabling
+the flag removes preparation registration and preserves existing Chat reads.
+Sending is unchanged. Mira history preparation remains deferred.
+Regression coverage: `test/features/chat/chat_offline_preparation_test.dart`.
