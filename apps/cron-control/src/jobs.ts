@@ -18,6 +18,7 @@ export type ProcessorTarget =
 export type OverlapClass = 'claim-fenced' | 'handover' | 'idempotent';
 
 export type WorkerProcessorId =
+  | 'tutoring-content-rules'
   | 'checkout-expiry'
   | 'cron-history-retention'
   | 'meet-transcript-retention'
@@ -28,6 +29,7 @@ export type WorkerProcessorId =
 export const DATABASE_MAINTENANCE_RPCS: Partial<
   Record<WorkerProcessorId, string>
 > = {
+  'tutoring-content-rules': 'process_tutoring_content_rules',
   'cron-history-retention': 'prune_cron_history',
   'meet-transcript-retention': 'purge_meet_transcripts_batch',
   'storage-access-audit-retention': 'prune_storage_access_events',
@@ -79,6 +81,14 @@ function job(
 
 // Cadences preserve the live legacy owner, not the stale source catalogs.
 export const CRON_JOBS: readonly CronJob[] = Object.freeze([
+  job(
+    'tutoring-content-rules',
+    '0 6 * * *',
+    'web',
+    '/rest/v1/rpc/process_tutoring_content_rules',
+    'claim-fenced',
+    { workerProcessor: 'tutoring-content-rules', timeoutMs: 30_000 }
+  ),
   job(
     'database-cron-history-retention',
     '*/10 * * * *',
