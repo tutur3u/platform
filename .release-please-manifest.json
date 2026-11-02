@@ -69,7 +69,7 @@
   "packages/tasks-ui": "0.17.3",
   "packages/transactional": "1.1.1",
   "packages/trigger": "0.4.0",
-  "packages/turnstile": "0.2.0",
+  "packages/cloudflare": "0.2.0",
   "packages/types": "0.37.0",
   "packages/typescript-config": "0.1.2",
   "packages/ui": "0.40.0",

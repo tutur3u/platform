@@ -28,7 +28,7 @@ vi.mock('../upstash-rest', () => ({
   getUpstashRestRedisClient: mocks.rest,
   getUpstashRatelimitRedisClient: mocks.limiter,
 }));
-vi.mock('@tuturuuu/turnstile/server', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile/server', () => ({
   verifyTurnstileToken: mocks.verify,
 }));
 vi.mock('@upstash/ratelimit', () => ({

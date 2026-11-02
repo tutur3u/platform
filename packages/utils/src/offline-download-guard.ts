@@ -1,4 +1,4 @@
-import { verifyTurnstileToken } from '@tuturuuu/turnstile/server';
+import { verifyTurnstileToken } from '@tuturuuu/cloudflare/turnstile/server';
 import { Ratelimit } from '@upstash/ratelimit';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
