@@ -17,6 +17,7 @@ const protectedEnvironment = (name) => ({
   protection_rules: [
     {
       type: 'required_reviewers',
+      prevent_self_review: true,
       reviewers: [{ type: 'Team', reviewer: { id: 1 } }],
     },
   ],
@@ -62,6 +63,14 @@ for (const mode of ['web', 'native']) {
   });
 }
 for (const [name, options] of [
+  [
+    'missing prevent_self_review',
+    { mutateEnvironment: (e) => { delete e.protection_rules[0].prevent_self_review; } },
+  ],
+  [
+    'false prevent_self_review',
+    { mutateEnvironment: (e) => { e.protection_rules[0].prevent_self_review = false; } },
+  ],
   ['missing environment', { status: 404 }],
   ['API denies access', { status: 403 }],
   [

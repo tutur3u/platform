@@ -52,6 +52,7 @@ export async function preflight({ env, mode, app, fetcher = fetch }) {
       environment.protection_rules?.some(
         (rule) =>
           rule.type === 'required_reviewers' &&
+          rule.prevent_self_review === true &&
           Array.isArray(rule.reviewers) &&
           rule.reviewers.length > 0 &&
           rule.reviewers.every(
