@@ -1,5 +1,12 @@
 // @vitest-environment jsdom
+
 import { cleanup, render, screen } from '@testing-library/react';
+import {
+  canReadRoomNotes,
+  createMeetRoomSnapshot,
+  type MeetRealtimeTokenPayload,
+  type MeetRoomSnapshot,
+} from '@tuturuuu/realtime/meet';
 import { NextIntlClientProvider } from 'next-intl';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import messages from '../../../messages/en.json';
@@ -62,11 +69,7 @@ it('tells denied viewers the notes are not shared and never starts the notes que
 });
 
 it('renders the notes and transcript reader for ended meetings', () => {
-  renderSection({
-    ended: true,
-    canReadNotes: true,
-    settings: { shareNotesAfterMeeting: true },
-  });
+  renderSection({ ended: true, canReadNotes: true });
   expect(screen.getByRole('region', { name: notes.title })).toBeTruthy();
   expect(mocks.ai).toHaveBeenCalledWith('ws-1', 'meeting-1', [], false);
 });
@@ -86,8 +89,7 @@ it('gives the host the after-meeting sharing control with its current value', ()
     meetingId: 'meeting-1',
     initialEnabled: true,
   });
-  expect(screen.queryByText(notes.visibility_shared)).toBeNull();
-  expect(screen.queryByText(notes.visibility_admin)).toBeNull();
+  expect(screen.queryByText(notes.visibility_reader)).toBeNull();
 });
 
 it('omits the host sharing control when the surrounding screen already shows it', () => {
@@ -99,6 +101,44 @@ it('omits the host sharing control when the surrounding screen already shows it'
   expect(screen.getByRole('region', { name: notes.title })).toBeTruthy();
 });
 
+/**
+ * Builds the viewer policy the way production does: the room's `/room-state`
+ * answer (`apps/meet-realtime/src/room-do.ts`) returns `settings` to host
+ * tokens only, and `readMeetingRoomPolicy` may then admit a non-host reader
+ * through the workspace-admin fallback without adding settings.
+ */
+function productionPolicy({
+  role,
+  ended,
+  settings,
+  present = true,
+  workspaceAdmin = false,
+}: {
+  role: 'host' | 'speaker';
+  ended: boolean;
+  settings: { shareNotes: boolean; shareNotesAfterMeeting?: boolean };
+  present?: boolean;
+  workspaceAdmin?: boolean;
+}): MeetingNotesPolicy {
+  const snapshot: MeetRoomSnapshot = {
+    ...createMeetRoomSnapshot(),
+    ended,
+    settings,
+    presence: present
+      ? { 'user-2': {} as MeetRoomSnapshot['presence'][string] }
+      : {},
+  };
+  const token = { role, userId: 'user-2' } as MeetRealtimeTokenPayload;
+  const roomState = {
+    canReadNotes: canReadRoomNotes(snapshot, token),
+    ended,
+    ...(role === 'host' ? { settings } : {}),
+  };
+  if (roomState.canReadNotes || role === 'host' || !workspaceAdmin)
+    return roomState;
+  return { ...roomState, canReadNotes: true };
+}
+
 it.each([
   [
     'live sharing during the call',
@@ -106,49 +146,58 @@ it.each([
   ],
   [
     'sharing after the meeting',
-    { ended: true, settings: { shareNotesAfterMeeting: true } },
+    {
+      ended: true,
+      settings: { shareNotes: false, shareNotesAfterMeeting: true },
+    },
   ],
-])('explains participant access granted by %s', (_label, policy) => {
-  renderSection({ canReadNotes: true, ...policy });
-  expect(screen.getByText(notes.visibility_shared)).toBeTruthy();
-  expect(screen.queryByText(notes.visibility_admin)).toBeNull();
-});
+])(
+  'gives a participant who reads through %s neutral access text, never the admin text',
+  (_label, room) => {
+    const policy = productionPolicy({ role: 'speaker', ...room });
+    expect(policy.canReadNotes).toBe(true);
+    expect(policy.settings).toBeUndefined();
+    renderSection(policy);
+    expect(screen.queryByText(/workspace admin/i)).toBeNull();
+    expect(screen.queryByText(/only the host/i)).toBeNull();
+    expect(screen.getByText(notes.visibility_reader)).toBeTruthy();
+  }
+);
 
 it.each([
-  [
-    'a live meeting',
-    { ended: false, settings: { shareNotesAfterMeeting: true } },
-  ],
+  ['a live meeting', { ended: false, settings: { shareNotes: false } }],
   ['an ended meeting', { ended: true, settings: { shareNotes: true } }],
-  ['a room with no settings', { ended: true }],
 ])(
-  'tells workspace admins on %s why they can read notes the host did not share',
-  (_label, policy) => {
-    renderSection({ canReadNotes: true, ...policy });
-    expect(screen.getByText(notes.visibility_admin)).toBeTruthy();
-    expect(screen.queryByText(notes.visibility_shared)).toBeNull();
+  'gives a workspace admin the host did not share with on %s the same neutral text',
+  (_label, room) => {
+    const policy = productionPolicy({
+      role: 'speaker',
+      present: false,
+      workspaceAdmin: true,
+      ...room,
+    });
+    expect(policy.canReadNotes).toBe(true);
+    expect(policy.settings).toBeUndefined();
+    renderSection(policy);
+    expect(screen.getByText(notes.visibility_reader)).toBeTruthy();
     expect(screen.queryByText(/only the host/i)).toBeNull();
   }
 );
 
-it('derives the access reason from the share flag the room checks for that phase', () => {
-  expect(notesAccess({ isHost: true, policy: { ended: true } })).toBe('host');
-  expect(
-    notesAccess({
-      isHost: false,
-      policy: { ended: false, settings: { shareNotes: true } },
-    })
-  ).toBe('shared');
-  expect(
-    notesAccess({
-      isHost: false,
-      policy: { ended: true, settings: { shareNotes: true } },
-    })
-  ).toBe('workspace_admin');
-  expect(
-    notesAccess({
-      isHost: false,
-      policy: { ended: true, settings: { shareNotesAfterMeeting: true } },
-    })
-  ).toBe('shared');
+it('keeps the host on the sharing control with the production host policy', () => {
+  const policy = productionPolicy({
+    role: 'host',
+    ended: true,
+    settings: { shareNotes: false, shareNotesAfterMeeting: true },
+  });
+  renderSection(policy, { isHost: true });
+  expect(mocks.sharing.mock.calls[0]?.[0]).toMatchObject({
+    initialEnabled: true,
+  });
+  expect(screen.queryByText(notes.visibility_reader)).toBeNull();
+});
+
+it('only names the host as a reason, because non-host policies carry no share settings', () => {
+  expect(notesAccess({ isHost: true })).toBe('host');
+  expect(notesAccess({ isHost: false })).toBe('reader');
 });

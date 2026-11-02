@@ -34,7 +34,7 @@ export function MeetingNotesSection({
       wsId={wsId}
       meetingId={meetingId}
       title={title}
-      access={notesAccess({ isHost, policy })}
+      access={notesAccess({ isHost })}
       shareNotesAfterMeeting={policy.settings?.shareNotesAfterMeeting === true}
       sharingControl={sharingControl}
     />

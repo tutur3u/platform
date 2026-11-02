@@ -1,13 +1,13 @@
 'use client';
 
-import { Eye, ShieldCheck } from '@tuturuuu/icons';
+import { Eye } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
 import { NotesSharingControl } from '@/features/meeting-ai/notes-sharing-control';
 import type { NotesAccess } from './notes-access';
 
 /**
- * Hosts manage the existing room-policy share flag; everyone else sees why
- * they can read these notes.
+ * Hosts manage the existing room-policy share flag; everyone else sees a
+ * neutral note that they have access, since their policy carries no reason.
  */
 export function NotesVisibility({
   wsId,
@@ -31,12 +31,10 @@ export function NotesVisibility({
         initialEnabled={shareNotesAfterMeeting}
       />
     ) : null;
-  const shared = access === 'shared';
-  const Icon = shared ? Eye : ShieldCheck;
   return (
     <p className="flex items-start gap-2 rounded-xl border bg-muted/30 p-4 text-muted-foreground text-sm">
-      <Icon className="mt-0.5 h-4 w-4 shrink-0" />
-      {t(shared ? 'visibility_shared' : 'visibility_admin')}
+      <Eye className="mt-0.5 h-4 w-4 shrink-0" />
+      {t('visibility_reader')}
     </p>
   );
 }

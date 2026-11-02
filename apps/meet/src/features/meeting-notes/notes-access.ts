@@ -2,31 +2,22 @@
 export interface MeetingNotesPolicy {
   canReadNotes: boolean;
   ended: boolean;
+  /** Present for host tokens only; `/room-state` omits it for everyone else. */
   settings?: {
     shareNotes?: boolean;
     shareNotesAfterMeeting?: boolean;
   };
 }
 
-export type NotesAccess = 'host' | 'shared' | 'workspace_admin';
+export type NotesAccess = 'host' | 'reader';
 
 /**
- * Why a viewer the policy already allows can read the notes. The room grants
- * participants access through the live share flag during a call and the
- * after-meeting flag once it ended (`canReadRoomNotes`); any other non-host
- * reader was admitted by the workspace-admin check in `readMeetingRoomPolicy`.
- * This only picks copy and never grants access.
+ * Which access copy a viewer the policy already allows should see. The room
+ * returns share settings to hosts only, so a non-host reader's policy cannot
+ * tell host sharing apart from the workspace-admin fallback in
+ * `readMeetingRoomPolicy`; those readers get neutral copy instead of a
+ * guessed reason. This only picks copy and never grants access.
  */
-export function notesAccess({
-  isHost,
-  policy,
-}: {
-  isHost: boolean;
-  policy: Pick<MeetingNotesPolicy, 'ended' | 'settings'>;
-}): NotesAccess {
-  if (isHost) return 'host';
-  const shared = policy.ended
-    ? policy.settings?.shareNotesAfterMeeting
-    : policy.settings?.shareNotes;
-  return shared ? 'shared' : 'workspace_admin';
+export function notesAccess({ isHost }: { isHost: boolean }): NotesAccess {
+  return isHost ? 'host' : 'reader';
 }
