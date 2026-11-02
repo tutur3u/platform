@@ -60,6 +60,9 @@ export function usePlanAssignment({
   // Each request replaces the task's whole owner set, so moves of one task
   // are sent one after another: the user's last move is the last write.
   const requestChain = useRef(new Map<string, Promise<unknown>>());
+  // A sprint move still landing per task. Later owner changes of the task
+  // wait on it too, so its failure stops them as well.
+  const placements = useRef(new Map<string, Promise<unknown>>());
 
   const mutation = useMutation({
     mutationFn: ({
@@ -73,11 +76,20 @@ export function usePlanAssignment({
       previousAssignees: TaskAssignee[];
       taskId: string;
     }) => {
+      if (after) {
+        placements.current.set(taskId, after);
+        const settle = () => {
+          if (placements.current.get(taskId) === after)
+            placements.current.delete(taskId);
+        };
+        after.then(settle, settle);
+      }
+      const placement = after ?? placements.current.get(taskId);
       const previous = requestChain.current.get(taskId) ?? Promise.resolve();
       const request = previous
         .catch(() => undefined)
         .then(() =>
-          after?.catch(() => {
+          placement?.catch(() => {
             throw new PlanMoveFailed();
           })
         )
