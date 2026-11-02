@@ -133,6 +133,7 @@ export const ci = {
   'nova-cloudflare.yaml': true,
   'inventory-cloudflare.yaml': true,
   'tools-cloudflare.yaml': true,
+  'pay-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
