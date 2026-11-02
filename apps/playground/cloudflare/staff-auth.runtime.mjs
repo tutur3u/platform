@@ -235,7 +235,7 @@ test('emitted Playground verifies staff before rendering private pages', {
         assert.equal(login.pathname, '/login');
         assert.equal(
           login.searchParams.get('returnUrl'),
-          'http://' + host + target
+          `http://${host}${target}`
         );
         if (!path.includes('missing')) {
           assert.ok(
