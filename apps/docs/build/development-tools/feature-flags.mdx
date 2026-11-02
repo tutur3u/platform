@@ -1,0 +1,59 @@
+---
+title: Feature flags
+description: Default-off registry and the mobile evaluation contract.
+---
+
+The root `config/feature-flags.json` owns the flag inventory. Each array entry has
+`key` (unique snake_case), `description`, `owner`, `class` (`read`, `write`, `ui`,
+`kill`), `default: false`, and `removeBy` (ISO date). The initial 16 mobile flags
+belong to `mona` and expire on `2027-01-31`.
+
+## Add a flag
+
+Name the flag in its PR, add its registry entry with default OFF, assign an owner
+and removal date, and wire its kill switch before enabling the feature. Follow the
+[trunk-based delivery rule](/build/development-tools/git-conventions#trunk-based-delivery):
+flags default OFF; kill switch first, rollback second.
+
+Run `cd packages/feature-flags && bun run generate` after editing the JSON, then
+format the generated file with Biome and commit it. `@tuturuuu/feature-flags`
+exports `registry`, the generated `FlagKey` union, and the pure
+`evaluateFlags(registry, context, overrides?)` function. Its tests validate the
+registry and detect generated-source drift.
+
+## Mobile endpoint
+
+`GET /api/v1/mobile/feature-flags?wsId=<uuid>` accepts the existing session or
+mobile app-session authentication. Authentication failures return 401. `wsId` is
+optional; when supplied it must be a UUID (400 otherwise), and the caller must
+belong to that workspace (403 otherwise). Membership lookup failures return 500.
+
+A 200 response contains only:
+
+```json
+{
+  "version": "<sha256>",
+  "ttlSeconds": 300,
+  "flags": { "mobile_offline": false, "offline_read_notes": false }
+}
+```
+
+The example abbreviates `flags`; the response includes **every registry key**.
+`version` hashes the JSON payload `{ttlSeconds, flags}` with SHA-256, excluding
+`version` itself. `ETag` is that version in double quotes. A matching
+`If-None-Match` returns 304 with no body, after authentication and membership
+checks. Responses use `Cache-Control: private, max-age=0, must-revalidate` and
+`Vary: Authorization, Cookie`. The mobile reader polls using the 300-second TTL
+and retains the last payload on 304. No user or workspace identifiers are returned.
+
+## v0 semantics
+
+v0 returns defaults; store-backed targeting (user/%/workspace, kill switch, audit)
+replaces v0 behind the same contract. The endpoint supplies no overrides. The
+pure evaluator accepts future overrides for known keys only and applies the kill
+switch last: `mobile_offline: false` forces every `offline_` key OFF, including
+reads, writes and status UI. Context currently has no effect. This endpoint does
+not enable offline functionality or grant access to underlying data.
+
+Regression coverage lives in `packages/feature-flags/src/index.test.ts` and
+`apps/web/src/app/api/v1/mobile/feature-flags/route.test.ts`.
