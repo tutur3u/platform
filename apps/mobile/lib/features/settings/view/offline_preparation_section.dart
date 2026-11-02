@@ -137,6 +137,16 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                     ) ??
                     false)
                   'chat',
+                if (context.watch<MobileFlags?>()?.enabled(
+                      MobileFlag.offlineReadTimeTracker,
+                    ) ??
+                    false)
+                  'time_tracker',
+                if (context.watch<MobileFlags?>()?.enabled(
+                      MobileFlag.offlineReadHabits,
+                    ) ??
+                    false)
+                  'habits',
               ]
             : [widget.productId!];
         final servicePaused = state.retryAt != null;
@@ -312,6 +322,8 @@ class _OfflineProductRow extends StatelessWidget {
       'finance' => l10n.financeTitle,
       'inventory' => l10n.inventoryTitle,
       'tasks' => l10n.tasksTitle,
+      'time_tracker' => l10n.timerTitle,
+      'habits' => l10n.habitsTitle,
       'chat' => l10n.chatTitle,
       _ => l10n.calendarTitle,
     };
@@ -331,7 +343,11 @@ class _OfflineProductRow extends StatelessWidget {
       OfflinePreparationStatus.ready => l10n.offlinePreparationReady,
       OfflinePreparationStatus.failed => l10n.offlinePreparationFailed,
       OfflinePreparationStatus.unavailable =>
-        l10n.offlinePreparationUnavailable,
+        id == 'time_tracker'
+            ? l10n.timerOfflineUnavailable
+            : id == 'habits'
+            ? l10n.habitsOfflineUnavailable
+            : l10n.offlinePreparationUnavailable,
     };
     final locale = Localizations.localeOf(context).toString();
     final preparing = product.status == OfflinePreparationStatus.downloading;
@@ -350,7 +366,11 @@ class _OfflineProductRow extends StatelessWidget {
             OfflinePreparationStatus.ready => l10n.offlineStatusReady,
             // Queued keeps its own label (waiting / needs refresh / queued).
             OfflinePreparationStatus.unavailable =>
-              l10n.offlinePreparationUnavailable,
+              id == 'time_tracker'
+                  ? l10n.timerOfflineUnavailable
+                  : id == 'habits'
+                  ? l10n.habitsOfflineUnavailable
+                  : l10n.offlinePreparationUnavailable,
             _ => legacyStatus,
           };
     final lastSuccess = product.lastSuccess;

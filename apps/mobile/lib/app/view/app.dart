@@ -11,6 +11,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/config/consent_gate.dart';
 import 'package:mobile/core/feature_flags/mobile_flags.dart';
@@ -34,11 +35,13 @@ import 'package:mobile/data/repositories/education_access_repository.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/data/repositories/habits_access_repository.dart';
+import 'package:mobile/data/repositories/habits_offline_preparation.dart';
 import 'package:mobile/data/repositories/inventory_access_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
+import 'package:mobile/data/repositories/time_tracker_offline_preparation.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/version_check_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -50,12 +53,15 @@ import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/bridge/app_assistant_client_action_bridge.dart';
 import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/audience_mode/audience_mode.dart';
 import 'package:mobile/features/audience_mode/audience_mode_cubit.dart';
 import 'package:mobile/features/audience_mode/audience_mode_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/chat/data/chat_offline_preparation.dart';
+import 'package:mobile/features/classes/data/classes_today_repository.dart';
+import 'package:mobile/features/dashboard/home_offline_preparation.dart';
 import 'package:mobile/features/desktop_update/desktop_uri_receipt.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
@@ -65,6 +71,7 @@ import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/mail/data/mail_offline_preparation.dart';
 import 'package:mobile/features/mastermind/privacy/mastermind_privacy_shield.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_auth_reset.dart';
+import 'package:mobile/features/mastermind/runtime/mastermind_offline_preparation.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
@@ -98,6 +105,7 @@ import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_controller.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
+import 'package:mobile/features/time_tracker/utils/history_period.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -171,6 +179,8 @@ class _AppState extends State<App> {
   late final GoRouter _router;
   late final _AppLifecycleObserver _lifecycleObserver;
   StreamSubscription<Uri>? _appLinkSubscription;
+  StreamSubscription<MobileFlagsState>? _timeTrackerOfflineFlags;
+  StreamSubscription<MobileFlagsState>? _habitsOfflineFlags;
   MobileDeepLink? _pendingDeepLink;
   DateTime? _backgroundedAt;
 
@@ -474,6 +484,8 @@ class _AppState extends State<App> {
 
   @override
   void dispose() {
+    unawaited(_timeTrackerOfflineFlags?.cancel());
+    unawaited(_habitsOfflineFlags?.cancel());
     unawaited(_chatOfflineFlags?.cancel());
     unawaited(_mobileFlags.close());
     _unregisterAssistantActions();
@@ -575,6 +587,9 @@ class _AppState extends State<App> {
               },
             ),
             mastermindAuthResetListener(_mastermind),
+            BlocListener<MobileFlags, MobileFlagsState>(
+              listener: (_, flags) => _registerFlaggedOfflineProducts(flags),
+            ),
             BlocListener<WorkspaceCubit, WorkspaceState>(
               listenWhen: (previous, current) =>
                   previous.currentWorkspace?.id != current.currentWorkspace?.id,
