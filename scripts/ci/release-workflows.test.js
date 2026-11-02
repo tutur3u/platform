@@ -583,7 +583,7 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   assert.match(supabaseStagingWorkflow, /\n {4}branches:\n {6}- main\n/);
   assert.match(
     supabaseProductionWorkflow,
-    /deployments\?environment=\$\{environment\}&sha=\$\{target\}/
+    /deployments\?environment=\$\{environment\}&sha=\$\{source\}/
   );
   assert.match(
     supabaseProductionWorkflow,
@@ -1093,10 +1093,10 @@ test('Supabase production migration requires production platform deploy and succ
   assert.match(evaluateJob, /does not have a current success status/);
   assert.match(
     evaluateJob,
-    /deployments\?environment=\$\{environment\}&sha=\$\{target\}/
+    /deployments\?environment=\$\{environment\}&sha=\$\{source\}/
   );
-  assert.match(evaluateJob, /d\.sha === target && d\.ref === target/);
-  assert.match(evaluateJob, /p\.sha === target && p\.markerKind/);
+  assert.match(evaluateJob, /d\.sha === source && d\.ref === source/);
+  assert.match(evaluateJob, /p\.sha === source && p\.markerKind/);
   assert.match(evaluateJob, /run\.status === 'completed'/);
   assert.match(evaluateJob, /run\.conclusion === 'success'/);
   assert.match(evaluateJob, /run\.run_attempt === Number\(p\.runAttempt\)/);
