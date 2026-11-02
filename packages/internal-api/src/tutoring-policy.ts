@@ -111,7 +111,7 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
     { scope: 'all', match: 'contains', value: 'Kindergarten' },
   ],
   parentMessageTemplate: EASY_CENTER_PARENT_MESSAGE_TEMPLATE,
-  // The eight class shifts supplied by Easy Center. Shift 4 is after class.
+  // The eight class shifts supplied by a tutoring centre workspace. Shift 4 is after class.
   // Shift 1 classes meet Monday/Wednesday/Friday but tutor Wednesday/Friday.
   timeRules: [
     {
