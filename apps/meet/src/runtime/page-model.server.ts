@@ -31,11 +31,10 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getMeetTogetherPlansData } from '@tuturuuu/ui/legacy/meet/page';
+import type { getMeetTogetherPlansData } from '@tuturuuu/ui/legacy/meet/page';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { canVerifiedAccountHostMeeting } from '@tuturuuu/utils/meet-hosting';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import LoginPage from '../app/[locale]/(auth)/login/page';
 import { loadMeetingCalendarEvent } from '../app/[locale]/[wsId]/meetings/[meetingId]/meeting-calendar-event';
 import { getMeetWorkspaceContext } from '../app/[locale]/[wsId]/workspace-context';
 import { getLocale, getTranslations } from './intl-server';
@@ -261,6 +260,10 @@ function pagination(url: URL, defaultSize: number) {
 async function plansModel(
   options: Parameters<typeof getMeetTogetherPlansData>[0]
 ) {
+  // Only the plan lists need the legacy Meet Together data layer.
+  const { getMeetTogetherPlansData } = await import(
+    '@tuturuuu/ui/legacy/meet/page'
+  );
   const result = await getMeetTogetherPlansData(options);
   const user = result.user;
   return {
@@ -327,6 +330,9 @@ async function loadResolvedPageModel(url: URL) {
     } satisfies MeetPageMeta,
   };
   if (segments[0] === 'login' && segments.length === 1) {
+    const { default: LoginPage } = await import(
+      '../app/[locale]/(auth)/login/page'
+    );
     await LoginPage({
       searchParams: Promise.resolve(Object.fromEntries(url.searchParams)),
     });
