@@ -1009,7 +1009,7 @@ depends on which record pins it.
    description is `definer-rebinds sha256:…` on the exact head SHA. Never use a
    rebind for a migration that has already been applied in production: those
    bytes are history and must not change. Add a new migration instead.
-2. **SR-843 reviewed exceptions** (`scripts/ci/sql-grant-reviewed-exceptions.js`)
+2. **Reviewed exceptions** (`scripts/ci/sql-grant-reviewed-exceptions.js`)
    **and the SQL grant historical baseline** (`scripts/ci/sql-grant-guard.baseline.json`).
    CI runs these guards from the base checkout, and both lists are shrink-only.
    A pull request cannot edit, regenerate or extend them for itself, so there
