@@ -9,9 +9,10 @@ audience: users
 
 - **Asks that need you never collapse.** Urgent and Needs-a-decision asks are
   never hidden behind "Show all" or a collapsed count. Only the FYI tier collapses:
-  above 5 FYI items it shows the first 5 with "Show all (N)" and "Show less", and
-  opening the FYI tile (or `?tier=fyi`) shows the whole FYI list. Regression
-  coverage: `mastermind_inbox_tiers_test.dart`.
+  above 5 FYI items, the tier starts collapsed, showing its heading and
+  "Show all (N)"; "Show all" expands the full list and "Show less" collapses it
+  again. Opening the FYI tile (or `?tier=fyi`) shows the whole FYI list.
+  Regression coverage: `mastermind_inbox_tiers_test.dart`.
 - **Every ask, loaded as you scroll.** Each group lists every ask it holds, built lazily:
   the first 20 appear, and the next 20 load when a row within three of the end
   scrolls into reach. The bottom shows a loading indicator while a page loads, an
