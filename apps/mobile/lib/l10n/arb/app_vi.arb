@@ -6670,7 +6670,19 @@
   "settingsTelemetrySummary": "Giúp cải thiện ứng dụng",
   "settingsStorageSummary": "Quản lý dữ liệu trên thiết bị này",
   "settingsLearnMore": "Tìm hiểu thêm",
+  "assistantVoiceMessagePrompt": "Hãy nghe tin nhắn thoại này và trả lời.",
   "offlineWaitingWifi": "Đang chờ Wi-Fi",
   "offlineWaitingRetry": "Chờ thử lại lúc {time}",
-  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}}
+  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}},
+  "mastermindUndoWindow": "Thời gian hoàn tác",
+  "mastermindUndoOff": "Tắt",
+  "mastermindUndoSeconds": "{seconds} giây",
+  "mastermindReplySendNow": "Gửi ngay",
+  "@mastermindUndoSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  }
 }

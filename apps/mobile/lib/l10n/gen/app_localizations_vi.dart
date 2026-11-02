@@ -15054,10 +15054,27 @@ class AppLocalizationsVi extends AppLocalizations {
   String get settingsLearnMore => 'Tìm hiểu thêm';
 
   @override
+  String get assistantVoiceMessagePrompt => 'Hãy nghe tin nhắn thoại này và trả lời.';
+
+  @override
   String get offlineWaitingWifi => 'Đang chờ Wi-Fi';
 
   @override
   String offlineWaitingRetry(String time) {
     return 'Chờ thử lại lúc $time';
   }
+
+  @override
+  String get mastermindUndoWindow => 'Thời gian hoàn tác';
+
+  @override
+  String get mastermindUndoOff => 'Tắt';
+
+  @override
+  String mastermindUndoSeconds(int seconds) {
+    return '$seconds giây';
+  }
+
+  @override
+  String get mastermindReplySendNow => 'Gửi ngay';
 }

@@ -7196,7 +7196,19 @@
   "settingsTelemetrySummary": "Help improve the app",
   "settingsStorageSummary": "Manage data on this device",
   "settingsLearnMore": "Learn more",
+  "assistantVoiceMessagePrompt": "Listen to this voice message and respond.",
   "offlineWaitingWifi": "Waiting for Wi-Fi",
   "offlineWaitingRetry": "Waiting to retry at {time}",
-  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}}
+  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}},
+  "mastermindUndoWindow": "Undo window",
+  "mastermindUndoOff": "Off",
+  "mastermindUndoSeconds": "{seconds} s",
+  "mastermindReplySendNow": "Send now",
+  "@mastermindUndoSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  }
 }

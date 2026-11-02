@@ -7,6 +7,7 @@ import 'package:mobile/core/ui/components/app_time_picker.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/overlays/app_sheet_scaffold.dart';
 import 'package:mobile/core/ui/overlays/show_app_sheet.dart';
+import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/mastermind/catchup/catchup_settings.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -32,11 +33,23 @@ class _CatchupSettingsSheet extends StatefulWidget {
 }
 
 class _CatchupSettingsSheetState extends State<_CatchupSettingsSheet> {
+  final _repository = SettingsRepository();
+  int? _undoSeconds;
+
   MorningCatchupSettings _settings = const MorningCatchupSettings();
 
   @override
   void initState() {
     super.initState();
+    unawaited(
+      _repository.loadMastermindUndoWindow().then((_) {
+        if (mounted) {
+          setState(
+            () => _undoSeconds = _repository.mastermindUndoWindow.inSeconds,
+          );
+        }
+      }),
+    );
     unawaited(
       widget.store.read().then((value) {
         if (mounted) setState(() => _settings = value);
@@ -69,6 +82,34 @@ class _CatchupSettingsSheetState extends State<_CatchupSettingsSheet> {
           child: AppGroupedSection(
             footer: l10n.mastermindMorningCatchupSubtitle,
             children: [
+              AppGroupedRow(
+                title: Text(l10n.mastermindUndoWindow),
+                subtitle: Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final seconds
+                        in SettingsRepository.mastermindUndoChoices)
+                      ChoiceChip(
+                        label: Text(
+                          seconds == 0
+                              ? l10n.mastermindUndoOff
+                              : l10n.mastermindUndoSeconds(seconds),
+                        ),
+                        selected: _undoSeconds == seconds,
+                        onSelected: _undoSeconds == null
+                            ? null
+                            : (_) async {
+                                await _repository.setMastermindUndoWindow(
+                                  seconds,
+                                );
+                                if (mounted) {
+                                  setState(() => _undoSeconds = seconds);
+                                }
+                              },
+                      ),
+                  ],
+                ),
+              ),
               AppGroupedRow(
                 key: const ValueKey('catchup-morning-toggle'),
                 leading: const AppIconTile(icon: LucideIcons.sunrise),
