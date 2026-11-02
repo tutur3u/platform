@@ -195,6 +195,10 @@
       "component": "editor",
       "package-name": "@tuturuuu/editor"
     },
+    "packages/feature-flags": {
+      "component": "feature-flags",
+      "package-name": "@tuturuuu/feature-flags"
+    },
     "packages/finance-core": {
       "component": "finance-core",
       "package-name": "@tuturuuu/finance-core"

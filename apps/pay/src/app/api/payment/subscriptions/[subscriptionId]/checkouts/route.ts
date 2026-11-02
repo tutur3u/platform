@@ -9,18 +9,13 @@ import {
   sanitizeLogValue,
 } from '@tuturuuu/utils/log-sanitizer';
 import { type NextRequest, NextResponse } from 'next/server';
-import { PORT } from '@/constants/common';
+import { BASE_URL } from '@/constants/common';
 import { getSubscriptionTransitionSeats } from '@/lib/subscription-seats';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ subscriptionId: string }> }
 ) {
-  const BASE_URL =
-    process.env.NODE_ENV === 'development'
-      ? `http://localhost:${PORT}`
-      : 'https://tuturuuu.com';
-
   const { subscriptionId } = await params;
 
   const { wsId, productId } = await request.json();
