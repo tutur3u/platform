@@ -4383,6 +4383,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get homeSectionCalendar => 'Lịch';
 
   @override
+  String get homeNotAvailableOffline => 'Không khả dụng khi ngoại tuyến';
+
+  @override
   String get homeSectionLoadFailed => 'Kéo xuống để thử lại.';
 
   @override

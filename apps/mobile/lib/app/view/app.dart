@@ -50,12 +50,15 @@ import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/bridge/app_assistant_client_action_bridge.dart';
 import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/audience_mode/audience_mode.dart';
 import 'package:mobile/features/audience_mode/audience_mode_cubit.dart';
 import 'package:mobile/features/audience_mode/audience_mode_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
 import 'package:mobile/features/chat/data/chat_offline_preparation.dart';
+import 'package:mobile/features/classes/data/classes_today_repository.dart';
+import 'package:mobile/features/dashboard/home_offline_preparation.dart';
 import 'package:mobile/features/desktop_update/desktop_uri_receipt.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
@@ -574,6 +577,13 @@ class _AppState extends State<App> {
               },
             ),
             mastermindAuthResetListener(_mastermind),
+            BlocListener<MobileFlags, MobileFlagsState>(
+              listener: (_, flags) => registerHomeOffline(
+                OfflinePreparationCoordinator.instance.registry,
+                flags,
+                (wsId) => _prepareWithPermissions(wsId, _prepareHomeOffline),
+              ),
+            ),
             BlocListener<WorkspaceCubit, WorkspaceState>(
               listenWhen: (previous, current) =>
                   previous.currentWorkspace?.id != current.currentWorkspace?.id,

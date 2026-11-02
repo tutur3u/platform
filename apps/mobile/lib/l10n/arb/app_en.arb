@@ -2734,6 +2734,7 @@
   "homePersonalAgenda": "Agenda",
   "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
   "homeSectionCalendar": "Calendar",
+  "homeNotAvailableOffline": "Not available offline",
   "homeSectionLoadFailed": "Pull down to try again.",
   "homeSectionToday": "Today",
   "homeSectionUpNext": "Up next",

@@ -2656,6 +2656,7 @@
   "homePersonalAgenda": "Lịch trình",
   "homePersonalAgendaUnavailable": "Lịch cá nhân hiện không khả dụng.",
   "homeSectionCalendar": "Lịch",
+  "homeNotAvailableOffline": "Không khả dụng khi ngoại tuyến",
   "homeSectionLoadFailed": "Kéo xuống để thử lại.",
   "homeSectionToday": "Hôm nay",
   "homeSectionUpNext": "Sắp tới",
