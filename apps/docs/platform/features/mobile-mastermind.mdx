@@ -109,7 +109,7 @@ Mastermind is restricted to one person, the platform owner account, through the 
   the hub allowlist is separate from the grant and must name the same user.
 
 Migrations `20261030113000` and `20261030113001` grant the permission to
-nobody. Separate migration `20261030120000_grant_mastermind_owner.sql` grants only root's creator through `private.grant_mastermind_access`. Missing root, null creator, missing auth account or root MEMBER membership produces NOTICE without a grant. After seed, the database owner may idempotently run `SELECT private.grant_mastermind_root_creator();`. Production writes require explicit GO. Before this PR's production sync, Rex or Bea checks read-only that the creator exists in auth.users and is a root MEMBER, reporting names only. Rollback `20261030120000_grant_mastermind_owner.rollback.sql` uses audited revoke provenance, preserving later intentional operator grants. Missing provenance revokes nothing. Bootstrap coverage: `manage-mastermind-owner-grant.sql`; actual rollback coverage: `apps/database/scripts/mastermind-owner-rollback-test.py`.
+nobody. Separate migration `20261030120000_grant_mastermind_owner.sql` grants only root's creator through `private.grant_mastermind_access`. Missing root, null creator, missing auth account or root MEMBER membership produces NOTICE without a grant. After seed, the database owner may idempotently run `SELECT private.grant_mastermind_root_creator();`. Production writes require explicit approval. Before the production sync, an operator checks read-only that the creator exists in auth.users and is a root MEMBER. Rollback `20261030120000_grant_mastermind_owner.rollback.sql` uses audited revoke provenance, preserving later intentional operator grants. Missing provenance revokes nothing. Bootstrap coverage: `manage-mastermind-owner-grant.sql`; actual rollback coverage: `apps/database/scripts/mastermind-owner-rollback-test.py`.
 
 - **Regression coverage:** `apps/database/supabase/tests/manage-mastermind-permission.sql`
   (no role, default permission, member or creator holds it after the
@@ -979,7 +979,7 @@ preview starts on the second line; screen readers hear at most 200 characters
 of the ask on a row. The recorded answer shows "Show full answer" whenever it
 overflows four lines at the current width and text size.
 
-**Undo window (Theo, 2026-10-28).** A Home or Inbox option is one tap; the item detail selects, then sends from the sticky Send ([decision detail](/platform/features/mobile-mastermind-decision-detail)). Either shows
+**Undo window (decided 2026-10-28).** A Home or Inbox option is one tap; the item detail selects, then sends from the sticky Send ([decision detail](/platform/features/mobile-mastermind-decision-detail)). Either shows
 "Sending “option” · Undo" for 5 seconds; the reply enters the outbox only then, through the same
 `submit` and Idempotency-Key. One window per item; the other options lock
 meanwhile. Leaving the screen inside the window still sends; logout or an
