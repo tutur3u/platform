@@ -130,9 +130,7 @@ class _WindowRow extends StatelessWidget {
     final l10n = context.l10n;
     final remaining = window.remainingPercent;
     final resets = window.resetsAt;
-    final reason =
-        window.fields['remaining_percent']?.reason(l10n) ??
-        l10n.mastermindNotPublished;
+    final reason = l10n.mastermindQuotaUnreadable;
     final percent = remaining == null
         ? null
         : l10n.mastermindUnitPercent(usageNumber(remaining));

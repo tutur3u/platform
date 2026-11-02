@@ -1,5 +1,4 @@
 'use client';
-
 import { useQuery } from '@tanstack/react-query';
 import {
   CalendarDays,
@@ -23,6 +22,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { ComponentProps } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { canTranscribeMeet } from '../../meeting-ai/eligibility';
 import { showMeetingAiFailure } from '../../meeting-ai/failure-toast';
 import { useCallNotifications } from '../hooks/use-call-notifications';
 import { useMeetRoom } from '../hooks/use-meet-room';
@@ -40,6 +40,7 @@ import { getMediaErrorDiagnostic, getMediaErrorKey } from '../lib/media-error';
 import { encodeRoomCode } from '../lib/room-code';
 import { CallEnded } from './call-ended';
 import { CallExtras } from './call-extras';
+import { ConnectedLobby } from './call-lobby';
 import { CallResourceNotice } from './call-resource-notice';
 import { CallSettings } from './call-settings';
 import { type CallLayout, CallStage } from './call-stage';
@@ -49,7 +50,6 @@ import { CopyInvite } from './copy-invite';
 import { DocumentPanel } from './document-panel';
 import { CallConnectionNotice, JoinOutcome } from './join-outcome';
 import { LeaveDialog } from './leave-dialog';
-import { Lobby } from './lobby';
 import { MeetingActionHint } from './meeting-action-hint';
 import { MeetingTitle } from './meeting-title';
 import { PersonalToolsPanel } from './personal-tools-panel';
@@ -140,11 +140,11 @@ function CallShellContent({
     window.location.reload();
   };
   const sharedAudio = useSharedRoomAudio(room, joined && !left);
-  const openNoticePanel = useCallback((next: 'chat' | 'participants') => {
+  const openNoticePanel = (next: 'chat' | 'participants') => {
     setPanel(next);
     setShowPersonalTools(false);
     setShowAi(false);
-  }, []);
+  };
   const notifications = useCallNotifications(
     state,
     joined && !left,
@@ -184,9 +184,10 @@ function CallShellContent({
     wsId,
     meetingId,
     transcriptionSources,
-    !left && Object.keys(state.participants).length > 1,
+    canTranscribeMeet(left, Object.keys(state.participants).length),
     canReadNotes,
-    accountId
+    accountId,
+    { title: state.title ?? meetingName }
   );
   const recording = useRoomRecording(room, meetingId, audioStreams);
   const telemetry = useQuery({
@@ -273,10 +274,9 @@ function CallShellContent({
         setSaving(false);
       }
     );
-  }, [room.leave, ai.finish, recording.stop, aiT, flushUsage]);
-  useEffect(() => {
-    if (panel === 'chat') setLastReadChatId(newestChatId);
-  }, [panel, newestChatId]);
+  }, [room, ai, recording, aiT, flushUsage]);
+  if (panel === 'chat' && lastReadChatId !== newestChatId)
+    setLastReadChatId(newestChatId);
   useEffect(() => {
     if (state.ended || state.admission === 'denied') leaveNow();
   }, [state.ended, state.admission, leaveNow]);
@@ -308,43 +308,33 @@ function CallShellContent({
     );
   if (!joined || state.admission === 'waiting')
     return (
-      <Lobby
-        avatarUrl={defaultAvatarUrl}
+      <ConnectedLobby
+        canReadWorkspace={canReadWorkspace}
+        defaultAvatarUrl={defaultAvatarUrl}
         defaultDisplayName={defaultDisplayName}
-        connectionStatus={room.connectionStatus}
-        error={state.error}
-        onRetry={retryConnection}
-        isJoining={state.admission === 'connecting'}
+        joined={joined}
         meetingName={meetingName}
-        waiting={state.admission === 'waiting'}
-        transcriptionNotice={
-          !canReadNotes && !canReadWorkspace
-            ? t('guest_transcription_notice')
-            : ai.data?.sessions.some((session) => !session.ended_at)
-              ? aiT('join_notice')
-              : undefined
-        }
+        onJoined={() => setJoined(true)}
         onLeave={() => {
           room.leave();
           router.push(backHref);
         }}
-        onJoin={({ audioEnabled, videoEnabled, previewStream }) => {
-          const enableMicrophone = sharedAudio.prepareJoin(audioEnabled);
-          setJoined(true);
-          void room
-            .adoptPreview(previewStream)
-            .then(() =>
-              Promise.all([
-                ...(enableMicrophone
-                  ? [runMediaAction(room.toggleMicrophone, 'microphone')]
-                  : []),
-                ...(videoEnabled
-                  ? [runMediaAction(room.toggleCamera, 'camera')]
-                  : []),
-              ])
-            )
-            .catch(() => toast.error(t('media_failed')));
-        }}
+        onOutputDeviceChange={setOutputDeviceId}
+        onRetry={retryConnection}
+        outputDeviceId={outputDeviceId}
+        participants={others}
+        prepareJoin={sharedAudio.prepareJoin}
+        room={room}
+        runMediaAction={runMediaAction}
+        transcriptionNotice={
+          !canReadNotes && !canReadWorkspace
+            ? t('guest_transcription_notice')
+            : ai.data?.sessions.some(
+                  (session: { ended_at: string | null }) => !session.ended_at
+                )
+              ? aiT('join_notice')
+              : undefined
+        }
       />
     );
 
@@ -358,14 +348,13 @@ function CallShellContent({
           onSaved={room.renameMeeting}
         />
         {participants.length === 1 && !state.liveAssistant && (
-          <span
-            role="status"
+          <output
             className="inline-flex items-center gap-1.5 rounded-full border bg-muted/40 px-2.5 py-1 text-muted-foreground text-xs"
             title={t('solo_hint')}
           >
             <Leaf className="size-3.5" />
             {t('solo_mode')}
-          </span>
+          </output>
         )}
         {canReadNotes && (
           <MeetingActionHint label={aiT('title')}>
@@ -442,10 +431,7 @@ function CallShellContent({
         <RoomCountdown expiresAt={state.roomExpiresAt} />
       </header>
       {canManage && state.waiting.length > 0 && (
-        <div
-          role="status"
-          className="flex items-center justify-between gap-3 border-b bg-muted/40 px-3 py-2"
-        >
+        <output className="flex items-center justify-between gap-3 border-b bg-muted/40 px-3 py-2">
           <span className="text-sm">
             {t('waiting_room', { count: state.waiting.length })}
           </span>
@@ -465,7 +451,7 @@ function CallShellContent({
               {t('participants', { count: participants.length })}
             </Button>
           </MeetingActionHint>
-        </div>
+        </output>
       )}
       <CallResourceNotice error={state.error} />
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">

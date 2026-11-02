@@ -52,12 +52,11 @@ const mocks = vi.hoisted(() => {
       }
 
       if (table === 'workspace_roles') {
+        const query: Record<string, unknown> = {};
+        query.eq = vi.fn(() => query);
+        query.in = roleIn;
         return {
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              in: roleIn,
-            })),
-          })),
+          select: vi.fn(() => query),
         };
       }
 
@@ -233,7 +232,9 @@ describe('workspace members invite route', () => {
       error: null,
     });
     mocks.roleIn.mockResolvedValue({
-      data: [{ id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' }],
+      data: [
+        { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', ws_id: 'canonical-ws' },
+      ],
       error: null,
     });
   });
@@ -289,7 +290,7 @@ describe('workspace members invite route', () => {
       'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
     ];
     mocks.roleIn.mockResolvedValue({
-      data: roleIds.map((id) => ({ id })),
+      data: roleIds.map((id) => ({ id, ws_id: 'canonical-ws' })),
       error: null,
     });
     const response = await postInvite({

@@ -2,6 +2,7 @@
 title: "Mobile Workspace Tools"
 description: "Shared mobile navigation, tablet layouts, caching, and workspace application behavior."
 updatedAt: 2026-10-03
+audience: users
 ---
 
 ## Overview
@@ -236,6 +237,19 @@ bubbles must not install a competing native text-selection long-press recognizer
 Other standalone markdown views remain selectable.
 
 ## Responsive Loading And Cache Verification
+
+### Push token registration and notification permission
+
+The mobile app creates and registers a push (FCM) device token only while the
+operating-system notification permission is authorized or provisional. Firebase
+Messaging auto-init is disabled in the Android manifest and iOS `Info.plist`, so
+the SDK creates no token before permission is granted. The app enables auto-init
+after permission is granted. A token refresh is sent to the server only while
+permission is still granted. If permission is later revoked, the next
+registration sync disables auto-init and deletes the local token. If deletion
+fails, later unauthorized syncs retry until deletion succeeds. Sign-out still
+unregisters the device. Regression coverage:
+`push_token_permission_gate_test.dart`.
 
 ### Device task and calendar reminders
 
@@ -2197,3 +2211,63 @@ remains with the route. Regression coverage:
 `packages/utils/src/__tests__/request-whiteboard-bounds.test.ts`,
 `apps/database/supabase/tests/description-table-hardening.sql`, and
 `apps/database/supabase/tests/readiness-whiteboard-contracts.sql`.
+
+## Mobile feature-flag evaluation
+
+The mobile flag reader uses the authenticated
+[`GET /api/v1/mobile/feature-flags`](/build/development-tools/feature-flags)
+contract. Its initial 16 flags default OFF for every user and workspace. When the
+reader gates an offline capability, `mobile_offline` must be ON along with its
+individual `offline_` flag; the master switch forces reads, writes and status UI
+OFF. The v0 endpoint returns registry defaults without targeting or overrides.
+This registry does not change authorization or existing offline implementations
+that have not adopted the reader. Workspace context requires membership, and
+conditional responses perform the same access checks as full responses. The TTL
+is 30 seconds; the browser response is private and requires revalidation, and
+shared/CDN output caching is disabled. Identity comes only from the authenticated
+session, never a query parameter.
+
+Regression evidence: `packages/feature-flags/src/index.test.ts` covers defaults
+and the master switch; the colocated mobile feature-flags route tests cover
+session authentication, membership, invalid IDs and conditional responses.
+
+### Notes offline preparation
+
+With both `mobile_offline` and `offline_read_notes` enabled (default OFF),
+explicit preparation stores the inbox and archive using the existing Notes
+screen cache keys. The list endpoint includes note bodies; at most 200 notes
+and 1 MiB combined across both tabs are retained. Larger responses publish no
+new snapshot and show the existing localized unavailable preparation state.
+Existing pending-edit overlays and flag-OFF reads are unchanged. The Offline
+screen supplies last-synced status. Regression:
+`notes_offline_preparation_test.dart` opens the real cold page offline and checks both tab keys.
+
+### Documents offline list preparation
+
+With both `mobile_offline` and `offline_read_documents` enabled (default OFF),
+explicit preparation stores the default first page (30 rows) in the same
+`documents.list` cache read by Documents. It retains only id, name, visibility,
+and creation date; document bodies and files are excluded. Responses exceeding
+200 rows or 1 MiB are unavailable and publish no new snapshot. Search and later
+pages retain their own cached responses; preparation preserves them. Existing list behavior is unchanged
+with the flag OFF. The Offline screen supplies localized availability and
+last-synced status. Regression: `documents_offline_preparation_test.dart`.
+
+## Habits offline preparation
+
+With `mobile_offline` and `offline_read_habits` enabled (default off),
+the mobile download prepares the complete self tracker list and its detail
+responses used by the Habits screen. Each response list is capped at 200 items
+and the complete download at 1 MiB. All responses are checked before publication;
+an exceeded budget shows “Not available offline” rather than a truncated list.
+The existing read-through cache supplies stored responses and the Offline settings
+row supplies the last successful synchronization time. Other scopes are unchanged.
+Regression coverage: `habits_offline_preparation_test.dart`.
+
+The Habits download also publishes the self `habits.workspace` snapshot through
+the screen's authorization and account-revision fences. Cold list, first detail
+and activity reads retain that authorized snapshot when fresh transport fails;
+fresh reads still require authorization and a definitive 401/403 revokes it.
+Retention checks include the published workspace snapshot. Regression coverage
+opens the real cold `HabitsCubit` after preparation with transport denied and
+checks entries, definitive denial, and revocation during download.

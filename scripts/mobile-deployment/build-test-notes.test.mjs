@@ -305,6 +305,7 @@ for (const deferral of ['metadata', 'unsafe reviewer', 'pending', 'history']) {
       await distributeTestFlightBuild(apple, 'app', 'build', {
         enabled: 'true',
         groups: 'all',
+        externalGroups: 'external',
         loadTestNotes: async () => {
           if (deferral === 'history')
             throw new BetaHistoryUnavailableError('Source mismatch');

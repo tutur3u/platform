@@ -24,6 +24,7 @@ test('security-sensitive paths require review by category', () => {
     ['scripts/ci/check-workflow-config.ts', 'ci'],
     ['tuturuuu.ci.ts', 'ci'],
     ['scripts/git-sync.js', 'ci'],
+    ['scripts/check-migration-timestamps.js', 'ci'],
     ['packages/auth/src/session.ts', 'auth'],
     ['apps/web/src/app/api/auth/callback/route.ts', 'auth'],
     ['apps/web/src/lib/sso/redirect.ts', 'auth'],

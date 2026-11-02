@@ -104,32 +104,72 @@ export function testFlightReady(build, betaDetail) {
   );
 }
 
-export function selectBetaGroups(groups, enabled, configuredGroups) {
+export function selectBetaGroups(
+  groups,
+  enabled,
+  configuredGroups = '',
+  externalGroups = ''
+) {
   if (enabled === 'false') return [];
   if (enabled !== 'true') {
     throw new Error('TESTFLIGHT_BETA_ENABLED must be true or false');
   }
+  const externalNames = externalGroups
+    .split(',')
+    .map((name) => name.trim())
+    .filter(Boolean);
+  if (externalNames.some((name) => name.toLowerCase() === 'all')) {
+    throw new Error(
+      'TESTFLIGHT_EXTERNAL_BETA_GROUPS must name exact groups; all is forbidden'
+    );
+  }
+  const internal = groups.filter(
+    (group) => group.attributes?.isInternalGroup === true
+  );
+  const external = groups.filter(
+    (group) => group.attributes?.isInternalGroup === false
+  );
   const names = configuredGroups.trim();
-  if (!names || names === 'all') return groups;
-  const selected = new Set(
-    names
+  if (names && names !== 'all') {
+    for (const name of names
       .split(',')
-      .map((name) => name.trim())
-      .filter(Boolean)
-  );
-  const matches = groups.filter(
-    (group) => selected.has(group.id) || selected.has(group.attributes?.name)
-  );
-  for (const name of selected) {
-    if (
-      !matches.some(
-        (group) => group.id === name || group.attributes?.name === name
+      .map((value) => value.trim())
+      .filter(Boolean)) {
+      if (
+        !groups.some((group) =>
+          [group.id, group.attributes?.name].includes(name)
+        )
       )
-    ) {
-      throw new Error(`Unknown TestFlight beta group: ${name}`);
+        throw new Error(`Unknown TestFlight beta group: ${name}`);
     }
   }
-  return matches;
+  const internalSelection =
+    !names || names === 'all'
+      ? internal
+      : internal.filter((group) =>
+          names
+            .split(',')
+            .some((name) =>
+              [group.id, group.attributes?.name].includes(name.trim())
+            )
+        );
+  for (const name of externalNames) {
+    if (
+      !external.some((group) =>
+        [group.id, group.attributes?.name].includes(name)
+      )
+    ) {
+      throw new Error(`Unknown external TestFlight beta group: ${name}`);
+    }
+  }
+  return [
+    ...internalSelection,
+    ...external.filter((group) =>
+      externalNames.some((name) =>
+        [group.id, group.attributes?.name].includes(name)
+      )
+    ),
+  ];
 }
 
 async function listAppleResources(apple, path) {
@@ -165,7 +205,12 @@ export async function distributeTestFlightBuild(apple, appId, buildId, config) {
     apple,
     `/v1/apps/${appId}/betaGroups?limit=200`
   );
-  const selected = selectBetaGroups(groups, config.enabled, config.groups);
+  const selected = selectBetaGroups(
+    groups,
+    config.enabled,
+    config.groups,
+    config.externalGroups
+  );
   if (selected.length === 0) {
     throw new Error('No TestFlight beta groups are available for this app');
   }
@@ -423,11 +468,17 @@ export async function expireSupersededTestFlightBuilds(apple, appId) {
 
 export async function retryDeferredTestFlightReview(apple, appId, config) {
   if (config.enabled === 'false') return 'disabled';
+  if (!config.externalGroups?.trim()) return 'no-external-groups';
   const groups = await listAppleResources(
     apple,
     `/v1/apps/${appId}/betaGroups?limit=200`
   );
-  const selected = selectBetaGroups(groups, config.enabled, config.groups);
+  const selected = selectBetaGroups(
+    groups,
+    config.enabled,
+    config.groups,
+    config.externalGroups
+  );
   if (!selected.some((group) => group.attributes?.isInternalGroup === false)) {
     return 'no-external-groups';
   }
@@ -546,7 +597,8 @@ async function connectApple() {
 function betaDistributionConfig(expectedBuildNumber) {
   return {
     enabled: process.env.TESTFLIGHT_BETA_ENABLED ?? 'true',
-    groups: process.env.TESTFLIGHT_BETA_GROUPS ?? 'all',
+    groups: process.env.TESTFLIGHT_BETA_GROUPS ?? '',
+    externalGroups: process.env.TESTFLIGHT_EXTERNAL_BETA_GROUPS ?? '',
     loadTestNotes: async (apple, buildId) => {
       const resource = await apple(
         `/v1/builds/${buildId}?include=preReleaseVersion`
@@ -620,12 +672,12 @@ export async function verifyTestFlight(buildNumber) {
     'TestFlight is not available for internal testing after 30 minutes. Check processing, export compliance, and automatic distribution to the existing internal tester group.'
   );
 }
-
 export async function retryLatestTestFlightReview() {
+  const config = betaDistributionConfig();
+  if (!config.externalGroups.trim()) return 'no-external-groups';
   const { apple, appId } = await connectApple();
-  return retryDeferredTestFlightReview(apple, appId, betaDistributionConfig());
+  return retryDeferredTestFlightReview(apple, appId, config);
 }
-
 if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href

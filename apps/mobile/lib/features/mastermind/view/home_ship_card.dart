@@ -4,11 +4,11 @@ import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/components/app_badge.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
-import 'package:mobile/features/mastermind/presentation/age_text.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_time_label.dart';
 import 'package:mobile/features/mastermind/view/widgets/reported_text.dart';
 import 'package:mobile/features/mastermind/view/widgets/show_all_row.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -69,9 +69,9 @@ class HomeShipCard extends StatelessWidget {
             subtitle: _stacked([
               if (shared == null && release.ageBasis != AgeBasis.unknown)
                 Text(MastermindLabels.ageBasis(l10n, release.ageBasis)),
-              if (large) _liveAge(l10n, release),
+              if (large) _liveAge(l10n, release, model.generatedAt),
             ]),
-            trailing: large ? null : _liveAge(l10n, release),
+            trailing: large ? null : _liveAge(l10n, release, model.generatedAt),
           ),
         if (model.releaseCount > model.releases.length)
           MastermindShowAllRow(
@@ -88,14 +88,16 @@ Widget _needsAttention(AppLocalizations l10n) => AppBadge(
   child: Text(l10n.mastermindNeedsAttention),
 );
 
-/// "Live 1 h ago", or `—` when the release has no age.
-Widget _liveAge(AppLocalizations l10n, ProductRelease release) => ReportedText(
-  release.prodAgeSeconds == null
-      ? null
-      : l10n.mastermindLiveAgo(
-          mastermindAgeText(l10n, Duration(seconds: release.prodAgeSeconds!)),
-        ),
-);
+/// "Live 1h" with the clock, or `—` when the release has no age. The age is
+/// the hub's, counted from the snapshot's own time [asOf].
+Widget _liveAge(AppLocalizations l10n, ProductRelease release, DateTime asOf) {
+  final age = release.prodAgeSeconds;
+  if (age == null) return const ReportedText(null);
+  return MastermindTimeLabel(
+    asOf.subtract(Duration(seconds: age)),
+    sentence: l10n.mastermindLiveAgo,
+  );
+}
 
 /// A subtitle of zero or more lines; null when there is nothing to show.
 Widget? _stacked(List<Widget> lines) => switch (lines) {

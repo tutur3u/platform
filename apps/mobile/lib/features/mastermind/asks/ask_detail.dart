@@ -1,3 +1,5 @@
+import 'package:mobile/features/mastermind/asks/ask_v2_fields.dart';
+import 'package:mobile/features/mastermind/asks/ask_v2_support.dart';
 import 'package:mobile/features/mastermind/model/enums.dart';
 
 /// What the person is asked to do to settle an ask.
@@ -68,6 +70,20 @@ final class AskDetail {
     this.risk,
     this.links = const [],
     this.answeredVia,
+    this.body,
+    this.kind,
+    this.state,
+    this.status,
+    this.askTruncated,
+    this.textComplete,
+    this.optionsV2 = const [],
+    this.recommendedId,
+    this.recommendedWhy,
+    this.inboxClass,
+    this.inboxUrgency,
+    this.riskClass,
+    this.updatedAt,
+    this.resolvedVia,
   });
 
   final String id;
@@ -91,6 +107,26 @@ final class AskDetail {
   final String? risk;
   final List<AskLink> links;
   final AskAnsweredVia? answeredVia;
+
+  // ask-v2 (all optional; see `ask_card.dart` for how they are normalized).
+  final String? body;
+  final ItemKind? kind;
+  final ItemState? state;
+  final AskStatus? status;
+  final bool? askTruncated;
+  final bool? textComplete;
+
+  /// `options_v2`; empty when absent or unusable (one bad entry voids it).
+  final List<AskOption> optionsV2;
+  final String? recommendedId;
+  final String? recommendedWhy;
+  final AskInboxClass? inboxClass;
+
+  /// The hub's `now|today|soon|whenever`; distinct from [urgency].
+  final AskInboxUrgency? inboxUrgency;
+  final AskRiskClass? riskClass;
+  final DateTime? updatedAt;
+  final AskResolvedVia? resolvedVia;
 
   /// The option applied when nobody answers; null when absent or invalid.
   String? get defaultOption {
@@ -120,6 +156,7 @@ AskDetail? parseAskDetail(Object? json) {
     return null;
   }
   final options = _options(json['options']);
+  final v2 = AskV2Fields.read(json);
   final blocks = json['blocks_count'];
   final via = json['answered_via'];
   return AskDetail(
@@ -133,7 +170,7 @@ AskDetail? parseAskDetail(Object? json) {
     defaultOptionIndex: _index(json['default_option_index'], options),
     urgency: AskUrgency.fromWire(json['urgency']),
     deadline: AskDeadline.fromWire(json['deadline']),
-    deadlineAt: _time(json['deadline_at']),
+    deadlineAt: v2.deadlineAt,
     reversible: json['reversible'] is bool ? json['reversible'] as bool : null,
     category: _text(json['category'], _maxLabel),
     blocksCount: blocks is int && blocks >= 0 ? blocks : null,
@@ -151,8 +188,24 @@ AskDetail? parseAskDetail(Object? json) {
         ? _enum(AskAnsweredVia.values, via, (v) => v.wireName) ??
               AskAnsweredVia.elsewhere
         : null,
+    body: _text(json['body'], _maxAskText),
+    kind: _enum(ItemKind.values, json['kind'], (v) => v.wireName),
+    state: _enum(ItemState.values, json['state'], (v) => v.wireName),
+    status: v2.status,
+    askTruncated: _flag(json['ask_truncated']),
+    textComplete: v2.textComplete,
+    optionsV2: v2.optionsV2,
+    recommendedId: v2.recommendedId,
+    recommendedWhy: v2.recommendedWhy,
+    inboxClass: v2.inboxClass,
+    inboxUrgency: v2.inboxUrgency,
+    riskClass: v2.riskClass,
+    updatedAt: v2.updatedAt,
+    resolvedVia: v2.resolvedVia,
   );
 }
+
+bool? _flag(Object? value) => value is bool ? value : null;
 
 T? _enum<T>(List<T> values, Object? wire, String Function(T) name) {
   for (final value in values) {

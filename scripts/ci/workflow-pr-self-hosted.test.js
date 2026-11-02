@@ -303,8 +303,16 @@ test('unit-test consumers accept exactly one successful shard variant', () => {
         },
       }
     );
-  for (const id of ['coverage-shards', 'coverage-result', 'build']) {
-    const expression = jobs[id].steps[0].env.TEST_RESULT;
+  const resultSteps = {
+    'coverage-shards': 'Require shared test execution',
+    'coverage-result': 'Require tests and coverage upload',
+    build: 'Require every unit-test shard',
+  };
+  for (const [id, name] of Object.entries(resultSteps)) {
+    const step = jobs[id].steps.find((step) => step.name === name);
+    assert.ok(step, id);
+    const expression = step.env?.TEST_RESULT;
+    assert.equal(typeof expression, 'string', id);
     assert.ok(!expression.includes('secrets'));
     for (const result of ['success', 'failure', 'cancelled']) {
       assert.equal(resultOf(expression, 'skipped', result), result, id);

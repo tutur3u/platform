@@ -112,10 +112,10 @@ jobs:
     permissions:
       contents: read
     env:
-      CARGO_BUILD_JOBS: "2"
-      CARGO_HTTP_MULTIPLEXING: "false"
-      CARGO_NET_RETRY: "10"
-      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_BUILD_JOBS: '2'
+      CARGO_HTTP_MULTIPLEXING: 'false'
+      CARGO_NET_RETRY: '10'
+      CARGO_PROFILE_TEST_DEBUG: '0'
     defaults:
       run:
         working-directory: ./apps/backend
@@ -140,7 +140,7 @@ jobs:
       - name: Setup repository minimum Rust toolchain
         uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # verified stable implementation
         with:
-          toolchain: "1.95.0"
+          toolchain: '1.95.0'
           components: clippy, rustfmt
           targets: wasm32-unknown-unknown
 
@@ -186,8 +186,8 @@ jobs:
       SUPABASE_SECRET_KEY: sb_secret_ci_placeholder
 
       # Configure infrastructure
-      PROXY_API_KEY: ${{ github.event_name != 'pull_request' && secrets.PROXY_API_KEY || '' }}
-      NEXT_PUBLIC_PROXY_API_KEY: ${{ github.event_name != 'pull_request' && secrets.NEXT_PUBLIC_PROXY_API_KEY || '' }}
+      PROXY_API_KEY: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && secrets.PROXY_API_KEY || '' }}
+      NEXT_PUBLIC_PROXY_API_KEY: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && secrets.NEXT_PUBLIC_PROXY_API_KEY || '' }}
 
     steps:
       - name: Check out code
@@ -350,7 +350,7 @@ jobs:
     if: ${{ (needs.changes.outputs.code == 'true' && !cancelled() && needs.coverage-check-ci.result == 'success' && needs.coverage-check-ci.outputs.should_run == 'true' && needs.coverage-check-ci.outputs.run_checks == 'true' && ((needs.test-shards.result == 'success' && needs.test-shards-pr.result == 'skipped') || (needs.test-shards-pr.result == 'success' && needs.test-shards.result == 'skipped'))) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')) }}
     uses: ./.github/workflows/codecov.yaml
     secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      CODECOV_TOKEN: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')) && secrets.CODECOV_TOKEN || '' }}
 
   coverage-result:
     name: Run tests and collect coverage

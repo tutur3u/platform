@@ -2,6 +2,7 @@
 title: Incoming Mail notifications
 updatedAt: '2026-10-12'
 description: Event admission, recipient privacy, deduplication, and verification boundaries for mobile Mail.
+audience: developers
 ---
 
 ## Admission and defaults
@@ -52,7 +53,7 @@ Delivery continues through the existing immediate queue and Firebase device
 registry. The recovery processor preserves its bounded retry and expiry limits.
 A persisted `delivery_in_flight` marker fences a lost provider response as
 `delivery_outcome_unknown`; it requires operator reconciliation, not automatic
-replay. See the [explicit selection budget](/build/devops/cloudflare-cron-control#explicit-immediate-selection-budget).
+replay. See the explicit selection budget.
 No new scheduler or dispatch service is introduced.
 
 ## Push previews and opening

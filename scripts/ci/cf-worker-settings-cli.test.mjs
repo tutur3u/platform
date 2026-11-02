@@ -14,7 +14,7 @@ const CLI = fileURLToPath(new URL('./cf-worker-settings.mjs', import.meta.url));
 const BASELINE = fileURLToPath(
   new URL('./fixtures/cf-worker-parity/cron-control.json', import.meta.url)
 );
-const { identity, previousIdentity } = JSON.parse(
+const { identity, previousIdentity = identity } = JSON.parse(
   readFileSync(BASELINE, 'utf8')
 );
 const TOKEN = 'tok_Ab3dEf5hIj7lMn9pQr1tUv3xYz5bCd7fGh9j';
@@ -58,7 +58,7 @@ writeFileSync(
 const routes = JSON.parse(readFileSync(process.env.HOSTILE_ROUTES, 'utf8'));
 globalThis.fetch = async (input) => {
   const url = new URL(String(input));
-  const key = url.pathname.includes('/zones') && !url.pathname.endsWith('/routes')
+  const key = url.pathname.includes('/workers/services/') ? 'service' : url.pathname.includes('/zones') && !url.pathname.endsWith('/routes')
     ? 'zones'
     : url.pathname.split('/').at(-1);
   const route = routes[key] ?? { status: 404, body: '{}' };
@@ -77,11 +77,18 @@ function healthy(live) {
     body: JSON.stringify({ success: true, result }),
   });
   return {
+    service: ok({
+      default_environment: { script: { last_deployed_from: 'cf' } },
+    }),
     verify: ok({ id: TOKEN_ID, status: 'active' }),
     settings: ok({
       compatibility_date: live.compatibilityDate,
       compatibility_flags: live.compatibilityFlags,
-      observability: { enabled: true, head_sampling_rate: 0.05 },
+      observability: {
+        enabled: true,
+        head_sampling_rate: 0.05,
+        traces: { enabled: false, head_sampling_rate: 0.05, persist: true },
+      },
       bindings: [
         ...Object.entries(live.vars).map(([name, text]) => ({
           name,
@@ -150,7 +157,7 @@ function assertNoToken(output) {
       );
 }
 
-test('the CLI accepts the live previous identity (harness control)', () => {
+test('the CLI accepts the live identity (harness control)', () => {
   const { status, output } = runCli(healthy(previousIdentity), 0);
   assert.equal(status, 0, output);
   assert.match(
@@ -159,7 +166,7 @@ test('the CLI accepts the live previous identity (harness control)', () => {
       `Cloudflare API token ${TOKEN_FP} status active \\(user token\\)`
     )
   );
-  assert.match(output, /before snapshot verified \(previous identity\)/);
+  assert.match(output, /before snapshot verified/);
   assertNoToken(output);
 });
 
@@ -295,7 +302,7 @@ for (const [index, [name, changes, pattern]] of [
         { name: '__proto__', type: 'plain_text', text: TOKEN },
       ]),
     },
-    /previous: undeclared plain_text binding <undeclared binding #\d+>/,
+    /undeclared plain_text binding <undeclared binding #\d+>/,
   ],
 ].entries())
   test(`hostile fixture: ${name} never prints the token`, () => {

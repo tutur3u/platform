@@ -49,4 +49,24 @@ describe('DialogContent presentation', () => {
     expect(dialog).toHaveClass('shadow-none');
     expect(className).not.toMatch(/animate-in|fade-in|zoom-in|slide-in/);
   });
+
+  it('docks panel content to the right edge without an overlay when non-modal', () => {
+    render(
+      <Dialog open modal={false}>
+        <DialogContent presentation="panel">
+          <DialogTitle>Task panel</DialogTitle>
+        </DialogContent>
+      </Dialog>
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Task panel' });
+
+    expect(dialog).toHaveAttribute('data-presentation', 'panel');
+    expect(dialog).toHaveClass('fixed', 'inset-y-0', 'right-0', 'h-dvh');
+    expect(dialog).toHaveClass('border-l', 'sm:w-[28rem]');
+    expect(dialog.getAttribute('class')).not.toContain('top-[50%]');
+    expect(
+      document.querySelector('[data-slot="dialog-overlay"]')
+    ).not.toBeInTheDocument();
+  });
 });

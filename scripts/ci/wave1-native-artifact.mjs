@@ -105,6 +105,7 @@ export function prepare(appRoot, app, environment, subdomain, sha) {
   assert.ok(!existsSync(config), 'Publication profile already exists');
   mkdirSync(dirname(config), { recursive: true });
   const declared = publicationConfig(base, profile, {
+    sourceSha: sha,
     main: relative(dirname(config), main),
     assets: relative(dirname(config), assets),
   });
@@ -138,7 +139,9 @@ export function verify(appRoot, app, environment, sha) {
   assert.equal(receipt.profile.app, app);
   assert.equal(receipt.profile.environment, environment);
   const subdomain =
-    environment === 'staging' && !profiles.apps[app].stagingHost
+    environment === 'staging' &&
+    app !== 'web' &&
+    !profiles.apps[app].stagingHost
       ? receipt.profile.host.split('.')[1]
       : undefined;
   assert.deepEqual(receipt.profile, profileFor(app, environment, subdomain));
@@ -166,6 +169,7 @@ export function verify(appRoot, app, environment, sha) {
   assert.deepEqual(
     json(config),
     publicationConfig(base, receipt.profile, {
+      sourceSha: sha,
       main: relative(dirname(config), main),
       assets: relative(dirname(config), assets),
     }),

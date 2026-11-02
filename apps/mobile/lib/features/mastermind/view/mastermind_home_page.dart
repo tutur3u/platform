@@ -8,6 +8,7 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/features/mastermind/catchup/catchup_refresh.dart';
 import 'package:mobile/features/mastermind/catchup/catchup_section.dart';
 import 'package:mobile/features/mastermind/catchup/catchup_settings_sheet.dart';
+import 'package:mobile/features/mastermind/machines/machine_list.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/home_model.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
@@ -84,6 +85,7 @@ class _MastermindHomePageState extends State<MastermindHomePage> {
                         ),
                       MastermindActivityStrip(activity: model.lanes),
                       HomeNeedsYouCard(model: model),
+                      HomeMachinesRow(snapshot: ready.snapshot.machines),
                       const PendingRepliesSection(),
                       HomeShipCard(model: model),
                       HomeQuotaCard(model: model),

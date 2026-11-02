@@ -21,6 +21,10 @@ export function endMeetRoom(state: MeetRoomSnapshot, now: string) {
         }
       : undefined,
     ended: true,
+    transcription: state.transcription
+      ? { ...state.transcription, active: false }
+      : undefined,
+    transcriptionConsents: undefined,
     lifecycle: {
       ...state.lifecycle,
       version: (state.lifecycle?.version ?? 0) + 1,

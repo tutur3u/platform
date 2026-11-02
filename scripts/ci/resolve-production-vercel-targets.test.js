@@ -46,7 +46,8 @@ function resolveFixtureTargets({
   workflowMarkers,
   platformEnabled,
   includeEvidence = false,
-  publicationPolicy,
+  // Hold semantics are exercised against Meet; admission has its own test.
+  publicationPolicy = { meet: { state: 'held', reason: 'held for test' } },
 }) {
   const output = execFileSync(
     'bun',
@@ -155,6 +156,33 @@ test('production planner holds Cloudflare for shared Meet runtime changes', () =
     { shouldRun: false, workflowName: 'vercel-production-calendar.yaml' },
     { shouldRun: false, workflowName: 'vercel-production-storefront.yaml' },
   ]);
+});
+
+test('admitted Meet runs Cloudflare for shared Meet runtime changes', () => {
+  const rootDir = createFixtureRoot();
+  const baseSha = initializeGitRepo(rootDir);
+  const headSha = commitFile(
+    rootDir,
+    'apps/meet-realtime/src/worker.ts',
+    'export const changed = true;\n',
+    'meet realtime change'
+  );
+  const [meet] = resolveFixtureTargets({
+    baseSha,
+    headSha,
+    rootDir,
+    publicationPolicy: {
+      meet: {
+        state: 'admitted',
+        reason: 'reviewed cutover',
+        surfaces: ['frontend', 'realtime-do'],
+      },
+    },
+  });
+  assert.deepEqual(meet, {
+    shouldRun: true,
+    workflowName: 'meet-cloudflare.yaml',
+  });
 });
 
 test('production hold overrides missing Cloudflare deployment markers', () => {

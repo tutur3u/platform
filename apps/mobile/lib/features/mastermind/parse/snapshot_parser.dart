@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:mobile/features/mastermind/catchup/catchup_parser.dart';
+import 'package:mobile/features/mastermind/machines/machine_parser.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/parse/strict_json.dart';
 import 'package:mobile/features/mastermind/presentation/hub_companion_adapter.dart';
@@ -79,7 +80,8 @@ ParseOutcome parseMastermindSnapshot(Uint8List bytes) {
   try {
     final reader = JsonReader(decoded);
     final root = reader.object();
-    if (root.containsKey('schema_version') && root['schema_version'] != '1.4') {
+    if (root.containsKey('schema_version') &&
+        !const ['1.4', '1.5'].contains(root['schema_version'])) {
       return const ParseOutcome.rejected(RejectionReason.unsupportedVersion);
     }
     return ParseOutcome.accepted(parseRootSnapshot(reader));

@@ -125,6 +125,7 @@ class _StorefrontsPageState extends State<StorefrontsPage> {
         child: NovaRefreshIndicator(
           onRefresh: _reload,
           child: AppPageListView(
+            physics: const AlwaysScrollableScrollPhysics(),
             children: [
               InventoryHeroCard(
                 title: l10n.storefrontTitle,

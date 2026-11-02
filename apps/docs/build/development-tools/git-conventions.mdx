@@ -2,6 +2,7 @@
 title: "Git Conventions"
 description: "Learn how Tuturuuu uses Conventional Commits and Branch naming to improve development workflow."
 updatedAt: "2026-06-21"
+audience: developers
 ---
 
 <Info>
@@ -487,3 +488,10 @@ comfortably, split it into a chain of dependent PRs — see [Stacked Pull
 Requests](/build/development-tools/stacked-pull-requests).
 
 For more information, refer to the official documentation for [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) and [Conventional Branch](https://conventional-branch.github.io/).
+
+## Trunk-based delivery
+
+Integrate small changes into main behind flags that default OFF. Add and verify
+the kill switch before enabling a feature. During an incident, disable the kill
+switch first, then roll back if needed. Track each flag owner and removal date in
+the [feature-flag registry](/build/development-tools/feature-flags).

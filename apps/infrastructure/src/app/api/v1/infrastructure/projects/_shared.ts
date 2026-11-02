@@ -1,3 +1,4 @@
+import { isSafeProjectBranch } from '@tuturuuu/utils/managed-project-branch';
 import { NextResponse } from 'next/server';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import {
@@ -52,4 +53,12 @@ export function readStringArray(value: unknown) {
   }
 
   return value.filter((item): item is string => typeof item === 'string');
+}
+
+export function readSelectedBranch(value: unknown) {
+  if (value === undefined) return undefined;
+  if (!isSafeProjectBranch(value)) {
+    throw new Error('Selected branch must be a valid branch name.');
+  }
+  return value as string;
 }

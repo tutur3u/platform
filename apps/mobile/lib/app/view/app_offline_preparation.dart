@@ -2,24 +2,43 @@ part of 'app.dart';
 
 extension _AppOfflinePreparation on _AppState {
   void _registerOfflinePreparation() {
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    _mobileFlags.setForeground(
+      foreground: lifecycle == null || lifecycle == AppLifecycleState.resumed,
+    );
     OfflinePreparationCoordinator.instance
+      ..registry = OfflinePreparerRegistry(isEnabled: _mobileFlags.enabled)
       ..verifyRetention = OfflineDownloadManifest.verifyScope
-      ..verifyProductRetention = OfflineDownloadManifest.verifyProduct
-      ..register(
+      ..verifyProductRetention = (user, workspace, product) async {
+        if (product == 'mastermind') {
+          if (_authCubit.state.user?.id != user ||
+              _mastermind.access.state.wsId != workspace ||
+              !_mastermind.access.state.visible) {
+            throw const OfflinePreparationUnavailable();
+          }
+          await _mastermind.snapshot.verifyOffline();
+        } else {
+          await OfflineDownloadManifest.verifyProduct(user, workspace, product);
+        }
+      }
+      ..registry.register(
         'finance',
+        null,
         (wsId) =>
             _prepareWithPermissions(wsId, _financeRepository.prepareOffline),
       )
-      ..register(
+      ..registry.register(
         'tasks',
+        null,
         (wsId) => _prepareWithPermissions(wsId, _taskRepository.prepareOffline),
       )
-      ..register(
+      ..registry.register(
         'calendar',
+        null,
         (wsId) =>
             _prepareWithPermissions(wsId, _calendarRepository.prepareOffline),
       )
-      ..register('inventory', (workspaceId) async {
+      ..registry.register('inventory', null, (workspaceId) async {
         if (!await _inventoryAccessRepository.isInventoryEnabled(workspaceId)) {
           throw const OfflinePreparationUnavailable();
         }
@@ -28,11 +47,167 @@ extension _AppOfflinePreparation on _AppState {
           _inventoryRepository.prepareOffline,
         );
       });
+    void registerTimeTracker() => TimeTrackerOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient();
+        try {
+          await _calendarSettingsCubit.loadWorkspacePreference(wsId);
+          final locale =
+              _localeCubit.state.locale ??
+              WidgetsBinding.instance.platformDispatcher.locale;
+          await TimeTrackerOfflinePreparation(
+            api: api,
+            firstDayOfWeek: timeTrackerFirstDayOfWeek(
+              _calendarSettingsCubit.state,
+              locale.languageCode,
+            ),
+          ).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
+    void registerHabits() => HabitsOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient(baseUrl: ApiConfig.tasksBaseUrl);
+        try {
+          await HabitsOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
+    registerTimeTracker();
+    _timeTrackerOfflineFlags = _mobileFlags.stream.listen(
+      (_) => registerTimeTracker(),
+    );
+    registerHabits();
+    _habitsOfflineFlags = _mobileFlags.stream.listen((_) => registerHabits());
+    void registerChat() => ChatOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient();
+        try {
+          await ChatOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
+    void registerNotes() => NotesOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient();
+        try {
+          await NotesOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
+    void registerMira() => MiraOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient();
+        try {
+          await MiraOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
+    void registerDocuments() => DocumentsOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient();
+        try {
+          await DocumentsOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
+    void registerMail() => MailOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient();
+        try {
+          await MailOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
+    registerNotes();
+    registerMira();
+    registerDocuments();
+    registerMail();
+    registerChat();
+    _chatOfflineFlags = _mobileFlags.stream.listen((_) {
+      registerChat();
+      registerNotes();
+      registerMira();
+      registerDocuments();
+      registerMail();
+    });
     CacheStore.instance.removedResource.addListener(
       _invalidateOfflineReadiness,
     );
     _syncOfflinePreparationScope();
   }
+
+  void _registerFlaggedOfflineProducts(MobileFlagsState flags) {
+    _mastermind.registerOfflinePreparation(
+      OfflinePreparationCoordinator.instance.registry,
+      flags,
+    );
+    registerHomeOffline(
+      OfflinePreparationCoordinator.instance.registry,
+      flags,
+      (wsId) => _prepareWithPermissions(wsId, _prepareHomeOffline),
+    );
+  }
+
+  Future<void> _prepareHomeOffline(String wsId) => retainHomeOffline(
+    wsId,
+    warm: () async {
+      final workspace = _workspaceCubit.state.currentWorkspace;
+      final user = _authCubit.state.user?.id;
+      if (workspace?.id != wsId || user == null) {
+        throw const OfflinePreparationUnavailable();
+      }
+      await TaskListCubit.prewarm(
+        taskRepository: _taskRepository,
+        wsId: wsId,
+        isPersonal: workspace!.personal,
+        forceRefresh: true,
+      );
+      await CalendarCubit.prewarm(
+        calendarRepository: _calendarRepository,
+        wsId: wsId,
+        forceRefresh: true,
+      );
+      final keys = [
+        TaskListCubit.offlineSummaryKey(wsId, isPersonal: workspace.personal),
+        CalendarCubit.offlineSummaryKey(wsId),
+      ];
+      if (_audienceModeCubit.state.mode == AudienceMode.education) {
+        final day = DateTime.now();
+        await SessionsClassesTodayRepository().fetch(
+          userId: user,
+          wsId: wsId,
+          day: day,
+          scope: ClassScope.mine,
+        );
+        keys.add(
+          SessionsClassesTodayRepository.offlineSummaryKey(user, wsId, day),
+        );
+      }
+      return keys;
+    },
+  );
 
   Future<void> _prepareWithPermissions(
     String workspaceId,
@@ -93,6 +268,16 @@ extension _AppOfflinePreparation on _AppState {
     final workspaceId = resetWorkspace
         ? null
         : _workspaceCubit.state.currentWorkspace?.id;
+    unawaited(
+      _mobileFlags
+          .setScope(
+            userId: auth.status == AuthStatus.authenticated ? userId : null,
+            workspaceId: workspaceId,
+          )
+          .catchError((Object error) {
+            debugPrint('Mobile flags cache scope reset failed: $error');
+          }),
+    );
     final coordinator = OfflinePreparationCoordinator.instance;
     unawaited(
       _calendarSettingsCubit.load(
@@ -124,6 +309,10 @@ extension _AppOfflinePreparation on _AppState {
   }
 
   void _unregisterOfflinePreparation() {
+    unawaited(_timeTrackerOfflineFlags?.cancel());
+    OfflinePreparationCoordinator.instance.unregister('time_tracker');
+    unawaited(_habitsOfflineFlags?.cancel());
+    OfflinePreparationCoordinator.instance.unregister('habits');
     CacheStore.instance.removedResource.removeListener(
       _invalidateOfflineReadiness,
     );

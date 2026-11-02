@@ -163,51 +163,57 @@ class _FeedbackSheetState extends State<_FeedbackSheet> {
             Expanded(
               child: _loading
                   ? const AppLoadingIndicator.page()
-                  : ListView(
-                      children: _items
-                          .map(
-                            (item) => PendingSyncFrame(
-                              workspaceId: widget.wsId,
-                              feature: 'crm',
-                              entityId: item.id,
-                              child: Card(
-                                margin: const EdgeInsets.only(bottom: 8),
-                                child: ListTile(
-                                  title: Text(
-                                    item.groupName ?? item.group?.name ?? '',
+                  : NovaRefreshIndicator(
+                      onRefresh: _load,
+                      child: ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: _items
+                            .map(
+                              (item) => PendingSyncFrame(
+                                workspaceId: widget.wsId,
+                                feature: 'crm',
+                                entityId: item.id,
+                                child: Card(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  child: ListTile(
+                                    title: Text(
+                                      item.groupName ?? item.group?.name ?? '',
+                                    ),
+                                    subtitle: Text(item.content),
+                                    trailing: widget.canManageFeedbacks
+                                        ? PopupMenuButton<String>(
+                                            onSelected: (value) {
+                                              if (value == 'edit') {
+                                                unawaited(_editFeedback(item));
+                                              }
+                                              if (value == 'delete') {
+                                                unawaited(
+                                                  _deleteFeedback(item),
+                                                );
+                                              }
+                                            },
+                                            itemBuilder: (context) => [
+                                              PopupMenuItem(
+                                                value: 'edit',
+                                                child: Text(
+                                                  context.l10n.commonEdit,
+                                                ),
+                                              ),
+                                              PopupMenuItem(
+                                                value: 'delete',
+                                                child: Text(
+                                                  context.l10n.commonDelete,
+                                                ),
+                                              ),
+                                            ],
+                                          )
+                                        : null,
                                   ),
-                                  subtitle: Text(item.content),
-                                  trailing: widget.canManageFeedbacks
-                                      ? PopupMenuButton<String>(
-                                          onSelected: (value) {
-                                            if (value == 'edit') {
-                                              unawaited(_editFeedback(item));
-                                            }
-                                            if (value == 'delete') {
-                                              unawaited(_deleteFeedback(item));
-                                            }
-                                          },
-                                          itemBuilder: (context) => [
-                                            PopupMenuItem(
-                                              value: 'edit',
-                                              child: Text(
-                                                context.l10n.commonEdit,
-                                              ),
-                                            ),
-                                            PopupMenuItem(
-                                              value: 'delete',
-                                              child: Text(
-                                                context.l10n.commonDelete,
-                                              ),
-                                            ),
-                                          ],
-                                        )
-                                      : null,
                                 ),
                               ),
-                            ),
-                          )
-                          .toList(growable: false),
+                            )
+                            .toList(growable: false),
+                      ),
                     ),
             ),
           ],

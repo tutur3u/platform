@@ -1,16 +1,12 @@
-import { reviseLegalDocument } from './commercial-revisions';
-import { getCommunityPolicy } from './community-policies';
-import { getLegalDocument } from './documents';
+import { getLegalRevision, type ProposedLegalVersion } from './revisions';
 import type { LegalDocument } from './types';
 
 export function getProposedLegalDocument(
   kind: LegalDocument['kind'],
-  locale: string
+  locale: string,
+  version?: ProposedLegalVersion
 ): Omit<LegalDocument, 'effectiveDate'> {
-  const document =
-    kind === 'acceptable-use' || kind === 'community-guidelines'
-      ? getCommunityPolicy(kind, locale)
-      : reviseLegalDocument(getLegalDocument(kind, locale));
+  const document = getLegalRevision(kind, locale, version);
   const { effectiveDate: _effectiveDate, ...proposed } = document;
   return {
     ...proposed,

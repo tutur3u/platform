@@ -278,7 +278,7 @@ test('Rust source qualification is bounded and restricted to the reviewed integr
   const toolchain = job.steps.find((step) => step.with?.toolchain);
   assert.equal(
     toolchain.uses,
-    'dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87'
+    'dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec'
   );
   assert.equal(toolchain.with.toolchain, '1.95.0');
   assert.equal(toolchain.with.components, 'clippy, rustfmt');

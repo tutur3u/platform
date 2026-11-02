@@ -1,16 +1,15 @@
+\ir helpers/local-dblink.inc
 -- Independent committed sessions exist only inside the owned disposable database.
 -- The canonical lifecycle destroys that entire database after this rollback packet.
 begin;
 create extension if not exists pgtap with schema extensions;
--- On non-superuser local Postgres, set test.dblink_connstr to a password-authenticated
--- connection to this same disposable database (loopback trust cannot authenticate dblink).
 create extension if not exists dblink with schema extensions;
 set local search_path=public,extensions;
 select plan(10);
 do $setup$
 begin
-  perform dblink_connect('profile_a',coalesce(nullif(current_setting('test.dblink_connstr', true), ''), format('dbname=%L user=%L',current_database(),current_user)));
-  perform dblink_connect('profile_b',coalesce(nullif(current_setting('test.dblink_connstr', true), ''), format('dbname=%L user=%L',current_database(),current_user)));
+  perform dblink_connect('profile_a',pg_temp.fixture_dblink_connstr());
+  perform dblink_connect('profile_b',pg_temp.fixture_dblink_connstr());
   perform dblink_exec('profile_a',$remote$
     begin;
     set local statement_timeout='10s'; set local lock_timeout='1s';
@@ -111,3 +110,4 @@ select dblink_disconnect('profile_a');
 select dblink_disconnect('profile_b');
 select * from finish();
 rollback;
+

@@ -84,10 +84,7 @@ void main() {
       expect(find.text('Canonical title'), findsNothing);
       expect(find.text('Tuturuuu'), findsOneWidget);
       expect(find.textContaining('Orchestrator'), findsOneWidget);
-      expect(
-        find.textContaining(locale == 'en' ? '32 min ago' : '32 phút trước'),
-        findsOneWidget,
-      );
+      expect(findTimeLabel(locale == 'en' ? '32m' : '32 phút'), findsOneWidget);
       expect(
         find.text(locale == 'en' ? 'Recommended' : 'Đề xuất'),
         findsOneWidget,
@@ -107,7 +104,7 @@ void main() {
     });
   }
 
-  testWidgets('one tap, undo, then five-second window and one canonical send', (
+  testWidgets('one tap, undo, then 5-second window and one canonical send', (
     tester,
   ) async {
     final transport = FakeReplyTransport();
@@ -122,7 +119,7 @@ void main() {
     expect(transport.sent, isEmpty);
     await tester.tap(find.text('Undo'));
     await tester.pump();
-    await tester.pump(const Duration(seconds: 6));
+    await tester.pump(const Duration(seconds: 31));
     expect(transport.sent, isEmpty);
     expect(find.text('Later'), findsOneWidget);
 

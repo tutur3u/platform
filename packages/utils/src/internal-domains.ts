@@ -70,7 +70,6 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     name: 'rewise',
     url: 'https://rewise.tuturuuu.com',
   },
-  { name: 'rewise', url: 'https://rewise.me', requiresExactOrigin: true },
   {
     name: 'tasks',
     url: 'https://tasks.tuturuuu.com',

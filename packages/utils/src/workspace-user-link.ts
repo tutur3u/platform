@@ -100,16 +100,16 @@ export async function getWorkspaceUserLinkForUser(
 
   try {
     const sbAdmin = await createAdminClient();
-    // Note: ensure_workspace_user_link is defined in migration 20260112060000.
-    // IMPORTANT: must use .bind() to preserve the Supabase client's `this` context.
-    const rpc = sbAdmin.rpc.bind(sbAdmin) as unknown as (
-      fn: string,
-      args: Record<string, unknown>
-    ) => Promise<{ error: Error | null }>;
-    const { error: repairError } = await rpc('ensure_workspace_user_link', {
-      target_user_id: userId,
-      target_ws_id: resolvedWsId,
-    });
+    // ensure_workspace_user_link is defined in migration 20260112060000. Call
+    // it as a method (keeps the client's `this`); binding the overloaded rpc
+    // generic exceeds the type instantiation depth (TS2589).
+    const { error: repairError } = await sbAdmin.rpc(
+      'ensure_workspace_user_link',
+      {
+        target_user_id: userId,
+        target_ws_id: resolvedWsId,
+      }
+    );
 
     // Always re-read with the service-role client, including after an RPC
     // error. Another layout/page/API request may have repaired the same member

@@ -1,6 +1,7 @@
 import { createAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
 import type { AppCoordinationSessionPolicy } from '@tuturuuu/auth/app-session-policy';
 import type { MfaSessionProof } from '@tuturuuu/utils/required-mfa-policy';
+import type { SessionAssurance } from '@tuturuuu/utils/session-assurance';
 import { NextResponse } from 'next/server';
 
 export type ExchangeUserProfile = {
@@ -16,6 +17,7 @@ export type ExchangeUserProfile = {
 };
 
 export function createExchangeTokenBody({
+  assurance,
   email,
   mfa,
   normalizedWorkspaceId,
@@ -25,6 +27,8 @@ export function createExchangeTokenBody({
   userProfile,
   userId,
 }: {
+  /** Server-verified session assurance; null when unknown (treat as aal1). */
+  assurance?: SessionAssurance | null;
   email: string | null;
   mfa: MfaSessionProof | null;
   normalizedWorkspaceId?: string | null;
@@ -34,7 +38,11 @@ export function createExchangeTokenBody({
   userProfile: ExchangeUserProfile;
   userId: string;
 }) {
+  const assuranceClaims = assurance
+    ? { aal: assurance.aal, amr: assurance.amr }
+    : {};
   const accessToken = createAppCoordinationToken({
+    ...assuranceClaims,
     email,
     mfa: mfa ?? undefined,
     expiresInSeconds: policy.externalAppBearerTtlSeconds,
@@ -44,6 +52,7 @@ export function createExchangeTokenBody({
     userId,
   });
   const refreshToken = createAppCoordinationToken({
+    ...assuranceClaims,
     email,
     mfa: mfa ?? undefined,
     expiresInSeconds: policy.internalAppRefreshTtlSeconds,
@@ -54,6 +63,12 @@ export function createExchangeTokenBody({
   });
 
   return {
+    ...(assurance
+      ? {
+          aal: assurance.aal,
+          ...(assurance.amr?.length ? { amr: assurance.amr } : {}),
+        }
+      : {}),
     accessToken: accessToken.token,
     app: {
       name: accessToken.claims.target_app,

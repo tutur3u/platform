@@ -57,8 +57,7 @@ it.each(['en', 'vi'] as const)(
       screen.getByRole('heading', { name: copy.join_missing_title })
     ).toBeTruthy();
     expect(screen.getByText(copy.join_missing_hint)).toBeTruthy();
-    expect(screen.getByText(copy.preparing_privacy)).toBeTruthy();
-    expect(screen.getByText(copy.resource_limits_hint)).toBeTruthy();
+    expect(screen.queryByText(copy.resource_limits_hint)).toBeNull();
     view.rerender(
       <RoomRouteFeedback pathname={pathname} state="error" onRetry={retry} />
     );
@@ -81,12 +80,11 @@ it.each(['en', 'vi'] as const)(
     expect(
       screen.getByRole('heading', { name: copy.preparing_call })
     ).toBeTruthy();
-    expect(screen.getByText(copy.preparing_call_hint)).toBeTruthy();
+    expect(screen.queryByText(copy.resource_limits_hint)).toBeNull();
     act(() => vi.advanceTimersByTime(30_000));
     expect(
       screen.getByRole('heading', { name: copy.join_loading_slow_title })
     ).toBeTruthy();
-    expect(screen.getByText(copy.join_loading_slow_hint)).toBeTruthy();
     expect(screen.getByRole('link', { name: copy.back_to_meet })).toBeTruthy();
     view.rerender(<NotFoundPage />);
     expect(

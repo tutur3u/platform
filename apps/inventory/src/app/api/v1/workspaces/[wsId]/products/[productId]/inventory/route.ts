@@ -9,6 +9,7 @@ import { validateInventoryItemWorkspaceRelations } from '@tuturuuu/inventory-cor
 import { getStockChangeAmount } from '@tuturuuu/inventory-core/stock-change';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import type { Database } from '@tuturuuu/types/supabase';
 import { NextResponse } from 'next/server';
 import {
   insertProductStockChanges,
@@ -272,10 +273,11 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   // Get existing inventory to compare
-  const { data: existingInventory, error: fetchError } = await inventoryClient
-    .from('inventory_products')
-    .select('*')
-    .eq('product_id', productId);
+  const { data: existingInventoryRows, error: fetchError } =
+    await inventoryClient
+      .from('inventory_products')
+      .select('*')
+      .eq('product_id', productId);
 
   if (fetchError) {
     console.error('Error fetching existing product inventory', fetchError);
@@ -286,6 +288,10 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const workspaceUserId = await getWorkspaceUserId(userId, sbAdmin, wsId);
+
+  const existingInventory:
+    | Database['private']['Tables']['inventory_products']['Row'][]
+    | null = existingInventoryRows;
 
   // If inventory is empty, clear all existing inventory
   if (inventory.length === 0) {

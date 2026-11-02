@@ -27,6 +27,7 @@ vi.mock('@/lib/api-auth', () => ({
       ),
 }));
 
+import { ProfileUploadError } from '@tuturuuu/storage-core/profile-upload-error';
 import { POST } from './route';
 
 const context = { params: Promise.resolve({ wsId: 'personal' }) };
@@ -54,7 +55,8 @@ it('issues a budgeted optimizer capability for the authorized canonical workspac
     'avatar',
     expect.any(String),
     undefined,
-    'resolved-id/users'
+    'resolved-id/users',
+    'resolved-id'
   );
   expect(await response.json()).toMatchObject({
     path: 'resolved-id/users/ticket.webp',
@@ -68,4 +70,27 @@ it('rejects non-managers before issuing a capability', async () => {
 it('rejects unsupported images before ticket reservation', async () => {
   expect((await POST(request('image/svg+xml'), context)).status).toBe(400);
   expect(f.ticket).not.toHaveBeenCalled();
+});
+it('surfaces the real 429 with its retry time instead of a generic failure', async () => {
+  f.ticket.mockRejectedValue(
+    new ProfileUploadError('Profile upload limit reached', 429, 1800)
+  );
+  const response = await POST(request(), context);
+  expect(response.status).toBe(429);
+  expect(response.headers.get('Retry-After')).toBe('1800');
+  expect(await response.json()).toEqual({
+    message: 'Profile upload limit reached',
+    code: 'PROFILE_UPLOAD_LIMIT',
+    retryAfter: 1800,
+  });
+});
+it('keeps protection outages generic and fail-closed', async () => {
+  f.ticket.mockRejectedValue(
+    new ProfileUploadError('Profile upload protection is unavailable', 503)
+  );
+  const response = await POST(request(), context);
+  expect(response.status).toBe(503);
+  expect(await response.json()).toEqual({
+    message: 'Avatar upload unavailable',
+  });
 });

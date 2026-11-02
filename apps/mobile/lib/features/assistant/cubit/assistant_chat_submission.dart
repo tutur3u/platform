@@ -154,10 +154,13 @@ extension _AssistantChatSubmission on AssistantChatCubit {
   }) async {
     bool current() => !isClosed && (isCurrent?.call() ?? true);
     if (!current()) return false;
-    if (state.creationOutcomeUnknown &&
-        (retryMessageId != null ||
-            state.chat == null ||
-            state.storedChatId == null)) {
+    // The outcome flag is set only after a failed send; an unacknowledged
+    // first creation that is still in flight must not be superseded.
+    if ((state.creationOutcomeUnknown &&
+            (retryMessageId != null ||
+                state.chat == null ||
+                state.storedChatId == null)) ||
+        (state.isBusy && state.storedChatId == null)) {
       return false;
     }
     final trimmed = message.trim();
@@ -581,6 +584,11 @@ extension _AssistantChatSubmission on AssistantChatCubit {
             reportFailure(error);
             _emitIfOpen(
               state.copyWith(
+                // An unacknowledged first message matches the repository hold.
+                creationOutcomeUnknown:
+                    firstCreation != null && state.storedChatId == null
+                    ? true
+                    : null,
                 messages: _withoutEmptyAssistantReply(
                   state.messages,
                   _activeAssistantMessageId,
@@ -626,15 +634,26 @@ extension _AssistantChatSubmission on AssistantChatCubit {
             error.statusCode == 400 &&
             error.code == 'chat_create_invalid_request',
       );
-      if (phase == OperationalPhase.assistantCreate &&
+      final deniedBeforeEffect =
           error is ApiException &&
           error.statusCode == 400 &&
-          error.code == 'chat_create_invalid_request') {
-        _emitIfOpen(state.copyWith(creationOutcomeUnknown: false));
-      }
+          error.code == 'chat_create_invalid_request';
+      // Unknown only after a send attempt failed without an acknowledgement,
+      // including a created chat whose selection could not be retained.
+      final creationUnknown =
+          (phase == OperationalPhase.assistantCreate ||
+              phase == OperationalPhase.assistantPreferencePersist) &&
+          !deniedBeforeEffect &&
+          error is! AssistantCreationSelectedException &&
+          state.storedChatId == null;
       reportFailure(error);
       _emitIfOpen(
         state.copyWith(
+          creationOutcomeUnknown: creationUnknown
+              ? true
+              : deniedBeforeEffect
+              ? false
+              : null,
           messages: _withoutEmptyAssistantReply(
             state.messages,
             _activeAssistantMessageId,
