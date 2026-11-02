@@ -154,11 +154,18 @@ Release owner steps:
    `meet-cloudflare.yaml`; its `deploy` job records the current
    `tuturuuu-meet` and `tuturuuu-meet-realtime` versions and deployments in the
    `meet-rollback-<sha>-<run>` artifact before any write.
-2. Private smoke before full traffic (recommended): upload the qualified
-   artifact with `wrangler versions upload` and route only operator requests to
+2. Private smoke before promotion (required): the deploy job's `wrangler
+   deploy` is the public flip, so first upload the qualified artifact with
+   `wrangler versions upload` (no traffic) and route only operator requests to
    it with the `Cloudflare-Workers-Version-Overrides` header on
-   `meet.tuturuuu.com`, or run the smoke right after the deploy job's
-   canonical-route, build-identity and authenticated realtime/SFU checks.
+   `meet.tuturuuu.com`. Promote only after the real-call QA passes (join, SFU
+   media, lobby rename, consent, an authenticated API call and a server
+   action). Record the legacy `tuturuuu-meet` and `tuturuuu-meet-realtime`
+   version IDs first.
+5. Keep `MEET_AI_ENABLED_WORKSPACE_IDS` set as a secret on `tuturuuu-meet`
+   (Meet AI is default-allow without it; the deploy job fails closed) and
+   watch errors for 30 minutes after the flip, rolling back at the first
+   regression.
 3. Rollback is one step: `wrangler versions deploy <legacy-version-id>@100%
    --name tuturuuu-meet` (and the same for `tuturuuu-meet-realtime` if its
    version changed), using the IDs from the rollback artifact. Rehearse once
