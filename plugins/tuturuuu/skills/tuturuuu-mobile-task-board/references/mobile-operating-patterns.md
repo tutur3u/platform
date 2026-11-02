@@ -183,6 +183,10 @@ Notes uses dedicated list/archive keys without path parameters; share that key
 factory with its repository. Its list already includes bodies, so budget inbox
 and archive together before publishing either snapshot.
 
+For Documents, prepare the default 30-row path and whitelist metadata fields;
+never retain list-response content as a substitute for a detail download.
+The preparer regression must reopen its snapshot through readThroughJson.
+
 Use shell titles rather than duplicate body titles. Put grouped section switches
 rightmost and auxiliary actions before them. Profile sections should adapt to
 width and text scale, avoid nested bordered panels, and keep timeline copy compact
