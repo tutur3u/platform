@@ -74,29 +74,36 @@ void main() {
     coordinator.state.dispose();
   });
 
-  test('service Retry-After beyond fifteen minutes is honored', () async {
-    final now = DateTime.utc(2026, 10, 25);
-    final coordinator =
-        OfflinePreparationCoordinator.forTesting(
-          load: (_, _) async => {},
-          write: (_, _, _) async {},
-          clock: () => now,
-        )..register('tasks', (_) async {
-          throw const ApiException(
-            statusCode: 429,
-            message: 'Slow down',
-            retryAfter: 86400,
-          );
-        });
-    await coordinator.run(
-      userId: 'actor',
-      workspaceId: 'workspace',
-      productId: 'tasks',
-    );
-    expect(coordinator.state.value.retryAt, now.add(const Duration(days: 1)));
-    coordinator.cancel();
-    coordinator.state.dispose();
-  });
+  for (final (retryAfter, expected) in [
+    (86400, const Duration(minutes: 15)),
+    (10000000000, const Duration(minutes: 15)),
+    (0, const Duration(seconds: 5)),
+    (7, const Duration(seconds: 7)),
+  ]) {
+    test('service Retry-After $retryAfter s waits $expected', () async {
+      final now = DateTime.utc(2026, 10, 25);
+      final coordinator =
+          OfflinePreparationCoordinator.forTesting(
+            load: (_, _) async => {},
+            write: (_, _, _) async {},
+            clock: () => now,
+          )..register('tasks', (_) async {
+            throw ApiException(
+              statusCode: 429,
+              message: 'Slow down',
+              retryAfter: retryAfter,
+            );
+          });
+      await coordinator.run(
+        userId: 'actor',
+        workspaceId: 'workspace',
+        productId: 'tasks',
+      );
+      expect(coordinator.state.value.retryAt, now.add(expected));
+      coordinator.cancel();
+      coordinator.state.dispose();
+    });
+  }
 
   testWidgets(
     'the one-shot timer resumes at the deadline without a challenge',

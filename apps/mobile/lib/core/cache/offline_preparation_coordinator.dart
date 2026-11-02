@@ -382,8 +382,8 @@ class OfflinePreparationCoordinator {
             }
             final seconds = error.retryAfter ?? 30;
             final retryAt = _clock().toUtc().add(
-              // Honour the server; never a tight loop (Retry-After: 0).
-              Duration(seconds: seconds < 5 ? 5 : seconds),
+              // Bounded: no tight loop (0) and no years-long park or overflow.
+              Duration(seconds: seconds.clamp(5, 15 * 60)),
             );
             if (_retryAt == null || retryAt.isAfter(_retryAt!)) {
               _retryAt = retryAt;
