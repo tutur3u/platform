@@ -28224,6 +28224,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scrolls to this section'**
   String get mastermindInboxTierJump;
+
+  /// No description provided for @offlineCopyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{title} (offline copy)'**
+  String offlineCopyTitle(String title);
+
+  /// No description provided for @offlineConflictDraft.
+  ///
+  /// In en, this message translates to:
+  /// **'Server wins. Local draft needs review; it will not be posted.'**
+  String get offlineConflictDraft;
+
+  /// No description provided for @offlineConflictDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Server changed. Offline delete dropped.'**
+  String get offlineConflictDelete;
+
+  /// No description provided for @offlineConflictCopy.
+  ///
+  /// In en, this message translates to:
+  /// **'Server wins. Your edit is kept as an offline copy.'**
+  String get offlineConflictCopy;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

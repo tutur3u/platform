@@ -15209,4 +15209,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindInboxTierJump => 'Scrolls to this section';
+
+  @override
+  String offlineCopyTitle(String title) {
+    return '$title (offline copy)';
+  }
+
+  @override
+  String get offlineConflictDraft => 'Server wins. Local draft needs review; it will not be posted.';
+
+  @override
+  String get offlineConflictDelete => 'Server changed. Offline delete dropped.';
+
+  @override
+  String get offlineConflictCopy => 'Server wins. Your edit is kept as an offline copy.';
 }

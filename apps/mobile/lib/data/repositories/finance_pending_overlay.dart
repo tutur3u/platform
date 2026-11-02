@@ -11,6 +11,7 @@ List<Wallet> overlayPendingWallets(
 ) {
   final rows = {for (final wallet in source) wallet.id: wallet};
   for (final mutation in pending) {
+    if (mutation.serverWon) continue;
     if (mutation.feature != 'finance' ||
         mutation.workspaceId != workspaceId ||
         !(mutation.path == FinanceEndpoints.wallets(workspaceId) ||
@@ -47,6 +48,7 @@ List<Transaction> overlayPendingTransactions(
 }) {
   final rows = {for (final transaction in source) transaction.id: transaction};
   for (final mutation in pending) {
+    if (mutation.serverWon) continue;
     if (mutation.feature != 'finance' ||
         mutation.workspaceId != workspaceId ||
         !(mutation.path == FinanceEndpoints.transactions(workspaceId) ||

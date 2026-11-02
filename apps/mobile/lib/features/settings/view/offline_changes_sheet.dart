@@ -156,7 +156,12 @@ class _PendingChangeCard extends StatelessWidget {
       OfflineDependencyIssue.invalidPayload => l10n.offlineDependencyInvalid,
       OfflineDependencyIssue.contractUnavailable =>
         l10n.offlineDependencyContract,
-      null => record.lastError,
+      null => switch (record.conflictResolution) {
+        'draft' => l10n.offlineConflictDraft,
+        'delete' => l10n.offlineConflictDelete,
+        'copy' || 'local_copy' => l10n.offlineConflictCopy,
+        _ => record.lastError,
+      },
     };
     final color = record.status == PendingMutationStatus.queued
         ? Theme.of(context).colorScheme.primary
@@ -179,6 +184,14 @@ class _PendingChangeCard extends StatelessWidget {
                     : record.feature,
                 style: Theme.of(context).textTheme.titleSmall,
               ),
+              if (record.serverWon && record.payload != null)
+                Text(
+                  (record.payload!['name'] ??
+                          record.payload!['title'] ??
+                          record.payload!['description'] ??
+                          '')
+                      .toString(),
+                ),
               Text(status, style: TextStyle(color: color)),
               if (diagnostic != null)
                 Text(diagnostic, maxLines: 2, overflow: TextOverflow.ellipsis),

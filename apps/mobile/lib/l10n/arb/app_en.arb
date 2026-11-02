@@ -7192,4 +7192,11 @@
   },
   "mastermindInboxTierShowLess": "Show less",
   "mastermindInboxTierJump": "Scrolls to this section"
+,
+  "offlineCopyTitle": "{title} (offline copy)",
+  "offlineConflictDraft": "Server wins. Local draft needs review; it will not be posted.",
+  "offlineConflictDelete": "Server changed. Offline delete dropped.",
+  "offlineConflictCopy": "Server wins. Your edit is kept as an offline copy."
+,
+  "@offlineCopyTitle": {"placeholders": {"title": {"type": "String"}}}
 }

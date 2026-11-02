@@ -28,6 +28,7 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
               workspaceId: workspaceId,
             );
       _checkOpen();
+      if (await _prepareEditReplay(record, api)) return;
       final resolved = reconcileOfflineIds(record.path, record.payload, ids);
       switch (record.method.toUpperCase()) {
         case 'POST':
@@ -405,6 +406,12 @@ extension OfflineMutationDispatch on OfflineMutationQueue {
           }
         default:
           throw StateError('Unsupported queued method: ${record.method}');
+      }
+      if (_editFeature(record)) {
+        await _store.updatePendingMutation(
+          record.id,
+          (current) => current.copyWith(acknowledgedWrite: true),
+        );
       }
     } on ApiException catch (error) {
       if (record.isMailSettings &&

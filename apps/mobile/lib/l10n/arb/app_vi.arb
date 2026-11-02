@@ -6666,4 +6666,11 @@
   "mastermindInboxTierShowAll": "Xem tất cả ({count})",
   "mastermindInboxTierShowLess": "Thu gọn",
   "mastermindInboxTierJump": "Cuộn tới mục này"
+,
+  "offlineCopyTitle": "{title} (bản sao ngoại tuyến)",
+  "offlineConflictDraft": "Giữ bản máy chủ. Bản nháp cần xem lại và sẽ không tự gửi.",
+  "offlineConflictDelete": "Máy chủ đã thay đổi. Đã bỏ thao tác xóa ngoại tuyến.",
+  "offlineConflictCopy": "Giữ bản máy chủ. Thay đổi được lưu thành bản sao ngoại tuyến."
+,
+  "@offlineCopyTitle": {"placeholders": {"title": {"type": "String"}}}
 }
