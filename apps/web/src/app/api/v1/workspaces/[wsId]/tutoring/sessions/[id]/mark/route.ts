@@ -55,7 +55,12 @@ export async function POST(request: Request, { params }: Params) {
   const resolvedAt =
     parsed.data.attendanceStatus === 'DONE' ? new Date().toISOString() : null;
   const sbAdmin = await createAdminClient();
-  const scope = await resolveTutoringWriteScope({ request, access, sbAdmin });
+  const scope = await resolveTutoringWriteScope({
+    request,
+    access,
+    sbAdmin,
+    tutorOnly: parsed.data.tutorComment !== undefined,
+  });
   if (!scope.allowed)
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   const tutoringSessionsClient = sbAdmin.schema('private');

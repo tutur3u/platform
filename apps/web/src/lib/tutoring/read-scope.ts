@@ -10,16 +10,18 @@ export async function resolveTutoringReadScope({
   access,
   sbAdmin,
   teacherId,
+  tutorOnly = false,
 }: {
   request: Request;
   access: Awaited<ReturnType<typeof resolveTutoringRouteAccess>>;
   sbAdmin: TypedSupabaseClient;
   teacherId?: string;
+  tutorOnly?: boolean;
 }): Promise<
   { allowed: false } | { allowed: true; teacherId: string | undefined }
 > {
   if (!access.permissions) return { allowed: false };
-  if (!access.permissions.withoutPermission('view_payroll'))
+  if (!tutorOnly && !access.permissions.withoutPermission('view_payroll'))
     return { allowed: true, teacherId };
   const actor =
     access.user ??

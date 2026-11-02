@@ -1093,10 +1093,11 @@ Contacts supports staff-only session comments behind the workspace config
 `tutoring_tutor_comments` (default OFF; set to `false` to disable capture and reading).
 With the flag enabled, completion opens an optional comment dialog; the session
 menu also opens comments for reading or editing. Writes require
-`update_user_groups_scores` and the existing teacher write scope. Reads require
+`update_user_groups_scores` and assignment as the session tutor, including for managers. Reads require
 `view_user_groups` plus assignment as the tutor, TEACHER membership of the session
-class, or `admin`/`approve_reports`. The comment endpoint preserves session-list
+class, or `admin`/`approve_reports`/`view_payroll`. The comment endpoint preserves session-list
 scope and does not expose comments to parent messages, exports or Teach/Learn.
 Comments are trimmed, limited to 2000 characters, and blank input clears the
 comment. Edits have no history and send no new notification in v1. No migration.
-Regression coverage: `sessions/[id]/mark/comment.test.ts`.
+Completion never waits for the comment read: failed or forbidden reads hide the field, and saving without edits omits the comment. Managers see a read-only field.
+Regression coverage: session PUT/mark write-scope tests, comment route tests and Contacts `tutoring-comment-dialog.test.tsx`.

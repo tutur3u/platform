@@ -40,7 +40,9 @@ export function TutoringCommentDialog({
   const save = useMutation({
     mutationFn: (): Promise<TutoringCompletionResponse> =>
       updateTutoringSession(wsId, sessionId, {
-        tutorComment: draft ?? comment.data?.tutorComment ?? '',
+        ...(comment.isSuccess && comment.data.canEdit && draft !== null
+          ? { tutorComment: draft }
+          : {}),
         ...(complete ? { attendanceStatus: 'DONE' } : {}),
       }),
     onSuccess: (result) => {
@@ -67,21 +69,18 @@ export function TutoringCommentDialog({
         <DialogHeader>
           <DialogTitle>{t('tutor_comment')}</DialogTitle>
         </DialogHeader>
-        {comment.isError || save.isError ? (
-          <p role="alert">{t('comment_failed')}</p>
+        {save.isError ? <p role="alert">{t('comment_failed')}</p> : null}
+        {comment.isSuccess ? (
+          <Textarea
+            aria-label={t('tutor_comment')}
+            maxLength={2000}
+            disabled={!canManage || !comment.data.canEdit || save.isPending}
+            value={draft ?? comment.data?.tutorComment ?? ''}
+            onChange={(event) => setDraft(event.target.value)}
+          />
         ) : null}
-        <Textarea
-          aria-label={t('tutor_comment')}
-          maxLength={2000}
-          disabled={!canManage || !comment.isSuccess || save.isPending}
-          value={draft ?? comment.data?.tutorComment ?? ''}
-          onChange={(event) => setDraft(event.target.value)}
-        />
-        {canManage ? (
-          <Button
-            disabled={!comment.isSuccess || save.isPending}
-            onClick={() => save.mutate()}
-          >
+        {canManage && (complete || comment.data?.canEdit) ? (
+          <Button disabled={save.isPending} onClick={() => save.mutate()}>
             {complete ? t('mark_done') : t('save_content')}
           </Button>
         ) : null}

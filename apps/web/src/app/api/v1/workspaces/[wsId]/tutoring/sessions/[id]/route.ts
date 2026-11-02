@@ -102,7 +102,12 @@ export async function PUT(request: Request, { params }: Params) {
     updates.resolved_at = parsed.data.resolvedAt;
 
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
-  const scope = await resolveTutoringWriteScope({ request, access, sbAdmin });
+  const scope = await resolveTutoringWriteScope({
+    request,
+    access,
+    sbAdmin,
+    tutorOnly: parsed.data.tutorComment !== undefined,
+  });
   if (!scope.allowed)
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   if (!isTeacherReassignmentAllowed(scope, parsed.data.teacherUserId)) {

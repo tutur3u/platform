@@ -31,6 +31,10 @@ function builder(result: () => Result) {
   const b: Record<string, unknown> = {};
   for (const method of ['select', 'eq', 'gte', 'lte', 'in', 'order', 'range']) {
     b[method] = (...args: unknown[]) => {
+      if (method === 'select') {
+        expect(args[0]).not.toContain('tutor_comment');
+        expect(args[0]).not.toContain('*');
+      }
       state.filters.push([method, ...args]);
       return b;
     };

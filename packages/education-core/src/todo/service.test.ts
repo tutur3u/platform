@@ -29,6 +29,10 @@ function dbMock(
       'not',
     ])
       query[method] = (...args: unknown[]) => {
+        if (table === 'workspace_tutoring_sessions' && method === 'select') {
+          expect(args[0]).not.toContain('tutor_comment');
+          expect(args[0]).not.toContain('*');
+        }
         calls.push({ table, method, args });
         return query;
       };

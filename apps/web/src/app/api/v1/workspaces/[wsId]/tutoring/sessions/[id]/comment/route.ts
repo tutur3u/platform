@@ -27,36 +27,37 @@ export async function GET(
     .maybeSingle();
   if (error) return NextResponse.json({}, { status: 500 });
   if (!session) return NextResponse.json({}, { status: 404 });
-  if (
-    permissions.withoutPermission('admin') &&
-    permissions.withoutPermission('approve_reports')
-  ) {
-    const actor =
-      access.user ??
-      (
-        await (
-          await createTutoringRequestClient(request, access.user)
-        ).auth.getUser()
-      ).data.user;
-    if (!actor) return NextResponse.json({}, { status: 403 });
-    const { data: link, error: linkError } = await db
-      .from('workspace_user_linked_users')
-      .select('virtual_user_id')
-      .eq('ws_id', normalizedWsId)
-      .eq('platform_user_id', actor.id)
-      .maybeSingle();
+  const actor =
+    access.user ??
+    (
+      await (
+        await createTutoringRequestClient(request, access.user)
+      ).auth.getUser()
+    ).data.user;
+  const { data: link, error: linkError } = actor
+    ? await db
+        .from('workspace_user_linked_users')
+        .select('virtual_user_id')
+        .eq('ws_id', normalizedWsId)
+        .eq('platform_user_id', actor.id)
+        .maybeSingle()
+    : { data: null, error: null };
+  const canEdit =
+    !linkError && !!link && link.virtual_user_id === session.teacher_user_id;
+  const manager =
+    !permissions.withoutPermission('admin') ||
+    !permissions.withoutPermission('approve_reports') ||
+    !permissions.withoutPermission('view_payroll');
+  if (!manager && !canEdit) {
     if (linkError || !link) return NextResponse.json({}, { status: 403 });
-    if (link.virtual_user_id !== session.teacher_user_id) {
-      const { data: teacher, error: teacherError } = await db
-        .from('workspace_user_groups_users')
-        .select('user_id')
-        .eq('group_id', session.group_id)
-        .eq('user_id', link.virtual_user_id)
-        .eq('role', 'TEACHER')
-        .maybeSingle();
-      if (teacherError || !teacher)
-        return NextResponse.json({}, { status: 403 });
-    }
+    const { data: teacher, error: teacherError } = await db
+      .from('workspace_user_groups_users')
+      .select('user_id')
+      .eq('group_id', session.group_id)
+      .eq('user_id', link.virtual_user_id)
+      .eq('role', 'TEACHER')
+      .maybeSingle();
+    if (teacherError || !teacher) return NextResponse.json({}, { status: 403 });
   }
-  return NextResponse.json({ tutorComment: session.tutor_comment });
+  return NextResponse.json({ tutorComment: session.tutor_comment, canEdit });
 }

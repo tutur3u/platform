@@ -12,7 +12,9 @@ describe('registry', () => {
     for (const flag of registry) {
       expect(flag.key).toMatch(/^[a-z]+(?:_[a-z]+)*$/);
       expect(flag.description.length).toBeGreaterThan(0);
-      expect(flag.owner).toBe('mona');
+      expect(flag.owner).toBe(
+        flag.key === 'tutoring_tutor_comments' ? 'pax' : 'mona'
+      );
       expect(['read', 'write', 'ui', 'kill']).toContain(flag.class);
       expect(flag.default).toBe(false);
       expect(flag.removeBy).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -36,7 +38,7 @@ describe('evaluateFlags', () => {
     );
     overrides.mobile_offline = false;
     expect(Object.values(evaluateFlags(registry, {}, overrides))).toEqual(
-      registry.map(() => false)
+      registry.map(({ key }) => key === 'tutoring_tutor_comments')
     );
   });
 

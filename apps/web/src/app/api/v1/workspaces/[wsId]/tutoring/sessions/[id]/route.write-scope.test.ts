@@ -7,6 +7,7 @@ const ownId = '00000000-0000-4000-8000-000000000001';
 const otherId = '00000000-0000-4000-8000-000000000002';
 
 const state = vi.hoisted(() => ({
+  enabled: false,
   manager: false,
   sessionTeacher: '' as string | null,
 }));
@@ -17,6 +18,9 @@ const mocks = vi.hoisted(() => ({
   listTeachers: vi.fn(),
 }));
 
+vi.mock('@/lib/tutoring/tutor-comments', () => ({
+  tutorCommentsEnabled: async () => state.enabled,
+}));
 vi.mock('next/server', () => ({
   NextResponse: { json: Response.json },
 }));
@@ -114,6 +118,7 @@ function install() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  state.enabled = false;
   state.manager = false;
   state.sessionTeacher = otherId;
   mocks.notifyCompletionSafely.mockResolvedValue(undefined);
@@ -201,5 +206,30 @@ describe('tutoring session write scope', () => {
     expect((await remove()).status).toBe(200);
     expect(writes.update).toHaveBeenCalledTimes(2);
     expect(writes.delete).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('tutor-only comments', () => {
+  it('rejects the field with flag OFF', async () => {
+    state.sessionTeacher = ownId;
+    install();
+    expect((await put({ tutorComment: ' note ' })).status).toBe(404);
+    expect(writes.update).not.toHaveBeenCalled();
+  });
+  it('writes a trimmed comment for the assigned tutor', async () => {
+    state.enabled = true;
+    state.sessionTeacher = ownId;
+    install();
+    expect((await put({ tutorComment: ' note ' })).status).toBe(200);
+    expect(writes.update).toHaveBeenCalledWith(
+      expect.objectContaining({ tutor_comment: 'note' })
+    );
+  });
+  it('denies a payroll manager on another tutor session', async () => {
+    state.enabled = true;
+    state.manager = true;
+    install();
+    expect((await put({ tutorComment: ' note ' })).status).toBe(404);
+    expect(writes.update).not.toHaveBeenCalled();
   });
 });

@@ -383,7 +383,10 @@ export function getTutoringSessionComment(
   workspaceId: string,
   sessionId: string
 ) {
-  return getInternalApiClient().json<{ tutorComment: string | null }>(
+  return getInternalApiClient().json<{
+    tutorComment: string | null;
+    canEdit: boolean;
+  }>(
     `${basePath(workspaceId)}/sessions/${encodePathSegment(sessionId)}/comment`,
     { cache: 'no-store' }
   );
