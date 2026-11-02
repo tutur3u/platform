@@ -228,13 +228,13 @@ export function publicationConfig(base, profile, { main, assets, sourceSha }) {
       [`NEXT_PUBLIC_${profile.app.toUpperCase()}_APP_URL`]: `https://${profile.host}`,
       NEXT_PUBLIC_WEB_APP_URL: production
         ? 'https://tuturuuu.com'
-        : 'https://web.staging.tutur3u.com',
+        : 'https://web.tutur3u.com',
       ...(profile.app === 'apps'
         ? {
             APPS_CANONICAL_HOST_ENABLED: production ? '1' : '0',
             INTERNAL_WEB_API_ORIGIN: production
               ? 'https://tuturuuu.com'
-              : 'https://web.staging.tutur3u.com',
+              : 'https://web.tutur3u.com',
           }
         : {}),
       ...(profile.app === 'calendar'

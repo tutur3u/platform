@@ -41,9 +41,9 @@ describe('Drive Worker bridge boundary (Start/RSC adapters are fixtures)', () =>
   it.each([
     'https://tuturuuu.com/drive/personal',
     'https://drive.tuturuuu.com/personal',
-    'https://staging.tutur3u.com/drive/personal',
-    'https://drive.staging.tutur3u.com.evil.test/personal',
-    'https://evil.drive.staging.tutur3u.com/personal',
+    'https://web.tutur3u.com/drive/personal',
+    'https://drive.tutur3u.com.evil.test/personal',
+    'https://evil.drive.tutur3u.com/personal',
     'https://tuturuuu-drive-vite-staging.example.workers.dev/',
   ])('rejects unlisted host %s before any app code', async (url) => {
     const response = await worker.fetch(new Request(url), env, ctx);
@@ -58,7 +58,7 @@ describe('Drive Worker bridge boundary (Start/RSC adapters are fixtures)', () =>
 
   it('rejects a production database before loading routes', async () => {
     const response = await worker.fetch(
-      new Request('https://drive.staging.tutur3u.com/personal'),
+      new Request('https://drive.tutur3u.com/personal'),
       { ...env, SUPABASE_SERVER_URL: 'https://production.supabase.co' },
       ctx
     );
@@ -71,7 +71,7 @@ describe('Drive Worker bridge boundary (Start/RSC adapters are fixtures)', () =>
     vi.stubGlobal('__driveTestRsc', { loadModule: runtime.loadModule });
     for (const path of ['/personal', '/vi/personal']) {
       const response = await worker.fetch(
-        new Request(`https://drive.staging.tutur3u.com${path}`),
+        new Request(`https://drive.tutur3u.com${path}`),
         env,
         ctx
       );
@@ -91,7 +91,7 @@ describe('Drive Worker bridge boundary (Start/RSC adapters are fixtures)', () =>
     const path =
       '/api/v1/workspaces/workspace-a/storage/list?path=chats%2Fprivate';
     const response = await worker.fetch(
-      new Request(`https://drive.staging.tutur3u.com${path}`, {
+      new Request(`https://drive.tutur3u.com${path}`, {
         headers: {
           cookie: 'tuturuuu_app_session=fixture',
           authorization: 'Bearer fixture',
@@ -105,7 +105,7 @@ describe('Drive Worker bridge boundary (Start/RSC adapters are fixtures)', () =>
     expect(fetch).toHaveBeenCalledOnce();
     const forwarded = fetch.mock.calls[0]?.[0];
     expect(forwarded).toBeInstanceOf(Request);
-    expect(forwarded?.url).toBe(`https://staging.tutur3u.com${path}`);
+    expect(forwarded?.url).toBe(`https://web.tutur3u.com${path}`);
     expect(forwarded?.headers.get('cookie')).toContain(
       'tuturuuu_app_session=fixture'
     );

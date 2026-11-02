@@ -68,10 +68,10 @@ describe('Web candidate admission', () => {
   );
   it.each([
     'https://tuturuuu.com',
-    'https://other.staging.tutur3u.com',
-    'https://web.staging.tutur3u.com.evil.test',
-    'http://web.staging.tutur3u.com',
-    'https://web.staging.tutur3u.com:444',
+    'https://other.tutur3u.com',
+    'https://web.tutur3u.com.evil.test',
+    'http://web.tutur3u.com',
+    'https://web.tutur3u.com:444',
   ])('rejects host %s', async (host) => {
     const { handler, fetcher } = setup();
     expect((await handler(new Request(`${host}/`), env)).status).toBe(503);

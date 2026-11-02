@@ -10,8 +10,8 @@ import {
 } from 'vitest';
 
 const runtime = vi.hoisted(() => {
-  vi.stubEnv('TTR_URL', 'https://staging.tutur3u.com');
-  vi.stubEnv('NEXT_PUBLIC_WEB_APP_URL', 'https://staging.tutur3u.com');
+  vi.stubEnv('TTR_URL', 'https://web.tutur3u.com');
+  vi.stubEnv('NEXT_PUBLIC_WEB_APP_URL', 'https://web.tutur3u.com');
   vi.stubEnv(
     'TUTURUUU_APP_COORDINATION_SECRET',
     'disposable-drive-test-signing-key'
@@ -57,7 +57,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 import worker from '../../cloudflare/worker';
 import { stagingVars } from './staging-policy';
 
-const origin = 'https://drive.staging.tutur3u.com';
+const origin = 'https://drive.tutur3u.com';
 const env = { ...stagingVars, ASSETS: { fetch: runtime.fetch } };
 const ctx = { waitUntil: vi.fn() };
 
@@ -80,7 +80,7 @@ describe('Drive Worker with the real app proxy and session verification', () => 
       );
       expect(response.status).toBe(307);
       const login = new URL(response.headers.get('location') ?? '');
-      expect(login.origin).toBe('https://staging.tutur3u.com');
+      expect(login.origin).toBe('https://web.tutur3u.com');
       expect(login.pathname).toBe('/login');
       const callback = new URL(login.searchParams.get('returnUrl') ?? '');
       expect(callback.origin).toBe(origin);

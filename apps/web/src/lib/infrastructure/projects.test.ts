@@ -70,7 +70,7 @@ describe('infrastructure projects', () => {
     'meet.tuturuuu.com',
     'Docs.Tuturuuu.COM.',
     'https://dev.tuturuuu.com/',
-    'web.staging.tutur3u.com',
+    'web.tutur3u.com',
   ])(
     'keeps platform zone host %s reserved from managed projects',
     (hostname) => {

@@ -17,7 +17,7 @@ export {
 } from './wave1-ingress-policies.mjs';
 
 export const STAGING_ZONE = 'tutur3u.com';
-export const STAGING_PARENT = 'staging.tutur3u.com';
+export const STAGING_PARENT = STAGING_ZONE;
 
 /** Ingress-admitted staging identities, keyed by host. */
 export function ingressTargets() {
@@ -54,7 +54,7 @@ const inZone = (hostname) =>
   hostname === STAGING_ZONE || hostname.endsWith(`.${STAGING_ZONE}`);
 
 /**
- * A wildcard that could answer an unknown `<x>.staging.tutur3u.com` name.
+ * A wildcard that could answer an unknown `<x>.tutur3u.com` name.
  * The issuer trusts every single-label staging origin for CORS, which is safe
  * only while no wildcard can mint such a host (R1/N10).
  */

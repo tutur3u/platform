@@ -13,8 +13,13 @@ import { PUBLIC_ASSETS } from './public-assets';
 export const TASKS_ROOT_HOSTS = ['tasks.tuturuuu.com'] as const;
 
 /** Staging Worker hostnames an operator may admit through a Worker var. */
-const STAGING_HOST =
-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:workers\.dev|staging\.tutur3u\.com)$/u;
+const STAGING_HOST = {
+  test: (host: string) =>
+    host === 'tasks.tutur3u.com' ||
+    /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+workers\.dev$/u.test(
+      host
+    ),
+};
 
 export interface TasksWorkerEnv {
   ASSETS?: AssetsBinding;

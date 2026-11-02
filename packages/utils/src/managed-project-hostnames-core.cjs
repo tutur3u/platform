@@ -10,6 +10,27 @@ const PLATFORM_HOSTNAME_ZONES = Object.freeze([
 /** Exact platform names outside the zones above. */
 const RESERVED_MANAGED_PROJECT_HOSTNAMES = Object.freeze([
   'localhost',
+  ...[
+    'web',
+    'calendar',
+    'contacts',
+    'finance',
+    'meet',
+    'mail',
+    'apps',
+    'ai',
+    'cms',
+    'forms',
+    'inventory',
+    'nova',
+    'storefront',
+    'tasks',
+    'track',
+    'drive',
+    'tools',
+    'pay',
+    'infrastructure',
+  ].map((app) => `${app}.tutur3u.com`),
   'nova.ai.vn',
   'rewise.me',
 ]);

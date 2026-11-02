@@ -327,8 +327,8 @@ describe('cross-app return route', () => {
   });
 
   describe('staging hosts outside the shared cookie domain', () => {
-    const stagingWebOrigin = 'https://web.staging.tutur3u.com';
-    const stagingTasksOrigin = 'https://tasks.staging.tutur3u.com';
+    const stagingWebOrigin = 'https://web.tutur3u.com';
+    const stagingTasksOrigin = 'https://tasks.tutur3u.com';
 
     it('hands off a token to a registered staging satellite from the staging web host', async () => {
       vi.stubEnv(
@@ -446,7 +446,7 @@ describe('cross-app return route', () => {
       expect(mocks.rpc).not.toHaveBeenCalled();
     });
 
-    it('keeps the tokenless managed path for unregistered hosts inside the configured staging domain', async () => {
+    it('rejects unregistered legacy staging hosts from the new issuer', async () => {
       vi.stubEnv(
         'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
         '.staging.tutur3u.com'
@@ -460,10 +460,7 @@ describe('cross-app return route', () => {
         })
       );
 
-      expect(response.status).toBe(200);
-      await expect(response.json()).resolves.toMatchObject({
-        targetApp: 'managed-tuturuuu',
-      });
+      expect(response.status).toBe(400);
       expect(mocks.rpc).not.toHaveBeenCalled();
     });
   });

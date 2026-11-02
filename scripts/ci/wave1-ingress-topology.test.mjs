@@ -34,11 +34,11 @@ test('ingress targets are exactly the Access-protected staging hosts', () => {
     [
       [
         'calendar',
-        'calendar.staging.tutur3u.com',
+        'calendar.tutur3u.com',
         'tuturuuu-calendar-wave1-staging',
         false,
       ],
-      ['web', 'web.staging.tutur3u.com', 'tuturuuu-web-wave1-staging', true],
+      ['web', 'web.tutur3u.com', 'tuturuuu-web-wave1-staging', true],
     ]
   );
   assert.equal(ingressTarget('mail'), null);
@@ -62,7 +62,7 @@ const failures = [
     'R1 a second Worker on the host',
     (o) => {
       o.domains.result.push({
-        hostname: 'web.staging.tutur3u.com',
+        hostname: 'web.tutur3u.com',
         service: 'other',
         zone_name: 'tutur3u.com',
       });
@@ -73,7 +73,7 @@ const failures = [
     'R1 staging Worker on an extra host',
     (o) => {
       o.domains.result.push({
-        hostname: 'extra.staging.tutur3u.com',
+        hostname: 'extra.tutur3u.com',
         service: 'tuturuuu-web-wave1-staging',
         zone_name: 'tutur3u.com',
       });
@@ -91,7 +91,7 @@ const failures = [
     'R2 production Worker in the staging zone',
     (o) => {
       o.domains.result.push({
-        hostname: 'x.staging.tutur3u.com',
+        hostname: 'x.tutur3u.com',
         service: 'tuturuuu-mail',
         zone_name: 'tutur3u.com',
       });
@@ -102,7 +102,7 @@ const failures = [
     'R2 capturing route',
     (o) => {
       o.routes.result.push({
-        pattern: 'web.staging.tutur3u.com/api/*',
+        pattern: 'web.tutur3u.com/api/*',
         script: 'other',
       });
     },
@@ -138,7 +138,7 @@ const failures = [
       o.hostRecords.result = [
         {
           type: 'CNAME',
-          name: 'web.staging.tutur3u.com',
+          name: 'web.tutur3u.com',
           content: 'x.vercel-dns.com',
         },
       ];
@@ -155,9 +155,9 @@ const failures = [
   [
     'path-only Access coverage',
     (o) => {
-      o.app.result.domain = 'web.staging.tutur3u.com/login';
+      o.app.result.domain = 'web.tutur3u.com/login';
       o.app.result.destinations = [
-        { type: 'public', uri: 'web.staging.tutur3u.com/login' },
+        { type: 'public', uri: 'web.tutur3u.com/login' },
       ];
     },
     /does not cover all/,
@@ -167,7 +167,7 @@ const failures = [
     (o) => {
       o.app.result.destinations.push({
         type: 'public',
-        uri: 'mail.staging.tutur3u.com',
+        uri: 'mail.tutur3u.com',
       });
     },
     /other than/,
@@ -272,32 +272,26 @@ test('wildcard classification covers every name that could mint a staging host',
     '*',
     '*.tutur3u.com',
     '*.staging.tutur3u.com',
-    '*.x.staging.tutur3u.com',
+    '*.x.tutur3u.com',
+    '*.docs.tutur3u.com',
   ])
     assert.equal(isStagingWildcard(name), true, name);
-  for (const name of [
-    '*.docs.tutur3u.com',
-    'web.staging.tutur3u.com',
-    '*.tuturuuu.com',
-  ])
+  for (const name of ['web.tutur3u.com', '*.tuturuuu.com'])
     assert.equal(isStagingWildcard(name), false, name);
 });
 
 test('Access application ids parse strictly', () => {
   const id = '22222222-2222-4222-8222-222222222222';
-  assert.deepEqual(
-    accessAppIds(JSON.stringify({ 'web.staging.tutur3u.com': id })),
-    {
-      'web.staging.tutur3u.com': id,
-    }
-  );
+  assert.deepEqual(accessAppIds(JSON.stringify({ 'web.tutur3u.com': id })), {
+    'web.tutur3u.com': id,
+  });
   for (const value of [
     undefined,
     '',
     '[]',
     'web=1',
     JSON.stringify({ 'web.tuturuuu.com': id }),
-    JSON.stringify({ 'web.staging.tutur3u.com': 'x' }),
+    JSON.stringify({ 'web.tutur3u.com': 'x' }),
   ])
     assert.throws(() => accessAppIds(value));
 });

@@ -62,7 +62,7 @@ const createHandler = () =>
       publicAssets,
       assets: (env) => env.ASSETS,
       centralApiOrigin: (env) =>
-        env.INTERNAL_WEB_API_ORIGIN ?? 'https://staging.tutur3u.com',
+        env.INTERNAL_WEB_API_ORIGIN ?? 'https://web.tutur3u.com',
     })
   );
 

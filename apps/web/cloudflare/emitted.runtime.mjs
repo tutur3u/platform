@@ -25,7 +25,7 @@ const messageCopy = Object.fromEntries(
     ])
   )
 );
-const base = 'https://web.staging.tutur3u.com';
+const base = 'https://web.tutur3u.com';
 const access = accessFixture();
 
 const legalPages = [
@@ -454,7 +454,7 @@ test(description, { timeout: 30000 }, async (t) => {
         const response = await rollback.dispatchFetch(`${base}${path}`, {
           method: 'OPTIONS',
           headers: {
-            origin: 'https://calendar.staging.tutur3u.com',
+            origin: 'https://calendar.tutur3u.com',
             'access-control-request-method': 'POST',
             'access-control-request-headers': 'content-type',
           },
@@ -463,7 +463,7 @@ test(description, { timeout: 30000 }, async (t) => {
         assert.equal(await response.text(), '');
         assert.equal(
           response.headers.get('access-control-allow-origin'),
-          'https://calendar.staging.tutur3u.com'
+          'https://calendar.tutur3u.com'
         );
       }
       assert.equal(egress.length, calls, 'OPTIONS reached Next');

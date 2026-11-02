@@ -1,5 +1,5 @@
-export const DRIVE_STAGING_ORIGIN = 'https://drive.staging.tutur3u.com';
-export const STAGING_WEB_ORIGIN = 'https://staging.tutur3u.com';
+export const DRIVE_STAGING_ORIGIN = 'https://drive.tutur3u.com';
+export const STAGING_WEB_ORIGIN = 'https://web.tutur3u.com';
 // Same project pinned by .github/workflows/supabase-staging.yaml.
 export const STAGING_SUPABASE_ORIGIN =
   'https://fxefojytwimjiqxseqag.supabase.co';

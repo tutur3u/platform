@@ -36,7 +36,7 @@ describe('managed project hostname reservation', () => {
     'meet.tuturuuu.com',
     'dev.tuturuuu.com',
     'a.b.tuturuuu.com',
-    'web.staging.tutur3u.com',
+    'web.tutur3u.com',
     'staging.tutur3u.com',
     'localhost',
     'nova.ai.vn',
