@@ -6660,5 +6660,9 @@
   "mastermindAskCardRecommendedWhy": "Đề xuất: {option}. {why}",
   "mastermindInboxTierUrgent": "Khẩn cấp",
   "mastermindInboxTierDecision": "Cần bạn quyết định",
-  "mastermindInboxTierFyi": "Để bạn biết"
+  "mastermindInboxTierFyi": "Để bạn biết",
+  "mastermindInboxTierHeading": "{tier}, {count} việc",
+  "mastermindInboxTierShowAll": "Xem tất cả ({count})",
+  "mastermindInboxTierShowLess": "Thu gọn",
+  "mastermindInboxTierJump": "Cuộn tới mục này"
 }

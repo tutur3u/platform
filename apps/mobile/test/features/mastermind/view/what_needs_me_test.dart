@@ -95,13 +95,22 @@ void main() {
         _timed(3),
       ], security: false),
     );
-    expect(find.text('Urgent'), findsNWidgets(2)); // badge + tier heading
+    // Badge, tier heading and count tile.
+    expect(find.text('Urgent'), findsNWidgets(3));
     expect(find.text('High priority'), findsOneWidget);
     expect(find.text('Answer within hours'), findsOneWidget);
     expect(find.text('Answer this week'), findsOneWidget);
-    expect(find.text('1 urgent'), findsOneWidget);
-    expect(find.text('1 soon'), findsOneWidget);
-    expect(find.text('1 other'), findsOneWidget);
+    // The Inbox shows tier tiles in place of the urgency chips.
+    expect(find.text('1 urgent'), findsNothing);
+    for (final (tier, count) in [('urgent', '1'), ('decision', '2')]) {
+      expect(
+        find.descendant(
+          of: find.byKey(ValueKey('tier-tile-$tier')),
+          matching: find.text(count),
+        ),
+        findsOneWidget,
+      );
+    }
   });
 
   testWidgets('Use recommendations confirms, then queues one undoable reply '

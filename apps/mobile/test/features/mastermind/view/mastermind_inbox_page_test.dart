@@ -69,8 +69,9 @@ Future<MastermindViewHarness> _pump(
   return harness;
 }
 
+/// The last [text]: a tier heading, not the count tile above the list.
 double _top(WidgetTester tester, String text) =>
-    tester.getTopLeft(find.text(text)).dy;
+    tester.getTopLeft(find.text(text).last).dy;
 
 /// Reveal search through the same controller as the navbar action.
 Future<void> _revealSearch(WidgetTester tester) async {
@@ -108,8 +109,9 @@ void main() {
 
     testWidgets('shows a count per group, normal items only', (tester) async {
       await _pump(tester, inboxJson(_mixed));
-      expect(find.text('3'), findsOneWidget); // decisions and the action
-      expect(find.text('1'), findsOneWidget); // one fyi
+      // Heading and tile: decisions and the action, then one fyi.
+      expect(find.text('3'), findsNWidgets(2));
+      expect(find.text('1'), findsNWidgets(2));
     });
 
     testWidgets('a long body is a four-line preview, with no More', (
@@ -172,7 +174,7 @@ void main() {
     testWidgets('are not counted, filtered or searched', (tester) async {
       await _pump(tester, inboxJson(_mixed));
       // 3 + 1 = 4 normal items; the security row adds nothing.
-      expect(find.text('3'), findsOneWidget);
+      expect(find.text('3'), findsNWidgets(2)); // heading and tile
       await _revealSearch(tester);
       await tester.enterText(find.byType(TextField), 'zzz-no-match');
       await tester.pumpAndSettle();
