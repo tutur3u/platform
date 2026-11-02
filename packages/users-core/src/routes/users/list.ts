@@ -24,7 +24,7 @@ interface Params {
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
-const GroupIdSchema = z.string().uuid();
+const GroupIdSchema = z.guid();
 
 /**
  * Optional `groupId` narrows the list to members of one user group (any role)

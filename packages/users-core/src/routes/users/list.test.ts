@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   apiKey: null as string | null,
+  canReadWorkspaceUsers: vi.fn(),
   getFinanceRouteContext: vi.fn(),
   rpc: vi.fn(),
   validateWorkspaceApiKey: vi.fn(),
@@ -27,7 +28,7 @@ vi.mock('../../lib/workspace-api-key', () => ({
   validateWorkspaceApiKey: mocks.validateWorkspaceApiKey,
 }));
 vi.mock('../../lib/workspace-user-read-access', () => ({
-  canReadWorkspaceUsers: () => true,
+  canReadWorkspaceUsers: mocks.canReadWorkspaceUsers,
   redactWorkspaceUser: (user: unknown) => user,
 }));
 vi.mock('./workspace-user-create', () => ({
@@ -62,6 +63,7 @@ describe('GET workspace basic users', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.apiKey = null;
+    mocks.canReadWorkspaceUsers.mockReturnValue(true);
     mocks.rpc.mockImplementation(() => rpcQuery());
     mocks.getFinanceRouteContext.mockImplementation(async () => ({
       context: {
@@ -97,6 +99,36 @@ describe('GET workspace basic users', () => {
         included_groups: [GROUP_ID],
       }),
       { count: 'exact' }
+    );
+  });
+
+  it('accepts Postgres group ids without RFC version bits', async () => {
+    const groupId = '00000000-0000-0000-0000-000000000001';
+    const response = await GET(request(`?groupId=${groupId}`), params);
+    expect(response.status).toBe(200);
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'get_workspace_users',
+      expect.objectContaining({ included_groups: [groupId] }),
+      { count: 'exact' }
+    );
+  });
+
+  it('denies callers without read permission before querying', async () => {
+    mocks.canReadWorkspaceUsers.mockReturnValue(false);
+    const response = await GET(request(`?groupId=${GROUP_ID}`), params);
+    expect(response.status).toBe(403);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid API key with a valid group filter', async () => {
+    mocks.apiKey = 'invalid-key';
+    mocks.validateWorkspaceApiKey.mockResolvedValue(false);
+    const response = await GET(request(`?groupId=${GROUP_ID}`), params);
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ message: 'Invalid API key' });
+    expect(mocks.validateWorkspaceApiKey).toHaveBeenCalledWith(
+      'ws',
+      'invalid-key'
     );
   });
 
