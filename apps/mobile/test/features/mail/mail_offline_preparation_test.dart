@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
@@ -11,9 +12,23 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/mail/data/mail_cache.dart';
 import 'package:mobile/features/mail/data/mail_offline_preparation.dart';
 import 'package:mobile/features/mail/data/mail_repository.dart';
+import 'package:mobile/features/mail/view/mail_page.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../helpers/helpers.dart';
 
 class _Api extends Mock implements ApiClient {}
+
+class _ColdRepository extends MailRepository {
+  _ColdRepository({
+    required super.apiClient,
+    required super.cache,
+    required super.currentUserId,
+  });
+  @override
+  Future<void> saveView(String wsId, Map<String, dynamic> view) async {}
+}
 
 class _Storage extends Mock implements FlutterSecureStorage {}
 
@@ -89,12 +104,21 @@ void main() {
           (call.positionalArguments.first as String).endsWith('/bootstrap')
           ? {
               'mailboxes': [
-                {'id': 'box'},
+                {
+                  'id': 'box',
+                  'address': 'fixture@example.test',
+                  'status': 'active',
+                },
               ],
             }
           : {
+              'pagination': {'hasMore': false, 'total': 1},
               'threads': [
-                {'id': 'thread'},
+                {
+                  'id': 'thread',
+                  'subject': 'Prepared subject',
+                  'fromAddress': 'sender@example.test',
+                },
               ],
             },
     );
@@ -131,6 +155,34 @@ void main() {
       await repository.list('ws', 'box', folder: 'inbox'),
       contains('threads'),
     );
+  });
+  testWidgets('prepared Mail opens the real cold inbox offline', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    await tester.runAsync(prepare);
+    when(() => api.getJson(any())).thenThrow(
+      const ApiException(
+        message: 'offline',
+        statusCode: 0,
+        failureKind: ApiFailureKind.transport,
+      ),
+    );
+    final repository = _ColdRepository(
+      apiClient: api,
+      cache: MailCache(store: store, currentUserId: () => owner),
+      currentUserId: () => owner,
+    );
+    await tester.pumpApp(
+      MailWorkspace(workspaceId: 'ws', repository: repository),
+    );
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 50)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Prepared subject'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
   });
   for (final bytes in [false, true]) {
     test('over ${bytes ? "bytes" : "items"} cap publishes nothing', () async {
