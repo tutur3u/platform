@@ -70,6 +70,7 @@ import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
 import 'package:mobile/features/mastermind/privacy/mastermind_privacy_shield.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_auth_reset.dart';
+import 'package:mobile/features/mastermind/runtime/mastermind_offline_preparation.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
 import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
@@ -586,11 +587,17 @@ class _AppState extends State<App> {
             ),
             mastermindAuthResetListener(_mastermind),
             BlocListener<MobileFlags, MobileFlagsState>(
-              listener: (_, flags) => registerHomeOffline(
-                OfflinePreparationCoordinator.instance.registry,
-                flags,
-                (wsId) => _prepareWithPermissions(wsId, _prepareHomeOffline),
-              ),
+              listener: (_, flags) {
+                _mastermind.registerOfflinePreparation(
+                  OfflinePreparationCoordinator.instance.registry,
+                  flags,
+                );
+                registerHomeOffline(
+                  OfflinePreparationCoordinator.instance.registry,
+                  flags,
+                  (wsId) => _prepareWithPermissions(wsId, _prepareHomeOffline),
+                );
+              },
             ),
             BlocListener<WorkspaceCubit, WorkspaceState>(
               listenWhen: (previous, current) =>
