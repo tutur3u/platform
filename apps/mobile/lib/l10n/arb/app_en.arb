@@ -4894,6 +4894,7 @@
   "timerThresholdWarningAll": "All missed entries in this workspace require approval. Add at least one proof image before submitting.",
   "timerTimeEditingRestricted": "Time Editing Restricted",
   "timerTitle": "Timer",
+  "timerOfflineUnavailable": "Not available offline",
   "timerToday": "Today",
   "timerTotalSessions": "Total sessions",
   "timerUnknownDate": "Unknown date",

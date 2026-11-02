@@ -41,6 +41,7 @@ import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
+import 'package:mobile/data/repositories/time_tracker_offline_preparation.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/version_check_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
@@ -102,6 +103,7 @@ import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_controller.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
+import 'package:mobile/features/time_tracker/utils/history_period.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -175,6 +177,7 @@ class _AppState extends State<App> {
   late final GoRouter _router;
   late final _AppLifecycleObserver _lifecycleObserver;
   StreamSubscription<Uri>? _appLinkSubscription;
+  StreamSubscription<MobileFlagsState>? _timeTrackerOfflineFlags;
   StreamSubscription<MobileFlagsState>? _habitsOfflineFlags;
   MobileDeepLink? _pendingDeepLink;
   DateTime? _backgroundedAt;
@@ -479,6 +482,7 @@ class _AppState extends State<App> {
 
   @override
   void dispose() {
+    unawaited(_timeTrackerOfflineFlags?.cancel());
     unawaited(_habitsOfflineFlags?.cancel());
     unawaited(_chatOfflineFlags?.cancel());
     unawaited(_mobileFlags.close());

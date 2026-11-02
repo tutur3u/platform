@@ -4782,6 +4782,7 @@
   "timerThresholdWarningAll": "Mọi mục bổ sung trong không gian làm việc này đều cần được duyệt. Vui lòng thêm ít nhất một ảnh minh chứng trước khi gửi.",
   "timerTimeEditingRestricted": "Chỉnh Sửa Thời Gian Bị Hạn Chế",
   "timerTitle": "Bấm giờ",
+  "timerOfflineUnavailable": "Không khả dụng ngoại tuyến",
   "timerToday": "Hôm nay",
   "timerTotalSessions": "Tổng số phiên",
   "timerUnknownDate": "Ngày không xác định",

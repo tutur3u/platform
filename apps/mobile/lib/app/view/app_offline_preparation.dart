@@ -36,6 +36,27 @@ extension _AppOfflinePreparation on _AppState {
           _inventoryRepository.prepareOffline,
         );
       });
+    void registerTimeTracker() => TimeTrackerOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient();
+        try {
+          await _calendarSettingsCubit.loadWorkspacePreference(wsId);
+          final locale =
+              _localeCubit.state.locale ??
+              WidgetsBinding.instance.platformDispatcher.locale;
+          await TimeTrackerOfflinePreparation(
+            api: api,
+            firstDayOfWeek: timeTrackerFirstDayOfWeek(
+              _calendarSettingsCubit.state,
+              locale.languageCode,
+            ),
+          ).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
     void registerHabits() => HabitsOfflinePreparation.register(
       OfflinePreparationCoordinator.instance.registry,
       (wsId) => _prepareWithPermissions(wsId, (wsId) async {
@@ -46,6 +67,10 @@ extension _AppOfflinePreparation on _AppState {
           api.dispose();
         }
       }),
+    );
+    registerTimeTracker();
+    _timeTrackerOfflineFlags = _mobileFlags.stream.listen(
+      (_) => registerTimeTracker(),
     );
     registerHabits();
     _habitsOfflineFlags = _mobileFlags.stream.listen((_) => registerHabits());
@@ -207,6 +232,8 @@ extension _AppOfflinePreparation on _AppState {
   }
 
   void _unregisterOfflinePreparation() {
+    unawaited(_timeTrackerOfflineFlags?.cancel());
+    OfflinePreparationCoordinator.instance.unregister('time_tracker');
     unawaited(_habitsOfflineFlags?.cancel());
     OfflinePreparationCoordinator.instance.unregister('habits');
     CacheStore.instance.removedResource.removeListener(
