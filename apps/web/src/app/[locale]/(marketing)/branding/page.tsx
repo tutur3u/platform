@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { siteConfig } from '@/constants/configs';
+import { brandingFontPreloads } from '@/fonts/preload-sets';
 import { FontPreloads } from '@/fonts/preloads';
 import { getMarketingMetadata } from '@/lib/seo/marketing-metadata';
 import { getPublicLocalizedPath } from '@/lib/seo/public-routes';
@@ -45,7 +46,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default function BrandingPage() {
   return (
     <>
-      <FontPreloads names={['inter']} />
+      <FontPreloads names={brandingFontPreloads} />
       <BrandingClient />
     </>
   );

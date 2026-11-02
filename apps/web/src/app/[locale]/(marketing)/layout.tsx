@@ -1,6 +1,7 @@
 import { cn } from '@tuturuuu/utils/format';
 import type React from 'react';
 import Footer from '@/components/layouts/Footer';
+import { marketingFontPreloads } from '@/fonts/preload-sets';
 import { FontPreloads } from '@/fonts/preloads';
 import MarketingNavbar from '../marketing-navbar';
 import { marketingFontVariables } from './marketing-fonts';
@@ -15,19 +16,7 @@ export default function Layout({ children }: LayoutProps) {
     // Display + mono faces are scoped to marketing so product surfaces keep
     // the app font untouched.
     <div className={cn('contents', marketingFontVariables)}>
-      <FontPreloads
-        names={[
-          'be-vietnam-pro-500-latin',
-          'be-vietnam-pro-500-vietnamese',
-          'be-vietnam-pro-600-latin',
-          'be-vietnam-pro-600-vietnamese',
-          'be-vietnam-pro-700-latin',
-          'be-vietnam-pro-700-vietnamese',
-          'be-vietnam-pro-800-latin',
-          'be-vietnam-pro-800-vietnamese',
-          'jetbrains-mono',
-        ]}
-      />
+      <FontPreloads names={marketingFontPreloads} />
       <ScrollToTop />
       <MarketingNavbar />
       {/* pt clears the floating pill navbar (top offset + 3.5rem bar) */}

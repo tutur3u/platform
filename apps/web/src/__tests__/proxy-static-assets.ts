@@ -9,6 +9,7 @@ export function expectStaticAssetMatcher(matchers: readonly string[]) {
     '/audio/example.ogg',
     '/audio/example.m4a',
     '/fonts/subsets/noto-sans-latin-core.woff2',
+    '/fonts/subsets/noto-sans-latin-core.7b24cd8019.woff2',
     '/fonts/subsets/OFL-notosans.txt',
   ]) {
     expect(matcher.test(path), path).toBe(false);

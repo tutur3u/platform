@@ -43,6 +43,16 @@ SOURCES = [
     ('jetbrains-mono', 'local', '9136b147774598c777d96371c6cc2dbc7904c6dfa6a37db809c3b57f0c36b329', {}, '100 800'),
     ('inter', 'inter/Inter[opsz,wght].ttf', '29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031', {'opsz': 14}, '400 700'),
 ]
+# Original Google Fonts Noto Sans chunks, vendored so regeneration does not
+# depend on another app's assets. Each output keeps the Google chunk's data.
+NOTO_CHUNKS = {
+    'vietnamese-core': ('noto-sans-vietnamese.woff2', '233281c01fdba521af3bb0bd691bf6f49b3e8c06d93d10c8f83f8fe07d8ff75f'),
+    'latin-core': ('noto-sans-latin.woff2', 'afc7a910f4ff04ee2ff7b3a2ef8b24f8340b8ea8d8125f2779f1f0b69d1b56b9'),
+    'latin-ext-extended': ('noto-sans-latin-ext.woff2', 'be4f6d04a074f3887553c9b1c09e563470f3fe975456a13fc5bf7e20b5612976'),
+}
+SOURCES_DIR = ROOT / 'scripts/fonts/sources'
+# Served names carry a content-hash prefix so the URLs can be cached immutably.
+HASH_LENGTH = 10
 LICENSES = [
     ('notosans', 'cee9892f9f0cc8fe882c9e9537ee6a89621d86ee7ceaf70b02e2b2b1c25c061a'),
     ('bevietnampro', '6b7f8f73609a25ea78c891e34cf37b06f8a676b7ea986e941e43b009110f2a85'),
@@ -52,6 +62,25 @@ LICENSES = [
 
 def digest(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def publish(target):
+    """Rename a saved WOFF2 to its content-hashed name and return the new path."""
+    final = target.with_name(f'{target.stem}.{digest(target.read_bytes())[:HASH_LENGTH]}.woff2')
+    target.replace(final)
+    return final
+
+
+def output_record(file, **extra):
+    return {'file': file.name, 'bytes': file.stat().st_size, 'sha256': digest(file.read_bytes()), **extra}
+
+
+def vendored_chunk(part):
+    name, expected = NOTO_CHUNKS[part]
+    chunk = SOURCES_DIR / name
+    if digest(chunk.read_bytes()) != expected:
+        raise ValueError(f'Original Google font changed: {chunk}')
+    return chunk
 
 
 def download(cache, relative, expected):
@@ -116,7 +145,7 @@ def face(family, slug, weight, display, manifest):
   font-style: normal;
   font-weight: {weight};
   font-display: {display};
-  src: url("/fonts/subsets/{slug}-{part}.woff2") format("woff2");
+  src: url("/fonts/subsets/{info['file']}") format("woff2");
   unicode-range: {unicode_range(group)};
 }}''')
     return '\n\n'.join(rules)
@@ -140,6 +169,8 @@ def generate(cache):
     styles = ROOT / 'apps/web/src/fonts'
     output.mkdir(parents=True, exist_ok=True)
     styles.mkdir(parents=True, exist_ok=True)
+    for stale in output.glob('*.woff2'):
+        stale.unlink()
     manifest = {}
     for slug, relative, expected, axes, weight in SOURCES:
         source = ROOT / 'apps/web/src/app/[locale]/(marketing)/fonts/jetbrains-mono-variable.woff2' if relative == 'local' else download(cache, relative, expected)
@@ -152,14 +183,8 @@ def generate(cache):
         core = {c for c in characters if any(a <= c <= b for a, b in CORE_RANGES)}
         original_chunks = []
         if slug == 'noto-sans':
-            for part, expected_hash in [
-                ('vietnamese-core', '233281c01fdba521af3bb0bd691bf6f49b3e8c06d93d10c8f83f8fe07d8ff75f'),
-                ('latin-core', 'afc7a910f4ff04ee2ff7b3a2ef8b24f8340b8ea8d8125f2779f1f0b69d1b56b9'),
-            ]:
-                chunk = ROOT / f'apps/colab/src/client/assets/fonts/noto-sans-{part.removesuffix("-core")}.woff2'
-                if digest(chunk.read_bytes()) != expected_hash:
-                    raise ValueError(f'Original Google font changed: {chunk}')
-                original_chunks.append((part, chunk))
+            for part in ['vietnamese-core', 'latin-core']:
+                original_chunks.append((part, vendored_chunk(part)))
             core = set()
             for _, file in original_chunks:
                 chunk_font = TTFont(file)
@@ -175,24 +200,23 @@ def generate(cache):
                 preserve_hyphen_aliases(font, slug)
                 target = output / f'{slug}-{part}.woff2'
                 font.save(target)
-                manifest[slug]['outputs'][part] = {'bytes': target.stat().st_size, 'sha256': digest(target.read_bytes()), 'unicodeRange': unicode_range(font.getBestCmap()), 'sourceUrl': spec['url'], 'sourceSha256': spec['sha256'], **metadata(font)}
+                manifest[slug]['outputs'][part] = output_record(publish(target), unicodeRange=unicode_range(font.getBestCmap()), sourceUrl=spec['url'], sourceSha256=spec['sha256'], **metadata(font))
             continue
         for part, file in original_chunks:
             target = output / f'{slug}-{part}.woff2'
             chunk_font = TTFont(file, recalcTimestamp=False, recalcBBoxes=False)
             preserve_hyphen_aliases(chunk_font, slug)
             chunk_font.save(target)
-            manifest[slug]['outputs'][part] = {'bytes': target.stat().st_size, 'sha256': digest(target.read_bytes()), 'unicodeRange': unicode_range(chunk_font.getBestCmap()), **metadata(chunk_font)}
+            manifest[slug]['outputs'][part] = output_record(publish(target), unicodeRange=unicode_range(chunk_font.getBestCmap()), **metadata(chunk_font))
         if original_chunks:
-            original_ext = ROOT / 'apps/colab/src/client/assets/fonts/noto-sans-latin-ext.woff2'
-            if digest(original_ext.read_bytes()) != 'be4f6d04a074f3887553c9b1c09e563470f3fe975456a13fc5bf7e20b5612976':
-                raise ValueError('Original Google Latin Extended font changed')
+            original_ext = vendored_chunk('latin-ext-extended')
             chunk_font = TTFont(original_ext, recalcTimestamp=False, recalcBBoxes=False)
             target = output / 'noto-sans-latin-ext-extended.woff2'
             chunk_font.save(target)
             preferred = set(chunk_font.getBestCmap())
             core.update(preferred)
-            manifest[slug]['outputs']['latin-ext-extended'] = {'bytes': target.stat().st_size, 'sha256': digest(target.read_bytes()), 'unicodeRange': unicode_range(preferred), **metadata(TTFont(target))}
+            details = metadata(TTFont(target))
+            manifest[slug]['outputs']['latin-ext-extended'] = output_record(publish(target), unicodeRange=unicode_range(preferred), **details)
         parts = [('extended', characters - core)] if original_chunks else [('core', core), ('extended', characters - core)]
         for part, keep in parts:
             if not keep:
@@ -224,7 +248,8 @@ def generate(cache):
             actual = TTFont(file)
             if set(actual.getBestCmap()) != keep:
                 raise ValueError(f'Cmap changed unexpectedly: {file}')
-            manifest[slug]['outputs'][part] = {'bytes': file.stat().st_size, 'sha256': digest(file.read_bytes()), 'unicodeRange': unicode_range(keep), **metadata(actual)}
+            details = metadata(actual)
+            manifest[slug]['outputs'][part] = output_record(publish(file), unicodeRange=unicode_range(keep), **details)
     for family, expected in LICENSES:
         (output / f'OFL-{family}.txt').write_bytes(download(cache, family + '/OFL.txt', expected).read_bytes())
     (output / 'OFL-jetbrains-mono.txt').write_bytes((ROOT / 'apps/web/src/app/[locale]/(marketing)/fonts/OFL-JetBrainsMono.txt').read_bytes())
@@ -238,7 +263,10 @@ def generate(cache):
     branding = [face('Inter', 'inter', '400 700', 'swap', manifest), fallback('Inter Fallback', '90.44', '22.52', '107.12'), face('Noto Sans Branding', 'noto-sans', '100 900', 'swap', manifest), '.web-brand-inter {\n  /* biome-ignore lint/a11y/useGenericFontNames: Preserve the existing next/font fallback stack. */\n  font-family: "Inter", "Inter Fallback";\n  font-style: normal;\n}', '.web-brand-noto {\n  /* biome-ignore lint/a11y/useGenericFontNames: Preserve the existing next/font fallback stack. */\n  font-family: "Noto Sans Branding", "Noto Sans Fallback";\n  font-style: normal;\n}']
     (styles / 'branding.css').write_text(header + '\n\n'.join(branding) + '\n')
     (output / 'manifest.json').write_text(json.dumps({'upstreamRevision': REVISION, 'fonts': manifest}, indent=2) + '\n')
-    subprocess.run(['bun', 'x', 'biome', 'format', '--write', str(styles), str(output / 'manifest.json')], cwd=ROOT, check=True)
+    files = {f'{slug}-{part}': info['file'] for slug, entry in manifest.items() for part, info in entry['outputs'].items()}
+    entries = ''.join(f"  '{name}': '/fonts/subsets/{files[name]}',\n" for name in sorted(files))
+    (styles / 'subset-files.ts').write_text(f'// Generated by scripts/fonts/subset_web_fonts.py. Run by hand; do not edit.\n\nexport const fontSubsetFiles = {{\n{entries}}} as const;\n\nexport type FontSubsetName = keyof typeof fontSubsetFiles;\n')
+    subprocess.run(['bun', 'x', 'biome', 'format', '--write', str(styles / 'root.css'), str(styles / 'marketing.css'), str(styles / 'branding.css'), str(styles / 'subset-files.ts'), str(output / 'manifest.json')], cwd=ROOT, check=True)
     print(f'Generated font assets for {len(SOURCES)} families and weights')
 
 
