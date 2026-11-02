@@ -52841,6 +52841,35 @@ export type Database = {
           user_id: string;
         }[];
       };
+      search_users_with_services: {
+        Args: {
+          enabled_filter?: boolean;
+          page_number: number;
+          page_size: number;
+          role_filter?: string;
+          search_query: string;
+        };
+        Returns: {
+          allow_challenge_management: boolean;
+          allow_manage_all_challenges: boolean;
+          allow_role_management: boolean;
+          avatar_url: string;
+          bio: string;
+          birthday: string;
+          created_at: string;
+          deleted: boolean;
+          display_name: string;
+          email: string;
+          enabled: boolean;
+          full_name: string;
+          handle: string;
+          id: string;
+          new_email: string;
+          services: Database['public']['Enums']['platform_service'][];
+          team_name: string[];
+          user_id: string;
+        }[];
+      };
       search_users_by_name: {
         Args: {
           min_similarity?: number;
