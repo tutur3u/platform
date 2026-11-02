@@ -103,6 +103,17 @@ export default async function MeetingDetailPage({
         wsId={wsId}
         meetingName={title}
         backHref={`/${workspaceSlug}/meetings`}
+        initialShowNotes={policy.canReadNotes}
+        notes={
+          <MeetingNotesSection
+            wsId={wsId}
+            meetingId={meetingId}
+            title={title}
+            isHost={isHost}
+            policy={policy}
+            sharingControl={false}
+          />
+        }
       />
     );
   const permissionOutcome = await permissionsPromise;

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   calendar: vi.fn(),
   eq: vi.fn(),
   section: vi.fn(() => null),
+  ended: vi.fn(() => null),
 }));
 vi.mock('../../workspace-context', () => ({
   getMeetWorkspaceContext: mocks.context,
@@ -58,7 +59,7 @@ vi.mock('@tuturuuu/ui/card', () => ({
   CardTitle: () => null,
 }));
 vi.mock('@/features/call/components/call-ended', () => ({
-  CallEnded: () => null,
+  CallEnded: mocks.ended,
 }));
 vi.mock('@/features/call/components/meeting-duration-info', () => ({
   MeetingDurationInfo: () => null,
@@ -253,4 +254,32 @@ test('active rooms hand the room policy to the shared notes section', async () =
     isHost: true,
     policy,
   });
+});
+
+test('ended rooms open the notes and transcript tabs for readers', async () => {
+  const policy = {
+    ended: true,
+    canReadNotes: true,
+    settings: { shareNotesAfterMeeting: true },
+  };
+  mocks.policy.mockResolvedValue(policy);
+  const result = await MeetingDetailPage(props);
+  expect(result.type).toBe(mocks.ended);
+  expect(result.props.initialShowNotes).toBe(true);
+  expect(result.props.notes.type).toBe(mocks.section);
+  expect(result.props.notes.props).toEqual({
+    wsId: 'canonical-workspace',
+    meetingId: '10000000-0000-4000-8000-000000000001',
+    title: 'Meeting',
+    isHost: true,
+    policy,
+    sharingControl: false,
+  });
+});
+
+test('ended rooms keep notes closed for viewers the policy denies', async () => {
+  mocks.policy.mockResolvedValue({ ended: true, canReadNotes: false });
+  const result = await MeetingDetailPage(props);
+  expect(result.props.canReadNotes).toBe(false);
+  expect(result.props.initialShowNotes).toBe(false);
 });
