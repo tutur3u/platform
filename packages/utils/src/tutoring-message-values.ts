@@ -105,7 +105,8 @@ function zonedParts(timestamp: string, timeZone: string) {
 export function selectTutoringClassTime(
   sessions: TutoringClassTimeSession[],
   sessionDate: string,
-  startTime: string
+  startTime: string,
+  sameDayOnly = false
 ) {
   const tutoringClock = formatClock(parseClock(startTime) ?? 0);
   const classes = sessions
@@ -128,6 +129,7 @@ export function selectTutoringClassTime(
 
   const sameDay = classes.find((item) => item.date === sessionDate);
   if (sameDay) return sameDay.range;
+  if (sameDayOnly) return TUTORING_VALUE_UNKNOWN;
 
   const tutoringKey = `${sessionDate}T${tutoringClock}`;
   const next = classes.find((item) => item.sortKey > tutoringKey);
