@@ -1086,3 +1086,17 @@ teacher read scope to both the session read and preview save. Editors without
 other-teacher session IDs are denied. A concurrent reassignment cannot return a
 preview after a scoped save no longer matches. Regression coverage is the
 message-preview route test suite.
+
+
+### Parent message v2
+
+The workspace config `tutoring_parent_message_v2` defaults to OFF; only the
+string `true` enables it. Set it to `false` or remove it to restore the
+existing template (kill switch). Contacts parent-message previews use the
+workspace name as the centre and the requested Vietnamese closing with v2 on.
+The official-class line appears only for a scheduled class on the tutoring day.
+If the workspace name is missing, blank or unreadable, the entire existing
+template and class fallback remain unchanged, even with the flag on.
+With the flag off, custom templates and existing output bytes are preserved.
+Regression coverage: the message-preview route tests and
+`packages/utils/src/tutoring-message-values.test.ts`.

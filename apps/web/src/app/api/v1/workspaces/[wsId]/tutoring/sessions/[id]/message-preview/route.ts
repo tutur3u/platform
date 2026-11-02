@@ -1,7 +1,9 @@
 import {
   getTutoringCampus,
+  PARENT_MESSAGE_TEMPLATE_V2,
   readTutoringPolicyConfigRows,
   renderTutoringParentMessage,
+  TUTORING_PARENT_MESSAGE_V2_CONFIG_ID,
   TUTORING_POLICY_CONFIG_ID,
 } from '@tuturuuu/internal-api/tutoring-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
@@ -159,10 +161,30 @@ export async function POST(request: Request, { params }: Params) {
   const studentName = displayName(student);
 
   const policy = readTutoringPolicyConfigRows(policyResult.data ?? []);
+  const flagResult = await sbAdmin
+    .from('workspace_configs')
+    .select('value')
+    .eq('ws_id', normalizedWsId)
+    .eq('id', TUTORING_PARENT_MESSAGE_V2_CONFIG_ID)
+    .maybeSingle();
+  let centreName: string | null = null;
+  if (!flagResult.error && flagResult.data?.value === 'true') {
+    const workspaceResult = await sbAdmin
+      .from('workspaces')
+      .select('name')
+      .eq('id', normalizedWsId)
+      .maybeSingle();
+    if (!workspaceResult.error) {
+      centreName = workspaceResult.data?.name?.trim() || null;
+    }
+  }
+  const template = centreName
+    ? PARENT_MESSAGE_TEMPLATE_V2
+    : policy.parentMessageTemplate;
   // The class time is optional context: a failed read or a template without
   // the field must not stop the preview.
   let classTime = TUTORING_VALUE_UNKNOWN;
-  if (policy.parentMessageTemplate.includes('{{class_time}}')) {
+  if (template.includes('{{class_time}}')) {
     // Widen by a day for time zone offsets; the zoned local date decides.
     const classSessionsResult = await tutoringSessionsClient
       .from('workspace_user_group_sessions')
@@ -192,11 +214,16 @@ export async function POST(request: Request, { params }: Params) {
       classTime = selectTutoringClassTime(
         classSessions,
         data.session_date,
-        String(data.start_time)
+        String(data.start_time),
+        Boolean(centreName)
       );
     }
   }
-  const preview = renderTutoringParentMessage(policy.parentMessageTemplate, {
+  const messageTemplate =
+    centreName && classTime === TUTORING_VALUE_UNKNOWN
+      ? template.replace('Lịch học chính thức: {{class_time}}\n', '')
+      : template;
+  const rendered = renderTutoringParentMessage(messageTemplate, {
     campus:
       getTutoringCampus(policy, data.group_id, group?.name) ?? 'Chưa xác định',
     class_time: classTime,
@@ -213,6 +240,10 @@ export async function POST(request: Request, { params }: Params) {
     ),
     weekday: getTutoringWeekdayLabel(data.session_date),
   });
+
+  const preview = centreName
+    ? rendered.replace('{{centre}}', () => centreName ?? '')
+    : rendered;
 
   let updateQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
