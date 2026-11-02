@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { beforeEach, expect, it, vi } from 'vitest';
 import { EmployeeCreationRecovery } from './employee-creation-recovery';
 

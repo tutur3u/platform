@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { InternalAccount } from '@tuturuuu/internal-api/infrastructure';
 import { describe, expect, it, vi } from 'vitest';
