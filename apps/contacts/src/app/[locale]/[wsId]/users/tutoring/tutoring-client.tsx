@@ -54,9 +54,15 @@ interface Props {
   wsId: string;
   canManage: boolean;
   canConfigure: boolean;
+  tutorCommentsEnabled?: boolean;
 }
 
-export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
+export function TutoringClient({
+  wsId,
+  canManage,
+  canConfigure,
+  tutorCommentsEnabled = false,
+}: Props) {
   const t = useTranslations('ws-tutoring');
   const locale = useLocale();
   const queryClient = useQueryClient();
@@ -461,6 +467,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
 
         <TabsContent className="space-y-4" value="sessions">
           <TutoringSessionsCard
+            tutorCommentsEnabled={tutorCommentsEnabled}
             actions={{
               onCreate: createMutation.submit,
               onCreateDialogOpenChange: changeDialogOpen,
