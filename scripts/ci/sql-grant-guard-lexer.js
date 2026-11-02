@@ -78,8 +78,22 @@ function lexSql(sql) {
         }
       }
       if (unicode) {
-        const clause = /^\s+uescape\s+'(.)'/i.exec(sql.slice(cursor));
-        if (clause) cursor += clause[0].length;
+        // PostgreSQL permits comments and no whitespace between these tokens.
+        const trivia = String.raw`(?:\s|--[^\n]*(?:\n|$)|/\*(?:[^*]|\*(?!/))*\*/)*`;
+        const clause = new RegExp(`^${trivia}uescape${trivia}'(.)'`, 'i').exec(
+          sql.slice(cursor)
+        );
+        if (clause) {
+          const identifier = sql.slice(index, cursor);
+          const escapeChar = clause[1];
+          code +=
+            identifier.slice(0, 3) +
+            identifier.slice(3, -1).split(escapeChar).join('\\') +
+            '"';
+          index = cursor;
+          emit(cursor + clause[0].length, false);
+          continue;
+        }
       }
       emit(Math.min(cursor, sql.length), true);
     } else {

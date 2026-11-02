@@ -189,6 +189,12 @@ function scanSql(sql, { definerRule }) {
   const revoked = new Map();
 
   for (const statement of statements) {
+    if (/\buescape\b/.test(statement.text))
+      findings.push({
+        rule: 'function-acl',
+        line: statement.startLine,
+        detail: 'unparsed UESCAPE requires scanner support',
+      });
     const roles = openGrantees(statement.text);
     const grantReview =
       /\bon (?:function|procedure|routine)s?\b/.test(statement.text) &&

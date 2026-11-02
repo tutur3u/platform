@@ -21,14 +21,13 @@ function nestedBodyGrants(sql) {
       pending.push({ text, line: body.line + lexed.bodyLines[index] - 1 });
     }
     for (const statement of parseStatements(body.text).statements) {
-      const grant = /(?:^|\bbegin\s+)grant\s+.+?\s+to\s+(.*)$/.exec(
-        statement.text
-      );
+      const grant = /(?:^|\s)grant\s+.+?\s+to\s+(.*)$/.exec(statement.text);
       if (!grant) continue;
       const roles = grant[1].split(',').map((role) =>
         role
           .trim()
-          .replace(/\s+with\s+.*$/, '')
+          .replace(/\s+(?:with|granted)\s+.*$/, '')
+          .replace(/^group\s+/, '')
           .replace(/^"([^"\n]*)"$/, '$1')
       );
       const open = roles.filter((role) => ['anon', 'public'].includes(role));
