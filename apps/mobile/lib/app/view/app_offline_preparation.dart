@@ -47,8 +47,23 @@ extension _AppOfflinePreparation on _AppState {
         }
       }),
     );
+    void registerNotes() => NotesOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient();
+        try {
+          await NotesOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
+    registerNotes();
     registerChat();
-    _chatOfflineFlags = _mobileFlags.stream.listen((_) => registerChat());
+    _chatOfflineFlags = _mobileFlags.stream.listen((_) {
+      registerChat();
+      registerNotes();
+    });
     CacheStore.instance.removedResource.addListener(
       _invalidateOfflineReadiness,
     );
