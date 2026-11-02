@@ -1,5 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -20,7 +21,7 @@ Future<DownloadNetworkConsent?> requestDownloadNetworkConsent(
     interfaces = const [];
   }
   if (!context.mounted) return null;
-  if (interfaces.contains(ConnectivityResult.wifi)) {
+  if (OfflinePreparationCoordinator.wifiLike(interfaces)) {
     return DownloadNetworkConsent.wifiOnly;
   }
   final l10n = context.l10n;

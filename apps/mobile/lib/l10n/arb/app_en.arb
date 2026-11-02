@@ -7195,5 +7195,8 @@
   "settingsPushSummary": "Get alerts on this device",
   "settingsTelemetrySummary": "Help improve the app",
   "settingsStorageSummary": "Manage data on this device",
-  "settingsLearnMore": "Learn more"
+  "settingsLearnMore": "Learn more",
+  "offlineWaitingWifi": "Waiting for Wi-Fi",
+  "offlineWaitingRetry": "Waiting to retry at {time}",
+  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}}
 }

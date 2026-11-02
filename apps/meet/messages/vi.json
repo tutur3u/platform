@@ -4159,7 +4159,6 @@
       "join_denied_title": "Yêu cầu tham gia đã bị từ chối",
       "join_error_hint": "Chưa thể xác nhận kết nối của bạn. Số lần tự động kết nối lại có giới hạn. Kiểm tra mạng, rồi thử lại hoặc rời đi.",
       "join_error_title": "Không thể kết nối với cuộc họp",
-      "join_loading_slow_hint": "Cuộc họp chưa tải xong. Bạn có thể rời đi và mở lại lời mời để thử lại.",
       "join_loading_slow_title": "Kết nối đang mất nhiều thời gian hơn dự kiến",
       "join_missing_hint": "Liên kết có thể không đúng hoặc bạn không có quyền truy cập cuộc họp. Hãy kiểm tra lời mời với chủ phòng.",
       "join_missing_title": "Không tìm thấy cuộc họp hoặc không thể truy cập",
@@ -4244,8 +4243,6 @@
       "playback_volume_hint": "Chỉ thay đổi âm thanh bạn nghe. Âm lượng tổng điều chỉnh giọng nói, âm thanh chia sẻ, Mira và âm báo.",
       "preferences": "Tùy chọn",
       "preparing_call": "Đang chuẩn bị cuộc gọi",
-      "preparing_call_hint": "Đang kết nối an toàn. Các nút điều khiển camera và micrô sẽ sẵn sàng trong giây lát.",
-      "preparing_privacy": "Không có gì được chia sẻ cho đến khi bạn tham gia.",
       "preview_private": "Micrô và camera của bạn chưa được chia sẻ cho đến khi bạn tham gia.",
       "pricing_date": "Giá được kiểm tra ngày {date}",
       "private_tools": {

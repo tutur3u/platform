@@ -28248,6 +28248,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Learn more'**
   String get settingsLearnMore;
+
+  /// No description provided for @offlineWaitingWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for Wi-Fi'**
+  String get offlineWaitingWifi;
+
+  /// No description provided for @offlineWaitingRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to retry at {time}'**
+  String offlineWaitingRetry(String time);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -6669,5 +6669,8 @@
   "settingsPushSummary": "Nhận thông báo trên thiết bị này",
   "settingsTelemetrySummary": "Giúp cải thiện ứng dụng",
   "settingsStorageSummary": "Quản lý dữ liệu trên thiết bị này",
-  "settingsLearnMore": "Tìm hiểu thêm"
+  "settingsLearnMore": "Tìm hiểu thêm",
+  "offlineWaitingWifi": "Đang chờ Wi-Fi",
+  "offlineWaitingRetry": "Chờ thử lại lúc {time}",
+  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}}
 }

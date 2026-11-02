@@ -20,6 +20,8 @@ typedef OfflinePreparationWriter =
 
 enum OfflinePreparationStatus {
   queued,
+  waitingRetry,
+  waitingWifi,
   downloading,
   ready,
   failed,
@@ -36,11 +38,13 @@ class OfflineProductPreparation {
     this.status = OfflinePreparationStatus.queued,
     this.lastSuccess,
     this.errorMessage,
+    this.retryAt,
   });
 
   final OfflinePreparationStatus status;
   final DateTime? lastSuccess;
   final String? errorMessage;
+  final DateTime? retryAt;
 }
 
 @immutable
@@ -119,6 +123,9 @@ class OfflinePreparationCoordinator {
   int? _activeGeneration;
   final Set<String> _removedDuringRun = {};
 
+  static bool wifiLike(List<ConnectivityResult> interfaces) =>
+      interfaces.contains(ConnectivityResult.wifi) ||
+      interfaces.contains(ConnectivityResult.ethernet);
   int get scopeRevision => _generation;
 
   bool canContinue(String userId, String workspaceId) =>
@@ -246,17 +253,17 @@ class OfflinePreparationCoordinator {
         : productIds;
     final networkSubscription = _networkEvents?.listen((interfaces) {
       if (_wifiOnly &&
-          !interfaces.contains(ConnectivityResult.wifi) &&
+          !wifiLike(interfaces) &&
           _current(generation, userId, workspaceId)) {
         _stop(clearIntent: false);
       }
     });
     _wifiOnly = wifiOnly;
     _pendingProducts = ids.where(_tasks.containsKey).toSet();
+    var countedRetry = false;
     final products = {...state.value.products};
     void publish({required bool running}) {
-      // Retention reads yield; a verified earlier product can be evicted while
-      // a later product is checked. Never overwrite those removal events.
+      // Preserve removals that occur while retention checks yield.
       for (final id in _removedDuringRun) {
         final product = products[id];
         if (product?.status == OfflinePreparationStatus.ready) {
@@ -312,7 +319,20 @@ class OfflinePreparationCoordinator {
         if (_wifiOnly) {
           final interfaces = await _network();
           if (!_current(generation, userId, workspaceId) ||
-              !interfaces.contains(ConnectivityResult.wifi)) {
+              !wifiLike(interfaces)) {
+            if (_current(generation, userId, workspaceId)) {
+              for (final pending in _pendingProducts) {
+                final product = products[pending];
+                if (product?.status == OfflinePreparationStatus.waitingRetry) {
+                  continue;
+                }
+                products[pending] = OfflineProductPreparation(
+                  status: OfflinePreparationStatus.waitingWifi,
+                  lastSuccess: product?.lastSuccess,
+                );
+              }
+              publish(running: false);
+            }
             return;
           }
         }
@@ -334,8 +354,7 @@ class OfflinePreparationCoordinator {
             id: timestamp,
           });
           if (!_current(generation, userId, workspaceId)) return;
-          // Its successful download supersedes prior/own reconciliation.
-          // Final retention checks still detect eviction or later removals.
+          // Final retention checks still detect subsequent eviction.
           _removedDuringRun.remove(id);
           _pendingProducts.remove(id);
           if (_intents != null) await _saveIntent(userId, workspaceId);
@@ -357,15 +376,28 @@ class OfflinePreparationCoordinator {
           }
           if (error is ApiException &&
               (error.statusCode == 503 || error.statusCode == 429)) {
-            _retryAttempts++;
+            if (!countedRetry) {
+              _retryAttempts++;
+              countedRetry = true;
+            }
             final seconds = error.retryAfter ?? 30;
-            _retryAt = _clock().toUtc().add(
-              Duration(seconds: seconds.clamp(30, 15 * 60)),
+            final retryAt = _clock().toUtc().add(
+              // Bounded: no tight loop (0) and no years-long park or overflow.
+              Duration(seconds: seconds.clamp(5, 15 * 60)),
             );
-            products[id] = OfflineProductPreparation(lastSuccess: lastSuccess);
+            if (_retryAt == null || retryAt.isAfter(_retryAt!)) {
+              _retryAt = retryAt;
+            }
+            products[id] = OfflineProductPreparation(
+              status: OfflinePreparationStatus.waitingRetry,
+              lastSuccess: lastSuccess,
+              retryAt: retryAt,
+              errorMessage: '${error.statusCode}: ${error.message}',
+            );
             if (_intents != null) await _saveIntent(userId, workspaceId);
             if (!_current(generation, userId, workspaceId)) return;
-            break;
+            publish(running: true);
+            continue;
           }
           products[id] = OfflineProductPreparation(
             status:
@@ -463,7 +495,12 @@ class OfflinePreparationCoordinator {
       retryExhausted: _retryAttempts >= 3,
       products: {
         for (final entry in latest.products.entries)
-          entry.key: entry.value.status == OfflinePreparationStatus.downloading
+          entry.key: !clearIntent && _pendingProducts.contains(entry.key)
+              ? OfflineProductPreparation(
+                  status: OfflinePreparationStatus.waitingWifi,
+                  lastSuccess: entry.value.lastSuccess,
+                )
+              : entry.value.status == OfflinePreparationStatus.downloading
               ? OfflineProductPreparation(lastSuccess: entry.value.lastSuccess)
               : entry.value,
       },
@@ -520,7 +557,20 @@ class OfflinePreparationCoordinator {
     state.value = OfflinePreparationState(
       userId: latest.userId,
       workspaceId: latest.workspaceId,
-      products: latest.products,
+      products: {
+        for (final entry in latest.products.entries)
+          entry.key:
+              intent.products.contains(entry.key) &&
+                  _retryAt != null &&
+                  entry.value.status != OfflinePreparationStatus.failed
+              ? OfflineProductPreparation(
+                  status: OfflinePreparationStatus.waitingRetry,
+                  lastSuccess: entry.value.lastSuccess,
+                  retryAt: _retryAt,
+                  errorMessage: entry.value.errorMessage,
+                )
+              : entry.value,
+      },
       retryAt: _retryAt,
       retryExhausted: _retryAttempts >= 3,
     );
@@ -533,10 +583,18 @@ class OfflinePreparationCoordinator {
     if (!_current(generation, userId, workspaceId) ||
         interfaces.isEmpty ||
         interfaces.every((value) => value == ConnectivityResult.none) ||
-        intent.wifiOnly && !interfaces.contains(ConnectivityResult.wifi)) {
+        intent.wifiOnly && !wifiLike(interfaces)) {
       return;
     }
-    final pending = intent.products.where(_tasks.containsKey).toSet();
+    final pending = intent.products
+        .where(
+          (id) =>
+              _tasks.containsKey(id) &&
+              (_retryAt == null ||
+                  state.value.products[id]?.status !=
+                      OfflinePreparationStatus.failed),
+        )
+        .toSet();
     if (pending.isEmpty) return;
     // Only original requested modules resume; no automatic scope expansion.
     await ApiClient.offlinePreparation(

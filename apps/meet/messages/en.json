@@ -4159,7 +4159,6 @@
       "join_denied_title": "Your request was declined",
       "join_error_hint": "We could not confirm your connection. Automatic reconnection attempts are limited. Check your network, then retry or leave.",
       "join_error_title": "Unable to connect to the meeting",
-      "join_loading_slow_hint": "The meeting has not finished loading. You can leave and reopen the invitation to try again.",
       "join_loading_slow_title": "Connecting is taking longer than expected",
       "join_missing_hint": "This link may be incorrect, or you may not have access to the meeting. Check the invite with the host.",
       "join_missing_title": "Meeting not found or unavailable",
@@ -4244,8 +4243,6 @@
       "playback_volume_hint": "Only changes what you hear. Master volume scales voices, shared audio, Mira, and notification sounds.",
       "preferences": "Preferences",
       "preparing_call": "Preparing your call",
-      "preparing_call_hint": "Connecting you securely. Your camera and microphone controls will be ready in a moment.",
-      "preparing_privacy": "Nothing is shared until you join.",
       "preview_private": "Your microphone and camera are not shared until you join.",
       "pricing_date": "Rates checked {date}",
       "private_tools": {

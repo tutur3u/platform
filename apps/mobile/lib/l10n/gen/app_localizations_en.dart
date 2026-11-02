@@ -15221,4 +15221,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLearnMore => 'Learn more';
+
+  @override
+  String get offlineWaitingWifi => 'Waiting for Wi-Fi';
+
+  @override
+  String offlineWaitingRetry(String time) {
+    return 'Waiting to retry at $time';
+  }
 }
