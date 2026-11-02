@@ -73,7 +73,11 @@ void main() {
             DateFormat.yMd(locale).add_jm().format(retry.toLocal()),
           ),
           OfflinePreparationStatus.failed => l10n.offlinePreparationFailed,
-          _ => l10n.offlinePreparationUnavailable,
+          // Waiting its turn is never shown as "not available".
+          OfflinePreparationStatus.queued =>
+            l10n.offlinePreparationNeedsRefresh,
+          OfflinePreparationStatus.unavailable =>
+            l10n.offlinePreparationUnavailable,
         };
         expect(find.text(expected), findsWidgets);
         expect(

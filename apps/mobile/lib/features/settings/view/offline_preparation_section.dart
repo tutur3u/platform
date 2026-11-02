@@ -336,7 +336,7 @@ class _OfflineProductRow extends StatelessWidget {
                     ),
             OfflinePreparationStatus.downloading => l10n.offlineStatusPreparing,
             OfflinePreparationStatus.ready => l10n.offlineStatusReady,
-            OfflinePreparationStatus.queued ||
+            // Queued keeps its own label (waiting / needs refresh / queued).
             OfflinePreparationStatus.unavailable =>
               l10n.offlinePreparationUnavailable,
             _ => legacyStatus,
