@@ -97,6 +97,11 @@ const expectedVerifiedIdentities = [
     'public.validate_cross_app_token_with_session(text,text)',
     'public-execute',
   ],
+  [
+    'apps/database/supabase/migrations/20261101100040_project_ticket_keys.sql',
+    '<dynamic-execute-acl>',
+    'dynamic-execute-acl',
+  ],
 ];
 const identity = ({ file, signature, rule }) => [file, signature, rule];
 const sortedIdentities = (entries) =>
@@ -121,7 +126,8 @@ test('verified findings remain separate from the historical debt inventory', () 
           ? ['anon', 'authenticated', 'service_role']
           : entry.file.includes('030700')
             ? ['authenticated', 'service_role']
-            : entry.file.includes('030500')
+            : entry.file.includes('030500') ||
+                entry.file.includes('20261101100040')
               ? []
               : ['service_role']
     );
