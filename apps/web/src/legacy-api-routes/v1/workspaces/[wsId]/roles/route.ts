@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Database, TablesInsert, WorkspaceRole } from '@tuturuuu/types';
+import { isExplicitGrantPermission } from '@tuturuuu/utils/explicit-grant-permissions';
 import { NextResponse } from 'next/server';
 import { filterCreatorGrantPermissions } from '@/lib/workspace-creator-grant-permissions';
 import { normalizeRoleMembers } from '@/lib/workspace-role-members';
@@ -134,14 +135,16 @@ export async function POST(req: Request, { params }: Params) {
   const { error: permissionsError } = await supabase
     .from('workspace_role_permissions')
     .insert(
-      permissions.map(
-        (permission): TablesInsert<'workspace_role_permissions'> => ({
-          ws_id: resolvedWsId,
-          role_id: role.id,
-          permission: permission.id as WorkspaceRolePermissionValue,
-          enabled: permission.enabled,
-        })
-      )
+      permissions
+        .filter((permission) => !isExplicitGrantPermission(permission.id))
+        .map(
+          (permission): TablesInsert<'workspace_role_permissions'> => ({
+            ws_id: resolvedWsId,
+            role_id: role.id,
+            permission: permission.id as WorkspaceRolePermissionValue,
+            enabled: permission.enabled,
+          })
+        )
     );
 
   if (permissionsError) {

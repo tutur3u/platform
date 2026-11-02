@@ -101,7 +101,8 @@ void main() {
     ) async {
       await _pump(tester, _asks(525));
       expect(find.textContaining('Show all'), findsNothing);
-      expect(find.text('525'), findsOneWidget); // the group count
+      // The group count and its tile.
+      expect(find.text('525'), findsNWidgets(2));
       await _scrollTo(tester, find.text('Decision 525'));
       await _scrollTo(tester, find.text(_endMarker));
       expect(find.text('Decision 525'), findsOneWidget);
@@ -195,6 +196,12 @@ void main() {
         },
       );
       await _scrollTo(tester, find.text(_loadFailed));
+      // Built is not on screen: nudge the row into the viewport first.
+      for (var i = 0; i < 20; i++) {
+        if (tester.getCenter(find.text('Retry')).dy < 700) break;
+        await tester.drag(_scrollable, const Offset(0, -200));
+        await tester.pump();
+      }
       await tester.tap(find.text('Retry'));
       await tester.pumpAndSettle();
       expect(find.text(_loadFailed), findsNothing);
@@ -267,7 +274,7 @@ void main() {
 
       await tester.tap(find.widgetWithText(AppChip, 'Mastermind'));
       await tester.pumpAndSettle();
-      expect(find.text('50'), findsOneWidget);
+      expect(find.text('50'), findsNWidgets(2)); // heading and tile
       expect(find.text('Decision 2'), findsNothing);
 
       await _scrollTo(tester, find.text(_endMarker));
@@ -303,7 +310,9 @@ void main() {
     await tester.tap(find.widgetWithText(AppChip, 'Mastermind'));
     await tester.pumpAndSettle();
     expect(find.text('Decision 90'), findsNothing);
-    expect(find.text('Decision 91'), findsOneWidget);
+    // Below the tier tiles: reachable, though not built yet.
+    await _scrollTo(tester, find.text('Decision 91'));
+    await _toTop(tester);
     await tester.enterText(find.byType(TextField), 'no such ask');
     await tester.pumpAndSettle();
     await tester.tap(find.text('Clear search and filters'));
@@ -338,7 +347,12 @@ void main() {
       matching: find.byType(InboxItemTile),
     );
     final approve = find.descendant(of: tile, matching: find.text('Approve'));
+    // Lazy rows above can still change height as they build; settle, then
+    // bring the option into view again before tapping it.
     await tester.ensureVisible(approve);
+    await tester.pump();
+    await tester.ensureVisible(approve);
+    await tester.pump();
     await tester.tap(approve);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
@@ -382,7 +396,9 @@ void main() {
       await _scrollTo(tester, find.text('Security'));
       expect(tester.takeException(), isNull);
       await _toTop(tester);
-      expect(find.text('Decision 1'), findsOneWidget);
+      expect(tester.state<ScrollableState>(_scrollable).position.pixels, 0);
+      // At 2x the stacked tier tiles push the first ask below the build area.
+      await _scrollTo(tester, find.text('Decision 1'));
       expect(tester.takeException(), isNull);
     });
   });

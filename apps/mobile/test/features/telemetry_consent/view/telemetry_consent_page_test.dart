@@ -292,8 +292,47 @@ void main() {
       );
       await tester.tap(find.text('Privacy details'));
       await tester.pumpAndSettle();
-      expect(opened, [telemetryPrivacyUri]);
+      expect(opened, [Uri.parse('https://tuturuuu.com/privacy')]);
     });
+
+    for (final language in ['en', 'vi']) {
+      testWidgets('privacy link follows app locale $language', (tester) async {
+        tester.binding.platformDispatcher.localeTestValue = Locale(
+          language == 'vi' ? 'en' : 'vi',
+        );
+        final (preference, _, _) = await _start(direct: true);
+        final opened = <Uri>[];
+        await tester.pumpApp(
+          Builder(
+            builder: (context) => Localizations.override(
+              context: context,
+              locale: Locale(language),
+              child: TelemetryConsentPage(
+                preference: preference,
+                openLink: (_, uri) async {
+                  opened.add(uri);
+                  return true;
+                },
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.text(
+            language == 'vi' ? 'Chi tiết về quyền riêng tư' : 'Privacy details',
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(opened, [
+          Uri.parse(
+            language == 'vi'
+                ? 'https://tuturuuu.com/vi/privacy'
+                : 'https://tuturuuu.com/privacy',
+          ),
+        ]);
+      });
+    }
 
     test('Vietnamese copy matches the Legal draft verbatim', () {
       final vi = AppLocalizationsVi();

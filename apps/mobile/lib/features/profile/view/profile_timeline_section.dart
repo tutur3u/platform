@@ -14,6 +14,7 @@ import 'package:mobile/features/profile/profile_timeline_repository.dart';
 import 'package:mobile/features/profile/view/profile_timeline_browser.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 
 class ProfileTimelineSection extends StatefulWidget {
   const ProfileTimelineSection({
@@ -54,6 +55,7 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
   bool _partial = false;
   bool _limited = false;
   bool _refreshing = false;
+  Future<void>? _refreshFuture;
   bool _failureReported = false;
   bool _loadingMore = false;
   bool _pagingPaused = false;
@@ -101,8 +103,18 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
     }
   }
 
-  Future<void> _load(String workspaceId, String userId) async {
-    if (_refreshing) return;
+  Future<void> _load(String workspaceId, String userId) {
+    final existing = _refreshFuture;
+    if (_refreshing && existing != null) return existing;
+    late final Future<void> running;
+    running = _loadSnapshot(workspaceId, userId).whenComplete(() {
+      if (identical(_refreshFuture, running)) _refreshFuture = null;
+    });
+    _refreshFuture = running;
+    return running;
+  }
+
+  Future<void> _loadSnapshot(String workspaceId, String userId) async {
     final request = ++_request;
     final immediate = _repository.peek(workspaceId, userId);
     setState(() {
@@ -294,7 +306,20 @@ class _ProfileTimelineSectionState extends State<ProfileTimelineSection> {
       );
     }
     final items = _items;
-    final browser = _browser(items);
+    final browser = NovaRefreshIndicator(
+      onRefresh: () async {
+        final userId = context.read<AuthCubit>().state.user?.id;
+        final workspaceId = verifiedPersonalProfileWorkspace(
+          userId: userId,
+          cacheUserId: (widget.cacheUserId ?? currentPersonalProfileUserId)(),
+          workspaces: context.read<WorkspaceCubit>(),
+        )?.id;
+        if (userId != null && workspaceId != null) {
+          await _load(workspaceId, userId);
+        }
+      },
+      child: _browser(items),
+    );
     return widget.fullSurface ? SizedBox.expand(child: browser) : browser;
   }
 

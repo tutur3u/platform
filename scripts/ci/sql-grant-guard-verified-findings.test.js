@@ -97,3 +97,41 @@ test('committed 100400 entries are inactive until the 030000 hardening file exis
   );
   assert.equal(present.verified.length, verifiedFindings.length);
 });
+
+test('rollback records admit only source-bound rollback search-path diagnostics', () => {
+  const rollback =
+    'apps/database/rollbacks/20300101000000_fixture.rollback.sql';
+  const files = [rollback];
+  const readFile = () => sql;
+  const diagnostics = collectDiagnostics({ files, readFile });
+  const records = diagnostics.map((f) => ({
+    path: f.file,
+    line: f.line,
+    rule: f.rule,
+    fileDigest: f.fileDigest,
+    digest: f.digest,
+    class: 'rollback',
+    reason: 'Restore the prior body with forward fix ready',
+  }));
+  const run = (options = {}) =>
+    evaluateSqlFiles({
+      files,
+      readFile,
+      verifiedFindings: records,
+      ...options,
+    });
+  assert.deepEqual(
+    run().verified.map((f) => f.rule),
+    ['definer-search-path']
+  );
+  assert.ok(run().violations.some((f) => f.rule === 'function-acl'));
+  assert.equal(
+    run({ readFile: () => `${sql}\n-- changed` }).verified.length,
+    0
+  );
+  assert.equal(
+    pathFindings({ verifiedFindings: [{ ...entry, class: 'rollback' }] })
+      .length,
+    1
+  );
+});

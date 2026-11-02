@@ -25,9 +25,9 @@ void main() {
     );
 
     await tester.tap(quickActionTile('task-quick-priority-critical'));
-    await settleQuickActionMutation(tester);
+    await settleQuickActionMutation(tester, waitForCompletion: true);
     await tester.tap(quickActionTile('task-quick-priority-low'));
-    await settleQuickActionMutation(tester);
+    await settleQuickActionMutation(tester, waitForCompletion: true);
 
     expect(repository.sent.map((update) => update.priority), [
       'critical',
@@ -47,14 +47,14 @@ void main() {
     await tester.tap(find.text('Work').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save'));
-    await settleQuickActionMutation(tester);
+    await settleQuickActionMutation(tester, waitForCompletion: true);
 
     await tester.tap(quickActionTile('task-quick-assignees'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Lan').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save'));
-    await settleQuickActionMutation(tester);
+    await settleQuickActionMutation(tester, waitForCompletion: true);
 
     final labels = repository.sent[repository.sent.length - 2];
     final assignees = repository.sent.last;

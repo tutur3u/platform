@@ -13,6 +13,13 @@ const bypassTimeTrackingRequestApprovalPermission =
     'bypass_time_tracking_request_approval';
 const manageWorkspaceSettingsPermission = 'manage_workspace_settings';
 const manageWorkspaceRolesPermission = 'manage_workspace_roles';
+const manageMastermindPermission = 'manage_mastermind';
+
+/// Never implied by creator or admin access: these count only when a role
+/// grants them explicitly. Mirrors
+/// packages/utils/src/explicit-grant-permissions.ts.
+const Set<String> explicitGrantPermissions = {manageMastermindPermission};
+
 const String _workspaceRolePermissionsPrefix = 'workspace_roles!inner(';
 const String _workspaceRolePermissionsSuffix =
     'workspace_role_permissions(permission, enabled))';
@@ -31,6 +38,9 @@ class WorkspacePermissions {
   bool get isAdmin => permissions.contains('admin');
 
   bool containsPermission(String permission) {
+    if (explicitGrantPermissions.contains(permission)) {
+      return permissions.contains(permission);
+    }
     return isCreator || isAdmin || permissions.contains(permission);
   }
 
@@ -262,13 +272,6 @@ class WorkspacePermissionsRepository {
         (responses[2] as List<dynamic>?) ?? const <dynamic>[];
 
     final isCreator = workspaceRow?['creator_id'] == currentUserId;
-    if (isCreator) {
-      return const WorkspacePermissions(
-        permissions: <String>{},
-        isCreator: true,
-      );
-    }
-
     final combinedPermissions = <String>{
       ..._extractRolePermissions(rolePermissionRows),
       ..._extractDefaultPermissions(defaultPermissionRows),
@@ -276,7 +279,7 @@ class WorkspacePermissionsRepository {
 
     return WorkspacePermissions(
       permissions: combinedPermissions,
-      isCreator: false,
+      isCreator: isCreator,
     );
   }
 
@@ -320,7 +323,9 @@ class WorkspacePermissionsRepository {
         continue;
       }
       final permission = row['permission'];
-      if (permission is String && permission.isNotEmpty) {
+      if (permission is String &&
+          permission.isNotEmpty &&
+          !explicitGrantPermissions.contains(permission)) {
         permissions.add(permission);
       }
     }

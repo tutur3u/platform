@@ -3982,7 +3982,8 @@
       "transcript": "Live transcript",
       "unavailable": "Meeting AI is unavailable. Please retry shortly.",
       "unpriced": "Usage unavailable for {count} requests; total is incomplete.",
-      "usage_details": "Usage details"
+      "usage_details": "Usage details",
+      "workspace_unavailable": "Meet AI is temporarily unavailable."
     },
     "call": {
       "actions_action": "Action items",
@@ -4158,7 +4159,6 @@
       "join_denied_title": "Your request was declined",
       "join_error_hint": "We could not confirm your connection. Automatic reconnection attempts are limited. Check your network, then retry or leave.",
       "join_error_title": "Unable to connect to the meeting",
-      "join_loading_slow_hint": "The meeting has not finished loading. You can leave and reopen the invitation to try again.",
       "join_loading_slow_title": "Connecting is taking longer than expected",
       "join_missing_hint": "This link may be incorrect, or you may not have access to the meeting. Check the invite with the host.",
       "join_missing_title": "Meeting not found or unavailable",
@@ -4179,7 +4179,14 @@
       "leave_choice_title": "Leave this meeting?",
       "leave_only": "Leave only",
       "live_assistant_cost": "Live Mira · {cost} · {count} billing periods",
+      "lobby_guest_name_hint": "Shown to everyone in this call.",
+      "lobby_guest_name_placeholder": "Enter your display name",
       "lobby_hint": "Check your camera and microphone before joining.",
+      "lobby_mic_blocked": "Microphone unavailable. Check browser permissions.",
+      "lobby_mic_level": "Microphone input level",
+      "lobby_nobody_here": "No one else is here yet",
+      "lobby_people_inside": "{count, plural, one {# person in the call} other {# people in the call}}",
+      "lobby_people_names_overflow": "{names} (+{count} more)",
       "lower_hand": "Lower hand",
       "master_volume": "Master volume",
       "media_connected": "Media connected — packet statistics unavailable",
@@ -4236,8 +4243,6 @@
       "playback_volume_hint": "Only changes what you hear. Master volume scales voices, shared audio, Mira, and notification sounds.",
       "preferences": "Preferences",
       "preparing_call": "Preparing your call",
-      "preparing_call_hint": "Connecting you securely. Your camera and microphone controls will be ready in a moment.",
-      "preparing_privacy": "Nothing is shared until you join.",
       "preview_private": "Your microphone and camera are not shared until you join.",
       "pricing_date": "Rates checked {date}",
       "private_tools": {
@@ -4332,10 +4337,10 @@
       "settings_title": "Meeting settings",
       "sfu_egress": "Media delivery estimate",
       "share_ended_notes": "Share notes after the meeting",
-      "share_ended_notes_hint": "Off by default. Allow approved participants to read the transcript and notes after this meeting ends. Costs stay private to room admins.",
+      "share_ended_notes_hint": "Off by default. Allow approved participants to read the transcript and notes after this meeting ends. Workspace admins can always read them; other workspace members cannot. Costs stay private to room admins.",
       "share_from_mobile_app": "Open mobile app",
       "share_notes": "Share transcript and notes",
-      "share_notes_hint": "Admitted participants can read this meeting’s transcript and notes.",
+      "share_notes_hint": "Admitted participants can read this meeting’s transcript and notes. Workspace admins can always read them; other workspace members cannot.",
       "share_screen": "Share screen",
       "shared_files": "Shared files",
       "sharing_screen": "Sharing screen",
@@ -8699,6 +8704,20 @@
     "description": "Task boards are used to manage tasks that are related to a specific project or goal.",
     "errors": {
       "name_exists": "A task board with this name already exists in this workspace."
+    },
+    "header": {
+      "focus": "Focus",
+      "focus_hint": "My open tasks, highest priority first",
+      "more": "More board actions",
+      "more_people": "{count} more",
+      "new_task": "New task",
+      "no_projects": "No projects yet",
+      "project": "Project",
+      "projects_selected": "{count} projects",
+      "share": "Share",
+      "shift_click": "Shift-click",
+      "task_count": "{count, plural, one {# task} other {# tasks}}",
+      "you": "{name} (you)"
     },
     "layout_settings": {
       "list_name_exists": "A list with this name already exists on this board."

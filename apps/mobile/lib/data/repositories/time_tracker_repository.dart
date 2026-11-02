@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
-
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:mobile/core/cache/cache_context.dart';
@@ -29,7 +28,6 @@ import 'package:mobile/data/models/workspace_settings.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 part 'time_tracker_repository_categories.dart';
 part 'time_tracker_repository_goals.dart';
 part 'time_tracker_repository_requests.dart';
@@ -43,7 +41,6 @@ abstract class ITimeTrackerRepository {
     int limit = 50,
     int offset = 0,
   });
-
   Future<TimeTrackingSessionPage> getHistorySessions(
     String wsId, {
     required DateTime dateFrom,
@@ -52,12 +49,9 @@ abstract class ITimeTrackerRepository {
     int limit = 10,
     String? userId,
   });
-
   Future<TimeTrackingSession?> getRunningSession(String wsId);
 
-  /// The session stopped by Pause whose break is still open, if any.
   Future<TimeTrackingSession?> getPausedSession(String wsId);
-
   Future<TimeTrackingSession> startSession(
     String wsId, {
     String? title,
@@ -248,16 +242,22 @@ abstract class ITimeTrackerRepository {
 
   Future<PomodoroSettings> loadPomodoroSettings();
 
-  /// Fetches minimal task display info (name, ticket label) for a single task.
   Future<TaskLinkOption?> getTaskLinkOptionById(String wsId, String taskId);
 }
 
-/// Repository for time tracking operations using API endpoints.
 class TimeTrackerRepository implements ITimeTrackerRepository {
-  TimeTrackerRepository({ApiClient? apiClient, http.Client? httpClient})
-    : _api = apiClient ?? ApiClient(),
-      _httpClient = httpClient ?? http.Client();
+  TimeTrackerRepository({
+    ApiClient? apiClient,
+    http.Client? httpClient,
+    CacheStore? cacheStore,
+    String? Function()? cacheUserId,
+  }) : _api = apiClient ?? ApiClient(),
+       _httpClient = httpClient ?? http.Client(),
+       _cacheStore = cacheStore,
+       _cacheUserId = cacheUserId;
 
+  final CacheStore? _cacheStore;
+  final String? Function()? _cacheUserId;
   final ApiClient _api;
   final http.Client _httpClient;
   static final Random _uuidRandom = Random.secure();

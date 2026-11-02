@@ -106,7 +106,7 @@ function collectDiagnostics({ files, readFile }) {
     if (rollback) {
       const name = path.posix.basename(file);
       const stem = name.replace(
-        /\.(?:incident-rollback|rollback|containment)\.sql$/,
+        /\.(?:incident-rollback|rollback-validate|rollback|containment)\.sql$/,
         '.sql'
       );
       if (stem === name || !files.includes(`${SQL_DIRS[0]}/${stem}`))
@@ -207,7 +207,13 @@ function evaluateSqlFiles({
         entry.digest === finding.digest &&
         typeof entry.reason === 'string' &&
         entry.reason.trim().length > 0 &&
-        (entry.class === undefined || entry.class === 'fixed-forward') &&
+        (entry.class === undefined ||
+          entry.class === 'fixed-forward' ||
+          (entry.class === 'rollback' &&
+            /^apps\/database\/rollbacks\/\d{14}_[a-zA-Z0-9_]+\.rollback\.sql$/.test(
+              entry.path
+            ) &&
+            entry.rule === 'definer-search-path')) &&
         (entry.class !== 'fixed-forward' ||
           (typeof entry.requiredMigration === 'string' &&
             /^apps\/database\/supabase\/migrations\/[a-zA-Z0-9_]+\.sql$/.test(

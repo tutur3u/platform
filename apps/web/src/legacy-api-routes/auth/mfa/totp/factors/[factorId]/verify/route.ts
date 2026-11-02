@@ -78,12 +78,15 @@ export async function POST(request: Request, { params }: Params) {
 
     if (error) {
       // Record the failure for abuse tracking
-      void recordMFAVerifyFailure(ipAddress);
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      await recordMFAVerifyFailure(ipAddress);
+      return NextResponse.json(
+        { error: 'Verification failed' },
+        { status: 400 }
+      );
     }
 
     // Clear failures on success
-    void clearMFAVerifyFailures(ipAddress);
+    await clearMFAVerifyFailures(ipAddress);
     await clearMFAVerifySubjectFailures(subject);
 
     return NextResponse.json({

@@ -119,6 +119,17 @@ export function TasksTab({
   };
 
   const renderView = () => {
+    if (tasks.length === 0) {
+      return (
+        <ProjectTasksEmptyState
+          onLinkTasks={() => setShowLinkTaskDialog(true)}
+          description={t('no_tasks_description')}
+          linkTasksLabel={t('link_tasks')}
+          title={t('no_tasks_title')}
+        />
+      );
+    }
+
     switch (currentView) {
       case 'kanban':
         return (
@@ -178,17 +189,6 @@ export function TasksTab({
         );
     }
   };
-
-  if (tasks.length === 0) {
-    return (
-      <ProjectTasksEmptyState
-        onLinkTasks={() => setShowLinkTaskDialog(true)}
-        description={t('no_tasks_description')}
-        linkTasksLabel={t('link_tasks')}
-        title={t('no_tasks_title')}
-      />
-    );
-  }
 
   return (
     <div

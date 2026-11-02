@@ -24,15 +24,16 @@ vi.mock('@tuturuuu/ai/studio/metering', () => ({
   settleAiStudioRun: f.settle,
   recordAiStudioRunStep: f.step,
 }));
-vi.mock('../../call/server/room-service', () => ({
-  personalWorkspace: async () => 'personal-workspace',
-}));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: async () => {
     const query = {
       select: () => query,
       eq: () => query,
       single: f.allocation,
+      maybeSingle: async () => ({
+        data: { ws_id: 'meeting-workspace' },
+        error: null,
+      }),
     };
     return { from: () => query };
   },
@@ -75,7 +76,7 @@ it('blocks the provider before reserving when credits are denied', async () => {
   f.check.mockResolvedValue({ allowed: false });
   await expect(
     generateBilledMeetArtifact({ transcript: 'hello' }, actor)
-  ).rejects.toThrow('AI credits unavailable');
+  ).rejects.toThrow('AI credits unavailable for the meeting workspace');
   expect(f.generate).not.toHaveBeenCalled();
   expect(f.begin).not.toHaveBeenCalled();
 });
@@ -86,7 +87,7 @@ it('settles actual provider cost with plan markup in AI Hub without private cont
   );
   expect(f.begin).toHaveBeenCalledWith(
     expect.objectContaining({
-      workspaceId: 'personal-workspace',
+      workspaceId: 'meeting-workspace',
       actorId: 'actor',
       rejectExisting: true,
     })

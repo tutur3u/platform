@@ -8,6 +8,7 @@ import 'package:mobile/features/mastermind/presentation/answered_via_labels.dart
 import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/view/inbox/ask_timing_chips.dart';
 import 'package:mobile/features/mastermind/view/inbox/recorded_answer.dart';
 import 'package:mobile/features/mastermind/view/widgets/linkified_text.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_group.dart';
@@ -42,12 +43,6 @@ class ItemQuestionCard extends StatelessWidget {
     final c = tokens.colorScheme;
     final l10n = context.l10n;
     final body = (fullText ?? item.body).trim();
-    final deadline = item.deadline ?? this.deadline;
-    final urgency = switch (item.urgency) {
-      AskUrgency.high => l10n.mastermindAskUrgencyHigh,
-      AskUrgency.urgent => l10n.mastermindAskUrgencyUrgent,
-      _ => null,
-    };
     final asked = item.createdAt;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -76,10 +71,8 @@ class ItemQuestionCard extends StatelessWidget {
             runSpacing: AppSpacing.xs,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              if (urgency != null)
-                MastermindStatusChip(label: urgency, tone: AppTone.warning),
-              if (deadline != null)
-                MastermindStatusChip(label: _deadlineLabel(context, deadline)),
+              if (item.state == ItemState.open)
+                ...askTimingChips(l10n, item, deadline: deadline),
               if (item.kind case final kind?)
                 MastermindStatusChip(
                   label: MastermindLabels.itemKind(l10n, kind),
@@ -138,16 +131,6 @@ class ItemQuestionCard extends StatelessWidget {
       ),
     );
   }
-}
-
-String _deadlineLabel(BuildContext context, AskDeadline deadline) {
-  final l10n = context.l10n;
-  return switch (deadline) {
-    AskDeadline.withinHours => l10n.mastermindAskDeadlineWithinHours,
-    AskDeadline.today => l10n.mastermindAskDeadlineToday,
-    AskDeadline.tonight => l10n.mastermindAskDeadlineTonight,
-    AskDeadline.thisWeek => l10n.mastermindAskDeadlineThisWeek,
-  };
 }
 
 /// The outcome of an ask the hub lists as resolved: the hub's word, the answer

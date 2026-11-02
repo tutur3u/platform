@@ -16,18 +16,19 @@ export default defineConfig({
     observability: {
       enabled: true,
       headSamplingRate: 0.05,
+      traces: { enabled: false, headSamplingRate: 0.05, persist: true },
       logs: { enabled: true, headSamplingRate: 0.05, invocationLogs: true },
     },
     triggers: [
-      '*/5 * * * *',
-      '17 3 * * *',
+      '* * * * *',
       '0 */12 * * *',
-      '0 6 * * *',
       '0 */6 * * *',
+      '0 6 * * *',
       '*/10 * * * *',
       '*/15 * * * *',
+      '17 3 * * *',
       '*/30 * * * *',
-      '* * * * *',
+      '*/5 * * * *',
     ].map((schedule) => triggers.scheduled({ schedule })),
     env: {
       WEB_ORIGIN: bindings.text('https://tuturuuu.com'),
@@ -41,7 +42,6 @@ export default defineConfig({
         'database-cron-history-retention'
       ),
       CRON_CONTROL_WORKER_PROCESSORS: bindings.text(''),
-      CRON_CONTROL_WEB_MODE: bindings.text('off'),
       SUPABASE_URL: bindings.secret(),
       SUPABASE_SECRET_KEY: bindings.secret(),
       CRON_CONTROL_DELIVERY_TOKEN: bindings.secret(),

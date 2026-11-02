@@ -1014,11 +1014,9 @@
     "apps/database/rollbacks/20261029010100_restore_whiteboard_snapshot_payload_limit.rollback.sql": "6176e8d4d99954f0e034bbca5d2a208e9f6a7945c749992eb43de008b09a827e",
     "apps/database/rollbacks/20261029012000_harden_workspace_ownership_guard.rollback.sql": "70f6e8d5d90cda6afe6d1a99f282d1de55a3f01cb9e78caea8df9f5a891e39f9",
     "apps/database/rollbacks/20261029012100_restrict_subscription_writes.rollback.sql": "4fc144e0ca68282f7ede34a677c679ec9f3d46fd05191acd0f0ed5592379be49",
-    "apps/database/rollbacks/20261029012300_tighten_legacy_table_grants.rollback.sql": "8b6493921e622773e65f28f1c6e7df09b1193078fd6ed70a7866ed29da17eecb",
     "apps/database/rollbacks/20261029030200_pin_notification_trigger_vault.rollback.sql": "ce24c5216ea7aad03282851b0297b0384d0acd95690735c474a824ad4a94dc82",
     "apps/database/rollbacks/20261029030400_align_ai_chat_and_subscription_rpc_access.rollback.sql": "e1b5cc192fbe4574af3c06aead2ab9e705542e0db9a8ce986aa320b7797b1500",
     "apps/database/rollbacks/20261029030410_restrict_nonpublic_definers.rollback.sql": "62b7cedb347520061c9af7d085b5c97ec48c7f1db5cf49ede1be8ece526cda6b",
-    "apps/database/rollbacks/20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql": "3abd5f18c2b4308dd1e52cd9f41a8f12cf7f20215db53c8596cfefe0cd3336b5",
     "apps/database/rollbacks/20261029030600_pin_workspace_membership_rls.rollback.sql": "9bd86da7393f49bd599b76e49b897c4cb7a1893adc56d8271bd5ab04dfe8d0d4",
     "apps/database/rollbacks/20261029030700_finance_workspace_scoping.sql": "8405fef3ff2427168dc409e081e922e4ef87da176e235234412fe7c4a3e993f1",
     "apps/database/rollbacks/20261029040800_finance_workspace_boundaries.rollback.sql": "15c6343d1bade68084f31f37435f8485f6217b0f505bd0017c9f29e42cd5fd58",
@@ -31883,18 +31881,6 @@
       "digest": "20c26217acc51ea47524f8c0c7b4705004c5a4535d8636c168dc860c243dbcba"
     },
     {
-      "path": "apps/database/rollbacks/20261029012300_tighten_legacy_table_grants.rollback.sql",
-      "rule": "anon-grant",
-      "digest": "af964c8335754c6ba1602a73c4ff7b07f485b1c45e773d7f5a92c9384ae2e757",
-      "class": "latent-rollback-grant"
-    },
-    {
-      "path": "apps/database/rollbacks/20261029012300_tighten_legacy_table_grants.rollback.sql",
-      "rule": "rollback-safety",
-      "digest": "af964c8335754c6ba1602a73c4ff7b07f485b1c45e773d7f5a92c9384ae2e757",
-      "class": "latent-rollback-grant"
-    },
-    {
       "path": "apps/database/rollbacks/20261029030200_pin_notification_trigger_vault.rollback.sql",
       "rule": "function-acl",
       "digest": "2d8ae0eb7687b8a18b761aaf309ed58f41d749f4ea70e3d15d61860bb181b7d6"
@@ -31928,34 +31914,6 @@
       "path": "apps/database/rollbacks/20261029030410_restrict_nonpublic_definers.rollback.sql",
       "rule": "dynamic-sql-review",
       "digest": "ecd36f19922de0ff8058e33323693dacc6aeb9995cc3548b99960d447c5eeb95",
-      "occurrence": 1
-    },
-    {
-      "path": "apps/database/rollbacks/20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql",
-      "rule": "anon-grant",
-      "digest": "b3941b3b8f31ecc96620ce2a06c1660a9d327a6fe1c62bfab78bf17d235a5141",
-      "class": "latent-rollback-grant"
-    },
-    {
-      "path": "apps/database/rollbacks/20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql",
-      "rule": "dynamic-sql-review",
-      "digest": "64542174f24c36fffb774c70c658c581f79914ade454f89fa731cd3593d71abb"
-    },
-    {
-      "path": "apps/database/rollbacks/20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql",
-      "rule": "rollback-safety",
-      "digest": "b3941b3b8f31ecc96620ce2a06c1660a9d327a6fe1c62bfab78bf17d235a5141",
-      "class": "latent-rollback-grant"
-    },
-    {
-      "path": "apps/database/rollbacks/20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql",
-      "rule": "function-acl",
-      "digest": "b3941b3b8f31ecc96620ce2a06c1660a9d327a6fe1c62bfab78bf17d235a5141"
-    },
-    {
-      "path": "apps/database/rollbacks/20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql",
-      "rule": "dynamic-sql-review",
-      "digest": "64542174f24c36fffb774c70c658c581f79914ade454f89fa731cd3593d71abb",
       "occurrence": 1
     },
     {

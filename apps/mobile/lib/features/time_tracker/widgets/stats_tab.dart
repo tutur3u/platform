@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/components/app_loading_indicator.dart';
+import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/shell/view/shell_mini_nav.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
@@ -16,6 +17,7 @@ import 'package:mobile/features/time_tracker/widgets/workspace_stats_tab.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 enum TimeTrackerStatsScope { personal, workspace }
@@ -156,40 +158,66 @@ class _StatsTabState extends State<StatsTab> {
               ],
             ),
             switch (_surface) {
-              _StatsSurface.personal => AppPageListView(
-                children: [
-                  StatsCards(stats: state.stats),
-                  const shad.Gap(8),
-                  ActivityHeatmap(
-                    dailyActivity: state.stats?.dailyActivity ?? [],
-                  ),
-                ],
+              _StatsSurface.personal => NovaRefreshIndicator(
+                onRefresh: () async {
+                  final userId = context.read<AuthCubit>().state.user?.id;
+                  if (wsId.isNotEmpty && userId != null) {
+                    await context.read<TimeTrackerCubit>().loadData(
+                      wsId,
+                      userId,
+                      forceRefresh: true,
+                    );
+                  }
+                },
+                child: AppPageListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    StatsCards(stats: state.stats),
+                    const shad.Gap(8),
+                    ActivityHeatmap(
+                      dailyActivity: state.stats?.dailyActivity ?? [],
+                    ),
+                  ],
+                ),
               ),
               _StatsSurface.workspace => const WorkspaceStatsTab(),
-              _StatsSurface.goals => AppPageListView(
-                children: [
-                  if (wsId.isNotEmpty)
-                    TimeTrackerGoalsSection(wsId: wsId)
-                  else if (workspaceState.status == WorkspaceStatus.error)
-                    Text(
-                      l10n.commonSomethingWentWrong,
-                      style: theme.typography.textSmall.copyWith(
-                        color: theme.colorScheme.mutedForeground,
+              _StatsSurface.goals => NovaRefreshIndicator(
+                onRefresh: () async {
+                  final userId = context.read<AuthCubit>().state.user?.id;
+                  if (wsId.isNotEmpty && userId != null) {
+                    await context.read<TimeTrackerCubit>().loadGoals(
+                      wsId,
+                      userId: userId,
+                      force: true,
+                    );
+                  }
+                },
+                child: AppPageListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    if (wsId.isNotEmpty)
+                      TimeTrackerGoalsSection(wsId: wsId)
+                    else if (workspaceState.status == WorkspaceStatus.error)
+                      Text(
+                        l10n.commonSomethingWentWrong,
+                        style: theme.typography.textSmall.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                        ),
+                      )
+                    else if (workspaceState.status == WorkspaceStatus.loaded)
+                      Text(
+                        l10n.workspaceSelectEmpty,
+                        style: theme.typography.textSmall.copyWith(
+                          color: theme.colorScheme.mutedForeground,
+                        ),
+                      )
+                    else
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: AppLoadingIndicator(),
                       ),
-                    )
-                  else if (workspaceState.status == WorkspaceStatus.loaded)
-                    Text(
-                      l10n.workspaceSelectEmpty,
-                      style: theme.typography.textSmall.copyWith(
-                        color: theme.colorScheme.mutedForeground,
-                      ),
-                    )
-                  else
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 24),
-                      child: AppLoadingIndicator(),
-                    ),
-                ],
+                  ],
+                ),
               ),
             },
           ],

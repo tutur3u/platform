@@ -8,6 +8,8 @@ const MEMBER_ID = '4b320da6-6c8a-43fe-b1bf-09fbe77303f9';
 
 const originalFetch = globalThis.fetch;
 const verifyMembership = vi.fn();
+const rpc = vi.fn();
+const adminClient = vi.fn();
 const meetingQuery = {
   select: vi.fn(),
   eq: vi.fn(),
@@ -23,7 +25,7 @@ vi.mock('next/server', () => ({
 vi.mock('@/lib/api-auth', () => ({
   resolveSessionAuthContext: async () => ({
     ok: true,
-    supabase: { from: () => meetingQuery },
+    supabase: { from: () => meetingQuery, rpc },
     user: { id: MEMBER_ID },
   }),
 }));
@@ -32,12 +34,14 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   verifyWorkspaceMembershipType: verifyMembership,
 }));
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: () => {
-    throw new Error('Private notes must not be read');
-  },
+  createAdminClient: () => adminClient(),
 }));
 
 beforeEach(() => {
+  rpc.mockReset().mockResolvedValue({ data: false, error: null });
+  adminClient.mockReset().mockImplementation(() => {
+    throw new Error('Private notes must not be read');
+  });
   verifyMembership.mockResolvedValue({ ok: true });
   process.env.MEET_REALTIME_TOKEN_SECRET = 'test-meet-review-secret';
   meetingQuery.maybeSingle.mockResolvedValue({
@@ -92,3 +96,84 @@ it.each([
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   }
 );
+
+const EMPTY_NOTES = Promise.resolve({ data: [], error: null });
+function notesClient() {
+  const query = {
+    select: () => query,
+    eq: () => query,
+    order: () => query,
+    range: () => EMPTY_NOTES,
+  };
+  return { from: () => query };
+}
+
+it('lets a workspace admin read ended notes without being a participant', async () => {
+  rpc.mockResolvedValue({ data: true, error: null });
+  adminClient.mockImplementation(notesClient);
+  globalThis.fetch = vi
+    .fn()
+    .mockResolvedValue(
+      Response.json({ ended: true, canReadNotes: false })
+    ) as typeof fetch;
+
+  const response = await readReview();
+
+  expect(rpc).toHaveBeenCalledWith('has_workspace_permission', {
+    p_ws_id: WS_ID,
+    p_user_id: MEMBER_ID,
+    p_permission: 'admin',
+  });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({
+    ended: true,
+    canReadNotes: true,
+    canManage: false,
+    costs: null,
+  });
+});
+
+it('lets a participant read ended notes without admin rights', async () => {
+  adminClient.mockImplementation(notesClient);
+  globalThis.fetch = vi
+    .fn()
+    .mockResolvedValue(
+      Response.json({ ended: true, canReadNotes: true })
+    ) as typeof fetch;
+
+  const response = await readReview();
+
+  expect(response.status).toBe(200);
+  expect(await response.json()).toMatchObject({ canReadNotes: true });
+});
+
+it('denies a non-participant, non-admin member even when sharing is on', async () => {
+  globalThis.fetch = vi
+    .fn()
+    .mockResolvedValue(
+      Response.json({ ended: true, canReadNotes: false })
+    ) as typeof fetch;
+
+  const response = await readReview();
+
+  expect(await response.json()).toEqual({
+    ended: true,
+    canReadNotes: false,
+    canManage: false,
+  });
+  expect(adminClient).not.toHaveBeenCalled();
+});
+
+it('fails closed when the admin lookup is unavailable', async () => {
+  rpc.mockResolvedValue({ data: null, error: { message: 'down' } });
+  globalThis.fetch = vi
+    .fn()
+    .mockResolvedValue(
+      Response.json({ ended: true, canReadNotes: false })
+    ) as typeof fetch;
+
+  const response = await readReview();
+
+  expect(response.status).toBe(503);
+  expect(adminClient).not.toHaveBeenCalled();
+});

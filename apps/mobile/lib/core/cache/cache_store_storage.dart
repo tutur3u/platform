@@ -91,15 +91,18 @@ extension CacheStoreStorage on CacheStore {
     final now = DateTime.now();
     final records = _memory.values.toList(growable: false)
       ..sort((a, b) {
-        final aExpired = !now.isBefore(a.expireAt);
-        final bExpired = !now.isBefore(b.expireAt);
+        final aExpired = !a.neverExpires && !now.isBefore(a.expireAt);
+        final bExpired = !b.neverExpires && !now.isBefore(b.expireAt);
         if (aExpired != bExpired) return aExpired ? -1 : 1;
         return a.fetchedAt.compareTo(b.fetchedAt);
       });
     var projectedBytes = _resourceBytes + _entityBytes;
     final selected = <CachedResourceRecord>[];
     for (final record in records) {
-      if (projectedBytes <= _maxBytes && now.isBefore(record.expireAt)) break;
+      if (projectedBytes <= _maxBytes &&
+          (record.neverExpires || now.isBefore(record.expireAt))) {
+        break;
+      }
       selected.add(record);
       final index = _entityBox.get(_replicaSourceKey(record.key));
       final replicaBytes = ((index as List?)?.whereType<String>() ?? <String>[])

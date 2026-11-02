@@ -1,0 +1,211 @@
+name: Wave-1 staging Web publisher
+# Native-only staging, dispatch-only from main for one exact admitted SHA.
+# This workflow never attaches domains, changes Access or DNS, or writes
+# WEB_STAGING_SERVING or STAGING_ACCESS_PHASE. Red ingress rolls back only
+# the staging Worker. Unmigrated paths return a static, no-store 404.
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Full main commit SHA admitted by WAVE1_STAGING_PUBLICATION_ADMISSION.
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: wave1-web-staging
+  cancel-in-progress: false
+env:
+  SOURCE_SHA: ${{ inputs.source_sha }}
+jobs:
+  preflight:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - name: Refuse missing fences or unprotected staging environments
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WAVE1_STAGING_PUBLISH_ENABLED: ${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}
+          WAVE1_STAGING_PUBLICATION_ADMISSION: ${{ vars.WAVE1_STAGING_PUBLICATION_ADMISSION }}
+        run: node scripts/ci/wave1-staging-preflight.mjs web web
+  admit:
+    needs: preflight
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      checks: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - name: Exact main ancestry, stop fence, admission and candidate qualification
+        env:
+          ENABLED: ${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}
+          PUBLICATION_ADMISSION: ${{ vars.WAVE1_STAGING_PUBLICATION_ADMISSION }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [[ "$SOURCE_SHA" =~ ^[a-f0-9]{40}$ ]]
+          git merge-base --is-ancestor "$SOURCE_SHA" "$GITHUB_SHA"
+          test "$ENABLED" = true
+          node scripts/ci/wave1-web-admit.mjs "$SOURCE_SHA"
+  seal-worker:
+    needs: admit
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      artifact_sha256: ${{ steps.seal.outputs.artifact_sha256 }}
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - run: bun run --cwd apps/web build:candidate
+      - run: bun run --cwd apps/web test:candidate:runtime
+      - name: Seal the native-only staging candidate
+        id: seal
+        run: node scripts/ci/wave1-web-seal.mjs prepare "$SOURCE_SHA"
+      - run: python3 scripts/ci/wave1-native-archive.py pack apps/web/cloudflare "$RUNNER_TEMP/wave1-web.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: wave1-web-staging-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/wave1-web.tar.gz
+          retention-days: 14
+          if-no-files-found: error
+  restored:
+    needs: seal-worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: wave1-web-staging-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/restore
+      - name: Restore and re-verify the same sealed bytes
+        run: |
+          python3 scripts/ci/wave1-native-archive.py restore apps/web/cloudflare "$RUNNER_TEMP/restore/wave1-web.tar.gz"
+          node scripts/ci/wave1-web-seal.mjs restored "$SOURCE_SHA"
+      - name: Restored emitted workerd acceptance
+        timeout-minutes: 3
+        run: bun run --cwd apps/web test:candidate:runtime
+      - name: Restored exact-bytes dry-run and final seal
+        run: |
+          node scripts/ci/wave1-native-publish.mjs dry-run web staging "$SOURCE_SHA"
+          node scripts/ci/wave1-web-seal.mjs verify "$SOURCE_SHA"
+  publish-worker:
+    needs: restored
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: wave1-web-staging
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: wave1-web-staging-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/publish
+      - run: |
+          python3 scripts/ci/wave1-native-archive.py restore apps/web/cloudflare "$RUNNER_TEMP/publish/wave1-web.tar.gz"
+          node scripts/ci/wave1-web-seal.mjs verify "$SOURCE_SHA"
+      - name: Exact artifact admission, ingress preflight, then one upload
+        timeout-minutes: 5
+        env:
+          WAVE1_STAGING_ATTEMPT_D1_ID: ${{ vars.WAVE1_STAGING_ATTEMPT_D1_ID }}
+          WAVE1_STAGING_PUBLICATION_ADMISSION: ${{ vars.WAVE1_STAGING_PUBLICATION_ADMISSION }}
+          WAVE1_STAGING_PUBLISH_ENABLED: ${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}
+          CLOUDFLARE_STAGING_API_TOKEN: ${{ secrets.CLOUDFLARE_STAGING_API_TOKEN }}
+          CLOUDFLARE_STAGING_ACCOUNT_ID: ${{ vars.CLOUDFLARE_STAGING_ACCOUNT_ID }}
+          WAVE1_CONTROL_READ_TOKEN: ${{ secrets.WAVE1_CONTROL_READ_TOKEN }}
+          STAGING_TUTUR3U_ZONE_ID: ${{ vars.STAGING_TUTUR3U_ZONE_ID }}
+          STAGING_ACCESS_APP_IDS: ${{ vars.STAGING_ACCESS_APP_IDS }}
+          STAGING_ACCESS_STAFF_GROUP_ID: ${{ vars.STAGING_ACCESS_STAFF_GROUP_ID }}
+          STAGING_ACCESS_STAFF_EMAIL_LIST_ID: ${{ vars.STAGING_ACCESS_STAFF_EMAIL_LIST_ID }}
+          STAGING_ACCESS_HEALTH_TOKEN_IDS: ${{ vars.STAGING_ACCESS_HEALTH_TOKEN_IDS }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.STAGING_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+        run: node scripts/ci/wave1-native-publish.mjs publish web staging "$SOURCE_SHA"
+  verify-ingress:
+    needs: publish-worker
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: wave1-web-staging
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - name: Post-publication readback (R1–R4, N1–N5, N10, N17 through the Worker)
+        env:
+          CLOUDFLARE_STAGING_API_TOKEN: ${{ secrets.CLOUDFLARE_STAGING_API_TOKEN }}
+          CLOUDFLARE_STAGING_ACCOUNT_ID: ${{ vars.CLOUDFLARE_STAGING_ACCOUNT_ID }}
+          CLOUDFLARE_WORKERS_SUBDOMAIN: ${{ vars.CLOUDFLARE_WORKERS_SUBDOMAIN }}
+          STAGING_TUTUR3U_ZONE_ID: ${{ vars.STAGING_TUTUR3U_ZONE_ID }}
+          STAGING_ACCESS_APP_IDS: ${{ vars.STAGING_ACCESS_APP_IDS }}
+          STAGING_ACCESS_STAFF_GROUP_ID: ${{ vars.STAGING_ACCESS_STAFF_GROUP_ID }}
+          STAGING_ACCESS_STAFF_EMAIL_LIST_ID: ${{ vars.STAGING_ACCESS_STAFF_EMAIL_LIST_ID }}
+          STAGING_ACCESS_HEALTH_TOKEN_IDS: ${{ vars.STAGING_ACCESS_HEALTH_TOKEN_IDS }}
+          CF_ACCESS_HEALTH_CLIENT_ID: ${{ secrets.CF_ACCESS_HEALTH_CLIENT_ID }}
+          CF_ACCESS_HEALTH_CLIENT_SECRET: ${{ secrets.CF_ACCESS_HEALTH_CLIENT_SECRET }}
+          WAVE1_CONTROL_READ_TOKEN: ${{ secrets.WAVE1_CONTROL_READ_TOKEN }}
+        run: node scripts/wave1-staging/readback.mjs --app web --expect-sha "$SOURCE_SHA"
+      - name: Red verify-ingress rolls only the staging Worker back (R-d)
+        if: failure()
+        timeout-minutes: 3
+        env:
+          CLOUDFLARE_STAGING_API_TOKEN: ${{ secrets.CLOUDFLARE_STAGING_API_TOKEN }}
+          CLOUDFLARE_STAGING_ACCOUNT_ID: ${{ vars.CLOUDFLARE_STAGING_ACCOUNT_ID }}
+          WAVE1_STAGING_ATTEMPT_D1_ID: ${{ vars.WAVE1_STAGING_ATTEMPT_D1_ID }}
+        run: node scripts/ci/wave1-web-rollback.mjs "$SOURCE_SHA"
+

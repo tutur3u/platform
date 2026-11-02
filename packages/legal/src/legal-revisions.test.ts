@@ -116,7 +116,7 @@ describe('effective legal publications', () => {
         const d = getProposedLegalDocument(kind, locale);
         expect(d).not.toHaveProperty('effectiveDate');
         expect(d.badge).toBe(locale === 'vi' ? 'Dự kiến' : 'Proposed');
-        expect(d.version).toBe('2026-09-13-draft');
+        expect(d.version).toBe('2026-11-02');
       }
     });
   }

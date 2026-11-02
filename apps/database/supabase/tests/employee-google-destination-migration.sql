@@ -1,8 +1,7 @@
+\ir helpers/local-dblink.inc
 -- Rollback-only actual SQL. Provider effects below are simulations, not GoTrue.
 begin;
 create extension if not exists pgtap with schema extensions;
--- On non-superuser local Postgres, set test.dblink_connstr to a password-authenticated
--- connection to this same disposable database (loopback trust cannot authenticate dblink).
 create extension if not exists dblink with schema extensions;
 set local search_path=public,extensions;
 select plan(30);
@@ -60,7 +59,7 @@ language plpgsql as $$ begin
   return false;
 exception when lock_not_available then return true; end; $$;
 do $control$ begin
-  perform dblink_connect('google_migration_fk_fixture',coalesce(nullif(current_setting('test.dblink_connstr', true), ''), format('dbname=%L user=%L',current_database(),current_user)));
+  perform dblink_connect('google_migration_fk_fixture',pg_temp.fixture_dblink_connstr());
   perform dblink_exec('google_migration_fk_fixture','begin; lock table private.mail_threads in row exclusive mode');
 end; $control$;
 select ok(exists(select 1 from pg_locks where pid=(select pid from dblink('google_migration_fk_fixture','select pg_backend_pid()') as remote(pid integer))
@@ -128,3 +127,4 @@ select is(private.employee_address_migration('inspect',request)->>'sourceVerifie
 select ok(not has_function_privilege('service_role','private.employee_address_google_state(uuid,text,text,boolean)','EXECUTE'),'service cannot bypass the guarded RPC to read snapshots');
 select * from finish();
 rollback;
+

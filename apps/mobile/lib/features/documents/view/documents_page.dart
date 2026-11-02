@@ -31,7 +31,7 @@ class DocumentsPage extends StatefulWidget {
 }
 
 class _DocumentsPageState extends State<DocumentsPage> {
-  static const int _pageSize = 30;
+  static const int _pageSize = DocumentRepository.screenPageSize;
 
   late final DocumentRepository _repository;
   final TextEditingController _searchController = TextEditingController();
@@ -244,6 +244,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             NovaRefreshIndicator(
               onRefresh: _reload,
               child: AppPageListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   FinanceSectionHeader(
                     title: context.l10n.documentsTitle,

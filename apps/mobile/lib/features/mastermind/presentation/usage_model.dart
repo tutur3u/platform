@@ -120,7 +120,7 @@ final class MastermindUsageModel {
   final List<UsagePool> pools;
   final List<CreditPool> credits;
 
-  /// Least left first, unknown last.
+  /// Unreadable first, then least left first.
   final List<ProductQuota> quotas;
 
   /// Soonest projected empty first, then the pools not projected to run out.
@@ -183,7 +183,13 @@ int _byUrgency(UsagePool a, UsagePool b) {
 }
 
 int _byRemaining(ProductQuota a, ProductQuota b) {
-  final byLeft = _nullsLast(a.remainingPercent, b.remainingPercent);
+  final byLeft = a.remainingPercent == null || b.remainingPercent == null
+      ? (a.remainingPercent == b.remainingPercent
+            ? 0
+            : a.remainingPercent == null
+            ? -1
+            : 1)
+      : a.remainingPercent!.compareTo(b.remainingPercent!);
   return byLeft != 0 ? byLeft : a.instance.compareTo(b.instance);
 }
 

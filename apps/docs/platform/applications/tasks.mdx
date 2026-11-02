@@ -1,6 +1,8 @@
 ---
 title: "Tasks - Task Management"
 description: "Hierarchical task management with bucket dump and cross-board coordination"
+updatedAt: "2026-10-31"
+audience: users
 ---
 
 # Tasks - Smart Task Management
@@ -60,8 +62,8 @@ client accesses these tables; mobile continues through the product APIs.
 
 Task-list change subscriptions use Cloudflare, so `task_lists` is excluded from
 `supabase_realtime`. Regression coverage is
-`apps/database/supabase/tests/task-list-assignee-authorization.sql` (SR-337 and
-SR-338), alongside board access and shared-task route tests.
+`apps/database/supabase/tests/task-list-assignee-authorization.sql` (internal security
+reviews), alongside board access and shared-task route tests.
 
 ## Overview
 

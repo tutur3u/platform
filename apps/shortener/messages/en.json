@@ -1151,6 +1151,20 @@
     "save_changes": "Save changes"
   },
   "ws-task-boards": {
+    "header": {
+      "focus": "Focus",
+      "focus_hint": "My open tasks, highest priority first",
+      "more": "More board actions",
+      "more_people": "{count} more",
+      "new_task": "New task",
+      "no_projects": "No projects yet",
+      "project": "Project",
+      "projects_selected": "{count} projects",
+      "share": "Share",
+      "shift_click": "Shift-click",
+      "task_count": "{count, plural, one {# task} other {# tasks}}",
+      "you": "{name} (you)"
+    },
     "manual_ordering_disabled": {
       "description": "Tasks are sorted by a criterion, so dragging cannot change their manual order. Switch to manual ordering to arrange them.",
       "keep_sorting": "Keep current sorting",

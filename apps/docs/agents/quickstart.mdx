@@ -1,0 +1,66 @@
+---
+title: "Agent quickstart"
+description: "Read the public docs, locate repository code, and follow contribution conventions."
+updatedAt: "2026-11-01"
+audience: agents
+---
+
+## Read the docs
+
+- Start with [llms.txt](https://docs.tuturuuu.com/llms.txt) for a page index.
+- Append `.md` to a page URL for Markdown. For example, read the [documenting guide as Markdown](https://docs.tuturuuu.com/build/development-tools/documenting.md).
+- Connect an MCP client to `https://docs.tuturuuu.com/mcp` and use `search_tuturuuu_docs` to search public documentation. The endpoint accepts MCP POST requests; a browser GET is not a connectivity test.
+
+## Repository map
+
+The [platform repository](https://github.com/tutur3u/platform) separates application entrypoints from shared libraries.
+
+| Directory | Purpose |
+| --- | --- |
+| `apps/` | Product applications, the docs site, and supporting services. |
+| `packages/` | Shared domain libraries, UI, SDKs, integrations, and development configuration. |
+
+Start with these public contribution areas. This is a selected map, excluding paused runtimes and operational tooling.
+
+| Path | Purpose |
+| --- | --- |
+| `apps/web/` | Main platform web application and API routes. |
+| `apps/docs/` | Mintlify documentation pages and navigation. |
+| `apps/mobile/` | Flutter mobile application. |
+| `apps/calendar/` | Calendar application. |
+| `apps/tasks/` | Task management application. |
+| `apps/finance/` | Finance application. |
+| `apps/meet/` | Meetings application. |
+| `apps/learn/` | Learning application. |
+| `apps/mail/` | Mail application. |
+| `apps/drive/` | File management application. |
+| `packages/ui/` | Shared UI components. |
+| `packages/editor/` | Localized rich-text editor and rendering utilities. |
+| `packages/sdk/` | Public TypeScript and JavaScript platform SDK. |
+| `packages/types/` | Shared TypeScript types. |
+| `packages/utils/` | Shared utility functions. |
+| `packages/typescript-config/` | Shared TypeScript configuration. |
+| `packages/education-core/` | Shared education domain logic. |
+| `packages/finance-core/` | Shared finance domain logic. |
+| `packages/storage-core/` | Shared storage domain logic. |
+
+## Follow repository conventions
+
+Read the root [AGENTS.md](https://github.com/tutur3u/platform/blob/main/AGENTS.md) and the nearest applicable `AGENTS.md` before editing. Public contribution conventions include:
+
+- Use Bun, with the version pinned in the root `package.json`. Change dependencies through the package manager.
+- Use Conventional Commits and an accepted branch prefix such as `docs/`, `feat/`, or `fix/`.
+- Run focused non-build checks for changed code. Run `bun check:changed` before pushing; applicable CI checks must pass for the exact commit.
+- For docs, use the local Mintlify wrapper. Run `node scripts/local-docs.js validate` and `node scripts/local-docs.js broken-links` from the repository root.
+- Add new docs pages to `apps/docs/docs.json` and keep documentation aligned with behavior changes.
+- Add user-facing strings to both English and Vietnamese bundles. Update every affected shared UI bundle and run `bun i18n:sort`.
+- Keep new authored source files at or below 700 lines. Generated and vendored files are excluded.
+- Modify and commit only files intentionally changed for the task.
+
+## Find product decisions
+
+Product behavior decisions live in the `platform/` section of these docs. Start with the [platform overview](/platform/overview), then read the relevant feature page for defaults, scope, exceptions, and regression evidence.
+
+## Contribute documentation
+
+Follow [Documenting](/build/development-tools/documenting) for page structure, navigation, preview, validation, and review.

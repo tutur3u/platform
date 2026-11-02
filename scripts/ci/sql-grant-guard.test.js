@@ -1,5 +1,6 @@
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
+const fs = require('node:fs');
 const path = require('node:path');
 const test = require('node:test');
 const {
@@ -49,7 +50,7 @@ function definers(sql) {
   );
 }
 
-test('the repository passes only exact diagnostic debt and retains the 13 original findings', () => {
+test('the repository passes only exact diagnostic debt and retains the 11 remaining original findings', () => {
   const result = checkRepository();
   assert.deepEqual(result.violations, []);
   const original = new Set(
@@ -67,10 +68,32 @@ test('the repository passes only exact diagnostic debt and retains the 13 origin
     '20261029040800_finance_workspace_boundaries.sql:267:definer-public',
     '20261029040800_finance_workspace_boundaries.sql:341:definer-public',
     '20261029040800_finance_workspace_boundaries.sql:415:definer-public',
-    '20261029012300_tighten_legacy_table_grants.rollback.sql:2:anon-grant',
-    '20261029030500_align_cross_app_token_grant_and_private_fence.rollback.sql:6:anon-grant',
   ])
     assert.ok(original.has(expected), expected);
+});
+
+// The 012300 rollback used to restore anon grants (baselined debt). It was
+// rewritten, so that debt left the baseline; this negative check keeps it gone.
+test('the 012300 rollback grants nothing to anon or PUBLIC and never restores TRUNCATE', () => {
+  const file =
+    'apps/database/rollbacks/20261029012300_tighten_legacy_table_grants.rollback.sql';
+  const code = fs
+    .readFileSync(path.join(__dirname, '../..', file), 'utf8')
+    .replace(/--.*$/gm, '')
+    .toLowerCase();
+  const grants = [...code.matchAll(/\bgrant\b[^;]*;/g)].map((m) => m[0]);
+  assert.ok(grants.length > 0);
+  for (const grant of grants) {
+    assert.match(grant, /\bto\s+authenticated\s*;$/, grant);
+    assert.doesNotMatch(grant, /\b(?:anon|public)\b(?!\.)/, grant);
+    assert.doesNotMatch(grant, /\btruncate\b/, grant);
+  }
+  assert.doesNotMatch(code, /\btruncate\b/);
+  assert.ok(
+    !checkRepository().legacy.some(
+      (finding) => finding.file === file && finding.rule === RULES.anonGrant
+    )
+  );
 });
 
 test('the historical debt report counts every explicitly baselined diagnostic', () => {

@@ -10,6 +10,7 @@ import {
 } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { ingressPreflight } from './wave1-ingress-preflight.mjs';
 import { stagingAdmission } from './wave1-native-admission.mjs';
 import {
   artifactDigest,
@@ -158,7 +159,9 @@ export async function main({
   appRoot,
 } = {}) {
   const [mode, app, environment, sha] = argv;
-  appRoot ??= resolve('apps', app);
+  // The Web issuer candidate builds from its isolated cloudflare/ root.
+  appRoot ??=
+    app === 'web' ? resolve('apps/web/cloudflare') : resolve('apps', app);
   if (mode === 'dry-run') {
     assert.ok(
       !env.CLOUDFLARE_API_TOKEN &&
@@ -269,6 +272,16 @@ export async function main({
     );
   };
   await assertEnabled();
+  // Ingress-admitted identities (Access-protected Custom Domain) must prove
+  // their topology and the fresh serving intent before any ledger write.
+  await ingressPreflight({
+    app,
+    env,
+    request,
+    cfToken,
+    ghToken,
+    accountId: p.accountId,
+  });
   const ledger = await attemptLedger({
     request,
     base: `https://api.cloudflare.com/client/v4/accounts/${p.accountId}`,

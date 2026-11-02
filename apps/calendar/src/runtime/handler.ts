@@ -3,8 +3,6 @@ import { createNonce } from '@tuturuuu/start-bridge/csp';
 import { APP_BASE_HEADER } from '@tuturuuu/start-bridge/mounts';
 import { withBridgeRequest } from '@tuturuuu/start-bridge/request-context';
 import { createBridgeStartHandler } from '@tuturuuu/start-bridge/start/server-entry';
-import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
-import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { proxy } from '../proxy';
@@ -26,6 +24,8 @@ import {
 } from './request-telemetry.server';
 import { applyCalendarResponsePolicy } from './response-policy';
 import { reportCalendarSsrError } from './ssr-diagnostics';
+import { denyWithoutStagingAccess, fetchOwner } from './staging-access';
+import { resolveCalendarTasksOrigin } from './tasks-origin';
 import type {
   CalendarExecutionContext,
   CalendarWorkerEnvironment,
@@ -64,6 +64,8 @@ async function dispatchCalendarRequest(
   const base = calendarBase(url);
   let path = base?.strip(url.pathname);
   if (!base || path == null) return new Response('Not Found', { status: 404 });
+  const denied = await denyWithoutStagingAccess(request, env);
+  if (denied) return denied;
   if (
     path === CALENDAR_LEGACY_FUNCTION_BASE ||
     path.startsWith(`${CALENDAR_LEGACY_FUNCTION_BASE}/`)
@@ -141,25 +143,18 @@ async function dispatchCalendarRequest(
               const origin =
                 owner === 'web'
                   ? resolveTuturuuuWebAppUrl()
-                  : resolveInternalAppUrl({
-                      appName: 'tasks',
-                      candidates: [
-                        process.env.TASKS_APP_URL,
-                        process.env.NEXT_PUBLIC_TASKS_APP_URL,
-                      ],
-                      fallback:
-                        process.env.NODE_ENV === 'production'
-                          ? 'https://tasks.tuturuuu.com'
-                          : getLocalInternalAppUrl(
-                              'tasks',
-                              'http://localhost:7809'
-                            ),
-                    });
-              return fetch(
+                  : resolveCalendarTasksOrigin();
+              if (!origin)
+                return Response.json(
+                  { error: 'Tasks is not configured for this deployment' },
+                  { status: 503, headers: { 'cache-control': 'no-store' } }
+                );
+              return fetchOwner(
                 forwardToOwner(
                   base.stripRequest(forwarded) ?? forwarded,
                   origin
-                )
+                ),
+                env
               );
             }
             const endpoint = await dispatchCalendarEndpoint(forwarded);
@@ -167,8 +162,9 @@ async function dispatchCalendarRequest(
             if (forwarded.nextUrl.pathname.startsWith('/api/')) {
               if (!base.isRoot)
                 return new Response('Not Found', { status: 404 });
-              return fetch(
-                forwardToOwner(forwarded, resolveTuturuuuWebAppUrl())
+              return fetchOwner(
+                forwardToOwner(forwarded, resolveTuturuuuWebAppUrl()),
+                env
               );
             }
             if (

@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(24);
+select plan(26);
 
 -- Fixture
 --   a101 owner: creator of workspaces A, B and the seat-limited workspace F
@@ -294,6 +294,13 @@ select ok(
   'no cross-workspace membership was created'
 );
 
+
+reset role;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-00000000a101","role":"authenticated","aal":"aal2"}', true);
+set local role authenticated;
+select throws_ok($$insert into public.workspace_invites(ws_id,user_id,type) values ('00000000-0000-4000-8000-00000000a1a0','00000000-0000-4000-8000-00000000a103','MEMBER')$$, '42501', null, 'caller binding does not permit inviting an existing member');
+select lives_ok($$insert into public.workspace_invites(ws_id,user_id,type) values ('00000000-0000-4000-8000-00000000a1a0','00000000-0000-4000-8000-00000000a106','GUEST')$$, 'manager can still invite a nonmember');
+reset role;
 select * from finish();
 
 rollback;

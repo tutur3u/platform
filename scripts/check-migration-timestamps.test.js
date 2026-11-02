@@ -6,8 +6,10 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const {
+  ORDER_EXEMPT_VERSIONS,
   checkMigrationOrder,
   findNewestMigration,
+  findOutOfOrderMigrations,
   parseAddedMigrations,
 } = require('./check-migration-timestamps.js');
 
@@ -184,4 +186,75 @@ test('name-status parsing keeps only added and renamed-to migrations', () => {
     `${MIGRATIONS_DIR}/20260104000000_old.sql`,
   ]);
   assert.equal(findNewestMigration([]), null);
+});
+
+const NEWEST = {
+  filename: '20261030131100_apply_creator_grant_checks.sql',
+  timestamp: '20261030131100',
+};
+const inDir = (filename) => `${MIGRATIONS_DIR}/${filename}`;
+
+test('the exemption list is exactly the reviewed quarantine version', () => {
+  assert.deepEqual([...ORDER_EXEMPT_VERSIONS], ['20261030130950']);
+  assert.ok(Object.isFrozen(ORDER_EXEMPT_VERSIONS));
+});
+
+test('the exempt out-of-order version passes', () => {
+  assert.deepEqual(
+    findOutOfOrderMigrations(
+      [inDir('20261030130950_quarantine_orphan_role_permissions.sql')],
+      NEWEST
+    ),
+    []
+  );
+});
+
+test('any other out-of-order version still fails', () => {
+  assert.deepEqual(
+    findOutOfOrderMigrations(
+      [
+        inDir('20261030130950_quarantine_orphan_role_permissions.sql'),
+        inDir('20261030130949_neighbor_below.sql'),
+        inDir('20261030130951_neighbor_above.sql'),
+        inDir('20261030131100_equal_to_newest.sql'),
+        inDir('20260101000000_ancient.sql'),
+      ],
+      NEWEST
+    ),
+    [
+      '20260101000000_ancient.sql',
+      '20261030130949_neighbor_below.sql',
+      '20261030130951_neighbor_above.sql',
+      '20261030131100_equal_to_newest.sql',
+    ]
+  );
+});
+
+test('the exemption cannot match by prefix, glob or substring', () => {
+  for (const entry of ORDER_EXEMPT_VERSIONS) {
+    assert.match(entry, /^\d{14}$/u);
+  }
+  // The version is the full 14-digit prefix, so longer or shorter lookalikes
+  // and glob characters never extract as the exempt version.
+  assert.deepEqual(
+    findOutOfOrderMigrations(
+      [
+        inDir('202610301309500_prefix_extension.sql'),
+        inDir('2026103013095_prefix_truncation.sql'),
+        inDir('2026103013095*_glob.sql'),
+        inDir('20261030130950*_glob_suffix.sql'),
+      ],
+      NEWEST
+    ),
+    []
+  );
+  // A different version that merely contains the exempt one is not exempt.
+  assert.deepEqual(
+    findOutOfOrderMigrations([inDir('20261030130950_x.sql')], NEWEST),
+    []
+  );
+  assert.equal(
+    ORDER_EXEMPT_VERSIONS.some((entry) => entry === '20261030130951'),
+    false
+  );
 });

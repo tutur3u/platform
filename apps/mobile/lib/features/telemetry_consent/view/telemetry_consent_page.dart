@@ -7,7 +7,10 @@ import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// Where "Privacy details" opens: the public privacy notice.
-final Uri telemetryPrivacyUri = Uri.parse('https://tuturuuu.com/privacy');
+Uri telemetryPrivacyUri(Locale locale) => Uri.https(
+  'tuturuuu.com',
+  locale.languageCode == 'vi' ? '/vi/privacy' : '/privacy',
+);
 
 /// One-time, full-screen analytics and crash report choice.
 ///
@@ -78,11 +81,15 @@ class _TelemetryConsentPageState extends State<TelemetryConsentPage> {
                           const SizedBox(height: AppSpacing.md),
                           Text(l10n.telemetryConsentBody),
                           const SizedBox(height: AppSpacing.sm),
+                          Text(l10n.telemetryFirebaseInstallationDisclosure),
+                          const SizedBox(height: AppSpacing.sm),
                           AppButton.ghost(
                             onPressed: () =>
                                 (widget.openLink ?? openMobileLink)(
                                   context,
-                                  telemetryPrivacyUri,
+                                  telemetryPrivacyUri(
+                                    Localizations.localeOf(context),
+                                  ),
                                 ),
                             child: Text(l10n.telemetryConsentLearnMore),
                           ),
