@@ -200,7 +200,12 @@ class CalendarCubit extends Cubit<CalendarState> {
   }
 
   /// Loads events within a 3-month window around the selected date.
-  Future<void> loadEvents(String wsId, {bool forceRefresh = false}) async {
+  ///
+  Future<void> loadEvents(
+    String wsId, {
+    bool forceRefresh = false,
+    bool retainError = false,
+  }) async {
     if (isClosed) return;
     final generation = ++_loadGeneration;
     // A refresh supersedes pending pagination, whose callback will be ignored.
@@ -213,6 +218,12 @@ class CalendarCubit extends Cubit<CalendarState> {
         _wsId == wsId;
     final memoryCacheKey = _memoryCacheKey(wsId);
     final sameActor = _userId == userId;
+    final keepError =
+        retainError &&
+        forceRefresh &&
+        sameActor &&
+        _wsId == wsId &&
+        state.status == CalendarStatus.error;
     final hasVisibleData = sameActor && _wsId == wsId && state.hasLoadedOnce;
     final cached =
         _cache[memoryCacheKey] ??
@@ -230,32 +241,28 @@ class CalendarCubit extends Cubit<CalendarState> {
     _userId = userId;
     final cacheKey = _cacheKey(wsId);
     final shouldReadDiskCache = cached == null && !hasVisibleData;
-
     if (forceRefresh) {
       if (cached != null && !hasVisibleData) {
         emit(_restoreView(cached.state));
       }
       emit(
         state.copyWith(
-          status: CalendarStatus.loading,
+          status: keepError ? CalendarStatus.error : CalendarStatus.loading,
           hasLoadedOnce: state.hasLoadedOnce || cached != null,
           isFromCache: state.hasLoadedOnce || cached != null,
-          isRefreshing: state.hasLoadedOnce || cached != null,
+          isRefreshing: keepError || state.hasLoadedOnce || cached != null,
           lastUpdatedAt: cached?.fetchedAt,
-          clearError: true,
+          clearError: !keepError,
         ),
       );
     }
-
     final diskCached = shouldReadDiskCache
         ? await _cacheStore.read<CalendarState>(
             key: cacheKey,
             decode: (json) => _stateFromCacheJson(_decodeCacheJson(json)),
           )
         : null;
-
     if (!isCurrent()) return;
-
     if (diskCached?.hasValue == true &&
         !hasVisibleData &&
         diskCached?.data != null) {
@@ -266,37 +273,34 @@ class CalendarCubit extends Cubit<CalendarState> {
       );
       emit(_restoreView(diskCached.data!));
     }
-
     if (cached != null && !hasVisibleData) {
       _rememberCachedState(wsId, cached.state, fetchedAt: cached.fetchedAt);
       emit(_restoreView(cached.state));
     }
-
     if (hasVisibleData || cached != null || diskCached?.hasValue == true) {
       emit(
         state.copyWith(
-          status: CalendarStatus.loading,
+          status: keepError ? CalendarStatus.error : CalendarStatus.loading,
           hasLoadedOnce: true,
           isFromCache: cached != null || (diskCached?.hasValue ?? false),
           isRefreshing: true,
           lastUpdatedAt: cached?.fetchedAt ?? diskCached?.fetchedAt,
-          clearError: true,
+          clearError: !keepError,
         ),
       );
     } else {
       emit(
         state.copyWith(
-          status: CalendarStatus.loading,
+          status: keepError ? CalendarStatus.error : CalendarStatus.loading,
           hasLoadedOnce: false,
           isFromCache: false,
-          isRefreshing: false,
+          isRefreshing: keepError,
           events: const [],
           fetchedRange: null,
-          clearError: true,
+          clearError: !keepError,
         ),
       );
     }
-
     try {
       final center = state.viewMode == CalendarViewMode.year
           ? state.effectiveFocusedMonth
@@ -304,7 +308,6 @@ class CalendarCubit extends Cubit<CalendarState> {
       final targetRange = _targetRangeFor(center, state.viewMode);
       final start = targetRange.start;
       final end = targetRange.end;
-
       final events = deduplicateCalendarEvents(
         await CacheStore.awaitRevalidation(
           () => _repo.getEvents(
@@ -314,7 +317,6 @@ class CalendarCubit extends Cubit<CalendarState> {
           ),
         ),
       );
-
       if (!isCurrent()) return;
       _refreshVersions[memoryCacheKey] =
           (_refreshVersions[memoryCacheKey] ?? 0) + 1;

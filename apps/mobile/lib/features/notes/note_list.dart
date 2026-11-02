@@ -23,6 +23,7 @@ class NoteList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (notes.isEmpty) {
       return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
@@ -72,6 +73,7 @@ class NoteList extends StatelessWidget {
       context.l10n.notesOlder,
     ];
     return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
       // The page body already ends above the dock; no extra clearance here.
       padding: EdgeInsets.zero,
       children: [

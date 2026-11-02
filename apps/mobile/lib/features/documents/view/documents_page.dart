@@ -244,6 +244,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             NovaRefreshIndicator(
               onRefresh: _reload,
               child: AppPageListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   FinanceSectionHeader(
                     title: context.l10n.documentsTitle,

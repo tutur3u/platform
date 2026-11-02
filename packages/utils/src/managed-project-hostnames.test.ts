@@ -39,6 +39,7 @@ describe('managed project hostname reservation', () => {
     'tutur3u.com',
     'app.tutur3u.com',
     'web.staging.tutur3u.com',
+    'web.tutur3u.com',
     'staging.tutur3u.com',
     'localhost',
     'nova.ai.vn',

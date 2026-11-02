@@ -1,0 +1,431 @@
+{
+  "now": "2026-11-02T03:00:00Z",
+  "cards": [
+    {
+      "id": "item-00000000000000000001",
+      "version_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+      "title": "Ship the Orchid release candidate?",
+      "text": "The Orchid release candidate passed every check. Shipping now promotes it to production; holding keeps the previous build live.",
+      "options": [
+        {
+          "id": "ship-now",
+          "label": "Ship now",
+          "note": "Promotes the candidate to production."
+        },
+        {
+          "id": "hold",
+          "label": "Hold until Monday",
+          "note": null
+        },
+        {
+          "id": "staging",
+          "label": "Ship to staging only",
+          "note": "Production keeps the previous build."
+        }
+      ],
+      "recommended_id": "ship-now",
+      "recommended_label": "Ship now",
+      "recommended_why": "All checks passed and the change is reversible.",
+      "inbox_class": "urgent",
+      "urgency": "now",
+      "deadline_at": "2026-11-02T03:30:00Z",
+      "risk_class": null,
+      "risky": false,
+      "phase": "open",
+      "kind": "decision",
+      "incomplete": false,
+      "incomplete_reasons": [],
+      "updated_at": "2026-11-02T01:15:00Z",
+      "resolved_via": null
+    },
+    {
+      "id": "item-00000000000000000002",
+      "version_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+      "title": "Approve the vendor renewal terms?",
+      "text": "The renewal needs an answer before the quote lapses.",
+      "options": [
+        {
+          "id": "opt-0",
+          "label": "Approve",
+          "note": null
+        },
+        {
+          "id": "opt-1",
+          "label": "Decline",
+          "note": null
+        }
+      ],
+      "recommended_id": "opt-0",
+      "recommended_label": "Approve",
+      "recommended_why": null,
+      "inbox_class": "urgent",
+      "urgency": "now",
+      "deadline_at": null,
+      "risk_class": null,
+      "risky": false,
+      "phase": "open",
+      "kind": "decision",
+      "incomplete": false,
+      "incomplete_reasons": [],
+      "updated_at": null,
+      "resolved_via": null
+    },
+    {
+      "id": "item-00000000000000000003",
+      "version_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+      "title": "Reopen the paused import job?",
+      "text": "The nightly import job has been paused since yesterday evening. Reopening it re-queues the missed batch.",
+      "options": [
+        {
+          "id": "opt-0",
+          "label": "Reopen",
+          "note": null
+        },
+        {
+          "id": "opt-1",
+          "label": "Keep paused",
+          "note": null
+        }
+      ],
+      "recommended_id": "opt-0",
+      "recommended_label": "Reopen",
+      "recommended_why": null,
+      "inbox_class": "urgent",
+      "urgency": "soon",
+      "deadline_at": "2026-11-02T01:00:00Z",
+      "risk_class": null,
+      "risky": false,
+      "phase": "open",
+      "kind": "decision",
+      "incomplete": false,
+      "incomplete_reasons": [],
+      "updated_at": null,
+      "resolved_via": null
+    },
+    {
+      "id": "item-00000000000000000004",
+      "version_hash": "4444444444444444444444444444444444444444444444444444444444444444",
+      "title": "Pick the onboarding checklist layout",
+      "text": "Layout A groups steps by week; layout B shows one flat list. Usage data from the pilot favours B.",
+      "options": [
+        {
+          "id": "layout-a",
+          "label": "Layout A",
+          "note": "Steps grouped by week."
+        },
+        {
+          "id": "layout-b",
+          "label": "Layout B",
+          "note": "One flat list."
+        }
+      ],
+      "recommended_id": "layout-b",
+      "recommended_label": "Layout B",
+      "recommended_why": "The pilot favoured the flat list.",
+      "inbox_class": "decision",
+      "urgency": "today",
+      "deadline_at": "2026-11-03T09:00:00Z",
+      "risk_class": null,
+      "risky": false,
+      "phase": "open",
+      "kind": "decision",
+      "incomplete": false,
+      "incomplete_reasons": [],
+      "updated_at": null,
+      "resolved_via": null
+    },
+    {
+      "id": "item-00000000000000000005",
+      "version_hash": "5555555555555555555555555555555555555555555555555555555555555555",
+      "title": "Rename the staging project?",
+      "text": "A shorter name would match the other projects.",
+      "options": [
+        {
+          "id": "opt-0",
+          "label": "Rename",
+          "note": null
+        },
+        {
+          "id": "opt-1",
+          "label": "Leave as is",
+          "note": null
+        }
+      ],
+      "recommended_id": "opt-1",
+      "recommended_label": "Leave as is",
+      "recommended_why": null,
+      "inbox_class": "decision",
+      "urgency": "today",
+      "deadline_at": null,
+      "risk_class": null,
+      "risky": false,
+      "phase": "open",
+      "kind": "decision",
+      "incomplete": false,
+      "incomplete_reasons": [],
+      "updated_at": null,
+      "resolved_via": null
+    },
+    {
+      "id": "item-00000000000000000006",
+      "version_hash": "6666666666666666666666666666666666666666666666666666666666666666",
+      "title": "Choose a rollout window",
+      "text": "Three windows are free this week.",
+      "options": [
+        {
+          "id": "opt-0",
+          "label": "Tuesday night",
+          "note": null
+        },
+        {
+          "id": "opt-1",
+          "label": "Wednesday night",
+          "note": null
+        },
+        {
+          "id": "opt-2",
+          "label": "Thursday night",
+          "note": null
+        }
+      ],
+      "recommended_id": null,
+      "recommended_label": null,
+      "recommended_why": null,
+      "inbox_class": "decision",
+      "urgency": "soon",
+      "deadline_at": null,
+      "risk_class": null,
+      "risky": false,
+      "phase": "open",
+      "kind": "decision",
+      "incomplete": false,
+      "incomplete_reasons": [],
+      "updated_at": null,
+      "resolved_via": null
+    },
+    {
+      "id": "item-00000000000000000007",
+      "version_hash": "7777777777777777777777777777777777777777777777777777777777777777",
+      "title": "Which migration plan should run first?",
+      "text": "Both plans reach the same end state.",
+      "options": [
+        {
+          "id": "plan-b",
+          "label": "Plan B (staged rollout)",
+          "note": "Smaller batches, slower overall."
+        },
+        {
+          "id": "plan-a",
+          "label": "Plan A (single pass)",
+          "note": "Fastest, one maintenance window."
+        }
+      ],
+      "recommended_id": "plan-b",
+      "recommended_label": "Plan B (staged rollout)",
+      "recommended_why": "Staged batches are easier to roll back.",
+      "inbox_class": "decision",
+      "urgency": "today",
+      "deadline_at": null,
+      "risk_class": null,
+      "risky": false,
+      "phase": "open",
+      "kind": "decision",
+      "incomplete": false,
+      "incomplete_reasons": [],
+      "updated_at": null,
+      "resolved_via": null
+    },
+    {
+      "id": "item-00000000000000000008",
+      "version_hash": "8888888888888888888888888888888888888888888888888888888888888888",
+      "title": "Enable the weekly digest for new members?",
+      "text": "The digest is ready to switch on.",
+      "options": [
+        {
+          "id": "enable",
+          "label": "Enable",
+          "note": null
+        },
+        {
+          "id": "not-yet",
+          "label": "Not yet",
+          "note": "Revisit next sprint."
+        }
+      ],
+      "recommended_id": "enable",
+      "recommended_label": "Enable",
+      "recommended_why": "Early members asked for it.",
+      "inbox_class": "decision",
+      "urgency": "soon",
+      "deadline_at": null,
+      "risk_class": null,
+      "risky": false,
+      "phase": "open",
+      "kind": "decision",
+      "incomplete": false,
+      "incomplete_reasons": [],
+      "updated_at": null,
+      "resolved_via": null
+    },
+    {
+      "id": "item-00000000000000000009",
+      "version_hash": "9999999999999999999999999999999999999999999999999999999999999999",
+      "title": "Extend the trial for the pilot group?",
+      "text": "The pilot ended before an answer arrived.",
+      "options": [
+        {
+          "id": "opt-0",
+          "label": "Extend",
+          "note": null
+        },
+        {
+          "id": "opt-1",
+          "label": "Let it end",
+          "note": null
+        }
+      ],
+      "recommended_id": "opt-1",
+      "recommended_label": "Let it end",
+      "recommended_why": null,
+      "inbox_class": "decision",
+      "urgency": "soon",
+      "deadline_at": "2026-11-01T17:00:00Z",
+      "risk_class": null,
+      "risky": false,
+      "phase": "expired",
+      "kind": "decision",
+      "incomplete": false,
+      "incomplete_reasons": [],
+      "updated_at": "2026-11-01T17:00:01Z",
+      "resolved_via": null
+    },
+    {
+      "id": "item-0000000000000000000a",
+      "version_hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "title": "Nightly backup finished",
+      "text": "Backup completed with no warnings.",
+      "options": [],
+      "recommended_id": null,
+      "recommended_label": null,
+      "recommended_why": null,
+      "inbox_class": "fyi",
+      "urgency": "whenever",
+      "deadline_at": null,
+      "risk_class": null,
+      "risky": false,
+      "phase": "open",
+      "kind": "fyi",
+      "incomplete": false,
+      "incomplete_reasons": [],
+      "updated_at": null,
+      "resolved_via": null
+    },
+    {
+      "id": "item-0000000000000000000b",
+      "version_hash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "title": "Docs site moved to the new domain",
+      "text": "Old links redirect for 90 days.",
+      "options": [
+        {
+          "id": "opt-0",
+          "label": "Acknowledge",
+          "note": null
+        }
+      ],
+      "recommended_id": "opt-0",
+      "recommended_label": "Acknowledge",
+      "recommended_why": null,
+      "inbox_class": "fyi",
+      "urgency": "today",
+      "deadline_at": null,
+      "risk_class": null,
+      "risky": false,
+      "phase": "open",
+      "kind": "fyi",
+      "incomplete": false,
+      "incomplete_reasons": [],
+      "updated_at": null,
+      "resolved_via": null
+    },
+    {
+      "id": "item-0000000000000000000c",
+      "version_hash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "title": "Changelog draft is ready to read",
+      "text": "The changelog draft covers the last release.",
+      "options": [
+        {
+          "id": "opt-0",
+          "label": "Looks good",
+          "note": null
+        }
+      ],
+      "recommended_id": "opt-0",
+      "recommended_label": "Looks good",
+      "recommended_why": null,
+      "inbox_class": "fyi",
+      "urgency": "whenever",
+      "deadline_at": null,
+      "risk_class": null,
+      "risky": false,
+      "phase": "answered",
+      "kind": "fyi",
+      "incomplete": false,
+      "incomplete_reasons": [],
+      "updated_at": "2026-11-02T00:20:00Z",
+      "resolved_via": "mobile"
+    },
+    {
+      "id": "item-0000000000000000000d",
+      "version_hash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "title": "Which region should we use?",
+      "text": null,
+      "options": [],
+      "recommended_id": null,
+      "recommended_label": null,
+      "recommended_why": null,
+      "inbox_class": "decision",
+      "urgency": "today",
+      "deadline_at": null,
+      "risk_class": null,
+      "risky": false,
+      "phase": "open",
+      "kind": "decision",
+      "incomplete": true,
+      "incomplete_reasons": ["missing_text", "missing_options"],
+      "updated_at": null,
+      "resolved_via": null
+    },
+    {
+      "id": "item-0000000000000000000e",
+      "version_hash": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "title": "Rotate the production signing key?",
+      "text": "Rotating the production signing key takes effect immediately and cannot be undone. Dependent services pick up the new key within minutes.",
+      "options": [
+        {
+          "id": "rotate-now",
+          "label": "Rotate now",
+          "note": "Immediate and irreversible."
+        },
+        {
+          "id": "weekend",
+          "label": "Schedule for the weekend",
+          "note": "Rotates in the next quiet window."
+        }
+      ],
+      "recommended_id": "weekend",
+      "recommended_label": "Schedule for the weekend",
+      "recommended_why": "Fewer services are active on weekends.",
+      "inbox_class": "urgent",
+      "urgency": "now",
+      "deadline_at": "2026-11-02T11:00:00Z",
+      "risk_class": "deploy",
+      "risky": true,
+      "phase": "open",
+      "kind": "decision",
+      "incomplete": false,
+      "incomplete_reasons": [],
+      "updated_at": null,
+      "resolved_via": null
+    }
+  ]
+}

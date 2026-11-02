@@ -459,6 +459,7 @@ class _MeetPageState extends State<MeetPage> {
             NovaRefreshIndicator(
               onRefresh: _reload,
               child: AppPageListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 kind: AppPageKind.root,
                 children: [
                   if (_isLoading && _meetings.isEmpty)

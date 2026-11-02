@@ -10,16 +10,21 @@ import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/answered_via_labels.dart';
+import 'package:mobile/features/mastermind/presentation/ask_card_source.dart';
 import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/presentation/option_labels.dart';
 import 'package:mobile/features/mastermind/presentation/relative_time.dart';
 import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
+import 'package:mobile/features/mastermind/view/inbox/ask_card.dart';
 import 'package:mobile/features/mastermind/view/inbox/ask_timing_chips.dart';
 import 'package:mobile/features/mastermind/view/inbox/decision_card_actions.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
+import 'package:mobile/features/mastermind/view/inbox/reply_status_panel.dart';
+import 'package:mobile/features/mastermind/view/inbox/reply_undo_bar.dart';
 import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_clock.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
@@ -39,12 +44,17 @@ class InboxItemTile extends StatelessWidget {
     this.now,
     this.showKind = false,
     this.showKindIcon = false,
+    this.askCard = false,
     super.key,
   });
 
   final NeedsYou item;
   final bool showKind;
   final bool showKindIcon;
+
+  /// Shows an open ask as the Inbox ask card (the Inbox list). Compact
+  /// surfaces such as Home keep the row.
+  final bool askCard;
 
   /// The section clock. Without it no age is shown.
   final DateTime? now;
@@ -82,6 +92,9 @@ class InboxItemTile extends StatelessWidget {
     ReplyItemStatus status,
     AnsweredElsewhere? elsewhere,
   ) {
+    // An open ask shows as the Inbox ask card: the question, its full text and
+    // every option, never a title alone. Closed asks, and an ask answered on
+    // another device, keep the compact row below.
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).toString();
     final title = item.hubTitle ?? itemDisplayTitle(l10n, item);
@@ -102,16 +115,7 @@ class InboxItemTile extends StatelessWidget {
         : [?_state(l10n, entry, status), ?resolvedTime].join(' · ');
     final at = elsewhere != null || resolvedTime != null ? null : _at;
     final preview = item.hubText ?? askPreviewText(item);
-    void open() {
-      if (_canRetry(status, entry)) {
-        unawaited(
-          MastermindRepliesWatcher.cubitOf(
-            context,
-          ).retry(item.id, item.versionHash),
-        );
-      }
-      unawaited(context.push<void>(Routes.mastermindInboxItemPath(item.id)));
-    }
+    void open() => _open(context, status, entry);
 
     final exactTime = GlobalKey<TooltipState>();
     final large = mastermindLargeText(context);
@@ -214,10 +218,13 @@ class InboxItemTile extends StatelessWidget {
             ),
           );
     if (item.state != ItemState.open) return row;
+    // In the Inbox list the card carries the title, so the compact row only
+    // shows once the ask was answered elsewhere.
+    final cardMode = askCard;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        row,
+        if (!cardMode || elsewhere != null) row,
         // Answered elsewhere: the choices fold away rather than vanish.
         AnimatedSwitcher(
           duration: MediaQuery.disableAnimationsOf(context)
@@ -238,6 +245,11 @@ class InboxItemTile extends StatelessWidget {
                   key: ValueKey('answered'),
                   width: double.infinity,
                 )
+              : cardMode
+              ? KeyedSubtree(
+                  key: const ValueKey('actions'),
+                  child: _askCard(context, status, entry),
+                )
               : Padding(
                   key: const ValueKey('actions'),
                   padding: const EdgeInsets.all(AppSpacing.sm),
@@ -245,6 +257,85 @@ class InboxItemTile extends StatelessWidget {
                 ),
         ),
       ],
+    );
+  }
+
+  /// A tap retries only when the reply is still queued and the device was
+  /// offline, then pushes the full ask and composer.
+  void _open(BuildContext context, ReplyItemStatus status, OutboxEntry? entry) {
+    if (_canRetry(status, entry)) {
+      unawaited(
+        MastermindRepliesWatcher.cubitOf(
+          context,
+        ).retry(item.id, item.versionHash),
+      );
+    }
+    unawaited(context.push<void>(Routes.mastermindInboxItemPath(item.id)));
+  }
+
+  /// This device's reply state, only when it says more than "Open".
+  String? _cardStatus(
+    AppLocalizations l10n,
+    OutboxEntry? entry,
+    ReplyItemStatus status,
+  ) => status.issue == null && entry == null
+      ? null
+      : _state(l10n, entry, status);
+
+  Widget _askCard(
+    BuildContext context,
+    ReplyItemStatus status,
+    OutboxEntry? entry,
+  ) {
+    final l10n = context.l10n;
+    final replies = MastermindRepliesWatcher.cubitOf(context);
+    final ask = inboxAskFor(item, now: now);
+    return BlocBuilder<MastermindRepliesCubit, MastermindRepliesState>(
+      bloc: replies,
+      builder: (context, state) {
+        final pending = state.pendingOptionFor(item.id, item.versionHash);
+        final queued = state.entryFor(item.id, item.versionHash);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ReplyIssueBanner(issue: state.statusFor(item.id).issue),
+            MastermindAskCard(
+              ask: ask,
+              title: item.hubTitle ?? itemDisplayTitle(l10n, item),
+              now: now,
+              statusLine: _cardStatus(l10n, queued, status),
+              onOpen: () => _open(context, status, entry),
+              onSelectOption: state.canReply
+                  ? (index) =>
+                        replies.queueOption(item: item, optionIndex: index)
+                  : null,
+              disabledNote: state.canReply
+                  ? null
+                  : switch (state.capability) {
+                      ReplyCapability.unknown ||
+                      ReplyCapability.checking => l10n.mastermindReplyChecking,
+                      ReplyCapability.unavailable =>
+                        l10n.mastermindReplyCheckFailed,
+                      _ => l10n.mastermindReplyOnMac,
+                    },
+              optionsOverride: pending != null
+                  ? ReplyUndoBar(
+                      option: plainOptionLabel(item, pending.optionIndex),
+                      onUndo: pending.committed
+                          ? null
+                          : () => replies.undoOption(item.id),
+                    )
+                  : queued != null
+                  ? ReplyEntryPanel(
+                      entry: queued,
+                      status: state.statusFor(item.id),
+                      replies: replies,
+                    )
+                  : null,
+            ),
+          ],
+        );
+      },
     );
   }
 

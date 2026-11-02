@@ -82,6 +82,7 @@ const HEAVY_PR_WORKFLOWS = [
   'supabase-baseline.yaml',
   'time-tracker-control-contract.yaml',
   'topic-delivery-foundation-contract.yaml',
+  'tools-cloudflare.yaml',
   'track-cloudflare.yaml',
   'tsrs-shadow.yaml',
   'turbo-cache-cloudflare.yaml',

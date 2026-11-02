@@ -1,6 +1,8 @@
 export {
   isMeetAiEnabledForWorkspace,
+  MEET_AI_DISABLED_ENV,
   MEET_AI_WORKSPACE_ALLOWLIST_ENV,
+  MEET_AI_WORKSPACE_DENYLIST_ENV,
   type MeetAiGateEnv,
   meetAiEnabledWorkspaceIds,
 } from './ai-workspace-gate';

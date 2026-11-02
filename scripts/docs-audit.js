@@ -173,7 +173,7 @@ function hashedTermErrors(
 const PUBLIC_ONLY_SAFETY_RULES = [
   [
     'staging host',
-    /\b[a-z0-9][a-z0-9-]*(?:\.staging\.tutur3u\.com|-staging\.tutur3u\.com)\b/,
+    /\b(?:web|calendar|contacts|finance|meet|mail|apps)\.tutur3u\.com\b|\b[a-z0-9][a-z0-9-]*(?:\.staging\.tutur3u\.com|-staging\.tutur3u\.com)\b/,
   ],
   ['staging worker name', /\btuturuuu-[a-z0-9-]*staging[a-z0-9-]*\b/],
   [

@@ -41,10 +41,6 @@ function fixture(t, policy) {
     'scripts/ci/wave1-ingress-topology.mjs',
     'scripts/ci/wave1-ingress-policies.mjs',
     'scripts/native-cutover/route-pattern.mjs',
-    // The real Web issuer gates the publisher imports, and their imports.
-    'scripts/ci/wave1-web-next.mjs',
-    'scripts/ci/wave1-web-next-ledger.mjs',
-    'scripts/ci/wave1-web-vercel.mjs',
     'scripts/wave1-staging/readback-probes.mjs',
     'scripts/ci/wave1-native-upload-error.mjs',
     'scripts/ci/wave1-native-upload-limits.mjs',

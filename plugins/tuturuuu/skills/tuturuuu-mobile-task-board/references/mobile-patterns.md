@@ -426,6 +426,17 @@ infer hub resolution from a local tap or accepted reply. Exercise the real
 reply cubit with fake transport in `decision_cards_test.dart`; English/Vietnamese
 at 320px and 2x text catch wrapping regressions without a device build.
 
+### First-frame critical path
+
+Overlap the local preference reads with `TelemetryPreference.initialize` via
+`initializeBootstrapServices`; start Supabase after both. Never initialize
+Firebase outside `FirebaseAdmission` (signed in AND push/telemetry allowed): a
+signed-out launch must create no Firebase app and no FCM token. Push setup
+(`initialize`/`startSession`) runs after first paint through
+`scheduleOptionalStartup` and `startPushForCurrentAccount`, which reads auth at
+run time. Tests: `test/core/startup/startup_state_test.dart` and
+`cold_start_firebase_contract_test.dart`.
+
 ### Independent startup state restoration
 
 Use `initializeStartupState` only after Firebase/observability and Supabase settle.
@@ -513,3 +524,22 @@ an enable enum in standard defaults and the Measurement plist; reset both before
 Firebase configuration. Native upgrade tests must seed enabled overrides, retain
 unrelated preferences and prove the first SDK read sees disabled. See the
 mobile telemetry privacy page for version-specific storage keys and commands.
+
+## Remote list refresh
+
+Use NovaRefreshIndicator around the existing awaitable cubit/repository refresh.
+Set AlwaysScrollableScrollPhysics only on its owning vertical scroll view;
+never inherit that physics into nested or horizontal scrollables. The affordance
+adds header clearance only when the shell header scrolls over the body. Use NovaRefreshIndicator.state for an existing
+empty/error widget that has no scrollable; it preserves the widget's page insets.
+Sheets expose AppSheetScaffold.onRefresh inside their scroll-notification fence;
+an indicator outside the scaffold cannot receive those notifications. Keep
+canvas-specific notification predicates and realtime reverse-list gestures.
+Audit routed lists plus remote list overlays; record local-only/form exceptions
+in the mobile application page. Regression targets are
+notifications_pull_to_refresh_test.dart and nova_refresh_indicator_test.dart.
+
+Pull gestures retain the current error message while refreshing. Explicit Retry
+returns to loading feedback. Compact sheet empty/error states use a plain
+indicator with a shrink-wrapped scroll view. Regression coverage includes
+calendar_cubit_test.dart and nova_refresh_indicator_test.dart.

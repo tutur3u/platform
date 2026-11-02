@@ -82,7 +82,11 @@ export function useTranscription({
 
       // Step 4: Send to transcription API
       const transcriptionResult =
-        await transcribeWorkspaceMeetingAudio<unknown>(wsId, audioBlob);
+        await transcribeWorkspaceMeetingAudio<unknown>(
+          wsId,
+          meetingId,
+          audioBlob
+        );
 
       // Step 5: Save the transcript and update status to completed
       await updateWorkspaceMeetingRecording(

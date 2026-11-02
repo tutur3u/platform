@@ -14948,6 +14948,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindIrisDone => 'Done';
 
   @override
+  String mastermindIrisUseRecommendationsOthers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count other options',
+      one: '+1 other option',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindIrisNotIncludedTitle => 'Not included: answer these one by one';
+
+  @override
+  String get mastermindIrisNotIncludedRisky => 'Needs approval on a trusted device';
+
+  @override
+  String get mastermindIrisNotIncludedIncomplete => 'Incomplete: open it to read the full ask';
+
+  @override
+  String get mastermindRiskyComingSoon => 'Approve on a trusted device: coming soon';
+
+  @override
+  String get mastermindRiskyComingSoonHint => 'This ask touches deploy, spend, credentials or security. It can\'t be answered from the phone yet.';
+
+  @override
   String get mastermindIrisDevicesTitle => 'Iris devices';
 
   @override
@@ -15012,5 +15038,172 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindIrisEnrolFailed => 'Couldn\'t start enrolment. Try again.';
 
   @override
-  String get mastermindIrisEnrolLimit => 'Too many pending devices. Wait for one to expire.';
+  String get mastermindIrisEnrolLimit => 'Too many enrolment attempts or pending devices. Try again later.';
+
+  @override
+  String get mastermindIrisEnrolAgain => 'Enrol again with a new key';
+
+  @override
+  String get mastermindIrisUnlockReason => 'Unlock Iris to read your inbox';
+
+  @override
+  String get mastermindIrisConfirmReason => 'Confirm this Iris action';
+
+  @override
+  String get mastermindIrisDeviceLocked => 'Iris is locked on this device. It will ask you to unlock again in a few minutes.';
+
+  @override
+  String get mastermindIrisDeviceLockedEnrol => 'If this keeps happening, enrol again with a new key.';
+
+  @override
+  String get mastermindIrisDeviceRevoked => 'This device was removed from Iris. Enrol again to keep using it.';
+
+  @override
+  String get mastermindIrisEnrolAgainAction => 'Enrol again';
+
+  @override
+  String get mastermindIrisClockSkew => 'Check your device clock. It doesn\'t match Iris.';
+
+  @override
+  String get mastermindIrisEnrolCodeConflict => 'That code is already in use. Try again.';
+
+  @override
+  String get mastermindIrisEnrolDeviceConflict => 'This key is already registered. Enrol again with a new key.';
+
+  @override
+  String get mastermindIrisRelayStopped => 'Relay stopped. Ask the owner to restore it.';
+
+  @override
+  String get mastermindIrisDevicesUnavailable => 'The device list isn\'t available yet. You can still enrol this device.';
+
+  @override
+  String get mastermindIrisDeviceCurrent => 'This device';
+
+  @override
+  String get mastermindIrisWritesOff => 'Sending is off for now. You can still read the chat.';
+
+  @override
+  String get mastermindIrisWritesNeedEnrol => 'Enrol this device to send messages.';
+
+  @override
+  String get mastermindAskCardTierDecision => 'Needs decision';
+
+  @override
+  String get mastermindAskCardTierFyi => 'FYI';
+
+  @override
+  String mastermindAskCardDue(String when) {
+    return 'Due $when';
+  }
+
+  @override
+  String get mastermindAskCardOverdue => 'Overdue';
+
+  @override
+  String get mastermindAskCardReversible => 'Reversible';
+
+  @override
+  String get mastermindAskCardOneWay => 'One-way';
+
+  @override
+  String get mastermindAskCardNeedsBiometric => 'Needs Face ID or fingerprint';
+
+  @override
+  String get mastermindAskCardExpired => 'Expired';
+
+  @override
+  String get mastermindAskCardAnsweredDiscord => 'Answered on Discord';
+
+  @override
+  String get mastermindAskCardAnsweredAgent => 'Answered by an agent';
+
+  @override
+  String get mastermindAskCardIncomplete => 'Incomplete card';
+
+  @override
+  String get mastermindAskCardIncompleteMessage => 'The publisher sent only part of this ask. One-tap answers are off. Open the full question, or reply in your own words.';
+
+  @override
+  String get mastermindAskCardExpiredMessage => 'This ask expired, so answering is closed.';
+
+  @override
+  String get mastermindAskCardOpenFull => 'Open full question';
+
+  @override
+  String get mastermindAskCardReplyInWords => 'Reply in your own words';
+
+  @override
+  String get mastermindAskCardAnswerWithBiometric => 'Open to answer with Face ID';
+
+  @override
+  String get mastermindAskCardShowFullText => 'Show full text';
+
+  @override
+  String get mastermindAskCardHideFullText => 'Show less';
+
+  @override
+  String mastermindAskCardMoreOptions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count more options',
+      one: '+1 more option',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindAskCardFewerOptions => 'Show fewer options';
+
+  @override
+  String mastermindAskCardOptionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count options',
+      one: '1 option',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindAskCardRecommendedOption(String option) {
+    return 'Recommended: $option';
+  }
+
+  @override
+  String mastermindAskCardRecommendedWhy(String option, String why) {
+    return 'Recommended: $option. $why';
+  }
+
+  @override
+  String get mastermindInboxTierUrgent => 'Urgent';
+
+  @override
+  String get mastermindInboxTierDecision => 'Needs a decision';
+
+  @override
+  String get mastermindInboxTierFyi => 'For your information';
+
+  @override
+  String mastermindInboxTierHeading(String tier, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$tier, $count asks',
+      one: '$tier, 1 ask',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindInboxTierShowAll(int count) {
+    return 'Show all ($count)';
+  }
+
+  @override
+  String get mastermindInboxTierShowLess => 'Show less';
+
+  @override
+  String get mastermindInboxTierJump => 'Scrolls to this section';
 }

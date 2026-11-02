@@ -13,7 +13,7 @@ import {
 
 /**
  * The authoritative room-state settings write. Only the host may patch, and
- * turning note sharing on follows the Meet AI workspace gate (default deny);
+ * turning note sharing on follows the Meet AI workspace gate;
  * turning it off is always allowed.
  */
 export function resolveRoomSettingsPatch(
@@ -29,7 +29,7 @@ export function resolveRoomSettingsPatch(
     enablesNoteSharing(body as Parameters<typeof enablesNoteSharing>[0]) &&
     !isMeetAiEnabledForWorkspace(token.wsId, env)
   )
-    return new Response('Meeting AI is not available', { status: 403 });
+    return new Response('Meet AI is temporarily unavailable', { status: 403 });
   return patch.data;
 }
 

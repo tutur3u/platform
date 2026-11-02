@@ -28,7 +28,7 @@ export async function generateBilledMeetArtifact(
   admission?: MeetCreditAdmission
 ) {
   const { workspaceId, allowance } =
-    admission ?? (await admitMeetCredits(actor.userId));
+    admission ?? (await admitMeetCredits(actor.userId, actor.meetingId));
   const modelId = `google/${MEET_AI_MODEL}`;
   const db = await createAdminClient({ noCookie: true });
   const { data: allocation, error } = await db

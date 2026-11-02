@@ -1,5 +1,6 @@
 {
   "schemaVersion": 2,
+  "stagingUnmigrated": "not-migrated-404",
   "generatedBy": "bun apps/web/cloudflare/generate-inventory.ts",
   "serviceWorker": {
     "url": "/serwist/sw.js",

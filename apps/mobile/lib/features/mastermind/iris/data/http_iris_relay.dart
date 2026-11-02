@@ -8,13 +8,18 @@ import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart'
 import 'package:mobile/features/mastermind/iris/data/iris_models.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_parsers.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay.dart';
+import 'package:mobile/features/mastermind/iris/data/request_signer.dart';
 
 /// The relay on the hub origin (`/v1/iris/*`): the owner JWT as on every hub
-/// route, plus the device signature from [IrisRequestSigner] on every request.
+/// route, plus the device signature from [IrisRequestSigner] on every device
+/// route. Enrolment and revoke are owner-only relay routes and go unsigned.
+/// Error bodies are `{"error":"<class>"}`; a 401 `clock_skew`,
+/// `device_revoked`, `unknown_device` or `assertion_required` is not about
+/// the token, so it earns no token refresh.
 ///
 /// Nothing here logs or stores a token, signature, header, body or URL; every
-/// failure collapses to an [IrisFailureKind]. A 423 `killed` (or a 503
-/// `iris_killed` from an older Worker) is the kill switch: the app turns
+/// failure collapses to an [IrisFailureKind]. A 503 `killed` (or `iris_killed`
+/// from an older Worker) is the kill switch: the app turns
 /// read-only until the relay says otherwise.
 final class HttpIrisRelay implements IrisRelay {
   HttpIrisRelay({
@@ -105,13 +110,33 @@ final class HttpIrisRelay implements IrisRelay {
   @override
   Future<IrisResult<IrisEnrollment>> enroll(
     String publicKey,
-    String fingerprint,
-  ) => _call(
-    'POST',
-    '/v1/iris/devices/enroll',
-    body: {'public_key': publicKey, 'fingerprint': fingerprint},
-    parse: parseIrisEnrollment,
-  );
+    String fingerprint, {
+    required String deviceId,
+    required String code,
+  }) {
+    if (!irisIdempotencyKeyPattern.hasMatch(deviceId)) {
+      throw ArgumentError.value(deviceId, 'deviceId');
+    }
+    if (!RegExp(r'^[0-9]{6}$').hasMatch(code)) {
+      throw ArgumentError('code must be 6 digits');
+    }
+    final now = DateTime.now().toUtc();
+    return _call(
+      'POST',
+      '/v1/iris/enrol',
+      body: {'public_key': publicKey, 'fingerprint': fingerprint, 'code': code},
+      idempotencyKey: newIrisIdempotencyKey(),
+      deviceId: deviceId,
+      signed: false,
+      parse: (bytes) => parseIrisRelayEnrolment(
+        bytes,
+        deviceId: deviceId,
+        fingerprint: fingerprint,
+        code: code,
+        now: now,
+      ),
+    );
+  }
 
   @override
   Future<IrisResult<IrisDevice>> device(String id) =>
@@ -127,6 +152,7 @@ final class HttpIrisRelay implements IrisRelay {
     '/v1/iris/devices/${_id(id)}',
     parse: (_) {},
     allowEmpty: true,
+    signed: false,
   );
 
   String _id(String id) {
@@ -134,8 +160,9 @@ final class HttpIrisRelay implements IrisRelay {
     return id;
   }
 
-  /// One signed request; a 401 earns one silent token refresh and one retry
-  /// with a fresh signature (a reused nonce would be refused).
+  /// One request, signed unless [signed] is false (then [deviceId], when
+  /// given, names the device instead); a 401 earns one silent token refresh
+  /// and one retry with a fresh signature (a reused nonce would be refused).
   Future<IrisResult<T>> _call<T>(
     String method,
     String path, {
@@ -145,7 +172,12 @@ final class HttpIrisRelay implements IrisRelay {
     String? idempotencyKey,
     int maxBytes = irisSmallMaxBytes,
     bool allowEmpty = false,
+    bool signed = true,
+    String? deviceId,
   }) async {
+    final unsigned = signed
+        ? null
+        : <String, String>{IrisHeaders.device: ?deviceId};
     final base = _base;
     if (base == null) {
       return const IrisErr(IrisFailure(IrisFailureKind.notConfigured));
@@ -175,8 +207,11 @@ final class HttpIrisRelay implements IrisRelay {
         bytes,
         idempotencyKey,
         maxBytes,
+        unsigned,
       );
-      if (reply.status == 401 && !refreshed) {
+      if (reply.status == 401 &&
+          !refreshed &&
+          !_notTokenErrors.contains(irisErrorClass(reply.bytes))) {
         final fresh = _usable(await _tokens.refreshAccessToken());
         if (fresh != null && fresh != token) {
           reply = await _exchange(
@@ -186,9 +221,12 @@ final class HttpIrisRelay implements IrisRelay {
             bytes,
             idempotencyKey,
             maxBytes,
+            unsigned,
           );
         }
       }
+    } on IrisSignerException catch (error) {
+      return IrisErr(IrisFailure(error.kind));
     } on Object {
       return const IrisErr(IrisFailure(IrisFailureKind.offline));
     }
@@ -214,21 +252,45 @@ final class HttpIrisRelay implements IrisRelay {
     final error = irisErrorClass(reply.bytes);
     return IrisErr(switch (status) {
       0 => const IrisFailure(IrisFailureKind.offline),
+      401 when error == 'clock_skew' => const IrisFailure(
+        IrisFailureKind.clockSkew,
+      ),
+      401 when error == 'device_revoked' || error == 'unknown_device' =>
+        const IrisFailure(IrisFailureKind.deviceRevoked),
+      401 when error == 'assertion_required' => const IrisFailure(
+        IrisFailureKind.relayStopped,
+      ),
       401 => const IrisFailure(IrisFailureKind.unauthorized),
+      409 when error == 'code_conflict' => const IrisFailure(
+        IrisFailureKind.codeConflict,
+      ),
+      409 when error == 'device_conflict' => const IrisFailure(
+        IrisFailureKind.deviceConflict,
+      ),
+      // At most 3 pending enrolments: the same wait as a 429.
+      409 when error == 'pending_limit' => const IrisFailure(
+        IrisFailureKind.rateLimited,
+      ),
       403 => const IrisFailure(IrisFailureKind.forbidden),
       400 => const IrisFailure(IrisFailureKind.badRequest),
       404 => const IrisFailure(IrisFailureKind.notFound),
-      423 => const IrisFailure(IrisFailureKind.killed),
       429 => IrisFailure(
         IrisFailureKind.rateLimited,
         retryAfter: reply.retryAfter,
       ),
-      503 when error == 'iris_killed' => const IrisFailure(
+      503 when error == 'killed' || error == 'iris_killed' => const IrisFailure(
         IrisFailureKind.killed,
       ),
       _ => const IrisFailure(IrisFailureKind.unavailable),
     });
   }
+
+  static const _notTokenErrors = {
+    'clock_skew',
+    'device_revoked',
+    'unknown_device',
+    'assertion_required',
+  };
 
   String? _usable(String? token) =>
       token == null || token.isEmpty ? null : token;
@@ -240,6 +302,7 @@ final class HttpIrisRelay implements IrisRelay {
     Uint8List body,
     String? idempotencyKey,
     int maxBytes,
+    Map<String, String>? unsigned,
   ) async {
     final abort = Completer<void>();
     try {
@@ -250,8 +313,11 @@ final class HttpIrisRelay implements IrisRelay {
         body,
         idempotencyKey,
         maxBytes,
+        unsigned,
         abort.future,
       ).timeout(timeout);
+    } on IrisSignerException {
+      rethrow;
     } on Object {
       return const _Reply(0);
     } finally {
@@ -266,15 +332,18 @@ final class HttpIrisRelay implements IrisRelay {
     Uint8List body,
     String? idempotencyKey,
     int maxBytes,
+    Map<String, String>? unsigned,
     Future<void> aborted,
   ) async {
     final signedPath = uri.hasQuery ? '${uri.path}?${uri.query}' : uri.path;
-    final signature = await _signer.sign(
-      method,
-      signedPath,
-      body,
-      idempotencyKey: idempotencyKey,
-    );
+    final signature =
+        unsigned ??
+        await _signer.sign(
+          method,
+          signedPath,
+          body,
+          idempotencyKey: idempotencyKey,
+        );
     final request = http.AbortableRequest(method, uri, abortTrigger: aborted)
       ..followRedirects = false
       ..headers.addAll({

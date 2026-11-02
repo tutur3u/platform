@@ -30,8 +30,6 @@ final irisIdempotencyKeyPattern = RegExp(
 /// Receipt and device ids: opaque, URL-safe, never interpolated unchecked.
 final irisIdPattern = RegExp(r'^[A-Za-z0-9_-]{1,64}$');
 final _digest = RegExp(r'^[0-9a-f]{64}$');
-final _code = RegExp(r'^[0-9]{6}$');
-final _fingerprintPrefix = RegExp(r'^[0-9A-F:]{4,32}$');
 final _rfc3339Utc = RegExp(
   r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|\+00:00)$',
 );
@@ -224,60 +222,82 @@ IrisSummary? parseIrisSummary(Uint8List bytes) => _closed(
 
 const _deviceKeys = [
   'id',
-  'label',
-  'status',
+  'device_name',
   'fingerprint_prefix',
-  'qa',
   'created_at',
-  'last_seen_at',
+  'revoked',
+  'current',
 ];
 
+/// One row of `GET /v1/iris/devices`: every key required, nothing else.
 IrisDevice _device(JsonReader r) {
-  r.keys(_deviceKeys, const ['id', 'label', 'status', 'fingerprint_prefix']);
+  r.keys(_deviceKeys, _deviceKeys);
+  final revoked = r.field('revoked').boolean();
   return IrisDevice(
     id: r.field('id').string(pattern: irisIdPattern),
-    label: r.field('label').string(maxLength: 60),
-    status: r.field('status').enumOf(IrisDeviceStatus.values, (s) => s.name),
+    label: r.field('device_name').string(maxLength: 80),
+    status: revoked ? IrisDeviceStatus.revoked : IrisDeviceStatus.confirmed,
     fingerprintPrefix: r
         .field('fingerprint_prefix')
-        .string(pattern: _fingerprintPrefix),
-    qa: r.has('qa') && r.field('qa').boolean(),
-    createdAt: r.has('created_at')
-        ? r.field('created_at').nullable(_timestamp)
-        : null,
-    lastSeenAt: r.has('last_seen_at')
-        ? r.field('last_seen_at').nullable(_timestamp)
-        : null,
+        .string(pattern: RegExp(r'^[0-9a-f]{8}$')),
+    createdAt: _timestamp(r.field('created_at')),
+    current: r.field('current').boolean(),
   );
 }
 
-/// `GET /v1/iris/devices`: at most 3 confirmed plus 3 pending, with headroom.
+/// `GET /v1/iris/devices` (device-signed, no query): confirmed and revoked
+/// devices. A Worker without the route answers 404, which the devices page
+/// shows as "list unavailable".
 List<IrisDevice>? parseIrisDevices(Uint8List bytes) =>
     _closed(bytes, irisSmallMaxBytes, (r) {
       r.keys(const ['devices'], const ['devices']);
-      return _rows(r.field('devices'), 12, _device);
+      return _rows(r.field('devices'), 64, _device);
     });
 
 /// `GET /v1/iris/devices/<id>`.
 IrisDevice? parseIrisDevice(Uint8List bytes) =>
     _closed(bytes, irisSmallMaxBytes, _device);
 
-/// `POST /v1/iris/devices/enroll`.
-IrisEnrollment? parseIrisEnrollment(Uint8List bytes) =>
-    _closed(bytes, irisSmallMaxBytes, (r) {
-      const keys = ['device_id', 'code', 'fingerprint_prefix', 'expires_at'];
-      r.keys(keys, keys);
-      return IrisEnrollment(
-        deviceId: r.field('device_id').string(pattern: irisIdPattern),
-        code: r.field('code').string(pattern: _code),
-        fingerprintPrefix: r
-            .field('fingerprint_prefix')
-            .string(pattern: _fingerprintPrefix),
-        expiresAt: _timestamp(r.field('expires_at')),
-      );
-    });
+/// The relay's `202` to `POST /v1/iris/enrol`: `{state: "pending",
+/// pending_id, fingerprint_prefix, device_name, code}`. `command` is being
+/// retired: it may still be present and is never read. `pending_id` is the
+/// device id, the prefix the first 8 hex of the [fingerprint] that was sent,
+/// and the code the [code] that was sent; anything else is refused. The
+/// pending record lives 15 minutes from [now]; the relay sends no expiry.
+/// The prefix stays in the relay's lowercase form so it reads the same as the
+/// enrol page.
+IrisEnrollment? parseIrisRelayEnrolment(
+  Uint8List bytes, {
+  required String deviceId,
+  required String fingerprint,
+  required String code,
+  required DateTime now,
+}) => _closed(bytes, irisSmallMaxBytes, (r) {
+  const required = [
+    'state',
+    'pending_id',
+    'fingerprint_prefix',
+    'device_name',
+    'code',
+  ];
+  r.keys(const [...required, 'command'], required);
+  r.field('state').string(constant: 'pending');
+  r.field('pending_id').string(constant: deviceId);
+  r.field('device_name').string(maxLength: 80);
+  final prefix = r
+      .field('fingerprint_prefix')
+      .string(pattern: RegExp(r'^[0-9a-f]{8}$'));
+  if (!fingerprint.startsWith(prefix)) r.fail();
+  return IrisEnrollment(
+    deviceId: deviceId,
+    code: r.field('code').string(constant: code),
+    fingerprintPrefix: prefix,
+    expiresAt: now.toUtc().add(const Duration(minutes: 15)),
+  );
+});
 
-/// `{"error":"<class>"}` from a non-2xx reply; never anything else.
+/// The `error` class of a non-2xx reply (`{"error":"<class>"}`; a
+/// `clock_skew` body also carries `server_time`, which is never read).
 String? irisErrorClass(Uint8List bytes) {
   if (bytes.length > 1024) return null;
   try {

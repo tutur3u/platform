@@ -74,6 +74,7 @@ describe('infrastructure projects', () => {
     'tutur3u.com',
     'app.tutur3u.com',
     'A.B.Tutur3u.COM.',
+    'web.tutur3u.com',
   ])(
     'keeps platform zone host %s reserved from managed projects',
     (hostname) => {

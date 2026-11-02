@@ -69,6 +69,7 @@
     "../../packages/realtime/src/meet/room-cleanup.ts",
     "../../packages/realtime/src/meet/room-commands.ts",
     "../../packages/realtime/src/meet/room-controls.ts",
+    "../../packages/realtime/src/meet/room-display-name.ts",
     "../../packages/realtime/src/meet/room-ending.ts",
     "../../packages/realtime/src/meet/room-idle.ts",
     "../../packages/realtime/src/meet/room-lifecycle.ts",

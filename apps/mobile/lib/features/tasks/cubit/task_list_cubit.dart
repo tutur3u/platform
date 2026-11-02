@@ -121,18 +121,27 @@ class TaskListCubit extends Cubit<TaskListState> {
     );
   }
 
+  /// [retainError] keeps a visible error state and its message while the
+  /// pull-to-refresh gesture reloads; an explicit Retry leaves it false so
+  /// the page re-enters its loading state.
   Future<void> loadTasks({
     required String wsId,
     required bool isPersonal,
     bool forceRefresh = false,
+    bool retainError = false,
     String? userId,
   }) async {
     final cacheUserId = currentCacheUserId();
-    final preserveData =
+    final sameTarget =
         _cacheUserId == cacheUserId &&
         _wsId == wsId &&
-        _isPersonal == isPersonal &&
-        state.hasLoadedOnce;
+        _isPersonal == isPersonal;
+    final preserveData = sameTarget && state.hasLoadedOnce;
+    final keepError =
+        retainError &&
+        forceRefresh &&
+        sameTarget &&
+        state.status == TaskListStatus.error;
     if (_cacheUserId != cacheUserId || (_wsId != null && _wsId != wsId)) {
       emit(const TaskListState());
     }
@@ -197,10 +206,10 @@ class TaskListCubit extends Cubit<TaskListState> {
     } else {
       emit(
         state.copyWith(
-          status: TaskListStatus.loading,
+          status: keepError ? TaskListStatus.error : TaskListStatus.loading,
           hasLoadedOnce: false,
           isFromCache: false,
-          isRefreshing: false,
+          isRefreshing: keepError,
           lastUpdatedAt: cached.fetchedAt,
           overdueTasks: const [],
           todayTasks: const [],
@@ -211,7 +220,7 @@ class TaskListCubit extends Cubit<TaskListState> {
           hasMoreCompleted: false,
           completedPage: 0,
           isLoadingMoreCompleted: false,
-          clearError: true,
+          clearError: !keepError,
         ),
       );
     }

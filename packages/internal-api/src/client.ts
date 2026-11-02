@@ -34,7 +34,7 @@ export type InternalApiClientOptions = {
 type HeaderAccessor = Pick<Headers, 'get'>;
 const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
 const SUPABASE_AUTH_COOKIE_PATTERN = /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
-const KNOWN_CUSTOM_SATELLITE_HOSTS = new Set(['nova.ai.vn', 'rewise.me']);
+const KNOWN_CUSTOM_SATELLITE_HOSTS = new Set(['nova.ai.vn']);
 const KNOWN_NON_PLATFORM_TUTURUUU_HOSTS = new Set([
   'apps.tuturuuu.com',
   'cms.tuturuuu.com',

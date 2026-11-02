@@ -26,7 +26,10 @@ vi.mock('@opennextjs/cloudflare', () => ({
 }));
 const bindAllowlist = (value?: string) =>
   mocks.cloudflare.mockResolvedValue({
-    env: { MEET_AI_ENABLED_WORKSPACE_IDS: value },
+    env: {
+      MEET_AI_ENABLED_WORKSPACE_IDS: value,
+      MEET_AI_DISABLED: value ? undefined : 'true',
+    },
   });
 vi.mock('./room-access', () => ({ canReadSharedMeetingNotes: mocks.shared }));
 vi.mock('@tuturuuu/satellite/auth', () => ({
@@ -112,7 +115,7 @@ describe('Meet AI satellite authorization', () => {
       mocks.user.mockResolvedValue({ id: 'actor' });
       mocks.membership.mockResolvedValue({ ok: true });
     };
-    it('denies every workspace when the allowlist is unset', async () => {
+    it('denies every workspace when the kill switch is set', async () => {
       bindAllowlist('');
       signedInHost();
       const response = await meetAiResponse(() =>
@@ -121,7 +124,7 @@ describe('Meet AI satellite authorization', () => {
       expect(response.status).toBe(403);
       expect(await response.json()).toEqual({
         code: 'MEET_AI_WORKSPACE_NOT_ENABLED',
-        error: 'Meeting AI is not available for this workspace',
+        error: 'Meet AI is temporarily unavailable',
       });
     });
     it('denies an unlisted workspace and allows a listed one', async () => {
@@ -137,7 +140,7 @@ describe('Meet AI satellite authorization', () => {
       const access = await meetAiAccess(request(), forWorkspace(allowed), true);
       expect(access.wsId).toBe(allowed);
     });
-    it('denies when the Worker config is absent even if ambient process.env lists the workspace', async () => {
+    it('denies with the injected kill switch even if ambient process.env lists the workspace', async () => {
       vi.stubEnv('MEET_AI_ENABLED_WORKSPACE_IDS', allowed);
       bindAllowlist(undefined);
       signedInHost();

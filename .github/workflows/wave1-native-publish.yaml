@@ -26,7 +26,29 @@ concurrency:
   cancel-in-progress: false
   queue: max
 jobs:
+  preflight:
+    if: inputs.profile == 'staging' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - name: Refuse missing fences or unprotected staging environments
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WAVE1_STAGING_PUBLISH_ENABLED: ${{ vars.WAVE1_STAGING_PUBLISH_ENABLED }}
+          WAVE1_STAGING_PUBLICATION_ADMISSION: ${{ vars.WAVE1_STAGING_PUBLICATION_ADMISSION }}
+          APP: ${{ inputs.app }}
+        run: node scripts/ci/wave1-staging-preflight.mjs native "$APP"
   publish:
+    needs: preflight
     if: inputs.profile == 'staging' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     timeout-minutes: 15
