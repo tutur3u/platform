@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isTutoringGroupExcluded } from './tutoring-group-rules';
 import {
+  EASY_CENTER_TUTORING_POLICY,
   parseTutoringPolicy,
   readTutoringPolicyConfigRows,
   STANDARD_TUTORING_POLICY,
@@ -81,4 +82,46 @@ describe('tutoring group rules', () => {
       supportGroup,
     ]);
   });
+});
+
+describe('accent matching v2', () => {
+  for (const match of ['exact', 'contains', 'prefix', 'suffix'] as const) {
+    for (const target of ['name', 'tag'] as const) {
+      it(`${match} ${target} folds accents only when enabled`, () => {
+        const policy = {
+          ...STANDARD_TUTORING_POLICY,
+          groupExclusions: [
+            { scope: 'make_up' as const, match, target, value: 'Mẫu giáo' },
+          ],
+        };
+        const args = [
+          policy,
+          target === 'name' ? 'MAU GIAO' : 'unrelated',
+          'make_up',
+          null,
+          target === 'tag' ? ['MAU GIAO'] : [],
+        ] as const;
+        expect(isTutoringGroupExcluded(...args)).toBe(false);
+        expect(isTutoringGroupExcluded(...args, true)).toBe(true);
+        expect(
+          isTutoringGroupExcluded(
+            policy,
+            'MAU GIAO',
+            'weak_support',
+            null,
+            ['MAU GIAO'],
+            true
+          )
+        ).toBe(false);
+      });
+    }
+  }
+});
+
+it('excludes IELTS alongside DDT in the language center preset', () => {
+  for (const name of ['IELTS evening', 'DDT morning']) {
+    expect(
+      isTutoringGroupExcluded(EASY_CENTER_TUTORING_POLICY, name, 'make_up')
+    ).toBe(true);
+  }
 });

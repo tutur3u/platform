@@ -107,6 +107,7 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
   weakContentReviewDays: 14,
   groupExclusions: [
     { scope: 'all', match: 'contains', value: 'DDT' },
+    { scope: 'all', match: 'contains', value: 'IELTS' },
     { scope: 'all', match: 'contains', value: 'Mẫu giáo' },
     { scope: 'all', match: 'contains', value: 'Kindergarten' },
   ],

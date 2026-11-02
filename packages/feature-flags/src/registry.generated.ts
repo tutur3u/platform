@@ -128,4 +128,12 @@ export const registry = [
     default: false,
     removeBy: '2027-01-31',
   },
+  {
+    key: 'tutoring_exclusion_matching_v2',
+    description: 'Accent insensitive tutoring class name and tag exclusions.',
+    owner: 'pax',
+    class: 'read',
+    default: false,
+    removeBy: '2027-01-31',
+  },
 ] as const;
