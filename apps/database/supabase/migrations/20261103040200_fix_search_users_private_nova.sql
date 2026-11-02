@@ -1,4 +1,4 @@
--- Restore the prior body without changing privileges or function settings.
+-- tuturuuu: reviewed(dynamic-sql-review): Search values use EXECUTE USING; role branches append fixed SQL and the boolean filter is typed.
 create or replace function public.search_users(
   search_query text,
   page_number integer,
@@ -75,8 +75,8 @@ begin
     from public.platform_user_roles ur
     join public.users u on ur.user_id = u.id
     join public.user_private_details ud on u.id = ud.user_id
-    left join public.nova_team_members tm on u.id = tm.user_id
-    left join public.nova_teams t on tm.team_id = t.id
+    left join private.nova_team_members tm on u.id = tm.user_id
+    left join private.nova_teams t on tm.team_id = t.id
     where ' || where_clause || '
     group by
       u.id,
@@ -101,3 +101,6 @@ begin
   ' using search_query, page_size, page_number;
 end;
 $$;
+
+REVOKE ALL ON FUNCTION public.search_users(text, integer, integer, text, boolean) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.search_users(text, integer, integer, text, boolean) TO service_role;
