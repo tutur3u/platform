@@ -17,6 +17,7 @@ import {
 export function BoardSprintPill({
   boardId,
   canManage,
+  onEndSprint,
   onSelectSprint,
   sprints,
   tasks,
@@ -24,6 +25,7 @@ export function BoardSprintPill({
 }: {
   boardId: string;
   canManage: boolean;
+  onEndSprint?: (sprint: BoardSprint) => void;
   onSelectSprint?: (sprint: BoardSprint) => void;
   sprints: ReturnType<typeof useBoardSprints>;
   tasks: Task[];
@@ -51,6 +53,7 @@ export function BoardSprintPill({
       canManage={canManage}
       currentSprint={sprints.currentSprint}
       getProgress={getProgress}
+      onEndSprint={canManage ? onEndSprint : undefined}
       onOpenSettings={canManage ? openBoardSettings : undefined}
       onSelectSprint={onSelectSprint}
       onStartSprint={(sprint) =>
