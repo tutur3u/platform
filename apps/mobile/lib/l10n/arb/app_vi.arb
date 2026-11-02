@@ -6666,9 +6666,27 @@
   "mastermindInboxTierShowAll": "Xem tất cả ({count})",
   "mastermindInboxTierShowLess": "Thu gọn",
   "mastermindInboxTierJump": "Cuộn tới mục này",
+  "assistantVoiceMessagePrompt": "Hãy nghe tin nhắn thoại này và trả lời.",
   "offlineWaitingWifi": "Đang chờ Wi-Fi",
   "offlineWaitingRetry": "Chờ thử lại lúc {time}",
-  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}},
+  "@offlineWaitingRetry": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindUndoWindow": "Thời gian hoàn tác",
+  "mastermindUndoOff": "Tắt",
+  "mastermindUndoSeconds": "{seconds} giây",
+  "mastermindReplySendNow": "Gửi ngay",
+  "@mastermindUndoSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
   "offlineStatusPreparing": "Đang chuẩn bị",
   "offlineStatusReady": "Sẵn sàng ngoại tuyến",
   "offlineStatusNeverSynced": "Chưa đồng bộ",

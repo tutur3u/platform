@@ -28225,6 +28225,12 @@ abstract class AppLocalizations {
   /// **'Scrolls to this section'**
   String get mastermindInboxTierJump;
 
+  /// No description provided for @assistantVoiceMessagePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen to this voice message and respond.'**
+  String get assistantVoiceMessagePrompt;
+
   /// No description provided for @offlineWaitingWifi.
   ///
   /// In en, this message translates to:
@@ -28236,6 +28242,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Waiting to retry at {time}'**
   String offlineWaitingRetry(String time);
+
+  /// No description provided for @mastermindUndoWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo window'**
+  String get mastermindUndoWindow;
+
+  /// No description provided for @mastermindUndoOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get mastermindUndoOff;
+
+  /// No description provided for @mastermindUndoSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s'**
+  String mastermindUndoSeconds(int seconds);
+
+  /// No description provided for @mastermindReplySendNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Send now'**
+  String get mastermindReplySendNow;
 
   /// No description provided for @offlineStatusPreparing.
   ///

@@ -15211,12 +15211,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindInboxTierJump => 'Scrolls to this section';
 
   @override
+  String get assistantVoiceMessagePrompt => 'Listen to this voice message and respond.';
+
+  @override
   String get offlineWaitingWifi => 'Waiting for Wi-Fi';
 
   @override
   String offlineWaitingRetry(String time) {
     return 'Waiting to retry at $time';
   }
+
+  @override
+  String get mastermindUndoWindow => 'Undo window';
+
+  @override
+  String get mastermindUndoOff => 'Off';
+
+  @override
+  String mastermindUndoSeconds(int seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String get mastermindReplySendNow => 'Send now';
 
   @override
   String get offlineStatusPreparing => 'Preparing';
