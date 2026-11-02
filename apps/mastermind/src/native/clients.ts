@@ -1,3 +1,5 @@
+import { ASSERTION_HEADER, signAssertion } from '@tuturuuu/ops-hub/protocol';
+
 import type { MastermindEnvironment, Owner } from './auth';
 
 /** One instance per isolate; only call after request authentication. */
@@ -26,12 +28,21 @@ export function createOwnerMemo<T>(now = Date.now) {
 /** W2 supplies validated response schemas; W1 never calls or renders these clients. */
 export function createDataClients(env: MastermindEnvironment, owner: Owner) {
   return {
-    agentSnapshot() {
+    async agentSnapshot() {
       if (!env.OPS_HUB) throw new Error('Ops hub binding unavailable');
-      // Hub-side owner checks still apply. No public Worker URL or gateway credential.
+      if (!env.OPS_HUB_GATEWAY_SECRET?.trim()) {
+        throw new Error('Ops hub signing key unavailable');
+      }
       return env.OPS_HUB.fetch(
         new Request('https://ops-hub/snapshot', {
-          headers: { Authorization: `Bearer ${owner.token}` },
+          headers: {
+            [ASSERTION_HEADER]: await signAssertion(
+              env.OPS_HUB_GATEWAY_SECRET,
+              owner.id,
+              'GET',
+              '/snapshot'
+            ),
+          },
           redirect: 'error',
         })
       );
