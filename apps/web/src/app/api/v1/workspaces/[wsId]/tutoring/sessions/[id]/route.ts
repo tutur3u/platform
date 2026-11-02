@@ -13,6 +13,11 @@ import {
   freezeLinkedLessonContent,
   LINKED_CONTENT_NOT_STORED,
 } from '@/lib/tutoring/linked-content';
+import {
+  isSessionInTutoringScope,
+  isTeacherReassignmentAllowed,
+  resolveTutoringWriteScope,
+} from '@/lib/tutoring/read-scope';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 import { listWorkspaceTeacherIds } from '@/lib/tutoring/teachers';
 import {
@@ -26,8 +31,8 @@ interface Params {
 
 export async function PUT(request: Request, { params }: Params) {
   const { wsId, id } = await params;
-  const { normalizedWsId, permissions, user } =
-    await resolveTutoringRouteAccess(request, wsId);
+  const access = await resolveTutoringRouteAccess(request, wsId);
+  const { normalizedWsId, permissions, user } = access;
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -87,6 +92,12 @@ export async function PUT(request: Request, { params }: Params) {
     updates.resolved_at = parsed.data.resolvedAt;
 
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const scope = await resolveTutoringWriteScope({ request, access, sbAdmin });
+  if (!scope.allowed)
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  if (!isTeacherReassignmentAllowed(scope, parsed.data.teacherUserId)) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
   const tutoringSessionsClient = sbAdmin.schema('private');
 
   const { data: currentSession, error: currentSessionError } =
@@ -112,7 +123,10 @@ export async function PUT(request: Request, { params }: Params) {
     );
   }
 
-  if (!currentSession) {
+  if (
+    !currentSession ||
+    !isSessionInTutoringScope(scope, currentSession.teacher_user_id)
+  ) {
     return NextResponse.json({ message: 'Session not found' }, { status: 404 });
   }
 
@@ -259,6 +273,8 @@ export async function PUT(request: Request, { params }: Params) {
     .update(updates)
     .eq('id', id)
     .eq('ws_id', normalizedWsId);
+  if (scope.teacherId)
+    updateQuery = updateQuery.eq('teacher_user_id', scope.teacherId);
   // The weak-content verdict above rests on the reason and source feedback we
   // read; pin both so a concurrent change cannot slip content past the check.
   // Any reason in the payload is pinned, even one equal to the stale read, so
@@ -323,10 +339,8 @@ export async function PUT(request: Request, { params }: Params) {
 
 export async function DELETE(request: Request, { params }: Params) {
   const { wsId, id } = await params;
-  const { normalizedWsId, permissions } = await resolveTutoringRouteAccess(
-    request,
-    wsId
-  );
+  const access = await resolveTutoringRouteAccess(request, wsId);
+  const { normalizedWsId, permissions } = access;
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -339,10 +353,15 @@ export async function DELETE(request: Request, { params }: Params) {
   }
 
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const scope = await resolveTutoringWriteScope({ request, access, sbAdmin });
+  if (!scope.allowed)
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   const tutoringSessionsClient = sbAdmin.schema('private');
   const sessionQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
-    .select('id,attendance_status,reason_type,source_feedback_id')
+    .select(
+      'id,attendance_status,reason_type,source_feedback_id,teacher_user_id'
+    )
     .eq('id', id)
     .eq('ws_id', normalizedWsId);
   const { data: session, error: lookupError } =
@@ -359,7 +378,7 @@ export async function DELETE(request: Request, { params }: Params) {
       { status: 500 }
     );
   }
-  if (!session) {
+  if (!session || !isSessionInTutoringScope(scope, session.teacher_user_id)) {
     return NextResponse.json({ message: 'Session not found' }, { status: 404 });
   }
   // Deleting weak-support content follows the same class-manager restriction as
@@ -386,13 +405,15 @@ export async function DELETE(request: Request, { params }: Params) {
 
   // The weak-content verdict above rests on the reason and source feedback we
   // read; pin both so a concurrent switch cannot delete protected content.
-  const deleteQuery = tutoringSessionsClient
+  let deleteQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .delete()
     .eq('id', id)
     .eq('ws_id', normalizedWsId)
     .eq('reason_type', session.reason_type)
     .in('attendance_status', ['PENDING', 'CANCELLED']);
+  if (scope.teacherId)
+    deleteQuery = deleteQuery.eq('teacher_user_id', scope.teacherId);
   const { data: deleted, error: deleteError } =
     await (session.source_feedback_id === null
       ? deleteQuery.is('source_feedback_id', null)
