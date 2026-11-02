@@ -32,9 +32,11 @@ class MobileFlags extends Cubit<MobileFlagsState> {
     CacheStore? cache,
     MobileFlagsFetch? fetch,
     Stream<List<ConnectivityResult>>? networkEvents,
+    Timer Function(Duration, void Function())? createTimer,
   }) : _cache = cache ?? CacheStore.instance,
        _api = fetch == null ? ApiClient() : null,
        _fetch = fetch,
+       _createTimer = createTimer ?? Timer.new,
        super(MobileFlagsState()) {
     _networkSubscription =
         (networkEvents ?? Connectivity().onConnectivityChanged).listen(
@@ -59,6 +61,7 @@ class MobileFlags extends Cubit<MobileFlagsState> {
   String? _workspaceId;
   Map<String, dynamic>? _payload;
   Map<MobileFlag, bool>? _override;
+  final Timer Function(Duration, void Function()) _createTimer;
   Timer? _timer;
   StreamSubscription<List<ConnectivityResult>>? _networkSubscription;
   Future<void> _clearing = Future<void>.value();
@@ -177,7 +180,7 @@ class MobileFlags extends Cubit<MobileFlagsState> {
     } finally {
       if (_refreshing == revision) _refreshing = null;
       if (_current(revision) && _foreground) {
-        _timer = Timer(
+        _timer = _createTimer(
           Duration(seconds: _payload?['ttlSeconds'] as int? ?? 30),
           () => unawaited(refresh()),
         );
