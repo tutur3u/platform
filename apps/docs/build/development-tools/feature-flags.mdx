@@ -62,3 +62,21 @@ not enable offline functionality or grant access to underlying data.
 
 Regression coverage lives in `packages/feature-flags/src/index.test.ts` and
 `apps/web/src/app/api/v1/mobile/feature-flags/route.test.ts`.
+
+## Tutors-only workspace picker
+
+`tutoring_picker_tutors_only` is owned by `pax`, defaults OFF, and is evaluated
+per workspace through the workspace feature flag secret. Its named kill switch
+is `tutoring_picker_tutors_only`: setting it OFF restores the existing teacher
+picker and session-create behavior. No migration or global enablement is needed.
+
+When ON with `TUTORING_POLICY.tutorGroupIds` configured, Contacts picker requests
+and plan suggestions use tutors only. Hidden non-tutor selections are cleared
+with an inline notice, including plan choices and slot prefills. Session creation
+rejects non-tutor teachers with a localized validation error. Without configured
+tutor groups, the catalog stays unrestricted, the toggle is hidden, and a hint
+asks the administrator to configure tutor groups.
+
+Regression coverage: `tutoring-teacher-picker.test.tsx`,
+`tutoring-plan-data.test.ts`, the tutoring teachers and sessions route tests,
+and `apps/web/src/lib/tutoring/tutor-assignment.test.ts`.
