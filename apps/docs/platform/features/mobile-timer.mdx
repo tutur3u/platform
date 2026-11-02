@@ -246,3 +246,10 @@ cache publication. Exceeding a cap shows “Not available offline”.
 Offline settings records the last successful synchronization time.
 Other periods and pages require a previous cached read or connectivity.
 Regression coverage: `time_tracker_offline_preparation_test.dart`.
+
+Preparation and screen reads share the inclusive history-period builder and the
+Calendar first-day preference/locale resolver. Default opening prepares the current
+week; explicit route history contexts use their own previously cached responses.
+Preparing the current first page preserves other periods, cursors, and unrelated
+`time_tracker.data` keys. Cold-cubit and retained-cursor regressions live in
+`time_tracker_offline_preparation_test.dart`.

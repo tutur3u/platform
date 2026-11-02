@@ -4,13 +4,17 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
 import 'package:mobile/core/cache/cache_key.dart';
+import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/feature_flags/mobile_flag.dart';
 import 'package:mobile/data/repositories/time_tracker_offline_preparation.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
+import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _Api extends Mock implements ApiClient {}
 
@@ -42,6 +46,7 @@ void main() {
   const base = '/api/v1/workspaces/ws/time-tracking';
   const listPath = '$base/categories';
   setUp(() async {
+    SharedPreferences.setMockInitialValues({});
     directory = await Directory.systemTemp.createTemp('habits-offline-');
     final storage = _Storage();
     final secrets = <String, String>{};
@@ -77,15 +82,18 @@ void main() {
     });
   });
   tearDown(() async {
+    await CacheStore.instance.closeForTesting();
     await store.closeForTesting();
     await Hive.close();
     await directory.delete(recursive: true);
   });
-  Future<void> prepare() => TimeTrackerOfflinePreparation(
-    api: api,
-    store: store,
-    currentUser: () => owner,
-  ).prepare('ws');
+  Future<void> prepare({int firstDay = DateTime.monday}) =>
+      TimeTrackerOfflinePreparation(
+        api: api,
+        firstDayOfWeek: firstDay,
+        store: store,
+        currentUser: () => owner,
+      ).prepare('ws');
 
   test(
     'bounded download opens both first pages offline through read-through',
@@ -107,6 +115,96 @@ void main() {
       await Future<void>.delayed(Duration.zero);
     },
   );
+  for (final firstDay in [
+    DateTime.monday,
+    DateTime.sunday,
+    DateTime.saturday,
+  ]) {
+    test(
+      'cold TimeTrackerCubit opens prepared history and period stats offline '
+      'firstDay=$firstDay',
+      () async {
+        when(() => api.getJson(any())).thenAnswer((call) async {
+          final path = call.positionalArguments.first as String;
+          if (path == listPath) {
+            return {
+              'categories': [
+                {'id': 'cat'},
+              ],
+            };
+          }
+          if (path.contains('/stats/period?')) return {'totalDuration': 900};
+          return {
+            'sessions': <dynamic>[],
+            'session': null,
+            'hasMore': true,
+            'nextCursor': 'next',
+          };
+        });
+        await prepare(firstDay: firstDay);
+        when(
+          () => api.getJson(any()),
+        ).thenThrow(const SocketException('offline'));
+
+        final cubit = TimeTrackerCubit(
+          repository: TimeTrackerRepository(
+            apiClient: api,
+            cacheStore: store,
+            cacheUserId: () => owner,
+          ),
+          cacheStore: store,
+          currentUserId: () => owner,
+        );
+        addTearDown(cubit.close);
+        await cubit.loadData('ws', owner, firstDayOfWeek: firstDay);
+        expect(cubit.state.status, TimeTrackerStatus.loaded);
+        expect(cubit.state.error, isNull);
+        expect(cubit.state.historyPeriodStats?.totalDuration, 900);
+        expect(cubit.state.historyNextCursor, 'next');
+      },
+    );
+  }
+  test(
+    'older history cursor page survives bounded preparation offline',
+    () async {
+      final from = DateTime(2026, 1, 5);
+      final to = DateTime(2026, 1, 11, 23, 59, 59);
+      final path =
+          '$base/sessions?${Uri(queryParameters: {'type': 'history', 'limit': '10', 'dateFrom': from.toUtc().toIso8601String(), 'dateTo': to.toUtc().toIso8601String(), 'cursor': 'old-page', 'userId': owner}).query}';
+      await store.write(
+        key: CacheKey(
+          namespace: 'time_tracker.data',
+          userId: owner,
+          workspaceId: 'ws',
+          params: {'path': path},
+        ),
+        policy: CachePolicies.moduleData,
+        payload: {
+          'sessions': <dynamic>[],
+          'hasMore': true,
+          'nextCursor': 'older',
+        },
+      );
+      await prepare();
+      when(
+        () => api.getJson(any()),
+      ).thenThrow(const SocketException('offline'));
+      final page =
+          await TimeTrackerRepository(
+            apiClient: api,
+            cacheStore: store,
+            cacheUserId: () => owner,
+          ).getHistorySessions(
+            'ws',
+            dateFrom: from,
+            dateTo: to,
+            cursor: 'old-page',
+            userId: owner,
+          );
+      expect(page.nextCursor, 'older');
+    },
+  );
+
   test('oversized response fails preparation', () async {
     when(() => api.getJson(listPath)).thenAnswer(
       (_) async => {

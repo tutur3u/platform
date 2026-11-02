@@ -41,7 +41,17 @@ extension _AppOfflinePreparation on _AppState {
       (wsId) => _prepareWithPermissions(wsId, (wsId) async {
         final api = ApiClient();
         try {
-          await TimeTrackerOfflinePreparation(api: api).prepare(wsId);
+          await _calendarSettingsCubit.loadWorkspacePreference(wsId);
+          final locale =
+              _localeCubit.state.locale ??
+              WidgetsBinding.instance.platformDispatcher.locale;
+          await TimeTrackerOfflinePreparation(
+            api: api,
+            firstDayOfWeek: timeTrackerFirstDayOfWeek(
+              _calendarSettingsCubit.state,
+              locale.languageCode,
+            ),
+          ).prepare(wsId);
         } finally {
           api.dispose();
         }

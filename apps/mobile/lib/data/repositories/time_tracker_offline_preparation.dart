@@ -1,20 +1,24 @@
 import 'dart:convert';
-
 import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
+
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/feature_flags/mobile_flag.dart';
 import 'package:mobile/core/utils/timezone.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
+import 'package:mobile/features/time_tracker/utils/history_period.dart';
 
 class TimeTrackerOfflinePreparation {
   TimeTrackerOfflinePreparation({
     required this.api,
     this.store,
     this.currentUser,
+    this.firstDayOfWeek = DateTime.monday,
   });
+  final int firstDayOfWeek;
   final ApiClient api;
   final CacheStore? store;
   final String? Function()? currentUser;
@@ -79,13 +83,11 @@ class TimeTrackerOfflinePreparation {
       return data;
     }
 
-    final now = DateTime.now();
-    final start = DateTime(
-      now.year,
-      now.month,
-      now.day,
-    ).subtract(Duration(days: now.weekday - DateTime.monday));
-    final end = start.add(const Duration(days: 7));
+    final periodRange = timeTrackerHistoryPeriod(
+      HistoryViewMode.week,
+      DateTime.now(),
+      firstDayOfWeek: firstDayOfWeek,
+    );
     final timezone = await getCurrentTimezoneIdentifier();
     final base = '/api/v1/workspaces/$workspaceId';
     String query(String path, Map<String, String> params) =>
@@ -109,8 +111,8 @@ class TimeTrackerOfflinePreparation {
       }),
     );
     final period = {
-      'dateFrom': start.toUtc().toIso8601String(),
-      'dateTo': end.toUtc().toIso8601String(),
+      'dateFrom': periodRange.start.toUtc().toIso8601String(),
+      'dateTo': periodRange.end.toUtc().toIso8601String(),
       'userId': user,
     };
     await fetch(
@@ -139,10 +141,7 @@ class TimeTrackerOfflinePreparation {
         entry.data,
       );
     }
-    await manifest.reconcile(
-      workspaceId: workspaceId,
-      namespaces: {'time_tracker.data'},
-    );
+    await manifest.verify();
     manifest.retain('time_tracker', workspaceId);
   }
 }
