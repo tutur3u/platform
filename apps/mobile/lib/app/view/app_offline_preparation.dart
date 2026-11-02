@@ -57,10 +57,23 @@ extension _AppOfflinePreparation on _AppState {
         }
       }),
     );
+    void registerHabits() => HabitsOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient(baseUrl: ApiConfig.tasksBaseUrl);
+        try {
+          await HabitsOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
     registerTimeTracker();
     _timeTrackerOfflineFlags = _mobileFlags.stream.listen(
       (_) => registerTimeTracker(),
     );
+    registerHabits();
+    _habitsOfflineFlags = _mobileFlags.stream.listen((_) => registerHabits());
     void registerChat() => ChatOfflinePreparation.register(
       OfflinePreparationCoordinator.instance.registry,
       (wsId) => _prepareWithPermissions(wsId, (wsId) async {
@@ -79,6 +92,45 @@ extension _AppOfflinePreparation on _AppState {
     );
     _syncOfflinePreparationScope();
   }
+
+  Future<void> _prepareHomeOffline(String wsId) => retainHomeOffline(
+    wsId,
+    warm: () async {
+      final workspace = _workspaceCubit.state.currentWorkspace;
+      final user = _authCubit.state.user?.id;
+      if (workspace?.id != wsId || user == null) {
+        throw const OfflinePreparationUnavailable();
+      }
+      await TaskListCubit.prewarm(
+        taskRepository: _taskRepository,
+        wsId: wsId,
+        isPersonal: workspace!.personal,
+        forceRefresh: true,
+      );
+      await CalendarCubit.prewarm(
+        calendarRepository: _calendarRepository,
+        wsId: wsId,
+        forceRefresh: true,
+      );
+      final keys = [
+        TaskListCubit.offlineSummaryKey(wsId, isPersonal: workspace.personal),
+        CalendarCubit.offlineSummaryKey(wsId),
+      ];
+      if (_audienceModeCubit.state.mode == AudienceMode.education) {
+        final day = DateTime.now();
+        await SessionsClassesTodayRepository().fetch(
+          userId: user,
+          wsId: wsId,
+          day: day,
+          scope: ClassScope.mine,
+        );
+        keys.add(
+          SessionsClassesTodayRepository.offlineSummaryKey(user, wsId, day),
+        );
+      }
+      return keys;
+    },
+  );
 
   Future<void> _prepareWithPermissions(
     String workspaceId,
@@ -182,6 +234,8 @@ extension _AppOfflinePreparation on _AppState {
   void _unregisterOfflinePreparation() {
     unawaited(_timeTrackerOfflineFlags?.cancel());
     OfflinePreparationCoordinator.instance.unregister('time_tracker');
+    unawaited(_habitsOfflineFlags?.cancel());
+    OfflinePreparationCoordinator.instance.unregister('habits');
     CacheStore.instance.removedResource.removeListener(
       _invalidateOfflineReadiness,
     );

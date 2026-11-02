@@ -142,6 +142,11 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                     ) ??
                     false)
                   'time_tracker',
+                if (context.watch<MobileFlags?>()?.enabled(
+                      MobileFlag.offlineReadHabits,
+                    ) ??
+                    false)
+                  'habits',
               ]
             : [widget.productId!];
         final servicePaused = state.retryAt != null;
@@ -318,6 +323,7 @@ class _OfflineProductRow extends StatelessWidget {
       'inventory' => l10n.inventoryTitle,
       'tasks' => l10n.tasksTitle,
       'time_tracker' => l10n.timerTitle,
+      'habits' => l10n.habitsTitle,
       'chat' => l10n.chatTitle,
       _ => l10n.calendarTitle,
     };
@@ -339,6 +345,8 @@ class _OfflineProductRow extends StatelessWidget {
       OfflinePreparationStatus.unavailable =>
         id == 'time_tracker'
             ? l10n.timerOfflineUnavailable
+            : id == 'habits'
+            ? l10n.habitsOfflineUnavailable
             : l10n.offlinePreparationUnavailable,
     };
     final locale = Localizations.localeOf(context).toString();
@@ -360,6 +368,8 @@ class _OfflineProductRow extends StatelessWidget {
             OfflinePreparationStatus.unavailable =>
               id == 'time_tracker'
                   ? l10n.timerOfflineUnavailable
+                  : id == 'habits'
+                  ? l10n.habitsOfflineUnavailable
                   : l10n.offlinePreparationUnavailable,
             _ => legacyStatus,
           };
