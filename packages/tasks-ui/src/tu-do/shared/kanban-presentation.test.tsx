@@ -1,8 +1,12 @@
 import '@testing-library/jest-dom';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, renderHook, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { announceTaskBoardSwitch } from './board-switch-transition';
-import { KanbanPresentation } from './kanban-presentation';
+import { BoardPanelFrame, KanbanPresentation } from './kanban-presentation';
+import {
+  setTaskPanelOpen,
+  useIsTaskPanelSurfaceActive,
+} from './task-panel-surface';
 
 describe('KanbanPresentation', () => {
   afterEach(() => vi.useRealTimers());
@@ -197,5 +201,33 @@ describe('KanbanPresentation', () => {
     act(() => announceTaskBoardSwitch('cached-board'));
 
     expect(presentation).toHaveAttribute('data-kanban-entrance', 'active');
+  });
+});
+
+describe('BoardPanelFrame', () => {
+  afterEach(() => act(() => setTaskPanelOpen(false)));
+
+  it('asks for the side panel and leaves room for it only while open', () => {
+    const surface = renderHook(() => useIsTaskPanelSurfaceActive());
+    const { rerender, unmount } = render(
+      <BoardPanelFrame panelSurface>
+        <div data-testid="board" />
+      </BoardPanelFrame>
+    );
+    const frame = screen.getByTestId('board').parentElement;
+    expect(surface.result.current).toBe(true);
+    expect(frame).not.toHaveClass('sm:pr-[28rem]');
+
+    act(() => setTaskPanelOpen(true));
+    expect(frame).toHaveClass('sm:pr-[28rem]');
+
+    rerender(
+      <BoardPanelFrame panelSurface={false}>
+        <div data-testid="board" />
+      </BoardPanelFrame>
+    );
+    expect(surface.result.current).toBe(false);
+    expect(frame).not.toHaveClass('sm:pr-[28rem]');
+    unmount();
   });
 });
