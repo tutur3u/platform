@@ -11086,6 +11086,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerTitle => 'Bấm giờ';
 
   @override
+  String get timerOfflineUnavailable => 'Không khả dụng ngoại tuyến';
+
+  @override
   String get timerToday => 'Hôm nay';
 
   @override

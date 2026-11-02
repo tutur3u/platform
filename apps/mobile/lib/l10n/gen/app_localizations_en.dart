@@ -11204,6 +11204,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerTitle => 'Timer';
 
   @override
+  String get timerOfflineUnavailable => 'Not available offline';
+
+  @override
   String get timerToday => 'Today';
 
   @override

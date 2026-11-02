@@ -36,6 +36,21 @@ extension _AppOfflinePreparation on _AppState {
           _inventoryRepository.prepareOffline,
         );
       });
+    void registerTimeTracker() => TimeTrackerOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient();
+        try {
+          await TimeTrackerOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
+    registerTimeTracker();
+    _timeTrackerOfflineFlags = _mobileFlags.stream.listen(
+      (_) => registerTimeTracker(),
+    );
     CacheStore.instance.removedResource.addListener(
       _invalidateOfflineReadiness,
     );
@@ -142,6 +157,8 @@ extension _AppOfflinePreparation on _AppState {
   }
 
   void _unregisterOfflinePreparation() {
+    unawaited(_timeTrackerOfflineFlags?.cancel());
+    OfflinePreparationCoordinator.instance.unregister('time_tracker');
     CacheStore.instance.removedResource.removeListener(
       _invalidateOfflineReadiness,
     );

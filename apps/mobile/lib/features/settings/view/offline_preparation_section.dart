@@ -130,7 +130,14 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
       builder: (context, state, _) {
         final enabled = _userId != null && _workspaceId != null;
         final ids = widget.productId == null
-            ? OfflinePreparationCoordinator.productIds
+            ? [
+                ...OfflinePreparationCoordinator.productIds,
+                if (context.watch<MobileFlags?>()?.enabled(
+                      MobileFlag.offlineReadTimeTracker,
+                    ) ??
+                    false)
+                  'time_tracker',
+              ]
             : [widget.productId!];
         final servicePaused = state.retryAt != null;
         final canDownload =
@@ -193,8 +200,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
               ),
             if (!state.running &&
                 state.completed > 0 &&
-                state.completed <
-                    OfflinePreparationCoordinator.productIds.length &&
+                state.completed < ids.length &&
                 widget.productId == null)
               Align(
                 alignment: Alignment.centerLeft,
@@ -306,6 +312,7 @@ class _OfflineProductRow extends StatelessWidget {
       'finance' => l10n.financeTitle,
       'inventory' => l10n.inventoryTitle,
       'tasks' => l10n.tasksTitle,
+      'time_tracker' => l10n.timerTitle,
       _ => l10n.calendarTitle,
     };
     final legacyStatus = switch (product.status) {
@@ -324,7 +331,9 @@ class _OfflineProductRow extends StatelessWidget {
       OfflinePreparationStatus.ready => l10n.offlinePreparationReady,
       OfflinePreparationStatus.failed => l10n.offlinePreparationFailed,
       OfflinePreparationStatus.unavailable =>
-        l10n.offlinePreparationUnavailable,
+        id == 'time_tracker'
+            ? l10n.timerOfflineUnavailable
+            : l10n.offlinePreparationUnavailable,
     };
     final locale = Localizations.localeOf(context).toString();
     final preparing = product.status == OfflinePreparationStatus.downloading;
@@ -343,7 +352,9 @@ class _OfflineProductRow extends StatelessWidget {
             OfflinePreparationStatus.ready => l10n.offlineStatusReady,
             // Queued keeps its own label (waiting / needs refresh / queued).
             OfflinePreparationStatus.unavailable =>
-              l10n.offlinePreparationUnavailable,
+              id == 'time_tracker'
+                  ? l10n.timerOfflineUnavailable
+                  : l10n.offlinePreparationUnavailable,
             _ => legacyStatus,
           };
     final lastSuccess = product.lastSuccess;
