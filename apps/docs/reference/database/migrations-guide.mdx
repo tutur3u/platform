@@ -1011,13 +1011,14 @@ depends on which record pins it.
    bytes are history and must not change. Add a new migration instead.
 2. **Reviewed exceptions** (`scripts/ci/sql-grant-reviewed-exceptions.js`)
    **and the SQL grant historical baseline** (`scripts/ci/sql-grant-guard.baseline.json`).
-   CI runs these guards from the base checkout, and both lists are shrink-only.
-   A pull request cannot edit, regenerate or extend them for itself, so there
-   is no in-PR path. A reviewed exception also binds the whole file through
+   The definer job in `security-checks.yaml` loads the reviewed exceptions from
+   the base commit, and the grant guard validates the head's baseline against
+   the base copy, which may only shrink. A pull request cannot edit, regenerate
+   or extend either for itself, so there is no in-PR path. A reviewed exception also binds the whole file through
    `fileSha256`, so any byte change to a pinned file invalidates it. Such a
-   change needs a one-off excusal approved by the security desk plus an
-   admin-bypass GO, as the transaction-wrapper change for the pending
-   production sync did. Do not weaken the shrink-only checks to avoid it.
+   change needs a one-off, named excusal from the security reviewer for exactly
+   those failing checks, plus the release authority's admin-bypass GO; any other
+   red check blocks the merge. Do not weaken the shrink-only checks to avoid it.
 3. **Zero-line-shift rule.** Keep every edit to a pinned file from moving
    bytes into the statement blocks that follow it. The grant guard splits a file
    at each `;` and takes a finding's digest over its statement block, which
