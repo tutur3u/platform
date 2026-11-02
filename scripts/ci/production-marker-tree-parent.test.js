@@ -226,6 +226,7 @@ test('exact-SHA path retains its proof and does not query parents or main', asyn
   const { requests, logs } = await verify({ exact: true });
   assert.deepEqual(logs, [
     `Staging source proof: source=${target} producer=201 attempt=1 deployment=301`,
+    `Production platform deployment marker and staging migration are bound to ${target}. Proceeding with migration.`,
   ]);
   assert.equal(requests.length, 14);
   assert.ok(
@@ -239,7 +240,8 @@ for (const relation of ['identical', 'behind']) {
   test(`tree-equal direct parent ${relation} main with successful staging passes`, async () => {
     const { logs, requests } = await verify({ relation });
     assert.deepEqual(logs, [
-      `Staging source proof: source=${source} target=${target} tree=${tree}`,
+      `Staging source proof: source=${source} target=${target} tree=${tree} producer=201 attempt=1 deployment=301`,
+      `Production platform deployment marker is bound to ${target}; staging migration is bound to its tree-equal parent ${source}. Proceeding with migration.`,
     ]);
     assert.ok(
       requests.includes(`${base}/contents/${workflowPath}?ref=${source}`)
