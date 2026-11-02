@@ -2241,3 +2241,11 @@ an exceeded budget shows “Not available offline” rather than a truncated lis
 The existing read-through cache supplies stored responses and the Offline settings
 row supplies the last successful synchronization time. Other scopes are unchanged.
 Regression coverage: `habits_offline_preparation_test.dart`.
+
+The Habits download also publishes the self `habits.workspace` snapshot through
+the screen's authorization and account-revision fences. Cold list, first detail
+and activity reads retain that authorized snapshot when fresh transport fails;
+fresh reads still require authorization and a definitive 401/403 revokes it.
+Retention checks include the published workspace snapshot. Regression coverage
+opens the real cold `HabitsCubit` after preparation with transport denied and
+checks entries, definitive denial, and revocation during download.

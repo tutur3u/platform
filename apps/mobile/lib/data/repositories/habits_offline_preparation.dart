@@ -7,9 +7,17 @@ import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/feature_flags/mobile_flag.dart';
 import 'package:mobile/data/sources/api_client.dart';
+import 'package:mobile/features/habits/cubit/habits_cubit.dart';
+import 'package:mobile/features/habits/cubit/habits_snapshot_access.dart';
 
 class HabitsOfflinePreparation {
-  HabitsOfflinePreparation({required this.api, this.store, this.currentUser});
+  HabitsOfflinePreparation({
+    required this.api,
+    this.store,
+    this.currentUser,
+    this.snapshotAccess,
+  });
+  final HabitsSnapshotAccess? snapshotAccess;
   final ApiClient api;
   final CacheStore? store;
   final String? Function()? currentUser;
@@ -36,13 +44,31 @@ class HabitsOfflinePreparation {
       user,
       owner,
     );
+    final snapshot = HabitsOfflineSnapshot(
+      store: store ?? CacheStore.instance,
+      userId: user,
+      workspaceId: workspaceId,
+      access: snapshotAccess,
+      checkScope: () {
+        manifest.checkScope();
+        api.checkUser(user);
+      },
+    );
     final pending =
         <({String namespace, String path, Map<String, dynamic> data})>[];
     var bytes = 0;
     Future<Map<String, dynamic>> read(String namespace, String path) async {
       manifest.checkScope();
       api.checkUser(user);
-      final data = await ApiClient.runForUser(user, () => api.getJson(path));
+      snapshot.check();
+      late final Map<String, dynamic> data;
+      try {
+        data = await ApiClient.runForUser(user, () => api.getJson(path));
+      } on ApiException catch (error) {
+        if (habitsAccessDenied(error)) await snapshot.revoke(error);
+        rethrow;
+      }
+      snapshot.check();
       manifest.checkScope();
       api.checkUser(user);
       bytes += utf8.encode(jsonEncode(data)).length;
@@ -77,6 +103,7 @@ class HabitsOfflinePreparation {
     }
     // Publish only after every response passes the aggregate budget.
     for (final entry in pending) {
+      snapshot.check();
       await manifest.save(
         CacheKey(
           namespace: entry.namespace,
@@ -87,6 +114,12 @@ class HabitsOfflinePreparation {
         entry.data,
       );
     }
+    manifest.trackPublished(
+      await snapshot.publish(data, [
+        for (final entry in pending)
+          if (entry.namespace == 'habits.detail') entry.data,
+      ]),
+    );
     await manifest.reconcile(
       workspaceId: workspaceId,
       namespaces: {'habits.trackers', 'habits.detail'},
