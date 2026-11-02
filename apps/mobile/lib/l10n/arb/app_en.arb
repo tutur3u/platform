@@ -50,6 +50,7 @@
       }
     }
   },
+  "assistantNotAvailableOffline": "Not available offline",
   "assistantDownloadPhasePending": "Pending",
   "assistantDownloadPhaseQueued": "Queued",
   "assistantDownloadPhaseTransferring": "Downloading",

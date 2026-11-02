@@ -2,6 +2,9 @@ part of 'assistant_repository.dart';
 
 mixin _AssistantChatRepository {
   ApiClient get _apiClient;
+  bool Function() get _offlineReadEnabled;
+  Future<bool> Function() get _networkAvailable;
+  Future<Map<String, dynamic>> _miraRead(String wsId, String kind, String path);
   ChatRepository get _chatRepository;
   String generateUuid();
   String? Function() get _currentUserId;
@@ -29,6 +32,11 @@ mixin _AssistantChatRepository {
   }) async {
     if (chatId.startsWith('ai-agent-thread-')) return null;
     final route = AssistantChatRoute.parse(chatId);
+    if (_offlineReadEnabled() &&
+        route.kind == AssistantChatRouteKind.legacy &&
+        !await _networkAvailable()) {
+      throw const MiraLegacyOffline();
+    }
     final origin =
         cacheOrigin ??
         captureChatCacheOrigin(
@@ -38,7 +46,7 @@ mixin _AssistantChatRepository {
         );
     origin?.checkScope();
 
-    if (!forceRefresh && origin != null) {
+    if (!_offlineReadEnabled() && !forceRefresh && origin != null) {
       final cached = await _chatCacheStore.read<AssistantRestoredChat>(
         key: origin.key,
         decode: AssistantRepository._decodeRestoredCache,
@@ -75,7 +83,9 @@ mixin _AssistantChatRepository {
     );
     origin?.checkScope();
     if (nativeRestored != null) {
-      if (origin != null) {
+      if (origin != null &&
+          (!_offlineReadEnabled() ||
+              route.kind == AssistantChatRouteKind.native)) {
         await publishAssistantChatSnapshot(
           origin: origin,
           restored: nativeRestored,
@@ -185,7 +195,9 @@ mixin _AssistantChatRepository {
       attachmentsByMessageId: attachmentsByMessageId,
     );
 
-    if (origin != null) {
+    if (origin != null &&
+        (!_offlineReadEnabled() ||
+            route.kind == AssistantChatRouteKind.native)) {
       await publishAssistantChatSnapshot(origin: origin, restored: restored);
       origin.checkScope();
     }
@@ -430,16 +442,32 @@ mixin _AssistantChatRepository {
     try {
       AssistantConversationSettings? settings;
       if (route.kind == AssistantChatRouteKind.native) {
-        final payload = await _apiClient.getJson(
-          '/api/v1/workspaces/$wsId/chat/conversations/$chatId/ai-settings',
-        );
+        final path =
+            '/api/v1/workspaces/$wsId/chat/conversations/$chatId/ai-settings';
+        final payload = _offlineReadEnabled()
+            ? await _miraRead(wsId, 'settings', path)
+            : await _apiClient.getJson(path);
         cacheOrigin?.checkScope();
         requireAssistantSettingsReceipt(payload, chatId: chatId);
         settings = AssistantConversationSettings.fromJson(
           payload['settings'] as Map<String, dynamic>,
         );
       }
-      final messages = await _chatRepository.listMessages(wsId, chatId);
+      final messages =
+          _offlineReadEnabled() && route.kind == AssistantChatRouteKind.native
+          ? ((await _miraRead(
+                      wsId,
+                      'messages',
+                      '/api/v1/workspaces/$wsId/chat/conversations/$chatId/messages?limit=60',
+                    ))['messages']
+                    as List)
+                .map(
+                  (row) => ChatMessage.fromJson(
+                    Map<String, dynamic>.from(row as Map),
+                  ),
+                )
+                .toList()
+          : await _chatRepository.listMessages(wsId, chatId);
       cacheOrigin?.checkScope();
       requireAssistantMessageReceipts(messages, conversationId: chatId);
       return AssistantRestoredChat(

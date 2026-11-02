@@ -11,12 +11,15 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
+import 'package:mobile/core/cache/offline_network.dart';
+import 'package:mobile/core/cache/offline_read_through.dart';
 import 'package:mobile/core/cache/offline_repository_write.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/validation/uuid.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/safe_error_diagnostics.dart';
 import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
+import 'package:mobile/features/assistant/data/mira_offline_reads.dart';
 import 'package:mobile/features/chat/data/chat_creation_receipt.dart';
 import 'package:mobile/features/chat/data/chat_repository.dart';
 import 'package:mobile/features/chat/data/chat_stream_completion.dart';
@@ -61,6 +64,8 @@ class AssistantRepository
     ChatRepository? chatRepository,
     String? Function()? currentUserId,
     CacheStore? chatCacheStore,
+    bool Function()? offlineReadEnabled,
+    Future<bool> Function()? networkAvailable,
     AssistantReactionJournal? reactionJournal,
   }) : this._(
          apiClient ?? ApiClient(),
@@ -70,6 +75,8 @@ class AssistantRepository
          currentUserId ?? currentCacheUserId,
          chatCacheStore ?? CacheStore.instance,
          reactionJournal ?? AssistantReactionJournal(),
+         offlineReadEnabled ?? (() => false),
+         networkAvailable ?? hasNetworkConnection,
        );
 
   AssistantRepository._(
@@ -80,6 +87,8 @@ class AssistantRepository
     this._currentUserId,
     this._chatCacheStore,
     this._reactionJournal,
+    this._offlineReadEnabled,
+    this._networkAvailable,
   ) : _chatRepository =
           chatRepository ??
           ChatRepository(apiClient: _apiClient, httpClient: _httpClient);
@@ -87,6 +96,10 @@ class AssistantRepository
   @override
   final ApiClient _apiClient;
   final AssistantReactionJournal _reactionJournal;
+  @override
+  final bool Function() _offlineReadEnabled;
+  @override
+  final Future<bool> Function() _networkAvailable;
   final ApiClient _tasksApiClient;
   final http.Client _httpClient;
   @override
@@ -192,6 +205,20 @@ class AssistantRepository
     timezone: timezone,
     initialSettings: initialSettings,
     isCurrent: isCurrent,
+  );
+
+  @override
+  Future<Map<String, dynamic>> _miraRead(
+    String wsId,
+    String kind,
+    String path,
+  ) => readThroughJson(
+    api: _apiClient,
+    namespace: 'mira.$kind',
+    workspaceId: wsId,
+    path: path,
+    cacheStore: _chatCacheStore,
+    cacheUserId: _currentUserId,
   );
 
   static final Random _random = Random.secure();
@@ -440,6 +467,18 @@ class AssistantRepository
     int? limit,
     bool forceRefresh = false,
   }) async {
+    if (_offlineReadEnabled() && wsId != null) {
+      final payload = await _miraRead(
+        wsId,
+        'conversations',
+        '/api/v1/workspaces/$wsId/chat/conversations?archived=active&limit=40&offset=0',
+      );
+      return ChatConversationPage.fromJson(payload).conversations
+          .where((c) => c.type == ChatConversationType.ai && !c.isReadOnlyAgent)
+          .map(_assistantChatRecordFromConversation)
+          .take(limit ?? 40)
+          .toList();
+    }
     if (wsId != null && wsId.isNotEmpty) {
       try {
         final page = await _chatRepository.listConversations(

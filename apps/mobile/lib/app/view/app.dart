@@ -50,6 +50,7 @@ import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/bridge/app_assistant_client_action_bridge.dart';
 import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/data/mira_offline_preparation.dart';
 import 'package:mobile/features/audience_mode/audience_mode_cubit.dart';
 import 'package:mobile/features/audience_mode/audience_mode_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
@@ -192,7 +193,10 @@ class _AppState extends State<App> {
       ownsApiClient: true,
       ownsHttpClient: true,
     );
-    _assistantRepository = AssistantRepository();
+    _assistantRepository = AssistantRepository(
+      offlineReadEnabled: () =>
+          _mobileFlags.enabled(MobileFlag.offlineReadMira),
+    );
     PushNotificationService.instance.configure(
       appFlavor: widget.appFlavor,
       settingsRepository: _settingsRepo,
