@@ -127,10 +127,10 @@ test('v3 signed ingest refuses label canaries and stores only null task titles',
     const stored = await server.durableObjectSql(
       'OpsHub',
       `hub:${user}`,
-      'SELECT data FROM snapshot'
+      'SELECT data,org FROM snapshot'
     );
-    assert.equal(JSON.parse(stored[0].data).org.nodes[0].taskTitle, null);
-    assert.ok(!stored[0].data.includes(value));
+    assert.equal(JSON.parse(stored[0].org).nodes[0].taskTitle, null);
+    assert.ok(!JSON.stringify(stored).includes(value));
   }
 });
 test('org survives restart, appears only on authenticated reads, and v2 replacement removes it', async () => {
@@ -173,6 +173,41 @@ test('org survives restart, appears only on authenticated reads, and v2 replacem
     false
   );
 });
+test('v3 storage remains readable by strict v2 snapshot readers after rollback', async () => {
+  assert.equal((await publish(snapshot())).status, 200);
+  await server.restart();
+  const [stored] = await server.durableObjectSql(
+    'OpsHub',
+    `hub:${user}`,
+    'SELECT data FROM snapshot WHERE id=1'
+  );
+  // The pre-v3 strict reader accepts exactly these snapshot fields.
+  const legacy = JSON.parse(stored.data);
+  assert.deepEqual(legacy, {
+    needsYou: [],
+    environments: [],
+    lanes: [],
+    backlog: [],
+  });
+  assert.deepEqual(
+    await (await read('/environments')).json(),
+    legacy.environments
+  );
+  assert.deepEqual(
+    (await (await read('/hub/export?section=snapshot')).json()).rows[0].data,
+    legacy
+  );
+  // A pre-v3 INSERT OR REPLACE must clear the extension without knowing about it.
+  await server.durableObjectSql(
+    'OpsHub',
+    `hub:${user}`,
+    'INSERT OR REPLACE INTO snapshot(id,data) VALUES(1,?)',
+    [stored.data]
+  );
+  await server.restart();
+  assert.equal((await (await read('/snapshot')).json()).org, undefined);
+});
+
 test('expired snapshots and paused reads withhold org while status stays minimal', async () => {
   assert.equal((await publish(snapshot())).status, 200);
   await server.durableObjectSql(

@@ -45,6 +45,11 @@ export class OpsHub extends DurableObject<Env> {
       CREATE INDEX IF NOT EXISTS events_ts ON events(ts);
       CREATE TABLE IF NOT EXISTS needs_you(id TEXT PRIMARY KEY, version INTEGER NOT NULL, data TEXT NOT NULL, completedAt INTEGER);
     `);
+    const columns = this.ctx.storage.sql
+      .exec<{ name: string }>('PRAGMA table_info(snapshot)')
+      .toArray();
+    if (!columns.some((column) => column.name === 'org'))
+      this.ctx.storage.sql.exec('ALTER TABLE snapshot ADD COLUMN org TEXT');
     initializeDecisions(this.ctx.storage.sql);
     initializeObservability(this.ctx.storage.sql);
   }
@@ -64,10 +69,15 @@ export class OpsHub extends DurableObject<Env> {
   }
   private snapshot(now: number): HubSnapshot | null {
     const row = this.ctx.storage.sql
-      .exec<Stored>('SELECT data FROM snapshot WHERE id=1')
+      .exec<Stored & { org: string | null }>(
+        'SELECT data,org FROM snapshot WHERE id=1'
+      )
       .toArray()[0];
     if (!row) return null;
-    const stored = snapshotSchema.parse(JSON.parse(row.data));
+    const stored = snapshotSchema.parse({
+      ...JSON.parse(row.data),
+      ...(row.org === null ? {} : { org: JSON.parse(row.org) }),
+    });
     return { ...stored, needsYou: this.items(now) };
   }
   async fetch(request: Request) {
@@ -175,9 +185,12 @@ export class OpsHub extends DurableObject<Env> {
             'DELETE FROM events WHERE seq NOT IN (SELECT seq FROM events ORDER BY seq DESC LIMIT 1000)'
           );
         if (body.snapshot) {
+          // Keep data readable by a rolled-back v2 Worker. REPLACE clears org on old writers.
+          const { org, ...legacy }: HubSnapshot = body.snapshot;
           this.ctx.storage.sql.exec(
-            'INSERT OR REPLACE INTO snapshot(id,data) VALUES(1,?)',
-            JSON.stringify({ ...body.snapshot, needsYou: [] })
+            'INSERT OR REPLACE INTO snapshot(id,data,org) VALUES(1,?,?)',
+            JSON.stringify({ ...legacy, needsYou: [] }),
+            org ? JSON.stringify(org) : null
           );
           for (const item of incoming) {
             this.ctx.storage.sql.exec(
