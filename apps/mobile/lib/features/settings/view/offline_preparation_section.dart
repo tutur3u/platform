@@ -130,7 +130,14 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
       builder: (context, state, _) {
         final enabled = _userId != null && _workspaceId != null;
         final ids = widget.productId == null
-            ? OfflinePreparationCoordinator.productIds
+            ? [
+                ...OfflinePreparationCoordinator.productIds,
+                if (context.watch<MobileFlags?>()?.enabled(
+                      MobileFlag.offlineReadChat,
+                    ) ??
+                    false)
+                  'chat',
+              ]
             : [widget.productId!];
         final servicePaused = state.retryAt != null;
         final canDownload =
@@ -193,8 +200,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
               ),
             if (!state.running &&
                 state.completed > 0 &&
-                state.completed <
-                    OfflinePreparationCoordinator.productIds.length &&
+                state.completed < ids.length &&
                 widget.productId == null)
               Align(
                 alignment: Alignment.centerLeft,
@@ -306,6 +312,7 @@ class _OfflineProductRow extends StatelessWidget {
       'finance' => l10n.financeTitle,
       'inventory' => l10n.inventoryTitle,
       'tasks' => l10n.tasksTitle,
+      'chat' => l10n.chatTitle,
       _ => l10n.calendarTitle,
     };
     final legacyStatus = switch (product.status) {
