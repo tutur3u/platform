@@ -39,7 +39,7 @@ function formatInputToISO(dateString: string): string | null {
 }
 
 interface UpdateProjectData {
-  ticket_key: string;
+  ticket_key?: string;
   name: string;
   description: string | null;
   priority: string | null;
@@ -62,7 +62,9 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
   const [showTimelineEditor, setShowTimelineEditor] = useState(false);
   const [showConfiguration, setShowConfiguration] = useState(false);
 
-  const [editedTicketKey, setEditedTicketKey] = useState(project.ticket_key);
+  const [editedTicketKey, setEditedTicketKey] = useState(
+    project.ticket_key ?? ''
+  );
 
   // Form values
   const [editedName, setEditedName] = useState(project.name);
@@ -86,7 +88,7 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
 
   // Helper function to reset form fields from project data
   const resetFormFromProject = useCallback(() => {
-    setEditedTicketKey(project.ticket_key);
+    setEditedTicketKey(project.ticket_key ?? '');
     setEditedName(project.name);
     setEditedDescription(project.description || '');
     setEditedPriority(project.priority);
@@ -104,7 +106,7 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
   }, [resetFormFromProject]);
 
   const hasUnsavedChanges =
-    editedTicketKey !== project.ticket_key ||
+    editedTicketKey !== (project.ticket_key ?? '') ||
     editedName !== project.name ||
     editedDescription !== (project.description || '') ||
     editedPriority !== project.priority ||
@@ -147,9 +149,12 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
   });
 
   const saveProject = useCallback(() => {
-    if (!PROJECT_TICKET_KEY_PATTERN.test(editedTicketKey)) return;
+    // A project without a key saves its other fields until one is entered.
+    const keepsNoKey = !project.ticket_key && !editedTicketKey;
+    if (!keepsNoKey && !PROJECT_TICKET_KEY_PATTERN.test(editedTicketKey))
+      return;
     updateProjectMutation.mutate({
-      ticket_key: editedTicketKey,
+      ...(keepsNoKey ? {} : { ticket_key: editedTicketKey }),
       name: editedName,
       description: editedDescription || null,
       priority: editedPriority || null,
@@ -162,6 +167,7 @@ export function useProjectForm({ wsId, project }: UseProjectFormOptions) {
     });
   }, [
     updateProjectMutation,
+    project.ticket_key,
     editedTicketKey,
     editedName,
     editedDescription,

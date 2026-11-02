@@ -54,6 +54,13 @@ describe('getTaskTicketLabel', () => {
       })
     ).toBe('PLA-12');
   });
+  it('shows no ID for a keyless project, whose links have no number', () => {
+    expect(
+      getTaskTicketLabel({
+        projects: [{ ...project, ticket_key: null, ticket_number: null }],
+      })
+    ).toBeNull();
+  });
   it('relabels after a key edit without changing the number', () => {
     expect(
       getTaskTicketLabel({ projects: [{ ...project, ticket_key: 'CORE' }] })

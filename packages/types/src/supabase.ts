@@ -36339,23 +36339,23 @@ export type Database = {
       };
       task_project_tasks: {
         Row: {
-          created_at: string;
+          created_at: string | null;
           project_id: string;
           task_id: string;
-          ticket_number: number;
+          ticket_number: number | null;
         };
         ComputedFields: never;
         Insert: {
-          created_at?: string;
+          created_at?: string | null;
           project_id: string;
           task_id: string;
-          ticket_number?: number;
+          ticket_number?: number | null;
         };
         Update: {
-          created_at?: string;
+          created_at?: string | null;
           project_id?: string;
           task_id?: string;
-          ticket_number?: number;
+          ticket_number?: number | null;
         };
         Relationships: [
           {
@@ -36620,7 +36620,7 @@ export type Database = {
           priority: Database['public']['Enums']['task_priority'] | null;
           start_date: string | null;
           status: string | null;
-          ticket_key: string;
+          ticket_key: string | null;
           updated_at: string | null;
           ws_id: string;
         };
@@ -36641,7 +36641,7 @@ export type Database = {
           priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: string | null;
           status?: string | null;
-          ticket_key?: string;
+          ticket_key?: string | null;
           updated_at?: string | null;
           ws_id: string;
         };
@@ -36661,7 +36661,7 @@ export type Database = {
           priority?: Database['public']['Enums']['task_priority'] | null;
           start_date?: string | null;
           status?: string | null;
-          ticket_key?: string;
+          ticket_key?: string | null;
           updated_at?: string | null;
           ws_id?: string;
         };

@@ -62,7 +62,8 @@ DROP FUNCTION private.protect_project_ticket_identity();
 DROP FUNCTION private.assign_project_ticket_number();
 DROP FUNCTION private.assign_project_ticket_key();
 
--- created_at keeps its now() default, which predates ticket numbers.
+-- created_at keeps its now() default, which predates ticket numbers. The
+-- migration leaves it nullable; earlier builds of it set NOT NULL.
 ALTER TABLE public.task_project_tasks
   ALTER COLUMN created_at DROP NOT NULL,
   DROP CONSTRAINT task_project_tasks_ticket_number_check,
@@ -70,6 +71,7 @@ ALTER TABLE public.task_project_tasks
   DROP COLUMN ticket_number;
 ALTER TABLE public.task_projects
   DROP CONSTRAINT task_projects_next_ticket_number_check,
+  DROP CONSTRAINT IF EXISTS task_projects_ticket_key_present,
   DROP CONSTRAINT task_projects_ticket_key_unique,
   DROP CONSTRAINT task_projects_ticket_key_check,
   DROP COLUMN next_ticket_number,

@@ -1,3 +1,7 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+
 -- Take the task's board capacity lock before the project counter row lock.
 -- Saving a task locks its board first, then links projects; numbering a new
 -- link locked the counter first, so the two could deadlock.
@@ -15,13 +19,20 @@ begin
   if board_id is not null then
     perform pg_advisory_xact_lock(hashtextextended(board_id::text, 72411));
   end if;
+  new.created_at := coalesce(new.created_at, now());
+  -- Keyless projects (only the excluded workspace's existing ones) number nothing.
+  if exists (select 1 from public.task_projects where id = new.project_id and ticket_key is null) then
+    new.ticket_number := null;
+    return new;
+  end if;
   -- Always allocate server-side; callers cannot supply or reuse a number.
   update public.task_projects set next_ticket_number = next_ticket_number + 1
   where id = new.project_id returning next_ticket_number - 1 into new.ticket_number;
   if not found then raise exception 'PROJECT_TICKET_ALLOCATION_DENIED' using errcode = '42501'; end if;
-  new.created_at := coalesce(new.created_at, now());
   return new;
 end;
 $$;
 -- tuturuuu: no-grant (trigger)
 revoke all on function private.assign_project_ticket_number() from public, anon, authenticated;
+
+COMMIT;
