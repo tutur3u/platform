@@ -6668,5 +6668,16 @@
   "mastermindInboxTierJump": "Cuộn tới mục này",
   "offlineWaitingWifi": "Đang chờ Wi-Fi",
   "offlineWaitingRetry": "Chờ thử lại lúc {time}",
-  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}}
+  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}},
+  "mastermindUndoWindow": "Thời gian hoàn tác",
+  "mastermindUndoOff": "Tắt",
+  "mastermindUndoSeconds": "{seconds} giây",
+  "mastermindReplySendNow": "Gửi ngay",
+  "@mastermindUndoSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  }
 }
