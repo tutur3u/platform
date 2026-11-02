@@ -5,7 +5,10 @@ description: Default-off registry and the mobile evaluation contract.
 
 The root `config/feature-flags.json` owns the flag inventory. Each array entry has
 `key` (unique snake_case), `description`, `owner`, `class` (`read`, `write`, `ui`,
-`kill`), `default: false`, and `removeBy` (ISO date). The initial 16 mobile flags
+`kill`), `default: false`, and `removeBy` (ISO date). The optional `scope` field
+accepts `workspace`; workspace-scoped entries are inventory-only in the v0 mobile
+endpoint and return their defaults, independently of workspace configuration.
+The initial 16 mobile flags
 belong to `mona` and expire on `2027-01-31`.
 
 `tutoring_parent_message_v2` belongs to `pax`, defaults OFF, and has workspace
