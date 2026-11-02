@@ -15209,4 +15209,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindInboxTierJump => 'Scrolls to this section';
+
+  @override
+  String get offlineWaitingWifi => 'Waiting for Wi-Fi';
+
+  @override
+  String offlineWaitingRetry(String time) {
+    return 'Waiting to retry at $time';
+  }
 }

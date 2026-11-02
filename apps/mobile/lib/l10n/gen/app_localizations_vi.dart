@@ -15040,4 +15040,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindInboxTierJump => 'Cuộn tới mục này';
+
+  @override
+  String get offlineWaitingWifi => 'Đang chờ Wi-Fi';
+
+  @override
+  String offlineWaitingRetry(String time) {
+    return 'Chờ thử lại lúc $time';
+  }
 }
