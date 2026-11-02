@@ -7190,5 +7190,8 @@
     }
   },
   "mastermindInboxTierShowLess": "Show less",
-  "mastermindInboxTierJump": "Scrolls to this section"
+  "mastermindInboxTierJump": "Scrolls to this section",
+  "offlineWaitingWifi": "Waiting for Wi-Fi",
+  "offlineWaitingRetry": "Waiting to retry at {time}",
+  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}}
 }

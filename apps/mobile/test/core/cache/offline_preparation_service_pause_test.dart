@@ -8,7 +8,7 @@ import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/offline_api_request.dart';
 
 void main() {
-  test('a protection outage pauses the whole plan after one request', () async {
+  test('a protection outage marks every affected product waiting', () async {
     final coordinator = OfflinePreparationCoordinator.forTesting(
       load: (_, _) async => {},
       write: (_, _, _) async {},
@@ -25,7 +25,13 @@ void main() {
       });
     }
     await coordinator.run(userId: 'actor', workspaceId: 'workspace');
-    expect(calls, ['finance']);
+    expect(calls, OfflinePreparationCoordinator.productIds);
+    expect(
+      coordinator.state.value.products.values.every(
+        (product) => product.status == OfflinePreparationStatus.waitingRetry,
+      ),
+      isTrue,
+    );
     expect(coordinator.state.value.running, isFalse);
     expect(coordinator.state.value.completed, 0);
     coordinator.cancel();
@@ -68,7 +74,7 @@ void main() {
     coordinator.state.dispose();
   });
 
-  test('service retry delays are bounded to fifteen minutes', () async {
+  test('service Retry-After beyond fifteen minutes is honored', () async {
     final now = DateTime.utc(2026, 10, 25);
     final coordinator =
         OfflinePreparationCoordinator.forTesting(
@@ -87,10 +93,7 @@ void main() {
       workspaceId: 'workspace',
       productId: 'tasks',
     );
-    expect(
-      coordinator.state.value.retryAt,
-      now.add(const Duration(minutes: 15)),
-    );
+    expect(coordinator.state.value.retryAt, now.add(const Duration(days: 1)));
     coordinator.cancel();
     coordinator.state.dispose();
   });

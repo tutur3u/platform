@@ -6664,5 +6664,8 @@
   "mastermindInboxTierHeading": "{tier}, {count} việc",
   "mastermindInboxTierShowAll": "Xem tất cả ({count})",
   "mastermindInboxTierShowLess": "Thu gọn",
-  "mastermindInboxTierJump": "Cuộn tới mục này"
+  "mastermindInboxTierJump": "Cuộn tới mục này",
+  "offlineWaitingWifi": "Đang chờ Wi-Fi",
+  "offlineWaitingRetry": "Chờ thử lại lúc {time}",
+  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}}
 }
