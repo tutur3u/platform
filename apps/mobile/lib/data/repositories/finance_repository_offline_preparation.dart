@@ -20,10 +20,11 @@ extension FinanceOfflinePreparation on FinanceRepository {
           responses[path] = response;
           return response;
         } on ApiException catch (error) {
-          if (error.statusCode != 429 || attempt >= 2) rethrow;
-          await Future<void>.delayed(
-            Duration(seconds: error.retryAfter ?? (1 << attempt)),
-          );
+          // Short in-request backoff only; a longer Retry-After goes to the
+          // coordinator, which waits and retries this product alone.
+          final wait = error.retryAfter ?? (1 << attempt);
+          if (error.statusCode != 429 || attempt >= 2 || wait > 10) rethrow;
+          await Future<void>.delayed(Duration(seconds: wait < 1 ? 1 : wait));
           if (_cacheUserId() != user) {
             sessions.remove(scope);
             throw StateError('Finance download scope changed.');
