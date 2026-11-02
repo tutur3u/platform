@@ -4307,6 +4307,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get habitsTitle => 'Habits';
 
   @override
+  String get habitsOfflineUnavailable => 'Not available offline';
+
+  @override
   String get habitsTodayLabel => 'Today';
 
   @override
@@ -4401,6 +4404,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeSectionCalendar => 'Calendar';
+
+  @override
+  String get homeNotAvailableOffline => 'Not available offline';
 
   @override
   String get homeSectionLoadFailed => 'Pull down to try again.';
@@ -11202,6 +11208,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get timerTitle => 'Timer';
+
+  @override
+  String get timerOfflineUnavailable => 'Not available offline';
 
   @override
   String get timerToday => 'Today';

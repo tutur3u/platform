@@ -2230,3 +2230,22 @@ session, never a query parameter.
 Regression evidence: `packages/feature-flags/src/index.test.ts` covers defaults
 and the master switch; the colocated mobile feature-flags route tests cover
 session authentication, membership, invalid IDs and conditional responses.
+
+## Habits offline preparation
+
+With `mobile_offline` and `offline_read_habits` enabled (default off),
+the mobile download prepares the complete self tracker list and its detail
+responses used by the Habits screen. Each response list is capped at 200 items
+and the complete download at 1 MiB. All responses are checked before publication;
+an exceeded budget shows “Not available offline” rather than a truncated list.
+The existing read-through cache supplies stored responses and the Offline settings
+row supplies the last successful synchronization time. Other scopes are unchanged.
+Regression coverage: `habits_offline_preparation_test.dart`.
+
+The Habits download also publishes the self `habits.workspace` snapshot through
+the screen's authorization and account-revision fences. Cold list, first detail
+and activity reads retain that authorized snapshot when fresh transport fails;
+fresh reads still require authorization and a definitive 401/403 revokes it.
+Retention checks include the published workspace snapshot. Regression coverage
+opens the real cold `HabitsCubit` after preparation with transport denied and
+checks entries, definitive denial, and revocation during download.

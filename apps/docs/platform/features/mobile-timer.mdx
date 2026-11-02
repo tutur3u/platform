@@ -233,3 +233,23 @@ not establish notification delivery or timing on devices.
 
 `pomodoro_waiting_focus_test.dart` verifies that a waiting or automatic focus phase
 leaves an unrelated running timer intact.
+
+## Offline preparation
+
+With `mobile_offline` and `offline_read_time_tracker` enabled (default off),
+mobile prepares categories, running/paused session state, active break, the five
+most recent sessions, stats, the first ten history sessions for the current week,
+period stats and workspace settings. History retains the API cursor and has-more
+metadata. Lists are capped at 200 items, with stricter session page limits;
+the complete download is capped at 1 MiB. Responses are validated together before
+cache publication. Exceeding a cap shows “Not available offline”.
+Offline settings records the last successful synchronization time.
+Other periods and pages require a previous cached read or connectivity.
+Regression coverage: `time_tracker_offline_preparation_test.dart`.
+
+Preparation and screen reads share the inclusive history-period builder and the
+Calendar first-day preference/locale resolver. Default opening prepares the current
+week; explicit route history contexts use their own previously cached responses.
+Preparing the current first page preserves other periods, cursors, and unrelated
+`time_tracker.data` keys. Cold-cubit and retained-cursor regressions live in
+`time_tracker_offline_preparation_test.dart`.
