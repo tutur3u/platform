@@ -43,6 +43,7 @@ import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/version_check_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/app_version/view/app_version_gate.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
@@ -55,6 +56,7 @@ import 'package:mobile/features/audience_mode/audience_mode_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/chat/data/chat_offline_preparation.dart';
 import 'package:mobile/features/classes/data/classes_today_repository.dart';
 import 'package:mobile/features/dashboard/home_offline_preparation.dart';
 import 'package:mobile/features/desktop_update/desktop_uri_receipt.dart';
@@ -131,6 +133,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   final _mobileFlags = MobileFlags();
+  StreamSubscription<MobileFlagsState>? _chatOfflineFlags;
   late final AuthRepository _authRepo;
   late final WorkspaceRepository _workspaceRepo;
   late final SettingsRepository _settingsRepo;
@@ -473,6 +476,7 @@ class _AppState extends State<App> {
 
   @override
   void dispose() {
+    unawaited(_chatOfflineFlags?.cancel());
     unawaited(_mobileFlags.close());
     _unregisterAssistantActions();
     _unregisterOfflinePreparation();

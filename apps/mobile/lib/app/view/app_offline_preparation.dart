@@ -36,6 +36,19 @@ extension _AppOfflinePreparation on _AppState {
           _inventoryRepository.prepareOffline,
         );
       });
+    void registerChat() => ChatOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient();
+        try {
+          await ChatOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
+    registerChat();
+    _chatOfflineFlags = _mobileFlags.stream.listen((_) => registerChat());
     CacheStore.instance.removedResource.addListener(
       _invalidateOfflineReadiness,
     );
