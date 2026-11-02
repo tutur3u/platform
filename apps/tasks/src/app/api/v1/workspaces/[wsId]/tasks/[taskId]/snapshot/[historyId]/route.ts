@@ -66,7 +66,7 @@ export async function GET(
     };
     // The actor wrappers land with this route. Keep this narrow escape local
     // until generated database types are refreshed after the migration runs.
-    const snapshotRpc = supabase.rpc.bind(supabase) as unknown as SnapshotRpc;
+    const snapshotRpc = (supabase.rpc as unknown as SnapshotRpc).bind(supabase);
     const { data: taskSnapshot, error: snapshotError } =
       await snapshotRpc<WorkspaceTask>(
         isAppSession
