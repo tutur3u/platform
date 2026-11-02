@@ -3,6 +3,7 @@
 import { EyeIcon, FileText, Headphones } from '@tuturuuu/icons';
 import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useRecordingLoader } from '@/hooks/useRecordingLoader';
 import { useTranscription } from '@/hooks/useTranscription';
@@ -20,6 +21,7 @@ interface RecordingSession {
 }
 
 interface RecordingSessionActionsProps {
+  canTranscribeLegacy?: boolean;
   wsId: string;
   meetingId: string;
   session: RecordingSession;
@@ -27,11 +29,13 @@ interface RecordingSessionActionsProps {
 }
 
 export function RecordingSessionActions({
+  canTranscribeLegacy = false,
   wsId,
   meetingId,
   session,
   onDelete,
 }: RecordingSessionActionsProps) {
+  const t = useTranslations('meet.transcription');
   // Dialog states
   const [transcriptDialogOpen, setTranscriptDialogOpen] = useState(false);
   const [audioPlayerDialogOpen, setAudioPlayerDialogOpen] = useState(false);
@@ -78,7 +82,13 @@ export function RecordingSessionActions({
             variant="default"
             size="sm"
             onClick={transcribe}
-            disabled={isTranscribing || session.status === 'transcribing'}
+            disabled={
+              !canTranscribeLegacy ||
+              isTranscribing ||
+              session.status === 'transcribing'
+            }
+            title={canTranscribeLegacy ? undefined : t('legacy_disabled')}
+            aria-label={canTranscribeLegacy ? undefined : t('legacy_disabled')}
           >
             <FileText className="mr-1 h-3 w-3" />
             {isTranscribing || session.status === 'transcribing'
@@ -106,6 +116,9 @@ export function RecordingSessionActions({
         )}
       </div>
 
+      {!canTranscribeLegacy && !session.transcript && session.can_manage && (
+        <p className="text-muted-foreground text-sm">{t('legacy_disabled')}</p>
+      )}
       {/* Extracted Components */}
       <TranscriptViewer
         isOpen={transcriptDialogOpen}
