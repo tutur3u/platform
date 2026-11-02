@@ -179,6 +179,9 @@ challenges, and leave uncertain writes in review. Reuse ApiClient's preparation
 Zone so background work does not open captcha modals. Full downloads must use
 the same cache keys and payload shapes as normal reads; test first offline visits
 with normal UI page sizes rather than only the prepared request parameters.
+Notes uses dedicated list/archive keys without path parameters; share that key
+factory with its repository. Its list already includes bodies, so budget inbox
+and archive together before publishing either snapshot.
 
 Use shell titles rather than duplicate body titles. Put grouped section switches
 rightmost and auxiliary actions before them. Profile sections should adapt to
