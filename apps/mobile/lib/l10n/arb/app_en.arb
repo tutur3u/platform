@@ -5038,6 +5038,8 @@
   "assistantNewChatConfirmationDescription": "The earlier conversation may already have been saved, but this app could not confirm it. Check your chat history before starting a new chat. Starting a new chat does not retry the earlier request and may create a separate conversation.",
   "assistantNewChatInspectHistory": "Check history",
   "assistantNewChatConfirmCreation": "Start a new chat",
+  "assistantCreationHoldBannerMessage": "Your last chat may not have been saved. Starting a new chat does not retry it and may create a separate conversation.",
+  "assistantCreationHoldDismiss": "Dismiss",
   "assistantNewChatResetDenied": "A new chat was not started. Your draft is retained. Check your chat history before choosing another action.",
   "assistantNewChatResetUncertain": "The reset could not be confirmed. Your draft is retained. Check your chat history; the app will not retry automatically.",
   "assistantNewChatResetStale": "The conversation or draft changed. Your draft is retained. Check your chat history before starting another chat.",

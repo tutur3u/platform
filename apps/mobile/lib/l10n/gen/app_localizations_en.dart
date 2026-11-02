@@ -11625,6 +11625,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get assistantNewChatConfirmCreation => 'Start a new chat';
 
   @override
+  String get assistantCreationHoldBannerMessage => 'Your last chat may not have been saved. Starting a new chat does not retry it and may create a separate conversation.';
+
+  @override
+  String get assistantCreationHoldDismiss => 'Dismiss';
+
+  @override
   String get assistantNewChatResetDenied => 'A new chat was not started. Your draft is retained. Check your chat history before choosing another action.';
 
   @override
