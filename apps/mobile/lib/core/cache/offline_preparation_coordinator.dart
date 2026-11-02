@@ -6,9 +6,13 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_preparation_intent.dart';
+import 'package:mobile/core/cache/offline_preparer_registry.dart';
+import 'package:mobile/core/feature_flags/mobile_flag.dart';
+
 import 'package:mobile/data/sources/api_client.dart';
 
-typedef OfflinePreparationTask = Future<void> Function(String workspaceId);
+export 'offline_preparer_registry.dart';
+
 typedef OfflinePreparationLoader =
     Future<Map<String, DateTime>> Function(String userId, String workspaceId);
 typedef OfflinePreparationWriter =
@@ -85,12 +89,15 @@ class OfflinePreparationCoordinator {
     Future<List<ConnectivityResult>> Function()? network,
     Stream<List<ConnectivityResult>>? networkEvents,
     DateTime Function()? clock,
+    OfflinePreparerRegistry? registry,
   }) : _load = load,
        _write = write,
        _intents = intents,
        _network = network ?? (() async => [ConnectivityResult.wifi]),
        _networkEvents = networkEvents,
-       _clock = clock ?? DateTime.now;
+       _clock = clock ?? DateTime.now {
+    if (registry != null) this.registry = registry;
+  }
 
   static final OfflinePreparationCoordinator instance =
       OfflinePreparationCoordinator._();
@@ -98,7 +105,10 @@ class OfflinePreparationCoordinator {
   final ValueNotifier<OfflinePreparationState> state = ValueNotifier(
     const OfflinePreparationState(),
   );
-  final _tasks = <String, OfflinePreparationTask>{};
+  OfflinePreparerRegistry registry = OfflinePreparerRegistry(
+    isEnabled: (_) => false,
+  );
+  Iterable<String> get _productIds => {...productIds, ...registry.appKeys};
   final OfflinePreparationLoader _load;
   final OfflinePreparationWriter _write;
   final OfflinePreparationIntentStore? _intents;
@@ -130,11 +140,15 @@ class OfflinePreparationCoordinator {
   Future<void> Function(String userId, String workspaceId, String product)?
   verifyProductRetention;
 
-  void register(String productId, OfflinePreparationTask task) {
-    _tasks[productId] = task;
+  void register(
+    String productId,
+    OfflinePreparationTask task, {
+    MobileFlag? flagKey,
+  }) {
+    registry.register(productId, flagKey, task);
   }
 
-  void unregister(String productId) => _tasks.remove(productId);
+  void unregister(String productId) => registry.unregister(productId);
 
   bool _current(int generation, String userId, String workspaceId) =>
       generation == _generation &&
@@ -158,9 +172,9 @@ class OfflinePreparationCoordinator {
       workspaceId: workspaceId,
       running: _busy,
       products: {
-        for (final id in productIds)
+        for (final id in _productIds)
           id: OfflineProductPreparation(
-            status: _tasks.containsKey(id)
+            status: registry.containsKey(id)
                 ? OfflinePreparationStatus.queued
                 : OfflinePreparationStatus.unavailable,
           ),
@@ -191,9 +205,9 @@ class OfflinePreparationCoordinator {
         retryAt: _retryAt,
         retryExhausted: _retryAttempts >= 3,
         products: {
-          for (final id in productIds)
+          for (final id in _productIds)
             id: OfflineProductPreparation(
-              status: !_tasks.containsKey(id)
+              status: !registry.containsKey(id)
                   ? OfflinePreparationStatus.unavailable
                   : OfflinePreparationStatus.queued,
               lastSuccess: completed[id],
@@ -232,18 +246,18 @@ class OfflinePreparationCoordinator {
     _activeGeneration = generation;
     _removedDuringRun.clear();
     final ids = requestedProducts != null
-        ? productIds.where(requestedProducts.contains).toList()
+        ? _productIds.where(requestedProducts.contains).toList()
         : productId != null
         ? [productId]
         : resume
-        ? productIds
+        ? _productIds
               .where(
                 (id) =>
                     state.value.products[id]?.status !=
                     OfflinePreparationStatus.ready,
               )
               .toList()
-        : productIds;
+        : _productIds.toList();
     final networkSubscription = _networkEvents?.listen((interfaces) {
       if (_wifiOnly &&
           !interfaces.contains(ConnectivityResult.wifi) &&
@@ -252,7 +266,7 @@ class OfflinePreparationCoordinator {
       }
     });
     _wifiOnly = wifiOnly;
-    _pendingProducts = ids.where(_tasks.containsKey).toSet();
+    _pendingProducts = ids.where(registry.containsKey).toSet();
     final products = {...state.value.products};
     void publish({required bool running}) {
       // Retention reads yield; a verified earlier product can be evicted while
@@ -261,7 +275,7 @@ class OfflinePreparationCoordinator {
         final product = products[id];
         if (product?.status == OfflinePreparationStatus.ready) {
           products[id] = OfflineProductPreparation(
-            status: _tasks.containsKey(id)
+            status: registry.containsKey(id)
                 ? OfflinePreparationStatus.queued
                 : OfflinePreparationStatus.unavailable,
             lastSuccess: product!.lastSuccess,
@@ -296,7 +310,7 @@ class OfflinePreparationCoordinator {
       _retryTimer?.cancel();
       for (final id in ids) {
         products[id] = OfflineProductPreparation(
-          status: _tasks.containsKey(id)
+          status: registry.containsKey(id)
               ? OfflinePreparationStatus.queued
               : OfflinePreparationStatus.unavailable,
           lastSuccess: products[id]?.lastSuccess,
@@ -307,7 +321,7 @@ class OfflinePreparationCoordinator {
       if (!_current(generation, userId, workspaceId)) return;
       for (final id in ids) {
         if (!_current(generation, userId, workspaceId)) return;
-        final task = _tasks[id];
+        final task = registry[id];
         if (task == null) continue;
         if (_wifiOnly) {
           final interfaces = await _network();
@@ -388,7 +402,7 @@ class OfflinePreparationCoordinator {
       }
       if (_current(generation, userId, workspaceId) &&
           verifyProductRetention != null) {
-        for (final id in productIds) {
+        for (final id in _productIds) {
           if (!_current(generation, userId, workspaceId)) return;
           final product = products[id];
           if (product?.status != OfflinePreparationStatus.ready) continue;
@@ -407,7 +421,7 @@ class OfflinePreparationCoordinator {
           await verifyRetention!(userId, workspaceId);
         } on Object {
           if (_current(generation, userId, workspaceId)) {
-            for (final id in productIds) {
+            for (final id in _productIds) {
               final product = products[id];
               if (product?.status == OfflinePreparationStatus.ready) {
                 products[id] = OfflineProductPreparation(
@@ -536,7 +550,7 @@ class OfflinePreparationCoordinator {
         intent.wifiOnly && !interfaces.contains(ConnectivityResult.wifi)) {
       return;
     }
-    final pending = intent.products.where(_tasks.containsKey).toSet();
+    final pending = intent.products.where(registry.containsKey).toSet();
     if (pending.isEmpty) return;
     // Only original requested modules resume; no automatic scope expansion.
     await ApiClient.offlinePreparation(
@@ -573,9 +587,7 @@ class OfflinePreparationCoordinator {
   void invalidateRetainedData({Set<String>? productIds}) {
     if (productIds?.isEmpty ?? false) return;
     if (state.value.running) {
-      _removedDuringRun.addAll(
-        productIds ?? OfflinePreparationCoordinator.productIds,
-      );
+      _removedDuringRun.addAll(productIds ?? _productIds);
     }
     final latest = state.value;
     state.value = OfflinePreparationState(
@@ -589,7 +601,7 @@ class OfflinePreparationCoordinator {
           entry.key: productIds != null && !productIds.contains(entry.key)
               ? entry.value
               : OfflineProductPreparation(
-                  status: _tasks.containsKey(entry.key)
+                  status: registry.containsKey(entry.key)
                       ? OfflinePreparationStatus.queued
                       : OfflinePreparationStatus.unavailable,
                   lastSuccess: entry.value.lastSuccess,

@@ -13,6 +13,7 @@ import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/config/consent_gate.dart';
+import 'package:mobile/core/feature_flags/mobile_flags.dart';
 import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/deep_link_launcher.dart';
@@ -126,6 +127,7 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
+  final _mobileFlags = MobileFlags();
   late final AuthRepository _authRepo;
   late final WorkspaceRepository _workspaceRepo;
   late final SettingsRepository _settingsRepo;
@@ -468,6 +470,7 @@ class _AppState extends State<App> {
 
   @override
   void dispose() {
+    unawaited(_mobileFlags.close());
     _unregisterAssistantActions();
     _unregisterOfflinePreparation();
     WidgetsBinding.instance.removeObserver(_lifecycleObserver);
@@ -503,6 +506,7 @@ class _AppState extends State<App> {
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _authCubit),
+        BlocProvider.value(value: _mobileFlags),
         BlocProvider.value(value: _appVersionCubit),
         BlocProvider.value(value: _workspaceCubit),
         BlocProvider.value(value: _localeCubit),

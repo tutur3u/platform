@@ -62,6 +62,25 @@ void main() {
     httpClient: transport,
   );
 
+  test('conditional GET sends bearer and ETag and preserves 304', () async {
+    final reader = api(
+      MockClient((request) async {
+        expect(request.url.queryParameters['wsId'], 'workspace');
+        expect(request.headers['Authorization'], 'Bearer synthetic-session');
+        expect(request.headers['If-None-Match'], '"v1"');
+        return http.Response('', 304);
+      }),
+    );
+    expect(
+      await reader.getConditionalJson(
+        '/api/v1/mobile/feature-flags?wsId=workspace',
+        version: '"v1"',
+      ),
+      isNull,
+    );
+    reader.dispose();
+  });
+
   test(
     'bulk GETs across clients are sequential and paced; mutations are unmarked',
     () async {
