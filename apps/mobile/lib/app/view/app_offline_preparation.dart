@@ -36,6 +36,19 @@ extension _AppOfflinePreparation on _AppState {
           _inventoryRepository.prepareOffline,
         );
       });
+    void registerHabits() => HabitsOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient(baseUrl: ApiConfig.tasksBaseUrl);
+        try {
+          await HabitsOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
+    registerHabits();
+    _habitsOfflineFlags = _mobileFlags.stream.listen((_) => registerHabits());
     CacheStore.instance.removedResource.addListener(
       _invalidateOfflineReadiness,
     );
@@ -142,6 +155,8 @@ extension _AppOfflinePreparation on _AppState {
   }
 
   void _unregisterOfflinePreparation() {
+    unawaited(_habitsOfflineFlags?.cancel());
+    OfflinePreparationCoordinator.instance.unregister('habits');
     CacheStore.instance.removedResource.removeListener(
       _invalidateOfflineReadiness,
     );

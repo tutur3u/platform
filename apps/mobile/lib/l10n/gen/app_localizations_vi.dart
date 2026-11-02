@@ -4287,6 +4287,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get habitsTitle => 'Thói quen';
 
   @override
+  String get habitsOfflineUnavailable => 'Không khả dụng ngoại tuyến';
+
+  @override
   String get habitsTodayLabel => 'Hôm nay';
 
   @override

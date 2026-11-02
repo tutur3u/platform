@@ -4307,6 +4307,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get habitsTitle => 'Habits';
 
   @override
+  String get habitsOfflineUnavailable => 'Not available offline';
+
+  @override
   String get habitsTodayLabel => 'Today';
 
   @override
