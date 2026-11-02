@@ -183,9 +183,11 @@ function routineKey(name, types) {
   return types ? `${name}(${types.join(',')})` : name;
 }
 
+const { nestedBodyGrants } = require('./sql-grant-guard-body');
+
 function scanSql(sql, { definerRule }) {
   const { statements, comments } = parseStatements(sql);
-  const findings = [];
+  const findings = nestedBodyGrants(sql);
   const definers = [];
   const revoked = new Map();
 
@@ -232,6 +234,39 @@ function scanSql(sql, { definerRule }) {
         });
       }
     }
+  }
+
+  for (const [index, statement] of statements.entries()) {
+    const alter = /^alter (?:routine|function|procedure) (.+)$/.exec(
+      statement.text
+    );
+    if (!definerRule || !alter || !/\bsecurity definer\b/.test(statement.text))
+      continue;
+    const routine = readRoutine(alter[1]);
+    if (!routine || routine.args === null) continue;
+    const key = routineKey(routine.name, signatureTypes(routine.args));
+    const roles = new Set();
+    for (const later of statements.slice(index + 1)) {
+      const effect = require('./sql-grant-acl').routineAclEffect(
+        later.text,
+        key
+      );
+      if (effect?.op === 'reset') roles.clear();
+      if (effect?.op === 'revoke')
+        for (const role of effect.roles) roles.add(role);
+      if (effect?.op === 'grant')
+        for (const role of effect.roles) roles.delete(role);
+    }
+    const missing = OPEN_ROLES.filter((role) => !roles.has(role));
+    if (missing.length && !isAllowed(statement, comments, RULES.definerPublic))
+      findings.push({
+        rule: RULES.definerPublic,
+        line: statement.startLine,
+        detail:
+          key +
+          ' ALTER SECURITY DEFINER without subsequent EXECUTE revoke from ' +
+          missing.join(', '),
+      });
   }
 
   for (const definer of definers) {
