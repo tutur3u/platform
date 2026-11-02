@@ -10,7 +10,10 @@ import 'package:mobile/features/mastermind/iris/data/iris_models.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/iris_flag.dart';
 import 'package:mobile/features/mastermind/iris/view/iris_chat_view.dart';
+import 'package:mobile/features/mastermind/iris/view/iris_outgoing_tile.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
+import 'package:mobile/l10n/gen/app_localizations_en.dart';
+import 'package:mobile/l10n/gen/app_localizations_vi.dart';
 
 import '../../../../helpers/mastermind_iris_fixture.dart';
 import '../../../../helpers/pump_app.dart';
@@ -233,6 +236,25 @@ void main() {
       );
     });
   }
+
+  test('send disabled receipt explains the relay hold in EN and VI', () {
+    final row = IrisOutgoing(
+      clientId: 'test',
+      idempotencyKey: 'test',
+      text: 'hello',
+      createdAt: DateTime.utc(2026),
+      state: IrisReceiptState.failed,
+      failureKind: IrisFailureKind.sendDisabled,
+    );
+    expect(
+      irisReceiptText(AppLocalizationsEn(), row),
+      "Sending to Iris isn't available yet",
+    );
+    expect(
+      irisReceiptText(AppLocalizationsVi(), row),
+      'Hiện chưa thể gửi tin nhắn đến Iris',
+    );
+  });
 
   test('malformed iris_send fails closed', () {
     for (final value in <Object?>[

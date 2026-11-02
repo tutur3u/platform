@@ -6633,6 +6633,7 @@
   "mastermindIrisRelayStopped": "Relay đã dừng. Hãy nhờ chủ sở hữu khôi phục.",
   "mastermindIrisDevicesUnavailable": "Danh sách thiết bị chưa khả dụng. Bạn vẫn có thể đăng ký thiết bị này.",
   "mastermindIrisDeviceCurrent": "Thiết bị này",
+  "mastermindIrisSendDisabled": "Hiện chưa thể gửi tin nhắn đến Iris",
   "mastermindIrisWritesOff": "Sắp có thể gửi tin nhắn đến Iris",
   "mastermindIrisWritesNeedEnrol": "Hãy đăng ký thiết bị này để gửi tin nhắn.",
   "mastermindAskCardTierDecision": "Cần quyết định",

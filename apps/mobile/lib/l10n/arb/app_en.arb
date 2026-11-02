@@ -7103,6 +7103,7 @@
   "mastermindIrisRelayStopped": "Relay stopped. Ask the owner to restore it.",
   "mastermindIrisDevicesUnavailable": "The device list isn't available yet. You can still enrol this device.",
   "mastermindIrisDeviceCurrent": "This device",
+  "mastermindIrisSendDisabled": "Sending to Iris isn't available yet",
   "mastermindIrisWritesOff": "Sending to Iris is coming soon",
   "mastermindIrisWritesNeedEnrol": "Enrol this device to send messages.",
   "mastermindAskCardTierDecision": "Needs decision",

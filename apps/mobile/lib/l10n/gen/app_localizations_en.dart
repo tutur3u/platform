@@ -15080,6 +15080,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindIrisDeviceCurrent => 'This device';
 
   @override
+  String get mastermindIrisSendDisabled => 'Sending to Iris isn\'t available yet';
+
+  @override
   String get mastermindIrisWritesOff => 'Sending to Iris is coming soon';
 
   @override

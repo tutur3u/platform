@@ -14919,6 +14919,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindIrisDeviceCurrent => 'Thiết bị này';
 
   @override
+  String get mastermindIrisSendDisabled => 'Hiện chưa thể gửi tin nhắn đến Iris';
+
+  @override
   String get mastermindIrisWritesOff => 'Sắp có thể gửi tin nhắn đến Iris';
 
   @override
