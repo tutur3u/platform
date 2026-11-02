@@ -6633,7 +6633,8 @@
   "mastermindIrisRelayStopped": "Relay đã dừng. Hãy nhờ chủ sở hữu khôi phục.",
   "mastermindIrisDevicesUnavailable": "Danh sách thiết bị chưa khả dụng. Bạn vẫn có thể đăng ký thiết bị này.",
   "mastermindIrisDeviceCurrent": "Thiết bị này",
-  "mastermindIrisWritesOff": "Tạm thời chưa thể gửi tin. Bạn vẫn có thể đọc cuộc trò chuyện.",
+  "mastermindIrisSendDisabled": "Hiện chưa thể gửi tin nhắn đến Iris",
+  "mastermindIrisWritesOff": "Sắp có thể gửi tin nhắn đến Iris",
   "mastermindIrisWritesNeedEnrol": "Hãy đăng ký thiết bị này để gửi tin nhắn.",
   "mastermindAskCardTierDecision": "Cần quyết định",
   "mastermindAskCardTierFyi": "Để biết",
@@ -6665,5 +6666,8 @@
   "mastermindInboxTierShowAll": "Xem tất cả ({count})",
   "mastermindInboxTierShowLess": "Thu gọn",
   "mastermindInboxTierJump": "Cuộn tới mục này",
-  "assistantVoiceMessagePrompt": "Hãy nghe tin nhắn thoại này và trả lời."
+  "assistantVoiceMessagePrompt": "Hãy nghe tin nhắn thoại này và trả lời.",
+  "offlineWaitingWifi": "Đang chờ Wi-Fi",
+  "offlineWaitingRetry": "Chờ thử lại lúc {time}",
+  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}}
 }

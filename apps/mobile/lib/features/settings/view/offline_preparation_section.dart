@@ -298,6 +298,10 @@ class _OfflineProductRow extends StatelessWidget {
             : product.lastSuccess != null
             ? l10n.offlinePreparationNeedsRefresh
             : l10n.offlinePreparationQueued,
+      OfflinePreparationStatus.waitingWifi => l10n.offlineWaitingWifi,
+      OfflinePreparationStatus.waitingRetry => l10n.offlineWaitingRetry(
+        DateFormat.Hm().format(product.retryAt!.toLocal()),
+      ),
       OfflinePreparationStatus.downloading =>
         l10n.offlinePreparationDownloading,
       OfflinePreparationStatus.ready => l10n.offlinePreparationReady,
@@ -305,9 +309,7 @@ class _OfflineProductRow extends StatelessWidget {
       OfflinePreparationStatus.unavailable =>
         l10n.offlinePreparationUnavailable,
     };
-    final lastSuccess = product.status == OfflinePreparationStatus.unavailable
-        ? null
-        : product.lastSuccess;
+    final lastSuccess = product.lastSuccess;
     final retryable =
         product.status == OfflinePreparationStatus.failed ||
         product.status == OfflinePreparationStatus.unavailable;
@@ -319,6 +321,8 @@ class _OfflineProductRow extends StatelessWidget {
         OfflinePreparationStatus.ready => LucideIcons.hardDriveDownload,
         OfflinePreparationStatus.failed => LucideIcons.circleAlert,
         OfflinePreparationStatus.unavailable => LucideIcons.cloudOff,
+        OfflinePreparationStatus.waitingWifi => LucideIcons.cloudOff,
+        OfflinePreparationStatus.waitingRetry => LucideIcons.clock,
         OfflinePreparationStatus.queued => LucideIcons.download,
       },
       title: title,
@@ -326,9 +330,9 @@ class _OfflineProductRow extends StatelessWidget {
       subtitle: lastSuccess == null
           ? null
           : l10n.offlinePreparationLastSuccess(
-              DateFormat.yMd(
-                Localizations.localeOf(context).toString(),
-              ).add_jm().format(lastSuccess.toLocal()),
+              DateFormat.yMd(Localizations.localeOf(context).toString())
+                  .add_jm()
+                  .format(lastSuccess.toLocal()),
             ),
       onTap: onOpen,
       trailing: retryable

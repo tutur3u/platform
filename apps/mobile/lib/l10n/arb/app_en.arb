@@ -7103,7 +7103,8 @@
   "mastermindIrisRelayStopped": "Relay stopped. Ask the owner to restore it.",
   "mastermindIrisDevicesUnavailable": "The device list isn't available yet. You can still enrol this device.",
   "mastermindIrisDeviceCurrent": "This device",
-  "mastermindIrisWritesOff": "Sending is off for now. You can still read the chat.",
+  "mastermindIrisSendDisabled": "Sending to Iris isn't available yet",
+  "mastermindIrisWritesOff": "Sending to Iris is coming soon",
   "mastermindIrisWritesNeedEnrol": "Enrol this device to send messages.",
   "mastermindAskCardTierDecision": "Needs decision",
   "mastermindAskCardTierFyi": "FYI",
@@ -7191,5 +7192,8 @@
   },
   "mastermindInboxTierShowLess": "Show less",
   "mastermindInboxTierJump": "Scrolls to this section",
-  "assistantVoiceMessagePrompt": "Listen to this voice message and respond."
+  "assistantVoiceMessagePrompt": "Listen to this voice message and respond.",
+  "offlineWaitingWifi": "Waiting for Wi-Fi",
+  "offlineWaitingRetry": "Waiting to retry at {time}",
+  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}}
 }
