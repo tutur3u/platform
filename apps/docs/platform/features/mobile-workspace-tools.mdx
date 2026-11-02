@@ -2211,3 +2211,22 @@ remains with the route. Regression coverage:
 `packages/utils/src/__tests__/request-whiteboard-bounds.test.ts`,
 `apps/database/supabase/tests/description-table-hardening.sql`, and
 `apps/database/supabase/tests/readiness-whiteboard-contracts.sql`.
+
+## Mobile feature-flag evaluation
+
+The mobile flag reader uses the authenticated
+[`GET /api/v1/mobile/feature-flags`](/build/development-tools/feature-flags)
+contract. Its initial 16 flags default OFF for every user and workspace. When the
+reader gates an offline capability, `mobile_offline` must be ON along with its
+individual `offline_` flag; the master switch forces reads, writes and status UI
+OFF. The v0 endpoint returns registry defaults without targeting or overrides.
+This registry does not change authorization or existing offline implementations
+that have not adopted the reader. Workspace context requires membership, and
+conditional responses perform the same access checks as full responses. The TTL
+is 30 seconds; the browser response is private and requires revalidation, and
+shared/CDN output caching is disabled. Identity comes only from the authenticated
+session, never a query parameter.
+
+Regression evidence: `packages/feature-flags/src/index.test.ts` covers defaults
+and the master switch; the colocated mobile feature-flags route tests cover
+session authentication, membership, invalid IDs and conditional responses.

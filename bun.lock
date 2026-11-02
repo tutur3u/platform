@@ -2059,6 +2059,7 @@
         "@tuturuuu/devbox": "workspace:*",
         "@tuturuuu/education-core": "workspace:*",
         "@tuturuuu/email-service": "workspace:*",
+        "@tuturuuu/feature-flags": "workspace:*",
         "@tuturuuu/finance-core": "workspace:*",
         "@tuturuuu/google": "workspace:*",
         "@tuturuuu/hive-ui": "workspace:*",
@@ -2428,6 +2429,15 @@
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^26.6.5",
         "@types/sanitize-html": "^2.16.2",
+        "typescript": "7.0.2",
+        "vitest": "^5.0.5",
+      },
+    },
+    "packages/feature-flags": {
+      "name": "@tuturuuu/feature-flags",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@types/node": "^26.6.5",
         "typescript": "7.0.2",
         "vitest": "^5.0.5",
       },
@@ -5438,6 +5448,8 @@
     "@tuturuuu/email-service": ["@tuturuuu/email-service@workspace:packages/email-service"],
 
     "@tuturuuu/external": ["@tuturuuu/external@workspace:apps/external"],
+
+    "@tuturuuu/feature-flags": ["@tuturuuu/feature-flags@workspace:packages/feature-flags"],
 
     "@tuturuuu/finance": ["@tuturuuu/finance@workspace:apps/finance"],
 
