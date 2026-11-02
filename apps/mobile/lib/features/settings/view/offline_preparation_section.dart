@@ -133,6 +133,11 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
             ? [
                 ...OfflinePreparationCoordinator.productIds,
                 if (context.watch<MobileFlags?>()?.enabled(
+                      MobileFlag.offlineReadChat,
+                    ) ??
+                    false)
+                  'chat',
+                if (context.watch<MobileFlags?>()?.enabled(
                       MobileFlag.offlineReadTimeTracker,
                     ) ??
                     false)
@@ -313,6 +318,7 @@ class _OfflineProductRow extends StatelessWidget {
       'inventory' => l10n.inventoryTitle,
       'tasks' => l10n.tasksTitle,
       'time_tracker' => l10n.timerTitle,
+      'chat' => l10n.chatTitle,
       _ => l10n.calendarTitle,
     };
     final legacyStatus = switch (product.status) {
