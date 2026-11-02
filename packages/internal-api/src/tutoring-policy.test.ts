@@ -6,10 +6,12 @@ import {
   getTutoringShiftLabel,
   isTutoringGroupExcluded,
   parseTutoringPolicy,
+  readTutoringPolicy,
   readTutoringPolicyConfigRows,
   renderTutoringParentMessage,
   STANDARD_TUTORING_POLICY,
   serializeTutoringPolicyConfigRows,
+  usesEasyCenterPresetShifts,
 } from './tutoring-policy';
 
 describe('Easy Center tutoring shifts', () => {
@@ -436,5 +438,60 @@ describe('parent message placeholders', () => {
     ).toBe(
       'Trung tâm EASY xin được xếp lịch kèm cho bạn Lê Ngọc Kiến Văn như sau:\n• Giờ kèm: 15:15-16:00\n• Ngày: 31/10/2026 thứ 7\n• Cơ sở: CS1\nLịch học chính thức: 16:00-17:30\nMong phụ huynh thu xếp cho con tham gia đúng giờ. Trân trọng.'
     );
+  });
+});
+
+describe('usesEasyCenterPresetShifts', () => {
+  it('returns true for the standard Easy Center policy preset and time rules', () => {
+    expect(usesEasyCenterPresetShifts(EASY_CENTER_TUTORING_POLICY)).toBe(true);
+  });
+
+  it('returns false when preset is not easy_center', () => {
+    expect(usesEasyCenterPresetShifts(STANDARD_TUTORING_POLICY)).toBe(false);
+    expect(
+      usesEasyCenterPresetShifts({
+        ...EASY_CENTER_TUTORING_POLICY,
+        preset: 'custom',
+      })
+    ).toBe(false);
+  });
+
+  it('returns false when timeRules do not match Easy Center preset rules', () => {
+    expect(
+      usesEasyCenterPresetShifts({
+        ...EASY_CENTER_TUTORING_POLICY,
+        timeRules: EASY_CENTER_TUTORING_POLICY.timeRules.slice(0, 7),
+      })
+    ).toBe(false);
+
+    expect(
+      usesEasyCenterPresetShifts({
+        ...EASY_CENTER_TUTORING_POLICY,
+        timeRules: EASY_CENTER_TUTORING_POLICY.timeRules.map((rule) =>
+          rule.label === 'Shift 1' ? { ...rule, weekdays: [1, 3, 5] } : rule
+        ),
+      })
+    ).toBe(false);
+  });
+});
+
+describe('readTutoringPolicy', () => {
+  it('returns STANDARD_TUTORING_POLICY for null, undefined, or empty string', () => {
+    expect(readTutoringPolicy(null)).toEqual(STANDARD_TUTORING_POLICY);
+    expect(readTutoringPolicy(undefined)).toEqual(STANDARD_TUTORING_POLICY);
+    expect(readTutoringPolicy('')).toEqual(STANDARD_TUTORING_POLICY);
+  });
+
+  it('returns STANDARD_TUTORING_POLICY on invalid JSON or malformed policy', () => {
+    expect(readTutoringPolicy('not json')).toEqual(STANDARD_TUTORING_POLICY);
+    expect(readTutoringPolicy('{}')).toEqual(STANDARD_TUTORING_POLICY);
+    expect(
+      readTutoringPolicy(JSON.stringify({ preset: 'unknown_preset' }))
+    ).toEqual(STANDARD_TUTORING_POLICY);
+  });
+
+  it('parses valid serialized policy JSON', () => {
+    const json = JSON.stringify(EASY_CENTER_TUTORING_POLICY);
+    expect(readTutoringPolicy(json)).toEqual(EASY_CENTER_TUTORING_POLICY);
   });
 });
