@@ -15246,4 +15246,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindReplySendNow => 'Send now';
+
+  @override
+  String get offlineStatusPreparing => 'Preparing';
+
+  @override
+  String get offlineStatusReady => 'Ready offline';
+
+  @override
+  String get offlineStatusNeverSynced => 'Never synced';
+
+  @override
+  String offlineStatusLastSynced(String time) {
+    return 'Last synced: $time';
+  }
+
+  @override
+  String offlineStatusSummary(int ready, int total) {
+    return '$ready of $total apps ready offline';
+  }
 }

@@ -7199,7 +7199,13 @@
   "assistantVoiceMessagePrompt": "Listen to this voice message and respond.",
   "offlineWaitingWifi": "Waiting for Wi-Fi",
   "offlineWaitingRetry": "Waiting to retry at {time}",
-  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}},
+  "@offlineWaitingRetry": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
   "mastermindUndoWindow": "Undo window",
   "mastermindUndoOff": "Off",
   "mastermindUndoSeconds": "{seconds} s",
@@ -7207,6 +7213,28 @@
   "@mastermindUndoSeconds": {
     "placeholders": {
       "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineStatusPreparing": "Preparing",
+  "offlineStatusReady": "Ready offline",
+  "offlineStatusNeverSynced": "Never synced",
+  "offlineStatusLastSynced": "Last synced: {time}",
+  "offlineStatusSummary": "{ready} of {total} apps ready offline",
+  "@offlineStatusLastSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@offlineStatusSummary": {
+    "placeholders": {
+      "ready": {
+        "type": "int"
+      },
+      "total": {
         "type": "int"
       }
     }

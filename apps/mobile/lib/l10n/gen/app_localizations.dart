@@ -28290,6 +28290,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send now'**
   String get mastermindReplySendNow;
+
+  /// No description provided for @offlineStatusPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing'**
+  String get offlineStatusPreparing;
+
+  /// No description provided for @offlineStatusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready offline'**
+  String get offlineStatusReady;
+
+  /// No description provided for @offlineStatusNeverSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Never synced'**
+  String get offlineStatusNeverSynced;
+
+  /// No description provided for @offlineStatusLastSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Last synced: {time}'**
+  String offlineStatusLastSynced(String time);
+
+  /// No description provided for @offlineStatusSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{ready} of {total} apps ready offline'**
+  String offlineStatusSummary(int ready, int total);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
