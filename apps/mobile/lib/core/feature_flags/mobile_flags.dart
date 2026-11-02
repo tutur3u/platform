@@ -181,7 +181,9 @@ class MobileFlags extends Cubit<MobileFlagsState> {
       if (_refreshing == revision) _refreshing = null;
       if (_current(revision) && _foreground) {
         _timer = _createTimer(
-          Duration(seconds: _payload?['ttlSeconds'] as int? ?? 30),
+          Duration(
+            seconds: ((_payload?['ttlSeconds'] as int?) ?? 30).clamp(15, 3600),
+          ),
           () => unawaited(refresh()),
         );
       }

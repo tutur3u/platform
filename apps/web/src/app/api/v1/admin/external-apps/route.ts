@@ -19,6 +19,11 @@ const payloadSchema = z.discriminatedUnion('action', [
       origins: z.array(z.url().max(512)).min(1).max(20),
       allowedScopes: z.array(z.string().trim().min(1).max(80)).max(50),
       allowedWorkspaceIds: z.array(z.uuid()).min(1).max(50),
+      requirePkce: z.boolean().optional(),
+      callbackPaths: z
+        .array(z.string().trim().min(1).max(512))
+        .max(20)
+        .optional(),
     })
     .strict(),
 ]);

@@ -12161,6 +12161,33 @@ class AppLocalizationsVi extends AppLocalizations {
   String get offlineTechnicalDetails => 'Chi tiết kỹ thuật';
 
   @override
+  String get offlineWaitingWifi => 'Đang chờ Wi-Fi';
+
+  @override
+  String offlineWaitingRetry(String time) {
+    return 'Chờ thử lại lúc $time';
+  }
+
+  @override
+  String get offlineStatusPreparing => 'Đang chuẩn bị';
+
+  @override
+  String get offlineStatusReady => 'Sẵn sàng ngoại tuyến';
+
+  @override
+  String get offlineStatusNeverSynced => 'Chưa đồng bộ';
+
+  @override
+  String offlineStatusLastSynced(String time) {
+    return 'Đồng bộ lần cuối: $time';
+  }
+
+  @override
+  String offlineStatusSummary(int ready, int total) {
+    return '$ready / $total ứng dụng sẵn sàng ngoại tuyến';
+  }
+
+  @override
   String get mailSettingsReadingGroup => 'Đọc thư';
 
   @override
@@ -15040,4 +15067,33 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindInboxTierJump => 'Cuộn tới mục này';
+
+  @override
+  String get mastermindUndoWindow => 'Thời gian hoàn tác';
+
+  @override
+  String get mastermindUndoOff => 'Tắt';
+
+  @override
+  String mastermindUndoSeconds(int seconds) {
+    return '$seconds giây';
+  }
+
+  @override
+  String get mastermindReplySendNow => 'Gửi ngay';
+
+  @override
+  String get settingsPushSummary => 'Nhận thông báo trên thiết bị này';
+
+  @override
+  String get settingsTelemetrySummary => 'Giúp cải thiện ứng dụng';
+
+  @override
+  String get settingsStorageSummary => 'Quản lý dữ liệu trên thiết bị này';
+
+  @override
+  String get settingsLearnMore => 'Tìm hiểu thêm';
+
+  @override
+  String get assistantVoiceMessagePrompt => 'Hãy nghe tin nhắn thoại này và trả lời.';
 }

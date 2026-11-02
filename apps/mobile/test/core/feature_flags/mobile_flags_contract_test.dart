@@ -119,11 +119,11 @@ void main() {
     'rule 1: a changed payload TTL replaces the previous interval',
     () async {
       var requests = 0;
-      flags = reader((_, _) async => _payload(ttl: ++requests == 1 ? 30 : 7));
+      flags = reader((_, _) async => _payload(ttl: ++requests == 1 ? 30 : 45));
       await flags.setScope(userId: 'a', workspaceId: 'one');
       expect(timers.last.duration, const Duration(seconds: 30));
       await flags.refresh();
-      expect(timers.last.duration, const Duration(seconds: 7));
+      expect(timers.last.duration, const Duration(seconds: 45));
     },
   );
 

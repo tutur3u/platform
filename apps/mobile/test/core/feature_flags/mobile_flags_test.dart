@@ -311,19 +311,34 @@ void main() {
       },
     );
 
-    test('TTL schedules another conditional request', () async {
-      var requests = 0;
-      flags = MobileFlags(
-        networkEvents: const Stream.empty(),
-        cache: cache,
-        fetch: (_, _) async {
-          requests++;
-          return payload(ttl: 1);
-        },
-      );
-      await flags.setScope(userId: 'user', workspaceId: 'workspace');
-      await Future<void>.delayed(const Duration(milliseconds: 1100));
-      expect(requests, greaterThanOrEqualTo(2));
-    });
+    for (final entry in <int?, int>{
+      1: 15,
+      1000000000: 3600,
+      null: 30,
+    }.entries) {
+      test('TTL ${entry.key} schedules ${entry.value} seconds', () async {
+        Duration? scheduled;
+        void Function()? refresh;
+        var requests = 0;
+        flags = MobileFlags(
+          networkEvents: const Stream.empty(),
+          cache: cache,
+          createTimer: (duration, callback) {
+            scheduled = duration;
+            refresh = callback;
+            return Timer(const Duration(days: 1), () {});
+          },
+          fetch: (_, _) async {
+            requests++;
+            return entry.key == null ? null : payload(ttl: entry.key!);
+          },
+        );
+        await flags.setScope(userId: 'user', workspaceId: 'workspace');
+        expect(scheduled, Duration(seconds: entry.value));
+        refresh!();
+        await Future<void>.delayed(Duration.zero);
+        expect(requests, 2);
+      });
+    }
   });
 }

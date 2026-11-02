@@ -75,7 +75,9 @@ and the Home order case in `dashboard_layout_cubit_test.dart`.
 Mobile rollout flags default to false and are cached per account and workspace.
 The app refreshes `/api/v1/mobile/feature-flags?wsId=<workspace>` at startup,
 on login, account/workspace changes, resume, network reconnect, and every server
-`ttlSeconds` while foregrounded (currently 30 seconds). Backgrounding cancels
+`ttlSeconds` while foregrounded, clamped to 15–3600 seconds with a 30-second
+fallback when no payload is known. The boundary cases are covered by
+`mobile_flags_test.dart`. Backgrounding cancels
 polling; resume requests fresh flags. Requests use Bearer authentication
 and the cached `version` as `If-None-Match`; HTTP 304 retains the payload.
 An unreachable server keeps the last known cached values without time expiry;
@@ -117,6 +119,18 @@ Offline availability is product-specific. Cached data is not proof that an
 edit reached the server. Review queued/sync states and recover through the
 owning product's documented flow. Optional products should not warm private
 endpoints until access is known to be enabled.
+
+Offline status UI is default OFF behind `offline_status_ui`; the existing
+`mobile_offline` kill switch remains authoritative for offline capability.
+The settings preparation section accepts `offlineStatusUiEnabled` until the
+MobileFlags reader is integrated. With the flag off, its existing UI and behavior
+remain unchanged. With it on, app rows show readiness, indeterminate preparation
+progress (the coordinator has no per-app percentage), Wi-Fi/retry waits, failure,
+unavailability and last sync. Retry and sync timestamps use the device locale and
+local time zone. The compact ready count appears only in the existing offline
+settings section. These labels describe downloaded snapshots, not server
+acknowledgement of queued edits. Regression coverage:
+`apps/mobile/test/features/settings/view/offline_status_ui_test.dart`.
 
 ## Versions and privacy
 

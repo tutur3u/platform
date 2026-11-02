@@ -58,6 +58,7 @@ import * as z from 'zod';
 import { DEV_MODE } from '@/constants/common';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { useCurrentUserProfile } from '@/hooks/use-current-user-profile';
+import { getCrossAppPkceParams } from '@/lib/auth/cross-app-pkce';
 import {
   isManagedTuturuuuHostname,
   isRootTuturuuuHostname,
@@ -236,13 +237,8 @@ function getStaticReturnApp(
   returnUrl: string | null | undefined,
   localReturnPath: string | null
 ) {
-  if (!returnUrl) {
-    return null;
-  }
-
-  if (localReturnPath) {
-    return 'web';
-  }
+  if (!returnUrl) return null;
+  if (localReturnPath) return 'web';
 
   const appDomain =
     getMountedAppVerifyTokenMatch(returnUrl) ?? getAppDomainByUrl(returnUrl);
@@ -869,6 +865,7 @@ export default function LoginForm({
       }
 
       const crossAppReturn = await createCrossAppReturnUrlWithInternalApi({
+        ...getCrossAppPkceParams(searchParams),
         returnUrl,
       });
 

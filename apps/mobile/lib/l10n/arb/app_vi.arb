@@ -5139,6 +5139,37 @@
   "offlineManageData": "Quản lý dữ liệu",
   "offlineEvictRowDescription": "Giải phóng dung lượng. Dữ liệu sẽ được tải lại khi bạn trực tuyến.",
   "offlineTechnicalDetails": "Chi tiết kỹ thuật",
+  "offlineWaitingWifi": "Đang chờ Wi-Fi",
+  "offlineWaitingRetry": "Chờ thử lại lúc {time}",
+  "@offlineWaitingRetry": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineStatusPreparing": "Đang chuẩn bị",
+  "offlineStatusReady": "Sẵn sàng ngoại tuyến",
+  "offlineStatusNeverSynced": "Chưa đồng bộ",
+  "offlineStatusLastSynced": "Đồng bộ lần cuối: {time}",
+  "offlineStatusSummary": "{ready} / {total} ứng dụng sẵn sàng ngoại tuyến",
+  "@offlineStatusLastSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@offlineStatusSummary": {
+    "placeholders": {
+      "ready": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "mailSettingsReadingGroup": "Đọc thư",
   "mailSettingsComposeGroup": "Người gửi và chữ ký",
   "mailSettingsAiGroup": "Bản nháp AI",
@@ -6665,5 +6696,21 @@
   "mastermindInboxTierHeading": "{tier}, {count} việc",
   "mastermindInboxTierShowAll": "Xem tất cả ({count})",
   "mastermindInboxTierShowLess": "Thu gọn",
-  "mastermindInboxTierJump": "Cuộn tới mục này"
+  "mastermindInboxTierJump": "Cuộn tới mục này",
+  "mastermindUndoWindow": "Thời gian hoàn tác",
+  "mastermindUndoOff": "Tắt",
+  "mastermindUndoSeconds": "{seconds} giây",
+  "mastermindReplySendNow": "Gửi ngay",
+  "@mastermindUndoSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsPushSummary": "Nhận thông báo trên thiết bị này",
+  "settingsTelemetrySummary": "Giúp cải thiện ứng dụng",
+  "settingsStorageSummary": "Quản lý dữ liệu trên thiết bị này",
+  "settingsLearnMore": "Tìm hiểu thêm",
+  "assistantVoiceMessagePrompt": "Hãy nghe tin nhắn thoại này và trả lời."
 }
