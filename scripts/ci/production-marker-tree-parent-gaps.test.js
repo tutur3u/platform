@@ -227,8 +227,12 @@ async function verify(world) {
   return { requests, logs };
 }
 
-const fallbackLog = (source) =>
-  `Staging source proof: source=${source} target=${target} tree=${tree}`;
+// Runbook §6 prefix, then the exact path's producer/attempt/deployment ids.
+const ids = (n) => `producer=20${n} attempt=1 deployment=30${n}`;
+const fallbackLog = (source) => [
+  `Staging source proof: source=${source} target=${target} tree=${tree} ${ids(source === first ? 2 : 3)}`,
+  `Production platform deployment marker is bound to ${target}; staging migration is bound to its tree-equal parent ${source}. Proceeding with migration.`,
+];
 const count = (requests, text) =>
   requests.filter((route) => route.includes(text)).length;
 
@@ -251,7 +255,7 @@ test('rule 1: a failed exact marker blocks fallback even with a valid parent', a
 
 test('rule 2: a qualifying parent without a marker is skipped for the next', async () => {
   const { logs, requests } = await verify({ parents: [second, first] });
-  assert.deepEqual(logs, [fallbackLog(first)]);
+  assert.deepEqual(logs, fallbackLog(first));
   assert.equal(count(requests, `/compare/refs%2Fheads%2Fmain...${second}`), 1);
   assert.equal(count(requests, `sha=${second}&`), 1);
 });
@@ -261,7 +265,7 @@ test('rule 2: the first qualifying parent with markers wins, in parent order', a
     parents: [second, first],
     markers: { [first]: {}, [second]: {} },
   };
-  assert.deepEqual((await verify(world)).logs, [fallbackLog(second)]);
+  assert.deepEqual((await verify(world)).logs, fallbackLog(second));
   const failed = {
     ...world,
     markers: { [first]: {}, [second]: { status: 'failure' } },
@@ -323,9 +327,33 @@ test('rule 3: a legacy wrapper producer is checked at the source and its own hea
   const { logs, requests } = await verify({
     markers: { [first]: { event: 'workflow_run', runHead: producerHead } },
   });
-  assert.deepEqual(logs, [fallbackLog(first)]);
+  assert.deepEqual(logs, fallbackLog(first));
   assert.equal(count(requests, `${workflowPath}?ref=${first}`), 1);
   assert.equal(count(requests, `${workflowPath}?ref=${producerHead}`), 1);
+});
+
+test('log: fallback ids name the selected parent marker and keep the runbook prefix', async () => {
+  const runbook =
+    /^Staging source proof: source=([0-9a-f]{40}) target=([0-9a-f]{40}) tree=([0-9a-f]{40})/;
+  for (const [parents, markers, source, n] of [
+    [[other, first], { [first]: {} }, first, 2],
+    [[second, first], { [first]: {}, [second]: {} }, second, 3],
+  ]) {
+    const [line, binding] = (await verify({ parents, markers })).logs;
+    assert.deepEqual(line.match(runbook).slice(1), [source, target, tree]);
+    assert.equal(line.slice(line.match(runbook)[0].length), ` ${ids(n)}`);
+    assert.doesNotMatch(binding, new RegExp(`staging migration[^;]*${target}`));
+    assert.match(binding, new RegExp(`tree-equal parent ${source}\\.`));
+  }
+  const exact = (await verify({ markers: { [target]: {} } })).logs;
+  assert.deepEqual(exact, [
+    `Staging source proof: source=${target} ${ids(1)}`,
+    `Production platform deployment marker and staging migration are bound to ${target}. Proceeding with migration.`,
+  ]);
+  assert.doesNotMatch(
+    workflow.slice(workflow.indexOf('          STAGING_SOURCE_PROOF\n')),
+    /staging migration are bound to \$TARGET_SHA/
+  );
 });
 
 test('rule 4: platform marker, checkout and production marker stay bound to the target', () => {
