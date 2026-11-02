@@ -1,4 +1,7 @@
--- tuturuuu: reviewed(dynamic-sql-review): Search values use EXECUTE USING; role branches append fixed SQL and the boolean filter is typed.
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '30s';
+
 create or replace function public.search_users(
   search_query text,
   page_number integer,
@@ -28,32 +31,8 @@ returns table (
 language plpgsql
 set search_path = private, public, pg_temp
 as $$
-declare
-  where_clause text := '';
 begin
-  where_clause :=
-    '(u.display_name ilike ''%'' || $1 || ''%'' or ud.email ilike ''%'' || $1 || ''%'')';
-
-  if role_filter is not null then
-    case role_filter
-      when 'admin' then
-        where_clause := where_clause || ' and ur.allow_role_management = true';
-      when 'global_manager' then
-        where_clause := where_clause || ' and ur.allow_manage_all_challenges = true';
-      when 'challenge_manager' then
-        where_clause := where_clause || ' and ur.allow_challenge_management = true';
-      when 'member' then
-        where_clause := where_clause || ' and ur.allow_challenge_management = false and ur.allow_manage_all_challenges = false and ur.allow_role_management = false';
-      else
-        null;
-    end case;
-  end if;
-
-  if enabled_filter is not null then
-    where_clause := where_clause || ' and ur.enabled = ' || enabled_filter::text;
-  end if;
-
-  return query execute '
+  return query
     select
       u.id,
       u.display_name,
@@ -77,7 +56,14 @@ begin
     join public.user_private_details ud on u.id = ud.user_id
     left join private.nova_team_members tm on u.id = tm.user_id
     left join private.nova_teams t on tm.team_id = t.id
-    where ' || where_clause || '
+    where (u.display_name ilike '%' || search_query || '%' or ud.email ilike '%' || search_query || '%')
+      and (role_filter is null or case role_filter
+        when 'admin' then ur.allow_role_management = true
+        when 'global_manager' then ur.allow_manage_all_challenges = true
+        when 'challenge_manager' then ur.allow_challenge_management = true
+        when 'member' then ur.allow_challenge_management = false and ur.allow_manage_all_challenges = false and ur.allow_role_management = false
+        else true end)
+      and (enabled_filter is null or ur.enabled = enabled_filter)
     group by
       u.id,
       u.display_name,
@@ -96,11 +82,12 @@ begin
       ud.birthday,
       ud.full_name
     order by u.created_at desc
-    limit $2
-    offset ($3 - 1) * $2
-  ' using search_query, page_size, page_number;
+    limit page_size
+    offset (page_number - 1) * page_size;
 end;
 $$;
 
 REVOKE ALL ON FUNCTION public.search_users(text, integer, integer, text, boolean) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.search_users(text, integer, integer, text, boolean) TO service_role;
+
+COMMIT;
