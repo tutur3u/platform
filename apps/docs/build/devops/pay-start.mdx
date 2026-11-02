@@ -49,10 +49,10 @@ protection; no scheduler is enabled by the candidate.
 
 Run the exact-head unit, Next/Cloudflare types, lint, real `vp build`, registry
 and route-tree checks, binding harness, emitted config and Wrangler dry-run on
-Sonha through `ttr resources run`. Seal the output with
-`scripts/ci/pay-native-artifact.py`, transfer it through the M4, and run both the
-transferred and roundtrip-restored artifact on Thanh under browser admission.
-Run `bun check:changed` before publication. The M4 runs no builds or containers.
+a build host through `ttr resources run`. Seal the output with
+`scripts/ci/pay-native-artifact.py`, transfer it through a relay host, and run both the
+transferred and roundtrip-restored artifact on a browser host under browser admission.
+Run `bun check:changed` before publication. The relay host runs no builds or containers.
 
 The native workflow calls the shared qualification template. The generated raw
 Host suite consumes declared root/login/dashboard outcomes from
