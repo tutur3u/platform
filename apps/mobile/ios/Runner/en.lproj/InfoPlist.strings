@@ -1,3 +1,3 @@
 "NSPhotoLibraryUsageDescription" = "This app needs access to your photo library to pick an avatar.";
 "NSCameraUsageDescription" = "This app needs access to your camera to take a profile picture.";
-"NSFaceIDUsageDescription" = "This app uses Face ID to unlock the app, sign you in, and approve sensitive requests, including Iris actions.";
+"NSFaceIDUsageDescription" = "This app uses Face ID to unlock the app and to confirm secure web sign-ins and sensitive requests, including Iris approvals.";

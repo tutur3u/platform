@@ -81,7 +81,7 @@
 		<key>NSCameraUsageDescription</key>
 		<string>The application requires access to camera to allow instant captures to be used inside the app.</string>
 		<key>NSFaceIDUsageDescription</key>
-		<string>The application uses Face ID to unlock the app, sign you in, and approve sensitive requests, including Iris actions.</string>
+		<string>The application uses Face ID to unlock the app and to confirm secure web sign-ins and sensitive requests, including Iris approvals.</string>
 		<key>NSMicrophoneUsageDescription</key>
 		<string>The application requires access to microphone so you can talk with the live assistant.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
