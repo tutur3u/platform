@@ -11,6 +11,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/app_flavor.dart';
 import 'package:mobile/core/config/consent_gate.dart';
 import 'package:mobile/core/feature_flags/mobile_flags.dart';
@@ -34,6 +35,7 @@ import 'package:mobile/data/repositories/education_access_repository.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/data/repositories/habits_access_repository.dart';
+import 'package:mobile/data/repositories/habits_offline_preparation.dart';
 import 'package:mobile/data/repositories/inventory_access_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
@@ -43,17 +45,22 @@ import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/version_check_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/app_version/view/app_version_gate.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/bridge/app_assistant_client_action_bridge.dart';
 import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/audience_mode/audience_mode.dart';
 import 'package:mobile/features/audience_mode/audience_mode_cubit.dart';
 import 'package:mobile/features/audience_mode/audience_mode_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/chat/data/chat_offline_preparation.dart';
+import 'package:mobile/features/classes/data/classes_today_repository.dart';
+import 'package:mobile/features/dashboard/home_offline_preparation.dart';
 import 'package:mobile/features/desktop_update/desktop_uri_receipt.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
@@ -129,6 +136,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   final _mobileFlags = MobileFlags();
+  StreamSubscription<MobileFlagsState>? _chatOfflineFlags;
   late final AuthRepository _authRepo;
   late final WorkspaceRepository _workspaceRepo;
   late final SettingsRepository _settingsRepo;
@@ -168,6 +176,7 @@ class _AppState extends State<App> {
   late final GoRouter _router;
   late final _AppLifecycleObserver _lifecycleObserver;
   StreamSubscription<Uri>? _appLinkSubscription;
+  StreamSubscription<MobileFlagsState>? _habitsOfflineFlags;
   MobileDeepLink? _pendingDeepLink;
   DateTime? _backgroundedAt;
 
@@ -471,6 +480,8 @@ class _AppState extends State<App> {
 
   @override
   void dispose() {
+    unawaited(_habitsOfflineFlags?.cancel());
+    unawaited(_chatOfflineFlags?.cancel());
     unawaited(_mobileFlags.close());
     _unregisterAssistantActions();
     _unregisterOfflinePreparation();
@@ -572,10 +583,17 @@ class _AppState extends State<App> {
             ),
             mastermindAuthResetListener(_mastermind),
             BlocListener<MobileFlags, MobileFlagsState>(
-              listener: (_, flags) => _mastermind.registerOfflinePreparation(
-                OfflinePreparationCoordinator.instance.registry,
-                flags,
-              ),
+              listener: (_, flags) {
+                _mastermind.registerOfflinePreparation(
+                  OfflinePreparationCoordinator.instance.registry,
+                  flags,
+                );
+                registerHomeOffline(
+                  OfflinePreparationCoordinator.instance.registry,
+                  flags,
+                  (wsId) => _prepareWithPermissions(wsId, _prepareHomeOffline),
+                );
+              },
             ),
             BlocListener<WorkspaceCubit, WorkspaceState>(
               listenWhen: (previous, current) =>

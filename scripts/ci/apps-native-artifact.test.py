@@ -212,7 +212,8 @@ class ArtifactTest(unittest.TestCase):
                         for path in (app / "dist").rglob("*") if path.is_file()
                     }
                     with tempfile.TemporaryDirectory() as destination, tempfile.TemporaryDirectory() as outside:
-                        target, external = Path(destination), Path(outside)
+                        # Match restore() canonicalization, including macOS /var aliases.
+                        target, external = Path(destination).resolve(), Path(outside).resolve()
                         restored_receipt = target / "receipt.json"
                         original_move = artifact.shutil.move
                         moved_dist = []
