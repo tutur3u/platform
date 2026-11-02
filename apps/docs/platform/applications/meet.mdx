@@ -2,6 +2,7 @@
 title: "Meet"
 description: "Meeting plans, collaboration rooms, calls, transcription, assistants, and follow-up review."
 updatedAt: '2026-10-22'
+audience: users
 ---
 
 Meet (`meet.tuturuuu.com`, `apps/meet`) combines meeting planning and live
@@ -149,7 +150,7 @@ are unaffected.
   `FAIR-R1-SYBIL-DRAIN` remains open. Shared NATs and unknown-source callers can
   also exhaust their common bucket; P2 `FAIR-R1-SHARED-SOURCE-LOCKOUT` remains open.
   A repeated denied reservation is cached for at most one second. See the
-  [fairness activation holds](/build/devops/abuse-guard-store#fairness-activation-holds).
+  [fairness activation holds](/platform/architecture/system-design/security-architecture).
   Regression coverage: `apps/abuse-guard/src/fairness.test.ts` and
   `packages/utils/src/abuse-protection/__tests__/password-attempt-store.test.ts`.
   The participant view and guest table are available only to server/admin clients;

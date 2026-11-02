@@ -2,6 +2,7 @@
 title: 'Drive'
 description: 'Standalone Drive app with centralized workspace storage APIs.'
 updatedAt: "2026-10-31"
+audience: users
 ---
 
 ## Overview
@@ -341,3 +342,20 @@ commit; do not run `bun validate` or app builds on the shared machine.
   template pickers. `drive/mira/qr/**` is an intentional Drive output.
 - **Evidence:** the matrix, rollback and verification steps are in
   [Workspace storage RLS](/build/devops/workspace-storage-rls).
+
+## Start candidate staging cookies and authentication
+
+The unprovisioned Start candidate remains restricted to the exact
+Drive staging host. Candidate response cookies stay host-only, including
+`__Host-` rotations and deletions. The response policy and Worker exit reject
+every outgoing Domain cookie rather than rewriting it to a parent domain.
+Production cookie behavior is unchanged. Global Supabase and shared-cookie
+configuration remains deferred to the issuer migration.
+
+Unauthenticated pages redirect to central staging login through a Drive
+`verify-token` return URL that retains the original destination. Unauthenticated API requests return 401 before Start or upstream
+forwarding. `src/start-candidate/worker-auth.test.ts` runs the real Drive proxy,
+shared auth and bridge with fixture Start/RSC and provider adapters;
+`staging-policy.test.ts` and Supabase's `staging-cookie-domain.test.ts` cover
+cookie rotations, deletions, Domain rejection and production parity. Hosted login and provider
+sessions still require staging acceptance before publication.

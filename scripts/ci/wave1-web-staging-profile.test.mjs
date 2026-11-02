@@ -12,7 +12,7 @@ test('the Web staging entry is ingress-admitted and outside the no-ingress publi
   // The legacy wave-1 publisher refuses ingress, so Web must never be listed there.
   assert.equal(Object.hasOwn(profiles.apps, 'web'), false);
   assert.equal(web.ingress, 'access-custom-domain');
-  assert.equal(web.stagingHost, 'web.staging.tutur3u.com');
+  assert.equal(web.stagingHost, 'web.tutur3u.com');
   assert.equal(web.zone, 'tutur3u.com');
   assert.equal(web.stagingWorker, 'tuturuuu-web-wave1-staging');
   assert.match(
@@ -29,9 +29,7 @@ test('the entry agrees with the candidate profile and admission inputs', () => {
   );
   assert.match(
     profile,
-    new RegExp(
-      `cookieDomain: '${web.vars.AUTH_COOKIE_DOMAIN.replaceAll('.', '\\.')}'`
-    )
+    new RegExp(`cookiePrefix: '${web.vars.AUTH_COOKIE_PREFIX}'`)
   );
   assert.match(
     profile,
@@ -39,6 +37,12 @@ test('the entry agrees with the candidate profile and admission inputs', () => {
       `supabaseUrl: '${web.vars.NEXT_PUBLIC_SUPABASE_URL.replaceAll('.', '\\.')}'`
     )
   );
+  assert.equal(web.vars.AUTH_COOKIE_PREFIX, '__Host-');
+  assert.equal(Object.hasOwn(web.vars, 'AUTH_COOKIE_DOMAIN'), false);
+  const native = profile.slice(
+    profile.indexOf('export function admittedNativeStaging')
+  );
+  assert.doesNotMatch(native, /TRUSTED_PROXY_ORIGIN_SECRET/);
   assert.equal(web.vars.WEB_START_CANDIDATE, 'staging');
   assert.equal(web.vars.WEB_START_NATIVE_LEGAL, 'off');
   assert.equal(web.vars.WEB_START_NATIVE_SECURITY, 'off');
@@ -49,12 +53,8 @@ test('the entry agrees with the candidate profile and admission inputs', () => {
   assert.deepEqual([...web.secrets].sort(), [
     'CF_ACCESS_AUD',
     'CF_ACCESS_TEAM_DOMAIN',
-    'TRUSTED_PROXY_ORIGIN_SECRET',
-    'VERCEL_AUTOMATION_BYPASS_SECRET',
   ]);
-  assert.equal(web.nextFallback.vercelProject, 'tuturuuu-web-staging');
-  assert.equal(web.nextFallback.target, 'staging');
-  JSON.parse(source(web.nextFallback.config));
+  assert.equal(web.nextFallback, undefined);
 });
 
 // Every string (keys and values, recursively) in a JSON value.
@@ -110,8 +110,8 @@ test('the production-zone host scan flags every host form and spares package sco
     assert.notDeepEqual(productionZoneHosts(sample), [], sample);
   for (const sample of [
     '@tuturuuu/utils',
-    'web.staging.tutur3u.com',
-    'https://calendar.staging.tutur3u.com/x',
+    'web.tutur3u.com',
+    'https://calendar.tutur3u.com/x',
     'tuturuuu-web-staging',
     'tuturuuu-web-wave1-staging',
   ])

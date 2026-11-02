@@ -65,6 +65,33 @@ void main() {
     );
   });
 
+  test(
+    'old dev or QA Allow without the FID copy revision re-prompts once',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        TelemetryPreference.choiceKey: true,
+        TelemetryPreference.noticeVersionKey:
+            TelemetryPreference.currentNoticeVersion,
+      });
+      final preference = TelemetryPreference();
+      await preference.initialize(
+        promptEligible: true,
+        apply: ({required enabled}) async {},
+      );
+      expect(preference.enabled, isFalse);
+      expect(preference.consentPending, isTrue);
+      await preference.setEnabled(value: true);
+      final restarted = TelemetryPreference();
+      await restarted.initialize(
+        promptEligible: true,
+        apply: ({required enabled}) async {},
+      );
+      expect(restarted.enabled, isTrue);
+      expect(restarted.consentPending, isFalse);
+      expect(TelemetryPreference.currentNoticeVersion, 'telemetry-consent-v1');
+    },
+  );
+
   test('both answers persist across restarts', () async {
     final applied = <bool>[];
     Future<TelemetryPreference> start() async {
@@ -170,6 +197,8 @@ void main() {
 
   test('off revokes collection before the saved value changes', () async {
     SharedPreferences.setMockInitialValues({
+      TelemetryPreference.copyVersionKey:
+          TelemetryPreference.currentCopyVersion,
       TelemetryPreference.choiceKey: true,
       TelemetryPreference.noticeVersionKey:
           TelemetryPreference.currentNoticeVersion,
@@ -199,11 +228,167 @@ void main() {
     );
   });
 
+  test(
+    'a persisted enable from an older build never survives startup',
+    () async {
+      // Nothing stored (an older build never wrote consent): collection is
+      // switched off, never on, however Firebase last persisted it.
+      final applied = <bool>[];
+      final preference = TelemetryPreference();
+      await preference.initialize(
+        promptEligible: true,
+        apply: ({required enabled}) async => applied.add(enabled),
+      );
+      expect(applied, [false]);
+      expect(preference.enabled, isFalse);
+    },
+  );
+
+  test('a stale-version Allow is not consent at startup', () async {
+    SharedPreferences.setMockInitialValues({
+      TelemetryPreference.copyVersionKey:
+          TelemetryPreference.currentCopyVersion,
+      TelemetryPreference.choiceKey: true,
+      TelemetryPreference.noticeVersionKey: 'telemetry-consent-v0',
+    });
+    final applied = <bool>[];
+    await TelemetryPreference().initialize(
+      apply: ({required enabled}) async => applied.add(enabled),
+    );
+    expect(applied, [false]);
+  });
+
+  group('session transitions re-read consent', () {
+    Future<(TelemetryPreference, List<bool>)> started() async {
+      final applied = <bool>[];
+      final preference = TelemetryPreference();
+      await preference.initialize(
+        apply: ({required enabled}) async => applied.add(enabled),
+      );
+      return (preference, applied);
+    }
+
+    test('stored Allow is revoked first, then enabled again', () async {
+      final (preference, applied) = await started();
+      await preference.setEnabled(value: true);
+      applied.clear();
+      await preference.reloadConsent();
+      expect(applied, [false, true]);
+      expect(preference.enabled, isTrue);
+    });
+
+    test('a consent that vanished leaves collection off', () async {
+      final (preference, applied) = await started();
+      await preference.setEnabled(value: true);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(TelemetryPreference.noticeVersionKey);
+      applied.clear();
+      await preference.reloadConsent();
+      expect(applied, [false]);
+      expect(preference.enabled, isFalse);
+      expect(preference.hasExplicitChoice, isFalse);
+    });
+
+    test('a Deny stays off', () async {
+      final (preference, applied) = await started();
+      await preference.setEnabled(value: false);
+      applied.clear();
+      await preference.reloadConsent();
+      expect(applied, [false]);
+      expect(preference.enabled, isFalse);
+    });
+
+    test('a failing enable fails closed and never throws', () async {
+      SharedPreferences.setMockInitialValues({
+        TelemetryPreference.copyVersionKey:
+            TelemetryPreference.currentCopyVersion,
+        TelemetryPreference.choiceKey: true,
+        TelemetryPreference.noticeVersionKey:
+            TelemetryPreference.currentNoticeVersion,
+      });
+      final applied = <bool>[];
+      final preference = TelemetryPreference();
+      await preference.initialize(
+        apply: ({required enabled}) async {
+          applied.add(enabled);
+          if (applied.length > 1 && enabled) throw StateError('apply failed');
+        },
+      );
+      applied.clear();
+      await preference.reloadConsent();
+      expect(applied, [false, true]);
+      expect(preference.enabled, isFalse);
+    });
+
+    test('does nothing before startup finished', () async {
+      final applied = <bool>[];
+      final preference = TelemetryPreference();
+      await preference.reloadConsent();
+      expect(applied, isEmpty);
+      expect(preference.ready, isFalse);
+    });
+  });
+
+  test(
+    'the privacy manifest is declared, untracked and in the Runner target',
+    () {
+      final manifest = File(
+        'ios/Runner/PrivacyInfo.xcprivacy',
+      ).readAsStringSync();
+      expect(manifest, matches(RegExp(r'NSPrivacyTracking</key>\s*<false/>')));
+      expect(manifest, contains('NSPrivacyAccessedAPICategoryUserDefaults'));
+      expect(manifest, contains('CA92.1'));
+      expect(
+        manifest,
+        isNot(contains('NSPrivacyCollectedDataTypePurchaseHistory')),
+      );
+      expect(manifest, isNot(contains('NSPrivacyCollectedDataTypeUserID')));
+      final project = File(
+        'ios/Runner.xcodeproj/project.pbxproj',
+      ).readAsStringSync();
+      expect(
+        RegExp('PrivacyInfo.xcprivacy in Resources').allMatches(project),
+        hasLength(2),
+      );
+    },
+  );
+
+  test('native consent readers mirror the Dart keys and notice version', () {
+    final dart = File(
+      'lib/core/observability/telemetry_preference.dart',
+    ).readAsStringSync();
+    expect(dart, contains("'telemetry-consent-v1'"));
+    expect(dart, contains("choiceKey = 'telemetry-consent-choice'"));
+    expect(
+      dart,
+      contains("noticeVersionKey = 'telemetry-consent-notice-version'"),
+    );
+    const shared = [
+      'flutter.telemetry-consent-choice',
+      'flutter.telemetry-consent-notice-version',
+      'flutter.telemetry-consent-copy-version',
+      TelemetryPreference.currentCopyVersion,
+      TelemetryPreference.currentNoticeVersion,
+    ];
+    final kotlin = File(
+      'android/app/src/main/kotlin/com/tuturuuu/app/mobile/telemetry/'
+      'TelemetryConsentDecision.kt',
+    ).readAsStringSync();
+    final swift = File('ios/Runner/AppDelegate.swift').readAsStringSync();
+    for (final value in shared) {
+      expect(kotlin, contains('"$value"'));
+      expect(swift, contains('"$value"'));
+    }
+    expect(kotlin, contains('"FlutterSharedPreferences"'));
+  });
+
   test('native defaults stay disabled until Dart reads consent', () {
     final plist = File('ios/Runner/Info.plist').readAsStringSync();
     for (final key in [
       'FIREBASE_ANALYTICS_COLLECTION_ENABLED',
       'FirebaseCrashlyticsCollectionEnabled',
+      'FirebaseDataCollectionDefaultEnabled',
+      'FirebaseMessagingAutoInitEnabled',
       // No advertising identifier is ever collected.
       'GOOGLE_ANALYTICS_ADID_COLLECTION_ENABLED',
     ]) {
@@ -211,12 +396,22 @@ void main() {
       expect(plist.split('<key>$key</key>'), hasLength(2));
       expect(plist, matches(RegExp('<key>$key</key>\\s*<false/>')));
     }
+    final gradle = File('android/app/build.gradle.kts').readAsStringSync();
+    expect(
+      gradle,
+      contains(
+        'exclude(group = "com.google.android.gms", '
+        'module = "play-services-ads-identifier")',
+      ),
+    );
     final manifest = File(
       'android/app/src/main/AndroidManifest.xml',
     ).readAsStringSync();
     for (final key in [
       'firebase_analytics_collection_enabled',
       'firebase_crashlytics_collection_enabled',
+      'firebase_data_collection_default_enabled',
+      'firebase_messaging_auto_init_enabled',
       'google_analytics_adid_collection_enabled',
     ]) {
       // Duplicate meta-data names break the manifest merge.
@@ -244,6 +439,16 @@ void main() {
         ),
       ),
     );
+    // Attribution reporting is ad measurement; the app has none.
+    expect(
+      manifest,
+      matches(
+        RegExp(
+          r'<uses-permission\s+android:name="android\.permission\.ACCESS_ADSERVICES_ATTRIBUTION"'
+          r'\s+tools:node="remove"',
+        ),
+      ),
+    );
     expect(
       File('ios/Podfile').readAsStringSync(),
       contains(r'$FirebaseAnalyticsWithoutAdIdSupport = true'),
@@ -264,10 +469,46 @@ void main() {
         lessThan(delegate.indexOf('FirebaseApp.configure()')),
       ),
     );
-    final bootstrap = File('lib/bootstrap.dart').readAsStringSync();
+    // No SDK setter is used to disable an SDK that has not been admitted.
+    expect(delegate, contains('guard FirebaseAdmissionGate.allowsStartup'));
+    expect(delegate, contains('FirebaseAdmissionGate.reset()'));
     expect(
-      bootstrap.indexOf('TelemetryPreference.instance.initialize('),
-      lessThan(bootstrap.indexOf('await Firebase.initializeApp(')),
+      delegate,
+      contains('Analytics.setAnalyticsCollectionEnabled(false)'),
     );
+    final initialization = delegate.substring(
+      delegate.indexOf('private func initializeFirebase('),
+      delegate.indexOf('func didInitializeImplicitFlutterEngine'),
+    );
+    expect(initialization, isNot(contains('Messaging.messaging()')));
+    expect(
+      initialization,
+      isNot(contains('Analytics.setAnalyticsCollectionEnabled')),
+    );
+    expect(manifest, isNot(contains('TelemetryCollectionLockProvider')));
+    final kotlin = File(
+      'android/app/src/main/kotlin/com/tuturuuu/app/mobile/telemetry/'
+      'FirebaseStartupGate.kt',
+    ).readAsStringSync();
+    expect(kotlin, contains('setAnalyticsCollectionEnabled(false)'));
+    expect(kotlin, contains('PersistedAnalyticsGate.mayEnable'));
+    expect(kotlin, contains('TelemetryConsentDecision.allowsCollection'));
+    expect(manifest, contains('tools:node="remove"'));
+    expect(
+      manifest,
+      contains('com.google.firebase.provider.FirebaseInitProvider'),
+    );
+    final nativeStartup = delegate.substring(
+      delegate.indexOf('didFinishLaunchingWithOptions launchOptions:'),
+      delegate.indexOf(
+        'override func application(',
+        delegate.indexOf('didFinishLaunchingWithOptions launchOptions:'),
+      ),
+    );
+    expect(nativeStartup, isNot(contains('FirebaseApp.configure()')));
+    expect(nativeStartup, isNot(contains('registerForRemoteNotifications()')));
+    final podfile = File('ios/Podfile').readAsStringSync();
+    expect(podfile, contains('ConsentFirebaseMessagingPlugin.m'));
+    expect(podfile, contains('APNs registration waits'));
   });
 }

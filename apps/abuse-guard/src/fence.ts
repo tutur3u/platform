@@ -32,10 +32,13 @@ const MAX_BUDGET = 1_000_000_000;
  * largest share but cannot spend another family's allowance.
  */
 export const FAMILY_BUDGET_SHARES: Record<AbuseGuardFamily, number> = {
-  offline: 0.6,
+  offline: 0.5,
   proxy: 0.2,
   replay: 0.1,
   password: 0.1,
+  // Meet AI usage admission: three commands per paid upload or notes run.
+  // Its callers fail closed, so an exhausted share stops Meet AI only.
+  meet: 0.1,
 };
 
 /** Thrown when the budget configuration is invalid; RPCs return 503. */

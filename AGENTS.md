@@ -321,7 +321,7 @@ Use only the topic relevant to the change under `plugins/tuturuuu/skills/`:
 - Database/API/storage: `tuturuuu-database/references/database-api-patterns.md`.
 - Web release metadata: `tuturuuu-web-release/references/web-release-checklist.md`.
 - CI/root scripts: `tuturuuu-development-tooling/references/ci-tooling-patterns.md`.
-- Docker blue/green: `tuturuuu-ci-docs/references/blue-green-patterns.md`.
+- Docker blue/green (paused; Docker is inactive, see the active runtime policy above): `tuturuuu-ci-docs/references/blue-green-patterns.md`.
 - Mobile: `tuturuuu-mobile-task-board/references/mobile-patterns.md`.
 
 When work reveals a reusable failure or changed operating rule, update the

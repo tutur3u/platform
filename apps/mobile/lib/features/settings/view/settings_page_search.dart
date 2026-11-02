@@ -101,6 +101,13 @@ mixin _SettingsPageSearch on State<_SettingsView>, _SettingsPageActions {
     final support = l10n.settingsSupportGroup;
     return [
       jump(
+        'push-notifications',
+        LucideIcons.bellRing,
+        l10n.settingsPushNotifications,
+        'interaction',
+        l10n.settingsNotificationsInteraction,
+      ),
+      jump(
         'telemetry',
         LucideIcons.shield,
         l10n.settingsShareTelemetry,

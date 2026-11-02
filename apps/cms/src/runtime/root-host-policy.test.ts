@@ -51,7 +51,7 @@ describe('CMS root-only host policy', () => {
     expect(outbound).not.toHaveBeenCalled();
   });
 
-  it.each(['cms.tuturuuu.com', 'cms.staging.tutur3u.com'])(
+  it.each(['cms.tuturuuu.com', 'cms.tutur3u.com'])(
     'admits the explicit root host %s',
     async (host) => {
       const { handle, ctx, start, proxy, assets, outbound } = fixture();

@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/config/app_flavor.dart';
+import 'package:mobile/core/config/consent_gate.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
 import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -62,13 +63,21 @@ void main() {
       expect(observability.enabled, isFalse);
     });
 
-    test('non-production startup deletes them even with consent', () async {
-      final controls = _RecordingControls();
-      await MobileObservability.withControls(
-        controls,
-      ).initialize(AppFlavor.development, collectionEnabled: true);
-      expect(controls.calls, ['crash:false', 'analytics:false', 'delete']);
-    });
+    test(
+      'non-production collection requires the QA override and consent',
+      () async {
+        final controls = _RecordingControls();
+        await MobileObservability.withControls(
+          controls,
+        ).initialize(AppFlavor.development, collectionEnabled: true);
+        expect(
+          controls.calls,
+          consentGate.qaOverride
+              ? ['crash:true', 'analytics:true']
+              : ['crash:false', 'analytics:false', 'delete'],
+        );
+      },
+    );
 
     test('startup with consent keeps them for upload', () async {
       final controls = _RecordingControls();

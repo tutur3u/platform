@@ -2,6 +2,7 @@
 title: "Pre-push checks"
 description: "Run the build-free changed-files gate before pushing so cheap CI failures are caught locally in seconds."
 updatedAt: "2026-10-23"
+audience: developers
 ---
 
 ## Why this gate exists
@@ -71,6 +72,12 @@ workspace dependencies with `~/.bun/bin/ttr resources run -- bun install --force
 keeping legitimate package links. Remove links only after proving they are
 undeclared orphan symlinks; follow the conditional
 [orphan alias recovery procedure](/reference/packages/sdk#orphan-workspace-aliases).
+
+For Vite/Oxc validation, keep the worktree container outside another checkout.
+An enclosing checkout's TypeScript project references can cause `TSCONFIG_ERROR`
+for a missing config package even when the worktree's own package links resolve.
+Move only the owned worktree with `git worktree move`, retain TTR admission, and
+rerun the failed contract; do not change compiler settings to hide this failure.
 
 ## Type-checking without built declarations
 

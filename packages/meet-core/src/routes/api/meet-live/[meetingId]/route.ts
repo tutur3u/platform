@@ -48,6 +48,8 @@ export async function POST(
       MEET_REALTIME_TOKEN_SECRET: string;
       GOOGLE_GENERATIVE_AI_API_KEY?: string;
       MEET_AI_ENABLED_WORKSPACE_IDS?: string;
+      MEET_AI_DISABLED?: string;
+      MEET_AI_DISABLED_WORKSPACE_IDS?: string;
     };
     if (
       !env.MEET_LIVE ||
@@ -61,10 +63,7 @@ export async function POST(
       command.action !== 'stop' &&
       !isMeetAiAvailableForWorkspace(access.meeting.ws_id, env)
     )
-      throw new MeetCallAccessError(
-        403,
-        'Meeting AI is not available for this workspace'
-      );
+      throw new MeetCallAccessError(403, 'Meet AI is temporarily unavailable');
     const sharedContext =
       command.action === 'stop'
         ? undefined
@@ -120,6 +119,12 @@ export async function POST(
         409,
         'Refresh Meet before starting a room assistant'
       );
+    // Personal "Talk to Mira" stays on the actor's personal credits; only the
+    // room assistant (meeting transcription/notes) bills the meeting workspace.
+    const billingWorkspaceId =
+      command.mode === 'personal'
+        ? await personalWorkspace(access.user.id)
+        : access.meeting.ws_id;
     const claims: LiveSessionClaims = {
       audioPolicy: command.audioPolicy,
       audience: 'meet-live',
@@ -127,7 +132,7 @@ export async function POST(
       sessionId: crypto.randomUUID(),
       meetingId,
       ownerId: access.user.id,
-      billingWorkspaceId: await personalWorkspace(access.user.id),
+      billingWorkspaceId,
       mode: command.mode,
       expiresAt: Date.now() + 120000,
     };

@@ -41,7 +41,6 @@ import {
   useState,
 } from 'react';
 import { KanbanBoard } from '../boards/boardId/kanban';
-import type { KanbanDeadlineCollapsedState } from '../boards/boardId/kanban/rendering/kanban-deadline-panels';
 import type { TaskFilters } from '../boards/boardId/task-filter';
 import { TimelineBoard } from '../boards/boardId/timeline-board';
 import { DraftsPage } from '../drafts/drafts-page';
@@ -51,6 +50,14 @@ import { BoardHeader, type ListStatusFilter } from '../shared/board-header';
 import { ListView } from '../shared/list-view';
 import { RecycleBinContent } from '../shared/recycle-bin-panel';
 import { loadBoardConfig } from './board-config-storage';
+import {
+  DEFAULT_BOARD_FILTERS,
+  getListStatusesForFilter,
+  listMatchesStatusFilter,
+  sanitizeListStatusFilter,
+  sanitizeSavedBoardFilters,
+} from './board-header/board-filter-state';
+import { useBoardHeaderData } from './board-header/use-board-header-data';
 import {
   sortLocalTasks,
   taskMatchesLocalFilters,
@@ -87,19 +94,7 @@ const HOTKEY_GO_TO_MY_TASKS: ['G', 'M'] = ['G', 'M'];
 const HOTKEY_GO_TO_TIMELINE: ['G', 'T'] = ['G', 'T'];
 const HOTKEY_GO_TO_DRAFTS: ['G', 'D'] = ['G', 'D'];
 const HOTKEY_GO_TO_RECYCLE_BIN: ['G', 'R'] = ['G', 'R'];
-const DEFAULT_TASK_FILTERS: TaskFilters = {
-  labels: [],
-  assignees: [],
-  projects: [],
-  priorities: [],
-  dueDateRange: null,
-  estimationRange: null,
-  includeMyTasks: false,
-  includeUnassigned: false,
-  sourceScope: 'all_visible',
-  sourceWorkspaceIds: [],
-  sourceBoardIds: [],
-};
+const DEFAULT_TASK_FILTERS: TaskFilters = DEFAULT_BOARD_FILTERS;
 interface Props {
   workspace: Pick<Workspace, 'id' | 'personal'>;
   workspaceTier?: WorkspaceProductTier | null;
@@ -248,7 +243,7 @@ export function BoardViews({
     sourceScope === 'external_current_workspace' ||
     sourceScope === 'external_specific';
   const listStatusesForQuery = useMemo(
-    () => (listStatusFilter === 'all' ? undefined : [listStatusFilter]),
+    () => getListStatusesForFilter(listStatusFilter),
     [listStatusFilter]
   );
   const hasTaskFilters = useMemo(
@@ -327,13 +322,6 @@ export function BoardViews({
       taskQueryOptions,
     ]
   );
-  const deadlineTaskQueryOptions = useMemo<ListWorkspaceTasksOptions>(() => {
-    const { sortBy: _sortBy, ...filterOptions } = taskQueryOptions;
-    return {
-      ...filterOptions,
-      listStatuses: listStatusesForQuery,
-    };
-  }, [listStatusesForQuery, taskQueryOptions]);
   const viewHotkeyLabels = useMemo(
     () => ({
       kanban: formatHotkeySequence(HOTKEY_GO_TO_KANBAN),
@@ -436,9 +424,7 @@ export function BoardViews({
     staleTime: Infinity,
   });
   const {
-    deadlineSectionsCollapsed,
     externalTasksCollapsed,
-    handleDeadlineSectionCollapsedChange,
     handleExternalTasksCollapsedChange,
     handleTaskListCollapsedChange,
     kanbanLayoutRestored,
@@ -487,16 +473,13 @@ export function BoardViews({
           ? savedConfig.currentView
           : effectiveDefaultView)
     );
-    const restoredFilters = {
-      ...DEFAULT_TASK_FILTERS,
-      ...savedConfig.filters,
-    };
+    const restoredFilters = sanitizeSavedBoardFilters(savedConfig.filters);
     setFilters(
       (savedConfig.filters.hideEmptyTaskLists ?? hideEmptyTaskListsByDefault)
         ? { ...restoredFilters, hideEmptyTaskLists: true }
         : restoredFilters
     );
-    setListStatusFilter(savedConfig.listStatusFilter);
+    setListStatusFilter(sanitizeListStatusFilter(savedConfig.listStatusFilter));
   }, [
     board.id,
     defaultView,
@@ -568,15 +551,6 @@ export function BoardViews({
       ? [externalStagingList, ...realLists]
       : realLists;
   }, [boardLists, externalStagingList, taskListsCollapsed]);
-
-  const effectiveDeadlineSectionsCollapsed =
-    useMemo<KanbanDeadlineCollapsedState>(
-      () => ({
-        overdue: deadlineSectionsCollapsed.overdue,
-        upcoming: deadlineSectionsCollapsed.upcoming,
-      }),
-      [deadlineSectionsCollapsed.overdue, deadlineSectionsCollapsed.upcoming]
-    );
 
   const {
     data: filteredListCounts,
@@ -666,7 +640,9 @@ export function BoardViews({
 
     const stagingLists = activeLists.filter((list) => list.is_external_staging);
     const realLists = activeLists.filter(
-      (list) => !list.is_external_staging && list.status === listStatusFilter
+      (list) =>
+        !list.is_external_staging &&
+        listMatchesStatusFilter(list, listStatusFilter)
     );
     return [...stagingLists, ...realLists];
   }, [activeLists, listStatusFilter]);
@@ -769,40 +745,40 @@ export function BoardViews({
     }));
   };
 
-  const handleUpdate = async () => {
-    // Note: We intentionally do NOT invalidate queries here.
-    // Optimistic updates handle immediate UI feedback, and realtime
-    // subscription handles cross-user sync. Invalidating would cause
-    // all tasks to flicker (disappear then reappear).
+  const canCreateTask =
+    !readOnly &&
+    currentView !== 'drafts' &&
+    currentView !== 'recycle_bin' &&
+    filteredLists.some((list) => !list.is_external_staging);
+  const createTaskInBoard = () => {
+    const selectableLists = filteredLists.filter(
+      (list) => !list.is_external_staging
+    );
+    const defaultTargetList =
+      selectableLists.find((list) => list.id === board.default_list_id) ??
+      selectableLists[0];
+    const hoveredTargetList =
+      quickCreateTargetList === 'hovered_list'
+        ? selectableLists.find((list) => list.id === hoveredTaskListId)
+        : undefined;
+    const targetList = hoveredTargetList ?? defaultTargetList;
+    if (!targetList) return;
+    createTask(board.id, targetList.id, selectableLists, filters);
   };
+  const headerData = useBoardHeaderData({
+    tasks,
+    lists,
+    currentUserId,
+    workspaceId: effectiveWorkspaceId,
+    boardId: board.id,
+    enabled: !localTaskState,
+  });
 
-  useHotkey(
-    HOTKEY_CREATE_TASK,
-    () => {
-      const selectableLists = filteredLists.filter(
-        (list) => !list.is_external_staging
-      );
-      const defaultTargetList =
-        selectableLists.find((list) => list.id === board.default_list_id) ??
-        selectableLists[0];
-      const hoveredTargetList =
-        quickCreateTargetList === 'hovered_list'
-          ? selectableLists.find((list) => list.id === hoveredTaskListId)
-          : undefined;
-      const targetList = hoveredTargetList ?? defaultTargetList;
-      if (!targetList) return;
-      createTask(board.id, targetList.id, selectableLists, filters);
-    },
-    {
-      enabled:
-        !readOnly &&
-        currentView !== 'drafts' &&
-        currentView !== 'recycle_bin' &&
-        filteredLists.some((list) => !list.is_external_staging),
-      ignoreInputs: true,
-      preventDefault: true,
-    }
-  );
+  useHotkey(HOTKEY_CREATE_TASK, createTaskInBoard, {
+    enabled: canCreateTask,
+    ignoreInputs: true,
+    preventDefault: true,
+  });
 
   useHotkeySequence(
     HOTKEY_GO_TO_KANBAN,
@@ -894,17 +870,12 @@ export function BoardViews({
             isSearchError={!localTaskState && isFullTasksError}
             disableSort={!!filters.sortBy}
             onFiltersChange={setFilters}
-            deadlineTaskQueryOptions={deadlineTaskQueryOptions}
             listStatusFilter={listStatusFilter}
             filters={filters}
             isMultiSelectMode={readOnly ? false : isMultiSelectMode}
             setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
             onExternalTasksCollapsedChange={handleExternalTasksCollapsedChange}
             onTaskListCollapsedChange={handleTaskListCollapsedChange}
-            deadlineSectionsCollapsed={effectiveDeadlineSectionsCollapsed}
-            onDeadlineSectionCollapsedChange={
-              handleDeadlineSectionCollapsedChange
-            }
             specialTaskListPins={specialTaskListPins}
             onSpecialTaskListPinnedChange={handleSpecialTaskListPinnedChange}
             onBulkSelectionActiveChange={setKanbanBulkSelectionActive}
@@ -1052,7 +1023,6 @@ export function BoardViews({
               !localTaskState &&
               (isFullTasksFetching || isFilteredListCountsFetching)
             }
-            onUpdate={handleUpdate}
             isMultiSelectMode={readOnly ? false : isMultiSelectMode}
             setIsMultiSelectMode={readOnly ? () => {} : setIsMultiSelectMode}
             availableViews={enabledViews ?? undefined}
@@ -1060,6 +1030,11 @@ export function BoardViews({
             publicView={publicView}
             readOnly={readOnly}
             titlePrefix={publicHeaderPrefix}
+            people={headerData.people}
+            unassignedCount={headerData.unassignedCount}
+            projectTaskCounts={headerData.projectTaskCounts}
+            countsComplete={headerData.countsComplete}
+            onCreateTask={canCreateTask ? createTaskInBoard : undefined}
           />
         }
         initialLayoutReady={initialKanbanLayoutReady}

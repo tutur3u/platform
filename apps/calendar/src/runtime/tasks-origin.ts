@@ -7,10 +7,16 @@ import { isCalendarStagingArtifact } from './deployment-profile';
 
 const PRODUCTION_ROOT = 'tuturuuu.com'; // host-scan-allow
 
+// DNS treats `host.` and `host` as the same name, so compare the normalised
+// form: lowercase with exactly one trailing dot removed.
+function normaliseHost(hostname: string) {
+  const lower = hostname.toLowerCase();
+  return lower.endsWith('.') ? lower.slice(0, -1) : lower;
+}
+
 function isProductionHost(hostname: string) {
-  return (
-    hostname === PRODUCTION_ROOT || hostname.endsWith(`.${PRODUCTION_ROOT}`)
-  );
+  const host = normaliseHost(hostname);
+  return host === PRODUCTION_ROOT || host.endsWith(`.${PRODUCTION_ROOT}`);
 }
 
 function explicitTasksUrl() {

@@ -993,6 +993,20 @@
     "save_changes": "Lưu thay đổi"
   },
   "ws-task-boards": {
+    "header": {
+      "focus": "Tập trung",
+      "focus_hint": "Công việc đang mở của tôi, ưu tiên cao trước",
+      "more": "Thêm thao tác bảng",
+      "more_people": "Thêm {count}",
+      "new_task": "Công việc mới",
+      "no_projects": "Chưa có dự án",
+      "project": "Dự án",
+      "projects_selected": "{count} dự án",
+      "share": "Chia sẻ",
+      "shift_click": "Shift-click",
+      "task_count": "{count} công việc",
+      "you": "{name} (bạn)"
+    },
     "manual_ordering_disabled": {
       "description": "Công việc đang được sắp xếp theo một tiêu chí nên thao tác kéo không thể thay đổi thứ tự thủ công. Hãy chuyển sang sắp xếp thủ công để sắp xếp lại.",
       "keep_sorting": "Giữ cách sắp xếp hiện tại",

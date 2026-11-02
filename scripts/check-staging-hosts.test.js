@@ -35,7 +35,7 @@ for (const host of [
 }
 test('production and isolated staging allowed', () => {
   assert.deepEqual(
-    violations('tuturuuu.com pay.tuturuuu.com pay.staging.tutur3u.com'),
+    violations('tuturuuu.com pay.tuturuuu.com pay.tutur3u.com'),
     []
   );
 });
@@ -173,9 +173,11 @@ test('scans every configuration location, not only app and script sources', () =
     'apps/mobile/lib/config.dart',
   ])
     assert.equal(scannedFile(file), true, file);
+  assert.equal(scannedFile('docs-internal/build/devops/runbook.mdx'), true);
+  assert.equal(scannedFile('docs-internal/README.md'), true);
   for (const file of [
     'scripts/check-staging-hosts.test.js',
-    'apps/docs/build/devops/wave1-native-publishers.mdx',
+    'apps/docs/build/devops/environments-release-flow.mdx',
     'packages/x/__tests__/hosts.ts',
     'bun.lock',
     'apps/web/public/logo.png',
@@ -303,10 +305,7 @@ test('detects hosts concatenated across comments', () => {
     );
   }
   assert.ok(violations('const host = "https://dev.tuturuuu.com";').length);
-  assert.equal(
-    violations('const host = "https://dev.staging.tutur3u.com";').length,
-    0
-  );
+  assert.equal(violations('const host = "https://dev.tutur3u.com";').length, 0);
 });
 
 test('regex literals cannot open a block comment that hides a host', () => {

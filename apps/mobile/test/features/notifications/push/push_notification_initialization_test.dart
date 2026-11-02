@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/data/repositories/notification_push_repository.dart';
+import 'package:mobile/features/notifications/push/delivered_inbox_notifications.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -28,6 +29,11 @@ void main() {
   late StreamSubscription<PushNotificationEvent> subscription;
 
   setUp(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('test/init-delivered'),
+          (_) async => true,
+        );
     messages = StreamController<RemoteMessage>.broadcast();
     gate = Completer<void>();
     messaging = _Messaging();
@@ -46,6 +52,24 @@ void main() {
       return true;
     });
     when(local.getNotificationAppLaunchDetails).thenAnswer((_) async => null);
+    when(messaging.getNotificationSettings).thenAnswer(
+      (_) async => const NotificationSettings(
+        alert: AppleNotificationSetting.enabled,
+        announcement: AppleNotificationSetting.disabled,
+        authorizationStatus: AuthorizationStatus.authorized,
+        badge: AppleNotificationSetting.enabled,
+        carPlay: AppleNotificationSetting.disabled,
+        lockScreen: AppleNotificationSetting.enabled,
+        notificationCenter: AppleNotificationSetting.enabled,
+        showPreviews: AppleShowPreviewSetting.always,
+        timeSensitive: AppleNotificationSetting.disabled,
+        criticalAlert: AppleNotificationSetting.disabled,
+        sound: AppleNotificationSetting.enabled,
+        providesAppNotificationSettings: AppleNotificationSetting.disabled,
+      ),
+    );
+    when(() => messaging.setAutoInitEnabled(any())).thenAnswer((_) async {});
+    when(messaging.getToken).thenAnswer((_) async => null);
     when(messaging.getInitialMessage).thenAnswer((_) async => null);
     when(
       () => messaging.onTokenRefresh,
@@ -62,6 +86,9 @@ void main() {
       shown.add(call.namedArguments[#title] as String?);
     });
     service = PushNotificationService(
+      delivered: DeliveredInboxNotifications(
+        channel: const MethodChannel('test/init-delivered'),
+      ),
       foregroundMessages: messages.stream,
       messaging: messaging,
       localNotifications: local,
@@ -130,7 +157,7 @@ void main() {
 
   test('overlapping startup installs one foreground receiver '
       'and preserves distinct events', () async {
-    final startup = service.initialize();
+    final startup = service.startSession('synthetic-actor');
     final restoredSession = service.initialize();
     gate.complete();
     await Future.wait([startup, restoredSession]);
@@ -169,7 +196,7 @@ void main() {
         return lookup.future;
       });
       gate.complete();
-      final initializing = service.initialize();
+      final initializing = service.startSession('synthetic-actor');
       await entered.future;
       messages.add(
         const RemoteMessage(
@@ -196,7 +223,10 @@ void main() {
       messaging.getInitialMessage,
     ).thenThrow(StateError('synthetic failure'));
     gate.complete();
-    await expectLater(service.initialize(), throwsStateError);
+    await expectLater(
+      service.startSession('synthetic-actor'),
+      throwsStateError,
+    );
     messages.add(
       const RemoteMessage(
         messageId: 'after-failure',
@@ -207,7 +237,7 @@ void main() {
     expect(shown, isEmpty);
     expect(events, isEmpty);
     when(messaging.getInitialMessage).thenAnswer((_) async => null);
-    await service.initialize();
+    await service.startSession('synthetic-actor');
     messages.add(
       const RemoteMessage(
         messageId: 'transport',
@@ -227,7 +257,7 @@ void main() {
       return lookup.future;
     });
     gate.complete();
-    final initializing = service.initialize();
+    final initializing = service.startSession('synthetic-actor');
     await entered.future;
     await service.dispose();
     messages.add(
@@ -244,7 +274,7 @@ void main() {
   });
 
   test('disposal during initialization never installs a receiver', () async {
-    final initializing = service.initialize();
+    final initializing = service.startSession('synthetic-actor');
     await service.dispose();
     gate.complete();
     await initializing;

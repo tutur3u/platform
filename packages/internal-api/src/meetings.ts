@@ -243,6 +243,7 @@ export async function deleteWorkspaceMeetingRecording(
 
 export async function transcribeWorkspaceMeetingAudio<T>(
   workspaceId: string,
+  meetingId: string,
   audio: Blob,
   options?: InternalApiClientOptions
 ) {
@@ -250,6 +251,7 @@ export async function transcribeWorkspaceMeetingAudio<T>(
   const body = new FormData();
   body.append('audio', audio, getTranscriptionAudioFilename(mediaType));
   body.append('wsId', workspaceId);
+  body.append('meetingId', meetingId);
   return getInternalApiClient(options).json<T>(
     '/api/ai/meetings/transcription',
     { body, cache: 'no-store', method: 'POST' }

@@ -329,3 +329,41 @@ it('keeps scenario AI policy isolated even for approved users visiting Meet', as
     status: 403,
   });
 });
+
+it('uses an injected meeting row and Parley flag with the same decisions', async () => {
+  const meeting = vi.fn().mockResolvedValue({
+    data: {
+      id: meetingId,
+      ws_id: 'workspace',
+      creator_id: 'host',
+      name: 'Invited call',
+      workspaces: { personal: false },
+    },
+    error: null,
+  });
+  const isParleySession = vi.fn().mockResolvedValue(false);
+  expect(
+    await getMeetCallAccess(meetingId, 'Guest', { meeting, isParleySession })
+  ).toMatchObject({ isHost: false, admission: 'lobby' });
+  expect(meeting).toHaveBeenCalledTimes(1);
+  expect(isParleySession).toHaveBeenCalledWith(false);
+  expect(mocks.meeting).not.toHaveBeenCalled();
+  expect(mocks.scenario).not.toHaveBeenCalled();
+});
+
+it('still rejects an injected Parley session through Meet', async () => {
+  await expect(
+    getMeetCallAccess(meetingId, 'Guest', {
+      isParleySession: async () => true,
+    })
+  ).rejects.toMatchObject({ status: 403 });
+});
+
+it('still checks sign-in before reading injected sources', async () => {
+  mocks.user.mockResolvedValue(null);
+  const meeting = vi.fn();
+  await expect(
+    getMeetCallAccess(meetingId, 'Guest', { meeting })
+  ).rejects.toMatchObject({ status: 401 });
+  expect(meeting).not.toHaveBeenCalled();
+});

@@ -65,7 +65,7 @@ and its focused regression coverage before adding a reason or changing middlewar
   Trace the current handler before applying a historical Supabase world-event
   fix. A maintenance Worker is an approval-gated routing operation, not app
   restoration. See the [Hive migration plan](../../../../../docs-internal/build/devops/hive-cloudflare-migration.mdx)
-  and [maintenance runbook](../../../../../docs-internal/build/devops/hive-cloudflare-maintenance.mdx).
+  and [maintenance runbook](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/hive-cloudflare-maintenance.mdx).
 
 - Calendar provider cron failures retain failed dashboard diagnostics while
   isolating accounts and bounding work. Rejected Google credentials stop siblings
@@ -224,8 +224,9 @@ and its focused regression coverage before adding a reason or changing middlewar
   enforces it.
 - Central-login app identity comes from `packages/utils/src/internal-domains.ts`,
   not the infrastructure project's reserved-host list or shared-cookie domains.
-  Rewise (`https://rewise.me`) and Nova (`https://nova.ai.vn`) are internal
-  satellites with exact HTTPS production origins outside `tuturuuu.com`.
+  Nova (`https://nova.ai.vn`) is an internal satellite with an exact HTTPS
+  production origin outside `tuturuuu.com`. Rewise is served only at
+  `https://rewise.tuturuuu.com`; the expired `rewise.me` must never be trusted.
   Preserve their registrations when changing canonical SEO hosts; verify the
   domain, cross-app mapping, and web return-validation regression suites.
 - **Never copy the multi-account vault into another app.**
@@ -808,7 +809,7 @@ Reset participation acknowledgement when switching scenarios. Keep filtered sele
 visible. Load private rubrics only after session-owner and meeting-host checks;
 render the session snapshot. See the Parley product guide and studio setup,
 invitation, review-route and Meet-link regression tests. Keep shared chat mention
-markers lazy and unguessable; see the [native import checks](../../../../../apps/docs/build/development-tools/thanh-local-e2e.mdx#native-worker-imports).
+markers lazy and unguessable; see the [native import checks](../../../../../apps/docs/build/development-tools/local-e2e.mdx#native-worker-imports).
 
 ## Calendar OAuth operator alerts
 
@@ -1334,7 +1335,7 @@ restoring real timers; see the Calendar application decision and tracker tests.
 
 Trace mobile preference requests through `ApiOrigins.baseUrlForPath`, not only `ownerForPath`: personal/workspace calendar-settings GET/PATCH now default directly to Web, while older published builds retain Infrastructure-to-Calendar routing. Keep Web settings paths out of satellite rewrites; changing the mobile host alone can still send traffic back to Calendar. Inspect `apps/web/vercel.json` and the active hosting policy separately: application MFA cannot bypass a provider challenge before application execution. Reuse the Bearer actor already verified by the MFA guard for exact preference GET/PATCH quotas; do not add an authentication request or rely on a warm trust cache.
 Keep preferences bounded and separate from unrelated gateway traffic. Retain anonymous quotas, MFA, IP blocks and route permissions. Test cold-cache/shared-IP rejection, token rotation, actor isolation, forged credentials and Settings mount request counts.
-Middleware logs alone cannot attribute a TestFlight incident; obtain safe rejection headers and correlate both hosts. See the Calendar settings decision, native API protection runbook and `api-proxy-calendar-preference-reads.test.ts`. Keep the calendar preference Web routing fix independently deliverable before native integrity. `NATIVE_INTEGRITY_MODE` defaults to `off`; `monitor` may record only scalar verification verdicts and must continue through existing auth/MFA/quota/permission controls on every integrity failure. Enforce only after operator acceptance of real providers, signed devices, nonce/counter replay storage, key deletion and unsupported/older-client policy. The guard also covers existing Web browser/server consumers without proofs, so keep enforce inactive until their proof coverage or a separately reviewed trusted-browser policy is accepted; never bypass by omitted header or User-Agent. Do not infer Vercel hosting clearance from a valid app proof. Follow the [native integrity runbook](../../../../../apps/docs/build/devops/calendar-native-api-protection.mdx#native-integrity-rollout-default-off) for configuration, acceptance and rollback; keep tokens, key IDs and request bindings out of logs. Turnstile fallback is separately default-off and requires server-owned unsupported-actor eligibility; live Apple or verified Play capability bars the downgrade. Request-owned verified-user reuse applies only to the exact unchanged Request in one process; distinct proxy/route objects or runtimes resolve identity normally, never through a trusted client header or assumed cross-runtime WeakMap.
+Middleware logs alone cannot attribute a TestFlight incident; obtain safe rejection headers and correlate both hosts. See the Calendar settings decision, native API protection runbook and `api-proxy-calendar-preference-reads.test.ts`. Keep the calendar preference Web routing fix independently deliverable before native integrity. `NATIVE_INTEGRITY_MODE` defaults to `off`; `monitor` may record only scalar verification verdicts and must continue through existing auth/MFA/quota/permission controls on every integrity failure. Enforce only after operator acceptance of real providers, signed devices, nonce/counter replay storage, key deletion and unsupported/older-client policy. The guard also covers existing Web browser/server consumers without proofs, so keep enforce inactive until their proof coverage or a separately reviewed trusted-browser policy is accepted; never bypass by omitted header or User-Agent. Do not infer Vercel hosting clearance from a valid app proof. Follow the [native integrity runbook](https://github.com/tutur3u/internal-docs/blob/main/apps/docs/build/devops/calendar-native-api-protection.mdx#native-integrity-rollout-default-off) for configuration, acceptance and rollback; keep tokens, key IDs and request bindings out of logs. Turnstile fallback is separately default-off and requires server-owned unsupported-actor eligibility; live Apple or verified Play capability bars the downgrade. Request-owned verified-user reuse applies only to the exact unchanged Request in one process; distinct proxy/route objects or runtimes resolve identity normally, never through a trusted client header or assumed cross-runtime WeakMap.
 
 ### Storage object key transport
 
@@ -1417,7 +1418,7 @@ client, key quotas by token/target, or replace durable quotas with a local cache
 The control object checks identity quotas and family spend in one transaction;
 subject denials, retries and successful refunds still count. Bounded caches are
 shortcuts whose misses recheck durable admission after eviction or restart.
-Follow the [store runbook](../../../../../apps/docs/build/devops/abuse-guard-store.mdx#durable-command-fairness)
+Follow the [store runbook](https://github.com/tutur3u/internal-docs/blob/main/apps/docs/build/devops/abuse-guard-store.mdx#durable-command-fairness)
 for defaults, canonical IP buckets, tests and remaining activation holds. Command
 allowances do not establish a total bound on Worker/control-DO request billing.
 
@@ -1435,6 +1436,21 @@ The export and crawler denial matrix is covered by
 `apps/web/src/lib/staff-session.test.ts` and `staff-exact-domain.test.ts`.
 When a role gate is added to an identity-policy test, mock its permission boundary
 and assert denied identities never call it; keep role-reader coverage separate.
+
+### Tutoring payroll
+
+Report and payroll export totals share internal-api's pure
+`calculateTutoringPayroll`. Preserve the duration-bearing slot key until a
+product decision changes it. Apply `view_payroll` or a verified actor-to-workspace
+teacher link before reading sessions with the admin client. Never trust a client
+teacher filter as authorization. Apply the same self scope to detailed exports,
+session lists and teacher pickers, which otherwise reveal reconstructible work
+hours. Require both export dates and an inclusive span of at most 366 days. See the tutoring feature page and export route
+permission/parity regressions.
+
+Parent-message previews also expose teacher work hours. Apply the shared teacher
+read scope to both the preview session lookup and save, and return no preview
+when a concurrent reassignment makes the scoped save miss. Keep the editor gate.
 
 ### Private native Worker admission
 

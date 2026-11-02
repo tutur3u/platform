@@ -1,7 +1,15 @@
 {
   "name": "@tuturuuu/turnstile",
+  "license": "MIT",
   "version": "0.2.0",
-  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tutur3u/platform",
+    "directory": "packages/turnstile"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
@@ -9,7 +17,6 @@
     "./client": "./src/client.ts",
     "./server": "./src/server.ts"
   },
-  "license": "MIT",
   "scripts": {
     "type-check": "tsc --project tsconfig.typecheck.json",
     "test": "vitest run",

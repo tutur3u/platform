@@ -346,7 +346,7 @@ test('the generated Worker states its effective mounts and fails safely', (t) =>
   // Root-only: no apex mount is claimed in the generated source.
   const rootOnly = {
     mounts: {
-      rootHosts: ['demo.tuturuuu.com', 'demo.staging.tutur3u.com'],
+      rootHosts: ['demo.tuturuuu.com', 'demo.tutur3u.com'],
       mountHosts: [],
       unknownHost: 'reject',
     },
@@ -354,7 +354,7 @@ test('the generated Worker states its effective mounts and fails safely', (t) =>
   const { worker, runtime } = files(rootOnly);
   assert.match(
     worker,
-    /\/\/ Root-only: served at demo\.tuturuuu\.com, demo\.staging\.tutur3u\.com; no apex mount, and unknown hosts are rejected\.\nconst mounts = \{\n {2}app: 'demo',\n {2}rootHosts: \['demo\.tuturuuu\.com', 'demo\.staging\.tutur3u\.com'\],\n {2}mountHosts: \[\],\n {2}unknownHost: 'reject' as const,\n {2}\.\.\.appConfig\.mounts,\n\};/
+    /\/\/ Root-only: served at demo\.tuturuuu\.com, demo\.tutur3u\.com; no apex mount, and unknown hosts are rejected\.\nconst mounts = \{\n {2}app: 'demo',\n {2}rootHosts: \['demo\.tuturuuu\.com', 'demo\.tutur3u\.com'\],\n {2}mountHosts: \[\],\n {2}unknownHost: 'reject' as const,\n {2}\.\.\.appConfig\.mounts,\n\};/
   );
   assert.doesNotMatch(worker, /tuturuuu\.com\/demo|basePath: '\/demo'/);
 

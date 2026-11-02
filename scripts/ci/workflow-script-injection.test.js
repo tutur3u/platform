@@ -51,25 +51,6 @@ for (const app of ['cms', 'contacts', 'finance', 'inventory', 'tasks']) {
     'steps.stage_deployment.outputs.url',
   ];
 }
-for (const pkg of [
-  'ai',
-  'apis',
-  'devbox',
-  'editor',
-  'google',
-  'hooks',
-  'icons',
-  'internal-api',
-  'supabase',
-  'types',
-  'typescript-config',
-  'ui',
-  'utils',
-]) {
-  acceptedOutputInterpolations[`release-${pkg}-package.yaml`] = [
-    'steps.artifact.outputs.path',
-  ];
-}
 
 function outputInterpolations(script) {
   return [...script.matchAll(/\$\{\{\s*([\s\S]*?)\s*\}\}/gu)]

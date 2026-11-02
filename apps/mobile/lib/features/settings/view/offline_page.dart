@@ -37,7 +37,8 @@ class OfflinePage extends StatelessWidget {
               wrapSupportingText: true,
               icon: LucideIcons.hardDrive,
               title: l10n.cacheStorageTitle,
-              subtitle: l10n.offlineStorageScope,
+              subtitle: l10n.settingsStorageSummary,
+              details: l10n.offlineStorageScope,
               onTap: () => unawaited(showCacheStorageSheet(context)),
             ),
             SettingsTile(

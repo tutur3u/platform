@@ -3970,7 +3970,7 @@
       "unavailable": "AI cuộc họp chưa khả dụng. Vui lòng thử lại sau.",
       "unpriced": "Thiếu dữ liệu sử dụng của {count} yêu cầu; tổng chi phí chưa đầy đủ.",
       "usage_details": "Chi tiết sử dụng",
-      "workspace_unavailable": "Trợ lý AI cho cuộc họp chưa khả dụng với không gian làm việc này."
+      "workspace_unavailable": "Meet AI tạm thời không khả dụng."
     },
     "call": {
       "actions_action": "Việc cần làm",
@@ -4146,7 +4146,6 @@
       "join_denied_title": "Yêu cầu tham gia đã bị từ chối",
       "join_error_hint": "Chưa thể xác nhận kết nối của bạn. Số lần tự động kết nối lại có giới hạn. Kiểm tra mạng, rồi thử lại hoặc rời đi.",
       "join_error_title": "Không thể kết nối với cuộc họp",
-      "join_loading_slow_hint": "Cuộc họp chưa tải xong. Bạn có thể rời đi và mở lại lời mời để thử lại.",
       "join_loading_slow_title": "Kết nối đang mất nhiều thời gian hơn dự kiến",
       "join_missing_hint": "Liên kết có thể không đúng hoặc bạn không có quyền truy cập cuộc họp. Hãy kiểm tra lời mời với chủ phòng.",
       "join_missing_title": "Không tìm thấy cuộc họp hoặc không thể truy cập",
@@ -4167,7 +4166,14 @@
       "leave_choice_title": "Rời cuộc họp này?",
       "leave_only": "Chỉ rời cuộc họp",
       "live_assistant_cost": "Mira trực tiếp · {cost} · {count} kỳ tính phí",
+      "lobby_guest_name_hint": "Hiển thị với mọi người trong cuộc gọi này.",
+      "lobby_guest_name_placeholder": "Nhập tên hiển thị của bạn",
       "lobby_hint": "Kiểm tra camera và micro trước khi tham gia.",
+      "lobby_mic_blocked": "Không dùng được micro. Kiểm tra quyền của trình duyệt.",
+      "lobby_mic_level": "Mức âm lượng micro",
+      "lobby_nobody_here": "Chưa có ai khác trong phòng",
+      "lobby_people_inside": "{count, plural, one {# người đang trong cuộc gọi} other {# người đang trong cuộc gọi}}",
+      "lobby_people_names_overflow": "{names} (+{count} người khác)",
       "lower_hand": "Hạ tay",
       "master_volume": "Âm lượng tổng",
       "media_connected": "Đã kết nối phương tiện — chưa có số liệu gói tin",
@@ -4224,8 +4230,6 @@
       "playback_volume_hint": "Chỉ thay đổi âm thanh bạn nghe. Âm lượng tổng điều chỉnh giọng nói, âm thanh chia sẻ, Mira và âm báo.",
       "preferences": "Tùy chọn",
       "preparing_call": "Đang chuẩn bị cuộc gọi",
-      "preparing_call_hint": "Đang kết nối an toàn. Các nút điều khiển camera và micrô sẽ sẵn sàng trong giây lát.",
-      "preparing_privacy": "Không có gì được chia sẻ cho đến khi bạn tham gia.",
       "preview_private": "Micrô và camera của bạn chưa được chia sẻ cho đến khi bạn tham gia.",
       "pricing_date": "Giá được kiểm tra ngày {date}",
       "private_tools": {
@@ -8798,6 +8802,20 @@
     "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể.",
     "errors": {
       "name_exists": "Đã có bảng nhiệm vụ với tên này trong không gian làm việc."
+    },
+    "header": {
+      "focus": "Tập trung",
+      "focus_hint": "Công việc đang mở của tôi, ưu tiên cao trước",
+      "more": "Thêm thao tác bảng",
+      "more_people": "Thêm {count}",
+      "new_task": "Công việc mới",
+      "no_projects": "Chưa có dự án",
+      "project": "Dự án",
+      "projects_selected": "{count} dự án",
+      "share": "Chia sẻ",
+      "shift_click": "Shift-click",
+      "task_count": "{count} công việc",
+      "you": "{name} (bạn)"
     },
     "layout_settings": {
       "list_name_exists": "Đã có danh sách với tên này trong bảng."

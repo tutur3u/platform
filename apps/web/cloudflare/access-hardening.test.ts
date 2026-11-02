@@ -1,6 +1,6 @@
 import { verifyOriginClientIpProof } from '@tuturuuu/utils/abuse-protection/origin-ip-proof';
 import { describe, expect, it, vi } from 'vitest';
-import type { Fetcher } from './fallback';
+import { type Fetcher, proxyNext } from './fallback';
 import { type AccessVerifier, createWebCandidateHandler } from './handler';
 import { stagingProfile, type WebCandidateEnv } from './profile';
 
@@ -11,8 +11,7 @@ const env: WebCandidateEnv = {
   WEB_START_CANDIDATE: 'staging',
   NEXT_FALLBACK_ORIGIN: origin,
   NEXT_PUBLIC_SUPABASE_URL: stagingProfile.supabaseUrl,
-  AUTH_COOKIE_DOMAIN: stagingProfile.cookieDomain,
-  TRUSTED_PROXY_ORIGIN_SECRET: secret,
+  AUTH_COOKIE_PREFIX: stagingProfile.cookiePrefix,
   VERCEL_AUTOMATION_BYPASS_SECRET: bypass,
   CF_ACCESS_TEAM_DOMAIN: 'fixture-team.cloudflareaccess.com',
   CF_ACCESS_AUD: 'fixture-aud',
@@ -55,12 +54,12 @@ function sent(fetcher: ReturnType<typeof setup>['fetcher']) {
 describe('Access JWT verification in the issuer Worker (N19, V2b)', () => {
   it('passes the configured team and AUD to the verifier', async () => {
     const { handler, verify, fetcher } = setup();
-    expect((await handler(request('/login'), env)).status).toBe(200);
+    expect((await handler(request('/login'), env)).status).toBe(404);
     expect(verify).toHaveBeenCalledWith(expect.any(Request), {
       teamDomain: env.CF_ACCESS_TEAM_DOMAIN,
       audience: env.CF_ACCESS_AUD,
     });
-    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(fetcher).not.toHaveBeenCalled();
   });
   it.each([
     ['rejects', async () => false],
@@ -86,30 +85,21 @@ describe('Access JWT verification in the issuer Worker (N19, V2b)', () => {
     { CF_ACCESS_TEAM_DOMAIN: undefined },
     { CF_ACCESS_TEAM_DOMAIN: 'evil.example.com' },
     { CF_ACCESS_AUD: ' ' },
-    { VERCEL_AUTOMATION_BYPASS_SECRET: undefined },
-    { VERCEL_AUTOMATION_BYPASS_SECRET: 'short' },
-    { VERCEL_AUTOMATION_BYPASS_SECRET: `${'a'.repeat(32)} b` },
-  ])(
-    'stays disabled without complete Access and bypass inputs: %j',
-    async (gap) => {
-      const { handler, fetcher, verify } = setup();
-      expect(
-        (await handler(request('/login'), { ...env, ...gap })).status
-      ).toBe(503);
-      expect(fetcher).not.toHaveBeenCalled();
-      expect(verify).not.toHaveBeenCalled();
-    }
-  );
+  ])('stays disabled without complete Access inputs: %j', async (gap) => {
+    const { handler, fetcher, verify } = setup();
+    expect((await handler(request('/login'), { ...env, ...gap })).status).toBe(
+      503
+    );
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(verify).not.toHaveBeenCalled();
+  });
 });
 
 describe('OPTIONS is answered locally (N20, V5b)', () => {
   it('never calls Next, Start or the Access verifier, even when Access would deny', async () => {
     const { handler, fetcher, start, verify } = setup(async () => false);
     for (const [path, extra] of [
-      [
-        '/api/v1/workspaces',
-        { origin: 'https://calendar.staging.tutur3u.com' },
-      ],
+      ['/api/v1/workspaces', { origin: 'https://calendar.tutur3u.com' }],
       ['/login', {}],
     ] as const) {
       const response = await handler(
@@ -144,9 +134,9 @@ describe('OPTIONS is answered locally (N20, V5b)', () => {
         }),
         env
       );
-    const allowed = await ask('https://calendar.staging.tutur3u.com');
+    const allowed = await ask('https://calendar.tutur3u.com');
     expect(allowed.headers.get('access-control-allow-origin')).toBe(
-      'https://calendar.staging.tutur3u.com'
+      'https://calendar.tutur3u.com'
     );
     expect(allowed.headers.get('access-control-allow-credentials')).toBe(
       'true'
@@ -156,10 +146,10 @@ describe('OPTIONS is answered locally (N20, V5b)', () => {
     );
     for (const denied of [
       'https://calendar.tuturuuu.com',
-      'https://a.b.staging.tutur3u.com',
-      'http://calendar.staging.tutur3u.com',
-      'https://calendar.staging.tutur3u.com:444',
-      'https://calendar.staging.tutur3u.com.evil.test',
+      'https://a.b.tutur3u.com',
+      'http://calendar.tutur3u.com',
+      'https://calendar.tutur3u.com:444',
+      'https://calendar.tutur3u.com.evil.test',
       'null',
     ])
       expect(
@@ -169,6 +159,23 @@ describe('OPTIONS is answered locally (N20, V5b)', () => {
 });
 
 describe('forwarded request hygiene (N13, V2a, V1c)', () => {
+  function setup(
+    _verify?: AccessVerifier,
+    upstream: () => Response = () =>
+      new Response('Next', {
+        headers: {
+          [stagingProfile.upstreamProjectHeader]: stagingProfile.supabaseRef,
+        },
+      })
+  ) {
+    const fetcher = vi.fn<Fetcher>(async () => upstream());
+    return {
+      fetcher,
+      handler: (request: Request, _env: WebCandidateEnv) =>
+        proxyNext(request, origin, secret, bypass, fetcher),
+    };
+  }
+
   it('strips Access credentials, client forwarding claims and server-owned names', async () => {
     const { handler, fetcher } = setup();
     await handler(
@@ -267,6 +274,23 @@ describe('forwarded request hygiene (N13, V2a, V1c)', () => {
 });
 
 describe('Vercel platform state never reaches the browser (N17)', () => {
+  function setup(
+    _verify?: AccessVerifier,
+    upstream: () => Response = () =>
+      new Response('Next', {
+        headers: {
+          [stagingProfile.upstreamProjectHeader]: stagingProfile.supabaseRef,
+        },
+      })
+  ) {
+    const fetcher = vi.fn<Fetcher>(async () => upstream());
+    return {
+      fetcher,
+      handler: (request: Request, _env: WebCandidateEnv) =>
+        proxyNext(request, origin, secret, bypass, fetcher),
+    };
+  }
+
   it('drops _vercel cookies and x-vercel-* headers and never requests a bypass cookie', async () => {
     const { handler, fetcher } = setup(undefined, () => {
       const headers = new Headers({

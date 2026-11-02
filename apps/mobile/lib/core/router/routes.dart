@@ -52,6 +52,7 @@ abstract final class Routes {
   static const mastermindInsights = '/mastermind/insights';
   static const mastermindWorkLane = '/mastermind/work/lane/:laneId';
   static const mastermindInboxItem = '/mastermind/inbox/item/:itemId';
+  static const mastermindIrisDevices = '/mastermind/iris/devices';
   static const mastermindInboxDecision =
       '/mastermind/inbox/decision/:decisionId';
   static const mastermindInsightsTable =

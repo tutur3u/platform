@@ -25,11 +25,9 @@ Current source, rather than old deployment prose, defines the starting graph:
 | Simulation and workflow execution | Hive routes and optional local model origin | Bounded Worker/Queue/Workflow execution; no local inference dependency |
 | Static assets and research exports | App public assets and export handlers | Worker static assets; private R2 only where size/retention requires it |
 
-The interim maintenance Worker and DNS detachment are complete. The release
-owner also removed Hive's shared-tunnel ingress; only the main hostname and
-catch-all remain. This restores an explicit maintenance response, not the Hive
-application. Incident chronology and exact resource identities stay in the
-private coordination record. Source execution/deployed app identity and data
+An interim maintenance response is in place. It restores an explicit maintenance
+response, not the Hive application. Chronology and exact resource identities
+stay in the private coordination record. Source execution/deployed app identity and data
 freshness still require the authorized data owner's evidence.
 
 ## Product decision: an interim application milestone
@@ -223,11 +221,11 @@ runtime policy, build restrictions and source/data-owner custody.
 4. Take a Hive-only promotion window with the integration/data owners; preserve
    Finance's lane. Fence writers, apply final delta and verify reconciliation.
    Route only Hive to the accepted Worker; retain the maintenance script and
-   captured DNS/tunnel states. No shared-zone wildcard or main-host change.
+   the captured routing state. No shared-zone wildcard or main-host change.
 5. If acceptance fails, switch Hive back to maintenance and stop new jobs using
    the durable fence. Preserve Cloudflare writes for reconciliation. Restore a
    previous working app only when data compatibility and writer authority are
-   proven; DNS reversal alone is insufficient once new writes are accepted.
+   proven; reverting routing alone is insufficient once new writes are accepted.
    Never roll back to an unverified down origin as a claim of restored service.
 6. Observe a finite owner-agreed window and record exact source/deployment,
    migration manifests, stop tests and customer-facing results. Retire old

@@ -47,7 +47,7 @@ describe('Calendar owner forwards and the Access service token', () => {
   it('attaches the service token only on the exact issuer origin', async () => {
     const { prepareOwnerRequest } = await load('staging');
     const prepared = prepareOwnerRequest(
-      forwarded('https://web.staging.tutur3u.com/api/v1/workspaces'),
+      forwarded('https://web.tutur3u.com/api/v1/workspaces'),
       env
     );
     expect(prepared).toBeInstanceOf(Request);
@@ -70,11 +70,11 @@ describe('Calendar owner forwards and the Access service token', () => {
 
   // V4: no prefix, suffix, scheme or port lookalike receives the token.
   it.each([
-    'https://web.staging.tutur3u.com.evil.invalid/api/x',
-    'https://evil.web.staging.tutur3u.com/api/x',
-    'http://web.staging.tutur3u.com/api/x',
-    'https://web.staging.tutur3u.com:8443/api/x',
-    'https://tasks.staging.tutur3u.com/api/x',
+    'https://web.tutur3u.com.evil.invalid/api/x',
+    'https://evil.web.tutur3u.com/api/x',
+    'http://web.tutur3u.com/api/x',
+    'https://web.tutur3u.com:8443/api/x',
+    'https://tasks.tutur3u.com/api/x',
     'https://tuturuuu.com/api/x',
   ])('sends no token to %s', async (url) => {
     const { prepareOwnerRequest } = await load('staging');
@@ -91,7 +91,7 @@ describe('Calendar owner forwards and the Access service token', () => {
   it('refuses to attach the token to a redirect-following request', async () => {
     const { prepareOwnerRequest } = await load('staging');
     const result = prepareOwnerRequest(
-      forwarded('https://web.staging.tutur3u.com/api/x', {
+      forwarded('https://web.tutur3u.com/api/x', {
         redirect: 'follow',
       }),
       env
@@ -103,7 +103,7 @@ describe('Calendar owner forwards and the Access service token', () => {
   it('fails closed without contacting the issuer when the token is missing', async () => {
     const { fetchOwner } = await load('staging');
     const response = await fetchOwner(
-      forwarded('https://web.staging.tutur3u.com/api/x'),
+      forwarded('https://web.tutur3u.com/api/x'),
       { ASSETS: env.ASSETS, CF_ACCESS_CLIENT_ID: token.CF_ACCESS_CLIENT_ID }
     );
     expect(response.status).toBe(503);
@@ -120,7 +120,7 @@ describe('Calendar owner forwards and the Access service token', () => {
     );
     const { fetchOwner } = await load('staging');
     const response = await fetchOwner(
-      forwarded('https://web.staging.tutur3u.com/api/x'),
+      forwarded('https://web.tutur3u.com/api/x'),
       env
     );
     expect(response.status).toBe(302);
@@ -129,7 +129,7 @@ describe('Calendar owner forwards and the Access service token', () => {
     );
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     const sent = fetchSpy.mock.calls[0]?.[0] as Request;
-    expect(new URL(sent.url).origin).toBe('https://web.staging.tutur3u.com');
+    expect(new URL(sent.url).origin).toBe('https://web.tutur3u.com');
     expect(sent.redirect).toBe('manual');
     expect(response.headers.get('cf-access-client-secret')).toBeNull();
   });
@@ -137,7 +137,7 @@ describe('Calendar owner forwards and the Access service token', () => {
   it('production strips Access credentials and never adds a token', async () => {
     const { prepareOwnerRequest } = await load('production');
     const request = prepareOwnerRequest(
-      forwarded('https://web.staging.tutur3u.com/api/x'),
+      forwarded('https://web.tutur3u.com/api/x'),
       env
     ) as Request;
     expect(request.headers.get('cf-access-client-id')).toBeNull();
