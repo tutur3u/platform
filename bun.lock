@@ -1676,6 +1676,13 @@
         "wrangler": "4.151.2",
       },
     },
+    "apps/status-api": {
+      "name": "@tuturuuu/status-api",
+      "devDependencies": {
+        "@types/bun": "^1.4.4",
+        "typescript": "7.0.2",
+      },
+    },
     "apps/storage-unzip-proxy": {
       "name": "@tuturuuu/storage-unzip-proxy",
       "dependencies": {
@@ -5563,6 +5570,8 @@
     "@tuturuuu/sso": ["@tuturuuu/sso@workspace:packages/sso"],
 
     "@tuturuuu/start-bridge": ["@tuturuuu/start-bridge@workspace:packages/start-bridge"],
+
+    "@tuturuuu/status-api": ["@tuturuuu/status-api@workspace:apps/status-api"],
 
     "@tuturuuu/storage-core": ["@tuturuuu/storage-core@workspace:packages/storage-core"],
 
