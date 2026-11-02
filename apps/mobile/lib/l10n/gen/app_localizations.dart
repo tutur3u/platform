@@ -8263,6 +8263,12 @@ abstract class AppLocalizations {
   /// **'Habits'**
   String get habitsTitle;
 
+  /// No description provided for @habitsOfflineUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get habitsOfflineUnavailable;
+
   /// No description provided for @habitsTodayLabel.
   ///
   /// In en, this message translates to:
@@ -8442,6 +8448,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Calendar'**
   String get homeSectionCalendar;
+
+  /// No description provided for @homeNotAvailableOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get homeNotAvailableOffline;
 
   /// No description provided for @homeSectionLoadFailed.
   ///
@@ -21186,6 +21198,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Timer'**
   String get timerTitle;
+
+  /// No description provided for @timerOfflineUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get timerOfflineUnavailable;
 
   /// No description provided for @timerToday.
   ///

@@ -30,6 +30,9 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
+          # History stays (merge-base/diff/show of base SHAs); blobs are fetched
+          # lazily. Self-hosted runs persist no credentials, so keep a full fetch.
+          filter: ${{ runner.environment != 'self-hosted' && 'blob:none' || '' }}
           clean: true
           persist-credentials: ${{ runner.environment != 'self-hosted' }}
       - name: Isolate persistent runner state
@@ -167,6 +170,9 @@ jobs:
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
+          # History stays (merge-base/diff/show of base SHAs); blobs are fetched
+          # lazily. Self-hosted runs persist no credentials, so keep a full fetch.
+          filter: ${{ runner.environment != 'self-hosted' && 'blob:none' || '' }}
           clean: true
           persist-credentials: ${{ runner.environment != 'self-hosted' }}
       - name: Isolate persistent runner state

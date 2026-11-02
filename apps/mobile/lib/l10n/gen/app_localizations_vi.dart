@@ -4290,6 +4290,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get habitsTitle => 'Thói quen';
 
   @override
+  String get habitsOfflineUnavailable => 'Không khả dụng ngoại tuyến';
+
+  @override
   String get habitsTodayLabel => 'Hôm nay';
 
   @override
@@ -4384,6 +4387,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get homeSectionCalendar => 'Lịch';
+
+  @override
+  String get homeNotAvailableOffline => 'Không khả dụng khi ngoại tuyến';
 
   @override
   String get homeSectionLoadFailed => 'Kéo xuống để thử lại.';
@@ -11087,6 +11093,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get timerTitle => 'Bấm giờ';
+
+  @override
+  String get timerOfflineUnavailable => 'Không khả dụng ngoại tuyến';
 
   @override
   String get timerToday => 'Hôm nay';
