@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { HeatmapOverlay } from '../components/heatmap-overlay';

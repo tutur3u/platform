@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { cleanup, render, screen } from '@testing-library/react';
 import { useCalendarDayZone } from '@tuturuuu/ui/hooks/use-calendar-day-zone';

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { createMemoryHistory, RouterProvider } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';

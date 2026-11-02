@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { type ReactNode, useState } from 'react';
