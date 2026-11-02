@@ -20,6 +20,11 @@ describe('BoardPlanView sprints', () => {
   };
   const card = (id: string) =>
     screen.getByRole('article', { name: `Task ${id}` });
+  // The sprint tag above a card, not the sprint menu's heading.
+  const tags = (id: string, name: string) =>
+    within(card(id))
+      .queryAllByText(name)
+      .filter((node) => !node.closest('[role="menu"]'));
 
   it('shows open tasks in no sprint as ghosts in the backlog', async () => {
     renderPlan({ sprints: [planned], unplanned: ['t4'] });
@@ -39,11 +44,11 @@ describe('BoardPlanView sprints', () => {
     await waitFor(async () => expect(await backlogIds()).toEqual(['t1', 't4']));
     expect(card('t4')).not.toHaveAttribute('data-plan-ghost');
     // Only tasks from another sprint name their sprint.
-    expect(within(card('t4')).getByText('Sprint 14')).toBeInTheDocument();
+    expect(tags('t4', 'Sprint 14')).toHaveLength(1);
     expect(within(card('t4')).getByText('Task t4').dataset.assignees).toBe(
       'false'
     );
-    expect(within(card('t1')).queryByText('Sprint 15')).toBeNull();
+    expect(tags('t1', 'Sprint 15')).toHaveLength(0);
 
     // Giving it an owner here plans it into the shown sprint first.
     await assignFromBacklog('t4', 'Binh');
@@ -125,6 +130,18 @@ describe('BoardPlanView sprints', () => {
         assignee_ids: ['u-binh'],
       });
     });
+  });
+
+  it('offers the sprint menu on backlog cards too', async () => {
+    api.unplan.mockResolvedValue({ moved: 1 });
+    renderPlan({ sprints: [active, planned] });
+    await screen.findByText('Task t1');
+    const backlog = within(screen.getByRole('region', { name: 'backlog' }));
+    const row = within(backlog.getByRole('article', { name: 'Task t1' }));
+    fireEvent.click(row.getByRole('menuitem', { name: 'remove_from_sprint' }));
+    await waitFor(() =>
+      expect(api.unplan).toHaveBeenCalledWith('ws-1', 'board-1', ['t1'])
+    );
   });
 
   it('takes a task out of every sprint, or on to a new sprint', async () => {
@@ -238,8 +255,8 @@ describe('BoardPlanView sprints', () => {
     fireEvent.click(screen.getByRole('menuitemradio', { name: /all_sprints/ }));
     await waitFor(async () => expect(await backlogIds()).toEqual(['t1', 't4']));
     // Each card names its sprint.
-    expect(within(card('t4')).getByText('Sprint 14')).toBeInTheDocument();
-    expect(within(card('t1')).getByText('Sprint 15')).toBeInTheDocument();
+    expect(tags('t4', 'Sprint 14')).toHaveLength(1);
+    expect(tags('t1', 'Sprint 15')).toHaveLength(1);
     expect(screen.queryByText('Task t3')).not.toBeInTheDocument();
 
     // A task created here sits in no sprint.

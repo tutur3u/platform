@@ -268,6 +268,7 @@ export function BoardPlanView({
         onDragEnd={dragEnd}
         onDragOver={dragOver(BACKLOG_DROP)}
         onDrop={drop(null)}
+        renderSprintMenu={renderSprintMenu}
         sprintTag={sprintTag}
         tasks={backlog}
         workspaceId={wsId}

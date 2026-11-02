@@ -7,7 +7,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type DragEvent, useMemo, useState } from 'react';
+import { type DragEvent, type ReactNode, useMemo, useState } from 'react';
 import {
   TaskCard,
   type TaskCardProps,
@@ -45,6 +45,8 @@ interface PlanBacklogProps {
   onDragOver: (event: DragEvent) => void;
   onDrop: (event: DragEvent) => void;
   /** The task's sprint, when it is not the shown one. */
+  /** Moves a task between sprints; absent for people who cannot plan. */
+  renderSprintMenu?: (task: Task) => ReactNode;
   sprintTag: (task: Task) => BoardSprint | null;
   tasks: Task[];
   workspaceId: string;
@@ -68,6 +70,7 @@ export function PlanBacklog({
   onDragEnd,
   onDragOver,
   onDrop,
+  renderSprintMenu,
   sprintTag,
   tasks,
   workspaceId,
@@ -170,6 +173,7 @@ export function PlanBacklog({
         {visible.map((task) => {
           const ghost = isGhost(task);
           const tag = ghost ? null : sprintTag(task);
+          const sprintMenu = renderSprintMenu?.(task);
           return (
             // Native drag plans the task onto a person; the card is the
             // Board's own, with its sortable drag off.
@@ -186,10 +190,17 @@ export function PlanBacklog({
                 setPlanCardDragImage(event);
               }}
             >
-              {ghost || tag ? (
-                <p className="flex px-1 pb-1 text-muted-foreground text-xs">
-                  {tag ? <SprintLabel sprint={tag} /> : t('not_in_sprint')}
-                </p>
+              {ghost || tag || sprintMenu ? (
+                <div className="flex items-center gap-2 px-1 pb-1 text-muted-foreground text-xs">
+                  <span className="min-w-0 flex-1">
+                    {tag ? (
+                      <SprintLabel sprint={tag} />
+                    ) : ghost ? (
+                      t('not_in_sprint')
+                    ) : null}
+                  </span>
+                  {sprintMenu}
+                </div>
               ) : null}
               <TaskCard
                 {...boardCard}
