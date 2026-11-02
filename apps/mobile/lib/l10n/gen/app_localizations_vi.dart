@@ -15048,4 +15048,23 @@ class AppLocalizationsVi extends AppLocalizations {
   String offlineWaitingRetry(String time) {
     return 'Chờ thử lại lúc $time';
   }
+
+  @override
+  String get offlineStatusPreparing => 'Đang chuẩn bị';
+
+  @override
+  String get offlineStatusReady => 'Sẵn sàng ngoại tuyến';
+
+  @override
+  String get offlineStatusNeverSynced => 'Chưa đồng bộ';
+
+  @override
+  String offlineStatusLastSynced(String time) {
+    return 'Đồng bộ lần cuối: $time';
+  }
+
+  @override
+  String offlineStatusSummary(int ready, int total) {
+    return '$ready / $total ứng dụng sẵn sàng ngoại tuyến';
+  }
 }

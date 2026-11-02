@@ -7194,5 +7194,27 @@
   "mastermindInboxTierJump": "Scrolls to this section",
   "offlineWaitingWifi": "Waiting for Wi-Fi",
   "offlineWaitingRetry": "Waiting to retry at {time}",
-  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}}
+  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}},
+  "offlineStatusPreparing": "Preparing",
+  "offlineStatusReady": "Ready offline",
+  "offlineStatusNeverSynced": "Never synced",
+  "offlineStatusLastSynced": "Last synced: {time}",
+  "offlineStatusSummary": "{ready} of {total} apps ready offline",
+  "@offlineStatusLastSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@offlineStatusSummary": {
+    "placeholders": {
+      "ready": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }

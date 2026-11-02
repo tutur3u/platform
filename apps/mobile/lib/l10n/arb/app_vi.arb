@@ -6668,5 +6668,27 @@
   "mastermindInboxTierJump": "Cuộn tới mục này",
   "offlineWaitingWifi": "Đang chờ Wi-Fi",
   "offlineWaitingRetry": "Chờ thử lại lúc {time}",
-  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}}
+  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}},
+  "offlineStatusPreparing": "Đang chuẩn bị",
+  "offlineStatusReady": "Sẵn sàng ngoại tuyến",
+  "offlineStatusNeverSynced": "Chưa đồng bộ",
+  "offlineStatusLastSynced": "Đồng bộ lần cuối: {time}",
+  "offlineStatusSummary": "{ready} / {total} ứng dụng sẵn sàng ngoại tuyến",
+  "@offlineStatusLastSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@offlineStatusSummary": {
+    "placeholders": {
+      "ready": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }
