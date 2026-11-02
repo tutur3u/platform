@@ -108,6 +108,7 @@ describe('center teacher catalog', () => {
       ],
       count: 25,
       tutorsOnlyLocked: false,
+      tutorGroupConfigMissing: false,
       page: 2,
       pageSize: 20,
       totalPages: 2,
@@ -231,21 +232,24 @@ describe('center teacher catalog', () => {
     ]);
     expect(tutorQuery.in).toHaveBeenCalledWith('group_id', [tutorGroup]);
   });
-  it('locks the picker to configured tutors when the workspace flag is ON', async () => {
-    mocks.flag.mockResolvedValue(true);
-    policyRows = serializeTutoringPolicyConfigRows({
-      ...STANDARD_TUTORING_POLICY,
-      tutorGroupIds: [tutorGroup],
-    });
-    tutorRows = [{ user_id: 'tutor' }];
-    const body = await (await get('?tutorsOnly=true')).json();
-    expect(body.tutorsOnlyLocked).toBe(true);
-    expect(query.in).toHaveBeenCalledWith('id', ['tutor']);
-    expect(mocks.flag).toHaveBeenCalledWith(
-      'verified-center',
-      'tutoring_picker_tutors_only'
-    );
-  });
+  it.each(['', '?tutorsOnly=true'])(
+    'locks the picker to configured tutors when the workspace flag is ON (%s)',
+    async (search) => {
+      mocks.flag.mockResolvedValue(true);
+      policyRows = serializeTutoringPolicyConfigRows({
+        ...STANDARD_TUTORING_POLICY,
+        tutorGroupIds: [tutorGroup],
+      });
+      tutorRows = [{ user_id: 'tutor' }];
+      const body = await (await get(search)).json();
+      expect(body.tutorsOnlyLocked).toBe(true);
+      expect(query.in).toHaveBeenCalledWith('id', ['tutor']);
+      expect(mocks.flag).toHaveBeenCalledWith(
+        'verified-center',
+        'tutoring_picker_tutors_only'
+      );
+    }
+  );
   it.each([false, true])(
     'flag %s retains the explicit all-teacher catalog for plan labels',
     async (enabled) => {
@@ -268,6 +272,7 @@ describe('center teacher catalog', () => {
         );
       const body = await (await get('?tutorsOnly=true')).json();
       expect(body.tutorsOnlyLocked).toBe(false);
+      expect(body.tutorGroupConfigMissing).toBe(true);
       expect(body.data).toHaveLength(1);
       expect(query.in).not.toHaveBeenCalled();
     }
@@ -321,4 +326,12 @@ describe('center teacher catalog', () => {
     });
     expect((await get()).status).toBe(500);
   });
+});
+
+it('filters a selected teacher by id before pagination', async () => {
+  await get('?teacherId=11111111-1111-4111-8111-111111111111&tutorsOnly=true');
+  expect(query.eq).toHaveBeenCalledWith(
+    'id',
+    '11111111-1111-4111-8111-111111111111'
+  );
 });

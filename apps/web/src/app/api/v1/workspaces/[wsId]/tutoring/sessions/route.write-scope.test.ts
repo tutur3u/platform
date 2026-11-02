@@ -20,6 +20,9 @@ const mocks = vi.hoisted(() => ({
   teachers: vi.fn(),
 }));
 
+vi.mock('@tuturuuu/utils/feature-flags/core', () => ({
+  getFeatureFlag: async () => false,
+}));
 vi.mock('next/server', () => ({
   connection: async () => {},
   NextResponse: { json: Response.json },

@@ -352,12 +352,14 @@ export async function listTutoringTeachers(
     pageSize?: number;
     q?: string;
     tutorsOnly?: boolean;
+    teacherId?: string;
   } = {},
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<{
     data: TutoringTeacher[];
     tutorsOnlyLocked: boolean;
+    tutorGroupConfigMissing: boolean;
     count: number;
     page: number;
     pageSize: number;

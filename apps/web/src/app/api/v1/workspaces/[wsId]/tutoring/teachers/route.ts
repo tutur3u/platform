@@ -19,6 +19,7 @@ const querySchema = z.object({
   page: z.coerce.number().int().min(1).max(1000000).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   q: z.string().trim().max(200).default(''),
+  teacherId: z.uuid().optional(),
   tutorsOnly: z
     .enum(['true', 'false'])
     .optional()
@@ -45,7 +46,7 @@ export async function GET(
   );
   if (!parsed.success)
     return NextResponse.json({ message: 'Invalid query' }, { status: 400 });
-  const { page, pageSize, q, tutorsOnly } = parsed.data;
+  const { page, pageSize, q, tutorsOnly, teacherId } = parsed.data;
   const sbAdmin = await createAdminClient();
   const scope = await resolveTutoringReadScope({ request, access, sbAdmin });
   if (!scope.allowed)
@@ -77,6 +78,7 @@ export async function GET(
   const tutorsOnlyLocked = tutorsOnlyEnabled && tutorGroupIds.length > 0;
   let query = workspaceTeachersQuery(sbAdmin, normalizedWsId);
   if (scope.teacherId) query = query.eq('id', scope.teacherId);
+  if (teacherId) query = query.eq('id', teacherId);
   if (
     (tutorsOnly ?? tutorGroupIds.length > 0) &&
     !(tutorsOnlyEnabled && tutorGroupIds.length === 0)
@@ -131,6 +133,7 @@ export async function GET(
         })
       ),
       tutorsOnlyLocked,
+      tutorGroupConfigMissing: tutorsOnlyEnabled && tutorGroupIds.length === 0,
       count: count ?? 0,
       page,
       pageSize,
