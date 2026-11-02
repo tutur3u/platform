@@ -154,6 +154,8 @@ class CalendarCubit extends Cubit<CalendarState> {
     _cacheEpoch++;
   }
 
+  static CacheKey offlineSummaryKey(String wsId) => _cacheKey(wsId);
+
   static Future<void> prewarm({
     required CalendarRepository calendarRepository,
     required String wsId,

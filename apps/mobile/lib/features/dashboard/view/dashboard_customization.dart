@@ -96,7 +96,12 @@ extension _DashboardCustomization on _DashboardViewState {
     return [
       for (final id in layout.arranged(available))
         if (!layout.hidden.contains(id))
-          KeyedSubtree(key: ValueKey('home-widget-$id'), child: cards[id]!),
+          KeyedSubtree(
+            key: ValueKey('home-widget-$id'),
+            child: const {'mail', 'meet', 'finance', 'notes'}.contains(id)
+                ? HomeOnlineCard(child: cards[id]!)
+                : cards[id]!,
+          ),
     ];
   }
 

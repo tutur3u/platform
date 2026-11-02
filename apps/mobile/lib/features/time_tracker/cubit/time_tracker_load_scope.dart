@@ -117,7 +117,7 @@ extension _TimerScopedLoading on TimeTrackerCubit {
       final anchorDate = _currentHistoryAnchorDate();
       final timezone = await getCurrentTimezoneIdentifier();
       if (!scope.active) return;
-      final periodRange = _historyPeriodRange(
+      final periodRange = timeTrackerHistoryPeriod(
         state.historyViewMode,
         anchorDate,
         firstDayOfWeek: effectiveFirstDayOfWeek,
