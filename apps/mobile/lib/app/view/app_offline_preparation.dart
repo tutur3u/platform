@@ -2,24 +2,32 @@ part of 'app.dart';
 
 extension _AppOfflinePreparation on _AppState {
   void _registerOfflinePreparation() {
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    _mobileFlags.setForeground(
+      foreground: lifecycle == null || lifecycle == AppLifecycleState.resumed,
+    );
     OfflinePreparationCoordinator.instance
+      ..registry = OfflinePreparerRegistry(isEnabled: _mobileFlags.enabled)
       ..verifyRetention = OfflineDownloadManifest.verifyScope
       ..verifyProductRetention = OfflineDownloadManifest.verifyProduct
-      ..register(
+      ..registry.register(
         'finance',
+        null,
         (wsId) =>
             _prepareWithPermissions(wsId, _financeRepository.prepareOffline),
       )
-      ..register(
+      ..registry.register(
         'tasks',
+        null,
         (wsId) => _prepareWithPermissions(wsId, _taskRepository.prepareOffline),
       )
-      ..register(
+      ..registry.register(
         'calendar',
+        null,
         (wsId) =>
             _prepareWithPermissions(wsId, _calendarRepository.prepareOffline),
       )
-      ..register('inventory', (workspaceId) async {
+      ..registry.register('inventory', null, (workspaceId) async {
         if (!await _inventoryAccessRepository.isInventoryEnabled(workspaceId)) {
           throw const OfflinePreparationUnavailable();
         }
@@ -93,6 +101,16 @@ extension _AppOfflinePreparation on _AppState {
     final workspaceId = resetWorkspace
         ? null
         : _workspaceCubit.state.currentWorkspace?.id;
+    unawaited(
+      _mobileFlags
+          .setScope(
+            userId: auth.status == AuthStatus.authenticated ? userId : null,
+            workspaceId: workspaceId,
+          )
+          .catchError((Object error) {
+            debugPrint('Mobile flags cache scope reset failed: $error');
+          }),
+    );
     final coordinator = OfflinePreparationCoordinator.instance;
     unawaited(
       _calendarSettingsCubit.load(

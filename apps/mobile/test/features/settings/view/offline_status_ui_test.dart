@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -7,6 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/core/feature_flags/mobile_flags.dart';
 import 'package:mobile/features/settings/view/offline_preparation_section.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
@@ -125,17 +127,25 @@ void main() {
         },
       );
       addTearDown(workspace.close);
+      final flags = MobileFlags(networkEvents: const Stream.empty())
+        ..debugOverride = {
+          MobileFlag.mobileOffline: true,
+          MobileFlag.offlineStatusUi: enabled,
+        };
+      addTearDown(flags.close);
       await tester.pumpThemedHome(
         Material(
           child: SingleChildScrollView(
-            child: OfflinePreparationSection(
-              coordinator: coordinator,
-              offlineStatusUiEnabled: enabled,
-            ),
+            child: OfflinePreparationSection(coordinator: coordinator),
           ),
         ),
-        wrap: (app) =>
-            BlocProvider<WorkspaceCubit>.value(value: workspace, child: app),
+        wrap: (app) => BlocProvider<MobileFlags>.value(
+          value: flags,
+          child: BlocProvider<WorkspaceCubit>.value(
+            value: workspace,
+            child: app,
+          ),
+        ),
       );
       await tester.pump();
       expect(

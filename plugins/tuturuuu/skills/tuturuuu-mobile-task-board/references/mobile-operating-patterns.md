@@ -165,6 +165,10 @@ when the local checkout lacks package configuration.
 
 ### Offline downloads
 
+For MobileFlags polling, reconnect, logout, cache retention, and flag-gated
+preparer registration, use the [mobile rollout contract](../../../../../apps/docs/platform/applications/mobile.mdx#offline-rollout-flags).
+Its linked reader tests cover scoped deletion, late responses, and disk retention.
+
 Use the product decisions in
 `apps/docs/platform/features/mobile-workspace-tools.mdx` for offline preparation,
 local search parity, and repeated dock taps. Download all must remain explicit,

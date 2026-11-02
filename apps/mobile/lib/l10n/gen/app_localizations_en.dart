@@ -12299,6 +12299,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offlineTechnicalDetails => 'Technical details';
 
   @override
+  String get offlineWaitingWifi => 'Waiting for Wi-Fi';
+
+  @override
+  String offlineWaitingRetry(String time) {
+    return 'Waiting to retry at $time';
+  }
+
+  @override
+  String get offlineStatusPreparing => 'Preparing';
+
+  @override
+  String get offlineStatusReady => 'Ready offline';
+
+  @override
+  String get offlineStatusNeverSynced => 'Never synced';
+
+  @override
+  String offlineStatusLastSynced(String time) {
+    return 'Last synced: $time';
+  }
+
+  @override
+  String offlineStatusSummary(int ready, int total) {
+    return '$ready of $total apps ready offline';
+  }
+
+  @override
   String get mailSettingsReadingGroup => 'Reading';
 
   @override
@@ -15211,29 +15238,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindInboxTierJump => 'Scrolls to this section';
 
   @override
-  String get settingsPushSummary => 'Get alerts on this device';
-
-  @override
-  String get settingsTelemetrySummary => 'Help improve the app';
-
-  @override
-  String get settingsStorageSummary => 'Manage data on this device';
-
-  @override
-  String get settingsLearnMore => 'Learn more';
-
-  @override
-  String get assistantVoiceMessagePrompt => 'Listen to this voice message and respond.';
-
-  @override
-  String get offlineWaitingWifi => 'Waiting for Wi-Fi';
-
-  @override
-  String offlineWaitingRetry(String time) {
-    return 'Waiting to retry at $time';
-  }
-
-  @override
   String get mastermindUndoWindow => 'Undo window';
 
   @override
@@ -15248,21 +15252,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindReplySendNow => 'Send now';
 
   @override
-  String get offlineStatusPreparing => 'Preparing';
+  String get settingsPushSummary => 'Get alerts on this device';
 
   @override
-  String get offlineStatusReady => 'Ready offline';
+  String get settingsTelemetrySummary => 'Help improve the app';
 
   @override
-  String get offlineStatusNeverSynced => 'Never synced';
+  String get settingsStorageSummary => 'Manage data on this device';
 
   @override
-  String offlineStatusLastSynced(String time) {
-    return 'Last synced: $time';
-  }
+  String get settingsLearnMore => 'Learn more';
 
   @override
-  String offlineStatusSummary(int ready, int total) {
-    return '$ready of $total apps ready offline';
-  }
+  String get assistantVoiceMessagePrompt => 'Listen to this voice message and respond.';
 }

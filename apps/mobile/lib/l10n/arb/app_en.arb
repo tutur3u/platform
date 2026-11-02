@@ -5337,6 +5337,37 @@
   "offlineManageData": "Manage data",
   "offlineEvictRowDescription": "Frees space. Data downloads again when you are online.",
   "offlineTechnicalDetails": "Technical details",
+  "offlineWaitingWifi": "Waiting for Wi-Fi",
+  "offlineWaitingRetry": "Waiting to retry at {time}",
+  "@offlineWaitingRetry": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineStatusPreparing": "Preparing",
+  "offlineStatusReady": "Ready offline",
+  "offlineStatusNeverSynced": "Never synced",
+  "offlineStatusLastSynced": "Last synced: {time}",
+  "offlineStatusSummary": "{ready} of {total} apps ready offline",
+  "@offlineStatusLastSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@offlineStatusSummary": {
+    "placeholders": {
+      "ready": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "mailSettingsReadingGroup": "Reading",
   "mailSettingsComposeGroup": "Sender and signature",
   "mailSettingsAiGroup": "AI drafts",
@@ -7192,20 +7223,6 @@
   },
   "mastermindInboxTierShowLess": "Show less",
   "mastermindInboxTierJump": "Scrolls to this section",
-  "settingsPushSummary": "Get alerts on this device",
-  "settingsTelemetrySummary": "Help improve the app",
-  "settingsStorageSummary": "Manage data on this device",
-  "settingsLearnMore": "Learn more",
-  "assistantVoiceMessagePrompt": "Listen to this voice message and respond.",
-  "offlineWaitingWifi": "Waiting for Wi-Fi",
-  "offlineWaitingRetry": "Waiting to retry at {time}",
-  "@offlineWaitingRetry": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
   "mastermindUndoWindow": "Undo window",
   "mastermindUndoOff": "Off",
   "mastermindUndoSeconds": "{seconds} s",
@@ -7217,26 +7234,9 @@
       }
     }
   },
-  "offlineStatusPreparing": "Preparing",
-  "offlineStatusReady": "Ready offline",
-  "offlineStatusNeverSynced": "Never synced",
-  "offlineStatusLastSynced": "Last synced: {time}",
-  "offlineStatusSummary": "{ready} of {total} apps ready offline",
-  "@offlineStatusLastSynced": {
-    "placeholders": {
-      "time": {
-        "type": "String"
-      }
-    }
-  },
-  "@offlineStatusSummary": {
-    "placeholders": {
-      "ready": {
-        "type": "int"
-      },
-      "total": {
-        "type": "int"
-      }
-    }
-  }
+  "settingsPushSummary": "Get alerts on this device",
+  "settingsTelemetrySummary": "Help improve the app",
+  "settingsStorageSummary": "Manage data on this device",
+  "settingsLearnMore": "Learn more",
+  "assistantVoiceMessagePrompt": "Listen to this voice message and respond."
 }

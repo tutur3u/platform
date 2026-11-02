@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/cache/download_network_consent.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/core/feature_flags/mobile_flags.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/data/sources/api_client.dart';
@@ -18,14 +19,13 @@ import 'package:mobile/l10n/l10n.dart';
 class OfflinePreparationSection extends StatefulWidget {
   const OfflinePreparationSection({
     this.coordinator,
-    this.offlineStatusUiEnabled = false,
+    this.offlineStatusUiEnabled,
     this.productId,
     this.showModuleDetails = false,
     this.connectivity,
     super.key,
   });
-  // TODO(MONA-24): Inject MobileFlags.isOn(FeatureFlag.offline_status_ui).
-  final bool offlineStatusUiEnabled;
+  final bool? offlineStatusUiEnabled;
   final String? productId;
   final bool showModuleDetails;
 
@@ -120,6 +120,11 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final offlineStatusUiEnabled =
+        widget.offlineStatusUiEnabled ??
+        context.select<MobileFlags?, bool>(
+          (flags) => flags?.enabled(MobileFlag.offlineStatusUi) ?? false,
+        );
     return ValueListenableBuilder<OfflinePreparationState>(
       valueListenable: _coordinator.state,
       builder: (context, state, _) {
@@ -158,7 +163,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                 ),
               ],
             ),
-            if (widget.offlineStatusUiEnabled && widget.productId == null)
+            if (offlineStatusUiEnabled && widget.productId == null)
               Semantics(
                 key: const ValueKey('offline-status-summary'),
                 liveRegion: true,
@@ -242,7 +247,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                 for (final id in ids)
                   _OfflineProductRow(
                     id: id,
-                    enhanced: widget.offlineStatusUiEnabled,
+                    enhanced: offlineStatusUiEnabled,
                     product:
                         state.products[id] ?? const OfflineProductPreparation(),
                     running: state.running || servicePaused,
