@@ -2230,3 +2230,14 @@ session, never a query parameter.
 Regression evidence: `packages/feature-flags/src/index.test.ts` covers defaults
 and the master switch; the colocated mobile feature-flags route tests cover
 session authentication, membership, invalid IDs and conditional responses.
+
+### Documents offline list preparation
+
+With both `mobile_offline` and `offline_read_documents` enabled (default OFF),
+explicit preparation stores the default first page (30 rows) in the same
+`documents.list` cache read by Documents. It retains only id, name, visibility,
+and creation date; document bodies and files are excluded. Responses exceeding
+200 rows or 1 MiB are unavailable and publish no new snapshot. Search and later
+pages still require their own cached response. Existing list behavior is unchanged
+with the flag OFF. The Offline screen supplies localized availability and
+last-synced status. Regression: `documents_offline_preparation_test.dart`.

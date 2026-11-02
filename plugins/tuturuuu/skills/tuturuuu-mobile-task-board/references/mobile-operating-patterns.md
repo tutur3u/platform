@@ -179,6 +179,9 @@ challenges, and leave uncertain writes in review. Reuse ApiClient's preparation
 Zone so background work does not open captcha modals. Full downloads must use
 the same cache keys and payload shapes as normal reads; test first offline visits
 with normal UI page sizes rather than only the prepared request parameters.
+For Documents, prepare the default 30-row path and whitelist metadata fields;
+never retain list-response content as a substitute for a detail download.
+The preparer regression must reopen its snapshot through readThroughJson.
 
 Use shell titles rather than duplicate body titles. Put grouped section switches
 rightmost and auxiliary actions before them. Profile sections should adapt to
