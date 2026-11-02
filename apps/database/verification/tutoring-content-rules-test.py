@@ -42,7 +42,7 @@ class ContentRules(unittest.TestCase):
         create function public.has_workspace_permission(uuid,uuid,text) returns boolean language sql as $$select $3 = 'approve_reports'$$;
         create table public.user_feedbacks(id uuid,user_id uuid,group_id uuid,content text,require_attention boolean,created_at timestamptz);
         create table private.tutoring_weak_support_reviews(group_id uuid,student_user_id uuid,last_reviewed_at timestamptz,primary key(group_id,student_user_id));
-        create table public.notifications(id uuid default gen_random_uuid(), ws_id uuid,user_id uuid,type text,code text,title text,description text,scope text,entity_type text,entity_id text,data jsonb);
+        create table public.notifications(id uuid default gen_random_uuid(), ws_id uuid,user_id uuid,type text,code text,title text,description text,scope text,entity_type text,entity_id uuid,data jsonb);
         create table private.tutoring_notification_receipts(id uuid default gen_random_uuid(),kind text,group_id uuid,student_user_id uuid,review_cycle_started_at timestamptz,recipient_user_id uuid,notification_id uuid,created_at timestamptz default now(),tutoring_session_id uuid,
         constraint tutoring_notification_receipts_review_key unique(group_id,student_user_id,review_cycle_started_at,recipient_user_id),
         unique(tutoring_session_id,recipient_user_id));
@@ -77,6 +77,16 @@ class ContentRules(unittest.TestCase):
     def test_flag_off(self):
         self.sql('delete from public.workspace_configs')
         self.run_job(); self.count(0)
+
+    def test_flag_off_edits_inert(self):
+        self.sql("delete from public.workspace_configs; update public.user_feedbacks set content='edited'")
+        self.assertEqual(self.sql('select count(*) from private.tutoring_weak_support_reviews'), ['0'])
+
+    def test_ec_excluded(self):
+        self.sql("update public.workspace_user_groups set ws_id='42529372-c669-4833-bb32-2cab1f4ffd83'; update public.workspace_users set ws_id='42529372-c669-4833-bb32-2cab1f4ffd83'; update public.workspace_configs set ws_id='42529372-c669-4833-bb32-2cab1f4ffd83'; update public.user_feedbacks set content='edited'")
+        self.run_job()
+        self.assertEqual(self.sql('select count(*) from private.tutoring_weak_support_reviews'), ['0'])
+        self.count(0)
 
     def test_no_teacher(self):
         self.sql('delete from public.workspace_user_linked_users')

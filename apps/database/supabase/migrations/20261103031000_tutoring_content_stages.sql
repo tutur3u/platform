@@ -18,7 +18,7 @@ alter table private.tutoring_notification_receipts
 create function private.reset_tutoring_content_clock() returns trigger
 language plpgsql security definer set search_path = pg_catalog, pg_temp as $$
 begin
-  if new.group_id is not null and
+  if exists(select 1 from public.workspace_user_groups g join public.workspace_configs c on c.ws_id=g.ws_id and c.id='tutoring_content_rules' and c.value='true' where g.id=new.group_id and g.ws_id <> '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid) and
     (new.content is distinct from old.content or new.require_attention is distinct from old.require_attention) then
     insert into private.tutoring_weak_support_reviews(group_id,student_user_id,last_reviewed_at)
     values(new.group_id,new.user_id,clock_timestamp())
@@ -67,7 +67,7 @@ begin
     join public.workspace_users u on u.id=f.user_id and u.ws_id=g.ws_id
     join public.workspace_configs flag on flag.ws_id=g.ws_id
       and flag.id='tutoring_content_rules' and flag.value='true'
-    where f.require_attention
+    where g.ws_id <> '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid and f.require_attention
       and f.id>coalesce((select after_id from private.tutoring_content_scan_cursor), '00000000-0000-0000-0000-000000000000'::uuid)
       and exists(select 1 from public.workspace_user_groups_users m
         where m.group_id=f.group_id and m.user_id=f.user_id and m.role='STUDENT')
@@ -123,7 +123,7 @@ begin
         values(note.ws_id,target.user_id,'tutoring_weak_content_review_due','tutoring_weak_content_review_due',
           case when stage_name='n2' then 'Có cần thay đổi nội dung kèm không?' else 'Nội dung kèm chưa được cập nhật' end,
           case when stage_name='n2' then 'Review the learner’s tutoring content.' else 'Tutoring content remains unchanged after the teacher reminder.' end,
-          'workspace','user_group',note.group_id::text,jsonb_build_object('stage',stage_name,'studentUserId',note.user_id))
+          'workspace','user_group',note.group_id,jsonb_build_object('stage',stage_name,'studentUserId',note.user_id))
         returning id into notice_id;
       update private.tutoring_notification_receipts set notification_id=notice_id where id=receipt_id;
       sent := sent+1;
