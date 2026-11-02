@@ -105,6 +105,51 @@ export function getSprintProgress(
   };
 }
 
+/**
+ * Whether the Board view shows a task while its board runs sprints: tasks of
+ * the current sprint, and open tasks no open sprint holds yet (just created,
+ * moved onto the board, restored or reopened), which the database has already
+ * put in the current sprint, so they never vanish while the sprints refresh.
+ * Hidden: tasks waiting in another open sprint, and finished tasks from past
+ * sprints or from before sprints were on. A task created finished during the
+ * running sprint shows too.
+ */
+export function isTaskInCurrentSprintView(
+  task: TaskTiming & { id: string; created_at?: string | null },
+  sprints: readonly Pick<SprintLike, 'status' | 'tasks'>[],
+  current:
+    | (Pick<SprintLike, 'status' | 'tasks'> & { started_at?: string | null })
+    | null
+) {
+  if (!current) return true;
+  if (current.tasks.some((member) => member.task_id === task.id)) return true;
+  let inAnySprint = false;
+  for (const sprint of sprints) {
+    if (!sprint.tasks.some((member) => member.task_id === task.id)) continue;
+    if (isBoardSprintOpen(sprint)) return false;
+    inAnySprint = true;
+  }
+  if (!isTaskFinished(task)) return true;
+  if (inAnySprint || !current.started_at || !task.created_at) return false;
+  return Date.parse(task.created_at) >= Date.parse(current.started_at);
+}
+
+/**
+ * Progress from live task state where a task is loaded, else from the
+ * sprint's own record of it, so tasks on unloaded pages still count.
+ */
+export function getLoadedSprintProgress<T extends TaskTiming & { id: string }>(
+  sprint: { tasks: { task_id: string; done?: boolean }[] },
+  loadedTasks: ReadonlyMap<string, T>
+) {
+  return getSprintProgress(sprint, (taskId) => {
+    const loaded = loadedTasks.get(taskId);
+    return loaded
+      ? isTaskFinished(loaded)
+      : sprint.tasks.some((task) => task.task_id === taskId && task.done);
+  });
+}
+
 function parseDateOnly(value: string) {
   const [year, month, day] = value.slice(0, 10).split('-').map(Number);
   if (!year || !month || !day) return null;

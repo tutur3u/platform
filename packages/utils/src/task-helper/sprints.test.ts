@@ -4,10 +4,12 @@ import {
   formatSprintDateRange,
   getCurrentBoardSprint,
   getDaysUntilSprintEnd,
+  getLoadedSprintProgress,
   getPlanningBoardSprint,
   getSprintProgress,
   getTaskEffectiveDueDate,
   getTaskSprintHistory,
+  isTaskInCurrentSprintView,
   isTaskOverdueByOwnDate,
 } from './sprints';
 
@@ -112,5 +114,76 @@ describe('board sprint helpers', () => {
     expect(formatSprintDateRange(active, 'en')).toBe(
       '19 Oct 2026 - 30 Oct 2026'
     );
+  });
+
+  it('counts unloaded finished tasks from the sprint record and loaded ones live', () => {
+    const sprint = {
+      tasks: [
+        { task_id: 'loaded-open', done: true },
+        { task_id: 'loaded-done', done: false },
+        { task_id: 'unloaded-done', done: true },
+        { task_id: 'unloaded-open', done: false },
+      ],
+    };
+    const loaded = new Map([
+      ['loaded-open', { id: 'loaded-open', completed_at: null }],
+      ['loaded-done', { id: 'loaded-done', completed_at: '2026-10-28' }],
+    ]);
+    expect(getLoadedSprintProgress(sprint, loaded)).toMatchObject({
+      done: 2,
+      total: 4,
+    });
+  });
+
+  describe('isTaskInCurrentSprintView', () => {
+    const member = (task_id: string) => ({ task_id });
+    const current = {
+      status: 'active' as const,
+      started_at: '2026-10-27T09:00:00Z',
+      tasks: [member('in-current')],
+    };
+    const planned = { status: 'planned' as const, tasks: [member('waiting')] };
+    const past = { status: 'completed' as const, tasks: [member('past')] };
+    const sprints = [past, current, planned];
+    const view = (task: {
+      id: string;
+      completed_at?: string | null;
+      created_at?: string;
+    }) => isTaskInCurrentSprintView(task, sprints, current);
+
+    it('shows the current sprint and hides tasks waiting in the planned one', () => {
+      expect(view({ id: 'in-current' })).toBe(true);
+      expect(view({ id: 'waiting' })).toBe(false);
+    });
+
+    it('shows a new, moved, restored or reopened open task before the sprints refresh', () => {
+      expect(view({ id: 'brand-new' })).toBe(true);
+      expect(view({ id: 'past' })).toBe(true);
+    });
+
+    it('hides finished work from past sprints or from before sprints were on', () => {
+      expect(view({ id: 'past', completed_at: '2026-10-20' })).toBe(false);
+      expect(
+        view({
+          id: 'legacy',
+          completed_at: '2026-10-01',
+          created_at: '2026-09-01T00:00:00Z',
+        })
+      ).toBe(false);
+    });
+
+    it('shows a task created finished during the running sprint', () => {
+      expect(
+        view({
+          id: 'done-now',
+          completed_at: '2026-10-28',
+          created_at: '2026-10-28T10:00:00Z',
+        })
+      ).toBe(true);
+    });
+
+    it('shows everything without a current sprint', () => {
+      expect(isTaskInCurrentSprintView({ id: 'x' }, sprints, null)).toBe(true);
+    });
   });
 });

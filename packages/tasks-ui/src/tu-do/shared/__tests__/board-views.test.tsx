@@ -43,14 +43,10 @@ let timelineBoardProps:
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
-
-vi.mock('@tuturuuu/ui/hooks/use-semantic-task-search', () => ({
-  useSemanticTaskSearch: () => ({
-    data: [],
-    isFetching: false,
-    isLoading: false,
-  }),
-}));
+vi.mock(
+  '@tuturuuu/ui/hooks/use-semantic-task-search',
+  () => import('./mocks/semantic-search-off')
+);
 
 vi.mock('../../hooks/useTaskDialog', () => ({
   useTaskDialog: () => ({
@@ -61,6 +57,10 @@ vi.mock('../../hooks/useTaskDialog', () => ({
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
   listWorkspaceTasks: listWorkspaceTasksMock,
 }));
+vi.mock(
+  '@tuturuuu/internal-api/task-sprints',
+  () => import('./mocks/board-sprints-off')
+);
 vi.mock('@tuturuuu/internal-api/users', () => ({
   TASK_BOARD_PINNED_SPECIAL_LISTS_CONFIG_ID: 'TASK_BOARD_PINNED_SPECIAL_LISTS',
   TASK_LAST_BOARD_VIEW_CONFIG_ID: 'TASK_LAST_BOARD_VIEW',

@@ -23,6 +23,8 @@ export interface BoardSprintTask {
   added_after_start: boolean;
   carry_count: number;
   end_decision: BoardSprintEndDecision | null;
+  /** Completed or closed, so progress is exact even for unloaded tasks. */
+  done?: boolean;
 }
 
 export interface BoardSprintReportPerson {
