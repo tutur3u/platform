@@ -4403,6 +4403,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeSectionCalendar => 'Calendar';
 
   @override
+  String get homeNotAvailableOffline => 'Not available offline';
+
+  @override
   String get homeSectionLoadFailed => 'Pull down to try again.';
 
   @override

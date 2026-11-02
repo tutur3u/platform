@@ -8437,6 +8437,12 @@ abstract class AppLocalizations {
   /// **'Calendar'**
   String get homeSectionCalendar;
 
+  /// No description provided for @homeNotAvailableOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get homeNotAvailableOffline;
+
   /// No description provided for @homeSectionLoadFailed.
   ///
   /// In en, this message translates to:

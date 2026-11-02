@@ -42,6 +42,45 @@ extension _AppOfflinePreparation on _AppState {
     _syncOfflinePreparationScope();
   }
 
+  Future<void> _prepareHomeOffline(String wsId) => retainHomeOffline(
+    wsId,
+    warm: () async {
+      final workspace = _workspaceCubit.state.currentWorkspace;
+      final user = _authCubit.state.user?.id;
+      if (workspace?.id != wsId || user == null) {
+        throw const OfflinePreparationUnavailable();
+      }
+      await TaskListCubit.prewarm(
+        taskRepository: _taskRepository,
+        wsId: wsId,
+        isPersonal: workspace!.personal,
+        forceRefresh: true,
+      );
+      await CalendarCubit.prewarm(
+        calendarRepository: _calendarRepository,
+        wsId: wsId,
+        forceRefresh: true,
+      );
+      final keys = [
+        TaskListCubit.offlineSummaryKey(wsId, isPersonal: workspace.personal),
+        CalendarCubit.offlineSummaryKey(wsId),
+      ];
+      if (_audienceModeCubit.state.mode == AudienceMode.education) {
+        final day = DateTime.now();
+        await SessionsClassesTodayRepository().fetch(
+          userId: user,
+          wsId: wsId,
+          day: day,
+          scope: ClassScope.mine,
+        );
+        keys.add(
+          SessionsClassesTodayRepository.offlineSummaryKey(user, wsId, day),
+        );
+      }
+      return keys;
+    },
+  );
+
   Future<void> _prepareWithPermissions(
     String workspaceId,
     Future<void> Function(String) prepare,
