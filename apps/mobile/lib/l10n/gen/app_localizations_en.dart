@@ -15211,6 +15211,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindInboxTierJump => 'Scrolls to this section';
 
   @override
+  String get assistantVoiceMessagePrompt => 'Listen to this voice message and respond.';
+
+  @override
   String get offlineWaitingWifi => 'Waiting for Wi-Fi';
 
   @override

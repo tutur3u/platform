@@ -7192,6 +7192,7 @@
   },
   "mastermindInboxTierShowLess": "Show less",
   "mastermindInboxTierJump": "Scrolls to this section",
+  "assistantVoiceMessagePrompt": "Listen to this voice message and respond.",
   "offlineWaitingWifi": "Waiting for Wi-Fi",
   "offlineWaitingRetry": "Waiting to retry at {time}",
   "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}}

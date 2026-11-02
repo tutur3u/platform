@@ -28225,6 +28225,12 @@ abstract class AppLocalizations {
   /// **'Scrolls to this section'**
   String get mastermindInboxTierJump;
 
+  /// No description provided for @assistantVoiceMessagePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen to this voice message and respond.'**
+  String get assistantVoiceMessagePrompt;
+
   /// No description provided for @offlineWaitingWifi.
   ///
   /// In en, this message translates to:
