@@ -107,11 +107,24 @@ extension _AppOfflinePreparation on _AppState {
         }
       }),
     );
+    void registerMira() => MiraOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient();
+        try {
+          await MiraOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
     registerNotes();
+    registerMira();
     registerChat();
     _chatOfflineFlags = _mobileFlags.stream.listen((_) {
       registerChat();
       registerNotes();
+      registerMira();
     });
     CacheStore.instance.removedResource.addListener(
       _invalidateOfflineReadiness,
