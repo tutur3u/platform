@@ -20,6 +20,7 @@ import {
 } from '@/lib/tutoring/read-scope';
 import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 import { listWorkspaceTeacherIds } from '@/lib/tutoring/teachers';
+import { tutorCommentsEnabled } from '@/lib/tutoring/tutor-comments';
 import {
   denyWeakContentEdit,
   isWeakSupportSession,
@@ -60,10 +61,19 @@ export async function PUT(request: Request, { params }: Params) {
     );
   }
 
+  if (
+    parsed.data.tutorComment !== undefined &&
+    !(await tutorCommentsEnabled(normalizedWsId))
+  ) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+
   const updates: TablesUpdate<
     { schema: 'private' },
     'workspace_tutoring_sessions'
   > = {};
+  if (parsed.data.tutorComment !== undefined)
+    updates.tutor_comment = parsed.data.tutorComment;
   if (parsed.data.teacherUserId !== undefined)
     updates.teacher_user_id = parsed.data.teacherUserId;
   if (parsed.data.sessionDate !== undefined)

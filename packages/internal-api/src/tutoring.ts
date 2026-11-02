@@ -144,6 +144,7 @@ export interface CreateTutoringSessionPayload {
 }
 
 export interface UpdateTutoringSessionPayload {
+  tutorComment?: string;
   teacherUserId?: string | null;
   sessionDate?: string;
   startTime?: string;
@@ -224,7 +225,7 @@ export async function updateTutoringSession(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ message: string }>(
+  return client.json<TutoringCompletionResponse>(
     `${basePath(workspaceId)}/sessions/${encodePathSegment(sessionId)}`,
     {
       method: 'PUT',
@@ -376,4 +377,14 @@ export async function getTutoringPayroll(
   return getInternalApiClient(options).json<{
     data: TutoringPayrollReportRow[];
   }>(`${basePath(workspaceId)}/payroll`, { cache: 'no-store', query: params });
+}
+
+export function getTutoringSessionComment(
+  workspaceId: string,
+  sessionId: string
+) {
+  return getInternalApiClient().json<{ tutorComment: string | null }>(
+    `${basePath(workspaceId)}/sessions/${encodePathSegment(sessionId)}/comment`,
+    { cache: 'no-store' }
+  );
 }
