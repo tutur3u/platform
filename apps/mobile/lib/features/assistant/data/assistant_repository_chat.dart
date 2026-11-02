@@ -4,7 +4,12 @@ mixin _AssistantChatRepository {
   ApiClient get _apiClient;
   bool Function() get _offlineReadEnabled;
   Future<bool> Function() get _networkAvailable;
-  Future<Map<String, dynamic>> _miraRead(String wsId, String kind, String path);
+  Future<Map<String, dynamic>> _miraRead(
+    String wsId,
+    String kind,
+    String path, {
+    bool forceRefresh = false,
+  });
   ChatRepository get _chatRepository;
   String generateUuid();
   String? Function() get _currentUserId;
@@ -80,6 +85,7 @@ mixin _AssistantChatRepository {
       wsId: wsId,
       chatId: chatId,
       cacheOrigin: origin,
+      forceRefresh: forceRefresh || _offlineReadEnabled(),
     );
     origin?.checkScope();
     if (nativeRestored != null) {
@@ -394,7 +400,7 @@ mixin _AssistantChatRepository {
             }
             final assistantMessages = event.messages
                 .where((message) => message.kind == ChatMessageKind.assistant)
-                .map(_assistantMessageFromChatMessage)
+                .map(restoreAssistantChatMessage)
                 .toList(growable: false);
             if (!assistantStarted && assistantMessages.isNotEmpty) {
               assistantStarted = true;
@@ -436,6 +442,7 @@ mixin _AssistantChatRepository {
     required String wsId,
     required String chatId,
     AssistantChatCacheOrigin? cacheOrigin,
+    bool forceRefresh = false,
   }) async {
     cacheOrigin?.checkScope();
     final route = AssistantChatRoute.parse(chatId);
@@ -445,7 +452,12 @@ mixin _AssistantChatRepository {
         final path =
             '/api/v1/workspaces/$wsId/chat/conversations/$chatId/ai-settings';
         final payload = _offlineReadEnabled()
-            ? await _miraRead(wsId, 'settings', path)
+            ? await _miraRead(
+                wsId,
+                'settings',
+                path,
+                forceRefresh: forceRefresh,
+              )
             : await _apiClient.getJson(path);
         cacheOrigin?.checkScope();
         requireAssistantSettingsReceipt(payload, chatId: chatId);
@@ -459,6 +471,7 @@ mixin _AssistantChatRepository {
                       wsId,
                       'messages',
                       '/api/v1/workspaces/$wsId/chat/conversations/$chatId/messages?limit=60',
+                      forceRefresh: forceRefresh,
                     ))['messages']
                     as List)
                 .map(
@@ -473,11 +486,18 @@ mixin _AssistantChatRepository {
       return AssistantRestoredChat(
         chat: AssistantChatRecord(id: chatId, model: settings?.modelId),
         settings: settings,
-        messages: messages.map(_assistantMessageFromChatMessage).toList(),
+        messages: messages.map(restoreAssistantChatMessage).toList(),
         attachmentsByMessageId: _assistantAttachmentsFromChatMessages(messages),
       );
     } on ApiException catch (error) {
       cacheOrigin?.checkScope();
+      if (cacheOrigin != null &&
+          (error.statusCode == 401 ||
+              (error.statusCode == 403 &&
+                  !error.isVerificationRequired &&
+                  error.code != 'MFA_REQUIRED'))) {
+        await _chatCacheStore.remove(cacheOrigin.key);
+      }
       if (route.kind == AssistantChatRouteKind.legacy &&
           error.statusCode == 404) {
         return null;
@@ -486,46 +506,29 @@ mixin _AssistantChatRepository {
     }
   }
 
-  AssistantChatRecord _assistantChatRecordFromConversation(
-    ChatConversation conversation, {
-    String? modelId,
-  }) {
-    return AssistantChatRecord(
-      id: conversation.id,
-      title: conversation.title,
-      model: modelId ?? conversation.metadata['modelId']?.toString(),
-      createdAt: conversation.createdAt,
-    );
-  }
-
   AssistantMessage _assistantMessageFromChatMessage(ChatMessage message) =>
       restoreAssistantChatMessage(message);
 
   Map<String, List<AssistantAttachment>> _assistantAttachmentsFromChatMessages(
     List<ChatMessage> messages,
-  ) {
-    final out = <String, List<AssistantAttachment>>{};
-    for (final message in messages) {
-      if (message.attachments.isEmpty) continue;
-      out[message.id] = message.attachments
-          .map(_assistantAttachmentFromChatAttachment)
-          .toList(growable: false);
-    }
-    return out;
-  }
+  ) => {
+    for (final message in messages)
+      if (message.attachments.isNotEmpty)
+        message.id: message.attachments
+            .map(_assistantAttachmentFromChatAttachment)
+            .toList(growable: false),
+  };
 
   AssistantAttachment _assistantAttachmentFromChatAttachment(
     ChatAttachment attachment,
-  ) {
-    return AssistantAttachment(
-      id: attachment.id,
-      name: attachment.filename,
-      size: attachment.sizeBytes ?? 0,
-      type: attachment.contentType ?? 'application/octet-stream',
-      storagePath: attachment.storagePath,
-      uploadState: AssistantAttachmentUploadState.uploaded,
-    );
-  }
+  ) => AssistantAttachment(
+    id: attachment.id,
+    name: attachment.filename,
+    size: attachment.sizeBytes ?? 0,
+    type: attachment.contentType ?? 'application/octet-stream',
+    storagePath: attachment.storagePath,
+    uploadState: AssistantAttachmentUploadState.uploaded,
+  );
 
   List<ChatAttachmentDraft> _chatAttachmentDrafts(
     String conversationId,

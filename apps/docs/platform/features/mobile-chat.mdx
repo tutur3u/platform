@@ -639,5 +639,7 @@ Mobile Mira offline preparation is opt-in behind both offline flags, which defau
 off. It retains a bounded native conversation page and recent messages/settings
 for the current account and workspace. Preparation preserves cached chats and
 cursors outside that bounded download; access-denial and account fences still
-apply. Legacy history remains unavailable offline. The cold-reader regression is
+apply. Native restores await authorization refresh; definitive denial invalidates raw and
+derived snapshots, while transport loss can use prepared data. Connected
+legacy-only history is read without caching it; legacy remains unavailable offline. The cold-reader regression is
 covered by `mira_offline_preparation_test.dart`.

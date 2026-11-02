@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:mobile/core/cache/cache_context.dart';
 import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
@@ -144,6 +145,13 @@ void main() {
       expect(restored?.messages, hasLength(1));
       final preferences = _Preferences();
       when(() => preferences.loadChatId('ws')).thenAnswer((_) async => id);
+      when(
+        () => preferences.saveChatId(
+          'ws',
+          id,
+          shouldWrite: any(named: 'shouldWrite'),
+        ),
+      ).thenAnswer((_) async {});
       final cold = AssistantChatCubit(
         repository: repository,
         preferences: preferences,
@@ -159,9 +167,97 @@ void main() {
       expect(cold.state.hasLoadedOnce, isTrue);
       expect(cold.state.messages.single.parts.single.text, 'Prepared reply');
       expect(cold.state.history, isNotEmpty);
+      await cold.openChatById('ws', id);
+      expect(cold.state.status, AssistantChatStatus.idle);
+      when(() => api.getJson('$base/$id/ai-settings')).thenAnswer(
+        (_) async => {
+          'settings': {
+            'conversationId': id,
+            'modelId': 'fresh-model',
+            'creditSource': 'personal',
+            'creditWsId': null,
+            'thinkingMode': 'fast',
+          },
+        },
+      );
+      when(() => api.getJson('$base/$id/messages?limit=60')).thenAnswer(
+        (_) async => {
+          'messages': [
+            {
+              'id': '22222222-2222-4222-8222-222222222222',
+              'conversationId': id,
+              'content': 'Fresh reply',
+              'kind': 'text',
+            },
+          ],
+        },
+      );
+      await cold.openChatById('ws', id);
+      final freshModel = cold.state.chat?.model;
+      final freshText = cold.state.messages.single.parts.single.text;
+      final origin = repository.captureChatCacheOrigin(
+        wsId: 'ws',
+        chatId: id,
+        isCurrent: () => true,
+      )!;
+      when(
+        () => api.getJson('$base/$id/ai-settings'),
+      ).thenThrow(const ApiException(message: 'Denied', statusCode: 403));
+      await cold.openChatById('ws', id);
+      expect(cold.state.status, AssistantChatStatus.error);
+      expect(freshModel, 'fresh-model');
+      expect(freshText, 'Fresh reply');
+      expect(origin.isCurrent(), isFalse);
+      expect(
+        (await store.read<Object?>(key: origin.key, decode: (v) => v)).hasValue,
+        isFalse,
+      );
+
       await Future<void>.delayed(Duration.zero);
     },
   );
+  test(
+    'connected empty native history shows legacy without persisting it',
+    () async {
+      when(
+        () => api.getJson(listPath),
+      ).thenAnswer((_) async => {'conversations': <Object?>[]});
+      when(() => api.getJsonList('/api/v1/ai/chats')).thenAnswer(
+        (_) async => [
+          {'id': id, 'title': 'Legacy history'},
+        ],
+      );
+      final repository = AssistantRepository(
+        apiClient: api,
+        chatCacheStore: store,
+        currentUserId: () => owner,
+        offlineReadEnabled: () => true,
+        networkAvailable: () async => true,
+      );
+      final history = await repository.fetchRecentChats(wsId: 'ws');
+      expect(history.single.title, 'Legacy history');
+      expect(history.single.id, 'ai-chat-$id');
+      final legacyKey = CacheKey(
+        namespace: 'assistant.recent_chats',
+        userId: currentCacheUserId(),
+        workspaceId: 'ws',
+        locale: currentCacheLocaleTag(),
+        params: const {'limit': 'all'},
+      );
+      expect(
+        CacheStore.instance
+            .peek<Object?>(key: legacyKey, decode: (v) => v)
+            .hasValue,
+        isFalse,
+      );
+      expect(
+        (await store.read<Object?>(key: legacyKey, decode: (v) => v)).hasValue,
+        isFalse,
+      );
+      verify(() => api.getJsonList('/api/v1/ai/chats')).called(1);
+    },
+  );
+
   for (final enabled in [false, true]) {
     test('legacy offline flag=$enabled', () async {
       final repository = AssistantRepository(

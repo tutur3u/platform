@@ -211,15 +211,32 @@ class AssistantRepository
   Future<Map<String, dynamic>> _miraRead(
     String wsId,
     String kind,
-    String path,
-  ) => readThroughJson(
-    api: _apiClient,
-    namespace: 'mira.$kind',
-    workspaceId: wsId,
-    path: path,
-    cacheStore: _chatCacheStore,
-    cacheUserId: _currentUserId,
-  );
+    String path, {
+    bool forceRefresh = false,
+  }) {
+    Future<Map<String, dynamic>> read() => readThroughJson(
+      api: _apiClient,
+      namespace: 'mira.$kind',
+      workspaceId: wsId,
+      path: path,
+      cacheStore: _chatCacheStore,
+      cacheUserId: _currentUserId,
+      forceRefresh: forceRefresh,
+    );
+    return forceRefresh ? CacheStore.awaitRevalidation(read) : read();
+  }
+
+  AssistantChatRecord _assistantChatRecordFromConversation(
+    ChatConversation conversation, {
+    String? modelId,
+  }) {
+    return AssistantChatRecord(
+      id: conversation.id,
+      title: conversation.title,
+      model: modelId ?? conversation.metadata['modelId']?.toString(),
+      createdAt: conversation.createdAt,
+    );
+  }
 
   static final Random _random = Random.secure();
 
@@ -467,17 +484,41 @@ class AssistantRepository
     int? limit,
     bool forceRefresh = false,
   }) async {
+    Future<List<Map<String, dynamic>>> fetchLegacy() async {
+      final rows = await _apiClient.getJsonList('/api/v1/ai/chats');
+      final mapped = rows
+          .whereType<Map<String, dynamic>>()
+          .map((row) {
+            final record = AssistantChatRecord.fromJson(row);
+            final route = AssistantChatRoute.parse('ai-chat-${record.id}');
+            return AssistantChatRecord(
+              id: route.conversationId,
+              title: record.title,
+              model: record.model,
+              isPublic: record.isPublic,
+              createdAt: record.createdAt,
+            );
+          })
+          .toList(growable: false);
+      final limited = limit == null
+          ? mapped
+          : mapped.take(limit).toList(growable: false);
+      return limited.map((chat) => chat.toJson()).toList(growable: false);
+    }
+
     if (_offlineReadEnabled() && wsId != null) {
       final payload = await _miraRead(
         wsId,
         'conversations',
         '/api/v1/workspaces/$wsId/chat/conversations?archived=active&limit=40&offset=0',
       );
-      return ChatConversationPage.fromJson(payload).conversations
+      final native = ChatConversationPage.fromJson(payload).conversations
           .where((c) => c.type == ChatConversationType.ai && !c.isReadOnlyAgent)
           .map(_assistantChatRecordFromConversation)
           .take(limit ?? 40)
           .toList();
+      if (native.isNotEmpty || !await _networkAvailable()) return native;
+      return _decodeRecentChatsCache(await fetchLegacy());
     }
     if (wsId != null && wsId.isNotEmpty) {
       try {
@@ -516,29 +557,7 @@ class AssistantRepository
           decode: _decodeRecentChatsCache,
           forceRefresh: forceRefresh,
           tags: [_assistantHistoryCacheTag, 'module:assistant'],
-          fetch: () async {
-            final rows = await _apiClient.getJsonList('/api/v1/ai/chats');
-            final mapped = rows
-                .whereType<Map<String, dynamic>>()
-                .map((row) {
-                  final record = AssistantChatRecord.fromJson(row);
-                  final route = AssistantChatRoute.parse(
-                    'ai-chat-${record.id}',
-                  );
-                  return AssistantChatRecord(
-                    id: route.conversationId,
-                    title: record.title,
-                    model: record.model,
-                    isPublic: record.isPublic,
-                    createdAt: record.createdAt,
-                  );
-                })
-                .toList(growable: false);
-            final limited = limit == null
-                ? mapped
-                : mapped.take(limit).toList(growable: false);
-            return limited.map((chat) => chat.toJson()).toList(growable: false);
-          },
+          fetch: fetchLegacy,
         );
     return result.data ?? const <AssistantChatRecord>[];
   }
