@@ -34,7 +34,7 @@ function syntheticSessionHeaders(secret) {
   const pay = token('pay');
   return {
     authorization: `Bearer ${pay}`,
-    cookie: `tuturuuu_app_session=${pay}; tuturuuu_web_app_session=${token('web')}`,
+    cookie: `__Host-tuturuuu_app_session=${pay}; __Host-tuturuuu_web_app_session=${token('web')}`,
   };
 }
 
@@ -175,7 +175,7 @@ test('Pay staging: identity, denial, sandbox isolation and anonymous browser red
           }
         }
       );
-      if (mode.origin === 'https://pay-staging.tuturuuu.com') {
+      if (mode.origin === 'https://pay.tutur3u.com') {
         await context.test(
           'staging login returns only to staging Pay',
           async () => {
@@ -184,7 +184,7 @@ test('Pay staging: identity, denial, sandbox isolation and anonymous browser red
             );
             assert.equal(response.status, 307);
             const login = new URL(response.headers.get('location'));
-            assert.equal(login.origin, 'https://staging.tuturuuu.com');
+            assert.equal(login.origin, 'https://web.tutur3u.com');
             assert.equal(login.pathname, '/login');
             const returned = new URL(login.searchParams.get('returnUrl'));
             assert.equal(returned.origin, mode.origin);
@@ -268,7 +268,7 @@ test('Pay staging: identity, denial, sandbox isolation and anonymous browser red
             const fenced = await withNativeBrowserFence(
               browser,
               origin,
-              ['https://staging.tuturuuu.com'],
+              ['https://web.tutur3u.com'],
               async (page) => {
                 const errors = [];
                 page.on('pageerror', (error) => errors.push(error.message));
@@ -277,7 +277,7 @@ test('Pay staging: identity, denial, sandbox isolation and anonymous browser red
                 });
                 await page.waitForURL(
                   (url) =>
-                    url.origin === 'https://staging.tuturuuu.com' &&
+                    url.origin === 'https://web.tutur3u.com' &&
                     url.pathname === '/login'
                 );
                 assert.equal(

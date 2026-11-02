@@ -8,7 +8,7 @@ const framablePaths = framablePathRegexes();
 export default defineBridgeAppConfig<PayEnvironment>({
   csp: defaultContentSecurityPolicy,
   mounts: {
-    rootHosts: ['pay-staging.tuturuuu.com'],
+    rootHosts: ['pay.tutur3u.com'],
     mountHosts: [],
     unknownHost: 'reject',
   },
