@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/widgets.dart';
@@ -73,6 +74,7 @@ void main() {
 
   late Directory directory;
   late CacheStore store;
+  Future<void> Function(String)? checkpoint;
   late _Api api;
   var owner = 'user';
   setUp(() async {
@@ -91,8 +93,12 @@ void main() {
       secrets[call.namedArguments[#key] as String] =
           call.namedArguments[#value] as String;
     });
+    checkpoint = null;
     store = CacheStore.forTesting(
       secureStorage: storage,
+      persistenceCheckpoint: (stage) async {
+        if (checkpoint != null) await checkpoint!(stage);
+      },
       directoryResolver: () async => directory,
     );
     await store.init();
@@ -183,6 +189,141 @@ void main() {
     expect(find.text('Prepared subject'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
+  });
+  final inboxQuery = Uri(
+    queryParameters: {
+      'folder': 'inbox',
+      'query': '',
+      'page': '1',
+      'pageSize': '30',
+    },
+  ).query;
+  final inboxPath =
+      '${MailRepository.mailboxPath('ws', 'box')}/threads?$inboxQuery';
+  MailRepository reader() => MailRepository(
+    apiClient: api,
+    cache: MailCache(store: store, currentUserId: () => owner),
+    currentUserId: () => owner,
+  );
+  void blockNetwork() => when(() => api.getJson(any())).thenThrow(
+    const ApiException(
+      message: 'offline',
+      statusCode: 0,
+      failureKind: ApiFailureKind.transport,
+    ),
+  );
+  Future<void> assertColdDenied() async {
+    blockNetwork();
+    final cold = reader();
+    await expectLater(cold.bootstrap('ws'), throwsA(anything));
+    await expectLater(
+      cold.list('ws', 'box', folder: 'inbox'),
+      throwsA(anything),
+    );
+  }
+
+  for (final path in ['$base/bootstrap', inboxPath]) {
+    test('Mail preparation fresh 403 purges cold data: $path', () async {
+      await prepare();
+      when(
+        () => api.getJson(path),
+      ).thenThrow(const ApiException(message: 'Denied', statusCode: 403));
+      await expectLater(prepare(), throwsA(isA<ApiException>()));
+      await assertColdDenied();
+    });
+  }
+  test('Mail preparation MFA denial preserves authorized cold data', () async {
+    await prepare();
+    when(() => api.getJson('$base/bootstrap')).thenThrow(
+      const ApiException(
+        message: 'Verify',
+        statusCode: 403,
+        code: 'MFA_REQUIRED',
+      ),
+    );
+    await expectLater(prepare(), throwsA(isA<ApiException>()));
+    blockNetwork();
+    expect(await reader().bootstrap('ws'), contains('mailboxes'));
+    expect(
+      await reader().list('ws', 'box', folder: 'inbox'),
+      contains('threads'),
+    );
+  });
+  test(
+    'Mail held response after reader denial cannot resurrect or become ready',
+    () async {
+      await prepare();
+      final entered = Completer<void>();
+      final held = Completer<Map<String, dynamic>>();
+      when(() => api.getJson('$base/bootstrap')).thenAnswer((_) {
+        entered.complete();
+        return held.future;
+      });
+      final registry = OfflinePreparerRegistry(isEnabled: (_) => true);
+      MailOfflinePreparation.register(registry, (_) => prepare());
+      final coordinator = OfflinePreparationCoordinator.forTesting(
+        load: (_, _) async => {},
+        write: (_, _, _) async {},
+        registry: registry,
+      );
+      addTearDown(coordinator.state.dispose);
+      final running = coordinator.run(
+        userId: owner,
+        workspaceId: 'ws',
+        productId: 'mail',
+      );
+      await entered.future;
+      when(
+        () => api.getJson('$base/bootstrap'),
+      ).thenThrow(const ApiException(message: 'Denied', statusCode: 403));
+      await expectLater(
+        CacheStore.awaitRevalidation(() => reader().bootstrap('ws')),
+        throwsA(isA<ApiException>()),
+      );
+      held.complete({
+        'mailboxes': [
+          {'id': 'box'},
+        ],
+      });
+      await running;
+      expect(
+        coordinator.state.value.products['mail']?.status,
+        isNot(OfflinePreparationStatus.ready),
+      );
+      expect(coordinator.state.value.products['mail']?.lastSuccess, isNull);
+      await assertColdDenied();
+    },
+  );
+  test('Mail purge during durable publication prevents readiness', () async {
+    var purged = false;
+    Future<void>? purge;
+    checkpoint = (stage) async {
+      if (stage == 'snapshot' && !purged) {
+        purged = true;
+        purge = MailCache(
+          store: store,
+          currentUserId: () => owner,
+        ).denyAccess('ws');
+      }
+    };
+    final registry = OfflinePreparerRegistry(isEnabled: (_) => true);
+    MailOfflinePreparation.register(registry, (_) => prepare());
+    final coordinator = OfflinePreparationCoordinator.forTesting(
+      load: (_, _) async => {},
+      write: (_, _, _) async {},
+      registry: registry,
+    );
+    addTearDown(coordinator.state.dispose);
+    await coordinator.run(userId: owner, workspaceId: 'ws', productId: 'mail');
+    await purge;
+    checkpoint = null;
+    expect(purged, isTrue);
+    expect(
+      coordinator.state.value.products['mail']?.status,
+      isNot(OfflinePreparationStatus.ready),
+    );
+    expect(coordinator.state.value.products['mail']?.lastSuccess, isNull);
+    await assertColdDenied();
   });
   for (final bytes in [false, true]) {
     test('over ${bytes ? "bytes" : "items"} cap publishes nothing', () async {
