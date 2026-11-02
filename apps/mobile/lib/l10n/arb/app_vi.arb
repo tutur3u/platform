@@ -50,6 +50,7 @@
       }
     }
   },
+  "assistantNotAvailableOffline": "Không khả dụng khi ngoại tuyến",
   "assistantDownloadPhasePending": "Đang chờ",
   "assistantDownloadPhaseQueued": "Trong hàng đợi",
   "assistantDownloadPhaseTransferring": "Đang tải xuống",

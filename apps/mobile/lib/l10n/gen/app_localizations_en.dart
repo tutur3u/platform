@@ -61,6 +61,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get assistantNotAvailableOffline => 'Not available offline';
+
+  @override
   String get assistantDownloadPhasePending => 'Pending';
 
   @override

@@ -175,6 +175,12 @@ abstract class AppLocalizations {
   /// **'Queued {time}'**
   String mastermindReplyQueuedAt(String time);
 
+  /// No description provided for @assistantNotAvailableOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get assistantNotAvailableOffline;
+
   /// No description provided for @assistantDownloadPhasePending.
   ///
   /// In en, this message translates to:

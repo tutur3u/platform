@@ -61,6 +61,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get assistantNotAvailableOffline => 'Không khả dụng khi ngoại tuyến';
+
+  @override
   String get assistantDownloadPhasePending => 'Đang chờ';
 
   @override
