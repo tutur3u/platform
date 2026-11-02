@@ -22033,6 +22033,18 @@ abstract class AppLocalizations {
   /// **'Start a new chat'**
   String get assistantNewChatConfirmCreation;
 
+  /// No description provided for @assistantCreationHoldBannerMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last chat may not have been saved. Starting a new chat does not retry it and may create a separate conversation.'**
+  String get assistantCreationHoldBannerMessage;
+
+  /// No description provided for @assistantCreationHoldDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get assistantCreationHoldDismiss;
+
   /// No description provided for @assistantNewChatResetDenied.
   ///
   /// In en, this message translates to:
