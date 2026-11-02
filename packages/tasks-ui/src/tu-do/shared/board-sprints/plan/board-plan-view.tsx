@@ -12,6 +12,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { type DragEvent, useMemo, useState } from 'react';
 import { useTaskDialog } from '../../../hooks/useTaskDialog';
+import { useBoardBroadcast } from '../../board-broadcast-context';
 import {
   getBoardSprintsQueryKey,
   useBoardSprintMutations,
@@ -61,6 +62,7 @@ export function BoardPlanView({
 }) {
   const t = useTranslations('ws-task-boards.sprints');
   const queryClient = useQueryClient();
+  const broadcast = useBoardBroadcast();
   const { openTask } = useTaskDialog();
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const planning = sprints.planningSprint;
@@ -141,6 +143,15 @@ export function BoardPlanView({
         getSprintTasksQueryKey(boardId),
         (current) => (current ? [...current, task] : current)
       );
+      // Board, List and Timeline stay mounted behind Plan; show them the task
+      // and tell other viewers, as the task composer does.
+      queryClient.setQueryData<Task[]>(['tasks', boardId], (current) =>
+        !current || current.some((item) => item.id === task.id)
+          ? current
+          : [...current, task]
+      );
+      void queryClient.invalidateQueries({ queryKey: ['tasks-full', boardId] });
+      broadcast?.('task:upsert', { task });
     },
     onError: () => toast.error(t('create_failed')),
     onSettled: () =>

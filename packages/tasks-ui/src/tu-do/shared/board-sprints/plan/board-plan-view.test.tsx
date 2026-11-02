@@ -16,6 +16,7 @@ import { BoardPlanView } from './board-plan-view';
 import { getPlanMoveAssigneeIds } from './use-plan-assignment';
 
 const api = vi.hoisted(() => ({
+  broadcast: vi.fn(),
   createWorkspaceTask: vi.fn(),
   listBoardTasksForSearch: vi.fn(),
   moveTasks: vi.fn(),
@@ -99,7 +100,7 @@ vi.mock('../../../hooks/useTaskDialog', () => ({
 }));
 
 vi.mock('../../board-broadcast-context', () => ({
-  useBoardBroadcast: () => null,
+  useBoardBroadcast: () => api.broadcast,
 }));
 
 const sprint = (
@@ -163,15 +164,16 @@ function sprintsState(sprints: BoardSprint[]) {
 function renderPlan({
   canManage = true,
   defaultListId = 'list-todo',
+  queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  }),
   sprints,
 }: {
   canManage?: boolean;
   defaultListId?: string;
+  queryClient?: QueryClient;
   sprints: BoardSprint[];
 }) {
-  const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
   return render(
     <QueryClientProvider client={queryClient}>
       <BoardPlanView
@@ -465,6 +467,30 @@ describe('BoardPlanView', () => {
       listId: 'list-todo',
       name: 'Write release notes',
     });
+  });
+
+  it('shows a new backlog task on the Board and tells other viewers', async () => {
+    api.createWorkspaceTask.mockResolvedValue({ task: task('t9') });
+    api.moveTasks.mockResolvedValue({ moved: 1 });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    queryClient.setQueryData(['tasks', 'board-1'], [task('t1')]);
+    renderPlan({ queryClient, sprints: [active, planned] });
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'add_to_backlog' })
+    );
+    const input = screen.getByRole('textbox', { name: 'new_backlog_task' });
+    fireEvent.change(input, { target: { value: 'Write release notes' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    await waitFor(() =>
+      expect(api.broadcast).toHaveBeenCalledWith('task:upsert', {
+        task: expect.objectContaining({ id: 't9' }),
+      })
+    );
+    expect(
+      queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.map((t) => t.id)
+    ).toEqual(['t1', 't9']);
   });
 
   it('creates backlog tasks in an open list when the default list is Done', async () => {
