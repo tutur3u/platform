@@ -97,10 +97,11 @@ class ContentRules(unittest.TestCase):
         self.sql("update private.tutoring_notification_receipts set created_at=now()-interval '14 days'")
         self.run_job(); self.run_job(); self.count(2)
 
-    def test_update_resets(self):
+    def test_member_edit_does_not_attest_review(self):
         self.run_job()
         self.sql("update private.tutoring_notification_receipts set created_at=now()-interval '14 days'; update public.user_feedbacks set content='updated fixture'")
-        self.run_job(); self.count(1)
+        self.run_job(); self.count(2)
+        self.assertEqual(self.sql('select count(*) from private.tutoring_weak_support_reviews'), ['0'])
 
     def test_threshold_config(self):
         self.sql("insert into public.workspace_configs select ws_id,'tutoring_content_rules_n2_days','15' from public.workspace_user_groups")
@@ -112,17 +113,16 @@ class ContentRules(unittest.TestCase):
         self.run_job()
         self.assertEqual(self.sql("select string_agg(stage,',' order by stage) from private.tutoring_notification_receipts"), ['n2,n3'])
 
-    def test_rollback_empty(self):
-        self.sql((ROOT / 'apps/database/rollbacks/20261103031000_tutoring_content_stages.rollback.sql').read_text())
-        self.assertEqual(self.sql("select count(*) from information_schema.columns where table_schema='private' and table_name='tutoring_notification_receipts' and column_name='stage'"), ['0'])
-
     def test_rollback_preserves_stage_history(self):
         self.run_job()
         self.sql("update private.tutoring_notification_receipts set created_at=now()-interval '14 days'")
         self.run_job()
-        with self.assertRaises(AssertionError):
-            self.sql((ROOT / 'apps/database/rollbacks/20261103031000_tutoring_content_stages.rollback.sql').read_text())
+        self.sql((ROOT / 'apps/database/rollbacks/20261103031000_tutoring_content_stages.rollback.sql').read_text())
         self.assertEqual(self.sql('select count(*) from private.tutoring_notification_receipts'), ['2'])
+        self.assertEqual(self.sql('select count(*) from private.tutoring_content_stage_backup'), ['2'])
+        self.assertEqual(self.sql("select to_regprocedure('private.process_tutoring_content_rules(integer)') is null"), ['t'])
+        self.sql("update public.user_feedbacks set content='after rollback'")
+        self.assertEqual(self.sql('select count(*) from private.tutoring_weak_support_reviews'), ['0'])
 
     def test_office_override_unset_group(self):
         self.sql("insert into public.workspace_configs select ws_id,'tutoring_content_rules_office_group','disabled' from public.workspace_user_groups")

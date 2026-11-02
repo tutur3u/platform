@@ -13,23 +13,7 @@ create unique index tutoring_notification_receipts_stage_key
 alter table private.tutoring_notification_receipts
   drop constraint tutoring_notification_receipts_review_key;
 
--- Edits have no updated_at column. Track actual content changes in the existing
--- review clock; never change the identity or creation time of an old receipt.
-create function private.reset_tutoring_content_clock() returns trigger
-language plpgsql security definer set search_path = pg_catalog, pg_temp as $$
-begin
-  if exists(select 1 from public.workspace_user_groups g join public.workspace_configs c on c.ws_id=g.ws_id and c.id='tutoring_content_rules' and c.value='true' where g.id=new.group_id and g.ws_id <> '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid) and
-    (new.content is distinct from old.content or new.require_attention is distinct from old.require_attention) then
-    insert into private.tutoring_weak_support_reviews(group_id,student_user_id,last_reviewed_at)
-    values(new.group_id,new.user_id,clock_timestamp())
-    on conflict (group_id,student_user_id) do update set last_reviewed_at=excluded.last_reviewed_at;
-  end if;
-  return new;
-end $$;
-revoke all on function private.reset_tutoring_content_clock() from public,anon,authenticated,service_role;
-create trigger reset_tutoring_content_clock after update on public.user_feedbacks
-for each row execute function private.reset_tutoring_content_clock();
-
+-- Review clocks remain controlled by the existing authorized review operation.
 -- A bounded scan must advance past already-notified or unlinked students.
 create table private.tutoring_content_scan_cursor (
   singleton boolean primary key default true check(singleton), after_id uuid
@@ -56,7 +40,7 @@ declare
   n3_days integer;
   office_group text;
 begin
-  -- Serialize runs and content edits so a changed note cannot race escalation.
+  -- Serialize processor runs.
   if not pg_try_advisory_xact_lock(hashtextextended('tutoring_content_rules',0)) then
     return jsonb_build_object('sent',0);
   end if;
