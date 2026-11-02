@@ -22,7 +22,6 @@ import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { isMeetAssistant } from '../lib/assistant-identity';
@@ -44,6 +43,7 @@ function ChatAttachment({ meetingId, id }: { meetingId: string; id: string }) {
     staleTime: 60000,
     retry: false,
   });
+  const [previewFailed, setPreviewFailed] = useState(false);
   if (!file.data)
     return (
       <p className="text-muted-foreground text-xs">
@@ -59,17 +59,20 @@ function ChatAttachment({ meetingId, id }: { meetingId: string; id: string }) {
         'image/gif',
         'image/webp',
         'image/avif',
-      ].includes(contentType) && (
-        <Image
-          unoptimized
-          width={640}
-          height={360}
-          src={url}
-          alt={name}
-          className="max-h-48 w-full object-contain"
-          loading="lazy"
-        />
-      )}
+      ].includes(contentType) &&
+        !previewFailed && (
+          // biome-ignore lint/performance/noImgElement: uploads are served directly, never via an optimizer
+          <img
+            width={640}
+            height={360}
+            src={url}
+            alt={name}
+            className="max-h-48 w-full object-contain"
+            loading="lazy"
+            decoding="async"
+            onError={() => setPreviewFailed(true)}
+          />
+        )}
       {['video/mp4', 'video/webm', 'video/quicktime'].includes(contentType) && (
         <video src={url} controls preload="none" className="max-h-48 w-full">
           <track kind="captions" />
