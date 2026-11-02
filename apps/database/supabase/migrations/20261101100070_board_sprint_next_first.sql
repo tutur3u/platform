@@ -1,3 +1,7 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+
 -- Board sprints: with several planned sprints (see
 -- 20261101100060_board_sprint_horizon.sql), work that moves on goes to the
 -- earliest planned one. Ending a sprint carries its open tasks there, and a new,
@@ -320,3 +324,5 @@ REVOKE ALL ON FUNCTION public.end_board_sprint(UUID, UUID, JSONB, TEXT) FROM PUB
 -- tuturuuu: no-grant (trigger)
 REVOKE ALL ON FUNCTION private.sync_task_board_sprint_membership() FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.end_board_sprint(UUID, UUID, JSONB, TEXT) TO service_role;
+
+COMMIT;

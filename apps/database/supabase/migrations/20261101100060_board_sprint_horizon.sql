@@ -1,3 +1,7 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+
 -- Board sprints: planning several sprints ahead. A board keeps up to five open
 -- sprints, the running one and the planned ones after it. Planned sprints chain
 -- one after another, and only the earliest one, the next sprint, can start
@@ -433,3 +437,5 @@ REVOKE ALL ON FUNCTION public.set_board_sprint_length(UUID, SMALLINT, UUID) FROM
 REVOKE ALL ON FUNCTION public.start_board_sprint(UUID, UUID) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.set_board_sprint_length(UUID, SMALLINT, UUID) TO service_role;
 GRANT EXECUTE ON FUNCTION public.start_board_sprint(UUID, UUID) TO service_role;
+
+COMMIT;
