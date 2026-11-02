@@ -96,6 +96,28 @@ extension _AppOfflinePreparation on _AppState {
         }
       }),
     );
+    void registerNotes() => NotesOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient();
+        try {
+          await NotesOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
+    void registerMira() => MiraOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient();
+        try {
+          await MiraOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
     void registerDocuments() => DocumentsOfflinePreparation.register(
       OfflinePreparationCoordinator.instance.registry,
       (wsId) => _prepareWithPermissions(wsId, (wsId) async {
@@ -107,10 +129,14 @@ extension _AppOfflinePreparation on _AppState {
         }
       }),
     );
+    registerNotes();
+    registerMira();
     registerDocuments();
     registerChat();
     _chatOfflineFlags = _mobileFlags.stream.listen((_) {
       registerChat();
+      registerNotes();
+      registerMira();
       registerDocuments();
     });
     CacheStore.instance.removedResource.addListener(

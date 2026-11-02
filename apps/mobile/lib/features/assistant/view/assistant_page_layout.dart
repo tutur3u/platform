@@ -341,6 +341,39 @@ extension _AssistantPageLayout on _AssistantPageState {
                                             ),
                                           ),
                                         ),
+                                        if (!localLane &&
+                                            _showCreationBanner(
+                                              remoteChatState,
+                                              currentWorkspace.id,
+                                            ))
+                                          Positioned(
+                                            top:
+                                                floatingShellHeaderInset(
+                                                  context,
+                                                  minimumContentHeight:
+                                                      headerHeight,
+                                                ) +
+                                                8,
+                                            left: 16,
+                                            right: 16,
+                                            child: AssistantCreationHoldBanner(
+                                              onCheckHistory: () => unawaited(
+                                                _showHistorySheet(
+                                                  context,
+                                                  currentWorkspace.id,
+                                                ),
+                                              ),
+                                              onStartNewChat: () => unawaited(
+                                                _startNewFromCreationBanner(
+                                                  currentWorkspace.id,
+                                                ),
+                                              ),
+                                              onDismiss: () =>
+                                                  _dismissCreationBanner(
+                                                    currentWorkspace.id,
+                                                  ),
+                                            ),
+                                          ),
                                         if (chatState.status ==
                                             AssistantChatStatus.restoring)
                                           Positioned(
