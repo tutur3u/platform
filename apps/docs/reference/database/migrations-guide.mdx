@@ -994,3 +994,41 @@ Additions alone use `definer-records sha256:…`; any rebind switches to
 `definer-rebinds sha256:…` over both lists. Admitted rebinds join the trusted
 records the guard scans with. Coverage: `security-definer-admission.test.js`,
 `security-definer-attestation.test.js` and `security-definer-rebind.test.js`.
+
+### Changing a migration that security records pin
+
+Several records pin a migration's bytes. If a change must alter such a file,
+for example to wrap it in `BEGIN`/`COMMIT` or add `SET LOCAL` timeouts, the path
+depends on which record pins it.
+
+1. **Definer verified records** (`scripts/ci/security-definer-verified-findings.json`).
+   Use the attested `sourceDigest` rebind described above. Keep the record
+   identical apart from `sourceDigest`, regenerate the digest with
+   `node scripts/ci/security-definer-admission.js digest <base-ledger> <head-ledger>`,
+   and get a release-bot `security/definer-record-admission` status whose
+   description is `definer-rebinds sha256:…` on the exact head SHA. Never use a
+   rebind for a migration that has already been applied in production: those
+   bytes are history and must not change. Add a new migration instead.
+2. **Reviewed exceptions** (`scripts/ci/sql-grant-reviewed-exceptions.js`)
+   **and the SQL grant historical baseline** (`scripts/ci/sql-grant-guard.baseline.json`).
+   The definer job in `security-checks.yaml` loads the reviewed exceptions from
+   the base commit, and the grant guard validates the head's baseline against
+   the base copy, which may only shrink. A pull request cannot edit, regenerate
+   or extend either for itself, so there is no in-PR path. A reviewed exception also binds the whole file through
+   `fileSha256`, so any byte change to a pinned file invalidates it. Such a
+   change needs a one-off, named excusal from the security reviewer for exactly
+   those failing checks, plus the release authority's admin-bypass GO; any other
+   red check blocks the merge. Do not weaken the shrink-only checks to avoid it.
+3. **Zero-line-shift rule.** Keep every edit to a pinned file from moving
+   bytes into the statement blocks that follow it. The grant guard splits a file
+   at each `;` and takes a finding's digest over its statement block, which
+   starts immediately after the previous `;` and includes everything up to the
+   next one, whitespace and comments included (`splitStatements` in
+   `scripts/ci/sql-grant-guard-lexer.js`, block `raw` and `digest` in
+   `scripts/ci/sql-grant-guard-baseline.js`). Bytes placed after a `;` on a
+   wrapper line therefore become the first bytes of the next block and change
+   its digest. Write `BEGIN;-- comment`, not `BEGIN; -- comment`, and add
+   wrapper lines without adding or removing lines in the middle of the file.
+   Records that carry a `line` (verified records, reviewed exceptions) also
+   break on any line shift. Check by running the guards locally and confirming
+   no pinned digest or line changed.
