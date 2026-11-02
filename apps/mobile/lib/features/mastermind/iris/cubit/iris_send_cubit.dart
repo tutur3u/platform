@@ -19,6 +19,7 @@ final class IrisOutgoing {
     this.delivery,
     this.id,
     this.attempts = 0,
+    this.failureKind,
   });
 
   /// Stable across retries, for the row's key.
@@ -34,6 +35,7 @@ final class IrisOutgoing {
   /// The relay's send id once it accepted the message.
   final String? id;
   final int attempts;
+  final IrisFailureKind? failureKind;
 
   bool get failed => state == IrisReceiptState.failed;
 
@@ -42,6 +44,7 @@ final class IrisOutgoing {
     IrisDelivery? delivery,
     String? id,
     int? attempts,
+    IrisFailureKind? failureKind,
   }) => IrisOutgoing(
     clientId: clientId,
     idempotencyKey: idempotencyKey,
@@ -51,6 +54,7 @@ final class IrisOutgoing {
     delivery: delivery ?? this.delivery,
     id: id ?? this.id,
     attempts: attempts ?? this.attempts,
+    failureKind: failureKind ?? this.failureKind,
   );
 }
 
@@ -171,6 +175,7 @@ class IrisSendCubit extends Cubit<List<IrisOutgoing>> {
           _put(
             current.copyWith(
               state: IrisReceiptState.failed,
+              failureKind: failure.kind,
               attempts: attempts,
             ),
           );

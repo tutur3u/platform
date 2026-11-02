@@ -14919,7 +14919,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindIrisDeviceCurrent => 'Thiết bị này';
 
   @override
-  String get mastermindIrisWritesOff => 'Tạm thời chưa thể gửi tin. Bạn vẫn có thể đọc cuộc trò chuyện.';
+  String get mastermindIrisSendDisabled => 'Hiện chưa thể gửi tin nhắn đến Iris';
+
+  @override
+  String get mastermindIrisWritesOff => 'Sắp có thể gửi tin nhắn đến Iris';
 
   @override
   String get mastermindIrisWritesNeedEnrol => 'Hãy đăng ký thiết bị này để gửi tin nhắn.';

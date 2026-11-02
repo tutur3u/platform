@@ -28027,10 +28027,16 @@ abstract class AppLocalizations {
   /// **'This device'**
   String get mastermindIrisDeviceCurrent;
 
+  /// No description provided for @mastermindIrisSendDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending to Iris isn\'t available yet'**
+  String get mastermindIrisSendDisabled;
+
   /// No description provided for @mastermindIrisWritesOff.
   ///
   /// In en, this message translates to:
-  /// **'Sending is off for now. You can still read the chat.'**
+  /// **'Sending to Iris is coming soon'**
   String get mastermindIrisWritesOff;
 
   /// No description provided for @mastermindIrisWritesNeedEnrol.
