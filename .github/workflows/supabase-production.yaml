@@ -626,9 +626,14 @@ jobs:
               assert(['identical', 'behind'].includes(comparison.status), 'staging-source-main');
             }
             assert(Date.now() <= deadline, 'proof-deadline');
+            const ids = `producer=${run.id} attempt=${run.run_attempt} deployment=${marker.id}`;
+            // Fallback keeps the runbook prefix `source=C target=B tree=<sha>` and appends the exact-path ids.
             console.log(source === target
-              ? `Staging source proof: source=${target} producer=${run.id} attempt=${run.run_attempt} deployment=${marker.id}`
-              : `Staging source proof: source=${source} target=${target} tree=${sourceTree}`);
+              ? `Staging source proof: source=${target} ${ids}`
+              : `Staging source proof: source=${source} target=${target} tree=${sourceTree} ${ids}`);
+            console.log(source === target
+              ? `Production platform deployment marker and staging migration are bound to ${target}. Proceeding with migration.`
+              : `Production platform deployment marker is bound to ${target}; staging migration is bound to its tree-equal parent ${source}. Proceeding with migration.`);
           }
           main().catch(() => {
             // Never echo API bodies, exceptions, credentials, or environment values.
@@ -636,7 +641,6 @@ jobs:
             process.exitCode = 1;
           });
           STAGING_SOURCE_PROOF
-                  echo "Production platform deployment marker and staging migration are bound to $TARGET_SHA. Proceeding with migration."
                   SHOULD_DEPLOY=true
                 fi
               fi

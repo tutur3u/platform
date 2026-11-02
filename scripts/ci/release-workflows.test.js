@@ -1105,7 +1105,11 @@ test('Supabase production migration requires production platform deploy and succ
   assert.doesNotMatch(evaluateJob, /run\.conclusion === 'skipped'/);
   assert.match(
     evaluateJob,
-    /Production platform deployment marker and staging migration are bound to \$TARGET_SHA/
+    /Production platform deployment marker and staging migration are bound to \$\{target\}/
+  );
+  assert.match(
+    evaluateJob,
+    /staging migration is bound to its tree-equal parent \$\{source\}/
   );
 
   assert.match(evaluateJob, /ref: \$\{\{ github\.sha \}\}/);
