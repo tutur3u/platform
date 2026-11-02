@@ -175,6 +175,12 @@ abstract class AppLocalizations {
   /// **'Queued {time}'**
   String mastermindReplyQueuedAt(String time);
 
+  /// No description provided for @assistantNotAvailableOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get assistantNotAvailableOffline;
+
   /// No description provided for @assistantDownloadPhasePending.
   ///
   /// In en, this message translates to:
@@ -8257,6 +8263,12 @@ abstract class AppLocalizations {
   /// **'Habits'**
   String get habitsTitle;
 
+  /// No description provided for @habitsOfflineUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get habitsOfflineUnavailable;
+
   /// No description provided for @habitsTodayLabel.
   ///
   /// In en, this message translates to:
@@ -8436,6 +8448,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Calendar'**
   String get homeSectionCalendar;
+
+  /// No description provided for @homeNotAvailableOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get homeNotAvailableOffline;
 
   /// No description provided for @homeSectionLoadFailed.
   ///
@@ -21181,6 +21199,12 @@ abstract class AppLocalizations {
   /// **'Timer'**
   String get timerTitle;
 
+  /// No description provided for @timerOfflineUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get timerOfflineUnavailable;
+
   /// No description provided for @timerToday.
   ///
   /// In en, this message translates to:
@@ -22014,6 +22038,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start a new chat'**
   String get assistantNewChatConfirmCreation;
+
+  /// No description provided for @assistantCreationHoldBannerMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last chat may not have been saved. Starting a new chat does not retry it and may create a separate conversation.'**
+  String get assistantCreationHoldBannerMessage;
+
+  /// No description provided for @assistantCreationHoldDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get assistantCreationHoldDismiss;
 
   /// No description provided for @assistantNewChatResetDenied.
   ///
@@ -23250,6 +23286,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Technical details'**
   String get offlineTechnicalDetails;
+
+  /// No description provided for @offlineWaitingWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for Wi-Fi'**
+  String get offlineWaitingWifi;
+
+  /// No description provided for @offlineWaitingRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to retry at {time}'**
+  String offlineWaitingRetry(String time);
+
+  /// No description provided for @offlineStatusPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing'**
+  String get offlineStatusPreparing;
+
+  /// No description provided for @offlineStatusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready offline'**
+  String get offlineStatusReady;
+
+  /// No description provided for @offlineStatusNeverSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Never synced'**
+  String get offlineStatusNeverSynced;
+
+  /// No description provided for @offlineStatusLastSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Last synced: {time}'**
+  String offlineStatusLastSynced(String time);
+
+  /// No description provided for @offlineStatusSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{ready} of {total} apps ready offline'**
+  String offlineStatusSummary(int ready, int total);
 
   /// No description provided for @mailSettingsReadingGroup.
   ///
@@ -27787,6 +27865,42 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get mastermindIrisDone;
 
+  /// No description provided for @mastermindIrisUseRecommendationsOthers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{+1 other option} other{+{count} other options}}'**
+  String mastermindIrisUseRecommendationsOthers(int count);
+
+  /// No description provided for @mastermindIrisNotIncludedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Not included: answer these one by one'**
+  String get mastermindIrisNotIncludedTitle;
+
+  /// No description provided for @mastermindIrisNotIncludedRisky.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs approval on a trusted device'**
+  String get mastermindIrisNotIncludedRisky;
+
+  /// No description provided for @mastermindIrisNotIncludedIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete: open it to read the full ask'**
+  String get mastermindIrisNotIncludedIncomplete;
+
+  /// No description provided for @mastermindRiskyComingSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve on a trusted device: coming soon'**
+  String get mastermindRiskyComingSoon;
+
+  /// No description provided for @mastermindRiskyComingSoonHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This ask touches deploy, spend, credentials or security. It can\'t be answered from the phone yet.'**
+  String get mastermindRiskyComingSoonHint;
+
   /// No description provided for @mastermindIrisDevicesTitle.
   ///
   /// In en, this message translates to:
@@ -27910,8 +28024,338 @@ abstract class AppLocalizations {
   /// No description provided for @mastermindIrisEnrolLimit.
   ///
   /// In en, this message translates to:
-  /// **'Too many pending devices. Wait for one to expire.'**
+  /// **'Too many enrolment attempts or pending devices. Try again later.'**
   String get mastermindIrisEnrolLimit;
+
+  /// No description provided for @mastermindIrisEnrolAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrol again with a new key'**
+  String get mastermindIrisEnrolAgain;
+
+  /// No description provided for @mastermindIrisUnlockReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock Iris to read your inbox'**
+  String get mastermindIrisUnlockReason;
+
+  /// No description provided for @mastermindIrisConfirmReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm this Iris action'**
+  String get mastermindIrisConfirmReason;
+
+  /// No description provided for @mastermindIrisDeviceLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Iris is locked on this device. It will ask you to unlock again in a few minutes.'**
+  String get mastermindIrisDeviceLocked;
+
+  /// No description provided for @mastermindIrisDeviceLockedEnrol.
+  ///
+  /// In en, this message translates to:
+  /// **'If this keeps happening, enrol again with a new key.'**
+  String get mastermindIrisDeviceLockedEnrol;
+
+  /// No description provided for @mastermindIrisDeviceRevoked.
+  ///
+  /// In en, this message translates to:
+  /// **'This device was removed from Iris. Enrol again to keep using it.'**
+  String get mastermindIrisDeviceRevoked;
+
+  /// No description provided for @mastermindIrisEnrolAgainAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrol again'**
+  String get mastermindIrisEnrolAgainAction;
+
+  /// No description provided for @mastermindIrisClockSkew.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your device clock. It doesn\'t match Iris.'**
+  String get mastermindIrisClockSkew;
+
+  /// No description provided for @mastermindIrisEnrolCodeConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'That code is already in use. Try again.'**
+  String get mastermindIrisEnrolCodeConflict;
+
+  /// No description provided for @mastermindIrisEnrolDeviceConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This key is already registered. Enrol again with a new key.'**
+  String get mastermindIrisEnrolDeviceConflict;
+
+  /// No description provided for @mastermindIrisRelayStopped.
+  ///
+  /// In en, this message translates to:
+  /// **'Relay stopped. Ask the owner to restore it.'**
+  String get mastermindIrisRelayStopped;
+
+  /// No description provided for @mastermindIrisDevicesUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The device list isn\'t available yet. You can still enrol this device.'**
+  String get mastermindIrisDevicesUnavailable;
+
+  /// No description provided for @mastermindIrisDeviceCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get mastermindIrisDeviceCurrent;
+
+  /// No description provided for @mastermindIrisSendDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending to Iris isn\'t available yet'**
+  String get mastermindIrisSendDisabled;
+
+  /// No description provided for @mastermindIrisWritesOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending to Iris is coming soon'**
+  String get mastermindIrisWritesOff;
+
+  /// No description provided for @mastermindIrisWritesNeedEnrol.
+  ///
+  /// In en, this message translates to:
+  /// **'Enrol this device to send messages.'**
+  String get mastermindIrisWritesNeedEnrol;
+
+  /// No description provided for @mastermindAskCardTierDecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs decision'**
+  String get mastermindAskCardTierDecision;
+
+  /// No description provided for @mastermindAskCardTierFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'FYI'**
+  String get mastermindAskCardTierFyi;
+
+  /// No description provided for @mastermindAskCardDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due {when}'**
+  String mastermindAskCardDue(String when);
+
+  /// No description provided for @mastermindAskCardOverdue.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue'**
+  String get mastermindAskCardOverdue;
+
+  /// No description provided for @mastermindAskCardReversible.
+  ///
+  /// In en, this message translates to:
+  /// **'Reversible'**
+  String get mastermindAskCardReversible;
+
+  /// No description provided for @mastermindAskCardOneWay.
+  ///
+  /// In en, this message translates to:
+  /// **'One-way'**
+  String get mastermindAskCardOneWay;
+
+  /// No description provided for @mastermindAskCardNeedsBiometric.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs Face ID or fingerprint'**
+  String get mastermindAskCardNeedsBiometric;
+
+  /// No description provided for @mastermindAskCardExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Expired'**
+  String get mastermindAskCardExpired;
+
+  /// No description provided for @mastermindAskCardAnsweredDiscord.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered on Discord'**
+  String get mastermindAskCardAnsweredDiscord;
+
+  /// No description provided for @mastermindAskCardAnsweredAgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Answered by an agent'**
+  String get mastermindAskCardAnsweredAgent;
+
+  /// No description provided for @mastermindAskCardIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete card'**
+  String get mastermindAskCardIncomplete;
+
+  /// No description provided for @mastermindAskCardIncompleteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The publisher sent only part of this ask. One-tap answers are off. Open the full question, or reply in your own words.'**
+  String get mastermindAskCardIncompleteMessage;
+
+  /// No description provided for @mastermindAskCardExpiredMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This ask expired, so answering is closed.'**
+  String get mastermindAskCardExpiredMessage;
+
+  /// No description provided for @mastermindAskCardOpenFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Open full question'**
+  String get mastermindAskCardOpenFull;
+
+  /// No description provided for @mastermindAskCardReplyInWords.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply in your own words'**
+  String get mastermindAskCardReplyInWords;
+
+  /// No description provided for @mastermindAskCardAnswerWithBiometric.
+  ///
+  /// In en, this message translates to:
+  /// **'Open to answer with Face ID'**
+  String get mastermindAskCardAnswerWithBiometric;
+
+  /// No description provided for @mastermindAskCardShowFullText.
+  ///
+  /// In en, this message translates to:
+  /// **'Show full text'**
+  String get mastermindAskCardShowFullText;
+
+  /// No description provided for @mastermindAskCardHideFullText.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get mastermindAskCardHideFullText;
+
+  /// No description provided for @mastermindAskCardMoreOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{+1 more option} other{+{count} more options}}'**
+  String mastermindAskCardMoreOptions(int count);
+
+  /// No description provided for @mastermindAskCardFewerOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Show fewer options'**
+  String get mastermindAskCardFewerOptions;
+
+  /// No description provided for @mastermindAskCardOptionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 option} other{{count} options}}'**
+  String mastermindAskCardOptionCount(int count);
+
+  /// No description provided for @mastermindAskCardRecommendedOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended: {option}'**
+  String mastermindAskCardRecommendedOption(String option);
+
+  /// No description provided for @mastermindAskCardRecommendedWhy.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended: {option}. {why}'**
+  String mastermindAskCardRecommendedWhy(String option, String why);
+
+  /// No description provided for @mastermindInboxTierUrgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Urgent'**
+  String get mastermindInboxTierUrgent;
+
+  /// No description provided for @mastermindInboxTierDecision.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs a decision'**
+  String get mastermindInboxTierDecision;
+
+  /// No description provided for @mastermindInboxTierFyi.
+  ///
+  /// In en, this message translates to:
+  /// **'For your information'**
+  String get mastermindInboxTierFyi;
+
+  /// Screen-reader label of an Inbox tier heading or tile
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{tier}, 1 ask} other{{tier}, {count} asks}}'**
+  String mastermindInboxTierHeading(String tier, int count);
+
+  /// No description provided for @mastermindInboxTierShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all ({count})'**
+  String mastermindInboxTierShowAll(int count);
+
+  /// No description provided for @mastermindInboxTierShowLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get mastermindInboxTierShowLess;
+
+  /// No description provided for @mastermindInboxTierJump.
+  ///
+  /// In en, this message translates to:
+  /// **'Scrolls to this section'**
+  String get mastermindInboxTierJump;
+
+  /// No description provided for @mastermindUndoWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo window'**
+  String get mastermindUndoWindow;
+
+  /// No description provided for @mastermindUndoOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get mastermindUndoOff;
+
+  /// No description provided for @mastermindUndoSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s'**
+  String mastermindUndoSeconds(int seconds);
+
+  /// No description provided for @mastermindReplySendNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Send now'**
+  String get mastermindReplySendNow;
+
+  /// No description provided for @settingsPushSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Get alerts on this device'**
+  String get settingsPushSummary;
+
+  /// No description provided for @settingsTelemetrySummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Help improve the app'**
+  String get settingsTelemetrySummary;
+
+  /// No description provided for @settingsStorageSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage data on this device'**
+  String get settingsStorageSummary;
+
+  /// No description provided for @settingsLearnMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn more'**
+  String get settingsLearnMore;
+
+  /// No description provided for @assistantVoiceMessagePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen to this voice message and respond.'**
+  String get assistantVoiceMessagePrompt;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

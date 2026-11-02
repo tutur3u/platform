@@ -50,6 +50,7 @@
       }
     }
   },
+  "assistantNotAvailableOffline": "Không khả dụng khi ngoại tuyến",
   "assistantDownloadPhasePending": "Đang chờ",
   "assistantDownloadPhaseQueued": "Trong hàng đợi",
   "assistantDownloadPhaseTransferring": "Đang tải xuống",
@@ -2626,6 +2627,7 @@
   "habitsTeamSummaryTitle": "Tóm tắt nhóm",
   "habitsTemplateLabel": "Bắt đầu từ mẫu",
   "habitsTitle": "Thói quen",
+  "habitsOfflineUnavailable": "Không khả dụng ngoại tuyến",
   "habitsTodayLabel": "Hôm nay",
   "habitsTodayTotalHint": "Tổng hôm nay",
   "habitsTopStreakLabel": "Chuỗi cao nhất",
@@ -2656,6 +2658,7 @@
   "homePersonalAgenda": "Lịch trình",
   "homePersonalAgendaUnavailable": "Lịch cá nhân hiện không khả dụng.",
   "homeSectionCalendar": "Lịch",
+  "homeNotAvailableOffline": "Không khả dụng khi ngoại tuyến",
   "homeSectionLoadFailed": "Kéo xuống để thử lại.",
   "homeSectionToday": "Hôm nay",
   "homeSectionUpNext": "Sắp tới",
@@ -4780,6 +4783,7 @@
   "timerThresholdWarningAll": "Mọi mục bổ sung trong không gian làm việc này đều cần được duyệt. Vui lòng thêm ít nhất một ảnh minh chứng trước khi gửi.",
   "timerTimeEditingRestricted": "Chỉnh Sửa Thời Gian Bị Hạn Chế",
   "timerTitle": "Bấm giờ",
+  "timerOfflineUnavailable": "Không khả dụng ngoại tuyến",
   "timerToday": "Hôm nay",
   "timerTotalSessions": "Tổng số phiên",
   "timerUnknownDate": "Ngày không xác định",
@@ -4926,6 +4930,8 @@
   "assistantNewChatConfirmationDescription": "Cuộc trò chuyện trước có thể đã được lưu, nhưng ứng dụng chưa thể xác nhận. Hãy kiểm tra lịch sử trò chuyện trước khi bắt đầu cuộc trò chuyện mới. Việc bắt đầu cuộc trò chuyện mới không gửi lại yêu cầu trước và có thể tạo một cuộc trò chuyện riêng.",
   "assistantNewChatInspectHistory": "Xem lịch sử",
   "assistantNewChatConfirmCreation": "Bắt đầu cuộc trò chuyện mới",
+  "assistantCreationHoldBannerMessage": "Cuộc trò chuyện gần nhất của bạn có thể chưa được lưu. Bắt đầu cuộc trò chuyện mới sẽ không thử lại cuộc trò chuyện đó và có thể tạo một cuộc trò chuyện riêng.",
+  "assistantCreationHoldDismiss": "Đóng",
   "assistantNewChatResetDenied": "Chưa bắt đầu cuộc trò chuyện mới. Bản nháp của bạn được giữ lại. Hãy kiểm tra lịch sử trò chuyện trước khi chọn thao tác khác.",
   "assistantNewChatResetUncertain": "Chưa thể xác nhận việc đặt lại. Bản nháp của bạn được giữ lại. Hãy kiểm tra lịch sử trò chuyện; ứng dụng sẽ không tự động thử lại.",
   "assistantNewChatResetStale": "Cuộc trò chuyện hoặc bản nháp đã thay đổi. Bản nháp của bạn được giữ lại. Hãy kiểm tra lịch sử trò chuyện trước khi bắt đầu cuộc trò chuyện khác.",
@@ -5139,6 +5145,37 @@
   "offlineManageData": "Quản lý dữ liệu",
   "offlineEvictRowDescription": "Giải phóng dung lượng. Dữ liệu sẽ được tải lại khi bạn trực tuyến.",
   "offlineTechnicalDetails": "Chi tiết kỹ thuật",
+  "offlineWaitingWifi": "Đang chờ Wi-Fi",
+  "offlineWaitingRetry": "Chờ thử lại lúc {time}",
+  "@offlineWaitingRetry": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineStatusPreparing": "Đang chuẩn bị",
+  "offlineStatusReady": "Sẵn sàng ngoại tuyến",
+  "offlineStatusNeverSynced": "Chưa đồng bộ",
+  "offlineStatusLastSynced": "Đồng bộ lần cuối: {time}",
+  "offlineStatusSummary": "{ready} / {total} ứng dụng sẵn sàng ngoại tuyến",
+  "@offlineStatusLastSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@offlineStatusSummary": {
+    "placeholders": {
+      "ready": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "mailSettingsReadingGroup": "Đọc thư",
   "mailSettingsComposeGroup": "Người gửi và chữ ký",
   "mailSettingsAiGroup": "Bản nháp AI",
@@ -6586,6 +6623,19 @@
   "mastermindIrisRecommendationSkipped": "Đã bỏ qua: đã được trả lời hoặc đang tắt trả lời",
   "mastermindIrisRecommendationsResult": "Đã gửi {sent}/{total}",
   "mastermindIrisDone": "Xong",
+  "mastermindIrisUseRecommendationsOthers": "{count, plural, other{+{count} lựa chọn khác}}",
+  "@mastermindIrisUseRecommendationsOthers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisNotIncludedTitle": "Không gồm trong lô: hãy trả lời từng câu",
+  "mastermindIrisNotIncludedRisky": "Cần phê duyệt trên thiết bị tin cậy",
+  "mastermindIrisNotIncludedIncomplete": "Chưa đầy đủ: mở để đọc toàn bộ câu hỏi",
+  "mastermindRiskyComingSoon": "Phê duyệt trên thiết bị tin cậy: sắp ra mắt",
+  "mastermindRiskyComingSoonHint": "Câu hỏi này liên quan đến triển khai, chi tiêu, thông tin xác thực hoặc bảo mật. Chưa thể trả lời từ điện thoại.",
   "mastermindIrisDevicesTitle": "Thiết bị Iris",
   "mastermindIrisDevicesAction": "Thiết bị Iris",
   "mastermindIrisDevicesEmpty": "Chưa có thiết bị nào được đăng ký",
@@ -6606,5 +6656,67 @@
   "mastermindIrisEnrolConfirmed": "Thiết bị này đã được đăng ký.",
   "mastermindIrisEnrolExpired": "Mã đã hết hạn. Hãy bắt đầu lại để nhận mã mới.",
   "mastermindIrisEnrolFailed": "Không thể bắt đầu đăng ký. Hãy thử lại.",
-  "mastermindIrisEnrolLimit": "Có quá nhiều thiết bị đang chờ. Hãy đợi một thiết bị hết hạn."
+  "mastermindIrisEnrolLimit": "Có quá nhiều lượt đăng ký hoặc thiết bị đang chờ. Hãy thử lại sau.",
+  "mastermindIrisEnrolAgain": "Đăng ký lại bằng khóa mới",
+  "mastermindIrisUnlockReason": "Mở khóa Iris để đọc hộp thư",
+  "mastermindIrisConfirmReason": "Xác nhận thao tác Iris này",
+  "mastermindIrisDeviceLocked": "Iris đang bị khóa trên thiết bị này. Ứng dụng sẽ hỏi mở khóa lại sau vài phút.",
+  "mastermindIrisDeviceLockedEnrol": "Nếu lỗi này lặp lại, hãy đăng ký lại bằng khóa mới.",
+  "mastermindIrisDeviceRevoked": "Thiết bị này đã bị gỡ khỏi Iris. Hãy đăng ký lại để tiếp tục sử dụng.",
+  "mastermindIrisEnrolAgainAction": "Đăng ký lại",
+  "mastermindIrisClockSkew": "Hãy kiểm tra đồng hồ thiết bị. Giờ không khớp với Iris.",
+  "mastermindIrisEnrolCodeConflict": "Mã này đang được dùng. Hãy thử lại.",
+  "mastermindIrisEnrolDeviceConflict": "Khóa này đã được đăng ký. Hãy đăng ký lại bằng khóa mới.",
+  "mastermindIrisRelayStopped": "Relay đã dừng. Hãy nhờ chủ sở hữu khôi phục.",
+  "mastermindIrisDevicesUnavailable": "Danh sách thiết bị chưa khả dụng. Bạn vẫn có thể đăng ký thiết bị này.",
+  "mastermindIrisDeviceCurrent": "Thiết bị này",
+  "mastermindIrisSendDisabled": "Hiện chưa thể gửi tin nhắn đến Iris",
+  "mastermindIrisWritesOff": "Sắp có thể gửi tin nhắn đến Iris",
+  "mastermindIrisWritesNeedEnrol": "Hãy đăng ký thiết bị này để gửi tin nhắn.",
+  "mastermindAskCardTierDecision": "Cần quyết định",
+  "mastermindAskCardTierFyi": "Để biết",
+  "mastermindAskCardDue": "Hạn {when}",
+  "mastermindAskCardOverdue": "Quá hạn",
+  "mastermindAskCardReversible": "Có thể hoàn tác",
+  "mastermindAskCardOneWay": "Một chiều",
+  "mastermindAskCardNeedsBiometric": "Cần Face ID hoặc vân tay",
+  "mastermindAskCardExpired": "Đã hết hạn",
+  "mastermindAskCardAnsweredDiscord": "Đã trả lời trên Discord",
+  "mastermindAskCardAnsweredAgent": "Đã được tác tử trả lời",
+  "mastermindAskCardIncomplete": "Thẻ thiếu nội dung",
+  "mastermindAskCardIncompleteMessage": "Bên đăng chỉ gửi một phần của yêu cầu này. Đã tắt trả lời một chạm. Hãy mở câu hỏi đầy đủ, hoặc trả lời bằng lời của bạn.",
+  "mastermindAskCardExpiredMessage": "Yêu cầu này đã hết hạn nên không thể trả lời nữa.",
+  "mastermindAskCardOpenFull": "Mở câu hỏi đầy đủ",
+  "mastermindAskCardReplyInWords": "Trả lời bằng lời của bạn",
+  "mastermindAskCardAnswerWithBiometric": "Mở để trả lời bằng Face ID",
+  "mastermindAskCardShowFullText": "Xem toàn văn",
+  "mastermindAskCardHideFullText": "Thu gọn",
+  "mastermindAskCardMoreOptions": "{count, plural, other{+{count} lựa chọn khác}}",
+  "mastermindAskCardFewerOptions": "Ẩn bớt lựa chọn",
+  "mastermindAskCardOptionCount": "{count, plural, other{{count} lựa chọn}}",
+  "mastermindAskCardRecommendedOption": "Đề xuất: {option}",
+  "mastermindAskCardRecommendedWhy": "Đề xuất: {option}. {why}",
+  "mastermindInboxTierUrgent": "Khẩn cấp",
+  "mastermindInboxTierDecision": "Cần bạn quyết định",
+  "mastermindInboxTierFyi": "Để bạn biết",
+  "mastermindInboxTierHeading": "{tier}, {count} việc",
+  "mastermindInboxTierShowAll": "Xem tất cả ({count})",
+  "mastermindInboxTierShowLess": "Thu gọn",
+  "mastermindInboxTierJump": "Cuộn tới mục này",
+  "mastermindUndoWindow": "Thời gian hoàn tác",
+  "mastermindUndoOff": "Tắt",
+  "mastermindUndoSeconds": "{seconds} giây",
+  "mastermindReplySendNow": "Gửi ngay",
+  "@mastermindUndoSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsPushSummary": "Nhận thông báo trên thiết bị này",
+  "settingsTelemetrySummary": "Giúp cải thiện ứng dụng",
+  "settingsStorageSummary": "Quản lý dữ liệu trên thiết bị này",
+  "settingsLearnMore": "Tìm hiểu thêm",
+  "assistantVoiceMessagePrompt": "Hãy nghe tin nhắn thoại này và trả lời."
 }

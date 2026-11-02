@@ -35,7 +35,7 @@ for (const host of [
 }
 test('production and isolated staging allowed', () => {
   assert.deepEqual(
-    violations('tuturuuu.com pay.tuturuuu.com pay.staging.tutur3u.com'),
+    violations('tuturuuu.com pay.tuturuuu.com pay.tutur3u.com'),
     []
   );
 });
@@ -305,10 +305,7 @@ test('detects hosts concatenated across comments', () => {
     );
   }
   assert.ok(violations('const host = "https://dev.tuturuuu.com";').length);
-  assert.equal(
-    violations('const host = "https://dev.staging.tutur3u.com";').length,
-    0
-  );
+  assert.equal(violations('const host = "https://dev.tutur3u.com";').length, 0);
 });
 
 test('regex literals cannot open a block comment that hides a host', () => {

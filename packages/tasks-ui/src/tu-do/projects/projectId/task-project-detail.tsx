@@ -13,6 +13,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState } from 'react';
+import { listMatchesStatusFilter } from '../../shared/board-header/board-filter-state';
+import {
+  sortLocalTasks,
+  taskMatchesLocalFilters,
+} from '../../shared/board-task-filtering';
 
 import {
   DocumentsTab,
@@ -103,71 +108,20 @@ export function TaskProjectDetail({
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
 
   // Filter lists based on selected status filter
-  const filteredLists = useMemo(() => {
-    if (listStatusFilter === 'all') {
-      return lists;
-    }
-    return lists.filter((list) => list.status === listStatusFilter);
-  }, [lists, listStatusFilter]);
+  const filteredLists = useMemo(
+    () =>
+      lists.filter((list) => listMatchesStatusFilter(list, listStatusFilter)),
+    [lists, listStatusFilter]
+  );
 
   // Filter tasks based on filters AND filtered lists
   const filteredTasks = useMemo(() => {
     const listIds = new Set(filteredLists.map((list) => list.id));
-    const tasksToFilter = tasks;
-    let result = tasksToFilter.filter((task) => listIds.has(task.list_id));
-
-    // Filter by labels
-    if (filters.labels.length > 0) {
-      result = result.filter((task) => {
-        if (!task.labels || task.labels.length === 0) return false;
-        return filters.labels.some((selectedLabel) =>
-          task.labels?.some((taskLabel) => taskLabel.id === selectedLabel.id)
-        );
-      });
-    }
-
-    // Filter by assignees or "my tasks"
-    if (filters.includeMyTasks && currentUserId) {
-      result = result.filter((task) =>
-        task.assignees?.some((a) => a.id === currentUserId)
-      );
-    } else if (filters.assignees.length > 0) {
-      result = result.filter((task) =>
-        task.assignees?.some((a) =>
-          filters.assignees.some((fa) => fa.id === a.id)
-        )
-      );
-    }
-
-    // Filter by projects
-    if (filters.projects.length > 0) {
-      result = result.filter((task) => {
-        if (!task.projects || task.projects.length === 0) return false;
-        return task.projects.some((pt: { id: string }) =>
-          filters.projects.some((p) => p.id === pt.id)
-        );
-      });
-    }
-
-    // Filter by priorities
-    if (filters.priorities.length > 0) {
-      result = result.filter((task) =>
-        task.priority ? filters.priorities.includes(task.priority) : false
-      );
-    }
-
-    // Filter by due date range
-    if (filters.dueDateRange?.from) {
-      result = result.filter((task) => {
-        if (!task.end_date) return false;
-        const taskDate = new Date(task.end_date);
-        const fromDate = filters.dueDateRange!.from!;
-        const toDate = filters.dueDateRange!.to;
-        return taskDate >= fromDate && (!toDate || taskDate <= toDate);
-      });
-    }
-
-    return result;
+    return tasks.filter(
+      (task) =>
+        listIds.has(task.list_id) &&
+        taskMatchesLocalFilters(task, filters, currentUserId)
+    );
   }, [tasks, filters, filteredLists, currentUserId]);
 
   // Apply optimistic overrides
@@ -179,8 +133,12 @@ export function TaskProjectDetail({
           return o ? ({ ...t, ...o } as Task) : t;
         });
 
-    return tasks.filter((task) => !task.deleted_at);
-  }, [filteredTasks, taskOverrides]);
+    return sortLocalTasks(
+      tasks.filter((task) => !task.deleted_at),
+      filters.sortBy,
+      'first'
+    );
+  }, [filteredTasks, filters.sortBy, taskOverrides]);
 
   const handleTaskPartialUpdate = (taskId: string, partial: Partial<Task>) => {
     setTaskOverrides((prev) => ({

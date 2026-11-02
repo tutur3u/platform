@@ -50,6 +50,7 @@
       }
     }
   },
+  "assistantNotAvailableOffline": "Not available offline",
   "assistantDownloadPhasePending": "Pending",
   "assistantDownloadPhaseQueued": "Queued",
   "assistantDownloadPhaseTransferring": "Downloading",
@@ -2704,6 +2705,7 @@
   "habitsTeamSummaryTitle": "Team summary",
   "habitsTemplateLabel": "Start from a template",
   "habitsTitle": "Habits",
+  "habitsOfflineUnavailable": "Not available offline",
   "habitsTodayLabel": "Today",
   "habitsTodayTotalHint": "Today's total",
   "habitsTopStreakLabel": "Top streak",
@@ -2734,6 +2736,7 @@
   "homePersonalAgenda": "Agenda",
   "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
   "homeSectionCalendar": "Calendar",
+  "homeNotAvailableOffline": "Not available offline",
   "homeSectionLoadFailed": "Pull down to try again.",
   "homeSectionToday": "Today",
   "homeSectionUpNext": "Up next",
@@ -4892,6 +4895,7 @@
   "timerThresholdWarningAll": "All missed entries in this workspace require approval. Add at least one proof image before submitting.",
   "timerTimeEditingRestricted": "Time Editing Restricted",
   "timerTitle": "Timer",
+  "timerOfflineUnavailable": "Not available offline",
   "timerToday": "Today",
   "timerTotalSessions": "Total sessions",
   "timerUnknownDate": "Unknown date",
@@ -5038,6 +5042,8 @@
   "assistantNewChatConfirmationDescription": "The earlier conversation may already have been saved, but this app could not confirm it. Check your chat history before starting a new chat. Starting a new chat does not retry the earlier request and may create a separate conversation.",
   "assistantNewChatInspectHistory": "Check history",
   "assistantNewChatConfirmCreation": "Start a new chat",
+  "assistantCreationHoldBannerMessage": "Your last chat may not have been saved. Starting a new chat does not retry it and may create a separate conversation.",
+  "assistantCreationHoldDismiss": "Dismiss",
   "assistantNewChatResetDenied": "A new chat was not started. Your draft is retained. Check your chat history before choosing another action.",
   "assistantNewChatResetUncertain": "The reset could not be confirmed. Your draft is retained. Check your chat history; the app will not retry automatically.",
   "assistantNewChatResetStale": "The conversation or draft changed. Your draft is retained. Check your chat history before starting another chat.",
@@ -5337,6 +5343,37 @@
   "offlineManageData": "Manage data",
   "offlineEvictRowDescription": "Frees space. Data downloads again when you are online.",
   "offlineTechnicalDetails": "Technical details",
+  "offlineWaitingWifi": "Waiting for Wi-Fi",
+  "offlineWaitingRetry": "Waiting to retry at {time}",
+  "@offlineWaitingRetry": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineStatusPreparing": "Preparing",
+  "offlineStatusReady": "Ready offline",
+  "offlineStatusNeverSynced": "Never synced",
+  "offlineStatusLastSynced": "Last synced: {time}",
+  "offlineStatusSummary": "{ready} of {total} apps ready offline",
+  "@offlineStatusLastSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@offlineStatusSummary": {
+    "placeholders": {
+      "ready": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "mailSettingsReadingGroup": "Reading",
   "mailSettingsComposeGroup": "Sender and signature",
   "mailSettingsAiGroup": "AI drafts",
@@ -7042,6 +7079,19 @@
     }
   },
   "mastermindIrisDone": "Done",
+  "mastermindIrisUseRecommendationsOthers": "{count, plural, =1{+1 other option} other{+{count} other options}}",
+  "@mastermindIrisUseRecommendationsOthers": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindIrisNotIncludedTitle": "Not included: answer these one by one",
+  "mastermindIrisNotIncludedRisky": "Needs approval on a trusted device",
+  "mastermindIrisNotIncludedIncomplete": "Incomplete: open it to read the full ask",
+  "mastermindRiskyComingSoon": "Approve on a trusted device: coming soon",
+  "mastermindRiskyComingSoonHint": "This ask touches deploy, spend, credentials or security. It can't be answered from the phone yet.",
   "mastermindIrisDevicesTitle": "Iris devices",
   "mastermindIrisDevicesAction": "Iris devices",
   "mastermindIrisDevicesEmpty": "No devices enrolled yet",
@@ -7076,5 +7126,123 @@
   "mastermindIrisEnrolConfirmed": "This device is enrolled.",
   "mastermindIrisEnrolExpired": "The code expired. Start again for a new one.",
   "mastermindIrisEnrolFailed": "Couldn't start enrolment. Try again.",
-  "mastermindIrisEnrolLimit": "Too many pending devices. Wait for one to expire."
+  "mastermindIrisEnrolLimit": "Too many enrolment attempts or pending devices. Try again later.",
+  "mastermindIrisEnrolAgain": "Enrol again with a new key",
+  "mastermindIrisUnlockReason": "Unlock Iris to read your inbox",
+  "mastermindIrisConfirmReason": "Confirm this Iris action",
+  "mastermindIrisDeviceLocked": "Iris is locked on this device. It will ask you to unlock again in a few minutes.",
+  "mastermindIrisDeviceLockedEnrol": "If this keeps happening, enrol again with a new key.",
+  "mastermindIrisDeviceRevoked": "This device was removed from Iris. Enrol again to keep using it.",
+  "mastermindIrisEnrolAgainAction": "Enrol again",
+  "mastermindIrisClockSkew": "Check your device clock. It doesn't match Iris.",
+  "mastermindIrisEnrolCodeConflict": "That code is already in use. Try again.",
+  "mastermindIrisEnrolDeviceConflict": "This key is already registered. Enrol again with a new key.",
+  "mastermindIrisRelayStopped": "Relay stopped. Ask the owner to restore it.",
+  "mastermindIrisDevicesUnavailable": "The device list isn't available yet. You can still enrol this device.",
+  "mastermindIrisDeviceCurrent": "This device",
+  "mastermindIrisSendDisabled": "Sending to Iris isn't available yet",
+  "mastermindIrisWritesOff": "Sending to Iris is coming soon",
+  "mastermindIrisWritesNeedEnrol": "Enrol this device to send messages.",
+  "mastermindAskCardTierDecision": "Needs decision",
+  "mastermindAskCardTierFyi": "FYI",
+  "mastermindAskCardDue": "Due {when}",
+  "@mastermindAskCardDue": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskCardOverdue": "Overdue",
+  "mastermindAskCardReversible": "Reversible",
+  "mastermindAskCardOneWay": "One-way",
+  "mastermindAskCardNeedsBiometric": "Needs Face ID or fingerprint",
+  "mastermindAskCardExpired": "Expired",
+  "mastermindAskCardAnsweredDiscord": "Answered on Discord",
+  "mastermindAskCardAnsweredAgent": "Answered by an agent",
+  "mastermindAskCardIncomplete": "Incomplete card",
+  "mastermindAskCardIncompleteMessage": "The publisher sent only part of this ask. One-tap answers are off. Open the full question, or reply in your own words.",
+  "mastermindAskCardExpiredMessage": "This ask expired, so answering is closed.",
+  "mastermindAskCardOpenFull": "Open full question",
+  "mastermindAskCardReplyInWords": "Reply in your own words",
+  "mastermindAskCardAnswerWithBiometric": "Open to answer with Face ID",
+  "mastermindAskCardShowFullText": "Show full text",
+  "mastermindAskCardHideFullText": "Show less",
+  "mastermindAskCardMoreOptions": "{count, plural, =1{+1 more option} other{+{count} more options}}",
+  "@mastermindAskCardMoreOptions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindAskCardFewerOptions": "Show fewer options",
+  "mastermindAskCardOptionCount": "{count, plural, =1{1 option} other{{count} options}}",
+  "@mastermindAskCardOptionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindAskCardRecommendedOption": "Recommended: {option}",
+  "@mastermindAskCardRecommendedOption": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindAskCardRecommendedWhy": "Recommended: {option}. {why}",
+  "@mastermindAskCardRecommendedWhy": {
+    "placeholders": {
+      "option": {
+        "type": "String"
+      },
+      "why": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindInboxTierUrgent": "Urgent",
+  "mastermindInboxTierDecision": "Needs a decision",
+  "mastermindInboxTierFyi": "For your information",
+  "mastermindInboxTierHeading": "{count, plural, =1{{tier}, 1 ask} other{{tier}, {count} asks}}",
+  "@mastermindInboxTierHeading": {
+    "description": "Screen-reader label of an Inbox tier heading or tile",
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindInboxTierShowAll": "Show all ({count})",
+  "@mastermindInboxTierShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindInboxTierShowLess": "Show less",
+  "mastermindInboxTierJump": "Scrolls to this section",
+  "mastermindUndoWindow": "Undo window",
+  "mastermindUndoOff": "Off",
+  "mastermindUndoSeconds": "{seconds} s",
+  "mastermindReplySendNow": "Send now",
+  "@mastermindUndoSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsPushSummary": "Get alerts on this device",
+  "settingsTelemetrySummary": "Help improve the app",
+  "settingsStorageSummary": "Manage data on this device",
+  "settingsLearnMore": "Learn more",
+  "assistantVoiceMessagePrompt": "Listen to this voice message and respond."
 }

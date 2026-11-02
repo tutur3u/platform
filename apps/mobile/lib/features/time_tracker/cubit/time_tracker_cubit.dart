@@ -19,6 +19,7 @@ import 'package:mobile/data/models/workspace_settings.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_state.dart';
 import 'package:mobile/features/time_tracker/utils/history_anchor.dart';
+import 'package:mobile/features/time_tracker/utils/history_period.dart';
 import 'package:mobile/features/time_tracker/utils/threshold.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -264,12 +265,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
       tags: [_cacheTag, 'workspace:$wsId', 'module:timer'],
       fetch: () async {
         final now = DateTime.now();
-        final weekStart = DateTime(
-          now.year,
-          now.month,
-          now.day,
-        ).subtract(Duration(days: now.weekday - DateTime.monday));
-        final weekEnd = weekStart.add(const Duration(days: 7));
+        final period = timeTrackerHistoryPeriod(HistoryViewMode.week, now);
         final normalizedUserId = userId.trim().isEmpty ? null : userId;
         final timezone = await getCurrentTimezoneIdentifier();
         final runningSessionFuture = repository.getRunningSession(wsId);
@@ -282,14 +278,14 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
         );
         final historyPageFuture = repository.getHistorySessions(
           wsId,
-          dateFrom: weekStart,
-          dateTo: weekEnd,
+          dateFrom: period.start,
+          dateTo: period.end,
           userId: normalizedUserId,
         );
         final historyStatsFuture = repository.getPeriodStats(
           wsId,
-          dateFrom: weekStart,
-          dateTo: weekEnd,
+          dateFrom: period.start,
+          dateTo: period.end,
           userId: normalizedUserId,
           timezone: timezone,
         );
@@ -694,7 +690,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     if (wsId.isEmpty) return;
     await _ensureHistoryPreferencesLoaded();
     final anchorDate = _currentHistoryAnchorDate();
-    final periodRange = _historyPeriodRange(
+    final periodRange = timeTrackerHistoryPeriod(
       state.historyViewMode,
       anchorDate,
       firstDayOfWeek: effectiveFirstDayOfWeek,
@@ -776,7 +772,7 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
     }
 
     final anchorDate = _currentHistoryAnchorDate();
-    final periodRange = _historyPeriodRange(
+    final periodRange = timeTrackerHistoryPeriod(
       state.historyViewMode,
       anchorDate,
       firstDayOfWeek: effectiveFirstDayOfWeek,
@@ -1386,45 +1382,6 @@ class TimeTrackerCubit extends Cubit<TimeTrackerState> {
 
   DateTime _currentHistoryAnchorDate() {
     return resolveTimeTrackerHistoryAnchorDate(state.historyAnchorDate);
-  }
-
-  ({DateTime start, DateTime end}) _historyPeriodRange(
-    HistoryViewMode mode,
-    DateTime anchor, {
-    int firstDayOfWeek = DateTime.monday,
-  }) {
-    final localAnchor = resolveTimeTrackerHistoryAnchorDate(anchor);
-    switch (mode) {
-      case HistoryViewMode.day:
-        final start = DateTime(
-          localAnchor.year,
-          localAnchor.month,
-          localAnchor.day,
-        );
-        final end = start
-            .add(const Duration(days: 1))
-            .subtract(const Duration(microseconds: 1));
-        return (start: start, end: end);
-      case HistoryViewMode.week:
-        final normalizedAnchor = DateTime(
-          localAnchor.year,
-          localAnchor.month,
-          localAnchor.day,
-        );
-        final offset = (normalizedAnchor.weekday - firstDayOfWeek + 7) % 7;
-        final start = normalizedAnchor.subtract(Duration(days: offset));
-        final end = start
-            .add(const Duration(days: 7))
-            .subtract(const Duration(microseconds: 1));
-        return (start: start, end: end);
-      case HistoryViewMode.month:
-        final start = DateTime(localAnchor.year, localAnchor.month);
-        final end = DateTime(
-          localAnchor.year,
-          localAnchor.month + 1,
-        ).subtract(const Duration(microseconds: 1));
-        return (start: start, end: end);
-    }
   }
 
   String? _normalizeUserId(String? userId) {

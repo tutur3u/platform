@@ -43,8 +43,57 @@ function recordsDigest(records) {
   return crypto.createHash('sha256').update(body).digest('hex');
 }
 
-function attestationDescription(records) {
-  return `definer-records sha256:${recordsDigest(records)}`;
+// Additions alone keep the original description. Rebinds switch to a digest
+// over both lists, so one status covers exactly the additions and rebinds.
+function attestationDescription(records, rebinds = []) {
+  if (!rebinds.length)
+    return `definer-records sha256:${recordsDigest(records)}`;
+  const body = canonicalJson({
+    additions: records.map(canonicalJson).sort(),
+    rebinds: rebinds.map(({ from, to }) => canonicalJson({ from, to })).sort(),
+  });
+  return `definer-rebinds sha256:${crypto.createHash('sha256').update(body).digest('hex')}`;
+}
+
+function withoutSourceDigest(entry) {
+  const { sourceDigest: _ignored, ...rest } = entry ?? {};
+  return canonicalJson(rest);
+}
+
+// A rebind replaces a base record with one that differs ONLY in sourceDigest,
+// for a migration this change modified. Every other edit or removal still
+// fails as append-only. Leftovers are additions.
+function splitLedger(trusted, proposed) {
+  if (!Array.isArray(trusted) || !Array.isArray(proposed))
+    throw new Error('Verified finding ledgers must be JSON arrays.');
+  const remaining = proposed.map((entry) => JSON.stringify(entry));
+  const missing = [];
+  for (const entry of trusted) {
+    const index = remaining.indexOf(JSON.stringify(entry));
+    if (index === -1) missing.push(entry);
+    else remaining.splice(index, 1);
+  }
+  const leftovers = remaining.map((entry) => JSON.parse(entry));
+  const rebinds = [];
+  for (const from of missing) {
+    const matches = leftovers.filter(
+      (entry) =>
+        entry &&
+        typeof entry === 'object' &&
+        !Array.isArray(entry) &&
+        typeof entry.sourceDigest === 'string' &&
+        entry.sourceDigest !== from.sourceDigest &&
+        withoutSourceDigest(entry) === withoutSourceDigest(from)
+    );
+    if (matches.length !== 1)
+      throw new Error(
+        `Verified finding record changed or removed (base records are append-only): ${from.file}`
+      );
+    leftovers.splice(leftovers.indexOf(matches[0]), 1);
+    rebinds.push({ from, to: matches[0] });
+  }
+  const additions = splitVerifiedRecords([], leftovers);
+  return { additions, rebinds };
 }
 
 // D1: every trusted record must still appear, byte-identical; whatever is left
@@ -135,6 +184,66 @@ function addedMigrations(root, base, head) {
   return added;
 }
 
+// D2 for rebinds: migrations this change MODIFIED in place (status M) that the
+// base already has. Added, renamed and copied files never qualify.
+function modifiedMigrations(root, base, head) {
+  const fields = git(root, [
+    'diff',
+    '--name-status',
+    '-z',
+    '-M',
+    '--no-ext-diff',
+    '--no-textconv',
+    `${base}...${head}`,
+    '--',
+    MIGRATIONS,
+  ]).split('\0');
+  const modified = new Set();
+  for (let index = 0; index < fields.length - 1; ) {
+    const status = fields[index];
+    const paths = /^[RC]/.test(status) ? 2 : 1;
+    if (status === 'M') modified.add(fields[index + 1]);
+    index += 1 + paths;
+  }
+  for (const file of modified) {
+    try {
+      git(root, ['cat-file', '-e', `${base}:${file}`]);
+    } catch {
+      modified.delete(file);
+    }
+  }
+  return modified;
+}
+
+// Each rebind must target a modified migration and match a finding the trusted
+// guard recomputed over the pull request's bytes.
+function bindRebinds(rebinds, findings, modified) {
+  for (const { to } of rebinds) {
+    if (
+      typeof to.file !== 'string' ||
+      !to.file.startsWith(MIGRATIONS) ||
+      !modified.has(to.file)
+    )
+      throw new Error(
+        `Verified finding rebind must target a migration modified by this change: ${to.file}`
+      );
+    if (
+      !findings.some((finding) =>
+        verifiedFindingMatches(to, finding.file, finding, finding.sourceDigest)
+      )
+    )
+      throw new Error(
+        `Verified finding rebind matches no recomputed finding: ${to.file}:${to.line} ${to.rule} ${to.signature}`
+      );
+  }
+}
+
+function applyRebinds(trusted, rebinds) {
+  return trusted.map(
+    (entry) => rebinds.find(({ from }) => from === entry)?.to ?? entry
+  );
+}
+
 // D2: each addition must match a finding the trusted guard recomputed over the
 // pull request's bytes (path, line, rule, signature, digest, sourceDigest).
 function bindAdditions(additions, findings, added) {
@@ -176,14 +285,20 @@ function bindAdditions(additions, findings, added) {
 
 // D3: the newest status for the context on the exact head SHA must be a
 // success from the pinned attester whose description carries the digest.
-async function verifyAttestation({ additions, head, token, fetch }) {
+async function verifyAttestation({
+  additions,
+  rebinds = [],
+  head,
+  token,
+  fetch,
+}) {
   if (!token)
     throw new Error(
       'Definer record attestation needs GITHUB_TOKEN (statuses: read).'
     );
   if (typeof fetch !== 'function')
     throw new Error('Definer record attestation needs fetch.');
-  const expected = attestationDescription(additions);
+  const expected = attestationDescription(additions, rebinds);
   for (let page = 1; page <= STATUS_PAGES; page += 1) {
     let statuses;
     try {
@@ -246,28 +361,31 @@ async function admitVerifiedFindings({
   const read = (directory) =>
     JSON.parse(fs.readFileSync(path.join(directory, LEDGER), 'utf8'));
   const trusted = read(trustedDirectory);
-  const additions = splitVerifiedRecords(
+  const { additions, rebinds } = splitLedger(
     trusted,
     read(path.join(root, 'scripts/ci'))
   );
   const findings = scan(trusted);
-  if (!additions.length) return findings;
+  if (!additions.length && !rebinds.length) return findings;
   const { base, head } = resolveShas(root, env);
-  const remaining = bindAdditions(
-    additions,
-    findings,
-    addedMigrations(root, base, head)
-  );
+  if (rebinds.length)
+    bindRebinds(rebinds, findings, modifiedMigrations(root, base, head));
+  const added = addedMigrations(root, base, head);
+  const remaining = bindAdditions(additions, findings, added);
   const description = await verifyAttestation({
     additions,
+    rebinds,
     head,
     token: env.GITHUB_TOKEN,
     fetch,
   });
   console.log(
-    `Admitted ${additions.length} attested verified finding record(s): ${description}`
+    `Admitted ${additions.length} attested verified finding record(s) and ${rebinds.length} rebind(s): ${description}`
   );
-  return remaining;
+  // Attested rebinds join the trusted set the guard scans with, so they
+  // suppress exactly like base records; additions still filter afterwards.
+  if (!rebinds.length) return remaining;
+  return bindAdditions(additions, scan(applyRebinds(trusted, rebinds)), added);
 }
 
 module.exports = {
@@ -278,8 +396,11 @@ module.exports = {
   admitVerifiedFindings,
   attestationDescription,
   bindAdditions,
+  bindRebinds,
   canonicalJson,
+  modifiedMigrations,
   recordsDigest,
+  splitLedger,
   splitVerifiedRecords,
   verifyAttestation,
 };
@@ -293,18 +414,20 @@ if (require.main === module) {
       throw new Error(
         'Usage: security-definer-admission.js digest <base-ledger.json> <head-ledger.json>'
       );
-    const additions = splitVerifiedRecords(
+    const { additions, rebinds } = splitLedger(
       JSON.parse(fs.readFileSync(trustedFile, 'utf8')),
       JSON.parse(fs.readFileSync(proposedFile, 'utf8'))
     );
-    if (!additions.length) throw new Error('No new verified finding records.');
+    if (!additions.length && !rebinds.length)
+      throw new Error('No new or rebound verified finding records.');
     console.log(
       JSON.stringify(
         {
           context: ATTESTATION_CONTEXT,
           count: additions.length,
-          description: attestationDescription(additions),
+          description: attestationDescription(additions, rebinds),
           records: additions,
+          rebinds,
         },
         null,
         2

@@ -131,6 +131,8 @@ extension _TimeTrackerRepositoryHelpers on TimeTrackerRepository {
       readThroughJson(
         api: _api,
         namespace: 'time_tracker.data',
+        cacheStore: _cacheStore,
+        cacheUserId: _cacheUserId,
         workspaceId: wsId,
         path: path,
       );
@@ -139,6 +141,8 @@ extension _TimeTrackerRepositoryHelpers on TimeTrackerRepository {
       readThroughJsonList(
         api: _api,
         namespace: 'time_tracker.list',
+        cacheStore: _cacheStore,
+        cacheUserId: _cacheUserId,
         workspaceId: wsId,
         path: path,
       );

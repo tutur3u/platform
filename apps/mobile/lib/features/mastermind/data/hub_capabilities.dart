@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:mobile/features/mastermind/data/mastermind_snapshot_source.dart';
 
 /// GET /v1/capabilities: `{schema_versions, replies, push}` plus an optional
-/// last `iris` key. The Worker flips these without a store release, so the
+/// `iris` and `iris_send` keys. The Worker flips these without a store release;
 /// client reads them instead of probing.
 final class MastermindCapabilities {
   MastermindCapabilities({
@@ -12,6 +12,8 @@ final class MastermindCapabilities {
     required this.replies,
     required this.push,
     this.iris = false,
+    this.irisSend = false,
+    this.replyHold = false,
   }) : schemaVersions = List.unmodifiable(schemaVersions);
 
   final List<String> schemaVersions;
@@ -22,6 +24,13 @@ final class MastermindCapabilities {
   /// about this device's enrolment.
   final bool iris;
 
+  /// Sending requires a separate explicit opt-in from the relay.
+  final bool irisSend;
+
+  /// Forge F2 honours `not_before` on POST /v1/replies (`reply_hold`). Absent
+  /// means off. Nothing sends `not_before` yet: the 30 s hold is client-side.
+  final bool replyHold;
+
   bool get supportsSchema14 => schemaVersions.contains('1.4');
 
   /// Closed body; null for anything else so a drifting Worker fails closed.
@@ -30,7 +39,12 @@ final class MastermindCapabilities {
       final decoded = jsonDecode(utf8.decode(bytes));
       if (decoded is! Map<String, dynamic>) return null;
       final hasIris = decoded.containsKey('iris');
-      if (decoded.length != (hasIris ? 4 : 3) ||
+      final hasSend = decoded.containsKey('iris_send');
+      final hasHold = decoded.containsKey('reply_hold');
+      if (decoded.length !=
+              3 + (hasIris ? 1 : 0) + (hasHold ? 1 : 0) + (hasSend ? 1 : 0) ||
+          (hasHold && decoded['reply_hold'] is! bool) ||
+          (hasSend && decoded['iris_send'] is! bool) ||
           decoded['replies'] is! bool ||
           decoded['push'] is! bool ||
           (hasIris && decoded['iris'] is! bool)) {
@@ -47,6 +61,8 @@ final class MastermindCapabilities {
         replies: decoded['replies'] as bool,
         push: decoded['push'] as bool,
         iris: hasIris && decoded['iris'] as bool,
+        irisSend: hasSend && decoded['iris_send'] as bool,
+        replyHold: hasHold && decoded['reply_hold'] as bool,
       );
     } on FormatException {
       return null;

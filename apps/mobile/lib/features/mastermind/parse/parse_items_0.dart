@@ -76,6 +76,7 @@ NeedsYou parseNeedsYou(JsonReader input) {
       'kind',
       'product',
       'answered_via',
+      ...AskV2Fields.keys,
     ],
     [
       'id',
@@ -100,6 +101,8 @@ NeedsYou parseNeedsYou(JsonReader input) {
     // Additive timing: an unknown or malformed value is absent, never fatal.
     deadline: AskDeadline.fromWire(r.object()['deadline']),
     urgency: AskUrgency.fromWire(r.object()['urgency']),
+    // Optional Inbox fields: tolerant, so a bad value is absent, never fatal.
+    askV2: AskV2Fields.read(r.object()),
     hubOptions: r.has('hub_options') && r.field('hub_options').value != null
         ? _shortOptions(r.field('hub_options')).labels
         : null,

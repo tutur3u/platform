@@ -4,7 +4,9 @@ import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_models.dart';
+import 'package:mobile/features/mastermind/presentation/inbox_model.dart';
 import 'package:mobile/features/mastermind/presentation/what_needs_me.dart';
+import 'package:mobile/features/mastermind/view/inbox/tier_header.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
 import 'package:mobile/l10n/l10n.dart';
 
@@ -19,8 +21,15 @@ class WhatNeedsMeHeader extends StatelessWidget {
     required this.counts,
     this.summary,
     this.onUseRecommendations,
+    this.tierCounts,
+    this.onTier,
     super.key,
   });
+
+  /// Open asks per Inbox tier; with [onTier], shown as three tiles that
+  /// scroll the list to their tier instead of the urgency chips.
+  final Map<InboxTier, int>? tierCounts;
+  final ValueChanged<InboxTier>? onTier;
 
   final WhatNeedsMeCounts counts;
   final IrisSummary? summary;
@@ -56,6 +65,8 @@ class WhatNeedsMeHeader extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           if (counts.total == 0)
             Text(l10n.mastermindIrisNothingNeedsYou, style: muted)
+          else if ((tierCounts, onTier) case (final tiers?, final onTier?))
+            MastermindTierTiles(counts: tiers, onTier: onTier)
           else
             Wrap(
               spacing: AppSpacing.xs,

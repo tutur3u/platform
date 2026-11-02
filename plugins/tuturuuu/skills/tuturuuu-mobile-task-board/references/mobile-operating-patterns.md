@@ -27,6 +27,7 @@ Read only the section relevant to the current feature; paths are repository-rela
 - **Widget Consistency**: Preserve per-field validation when refactoring into shared editable widgets.
 - **Mobile API Error Surfacing**: In mobile form submit handlers, catch `ApiException` separately and surface `e.message` (with safe fallback) instead of only a generic toast.
 - **Spreadsheet Export Sanitization**: For CSV/TSV exports that include user-controlled fields, prefix values whose left-trimmed content starts with `=`, `+`, `-`, or `@` with an apostrophe before quote escaping so spreadsheet apps do not interpret exported cells as formulas.
+- **Offline Preparation Publication**: Fetch-only preparers must reuse the owning reader's genuine denial cleanup, including its MFA/verification exceptions. Capture destination `resourceRevisionFor` values before requests, pass `expectedRevision`, `requirePublication: true` and scope checks through durable writes, and verify again before retaining readiness. Actor equality alone cannot fence a completed purge. Regress a fresh denial after an old download and a held response released after a completed normal-reader purge.
 - **Sensitive Cache Denylist**: Do not persist workspace secrets, credentials, access tokens, or raw secret values in `CacheStore`, SharedPreferences, Hive, or other mobile disk caches. Use in-memory state only unless the storage path is explicitly encrypted and reviewed for that secret class.
 - **Auth Account State Redaction**: Secret-bearing auth account models exposed through Cubit/Bloc state must exclude raw refresh tokens and session JSON from `Equatable.props` and `toString`/debug summaries. Keep secure-storage serialization separate from loggable equality and state output.
 - **Supabase Logout Required For Account Cleanup**: Multi-account removal and all-account logout must not clear secure account stores or emit unauthenticated auth state unless Supabase `auth.signOut()` succeeds. Treat Google/provider logout and stored refresh-token revocation as best-effort only; surface Supabase logout failures and keep the local account visible for retry.
@@ -165,6 +166,10 @@ when the local checkout lacks package configuration.
 
 ### Offline downloads
 
+For MobileFlags polling, reconnect, logout, cache retention, and flag-gated
+preparer registration, use the [mobile rollout contract](../../../../../apps/docs/platform/applications/mobile.mdx#offline-rollout-flags).
+Its linked reader tests cover scoped deletion, late responses, and disk retention.
+
 Use the product decisions in
 `apps/docs/platform/features/mobile-workspace-tools.mdx` for offline preparation,
 local search parity, and repeated dock taps. Download all must remain explicit,
@@ -175,6 +180,13 @@ challenges, and leave uncertain writes in review. Reuse ApiClient's preparation
 Zone so background work does not open captcha modals. Full downloads must use
 the same cache keys and payload shapes as normal reads; test first offline visits
 with normal UI page sizes rather than only the prepared request parameters.
+Notes uses dedicated list/archive keys without path parameters; share that key
+factory with its repository. Its list already includes bodies, so budget inbox
+and archive together before publishing either snapshot.
+
+For Documents, prepare the default 30-row path and whitelist metadata fields;
+never retain list-response content as a substitute for a detail download.
+The preparer regression must reopen its snapshot through readThroughJson.
 
 Use shell titles rather than duplicate body titles. Put grouped section switches
 rightmost and auxiliary actions before them. Profile sections should adapt to

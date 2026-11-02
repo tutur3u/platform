@@ -3,6 +3,7 @@ import {
   getConfiguredSharedCookieDomainOverride,
   type TuturuuuSharedCookieDomain,
 } from './shared-cookie';
+import { isStagingAppHostname } from './staging-hosts';
 
 const INTERNAL_APP_DOMAINS_ENV_KEY =
   'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS';
@@ -22,7 +23,7 @@ function warnIgnoredInternalAppDomainEntry(entry: string, reason: string) {
 
 function parseInternalAppDomainEntry(
   entry: string,
-  override: TuturuuuSharedCookieDomain,
+  _override: TuturuuuSharedCookieDomain,
   knownAppNames: ReadonlySet<string>
 ): AppDomain | null {
   const trimmed = entry.trim();
@@ -93,14 +94,10 @@ function parseInternalAppDomainEntry(
     return null;
   }
 
-  if (
-    url.hostname.endsWith('.') ||
-    (url.hostname !== override.hostname &&
-      !url.hostname.endsWith(`.${override.hostname}`))
-  ) {
+  if (!isStagingAppHostname(url.hostname)) {
     warnIgnoredInternalAppDomainEntry(
       trimmed,
-      `host must be ${override.hostname} or a subdomain of it`
+      'host must be an exact staging app hostname'
     );
     return null;
   }
@@ -114,7 +111,7 @@ function parseInternalAppDomainEntry(
 }
 
 /**
- * Staging apps live on `https://<app>.staging.tutur3u.com`, so they cannot be
+ * Staging apps live on `https://<app>.tutur3u.com`, so they cannot be
  * derived from the production registry. Register them as `internal` apps
  * (token handoff through `/verify-token`) with `name:https://origin` entries.
  *

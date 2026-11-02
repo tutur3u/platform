@@ -2,6 +2,7 @@
 title: "TanStack/Rust Cutover Runbook"
 description: "Bring up, verify, and gate the dual-stack TanStack frontend and Rust backend before cutover."
 updatedAt: "2026-06-22"
+audience: developers
 ---
 
 <Warning>
@@ -136,3 +137,41 @@ shell. Adding an app derives its inventory from the registered source path;
 removing a registered route requires an explicit accepted-removal decision.
 Preserve shared Internal API contracts and authorization when migrating each
 surface. This backlog does not change live routing or authorize a Rust cutover.
+
+## Meet production cutover
+
+Meet's production publication is admitted in `tuturuuu.ci.ts`
+(`productionPublicationPolicy.meet`, surfaces `frontend` and `realtime-do`).
+Unlike Calendar, Meet does not change origin: the native Start + Void build
+publishes as a new version of the same `tuturuuu-meet` Worker that served the
+legacy OpenNext build, on the same `meet.tuturuuu.com` custom domain. The
+`MeetLiveDurableObject` migration (`meet-live-v1`) is identical in both
+configurations, so no Durable Object migration runs.
+
+Release owner steps:
+
+1. Promote a green `main` SHA to `production`. The planner selects
+   `meet-cloudflare.yaml`; its `deploy` job records the current
+   `tuturuuu-meet` and `tuturuuu-meet-realtime` versions and deployments in the
+   `meet-rollback-<sha>-<run>` artifact before any write.
+2. Private smoke before promotion (required): the deploy job's `wrangler
+   deploy` is the public flip, so first upload the qualified artifact with
+   `wrangler versions upload` (no traffic) and route only operator requests to
+   it with the `Cloudflare-Workers-Version-Overrides` header on
+   `meet.tuturuuu.com`. Promote only after the real-call QA passes (join, SFU
+   media, lobby rename, consent, an authenticated API call and a server
+   action). Record the legacy `tuturuuu-meet` and `tuturuuu-meet-realtime`
+   version IDs first.
+5. Keep `MEET_AI_ENABLED_WORKSPACE_IDS` set as a secret on `tuturuuu-meet`
+   (Meet AI is default-allow without it; the deploy job fails closed) and
+   watch errors for 30 minutes after the flip, rolling back at the first
+   regression.
+3. Rollback is one step: `wrangler versions deploy <legacy-version-id>@100%
+   --name tuturuuu-meet` (and the same for `tuturuuu-meet-realtime` if its
+   version changed), using the IDs from the rollback artifact. Rehearse once
+   before announcing.
+4. Verify `https://meet.tuturuuu.com/api/build-info` reports the promoted SHA.
+
+To hold Meet again, set `productionPublicationPolicy.meet` back to
+`{ state: 'held', reason: ... }`; the planner and the deploy job's
+`production-policy` gate then skip every Meet production write.

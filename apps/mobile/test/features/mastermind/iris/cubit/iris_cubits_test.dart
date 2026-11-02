@@ -55,7 +55,12 @@ final class _ScriptedRelay implements IrisRelay {
   Future<IrisResult<IrisSummary>> summary() async => _none;
 
   @override
-  Future<IrisResult<IrisEnrollment>> enroll(String k, String f) async => _none;
+  Future<IrisResult<IrisEnrollment>> enroll(
+    String k,
+    String f, {
+    required String deviceId,
+    required String code,
+  }) async => _none;
 
   @override
   Future<IrisResult<IrisDevice>> device(String id) async => _none;

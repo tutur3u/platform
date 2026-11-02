@@ -171,6 +171,8 @@ export type GuardWindowInput = {
   limit: number;
   windowMs: number;
   algo: 'fixed' | 'sliding';
+  /** Units charged by this hit (default one), e.g. audio seconds. */
+  cost?: number;
 };
 
 export type GuardWindowSubject = {
@@ -384,6 +386,7 @@ export function createAbuseGuardClient(options: {
                   limit: window.limit,
                   windowMs: window.windowMs,
                   algo: window.algo,
+                  ...(window.cost === undefined ? {} : { cost: window.cost }),
                 }))
               ),
             },

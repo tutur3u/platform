@@ -37,7 +37,10 @@ import { GET, POST } from './route';
 // The Worker context crosses the app/core adapter package boundary.
 const allowlist = (value: string | undefined) =>
   vi.stubGlobal(Symbol.for('__cloudflare-context__'), {
-    env: { MEET_AI_ENABLED_WORKSPACE_IDS: value },
+    env: {
+      MEET_AI_ENABLED_WORKSPACE_IDS: value,
+      MEET_AI_DISABLED: value ? undefined : 'true',
+    },
   });
 afterEach(() => {
   vi.unstubAllGlobals();

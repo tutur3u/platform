@@ -50,10 +50,14 @@ export async function POST(request: Request, { params }: Params) {
 
   try {
     const sbAdmin = await createAdminClient();
-    const rpc = sbAdmin.rpc.bind(sbAdmin) as unknown as <T>(
-      fn: string,
-      args: Record<string, unknown>
-    ) => Promise<{ data: T[] | null; error: Error | null }>;
+    // Cast before binding: binding the generic rpc itself exceeds TypeScript's
+    // instantiation depth (TS2589) on the generated Database type.
+    const rpc = (
+      sbAdmin.rpc as unknown as <T>(
+        fn: string,
+        args: Record<string, unknown>
+      ) => Promise<{ data: T[] | null; error: Error | null }>
+    ).bind(sbAdmin);
     const { data, error } = await rpc<BackfillRow>(
       'backfill_workspace_user_status_changes',
       {

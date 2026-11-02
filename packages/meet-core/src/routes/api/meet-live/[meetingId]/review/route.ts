@@ -27,10 +27,7 @@ export async function POST(
     if (!parsed.success) throw new MeetCallAccessError(400, 'Invalid review');
     const { env } = await getCloudflareContext({ async: true });
     if (!isMeetAiAvailableForWorkspace(access.meeting.ws_id, env))
-      throw new MeetCallAccessError(
-        403,
-        'Meeting AI is not available for this workspace'
-      );
+      throw new MeetCallAccessError(403, 'Meet AI is temporarily unavailable');
     const binding = (env as unknown as { MEET_LIVE: DurableObjectNamespace })
       .MEET_LIVE;
     const object = binding.get(binding.idFromName(parsed.data.sessionId));

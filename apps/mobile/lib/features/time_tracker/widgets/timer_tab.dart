@@ -19,6 +19,7 @@ import 'package:mobile/features/time_tracker/widgets/timer_display.dart';
 import 'package:mobile/features/time_tracker/widgets/timer_dock_actions.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
 class TimerTab extends StatefulWidget {
@@ -55,104 +56,114 @@ class _TimerTabState extends State<TimerTab> {
             context.read<WorkspaceCubit>().state.currentWorkspace?.id ?? '';
         final userId = context.watch<AuthCubit>().state.user?.id ?? '';
 
-        return AppPageListView(
-          children: [
-            const shad.Gap(AppSpacing.xxl),
-            // Timer display
-            Center(
-              child: TimerDisplay(
-                elapsed: state.elapsed,
+        return NovaRefreshIndicator(
+          onRefresh: () async {
+            if (wsId.isNotEmpty && userId.isNotEmpty) {
+              await cubit.loadData(wsId, userId, forceRefresh: true);
+            }
+          },
+          child: AppPageListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              const shad.Gap(AppSpacing.xxl),
+              // Timer display
+              Center(
+                child: TimerDisplay(
+                  elapsed: state.elapsed,
+                  isRunning: state.isRunning,
+                  isPaused: state.isPaused,
+                  pomodoroPhase: state.pomodoroPhase,
+                ),
+              ),
+              const shad.Gap(24),
+              TimerDockActions(
                 isRunning: state.isRunning,
                 isPaused: state.isPaused,
-                pomodoroPhase: state.pomodoroPhase,
+                enabled:
+                    wsId.isNotEmpty &&
+                    userId.isNotEmpty &&
+                    !_isActionInProgress,
+                primaryLoading:
+                    _pendingAction != null &&
+                    _pendingAction != _TimerControlAction.stop,
+                stopLoading: _isActionLoading(_TimerControlAction.stop),
+                onStart: () => unawaited(_handleStart(context, cubit, wsId)),
+                onStop: () =>
+                    unawaited(_handleStop(context, cubit, wsId, userId)),
+                onPause: () =>
+                    unawaited(_handlePause(context, cubit, wsId, userId)),
+                onResume: () => unawaited(_handleResume(context, cubit)),
               ),
-            ),
-            const shad.Gap(24),
-            TimerDockActions(
-              isRunning: state.isRunning,
-              isPaused: state.isPaused,
-              enabled:
-                  wsId.isNotEmpty && userId.isNotEmpty && !_isActionInProgress,
-              primaryLoading:
-                  _pendingAction != null &&
-                  _pendingAction != _TimerControlAction.stop,
-              stopLoading: _isActionLoading(_TimerControlAction.stop),
-              onStart: () => unawaited(_handleStart(context, cubit, wsId)),
-              onStop: () =>
-                  unawaited(_handleStop(context, cubit, wsId, userId)),
-              onPause: () =>
-                  unawaited(_handlePause(context, cubit, wsId, userId)),
-              onResume: () => unawaited(_handleResume(context, cubit)),
-            ),
-            const PomodoroPanel(),
-            const shad.Gap(16),
-            // Running session info card (read-only summary while running/paused)
-            if (state.isRunning || state.isPaused) ...[
-              RunningSessionInfoCard(
-                title: state.runningSession?.title,
-                description: state.runningSession?.description,
-                categoryName: state.runningSession?.categoryName,
-                categoryColor: state.runningSession?.categoryColor,
-                taskName: state.runningSessionTaskName,
-                taskTicketLabel: state.runningSessionTaskTicketLabel,
-              ),
-              const shad.Gap(8),
-            ],
-            // Session title input
-            if (!state.isRunning && !state.isPaused)
-              shad.FormField(
-                key: const shad.FormKey<String>(#sessionTitle),
-                label: Text(l10n.timerSessionTitle),
-                child: shad.TextField(
-                  placeholder: Text(context.l10n.inputPlaceholderTimeTitle),
-                  selectionControls: platformTextSelectionControls(),
-                  contextMenuBuilder: platformTextContextMenuBuilder(),
-                  onChanged: cubit.setTitle,
-                ),
-              ),
-            // Advanced section (category, description, task link)
-            if (!state.isRunning && !state.isPaused) ...[
+              const PomodoroPanel(),
               const shad.Gap(16),
-              TimerAdvancedSection(
-                categories: state.categories,
-                selectedCategoryId: state.selectedCategoryId,
-                onOpenCategoryPicker: () => showCategorySheet(
-                  context: context,
+              // Running session info card (read-only summary while running/paused)
+              if (state.isRunning || state.isPaused) ...[
+                RunningSessionInfoCard(
+                  title: state.runningSession?.title,
+                  description: state.runningSession?.description,
+                  categoryName: state.runningSession?.categoryName,
+                  categoryColor: state.runningSession?.categoryColor,
+                  taskName: state.runningSessionTaskName,
+                  taskTicketLabel: state.runningSessionTaskTicketLabel,
+                ),
+                const shad.Gap(8),
+              ],
+              // Session title input
+              if (!state.isRunning && !state.isPaused)
+                shad.FormField(
+                  key: const shad.FormKey<String>(#sessionTitle),
+                  label: Text(l10n.timerSessionTitle),
+                  child: shad.TextField(
+                    placeholder: Text(context.l10n.inputPlaceholderTimeTitle),
+                    selectionControls: platformTextSelectionControls(),
+                    contextMenuBuilder: platformTextContextMenuBuilder(),
+                    onChanged: cubit.setTitle,
+                  ),
+                ),
+              // Advanced section (category, description, task link)
+              if (!state.isRunning && !state.isPaused) ...[
+                const shad.Gap(16),
+                TimerAdvancedSection(
                   categories: state.categories,
                   selectedCategoryId: state.selectedCategoryId,
-                  onSelected: cubit.selectCategory,
-                  onCreateCategory: ({required name, color, description}) =>
-                      cubit.createCategory(
-                        wsId,
-                        name,
-                        color: color,
-                        description: description,
-                        throwOnError: true,
+                  onOpenCategoryPicker: () => showCategorySheet(
+                    context: context,
+                    categories: state.categories,
+                    selectedCategoryId: state.selectedCategoryId,
+                    onSelected: cubit.selectCategory,
+                    onCreateCategory: ({required name, color, description}) =>
+                        cubit.createCategory(
+                          wsId,
+                          name,
+                          color: color,
+                          description: description,
+                          throwOnError: true,
+                        ),
+                  ),
+                  initialDescription: state.sessionDescription,
+                  initialTaskId: state.sessionTaskId,
+                  initialTaskName: state.sessionTaskName,
+                  initialTaskTicketLabel: state.sessionTaskTicketLabel,
+                  onDescriptionChanged: cubit.setDescription,
+                  onClearTask: () => cubit.setTaskOption(null),
+                  onOpenTaskPicker: () {
+                    if (wsId.isEmpty) {
+                      return;
+                    }
+                    unawaited(
+                      showTaskLinkPickerSheet(
+                        context: context,
+                        taskRepository: TaskRepository(),
+                        wsId: wsId,
+                        selectedTaskId: state.sessionTaskId,
+                        onSelected: cubit.setTaskOption,
                       ),
+                    );
+                  },
                 ),
-                initialDescription: state.sessionDescription,
-                initialTaskId: state.sessionTaskId,
-                initialTaskName: state.sessionTaskName,
-                initialTaskTicketLabel: state.sessionTaskTicketLabel,
-                onDescriptionChanged: cubit.setDescription,
-                onClearTask: () => cubit.setTaskOption(null),
-                onOpenTaskPicker: () {
-                  if (wsId.isEmpty) {
-                    return;
-                  }
-                  unawaited(
-                    showTaskLinkPickerSheet(
-                      context: context,
-                      taskRepository: TaskRepository(),
-                      wsId: wsId,
-                      selectedTaskId: state.sessionTaskId,
-                      onSelected: cubit.setTaskOption,
-                    ),
-                  );
-                },
-              ),
+              ],
             ],
-          ],
+          ),
         );
       },
     );

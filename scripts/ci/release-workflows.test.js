@@ -1975,22 +1975,23 @@ test('package trusted publishing avoids secret-redacted metadata outputs', () =>
       publishJob,
       /echo "path=\.\/\$\{PACKAGE_TARBALL\}" >> "\$GITHUB_OUTPUT"/
     );
-    // Newer releases hand the artifact path to the script through env; the
-    // older ones still interpolate it and are reviewed in the trust-boundary
-    // test.
+    // The artifact path reaches the publish script through env, never through
+    // direct `${{ }}` interpolation inside `run:` (trust boundary).
     const publishPattern =
       packagePath === 'packages/sdk'
         ? /npm publish "\$\{PACKAGE_TARBALL\}" --ignore-scripts/
-        : ['packages/realtime', 'packages/turnstile'].includes(packagePath)
-          ? /npm publish "\$ARTIFACT_PATH" --ignore-scripts/
-          : /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}" --ignore-scripts/;
+        : /npm publish "\$ARTIFACT_PATH" --ignore-scripts/;
     assert.match(publishJob, publishPattern);
-    if (publishPattern.source.includes('ARTIFACT_PATH')) {
+    if (packagePath !== 'packages/sdk') {
       assert.match(
         publishJob,
         /ARTIFACT_PATH: \$\{\{ steps\.artifact\.outputs\.path \}\}/
       );
     }
+    assert.doesNotMatch(
+      publishJob,
+      /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}"/
+    );
     assert.match(publishJob, /trusted publisher is configured/);
     assert.match(publishJob, /Wait for npm publication/);
     assert.match(
