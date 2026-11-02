@@ -1053,6 +1053,16 @@
       },
       "digest": "48ca5c86212153d8453634f1858ce3959303f9191bbf8c6c7da6cc0663c4fc20"
     },
+    "apps/playground/cloudflare/staff-auth.runtime.mjs": {
+      "lines": 1,
+      "uses": 1,
+      "gap": "void-wave1-publication",
+      "admitted": {
+        "decision": "https://github.com/tutur3u/platform/pull/7438",
+        "reason": "Playground staff-auth runtime fixture qualifies the exact Void-emitted Worker with the pinned Wrangler adapter (same as the generated gate); test-only, no publication. Remove with the Apps gap when cf deploy --prebuilt parity is proven."
+      },
+      "digest": "92ac9f70d750cdcea067d2eee2f6f7bc2aafb114a4b0d1c61907d2683c4b2ed0"
+    },
     "apps/playground/package.json": {
       "lines": 1,
       "uses": 1,

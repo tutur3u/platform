@@ -12,6 +12,18 @@
   "owned": {},
   "ignored": {},
   "runtime": {
-    "/": 200
+    "/": {
+      "redirect": "https://central.invalid/login"
+    }
+  },
+  "runtimeProbes": {
+    "page": {
+      "skip": "staff-only: every page requires a verified staff session",
+      "fixture": "cloudflare/staff-auth.runtime.mjs"
+    },
+    "notFound": {
+      "skip": "unknown paths redirect signed-out users to login",
+      "fixture": "cloudflare/staff-auth.runtime.mjs"
+    }
   }
 }
