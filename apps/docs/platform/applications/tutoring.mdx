@@ -1101,3 +1101,15 @@ Comments are trimmed, limited to 2000 characters, and blank input clears the
 comment. Edits have no history and send no new notification in v1. No migration.
 Completion never waits for the comment read: failed or forbidden reads hide the field, and saving without edits omits the comment. Managers see a read-only field.
 Regression coverage: session PUT/mark write-scope tests, comment route tests and Contacts `tutoring-comment-dialog.test.tsx`.
+
+### Student tutoring view
+
+Contacts exposes a Tutoring tab on learner profiles only when
+`tutoring_student_view=true` (default off; kill switch: unset or false).
+The profile shows sessions by month, tutoring no-shows and current-class absences
+as separate labelled counts. Class absences require `check_user_attendance` and
+access to current memberships. Session reads retain the existing
+API's teacher scope. Comments additionally require `tutoring_tutor_comments=true`
+and the B6 staff authorization; learners and parents never receive comments.
+No new permissions or schema are introduced. Regression coverage:
+`tutoring-student.test.ts` and `tutoring-student-panel.test.tsx`.

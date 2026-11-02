@@ -6,8 +6,10 @@ import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import {
   getContactsWorkspace,
+  getContactsWorkspaceConfigValue,
   getContactsWorkspacePermissions,
 } from '@/lib/workspace';
+import { TutoringStudentPanel } from '../../tutoring/tutoring-student-panel';
 import { UserFeedbackPanel } from '../user-feedback-panel';
 import {
   getAvailableUsersForReferral,
@@ -242,6 +244,53 @@ export default async function WorkspaceUserDetailsPage({ params }: Props) {
             unknown: t('common.unknown'),
             unscheduledGroups: t('unscheduled_groups'),
           }}
+        />
+      ),
+    });
+  }
+
+  if (
+    canViewFeedbacks &&
+    (await getContactsWorkspaceConfigValue(wsId, 'tutoring_student_view'))
+      ?.trim()
+      .toLowerCase() === 'true' &&
+    (await getContactsWorkspaceConfigValue(wsId, 'ENABLE_TUTORING'))
+      ?.trim()
+      .toLowerCase() !== 'false'
+  ) {
+    const tTutoring = await getTranslations('ws-tutoring');
+    tabs.push({
+      value: 'tutoring',
+      label: tTutoring('student_tutoring'),
+      content: (
+        <TutoringStudentPanel
+          wsId={wsId}
+          studentUserId={userId}
+          commentsEnabled={
+            (
+              await getContactsWorkspaceConfigValue(
+                wsId,
+                'tutoring_tutor_comments'
+              )
+            )
+              ?.trim()
+              .toLowerCase() === 'true'
+          }
+          currentGroupIds={
+            canCheckUserAttendance && hasPrivateInfo
+              ? groups
+                  .filter(
+                    (group) =>
+                      (!group.starting_date ||
+                        group.starting_date <=
+                          new Date().toISOString().slice(0, 10)) &&
+                      (!group.ending_date ||
+                        group.ending_date >=
+                          new Date().toISOString().slice(0, 10))
+                  )
+                  .map((group) => group.id)
+              : null
+          }
         />
       ),
     });

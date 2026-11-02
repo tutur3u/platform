@@ -13,7 +13,10 @@ describe('registry', () => {
       expect(flag.key).toMatch(/^[a-z]+(?:_[a-z]+)*$/);
       expect(flag.description.length).toBeGreaterThan(0);
       expect(flag.owner).toBe(
-        flag.key === 'tutoring_tutor_comments' ? 'pax' : 'mona'
+        flag.key === 'tutoring_tutor_comments' ||
+          flag.key === 'tutoring_student_view'
+          ? 'pax'
+          : 'mona'
       );
       expect(['read', 'write', 'ui', 'kill']).toContain(flag.class);
       expect(flag.default).toBe(false);
@@ -38,7 +41,10 @@ describe('evaluateFlags', () => {
     );
     overrides.mobile_offline = false;
     expect(Object.values(evaluateFlags(registry, {}, overrides))).toEqual(
-      registry.map(({ key }) => key === 'tutoring_tutor_comments')
+      registry.map(
+        ({ key }) =>
+          key === 'tutoring_tutor_comments' || key === 'tutoring_student_view'
+      )
     );
   });
 
