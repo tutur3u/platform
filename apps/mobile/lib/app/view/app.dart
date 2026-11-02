@@ -70,6 +70,7 @@ import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
+import 'package:mobile/features/mail/data/mail_offline_preparation.dart';
 import 'package:mobile/features/mastermind/privacy/mastermind_privacy_shield.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_auth_reset.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_offline_preparation.dart';
