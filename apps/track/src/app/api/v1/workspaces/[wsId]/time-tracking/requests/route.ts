@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
 import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
+import { validateRequestReferences } from '@tuturuuu/utils/time-tracking-reference';
 import {
   getPermissions,
   verifyWorkspaceMembershipType,
@@ -185,6 +186,18 @@ export async function POST(
         );
       }
     }
+
+    const referenceError = await validateRequestReferences({
+      client: sbAdmin,
+      categoryId: parsed.categoryId,
+      taskId: parsed.taskId,
+      wsId: normalizedWsId,
+    });
+    if (referenceError)
+      return NextResponse.json(
+        { error: referenceError.message },
+        { status: referenceError.status }
+      );
 
     // Create time tracking request (images already uploaded via signed URLs)
     const { data, error } = await sbAdmin

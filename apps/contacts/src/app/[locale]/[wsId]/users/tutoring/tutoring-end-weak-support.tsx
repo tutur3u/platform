@@ -20,12 +20,18 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { isTutoringContentRestricted } from './tutoring-errors';
 
-/** Rows whose learner is still on the weak-support list. */
+/**
+ * Rows whose learner is still on the weak-support list. Needs-tutoring group
+ * members leave the queue only when removed from the group, so ending is
+ * offered for them only to clear flagged feedback the row also carries.
+ */
 export function canEndWeakSupport(item: TutoringQueueItem) {
   return (
-    item.review_only ||
-    item.reason_type === 'WEAK_SUPPORT' ||
-    item.reason_type === 'BOTH'
+    (!item.support_group ||
+      Boolean(item.source_feedback_id || item.content_feedback_id)) &&
+    (item.review_only ||
+      item.reason_type === 'WEAK_SUPPORT' ||
+      item.reason_type === 'BOTH')
   );
 }
 

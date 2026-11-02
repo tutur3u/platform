@@ -113,6 +113,9 @@ class SessionsClassesTodayRepository implements ClassesTodayRepository {
     params: {'day': '${day.year}-${day.month}-${day.day}'},
   );
 
+  static CacheKey offlineSummaryKey(String user, String wsId, DateTime day) =>
+      _key(user, wsId, day);
+
   @override
   ClassesTodaySnapshot? peek({
     required String userId,

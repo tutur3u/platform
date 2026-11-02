@@ -198,19 +198,26 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
             if (_activeTab == _tabEstimates &&
                 estimatesState.status == TaskEstimatesStatus.error &&
                 estimatesState.boards.isEmpty) {
-              return TaskEstimatesErrorView(
-                error: context.l10n.taskBoardsLoadError,
+              return NovaRefreshIndicator.state(
+                onRefresh: () => _reload(context, retainError: true),
+                child: TaskEstimatesErrorView(
+                  error: context.l10n.taskBoardsLoadError,
+                ),
               );
             }
             if (_activeTab == _tabLabels &&
                 labelsState.status == TaskLabelsStatus.error &&
                 labelsState.labels.isEmpty) {
-              return TaskEstimatesErrorView(error: labelsState.error);
+              return NovaRefreshIndicator.state(
+                onRefresh: () => _reload(context, retainError: true),
+                child: TaskEstimatesErrorView(error: labelsState.error),
+              );
             }
 
             return NovaRefreshIndicator(
-              onRefresh: () => _reload(context),
+              onRefresh: () => _reload(context, retainError: true),
               child: AppPageListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
                   if (_activeTab == _tabEstimates)
                     TaskEstimateBoardsSection(
@@ -300,7 +307,7 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
     return currentWsId == capturedWsId && latestUserId == capturedUserId;
   }
 
-  Future<void> _reload(BuildContext context) async {
+  Future<void> _reload(BuildContext context, {bool retainError = false}) async {
     final wsId = context.read<WorkspaceCubit>().state.currentWorkspace?.id;
     if (wsId == null) {
       return;
@@ -309,10 +316,14 @@ class _TaskEstimatesViewState extends State<TaskEstimatesView> {
       await context.read<TaskLabelsCubit>().loadLabels(
         wsId,
         forceRefresh: true,
+        retainError: retainError,
       );
       return;
     }
-    await context.read<TaskEstimatesCubit>().loadBoards(wsId);
+    await context.read<TaskEstimatesCubit>().loadBoards(
+      wsId,
+      retainError: retainError,
+    );
   }
 
   Future<void> _openCreateLabel() async {

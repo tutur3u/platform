@@ -274,6 +274,7 @@ async function runJob(
           fetch: deps.fetch,
           fence: () => ledger.checkFence(cronJob.id, claim.generation),
           now: deps.now,
+          sleep: deps.sleep,
           pending: {
             add: (items) => ledger.addPendingWork(cronJob.id, items),
             fail: (items) =>

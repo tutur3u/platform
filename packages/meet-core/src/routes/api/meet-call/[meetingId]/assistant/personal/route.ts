@@ -2,6 +2,7 @@ import { MeetCallAccessError } from '@tuturuuu/meet-core/features/call/lib/call-
 import { readPersonalChatBody } from '@tuturuuu/meet-core/features/call/server/personal-chat-body';
 import { requestPersonalMeetChat } from '@tuturuuu/meet-core/features/call/server/personal-chat-request';
 import { roomRoute } from '@tuturuuu/meet-core/features/call/server/room-service';
+import { assertMeetAiRoom } from '@tuturuuu/meet-core/features/meeting-ai/server/room-gate';
 import { z } from 'zod';
 
 const inputSchema = z.object({
@@ -35,6 +36,7 @@ export async function POST(
 ) {
   const { meetingId } = await params;
   return roomRoute(request, meetingId, async (access) => {
+    await assertMeetAiRoom(access);
     const json = await readPersonalChatBody(request);
     const input = inputSchema.safeParse(json);
     if (!input.success) throw new MeetCallAccessError(400, 'Invalid message');

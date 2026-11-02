@@ -127,6 +127,22 @@ jobs:
             echo "✅ Branch name follows convention: $BRANCH_NAME"
           fi
 
+  staging-hosts:
+    name: Staging cookie-domain isolation
+    if: github.event_name != 'pull_request' || (github.event.action != 'labeled' && github.event.action != 'unlabeled') || github.event.label.name == 'ready-for-ci'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Keep staging hosts outside the production cookie zone
+        run: node scripts/check-staging-hosts.js
+
   admitted:
     uses: ./.github/workflows/ci-admitted.yaml
     permissions:
@@ -196,7 +212,7 @@ jobs:
   gate:
     name: ${{ (github.event_name == 'pull_request' && (github.event.action == 'labeled' || github.event.action == 'unlabeled') && github.event.label.name != 'ready-for-ci') && 'Cheap PR Checks (label event)' || 'Cheap PR Checks' }}
     if: '!cancelled()'
-    needs: [scope, branch-name, admitted, biome, i18n, docs, migration-timestamps, migrations, mobile, plugin]
+    needs: [scope, branch-name, staging-hosts, admitted, biome, i18n, docs, migration-timestamps, migrations, mobile, plugin]
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions: {}
@@ -215,6 +231,7 @@ jobs:
           const selected = {
             scope: full,
             'branch-name': full,
+            'staging-hosts': full,
             admitted: true,
             biome: full && scope.biome === 'true' && process.env.READY === 'true',
             i18n: full && scope.i18n === 'true' && process.env.READY === 'true',

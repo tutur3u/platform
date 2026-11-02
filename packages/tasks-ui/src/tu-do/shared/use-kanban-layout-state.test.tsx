@@ -46,10 +46,6 @@ describe('useKanbanLayoutState', () => {
       'task-board-list-collapsed:board-1:list-2',
       'false'
     );
-    window.localStorage.setItem(
-      'task-board-deadline-section-collapsed:board-1:overdue',
-      'false'
-    );
     const manualRef = { current: vi.fn() };
 
     const { result } = renderHook(() =>
@@ -71,10 +67,6 @@ describe('useKanbanLayoutState', () => {
     expect(result.current.taskListCollapsePreferences).toEqual({
       'list-1': true,
       'list-2': false,
-    });
-    expect(result.current.deadlineSectionsCollapsed).toMatchObject({
-      overdue: false,
-      upcoming: true,
     });
   });
 

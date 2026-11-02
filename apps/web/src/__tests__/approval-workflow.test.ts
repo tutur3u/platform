@@ -7,6 +7,7 @@ import {
   canRemoveApproval,
 } from '@tuturuuu/users-core/lib/approvals-utils';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { EXPLICIT_GRANT_PERMISSIONS } from '@tuturuuu/utils/explicit-grant-permissions';
 import { permissions } from '@tuturuuu/utils/permissions';
 import { describe, expect, it } from 'vitest';
 
@@ -102,7 +103,7 @@ describe('Post Approval Workflow', () => {
 });
 
 describe('Permission Integration', () => {
-  it('includes every workspace role permission enum value in the roles UI catalog', () => {
+  it('includes every ordinary enum permission and excludes explicit grants from the roles UI catalog', () => {
     const supabaseTypes = readFileSync(
       resolve(repoRoot, 'packages/types/src/supabase.ts'),
       'utf8'
@@ -132,8 +133,19 @@ describe('Permission Integration', () => {
 
     expect(new Set(actualPermissionIds).size).toBe(actualPermissionIds.length);
 
+    expect(EXPLICIT_GRANT_PERMISSIONS).toEqual(['manage_mastermind']);
+    const explicitGrants: readonly string[] = EXPLICIT_GRANT_PERMISSIONS;
+    for (const permissionId of explicitGrants) {
+      expect(enumPermissionIds).toContain(permissionId);
+      expect(actualPermissionIds).not.toContain(permissionId);
+    }
     for (const permissionId of enumPermissionIds) {
-      expect(actualPermissionIds).toContain(permissionId);
+      if (permissionId === undefined) {
+        throw new Error('Missing workspace permission enum capture');
+      }
+      if (!explicitGrants.includes(permissionId)) {
+        expect(actualPermissionIds).toContain(permissionId);
+      }
     }
   });
 

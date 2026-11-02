@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
 import 'package:mobile/core/ui/kit/kit.dart';
+import 'package:mobile/features/mastermind/machines/machine_labels.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_segmented_control.dart';
 import 'package:mobile/l10n/l10n.dart';
 
-/// Lanes, Backlog and Staff: three views of the same Work tab.
+/// Lanes, Backlog, Staff and Machines: four views of the same Work tab.
 class WorkSegmentBar extends StatelessWidget {
   const WorkSegmentBar({
     required this.selected,
@@ -36,6 +37,10 @@ class WorkSegmentBar extends StatelessWidget {
           AppSegment(
             value: WorkSegment.staff,
             label: l10n.mastermindStaffGroup,
+          ),
+          AppSegment(
+            value: WorkSegment.machines,
+            label: l10n.mastermindMachineLabel('machines'),
           ),
         ],
       ),

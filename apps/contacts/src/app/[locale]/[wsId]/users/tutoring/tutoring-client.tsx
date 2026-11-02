@@ -42,6 +42,7 @@ import {
   toIsoDate,
 } from './tutoring-filters';
 import { TutoringOverview } from './tutoring-overview';
+import { TutoringPayroll } from './tutoring-payroll';
 import { TutoringPolicyCard } from './tutoring-policy-card';
 import { TutoringQueueCard } from './tutoring-queue-card';
 import { TutoringSessionsCard } from './tutoring-sessions-card';
@@ -95,6 +96,8 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
     'tab',
     parseAsString.withDefault('sessions').withOptions({ shallow: true })
   );
+  const [customFrom, setCustomFrom] = useState(today);
+  const [customTo, setCustomTo] = useState(today);
   const [dateRange, setDateRange] = useQueryState(
     'range',
     parseAsString
@@ -192,6 +195,8 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
     reasonType: sessionReasonType,
     studentUserId: sessionStudentId,
     teacherUserId: sessionTeacherId,
+    fromDate: customFrom,
+    toDate: customTo,
   };
   // Rebuilt each render on purpose: TanStack hashes query keys structurally, so
   // a fresh object with the same values does not refetch.
@@ -244,6 +249,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
       'tutoring-sessions',
       'tutoring-session-stats',
       'tutoring-queue',
+      'tutoring-payroll',
     ]) {
       void queryClient.invalidateQueries({ queryKey: [key, wsId] });
     }
@@ -431,7 +437,11 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
       <Tabs
         className="space-y-4"
         onValueChange={(value) => void setTab(value)}
-        value={tab === 'queue' || tab === 'policy' ? tab : 'sessions'}
+        value={
+          tab === 'queue' || tab === 'policy' || tab === 'payroll'
+            ? tab
+            : 'sessions'
+        }
       >
         <TabsList className="h-auto">
           <TabsTrigger className="gap-2" value="sessions">
@@ -442,6 +452,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
             <LifeBuoy className="h-4 w-4" />
             {t('queue_tab')}
           </TabsTrigger>
+          <TabsTrigger value="payroll">{t('payroll_tab')}</TabsTrigger>
           <TabsTrigger className="gap-2" value="policy">
             <Settings2 className="h-4 w-4" />
             {t('policy_tab')}
@@ -455,6 +466,8 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
               onCreateDialogOpenChange: changeDialogOpen,
               onCreateFormChange: changeForm,
               onFiltersChange: (next) => {
+                if (next.fromDate !== undefined) setCustomFrom(next.fromDate);
+                if (next.toDate !== undefined) setCustomTo(next.toDate);
                 if (next.dateRange !== undefined)
                   void setDateRange(next.dateRange);
                 if (next.attendanceStatus !== undefined) {
@@ -564,6 +577,9 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
             policy={policy}
             wsId={wsId}
           />
+        </TabsContent>
+        <TabsContent value="payroll">
+          <TutoringPayroll wsId={wsId} today={today} />
         </TabsContent>
         <TabsContent className="space-y-4" value="policy">
           {policyQuery.isLoading ? (

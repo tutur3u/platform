@@ -30,10 +30,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
-    if (!permissions?.containsPermission('manage_time_tracking_requests'))
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-
     // Check if user is root user
     const isRootUser = isVerifiedTuturuuuStaffSession(
       user &&
@@ -45,6 +41,10 @@ export async function GET(request: NextRequest) {
     if (!isRootUser) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
+
+    const permissions = await getPermissions({ user, wsId: ROOT_WORKSPACE_ID });
+    if (!permissions?.containsPermission('manage_time_tracking_requests'))
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     // Get query parameters
     const { searchParams } = new URL(request.url);

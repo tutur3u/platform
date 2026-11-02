@@ -5,6 +5,11 @@ import {
 } from '@tuturuuu/start-bridge/api-forward';
 import { createOriginClientIpProof } from '@tuturuuu/utils/abuse-protection/origin-ip-proof';
 import { stagingProfile } from './profile';
+import {
+  sanitizedSearch,
+  sanitizeForwardHeaders,
+  sanitizeUpstreamResponseHeaders,
+} from './request-sanitizer';
 
 export type Fetcher = NonNullable<ForwardOptions['fetcher']>;
 
@@ -19,6 +24,7 @@ export async function proxyNext(
   request: Request,
   origin: string,
   secret: string,
+  bypassSecret: string,
   fetcher: Fetcher
 ) {
   const ip = request.headers.get('cf-connecting-ip') ?? '';
@@ -26,24 +32,23 @@ export async function proxyNext(
   if (!proof) return new Response('Missing trusted client IP', { status: 400 });
   const headers = new Headers(request.headers);
   stripConnectionHeaders(headers);
-  for (const name of [...headers.keys()]) {
-    if (
-      ['forwarded', 'true-client-ip', 'cf-connecting-ip'].includes(name) ||
-      name.startsWith('x-vercel-')
-    )
-      headers.delete(name);
-  }
+  sanitizeForwardHeaders(headers);
   headers.set('x-tuturuuu-origin-auth', proof);
   headers.set('x-forwarded-for', ip);
   headers.set('x-real-ip', ip);
   headers.set('x-forwarded-host', stagingProfile.host);
   headers.set('x-forwarded-proto', 'https');
+  // Deployment Protection bypass for the admitted origin only. The Worker
+  // never asks Vercel to set a bypass cookie, so no `_vercel_jwt` is minted.
+  headers.set('x-vercel-protection-bypass', bypassSecret);
   const forwarded = new Request(request, { headers });
   const upstream = await forwardToCentralApi(forwarded, origin, {
+    search: sanitizedSearch(new URL(request.url)),
     fetcher: async (input, init) => {
       const response = await fetcher(input, init);
       const headers = new Headers(response.headers);
       stripConnectionHeaders(headers);
+      sanitizeUpstreamResponseHeaders(headers);
       return new Response(response.body, {
         status: response.status,
         statusText: response.statusText,
@@ -91,4 +96,21 @@ export async function proxyNext(
     statusText: upstream.statusText,
     headers: output,
   });
+}
+
+export function notMigrated() {
+  return new Response(
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><meta name="color-scheme" content="light dark"><title>Not migrated yet</title><style>body{font:1rem system-ui;margin:15vh auto;padding:2rem;max-width:40rem;color:CanvasText;background:Canvas}h1{font-size:2rem}</style></head><body><main><h1>Not migrated yet</h1></main></body></html>`,
+    {
+      status: 404,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'cache-control': 'no-store',
+        'x-tuturuuu-native': 'not-migrated',
+        'content-security-policy':
+          "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'",
+        'x-content-type-options': 'nosniff',
+      },
+    }
+  );
 }

@@ -4,6 +4,7 @@ import 'package:mobile/core/router/routes.dart';
 import '../../../helpers/mastermind_home_fixture.dart';
 import '../../../helpers/mastermind_ship_fixture.dart';
 import '../../../helpers/mastermind_ship_pump.dart';
+import '../../../helpers/mastermind_time_finder.dart';
 import '../../../helpers/mastermind_usage_fixture.dart';
 import '../../../helpers/mastermind_work_pump.dart';
 
@@ -40,7 +41,10 @@ void main() {
     testWidgets('a release row opens Ship on its product', (tester) async {
       final router = workRouter(Routes.mastermind);
       await pumpShip(tester, _json(), router: router);
-      await tester.tap(find.text('Live just now'));
+      // The words open the row; only the clock beside them is its own target.
+      await tester.tapAt(
+        tester.getTopLeft(findTimeLabel('Live 2m')) + const Offset(4, 4),
+      );
       await tester.pumpAndSettle();
       expect(
         workUri(router).toString(),

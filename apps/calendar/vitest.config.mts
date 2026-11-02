@@ -12,6 +12,9 @@ export default defineConfig({
       },
     },
     environment: 'jsdom',
+    // Pinned explicitly: source has no fallback, and root-cutover.test.ts
+    // re-imports the config under each profile plus the unset/unknown cases.
+    env: { CALENDAR_DEPLOYMENT_PROFILE: 'production' },
   },
   ssr: {
     resolve: {

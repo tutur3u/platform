@@ -1,4 +1,5 @@
 import {
+  hasTutoringTagExclusions,
   isTutoringGroupExcluded,
   readTutoringPolicyConfigRows,
   TUTORING_POLICY_CONFIG_ID,
@@ -20,6 +21,12 @@ import { resolveTutoringRouteAccess } from '@/lib/tutoring/route-access';
 import { unmatchedAbsenceDates } from './absence-credits';
 import { readAllRows } from './all-rows';
 import { loadQueueLessonNotes } from './queue-lesson-content';
+import {
+  loadGroupTagNames,
+  loadQueueMemberships,
+  type QueueIdentity,
+  supportQueueKeys,
+} from './queue-membership';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -47,6 +54,7 @@ type QueueItem = {
   content_review_due: boolean;
   content_unchanged_since: string | null;
   review_only: boolean;
+  support_group?: boolean;
 };
 
 type QueueSummary = {
@@ -55,13 +63,7 @@ type QueueSummary = {
   review_due: number;
 };
 
-type IdentityRow = {
-  full_name: string | null;
-  display_name: string | null;
-  email: string | null;
-};
-
-function nameOf(value: IdentityRow) {
+function nameOf(value: QueueIdentity) {
   return (
     value.full_name?.trim() ||
     value.display_name?.trim() ||
@@ -235,6 +237,31 @@ async function getTutoringData(request: Request, { params }: Params) {
   const reservedRows = reservedResult.data;
   const feedbackRows = feedbackResult.data;
   const policy = readTutoringPolicyConfigRows(policyResult.data ?? []);
+  // Learners are listed only under the classes they belong to now.
+  const [membershipResult, tagResult] = await Promise.all([
+    loadQueueMemberships({
+      sbAdmin,
+      wsId: normalizedWsId,
+      groupId: parsed.data.groupId,
+      studentUserId: parsed.data.studentUserId,
+      supportGroupIds: policy.supportGroupIds,
+    }),
+    hasTutoringTagExclusions(policy)
+      ? loadGroupTagNames({ sbAdmin, wsId: normalizedWsId })
+      : { data: new Map<string, string[]>(), error: null },
+  ]);
+  for (const [source, error] of [
+    ['memberships', membershipResult.error],
+    ['group tags', tagResult.error],
+  ] as const) {
+    if (!error) continue;
+    console.error(`Failed to load tutoring queue ${source}`, error);
+    return NextResponse.json(
+      { message: 'Failed to load queue' },
+      { status: 500 }
+    );
+  }
+  const groupTags = tagResult.data;
   const reassessmentDays = policy.reassessmentDays;
   const absenceCutoff = new Date(
     Date.now() - policy.absenceLookbackDays * 86_400_000
@@ -247,6 +274,13 @@ async function getTutoringData(request: Request, { params }: Params) {
   const missedClassDatesMap = new Map<string, string[]>();
   const groupNameMap = new Map<string, string>();
   const studentNameMap = new Map<string, string>();
+  const currentKeys = new Set<string>();
+  for (const row of membershipResult.data) {
+    currentKeys.add(`${row.group_id}:${row.user_id}`);
+    if (row.group?.name) groupNameMap.set(row.group_id, row.group.name);
+    if (row.user) studentNameMap.set(row.user_id, nameOf(row.user));
+  }
+  const supportKeys = supportQueueKeys(membershipResult.data, policy);
 
   for (const row of attendanceRows ?? []) {
     if (row.date < absenceCutoff) continue;
@@ -269,8 +303,21 @@ async function getTutoringData(request: Request, { params }: Params) {
   const sessionSourceIds = new Map<string, Set<string>>();
   const scheduledFeedbackIds = new Set<string>();
   const completedFeedbackDays = new Map<string, number>();
+  const pendingWeakKeys = new Set<string>();
+  const doneWeakDays = new Map<string, number>();
   for (const row of reservedRows ?? []) {
     const key = `${row.group_id}:${row.student_user_id}`;
+    if (row.reason_type === 'WEAK_SUPPORT') {
+      if (row.attendance_status === 'PENDING') pendingWeakKeys.add(key);
+      const doneDay = Math.floor(
+        Date.parse(row.resolved_at ?? row.session_date) / 86_400_000
+      );
+      if (row.attendance_status === 'DONE' && Number.isFinite(doneDay))
+        doneWeakDays.set(
+          key,
+          Math.max(doneWeakDays.get(key) ?? doneDay, doneDay)
+        );
+    }
     if (
       row.reason_type === 'ABSENT_RECOVERY' &&
       row.session_date >= absenceCutoff
@@ -303,12 +350,18 @@ async function getTutoringData(request: Request, { params }: Params) {
     }
   }
 
-  const keySet = new Set<string>();
-  for (const key of absenceCountMap.keys()) keySet.add(key);
+  // History in a class the learner has left stays recorded but unlisted.
+  const keySet = new Set<string>(supportKeys);
+  for (const key of absenceCountMap.keys())
+    if (currentKeys.has(key)) keySet.add(key);
   for (const row of feedbackRows ?? []) {
-    if (isPresentId(row.group_id) && isPresentId(row.user_id)) {
-      keySet.add(`${row.group_id}:${row.user_id}`);
-    }
+    const key = `${row.group_id}:${row.user_id}`;
+    if (
+      isPresentId(row.group_id) &&
+      isPresentId(row.user_id) &&
+      currentKeys.has(key)
+    )
+      keySet.add(key);
   }
 
   const pairs = [...keySet].map((key) => {
@@ -367,23 +420,40 @@ async function getTutoringData(request: Request, { params }: Params) {
     const deficit = remainingDates.length;
     const feedback = latestFeedbackMap.get(key);
     const groupName = groupNameMap.get(groupId) ?? 'Unknown group';
+    const tags = groupTags.get(groupId) ?? [];
     const hasAbsent =
       deficit > 0 &&
-      !isTutoringGroupExcluded(policy, groupName, 'make_up', groupId);
+      !isTutoringGroupExcluded(policy, groupName, 'make_up', groupId, tags);
     const completedDay = feedback
       ? completedFeedbackDays.get(feedback.id)
       : undefined;
-    const hasWeak = Boolean(
+    const weakExcluded = isTutoringGroupExcluded(
+      policy,
+      groupName,
+      'weak_support',
+      groupId,
+      tags
+    );
+    const feedbackWeak = Boolean(
       feedback &&
-        !isTutoringGroupExcluded(policy, groupName, 'weak_support', groupId) &&
+        !weakExcluded &&
         !scheduledFeedbackIds.has(feedback.id) &&
         (completedDay === undefined ||
           todayNumber - completedDay >= reassessmentDays)
     );
+    // A support-group learner needs weak support until a session is pending,
+    // and again once the reassessment interval after a completed one passes.
+    const doneWeakDay = doneWeakDays.get(key);
+    const supportWeak =
+      supportKeys.has(key) &&
+      !weakExcluded &&
+      !pendingWeakKeys.has(key) &&
+      (doneWeakDay === undefined ||
+        todayNumber - doneWeakDay >= reassessmentDays);
+    const hasWeak = feedbackWeak || supportWeak;
 
     const contentUnchangedSince =
-      feedback &&
-      !isTutoringGroupExcluded(policy, groupName, 'weak_support', groupId)
+      feedback && !weakExcluded
         ? unchangedFeedbackSince(feedbackHistoryMap.get(key) ?? [])
         : null;
     const contentReviewDue = isWeakContentReviewDue(
@@ -417,12 +487,13 @@ async function getTutoringData(request: Request, { params }: Params) {
         hasWeak || contentReviewDue ? (contentFeedback?.content ?? '') : '',
       feedback_created_at:
         hasWeak || contentReviewDue ? (feedback?.createdAt ?? null) : null,
-      source_feedback_id: hasWeak ? (feedback?.id ?? null) : null,
+      source_feedback_id: feedbackWeak ? (feedback?.id ?? null) : null,
       content_feedback_id:
         hasWeak || contentReviewDue ? (contentFeedback?.id ?? null) : null,
       content_review_due: contentReviewDue,
       content_unchanged_since: contentUnchangedSince,
       review_only: reviewOnly,
+      ...(supportKeys.has(key) ? { support_group: true } : {}),
     };
   };
 

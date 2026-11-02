@@ -100,10 +100,15 @@ describe('meeting transcription client', () => {
       const fetchMock = vi.fn();
 
       await expect(
-        transcribeWorkspaceMeetingAudio(audio as Blob, {
-          baseUrl: 'https://internal.example.com',
-          fetch: fetchMock as unknown as typeof fetch,
-        })
+        transcribeWorkspaceMeetingAudio(
+          'workspace-1',
+          'meeting-1',
+          audio as Blob,
+          {
+            baseUrl: 'https://internal.example.com',
+            fetch: fetchMock as unknown as typeof fetch,
+          }
+        )
       ).rejects.toEqual(
         expect.objectContaining({
           code,
@@ -130,7 +135,7 @@ describe('meeting transcription client', () => {
       const fetchMock = vi.fn().mockResolvedValue(successfulJsonResponse());
       const audio = new Blob(['audio'], { type });
 
-      await transcribeWorkspaceMeetingAudio(audio, {
+      await transcribeWorkspaceMeetingAudio('workspace-1', 'meeting-1', audio, {
         baseUrl: 'https://internal.example.com',
         fetch: fetchMock as unknown as typeof fetch,
       });
@@ -147,6 +152,8 @@ describe('meeting transcription client', () => {
           method: 'POST',
         })
       );
+      expect((init.body as FormData).get('wsId')).toBe('workspace-1');
+      expect((init.body as FormData).get('meetingId')).toBe('meeting-1');
       const uploadedAudio = (init.body as FormData).get('audio');
       expect(uploadedAudio).toBeInstanceOf(File);
       expect(uploadedAudio).toEqual(

@@ -1,4 +1,12 @@
 export {
+  isMeetAiEnabledForWorkspace,
+  MEET_AI_DISABLED_ENV,
+  MEET_AI_WORKSPACE_ALLOWLIST_ENV,
+  MEET_AI_WORKSPACE_DENYLIST_ENV,
+  type MeetAiGateEnv,
+  meetAiEnabledWorkspaceIds,
+} from './ai-workspace-gate';
+export {
   findMeetAssistantMentions,
   getMeetAssistantMentions,
   hasMeetAssistantMention,
@@ -86,7 +94,7 @@ export {
   MEET_MAX_ROOM_PARTICIPANTS,
 } from './room-budget';
 export { mergePublicationCleanup } from './room-cleanup';
-export { canReadRoomNotes } from './room-controls';
+export { canReadRoomNotes, enablesNoteSharing } from './room-controls';
 export type {
   MeetApprovedParticipant,
   MeetReaction,
@@ -104,3 +112,13 @@ export type {
   RenegotiateInput,
 } from './sfu';
 export { CloudflareSfuClient } from './sfu';
+export type {
+  TranscriptionConsentMessage,
+  TranscriptionState,
+  TranscriptionStateMessage,
+} from './transcription';
+export {
+  transcriptionConsentMessageSchema,
+  transcriptionStateMessageSchema,
+  transcriptionStateSchema,
+} from './transcription';

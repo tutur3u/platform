@@ -18,7 +18,10 @@ vi.mock('@tuturuuu/meet-core/features/meeting-ai/server/room-access', () => ({
   readMeetingRoomPolicy: mocks.policy,
 }));
 
-import { getMeetingPublicInfo } from './meeting-public-info';
+import {
+  getMeetingPublicInfo,
+  resolveMeetingPublicInfo,
+} from './meeting-public-info';
 
 const id = '00000000-0000-4000-8000-000000000001';
 beforeEach(() => {
@@ -77,4 +80,38 @@ it('never publishes research session metadata through Meet previews', async () =
   mocks.parley.mockResolvedValue(true);
   expect(await getMeetingPublicInfo(id)).toBeNull();
   expect(mocks.policy).not.toHaveBeenCalled();
+});
+
+it('reads injected sources instead of querying storage again', async () => {
+  const hostPolicy = vi.fn().mockResolvedValue({
+    settings: { publicLinkPreview: true },
+    ended: true,
+  });
+  const meeting = {
+    ws_id: 'workspace',
+    creator_id: 'host',
+    name: ' Shared ',
+    time: '2026-09-15T12:00:00Z',
+  };
+  expect(
+    await resolveMeetingPublicInfo({
+      isParleySession: async () => false,
+      meeting: async () => ({ data: meeting, error: null }),
+      hostPolicy,
+    })
+  ).toEqual({ title: 'Shared', scheduledAt: meeting.time, ended: true });
+  expect(hostPolicy).toHaveBeenCalledWith(meeting);
+  expect(mocks.from).not.toHaveBeenCalled();
+  expect(mocks.parley).not.toHaveBeenCalled();
+  expect(mocks.policy).not.toHaveBeenCalled();
+});
+
+it('fails closed when an injected source rejects', async () => {
+  expect(
+    await resolveMeetingPublicInfo({
+      isParleySession: async () => false,
+      meeting: () => Promise.reject(new Error('storage down')),
+      hostPolicy: vi.fn(),
+    })
+  ).toBeNull();
 });

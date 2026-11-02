@@ -61,6 +61,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get assistantNotAvailableOffline => 'Not available offline';
+
+  @override
   String get assistantDownloadPhasePending => 'Pending';
 
   @override
@@ -4307,6 +4310,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get habitsTitle => 'Habits';
 
   @override
+  String get habitsOfflineUnavailable => 'Not available offline';
+
+  @override
   String get habitsTodayLabel => 'Today';
 
   @override
@@ -4401,6 +4407,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeSectionCalendar => 'Calendar';
+
+  @override
+  String get homeNotAvailableOffline => 'Not available offline';
 
   @override
   String get homeSectionLoadFailed => 'Pull down to try again.';
@@ -11204,6 +11213,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerTitle => 'Timer';
 
   @override
+  String get timerOfflineUnavailable => 'Not available offline';
+
+  @override
   String get timerToday => 'Today';
 
   @override
@@ -11623,6 +11635,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantNewChatConfirmCreation => 'Start a new chat';
+
+  @override
+  String get assistantCreationHoldBannerMessage => 'Your last chat may not have been saved. Starting a new chat does not retry it and may create a separate conversation.';
+
+  @override
+  String get assistantCreationHoldDismiss => 'Dismiss';
 
   @override
   String get assistantNewChatResetDenied => 'A new chat was not started. Your draft is retained. Check your chat history before choosing another action.';
@@ -12297,6 +12315,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineTechnicalDetails => 'Technical details';
+
+  @override
+  String get offlineWaitingWifi => 'Waiting for Wi-Fi';
+
+  @override
+  String offlineWaitingRetry(String time) {
+    return 'Waiting to retry at $time';
+  }
+
+  @override
+  String get offlineStatusPreparing => 'Preparing';
+
+  @override
+  String get offlineStatusReady => 'Ready offline';
+
+  @override
+  String get offlineStatusNeverSynced => 'Never synced';
+
+  @override
+  String offlineStatusLastSynced(String time) {
+    return 'Last synced: $time';
+  }
+
+  @override
+  String offlineStatusSummary(int ready, int total) {
+    return '$ready of $total apps ready offline';
+  }
 
   @override
   String get mailSettingsReadingGroup => 'Reading';
@@ -13368,9 +13413,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get mastermindSecurityFix => 'Security fix';
-
-  @override
   String get mastermindSecurityGroup => 'Security';
 
   @override
@@ -13778,6 +13820,73 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindTryAgain => 'Try again';
+
+  @override
+  String mastermindTimeDaysShort(int count) {
+    return '${count}d';
+  }
+
+  @override
+  String mastermindTimeHoursShort(int count) {
+    return '${count}h';
+  }
+
+  @override
+  String mastermindTimeMinutesShort(int count) {
+    return '${count}m';
+  }
+
+  @override
+  String get mastermindTimeNow => 'now';
+
+  @override
+  String mastermindAskedTime(String time) {
+    return 'Asked $time';
+  }
+
+  @override
+  String mastermindTimeSpoken(String relative, String absolute) {
+    return '$relative, $absolute';
+  }
+
+  @override
+  String mastermindTimeSpokenDays(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days ago',
+      one: '1 day ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindTimeSpokenHours(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count hours ago',
+      one: '1 hour ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindTimeSpokenMinutes(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count minutes ago',
+      one: '1 minute ago',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindTimeSpokenNow => 'just now';
+
+  @override
+  String get mastermindQuotaUnreadable => 'Out of service / unreadable';
 
   @override
   String get mastermindUnavailable => 'Unavailable';
@@ -14265,6 +14374,243 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindAskRemindAtMacSoon => 'Coming soon';
 
   @override
+  String get settingsShareTelemetry => 'Share analytics and crash reports';
+
+  @override
+  String get settingsPrivacy => 'Privacy';
+
+  @override
+  String get settingsTelemetryError => 'Could not update sharing. Tap to retry.';
+
+  @override
+  String mastermindMachineUpdated(String time) {
+    return 'As of $time';
+  }
+
+  @override
+  String mastermindMachineLastSeen(String time) {
+    return 'Last seen $time';
+  }
+
+  @override
+  String mastermindMachineSummary(int total, int online, int attention) {
+    return '$total machines · $online online · $attention need attention';
+  }
+
+  @override
+  String get machineTextMachines => 'Machines';
+
+  @override
+  String get machineTextAttention => 'Needs attention';
+
+  @override
+  String get machineTextOnline => 'Online';
+
+  @override
+  String get machineTextAsleep => 'Asleep';
+
+  @override
+  String get machineTextOffline => 'Offline';
+
+  @override
+  String get machineTextUnknown => 'Unknown';
+
+  @override
+  String get machineTextOfflineGroup => 'Asleep or offline';
+
+  @override
+  String get machineTextNotPublished => 'Machine data is not published yet';
+
+  @override
+  String get machineTextEmpty => 'No machines reported';
+
+  @override
+  String get machineTextGone => 'This machine is no longer reported';
+
+  @override
+  String get machineTextUnavailable => 'Unavailable';
+
+  @override
+  String get machineTextStale => 'Collector data is stale; values are last known';
+
+  @override
+  String get machineTextPartial => 'Collector coverage is partial';
+
+  @override
+  String get machineTextNow => 'Now';
+
+  @override
+  String get machineTextRunning => 'Running';
+
+  @override
+  String get machineTextRules => 'Rules';
+
+  @override
+  String get machineTextAlerts => 'Alerts';
+
+  @override
+  String get machineTextHistory => 'History';
+
+  @override
+  String get machineTextKeepAwake => 'Keep awake';
+
+  @override
+  String get machineTextSample => 'SAMPLE data';
+
+  @override
+  String get machineTextSampleToggle => 'Use sample machine data';
+
+  @override
+  String get machineTextStatus => 'Status and specs';
+
+  @override
+  String get machineTextCpu => 'CPU';
+
+  @override
+  String get machineTextRam => 'Memory';
+
+  @override
+  String get machineTextDisk => 'Disk free';
+
+  @override
+  String get machineTextSwap => 'Swap';
+
+  @override
+  String get machineTextTemperature => 'Temperature';
+
+  @override
+  String get machineTextBuild => 'Build';
+
+  @override
+  String get machineTextStudio => 'Studio';
+
+  @override
+  String get machineTextLaptop => 'Laptop';
+
+  @override
+  String get machineTextDevbox => 'Devbox';
+
+  @override
+  String get machineTextLane => 'Lanes';
+
+  @override
+  String get machineTextTest => 'Tests';
+
+  @override
+  String get machineTextActive => 'Scheduling active';
+
+  @override
+  String get machineTextDraining => 'Draining';
+
+  @override
+  String get machineTextPaused => 'Scheduling paused';
+
+  @override
+  String get machineTextThermal => 'Thermal alert';
+
+  @override
+  String get machineTextWarning => 'Warning';
+
+  @override
+  String get machineTextCritical => 'Critical';
+
+  @override
+  String get machineTextNominal => 'Nominal';
+
+  @override
+  String get machineTextFair => 'Fair';
+
+  @override
+  String get machineTextSerious => 'Serious';
+
+  @override
+  String get machineTextMacos => 'macOS';
+
+  @override
+  String get machineTextLinux => 'Linux';
+
+  @override
+  String get machineTextWindows => 'Windows';
+
+  @override
+  String get machineTextNone => 'None reported';
+
+  @override
+  String get machineTextLastKnown => 'Last-known values';
+
+  @override
+  String get machineTextDay => '24 h';
+
+  @override
+  String get machineTextWeek => '7 d';
+
+  @override
+  String get machineTextTable => 'Table';
+
+  @override
+  String get machineTextTime => 'Time';
+
+  @override
+  String get machineTextCores => 'Cores';
+
+  @override
+  String get machineTextLoad => 'Load (1 min)';
+
+  @override
+  String get machineTextMacGuide => 'In System Settings, open Energy and prevent automatic sleeping on power. Plug in and keep the lid open. Mastermind does not control this machine.';
+
+  @override
+  String get machineTextLinuxGuide => 'Use your desktop Power settings to prevent automatic suspend while plugged in. Mastermind does not control this machine.';
+
+  @override
+  String get machineTextWindowsGuide => 'In Settings, open System > Power and battery > Screen and sleep. Choose the plugged-in sleep setting. Mastermind does not control this machine.';
+
+  @override
+  String get machineTextUnknownGuide => 'Use the operating system power settings to keep the machine awake while plugged in. Mastermind does not control this machine.';
+
+  @override
+  String get machineTextOther => 'Other';
+
+  @override
+  String get machineTextProdHost => 'Production host';
+
+  @override
+  String get machineTextMergeTrain => 'Merge train';
+
+  @override
+  String get machineTextFindingsOnly => 'Findings only';
+
+  @override
+  String get machineTextProdReadsHereOnly => 'Production reads only here';
+
+  @override
+  String get machineTextNeverBuilds => 'Never builds';
+
+  @override
+  String get machineTextNoHeavyWork => 'No heavy work';
+
+  @override
+  String get machineTextLightWorkOnly => 'Light work only';
+
+  @override
+  String get machineTextProdHostReadOnly => 'Production host: read-only';
+
+  @override
+  String get machineTextDiskLow => 'Low disk space';
+
+  @override
+  String get machineTextLoadHigh => 'Load above cores';
+
+  @override
+  String get machineTextSwapHigh => 'High swap use';
+
+  @override
+  String get machineTextRamGb => 'RAM (GB)';
+
+  @override
+  String get machineTextDiskGb => 'Disk (GB)';
+
+  @override
   String get mastermindCatchupTitle => 'Since you last looked';
 
   @override
@@ -14408,4 +14754,533 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindCatchupPushBody => 'Your catch-up is ready';
+
+  @override
+  String get mastermindSecurityFix => 'Security fix';
+
+  @override
+  String get telemetryConsentTitle => 'Help improve Tuturuuu?';
+
+  @override
+  String get telemetryConsentBody => 'Share usage data and crash reports with Google Firebase Analytics and Crashlytics so we can fix problems and improve the app. This includes app and device identifiers, usage events, crash reports, and device and operating-system information. You can change your choice any time in Settings > Preferences > Privacy.';
+
+  @override
+  String get telemetryFirebaseInstallationDisclosure => 'Allowing analytics and crash reports also creates a Firebase Installation ID on this device (iOS and Android), which Google uses to tell app installs apart. We do not send your account details to Google with it.';
+
+  @override
+  String get telemetryConsentAllow => 'Allow';
+
+  @override
+  String get telemetryConsentDeny => 'Don\'t allow';
+
+  @override
+  String get telemetryConsentLearnMore => 'Privacy details';
+
+  @override
+  String get settingsShareTelemetryDescription => 'Send usage data and crash reports to Google Firebase Analytics and Crashlytics to help us fix problems and improve the app. Turning this off stops collection and deletes crash reports that have not been sent.';
+
+  @override
+  String get settingsPushNotifications => 'Push notifications';
+
+  @override
+  String get settingsPushFirebaseDisclosure => 'Push notifications are delivered through Google Firebase Cloud Messaging, which registers this device with Firebase Installations. This creates a Firebase Installation ID and a push token for this device; we link the push token to your account so we can send you notifications. This is separate from your analytics choice. Turn push off and this device is no longer registered for notifications.';
+
+  @override
+  String get mastermindIrisChatSegment => 'Chat';
+
+  @override
+  String get mastermindIrisChatEmpty => 'No messages yet';
+
+  @override
+  String get mastermindIrisComposerPlaceholder => 'Message Atlas';
+
+  @override
+  String get mastermindIrisSend => 'Send';
+
+  @override
+  String get mastermindIrisReceiptSending => 'Sending';
+
+  @override
+  String get mastermindIrisReceiptQueued => 'Queued';
+
+  @override
+  String get mastermindIrisReceiptSent => 'Sent';
+
+  @override
+  String get mastermindIrisReceiptSeen => 'Seen';
+
+  @override
+  String get mastermindIrisReceiptFailed => 'Not sent';
+
+  @override
+  String get mastermindIrisRetry => 'Retry';
+
+  @override
+  String get mastermindIrisHidden => 'Hidden message';
+
+  @override
+  String get mastermindIrisTruncated => 'Open on Mac for the rest.';
+
+  @override
+  String get mastermindIrisLoadEarlier => 'Load earlier messages';
+
+  @override
+  String get mastermindIrisKilledTitle => 'Iris is paused';
+
+  @override
+  String get mastermindIrisKilledBody => 'Sending is off until the kill switch is lifted. You can still read the chat.';
+
+  @override
+  String get mastermindIrisOffline => 'Can\'t reach Iris. Retrying.';
+
+  @override
+  String get mastermindIrisRateLimited => 'Iris is busy. Retrying shortly.';
+
+  @override
+  String get mastermindIrisAccessLost => 'This device can\'t use Iris. Check its enrolment.';
+
+  @override
+  String get mastermindIrisAuthorOwner => 'Owner';
+
+  @override
+  String get mastermindIrisAuthorAgent => 'Atlas';
+
+  @override
+  String get mastermindIrisAuthorSystem => 'System';
+
+  @override
+  String get mastermindIrisRedactedPath => 'path';
+
+  @override
+  String get mastermindIrisRedactedLink => 'link';
+
+  @override
+  String mastermindIrisRedactedLinkHost(String host) {
+    return 'link: $host';
+  }
+
+  @override
+  String get mastermindIrisRedactedSecret => 'secret withheld';
+
+  @override
+  String get mastermindIrisRedactedId => 'id';
+
+  @override
+  String get mastermindIrisRedactedEmail => 'email';
+
+  @override
+  String get mastermindIrisRedactedNumber => 'number';
+
+  @override
+  String get mastermindIrisRedactedOther => 'withheld';
+
+  @override
+  String mastermindIrisActivityCommands(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ran $count commands',
+      one: 'Ran 1 command',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindIrisActivityEdits(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Edited $count files',
+      one: 'Edited 1 file',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindIrisActivitySearches(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Searched $count times',
+      one: 'Searched once',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindIrisActivitySubagents(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ran $count subagents',
+      one: 'Ran 1 subagent',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindIrisWhatNeedsMe => 'What needs me';
+
+  @override
+  String mastermindIrisCountUrgent(int count) {
+    return '$count urgent';
+  }
+
+  @override
+  String mastermindIrisCountSoon(int count) {
+    return '$count soon';
+  }
+
+  @override
+  String mastermindIrisCountFyi(int count) {
+    return '$count FYI';
+  }
+
+  @override
+  String mastermindIrisCountOther(int count) {
+    return '$count other';
+  }
+
+  @override
+  String get mastermindIrisNothingNeedsYou => 'Nothing needs you right now';
+
+  @override
+  String mastermindIrisRoleLine(String role, String status) {
+    return '$role: $status';
+  }
+
+  @override
+  String get mastermindIrisRoleArmed => 'armed';
+
+  @override
+  String get mastermindIrisRoleRunning => 'running';
+
+  @override
+  String get mastermindIrisRoleStalled => 'stalled';
+
+  @override
+  String get mastermindIrisRoleIdle => 'idle';
+
+  @override
+  String get mastermindIrisUseRecommendations => 'Use recommendations';
+
+  @override
+  String get mastermindIrisUseRecommendationsDescription => 'Sends the recommended answer to each ask below. Each one can be undone on its card for a few seconds.';
+
+  @override
+  String mastermindIrisUseRecommendationsConfirm(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Send $count answers',
+      one: 'Send 1 answer',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindIrisRecommendationQueued => 'Sending. Undo on its card.';
+
+  @override
+  String get mastermindIrisRecommendationSkipped => 'Skipped: already answered, or replies are off';
+
+  @override
+  String mastermindIrisRecommendationsResult(int sent, int total) {
+    return '$sent of $total sent';
+  }
+
+  @override
+  String get mastermindIrisDone => 'Done';
+
+  @override
+  String mastermindIrisUseRecommendationsOthers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count other options',
+      one: '+1 other option',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindIrisNotIncludedTitle => 'Not included: answer these one by one';
+
+  @override
+  String get mastermindIrisNotIncludedRisky => 'Needs approval on a trusted device';
+
+  @override
+  String get mastermindIrisNotIncludedIncomplete => 'Incomplete: open it to read the full ask';
+
+  @override
+  String get mastermindRiskyComingSoon => 'Approve on a trusted device: coming soon';
+
+  @override
+  String get mastermindRiskyComingSoonHint => 'This ask touches deploy, spend, credentials or security. It can\'t be answered from the phone yet.';
+
+  @override
+  String get mastermindIrisDevicesTitle => 'Iris devices';
+
+  @override
+  String get mastermindIrisDevicesAction => 'Iris devices';
+
+  @override
+  String get mastermindIrisDevicesEmpty => 'No devices enrolled yet';
+
+  @override
+  String get mastermindIrisDevicesLoadFailed => 'Couldn\'t load devices. Try again.';
+
+  @override
+  String get mastermindIrisDeviceStatusPending => 'Waiting for confirmation';
+
+  @override
+  String get mastermindIrisDeviceStatusConfirmed => 'Enrolled';
+
+  @override
+  String get mastermindIrisDeviceStatusExpired => 'Expired';
+
+  @override
+  String get mastermindIrisDeviceStatusRevoked => 'Revoked';
+
+  @override
+  String get mastermindIrisDeviceQa => 'QA';
+
+  @override
+  String mastermindIrisDeviceFingerprint(String prefix) {
+    return 'Key $prefix';
+  }
+
+  @override
+  String get mastermindIrisRevoke => 'Revoke';
+
+  @override
+  String get mastermindIrisRevokeConfirm => 'Tap again to revoke';
+
+  @override
+  String get mastermindIrisEnrol => 'Enrol this device';
+
+  @override
+  String get mastermindIrisEnrolUnavailable => 'This build can\'t create a device key yet.';
+
+  @override
+  String get mastermindIrisEnrolCode => 'Enrolment code';
+
+  @override
+  String mastermindIrisEnrolInstructions(String prefix) {
+    return 'Open the Iris enrol page and confirm with your passkey. Check that the key starts with $prefix.';
+  }
+
+  @override
+  String get mastermindIrisEnrolWaiting => 'Waiting for you to confirm. The code expires in 15 minutes.';
+
+  @override
+  String get mastermindIrisEnrolConfirmed => 'This device is enrolled.';
+
+  @override
+  String get mastermindIrisEnrolExpired => 'The code expired. Start again for a new one.';
+
+  @override
+  String get mastermindIrisEnrolFailed => 'Couldn\'t start enrolment. Try again.';
+
+  @override
+  String get mastermindIrisEnrolLimit => 'Too many enrolment attempts or pending devices. Try again later.';
+
+  @override
+  String get mastermindIrisEnrolAgain => 'Enrol again with a new key';
+
+  @override
+  String get mastermindIrisUnlockReason => 'Unlock Iris to read your inbox';
+
+  @override
+  String get mastermindIrisConfirmReason => 'Confirm this Iris action';
+
+  @override
+  String get mastermindIrisDeviceLocked => 'Iris is locked on this device. It will ask you to unlock again in a few minutes.';
+
+  @override
+  String get mastermindIrisDeviceLockedEnrol => 'If this keeps happening, enrol again with a new key.';
+
+  @override
+  String get mastermindIrisDeviceRevoked => 'This device was removed from Iris. Enrol again to keep using it.';
+
+  @override
+  String get mastermindIrisEnrolAgainAction => 'Enrol again';
+
+  @override
+  String get mastermindIrisClockSkew => 'Check your device clock. It doesn\'t match Iris.';
+
+  @override
+  String get mastermindIrisEnrolCodeConflict => 'That code is already in use. Try again.';
+
+  @override
+  String get mastermindIrisEnrolDeviceConflict => 'This key is already registered. Enrol again with a new key.';
+
+  @override
+  String get mastermindIrisRelayStopped => 'Relay stopped. Ask the owner to restore it.';
+
+  @override
+  String get mastermindIrisDevicesUnavailable => 'The device list isn\'t available yet. You can still enrol this device.';
+
+  @override
+  String get mastermindIrisDeviceCurrent => 'This device';
+
+  @override
+  String get mastermindIrisSendDisabled => 'Sending to Iris isn\'t available yet';
+
+  @override
+  String get mastermindIrisWritesOff => 'Sending to Iris is coming soon';
+
+  @override
+  String get mastermindIrisWritesNeedEnrol => 'Enrol this device to send messages.';
+
+  @override
+  String get mastermindAskCardTierDecision => 'Needs decision';
+
+  @override
+  String get mastermindAskCardTierFyi => 'FYI';
+
+  @override
+  String mastermindAskCardDue(String when) {
+    return 'Due $when';
+  }
+
+  @override
+  String get mastermindAskCardOverdue => 'Overdue';
+
+  @override
+  String get mastermindAskCardReversible => 'Reversible';
+
+  @override
+  String get mastermindAskCardOneWay => 'One-way';
+
+  @override
+  String get mastermindAskCardNeedsBiometric => 'Needs Face ID or fingerprint';
+
+  @override
+  String get mastermindAskCardExpired => 'Expired';
+
+  @override
+  String get mastermindAskCardAnsweredDiscord => 'Answered on Discord';
+
+  @override
+  String get mastermindAskCardAnsweredAgent => 'Answered by an agent';
+
+  @override
+  String get mastermindAskCardIncomplete => 'Incomplete card';
+
+  @override
+  String get mastermindAskCardIncompleteMessage => 'The publisher sent only part of this ask. One-tap answers are off. Open the full question, or reply in your own words.';
+
+  @override
+  String get mastermindAskCardExpiredMessage => 'This ask expired, so answering is closed.';
+
+  @override
+  String get mastermindAskCardOpenFull => 'Open full question';
+
+  @override
+  String get mastermindAskCardReplyInWords => 'Reply in your own words';
+
+  @override
+  String get mastermindAskCardAnswerWithBiometric => 'Open to answer with Face ID';
+
+  @override
+  String get mastermindAskCardShowFullText => 'Show full text';
+
+  @override
+  String get mastermindAskCardHideFullText => 'Show less';
+
+  @override
+  String mastermindAskCardMoreOptions(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '+$count more options',
+      one: '+1 more option',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get mastermindAskCardFewerOptions => 'Show fewer options';
+
+  @override
+  String mastermindAskCardOptionCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count options',
+      one: '1 option',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindAskCardRecommendedOption(String option) {
+    return 'Recommended: $option';
+  }
+
+  @override
+  String mastermindAskCardRecommendedWhy(String option, String why) {
+    return 'Recommended: $option. $why';
+  }
+
+  @override
+  String get mastermindInboxTierUrgent => 'Urgent';
+
+  @override
+  String get mastermindInboxTierDecision => 'Needs a decision';
+
+  @override
+  String get mastermindInboxTierFyi => 'For your information';
+
+  @override
+  String mastermindInboxTierHeading(String tier, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$tier, $count asks',
+      one: '$tier, 1 ask',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindInboxTierShowAll(int count) {
+    return 'Show all ($count)';
+  }
+
+  @override
+  String get mastermindInboxTierShowLess => 'Show less';
+
+  @override
+  String get mastermindInboxTierJump => 'Scrolls to this section';
+
+  @override
+  String get mastermindUndoWindow => 'Undo window';
+
+  @override
+  String get mastermindUndoOff => 'Off';
+
+  @override
+  String mastermindUndoSeconds(int seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String get mastermindReplySendNow => 'Send now';
+
+  @override
+  String get settingsPushSummary => 'Get alerts on this device';
+
+  @override
+  String get settingsTelemetrySummary => 'Help improve the app';
+
+  @override
+  String get settingsStorageSummary => 'Manage data on this device';
+
+  @override
+  String get settingsLearnMore => 'Learn more';
+
+  @override
+  String get assistantVoiceMessagePrompt => 'Listen to this voice message and respond.';
 }

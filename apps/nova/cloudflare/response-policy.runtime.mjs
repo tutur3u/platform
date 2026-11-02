@@ -10,7 +10,7 @@ import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime
 
 const app = fileURLToPath(new URL('../', import.meta.url));
 const require = createRequire(join(app, 'package.json'));
-const hosts = ['nova.ai.vn', 'nova.staging.tutur3u.com'];
+const hosts = ['nova.ai.vn', 'nova.tutur3u.com'];
 const privateRobots = 'noindex, nofollow, nosnippet';
 
 function assertHeaders(response, { asset = false, publicPage = false } = {}) {

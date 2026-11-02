@@ -1,7 +1,5 @@
-import type { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Tables } from '@tuturuuu/types/supabase';
-
-type TypedSupabaseClient = Awaited<ReturnType<typeof createAdminClient>>;
 
 export type ParentLinkRow = Tables<'tulearn_parent_student_links'>;
 

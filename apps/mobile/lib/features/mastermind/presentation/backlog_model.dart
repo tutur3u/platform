@@ -1,4 +1,5 @@
 import 'package:mobile/features/mastermind/model/snapshot.dart';
+import 'package:mobile/features/mastermind/presentation/security_rows.dart';
 
 /// One product's backlog items, open first.
 final class BacklogGroup {
@@ -44,14 +45,14 @@ final class MastermindBacklogModel {
               case final items when items.isNotEmpty)
             BacklogGroup(product: product, items: items),
       ],
-      security: _onePerProduct(snapshot.backlog),
+      security: singleSecurityRow(snapshot.backlog),
       total: normal.length,
     );
   }
 
   final List<BacklogGroup> groups;
 
-  /// At most one per product, never counted or searched.
+  /// At most one row for the whole list, never counted or searched.
   final List<SecurityItem> security;
 
   /// Normal items before the search.
@@ -84,11 +85,3 @@ List<BacklogItem> _openFirst(List<BacklogItem> items) {
 bool _matches(BacklogItem item, String needle) =>
     item.title.toLowerCase().contains(needle) ||
     (item.product?.wireName.toLowerCase().contains(needle) ?? false);
-
-List<SecurityItem> _onePerProduct(List<BacklogEntry> entries) {
-  final seen = <Product?>{};
-  return [
-    for (final entry in entries)
-      if (entry is SecurityItem && seen.add(entry.product)) entry,
-  ];
-}

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/layout/layout.dart';
+import 'package:mobile/features/mastermind/machines/machine_list.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/work_model.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
@@ -168,6 +169,12 @@ class _MastermindWorkPageState extends State<MastermindWorkPage> {
                   controller: _backlogSearch,
                   query: _backlogQuery,
                   onQuery: (value) => setState(() => _backlogQuery = value),
+                ),
+              ],
+              WorkSegment.machines => [
+                MachineList(
+                  snapshot: ready.snapshot.machines,
+                  now: DateTime.now().toUtc(),
                 ),
               ],
               WorkSegment.staff => [WorkStaffSection(snapshot: ready.snapshot)],

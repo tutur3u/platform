@@ -16,6 +16,8 @@ export interface ProcessorContext {
   fence: () => Promise<boolean>;
   now: () => number;
   signal?: AbortSignal;
+  /** Backoff between bounded in-run retries; defaults to a timer. */
+  sleep?: (milliseconds: number) => Promise<void>;
   /** Durable follow-up obligations, retried by later runs until settled. */
   pending: {
     add: (items: string[]) => Promise<void>;

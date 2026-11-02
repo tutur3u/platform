@@ -15,14 +15,20 @@
  *
  * In pull request context (GITHUB_BASE_REF set), it also requires every
  * migration the PR adds or renames to sort after the newest migration already
- * on the base branch. Production `supabase db push` rejects out-of-order
- * migrations, so they must fail here first. Shallow checkouts are handled by
+ * on the base branch. `supabase db push` rejects out-of-order migrations
+ * unless `--include-all` is passed, so they must fail here first. The only
+ * exceptions are the reviewed versions in ORDER_EXEMPT_VERSIONS. Shallow checkouts are handled by
  * fetching the base ref and deepening until the merge-base resolves.
  * Locally, the order check uses MIGRATION_BASE_REF (default `main`) against
  * the existing `origin/<ref>` without fetching, and skips if it is missing.
  *
+ * The inline order check in .github/workflows/check-migrations.yml reads the
+ * same exemption list through `--print-exempt-versions`, so the list lives
+ * only in this file.
+ *
  * Usage:
  *   node scripts/check-migration-timestamps.js
+ *   node scripts/check-migration-timestamps.js --print-exempt-versions
  *
  * Exit codes:
  *   0 - All migrations have valid timestamps
@@ -152,6 +158,20 @@ function checkMigration(file, now) {
   };
 }
 
+// Reviewed out-of-order migration versions. Matching is exact string equality
+// on the full 14-digit version; never a prefix, glob or range. Add a version
+// only with a written reason and evidence, and remove it once it is merged.
+//
+// 20261030130950 quarantines orphan workspace_role_permissions rows before the
+// composite foreign key VALIDATE in 20261030131000, which staging already
+// applied (staging run 41101934863). That is safe because both gated
+// workflows push with `supabase db push --include-all`, which applies a
+// pending version below an applied one:
+//   .github/workflows/supabase-staging.yaml     (`supabase db push --include-all`)
+//   .github/workflows/supabase-production.yaml  (`supabase db push --include-all`)
+// Production has not applied 131000 yet, so 130950 runs before it there.
+const ORDER_EXEMPT_VERSIONS = Object.freeze(['20261030130950']);
+
 const MAX_DEEPEN_ATTEMPTS = 5;
 const DEEPEN_STEP = 200;
 
@@ -212,7 +232,11 @@ function findOutOfOrderMigrations(addedPaths, newest) {
     .map((filePath) => path.posix.basename(filePath))
     .filter((filename) => {
       const timestamp = extractTimestamp(filename);
-      return timestamp !== null && timestamp <= newest.timestamp;
+      return (
+        timestamp !== null &&
+        timestamp <= newest.timestamp &&
+        !ORDER_EXEMPT_VERSIONS.includes(timestamp)
+      );
     })
     .sort();
 }
@@ -341,7 +365,7 @@ function reportMigrationOrder(env = process.env) {
       console.error(`   ${filename}`);
     }
     console.error(
-      `\nRename them to a timestamp after ${result.newest.timestamp}; production \`supabase db push\` rejects out-of-order migrations.`
+      `\nRename them to a timestamp after ${result.newest.timestamp}; \`supabase db push\` rejects out-of-order migrations unless \`--include-all\` is passed, and only versions in ORDER_EXEMPT_VERSIONS are exempt.`
     );
     return false;
   }
@@ -356,6 +380,13 @@ function reportMigrationOrder(env = process.env) {
  * Main function
  */
 function main() {
+  if (process.argv.includes('--print-exempt-versions')) {
+    // One exact version per line and nothing else: the workflow matches these
+    // lines with a fixed-string, whole-line comparison.
+    for (const version of ORDER_EXEMPT_VERSIONS) console.log(version);
+    return;
+  }
+
   console.log('Checking migration timestamps...');
   console.log('(All timestamps are interpreted as GMT+7)\n');
 
@@ -411,6 +442,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  ORDER_EXEMPT_VERSIONS,
   checkMigrationOrder,
   findNewestMigration,
   findOutOfOrderMigrations,

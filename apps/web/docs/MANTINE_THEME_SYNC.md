@@ -50,8 +50,10 @@ This application uses Mantine UI components (specifically `@mantine/charts` for 
 |---------------------|-------|------------------|---------|
 | `--background` | `hsl(0 0% 100%)` | `--mantine-color-body` | Main page background |
 | `--foreground` | `hsl(0 0% 3.9%)` | `--mantine-color-text` | Primary text color |
-| `--muted-foreground` | `hsl(0 0% 45.1%)` | `--mantine-color-dimmed` | Muted/secondary text |
+| `--muted-foreground` | `hsl(0 0% 40%)` | `--mantine-color-dimmed` | Muted/secondary text |
 | `--border` | `hsl(0 0% 89.8%)` | `--mantine-color-border` | Border colors |
+
+Light-mode muted text uses 40% lightness to increase the WCAG AA contrast margin for normal text on white: approximately 5.74:1, up from 4.74:1 at 45.1%. Dark-mode muted text remains at 63.9%.
 
 ## Maintenance Workflow
 

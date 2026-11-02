@@ -98,8 +98,11 @@ void main() {
       expect(find.text('Delegated'), findsOneWidget);
       expect(find.text('Quota'), findsOneWidget);
       expect(find.text('Tuturuuu'), findsOneWidget);
-      // Absolute time in GMT+7, never UTC.
-      expect(find.text('Feb 1, 2026 00:30 GMT+7'), findsOneWidget);
+      // Relative time; a long press shows the absolute GMT+7 time, never UTC.
+      expect(findTimeLabel('2m'), findsOneWidget);
+      await tester.longPress(findTimeLabel('2m'));
+      await tester.pump();
+      expect(find.text('1 Feb, 00:30 GMT+7'), findsOneWidget);
     });
 
     testWidgets('names Mastermind and the user as deciders', (tester) async {

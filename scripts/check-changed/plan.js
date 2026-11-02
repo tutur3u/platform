@@ -237,6 +237,15 @@ function planChecks(changes, context) {
     );
   }
 
+  if (any(/^packages\/(internal-api|sdk|utils|types)\//)) {
+    steps.push(
+      nodeStep('sdk-portable', 'SDK portable source approval (no emit)', [
+        'packages/sdk/scripts/portable-build.cjs',
+        '--check',
+      ])
+    );
+  }
+
   const biomeFiles = present.filter(
     (file) => BIOME_FILE.test(file) && !file.startsWith(MOBILE_PREFIX)
   );
@@ -278,6 +287,19 @@ function planChecks(changes, context) {
     for (const { name, script } of AUTH_GUARDS) {
       steps.push(nodeStep(name, name, [script]));
     }
+  }
+  if (
+    any(
+      /^packages\/[^/]+\/package\.json$|^\.github\/workflows\/release-.+-package\.ya?ml$|^scripts\/ci\/package-release-(dependency-guard|readiness)\.js$/
+    )
+  ) {
+    steps.push(
+      nodeStep(
+        'package-release-dependencies',
+        'published package dependencies',
+        ['scripts/ci/package-release-dependency-guard.js']
+      )
+    );
   }
   if (any(/^apps\/[^/]+\/messages\/.*\.json$/)) {
     steps.push(

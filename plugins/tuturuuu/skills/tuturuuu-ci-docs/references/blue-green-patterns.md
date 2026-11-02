@@ -1,7 +1,9 @@
 # Blue/Green Deployment Patterns
 
-Load this reference for Docker web deployment, watcher, BuildKit, monitoring, or
-infrastructure dashboard changes.
+Docker is currently paused and not in use (see the AGENTS.md active runtime
+policy and `apps/docs/build/devops/active-runtime.mdx`). Load this reference only
+if Docker work is explicitly resumed, for Docker web deployment, watcher,
+BuildKit, monitoring, or infrastructure dashboard changes.
 
 ## Runtime Ownership
 
