@@ -105,4 +105,28 @@ void main() {
       }
     }
   }
+
+  testWidgets('opted-in wrapping rows keep wrapping without an info sheet', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const long =
+        'someone.with.a.very.long.address@example-workspace.tuturuuu.com';
+    await tester.pumpApp(
+      const SettingsTile(
+        icon: LucideIcons.mail,
+        title: 'Email',
+        subtitle: long,
+        wrapSupportingText: true,
+      ),
+    );
+    await tester.pumpAndSettle();
+    final text = tester.widget<Text>(find.text(long));
+    expect(text.maxLines, isNull);
+    expect(text.overflow, isNot(TextOverflow.ellipsis));
+    expect(find.byIcon(LucideIcons.info), findsNothing);
+  });
 }

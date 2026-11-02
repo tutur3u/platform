@@ -180,46 +180,55 @@ class SettingsTile extends StatelessWidget {
                             ],
                             if (subtitle?.trim().isNotEmpty ?? false) ...[
                               const AppGap(2),
-                              LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final style = theme.typography.small.copyWith(
+                              if (wrapSupportingText && details == null)
+                                // Opted-in rows (identity, account, status
+                                // lines) keep wrapping; no info sheet.
+                                Text(
+                                  subtitle!,
+                                  style: theme.typography.small.copyWith(
                                     color: muted,
-                                  );
-                                  final fullText = details ?? subtitle!;
-                                  final learnMore =
-                                      context.l10n.settingsLearnMore;
-                                  final needsInfo =
-                                      details != null ||
-                                      SettingsRowLayout.textWidth(
-                                            context,
+                                  ),
+                                )
+                              else
+                                LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final style = theme.typography.small
+                                        .copyWith(color: muted);
+                                    final fullText = details ?? subtitle!;
+                                    final learnMore =
+                                        context.l10n.settingsLearnMore;
+                                    final needsInfo =
+                                        details != null ||
+                                        SettingsRowLayout.textWidth(
+                                              context,
+                                              subtitle!,
+                                              style,
+                                            ) >
+                                            constraints.maxWidth;
+                                    return Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
                                             subtitle!,
-                                            style,
-                                          ) >
-                                          constraints.maxWidth;
-                                  return Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          subtitle!,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: style,
-                                        ),
-                                      ),
-                                      if (needsInfo)
-                                        AppIconButton(
-                                          icon: const Icon(LucideIcons.info),
-                                          tooltip: '$learnMore: $title',
-                                          onPressed: () => showAppInfoSheet(
-                                            context: context,
-                                            title: title,
-                                            body: fullText,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: style,
                                           ),
                                         ),
-                                    ],
-                                  );
-                                },
-                              ),
+                                        if (needsInfo)
+                                          AppIconButton(
+                                            icon: const Icon(LucideIcons.info),
+                                            tooltip: '$learnMore: $title',
+                                            onPressed: () => showAppInfoSheet(
+                                              context: context,
+                                              title: title,
+                                              body: fullText,
+                                            ),
+                                          ),
+                                      ],
+                                    );
+                                  },
+                                ),
                             ],
                           ],
                         ),
