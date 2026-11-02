@@ -7,6 +7,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   renameSync,
   rmSync,
   symlinkSync,
@@ -475,7 +476,8 @@ test('saved Void bytes use the native base and survive selected-file relocation'
     );
     assert.equal(
       validateOutput(app).configPath,
-      resolve(app, 'dist/server/wrangler.json')
+      // validateOutput canonicalizes; match it (macOS /var -> /private/var).
+      realpathSync(resolve(app, 'dist/server/wrangler.json'))
     );
     const receipt = manifest(app, sha);
     assert.ok(receipt.files['.void/preview-deploy-config.json']);

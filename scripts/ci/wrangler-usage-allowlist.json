@@ -1608,10 +1608,10 @@
       "uses": 21,
       "gap": "void-wave1-publication",
       "admitted": {
-        "decision": "https://github.com/tutur3u/platform/pull/6859",
-        "reason": "Calendar artifact fixtures reuse caller-owned pointer/config paths instead of adding usage in a new helper. Update only this test’s lowered token counts and digest; negative controls, sealed output and source binding are retained."
+        "decision": "https://github.com/tutur3u/platform/pull/7480",
+        "reason": "Test-only: the expected dist/server/wrangler.json path is canonicalized with realpathSync to match validateOutput on macOS (/var -> /private/var). Wrangler token counts are unchanged (21 lines, 21 uses); negative controls, sealed output and source binding are retained."
       },
-      "digest": "f19a7422576c029e735df74b8aa26912501b364cb855ec8972ab6ffe11c210bb"
+      "digest": "2a169116b0142e74d8525f3125cfe35b0cebb0dba03f0c32ced0aae18ec8e4c5"
     },
     "scripts/ci/calendar-native-inventory.mjs": {
       "lines": 2,

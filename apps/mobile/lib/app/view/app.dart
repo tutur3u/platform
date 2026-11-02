@@ -73,6 +73,7 @@ import 'package:mobile/features/mastermind/privacy/mastermind_privacy_shield.dar
 import 'package:mobile/features/mastermind/runtime/mastermind_auth_reset.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_offline_preparation.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
+import 'package:mobile/features/notes/notes_offline_preparation.dart';
 import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
