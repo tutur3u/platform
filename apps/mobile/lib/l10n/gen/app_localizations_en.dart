@@ -15080,7 +15080,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindIrisDeviceCurrent => 'This device';
 
   @override
-  String get mastermindIrisWritesOff => 'Sending is off for now. You can still read the chat.';
+  String get mastermindIrisWritesOff => 'Sending to Iris is coming soon';
 
   @override
   String get mastermindIrisWritesNeedEnrol => 'Enrol this device to send messages.';

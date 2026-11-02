@@ -1,9 +1,14 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile/features/mastermind/data/hub_capabilities.dart';
 import 'package:mobile/features/mastermind/iris/cubit/iris_send_cubit.dart';
 import 'package:mobile/features/mastermind/iris/data/fixture_iris_relay.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_models.dart';
 import 'package:mobile/features/mastermind/iris/data/iris_relay.dart';
+import 'package:mobile/features/mastermind/iris/iris_flag.dart';
 import 'package:mobile/features/mastermind/iris/view/iris_chat_view.dart';
 import 'package:mobile/features/shell/view/shell_dock_slot.dart';
 
@@ -67,7 +72,7 @@ void main() {
     ThemeMode? themeMode,
     IrisSendCubit? sendCubit,
     IrisRelay? over,
-    bool writes = true,
+    bool? writes = true,
     VoidCallback? onEnrol,
   }) async {
     await tester.pumpApp(
@@ -75,7 +80,7 @@ void main() {
         child: IrisChatView(
           relay: over ?? relay,
           sendCubit: sendCubit,
-          writesEnabled: ValueNotifier(writes),
+          writesEnabled: writes == null ? null : ValueNotifier(writes),
           onEnrol: onEnrol,
         ),
       ),
@@ -192,6 +197,69 @@ void main() {
     expect(open.onPressed, isNull);
   });
 
+  for (final send in [false, true]) {
+    testWidgets('iris reads with iris_send $send', (tester) async {
+      final caps = MastermindCapabilities.parse(
+        Uint8List.fromList(
+          utf8.encode(
+            jsonEncode({
+              'schema_versions': ['1.4'],
+              'replies': false,
+              'push': false,
+              'iris': true,
+              if (send) 'iris_send': true,
+            }),
+          ),
+        ),
+      )!;
+      mastermindIrisCapability.value = caps.iris;
+      mastermindIrisSendCapability.value = caps.irisSend;
+      addTearDown(() {
+        mastermindIrisCapability.value = false;
+        mastermindIrisSendCapability.value = false;
+      });
+      expect(mastermindIrisEnabled, isTrue);
+      await pumpChat(tester, writes: null);
+      final messages = irisFixtureJson()['messages'] as List;
+      final newest = (messages.last as Map)['msg_ref'] as String;
+      expect(find.byKey(ValueKey('iris-message-$newest')), findsOneWidget);
+      final button = tester.widget<IconButton>(
+        find.byKey(const ValueKey('iris-composer-open')),
+      );
+      expect(button.onPressed == null, !send);
+      expect(
+        find.text('Sending to Iris is coming soon'),
+        send ? findsNothing : findsOneWidget,
+      );
+    });
+  }
+
+  test('malformed iris_send fails closed', () {
+    for (final value in <Object?>[
+      'true',
+      1,
+      null,
+      <Object?>[],
+      <String, Object?>{},
+    ]) {
+      final caps = MastermindCapabilities.parse(
+        Uint8List.fromList(
+          utf8.encode(
+            jsonEncode({
+              'schema_versions': ['1.4'],
+              'replies': false,
+              'push': false,
+              'iris': true,
+              'iris_send': value,
+            }),
+          ),
+        ),
+      );
+      expect(caps, isNull);
+      expect(caps?.irisSend ?? false, isFalse);
+    }
+  });
+
   group('writes stay off', () {
     IconButton openButton(WidgetTester tester) => tester.widget<IconButton>(
       find.byKey(const ValueKey('iris-composer-open')),
@@ -200,10 +268,7 @@ void main() {
     testWidgets('while the hub capability is false', (tester) async {
       await pumpChat(tester, writes: false);
       expect(openButton(tester).onPressed, isNull);
-      expect(
-        find.text('Sending is off for now. You can still read the chat.'),
-        findsOneWidget,
-      );
+      expect(find.text('Sending to Iris is coming soon'), findsOneWidget);
       // Reading still works.
       final messages = irisFixtureJson()['messages'] as List;
       final newest = (messages.last as Map)['msg_ref'] as String;
