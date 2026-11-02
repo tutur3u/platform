@@ -96,10 +96,8 @@ class MiraOfflinePreparation {
       final settingsPath = '$base/$id/ai-settings';
       await save('settings', settingsPath, await read(settingsPath));
     }
-    await manifest.reconcile(
-      workspaceId: workspaceId,
-      namespaces: {'mira.conversations', 'mira.messages', 'mira.settings'},
-    );
+    // This bounded page is not authoritative for other chats or cursors.
+    await manifest.verify();
     manifest.retain('mira', workspaceId);
   }
 }
