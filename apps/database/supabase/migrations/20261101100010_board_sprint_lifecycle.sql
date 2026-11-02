@@ -1,3 +1,7 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+
 -- Board sprints, part two: ending a sprint, moving tasks between open sprints
 -- and keeping new tasks in the board's current sprint. Builds on
 -- 20261101100000_board_sprints.sql.
@@ -372,3 +376,5 @@ CREATE TRIGGER sync_task_board_sprint_membership
   AFTER INSERT OR UPDATE OF list_id ON public.tasks
   FOR EACH ROW
   EXECUTE FUNCTION private.sync_task_board_sprint_membership();
+
+COMMIT;

@@ -1,3 +1,7 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+
 -- Board sprints: a board can plan one sprint at a time on top of task cycles.
 --
 -- A sprint is a task cycle with a board_id. Statuses reuse the cycle values:
@@ -11,7 +15,7 @@
 
 -- 1. Board setting. NULL keeps sprints off for the board.
 ALTER TABLE public.workspace_boards
-  ADD COLUMN sprint_length_weeks SMALLINT
+  ADD COLUMN IF NOT EXISTS sprint_length_weeks SMALLINT
     CONSTRAINT workspace_boards_sprint_length_weeks_check
       CHECK (sprint_length_weeks IN (1, 2));
 
@@ -20,12 +24,12 @@ COMMENT ON COLUMN public.workspace_boards.sprint_length_weeks IS
 
 -- 2. Cycles become board sprints when board_id is set.
 ALTER TABLE public.task_cycles
-  ADD COLUMN board_id UUID REFERENCES public.workspace_boards(id) ON DELETE CASCADE,
-  ADD COLUMN sequence_number INTEGER,
-  ADD COLUMN goal TEXT,
-  ADD COLUMN goal_result TEXT,
-  ADD COLUMN started_at TIMESTAMPTZ,
-  ADD COLUMN ended_at TIMESTAMPTZ;
+  ADD COLUMN IF NOT EXISTS board_id UUID REFERENCES public.workspace_boards(id) ON DELETE CASCADE,
+  ADD COLUMN IF NOT EXISTS sequence_number INTEGER,
+  ADD COLUMN IF NOT EXISTS goal TEXT,
+  ADD COLUMN IF NOT EXISTS goal_result TEXT,
+  ADD COLUMN IF NOT EXISTS started_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS ended_at TIMESTAMPTZ;
 
 ALTER TABLE public.task_cycles
   ADD CONSTRAINT task_cycles_goal_length_check
@@ -54,10 +58,10 @@ COMMENT ON COLUMN public.task_cycles.sequence_number IS
 
 -- 3. Membership metadata.
 ALTER TABLE public.task_cycle_tasks
-  ADD COLUMN added_after_start BOOLEAN NOT NULL DEFAULT false,
-  ADD COLUMN carry_count INTEGER NOT NULL DEFAULT 0
+  ADD COLUMN IF NOT EXISTS added_after_start BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS carry_count INTEGER NOT NULL DEFAULT 0
     CONSTRAINT task_cycle_tasks_carry_count_check CHECK (carry_count >= 0),
-  ADD COLUMN end_decision TEXT
+  ADD COLUMN IF NOT EXISTS end_decision TEXT
     CONSTRAINT task_cycle_tasks_end_decision_check
       CHECK (end_decision IS NULL OR end_decision IN ('carry', 'backlog'));
 
@@ -441,3 +445,5 @@ REVOKE ALL ON FUNCTION public.set_board_sprint_length(UUID, SMALLINT, UUID) FROM
 REVOKE ALL ON FUNCTION public.start_board_sprint(UUID, UUID) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.set_board_sprint_length(UUID, SMALLINT, UUID) TO service_role;
 GRANT EXECUTE ON FUNCTION public.start_board_sprint(UUID, UUID) TO service_role;
+
+COMMIT;

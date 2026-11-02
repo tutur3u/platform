@@ -1,3 +1,7 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+
 -- Starting a board sprint before its planned Monday used to pull only the
 -- start date back, so a two-week sprint started on a Wednesday ran until its
 -- planned end two and a half weeks later (or longer when the previous sprint
@@ -92,3 +96,5 @@ $$;
 
 REVOKE ALL ON FUNCTION public.start_board_sprint(UUID, UUID) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.start_board_sprint(UUID, UUID) TO service_role;
+
+COMMIT;

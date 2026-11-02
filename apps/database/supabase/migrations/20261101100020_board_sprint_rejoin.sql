@@ -1,3 +1,7 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+
 -- Board sprints: a task that becomes open again on its board (moved back out
 -- of Done, un-closed, or restored from the recycle bin) after its sprint ended
 -- was left in no open sprint, so it vanished from the Board view and from
@@ -113,3 +117,5 @@ CREATE TRIGGER sync_task_board_sprint_membership
   ON public.tasks
   FOR EACH ROW
   EXECUTE FUNCTION private.sync_task_board_sprint_membership();
+
+COMMIT;
