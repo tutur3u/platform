@@ -4,6 +4,9 @@
 /** Platform cookie zones; managed projects may not claim them or any subdomain. */
 const PLATFORM_HOSTNAME_ZONES = Object.freeze([
   'tuturuuu.com',
+  // Staging apex and every <app>.tutur3u.com host: a customer-controlled
+  // subdomain could set Domain=tutur3u.com cookies that the apex receives.
+  'tutur3u.com',
   'staging.tutur3u.com',
 ]);
 
