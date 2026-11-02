@@ -7191,5 +7191,9 @@
     }
   },
   "mastermindInboxTierShowLess": "Show less",
-  "mastermindInboxTierJump": "Scrolls to this section"
+  "mastermindInboxTierJump": "Scrolls to this section",
+  "settingsPushSummary": "Get alerts on this device",
+  "settingsTelemetrySummary": "Help improve the app",
+  "settingsStorageSummary": "Manage data on this device",
+  "settingsLearnMore": "Learn more"
 }

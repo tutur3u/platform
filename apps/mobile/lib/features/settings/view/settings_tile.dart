@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/ui/overlays/app_info_sheet.dart';
 import 'package:mobile/core/ui/ui.dart';
 import 'package:mobile/features/settings/view/settings_row_layout.dart';
+import 'package:mobile/l10n/l10n.dart';
 
 class SettingsTile extends StatelessWidget {
   const SettingsTile({
     required this.icon,
     required this.title,
     this.subtitle,
+    this.details,
     this.value,
     this.trailingValue,
     this.onTap,
@@ -23,6 +26,7 @@ class SettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? subtitle;
+  final String? details;
 
   /// Current-value summary shown under the title.
   final String? value;
@@ -176,17 +180,45 @@ class SettingsTile extends StatelessWidget {
                             ],
                             if (subtitle?.trim().isNotEmpty ?? false) ...[
                               const AppGap(2),
-                              Text(
-                                subtitle!,
-                                maxLines: onTap != null && !wrapSupportingText
-                                    ? 1
-                                    : null,
-                                overflow: onTap != null && !wrapSupportingText
-                                    ? TextOverflow.ellipsis
-                                    : null,
-                                style: theme.typography.small.copyWith(
-                                  color: muted,
-                                ),
+                              LayoutBuilder(
+                                builder: (context, constraints) {
+                                  final style = theme.typography.small.copyWith(
+                                    color: muted,
+                                  );
+                                  final fullText = details ?? subtitle!;
+                                  final learnMore =
+                                      context.l10n.settingsLearnMore;
+                                  final needsInfo =
+                                      details != null ||
+                                      SettingsRowLayout.textWidth(
+                                            context,
+                                            subtitle!,
+                                            style,
+                                          ) >
+                                          constraints.maxWidth;
+                                  return Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          subtitle!,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: style,
+                                        ),
+                                      ),
+                                      if (needsInfo)
+                                        AppIconButton(
+                                          icon: const Icon(LucideIcons.info),
+                                          tooltip: '$learnMore: $title',
+                                          onPressed: () => showAppInfoSheet(
+                                            context: context,
+                                            title: title,
+                                            body: fullText,
+                                          ),
+                                        ),
+                                    ],
+                                  );
+                                },
                               ),
                             ],
                           ],
