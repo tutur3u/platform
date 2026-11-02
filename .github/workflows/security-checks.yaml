@@ -59,11 +59,18 @@ jobs:
         # verified records; it then fails closed unless a pinned-attester status
         # on that exact head covers the additions. Rerun this job after posting.
         env:
+          EVENT_NAME: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          # PR checkout is the tested merge ref. Its first parent is the
+          # trusted main snapshot, including records merged after PR creation.
+          # Keep HEAD_SHA pinned to the PR head for new-record attestations.
+          if [ "$EVENT_NAME" = pull_request ]; then
+            BASE_SHA="$(git rev-parse --verify "$GITHUB_SHA^1")"
+          fi
           dir="$RUNNER_TEMP/definer-guard"
           mkdir -p "$dir"
           if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]] && git cat-file -e "$BASE_SHA:scripts/ci/security-definer-guard.js" 2>/dev/null; then
