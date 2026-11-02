@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import './route-test-support';
 import { createAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { dispatchRecentSidebarVisit } from '@tuturuuu/tasks-ui/tu-do/shared/recent-sidebar-events';
 import type { NavLink } from '@tuturuuu/ui/custom/navigation';

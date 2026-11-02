@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
 import { describe, expect, it, vi } from 'vitest';

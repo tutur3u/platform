@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { InternalApiError } from '@tuturuuu/internal-api/client';
 import { journalEntrySchema } from '@tuturuuu/internal-api/personal-journal';

@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import '@testing-library/jest-dom/vitest';
 import { fireEvent, render, waitFor } from '@testing-library/react';
 import type { Workspace } from '@tuturuuu/types';

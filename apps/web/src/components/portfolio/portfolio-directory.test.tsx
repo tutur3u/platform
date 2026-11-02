@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { fireEvent, render, screen } from '@testing-library/react';
 import { LAUNCHABLE_APPS } from '@tuturuuu/utils/launchable-apps';
 import { describe, expect, it } from 'vitest';
