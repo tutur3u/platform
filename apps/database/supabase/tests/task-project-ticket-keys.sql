@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
 set local role service_role;
 set local request.jwt.claims = '{"role":"service_role"}';
-select plan(33);
+select plan(36);
 insert into public.users (id, display_name) values
   ('00000000-0000-4000-8000-0000000e6001', 'Ticket Owner');
 insert into public.workspaces (id, name, creator_id, personal) values
@@ -134,5 +134,37 @@ set local request.jwt.claims = '{"role":"service_role"}';
 select lives_ok($$insert into public.task_projects (ws_id, name, creator_id, ticket_key)
   values ('00000000-0000-4000-8000-0000000e6010', 'Chosen', '00000000-0000-4000-8000-0000000e6001', 'CHOSEN')$$,
   'service-role creation keeps a chosen key');
+-- A member without project management links through the task API, which
+-- saves relations as the service role; the allocator numbers the link.
+insert into public.users (id, display_name) values
+  ('00000000-0000-4000-8000-0000000e6002', 'Member');
+insert into public.workspace_members (ws_id, user_id, type) values
+  ('00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6002', 'MEMBER')
+on conflict (ws_id, user_id) do update set type = excluded.type;
+insert into public.tasks (id, name, list_id) values
+  ('00000000-0000-4000-8000-0000000e6105', 'Member task', (select id from public.task_lists where board_id = '00000000-0000-4000-8000-0000000e6020' and status = 'active' limit 1)),
+  ('00000000-0000-4000-8000-0000000e6106', 'Member direct task', (select id from public.task_lists where board_id = '00000000-0000-4000-8000-0000000e6020' and status = 'active' limit 1));
+select lives_ok($$select public.update_task_with_relations(
+  p_task_id := '00000000-0000-4000-8000-0000000e6105',
+  p_task_updates := '{}'::jsonb,
+  p_project_ids := array['00000000-0000-4000-8000-0000000e6031']::uuid[],
+  p_replace_projects := true,
+  p_actor_user_id := '00000000-0000-4000-8000-0000000e6002'
+)$$, 'a member links a task to a keyed project through the task API');
+select ok((select ticket_number from public.task_project_tasks
+  where task_id = '00000000-0000-4000-8000-0000000e6105'
+    and project_id = '00000000-0000-4000-8000-0000000e6031') is not null,
+  'the member''s link gets a ticket number');
+-- Linking straight from a member session fails: the allocator is SECURITY
+-- INVOKER and end-user sessions hold no task_projects privileges. Left for
+-- the security reviewer to decide; the function's mode is unchanged.
+set local role authenticated;
+set local request.jwt.claims = '{"role":"authenticated","sub":"00000000-0000-4000-8000-0000000e6002"}';
+select todo('end-user sessions cannot read task_projects for the invoker allocator', 1);
+select lives_ok($$insert into public.task_project_tasks (project_id, task_id)
+  values ('00000000-0000-4000-8000-0000000e6031', '00000000-0000-4000-8000-0000000e6106')$$,
+  'a member links a task straight from their session and gets a number');
+set local role service_role;
+set local request.jwt.claims = '{"role":"service_role"}';
 select * from finish();
 rollback;
