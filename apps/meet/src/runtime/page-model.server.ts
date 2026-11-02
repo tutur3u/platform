@@ -10,12 +10,16 @@ import {
   MeetCallAccessError,
 } from '@tuturuuu/meet-core/features/call/lib/call-access';
 import { getHostMeetingDurationSeconds } from '@tuturuuu/meet-core/features/call/lib/meeting-duration';
-import { getMeetingPublicInfo } from '@tuturuuu/meet-core/features/call/lib/meeting-public-info';
+import {
+  type MeetingPublicInfo,
+  resolveMeetingPublicInfo,
+} from '@tuturuuu/meet-core/features/call/lib/meeting-public-info';
 import {
   decodeRoomCode,
   encodeRoomCode,
 } from '@tuturuuu/meet-core/features/call/lib/room-code';
 import { readMeetingRoomPolicy } from '@tuturuuu/meet-core/features/meeting-ai/server/room-access';
+import { isParleySession } from '@tuturuuu/meet-core/parley/repository';
 import {
   getSatelliteAppSessionUser,
   getSatelliteCurrentUser,
@@ -44,14 +48,54 @@ import {
   withMeetRequest,
 } from './request-context';
 
+/**
+ * The public preview and the call access check read the same meeting row and
+ * Parley flag, so each is fetched once. The host's room policy is shared too:
+ * when the viewer is the host, their own policy read is the same signed request.
+ */
+function roomSources(meetingId: string) {
+  const loadMeeting = async () =>
+    (await createAdminClient({ noCookie: true }))
+      .from('workspace_meetings')
+      .select('id, name, creator_id, ws_id, time, workspaces(personal)')
+      .eq('id', meetingId)
+      .maybeSingle();
+  let meeting: ReturnType<typeof loadMeeting> | undefined;
+  const parley = new Map<boolean, Promise<boolean>>();
+  let hostPolicy: ReturnType<typeof readMeetingRoomPolicy> | undefined;
+  return {
+    meeting: () => (meeting ??= loadMeeting()),
+    isParleySession: (required = false) => {
+      const pending =
+        parley.get(required) ?? isParleySession(meetingId, required);
+      parley.set(required, pending);
+      return pending;
+    },
+    hostPolicy: (host: { ws_id: string; creator_id: string }) =>
+      (hostPolicy ??= readMeetingRoomPolicy({
+        meetingId,
+        wsId: host.ws_id,
+        userId: host.creator_id,
+        isHost: true,
+      })),
+  };
+}
+
 async function roomModel(code: string, locale: string, url: URL) {
   const meetingId = decodeRoomCode(code);
   if (!meetingId) throw notFound();
-  const t = await getTranslations('meet.call');
-  const publicCopy = await getTranslations('meet.public');
-  const info = await getMeetingPublicInfo(code);
+  const [t, publicCopy] = await Promise.all([
+    getTranslations('meet.call'),
+    getTranslations('meet.public'),
+  ]);
+  const sources = roomSources(meetingId);
+  // Never rejects: any lookup failure keeps the meeting private.
+  const infoPromise = resolveMeetingPublicInfo({
+    ...sources,
+    isParleySession: () => sources.isParleySession(false),
+  });
   const canonical = `https://meet.tuturuuu.com${locale === 'vi' ? '/vi' : ''}/r/${encodeRoomCode(meetingId)}`;
-  const meta: MeetPageMeta = {
+  const roomMeta = (info: MeetingPublicInfo | null): MeetPageMeta => ({
     title: info?.title || publicCopy('meta_title'),
     description: info
       ? publicCopy(info.ended ? 'meta_ended' : 'meta_join')
@@ -59,13 +103,14 @@ async function roomModel(code: string, locale: string, url: URL) {
     indexable: Boolean(info),
     canonical,
     image: `${canonical}/preview?lang=${locale}`,
-  };
-  const access = await getMeetCallAccess(meetingId, t('guest')).catch(
+  });
+  const access = await getMeetCallAccess(meetingId, t('guest'), sources).catch(
     async (error: unknown) => {
+      const info = await infoPromise;
       if (error instanceof MeetCallAccessError) {
         if (error.status === 401) {
           const returnTo = `${locale === 'en' ? '' : `/${locale}`}/r/${code}`;
-          if (info) return { publicInvite: info, returnTo };
+          if (info) return { publicInvite: info, returnTo, info };
           throw redirect({
             href: `/login?next=${encodeURIComponent(returnTo)}`,
           });
@@ -75,17 +120,24 @@ async function roomModel(code: string, locale: string, url: URL) {
       throw error;
     }
   );
-  if ('publicInvite' in access)
-    return { kind: 'public-invite' as const, ...access, meta };
-  const policy = await readMeetingRoomPolicy({
-    meetingId,
-    wsId: access.meeting.ws_id,
-    userId: access.user.id,
-    isHost: access.isHost,
-  });
+  if ('publicInvite' in access) {
+    const { info, ...invite } = access;
+    return { kind: 'public-invite' as const, ...invite, meta: roomMeta(info) };
+  }
+  const [info, policy] = await Promise.all([
+    infoPromise,
+    access.isHost
+      ? sources.hostPolicy(access.meeting)
+      : readMeetingRoomPolicy({
+          meetingId,
+          wsId: access.meeting.ws_id,
+          userId: access.user.id,
+          isHost: access.isHost,
+        }),
+  ]);
   return {
     kind: 'room' as const,
-    meta,
+    meta: roomMeta(info),
     access: {
       ...access,
       user: { id: access.user.id },
@@ -101,17 +153,24 @@ async function roomModel(code: string, locale: string, url: URL) {
 }
 
 async function workspaceModel(id: string) {
-  const invitation = await getPendingWorkspaceInvitation(id, await headers());
-  if (invitation) return { kind: 'invitation' as const, invitation };
-  // The workspace lookup and the member's profile read are independent
-  // network calls; running them sequentially added both latencies to TTFB.
-  const userPromise = getSatelliteCurrentUser('meet').catch(() => null);
-  const context = await getMeetWorkspaceContext(id).catch(
-    async (error: unknown) => {
-      await userPromise;
-      throw error;
-    }
+  // The invitation check, the workspace lookup and the member's profile read
+  // are independent network calls; running them in sequence added all three
+  // latencies to TTFB. The invitation still decides first.
+  const invitationPromise = headers().then((requestHeaders) =>
+    getPendingWorkspaceInvitation(id, requestHeaders)
   );
+  const userPromise = getSatelliteCurrentUser('meet').catch(() => null);
+  const contextPromise = getMeetWorkspaceContext(id);
+  contextPromise.catch(() => undefined);
+  const invitation = await invitationPromise.catch(async (error: unknown) => {
+    await Promise.allSettled([userPromise, contextPromise]);
+    throw error;
+  });
+  if (invitation) return { kind: 'invitation' as const, invitation };
+  const context = await contextPromise.catch(async (error: unknown) => {
+    await userPromise;
+    throw error;
+  });
   const cookieStore = await cookies();
   const behavior = parseSidebarBehavior(cookieStore);
   const user = await userPromise;
@@ -154,28 +213,30 @@ async function detailModel(
     .single();
   if (error || !meeting) throw notFound();
   const isHost = meeting.creator_id === user.id;
-  const permissionsPromise = getPermissions({ user, wsId }).then(
-    (permissions) => ({ permissions }),
-    (error: unknown) => ({ error })
+  // Policy, permissions, the calendar link and the duration limit are
+  // independent reads; they resolve together. Errors keep their old order:
+  // policy first, then permissions, calendar event and duration.
+  const permissionsPromise = getPermissions({ user, wsId });
+  const calendarPromise = permissionsPromise.then((permissions) =>
+    loadMeetingCalendarEvent({ supabase, permissions, wsId, meetingId })
   );
+  const durationPromise = getHostMeetingDurationSeconds(meeting.creator_id);
+  const pending = [permissionsPromise, calendarPromise, durationPromise];
+  for (const promise of pending) promise.catch(() => undefined);
+  const settleThenThrow = async (error: unknown): Promise<never> => {
+    await Promise.allSettled(pending);
+    throw error;
+  };
   const policy = await readMeetingRoomPolicy({
     meetingId,
     wsId,
     userId: user.id,
     isHost,
-  });
+  }).catch(settleThenThrow);
   if (policy.ended) return { kind: 'ended' as const, meeting, isHost, policy };
-  const outcome = await permissionsPromise;
-  if ('error' in outcome) throw outcome.error;
-  const calendarEvent = await loadMeetingCalendarEvent({
-    supabase,
-    permissions: outcome.permissions,
-    wsId,
-    meetingId,
-  });
-  const durationSeconds = await getHostMeetingDurationSeconds(
-    meeting.creator_id
-  );
+  await permissionsPromise.catch(settleThenThrow);
+  const calendarEvent = await calendarPromise.catch(settleThenThrow);
+  const durationSeconds = await durationPromise;
   return {
     kind: 'active' as const,
     meeting,
