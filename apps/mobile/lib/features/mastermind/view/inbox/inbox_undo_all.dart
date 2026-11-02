@@ -22,6 +22,7 @@ class InboxUndoAll extends StatelessWidget {
           expiresAt: state.earliestHoldUntil(now),
           now: replies.now,
           onUndoAll: replies.undoAll,
+          onSendNow: replies.sendAllNow,
         );
       },
     );

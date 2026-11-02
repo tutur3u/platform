@@ -15220,4 +15220,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String offlineWaitingRetry(String time) {
     return 'Waiting to retry at $time';
   }
+
+  @override
+  String get mastermindUndoWindow => 'Undo window';
+
+  @override
+  String get mastermindUndoOff => 'Off';
+
+  @override
+  String mastermindUndoSeconds(int seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String get mastermindReplySendNow => 'Send now';
 }

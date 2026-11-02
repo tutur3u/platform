@@ -9,6 +9,29 @@ export 'package:mobile/data/repositories/theme_preference_ledger.dart'
 /// Ported from apps/native/lib/stores/ui-store.ts.
 
 class SettingsRepository {
+  static int _mastermindUndoSeconds = 5;
+  static const mastermindUndoChoices = [0, 5, 10, 30];
+  Duration get mastermindUndoWindow =>
+      Duration(seconds: _mastermindUndoSeconds);
+  Future<void> loadMastermindUndoWindow() async {
+    final prefs = await SharedPreferences.getInstance();
+    final seconds = prefs.getInt('mastermind-undo-seconds');
+    _mastermindUndoSeconds = mastermindUndoChoices.contains(seconds)
+        ? seconds!
+        : 5;
+  }
+
+  Future<void> setMastermindUndoWindow(int seconds) async {
+    if (!mastermindUndoChoices.contains(seconds)) {
+      throw ArgumentError.value(seconds);
+    }
+    final prefs = await SharedPreferences.getInstance();
+    if (!await prefs.setInt('mastermind-undo-seconds', seconds)) {
+      throw StateError('Could not save undo window');
+    }
+    _mastermindUndoSeconds = seconds;
+  }
+
   static const _themeModeKey = 'theme-mode';
   static const _appearanceKey = 'appearance-v1';
   static const _appearanceIntroSeenKey = 'appearance-intro-seen';

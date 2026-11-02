@@ -28242,6 +28242,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Waiting to retry at {time}'**
   String offlineWaitingRetry(String time);
+
+  /// No description provided for @mastermindUndoWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo window'**
+  String get mastermindUndoWindow;
+
+  /// No description provided for @mastermindUndoOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get mastermindUndoOff;
+
+  /// No description provided for @mastermindUndoSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s'**
+  String mastermindUndoSeconds(int seconds);
+
+  /// No description provided for @mastermindReplySendNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Send now'**
+  String get mastermindReplySendNow;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
