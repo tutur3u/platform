@@ -92,6 +92,11 @@ const expectedVerifiedIdentities = [
     'public.is_org_member(uuid,uuid)',
     'public-execute',
   ],
+  [
+    'apps/database/supabase/migrations/20261101090000_bind_cross_app_handoff_pkce.sql',
+    'public.validate_cross_app_token_with_session(text,text)',
+    'public-execute',
+  ],
 ];
 const identity = ({ file, signature, rule }) => [file, signature, rule];
 const sortedIdentities = (entries) =>
@@ -112,11 +117,13 @@ test('verified findings remain separate from the historical debt inventory', () 
         'public.has_workspace_permission(uuid,uuid,text)',
       ].includes(entry.signature)
         ? ['PUBLIC', 'anon', 'authenticated', 'service_role']
-        : entry.file.includes('030700')
-          ? ['authenticated', 'service_role']
-          : entry.file.includes('030500')
-            ? []
-            : ['service_role']
+        : entry.file.includes('20261101090000')
+          ? ['anon', 'authenticated', 'service_role']
+          : entry.file.includes('030700')
+            ? ['authenticated', 'service_role']
+            : entry.file.includes('030500')
+              ? []
+              : ['service_role']
     );
     assert.throws(
       () =>

@@ -50,6 +50,7 @@
       }
     }
   },
+  "assistantNotAvailableOffline": "Not available offline",
   "assistantDownloadPhasePending": "Pending",
   "assistantDownloadPhaseQueued": "Queued",
   "assistantDownloadPhaseTransferring": "Downloading",
@@ -2704,6 +2705,7 @@
   "habitsTeamSummaryTitle": "Team summary",
   "habitsTemplateLabel": "Start from a template",
   "habitsTitle": "Habits",
+  "habitsOfflineUnavailable": "Not available offline",
   "habitsTodayLabel": "Today",
   "habitsTodayTotalHint": "Today's total",
   "habitsTopStreakLabel": "Top streak",
@@ -2734,6 +2736,7 @@
   "homePersonalAgenda": "Agenda",
   "homePersonalAgendaUnavailable": "Personal calendar is unavailable.",
   "homeSectionCalendar": "Calendar",
+  "homeNotAvailableOffline": "Not available offline",
   "homeSectionLoadFailed": "Pull down to try again.",
   "homeSectionToday": "Today",
   "homeSectionUpNext": "Up next",
@@ -4892,6 +4895,7 @@
   "timerThresholdWarningAll": "All missed entries in this workspace require approval. Add at least one proof image before submitting.",
   "timerTimeEditingRestricted": "Time Editing Restricted",
   "timerTitle": "Timer",
+  "timerOfflineUnavailable": "Not available offline",
   "timerToday": "Today",
   "timerTotalSessions": "Total sessions",
   "timerUnknownDate": "Unknown date",
@@ -5038,6 +5042,8 @@
   "assistantNewChatConfirmationDescription": "The earlier conversation may already have been saved, but this app could not confirm it. Check your chat history before starting a new chat. Starting a new chat does not retry the earlier request and may create a separate conversation.",
   "assistantNewChatInspectHistory": "Check history",
   "assistantNewChatConfirmCreation": "Start a new chat",
+  "assistantCreationHoldBannerMessage": "Your last chat may not have been saved. Starting a new chat does not retry it and may create a separate conversation.",
+  "assistantCreationHoldDismiss": "Dismiss",
   "assistantNewChatResetDenied": "A new chat was not started. Your draft is retained. Check your chat history before choosing another action.",
   "assistantNewChatResetUncertain": "The reset could not be confirmed. Your draft is retained. Check your chat history; the app will not retry automatically.",
   "assistantNewChatResetStale": "The conversation or draft changed. Your draft is retained. Check your chat history before starting another chat.",
@@ -5337,6 +5343,37 @@
   "offlineManageData": "Manage data",
   "offlineEvictRowDescription": "Frees space. Data downloads again when you are online.",
   "offlineTechnicalDetails": "Technical details",
+  "offlineWaitingWifi": "Waiting for Wi-Fi",
+  "offlineWaitingRetry": "Waiting to retry at {time}",
+  "@offlineWaitingRetry": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "offlineStatusPreparing": "Preparing",
+  "offlineStatusReady": "Ready offline",
+  "offlineStatusNeverSynced": "Never synced",
+  "offlineStatusLastSynced": "Last synced: {time}",
+  "offlineStatusSummary": "{ready} of {total} apps ready offline",
+  "@offlineStatusLastSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@offlineStatusSummary": {
+    "placeholders": {
+      "ready": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
   "mailSettingsReadingGroup": "Reading",
   "mailSettingsComposeGroup": "Sender and signature",
   "mailSettingsAiGroup": "AI drafts",
@@ -7192,7 +7229,20 @@
   },
   "mastermindInboxTierShowLess": "Show less",
   "mastermindInboxTierJump": "Scrolls to this section",
-  "offlineWaitingWifi": "Waiting for Wi-Fi",
-  "offlineWaitingRetry": "Waiting to retry at {time}",
-  "@offlineWaitingRetry": {"placeholders": {"time": {"type": "String"}}}
+  "mastermindUndoWindow": "Undo window",
+  "mastermindUndoOff": "Off",
+  "mastermindUndoSeconds": "{seconds} s",
+  "mastermindReplySendNow": "Send now",
+  "@mastermindUndoSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsPushSummary": "Get alerts on this device",
+  "settingsTelemetrySummary": "Help improve the app",
+  "settingsStorageSummary": "Manage data on this device",
+  "settingsLearnMore": "Learn more",
+  "assistantVoiceMessagePrompt": "Listen to this voice message and respond."
 }

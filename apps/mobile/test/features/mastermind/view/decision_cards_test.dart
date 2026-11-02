@@ -104,7 +104,7 @@ void main() {
     });
   }
 
-  testWidgets('one tap, undo, then 30-second window and one canonical send', (
+  testWidgets('one tap, undo, then 5-second window and one canonical send', (
     tester,
   ) async {
     final transport = FakeReplyTransport();
@@ -125,7 +125,7 @@ void main() {
 
     await tester.tap(find.text('Later'));
     await tester.pump();
-    await tester.pump(const Duration(seconds: 29));
+    await tester.pump(const Duration(seconds: 4));
     expect(transport.sent, isEmpty);
     await tester.pump(const Duration(seconds: 1));
     await tester.pumpAndSettle();

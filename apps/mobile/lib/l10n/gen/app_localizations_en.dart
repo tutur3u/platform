@@ -61,6 +61,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get assistantNotAvailableOffline => 'Not available offline';
+
+  @override
   String get assistantDownloadPhasePending => 'Pending';
 
   @override
@@ -4307,6 +4310,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get habitsTitle => 'Habits';
 
   @override
+  String get habitsOfflineUnavailable => 'Not available offline';
+
+  @override
   String get habitsTodayLabel => 'Today';
 
   @override
@@ -4401,6 +4407,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get homeSectionCalendar => 'Calendar';
+
+  @override
+  String get homeNotAvailableOffline => 'Not available offline';
 
   @override
   String get homeSectionLoadFailed => 'Pull down to try again.';
@@ -11204,6 +11213,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get timerTitle => 'Timer';
 
   @override
+  String get timerOfflineUnavailable => 'Not available offline';
+
+  @override
   String get timerToday => 'Today';
 
   @override
@@ -11623,6 +11635,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get assistantNewChatConfirmCreation => 'Start a new chat';
+
+  @override
+  String get assistantCreationHoldBannerMessage => 'Your last chat may not have been saved. Starting a new chat does not retry it and may create a separate conversation.';
+
+  @override
+  String get assistantCreationHoldDismiss => 'Dismiss';
 
   @override
   String get assistantNewChatResetDenied => 'A new chat was not started. Your draft is retained. Check your chat history before choosing another action.';
@@ -12297,6 +12315,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineTechnicalDetails => 'Technical details';
+
+  @override
+  String get offlineWaitingWifi => 'Waiting for Wi-Fi';
+
+  @override
+  String offlineWaitingRetry(String time) {
+    return 'Waiting to retry at $time';
+  }
+
+  @override
+  String get offlineStatusPreparing => 'Preparing';
+
+  @override
+  String get offlineStatusReady => 'Ready offline';
+
+  @override
+  String get offlineStatusNeverSynced => 'Never synced';
+
+  @override
+  String offlineStatusLastSynced(String time) {
+    return 'Last synced: $time';
+  }
+
+  @override
+  String offlineStatusSummary(int ready, int total) {
+    return '$ready of $total apps ready offline';
+  }
 
   @override
   String get mailSettingsReadingGroup => 'Reading';
@@ -15211,10 +15256,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindInboxTierJump => 'Scrolls to this section';
 
   @override
-  String get offlineWaitingWifi => 'Waiting for Wi-Fi';
+  String get mastermindUndoWindow => 'Undo window';
 
   @override
-  String offlineWaitingRetry(String time) {
-    return 'Waiting to retry at $time';
+  String get mastermindUndoOff => 'Off';
+
+  @override
+  String mastermindUndoSeconds(int seconds) {
+    return '$seconds s';
   }
+
+  @override
+  String get mastermindReplySendNow => 'Send now';
+
+  @override
+  String get settingsPushSummary => 'Get alerts on this device';
+
+  @override
+  String get settingsTelemetrySummary => 'Help improve the app';
+
+  @override
+  String get settingsStorageSummary => 'Manage data on this device';
+
+  @override
+  String get settingsLearnMore => 'Learn more';
+
+  @override
+  String get assistantVoiceMessagePrompt => 'Listen to this voice message and respond.';
 }

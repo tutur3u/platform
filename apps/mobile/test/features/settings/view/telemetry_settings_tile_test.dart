@@ -33,6 +33,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.widget<AppSwitch>(find.byType(AppSwitch)).value, isFalse);
     expect(applied, [false, true, false]);
+    expect(find.text('Help improve the app'), findsOneWidget);
+    await tester.tap(find.byType(AppIconButton));
+    await tester.pumpAndSettle();
     expect(
       find.textContaining('Send usage data and crash reports to Google'),
       findsOneWidget,
