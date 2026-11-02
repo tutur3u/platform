@@ -15042,6 +15042,18 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindInboxTierJump => 'Cuộn tới mục này';
 
   @override
+  String get settingsPushSummary => 'Nhận thông báo trên thiết bị này';
+
+  @override
+  String get settingsTelemetrySummary => 'Giúp cải thiện ứng dụng';
+
+  @override
+  String get settingsStorageSummary => 'Quản lý dữ liệu trên thiết bị này';
+
+  @override
+  String get settingsLearnMore => 'Tìm hiểu thêm';
+
+  @override
   String get assistantVoiceMessagePrompt => 'Hãy nghe tin nhắn thoại này và trả lời.';
 
   @override

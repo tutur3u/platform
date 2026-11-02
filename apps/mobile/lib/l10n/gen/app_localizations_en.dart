@@ -15211,6 +15211,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindInboxTierJump => 'Scrolls to this section';
 
   @override
+  String get settingsPushSummary => 'Get alerts on this device';
+
+  @override
+  String get settingsTelemetrySummary => 'Help improve the app';
+
+  @override
+  String get settingsStorageSummary => 'Manage data on this device';
+
+  @override
+  String get settingsLearnMore => 'Learn more';
+
+  @override
   String get assistantVoiceMessagePrompt => 'Listen to this voice message and respond.';
 
   @override
