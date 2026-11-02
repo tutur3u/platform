@@ -4541,7 +4541,8 @@
     "transcription": {
       "empty": "This recording contains no audio to transcribe. The saved recording remains available.",
       "too_large": "This recording is too large for inline transcription. The saved recording remains available.",
-      "unsupported_type": "This recording format cannot be transcribed inline yet. The saved recording remains available."
+      "unsupported_type": "This recording format cannot be transcribed inline yet. The saved recording remains available.",
+      "legacy_disabled": "Speaker consent cannot be verified for legacy recordings. Use Meet AI."
     }
   },
   "meet_workspace": {

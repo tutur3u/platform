@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   generateObject: vi.fn(),
   google: vi.fn(),
   withAiMemory: vi.fn(),
+  legacy: vi.fn(),
   meetAi: vi.fn(),
   usage: vi.fn(),
 }));
@@ -54,7 +55,11 @@ vi.mock('../../memory', () => ({
 import { createPOST } from './route';
 
 const post = () =>
-  createPOST({ isMeetAiEnabled: mocks.meetAi, limitMeetAiUsage: mocks.usage });
+  createPOST({
+    isLegacyMeetingTranscriptionEnabled: mocks.legacy,
+    isMeetAiEnabled: mocks.meetAi,
+    limitMeetAiUsage: mocks.usage,
+  });
 
 function createAudioFile({
   size = 1,
@@ -113,6 +118,7 @@ describe('meeting transcription route input bounds', () => {
       '11111111-1111-4111-8111-111111111111'
     );
     mocks.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
+    mocks.legacy.mockResolvedValue(true);
     mocks.meetAi.mockResolvedValue(true);
     mocks.usage.mockResolvedValue({ ok: true });
     mocks.credits.mockResolvedValue({ allowed: true });
@@ -122,7 +128,10 @@ describe('meeting transcription route input bounds', () => {
       mutate: [{ limiter: { limit: mocks.limit } }],
     });
     mocks.meeting.mockResolvedValue({
-      data: { ws_id: '11111111-1111-4111-8111-111111111111' },
+      data: {
+        ws_id: '11111111-1111-4111-8111-111111111111',
+        creator_id: 'user-1',
+      },
       error: null,
     });
     const query = {
@@ -149,6 +158,57 @@ describe('meeting transcription route input bounds', () => {
         text: 'Transcript',
       },
     });
+  });
+
+  it('refuses default OFF before usage, credits or provider', async () => {
+    const { file } = createAudioFile();
+    const { request } = createRequest({ audio: file });
+    mocks.legacy.mockResolvedValue(false);
+    expect((await post()(request)).status).toBe(403);
+    expect(mocks.usage).not.toHaveBeenCalled();
+    expect(mocks.credits).not.toHaveBeenCalled();
+    expectNoAiSetup();
+  });
+
+  it.each(['en', 'vi'])('localizes refusal in %s', async (locale) => {
+    mocks.legacy.mockResolvedValue(false);
+    const { request } = createRequest();
+    request.headers.set('accept-language', locale);
+    const response = await post()(request);
+    const body = await response.json();
+    expect(body.error).toContain(
+      locale === 'vi' ? 'Không thể' : 'Speaker consent'
+    );
+    expect(body.error).toContain('Meet AI');
+  });
+
+  it('defaults legacy transcription to OFF when no gate is configured', async () => {
+    const { file } = createAudioFile();
+    const { request } = createRequest({ audio: file });
+    const response = await createPOST({
+      isMeetAiEnabled: mocks.meetAi,
+      limitMeetAiUsage: mocks.usage,
+    })(request);
+    expect(response.status).toBe(403);
+    expect(mocks.usage).not.toHaveBeenCalled();
+    expect(mocks.credits).not.toHaveBeenCalled();
+    expectNoAiSetup();
+  });
+
+  it('refuses enabled legacy transcription for a non-creator', async () => {
+    mocks.meeting.mockResolvedValue({
+      data: {
+        ws_id: '11111111-1111-4111-8111-111111111111',
+        creator_id: 'other',
+      },
+      error: null,
+    });
+    const { file } = createAudioFile();
+    const { request } = createRequest({ audio: file });
+    expect((await post()(request)).status).toBe(403);
+    expect(mocks.usage).not.toHaveBeenCalled();
+    expect(mocks.credits).not.toHaveBeenCalled();
+    expectNoAiSetup();
   });
 
   it.each([null, '', ' ', new File(['x'], 'workspace')])(
@@ -244,8 +304,11 @@ describe('meeting transcription route input bounds', () => {
       const { request } = createRequest({ audio: file });
       const handler =
         reason === 'no-gate'
-          ? createPOST()
-          : createPOST({ isMeetAiEnabled: mocks.meetAi });
+          ? createPOST({ isLegacyMeetingTranscriptionEnabled: mocks.legacy })
+          : createPOST({
+              isLegacyMeetingTranscriptionEnabled: mocks.legacy,
+              isMeetAiEnabled: mocks.meetAi,
+            });
       const response = await handler(request);
       expect(response.status).toBe(403);
       expect(await response.text()).toBe('Meet AI is temporarily unavailable');
@@ -488,6 +551,7 @@ describe('meeting transcription Meet AI usage limiter', () => {
     vi.resetAllMocks();
     mocks.normalizeWorkspaceId.mockResolvedValue(wsId);
     mocks.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
+    mocks.legacy.mockResolvedValue(true);
     mocks.meetAi.mockResolvedValue(true);
     mocks.usage.mockResolvedValue({ ok: true });
     mocks.credits.mockResolvedValue({ allowed: true });
@@ -496,7 +560,10 @@ describe('meeting transcription Meet AI usage limiter', () => {
     mocks.limiters.mockResolvedValue({
       mutate: [{ limiter: { limit: mocks.limit } }],
     });
-    mocks.meeting.mockResolvedValue({ data: { ws_id: wsId }, error: null });
+    mocks.meeting.mockResolvedValue({
+      data: { ws_id: wsId, creator_id: 'user-1' },
+      error: null,
+    });
     const query = {
       select: () => query,
       eq: () => query,
@@ -591,9 +658,10 @@ describe('meeting transcription Meet AI usage limiter', () => {
   it('fails closed when no limiter is injected', async () => {
     const { file } = createAudioFile();
     const { request } = createRequest({ audio: file });
-    const response = await createPOST({ isMeetAiEnabled: mocks.meetAi })(
-      request
-    );
+    const response = await createPOST({
+      isLegacyMeetingTranscriptionEnabled: mocks.legacy,
+      isMeetAiEnabled: mocks.meetAi,
+    })(request);
     expect(response.status).toBe(503);
     expect(await response.json()).toMatchObject({
       code: 'MEET_AI_LIMITER_UNAVAILABLE',

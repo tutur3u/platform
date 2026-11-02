@@ -15,7 +15,10 @@ import {
   CardHeader,
   CardTitle,
 } from '@tuturuuu/ui/card';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getWorkspaceConfig,
+} from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -79,6 +82,10 @@ export default async function MeetingDetailPage({
   }
 
   const isHost = meeting.creator_id === user.id;
+  const canTranscribeLegacy =
+    isHost &&
+    (await getWorkspaceConfig(wsId, 'legacy_meeting_transcription_enabled')) ===
+      'true';
   // Permissions do not depend on room policy. Capture rejection immediately so
   // the ended-room shortcut and policy error precedence remain unchanged.
   const permissionsPromise = getPermissions({ user, wsId }).then(
@@ -193,7 +200,11 @@ export default async function MeetingDetailPage({
             <CardDescription>{details('recordings_hint')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <RecordingSessionsOverview wsId={wsId} meetingId={meetingId} />
+            <RecordingSessionsOverview
+              wsId={wsId}
+              meetingId={meetingId}
+              canTranscribeLegacy={canTranscribeLegacy}
+            />
           </CardContent>
         </Card>
       </div>

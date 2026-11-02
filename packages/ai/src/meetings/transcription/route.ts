@@ -45,6 +45,9 @@ const transcriptSchema = z.object({
 });
 
 export type MeetingTranscriptionOptions = {
+  isLegacyMeetingTranscriptionEnabled?: (
+    wsId: string
+  ) => boolean | Promise<boolean>;
   /**
    * Meet AI default-deny workspace gate, injected by the framework adapter
    * (the allowlist binding lives in the runtime env, which this portable
@@ -97,6 +100,7 @@ async function meetAiUsageDecision(
 
 export function createPOST({
   isMeetAiEnabled,
+  isLegacyMeetingTranscriptionEnabled,
   limitMeetAiUsage,
 }: MeetingTranscriptionOptions = {}) {
   return async function handler(req: Request) {
@@ -182,7 +186,7 @@ export function createPOST({
       }
       const { data: meeting, error: meetingError } = await supabase
         .from('workspace_meetings')
-        .select('ws_id')
+        .select('ws_id, creator_id')
         .eq('id', meetingId)
         .maybeSingle();
       if (meetingError) {
@@ -200,6 +204,24 @@ export function createPOST({
       });
       if (!membership.ok) {
         return new Response('Workspace access denied', { status: 403 });
+      }
+
+      if (
+        meeting.creator_id !== user.id ||
+        !(await meetAiAllowed(wsId, isLegacyMeetingTranscriptionEnabled))
+      ) {
+        return Response.json(
+          {
+            code: 'LEGACY_MEETING_TRANSCRIPTION_DISABLED',
+            error: req.headers
+              .get('accept-language')
+              ?.toLowerCase()
+              .startsWith('vi')
+              ? 'Không thể xác minh sự đồng ý của người nói cho bản ghi cũ. Hãy sử dụng Meet AI.'
+              : 'Speaker consent cannot be verified for legacy recordings. Use Meet AI.',
+          },
+          { status: 403 }
+        );
       }
 
       if (!(await meetAiAllowed(wsId, isMeetAiEnabled))) {

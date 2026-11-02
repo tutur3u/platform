@@ -4541,7 +4541,8 @@
     "transcription": {
       "empty": "Bản ghi này không có dữ liệu âm thanh để phiên âm. Bản ghi đã lưu vẫn còn khả dụng.",
       "too_large": "Bản ghi này quá lớn để phiên âm trực tiếp. Bản ghi đã lưu vẫn còn khả dụng.",
-      "unsupported_type": "Định dạng bản ghi này chưa thể được phiên âm trực tiếp. Bản ghi đã lưu vẫn còn khả dụng."
+      "unsupported_type": "Định dạng bản ghi này chưa thể được phiên âm trực tiếp. Bản ghi đã lưu vẫn còn khả dụng.",
+      "legacy_disabled": "Không thể xác minh sự đồng ý của người nói cho bản ghi cũ. Hãy sử dụng Meet AI."
     }
   },
   "meet_workspace": {

@@ -18,6 +18,7 @@ interface RecordingSession {
 }
 
 interface RecordingSessionsOverviewProps {
+  canTranscribeLegacy?: boolean;
   wsId: string;
   meetingId: string;
 }
@@ -81,6 +82,7 @@ const getDuration = (session: RecordingSession) => {
 };
 
 export function RecordingSessionsOverview({
+  canTranscribeLegacy = false,
   wsId,
   meetingId,
 }: RecordingSessionsOverviewProps) {
@@ -195,6 +197,7 @@ export function RecordingSessionsOverview({
 
               <div className="flex items-center gap-2 border-t pt-2">
                 <RecordingSessionActions
+                  canTranscribeLegacy={canTranscribeLegacy}
                   wsId={wsId}
                   meetingId={meetingId}
                   session={session}
