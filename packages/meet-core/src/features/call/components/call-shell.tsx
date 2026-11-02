@@ -315,6 +315,7 @@ function CallShellContent({
         error={state.error}
         onRetry={retryConnection}
         isJoining={state.admission === 'connecting'}
+        joined={joined}
         meetingName={meetingName}
         waiting={state.admission === 'waiting'}
         transcriptionNotice={
