@@ -114,6 +114,14 @@ describe('GET mobile feature flags', () => {
     expect(await scoped.json()).toEqual(await personal.json());
   });
 
+  it('returns 304 when the client echoes the bare body version', async () => {
+    const initial = await GET(request());
+    const { version } = (await initial.json()) as { version: string };
+    const response = await GET(request(`?wsId=${wsId}`, version));
+    expect(response.status).toBe(304);
+    expect(await response.text()).toBe('');
+  });
+
   it.each(['exact', 'weak', 'list', 'wildcard'])(
     'returns a bodyless 304 for a matching %s validator',
     async (kind) => {

@@ -69,7 +69,9 @@ export async function GET(request: NextRequest) {
   if (
     validators.some((value) => {
       const validator = value.trim();
-      return validator === '*' || validator.replace(/^W\//, '') === etag;
+      const opaque = validator.replace(/^W\//, '');
+      // The mobile client echoes the body `version` (bare hex); browsers echo the quoted ETag.
+      return validator === '*' || opaque === etag || opaque === version;
     })
   ) {
     return new NextResponse(null, { status: 304, headers });
