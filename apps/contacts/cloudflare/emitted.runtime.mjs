@@ -67,11 +67,11 @@ test(description, { timeout: 30000 }, async (t) => {
           if (attest) headers.set('x-tuturuuu-staging-supabase-ref', ref);
           headers.append(
             'set-cookie',
-            'sb-auth.0=one; Domain=.staging.tutur3u.com; Path=/; Secure; HttpOnly'
+            'sb-auth.0=one; Path=/; Secure; HttpOnly'
           );
           headers.append(
             'set-cookie',
-            'sb-auth.1=two; Domain=.staging.tutur3u.com; Path=/; Secure; HttpOnly'
+            'sb-auth.1=two; Path=/; Secure; HttpOnly'
           );
           return new Response(`Next fixture:${await request.text()}`, {
             status: 429,

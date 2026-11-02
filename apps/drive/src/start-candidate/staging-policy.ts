@@ -1,9 +1,11 @@
+import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
+import { isStagingAppHostname } from '@tuturuuu/utils/staging-hosts';
+
 export const DRIVE_STAGING_ORIGIN = 'https://drive.tutur3u.com';
 export const STAGING_WEB_ORIGIN = 'https://web.tutur3u.com';
 // Same project pinned by .github/workflows/supabase-staging.yaml.
 export const STAGING_SUPABASE_ORIGIN =
   'https://fxefojytwimjiqxseqag.supabase.co';
-export const STAGING_COOKIE_DOMAIN = '.staging.tutur3u.com';
 
 export const stagingVars = {
   TUTURUUU_NOINDEX: '1',
@@ -28,25 +30,20 @@ export function isDriveStagingEnvironment(
   );
 }
 
-export function scopeStagingCookies(response: Response): Response {
-  const scoped = new Response(response.body, response);
+export function scopeStagingCookies(
+  request: Request,
+  response: Response
+): Response {
+  if (!isStagingAppHostname(new URL(request.url).hostname)) return response;
+  const checked = enforceStagingCookiePolicy(request, response);
+  const scoped = new Response(checked.body, checked);
   scoped.headers.set('Strict-Transport-Security', 'max-age=63072000');
   const cookies = scoped.headers.getSetCookie();
   scoped.headers.delete('Set-Cookie');
   for (const cookie of cookies) {
-    if (cookie.trimStart().startsWith('__Host-')) {
-      scoped.headers.append('Set-Cookie', cookie);
-      continue;
-    }
-    const attributes = cookie
-      .split(';')
-      .filter(
-        (part, index) =>
-          index === 0 || !/^\s*(?:domain|secure)(?:=|\s*$)/iu.test(part)
-      );
     scoped.headers.append(
       'Set-Cookie',
-      `${attributes.join(';')}; Domain=${STAGING_COOKIE_DOMAIN}; Secure`
+      /;\s*secure\s*(?:;|$)/iu.test(cookie) ? cookie : `${cookie}; Secure`
     );
   }
   return scoped;

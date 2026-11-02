@@ -26,7 +26,7 @@ export interface TasksWorkerEnv {
   /** Central Web API origin for unowned `/api/*` (default tuturuuu.com). */
   INTERNAL_WEB_API_ORIGIN?: string;
   /**
-   * Comma-separated staging hostnames (`*.workers.dev` or `*.staging.tutur3u.com`)
+   * Comma-separated exact staging hosts (`tasks.tutur3u.com` or reviewed workers.dev hosts)
    * served at the root, set on the staging Worker only. Never derived from a
    * request.
    */

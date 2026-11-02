@@ -47,7 +47,7 @@ function webPublicationConfig(base, profile, { main, assets, sourceSha }) {
       WEB_START_CANDIDATE: 'off',
       WEB_START_NATIVE_LEGAL: 'off',
       WEB_START_NATIVE_SECURITY: 'off',
-      AUTH_COOKIE_DOMAIN: web.vars.AUTH_COOKIE_DOMAIN,
+      AUTH_COOKIE_PREFIX: web.vars.AUTH_COOKIE_PREFIX,
       NEXT_PUBLIC_SUPABASE_URL: web.vars.NEXT_PUBLIC_SUPABASE_URL,
     },
     'Source vars require explicit profile review'

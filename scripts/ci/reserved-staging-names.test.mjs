@@ -75,6 +75,7 @@ test('reserved production services, apex, wildcards, nested and legacy hosts fai
     ...reserved.map((name) => `${name}.tutur3u.com`),
     'key._domainkey.tutur3u.com',
     '*.tutur3u.com',
+    '*.docs.tutur3u.com',
     'tools.staging.tutur3u.com',
     'calendar-staging.tuturuuu.com',
     'foo.example.tutur3u.com',

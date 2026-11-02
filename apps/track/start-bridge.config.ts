@@ -24,7 +24,7 @@ const FRAMABLE =
 
 export interface TrackPolicyEnv {
   /**
-   * Comma-separated staging hostnames (`*.workers.dev` or `*.staging.tutur3u.com`)
+   * Comma-separated exact staging hosts (`track.tutur3u.com` or reviewed workers.dev hosts)
    * served at the root, set on the staging Worker only. Never derived from a
    * request.
    */
