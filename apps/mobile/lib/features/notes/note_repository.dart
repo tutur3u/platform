@@ -5,6 +5,7 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/notes/note_lock_crypto.dart';
+import 'package:mobile/features/notes/notes_offline_preparation.dart';
 
 class NoteRecord {
   const NoteRecord({
@@ -66,11 +67,12 @@ class NoteRepository {
   final ApiClient _api;
   static const CachePolicy _policy = CachePolicies.moduleData;
 
-  CacheKey _key(String wsId, {bool archived = false}) => CacheKey(
-    namespace: archived ? 'notes.archive' : 'notes.list',
-    userId: currentCacheUserId(),
-    workspaceId: wsId,
-  );
+  CacheKey _key(String wsId, {bool archived = false}) =>
+      NotesOfflinePreparation.key(
+        currentCacheUserId(),
+        wsId,
+        archived: archived,
+      );
 
   static List<NoteRecord> _decode(Object? value) =>
       (value as List<Object?>? ?? <Object?>[])
