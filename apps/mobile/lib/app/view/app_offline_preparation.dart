@@ -96,12 +96,39 @@ extension _AppOfflinePreparation on _AppState {
         }
       }),
     );
+    void registerDrive() => DriveOfflinePreparation.register(
+      OfflinePreparationCoordinator.instance.registry,
+      (wsId) => _prepareWithPermissions(wsId, (wsId) async {
+        final api = ApiClient();
+        try {
+          await DriveOfflinePreparation(api: api).prepare(wsId);
+        } finally {
+          api.dispose();
+        }
+      }),
+    );
     registerChat();
-    _chatOfflineFlags = _mobileFlags.stream.listen((_) => registerChat());
+    registerDrive();
+    _chatOfflineFlags = _mobileFlags.stream.listen((_) {
+      registerChat();
+      registerDrive();
+    });
     CacheStore.instance.removedResource.addListener(
       _invalidateOfflineReadiness,
     );
     _syncOfflinePreparationScope();
+  }
+
+  void _registerFlaggedOfflineProducts(MobileFlagsState flags) {
+    _mastermind.registerOfflinePreparation(
+      OfflinePreparationCoordinator.instance.registry,
+      flags,
+    );
+    registerHomeOffline(
+      OfflinePreparationCoordinator.instance.registry,
+      flags,
+      (wsId) => _prepareWithPermissions(wsId, _prepareHomeOffline),
+    );
   }
 
   Future<void> _prepareHomeOffline(String wsId) => retainHomeOffline(

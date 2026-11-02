@@ -31,6 +31,7 @@ import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
+import 'package:mobile/data/repositories/drive_offline_preparation.dart';
 import 'package:mobile/data/repositories/education_access_repository.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
@@ -587,17 +588,7 @@ class _AppState extends State<App> {
             ),
             mastermindAuthResetListener(_mastermind),
             BlocListener<MobileFlags, MobileFlagsState>(
-              listener: (_, flags) {
-                _mastermind.registerOfflinePreparation(
-                  OfflinePreparationCoordinator.instance.registry,
-                  flags,
-                );
-                registerHomeOffline(
-                  OfflinePreparationCoordinator.instance.registry,
-                  flags,
-                  (wsId) => _prepareWithPermissions(wsId, _prepareHomeOffline),
-                );
-              },
+              listener: (_, flags) => _registerFlaggedOfflineProducts(flags),
             ),
             BlocListener<WorkspaceCubit, WorkspaceState>(
               listenWhen: (previous, current) =>
