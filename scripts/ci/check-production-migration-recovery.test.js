@@ -262,7 +262,7 @@ test('workflow keeps default-off manual opt-in and full normal marker/staging/ap
   assert.match(yaml, /DEPLOYMENT_MARKER_HAS_SUCCESS.*!= "true"/);
   assert.match(
     yaml,
-    /d\.sha === target && d\.ref === target &&[\s\S]*p\.sha === target/
+    /d\.sha === source && d\.ref === source &&[\s\S]*p\.sha === source/
   );
   assert.match(
     yaml,
