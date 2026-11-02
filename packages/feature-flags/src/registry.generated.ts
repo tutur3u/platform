@@ -128,4 +128,14 @@ export const registry = [
     default: false,
     removeBy: '2027-01-31',
   },
+  {
+    key: 'tutoring_parent_message_v2',
+    description:
+      'Workspace-scoped parent message v2. Kill switch: set workspace_configs tutoring_parent_message_v2 to false or remove it.',
+    owner: 'pax',
+    scope: 'workspace',
+    class: 'ui',
+    default: false,
+    removeBy: '2027-01-31',
+  },
 ] as const;

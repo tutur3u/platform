@@ -34,6 +34,8 @@ vi.mock('@tuturuuu/internal-api/tutoring-policy', async (importOriginal) => ({
 
 let flagError = false;
 let nameError = false;
+let overrideError = false;
+let centreOverride: string | null = null;
 let flagValue: string | null = null;
 let centreName: string | null = 'Trung tâm Fixture';
 let teacherId = 'teacher';
@@ -48,6 +50,7 @@ let calls: { args: unknown[]; method: string; table: string }[] = [];
 /** A chainable query that records every call and resolves to `result`. */
 function query(table: string, result: () => unknown) {
   const teacherFilters: unknown[] = [];
+  let configId: unknown;
   const methods: Record<string, (...args: unknown[]) => unknown> = {};
   for (const method of [
     'eq',
@@ -60,6 +63,7 @@ function query(table: string, result: () => unknown) {
   ]) {
     methods[method] = (...args: unknown[]) => {
       calls.push({ args, method, table });
+      if (method === 'eq' && args[0] === 'id') configId = args[1];
       if (method === 'update' && reassignOnUpdate) teacherId = 'other-teacher';
       if (method === 'eq' && args[0] === 'teacher_user_id')
         teacherFilters.push(args[1]);
@@ -70,8 +74,19 @@ function query(table: string, result: () => unknown) {
     maybeSingle: async () =>
       table === 'workspace_configs'
         ? {
-            data: { value: flagValue },
-            error: flagError ? { message: 'fixture error' } : null,
+            data: {
+              value:
+                configId === 'tutoring_parent_message_centre_name'
+                  ? centreOverride
+                  : flagValue,
+            },
+            error: (
+              configId === 'tutoring_parent_message_centre_name'
+                ? overrideError
+                : flagError
+            )
+              ? { message: 'fixture error' }
+              : null,
           }
         : table === 'workspace_tutoring_sessions' &&
             teacherFilters.some((value) => value !== teacherId)
@@ -116,6 +131,8 @@ beforeEach(() => {
   flagValue = null;
   flagError = false;
   nameError = false;
+  overrideError = false;
+  centreOverride = null;
   centreName = 'Trung tâm Fixture';
   teacherId = 'teacher';
   reassignOnUpdate = false;
@@ -313,9 +330,81 @@ describe('workspace parent message v2', () => {
       await useRealRenderer();
       flagValue = value;
       expect(await (await preview()).json()).toEqual({ preview: legacy });
-      expect(calls.some((call) => call.table === 'workspaces')).toBe(false);
+      centreOverride = 'Ignored override';
+      nameError = true;
+      expect(await (await preview()).json()).toEqual({ preview: legacy });
     }
   );
+  it.each([null, '', '  '])(
+    'falls back from blank override %s',
+    async (value) => {
+      await useRealRenderer();
+      flagValue = 'true';
+      centreOverride = value;
+      expect(await (await preview()).json()).toEqual({ preview: v2 });
+    }
+  );
+  it.each([false, true])(
+    'uses an NFC override despite workspace read error %s',
+    async (error) => {
+      await useRealRenderer();
+      flagValue = 'true';
+      nameError = error;
+      centreOverride = '  Trung tâm $& {{student}}  '.normalize('NFD');
+      expect(await (await preview()).json()).toEqual({
+        preview: v2.replace(
+          'Trung tâm Fixture',
+          () => 'Trung tâm $& {{student}}'
+        ),
+      });
+      expect(calls).toContainEqual({
+        table: 'workspace_configs',
+        method: 'eq',
+        args: ['id', 'tutoring_parent_message_centre_name'],
+      });
+    }
+  );
+  it('normalizes the workspace fallback and tolerates an override read failure', async () => {
+    await useRealRenderer();
+    flagValue = 'true';
+    centreName = '  Trung tâm Fixture  '.normalize('NFD');
+    overrideError = true;
+    expect(await (await preview()).json()).toEqual({ preview: v2 });
+  });
+  it.each([
+    ['2026-10-30T23:30:00Z', '2026-10-31T00:30:00Z', '06:30-07:30'],
+    ['2026-10-31T17:30:00Z', '2026-10-31T18:30:00Z', null],
+  ])('uses the GMT+7 calendar day for %s', async (start, end, time) => {
+    await useRealRenderer();
+    flagValue = 'true';
+    classSessions.data = [
+      {
+        starts_at: start,
+        ends_at: end,
+        start_timezone: 'Asia/Ho_Chi_Minh',
+        status: 'scheduled',
+      },
+    ];
+    expect(await (await preview()).json()).toEqual({
+      preview: time
+        ? v2.replace('16:00-17:30', time)
+        : v2.replace('Lịch học chính thức: 16:00-17:30\n', ''),
+    });
+  });
+  it('keeps legacy next-class date bytes with the flag off', async () => {
+    await useRealRenderer();
+    classSessions.data = [
+      {
+        starts_at: '2026-11-03T11:00:00Z',
+        ends_at: '2026-11-03T12:30:00Z',
+        start_timezone: 'Asia/Ho_Chi_Minh',
+        status: 'scheduled',
+      },
+    ];
+    expect(await (await preview()).json()).toEqual({
+      preview: legacy.replace('16:00-17:30', '18:00-19:30 ngày 03/11/2026'),
+    });
+  });
   it('uses the workspace name and exact Vietnamese closing', async () => {
     await useRealRenderer();
     flagValue = 'true';

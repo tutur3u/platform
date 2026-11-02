@@ -8,6 +8,12 @@ The root `config/feature-flags.json` owns the flag inventory. Each array entry h
 `kill`), `default: false`, and `removeBy` (ISO date). The initial 16 mobile flags
 belong to `mona` and expire on `2027-01-31`.
 
+`tutoring_parent_message_v2` belongs to `pax`, defaults OFF, and has workspace
+scope. Its runtime value comes from `workspace_configs`, independently of the
+v0 mobile evaluator. Only the exact string `true` enables it; setting it to
+`false` or removing it is the kill switch. See
+[parent message v2](/platform/applications/tutoring#parent-message-v2).
+
 ## Add a flag
 
 Name the flag in its PR, add its registry entry with default OFF, assign an owner

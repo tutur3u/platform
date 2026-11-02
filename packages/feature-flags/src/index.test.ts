@@ -3,6 +3,15 @@ import sourceRegistry from '../../../config/feature-flags.json';
 import { evaluateFlags, registry } from './index';
 
 describe('registry', () => {
+  it('registers parent message v2 as workspace-scoped and default off', () => {
+    expect(
+      registry.find(({ key }) => key === 'tutoring_parent_message_v2')
+    ).toMatchObject({
+      owner: 'pax',
+      scope: 'workspace',
+      default: false,
+    });
+  });
   it('matches the generated typed registry', () => {
     expect(registry).toEqual(sourceRegistry);
   });
@@ -10,9 +19,9 @@ describe('registry', () => {
   it('has unique snake_case keys, ownership, expiry, valid classes and false defaults', () => {
     expect(new Set(registry.map(({ key }) => key)).size).toBe(registry.length);
     for (const flag of registry) {
-      expect(flag.key).toMatch(/^[a-z]+(?:_[a-z]+)*$/);
+      expect(flag.key).toMatch(/^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/);
       expect(flag.description.length).toBeGreaterThan(0);
-      expect(flag.owner).toBe('mona');
+      expect(flag.owner.length).toBeGreaterThan(0);
       expect(['read', 'write', 'ui', 'kill']).toContain(flag.class);
       expect(flag.default).toBe(false);
       expect(flag.removeBy).toMatch(/^\d{4}-\d{2}-\d{2}$/);
@@ -36,7 +45,7 @@ describe('evaluateFlags', () => {
     );
     overrides.mobile_offline = false;
     expect(Object.values(evaluateFlags(registry, {}, overrides))).toEqual(
-      registry.map(() => false)
+      registry.map(({ key }) => key === 'tutoring_parent_message_v2')
     );
   });
 
