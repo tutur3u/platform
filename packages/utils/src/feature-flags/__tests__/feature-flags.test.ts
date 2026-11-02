@@ -1,9 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { FEATURE_GROUPS } from '../core';
 import { FEATURE_FLAGS } from '../data';
+import { DEFAULT_FEATURE_FLAGS } from '../default';
 import type { FeatureFlag, FeatureFlagMap } from '../types';
 
 describe('FEATURE_FLAGS', () => {
+  it('registers the tutoring picker kill switch with default OFF', () => {
+    expect(FEATURE_FLAGS.tutoring_picker_tutors_only).toBe(
+      'tutoring_picker_tutors_only'
+    );
+    expect(DEFAULT_FEATURE_FLAGS.tutoring_picker_tutors_only).toBe(false);
+  });
   describe('AI-related flags', () => {
     it('should have ENABLE_AI flag', () => {
       expect(FEATURE_FLAGS.ENABLE_AI).toBe('ENABLE_AI');
@@ -73,9 +80,9 @@ describe('FEATURE_FLAGS', () => {
   });
 
   describe('flag count and structure', () => {
-    it('should have exactly 14 feature flags', () => {
+    it('should have exactly 15 feature flags', () => {
       const flags = Object.keys(FEATURE_FLAGS);
-      expect(flags).toHaveLength(14);
+      expect(flags).toHaveLength(15);
     });
 
     it('should have all unique values', () => {
@@ -188,6 +195,7 @@ describe('FeatureFlag type', () => {
 describe('FeatureFlagMap type', () => {
   it('should create valid feature flag map', () => {
     const flagMap: FeatureFlagMap = {
+      tutoring_picker_tutors_only: false,
       ENABLE_AI: true,
       ENABLE_EDUCATION: false,
       ENABLE_QUIZZES: true,
@@ -223,6 +231,7 @@ describe('Feature flag usage patterns', () => {
   describe('checking multiple flags', () => {
     it('should support checking if all flags are enabled', () => {
       const flagMap: FeatureFlagMap = {
+        tutoring_picker_tutors_only: false,
         ENABLE_AI: true,
         ENABLE_EDUCATION: true,
         ENABLE_QUIZZES: true,
@@ -250,6 +259,7 @@ describe('Feature flag usage patterns', () => {
 
     it('should support checking if any flag is enabled', () => {
       const flagMap: FeatureFlagMap = {
+        tutoring_picker_tutors_only: false,
         ENABLE_AI: false,
         ENABLE_EDUCATION: false,
         ENABLE_QUIZZES: false,

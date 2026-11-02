@@ -1,6 +1,7 @@
 import type { FeatureFlagMap } from './types';
 
 export const DEFAULT_FEATURE_FLAGS: FeatureFlagMap = {
+  tutoring_picker_tutors_only: false,
   ENABLE_AI: false,
   ENABLE_EDUCATION: false,
   ENABLE_QUIZZES: false,

@@ -357,6 +357,7 @@ export async function listTutoringTeachers(
 ) {
   return getInternalApiClient(options).json<{
     data: TutoringTeacher[];
+    tutorsOnlyLocked: boolean;
     count: number;
     page: number;
     pageSize: number;

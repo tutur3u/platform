@@ -45,10 +45,12 @@ export function TutoringTeacherPicker({
     getNextPageParam: (page) =>
       page.page < page.totalPages ? page.page + 1 : undefined,
   });
+  const tutorsOnlyLocked = query.data?.pages[0]?.tutorsOnlyLocked === true;
   const options = useMemo(() => {
     const teachers = new Map<string, ComboboxOption>();
     for (const page of query.data?.pages ?? [])
       for (const person of page.data) {
+        if (tutorsOnlyLocked && !person.isTutor) continue;
         // A person can hold both roles; each label shows alongside the name.
         const roles = [
           person.isTutor ? t('tutor') : null,
@@ -65,23 +67,25 @@ export function TutoringTeacherPicker({
       selected?.value === value
         ? selected
         : knownOptions.find((option) => option.value === value);
-    if (value && !teachers.has(value))
+    if (!tutorsOnlyLocked && value && !teachers.has(value))
       teachers.set(value, current ?? { value, label: t('teacher') });
     return [...teachers.values()];
-  }, [query.data?.pages, value, selected, knownOptions, t]);
+  }, [query.data?.pages, value, selected, knownOptions, t, tutorsOnlyLocked]);
   return (
     <div className="space-y-1">
-      <div className="flex items-center gap-2">
-        <Switch
-          checked={tutorsOnly}
-          disabled={disabled}
-          id={tutorsOnlyId}
-          onCheckedChange={setTutorsOnly}
-        />
-        <Label className="text-xs" htmlFor={tutorsOnlyId}>
-          {t('tutors_only')}
-        </Label>
-      </div>
+      {!tutorsOnlyLocked && (
+        <div className="flex items-center gap-2">
+          <Switch
+            checked={tutorsOnly}
+            disabled={disabled}
+            id={tutorsOnlyId}
+            onCheckedChange={setTutorsOnly}
+          />
+          <Label className="text-xs" htmlFor={tutorsOnlyId}>
+            {t('tutors_only')}
+          </Label>
+        </div>
+      )}
       <Combobox
         disabled={disabled}
         emptyText={query.isError ? t('teachers_load_failed') : t('no_teachers')}

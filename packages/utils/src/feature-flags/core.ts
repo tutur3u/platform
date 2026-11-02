@@ -31,6 +31,7 @@ export async function getFeatureFlags(
   forceAdmin: boolean = true
 ): Promise<FeatureFlagMap> {
   const [
+    tutoring_picker_tutors_only,
     ENABLE_AI,
     ENABLE_EDUCATION,
     ENABLE_QUIZZES,
@@ -46,6 +47,12 @@ export async function getFeatureFlags(
     ENABLE_AVATAR,
     ENABLE_LOGO,
   ] = await Promise.all([
+    verifySecret({
+      forceAdmin,
+      wsId,
+      name: FEATURE_FLAGS.tutoring_picker_tutors_only,
+      value: 'true',
+    }),
     verifySecret({
       forceAdmin,
       wsId,
@@ -133,6 +140,7 @@ export async function getFeatureFlags(
   ]);
 
   return {
+    tutoring_picker_tutors_only,
     ENABLE_AI,
     ENABLE_EDUCATION,
     ENABLE_QUIZZES,

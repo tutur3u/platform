@@ -3,6 +3,7 @@ import {
   TUTORING_POLICY_CONFIG_ID,
 } from '@tuturuuu/internal-api/tutoring-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getFeatureFlag } from '@tuturuuu/utils/feature-flags/core';
 import { buildPostgrestIlikeOrFilter } from '@tuturuuu/utils/postgrest-filter';
 import { connection, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -69,9 +70,17 @@ export async function GET(
   const { tutorGroupIds } = readTutoringPolicyConfigRows(
     policyError ? [] : (policyRows ?? [])
   );
+  const tutorsOnlyEnabled = await getFeatureFlag(
+    normalizedWsId,
+    'tutoring_picker_tutors_only'
+  );
+  const tutorsOnlyLocked = tutorsOnlyEnabled && tutorGroupIds.length > 0;
   let query = workspaceTeachersQuery(sbAdmin, normalizedWsId);
   if (scope.teacherId) query = query.eq('id', scope.teacherId);
-  if (tutorsOnly ?? tutorGroupIds.length > 0) {
+  if (
+    (tutorsOnly ?? tutorGroupIds.length > 0) &&
+    !(tutorsOnlyEnabled && tutorGroupIds.length === 0)
+  ) {
     const { tutorIds, error } = await listWorkspaceTutorIds({
       normalizedWsId,
       sbAdmin,
@@ -121,6 +130,7 @@ export async function GET(
           ...classifyWorkspaceTeacher(memberships ?? [], tutorGroupIds),
         })
       ),
+      tutorsOnlyLocked,
       count: count ?? 0,
       page,
       pageSize,

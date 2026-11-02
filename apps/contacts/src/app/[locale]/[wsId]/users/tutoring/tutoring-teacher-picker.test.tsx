@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TutoringTeacherPicker } from './tutoring-teacher-picker';
 
 const state = vi.hoisted(() => ({
+  locked: false,
   config: null as any,
   props: null as any,
   next: vi.fn(),
@@ -41,7 +42,12 @@ vi.mock('@tanstack/react-query', () => ({
   useInfiniteQuery: (config: unknown) => {
     state.config = config;
     return {
-      data: { pages: state.pages },
+      data: {
+        pages: state.pages.map((page) => ({
+          ...page,
+          tutorsOnlyLocked: state.locked,
+        })),
+      },
       hasNextPage: true,
       isFetchingNextPage: false,
       fetchNextPage: state.next,
@@ -86,7 +92,10 @@ vi.mock('@tuturuuu/ui/custom/combobox', () => ({
 }));
 
 describe('center teacher picker', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    state.locked = false;
+  });
   it('uses the eligible teacher catalog, paginates, and clears search after selection', () => {
     const change = vi.fn();
     render(
@@ -166,6 +175,43 @@ describe('center teacher picker', () => {
     });
   });
 
+  it('flag ON hides the toggle and excludes other teachers including a saved selection', () => {
+    state.locked = true;
+    render(
+      <TutoringTeacherPicker
+        onChange={vi.fn()}
+        value="other-class-teacher"
+        knownOptions={[
+          { value: 'other-class-teacher', label: 'Saved teacher' },
+        ]}
+        wsId="center"
+      />
+    );
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Center Teacher [teacher]')
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Saved teacher')).not.toBeInTheDocument();
+    expect(screen.getByText('Student Tutor [tutor]')).toBeInTheDocument();
+    expect(
+      screen.getByText('Lecturer Tutor [tutor · teacher]')
+    ).toBeInTheDocument();
+  });
+  it('locks an already toggled all-teacher picker when flag metadata changes', () => {
+    const { rerender } = render(
+      <TutoringTeacherPicker onChange={vi.fn()} value="" wsId="center" />
+    );
+    fireEvent.click(screen.getByRole('switch'));
+    state.locked = true;
+    rerender(
+      <TutoringTeacherPicker onChange={vi.fn()} value="" wsId="center" />
+    );
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Center Teacher [teacher]')
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Student Tutor [tutor]')).toBeInTheDocument();
+  });
   it('keeps each slot picker toggle independent when several render', () => {
     render(
       <>

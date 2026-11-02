@@ -787,6 +787,15 @@ mark as a **tutor group**.
   default and tutors-only requests; assignment permissions are unchanged.
   The teacher catalog route regression covers configured tutor A and main
   teacher B. Group names are not used for matching.
+- **Picker kill switch.** Workspace feature flag `tutoring_picker_tutors_only`
+  defaults OFF. Set the existing workspace secret with that name to `true`
+  to limit Contacts picker choices to configured tutor-group teachers and hide
+  the toggle. Set it to `false` or remove it to restore the current picker.
+  If `TUTORING_POLICY.tutorGroupIds` is unset or empty, the flag leaves the
+  toggle available and returns the workspace teacher catalog, avoiding an empty
+  picker caused by missing configuration. Configured groups with no eligible
+  members remain empty. Existing plan labels still use the all-teacher catalog.
+  The teacher route and picker regression tests cover OFF, ON and fallback.
 - **Queues.** Tutor groups have no real students, so they are excluded from the
   make-up and weak-support queues by group id, in addition to the name-based
   exclusion rules.
