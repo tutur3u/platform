@@ -12,6 +12,7 @@ import {
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
+import { useBoardBroadcast } from '../../board-broadcast-context';
 import { getBoardSprintsQueryKey } from '../use-board-sprints';
 import { getSprintTasksQueryKey } from './use-sprint-plan-data';
 
@@ -35,6 +36,7 @@ export function usePlanCreate({
 }) {
   const t = useTranslations('ws-task-boards.sprints');
   const queryClient = useQueryClient();
+  const broadcast = useBoardBroadcast();
 
   return useMutation({
     mutationFn: async (name: string) => {
@@ -75,6 +77,15 @@ export function usePlanCreate({
         getSprintTasksQueryKey(boardId),
         (current) => (current ? [...current, task] : current)
       );
+      // Board, List and Timeline stay mounted behind Plan; show them the task
+      // and tell other viewers, as the task composer does.
+      queryClient.setQueryData<Task[]>(['tasks', boardId], (current) =>
+        !current || current.some((item) => item.id === task.id)
+          ? current
+          : [...current, task]
+      );
+      void queryClient.invalidateQueries({ queryKey: ['tasks-full', boardId] });
+      broadcast?.('task:upsert', { task });
     },
     onError: () => toast.error(t('create_failed')),
     onSettled: () =>
