@@ -32,32 +32,64 @@ cost, rather than a claim that Vietnamese requests only core bytes.
 
 Preloads retain their original route scope: the web root preloads Noto Sans
 Latin and Vietnamese core, marketing adds its display weights and mono core,
-and branding adds Inter core. Extended files are never preloaded. All faces
-precede their fallback family; no fallback face is inserted between core and
-extended. Public files under `/fonts/subsets/` bypass the web proxy so font
+and branding adds Inter core. `vi` pages also preload Noto Sans Latin
+Extended: the kept face order makes Vietnamese text fetch it on every `vi`
+page, and with the root's `font-display: block`, discovering it only after
+the CSS applies delays paint. Be Vietnam Pro Latin Extended stays on demand
+because its faces use `swap` and a page needs it only for the weights its
+Vietnamese text uses. Other extended files are never preloaded.
+`apps/web/src/fonts/preload-sets.ts` holds the sets; its test derives the
+blocking faces Vietnamese and English text fetch from the generated CSS. All
+faces precede their fallback family; no fallback face is inserted between core
+and extended. Public files under `/fonts/subsets/` bypass the web proxy so font
 requests do not redirect to login.
+
+## File names and caching
+
+Every served WOFF2 is named `<name>.<first 10 hex of its SHA-256>.woff2`. The
+generator deletes old WOFF2 outputs before writing, records each `file` in the
+manifest, and writes `apps/web/src/fonts/subset-files.ts`, which maps logical
+names such as `noto-sans-latin-core` to the hashed URLs used by preloads. CSS
+references the same hashed URLs.
+
+`apps/web/next.config.ts` sends `Cache-Control: public, max-age=31536000,
+immutable` only for paths that match that hashed shape directly under
+`/fonts/subsets/`. The manifest, licenses and any unhashed WOFF2 keep the
+platform default (Vercel revalidates public files with `max-age=0`). A byte
+change therefore always ships under a new URL; never edit a hashed file in
+place.
 
 ## Manual regeneration
 
-No font processing runs during install, development, CI or release builds.
-Install tools into a disposable environment, then run from the repository root:
+No font processing runs during install, development or release builds. CI only
+validates the committed files: the `Web font subsets` job in Cheap PR Checks
+runs `scripts/fonts/test_web_fonts.py` when fonts, font CSS, the generator or
+the web root/marketing layouts change. Install the hash-pinned tools into a
+disposable environment, then run from the repository root:
 
 ```bash
 python3 -m venv /tmp/web-font-tools
-/tmp/web-font-tools/bin/pip install 'fonttools[woff]==4.60.1' 'brotli==1.1.0'
+/tmp/web-font-tools/bin/pip install --require-hashes -r scripts/fonts/requirements.lock
 /tmp/web-font-tools/bin/python scripts/fonts/subset_web_fonts.py
-/tmp/web-font-tools/bin/python -m unittest discover -s scripts/fonts -p 'test_*.py'
+/tmp/web-font-tools/bin/python -m unittest scripts/fonts/test_web_fonts.py
 bun check:changed
 ```
+
+`scripts/fonts/requirements.in` lists the two pins; regenerate the lock with
+`uv pip compile --generate-hashes --universal --python-version 3.13
+scripts/fonts/requirements.in -o scripts/fonts/requirements.lock`.
 
 Admit commands through the executing host's `ttr resources run`. Do not build on
 the M4. Other-host dependency builds require the current task's authorization.
 The generator uses the repository's pinned Biome formatter; install repository
 dependencies first.
 
-Google Fonts TTF sources, served WOFF2 sources and existing Colab Noto Sans
-assets are pinned by immutable revision or URL plus SHA-256. JetBrains Mono's
-existing local source is hash-checked. Inputs cache outside the repository.
+Google Fonts TTF sources and served WOFF2 sources are pinned by immutable
+revision or URL plus SHA-256. The original Google Noto Sans Latin, Latin
+Extended and Vietnamese chunks are vendored under `scripts/fonts/sources/`
+(with their OFL), so regeneration no longer reads another app's assets; the
+generator and tests check their SHA-256 pins. JetBrains Mono's existing local
+source is hash-checked. Downloaded inputs cache outside the repository.
 Commit output WOFF2 files, licenses, CSS and manifest. Rerun after intentional
 source, character, axis, feature or fallback-metric changes. Review source hashes
 and licenses before updating pins.
@@ -79,8 +111,10 @@ allowed by Google's broad punctuation ranges. Instancer output is serialized
 before subsetting because FontTools otherwise removes empty `gvar` entries that
 the subsetter expects to exist.
 
-The manifest records bytes, glyph/character counts, axes, features, hint tables,
-glyph-instruction counts and SHA-256 digests. Tests open the actual WOFF2 files,
+The manifest records served file names, bytes, glyph/character counts, axes,
+features, hint tables, glyph-instruction counts and SHA-256 digests. Tests check
+that every served name carries its own hash prefix and that no stale WOFF2,
+CSS reference or preload entry falls outside the manifest. They open the actual WOFF2 files,
 check Vietnamese coverage in each core pool, validate declared ranges against
 real cmaps, verify licensing, and prove that public/dashboard roots share the
 same body stack. Original overlapping character groups are intentional.

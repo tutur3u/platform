@@ -2,14 +2,19 @@
 import hashlib
 import json
 import re
+import sys
 import unittest
 from pathlib import Path
 
 from fontTools.ttLib import TTFont
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import subset_web_fonts as generator  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 ASSETS = ROOT / 'apps/web/public/fonts/subsets'
 STYLES = ROOT / 'apps/web/src/fonts'
+HASHED_NAME = re.compile(r'^(?P<stem>[a-z0-9-]+)\.(?P<hash>[0-9a-f]{%d})\.woff2$' % generator.HASH_LENGTH)
 
 
 def codepoints(value):
@@ -26,11 +31,14 @@ class WebFonts(unittest.TestCase):
     def setUpClass(cls):
         cls.manifest = json.loads((ASSETS / 'manifest.json').read_text())['fonts']
 
+    def asset(self, name, part):
+        return ASSETS / self.manifest[name]['outputs'][part]['file']
+
     def test_real_outputs_match_declared_bytes_and_ranges(self):
         for name, entry in self.manifest.items():
             coverage = set()
             for part, expected in entry['outputs'].items():
-                file = ASSETS / f'{name}-{part}.woff2'
+                file = ASSETS / expected['file']
                 actual = TTFont(file)
                 chars = set(actual.getBestCmap())
                 if name in ['jetbrains-mono', 'inter']:
@@ -45,7 +53,7 @@ class WebFonts(unittest.TestCase):
     def test_full_vietnamese_stays_in_each_core_pool(self):
         vietnamese = set(range(0x1EA0, 0x1EFA)) | {0x102, 0x103, 0x110, 0x111, 0x128, 0x129, 0x168, 0x169, 0x1A0, 0x1A1, 0x1AF, 0x1B0, 0x300, 0x301, 0x303, 0x309, 0x323}
         for name in self.manifest:
-            core = set().union(*(set(TTFont(ASSETS / f'{name}-{part}.woff2').getBestCmap()) for part in self.manifest[name]['outputs'] if part.endswith('core')))
+            core = set().union(*(set(TTFont(self.asset(name, part)).getBestCmap()) for part in self.manifest[name]['outputs'] if part.endswith('core')))
             self.assertFalse(vietnamese - core, name)
             self.assertTrue(set(range(0x20, 0x7F)) <= core, name)
 
@@ -73,14 +81,14 @@ class WebFonts(unittest.TestCase):
 
     def test_hyphens_have_real_glyphs_in_display_core(self):
         for weight in [500, 600, 700, 800]:
-            font = TTFont(ASSETS / f'be-vietnam-pro-{weight}-latin-core.woff2')
+            font = TTFont(self.asset(f'be-vietnam-pro-{weight}', 'latin-core'))
             cmap = font.getBestCmap()
             self.assertEqual(cmap[0x2010], cmap[0x2D])
             self.assertEqual(cmap[0x2011], cmap[0x2D])
 
     def test_mono_keeps_original_glyph_ids_and_bounds(self):
         original = TTFont(ROOT / 'apps/web/src/app/[locale]/(marketing)/fonts/jetbrains-mono-variable.woff2')
-        core = TTFont(ASSETS / 'jetbrains-mono-core.woff2')
+        core = TTFont(self.asset('jetbrains-mono', 'core'))
         for codepoint, glyph in core.getBestCmap().items():
             expected = original.getBestCmap()[codepoint]
             self.assertEqual(core.getGlyphID(glyph), original.getGlyphID(expected))
@@ -111,13 +119,45 @@ class WebFonts(unittest.TestCase):
         for file in STYLES.glob('*.css'):
             for block in re.findall(r'@font-face\s*\{([^}]+)\}', file.read_text()):
                 source = re.search(r'/fonts/subsets/([^"\)]+)', block)
-                if not source or not source[1].endswith('-core.woff2'):
+                if not source or not HASHED_NAME.match(source[1])['stem'].endswith('-core'):
                     continue
                 declared = re.search(r'unicode-range:\s*([^;]+)', block)
                 name = next(name for name in pools if source[1].startswith(name + '-'))
                 pools[name].update(codepoints(declared[1]))
         for name, chars in pools.items():
             self.assertTrue(set(range(0x1EA0, 0x1EFA)) <= chars, name)
+
+    def test_served_names_are_content_hashed_and_complete(self):
+        declared = {}
+        for name, entry in self.manifest.items():
+            for part, expected in entry['outputs'].items():
+                match = HASHED_NAME.match(expected['file'])
+                self.assertIsNotNone(match, expected['file'])
+                self.assertEqual(match['stem'], f'{name}-{part}')
+                self.assertEqual(match['hash'], expected['sha256'][: generator.HASH_LENGTH])
+                declared[expected['file']] = expected['sha256']
+        # No stale or unhashed WOFF2 may ship: an immutable URL must never change bytes.
+        self.assertEqual({file.name for file in ASSETS.glob('*.woff2')}, set(declared))
+        for file in ASSETS.glob('*.woff2'):
+            self.assertEqual(hashlib.sha256(file.read_bytes()).hexdigest(), declared[file.name])
+
+    def test_css_references_only_manifest_files(self):
+        served = {expected['file'] for entry in self.manifest.values() for expected in entry['outputs'].values()}
+        for file in STYLES.glob('*.css'):
+            for source in re.findall(r'/fonts/subsets/([^"\)]+)', file.read_text()):
+                self.assertIn(source, served, file.name)
+
+    def test_preload_map_matches_manifest(self):
+        source = (STYLES / 'subset-files.ts').read_text()
+        declared = dict(re.findall(r"'([a-z0-9-]+)':\s*'/fonts/subsets/([^']+)'", source))
+        expected = {f'{name}-{part}': output['file'] for name, entry in self.manifest.items() for part, output in entry['outputs'].items()}
+        self.assertEqual(declared, expected)
+
+    def test_vendored_generator_inputs_match_pins(self):
+        for part, (name, expected) in generator.NOTO_CHUNKS.items():
+            file = generator.SOURCES_DIR / name
+            self.assertEqual(hashlib.sha256(file.read_bytes()).hexdigest(), expected, part)
+        self.assertNotIn('apps/colab', Path(generator.__file__).read_text())
 
     def test_root_stack_is_shared_by_public_and_dashboard(self):
         root = ROOT / 'apps/web/src/app/[locale]'

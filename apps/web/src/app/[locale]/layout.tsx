@@ -15,6 +15,7 @@ import { locale as getRootLocale } from 'next/root-params';
 import { getMessages } from 'next-intl/server';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import { type ReactNode, Suspense } from 'react';
+import { rootFontPreloads } from '@/fonts/preload-sets';
 import { FontPreloads } from '@/fonts/preloads';
 import { getPublicClientMessages } from '@/i18n/client-messages';
 
@@ -144,7 +145,7 @@ export default async function RootLayout({ children }: Props) {
   return (
     <html lang={locale} suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
-        <FontPreloads names={['noto-sans-latin', 'noto-sans-vietnamese']} />
+        <FontPreloads names={rootFontPreloads(locale)} />
       </head>
       <body
         className={cn(
