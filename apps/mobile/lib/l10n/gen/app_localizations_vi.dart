@@ -15037,4 +15037,7 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindInboxTierJump => 'Cuộn tới mục này';
+
+  @override
+  String get assistantVoiceMessagePrompt => 'Hãy nghe tin nhắn thoại này và trả lời.';
 }

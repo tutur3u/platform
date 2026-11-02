@@ -6664,5 +6664,6 @@
   "mastermindInboxTierHeading": "{tier}, {count} việc",
   "mastermindInboxTierShowAll": "Xem tất cả ({count})",
   "mastermindInboxTierShowLess": "Thu gọn",
-  "mastermindInboxTierJump": "Cuộn tới mục này"
+  "mastermindInboxTierJump": "Cuộn tới mục này",
+  "assistantVoiceMessagePrompt": "Hãy nghe tin nhắn thoại này và trả lời."
 }
