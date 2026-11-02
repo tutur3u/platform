@@ -81,10 +81,8 @@ class DocumentsOfflinePreparation {
       ),
       metadata,
     );
-    await manifest.reconcile(
-      workspaceId: workspaceId,
-      namespaces: {'documents.list'},
-    );
+    // The first page is not authoritative for other pages or searches.
+    await manifest.verify();
     manifest.retain('documents', workspaceId);
   }
 }
