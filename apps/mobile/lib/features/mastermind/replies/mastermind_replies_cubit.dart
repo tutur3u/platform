@@ -390,7 +390,15 @@ final class MastermindRepliesCubit extends Cubit<MastermindRepliesState> {
             entry.holdUntil != null)
           entry.idempotencyKey: entry.withoutHold(),
     };
-    if (ready.isEmpty) return;
+    if (ready.isEmpty) {
+      // Already sent, undone or resolved elsewhere: drop any stale pending
+      // option so the card never shows a hold that no longer exists.
+      for (final entry in held) {
+        _undoTimers.remove(entry.itemId)?.cancel();
+        _clearPending(entry.itemId);
+      }
+      return;
+    }
     final items = {for (final entry in ready.values) entry.itemId};
     for (final id in items) {
       _undoTimers.remove(id)?.cancel();
