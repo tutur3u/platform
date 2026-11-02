@@ -45,6 +45,33 @@ final class MastermindSnapshotCubit extends Cubit<MastermindSnapshotState> {
 
   Future<void> refresh() => _refresh(conditional: true);
 
+  /// Explicit downloads must survive a new reader, not just succeed in memory.
+  Future<void> prepareOffline() async {
+    await refresh();
+    final ready = state;
+    if (ready is! MastermindSnapshotReady || ready.refreshFailure != null) {
+      throw StateError('Mastermind snapshot download failed.');
+    }
+    await verifyOffline();
+    final retained = await _store.read();
+    if (retained?.digest != ready.digest) {
+      throw StateError('Mastermind snapshot was not persisted.');
+    }
+  }
+
+  Future<void> verifyOffline() async {
+    final generation = _generation;
+    await _storeTail;
+    final stored = await _store.read();
+    if (stored == null || !_current(generation)) {
+      throw StateError('Mastermind snapshot is not retained.');
+    }
+    final parsed = await _parser(stored.bytes);
+    if (!_current(generation) || parsed is! ParseAccepted) {
+      throw StateError('Mastermind stored snapshot was rejected.');
+    }
+  }
+
   /// Adopts a fresh snapshot with no `If-None-Match`, for when the held export
   /// no longer matches what the events route knows (409 `cursor_ahead`, or 404
   /// for a digest the pointer moved past). The cursor then restarts from the

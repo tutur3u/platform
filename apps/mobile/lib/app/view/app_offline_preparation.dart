@@ -9,7 +9,18 @@ extension _AppOfflinePreparation on _AppState {
     OfflinePreparationCoordinator.instance
       ..registry = OfflinePreparerRegistry(isEnabled: _mobileFlags.enabled)
       ..verifyRetention = OfflineDownloadManifest.verifyScope
-      ..verifyProductRetention = OfflineDownloadManifest.verifyProduct
+      ..verifyProductRetention = (user, workspace, product) async {
+        if (product == 'mastermind') {
+          if (_authCubit.state.user?.id != user ||
+              _mastermind.access.state.wsId != workspace ||
+              !_mastermind.access.state.visible) {
+            throw const OfflinePreparationUnavailable();
+          }
+          await _mastermind.snapshot.verifyOffline();
+        } else {
+          await OfflineDownloadManifest.verifyProduct(user, workspace, product);
+        }
+      }
       ..registry.register(
         'finance',
         null,
