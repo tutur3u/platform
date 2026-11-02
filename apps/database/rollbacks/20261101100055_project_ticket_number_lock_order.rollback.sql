@@ -10,11 +10,16 @@ RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER
 SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
+  NEW.created_at := coalesce(NEW.created_at, now());
+  -- Keyless projects (only the excluded workspace's existing ones) number nothing.
+  IF EXISTS (SELECT 1 FROM public.task_projects WHERE id = NEW.project_id AND ticket_key IS NULL) THEN
+    NEW.ticket_number := NULL;
+    RETURN NEW;
+  END IF;
   -- Always allocate server-side; callers cannot supply or reuse a number.
   UPDATE public.task_projects SET next_ticket_number = next_ticket_number + 1
   WHERE id = NEW.project_id RETURNING next_ticket_number - 1 INTO NEW.ticket_number;
   IF NOT FOUND THEN RAISE EXCEPTION 'PROJECT_TICKET_ALLOCATION_DENIED' USING ERRCODE = '42501'; END IF;
-  NEW.created_at := coalesce(NEW.created_at, now());
   RETURN NEW;
 END;
 $$;

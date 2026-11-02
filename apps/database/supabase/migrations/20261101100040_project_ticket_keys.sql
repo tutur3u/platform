@@ -1,16 +1,23 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+
 -- Trigger inventory addendum (has_workspace_permission callers added here; both
 -- pass auth.uid() for manage_projects):
 --   private.assign_project_ticket_key()
 --   private.protect_project_ticket_identity()
 -- Project ticket identity is independent of the retained board display number.
+-- Nothing here writes workspace 42529372-c669-4833-bb32-2cab1f4ffd83: its
+-- existing projects keep a NULL key and its existing links keep a NULL number
+-- and join time. Keyless projects number no tasks (see the allocator below).
 alter table public.task_projects
-  add column ticket_key text default null,
-  add column next_ticket_number integer not null default 1,
+  add column if not exists ticket_key text default null,
+  add column if not exists next_ticket_number integer not null default 1,
   add constraint task_projects_ticket_key_check check (ticket_key ~ '^[A-Z][A-Z0-9]{1,9}$'),
   add constraint task_projects_ticket_key_unique unique (ws_id, ticket_key),
   add constraint task_projects_next_ticket_number_check check (next_ticket_number > 0);
 alter table public.task_project_tasks
-  add column ticket_number integer default null,
+  add column if not exists ticket_number integer default null,
   add constraint task_project_tasks_ticket_number_unique unique (project_id, ticket_number),
   add constraint task_project_tasks_ticket_number_check check (ticket_number > 0);
 
@@ -50,37 +57,73 @@ revoke all on function private.assign_project_ticket_key() from public, anon, au
 create trigger assign_project_ticket_key before insert on public.task_projects
 for each row execute function private.assign_project_ticket_key();
 
--- Reuse the insert derivation for deterministic, workspace-local backfill.
-create trigger backfill_project_ticket_key before update of ticket_key on public.task_projects
-for each row when (new.ticket_key is null) execute function private.assign_project_ticket_key();
--- tuturuuu: reviewed(dynamic-sql-review): static backfill loop, no EXECUTE.
+-- Derive keys for existing projects with the insert trigger's rules, in
+-- creation order per workspace, then write them in one set-based UPDATE.
+create temporary table project_ticket_key_backfill (
+  id uuid primary key,
+  ws_id uuid not null,
+  ticket_key text not null,
+  unique (ws_id, ticket_key)
+) on commit drop;
+-- tuturuuu: reviewed(dynamic-sql-review): static key derivation loop, no EXECUTE.
 do $$
-declare project record;
+declare
+  project record;
+  base_key text;
+  candidate text;
+  suffix integer;
 begin
-  for project in select id from public.task_projects order by ws_id, created_at nulls last, id loop
-    update public.task_projects set ticket_key = null where id = project.id;
+  for project in
+    select id, ws_id, name from public.task_projects
+    where ws_id <> '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid
+    order by ws_id, created_at nulls last, id
+  loop
+    base_key := left(regexp_replace(regexp_replace(upper(project.name collate "C"), '[^A-Z0-9]', '', 'g'), '^[0-9]+', ''), 3);
+    if length(base_key) < 2 then base_key := 'PRJ'; end if;
+    candidate := base_key;
+    suffix := 1;
+    while exists (
+      select 1 from project_ticket_key_backfill backfill
+      where backfill.ws_id = project.ws_id and backfill.ticket_key = candidate
+    ) loop
+      suffix := suffix + 1;
+      candidate := left(base_key, 10 - length(suffix::text)) || suffix::text;
+    end loop;
+    insert into project_ticket_key_backfill values (project.id, project.ws_id, candidate);
   end loop;
 end;
 $$;
-drop trigger backfill_project_ticket_key on public.task_projects;
-alter table public.task_projects alter column ticket_key set not null;
+update public.task_projects project set ticket_key = backfill.ticket_key
+from project_ticket_key_backfill backfill where backfill.id = project.id;
+alter table public.task_projects add constraint task_projects_ticket_key_present
+  check (ws_id = '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid or ticket_key is not null) not valid;
+alter table public.task_projects validate constraint task_projects_ticket_key_present;
 
 update public.task_project_tasks link
 set created_at = coalesce(task.created_at, now())
-from public.tasks task where task.id = link.task_id and link.created_at is null;
-alter table public.task_project_tasks alter column created_at set default now(), alter column created_at set not null;
+from public.tasks task, public.task_projects project
+where task.id = link.task_id and project.id = link.project_id
+  and project.ws_id <> '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid and link.created_at is null;
+alter table public.task_project_tasks alter column created_at set default now();
 
 with numbered as (
   select link.project_id, link.task_id,
     row_number() over (partition by link.project_id order by link.created_at, task.created_at, task.id)::integer as number
-  from public.task_project_tasks link join public.tasks task on task.id = link.task_id
+  from public.task_project_tasks link
+  join public.tasks task on task.id = link.task_id
+  join public.task_projects project on project.id = link.project_id
+  where project.ws_id <> '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid
 )
 update public.task_project_tasks link set ticket_number = numbered.number
 from numbered where link.project_id = numbered.project_id and link.task_id = numbered.task_id;
-update public.task_projects project set next_ticket_number = coalesce(
-  (select max(link.ticket_number) + 1 from public.task_project_tasks link where link.project_id = project.id), 1
-);
-alter table public.task_project_tasks alter column ticket_number set not null;
+update public.task_projects project set next_ticket_number = (
+  select max(link.ticket_number) + 1 from public.task_project_tasks link where link.project_id = project.id
+)
+where project.ws_id <> '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid
+  and exists (select 1 from public.task_project_tasks link where link.project_id = project.id);
+-- task_project_tasks has no ws_id, so the exclusion cannot be a CHECK there.
+-- ticket_number and created_at stay nullable: the allocator below sets both on
+-- every new link to a keyed project, and the identity trigger freezes them.
 
 -- Invoker privileges preserve existing manage_projects RLS on both tables.
 create function private.assign_project_ticket_number()
@@ -88,11 +131,16 @@ returns trigger language plpgsql security invoker
 set search_path = pg_catalog, pg_temp
 as $$
 begin
+  new.created_at := coalesce(new.created_at, now());
+  -- Keyless projects (only the excluded workspace's existing ones) number nothing.
+  if exists (select 1 from public.task_projects where id = new.project_id and ticket_key is null) then
+    new.ticket_number := null;
+    return new;
+  end if;
   -- Always allocate server-side; callers cannot supply or reuse a number.
   update public.task_projects set next_ticket_number = next_ticket_number + 1
   where id = new.project_id returning next_ticket_number - 1 into new.ticket_number;
   if not found then raise exception 'PROJECT_TICKET_ALLOCATION_DENIED' using errcode = '42501'; end if;
-  new.created_at := coalesce(new.created_at, now());
   return new;
 end;
 $$;
@@ -184,3 +232,5 @@ end;
 $migration$;
 
 notify pgrst, 'reload schema';
+
+COMMIT;

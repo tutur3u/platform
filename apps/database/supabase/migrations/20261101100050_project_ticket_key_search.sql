@@ -1,3 +1,7 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+
 -- Retain board-number compatibility and add project keys to both paged IDs and counts.
 create or replace function private.list_task_source_filter_ids(
   p_actor_id uuid,
@@ -630,3 +634,5 @@ grant execute on function private.count_task_source_filter_lists(
 
 
 notify pgrst, 'reload schema';
+
+COMMIT;

@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
 set local role service_role;
 set local request.jwt.claims = '{"role":"service_role"}';
-select plan(28);
+select plan(33);
 insert into public.users (id, display_name) values
   ('00000000-0000-4000-8000-0000000e6001', 'Ticket Owner');
 insert into public.workspaces (id, name, creator_id, personal) values
@@ -42,8 +42,7 @@ insert into public.task_project_tasks (project_id, task_id) values
   ('00000000-0000-4000-8000-0000000e6030', '00000000-0000-4000-8000-0000000e6103');
 select is((select ticket_number from public.task_project_tasks where task_id = '00000000-0000-4000-8000-0000000e6103'), 3, 'deleted numbers are never reused');
 select ok(exists(select 1 from pg_constraint where conrelid = 'public.task_project_tasks'::regclass and conname = 'task_project_tasks_ticket_number_unique' and contype = 'u'), 'project numbers have a unique constraint');
-select col_not_null('public', 'task_project_tasks', 'ticket_number', 'numbers are required after backfill');
-select col_not_null('public', 'task_project_tasks', 'created_at', 'links always have join timestamps');
+select col_is_null('public', 'task_project_tasks', 'ticket_number', 'numbers stay nullable for links in keyless projects');
 
 -- Exercise backfill ordering with equal join dates and equal task dates.
 create temporary table ticket_backfill_fixture (task_id integer, joined_at timestamptz, task_created_at timestamptz);
@@ -87,6 +86,33 @@ select results_eq(
     p_ticket_prefix := (select ticket_prefix from public.workspace_boards where id = '00000000-0000-4000-8000-0000000e6020'),
     p_display_number := (select display_number from public.tasks where id = '00000000-0000-4000-8000-0000000e6102'))$$,
   $$values ('00000000-0000-4000-8000-0000000e6102'::uuid)$$, 'legacy lookup still resolves a project-less task'
+);
+-- Workspace 42529372-c669-4833-bb32-2cab1f4ffd83 is excluded from the
+-- backfill, so its existing projects keep a NULL key.
+select ok((select convalidated from pg_constraint where conrelid = 'public.task_projects'::regclass and conname = 'task_projects_ticket_key_present'), 'key presence check is validated');
+select throws_ok($$update public.task_projects set ticket_key = null where id = '00000000-0000-4000-8000-0000000e6031'$$, '23514', null, 'other workspaces cannot drop a key');
+insert into public.workspaces (id, name, creator_id, personal) values
+  ('42529372-c669-4833-bb32-2cab1f4ffd83', 'Excluded Workspace', '00000000-0000-4000-8000-0000000e6001', false)
+on conflict (id) do nothing;
+insert into public.workspace_members (ws_id, user_id, type) values
+  ('42529372-c669-4833-bb32-2cab1f4ffd83', '00000000-0000-4000-8000-0000000e6001', 'MEMBER')
+on conflict (ws_id, user_id) do update set type = excluded.type;
+insert into public.workspace_boards (id, ws_id, name, creator_id) values
+  ('00000000-0000-4000-8000-0000000e6021', '42529372-c669-4833-bb32-2cab1f4ffd83', 'Legacy Board', '00000000-0000-4000-8000-0000000e6001');
+insert into public.task_projects (id, ws_id, name, creator_id) values
+  ('00000000-0000-4000-8000-0000000e6033', '42529372-c669-4833-bb32-2cab1f4ffd83', 'Legacy', '00000000-0000-4000-8000-0000000e6001');
+select lives_ok($$update public.task_projects set ticket_key = null where id = '00000000-0000-4000-8000-0000000e6033'$$, 'the excluded workspace keeps a NULL key');
+insert into public.tasks (id, name, list_id) values
+  ('00000000-0000-4000-8000-0000000e6104', 'Legacy task', (select id from public.task_lists where board_id = '00000000-0000-4000-8000-0000000e6021' and status = 'active' limit 1));
+insert into public.task_project_tasks (project_id, task_id) values
+  ('00000000-0000-4000-8000-0000000e6033', '00000000-0000-4000-8000-0000000e6104');
+select is((select ticket_number from public.task_project_tasks where task_id = '00000000-0000-4000-8000-0000000e6104'), null::integer, 'keyless projects number nothing');
+select is((select next_ticket_number from public.task_projects where id = '00000000-0000-4000-8000-0000000e6033'), 1, 'keyless projects leave their counter alone');
+select is_empty(
+  $$select task_id from private.list_task_source_filter_ids(
+    p_actor_id := '00000000-0000-4000-8000-0000000e6001', p_workspace_id := '42529372-c669-4833-bb32-2cab1f4ffd83',
+    p_ticket_prefix := 'LEG', p_display_number := 1)$$,
+  'search skips NULL keys without error'
 );
 -- Choosing a key is project management. End-user sessions have no direct
 -- insert grant; the key trigger also refuses a chosen key without permission.
