@@ -28225,6 +28225,30 @@ abstract class AppLocalizations {
   /// **'Scrolls to this section'**
   String get mastermindInboxTierJump;
 
+  /// No description provided for @settingsPushSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Get alerts on this device'**
+  String get settingsPushSummary;
+
+  /// No description provided for @settingsTelemetrySummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Help improve the app'**
+  String get settingsTelemetrySummary;
+
+  /// No description provided for @settingsStorageSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage data on this device'**
+  String get settingsStorageSummary;
+
+  /// No description provided for @settingsLearnMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn more'**
+  String get settingsLearnMore;
+
   /// No description provided for @assistantVoiceMessagePrompt.
   ///
   /// In en, this message translates to:
