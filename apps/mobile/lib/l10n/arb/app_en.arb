@@ -7168,5 +7168,27 @@
   },
   "mastermindInboxTierUrgent": "Urgent",
   "mastermindInboxTierDecision": "Needs a decision",
-  "mastermindInboxTierFyi": "For your information"
+  "mastermindInboxTierFyi": "For your information",
+  "mastermindInboxTierHeading": "{count, plural, =1{{tier}, 1 ask} other{{tier}, {count} asks}}",
+  "@mastermindInboxTierHeading": {
+    "description": "Screen-reader label of an Inbox tier heading or tile",
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindInboxTierShowAll": "Show all ({count})",
+  "@mastermindInboxTierShowAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "mastermindInboxTierShowLess": "Show less",
+  "mastermindInboxTierJump": "Scrolls to this section"
 }

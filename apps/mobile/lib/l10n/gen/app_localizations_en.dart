@@ -15184,4 +15184,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindInboxTierFyi => 'For your information';
+
+  @override
+  String mastermindInboxTierHeading(String tier, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$tier, $count asks',
+      one: '$tier, 1 ask',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String mastermindInboxTierShowAll(int count) {
+    return 'Show all ($count)';
+  }
+
+  @override
+  String get mastermindInboxTierShowLess => 'Show less';
+
+  @override
+  String get mastermindInboxTierJump => 'Scrolls to this section';
 }

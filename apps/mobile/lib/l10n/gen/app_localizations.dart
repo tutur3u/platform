@@ -28194,6 +28194,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'For your information'**
   String get mastermindInboxTierFyi;
+
+  /// Screen-reader label of an Inbox tier heading or tile
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{{tier}, 1 ask} other{{tier}, {count} asks}}'**
+  String mastermindInboxTierHeading(String tier, int count);
+
+  /// No description provided for @mastermindInboxTierShowAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all ({count})'**
+  String mastermindInboxTierShowAll(int count);
+
+  /// No description provided for @mastermindInboxTierShowLess.
+  ///
+  /// In en, this message translates to:
+  /// **'Show less'**
+  String get mastermindInboxTierShowLess;
+
+  /// No description provided for @mastermindInboxTierJump.
+  ///
+  /// In en, this message translates to:
+  /// **'Scrolls to this section'**
+  String get mastermindInboxTierJump;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

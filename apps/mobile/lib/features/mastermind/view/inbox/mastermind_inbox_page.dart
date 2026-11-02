@@ -27,6 +27,7 @@ import 'package:mobile/features/mastermind/view/inbox/inbox_undo_all.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_what_needs_me.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
 import 'package:mobile/features/mastermind/view/inbox/pending_replies_section.dart';
+import 'package:mobile/features/mastermind/view/inbox/tier_header.dart';
 import 'package:mobile/features/mastermind/view/mastermind_freshness_strip.dart';
 import 'package:mobile/features/mastermind/view/mastermind_section.dart';
 import 'package:mobile/features/mastermind/view/widgets/collapsible_search.dart';
@@ -82,6 +83,9 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
   };
   late String _query = widget.initialSearch ?? '';
   late InboxTier? _seeking = widget.initialTier;
+
+  /// Whether a long FYI tier shows its rows; a link to FYI opens it.
+  late bool _fyiOpen = widget.initialTier == InboxTier.fyi;
   bool _seekScheduled = false;
   Product? _product;
   late InboxSegment _segment = widget.initialSegment ?? defaultInboxSegment;
@@ -103,10 +107,7 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
     // A link to another tier or search while the page is open; a segment
     // change drops both from the URL and must not clear what is typed.
     final tier = widget.initialTier;
-    if (tier != null && tier != oldWidget.initialTier) {
-      _seeking = tier;
-      _seekScheduled = false;
-    }
+    if (tier != null && tier != oldWidget.initialTier) _jumpTo(tier);
     final search = widget.initialSearch;
     if (search != null && search != oldWidget.initialSearch) {
       _search.text.text = search;
@@ -114,6 +115,13 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
       _paging.reset();
       _query = search;
     }
+  }
+
+  /// Seek [tier] on the next build, opening FYI if it is collapsed.
+  void _jumpTo(InboxTier tier) {
+    _seeking = tier;
+    _seekScheduled = false;
+    if (tier == InboxTier.fyi) _fyiOpen = true;
   }
 
   /// Scrolls to [_seeking]'s heading. The list is lazy, so step down a screen
@@ -244,6 +252,8 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
                     paging: _paging,
                     onClearFilters: _clearFilters,
                     tierKeys: _tierKeys,
+                    fyiExpanded: _fyiCollapsible(model) ? _fyiOpen : null,
+                    onToggleFyi: () => setState(() => _fyiOpen = !_fyiOpen),
                     now: freshness.time.add(freshness.age),
                   ),
               ],
@@ -333,7 +343,11 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
     MastermindSnapshot snapshot,
   ) => [
     if (_segment == InboxSegment.needsYou)
-      InboxWhatNeedsMe(open: openAsks(snapshot)),
+      InboxWhatNeedsMe(
+        open: openAsks(snapshot),
+        tiers: model.tiers,
+        onTier: (tier) => setState(() => _jumpTo(tier)),
+      ),
     if (_segment != InboxSegment.resolved) ...const [
       InboxUndoAll(),
       PendingRepliesSection(),
@@ -348,6 +362,12 @@ class _MastermindInboxPageState extends State<MastermindInboxPage> {
         },
       ),
   ];
+
+  static bool _fyiCollapsible(MastermindInboxModel model) => model.tiers.any(
+    (group) =>
+        group.tier == InboxTier.fyi &&
+        group.items.length > inboxFyiCollapseAbove,
+  );
 
   Widget _decisions(MastermindSnapshot snapshot) {
     var model = MastermindDecisionsModel.from(

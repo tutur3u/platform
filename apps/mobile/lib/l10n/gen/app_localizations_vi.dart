@@ -15021,4 +15021,20 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindInboxTierFyi => 'Để bạn biết';
+
+  @override
+  String mastermindInboxTierHeading(String tier, int count) {
+    return '$tier, $count việc';
+  }
+
+  @override
+  String mastermindInboxTierShowAll(int count) {
+    return 'Xem tất cả ($count)';
+  }
+
+  @override
+  String get mastermindInboxTierShowLess => 'Thu gọn';
+
+  @override
+  String get mastermindInboxTierJump => 'Cuộn tới mục này';
 }
