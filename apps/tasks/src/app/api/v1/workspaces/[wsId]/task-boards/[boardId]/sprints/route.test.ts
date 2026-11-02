@@ -62,13 +62,9 @@ const CYCLES_GATE = {
   error: 'Board cycles are not enabled for this workspace',
 };
 
-/** An RPC result with PostgREST's chainable `range`, as supabase-js returns. */
+/** An RPC result, as supabase-js resolves it. */
 function rpcResult(result: TableResult) {
-  const query = Promise.resolve(result) as Promise<TableResult> & {
-    range: (from: number, to: number) => Promise<TableResult>;
-  };
-  query.range = vi.fn(() => query);
-  return query;
+  return Promise.resolve(result);
 }
 
 function createAdmin(tables: Record<string, TableResult>) {
@@ -261,23 +257,24 @@ describe('board sprint routes', () => {
     expect(body.unplannedTaskIds).toEqual([TASK_B]);
   });
 
-  it('reads parked tasks past the API row cap, page by page', async () => {
+  it('reads every parked task in one snapshot, past the API row cap', async () => {
     const sbAdmin = createAdmin({
       workspace_boards: { data: { sprint_length_weeks: 2 }, error: null },
       task_cycles: { data: sprintRows, error: null },
       task_sprint_reports: { data: [], error: null },
     });
     const ids = Array.from({ length: 1001 }, (_, index) => `task-${index}`);
-    const first = rpcResult({ data: ids.slice(0, 1000), error: null });
-    const second = rpcResult({ data: ids.slice(1000), error: null });
-    sbAdmin.rpc.mockReturnValueOnce(first).mockReturnValueOnce(second);
+    sbAdmin.rpc.mockReturnValueOnce(rpcResult({ data: ids, error: null }));
     grantAccess(sbAdmin);
 
     const body = await (await GET(request('GET'), params())).json();
 
-    expect(first.range).toHaveBeenCalledWith(0, 999);
-    expect(second.range).toHaveBeenCalledWith(1000, 1999);
-    expect(body.unplannedTaskIds).toHaveLength(1001);
+    expect(
+      sbAdmin.rpc.mock.calls.filter(
+        ([name]) => name === 'list_board_unplanned_task_ids'
+      )
+    ).toHaveLength(1);
+    expect(body.unplannedTaskIds).toEqual(ids);
   });
 
   it('marks finished members done and leaves deleted tasks out of a sprint', () => {

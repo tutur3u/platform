@@ -387,12 +387,14 @@ END;
 $$;
 
 -- Open tasks of a board that sit in no open sprint: parked outside sprints,
--- shown in the Plan backlog and left off the Board view.
+-- shown in the Plan backlog and left off the Board view. One array is one
+-- consistent snapshot: the API row cap cannot split it into pages, and a
+-- task planned meanwhile cannot shift a later page past a parked one.
 CREATE OR REPLACE FUNCTION public.list_board_unplanned_task_ids(
   p_ws_id UUID,
   p_board_id UUID
 )
-RETURNS SETOF UUID
+RETURNS UUID[]
 LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
@@ -406,8 +408,8 @@ BEGIN
     RAISE EXCEPTION 'SPRINT_BOARD_NOT_FOUND' USING ERRCODE = 'P0002';
   END IF;
 
-  RETURN QUERY
-  SELECT t.id
+  RETURN (
+  SELECT coalesce(array_agg(t.id ORDER BY t.created_at DESC, t.id DESC), '{}'::UUID[])
   FROM public.tasks t
   WHERE t.board_id = p_board_id
     AND t.deleted_at IS NULL
@@ -422,7 +424,7 @@ BEGIN
         AND c.status IN ('planned', 'active')
         AND c.deleted IS NOT TRUE
     )
-  ORDER BY t.created_at DESC;
+  );
 END;
 $$;
 

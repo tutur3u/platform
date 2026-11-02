@@ -244,28 +244,20 @@ const UNAVAILABLE: BoardSprintsResponse = {
   unplannedTaskIds: [],
 };
 
-/** PostgREST caps every response, set-returning RPCs included, at this. */
-const UNPLANNED_PAGE_SIZE = 1000;
-
-/** Every parked task id, read page by page past the API's row cap. */
+/**
+ * Every parked task id. The RPC returns one array, a consistent snapshot that
+ * the API's row cap cannot split into pages.
+ */
 async function listUnplannedTaskIds(
   sbAdmin: TypedSupabaseClient,
   { boardId, wsId }: { boardId: string; wsId: string }
 ): Promise<{ data: string[] | null; error: SprintQueryError | null }> {
-  const ids = new Set<string>();
-  for (let from = 0; ; from += UNPLANNED_PAGE_SIZE) {
-    const { data, error } = await sbAdmin
-      .rpc('list_board_unplanned_task_ids', {
-        p_board_id: boardId,
-        p_ws_id: wsId,
-      })
-      .range(from, from + UNPLANNED_PAGE_SIZE - 1);
-    if (error) return { data: null, error };
-    const page = (data ?? []) as string[];
-    for (const id of page) ids.add(id);
-    if (page.length < UNPLANNED_PAGE_SIZE)
-      return { data: [...ids], error: null };
-  }
+  const { data, error } = await sbAdmin.rpc('list_board_unplanned_task_ids', {
+    p_board_id: boardId,
+    p_ws_id: wsId,
+  });
+  if (error) return { data: null, error };
+  return { data: (data ?? []) as string[], error: null };
 }
 
 export async function loadBoardSprints({

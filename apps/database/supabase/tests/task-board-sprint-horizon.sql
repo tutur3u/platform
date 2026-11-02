@@ -138,7 +138,7 @@ select is(
   'a task can sit in no sprint'
 );
 select is(
-  (select array_agg(id) from public.list_board_unplanned_task_ids('00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020') as id),
+  public.list_board_unplanned_task_ids('00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6020'),
   array['00000000-0000-4000-8000-0000000e6102']::uuid[],
   'the board lists its open tasks that sit in no sprint'
 );
