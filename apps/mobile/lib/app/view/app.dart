@@ -57,6 +57,7 @@ import 'package:mobile/features/audience_mode/audience_mode_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/chat/data/chat_offline_preparation.dart';
 import 'package:mobile/features/desktop_update/desktop_uri_receipt.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
@@ -131,6 +132,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   final _mobileFlags = MobileFlags();
+  StreamSubscription<MobileFlagsState>? _chatOfflineFlags;
   late final AuthRepository _authRepo;
   late final WorkspaceRepository _workspaceRepo;
   late final SettingsRepository _settingsRepo;
@@ -475,6 +477,7 @@ class _AppState extends State<App> {
   @override
   void dispose() {
     unawaited(_habitsOfflineFlags?.cancel());
+    unawaited(_chatOfflineFlags?.cancel());
     unawaited(_mobileFlags.close());
     _unregisterAssistantActions();
     _unregisterOfflinePreparation();
