@@ -7103,7 +7103,8 @@
   "mastermindIrisRelayStopped": "Relay stopped. Ask the owner to restore it.",
   "mastermindIrisDevicesUnavailable": "The device list isn't available yet. You can still enrol this device.",
   "mastermindIrisDeviceCurrent": "This device",
-  "mastermindIrisWritesOff": "Sending is off for now. You can still read the chat.",
+  "mastermindIrisSendDisabled": "Sending to Iris isn't available yet",
+  "mastermindIrisWritesOff": "Sending to Iris is coming soon",
   "mastermindIrisWritesNeedEnrol": "Enrol this device to send messages.",
   "mastermindAskCardTierDecision": "Needs decision",
   "mastermindAskCardTierFyi": "FYI",
@@ -7190,5 +7191,52 @@
     }
   },
   "mastermindInboxTierShowLess": "Show less",
-  "mastermindInboxTierJump": "Scrolls to this section"
+  "mastermindInboxTierJump": "Scrolls to this section",
+  "settingsPushSummary": "Get alerts on this device",
+  "settingsTelemetrySummary": "Help improve the app",
+  "settingsStorageSummary": "Manage data on this device",
+  "settingsLearnMore": "Learn more",
+  "assistantVoiceMessagePrompt": "Listen to this voice message and respond.",
+  "offlineWaitingWifi": "Waiting for Wi-Fi",
+  "offlineWaitingRetry": "Waiting to retry at {time}",
+  "@offlineWaitingRetry": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "mastermindUndoWindow": "Undo window",
+  "mastermindUndoOff": "Off",
+  "mastermindUndoSeconds": "{seconds} s",
+  "mastermindReplySendNow": "Send now",
+  "@mastermindUndoSeconds": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "offlineStatusPreparing": "Preparing",
+  "offlineStatusReady": "Ready offline",
+  "offlineStatusNeverSynced": "Never synced",
+  "offlineStatusLastSynced": "Last synced: {time}",
+  "offlineStatusSummary": "{ready} of {total} apps ready offline",
+  "@offlineStatusLastSynced": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "@offlineStatusSummary": {
+    "placeholders": {
+      "ready": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  }
 }

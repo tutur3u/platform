@@ -15080,7 +15080,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mastermindIrisDeviceCurrent => 'This device';
 
   @override
-  String get mastermindIrisWritesOff => 'Sending is off for now. You can still read the chat.';
+  String get mastermindIrisSendDisabled => 'Sending to Iris isn\'t available yet';
+
+  @override
+  String get mastermindIrisWritesOff => 'Sending to Iris is coming soon';
 
   @override
   String get mastermindIrisWritesNeedEnrol => 'Enrol this device to send messages.';
@@ -15206,4 +15209,60 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mastermindInboxTierJump => 'Scrolls to this section';
+
+  @override
+  String get settingsPushSummary => 'Get alerts on this device';
+
+  @override
+  String get settingsTelemetrySummary => 'Help improve the app';
+
+  @override
+  String get settingsStorageSummary => 'Manage data on this device';
+
+  @override
+  String get settingsLearnMore => 'Learn more';
+
+  @override
+  String get assistantVoiceMessagePrompt => 'Listen to this voice message and respond.';
+
+  @override
+  String get offlineWaitingWifi => 'Waiting for Wi-Fi';
+
+  @override
+  String offlineWaitingRetry(String time) {
+    return 'Waiting to retry at $time';
+  }
+
+  @override
+  String get mastermindUndoWindow => 'Undo window';
+
+  @override
+  String get mastermindUndoOff => 'Off';
+
+  @override
+  String mastermindUndoSeconds(int seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String get mastermindReplySendNow => 'Send now';
+
+  @override
+  String get offlineStatusPreparing => 'Preparing';
+
+  @override
+  String get offlineStatusReady => 'Ready offline';
+
+  @override
+  String get offlineStatusNeverSynced => 'Never synced';
+
+  @override
+  String offlineStatusLastSynced(String time) {
+    return 'Last synced: $time';
+  }
+
+  @override
+  String offlineStatusSummary(int ready, int total) {
+    return '$ready of $total apps ready offline';
+  }
 }

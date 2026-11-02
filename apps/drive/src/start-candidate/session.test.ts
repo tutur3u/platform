@@ -73,7 +73,7 @@ describe('Drive signed session audience', () => {
         { secret, now }
       ).access.token;
     const request = (accessToken: string) =>
-      new Request('https://drive.staging.tutur3u.com/personal', {
+      new Request('https://drive.tutur3u.com/personal', {
         headers: { cookie: `tuturuuu_app_session=${accessToken}` },
       });
     expect(

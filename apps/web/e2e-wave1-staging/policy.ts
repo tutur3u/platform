@@ -22,10 +22,7 @@ export function stagingOrigin(
     throw new Error('Staging origin must be an absolute HTTPS origin');
   }
   const host = url.hostname;
-  const named =
-    role === 'issuer'
-      ? 'web.staging.tutur3u.com'
-      : `${role}.staging.tutur3u.com`;
+  const named = role === 'issuer' ? 'web.tutur3u.com' : `${role}.tutur3u.com`;
   if (
     url.protocol !== 'https:' ||
     url.port ||
@@ -87,11 +84,11 @@ export function readConfig(env: Env) {
     supabaseOrigin: `https://${supabaseRef}.supabase.co`,
     app,
     baseURL: stagingOrigin(
-      env.WAVE1_STAGING_BASE_URL ?? `https://${app}.staging.tutur3u.com`,
+      env.WAVE1_STAGING_BASE_URL ?? `https://${app}.tutur3u.com`,
       app
     ),
     webOrigin: stagingOrigin(
-      env.WAVE1_STAGING_WEB_ORIGIN ?? 'https://web.staging.tutur3u.com',
+      env.WAVE1_STAGING_WEB_ORIGIN ?? 'https://web.tutur3u.com',
       'issuer'
     ),
     sha,
@@ -124,7 +121,7 @@ export function allowedRequest({
   if (![baseURL, webOrigin].includes(target.origin)) return false;
   if (['GET', 'HEAD', 'OPTIONS'].includes(method)) return true;
   if (
-    target.origin === 'https://meet.staging.tutur3u.com' &&
+    target.origin === 'https://meet.tutur3u.com' &&
     method === 'POST' &&
     /^\/api\/meet-call\/[a-f0-9-]{36}\/token$/iu.test(target.pathname)
   )

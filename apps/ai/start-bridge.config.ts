@@ -6,7 +6,7 @@ import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 export default defineBridgeAppConfig({
   worker: { compatibilityFlags: ['enable_request_signal'] },
   mounts: {
-    rootHosts: ['ai.tuturuuu.com', 'ai.staging.tutur3u.com'],
+    rootHosts: ['ai.tuturuuu.com', 'ai.tutur3u.com'],
     mountHosts: [],
     unknownHost: 'reject',
   },

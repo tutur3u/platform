@@ -89,6 +89,18 @@ edit reached the server. Review queued/sync states and recover through the
 owning product's documented flow. Optional products should not warm private
 endpoints until access is known to be enabled.
 
+Offline status UI is default OFF behind `offline_status_ui`; the existing
+`mobile_offline` kill switch remains authoritative for offline capability.
+The settings preparation section accepts `offlineStatusUiEnabled` until the
+MobileFlags reader is integrated. With the flag off, its existing UI and behavior
+remain unchanged. With it on, app rows show readiness, indeterminate preparation
+progress (the coordinator has no per-app percentage), Wi-Fi/retry waits, failure,
+unavailability and last sync. Retry and sync timestamps use the device locale and
+local time zone. The compact ready count appears only in the existing offline
+settings section. These labels describe downloaded snapshots, not server
+acknowledgement of queued edits. Regression coverage:
+`apps/mobile/test/features/settings/view/offline_status_ui_test.dart`.
+
 ## Versions and privacy
 
 The [toolchain reference](/reference/repository/versions) reads the Flutter and

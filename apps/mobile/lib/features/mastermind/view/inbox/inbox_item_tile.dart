@@ -321,6 +321,7 @@ class InboxItemTile extends StatelessWidget {
               optionsOverride: pending != null
                   ? ReplyUndoBar(
                       option: plainOptionLabel(item, pending.optionIndex),
+                      onSendNow: () => replies.sendNow(item.id),
                       onUndo: pending.committed
                           ? null
                           : () => replies.undoOption(item.id),

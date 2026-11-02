@@ -25,7 +25,7 @@ const messageCopy = Object.fromEntries(
     ])
   )
 );
-const base = 'https://web.staging.tutur3u.com';
+const base = 'https://web.tutur3u.com';
 const access = accessFixture();
 
 const legalPages = [
@@ -132,6 +132,8 @@ test(description, { timeout: 30000 }, async (t) => {
   assert.equal(config.vars.WEB_START_CANDIDATE, 'off');
   assert.equal(config.vars.WEB_START_NATIVE_LEGAL, 'off');
   assert.equal(config.vars.WEB_START_NATIVE_SECURITY, 'off');
+  assert.equal(config.vars.AUTH_COOKIE_DOMAIN, undefined);
+  assert.equal(config.vars.AUTH_COOKIE_PREFIX, '__Host-');
   const entry = resolve(dirname(configPath), config.main);
   assert.match(await readFile(entry, 'utf8'), /Web candidate disabled/u);
   const modules = [
@@ -164,7 +166,6 @@ test(description, { timeout: 30000 }, async (t) => {
   }
   const admitted = {
     ...access.bindings,
-    TRUSTED_PROXY_ORIGIN_SECRET: 'disposable-emitted-worker-proof-secret',
   };
   const disabled = instance(config.vars);
   const enabled = instance({
@@ -454,7 +455,7 @@ test(description, { timeout: 30000 }, async (t) => {
         const response = await rollback.dispatchFetch(`${base}${path}`, {
           method: 'OPTIONS',
           headers: {
-            origin: 'https://calendar.staging.tutur3u.com',
+            origin: 'https://calendar.tutur3u.com',
             'access-control-request-method': 'POST',
             'access-control-request-headers': 'content-type',
           },
@@ -463,7 +464,7 @@ test(description, { timeout: 30000 }, async (t) => {
         assert.equal(await response.text(), '');
         assert.equal(
           response.headers.get('access-control-allow-origin'),
-          'https://calendar.staging.tutur3u.com'
+          'https://calendar.tutur3u.com'
         );
       }
       assert.equal(egress.length, calls, 'OPTIONS reached Next');

@@ -18,11 +18,14 @@ import 'package:mobile/l10n/l10n.dart';
 class OfflinePreparationSection extends StatefulWidget {
   const OfflinePreparationSection({
     this.coordinator,
+    this.offlineStatusUiEnabled = false,
     this.productId,
     this.showModuleDetails = false,
     this.connectivity,
     super.key,
   });
+  // TODO(MONA-24): Inject MobileFlags.isOn(FeatureFlag.offline_status_ui).
+  final bool offlineStatusUiEnabled;
   final String? productId;
   final bool showModuleDetails;
 
@@ -155,6 +158,12 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                 ),
               ],
             ),
+            if (widget.offlineStatusUiEnabled && widget.productId == null)
+              Semantics(
+                key: const ValueKey('offline-status-summary'),
+                liveRegion: true,
+                child: Text(l10n.offlineStatusSummary(completed, ids.length)),
+              ),
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
@@ -233,6 +242,7 @@ class _OfflinePreparationSectionState extends State<OfflinePreparationSection> {
                 for (final id in ids)
                   _OfflineProductRow(
                     id: id,
+                    enhanced: widget.offlineStatusUiEnabled,
                     product:
                         state.products[id] ?? const OfflineProductPreparation(),
                     running: state.running || servicePaused,
@@ -272,10 +282,12 @@ class _OfflineProductRow extends StatelessWidget {
     required this.id,
     required this.product,
     required this.running,
+    this.enhanced = false,
     this.onRetry,
     this.onOpen,
   });
 
+  final bool enhanced;
   final String id;
   final OfflineProductPreparation product;
   final bool running;
@@ -291,13 +303,17 @@ class _OfflineProductRow extends StatelessWidget {
       'tasks' => l10n.tasksTitle,
       _ => l10n.calendarTitle,
     };
-    final status = switch (product.status) {
+    final legacyStatus = switch (product.status) {
       OfflinePreparationStatus.queued =>
         running
             ? l10n.offlinePreparationWaiting
             : product.lastSuccess != null
             ? l10n.offlinePreparationNeedsRefresh
             : l10n.offlinePreparationQueued,
+      OfflinePreparationStatus.waitingWifi => l10n.offlineWaitingWifi,
+      OfflinePreparationStatus.waitingRetry => l10n.offlineWaitingRetry(
+        DateFormat.Hm().format(product.retryAt!.toLocal()),
+      ),
       OfflinePreparationStatus.downloading =>
         l10n.offlinePreparationDownloading,
       OfflinePreparationStatus.ready => l10n.offlinePreparationReady,
@@ -305,13 +321,31 @@ class _OfflineProductRow extends StatelessWidget {
       OfflinePreparationStatus.unavailable =>
         l10n.offlinePreparationUnavailable,
     };
-    final lastSuccess = product.status == OfflinePreparationStatus.unavailable
-        ? null
-        : product.lastSuccess;
+    final locale = Localizations.localeOf(context).toString();
+    final preparing = product.status == OfflinePreparationStatus.downloading;
+    final status = !enhanced
+        ? legacyStatus
+        : switch (product.status) {
+            OfflinePreparationStatus.waitingRetry =>
+              product.retryAt == null
+                  ? l10n.offlineDownloadsPaused
+                  : l10n.offlineWaitingRetry(
+                      DateFormat.yMd(
+                        locale,
+                      ).add_jm().format(product.retryAt!.toLocal()),
+                    ),
+            OfflinePreparationStatus.downloading => l10n.offlineStatusPreparing,
+            OfflinePreparationStatus.ready => l10n.offlineStatusReady,
+            // Queued keeps its own label (waiting / needs refresh / queued).
+            OfflinePreparationStatus.unavailable =>
+              l10n.offlinePreparationUnavailable,
+            _ => legacyStatus,
+          };
+    final lastSuccess = product.lastSuccess;
     final retryable =
         product.status == OfflinePreparationStatus.failed ||
         product.status == OfflinePreparationStatus.unavailable;
-    return SettingsTile(
+    final tile = SettingsTile(
       key: ValueKey('offline-product-$id'),
       grouped: true,
       icon: switch (product.status) {
@@ -319,11 +353,21 @@ class _OfflineProductRow extends StatelessWidget {
         OfflinePreparationStatus.ready => LucideIcons.hardDriveDownload,
         OfflinePreparationStatus.failed => LucideIcons.circleAlert,
         OfflinePreparationStatus.unavailable => LucideIcons.cloudOff,
+        OfflinePreparationStatus.waitingWifi => LucideIcons.cloudOff,
+        OfflinePreparationStatus.waitingRetry => LucideIcons.clock,
         OfflinePreparationStatus.queued => LucideIcons.download,
       },
       title: title,
       value: status,
-      subtitle: lastSuccess == null
+      subtitle: enhanced
+          ? lastSuccess == null
+                ? l10n.offlineStatusNeverSynced
+                : l10n.offlineStatusLastSynced(
+                    DateFormat.yMd(
+                      locale,
+                    ).add_jm().format(lastSuccess.toLocal()),
+                  )
+          : lastSuccess == null
           ? null
           : l10n.offlinePreparationLastSuccess(
               DateFormat.yMd(
@@ -349,6 +393,17 @@ class _OfflineProductRow extends StatelessWidget {
               ],
             )
           : null,
+    );
+    if (!enhanced || !preparing) return tile;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        tile,
+        LinearProgressIndicator(
+          key: ValueKey('offline-status-progress-$id'),
+          semanticsLabel: status,
+        ),
+      ],
     );
   }
 }

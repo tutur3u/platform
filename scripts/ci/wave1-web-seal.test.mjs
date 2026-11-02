@@ -20,6 +20,8 @@ test('the sealed Web config binds native-only staging vars', (t) => {
   assert.equal(config.name, 'tuturuuu-web-wave1-staging');
   assert.equal(config.vars.NEXT_FALLBACK_ORIGIN, undefined);
   assert.equal(config.vars.WEB_START_CANDIDATE, 'staging');
+  assert.equal(config.vars.AUTH_COOKIE_PREFIX, '__Host-');
+  assert.equal(config.vars.AUTH_COOKIE_DOMAIN, undefined);
   assert.equal(config.vars.WEB_STAGING_SOURCE_SHA, sha);
   assert.equal(config.vars.WEB_START_NATIVE_LEGAL, 'off');
   assert.deepEqual(config.routes, []);
@@ -28,7 +30,6 @@ test('the sealed Web config binds native-only staging vars', (t) => {
   assert.deepEqual(config.secrets.required.sort(), [
     'CF_ACCESS_AUD',
     'CF_ACCESS_TEAM_DOMAIN',
-    'TRUSTED_PROXY_ORIGIN_SECRET',
   ]);
   const { receipt } = verify(dir, 'web', 'staging', sha);
   assert.equal(receipt.profile.nextFallback, undefined);

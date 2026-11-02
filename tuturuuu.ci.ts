@@ -142,7 +142,12 @@ export const productionPublicationPolicy = {
     state: 'held',
     reason: 'held for wave-2 cutover: Mastermind security review required',
   },
-  meet: { state: 'held', reason: 'held for wave-1 cutover' },
+  meet: {
+    state: 'admitted',
+    reason:
+      'Meet native Start + Void cutover on the tuturuuu-meet Worker with private version smoke and one-step version rollback',
+    surfaces: ['frontend', 'realtime-do'],
+  },
   calendar: {
     state: 'admitted',
     reason:
