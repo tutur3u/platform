@@ -109,7 +109,7 @@ Mastermind is restricted to one person, the platform owner account, through the 
   the hub allowlist is separate from the grant and must name the same user.
 
 Migrations `20261030113000` and `20261030113001` grant the permission to
-nobody. Separate migration `20261030120000_grant_mastermind_owner.sql` grants only root's creator through `private.grant_mastermind_access`. Missing root, null creator, missing auth account or root MEMBER membership produces NOTICE without a grant. After seed, the database owner may idempotently run `SELECT private.grant_mastermind_root_creator();`. Production writes require explicit approval. Before the production sync, an operator checks read-only that the creator exists in auth.users and is a root MEMBER. Rollback `20261030120000_grant_mastermind_owner.rollback.sql` uses audited revoke provenance, preserving later intentional operator grants. Missing provenance revokes nothing. Bootstrap coverage: `manage-mastermind-owner-grant.sql`; actual rollback coverage: `apps/database/scripts/mastermind-owner-rollback-test.py`.
+nobody. Separate migration `20261030120000_grant_mastermind_owner.sql` grants only root's creator through `private.grant_mastermind_access`. Missing root, null creator, missing auth account or root MEMBER membership produces NOTICE without a grant. After seed, the database owner may idempotently run `SELECT private.grant_mastermind_root_creator();`. Production writes require explicit approval. Before the production sync, an operator checks read-only that the creator exists in auth.users and is a root MEMBER, reporting names only. Rollback `20261030120000_grant_mastermind_owner.rollback.sql` uses audited revoke provenance, preserving later intentional operator grants. Missing provenance revokes nothing. Bootstrap coverage: `manage-mastermind-owner-grant.sql`; actual rollback coverage: `apps/database/scripts/mastermind-owner-rollback-test.py`.
 
 - **Regression coverage:** `apps/database/supabase/tests/manage-mastermind-permission.sql`
   (no role, default permission, member or creator holds it after the
@@ -1064,7 +1064,7 @@ Regression coverage lives in `mastermind_insights_compact_test.dart` and
 
 ## Iris in the Inbox (M0)
 
-Iris, the owner's inbox to Atlas, is a first-class part of the mobile Inbox,
+The owner's inbox is a first-class part of the mobile Inbox,
 behind a flag. Synthetic data only in fixtures and tests.
 
 - **Flag:** `mastermindIrisEnabled` is on when the `MASTERMIND_IRIS` Dart define
