@@ -4547,7 +4547,7 @@
       "title": "Meeting notes",
       "transcript_empty": "No transcript yet.",
       "unavailable": "Notes and transcript are unavailable right now. Try again later.",
-      "visibility_private": "Only the host can read these notes.",
+      "visibility_admin": "You can read these notes because you are a workspace admin.",
       "visibility_shared": "The host shared these notes and the transcript with meeting participants."
     },
     "public": {

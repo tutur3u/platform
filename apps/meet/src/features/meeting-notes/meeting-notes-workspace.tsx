@@ -4,6 +4,7 @@ import { showMeetingAiFailure } from '@tuturuuu/meet-core/features/meeting-ai/fa
 import { useTranslations } from 'next-intl';
 import { useMeetingAi } from '@/features/meeting-ai/use-meeting-ai';
 import { MeetingNotesView } from './meeting-notes-view';
+import type { NotesAccess } from './notes-access';
 import { NotesHostActions } from './notes-host-actions';
 import { NotesVisibility } from './notes-visibility';
 
@@ -16,14 +17,16 @@ export function MeetingNotesWorkspace({
   wsId,
   meetingId,
   title,
-  isHost,
-  shared,
+  access,
+  shareNotesAfterMeeting,
+  sharingControl,
 }: {
   wsId: string;
   meetingId: string;
   title: string;
-  isHost: boolean;
-  shared: boolean;
+  access: NotesAccess;
+  shareNotesAfterMeeting: boolean;
+  sharingControl: boolean;
 }) {
   const t = useTranslations('meet.ai');
   const ai = useMeetingAi(wsId, meetingId, [], false);
@@ -53,8 +56,9 @@ export function MeetingNotesWorkspace({
         <NotesVisibility
           wsId={wsId}
           meetingId={meetingId}
-          canManage={isHost}
-          shared={shared}
+          access={access}
+          shareNotesAfterMeeting={shareNotesAfterMeeting}
+          sharingControl={sharingControl}
         />
       }
     />

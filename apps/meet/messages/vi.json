@@ -4547,7 +4547,7 @@
       "title": "Ghi chú cuộc họp",
       "transcript_empty": "Chưa có bản ghi.",
       "unavailable": "Hiện không thể tải ghi chú và bản ghi. Vui lòng thử lại sau.",
-      "visibility_private": "Chỉ chủ phòng có thể đọc ghi chú này.",
+      "visibility_admin": "Bạn có thể đọc ghi chú này vì bạn là quản trị viên không gian làm việc.",
       "visibility_shared": "Chủ phòng đã chia sẻ ghi chú và bản ghi với người tham gia cuộc họp."
     },
     "public": {

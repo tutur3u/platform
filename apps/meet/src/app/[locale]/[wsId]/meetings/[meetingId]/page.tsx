@@ -29,7 +29,7 @@ import { MeetingPublicSettings } from '@/features/call/components/meeting-public
 import { buildCalendarEventUrl } from '@/features/call/lib/calendar-link';
 import { encodeRoomCode } from '@/features/call/lib/room-code';
 import { readMeetingRoomPolicy } from '@/features/meeting-ai/server/room-access';
-import { MeetingNotesWorkspace } from '@/features/meeting-notes/meeting-notes-workspace';
+import { MeetingNotesSection } from '@/features/meeting-notes/meeting-notes-section';
 import { getMeetWorkspaceContext } from '../../workspace-context';
 import { MeetingActions } from './meeting-actions';
 import { loadMeetingCalendarEvent } from './meeting-calendar-event';
@@ -57,7 +57,6 @@ export default async function MeetingDetailPage({
   const { user, workspaceSlug, wsId } = await getMeetWorkspaceContext(id);
   const t = await getTranslations('meet.call');
   const details = await getTranslations('meet.details');
-  const notesPage = await getTranslations('meet.notes_page');
   const supabase = await createAdminClient({ noCookie: true });
 
   // Fetch meeting details
@@ -80,6 +79,7 @@ export default async function MeetingDetailPage({
   }
 
   const isHost = meeting.creator_id === user.id;
+  const title = meeting.name ?? t('untitled_meeting');
   // Permissions do not depend on room policy. Capture rejection immediately so
   // the ended-room shortcut and policy error precedence remain unchanged.
   const permissionsPromise = getPermissions({ user, wsId }).then(
@@ -101,7 +101,7 @@ export default async function MeetingDetailPage({
         shareNotesAfterMeeting={policy.settings?.shareNotesAfterMeeting}
         meetingId={meetingId}
         wsId={wsId}
-        meetingName={meeting.name ?? t('untitled_meeting')}
+        meetingName={title}
         backHref={`/${workspaceSlug}/meetings`}
       />
     );
@@ -150,19 +150,13 @@ export default async function MeetingDetailPage({
       </div>
 
       <div className="mb-6">
-        {policy.canReadNotes ? (
-          <MeetingNotesWorkspace
-            wsId={wsId}
-            meetingId={meetingId}
-            title={meeting.name ?? t('untitled_meeting')}
-            isHost={isHost}
-            shared={policy.settings?.shareNotesAfterMeeting === true}
-          />
-        ) : (
-          <output className="block rounded-xl border bg-muted/30 p-4 text-muted-foreground text-sm">
-            {notesPage('not_shared')}
-          </output>
-        )}
+        <MeetingNotesSection
+          wsId={wsId}
+          meetingId={meetingId}
+          title={title}
+          isHost={isHost}
+          policy={policy}
+        />
       </div>
       {/* Meeting Details */}
       <div className="grid gap-6 md:grid-cols-2">

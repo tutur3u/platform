@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   policy: vi.fn(),
   calendar: vi.fn(),
   eq: vi.fn(),
-  workspace: vi.fn(() => null),
+  section: vi.fn(() => null),
 }));
 vi.mock('../../workspace-context', () => ({
   getMeetWorkspaceContext: mocks.context,
@@ -69,8 +69,8 @@ vi.mock('@/features/call/components/meeting-local-time', () => ({
 vi.mock('@/features/call/components/meeting-public-settings', () => ({
   MeetingPublicSettings: () => null,
 }));
-vi.mock('@/features/meeting-notes/meeting-notes-workspace', () => ({
-  MeetingNotesWorkspace: mocks.workspace,
+vi.mock('@/features/meeting-notes/meeting-notes-section', () => ({
+  MeetingNotesSection: mocks.section,
 }));
 vi.mock('./meeting-actions', () => ({ MeetingActions: () => null }));
 vi.mock('./recording-sessions-overview', () => ({
@@ -237,26 +237,20 @@ test.each([
   }
 );
 
-test('viewers the room policy denies never mount the notes and transcript reader', async () => {
-  mocks.policy.mockResolvedValue({ ended: false, canReadNotes: false });
-  const result = await MeetingDetailPage(props);
-  expect(findByType(result, mocks.workspace)).toHaveLength(0);
-  expect(JSON.stringify(result)).toContain('not_shared');
-});
-
-test('authorized viewers get the reader with the room sharing state', async () => {
-  mocks.policy.mockResolvedValue({
+test('active rooms hand the room policy to the shared notes section', async () => {
+  const policy = {
     ended: false,
-    canReadNotes: true,
-    settings: { shareNotesAfterMeeting: true },
-  });
+    canReadNotes: false,
+    settings: { shareNotes: false },
+  };
+  mocks.policy.mockResolvedValue(policy);
   const result = await MeetingDetailPage(props);
-  const [reader] = findByType(result, mocks.workspace);
-  expect(reader?.props).toEqual({
+  const [section] = findByType(result, mocks.section);
+  expect(section?.props).toEqual({
     wsId: 'canonical-workspace',
     meetingId: '10000000-0000-4000-8000-000000000001',
     title: 'Meeting',
     isHost: true,
-    shared: true,
+    policy,
   });
 });
