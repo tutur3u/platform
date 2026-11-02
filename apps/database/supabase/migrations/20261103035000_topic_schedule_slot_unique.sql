@@ -21,6 +21,7 @@
 set local lock_timeout = '5s';
 set local statement_timeout = '60s';
 
+-- tuturuuu: reviewed(dynamic-sql-review): Static duplicate-slot query only; raises on duplicates without changing source data or privileges.
 do $$
 declare
   duplicate_slots integer;

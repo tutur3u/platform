@@ -1,4 +1,5 @@
 -- IF NOT EXISTS must not accept an invalid index from an interrupted build.
+-- tuturuuu: reviewed(dynamic-sql-review): Static catalog validity check only; raises if the required unique index is absent or invalid.
 do $$
 begin
   if not exists (
