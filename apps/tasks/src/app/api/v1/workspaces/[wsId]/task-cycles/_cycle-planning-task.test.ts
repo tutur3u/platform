@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   cyclePlanningTaskSelect,
+  isCurrentlyInCycle,
+  isInNoWorkspaceCycle,
   type RawPlanningTask,
   toCyclePlanningTask,
 } from './_cycle-planning-task';
@@ -25,13 +27,51 @@ function task(cycleLinks: RawPlanningTask['cycle_links']): RawPlanningTask {
 }
 
 describe('cyclePlanningTaskSelect', () => {
-  it('selects created_at on cycle links so reads can order them', () => {
-    expect(cyclePlanningTaskSelect('left')).toContain(
-      'cycle_links:task_cycle_tasks!left(cycle_id, created_at)'
+  it('selects each link with its cycle so board sprints and deleted cycles can be left out', () => {
+    for (const scope of ['cycle', 'backlog'] as const) {
+      expect(cyclePlanningTaskSelect(scope)).toContain(
+        'cycle_links:task_cycle_tasks!left(cycle_id, created_at, cycle:task_cycles!inner(board_id, deleted))'
+      );
+    }
+  });
+
+  it('narrows only the cycle scope to tasks linked to the requested cycle', () => {
+    expect(cyclePlanningTaskSelect('cycle')).toContain(
+      'in_cycle:task_cycle_tasks!inner(cycle_id)'
     );
-    expect(cyclePlanningTaskSelect('inner')).toContain(
-      'cycle_links:task_cycle_tasks!inner(cycle_id, created_at)'
-    );
+    expect(cyclePlanningTaskSelect('backlog')).not.toContain('in_cycle');
+  });
+});
+
+describe('current workspace cycle ignores board sprints and deleted cycles', () => {
+  it('never reports a board sprint or a deleted cycle as the current cycle', () => {
+    const raw = task([
+      {
+        cycle_id: OLDER_CYCLE,
+        created_at: '2026-01-01T00:00:00Z',
+        cycle: { board_id: null, deleted: false },
+      },
+      {
+        cycle_id: NEWER_CYCLE,
+        created_at: '2026-02-01T00:00:00Z',
+        cycle: { board_id: 'board-1', deleted: false },
+      },
+      {
+        cycle_id: HIGH_CYCLE,
+        created_at: '2026-03-01T00:00:00Z',
+        cycle: { board_id: null, deleted: true },
+      },
+    ]);
+
+    expect(toCyclePlanningTask(raw).cycle_id).toBe(OLDER_CYCLE);
+    expect(isCurrentlyInCycle(raw, OLDER_CYCLE)).toBe(true);
+    expect(isCurrentlyInCycle(raw, NEWER_CYCLE)).toBe(false);
+    expect(isInNoWorkspaceCycle(raw)).toBe(false);
+    expect(
+      isInNoWorkspaceCycle(
+        task([{ cycle_id: NEWER_CYCLE, cycle: { board_id: 'board-1' } }])
+      )
+    ).toBe(true);
   });
 });
 

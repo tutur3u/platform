@@ -135,10 +135,54 @@ describe('GET task backlog', () => {
         ['eq', 'list.board.ws_id', WS_ID],
         ['in', 'list.status', ['not_started', 'active', 'review']],
         ['is', 'deleted_at', null],
+        ['is', 'cycle_links.cycle.board_id', null],
+        ['not', 'cycle_links.cycle.deleted', 'is', true],
         ['is', 'cycle_links', null],
         ['limit', 25],
       ])
     );
+  });
+
+  it('keeps tasks whose only links are board-sprint rows or deleted cycles', async () => {
+    const row = (id: string, cycleLinks: unknown[]) => ({
+      id,
+      name: id,
+      display_number: null,
+      priority: null,
+      list: { status: 'active', board: { id: 'b1', ticket_prefix: null } },
+      cycle_links: cycleLinks,
+      assignees: [],
+      projects: [],
+      labels: [],
+    });
+    mocks.result = {
+      data: [
+        // Completed-sprint history row only: still in the backlog.
+        row('sprint-history', [
+          { cycle_id: 'sprint-1', cycle: { board_id: 'b1', deleted: false } },
+        ]),
+        // Link to a deleted workspace cycle only: still in the backlog.
+        row('deleted-cycle', [
+          { cycle_id: 'gone', cycle: { board_id: null, deleted: true } },
+        ]),
+        // In a live workspace cycle: never in the backlog, even if a row
+        // slips past the database filters.
+        row('planned', [
+          { cycle_id: 'cycle-1', cycle: { board_id: null, deleted: false } },
+        ]),
+      ],
+      error: null,
+    };
+
+    const response = await GET(request(), context);
+    const body = (await response.json()) as {
+      tasks: { id: string; cycle_id: string | null }[];
+    };
+
+    expect(body.tasks.map((task) => [task.id, task.cycle_id])).toEqual([
+      ['sprint-history', null],
+      ['deleted-cycle', null],
+    ]);
   });
 
   it('rejects an out-of-range limit', async () => {

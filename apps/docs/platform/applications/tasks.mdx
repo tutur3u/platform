@@ -982,18 +982,21 @@ CREATE TABLE public.task_cycle_tasks (
 |------|-------------------------|
 | Same workspace | A task can join a cycle only when its board's workspace equals the cycle's workspace. The `enforce_task_cycle_task_workspace` trigger rejects other links for every role, including service-role writes. The API validates the cycle and task server-side first and returns `404`. |
 | Fixed workspace | A cycle's `ws_id` cannot change once created (`prevent_task_cycle_workspace_change`). |
-| One cycle per task | Assigning goes through `public.assign_task_cycle(task, cycle)`, which locks the task row, checks both workspaces and replaces the task's existing links with one, so assigning a task to another cycle moves it. There is no unique index on `task_cycle_tasks.task_id`. Concurrent assigns of one task wait for each other; one that waits longer than 5 s gets a retryable `409`. |
-| Backlog | Open tasks with no cycle: list status `not_started`, `active` or `review`; task not deleted; list and board not deleted or archived. Backlog is derived, not stored. |
+| One cycle per task | Applies to workspace cycles (`task_cycles.board_id IS NULL`). Assigning goes through `public.assign_task_cycle(task, cycle)`, which locks the task row (`FOR NO KEY UPDATE`), checks the cycle and both workspaces, and replaces the task's links to workspace cycles with one, so assigning a task to another cycle moves it. There is no unique index on `task_cycle_tasks.task_id`. Concurrent assigns of one task wait for each other; one that waits longer than 5 s, or hits a deadlock, gets a retryable `409`. |
+| Board sprints | Board sprints (`board_id` set) keep one `task_cycle_tasks` row per sprint as history, plus the open-sprint row, managed by the board sprint functions and trigger. The cycle planning endpoints refuse them with `400` (`code: board_sprint`), and an assign never deletes or changes their rows. A task can be in a workspace cycle and a board sprint at the same time. |
+| Deleted cycles | A deleted cycle (`deleted = true`) is not found (`404`) for planning, and its links do not count as the task's cycle. |
+| Current cycle | A task's cycle is its newest link to a live workspace cycle (latest `created_at`, then the lowest `cycle_id`). The cycle task list shows a task only in that cycle, and cycle task counts count it only there. Board-sprint counts are each sprint's own rows. |
+| Backlog | Open tasks in no live workspace cycle: list status `not_started`, `active` or `review`; task not deleted; list and board not deleted or archived. Board-sprint rows (including past sprints' history) and links to deleted cycles do not take a task out of the backlog. Backlog is derived, not stored. |
 | Excluded | Tasks in `documents` lists cannot join a cycle. |
 | Row cap | The cycle task list and the backlog each return at most 500 tasks, newest first (`?limit=` can lower the backlog cap). There is no pagination yet; larger cycles or backlogs are truncated until pagination ships as a follow-up. |
-| Access | Any workspace member can read cycle tasks and the backlog. Assigning and removing require `manage_projects`. `task_cycles` and `tasks` are not granted to the Data API `authenticated` role, so all reads and writes go through the Tasks API. |
+| Access | Any workspace member can read cycle tasks and the backlog. Assigning and removing through the Tasks API require `manage_projects`; the API validates the workspace and then writes with the service role. `assign_task_cycle` is executable by `service_role` only. The Data API `authenticated` role does hold table grants on `task_cycles` and `task_cycle_tasks` (from `20250929060000`), limited by RLS to workspace members and, for writes, to workspace cycles, so a direct member write can still add a second link without `manage_projects`; reads then use the current-cycle rule. |
 
 Exceptions: rows that existed before the workspace guard are not rewritten.
 Audit them with `apps/database/verification/task-cycle-cross-workspace-links.sql`;
-cleanup needs release-authority approval. Tasks linked to several cycles before
-one-cycle-per-task are not cleaned up either: reads report the newest link
-(latest `created_at`, then the lowest `cycle_id`), and the task's next assign
-replaces all of its links.
+cleanup needs release-authority approval. Tasks linked to several workspace
+cycles before one-cycle-per-task are not cleaned up either: reads use the
+current-cycle rule above, and the task's next assign replaces all of its
+workspace-cycle links (board-sprint rows stay).
 
 Regression coverage: `apps/database/supabase/tests/task-cycle-workspace-guard.sql`,
 `apps/database/supabase/tests/task-cycle-one-per-task.sql`, and the route tests

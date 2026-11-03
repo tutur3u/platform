@@ -88,7 +88,12 @@ export async function resolveCycleWorkspaceAccess(
   return { ok: true, wsId };
 }
 
-/** Returns an error response unless `cycleId` belongs to `wsId`. */
+/**
+ * Returns an error response unless `cycleId` is a live workspace cycle of
+ * `wsId`. Deleted cycles are not found. Board sprints (`board_id` set) are
+ * refused: they keep one task_cycle_tasks row per sprint as history, and
+ * only the board sprint routes may change their membership.
+ */
 export async function assertCycleInWorkspace(
   sbAdmin: TypedSupabaseClient,
   wsId: string,
@@ -100,7 +105,7 @@ export async function assertCycleInWorkspace(
 
   const { data: cycle, error } = await sbAdmin
     .from('task_cycles')
-    .select('ws_id')
+    .select('ws_id, board_id, deleted')
     .eq('id', cycleId)
     .maybeSingle();
 
@@ -112,11 +117,27 @@ export async function assertCycleInWorkspace(
     );
   }
 
-  if (!cycle || cycle.ws_id !== wsId) {
+  if (!cycle || cycle.ws_id !== wsId || cycle.deleted === true) {
     return NextResponse.json({ error: 'Cycle not found' }, { status: 404 });
   }
 
+  if (cycle.board_id != null) {
+    return boardSprintRefused();
+  }
+
   return null;
+}
+
+/** Board sprints change only through the board sprint routes. */
+export function boardSprintRefused() {
+  return NextResponse.json(
+    {
+      code: 'board_sprint',
+      error:
+        "This cycle is a board sprint; plan it from the board's sprint view",
+    },
+    { status: 400 }
+  );
 }
 
 /**

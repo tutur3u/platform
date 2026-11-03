@@ -9,7 +9,11 @@ const mocks = vi.hoisted(() => ({
   upsert: vi.fn(),
   rpc: vi.fn(),
   deleteEq: vi.fn(),
-  cycle: null as { ws_id: string } | null,
+  cycle: null as {
+    ws_id: string;
+    board_id?: string | null;
+    deleted?: boolean | null;
+  } | null,
   task: null as Record<string, unknown> | null,
   listCalls: [] as Array<[string, ...unknown[]]>,
   listResult: { data: [] as unknown[], error: null as unknown },
@@ -54,6 +58,9 @@ const WS_ID = '00000000-0000-4000-8000-000000000001';
 const FOREIGN_WS_ID = '00000000-0000-4000-8000-000000000009';
 const CYCLE_ID = '00000000-0000-4000-8000-000000000002';
 const TASK_ID = '00000000-0000-4000-8000-000000000003';
+const OTHER_CYCLE_ID = '00000000-0000-4000-8000-000000000004';
+const SPRINT_ID = '00000000-0000-4000-8000-000000000005';
+const BOARD_ID = '00000000-0000-4000-8000-000000000006';
 const URL = `http://localhost/api/v1/workspaces/${WS_ID}/task-cycles/${CYCLE_ID}/tasks`;
 
 function single(data: () => unknown) {
@@ -121,8 +128,68 @@ beforeEach(() => {
   mocks.upsert.mockResolvedValue({ error: null });
   mocks.rpc.mockResolvedValue({ data: null, error: null });
   mocks.deleteEq.mockResolvedValue({ error: null });
-  mocks.cycle = { ws_id: WS_ID };
+  mocks.cycle = { ws_id: WS_ID, board_id: null, deleted: false };
   mocks.task = taskIn(WS_ID);
+});
+
+const BOARD_SPRINT_ERROR = {
+  code: 'board_sprint',
+  error: "This cycle is a board sprint; plan it from the board's sprint view",
+};
+
+describe('board sprints and deleted cycles are out of scope', () => {
+  it('refuses to assign into a board sprint without writing', async () => {
+    mocks.cycle = { ws_id: WS_ID, board_id: BOARD_ID, deleted: false };
+
+    const response = await POST(request('POST'), context);
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual(BOARD_SPRINT_ERROR);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('refuses to remove a task from a board sprint (its rows are history)', async () => {
+    mocks.cycle = { ws_id: WS_ID, board_id: BOARD_ID, deleted: false };
+
+    const response = await DELETE(request('DELETE'), context);
+
+    expect(response.status).toBe(400);
+    expect(mocks.deleteEq).not.toHaveBeenCalled();
+  });
+
+  it('refuses to list a board sprint as a planning cycle', async () => {
+    mocks.cycle = { ws_id: WS_ID, board_id: BOARD_ID, deleted: false };
+    mocks.task = null;
+
+    const response = await GET(request('GET'), context);
+
+    expect(response.status).toBe(400);
+    expect(mocks.listCalls).toEqual([]);
+  });
+
+  it('treats a deleted cycle as not found', async () => {
+    mocks.cycle = { ws_id: WS_ID, board_id: null, deleted: true };
+
+    expect((await POST(request('POST'), context)).status).toBe(404);
+    expect((await DELETE(request('DELETE'), context)).status).toBe(404);
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.deleteEq).not.toHaveBeenCalled();
+  });
+
+  it('maps a board-sprint refusal from the rpc (cycle changed in between) to 400', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: {
+        code: '22023',
+        message: 'Board sprints are managed by the board sprint functions',
+      },
+    });
+
+    const response = await POST(request('POST'), context);
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual(BOARD_SPRINT_ERROR);
+  });
 });
 
 describe('POST assign task to cycle', () => {
@@ -235,6 +302,34 @@ describe('POST assign task to cycle', () => {
     });
   });
 
+  it('returns a retryable 409 on a deadlock', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { code: '40P01', message: 'deadlock detected' },
+    });
+
+    const response = await POST(request('POST'), context);
+
+    expect(response.status).toBe(409);
+  });
+
+  it('returns 500, not 404, when the rpc EXECUTE grant is missing', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: {
+        code: '42501',
+        message: 'permission denied for function assign_task_cycle',
+      },
+    });
+
+    const response = await POST(request('POST'), context);
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Failed to assign task to cycle',
+    });
+  });
+
   it('returns 500 for other assign failures', async () => {
     mocks.rpc.mockResolvedValue({
       data: null,
@@ -336,11 +431,82 @@ describe('GET cycle tasks', () => {
     });
     expect(mocks.listCalls).toEqual(
       expect.arrayContaining([
-        ['eq', 'cycle_links.cycle_id', CYCLE_ID],
+        ['eq', 'in_cycle.cycle_id', CYCLE_ID],
+        ['is', 'cycle_links.cycle.board_id', null],
+        ['not', 'cycle_links.cycle.deleted', 'is', true],
         ['eq', 'list.board.ws_id', WS_ID],
         ['is', 'deleted_at', null],
       ])
     );
+  });
+
+  it('lists a task with duplicate links only in its newest cycle', async () => {
+    const row = (id: string, cycleLinks: unknown[]) => ({
+      id,
+      name: id,
+      display_number: null,
+      priority: null,
+      list: { status: 'active', board: { id: BOARD_ID, ticket_prefix: null } },
+      cycle_links: cycleLinks,
+      assignees: [],
+      projects: [],
+      labels: [],
+    });
+    const plain = { board_id: null, deleted: false };
+    mocks.listResult = {
+      data: [
+        // Newer link to another workspace cycle: listed there, not here.
+        row('moved-on', [
+          {
+            cycle_id: CYCLE_ID,
+            created_at: '2026-01-01T00:00:00Z',
+            cycle: plain,
+          },
+          {
+            cycle_id: OTHER_CYCLE_ID,
+            created_at: '2026-02-01T00:00:00Z',
+            cycle: plain,
+          },
+        ]),
+        // Newest link is this cycle.
+        row('newest-here', [
+          {
+            cycle_id: OTHER_CYCLE_ID,
+            created_at: '2026-01-01T00:00:00Z',
+            cycle: plain,
+          },
+          {
+            cycle_id: CYCLE_ID,
+            created_at: '2026-02-01T00:00:00Z',
+            cycle: plain,
+          },
+        ]),
+        // A newer board-sprint row never moves a task out of this cycle.
+        row('also-in-sprint', [
+          {
+            cycle_id: CYCLE_ID,
+            created_at: '2026-01-01T00:00:00Z',
+            cycle: plain,
+          },
+          {
+            cycle_id: SPRINT_ID,
+            created_at: '2026-03-01T00:00:00Z',
+            cycle: { board_id: BOARD_ID, deleted: false },
+          },
+        ]),
+      ],
+      error: null,
+    };
+
+    const response = await GET(request('GET'), context);
+    const body = (await response.json()) as {
+      tasks: { id: string; cycle_id: string | null }[];
+    };
+
+    expect(body.tasks.map((task) => [task.id, task.cycle_id])).toEqual([
+      ['newest-here', CYCLE_ID],
+      ['also-in-sprint', CYCLE_ID],
+    ]);
   });
 
   it('allows plain members to read', async () => {
