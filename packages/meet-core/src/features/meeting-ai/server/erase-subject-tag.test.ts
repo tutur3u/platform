@@ -78,7 +78,6 @@ describe('erase subject tag v1', () => {
     (field) => {
       for (const value of [
         '',
-        '00000000-0000-0000-0000-000000000000',
         'ffffffff-ffff-ffff-ffff-ffffffffffff',
         'person@example.test',
         '33333333333343338333333333333333',
@@ -93,6 +92,31 @@ describe('erase subject tag v1', () => {
       }
     }
   );
+  it('tags a root-workspace subject using the nil workspace UUID', async () => {
+    const rootSubject = {
+      ...subject,
+      wsId: '00000000-0000-0000-0000-000000000000',
+    };
+    const message = Buffer.from(encodedHex, 'hex');
+    message.fill(0, 23, 39);
+    expect(Buffer.from(encodeEraseSubject(rootSubject))).toEqual(message);
+    expect(
+      await createEraseSubjectTag({ ...rootSubject, key: testKey })
+    ).toEqual({
+      subjectTag: createHmac('sha256', testKey.bytes)
+        .update(message)
+        .digest('hex'),
+      subjectKeyVersion: 1,
+    });
+  });
+  it.each(['meetingId', 'subjectId'] as const)('refuses a nil %s', (field) => {
+    expect(() =>
+      encodeEraseSubject({
+        ...subject,
+        [field]: '00000000-0000-0000-0000-000000000000',
+      })
+    ).toThrow('MEET_ERASE_INVALID_UUID');
+  });
   it.each([null, undefined, { version: 1, bytes: new Uint8Array() }])(
     'refuses unavailable keys with a stable content-free error',
     async (key) => {

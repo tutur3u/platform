@@ -15,8 +15,13 @@ const DOMAIN = new TextEncoder().encode('meet-erase-subject/v1');
 const UUID =
   /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/;
 
-function uuidBytes(value: string): Uint8Array {
-  if (!UUID.test(value)) throw new Error('MEET_ERASE_INVALID_UUID');
+function uuidBytes(value: string, allowNil: boolean): Uint8Array {
+  if (
+    !UUID.test(value) &&
+    !(allowNil && value === '00000000-0000-0000-0000-000000000000')
+  ) {
+    throw new Error('MEET_ERASE_INVALID_UUID');
+  }
   const hex = value.replaceAll('-', '');
   return Uint8Array.from({ length: 16 }, (_, index) =>
     Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16)
@@ -33,7 +38,7 @@ export function encodeEraseSubject(subject: EraseSubject): Uint8Array {
     subject.meetingId,
     subject.subjectId,
   ].entries()) {
-    message.set(uuidBytes(id), DOMAIN.length + 2 + index * 16);
+    message.set(uuidBytes(id, index === 0), DOMAIN.length + 2 + index * 16);
   }
   return message;
 }
