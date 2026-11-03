@@ -1,0 +1,75 @@
+---
+title: 'Public Status API'
+description: 'Read-only public availability and incident endpoints for Tuturuuu platform services.'
+updatedAt: '2026-11-03'
+audience: developers
+---
+
+# Public Status API
+
+The public status API provides read-only availability indicators, component health,
+and recent incident records for public Tuturuuu platform services.
+
+Requests support `GET` and `HEAD` methods. Unsupported HTTP methods return `405 Method Not Allowed`, and unrecognised routes return an empty `404 Not Found`.
+
+## Routes
+
+| Method | Route | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/v1/status` | Quick aggregate availability without components list. |
+| `GET` | `/api/v1/status/summary` | Overall status summary and published component states. |
+| `GET` | `/api/v1/status/components` | Full listing of active public components and states. |
+| `GET` | `/api/v1/status/incidents` | Recent public status change history (up to 50 records). |
+| `GET` | `/api/v1/status/badge/{id}` | State for a single component ID. Returns `404` if unknown or excluded. |
+
+## Response Envelope
+
+All endpoints return a structured JSON envelope:
+
+```json
+{
+  "status": "operational",
+  "components": [
+    {
+      "id": "web-app",
+      "status": "operational",
+      "updated_at": "2026-11-03T02:21:00Z"
+    }
+  ],
+  "generated_at": "2026-11-03T02:22:00Z",
+  "stale": false,
+  "fallback": false
+}
+```
+
+- **`status`**: Aggregate availability state: `operational`, `under_maintenance`, `degraded_performance`, `partial_outage`, `major_outage`, or `unknown`.
+- **`components`**: Allowlisted component objects containing `id`, `status`, and `updated_at` (coarse UTC ISO timestamp rounded down to the minute). `/api/v1/status` returns an empty array.
+- **`generated_at`**: UTC timestamp of the underlying data snapshot, or `null` when unavailable.
+- **`stale`**: `true` if snapshot freshness exceeds allowable limits or publisher status is offline.
+- **`fallback`**: `true` if data is served from a fallback snapshot.
+
+## Freshness and 'unknown' Semantics
+
+Availability status adheres to strict fail-safe rules:
+
+- **Stale or Fallback**: If snapshot data is older than 5 minutes (or exceeds the freshness window), if publisher availability is down, or if served from fallback, all component states and aggregate status force to `'unknown'`.
+- **Empty or Unusable Store**: If status data is unreadable, missing, or corrupt, endpoints return `503 Service Unavailable` with explicit unknown status and null timestamp:
+
+```json
+{
+  "status": "unknown",
+  "components": [],
+  "generated_at": null,
+  "stale": true,
+  "fallback": true
+}
+```
+
+## Caching and ETag Behaviour
+
+- **ETag and 304 Validation**: Weak ETags (`W/"..."`) are computed across the HTTP status code and full JSON body, including freshness flags (`stale`, `fallback`). Any transition to stale changes the ETag, guaranteeing that `304 Not Modified` never revalidates aged or degraded health records.
+- **Cache-Control**: Stale, fallback, and error responses send `Cache-Control: no-store`. Fresh responses specify `public, s-maxage=<ttl>, stale-while-revalidate=<swr>, stale-if-error=86400`, with `s-maxage` capped at remaining freshness lifetime.
+
+## Privacy and Scope
+
+Only approved public services are exposed. Excluded, tenant-specific, or unrecognised component IDs return an empty `404 Not Found` indistinguishable from non-existent resources. Response payloads contain only generic identifiers, states, and coarse timestamps.
