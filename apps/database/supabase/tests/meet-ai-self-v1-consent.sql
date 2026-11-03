@@ -18,10 +18,13 @@ insert into public.workspaces(id, name, personal, creator_id) values
  (pg_temp.cid(89311), 'Self consent', false, pg_temp.cid(89301));
 insert into public.workspace_meetings(id, ws_id, creator_id, name) values
  (pg_temp.cid(89321), pg_temp.cid(89311), pg_temp.cid(89301), 'Consent'),
- (pg_temp.cid(89322), pg_temp.cid(89311), pg_temp.cid(89301), 'No evidence');
+ (pg_temp.cid(89322), pg_temp.cid(89311), pg_temp.cid(89301), 'No evidence'),
+ (pg_temp.cid(89323), pg_temp.cid(89311), pg_temp.cid(89301), 'Legacy consent');
 insert into public.meet_ai_sessions(id, meeting_id, user_id, protocol, billing_ws_id, billing_host_id) values
  (pg_temp.cid(89331), pg_temp.cid(89321), pg_temp.cid(89302), 'self_v1', pg_temp.cid(89311), pg_temp.cid(89302)),
  (pg_temp.cid(89332), pg_temp.cid(89322), pg_temp.cid(89302), 'self_v1', pg_temp.cid(89311), pg_temp.cid(89302));
+insert into public.meet_ai_sessions(id, meeting_id, user_id) values
+ (pg_temp.cid(89333), pg_temp.cid(89323), pg_temp.cid(89302));
 set local role service_role;
 select private.record_meet_ai_self_v1_admission(pg_temp.cid(89331), pg_temp.cid(n), 1)
  from generate_series(89303, 89307) n;
@@ -133,6 +136,24 @@ select throws_ok($$update public.meet_ai_chunks set dispatch_consent_revision = 
   '55000', null, 'no provider dispatch is recorded after withdrawal');
 select throws_ok($$update public.meet_ai_chunks set dispatch_consent_revision = null where id = pg_temp.cid(89358)$$,
   '55000', null, 'a recorded dispatch revision is immutable');
+
+-- Legacy account decisions also use server time before any writer ships.
+set local role service_role;
+select lives_ok($$insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, created_at)
+  values (pg_temp.cid(89333), pg_temp.cid(89305), 'allow', 'v1', clock_timestamp() + interval '10 minutes')$$,
+  'a future-dated legacy allow is accepted with server time');
+select ok((select created_at <= clock_timestamp() from private.meet_ai_consents
+  where session_id = pg_temp.cid(89333) and user_id = pg_temp.cid(89305)),
+  'the legacy client future timestamp is ignored');
+select lives_ok($$insert into private.meet_ai_consents(session_id, user_id, decision, notice_version)
+  values (pg_temp.cid(89333), pg_temp.cid(89305), 'withdraw', 'v1')$$,
+  'legacy withdrawal succeeds after a future-dated allow');
+select is((select decision from private.meet_ai_consents
+  where session_id = pg_temp.cid(89333) and user_id = pg_temp.cid(89305)
+  order by created_at desc, id desc limit 1), 'withdraw',
+  'legacy withdrawal sorts after the future-dated allow');
+delete from private.meet_ai_consents where session_id = pg_temp.cid(89333);
+reset role;
 
 -- Client clock skew must never prevent a later withdrawal.
 set local role service_role;
