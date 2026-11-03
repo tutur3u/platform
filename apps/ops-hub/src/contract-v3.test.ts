@@ -5,7 +5,7 @@ import {
   orgStatusSchema,
 } from './contract-v3';
 import { ORG_CANARIES } from './org-canaries';
-import { ingestSchema } from './schema';
+import { ingestSchema, snapshotV2Schema } from './schema';
 
 const node = {
   key: 'a'.repeat(32),
@@ -347,4 +347,22 @@ it('accepts exactly the operator-set areas on both node variants', () => {
       );
     }
   }
+});
+
+it.each(['cus\u200btomer', 'sys\u0085tem prompt', 'ｃｕｓｔｏｍｅｒ', 'sys\u202etem prompt'])('refuses normalized denied text %s', (label) => {
+  expect(ingestSchema.safeParse(withNode({label})).success).toBe(false);
+});
+
+it('documents that the customer-name canaries are fixture-specific', () => {
+  expect(ingestSchema.safeParse(withNode({ label: 'Alex Example' })).success).toBe(true);
+});
+it('strict v2 readers accept populated v3 base data without org', () => {
+  const value = {...snapshot, enabled: true, pausedReason: 'Maintenance',
+    lanes: [{id: 'release', title: 'Release', state: 'running'}],
+    backlog: [{id: 'next', title: 'Prepare release', owner: 'Release', state: 'queued'}]};
+  const parsed = ingestSchema.parse({...envelope, snapshot: value});
+  const {org: storedOrg, ...data} = parsed.snapshot!;
+  expect(snapshotV2Schema.parse(JSON.parse(JSON.stringify(data)))).toEqual(data);
+  expect(Object.hasOwn(data, 'org')).toBe(false);
+  expect(JSON.parse(JSON.stringify(storedOrg))).toEqual(org);
 });

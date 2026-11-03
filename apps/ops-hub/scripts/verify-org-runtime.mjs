@@ -229,3 +229,23 @@ test('expired snapshots and paused reads withhold org while status stays minimal
   );
   assert.equal((await read('/snapshot')).status, 503);
 });
+
+test('status advertises v3 and unknown versions have a distinct error', async () => {
+  const status = await (await read('/status')).json();
+  assert.equal(status.v, 3);
+  assert.deepEqual(status.versions, [2, 3]);
+  const response = await publish(snapshot(), 99);
+  assert.equal(response.status, 400);
+  assert.equal((await response.json()).error, 'Unsupported version');
+});
+test('malformed optional org does not break base snapshot or environments', async () => {
+  assert.equal((await publish(snapshot())).status, 200);
+  for (const org of ['{', JSON.stringify({nodes: 'invalid'})]) {
+    await server.durableObjectSql('OpsHub', `hub:${user}`, 'UPDATE snapshot SET org=? WHERE id=1', [org]);
+    await server.restart();
+    const response = await read('/snapshot');
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).org, undefined);
+    assert.equal((await read('/environments')).status, 200);
+  }
+});

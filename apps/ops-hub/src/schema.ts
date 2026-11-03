@@ -120,6 +120,7 @@ const snapshotBase = z
       new TextEncoder().encode(JSON.stringify(snapshot)).byteLength <=
       128 * 1024
   );
+export const snapshotV2Schema = snapshotBase;
 export const snapshotV3Schema = snapshotBase.safeExtend({
   org: orgSchema.optional(),
 });

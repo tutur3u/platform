@@ -1,5 +1,4 @@
 import { DAY } from './maintenance';
-import { snapshotSchema } from './schema';
 
 export const EXPORT_SECTIONS = [
   'snapshot',
@@ -44,10 +43,8 @@ export function exportPage(
     rows: rows.map((row) => ({
       cursor: row.cursor,
       ...(row.kind ? { series: row.kind } : {}),
-      data:
-        section === 'snapshot'
-          ? { ...snapshotSchema.parse(JSON.parse(row.data)), org: undefined }
-          : JSON.parse(row.data),
+      // Export keeps the v2 data as stored; optional org is deliberately excluded.
+      data: JSON.parse(row.data),
     })),
     nextAfter: rows.length === 200 ? (rows.at(-1)?.cursor ?? null) : null,
     sections: EXPORT_SECTIONS,

@@ -1,14 +1,17 @@
 import { z } from 'zod';
 import { SECURITY, UNSAFE } from './fields';
 
+// Stable join ID, not a confidentiality control: roleKey is public.
 // Publisher: first 16 bytes of HMAC-SHA256(secret, role key), lowercase hex.
 export const orgKeySchema = z
   .string()
   .length(32)
   .regex(/^[a-f0-9]{32}$/);
+// Name alternatives below are fixture-specific canaries, not general name detection.
 const ORG_UNSAFE =
   /(?:^|\s)(?:\/[\w.-]+|[a-z]:\\|\.\.?\/)|\b(?:feature|feat|fix|bugfix|hotfix|release|chore|docs|refactor|perf|claude)\/|\b(?:thread|run|session)[-_:][a-z0-9_-]+|\b(?:ignore (?:all |previous )?instructions|system prompt|you are (?:an? |the )|assistant:|<\/?(?:system|prompt)>|customer|khách hàng)\b|\b(?:Nguyễn Văn An|Trần Thị Bình|Lê Minh Châu)\b/iu;
 export function orgTextDenied(value: string) {
+  value = value.normalize('NFKC').replace(/[\p{Cc}\p{Cf}]/gu, '');
   return UNSAFE.test(value) || SECURITY.test(value) || ORG_UNSAFE.test(value);
 }
 const boundedText = (max: number) =>

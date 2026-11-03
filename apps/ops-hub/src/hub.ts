@@ -1,4 +1,5 @@
 import { DurableObject } from 'cloudflare:workers';
+import { orgSchema } from './contract-v3';
 import { seriesSchema } from './contract-v2';
 import {
   initializeDecisions,
@@ -74,10 +75,15 @@ export class OpsHub extends DurableObject<Env> {
       )
       .toArray()[0];
     if (!row) return null;
-    const stored = snapshotSchema.parse({
-      ...JSON.parse(row.data),
-      ...(row.org === null ? {} : { org: JSON.parse(row.org) }),
-    });
+    const stored = snapshotSchema.parse(JSON.parse(row.data));
+    if (row.org !== null) {
+      try {
+        const org = orgSchema.safeParse(JSON.parse(row.org));
+        if (org.success) stored.org = org.data;
+      } catch {
+        // Preserve the base snapshot when optional org storage is malformed.
+      }
+    }
     return { ...stored, needsYou: this.items(now) };
   }
   async fetch(request: Request) {
@@ -86,7 +92,8 @@ export class OpsHub extends DurableObject<Env> {
     let flags = this.flags();
     if (request.method === 'GET' && url.pathname === '/status') {
       return json({
-        v: 2,
+        v: 3,
+        versions: [2, 3],
         enabled: Boolean(flags.enabled),
         erased: Boolean(flags.erased),
         seq: flags.seq,
@@ -98,7 +105,10 @@ export class OpsHub extends DurableObject<Env> {
     }
     if (!flags.enabled) return json({ error: 'Hub paused' }, 503);
     if (request.method === 'POST' && url.pathname === '/ingest') {
-      const parsed = ingestSchema.safeParse(await request.json());
+      const payload: unknown = await request.json();
+      if (typeof payload === 'object' && payload !== null && 'v' in payload && payload.v !== 2 && payload.v !== 3)
+        return json({ error: 'Unsupported version', versions: [2, 3] }, 400);
+      const parsed = ingestSchema.safeParse(payload);
       if (!parsed.success) return json({ error: 'Invalid payload' }, 400);
       flags = this.flags();
       if (!flags.enabled) return json({ error: 'Hub paused' }, 503);
