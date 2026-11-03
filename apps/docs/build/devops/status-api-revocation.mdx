@@ -1,0 +1,110 @@
+---
+title: Status API consent and revocation
+description: Consent wording for public status components, the 2-minute removal bound, and the manual Cloudflare cache purge for urgent revocations.
+updatedAt: "2026-11-03"
+audience: developers
+---
+
+## Decision
+
+The public status read Worker (`apps/status-api`) applies the current
+publication policy on every read, including reads of older snapshots. Shared
+caches can still serve a copy made before a policy change. Each cached response
+expires before its snapshot turns stale (120 s after `generated_at`), so a
+withdrawn consent, a revoked approval or a never-public exclusion stays visible
+for **at most 120 s after the new policy is effective**. This covers every
+route, including badges and history (`/incidents`). Selene accepted this bound
+on 3 Nov 2026.
+
+Nobody can delete copies that were downloaded, saved or shared before removal.
+These include screenshots, saved API responses, embedded badges that are
+already rendered, and third-party mirrors. Consent wording, client replies and
+incident notes must never promise that these copies will be deleted.
+
+## Consent wording
+
+Cora records written client consent. Every consent request for a client,
+partner or clinic component includes this text. Do not shorten it, and do not
+replace it with "immediately", "permanently deleted" or "removed everywhere".
+
+> Tuturuuu will publish only this component's current status and the time of
+> its last update, rounded to the minute, on Tuturuuu's public status page, API
+> and badges. No URLs, response content, latency or other monitoring details are
+> published. You can withdraw this consent at any time by contacting us. Once we
+> have applied your withdrawal, removal can take up to 2 minutes to disappear
+> from the status page, API, badges and history, because public copies are
+> cached for up to 2 minutes. We cannot delete copies that others downloaded,
+> saved or shared before removal, such as screenshots, saved responses or
+> third-party mirrors.
+
+Vietnamese version (for Vietnamese-speaking clients; Cora approves the final
+wording):
+
+> Tuturuuu chỉ công bố trạng thái hiện tại của thành phần này và thời điểm cập
+> nhật gần nhất, làm tròn đến phút, trên trang trạng thái công khai, API và huy
+> hiệu (badge) của Tuturuuu. Chúng tôi không công bố URL, nội dung phản hồi, độ
+> trễ hay bất kỳ chi tiết giám sát nào khác. Bạn có thể rút lại sự đồng ý này
+> bất cứ lúc nào bằng cách liên hệ với chúng tôi. Sau khi chúng tôi áp dụng yêu
+> cầu rút lại, việc gỡ bỏ có thể mất đến 2 phút để biến mất khỏi trang trạng
+> thái, API, huy hiệu và lịch sử, vì các bản sao công khai được lưu đệm tối đa
+> 2 phút. Chúng tôi không thể xóa các bản sao mà người khác đã tải xuống, lưu
+> hoặc chia sẻ trước khi gỡ bỏ, chẳng hạn ảnh chụp màn hình, phản hồi đã lưu
+> hoặc bản sao của bên thứ ba.
+
+## Urgent revocation: manual CDN purge
+
+Use this when a component must disappear sooner than the 120 s bound, for
+example after a consent withdrawal marked urgent by Cora or Selene, or after a
+never-public component was published by mistake.
+
+**Credential holder:** Bea or Rex. Only they hold Cloudflare access with the
+Cache Purge permission for the status zone. Nobody else runs the purge, and
+nobody pastes a token, zone ID or account ID into a doc, ticket, PR or chat.
+
+1. **Make the policy effective first.** Release Desk removes the ID from
+   `STATUS_CLIENT_CONSENT_IDS` and `STATUS_PUBLIC_COMPONENT_IDS`, or updates
+   `STATUS_NEVER_PUBLIC_IDS` out of band, and deploys the Worker version.
+   Record the time the new version is live. A purge before this point does
+   nothing useful, because the old policy would cache the component again.
+2. **Purge in the dashboard.** Sign in to the Cloudflare dashboard, open the
+   zone that serves the status host, then go to **Caching** > **Configuration**
+   > **Purge Cache** > **Custom Purge**.
+   - If the status host serves only this Worker, choose **Hostname** and enter
+     `<status-host>`.
+   - Otherwise choose **Prefix** and enter `<status-host>/api/v1/status`. This
+     covers `/api/v1/status`, `/summary`, `/components`, `/incidents` and every
+     `/badge/{id}`.
+
+   Select **Purge**.
+3. **API alternative.** The same purge can be sent from the holder's own
+   machine. The token and zone ID come from the holder's private secret store,
+   never from this repo:
+
+   ```bash
+   curl -sS -X POST \
+     "https://api.cloudflare.com/client/v4/zones/$CF_STATUS_ZONE_ID/purge_cache" \
+     -H "Authorization: Bearer $CF_CACHE_PURGE_TOKEN" \
+     -H "Content-Type: application/json" \
+     --data '{"hosts":["<status-host>"]}'
+   ```
+
+   A successful response contains `"success": true`. For a shared host, use
+   `{"prefixes":["<status-host>/api/v1/status"]}` instead.
+4. **Verify.** Run these checks from the holder's machine:
+
+   ```bash
+   curl -s https://<status-host>/api/v1/status/components | jq '[.components[].id]'
+   curl -s -o /dev/null -w '%{http_code}\n' https://<status-host>/api/v1/status/badge/<id>
+   ```
+
+   The ID must be missing from the component list, and the badge must return
+   `404`. Repeat the check for `/api/v1/status/incidents`. For a never-public
+   ID, run the checks locally and record only pass or fail. Never write that ID
+   in a ticket, log or receipt.
+5. **Record.** In the private receipt, note the time the policy became
+   effective, the purge time, the person who ran it (Bea or Rex) and the
+   verification result. Include names and times only, with no tokens or IDs.
+
+The purge only clears Cloudflare's cache for that zone. Browser and third-party
+shared caches still age out within the 120 s bound. Copies that were already
+downloaded stay outside our control, as stated in the consent wording.

@@ -208,6 +208,7 @@
                   "build/devops/adaptive-abuse-rate-limits",
                   "build/devops/storage-egress-protection",
                   "build/devops/meet-transcript-retention",
+                  "build/devops/status-api-revocation",
                   "build/devops/critical-app-rollout",
                   "build/devops/github-actions-runbook",
                   "build/devops/caching",
