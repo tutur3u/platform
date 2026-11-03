@@ -1,5 +1,8 @@
-import type { TutoringAttendanceStatus, TutoringReasonType } from '@tuturuuu/internal-api';
 import { render, renderHook, screen } from '@testing-library/react';
+import type {
+  TutoringAttendanceStatus,
+  TutoringReasonType,
+} from '@tuturuuu/internal-api';
 import { describe, expect, it, vi } from 'vitest';
 import {
   TutoringReasonBadge,
