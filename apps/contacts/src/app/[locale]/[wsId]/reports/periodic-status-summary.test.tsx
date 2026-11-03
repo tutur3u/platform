@@ -66,3 +66,36 @@ it('restores pending and keeps the toolbar accessible without counts', () => {
   expect(screen.getAllByText('—')).toHaveLength(11);
   expect(screen.queryByText(/NaN|Infinity/)).not.toBeInTheDocument();
 });
+it('shows unknown, not zero, for uncounted stages when counts are partial', () => {
+  const stages = Object.fromEntries(
+    PERIODIC_STAGES.map(([stage]) => [stage, stage === 'pending' ? 32 : 0])
+  ) as Record<(typeof PERIODIC_STAGES)[number][0], number>;
+  render(
+    <PeriodicStatusSummary
+      stage="pending"
+      onChange={vi.fn()}
+      partial
+      counts={{
+        total: 32,
+        draft: 0,
+        pendingReview: 32,
+        approved: 0,
+        blocked: 0,
+        delivered: 0,
+        failed: 0,
+        stages,
+      }}
+    />
+  );
+  expect(
+    screen.getByRole('button', { name: 'status_pending 32' })
+  ).toHaveAttribute('aria-pressed', 'true');
+  for (const [stage, label] of PERIODIC_STAGES) {
+    if (stage === 'pending') continue;
+    expect(
+      screen.getByRole('button', { name: `${label} —` })
+    ).toBeInTheDocument();
+  }
+  expect(screen.queryByText('0')).not.toBeInTheDocument();
+  expect(screen.getByText('summary_partial')).toBeInTheDocument();
+});
