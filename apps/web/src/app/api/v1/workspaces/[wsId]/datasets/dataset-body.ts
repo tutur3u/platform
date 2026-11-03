@@ -10,7 +10,7 @@ const cellKeySchema = {
 
 export const cellWriteBodySchema = z.object({
   ...cellKeySchema,
-  data: z.unknown().optional(),
+  data: z.string().nullable().optional(),
 });
 
 export const cellDeleteBodySchema = z.object(cellKeySchema);

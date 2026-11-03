@@ -151,7 +151,7 @@ describe('dataset write routes validate request bodies', () => {
   });
 
   describe('cells', () => {
-    it('accepts valid POST, PUT and DELETE bodies', async () => {
+    it('rejects object POST data and accepts valid PUT and DELETE bodies', async () => {
       const key = { rowId: 'row-a', columnId: 'col-a' };
       const post = await postCell(
         request(`${base}/cells`, {
@@ -160,7 +160,8 @@ describe('dataset write routes validate request bodies', () => {
         }),
         params('ws-a', 'ds-a')
       );
-      expect(post.status).toBe(200);
+      expect(post.status).toBe(400);
+      expect(db).toEqual(seedDb());
       const put = await putCell(
         request(`${base}/cells`, {
           method: 'PUT',
