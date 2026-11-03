@@ -1,7 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@tuturuuu/types/supabase';
+import { NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ReportIdentity } from '@/lib/user-report-automation/feedback-consumer';
+
+const policy = vi.hoisted(() => vi.fn());
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiPolicyResponse: policy,
+  workspaceAiAllowed: async () => true,
+}));
 
 const model = vi.hoisted(() => vi.fn());
 const admin = vi.hoisted(() => vi.fn());
@@ -29,6 +36,7 @@ beforeEach(() => {
     },
   });
   admin.mockReset();
+  policy.mockReset().mockResolvedValue(null);
   allowed.value = true;
 });
 const id = (n: number) =>
@@ -313,6 +321,22 @@ const call = () =>
     params: Promise.resolve({ wsId: id(1), reportId: id(4) }),
   });
 describe('actual first-class manual feedback generation', () => {
+  it('refuses disabled workspace AI before claiming a report or calling the provider', async () => {
+    const f = fixture({ origin: 'valid' });
+    admin.mockResolvedValue(f.client);
+    policy.mockResolvedValue(
+      NextResponse.json({ code: 'WORKSPACE_AI_DISABLED' }, { status: 403 })
+    );
+    const response = await call();
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({
+      code: 'WORKSPACE_AI_DISABLED',
+    });
+    expect(admin).not.toHaveBeenCalled();
+    expect(model).not.toHaveBeenCalled();
+    expect(f.writes).toHaveLength(0);
+  });
+
   it.each(['valid', 'default'] as const)(
     'verifies exact %s automation origin and persists same full evidence',
     async (origin) => {

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  workspaceAiPolicyResponse: vi.fn(),
   generateObject: vi.fn(),
   getSatelliteAppSessionUser: vi.fn(),
   getVerifiedAuthUser: vi.fn(),
@@ -9,6 +10,10 @@ const mocks = vi.hoisted(() => ({
   verifyWorkspaceMembershipType: vi.fn(),
 }));
 
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiPolicyResponse: (...args: unknown[]) =>
+    mocks.workspaceAiPolicyResponse(...args),
+}));
 vi.mock('@ai-sdk/google', () => ({
   google: (...args: unknown[]) => mocks.google(...args),
 }));
@@ -48,6 +53,7 @@ describe('playground API route contracts', () => {
   beforeEach(() => {
     for (const mock of Object.values(mocks)) mock.mockReset();
     mocks.createAdminClient.mockResolvedValue(admin);
+    mocks.workspaceAiPolicyResponse.mockResolvedValue(null);
     mocks.google.mockReturnValue({ id: 'fake-model' });
     mocks.getSatelliteAppSessionUser.mockResolvedValue({ id: 'user-1' });
     mocks.getVerifiedAuthUser.mockResolvedValue(staffAuthUser);

@@ -38,7 +38,10 @@ import { type LiveEnvironment, LiveTurnArchive } from './storage';
 import { settleTickBilling } from './tick-billing';
 import { replayLiveToolResponses } from './tool-responses';
 import { reportLiveUsage } from './usage-report';
-import { liveWorkspaceAllowed } from './workspace-gate';
+import {
+  liveWorkspaceAllowed,
+  liveWorkspacePolicyAllowed,
+} from './workspace-gate';
 import {
   controlWorkspaceReview,
   expireWorkspaceReviews,
@@ -95,10 +98,13 @@ export class MeetLiveDurableObject {
       }
     });
   }
-  private allowed(
+  private async allowed(
     session: Parameters<typeof liveWorkspaceAllowed>[1] = this.saved
   ) {
-    return liveWorkspaceAllowed(this.env, session);
+    return (
+      liveWorkspaceAllowed(this.env, session) &&
+      (await liveWorkspacePolicyAllowed(this.env, session))
+    );
   }
   private emit(event: LiveAssistantEvent) {
     if (this.socket?.readyState === WebSocket.OPEN)
@@ -115,7 +121,7 @@ export class MeetLiveDurableObject {
       const input = (await request.json()) as Parameters<
         typeof controlWorkspaceReview
       >[0];
-      if (this.saved && !this.allowed())
+      if (this.saved && !(await this.allowed()))
         return new Response('Meet AI is temporarily unavailable', {
           status: 403,
         });
@@ -147,7 +153,7 @@ export class MeetLiveDurableObject {
         | 'workspace'
         | 'voice'
       >;
-      if (!this.allowed(input))
+      if (!(await this.allowed(input)))
         return new Response('Meet AI is temporarily unavailable', {
           status: 403,
         });
@@ -179,7 +185,7 @@ export class MeetLiveDurableObject {
       }
       if (this.saved.ended)
         return new Response('Session ended', { status: 410 });
-      if (!this.allowed())
+      if (!(await this.allowed()))
         return new Response('Meet AI is temporarily unavailable', {
           status: 403,
         });
@@ -212,7 +218,7 @@ export class MeetLiveDurableObject {
       request.headers.get('Upgrade') !== 'websocket'
     )
       return new Response('Forbidden', { status: 403 });
-    if (!this.allowed(saved))
+    if (!(await this.allowed(saved)))
       return new Response('Meet AI is temporarily unavailable', {
         status: 403,
       });
@@ -274,7 +280,7 @@ export class MeetLiveDurableObject {
       !this.socket
     )
       return;
-    if (!this.allowed(saved)) {
+    if (!(await this.allowed(saved))) {
       await this.stop('workspace_not_enabled');
       return;
     }
@@ -382,7 +388,7 @@ export class MeetLiveDurableObject {
       return;
     }
     if (!this.provider) return;
-    if (!this.allowed()) {
+    if (!(await this.allowed())) {
       await this.stop('workspace_not_enabled');
       return;
     }
@@ -583,7 +589,7 @@ export class MeetLiveDurableObject {
     }
     // Revoked or never eligible: end the session instead of reconnecting the
     // provider. Stopping stays ungated so billing settles and cleanup runs.
-    if (!this.allowed()) {
+    if (!(await this.allowed())) {
       await this.stop('workspace_not_enabled');
       return;
     }

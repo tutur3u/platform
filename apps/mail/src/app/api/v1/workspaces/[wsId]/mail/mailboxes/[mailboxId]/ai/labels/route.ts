@@ -1,5 +1,6 @@
 import { google } from '@ai-sdk/google';
 import { withAiMemory } from '@tuturuuu/ai/memory';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { generateObject } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -17,7 +18,7 @@ import {
 } from '@/lib/mail/repository/shared';
 import { parseJsonBody, withMailContext } from '@/lib/mail/route-utils';
 import { suggestMailLabelsSchema } from '@/lib/mail/schemas';
-import type { MailLabel } from '@/lib/mail/types';
+import type { MailLabel, MailThreadSummary } from '@/lib/mail/types';
 
 type RouteParams = { mailboxId: string; wsId: string };
 
@@ -53,6 +54,13 @@ export async function POST(
   if (!body.ok) return body.response;
 
   return withMailContext(request, wsId, async (ctx) => {
+    const aiPolicyRefusal = await workspaceAiPolicyResponse(
+      ctx.normalizedWsId,
+      ctx.user.id,
+      request.headers.get('accept-language') ?? 'en'
+    );
+    if (aiPolicyRefusal) return aiPolicyRefusal;
+
     const access = await requireMailboxAccess(
       ctx,
       mailboxId,
@@ -83,7 +91,7 @@ export async function POST(
       const corpus = (recent?.threads ?? [])
         .map(
           (thread) =>
-            `Subject: ${thread.subject}\nParticipants: ${thread.participants.map((participant) => participant.address).join(', ')}\nSnippet: ${thread.latestSnippet ?? ''}`
+            `Subject: ${thread.subject}\nParticipants: ${thread.participants.map((participant: MailThreadSummary['participants'][number]) => participant.address).join(', ')}\nSnippet: ${thread.latestSnippet ?? ''}`
         )
         .join('\n\n--- thread boundary ---\n\n');
       const result = await generateObject({

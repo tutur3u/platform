@@ -4,6 +4,7 @@ import {
   isMeetAiEnabledForWorkspace,
   type MeetAiGateEnv,
 } from '@tuturuuu/realtime/meet';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 
 export {
   isMeetAiEnabledForWorkspace,
@@ -34,5 +35,8 @@ export function isMeetAiAvailableForWorkspace(
 }
 
 export async function meetAiAvailable(wsId: string | null | undefined) {
-  return isMeetAiAvailableForWorkspace(wsId, await meetAiGateEnv());
+  return (
+    (await workspaceAiAllowed(wsId, 'learner-data')) &&
+    isMeetAiAvailableForWorkspace(wsId, await meetAiGateEnv())
+  );
 }

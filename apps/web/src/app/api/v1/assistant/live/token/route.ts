@@ -7,6 +7,7 @@ import {
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import {
   getWorkspaceTier,
   normalizeWorkspaceId,
@@ -211,6 +212,12 @@ export async function POST(request: Request) {
           })
         : normalizeWorkspaceId(wsId, supabase)
     );
+    const aiPolicyRefusal = await workspaceAiPolicyResponse(
+      normalizedWsId,
+      user.id,
+      request.headers.get('accept-language') ?? 'en'
+    );
+    if (aiPolicyRefusal) return aiPolicyRefusal;
     if (
       tempAuth.status === 'valid' &&
       tempAuth.context.wsId &&

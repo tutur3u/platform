@@ -1,3 +1,4 @@
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import 'server-only';
 
 import { google } from '@ai-sdk/google';
@@ -125,6 +126,8 @@ export async function draftAiAgentExternalResponse({
       threadId,
     }
   );
+  if (!(await workspaceAiAllowed(externalThread.wsId, 'unknown', actorUserId)))
+    throw new Error('WORKSPACE_AI_DISABLED');
   const messages = await listAiAgentExternalThreadMessages({
     limit: 40,
     threadId,

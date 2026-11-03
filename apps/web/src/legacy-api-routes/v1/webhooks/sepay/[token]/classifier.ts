@@ -1,6 +1,7 @@
 import { google } from '@ai-sdk/google';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import { runSepayAiEnrichment } from './ai-billing';
@@ -138,6 +139,12 @@ export async function classifyCategoryId(input: {
     };
   }
 
+  if (!(await workspaceAiAllowed(input.wsId)))
+    return {
+      categoryId: fallbackCategoryId,
+      confidence: 0,
+      reason: 'WORKSPACE_AI_DISABLED',
+    };
   const memoryUserId = await resolveWorkspaceMemoryUserId({
     sbAdmin: input.sbAdmin,
     wsId: input.wsId,

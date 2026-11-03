@@ -1,0 +1,1696 @@
+[
+  {
+    "path": "apps/ai/cloudflare/runtime-fixture.mjs",
+    "sha256": "d5ff7093e266be35545ecd14b052b5e2d96829ef068648bfe5c5158a4dde16b0",
+    "workspace": "Bearer-key credential workspace in prepareMeteredExecution; image generation follows successful metered admission.",
+    "boundaries": [
+      {
+        "path": "apps/ai/src/lib/public-api.ts",
+        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/ai/cloudflare/worker.ts",
+    "sha256": "402a1c409e3b9d6e8e889773edc767107ec17ae7c71e4f4f3df096e2be797d17",
+    "workspace": "Bearer-key credential workspace in prepareMeteredExecution; image generation follows successful metered admission.",
+    "boundaries": [
+      {
+        "path": "apps/ai/src/lib/public-api.ts",
+        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/ai/src/components/developer-docs/snippets.ts",
+    "sha256": "aae593e127d67331d3eae1eacaca64884f88477f46978f8b04f5208431cd1e59",
+    "workspace": "Bearer-key credential workspace in prepareMeteredExecution; image generation follows successful metered admission.",
+    "boundaries": [
+      {
+        "path": "apps/ai/src/lib/public-api.ts",
+        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/ai/src/constants/common.ts",
+    "sha256": "5a27226ebd3e4fa59441755485fd95f7689beabb186ee814ce62b662439d04c6",
+    "workspace": "Bearer-key credential workspace in prepareMeteredExecution; image generation follows successful metered admission.",
+    "boundaries": [
+      {
+        "path": "apps/ai/src/lib/public-api.ts",
+        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/ai/src/lib/embedding-execution.ts",
+    "sha256": "3456c59aaee6c626f7657a19d3586ecdd017afae15618fb95f520518db29649a",
+    "workspace": "Bearer-key credential workspace in prepareMeteredExecution; image generation follows successful metered admission.",
+    "boundaries": [
+      {
+        "path": "apps/ai/src/lib/public-api.ts",
+        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/ai/src/lib/gemini-image.ts",
+    "sha256": "6e41fcfbdbaffbb27c5e18aff30a229e23d8ec25380871ae8f7ba306f9d25175",
+    "workspace": "Bearer-key credential workspace in prepareMeteredExecution; image generation follows successful metered admission.",
+    "boundaries": [
+      {
+        "path": "apps/ai/src/lib/public-api.ts",
+        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/ai/src/lib/image-execution.ts",
+    "sha256": "a72e982f42af7432a4b3c26d4d8e52b0c7037fee68d490d11b13b0a07071a319",
+    "workspace": "Bearer-key credential workspace in prepareMeteredExecution; image generation follows successful metered admission.",
+    "boundaries": [
+      {
+        "path": "apps/ai/src/lib/public-api.ts",
+        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/ai/src/lib/observed-text-agent.ts",
+    "sha256": "2a01edd0feca4c5f234ed71b09d68df930b68966335487472554abac625c48cc",
+    "workspace": "Bearer-key credential workspace in prepareMeteredExecution; image generation follows successful metered admission.",
+    "boundaries": [
+      {
+        "path": "apps/ai/src/lib/public-api.ts",
+        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/ai/src/lib/speech-execution.ts",
+    "sha256": "c8d321144f57c624514d125185542504af998016e59906f3a6ce6800b0db94f6",
+    "workspace": "Bearer-key credential workspace in prepareMeteredExecution; image generation follows successful metered admission.",
+    "boundaries": [
+      {
+        "path": "apps/ai/src/lib/public-api.ts",
+        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/ai/start-bridge.config.ts",
+    "sha256": "25e269871b5bfc33446b0986ffe3a8ba4d06f05c8b9564de9be9a47d339a23ed",
+    "workspace": "Bearer-key credential workspace in prepareMeteredExecution; image generation follows successful metered admission.",
+    "boundaries": [
+      {
+        "path": "apps/ai/src/lib/public-api.ts",
+        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/calendar/src/app/api/v1/calendar/audio/route.ts",
+    "sha256": "e0ebb506155eec25b2d5eec596ed90a46555d51b5467cf5a4f3c57536491a23f",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/calendar/src/app/api/v1/calendar/audio/route.ts",
+        "sha256": "e0ebb506155eec25b2d5eec596ed90a46555d51b5467cf5a4f3c57536491a23f"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/calendar/src/app/api/v1/calendar/image/route.ts",
+    "sha256": "f8b481ab686ee77e03ef9eb949d66355a0c329d50f5ef8b25a9dc73565540716",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/calendar/src/app/api/v1/calendar/image/route.ts",
+        "sha256": "f8b481ab686ee77e03ef9eb949d66355a0c329d50f5ef8b25a9dc73565540716"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/colab/scripts/verify-sponsorship.mjs",
+    "sha256": "2b4206c4f6a036bd543f3d99601a742d5ad95c59d25be9a82c3ed92f3285cfd3",
+    "workspace": "Sponsored AI transport only; credentials bind the sponsor workspace at AI Studio metered admission. The unscoped Workers AI fallback was removed.",
+    "boundaries": [
+      {
+        "path": "apps/ai/src/lib/public-api.ts",
+        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/colab/src/client/sponsorship.tsx",
+    "sha256": "aa2b9c8528a5067c38a5be6fa116ba74a4bcf985cfb98c9514ae12b62f49dfc4",
+    "workspace": "Sponsored AI transport only; credentials bind the sponsor workspace at AI Studio metered admission. The unscoped Workers AI fallback was removed.",
+    "boundaries": [
+      {
+        "path": "apps/ai/src/lib/public-api.ts",
+        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/colab/src/server/sponsored-ai.ts",
+    "sha256": "2a72746f76967ab3bf38390a26335ad653ff935080881d577f285bfca391cabe",
+    "workspace": "Sponsored AI transport only; credentials bind the sponsor workspace at AI Studio metered admission. The unscoped Workers AI fallback was removed.",
+    "boundaries": [
+      {
+        "path": "apps/ai/src/lib/public-api.ts",
+        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/hive/src/lib/hive/npc-interactions.ts",
+    "sha256": "d3a54de3968af080d6028b5329ba251dee3bbff2d382f2c5471ee54f1828ccca",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/hive/src/lib/hive/npc-interactions.ts",
+        "sha256": "d3a54de3968af080d6028b5329ba251dee3bbff2d382f2c5471ee54f1828ccca"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/infrastructure/src/app/api/ai/translate/route.ts",
+    "sha256": "581fd8cb661a675f1a96be8a5a00df5fa8559ae6e654777bb74da42e0ed91e4f",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/infrastructure/src/app/api/ai/translate/route.ts",
+        "sha256": "581fd8cb661a675f1a96be8a5a00df5fa8559ae6e654777bb74da42e0ed91e4f"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/infrastructure/src/lib/ai-agents/external-chat-actions.ts",
+    "sha256": "862eaf82ad83d7c8d6c2508412cad1f24daa70695d2c4ac62cb87bc1a3fc3f5a",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/infrastructure/src/lib/ai-agents/external-chat-actions.ts",
+        "sha256": "862eaf82ad83d7c8d6c2508412cad1f24daa70695d2c4ac62cb87bc1a3fc3f5a"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/infrastructure/src/lib/ai-agents/runtime.ts",
+    "sha256": "1edab16c7554f4dad4bdee9dfe48360eb53f104b66dbd34539a5d359828e52bc",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/infrastructure/src/lib/ai-agents/runtime.ts",
+        "sha256": "1edab16c7554f4dad4bdee9dfe48360eb53f104b66dbd34539a5d359828e52bc"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/inventory/src/app/api/v1/webhooks/sepay/[token]/classifier.ts",
+    "sha256": "4bc5fe4fcad4cf9e7d95ea9f898a3a94d110a808c7ecf69a9dba43eab6f1ed8f",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/inventory/src/app/api/v1/webhooks/sepay/[token]/classifier.ts",
+        "sha256": "4bc5fe4fcad4cf9e7d95ea9f898a3a94d110a808c7ecf69a9dba43eab6f1ed8f"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/inventory/src/app/api/v1/webhooks/sepay/[token]/tagger.ts",
+    "sha256": "9118a6a473eaa52b78b42c052b633778380e7fa85698fdf79a3738bf764906e3",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/inventory/src/app/api/v1/webhooks/sepay/[token]/tagger.ts",
+        "sha256": "9118a6a473eaa52b78b42c052b633778380e7fa85698fdf79a3738bf764906e3"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/learn/src/app/api/v1/vocabulary/pronunciation/route.ts",
+    "sha256": "4ab2894fe9b0967159f23d2132bf54319a9eddd600c75e8e4e9bc5e640b65155",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/learn/src/app/api/v1/vocabulary/pronunciation/route.ts",
+        "sha256": "4ab2894fe9b0967159f23d2132bf54319a9eddd600c75e8e4e9bc5e640b65155"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/learn/src/app/api/v1/vocabulary/speech/route.ts",
+    "sha256": "dc087b3f5e31c79faac4b6d9690ae1806e43b48514bec812df1a765dd63c577c",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/learn/src/app/api/v1/vocabulary/speech/route.ts",
+        "sha256": "dc087b3f5e31c79faac4b6d9690ae1806e43b48514bec812df1a765dd63c577c"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/mail/src/app/api/ai/email-draft/route.ts",
+    "sha256": "ec2aa036f07c970dfd718609d31ccc4b51e7f1a90ea39b6857348b64fa0d061d",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/mail/src/app/api/ai/email-draft/route.ts",
+        "sha256": "ec2aa036f07c970dfd718609d31ccc4b51e7f1a90ea39b6857348b64fa0d061d"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/mail/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/ai/draft/route.ts",
+    "sha256": "c564afd8121be34647cfdcc5f5bb7dce42ad6e0aad2b43ed9d9e97115467f786",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/mail/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/ai/draft/route.ts",
+        "sha256": "c564afd8121be34647cfdcc5f5bb7dce42ad6e0aad2b43ed9d9e97115467f786"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/mail/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/ai/labels/route.ts",
+    "sha256": "9b1bcf1f5b041264fb624574f8b7e7794b9f66c598edcc714f1236e85d3b82a6",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/mail/src/app/api/v1/workspaces/[wsId]/mail/mailboxes/[mailboxId]/ai/labels/route.ts",
+        "sha256": "9b1bcf1f5b041264fb624574f8b7e7794b9f66c598edcc714f1236e85d3b82a6"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/mail/src/lib/mail/automation/labels.ts",
+    "sha256": "dc7abd24ac4cfd2c08a0a43c76ced6b63ad16993cee109673997c09efcf9f73f",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/mail/src/lib/mail/automation/labels.ts",
+        "sha256": "dc7abd24ac4cfd2c08a0a43c76ced6b63ad16993cee109673997c09efcf9f73f"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/parley/src/app/[locale]/(studio)/navigation.tsx",
+    "sha256": "ca8b597f673250d6a166be2220a98f9c0b3b3cc494e08e9b3636ec37af97043a",
+    "workspace": "Static navigation URL or product metadata, no provider invocation or credentials.",
+    "boundaries": [
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/playground/src/app/api/ai/object-generation/route.ts",
+    "sha256": "a9ceff0771ca139c9c5962269f339c8107a6247d4336be1894097e04e98c9fcd",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/playground/src/app/api/ai/object-generation/route.ts",
+        "sha256": "a9ceff0771ca139c9c5962269f339c8107a6247d4336be1894097e04e98c9fcd"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-progress/catchup/route.ts",
+    "sha256": "b8a2ee0fcde1d10afa3ff5f8021b1ec0c850ff7f1305549f2908a40908721339",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/tasks/src/app/api/v1/workspaces/[wsId]/task-progress/catchup/route.ts",
+        "sha256": "b8a2ee0fcde1d10afa3ff5f8021b1ec0c850ff7f1305549f2908a40908721339"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/journal/route.ts",
+    "sha256": "39413df0ba76896b7d59c3f995e27251462f357808eb397b90079610f49aad95",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/journal/route.ts",
+        "sha256": "39413df0ba76896b7d59c3f995e27251462f357808eb397b90079610f49aad95"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/suggestions/route.ts",
+    "sha256": "2be9f73b5d3dd3512cf23f573ec44f5ee7c1ff111c9188f75844db64d14544a3",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/tasks/src/app/api/v1/workspaces/[wsId]/tasks/suggestions/route.ts",
+        "sha256": "2be9f73b5d3dd3512cf23f573ec44f5ee7c1ff111c9188f75844db64d14544a3"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/teach/src/app/api/ai/course/route.ts",
+    "sha256": "a17655c0302a720956501c80fb4ef8ffe7c736c74fda3668ff21b17302a1bfcb",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/teach/src/app/api/ai/course/route.ts",
+        "sha256": "a17655c0302a720956501c80fb4ef8ffe7c736c74fda3668ff21b17302a1bfcb"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/teach/src/app/api/ai/objects/shared.ts",
+    "sha256": "d8644cb309e8b7447f2df3064225bbed659965747715551c36ff07121054c2f1",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/teach/src/app/api/ai/objects/shared.ts",
+        "sha256": "d8644cb309e8b7447f2df3064225bbed659965747715551c36ff07121054c2f1"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/teach/src/app/api/ai/quiz/route.ts",
+    "sha256": "f464ffb6d3e27c3b6a927231e636dda8df35294b10be5e8ef27178d113d51694",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/teach/src/app/api/ai/quiz/route.ts",
+        "sha256": "f464ffb6d3e27c3b6a927231e636dda8df35294b10be5e8ef27178d113d51694"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/teach/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/ai-review/route.ts",
+    "sha256": "05ca866fc981474a7f5685725dd3eb0f2c1829d14658ef799122799272729a5e",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/teach/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/modules/[moduleId]/quizzes/submissions/[userId]/ai-review/route.ts",
+        "sha256": "05ca866fc981474a7f5685725dd3eb0f2c1829d14658ef799122799272729a5e"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/teach/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/[attemptId]/ai-feedback/route.ts",
+    "sha256": "50870ced27d1e2ae501503ce2d80a05ab6027728f4b49f37ebd008171f296254",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/teach/src/app/api/v1/workspaces/[wsId]/teach/courses/[courseId]/tests/[testId]/submissions/[attemptId]/ai-feedback/route.ts",
+        "sha256": "50870ced27d1e2ae501503ce2d80a05ab6027728f4b49f37ebd008171f296254"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/audio/multimodal-live-client.ts",
+    "sha256": "d54e55b9aab3ffa6e74eae5f2608cb761c709092bbc1699406fba90e2e355af3",
+    "workspace": "Authenticated token route workspace; browser Live SDK receives only the gated short-lived token. Declaration and usage modules do not mint credentials.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/app/api/v1/live/token/route.ts",
+        "sha256": "6e5a5071343a5f6e7689d0c557f0fc22ea8cf4ecc8c2c4f01fcaa6ff5f00bb48"
+      },
+      {
+        "path": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
+        "sha256": "34f65cb003e4ab62a056c983b486b94d7e65cbd2dc573f006674424450c8d993"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/components/altair/component.tsx",
+    "sha256": "bc76fed69b260cebf212e5cba7842461c76091c04210586e77b322ffa014f245",
+    "workspace": "Authenticated token route workspace; browser Live SDK receives only the gated short-lived token. Declaration and usage modules do not mint credentials.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/app/api/v1/live/token/route.ts",
+        "sha256": "6e5a5071343a5f6e7689d0c557f0fc22ea8cf4ecc8c2c4f01fcaa6ff5f00bb48"
+      },
+      {
+        "path": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
+        "sha256": "34f65cb003e4ab62a056c983b486b94d7e65cbd2dc573f006674424450c8d993"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/components/logger/logger.tsx",
+    "sha256": "1c48517016e60f6d680fe5208567cad7659ef2a06f59e7908f49d56d43d5f33f",
+    "workspace": "Authenticated token route workspace; browser Live SDK receives only the gated short-lived token. Declaration and usage modules do not mint credentials.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/app/api/v1/live/token/route.ts",
+        "sha256": "6e5a5071343a5f6e7689d0c557f0fc22ea8cf4ecc8c2c4f01fcaa6ff5f00bb48"
+      },
+      {
+        "path": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
+        "sha256": "34f65cb003e4ab62a056c983b486b94d7e65cbd2dc573f006674424450c8d993"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/legacy-providers.tsx",
+    "sha256": "7a20086e08e028736ca6792e59ed5bb9493f9290428162dc02ecba12329d180c",
+    "workspace": "Authenticated token route workspace; browser Live SDK receives only the gated short-lived token. Declaration and usage modules do not mint credentials.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/app/api/v1/live/token/route.ts",
+        "sha256": "6e5a5071343a5f6e7689d0c557f0fc22ea8cf4ecc8c2c4f01fcaa6ff5f00bb48"
+      },
+      {
+        "path": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
+        "sha256": "34f65cb003e4ab62a056c983b486b94d7e65cbd2dc573f006674424450c8d993"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/app/[locale]/(dashboard)/[wsId]/(dashboard)/assistant/multimodal-live.ts",
+    "sha256": "f9d1d971f597986db9ff865833b576b1592cc0c385e5c5a45e13ca24e4368aae",
+    "workspace": "Authenticated token route workspace; browser Live SDK receives only the gated short-lived token. Declaration and usage modules do not mint credentials.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/app/api/v1/live/token/route.ts",
+        "sha256": "6e5a5071343a5f6e7689d0c557f0fc22ea8cf4ecc8c2c4f01fcaa6ff5f00bb48"
+      },
+      {
+        "path": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
+        "sha256": "34f65cb003e4ab62a056c983b486b94d7e65cbd2dc573f006674424450c8d993"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
+    "sha256": "34f65cb003e4ab62a056c983b486b94d7e65cbd2dc573f006674424450c8d993",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
+        "sha256": "34f65cb003e4ab62a056c983b486b94d7e65cbd2dc573f006674424450c8d993"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/app/api/v1/live/token/route.ts",
+    "sha256": "6e5a5071343a5f6e7689d0c557f0fc22ea8cf4ecc8c2c4f01fcaa6ff5f00bb48",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/app/api/v1/live/token/route.ts",
+        "sha256": "6e5a5071343a5f6e7689d0c557f0fc22ea8cf4ecc8c2c4f01fcaa6ff5f00bb48"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/hooks/use-live-api.tsx",
+    "sha256": "746dcaf6b9995a843ac2586a5348ec1f6ad2c757b9f2234819d4ed6493ecac3e",
+    "workspace": "Authenticated token route workspace; browser Live SDK receives only the gated short-lived token. Declaration and usage modules do not mint credentials.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/app/api/v1/live/token/route.ts",
+        "sha256": "6e5a5071343a5f6e7689d0c557f0fc22ea8cf4ecc8c2c4f01fcaa6ff5f00bb48"
+      },
+      {
+        "path": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
+        "sha256": "34f65cb003e4ab62a056c983b486b94d7e65cbd2dc573f006674424450c8d993"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/legacy-api-routes/v1/mira/token/route.ts",
+    "sha256": "d147781ddff2cc1b62019612d6b784032ffe60704c19df73c447b33d0a184252",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/legacy-api-routes/v1/mira/token/route.ts",
+        "sha256": "d147781ddff2cc1b62019612d6b784032ffe60704c19df73c447b33d0a184252"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/legacy-api-routes/v1/webhooks/sepay/[token]/classifier.ts",
+    "sha256": "4bc5fe4fcad4cf9e7d95ea9f898a3a94d110a808c7ecf69a9dba43eab6f1ed8f",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/legacy-api-routes/v1/webhooks/sepay/[token]/classifier.ts",
+        "sha256": "4bc5fe4fcad4cf9e7d95ea9f898a3a94d110a808c7ecf69a9dba43eab6f1ed8f"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/legacy-api-routes/v1/webhooks/sepay/[token]/tagger.ts",
+    "sha256": "9118a6a473eaa52b78b42c052b633778380e7fa85698fdf79a3738bf764906e3",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/legacy-api-routes/v1/webhooks/sepay/[token]/tagger.ts",
+        "sha256": "9118a6a473eaa52b78b42c052b633778380e7fa85698fdf79a3738bf764906e3"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/title/route.ts",
+    "sha256": "79898830c78ccad663ff7a061a37231723f99d5fee45eb4e515cd23a6ef1b4c6",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/legacy-api-routes/v1/workspaces/[wsId]/chat/conversations/[conversationId]/title/route.ts",
+        "sha256": "79898830c78ccad663ff7a061a37231723f99d5fee45eb4e515cd23a6ef1b4c6"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/lib/ai-agents/external-chat-actions.ts",
+    "sha256": "862eaf82ad83d7c8d6c2508412cad1f24daa70695d2c4ac62cb87bc1a3fc3f5a",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/lib/ai-agents/external-chat-actions.ts",
+        "sha256": "862eaf82ad83d7c8d6c2508412cad1f24daa70695d2c4ac62cb87bc1a3fc3f5a"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/lib/ai-agents/runtime.ts",
+    "sha256": "825eddc9d8724124c77497d84fab689714e1655679da00f13279770eede6d762",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/lib/ai-agents/runtime.ts",
+        "sha256": "825eddc9d8724124c77497d84fab689714e1655679da00f13279770eede6d762"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/lib/chatgpt/oauth.ts",
+    "sha256": "b62442eb04512f179f9d354746f643f8c2938fb0ea677680fbde1c7f0a105f20",
+    "workspace": "Chat workspace admitted before selecting ChatGPT transport; OAuth file manages credentials, not inference.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/chat/google/new/route.ts",
+        "sha256": "c4e0289cc425fe1a888da3eaa7feac0de408fe8e203af728d77ae3e447decf7e"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/lib/chatgpt/provider.ts",
+    "sha256": "3c0e831014378ee9d359f71c8a69e13ca1e997b0047862425b14b9afdb4ede0d",
+    "workspace": "Chat workspace admitted before selecting ChatGPT transport; OAuth file manages credentials, not inference.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/chat/google/new/route.ts",
+        "sha256": "c4e0289cc425fe1a888da3eaa7feac0de408fe8e203af728d77ae3e447decf7e"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/lib/external-ai/chat-completions.ts",
+    "sha256": "2ae955752a0a75cfdab34d322277764afd3785fc8d290d30ad1ef869f7133e0d",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/lib/external-ai/chat-completions.ts",
+        "sha256": "2ae955752a0a75cfdab34d322277764afd3785fc8d290d30ad1ef869f7133e0d"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/lib/external-ai/speech.ts",
+    "sha256": "c262c1a45afb17e0136cbf4d4c44c3ffb52839ad5b7b447b2f824e7866c70980",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/lib/external-ai/speech.ts",
+        "sha256": "c262c1a45afb17e0136cbf4d4c44c3ffb52839ad5b7b447b2f824e7866c70980"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/lib/live/assistant-tools.ts",
+    "sha256": "f821f0dec26fcd490b46b90d1bb8fcb46efeb7ebaa6d3834e1fc56ee8be16ae7",
+    "workspace": "Authenticated token route workspace; browser Live SDK receives only the gated short-lived token. Declaration and usage modules do not mint credentials.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/app/api/v1/live/token/route.ts",
+        "sha256": "6e5a5071343a5f6e7689d0c557f0fc22ea8cf4ecc8c2c4f01fcaa6ff5f00bb48"
+      },
+      {
+        "path": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
+        "sha256": "34f65cb003e4ab62a056c983b486b94d7e65cbd2dc573f006674424450c8d993"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/lib/live/canonical-tool-bridge.ts",
+    "sha256": "7f23deaae173785561af495b25528927c27606bd2e7c4ce4beb5245735df38d3",
+    "workspace": "Authenticated token route workspace; browser Live SDK receives only the gated short-lived token. Declaration and usage modules do not mint credentials.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/app/api/v1/live/token/route.ts",
+        "sha256": "6e5a5071343a5f6e7689d0c557f0fc22ea8cf4ecc8c2c4f01fcaa6ff5f00bb48"
+      },
+      {
+        "path": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
+        "sha256": "34f65cb003e4ab62a056c983b486b94d7e65cbd2dc573f006674424450c8d993"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/lib/live/models.ts",
+    "sha256": "b72339415a7f0b3c2fc2ae5503a23d6eda000f7afeb59fa57eb3088801c54e69",
+    "workspace": "Authenticated token route workspace; browser Live SDK receives only the gated short-lived token. Declaration and usage modules do not mint credentials.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/app/api/v1/live/token/route.ts",
+        "sha256": "6e5a5071343a5f6e7689d0c557f0fc22ea8cf4ecc8c2c4f01fcaa6ff5f00bb48"
+      },
+      {
+        "path": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
+        "sha256": "34f65cb003e4ab62a056c983b486b94d7e65cbd2dc573f006674424450c8d993"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/lib/live/token-builder.ts",
+    "sha256": "d272034061ad79cfdfe52d0970db3f9fc9b02c08ba354c023d76800b05bb36cb",
+    "workspace": "Authenticated token route workspace; browser Live SDK receives only the gated short-lived token. Declaration and usage modules do not mint credentials.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/app/api/v1/live/token/route.ts",
+        "sha256": "6e5a5071343a5f6e7689d0c557f0fc22ea8cf4ecc8c2c4f01fcaa6ff5f00bb48"
+      },
+      {
+        "path": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
+        "sha256": "34f65cb003e4ab62a056c983b486b94d7e65cbd2dc573f006674424450c8d993"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/lib/live/usage.ts",
+    "sha256": "2f2a77b78a54dfce4768ef0b09495dbebe43dd931ea1af2ab20ef376aa58fbdb",
+    "workspace": "Authenticated token route workspace; browser Live SDK receives only the gated short-lived token. Declaration and usage modules do not mint credentials.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/app/api/v1/live/token/route.ts",
+        "sha256": "6e5a5071343a5f6e7689d0c557f0fc22ea8cf4ecc8c2c4f01fcaa6ff5f00bb48"
+      },
+      {
+        "path": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
+        "sha256": "34f65cb003e4ab62a056c983b486b94d7e65cbd2dc573f006674424450c8d993"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/lib/live/workspace-tool-declarations.ts",
+    "sha256": "c20d60cb5b042e2034a5610431a27d7cf34162832162ff304512e129276de436",
+    "workspace": "Authenticated token route workspace; browser Live SDK receives only the gated short-lived token. Declaration and usage modules do not mint credentials.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/app/api/v1/live/token/route.ts",
+        "sha256": "6e5a5071343a5f6e7689d0c557f0fc22ea8cf4ecc8c2c4f01fcaa6ff5f00bb48"
+      },
+      {
+        "path": "apps/web/src/app/api/v1/assistant/live/token/route.ts",
+        "sha256": "34f65cb003e4ab62a056c983b486b94d7e65cbd2dc573f006674424450c8d993"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/lib/notes-voice/provider.ts",
+    "sha256": "d1463c32aac90b16917b4942684f0ee0163954a03d843a736e31ba295e20f6a9",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/lib/notes-voice/provider.ts",
+        "sha256": "d1463c32aac90b16917b4942684f0ee0163954a03d843a736e31ba295e20f6a9"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "apps/web/src/lib/user-report-automation/generation.ts",
+    "sha256": "e0fd06b379d7ade2ff7fd7b392dff09924ea210131ce718c08cdde30e68a7734",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "apps/web/src/lib/user-report-automation/generation.ts",
+        "sha256": "e0fd06b379d7ade2ff7fd7b392dff09924ea210131ce718c08cdde30e68a7734"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/calendar/route.ts",
+    "sha256": "b29ad6c62d01a161b57e3d78bfe7aa8cf9eb2c6661954c1a66eda4326330cff1",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/calendar/route.ts",
+        "sha256": "b29ad6c62d01a161b57e3d78bfe7aa8cf9eb2c6661954c1a66eda4326330cff1"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/chat/google/new/route.ts",
+    "sha256": "c4e0289cc425fe1a888da3eaa7feac0de408fe8e203af728d77ae3e447decf7e",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/chat/google/new/route.ts",
+        "sha256": "c4e0289cc425fe1a888da3eaa7feac0de408fe8e203af728d77ae3e447decf7e"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/chat/google/route-options.ts",
+    "sha256": "46f008d9269f69a610eb34e48b193ff324918849d72dc74c72be246d5c200ec0",
+    "workspace": "Shared provider declarations, SDK types or React exports; executions use authenticated gated route workspace. No workspace is inferred from profile metadata.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/generate/route.ts",
+        "sha256": "b82009b746fdb326fa70f3602fd6c76aede18bc544bcd411788ea044c97f9368"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/chat/google/route.ts",
+    "sha256": "2521c9ba3d3e64f6b26ccb0a2b9fc6bae5ede2059cdb8b0a386c63b15bd48d42",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/chat/google/route.ts",
+        "sha256": "2521c9ba3d3e64f6b26ccb0a2b9fc6bae5ede2059cdb8b0a386c63b15bd48d42"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/chat/google/summary/route.ts",
+    "sha256": "efe663b1ead00a3ad423fdbc562b629128d4e7fb4d5cf65cab2f0975b7db03e8",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/chat/google/summary/route.ts",
+        "sha256": "efe663b1ead00a3ad423fdbc562b629128d4e7fb4d5cf65cab2f0975b7db03e8"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/embeddings/metered.ts",
+    "sha256": "c5442f687ef9b6461d17397e9e13e106d4fd4176f602c576bde7b14e3327e663",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/embeddings/metered.ts",
+        "sha256": "c5442f687ef9b6461d17397e9e13e106d4fd4176f602c576bde7b14e3327e663"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/generate/route.ts",
+    "sha256": "b82009b746fdb326fa70f3602fd6c76aede18bc544bcd411788ea044c97f9368",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/generate/route.ts",
+        "sha256": "b82009b746fdb326fa70f3602fd6c76aede18bc544bcd411788ea044c97f9368"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/hooks.ts",
+    "sha256": "2c64ed6e05c60cc62d251f57e940fa048713ab51deb4dcc9f737d1de481d3e43",
+    "workspace": "Shared provider declarations, SDK types or React exports; executions use authenticated gated route workspace. No workspace is inferred from profile metadata.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/generate/route.ts",
+        "sha256": "b82009b746fdb326fa70f3602fd6c76aede18bc544bcd411788ea044c97f9368"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/meetings/chat.ts",
+    "sha256": "b0d3bdc15036fc2a59101d0397876217d1be511a2568f709b96c99e56da5da44",
+    "workspace": "Meeting record workspace, admitted by Meet workspace gate and artifact billing before provider execution. eval/providers is an offline evaluation adapter, not a server route.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/features/meeting-ai/server/workspace-gate.ts",
+        "sha256": "e76af9f9d1e6678b57c046c4dad12322c0e032bbc34bd86a7cff6cd8c893b836"
+      },
+      {
+        "path": "packages/meet-core/src/features/meeting-ai/server/artifact-billing.ts",
+        "sha256": "89e06ff2ebbebf3f3410e4a66ec53cb90301142a12ee60c734f3df65391134f6"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/meetings/eval/providers.ts",
+    "sha256": "fa9cf7b48bcd4968414f5da1645100f97137f0bbccba4510c8ba6e4d996e37bf",
+    "workspace": "Meeting record workspace, admitted by Meet workspace gate and artifact billing before provider execution. eval/providers is an offline evaluation adapter, not a server route.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/features/meeting-ai/server/workspace-gate.ts",
+        "sha256": "e76af9f9d1e6678b57c046c4dad12322c0e032bbc34bd86a7cff6cd8c893b836"
+      },
+      {
+        "path": "packages/meet-core/src/features/meeting-ai/server/artifact-billing.ts",
+        "sha256": "89e06ff2ebbebf3f3410e4a66ec53cb90301142a12ee60c734f3df65391134f6"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/meetings/gemini.ts",
+    "sha256": "89450714708328cd9265c06c8db0b0d6f462ebb5f98bddd5acd6dff7642c3f58",
+    "workspace": "Meeting record workspace, admitted by Meet workspace gate and artifact billing before provider execution. eval/providers is an offline evaluation adapter, not a server route.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/features/meeting-ai/server/workspace-gate.ts",
+        "sha256": "e76af9f9d1e6678b57c046c4dad12322c0e032bbc34bd86a7cff6cd8c893b836"
+      },
+      {
+        "path": "packages/meet-core/src/features/meeting-ai/server/artifact-billing.ts",
+        "sha256": "89e06ff2ebbebf3f3410e4a66ec53cb90301142a12ee60c734f3df65391134f6"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/meetings/public-chat-search.ts",
+    "sha256": "600d2f1a86108e1792cad664c67819d95652b8fa91eb23c0618413b9118e8ba8",
+    "workspace": "Meeting record workspace, admitted by Meet workspace gate and artifact billing before provider execution. eval/providers is an offline evaluation adapter, not a server route.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/features/meeting-ai/server/workspace-gate.ts",
+        "sha256": "e76af9f9d1e6678b57c046c4dad12322c0e032bbc34bd86a7cff6cd8c893b836"
+      },
+      {
+        "path": "packages/meet-core/src/features/meeting-ai/server/artifact-billing.ts",
+        "sha256": "89e06ff2ebbebf3f3410e4a66ec53cb90301142a12ee60c734f3df65391134f6"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/meetings/transcription/route.ts",
+    "sha256": "e4b6f8f9375774fa7bc870110075129ffdedac9eb1943a9b274afecb3008af28",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/meetings/transcription/route.ts",
+        "sha256": "e4b6f8f9375774fa7bc870110075129ffdedac9eb1943a9b274afecb3008af28"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/memory/client.ts",
+    "sha256": "dca6b2e258f42a12f13467502e67dfba07f545a22cdc043dd6de20d2e2a78270",
+    "workspace": "AiMemoryScope wsId and userId in operations; search and ingest policy checks precede Supermemory network calls and any cron-triggered consolidation.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/memory/operations.ts",
+        "sha256": "3bba08e04898a9b7700a24bb7b2862659b0fe3612232f99004b112914c567b64"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/mind/route.ts",
+    "sha256": "b6a9b48a85ac39cfe669f75338178a36448e499a2773d3eabbf5f7c96226d84c",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/mind/route.ts",
+        "sha256": "b6a9b48a85ac39cfe669f75338178a36448e499a2773d3eabbf5f7c96226d84c"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/object/core.ts",
+    "sha256": "d5d3db5fdabfb253391118b89839b6c24de62ff3c9befbecf80e6a5ec06a67c4",
+    "workspace": "Shared provider declarations, SDK types or React exports; executions use authenticated gated route workspace. No workspace is inferred from profile metadata.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/generate/route.ts",
+        "sha256": "b82009b746fdb326fa70f3602fd6c76aede18bc544bcd411788ea044c97f9368"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/object/year-plan/route.ts",
+    "sha256": "399c465b9e9b043ef4ec99ed0c0d033193bc027388d0fe08247bca5999e74441",
+    "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/object/year-plan/route.ts",
+        "sha256": "399c465b9e9b043ef4ec99ed0c0d033193bc027388d0fe08247bca5999e74441"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/openai.ts",
+    "sha256": "3c0187917a393989ddb734526edc27ad95b1ab138a9b1d0d1cc689645ff5306d",
+    "workspace": "Shared provider declarations, SDK types or React exports; executions use authenticated gated route workspace. No workspace is inferred from profile metadata.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/generate/route.ts",
+        "sha256": "b82009b746fdb326fa70f3602fd6c76aede18bc544bcd411788ea044c97f9368"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/react.ts",
+    "sha256": "ccfea40aa30219fc67425d15f784843645925a12a82bff9209f0c671271ac384",
+    "workspace": "Shared provider declarations, SDK types or React exports; executions use authenticated gated route workspace. No workspace is inferred from profile metadata.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/generate/route.ts",
+        "sha256": "b82009b746fdb326fa70f3602fd6c76aede18bc544bcd411788ea044c97f9368"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/supported-providers.ts",
+    "sha256": "7f38ec9cc0d57118fd763c06c760e73080287e2333c40c950358f4c245177bb5",
+    "workspace": "Shared provider declarations, SDK types or React exports; executions use authenticated gated route workspace. No workspace is inferred from profile metadata.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/generate/route.ts",
+        "sha256": "b82009b746fdb326fa70f3602fd6c76aede18bc544bcd411788ea044c97f9368"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/tools/executors/image.ts",
+    "sha256": "135cca5cfcdd3da564fa98a61ce54231cfd4e91105b71a4ec338c0f9901d55b9",
+    "workspace": "Authenticated chat/tool context workspace, checked at chat or Mira entry before tool dispatch; credit workspace does not replace policy workspace.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/chat/google/new/route.ts",
+        "sha256": "c4e0289cc425fe1a888da3eaa7feac0de408fe8e203af728d77ae3e447decf7e"
+      },
+      {
+        "path": "apps/web/src/legacy-api-routes/v1/mira/token/route.ts",
+        "sha256": "d147781ddff2cc1b62019612d6b784032ffe60704c19df73c447b33d0a184252"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/tools/executors/parallel-checks.ts",
+    "sha256": "d0ecfd9e3146c906673e85e8447950ef01e73af883845787e1286d63518685db",
+    "workspace": "Authenticated chat/tool context workspace, checked at chat or Mira entry before tool dispatch; credit workspace does not replace policy workspace.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/chat/google/new/route.ts",
+        "sha256": "c4e0289cc425fe1a888da3eaa7feac0de408fe8e203af728d77ae3e447decf7e"
+      },
+      {
+        "path": "apps/web/src/legacy-api-routes/v1/mira/token/route.ts",
+        "sha256": "d147781ddff2cc1b62019612d6b784032ffe60704c19df73c447b33d0a184252"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/tools/executors/search.ts",
+    "sha256": "c71a1c27334cb2f315f9e7925e4e8e1c36be0e612ef733c81e46d1f7f026d161",
+    "workspace": "Authenticated chat/tool context workspace, checked at chat or Mira entry before tool dispatch; credit workspace does not replace policy workspace.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/chat/google/new/route.ts",
+        "sha256": "c4e0289cc425fe1a888da3eaa7feac0de408fe8e203af728d77ae3e447decf7e"
+      },
+      {
+        "path": "apps/web/src/legacy-api-routes/v1/mira/token/route.ts",
+        "sha256": "d147781ddff2cc1b62019612d6b784032ffe60704c19df73c447b33d0a184252"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/tools/google-search-tool.ts",
+    "sha256": "8d128868f0cdff45f48fa1c7fa2ac5e83f9544106ca746fd62e487a147ce41b6",
+    "workspace": "Authenticated chat/tool context workspace, checked at chat or Mira entry before tool dispatch; credit workspace does not replace policy workspace.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/chat/google/new/route.ts",
+        "sha256": "c4e0289cc425fe1a888da3eaa7feac0de408fe8e203af728d77ae3e447decf7e"
+      },
+      {
+        "path": "apps/web/src/legacy-api-routes/v1/mira/token/route.ts",
+        "sha256": "d147781ddff2cc1b62019612d6b784032ffe60704c19df73c447b33d0a184252"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/ai/src/types.ts",
+    "sha256": "1bb583768dd15f27b082815a778d48fca67b19933639a6e38e36034cc8a6bc81",
+    "workspace": "Shared provider declarations, SDK types or React exports; executions use authenticated gated route workspace. No workspace is inferred from profile metadata.",
+    "boundaries": [
+      {
+        "path": "packages/ai/src/generate/route.ts",
+        "sha256": "b82009b746fdb326fa70f3602fd6c76aede18bc544bcd411788ea044c97f9368"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/internal-api/src/ai-studio-playground.ts",
+    "sha256": "491739c186f5bff36e6827f38ccc5a4ff506a1ecf3c3c787e9a5d8362e005d8a",
+    "workspace": "Client request transport to authenticated AI Studio endpoints; workspace bound by metered admission.",
+    "boundaries": [
+      {
+        "path": "apps/ai/src/lib/public-api.ts",
+        "sha256": "ec03660c08346d065d4433d9cdf0d33d807a53dc26e26f9d41c6915c9bf7f522"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/meet-core/src/cloudflare/live/audio-input.ts",
+    "sha256": "a44bd340a8af9e6cc09aba3dfb8261db4ee6537fbaad257a0f6d78aed4d7331e",
+    "workspace": "Signed live-session workspaceId; liveWorkspaceAllowed reads current workspace secrets using service-role transport. Provider proxy is private service-binding transport for already admitted meeting jobs.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
+        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/meet-core/src/cloudflare/live/decision.ts",
+    "sha256": "872f418187d277c87d337984f3519887c645da3c4552f79cdf5d069bc5020d2e",
+    "workspace": "Signed live-session workspaceId; liveWorkspaceAllowed reads current workspace secrets using service-role transport. Provider proxy is private service-binding transport for already admitted meeting jobs.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
+        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/meet-core/src/cloudflare/live/provider.ts",
+    "sha256": "bee9eb958c12b41c65ec2a0ce731094ff2632692bba160553e06bee8d0b65690",
+    "workspace": "Signed live-session workspaceId; liveWorkspaceAllowed reads current workspace secrets using service-role transport. Provider proxy is private service-binding transport for already admitted meeting jobs.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
+        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/meet-core/src/cloudflare/live/public-speech.ts",
+    "sha256": "f3f4e5fab657b96b757259ae771599758828cf832f4739e57ec5ac9da829c644",
+    "workspace": "Signed live-session workspaceId; liveWorkspaceAllowed reads current workspace secrets using service-role transport. Provider proxy is private service-binding transport for already admitted meeting jobs.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
+        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/meet-core/src/cloudflare/live/session-state.ts",
+    "sha256": "3046bfb712f97c1a6d13143e7aef21ec6b95d6fe3c10e5be1d1ea456d089a321",
+    "workspace": "Signed live-session workspaceId; liveWorkspaceAllowed reads current workspace secrets using service-role transport. Provider proxy is private service-binding transport for already admitted meeting jobs.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
+        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/meet-core/src/cloudflare/live/session-tools.ts",
+    "sha256": "ab33eecf76dafb7ce619e5026b4b48e131cffa233798f9b1f3c969d05e910e4e",
+    "workspace": "Signed live-session workspaceId; liveWorkspaceAllowed reads current workspace secrets using service-role transport. Provider proxy is private service-binding transport for already admitted meeting jobs.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
+        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/meet-core/src/cloudflare/live/session-usage.ts",
+    "sha256": "499ab57ad1739c63e2dfe8381384ef4d72248de9756cda1223fdc7536e8952d4",
+    "workspace": "Signed live-session workspaceId; liveWorkspaceAllowed reads current workspace secrets using service-role transport. Provider proxy is private service-binding transport for already admitted meeting jobs.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
+        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/meet-core/src/cloudflare/live/session.ts",
+    "sha256": "d567eb603895b72aab8b772d32286cfda3b90cb7aa69af25422f12758328cb17",
+    "workspace": "Signed live-session workspaceId; liveWorkspaceAllowed reads current workspace secrets using service-role transport. Provider proxy is private service-binding transport for already admitted meeting jobs.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
+        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/meet-core/src/cloudflare/live/tool-responses.ts",
+    "sha256": "2fae1bdff864729be3ad91d8db750ef1d51e7630dfd6e5aaacbfe26a0c05c00c",
+    "workspace": "Signed live-session workspaceId; liveWorkspaceAllowed reads current workspace secrets using service-role transport. Provider proxy is private service-binding transport for already admitted meeting jobs.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
+        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/meet-core/src/cloudflare/live/tools.ts",
+    "sha256": "0f72b6aaa7404f1c27f3f155a1d8bc9d12109bc752e8fd58b8d04c8a5289c932",
+    "workspace": "Signed live-session workspaceId; liveWorkspaceAllowed reads current workspace secrets using service-role transport. Provider proxy is private service-binding transport for already admitted meeting jobs.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
+        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/meet-core/src/cloudflare/live/usage.ts",
+    "sha256": "c97d58e690ac82fd20ca2a031b73eb85bafd96d32d37215c7eaab0346a6a6081",
+    "workspace": "Signed live-session workspaceId; liveWorkspaceAllowed reads current workspace secrets using service-role transport. Provider proxy is private service-binding transport for already admitted meeting jobs.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
+        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/meet-core/src/cloudflare/live/workspace-review.ts",
+    "sha256": "87e29bf56401d6d2ae775cb6cc661022882bf8fb416b0c60d08973d616c247ad",
+    "workspace": "Signed live-session workspaceId; liveWorkspaceAllowed reads current workspace secrets using service-role transport. Provider proxy is private service-binding transport for already admitted meeting jobs.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
+        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/meet-core/src/cloudflare/provider-proxy.ts",
+    "sha256": "83360e03f10702067bc87384f1bd9744078061aefc58ebd68653951b9d6b1473",
+    "workspace": "Signed live-session workspaceId; liveWorkspaceAllowed reads current workspace secrets using service-role transport. Provider proxy is private service-binding transport for already admitted meeting jobs.",
+    "boundaries": [
+      {
+        "path": "packages/meet-core/src/cloudflare/live/workspace-gate.ts",
+        "sha256": "ad8582df760ef19c9c1dbde4f20e4a4e359acb8ad21ab7cfbb6f21cc27ab3b93"
+      },
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/meet-core/src/features/call/components/ai-costs.tsx",
+    "sha256": "d7e36c26fca8878909317d0fdb1e35ea8f0dd6ee569e1af89ce23cdac7a01ab6",
+    "workspace": "Static navigation URL or product metadata, no provider invocation or credentials.",
+    "boundaries": [
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/sdk/src/cli/operational-search.ts",
+    "sha256": "1719738b48fa9284240f39ec95f1470cd6bf762430962d21963deaa8c10e130b",
+    "workspace": "Offline operational search uses an injected local embedding runtime and Python model installation, outside hosted workspace AI. No hosted provider key or application workspace is accepted by this adapter.",
+    "boundaries": [
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/sdk/src/operational-search/index.ts",
+    "sha256": "800309eab6cba9678aba8d50352351f78c006721ba6f8aea03f6029d8e49ff39",
+    "workspace": "Offline operational search uses an injected local embedding runtime and Python model installation, outside hosted workspace AI. No hosted provider key or application workspace is accepted by this adapter.",
+    "boundaries": [
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/sdk/src/operational-search/python-runtime.ts",
+    "sha256": "391561036880773cba223098acf927bdd872c8e259aedbb5a2226f70715de0f8",
+    "workspace": "Offline operational search uses an injected local embedding runtime and Python model installation, outside hosted workspace AI. No hosted provider key or application workspace is accepted by this adapter.",
+    "boundaries": [
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/sdk/src/operational-search/query.ts",
+    "sha256": "d2325171ea2a98da70c9930377a9903761233424ae931e0d67c7dcc50aadb4f6",
+    "workspace": "Offline operational search uses an injected local embedding runtime and Python model installation, outside hosted workspace AI. No hosted provider key or application workspace is accepted by this adapter.",
+    "boundaries": [
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/utils/src/commercial-comparison-2.ts",
+    "sha256": "42342f7104132506e6753f67d570c35841455eccd4917fe123c58c474ed1a173",
+    "workspace": "Static product comparison data, including a Supermemory product id; no provider invocation.",
+    "boundaries": [
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/utils/src/internal-domains.ts",
+    "sha256": "b330b09a82793a130f207eedd653320a5fad2170a39b821820d5019e910b641d",
+    "workspace": "Static navigation URL or product metadata, no provider invocation or credentials.",
+    "boundaries": [
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  },
+  {
+    "path": "packages/utils/src/launchable-apps.ts",
+    "sha256": "0511982210a7e5b17a9fc3059fd789ce2d99a4ed7224682013cc391af94674fe",
+    "workspace": "Static navigation URL or product metadata, no provider invocation or credentials.",
+    "boundaries": [
+      {
+        "path": "packages/utils/src/workspace-ai-policy-server.ts",
+        "sha256": "6e4480cc0a7fa8eae7548ad2b1ef3a4eb7809d3c110e6e68811682c5df5d7049"
+      }
+    ]
+  }
+]

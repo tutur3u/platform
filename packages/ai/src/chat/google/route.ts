@@ -1,5 +1,6 @@
 import { google } from '@ai-sdk/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -40,7 +41,6 @@ import {
   releaseAiPersistenceRequest,
 } from './request-persistence-lease';
 import {
-  type AiRouteAuthResult,
   authorizeAiWorkspace,
   isInternalTuturuuuAiUser,
   resolveAiRouteAuth,
@@ -59,36 +59,14 @@ import {
   prepareProcessedMessages,
 } from './route-message-preparation';
 import { prepareMiraRuntime } from './route-mira-runtime';
+import type { ChatRouteOptions } from './route-options';
 import { validateSubscriptionRoute } from './route-subscription-boundary';
 import {
   buildAbortedStreamFinishResponse,
   persistAssistantResponse,
 } from './stream-finish-persistence';
 
-export function createPOST(
-  _options: {
-    serverAPIKeyFallback?: boolean;
-    /** Trusted in-process instructions; never read from the request body. */
-    serverSystemInstructions?: string;
-    /** Direct user-funded chat. It bypasses gateway memory, credits, and provider tools. */
-    subscription?: {
-      resolveModel: (
-        userId: string,
-        model: string | undefined
-      ) => Promise<LanguageModel>;
-      onError: () => string;
-      errorResponse?: (error: unknown) => {
-        message: string;
-        status: number;
-        code: string;
-      };
-    };
-    /** Gateway provider prefix for bare model names (e.g., 'openai', 'anthropic', 'vertex'). Defaults to 'google'. */
-    defaultProvider?: string;
-    requireWorkspaceId?: boolean;
-    resolveAuth?: (request: NextRequest) => Promise<AiRouteAuthResult | null>;
-  } = {}
-) {
+export function createPOST(_options: ChatRouteOptions = {}) {
   const defaultProvider = _options.defaultProvider ?? 'google';
 
   return async function handler(req: NextRequest): Promise<Response> {
@@ -201,6 +179,12 @@ export function createPOST(
         normalizedWsId = workspaceAuthorization.wsId;
       }
 
+      const aiPolicyRefusal = await workspaceAiPolicyResponse(
+        normalizedWsId,
+        user.id,
+        req.headers.get('accept-language') ?? 'en'
+      );
+      if (aiPolicyRefusal) return aiPolicyRefusal;
       try {
         requestedCreditWsId = rawCreditWsId
           ? await normalizeWorkspaceId(rawCreditWsId, supabase, req)

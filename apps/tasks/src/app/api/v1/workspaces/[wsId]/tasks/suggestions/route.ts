@@ -21,10 +21,9 @@ import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
-  MAX_SHORT_TEXT_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { isValidTimezone } from '@tuturuuu/utils/timezone';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -36,6 +35,7 @@ import utc from 'dayjs/plugin/utc';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveAuthenticatedSessionUser } from '@/lib/app-session-user';
+import { requestSchema } from './request-schema';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -50,22 +50,6 @@ const CALENDAR_HOURS = [
   'meeting_hours',
   'personal_hours',
 ] as const satisfies readonly CalendarHoursType[];
-
-const requestSchema = z.object({
-  boardId: z.guid(),
-  prompt: z.string().trim().min(1).max(MAX_LONG_TEXT_LENGTH),
-  description: z.string().max(MAX_LONG_TEXT_LENGTH).nullable().optional(),
-  currentListId: z.guid().optional(),
-  clientTimezone: z
-    .string()
-    .trim()
-    .max(MAX_SHORT_TEXT_LENGTH)
-    .refine((timezone) => !timezone || isValidTimezone(timezone), {
-      message: 'Invalid client timezone',
-    })
-    .optional(),
-  clientTimestamp: z.string().max(MAX_COLOR_LENGTH).optional(),
-});
 
 const modelSuggestionSchema = z.object({
   tasks: z
@@ -715,6 +699,13 @@ export async function POST(
     }
 
     const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+    const aiPolicyRefusal = await workspaceAiPolicyResponse(
+      wsId,
+      user.id,
+      req.headers.get('accept-language') ?? 'en'
+    );
+    if (aiPolicyRefusal) return aiPolicyRefusal;
+
     const workspaceAccess = await ensureWorkspaceAccess(
       supabase,
       wsId,

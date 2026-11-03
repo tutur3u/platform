@@ -1,3 +1,7 @@
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiAllowed: async () => true,
+}));
+
 import { beforeEach, expect, it, vi } from 'vitest';
 import { encodeMeetWav } from '../audio';
 

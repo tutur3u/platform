@@ -9,6 +9,7 @@ import { withAiMemory } from '@tuturuuu/ai/memory';
 import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { invalidateAiCreditSnapshot } from '@tuturuuu/utils/ai-temp-auth';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import {
   createTextStreamResponse,
   Output,
@@ -235,6 +236,12 @@ export function createTeachObjectGenerationHandler<
         wsId: parsedBody.data.wsId,
       });
       if (access instanceof NextResponse) return access;
+      const aiPolicyRefusal = await workspaceAiPolicyResponse(
+        access.normalizedWsId,
+        context.user.id,
+        request.headers.get('accept-language') ?? 'en'
+      );
+      if (aiPolicyRefusal) return aiPolicyRefusal;
 
       const { normalizedWsId } = access;
       const sbAdmin = access.sbAdmin as TypedSupabaseClient;

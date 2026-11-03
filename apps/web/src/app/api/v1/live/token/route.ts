@@ -4,6 +4,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -102,6 +103,12 @@ export async function POST(request: NextRequest) {
       supabase,
       request
     );
+    const aiPolicyRefusal = await workspaceAiPolicyResponse(
+      accessWsId,
+      user.id,
+      request.headers.get('accept-language') ?? 'en'
+    );
+    if (aiPolicyRefusal) return aiPolicyRefusal;
     const membership = await verifyWorkspaceMembershipType({
       supabase,
       userId: user.id,

@@ -7,6 +7,7 @@ import {
 import { toBareModelName } from '@tuturuuu/ai/credits/model-mapping';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import type { Json } from '@tuturuuu/types/db';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { z } from 'zod';
 import {
   HiveAiAccessError,
@@ -352,6 +353,14 @@ async function generateConversation(input: {
     sbAdmin: input.sbAdmin,
     userId: input.actorUserId,
   });
+  if (
+    !(await workspaceAiAllowed(
+      creditContext.creditWsId,
+      'unknown',
+      input.actorUserId
+    ))
+  )
+    throw new HiveAiAccessError('WORKSPACE_AI_DISABLED', 403);
   const modelId = await resolveHiveAllowedModel({
     requestedModel,
     wsId: creditContext.creditWsId,

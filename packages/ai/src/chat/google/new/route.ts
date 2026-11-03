@@ -8,6 +8,7 @@ import {
   isBackendRateLimitError,
 } from '@tuturuuu/utils/abuse-protection/backend-rate-limit';
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -224,6 +225,12 @@ export function createPOST(options: CreatePostOptions = {}) {
         });
       }
 
+      const aiPolicyRefusal = await workspaceAiPolicyResponse(
+        selectedWsId,
+        user.id,
+        req.headers.get('accept-language') ?? 'en'
+      );
+      if (aiPolicyRefusal) return aiPolicyRefusal;
       const prompt = buildPrompt([
         {
           id: 'initial-message',

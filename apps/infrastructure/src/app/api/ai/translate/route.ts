@@ -1,6 +1,7 @@
 import { google } from '@ai-sdk/google';
 import { withAiMemory } from '@tuturuuu/ai/memory';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { streamText } from 'ai';
 import { z } from 'zod';
 import { authorizeInfrastructureAdminRequest } from '@/lib/infrastructure-admin-access';
@@ -14,6 +15,12 @@ export async function POST(req: Request) {
   const auth = await authorizeInfrastructureAdminRequest();
   if (!auth.ok) return auth.response;
 
+  const policyRefusal = await workspaceAiPolicyResponse(
+    ROOT_WORKSPACE_ID,
+    auth.user.id,
+    req.headers.get('accept-language') ?? 'en'
+  );
+  if (policyRefusal) return policyRefusal;
   const parsed = requestSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return Response.json(

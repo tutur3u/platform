@@ -17,6 +17,7 @@ import { liveWorkspaceCatalog } from '@tuturuuu/meet-core/features/live-assistan
 import { isMeetAiAvailableForWorkspace } from '@tuturuuu/meet-core/features/meeting-ai/server/workspace-gate';
 import { getScenarioPrompt } from '@tuturuuu/meet-core/parley/repository';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { z } from 'zod';
 
 const schema = z.discriminatedUnion('action', [
@@ -61,7 +62,12 @@ export async function POST(
     // outside the pilot allowlist; stop stays open so a session can always end.
     if (
       command.action !== 'stop' &&
-      !isMeetAiAvailableForWorkspace(access.meeting.ws_id, env)
+      (!(await workspaceAiAllowed(
+        access.meeting.ws_id,
+        'learner-data',
+        access.user.id
+      )) ||
+        !isMeetAiAvailableForWorkspace(access.meeting.ws_id, env))
     )
       throw new MeetCallAccessError(403, 'Meet AI is temporarily unavailable');
     const sharedContext =

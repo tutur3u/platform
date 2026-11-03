@@ -5,6 +5,7 @@ import {
   settleExternalAiStudioRun,
 } from '@tuturuuu/ai/studio/metering';
 import { getAiStudioRequestId } from '@tuturuuu/ai/studio/request';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { z } from 'zod';
 import { authenticateExternalAiRequest, EXTERNAL_TTS_SCOPE } from './auth';
 
@@ -190,6 +191,14 @@ export async function executeExternalSpeech(
       request,
       EXTERNAL_TTS_SCOPE
     );
+    if (
+      !(await workspaceAiAllowed(
+        credential.workspaceId,
+        'unknown',
+        credential.actorId
+      ))
+    )
+      return Response.json({ code: 'WORKSPACE_AI_DISABLED' }, { status: 403 });
     requestId = getAiStudioRequestId(request);
     const requestedModel = input.model ?? `google/${DEFAULT_GOOGLE_TTS_MODEL}`;
     if (!requestedModel.startsWith('google/')) {

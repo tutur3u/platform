@@ -13,6 +13,7 @@ import {
   TASK_PROGRESS_AI_CATCHUPS_CONFIG_ID,
   TASK_PROGRESS_CATCHUP_CADENCE_CONFIG_ID,
 } from '@tuturuuu/tasks-api/progress/preferences';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { gateway, generateObject, NoObjectGeneratedError } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -115,6 +116,12 @@ export async function POST(
 ) {
   const auth = await resolveTaskProgressRouteAuth(request, context);
   if (auth instanceof NextResponse) return auth;
+  const aiPolicyRefusal = await workspaceAiPolicyResponse(
+    auth.wsId,
+    auth.user.id,
+    request.headers.get('accept-language') ?? 'en'
+  );
+  if (aiPolicyRefusal) return aiPolicyRefusal;
 
   try {
     const body = requestSchema.parse(await request.json());

@@ -5,6 +5,7 @@ import {
   releaseMeteredEmbeddingCredits,
   reserveMeteredEmbeddingCredits,
 } from '@tuturuuu/ai/credits/reservations';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { embed } from 'ai';
 
 export const GEMINI_EMBEDDING_2_MODEL_ID = 'gemini-embedding-2';
@@ -150,6 +151,8 @@ export async function createMeteredTextEmbedding({
 }: MeteredTextEmbeddingParams): Promise<MeteredEmbeddingResult> {
   const text = value.trim();
   if (!text) return skipped('empty_value');
+  if (!(await workspaceAiAllowed(wsId, 'unknown', userId ?? undefined)))
+    return { ok: false, skipped: true, reason: 'WORKSPACE_AI_DISABLED' };
   if (!wsId || !userId) {
     return skipped('missing_scope', { structuralDisable: true });
   }

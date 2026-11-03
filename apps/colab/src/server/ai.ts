@@ -115,18 +115,7 @@ async function generateValue(
     | 'agent_step'
     | 'result_coaching' = 'generation'
 ) {
-  if (env.COLAB_AI_API_KEY || env.COLAB_REQUIRE_SPONSORSHIP === 'true')
-    return parseModelJson(await sponsoredGeneration(env, system, input, phase));
-  const output = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', {
-    messages: [
-      { role: 'system', content: system },
-      { role: 'user', content: JSON.stringify(input) },
-    ],
-    max_tokens: 2500,
-    temperature: 0.3,
-    response_format: { type: 'json_object' },
-  });
-  return parseModelJson(output);
+  return parseModelJson(await sponsoredGeneration(env, system, input, phase));
 }
 
 function skillBody(value: unknown) {

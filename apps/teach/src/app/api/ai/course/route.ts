@@ -5,6 +5,7 @@ import { requireTeachWorkspaceAccess } from '@tuturuuu/education-core/teach/api'
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TablesInsert } from '@tuturuuu/types';
 import { sanitizePathStrict } from '@tuturuuu/utils/storage-path';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -13,8 +14,6 @@ import {
   CourseGenerationSchema,
   GenerateCourseRequestSchema,
 } from './schema';
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function isGroupStoragePath(
   storagePath: string,
@@ -37,7 +36,6 @@ function textContent(text: string): TipTapTextNode[] | undefined {
 }
 
 function markdownToTipTapDocument(markdown: string) {
-  // Split into blocks separated by one or more blank lines
   const blocks = markdown
     .split(/\n{2,}/u)
     .map((b) => b.trim())
@@ -46,7 +44,6 @@ function markdownToTipTapDocument(markdown: string) {
   const content: any[] = [];
 
   for (const block of blocks) {
-    // Heading: #, ##, ###
     const heading = block.match(/^(#{1,6})\s+(.+)$/u);
     if (heading?.[1] && heading[2]) {
       content.push({
@@ -57,7 +54,6 @@ function markdownToTipTapDocument(markdown: string) {
       continue;
     }
 
-    // List detection: lines starting with -, *, + or numbered lists
     const lines = block
       .split(/\n+/u)
       .map((l) => l.trim())
@@ -65,7 +61,6 @@ function markdownToTipTapDocument(markdown: string) {
     const isList =
       lines.length > 0 && lines.every((ln) => /^([*+-]|\d+\.)\s+/.test(ln));
     if (isList && lines[0]) {
-      // Determine if ordered
       const firstMatch = lines[0].match(/^\s*(\d+)\./);
       const ordered = Boolean(firstMatch);
       const listNode: any = {
@@ -88,7 +83,6 @@ function markdownToTipTapDocument(markdown: string) {
       continue;
     }
 
-    // Fallback: paragraph (preserve internal newlines as line breaks)
     content.push({
       type: 'paragraph',
       content: textContent(block.replace(/\n+/gu, '\n')),
@@ -104,9 +98,7 @@ function markdownToTipTapDocument(markdown: string) {
   };
 }
 
-// Normalize incoming module/section content into a TipTap `doc` object.
 function normalizeContentToTipTap(content: unknown) {
-  // Already a TipTap doc?
   if (
     content &&
     typeof content === 'object' &&
@@ -115,16 +107,13 @@ function normalizeContentToTipTap(content: unknown) {
     return content as any;
   }
 
-  // If it's a string assume Markdown and convert
   if (typeof content === 'string') {
     return markdownToTipTapDocument(content);
   }
 
-  // Unknown -> empty doc
   return { type: 'doc', content: [] };
 }
 
-// Build a TipTap document from an array of sections where each section may be TipTap or Markdown.
 function sectionsToTipTapDoc(sections: Array<any>) {
   const contentBlocks: any[] = [];
   for (const sec of sections) {
@@ -218,8 +207,6 @@ async function cleanupGeneratedCourseArtifacts({
   }
 }
 
-// ─── Route Handler ───────────────────────────────────────────────────────────
-
 export const POST = withSessionAuth(
   async (request, context) => {
     try {
@@ -267,6 +254,12 @@ export const POST = withSessionAuth(
         wsId,
       });
       if (access instanceof NextResponse) return access;
+      const aiPolicyRefusal = await workspaceAiPolicyResponse(
+        access.normalizedWsId,
+        context.user.id,
+        request.headers.get('accept-language') ?? 'en'
+      );
+      if (aiPolicyRefusal) return aiPolicyRefusal;
 
       const normalizedWsId = access.normalizedWsId;
       const sbAdmin = access.sbAdmin as TypedSupabaseClient;

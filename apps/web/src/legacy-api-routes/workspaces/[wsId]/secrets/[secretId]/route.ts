@@ -73,7 +73,10 @@ export async function PUT(req: Request, { params }: Params) {
   const touchesManagedCron =
     isManagedCronEnableSecretName(existingSecret.name) ||
     isManagedCronEnableSecretName(name);
-  if (touchesManagedCron && !(await canMutateManagedCronEnableSecret(req))) {
+  if (
+    touchesManagedCron &&
+    !(await canMutateManagedCronEnableSecret(req, existingSecret.name, name))
+  ) {
     return NextResponse.json(
       { message: 'Only Tuturuuu employees can enable managed cron jobs.' },
       { status: 403 }
@@ -139,7 +142,7 @@ export async function DELETE(request: Request, { params }: Params) {
   const touchesManagedCron = isManagedCronEnableSecretName(existingSecret.name);
   if (
     touchesManagedCron &&
-    !(await canMutateManagedCronEnableSecret(request))
+    !(await canMutateManagedCronEnableSecret(request, existingSecret.name))
   ) {
     return NextResponse.json(
       { message: 'Only Tuturuuu employees can disable managed cron jobs.' },

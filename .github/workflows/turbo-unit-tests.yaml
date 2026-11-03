@@ -86,6 +86,9 @@ jobs:
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
 
+      - name: Check workspace AI provider inventory
+        run: node scripts/workspace-ai-provider-inventory.mjs
+
       - name: Verify script-test prerequisites
         run: |
           ruby --version

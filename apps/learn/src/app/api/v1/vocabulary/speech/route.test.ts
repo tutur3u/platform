@@ -1,4 +1,9 @@
-import { NextRequest } from 'next/server';
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiPolicyResponse: vi.fn(async () => null),
+  workspaceAiAllowed: async () => true,
+}));
+
+import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -66,6 +71,19 @@ describe('vocabulary speech AI credits', () => {
     const response = await POST(speechRequest());
 
     expect(response.status).toBe(403);
+    expect(provider).not.toHaveBeenCalled();
+  });
+
+  it('refuses disabled workspaces before credits and provider calls', async () => {
+    const policy = await import('@tuturuuu/utils/workspace-ai-policy-server');
+    vi.mocked(policy.workspaceAiPolicyResponse).mockResolvedValueOnce(
+      NextResponse.json({ code: 'WORKSPACE_AI_DISABLED' }, { status: 403 })
+    );
+    const provider = vi.fn();
+    vi.stubGlobal('fetch', provider);
+    const response = await POST(speechRequest());
+    expect(response.status).toBe(403);
+    expect(mocks.checkAiCredits).not.toHaveBeenCalled();
     expect(provider).not.toHaveBeenCalled();
   });
 

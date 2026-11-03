@@ -8,6 +8,7 @@ import {
 import { readLiveRequestBody } from '@tuturuuu/meet-core/features/live-assistant/request-body';
 import { liveWorkspaceTools } from '@tuturuuu/meet-core/features/live-assistant/workspace-tools';
 import { isMeetAiAvailableForWorkspace } from '@tuturuuu/meet-core/features/meeting-ai/server/workspace-gate';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { z } from 'zod';
 
 export async function POST(
@@ -26,7 +27,14 @@ export async function POST(
       .safeParse(body.ok ? body.data : null);
     if (!parsed.success) throw new MeetCallAccessError(400, 'Invalid review');
     const { env } = await getCloudflareContext({ async: true });
-    if (!isMeetAiAvailableForWorkspace(access.meeting.ws_id, env))
+    if (
+      !(await workspaceAiAllowed(
+        access.meeting.ws_id,
+        'learner-data',
+        access.user.id
+      )) ||
+      !isMeetAiAvailableForWorkspace(access.meeting.ws_id, env)
+    )
       throw new MeetCallAccessError(403, 'Meet AI is temporarily unavailable');
     const binding = (env as unknown as { MEET_LIVE: DurableObjectNamespace })
       .MEET_LIVE;

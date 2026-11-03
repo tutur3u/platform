@@ -1,3 +1,8 @@
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiPolicyResponse: async () => null,
+  workspaceAiAllowed: async () => true,
+}));
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   MAX_INLINE_TRANSCRIPTION_AUDIO_BYTES,

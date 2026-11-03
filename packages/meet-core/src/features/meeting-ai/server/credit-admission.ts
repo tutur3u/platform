@@ -1,3 +1,4 @@
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import 'server-only';
 import { checkAiCredits } from '@tuturuuu/ai/credits/check-credits';
 import { MEET_AI_MODEL } from '@tuturuuu/ai/meetings/usage';
@@ -38,6 +39,12 @@ export async function admitMeetCredits(
     throw new MeetAiError(503, 'Meeting billing workspace unavailable');
   if (!meeting) throw new MeetAiError(404, 'Meeting not found');
   const workspaceId = meeting.ws_id;
+  if (!(await workspaceAiAllowed(workspaceId, 'learner-data', userId)))
+    throw new MeetAiError(
+      403,
+      'AI is disabled by workspace policy.',
+      'WORKSPACE_AI_DISABLED'
+    );
   const checked = await Effect.runPromise(
     Effect.either(
       Effect.tryPromise({

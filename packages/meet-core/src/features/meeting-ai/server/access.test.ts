@@ -1,3 +1,7 @@
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiAllowed: async () => true,
+}));
+
 vi.mock('@tuturuuu/meet-core/parley/repository', () => ({
   isParleySession: async () => false,
 }));

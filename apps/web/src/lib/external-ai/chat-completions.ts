@@ -9,6 +9,7 @@ import {
   getAiStudioRequestId,
   getIdempotencyKey,
 } from '@tuturuuu/ai/studio/request';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import {
   generateText,
   jsonSchema,
@@ -150,6 +151,14 @@ export async function executeExternalChatCompletion(request: Request) {
   try {
     const input = requestSchema.parse(await request.json());
     const credential = await authenticateExternalAiRequest(request);
+    if (
+      !(await workspaceAiAllowed(
+        credential.workspaceId,
+        'unknown',
+        credential.actorId
+      ))
+    )
+      return Response.json({ code: 'WORKSPACE_AI_DISABLED' }, { status: 403 });
     requestId = getAiStudioRequestId(request);
     const idempotencyKey = getIdempotencyKey(request);
     const normalized = normalizeMessages(input.messages);

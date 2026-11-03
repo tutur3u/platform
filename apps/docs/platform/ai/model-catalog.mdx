@@ -1,7 +1,7 @@
 ---
 title: Model Catalog
 description: How Tuturuuu publishes, browses, and syncs AI gateway model metadata.
-updatedAt: "2026-10-29"
+updatedAt: "2026-11-03"
 audience: developers
 ---
 
@@ -58,3 +58,50 @@ The development API proxy validates the resolved destination against its approve
 base origin before dispatch. It remains unavailable outside development.
 Regression coverage is in the generation access-order and development proxy route
 tests.
+
+## Workspace AI policy
+
+`AI_ENABLED=false` disables every provider in a workspace. An absent setting preserves
+AI availability in ordinary workspaces. `ENABLE_EDUCATION=true` additionally applies
+the education policy: `AI_EDUCATION_SCOPE` defaults to `full`, disabling all AI,
+including teacher-authored tools. The reviewed alternative `learner-data-only`
+permits only content classified server-side as teacher-authored. Unknown content
+and roles remain blocked; existing routes conservatively use unknown or learner data.
+Changing provider, key owner, or billing workspace does not bypass the policy.
+Personal AI remains available only when each education membership resolves to the
+workspace creator or every assigned role has an enabled `manage_workspace_roles`
+or `update_user_groups` permission in that workspace. Role display names do not
+establish staff status. Missing, mixed, unknown, errored, or saturated lookups
+block access. A learner in any education workspace blocks personal AI. System
+personal requests resolve the workspace creator. `BLOCK_ALL_EDUCATION_MEMBERS`
+can switch to blocking all education members with one constant.
+Role permission and membership changes use the existing audit log triggers,
+including actor, operation, and old/new rows. Regression coverage lives in
+`scripts/workspace-ai-policy-server.test.mjs` and
+`scripts/workspace-ai-role-audit-db-test.sql`.
+
+Verified staff use the existing workspace-secret administration endpoints to change
+these reserved settings. The database rejects direct authenticated mutations, including
+renames, and audits policy inserts, updates and deletes. Policy names cannot be renamed
+to or from unrelated credentials. Install the migration before
+operating the settings. No customer workspace identifiers are stored in source.
+
+New feature work must call `workspaceAiPolicyResponse` after resolving its workspace
+and before credits, usage, memory or provider selection. Background work uses
+`workspaceAiAllowed` at execution time. Database failures refuse access. Route
+refusals use HTTP 403 and `WORKSPACE_AI_DISABLED`, with English and Vietnamese copy.
+Existing saved output remains readable. Meet admission composes with `MEET_AI_*`;
+Live session checkpoints recheck policy and stop disabled sessions. Provider-issued
+browser Live tokens cannot be revoked by this switch; operators must drain active
+browser sessions before declaring a flip complete, allowing issued tokens to expire.
+No deployment or workspace flip is performed by the implementation PR.
+
+Run the focused policy and route inventory checks with:
+
+```sh
+node --test scripts/workspace-ai-policy*.test.mjs scripts/workspace-ai-route-matrix.test.mjs
+```
+
+The inventory detects direct provider calls in route files. Indirect feature factories,
+Worker transports and new background consumers also require source review and
+behavior tests; this static tripwire alone is not full route execution proof.

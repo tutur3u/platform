@@ -1,3 +1,10 @@
+import { NextResponse } from 'next/server';
+
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiPolicyResponse: vi.fn(async () => null),
+  workspaceAiAllowed: async () => true,
+}));
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -35,6 +42,33 @@ import {
 } from './public-api';
 
 describe('AI Studio billing policy', () => {
+  it('rejects workspace AI policy before pricing, reservations or provider execution', async () => {
+    const policy = await import('@tuturuuu/utils/workspace-ai-policy-server');
+    vi.mocked(policy.workspaceAiPolicyResponse).mockResolvedValueOnce(
+      NextResponse.json(
+        { error: 'Disabled', code: 'WORKSPACE_AI_DISABLED' },
+        { status: 403 }
+      )
+    );
+    await expect(
+      prepareMeteredExecution({
+        credential: {
+          kind: 'first-party',
+          appId: 'colab',
+          actorId: 'fixture-user',
+          workspaceId: 'fixture-workspace',
+        },
+        feature: 'colab_compile',
+        maxUsage: { inputTokens: 100 },
+        modelId: 'fixture-model',
+        request: new Request('https://ai.example.test'),
+      })
+    ).rejects.toMatchObject({ code: 'WORKSPACE_AI_DISABLED', status: 403 });
+    expect(mocks.calculateAiStudioUsageCost).not.toHaveBeenCalled();
+    expect(mocks.beginAiStudioRun).not.toHaveBeenCalled();
+    expect(mocks.beginExternalAiStudioRun).not.toHaveBeenCalled();
+  });
+
   it('reserves real credits for a first-party capability, never external unmetered usage', async () => {
     await prepareMeteredExecution({
       credential: {

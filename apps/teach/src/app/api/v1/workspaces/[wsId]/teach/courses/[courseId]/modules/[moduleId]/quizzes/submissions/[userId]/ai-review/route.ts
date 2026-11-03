@@ -4,6 +4,7 @@ import {
   validateTeachCourse,
   validateTeachCourseModule,
 } from '@tuturuuu/education-core/teach/api';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -57,6 +58,12 @@ export const POST = withSessionAuth(
         wsId,
       });
       if (access instanceof NextResponse) return access;
+      const aiPolicyRefusal = await workspaceAiPolicyResponse(
+        access.normalizedWsId,
+        context.user.id,
+        request.headers.get('accept-language') ?? 'en'
+      );
+      if (aiPolicyRefusal) return aiPolicyRefusal;
 
       const course = await validateTeachCourse({
         courseId,

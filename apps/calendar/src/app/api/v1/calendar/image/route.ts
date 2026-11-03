@@ -3,6 +3,7 @@ import {
   deductAiCredits,
 } from '@tuturuuu/ai/credits/check-credits';
 import { resolveAiMemoryWorkspaceIdForUser } from '@tuturuuu/ai/memory/workspace';
+import { workspaceAiPolicyResponse } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
 
@@ -34,6 +35,12 @@ async function extractEventsFromImage(
       1,
       Math.ceil(base64Image.length / 1000)
     );
+    const aiPolicyRefusal = await workspaceAiPolicyResponse(
+      billingWorkspaceId,
+      user.id,
+      req.headers.get('accept-language') ?? 'en'
+    );
+    if (aiPolicyRefusal) return aiPolicyRefusal;
     const creditCheck = await checkAiCredits(
       billingWorkspaceId,
       MODEL,

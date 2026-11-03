@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { generateText, Output } from 'ai';
 import { z } from 'zod';
 import type { ReportIdentity, ScheduleOrigin } from './feedback-consumer';
@@ -69,6 +70,8 @@ export function buildPeriodicReportPrompt(
 export async function generatePeriodicReportNarrative(
   context: PeriodicReportGenerationContext
 ) {
+  if (!(await workspaceAiAllowed(context.identity.wsId, 'learner-data')))
+    throw new Error('WORKSPACE_AI_DISABLED');
   if (context.humanFeedbackEvidence.status !== 'ready')
     throw new Error('human_feedback_unavailable');
   const result = await generateText({

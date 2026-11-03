@@ -2,10 +2,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   provider: vi.fn(),
+  database: vi.fn(),
   room: vi.fn(),
   cleanup: vi.fn(),
   finalize: vi.fn(),
   begin: vi.fn(),
+}));
+vi.mock('./storage', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./storage')>()),
+  liveDatabase: mocks.database,
 }));
 vi.mock('./room', () => ({ liveRoomCommand: mocks.room }));
 vi.mock('./session-cleanup', () => ({
@@ -110,7 +115,30 @@ const control = (object: MeetLiveDurableObject, action: string) =>
 describe('Live (transcription) workspace gate', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mocks.database.mockResolvedValue([]);
     mocks.begin.mockResolvedValue({ costUsd: 0 });
+  });
+
+  it.each(['full', 'learner-data-only'])(
+    'refuses education Live before persistence, credits and provider work in %s scope',
+    async (scope) => {
+      mocks.database.mockResolvedValue([
+        { name: 'ENABLE_EDUCATION', value: 'true' },
+        { name: 'AI_EDUCATION_SCOPE', value: scope },
+      ]);
+      const { object, storage } = fixture(team);
+      expect((await initialize(object, team)).status).toBe(403);
+      expect(storage.put).not.toHaveBeenCalled();
+      expect(mocks.begin).not.toHaveBeenCalled();
+      expect(mocks.provider).not.toHaveBeenCalled();
+    }
+  );
+  it('fails closed on a workspace-policy lookup error', async () => {
+    mocks.database.mockRejectedValue(new Error('synthetic lookup failure'));
+    const { object } = fixture(team);
+    expect((await initialize(object, team)).status).toBe(403);
+    expect(mocks.begin).not.toHaveBeenCalled();
+    expect(mocks.provider).not.toHaveBeenCalled();
   });
 
   it('allows by default, requires a session and exempts Parley sessions', () => {
