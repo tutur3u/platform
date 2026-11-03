@@ -61,7 +61,9 @@ beforeEach(() => {
         idFromName: (id: string) => id,
         get: () => ({ fetch: f.fetch }),
       },
+      MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
       MEET_AI_ENABLED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000a1',
+      MEET_AI_DISABLED: 'false',
     },
   });
   f.fetch.mockImplementation(async (_url, options) => {
@@ -158,8 +160,9 @@ it('denies review writes outside the Meet AI allowlist before any Durable Object
           idFromName: (id: string) => id,
           get: () => ({ fetch: f.fetch }),
         },
+        MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
         MEET_AI_ENABLED_WORKSPACE_IDS,
-        MEET_AI_DISABLED: MEET_AI_ENABLED_WORKSPACE_IDS ? undefined : 'true',
+        MEET_AI_DISABLED: MEET_AI_ENABLED_WORKSPACE_IDS ? 'false' : 'true',
       },
     });
     for (const approved of [true, false])
