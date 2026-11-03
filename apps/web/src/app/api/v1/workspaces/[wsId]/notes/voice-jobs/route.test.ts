@@ -7,6 +7,7 @@ const mock = vi.hoisted(() => ({
   remove: vi.fn(),
   after: vi.fn(),
   form: vi.fn(),
+  run: vi.fn(),
 }));
 vi.mock('next/server', () => ({
   connection: async () => {},
@@ -26,7 +27,11 @@ vi.mock('@/lib/notes-voice/jobs', () => ({
   getVoiceJob: mock.get,
   deleteVoiceJob: mock.remove,
   publicVoiceJob: (job: unknown) => job,
-  runVoiceJob: vi.fn(),
+  runVoiceJob: mock.run,
+}));
+vi.mock('@/lib/notes-voice/audio', () => ({
+  validateNotesVoiceAudio: () => {},
+  notesVoiceInputHash: () => 'hash',
 }));
 vi.mock('@/lib/notes-voice/request', async () => ({
   ...(await vi.importActual<object>('@/lib/notes-voice/request')),
@@ -53,6 +58,9 @@ const invoke = (handler: unknown) =>
   )(new Request('https://api.example'), auth, params);
 beforeEach(() => {
   vi.resetAllMocks();
+  delete process.env.MEET_AI_DISABLED;
+  delete process.env.MEET_AI_DISABLED_WORKSPACE_IDS;
+  delete process.env.MEET_AI_ENABLED_WORKSPACE_IDS;
   mock.access.mockResolvedValue('resolved-workspace');
 });
 describe('Notes voice route ownership', () => {
@@ -86,5 +94,47 @@ describe('Notes voice route ownership', () => {
       { userId: 'actor', wsId: 'resolved-workspace' },
       params.jobId
     );
+  });
+});
+
+describe('Notes voice honours MEET_AI_DISABLED', () => {
+  it('refuses new voice work before reading audio, reserving or scheduling paid work', async () => {
+    process.env.MEET_AI_DISABLED = 'true';
+    const response = await invoke(POST);
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ code: 'notes_voice_ai_disabled' });
+    expect(mock.form).not.toHaveBeenCalled();
+    expect(mock.reserve).not.toHaveBeenCalled();
+    expect(mock.after).not.toHaveBeenCalled();
+    expect(mock.run).not.toHaveBeenCalled();
+  });
+
+  it('still lets the owner read and delete existing jobs while AI is off', async () => {
+    process.env.MEET_AI_DISABLED = 'true';
+    mock.get.mockResolvedValue({ status: 'completed' });
+    expect((await invoke(GET)).status).toBe(200);
+    expect((await invoke(DELETE)).status).toBe(200);
+  });
+
+  it('re-checks the switch inside the scheduled job before each provider step', async () => {
+    const audio = new File([new Uint8Array(64)], 'a.wav', { type: 'audio/wav' });
+    const form = new FormData();
+    form.set('requestId', 'd6fb2145-ae9f-4f43-a209-6bb4c24c7a87');
+    form.set('timezone', 'UTC');
+    form.set('audio', audio);
+    mock.form.mockResolvedValue(form);
+    mock.reserve.mockResolvedValue({ start: true, job: { status: 'queued' } });
+    const scheduled: Array<() => unknown> = [];
+    mock.after.mockImplementation((task: () => unknown) => scheduled.push(task));
+    const response = await invoke(POST);
+    expect(response.status).toBe(202);
+    expect(scheduled).toHaveLength(1);
+    await scheduled[0]!();
+    const verifyAccess = mock.run.mock.calls[0]![3] as () => Promise<unknown>;
+    process.env.MEET_AI_DISABLED = 'true';
+    await expect(verifyAccess()).rejects.toMatchObject({
+      status: 403,
+      code: 'notes_voice_ai_disabled',
+    });
   });
 });
