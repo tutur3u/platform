@@ -88,6 +88,30 @@ class ContentRules(unittest.TestCase):
         self.assertEqual(self.sql('select count(*) from private.tutoring_weak_support_reviews'), ['0'])
         self.count(0)
 
+    def test_member_round_trips_preserve_authorized_boundary(self):
+        self.sql("insert into private.tutoring_weak_support_reviews values ('00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000003',now()-interval '15 days')")
+        before = self.sql('select last_reviewed_at from private.tutoring_weak_support_reviews')
+        self.run_job()
+        self.sql("update private.tutoring_notification_receipts set created_at=now()-interval '14 days'")
+        for change in ["content='edit'", "require_attention=false", "require_attention=true", "content='fixture'"]:
+            self.sql('update public.user_feedbacks set '+change)
+            self.assertEqual(self.sql('select last_reviewed_at from private.tutoring_weak_support_reviews'), before)
+        self.run_job(); self.count(2)
+
+    def test_ec_matrix_linked_recipient(self):
+        ec = '42529372-c669-4833-bb32-2cab1f4ffd83'
+        for table in ['workspace_user_groups','workspace_users','workspace_configs','workspace_user_linked_users','workspace_members']:
+            self.sql(f"update public.{table} set ws_id='{ec}'")
+        for enabled in ['false','true']:
+            with self.subTest(flag=enabled):
+                self.sql(f"update public.workspace_configs set value='{enabled}'")
+                for change in ["content='edit'", "require_attention=false", "require_attention=true", "content='fixture'"]:
+                    self.sql('update public.user_feedbacks set '+change)
+                    self.assertEqual(self.sql('select count(*) from private.tutoring_weak_support_reviews'), ['0'])
+                self.run_job(); self.count(0)
+                self.assertEqual(self.sql('select count(*) from private.tutoring_notification_receipts'), ['0'])
+                self.assertEqual(self.sql('select after_id is null from private.tutoring_content_scan_cursor'), ['t'])
+
     def test_no_teacher(self):
         self.sql('delete from public.workspace_user_linked_users')
         self.run_job(); self.count(0)
