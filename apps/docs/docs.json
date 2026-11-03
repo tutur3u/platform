@@ -210,6 +210,7 @@
                   "build/devops/meet-transcript-retention",
                   "build/devops/critical-app-rollout",
                   "build/devops/github-actions-runbook",
+                  "build/devops/meet-erase-restore",
                   "build/devops/caching",
                   "build/devops/code-owners",
                   "build/devops/e2e-proof-reuse",
