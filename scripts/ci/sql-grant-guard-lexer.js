@@ -1,3 +1,8 @@
+// A string literal right after AS (CREATE FUNCTION/PROCEDURE) or DO, with an
+// optional E or U& prefix and optional DO LANGUAGE clause, is a routine body.
+const ROUTINE_LITERAL =
+  /(?:^|[^\w$"])(?:as|do(?:\s+language(?:\s+(?:[a-z_][\w$]*|"(?:[^"]|"")*"))?)?)\s*(?:e|u&)?$/i;
+
 function lexSql(sql) {
   let code = '';
   let line = 1;
@@ -7,6 +12,9 @@ function lexSql(sql) {
   const bodyLines = [];
   const bodyStarts = [];
   const configurations = [];
+  // Quoted ('', E'', U&'') routine bodies are never decoded: each one is
+  // recorded so the scanner refuses it instead of blanking executable code.
+  const literalBodies = [];
   const emit = (end, keep) => {
     const chunk = sql.slice(index, end);
     code += keep ? chunk : chunk.replace(/[^\n]/g, ' ');
@@ -55,6 +63,8 @@ function lexSql(sql) {
           prefix
         );
       const literal = sql.slice(index + 1, cursor - 1);
+      if (ROUTINE_LITERAL.test(prefix))
+        literalBodies.push({ line, start: index });
       if (
         /\bset_config\s*\(\s*$/i.test(prefix) &&
         ['search_path', 'standard_conforming_strings'].includes(
@@ -81,7 +91,10 @@ function lexSql(sql) {
         const skipTrivia = (start) => {
           let pos = start;
           while (pos < sql.length) {
-            if (/\s/.test(sql[pos])) { pos++; continue; }
+            if (/\s/.test(sql[pos])) {
+              pos++;
+              continue;
+            }
             if (sql.startsWith('--', pos)) {
               const end = sql.indexOf('\n', pos + 2);
               pos = end < 0 ? sql.length : end + 1;
@@ -91,18 +104,25 @@ function lexSql(sql) {
             let depth = 1;
             pos += 2;
             while (pos < sql.length && depth) {
-              if (sql.startsWith('/*', pos)) { depth++; pos += 2; }
-              else if (sql.startsWith('*/', pos)) { depth--; pos += 2; }
-              else pos++;
+              if (sql.startsWith('/*', pos)) {
+                depth++;
+                pos += 2;
+              } else if (sql.startsWith('*/', pos)) {
+                depth--;
+                pos += 2;
+              } else pos++;
             }
           }
           return pos;
         };
         const keyword = skipTrivia(cursor);
         const literal = /^uescape\b/i.test(sql.slice(keyword))
-          ? skipTrivia(keyword + 7) : -1;
+          ? skipTrivia(keyword + 7)
+          : -1;
         const value = literal >= 0 ? /^'(.)'/.exec(sql.slice(literal)) : null;
-        const clause = value ? [sql.slice(cursor, literal + value[0].length), value[1]] : null;
+        const clause = value
+          ? [sql.slice(cursor, literal + value[0].length), value[1]]
+          : null;
         if (clause) {
           const identifier = sql.slice(index, cursor);
           const escapeChar = clause[1];
@@ -138,7 +158,15 @@ function lexSql(sql) {
       }
     }
   }
-  return { code, comments, bodies, bodyLines, bodyStarts, configurations };
+  return {
+    code,
+    comments,
+    bodies,
+    bodyLines,
+    bodyStarts,
+    configurations,
+    literalBodies,
+  };
 }
 
 function splitStatements(code) {

@@ -947,7 +947,10 @@ ALTER FUNCTION public.example(integer) SET search_path = pg_catalog, pg_temp;
 `reviewed(dynamic-sql-review)` also applies to EXECUTE and routine bodies; it
 never waives required ACLs. `reviewed(quoted-identifier-review)` waives only the
 complex-identifier review diagnostic. Strings, dollar bodies, block comments,
-unrelated statements, and other files cannot supply markers. Migration, rollback,
+unrelated statements, and other files cannot supply markers. Routine bodies must
+be dollar-quoted: a quoted body (`AS '...'`, `AS E'...'`, `AS U&'...'` or
+`DO '...'`), including one nested inside a dollar body, is refused with
+`function-acl` and no marker waives it. Migration, rollback,
 and schema SQL are covered by CODEOWNERS. Rollbacks also reject public/anonymous grants, TRUNCATE, MAINTAIN and
 default-grant restoration; their names must match a migration and an approved
 suffix. Run the `sql-grant-guard*.test.js` suites with `node --test` for parser, baseline and

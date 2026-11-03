@@ -15,8 +15,17 @@ function nestedBodyGrants(sql) {
       ? [{ text, line }]
       : [];
   });
+  const refuse = (line) =>
+    findings.push({
+      rule: 'function-acl',
+      line,
+      detail: 'quoted routine body is unsupported; use a dollar-quoted body',
+    });
+  for (const literal of outer.literalBodies) refuse(literal.line);
   for (const body of pending) {
     const lexed = lexSql(body.text);
+    for (const literal of lexed.literalBodies)
+      refuse(body.line + literal.line - 1);
     for (const [index, text] of lexed.bodies.entries()) {
       pending.push({ text, line: body.line + lexed.bodyLines[index] - 1 });
     }
