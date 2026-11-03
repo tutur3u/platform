@@ -135,6 +135,25 @@ for (const phase of ['pricing', 'settlement']) {
               external_app_id: null,
             });
           }
+          if (resource === 'workspaces') {
+            const identity = identities.find(
+              (item) => url.searchParams.get('id') === `eq.${item.workspace}`
+            );
+            assert.ok(identity, 'Policy must resolve the requested workspace');
+            return Response.json({
+              id: identity.workspace,
+              personal: false,
+              creator_id: identity.actor,
+            });
+          }
+          if (resource === 'workspace_secrets')
+            return Response.json(
+              identities.map((identity) => ({
+                ws_id: identity.workspace,
+                name: 'AI_ENABLED',
+                value: 'true',
+              }))
+            );
           if (resource === 'ai_gateway_models')
             return Response.json({ type: 'language' });
           const body = await request.json();

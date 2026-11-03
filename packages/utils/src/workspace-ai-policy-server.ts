@@ -79,7 +79,7 @@ export async function workspaceAiAllowed(
         workspace.data.personal &&
         !resolveEducationContext
       ) {
-        if (BLOCK_ALL_EDUCATION_MEMBERS) return false;
+        if (BLOCK_ALL_EDUCATION_MEMBERS || !policyUserId) return false;
         const educationWorkspace = await db
           .from('workspaces')
           .select('creator_id')
