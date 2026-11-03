@@ -8,7 +8,8 @@ drop function if exists private.reset_tutoring_content_clock();
 drop function if exists private.process_tutoring_content_rules(integer);
 commit;
 
--- Preserve both live stage history and a private backup. No schema contraction.
+-- Preserve both live stage history and a private backup. No schema contraction:
+-- the stage column, scan cursor and review-episode tables are retained inert.
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';

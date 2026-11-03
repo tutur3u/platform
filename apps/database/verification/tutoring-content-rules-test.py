@@ -1,17 +1,25 @@
-"""Fixture-only PostgreSQL tests. No remote DSN is accepted; requires local PG17."""
+"""Fixture-only PostgreSQL tests. No remote DSN is accepted; requires local PG17.
+
+Set TUTORING_PG_BIN to another local PostgreSQL bin directory when PG17 is not
+installed at the Homebrew path. The real-schema replay is a separate harness.
+"""
+import os
 import pathlib
 import subprocess
 import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
-PG = pathlib.Path('/opt/homebrew/opt/postgresql@17/bin')
+PG = pathlib.Path(os.environ.get('TUTORING_PG_BIN', '/opt/homebrew/opt/postgresql@17/bin'))
 MIGRATION = ROOT / 'apps/database/supabase/migrations/20261103031000_tutoring_content_stages.sql'
 
 class ContentRules(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.tmp = tempfile.TemporaryDirectory(dir=ROOT / '.tmp')
+        # Unix socket paths are limited to ~103 bytes; TUTORING_TMP shortens them.
+        base = pathlib.Path(os.environ.get('TUTORING_TMP', ROOT / '.tmp'))
+        base.mkdir(exist_ok=True)
+        cls.tmp = tempfile.TemporaryDirectory(dir=base)
         cls.path = pathlib.Path(cls.tmp.name)
         subprocess.run([PG / 'initdb', '-D', cls.path / 'db', '-A', 'trust'], check=True, stdout=subprocess.DEVNULL)
         subprocess.run([PG / 'pg_ctl', '-D', cls.path / 'db', '-l', cls.path / 'log', '-o', f'-k {cls.path} -p 55439 -c listen_addresses=', 'start'], check=True, stdout=subprocess.DEVNULL)
@@ -34,8 +42,8 @@ class ContentRules(unittest.TestCase):
         drop schema if exists private cascade; drop schema public cascade;
         create schema public; create schema private;
         create table public.workspace_configs(ws_id uuid, id text, value text);
-        create table public.workspace_user_groups(id uuid, ws_id uuid);
-        create table public.workspace_users(id uuid, ws_id uuid);
+        create table public.workspace_user_groups(id uuid primary key, ws_id uuid);
+        create table public.workspace_users(id uuid primary key, ws_id uuid);
         create table public.workspace_user_groups_users(group_id uuid,user_id uuid,role text);
         create table public.workspace_user_linked_users(ws_id uuid,virtual_user_id uuid,platform_user_id uuid);
         create table public.workspace_members(ws_id uuid,user_id uuid);
@@ -53,9 +61,20 @@ class ContentRules(unittest.TestCase):
         insert into public.workspace_members values ('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000005');
         insert into public.user_feedbacks values (gen_random_uuid(),'00000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000002','fixture',true,now()-interval '14 days');
         """)
+        self.pre_migration()
         if MIGRATION.exists():
             self.sql('begin;' + MIGRATION.read_text() + 'commit;')
         self.sql("insert into public.workspace_configs select ws_id,'tutoring_content_rules','true' from public.workspace_user_groups")
+
+    # Rows that exist before the stage migration is applied, keyed by test name.
+    PRE_MIGRATION = {
+        'test_legacy_weak_receipt_becomes_n2_history': "insert into private.tutoring_notification_receipts(kind,group_id,student_user_id,review_cycle_started_at,recipient_user_id,created_at) select 'weak_content_review_due',group_id,user_id,created_at,'00000000-0000-0000-0000-000000000005',now()-interval '14 days' from public.user_feedbacks",
+    }
+
+    def pre_migration(self):
+        seed = self.PRE_MIGRATION.get(self._testMethodName)
+        if seed:
+            self.sql(seed)
 
     def run_job(self):
         self.sql('select private.process_tutoring_content_rules(1000)')
@@ -114,7 +133,7 @@ class ContentRules(unittest.TestCase):
                     self.assertEqual(self.sql('select count(*) from private.tutoring_weak_support_reviews'), ['0'])
                 self.run_job(); self.count(0)
                 self.assertEqual(self.sql('select count(*) from private.tutoring_notification_receipts'), ['0'])
-                self.assertEqual(self.sql('select after_id is null from private.tutoring_content_scan_cursor'), ['t'])
+                self.assertEqual(self.sql('select count(*) from private.tutoring_content_scan_cursor'), ['0'])
 
     def test_no_teacher(self):
         self.sql('delete from public.workspace_user_linked_users')
@@ -173,6 +192,144 @@ class ContentRules(unittest.TestCase):
         self.sql('insert into private.tutoring_notification_receipts(kind,tutoring_session_id,recipient_user_id) select kind,tutoring_session_id,recipient_user_id from private.tutoring_notification_receipts on conflict do nothing')
         self.assertEqual(self.sql('select count(*) from private.tutoring_notification_receipts'), ['1'])
         self.assertEqual(self.sql('select stage from private.tutoring_notification_receipts'), ['n1'])
+
+    # Every table the processor may write. Absent tables are reported as such so
+    # a snapshot compares equal only when nothing derived was created or changed.
+    DERIVED = ['private.tutoring_content_scan_cursor', 'private.tutoring_notification_receipts',
+               'public.notifications', 'private.tutoring_weak_support_reviews',
+               'private.tutoring_content_review_episodes']
+
+    def derived_snapshot(self):
+        snapshot = {}
+        for table in self.DERIVED:
+            exists = self.sql(f"select to_regclass('{table}') is not null")
+            if exists != ['t']:
+                snapshot[table] = 'absent'
+                continue
+            # xmin exposes even a no-op UPDATE (for example after_id null -> null).
+            snapshot[table] = self.sql(
+                f"select count(*)::text || ':' || coalesce(md5(string_agg(t::text || '@' || t.xmin::text, ',' order by t::text)), '-') from {table} t")
+        return snapshot
+
+    def assert_no_derived_writes(self):
+        before = self.derived_snapshot()
+        self.run_job(); self.run_job()
+        self.assertEqual(self.derived_snapshot(), before)
+
+    def test_flag_off_no_derived_writes_empty_cursor(self):
+        self.sql('delete from public.workspace_configs')
+        self.assertEqual(self.sql('select count(*) from private.tutoring_content_scan_cursor'), ['0'])
+        self.assert_no_derived_writes()
+        self.assertEqual(self.sql('select count(*) from private.tutoring_content_scan_cursor'), ['0'])
+
+    def test_flag_off_no_derived_writes_seeded_cursor(self):
+        self.sql("delete from public.workspace_configs; insert into private.tutoring_content_scan_cursor values (true, 'ffffffff-ffff-ffff-ffff-fffffffffffe')")
+        self.assert_no_derived_writes()
+        self.assertEqual(self.sql('select after_id from private.tutoring_content_scan_cursor'), ['ffffffff-ffff-ffff-ffff-fffffffffffe'])
+
+    def test_flag_off_no_derived_writes_seeded_null_cursor(self):
+        self.sql('delete from public.workspace_configs; insert into private.tutoring_content_scan_cursor values (true, null)')
+        self.assert_no_derived_writes()
+
+    def test_flag_non_true_values_are_off(self):
+        for value in ['false', 'TRUE', ' true', '1', '']:
+            with self.subTest(value=value):
+                self.sql(f"update public.workspace_configs set value='{value}'")
+                self.assert_no_derived_writes()
+
+    def test_flag_on_only_for_ec_is_off(self):
+        ec = '42529372-c669-4833-bb32-2cab1f4ffd83'
+        self.sql(f"update public.workspace_configs set ws_id='{ec}'")
+        self.assert_no_derived_writes()
+        self.sql("insert into private.tutoring_content_scan_cursor values (true, 'ffffffff-ffff-ffff-ffff-fffffffffffe')")
+        self.assert_no_derived_writes()
+
+    def seed_review_boundary(self, days_ago):
+        self.sql(f"insert into private.tutoring_weak_support_reviews values ('00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000003',now()-interval '{days_ago} days') on conflict (group_id,student_user_id) do update set last_reviewed_at=excluded.last_reviewed_at")
+
+    def replace_feedback(self, attention='true', content='fixture'):
+        # The API POST inserts a new row instead of editing in place.
+        self.sql(f"insert into public.user_feedbacks values (gen_random_uuid(),'00000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000002','{content}',{attention},now())")
+
+    def test_replacement_feedback_keeps_cycle_for_n3(self):
+        # Selene M1: boundary day -30, N2 receipt day -15, replacement row today.
+        self.sql("update public.user_feedbacks set created_at=now()-interval '40 days'")
+        self.seed_review_boundary(30)
+        self.run_job(); self.count(1)
+        self.sql("update private.tutoring_notification_receipts set created_at=now()-interval '15 days'")
+        self.replace_feedback()
+        self.run_job(); self.count(2)
+        self.assertEqual(self.sql("select string_agg(stage,',' order by stage) from private.tutoring_notification_receipts"), ['n2,n3'])
+
+    def test_seeded_n2_history_survives_replacement(self):
+        # Preexisting N2 history (no processor episode row) keeps its cycle.
+        self.seed_review_boundary(30)
+        self.sql("insert into private.tutoring_notification_receipts(kind,group_id,student_user_id,review_cycle_started_at,recipient_user_id,stage,created_at) select 'weak_content_review_due',group_id,student_user_id,last_reviewed_at,'00000000-0000-0000-0000-000000000005','n2',now()-interval '15 days' from private.tutoring_weak_support_reviews")
+        self.replace_feedback()
+        self.run_job(); self.count(1)
+        self.assertEqual(self.sql("select count(*) from private.tutoring_notification_receipts where stage='n3' and review_cycle_started_at=(select last_reviewed_at from private.tutoring_weak_support_reviews)"), ['1'])
+
+    def test_replacement_revert_toggle_rows_do_not_postpone(self):
+        self.seed_review_boundary(30)
+        self.run_job(); self.count(1)
+        self.sql("update private.tutoring_notification_receipts set created_at=now()-interval '15 days'")
+        for attention, content in [('true', 'edited'), ('false', 'edited'), ('true', 'fixture'), ('true', 'fixture')]:
+            self.replace_feedback(attention, content)
+            self.run_job()
+        self.count(2)
+        self.assertEqual(self.sql("select count(distinct review_cycle_started_at) from private.tutoring_notification_receipts"), ['1'])
+        before = self.sql('select last_reviewed_at from private.tutoring_weak_support_reviews')
+        self.sql("update public.user_feedbacks set content='in place', require_attention=true")
+        self.assertEqual(self.sql('select last_reviewed_at from private.tutoring_weak_support_reviews'), before)
+
+    def test_replacement_before_n2_does_not_postpone_n2(self):
+        self.sql("update public.user_feedbacks set created_at=now()-interval '10 days'")
+        self.run_job(); self.count(0)
+        self.replace_feedback()
+        self.sql("insert into public.workspace_configs select ws_id,'tutoring_content_rules_n2_days','10' from public.workspace_user_groups")
+        self.run_job(); self.count(1)
+
+    def test_authorized_review_starts_new_cycle(self):
+        self.sql("update public.user_feedbacks set created_at=now()-interval '40 days'")
+        self.seed_review_boundary(30)
+        self.run_job(); self.count(1)
+        # Only the service-role review operation opens a new cycle.
+        self.seed_review_boundary(14)
+        self.run_job(); self.count(2)
+        self.assertEqual(self.sql("select count(distinct review_cycle_started_at) from private.tutoring_notification_receipts where stage='n2'"), ['2'])
+        self.seed_review_boundary(0)
+        self.replace_feedback()
+        self.run_job(); self.count(2)
+
+    def test_future_dated_replacement_cannot_postpone_first_cycle(self):
+        self.sql("insert into public.user_feedbacks values (gen_random_uuid(),'00000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000002','future',true,now()+interval '30 days')")
+        self.sql("delete from public.user_feedbacks where content='fixture'")
+        self.sql("insert into public.workspace_configs select ws_id,'tutoring_content_rules_n2_days','1' from public.workspace_user_groups")
+        self.run_job(); self.count(0)
+        self.assertEqual(self.sql("select count(*) from private.tutoring_content_review_episodes where cycle_started_at<=now()"), ['1'])
+
+    def test_rollback_phase1_survives_backup_failure(self):
+        self.run_job()
+        self.sql("update private.tutoring_notification_receipts set created_at=now()-interval '14 days'")
+        self.run_job()
+        # Disposable injected failure: an incompatible pre-existing backup table.
+        self.sql('create table private.tutoring_content_stage_backup(id uuid check (false))')
+        rollback = (ROOT / 'apps/database/rollbacks/20261103031000_tutoring_content_stages.rollback.sql').read_text()
+        with self.assertRaises(AssertionError):
+            self.sql(rollback)
+        self.assertEqual(self.sql("select to_regprocedure('private.process_tutoring_content_rules(integer)') is null"), ['t'])
+        self.assertEqual(self.sql('select count(*) from private.tutoring_content_stage_backup'), ['0'])
+        self.assertEqual(self.sql('select count(*) from private.tutoring_notification_receipts'), ['2'])
+        self.sql('drop table private.tutoring_content_stage_backup')
+        self.sql(rollback)
+        self.assertEqual(self.sql('select count(*) from (select * from private.tutoring_notification_receipts except select * from private.tutoring_content_stage_backup) d'), ['0'])
+        self.assertEqual(self.sql('select count(*) from private.tutoring_content_stage_backup'), ['2'])
+
+    def test_legacy_weak_receipt_becomes_n2_history(self):
+        # A pre-stage weak-content receipt is the teacher alert (N2), never N1.
+        self.assertEqual(self.sql("select stage from private.tutoring_notification_receipts"), ['n2'])
+        self.run_job(); self.run_job()
+        self.assertEqual(self.sql("select string_agg(stage,',' order by stage) from private.tutoring_notification_receipts"), ['n2,n3'])
 
 if __name__ == '__main__':
     unittest.main()
