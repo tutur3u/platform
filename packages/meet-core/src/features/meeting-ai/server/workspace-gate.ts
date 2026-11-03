@@ -2,10 +2,12 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import {
   isMeetAiEnabledForWorkspace,
+  MEET_AI_DISABLED_ENV,
   type MeetAiGateEnv,
 } from '@tuturuuu/realtime/meet';
 
 export {
+  EASY_CENTER_WORKSPACE_ID,
   isMeetAiEnabledForWorkspace,
   MEET_AI_WORKSPACE_ALLOWLIST_ENV,
   type MeetAiGateEnv,
@@ -13,16 +15,26 @@ export {
 } from '@tuturuuu/realtime/meet';
 
 /**
- * The Worker env binding, never ambient process.env. Without a Cloudflare
- * context the default policy allows; credit admission still applies.
+ * The raw Worker env binding, never ambient process.env, or undefined when no
+ * Cloudflare context exists. Only adapters that own a non-Worker fallback (the
+ * apps/web legacy gate) use this; Meet code uses meetAiGateEnv().
  */
-export async function meetAiGateEnv(): Promise<MeetAiGateEnv> {
+export async function meetAiWorkerEnv(): Promise<MeetAiGateEnv> {
   try {
     const { env } = await getCloudflareContext({ async: true });
     return env as unknown as MeetAiGateEnv;
   } catch {
     return undefined;
   }
+}
+
+/**
+ * The Worker env binding for the Meet AI gate. Without a Cloudflare context
+ * the gate fails closed, as if the kill switch were on, so a missing binding
+ * can never open Meet AI.
+ */
+export async function meetAiGateEnv(): Promise<MeetAiGateEnv> {
+  return (await meetAiWorkerEnv()) ?? { [MEET_AI_DISABLED_ENV]: 'true' };
 }
 
 /** Parley scenario sessions are a separate product and are not part of the Meet gate. */

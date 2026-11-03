@@ -113,17 +113,30 @@ describe('Live (transcription) workspace gate', () => {
     mocks.begin.mockResolvedValue({ costUsd: 0 });
   });
 
-  it('allows by default, requires a session and exempts Parley sessions', () => {
-    const session = (app?: 'meet' | 'parley') => ({
+  it('denies by default, requires a session and exempts Parley sessions', () => {
+    const session = (app?: 'meet' | 'parley', ws = team) => ({
       claims: { app },
-      identity: identity(team),
+      identity: identity(ws),
     });
-    expect(liveWorkspaceAllowed(undefined, session())).toBe(true);
-    expect(liveWorkspaceAllowed({}, session())).toBe(true);
+    expect(liveWorkspaceAllowed(undefined, session())).toBe(false);
+    expect(liveWorkspaceAllowed({}, session())).toBe(false);
+    expect(
+      liveWorkspaceAllowed({ MEET_AI_ENABLED_WORKSPACE_IDS: '' }, session())
+    ).toBe(false);
+    expect(
+      liveWorkspaceAllowed({ MEET_AI_ENABLED_WORKSPACE_IDS: '*' }, session())
+    ).toBe(false);
     expect(liveWorkspaceAllowed({}, undefined)).toBe(false);
     expect(
       liveWorkspaceAllowed({ MEET_AI_ENABLED_WORKSPACE_IDS: team }, session())
     ).toBe(true);
+    const easyCenter = '42529372-c669-4833-bb32-2cab1f4ffd83';
+    expect(
+      liveWorkspaceAllowed(
+        { MEET_AI_ENABLED_WORKSPACE_IDS: easyCenter },
+        session('meet', easyCenter)
+      )
+    ).toBe(false);
     expect(liveWorkspaceAllowed({}, session('parley'))).toBe(true);
   });
 
@@ -147,11 +160,13 @@ describe('Live (transcription) workspace gate', () => {
     ).toBe(403);
   });
 
-  it('initializes with no configured controls', async () => {
-    const { object, env } = fixture(team);
+  it('refuses /initialize with no configured controls (default-off)', async () => {
+    const { object, env, storage } = fixture(team);
     delete env.MEET_AI_ENABLED_WORKSPACE_IDS;
     delete env.MEET_AI_DISABLED;
-    expect((await initialize(object, team)).status).toBe(200);
+    expect((await initialize(object, team)).status).toBe(403);
+    expect(storage.put).not.toHaveBeenCalled();
+    expect(mocks.provider).not.toHaveBeenCalled();
   });
 
   it.each([

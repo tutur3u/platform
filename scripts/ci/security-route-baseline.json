@@ -6837,7 +6837,7 @@
   },
   {
     "file": "apps/web/src/legacy-api-routes/ai/meetings/summary/route.ts",
-    "digest": "6a921dc52eba09edeed38d13e4fbadba39c52d18d7d921d72da3edf7e7c46730"
+    "digest": "6481437f0f7f7a7e28e548198c56e87b9c00cbf42fe9ea01ae859e8e24294752"
   },
   {
     "file": "apps/web/src/legacy-api-routes/ai/meetings/transcription/route.ts",
