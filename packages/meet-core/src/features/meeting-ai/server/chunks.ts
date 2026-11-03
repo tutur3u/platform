@@ -6,6 +6,7 @@ import { MeetAiError, type MeetAiParams, meetAiAccess } from './access';
 import { generateBilledMeetArtifact } from './artifact-billing';
 import { readAudioParts } from './audio-input';
 import { readMeetAudioForm } from './body';
+import { requireChunkConsent } from './chunk-consent';
 import { admitMeetCredits } from './credit-admission';
 import { resolveTranscriptSpeaker } from './transcript-speaker';
 import { enforceMeetAiUsage } from './usage-limit';
@@ -52,6 +53,29 @@ export async function transcribeMeetChunk(
     .maybeSingle();
   if (error) throw new MeetAiError(500, 'Session lookup failed');
   if (!session) throw new MeetAiError(404, 'Session not found');
+  const resolved = await Effect.runPromise(
+    Effect.either(
+      Effect.forEach(
+        parts,
+        (part) =>
+          Effect.tryPromise({
+            try: () =>
+              resolveTranscriptSpeaker({
+                db,
+                meetingId,
+                actorId: user.id,
+                accountId: part.speakerAccountId,
+                kind: part.sourceKind,
+              }),
+            catch: (error) => error,
+          }),
+        { concurrency: 4 }
+      )
+    )
+  );
+  if (Either.isLeft(resolved)) throw resolved.left;
+  const speakers = resolved.right;
+  await requireChunkConsent(db, sessionId, speakers);
   const existing = await db
     .from('meet_ai_chunks')
     .select('*')
@@ -80,28 +104,6 @@ export async function transcribeMeetChunk(
   });
   // A credit refusal must reject the upload before it can leave a failed row.
   const admission = await admitMeetCredits(user.id, meetingId);
-  const resolved = await Effect.runPromise(
-    Effect.either(
-      Effect.forEach(
-        parts,
-        (part) =>
-          Effect.tryPromise({
-            try: () =>
-              resolveTranscriptSpeaker({
-                db,
-                meetingId,
-                actorId: user.id,
-                accountId: part.speakerAccountId,
-                kind: part.sourceKind,
-              }),
-            catch: (error) => error,
-          }),
-        { concurrency: 4 }
-      )
-    )
-  );
-  if (Either.isLeft(resolved)) throw resolved.left;
-  const speakers = resolved.right;
   // Claim one provider attempt at a time, including recovery of failed attempts.
   const reservationStarted = performance.now();
   const inserted = await db.rpc('reserve_meet_ai_chunk', {
@@ -150,6 +152,7 @@ export async function transcribeMeetChunk(
         409,
         'Transcription has ended or reservation expired'
       );
+    await requireChunkConsent(db, sessionId, speakers);
     const result = await generateBilledMeetArtifact(
       batched
         ? { audioSegments: parts.map((part) => part.bytes), hints }

@@ -12,8 +12,8 @@ export async function resolveTranscriptSpeaker(input: {
   actorId: string;
   accountId?: string;
   kind?: 'microphone' | 'shared_audio';
-}): Promise<MeetTranscriptSpeaker | null> {
-  if (!input.accountId) return null;
+}): Promise<MeetTranscriptSpeaker> {
+  if (!input.accountId) throw new MeetAiError(403, 'Speaker identity required');
   const room = await getMeetCallAccess(input.meetingId, 'Participant');
   if (room.user.id !== input.actorId)
     throw new MeetAiError(409, 'Account changed');
@@ -40,7 +40,7 @@ export async function resolveTranscriptSpeaker(input: {
   const displayName =
     profile.data?.display_name?.trim() || details.data?.email?.trim();
   // Never invent an identity or use an unverified client-supplied name.
-  if (!displayName) return null;
+  if (!displayName) throw new MeetAiError(403, 'Speaker identity unavailable');
   return {
     accountId: verified.accountId,
     displayName,
