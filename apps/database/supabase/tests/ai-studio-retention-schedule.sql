@@ -5,7 +5,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 set local timezone = 'UTC';
-select plan(56);
+select plan(62);
 
 -- Grants: service_role only; anon and authenticated are denied.
 select ok(has_function_privilege('service_role', 'private.count_ai_studio_retention()', 'execute'),
@@ -115,8 +115,8 @@ insert into private.ai_studio_run_steps (run_id, sequence, kind, name, status) v
   ('a15e0000-0000-4000-8000-00000000a001', 1, 'tool', 'step', 'succeeded'),
   ('a15e0000-0000-4000-8000-00000000a002', 0, 'model', 'step', 'failed'),
   ('a15e0000-0000-4000-8000-00000000a004', 0, 'model', 'step', 'succeeded');
-insert into private.ai_studio_usage (run_id, ws_id, model_id, feature, billed_credits)
-select f.id, r.ws_id, 'fixture/model', 'fixture', 1
+insert into private.ai_studio_usage (run_id, ws_id, model_id, feature, billed_credits, created_at)
+select f.id, r.ws_id, 'fixture/model', 'fixture', 1, r.created_at
 from fixture_runs f join private.ai_studio_runs r on r.id = f.id
 where f.id in ('a15e0000-0000-4000-8000-00000000a001', 'a15e0000-0000-4000-8000-00000000b001',
   'a15e0000-0000-4000-8000-00000000a004', 'a15e0000-0000-4000-8000-00000000e001');
@@ -224,6 +224,31 @@ select is((:'after'::jsonb ->> 'run_rows')::integer + (:'after'::jsonb ->> 'cont
 select ok(:'after'::jsonb ? 'run_oldest' and (:'after'::jsonb -> 'run_oldest') = 'null'::jsonb,
   'empty preview reports null timestamps');
 
+-- Late settlement crosses a month boundary: budget uses usage.created_at.
+insert into private.ai_studio_runs (id, request_id, ws_id, model_id, feature, status, created_at)
+values ('a15e0000-0000-4000-8000-00000000d001', 'late-settlement',
+'a15e0000-0000-4000-8000-0000000000b1', 'fixture/model', 'fixture', 'succeeded',
+date_trunc('month', now()) - interval '1 minute' - interval '1 month');
+insert into private.ai_studio_usage (run_id, ws_id, model_id, feature, billed_credits, created_at)
+values ('a15e0000-0000-4000-8000-00000000d001', 'a15e0000-0000-4000-8000-0000000000b1',
+'fixture/model', 'fixture', 7, date_trunc('month', now()) + interval '1 minute');
+select is(private.count_ai_studio_retention()->>'run_rows', '0', 'preview holds current-month settlement on old run');
+select private.cleanup_ai_studio_retention_batch(500);
+select is((select sum(billed_credits)::integer from private.ai_studio_usage where run_id = 'a15e0000-0000-4000-8000-00000000d001'), 7, 'deletion preserves current-month budget');
+-- Batch boundary: oldest due run has the second-oldest expired content.
+insert into private.ai_studio_runs (id, request_id, ws_id, model_id, feature, status, created_at)
+values ('a15e0000-0000-4000-8000-00000000d002', 'boundary',
+'a15e0000-0000-4000-8000-0000000000a1', 'fixture/model', 'fixture', 'succeeded', now()-interval '500 days');
+insert into private.ai_studio_run_content(run_id, expires_at) values
+('a15e0000-0000-4000-8000-00000000d002', now()-interval '1 day'),
+('a15e0000-0000-4000-8000-00000000a005', now()-interval '2 days');
+select private.count_ai_studio_retention() as boundary_preview \gset
+select private.cleanup_ai_studio_retention_batch(1) as boundary_batch \gset
+select is(:'boundary_batch'::jsonb->>'content_rows', :'boundary_preview'::jsonb->>'content_rows',
+ 'expired content keeps its category when deleted by cascade across the batch boundary');
+select is(:'boundary_batch'::jsonb->>'cascade_content_rows', :'boundary_preview'::jsonb->>'cascade_content_rows',
+ 'cascade means unexpired content in preview and batch');
+
 -- Run log: counts only.
 set local role service_role;
 select private.record_ai_studio_retention_run('delete', 'done', 4, 2, 3, 1, 3, 2, 1, null, null) as rec \gset
@@ -246,6 +271,29 @@ select is((select content_rows from private.ai_studio_retention_runs order by re
 select ok(has_function_privilege('service_role', 'private.cleanup_ai_studio_retention()', 'execute')
   and not has_function_privilege('authenticated', 'private.cleanup_ai_studio_retention()', 'execute'),
   'the original unbounded cleanup is unchanged and service-only');
+
+-- Freeze both retention clocks for a two-minute September/October settlement.
+-- Definitions are restored below; the entire test also rolls back.
+create temporary table retention_definitions as
+select pg_get_functiondef(oid) as definition from pg_proc
+where oid in ('private.count_ai_studio_retention()'::regprocedure,
+              'private.cleanup_ai_studio_retention_batch(integer)'::regprocedure);
+do $$declare d text; begin
+for d in select definition from retention_definitions loop
+execute replace(d, 'transaction_timestamp()', $clock$'2026-10-31 19:43:00+00'::timestamptz$clock$);
+end loop; end$$;
+insert into private.ai_studio_runs (id, request_id, ws_id, model_id, feature, status, created_at)
+values ('a15e0000-0000-4000-8000-00000000d003', 'two-minute-settlement',
+'a15e0000-0000-4000-8000-0000000000b1', 'fixture/model', 'fixture', 'succeeded', '2026-09-30 23:59:00+00');
+insert into private.ai_studio_usage (run_id, ws_id, model_id, feature, billed_credits, created_at)
+values ('a15e0000-0000-4000-8000-00000000d003', 'a15e0000-0000-4000-8000-0000000000b1',
+'fixture/model', 'fixture', 9, '2026-10-01 00:01:00+00');
+select is(private.count_ai_studio_retention()->>'run_rows', '0', 'two-minute crossing excluded from October preview');
+select private.cleanup_ai_studio_retention_batch(500);
+select is((select billed_credits::integer from private.ai_studio_usage where run_id='a15e0000-0000-4000-8000-00000000d003'), 9, 'two-minute crossing keeps October budget');
+do $$declare d text; begin
+for d in select definition from retention_definitions loop execute d; end loop;
+end$$;
 
 select * from finish();
 rollback;
