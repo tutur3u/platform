@@ -1,13 +1,17 @@
 // @vitest-environment node
 import {
   EASY_CENTER_TUTORING_POLICY,
+  parseTutoringPolicy,
   readTutoringPolicyConfigRows,
+  serializeTutoringPolicyConfigRows,
+  type TutoringPolicy,
 } from '@tuturuuu/internal-api/tutoring-policy';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const wsId = '5d23287f-9094-4714-b8e0-dcce877464a0';
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  exclusionUpgrade: false,
   resolveAccess: vi.fn(),
 }));
 const query = {
@@ -26,6 +30,17 @@ vi.mock('next/server', () => ({
   connection: async () => {},
   NextResponse: { json: Response.json },
 }));
+vi.mock('@tuturuuu/feature-flags', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@tuturuuu/feature-flags')>();
+  return {
+    ...actual,
+    evaluateFlags: (...args: Parameters<typeof actual.evaluateFlags>) => ({
+      ...actual.evaluateFlags(...args),
+      tutoring_exclusion_upgrade: mocks.exclusionUpgrade,
+    }),
+  };
+});
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: mocks.createAdminClient,
 }));
@@ -44,8 +59,24 @@ async function request(method: 'GET' | 'PUT', body?: unknown) {
   );
 }
 
+const IELTS_RULE = { scope: 'all', match: 'contains', value: 'IELTS' };
+const DDT_ONLY = [{ scope: 'all', match: 'contains', value: 'DDT' }];
+
+/** Stored Easy Center rows whose exclusions are omitted or DDT-only. */
+function storedEasyCenterRows(exclusions: 'omitted' | 'ddt-only') {
+  const { groupExclusions: _omit, ...rest } = EASY_CENTER_TUTORING_POLICY;
+  const stored =
+    exclusions === 'omitted' ? rest : { ...rest, groupExclusions: DDT_ONLY };
+  return serializeTutoringPolicyConfigRows(stored as TutoringPolicy);
+}
+
+function storedPolicy(rows: { id: string; value: string }[]) {
+  query.like.mockResolvedValueOnce({ data: rows, error: null } as never);
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
+  mocks.exclusionUpgrade = false;
   mocks.resolveAccess.mockResolvedValue({
     normalizedWsId: wsId,
     permissions: { withoutPermission: () => false },
@@ -145,4 +176,80 @@ describe('tutoring policy API', () => {
       campusOptions: ['Campus North'],
     });
   });
+
+  describe.each(['omitted', 'ddt-only'] as const)(
+    'flag gating with stored %s exclusions',
+    (exclusions) => {
+      it('flag OFF: the GET body is byte-identical to main', async () => {
+        const rows = storedEasyCenterRows(exclusions);
+        storedPolicy(rows);
+        const response = await request('GET');
+        expect(response.status).toBe(200);
+        const text = await response.text();
+        // main's body: { policy, isConfigured } with main's parser (flag off).
+        const mainBody = {
+          policy: readTutoringPolicyConfigRows(rows),
+          isConfigured: true,
+        };
+        expect(JSON.parse(text)).toEqual(mainBody);
+        expect(Object.keys(JSON.parse(text))).toEqual([
+          'policy',
+          'isConfigured',
+        ]);
+        expect(text).toBe(JSON.stringify(mainBody));
+        expect(text).not.toContain('IELTS');
+      });
+
+      it('flag ON: the GET returns the IELTS rule and exclusionUpgrade', async () => {
+        mocks.exclusionUpgrade = true;
+        storedPolicy(storedEasyCenterRows(exclusions));
+        const body = await (await request('GET')).json();
+        expect(body.exclusionUpgrade).toBe(true);
+        expect(body.isConfigured).toBe(true);
+        expect(body.policy.groupExclusions).toEqual([
+          ...EASY_CENTER_TUTORING_POLICY.groupExclusions,
+          IELTS_RULE,
+        ]);
+      });
+
+      it('flag OFF: the PUT writes main rows without IELTS', async () => {
+        const { groupExclusions: _omit, ...rest } = EASY_CENTER_TUTORING_POLICY;
+        const body =
+          exclusions === 'omitted'
+            ? rest
+            : { ...rest, groupExclusions: DDT_ONLY };
+        const response = await request('PUT', body);
+        expect(response.status).toBe(200);
+        const saved = query.upsert.mock.calls[0]?.[0] ?? [];
+        const mainPolicy = parseTutoringPolicy(body);
+        expect(mainPolicy).not.toBeNull();
+        expect(
+          saved.map(({ id, value, ws_id }) => ({ id, value, ws_id }))
+        ).toEqual(
+          serializeTutoringPolicyConfigRows(mainPolicy as TutoringPolicy).map(
+            (row) => ({ ...row, ws_id: wsId })
+          )
+        );
+        expect(JSON.stringify(saved)).not.toContain('IELTS');
+        expect(await response.json()).toEqual({ policy: mainPolicy });
+      });
+
+      it('flag ON: the PUT persists the IELTS rule', async () => {
+        mocks.exclusionUpgrade = true;
+        const { groupExclusions: _omit, ...rest } = EASY_CENTER_TUTORING_POLICY;
+        const body =
+          exclusions === 'omitted'
+            ? rest
+            : { ...rest, groupExclusions: DDT_ONLY };
+        const response = await request('PUT', body);
+        expect(response.status).toBe(200);
+        const saved = query.upsert.mock.calls[0]?.[0] ?? [];
+        // Read back with the flag OFF: the rule is stored explicitly.
+        expect(readTutoringPolicyConfigRows(saved).groupExclusions).toEqual([
+          ...EASY_CENTER_TUTORING_POLICY.groupExclusions,
+          IELTS_RULE,
+        ]);
+      });
+    }
+  );
 });

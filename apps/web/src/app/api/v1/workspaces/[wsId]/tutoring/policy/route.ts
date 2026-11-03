@@ -48,7 +48,8 @@ export async function GET(request: Request, { params }: Params) {
   return NextResponse.json(
     {
       policy: readTutoringPolicyConfigRows(data ?? [], exclusionUpgrade),
-      exclusionUpgrade,
+      // Sent only when ON so the flag-off body stays byte-identical to main.
+      ...(exclusionUpgrade ? { exclusionUpgrade } : {}),
       isConfigured: Boolean(
         data?.some((row) => row.id === TUTORING_POLICY_CONFIG_ID)
       ),
