@@ -32,7 +32,16 @@ Daily defaults and existing `view=daily`, `view=periodic`, `view=automations` an
 retain separate URL state so switching cadence does not reinterpret an old filter.
 
 Every displayed count is a server total over the same active result predicate,
-including stage, statuses, search, dates, category and access scope. Daily counts
+including statuses, search, dates, category and access scope. The list, its
+matching total and the category counts also include the selected stage. The
+periodic stage cards do not: each card counts its own stage under every other
+active filter, so opening the default Pending view shows every stage's real count
+instead of zero for the stages that are not selected (`report-summary-scope.test.ts`).
+That all-stage read never fails the page: if it exceeds the 20,000-report guard or
+errors, the list still loads, the response sets `summaryPartial`, and the cards show
+only the selected stage's count with "—" for the rest plus a hint to narrow the
+dates or search (`periodic-status-summary.test.tsx`).
+Daily counts
 recipient rows; periodic counts report records, including category counts. Changing
 a filter resets actionable selection and hides previous-scope totals while the new
 request is pending. Loading and failed reads show unknown counts rather than zero.
@@ -93,6 +102,13 @@ Periods are calculated in the workspace timezone:
 | Monthly | Calendar month | Default cadence |
 | Quarterly | Q1 through Q4 | Draft after the quarter closes |
 | Yearly | Calendar year | Draft after December 31 closes |
+
+The periodic worklist's report-period range uses inclusive calendar dates. A
+saved period matches when it overlaps the range, so a range may span months. A
+report without a saved period, such as one written manually from a class, matches
+when it was created inside the range, counted in whole days in the workspace
+timezone, or the viewer's browser timezone when the workspace has none
+(`report-summary-scope.test.ts`, `periodic-reports-panel-counts.test.tsx`).
 
 Manual schedules create an editable draft at the start of the period. AI
 schedules generate after the period closes. The default delivery target is
@@ -292,10 +308,11 @@ Daily reports count group-post completion and delivery. Periodic reports count
 subject reports by cadence and approval/delivery state. They intentionally use
 different underlying models and should not be summed as the same metric.
 
-Periodic summary cards use a private aggregate RPC rather than materializing
-report rows in the application. This keeps totals exact beyond PostgREST's
-default row limit. The report list remains independently paginated and can load
-every matching record without using the summary result as a page.
+Periodic stage cards are counted from a separate, column-limited read of the
+same scope without the stage selection. Both reads walk complete server chunks,
+so totals stay exact beyond PostgREST's default row limit. The report list remains
+independently paginated and can load every matching record without using the
+summary result as a page.
 
 ## Verification
 

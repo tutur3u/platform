@@ -48,9 +48,12 @@ describe('smart-search pagination through the real Supabase query builder', () =
           return new Response('[]', { headers });
         if (!url.pathname.endsWith('/rpc/search_periodic_reports'))
           throw new Error('Unexpected query');
-        expect(url.searchParams.get('report_stage')).toBe('eq.blocked');
-        expect(url.searchParams.get('period_end')).toBe('gte.2026-01-01');
-        expect(url.searchParams.get('period_start')).toBe('lte.2026-12-31');
+        expect(url.searchParams.get('report_stage')).toBe(
+          url.searchParams.get('select') === '*' ? 'eq.blocked' : null
+        );
+        expect(url.searchParams.getAll('or')).toEqual([
+          '(and(period_start.lte.2026-12-31,period_end.gte.2026-01-01),and(period_start.is.null,created_at.gte."2026-01-01T00:00:00.000Z",created_at.lt."2027-01-01T00:00:00.000Z"))',
+        ]);
         const args = JSON.parse(String(init?.body));
         expect(args.p_search).toBe('matching');
         expect(args.p_cadence).toBe('monthly');
@@ -145,8 +148,11 @@ describe('smart-search pagination through the real Supabase query builder', () =
         const args = JSON.parse(String(init?.body));
         expect(args.p_search).toBe('nguyen math');
         expect(args.p_ws_id).toBe('workspace');
-        expect(url.searchParams.get('report_stage')).toBe('eq.blocked');
-        rpcCadences.push(args.p_cadence);
+        const listing = url.searchParams.get('select') === '*';
+        expect(url.searchParams.get('report_stage')).toBe(
+          listing ? 'eq.blocked' : null
+        );
+        if (listing) rpcCadences.push(args.p_cadence);
         const matches = dataset.filter(
           (row) =>
             row.cadence === args.p_cadence &&
