@@ -4,6 +4,7 @@ set local lock_timeout = '2s';
 set local statement_timeout = '10s';
 lock table public.meet_ai_sessions, public.meet_ai_chunks, private.meeting_documents in access exclusive mode;
 lock table private.meet_content_fences in exclusive mode;
+-- tuturuuu: reviewed(dynamic-sql-review): Selene, #7519 rollback preconditions; static SQL only, no EXECUTE.
 do $$begin
  if to_regclass('private.meet_erasure_operations') is not null
  or to_regclass('private.meet_erasure_requests') is not null
@@ -16,8 +17,9 @@ do $$begin
    raise exception 'Fence is in use; roll forward';
  end if;
 end$$;
+-- Restore #7309 bodies verbatim; only SECURITY DEFINER search_path is normalized.
 create or replace function private.read_meeting_document(p_meeting_id uuid)
-returns jsonb language plpgsql security definer set search_path = '' as $$
+returns jsonb language plpgsql security definer set search_path = pg_catalog, pg_temp as $$
 declare v_meeting public.workspace_meetings; v_doc uuid; v_result jsonb;
 begin
   select * into v_meeting from public.workspace_meetings where id = p_meeting_id for update;
@@ -33,7 +35,7 @@ begin
   return v_result;
 end $$;
 create or replace function private.checkpoint_meeting_document(p_meeting_id uuid,p_document_id uuid,p_owner_id uuid,p_state jsonb,p_content jsonb,p_hash text,p_version integer)
-returns integer language plpgsql security definer set search_path = '' as $$
+returns integer language plpgsql security definer set search_path = pg_catalog, pg_temp as $$
 declare v_revision integer; v_expected jsonb; v_current jsonb;
 begin
   if jsonb_typeof(p_state) <> 'array' or jsonb_array_length(p_state) > 524288
