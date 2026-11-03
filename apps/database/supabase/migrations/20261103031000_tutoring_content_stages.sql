@@ -8,10 +8,13 @@ alter table private.tutoring_notification_receipts
   add column stage text not null default 'n1'
   constraint tutoring_notification_receipts_stage_check check (stage in ('n1','n2','n3'));
 -- A pre-stage weak-content receipt is the teacher alert, so it is N2 history of
--- its cycle (N1 is the session-completed notice). No caller wrote these rows
--- before this migration, so this touches at most a handful of rows.
-update private.tutoring_notification_receipts set stage='n2'
-  where kind='weak_content_review_due';
+-- its cycle (N1 is the session-completed notice). Use the processor's excluded
+-- workspace identity, hashed to avoid duplicating its raw ID. Both timeouts above
+-- cover this data step as well as the schema changes.
+update private.tutoring_notification_receipts r set stage='n2'
+  from public.workspace_user_groups g
+  where r.group_id=g.id and r.kind='weak_content_review_due'
+    and md5(g.ws_id::text) <> 'c736c4be0acb08f8625bb5ebe9ad8fe2';
 create unique index tutoring_notification_receipts_stage_key
   on private.tutoring_notification_receipts
   (group_id, student_user_id, review_cycle_started_at, recipient_user_id, stage);

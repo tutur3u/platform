@@ -3,8 +3,10 @@
 Set TUTORING_PG_BIN to another local PostgreSQL bin directory when PG17 is not
 installed at the Homebrew path. The real-schema replay is a separate harness.
 """
+import hashlib
 import os
 import pathlib
+import re
 import subprocess
 import tempfile
 import unittest
@@ -72,6 +74,31 @@ class ContentRules(unittest.TestCase):
     }
 
     def pre_migration(self):
+        if self._testMethodName == 'test_backfill_excludes_ec_receipts':
+            # Reuse the processor's identity rule; never duplicate its raw ID.
+            ec = re.search(r"flag.ws_id <> '([^']+)'::uuid", MIGRATION.read_text()).group(1)
+            self.sql(f"""
+                insert into public.workspace_user_groups values
+                  ('00000000-0000-0000-0000-000000000012','{ec}') on conflict do nothing;
+                insert into private.tutoring_notification_receipts
+                  (kind,group_id,student_user_id,review_cycle_started_at,recipient_user_id)
+                values
+                  ('weak_content_review_due','00000000-0000-0000-0000-000000000012',
+                   '00000000-0000-0000-0000-000000000003',now(),
+                   '00000000-0000-0000-0000-000000000005'),
+                  ('weak_content_review_due','00000000-0000-0000-0000-000000000002',
+                   '00000000-0000-0000-0000-000000000003',now(),
+                   '00000000-0000-0000-0000-000000000005');
+            """)
+            pre_run = (ROOT / 'apps/database/verification/tutoring-content-stages-pre-run.sql').read_text()
+            # psql emits transaction command tags; request only query rows.
+            query = pre_run[pre_run.index('with population'):pre_run.index('commit;')].rstrip().rstrip(';')
+            self.assertEqual(self.sql("select string_agg(workspace_segment || ':' || legacy_receipts || ':' || would_change, ',' order by workspace_segment) from (" + query + ") counts"), ['EC:1:0,non-EC:1:1'])
+            self.ec_receipt_before = self.sql("""
+                select (to_jsonb(r)-'stage')::text || '@' || r.xmin::text
+                from private.tutoring_notification_receipts r
+                where group_id='00000000-0000-0000-0000-000000000012'
+            """)
         seed = self.PRE_MIGRATION.get(self._testMethodName)
         if seed:
             self.sql(seed)
@@ -324,6 +351,29 @@ class ContentRules(unittest.TestCase):
         self.sql(rollback)
         self.assertEqual(self.sql('select count(*) from (select * from private.tutoring_notification_receipts except select * from private.tutoring_content_stage_backup) d'), ['0'])
         self.assertEqual(self.sql('select count(*) from private.tutoring_content_stage_backup'), ['2'])
+
+    def test_backfill_identity_matches_processor(self):
+        migration = MIGRATION.read_text()
+        ec = re.search(r"flag.ws_id <> '([^']+)'::uuid", migration).group(1)
+        digest = hashlib.md5(ec.encode()).hexdigest()
+        predicate = "md5(g.ws_id::text) <> '" + digest + "'"
+        self.assertIn(predicate, migration)
+        pre_run = (ROOT / 'apps/database/verification/tutoring-content-stages-pre-run.sql').read_text()
+        self.assertIn("md5(g.ws_id::text) = '" + digest + "'", pre_run)
+
+    def test_backfill_timeouts(self):
+        self.assertEqual(self.sql("begin;" + MIGRATION.read_text().split('-- Constant default')[0] + "select current_setting('lock_timeout') || ':' || current_setting('statement_timeout');"), ['5s:30s'])
+
+    def test_backfill_excludes_ec_receipts(self):
+        self.assertEqual(self.sql("""
+            select string_agg(stage,',' order by group_id)
+            from private.tutoring_notification_receipts
+        """), ['n2,n1'])
+        self.assertEqual(self.sql("""
+            select (to_jsonb(r)-'stage')::text || '@' || r.xmin::text
+            from private.tutoring_notification_receipts r
+            where group_id='00000000-0000-0000-0000-000000000012'
+        """), self.ec_receipt_before)
 
     def test_legacy_weak_receipt_becomes_n2_history(self):
         # A pre-stage weak-content receipt is the teacher alert (N2), never N1.

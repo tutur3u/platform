@@ -22,7 +22,8 @@ The processor records it in `private.tutoring_content_review_episodes`, so membe
 edits, toggles, reverts and replacement `user_feedbacks` rows (the API POST
 inserts a new row) never move N2 or N3. Only a newer authorized review opens the
 next cycle. Existing N2 history for the boundary keeps its cycle, and legacy
-pre-stage weak-content receipts become N2 history.
+pre-stage weak-content receipts outside EC become N2 history. EC receipts stay
+unchanged at N1.
 
 After approved migration rollout, ops can opt `tutoring-content-rules` into the
 existing `CRON_CONTROL_ENABLED_JOBS`. It runs daily on the existing 06:00 UTC
@@ -30,7 +31,13 @@ trigger. Each transaction scans at most 1000 notes and sends at most 1000 notice
 a private cursor advances across slots, including past unlinked students.
 No new cron trigger, runner, email batch, or external channel is introduced.
 The transaction runner prevents CONCURRENTLY in this single atomic migration.
-The regular index build has 5s lock and 30s statement timeouts. No data backfill.
+The migration, including the legacy receipt backfill and regular index build,
+has 5s lock and 30s statement timeouts. Before applying it, Rex must run
+[`tutoring-content-stages-pre-run.sql`](tutoring-content-stages-pre-run.sql).
+It runs read-only and reports legacy receipt counts and rows that would change,
+split EC vs non-EC; EC `would_change` must be zero. The backfill joins the
+receipt's group to its workspace and excludes the processor's EC identity via
+its MD5 hash; receipts without a matching group are left untouched.
 Disable both switches before rollback. Run the rollback standalone (no outer
 transaction): phase 1 commits the processor removal before the backup phase, so a
 failing backup never re-enables anything. Collisions on the legacy key are only
