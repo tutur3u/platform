@@ -1,5 +1,5 @@
 begin;
-set local lock_timeout = '5s';
+set local lock_timeout = '2s';
 set local statement_timeout = '30s';
 
 create table private.meet_erase_settings (
@@ -20,6 +20,7 @@ create table private.meet_erase_settings_audit (
   old_settings jsonb not null,
   new_settings jsonb not null
 );
+-- tuturuuu: no-grant (trigger)
 create function private.audit_meet_erase_settings() returns trigger
 language plpgsql security definer set search_path = pg_catalog, pg_temp as $$
 begin
@@ -47,6 +48,7 @@ create table private.meet_content_holds (
 );
 create index meet_content_holds_active on private.meet_content_holds(ws_id,meeting_id) where released_at is null;
 -- Keep inert until V9, the store workers and V10 M3 are ready; V22 installs transitions.
+-- tuturuuu: no-grant (trigger)
 create function private.block_meet_hold_transition() returns trigger
 language plpgsql set search_path = pg_catalog, pg_temp as $$
 begin

@@ -1847,6 +1847,13 @@ Apply `20261103120000_meet_erase_settings_and_holds.sql` before V10
 V10 needs both foundations. Deploy V2 and V3 to web, both Meet Workers and
 Parley, and confirm V3 readers are live before V10. Existing AI containment stays.
 
+Run all three erase rollbacks in an off-peak maintenance window:
+- V10 rollback: off-peak; stop erase workers and preserve ledger evidence first.
+- V2 rollback: off-peak; run only after V10 is removed.
+- V4 rollback: off-peak; run only after V10 is removed.
+
+V2's forward migration uses a 2 s lock timeout and a 30 s statement timeout.
+
 The V2 rollback is **FORBIDDEN after V10**: roll back V10 before V2 because
 PL/pgSQL references to the holds table are not dependency-tracked. Preserve
 all hold and settings audit evidence. Keep the inert hold trigger until V9,
