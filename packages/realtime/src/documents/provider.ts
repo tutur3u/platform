@@ -123,6 +123,17 @@ export class CloudflareDocumentProvider {
       this.onStatus?.(false);
     }
   }
+  discard() {
+    this.closed = true;
+    this.connected = false;
+    this.pendingUpdates = [];
+    this.pendingClients.clear();
+    if (this.flushTimer) clearTimeout(this.flushTimer);
+    this.doc.off('update', this.documentUpdate);
+    this.awareness.off('update', this.awarenessUpdate);
+    this.awareness.destroy();
+    void this.channel.unsubscribe();
+  }
   async destroy() {
     if (this.closed) return;
     this.awareness.setLocalState(null);

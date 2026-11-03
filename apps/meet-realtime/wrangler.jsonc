@@ -11,6 +11,7 @@
     "port": 8786,
     "local_protocol": "http"
   },
+  "vars": { "MEET_ERASE_DO_PUBLIC_KEYS": "{}" },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 0.05

@@ -6,5 +6,10 @@ export async function GET(
   { params }: { params: Promise<{ meetingId: string }> }
 ) {
   await connection();
-  return roomRoute(request, (await params).meetingId, joinMeetingDocument);
+  return roomRoute(request, (await params).meetingId, (access) =>
+    joinMeetingDocument(
+      access,
+      request.headers.get('x-meet-document-protocol') === '2' ? 2 : 1
+    )
+  );
 }

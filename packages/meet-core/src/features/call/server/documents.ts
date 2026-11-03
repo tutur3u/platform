@@ -6,13 +6,14 @@ import { MeetCallAccessError } from '../lib/call-access';
 import { callRoomService } from './room-service';
 
 type Access = Parameters<typeof callRoomService>[0];
-export async function joinMeetingDocument(access: Access) {
+export async function joinMeetingDocument(access: Access, docProtocol = 1) {
   // A signed room read proves lifecycle and admission before any document lookup.
   await callRoomService(access, { action: 'programming.read' });
   const document = await accountPrivateRpc<{
     documentId: string;
     revision: number;
     state: number[];
+    docGeneration: number;
   }>('read_meeting_document', { p_meeting_id: access.meeting.id });
   const endpoint = new URL(
     process.env.CLOUDFLARE_CHANNELS_URL ??
@@ -38,14 +39,16 @@ export async function joinMeetingDocument(access: Access) {
     ownerId: access.meeting.creator_id,
     documentId: document.documentId,
     version: document.revision,
-    role: 'editor',
+    docGeneration: document.docGeneration,
+    docProtocol,
+    role: document.docGeneration > 0 && docProtocol < 2 ? 'viewer' : 'editor',
     exp: Math.floor(Date.now() / 1000) + 60,
   });
   return {
     ...document,
     endpoint: endpoint.toString(),
     token: signRealtimePayload(ticket, process.env.MEET_REALTIME_TOKEN_SECRET),
-    role: 'editor' as const,
+    role: ticket.role,
     user: {
       id: access.user.id,
       user_metadata: { display_name: access.displayName },

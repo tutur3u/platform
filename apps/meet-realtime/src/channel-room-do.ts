@@ -19,11 +19,15 @@ import {
   DOCUMENT_CHECKPOINT_EVENT,
   type DocumentCheckpointStatus,
 } from '../../../packages/realtime/src/documents/checkpoint';
+import { emptyErase, type PersistedErase } from './channel-document-erase';
+import { ChannelDocumentErase } from './channel-document-erase-protocol';
 
 export interface ChannelRoomEnv {
   CHANNEL_ROOM: DurableObjectNamespace;
   MEET_REALTIME_TOKEN_SECRET: string;
   PLATFORM_API_BASE_URL?: string;
+  MEET_ERASE_DO_PUBLIC_KEYS?: string;
+  MEET_ERASE_CALLBACK_KEY_V1?: string;
 }
 type Attachment = {
   ticket: ChannelTicket;
@@ -37,9 +41,13 @@ type Attachment = {
 };
 /** Broadcast/presence authority and durable rich-text document transport. */
 export class ChannelRoomDurableObject implements DurableObject {
-  private doc = new Y.Doc();
+  doc = new Y.Doc();
   private dirty = false;
-  private metadata: {
+  erase: PersistedErase = emptyErase();
+  documentAllowed = false;
+  documentPresent = false;
+  private serial: Promise<unknown> = Promise.resolve();
+  metadata: {
     topic: string;
     ownerId: string;
     documentId: string;
@@ -51,19 +59,34 @@ export class ChannelRoomDurableObject implements DurableObject {
     checkpointStatus?: DocumentCheckpointStatus;
   } | null = null;
   private ready: Promise<void>;
+  private eraseProtocol: ChannelDocumentErase;
   private alarmInFlight: Promise<void> | null = null;
   constructor(
-    private state: DurableObjectState,
-    private env: ChannelRoomEnv
+    readonly state: DurableObjectState,
+    readonly env: ChannelRoomEnv
   ) {
+    this.eraseProtocol = new ChannelDocumentErase(this);
     this.ready = state.blockConcurrencyWhile(async () => {
-      const update = await state.storage.get<Uint8Array>('document');
+      const [update, metadata, erase] = await Promise.all([
+        state.storage.get<Uint8Array>('document'),
+        state.storage.get<typeof this.metadata>('metadata'),
+        state.storage.get<PersistedErase>('erase'),
+      ]);
       if (update) Y.applyUpdate(this.doc, update);
-      this.metadata = (await state.storage.get('metadata')) ?? null;
+      this.documentPresent = update !== undefined;
+      this.metadata = metadata ?? null;
+      this.erase = erase ?? emptyErase();
     });
   }
-  async fetch(request: Request) {
+  fetch(request: Request) {
+    const run = this.serial.then(() => this.handleFetch(request));
+    this.serial = run.catch(() => {});
+    return run;
+  }
+  private async handleFetch(request: Request) {
     await this.ready;
+    if (new URL(request.url).pathname === '/channels/erase')
+      return this.eraseProtocol.eraseCommand(request);
     const ticket = JSON.parse(
       request.headers.get('x-channel-ticket') ?? 'null'
     ) as ChannelTicket | null;
@@ -89,6 +112,15 @@ export class ChannelRoomDurableObject implements DurableObject {
         };
         await this.state.storage.put('metadata', this.metadata);
       }
+    }
+    if (ticket.topic.startsWith('meeting-document-')) {
+      if (
+        !(await this.eraseProtocol.checkDocumentGate()) ||
+        (ticket.docGeneration ?? 0) !== this.erase.installedGeneration
+      )
+        return Response.json({ code: 'doc_locked' }, { status: 423 });
+      if (this.erase.installedGeneration > 0 && (ticket.docProtocol ?? 1) < 2)
+        ticket.role = 'viewer';
     }
     if (ticket.kind === 'document') {
       if (request.method !== 'GET') return new Response(null, { status: 405 });
@@ -168,7 +200,31 @@ export class ChannelRoomDurableObject implements DurableObject {
     return new Response(null, { status: 101, webSocket: client });
   }
   webSocketMessage(socket: WebSocket, message: string | ArrayBuffer) {
+    const run = this.serial.then(async () => {
+      await this.ready;
+      if (this.metadata && !(await this.eraseProtocol.checkDocumentGate()))
+        return socket.close(4423, 'doc_locked');
+      this.handleSocketMessage(socket, message);
+    });
+    this.serial = run.catch(() => socket.close(1011, 'Document unavailable'));
+    return run;
+  }
+  private handleSocketMessage(
+    socket: WebSocket,
+    message: string | ArrayBuffer
+  ) {
     const attachment = socket.deserializeAttachment() as Attachment;
+    if (
+      this.metadata &&
+      (this.erase.freeze ||
+        !this.documentAllowed ||
+        (attachment.ticket.docGeneration ?? 0) !==
+          this.erase.installedGeneration ||
+        (attachment.ticket.role === 'editor' &&
+          this.erase.installedGeneration > 0 &&
+          (attachment.ticket.docProtocol ?? 1) < 2))
+    )
+      return socket.close(4423, 'doc_locked');
     if (attachment.ticket.exp * 1000 <= Date.now())
       return socket.close(1008, 'Ticket expired');
     if (
@@ -197,7 +253,13 @@ export class ChannelRoomDurableObject implements DurableObject {
           next.data.topic !== attachment.ticket.topic ||
           next.data.userId !== attachment.ticket.userId ||
           next.data.ownerId !== attachment.ticket.ownerId ||
-          next.data.documentId !== attachment.ticket.documentId
+          next.data.documentId !== attachment.ticket.documentId ||
+          (this.metadata !== null &&
+            ((next.data.docGeneration ?? 0) !==
+              this.erase.installedGeneration ||
+              (this.erase.installedGeneration > 0 &&
+                next.data.role === 'editor' &&
+                (next.data.docProtocol ?? 1) < 2)))
         )
           return socket.close(1008, 'Invalid refresh');
         attachment.ticket = next.data;
@@ -351,9 +413,12 @@ export class ChannelRoomDurableObject implements DurableObject {
     if (!alarm || alarm > deadline) await this.state.storage.setAlarm(deadline);
   }
   alarm() {
-    this.alarmInFlight ??= this.runAlarm().finally(() => {
-      this.alarmInFlight = null;
-    });
+    this.alarmInFlight ??= this.serial
+      .then(() => this.runAlarm())
+      .finally(() => {
+        this.alarmInFlight = null;
+      });
+    this.serial = this.alarmInFlight.catch(() => {});
     return this.alarmInFlight;
   }
   private async runAlarm() {
@@ -366,7 +431,26 @@ export class ChannelRoomDurableObject implements DurableObject {
       });
     }
     let next = Infinity;
-    if (this.metadata) next = await this.checkpointDocument();
+    if (this.erase.freeze && this.erase.freeze.lease_exp <= Date.now()) {
+      try {
+        const status = await this.eraseProtocol.platformEraseCall('status', {
+          operation_key: this.erase.freeze.operation_key,
+        });
+        if (
+          status.state === 'not_committed' ||
+          (status.state === 'in_progress' &&
+            this.erase.freeze.decision === 'leave' &&
+            status.committed === true)
+        ) {
+          const erase = { ...this.erase, freeze: null };
+          await this.state.storage.put('erase', erase);
+          this.erase = erase;
+        }
+      } catch {}
+      if (this.erase.freeze) next = Date.now() + 30000;
+    }
+    if (this.metadata && (await this.eraseProtocol.checkDocumentGate()))
+      next = Math.min(next, await this.checkpointDocument());
     for (const socket of this.state.getWebSockets()) {
       const { ticket } = socket.deserializeAttachment() as Attachment;
       if (ticket.exp * 1000 <= Date.now()) socket.close(1008, 'Ticket expired');
@@ -414,6 +498,7 @@ export class ChannelRoomDurableObject implements DurableObject {
       {
         aud: 'tuturuuu.channels',
         kind: 'document-checkpoint',
+        docGeneration: this.erase.installedGeneration,
         version,
         topic: metadata.topic,
         userId: metadata.ownerId,

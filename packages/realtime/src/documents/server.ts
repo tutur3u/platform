@@ -9,3 +9,4 @@ export function richTextDocumentContent(update: Uint8Array) {
     doc.destroy();
   }
 }
+export * from './erase';

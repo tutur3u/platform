@@ -1,8 +1,20 @@
 import { channelTicketSchema } from '../../../packages/realtime/src/channels/schema';
 import { verifyRealtimePayload } from '../../../packages/realtime/src/core/token';
+import { verifyEraseCommand } from '../../../packages/realtime/src/documents/erase';
 import type { ChannelRoomEnv } from './channel-room-do';
 export async function channelRequest(request: Request, env: ChannelRoomEnv) {
   const url = new URL(request.url);
+  if (url.pathname === '/channels/erase') {
+    if (request.method !== 'POST') return new Response(null, { status: 405 });
+    const command = await verifyEraseCommand(
+      request.headers.get('Authorization')?.match(/^Bearer (\S+)$/)?.[1] ?? '',
+      env.MEET_ERASE_DO_PUBLIC_KEYS
+    );
+    if (!command) return new Response(null, { status: 401 });
+    return env.CHANNEL_ROOM.get(
+      env.CHANNEL_ROOM.idFromName(command.topic)
+    ).fetch(request);
+  }
   const join = url.pathname === '/channels';
   const raw = join
     ? url.searchParams.get('token')

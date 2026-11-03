@@ -11,6 +11,8 @@ export const channelTicketSchema = z
     kind: z.enum(['join', 'publish', 'document', 'document-checkpoint']),
     documentId: z.guid().optional(),
     ownerId: z.guid().optional(),
+    docGeneration: z.number().int().nonnegative().optional(),
+    docProtocol: z.number().int().positive().optional(),
     version: z.number().int().nonnegative().optional(),
     topic: channelTopicSchema,
     userId: z.guid(),

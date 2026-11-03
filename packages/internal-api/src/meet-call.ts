@@ -353,12 +353,13 @@ export function getMeetPlaygroundRun(id: string, run: string) {
 }
 
 export interface MeetingDocumentJoin {
+  docGeneration: number;
   documentId: string;
   revision: number;
   state: number[];
   endpoint: string;
   token: string;
-  role: 'editor';
+  role: 'editor' | 'viewer';
   user: { id: string; user_metadata: { display_name: string } };
 }
 export function getMeetDocument(
@@ -366,6 +367,7 @@ export function getMeetDocument(
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<MeetingDocumentJoin>(
-    `/api/meet-call/${encodePathSegment(meetingId)}/document`
+    `/api/meet-call/${encodePathSegment(meetingId)}/document`,
+    { headers: { 'x-meet-document-protocol': '2' } }
   );
 }
