@@ -28,6 +28,9 @@ grant usage on schema extensions to service_role;
 set local role service_role;
 select throws_ok($$delete from private.meet_content_fences$$,'42501','permission denied for table meet_content_fences','service cannot delete the advanced fence');
 select throws_ok($$update private.meet_content_fences set generation=0,restore_hold=false,doc_hold=false$$,'42501','permission denied for table meet_content_fences','service cannot rewind the advanced fence');
+select is(public.complete_meet_ai_chunk('00000000-0000-4000-8000-000000088705',
+ (select attempt_id from public.meet_ai_chunks where id='00000000-0000-4000-8000-000000088705'),
+ '{"transcript":"stale","usage":{},"cost_usd":1}'::jsonb),false,'service stale completion stays refused after direct mutation attempts');
 reset role;
 select is((select generation from private.meet_content_fences where meeting_id=pg_temp.fid(88703)),1::bigint,'permission refusals preserve erase generation');
 select throws_ok($$select public.reserve_meet_ai_chunk(pg_temp.fid(88709),pg_temp.fid(88999),0,0::numeric,8::numeric)$$,'P0001','Session not found','missing session preserves the reservation conflict contract');
@@ -55,6 +58,11 @@ update private.meet_content_fences set doc_generation=1 where meeting_id=pg_temp
 select throws_ok($$select private.read_meeting_document(pg_temp.fid(88703))$$,'40001','Document erasing','cold reader refuses old installed copy');
 select throws_ok($$select private.checkpoint_meeting_document(pg_temp.fid(88703),(select document_id from doc),pg_temp.fid(88701),'[]','{"type":"doc","content":[]}',repeat('b',64),2)$$,'40001','Document erasing','legacy checkpoint refused after erase');
 update private.meeting_documents set installed_doc_generation=1 where meeting_id=pg_temp.fid(88703);
+select is((private.read_meeting_document(pg_temp.fid(88703))->>'docGeneration')::bigint,1::bigint,'V8 reader returns the installed nonzero generation');
+select is(private.checkpoint_meeting_document(pg_temp.fid(88703),(select document_id from doc),pg_temp.fid(88701),'[1]','{"type":"doc","content":[]}',repeat('b',64),2,1),2,'V8 eight-argument checkpoint accepts current generation');
+select throws_ok($$select private.checkpoint_meeting_document(pg_temp.fid(88703),(select document_id from doc),pg_temp.fid(88701),'[2]','{"type":"doc","content":[]}',repeat('c',64),3,0)$$,'40001','Document erasing','V8 eight-argument checkpoint refuses stale generation');
+select is(private.read_meeting_document(pg_temp.fid(88703))->'state','[1]'::jsonb,'V8 reader retains current checkpoint after stale refusal');
+
 update private.meet_content_fences set doc_hold=true where meeting_id=pg_temp.fid(88703);
 select throws_ok($$select private.read_meeting_document(pg_temp.fid(88703))$$,'40001','Document erasing','document hold blocks read');
 update private.meet_content_fences set doc_hold=false,restore_hold=true where meeting_id=pg_temp.fid(88703);
