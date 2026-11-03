@@ -22,12 +22,14 @@ for table, column, value, reset in [
 print("""
 select lives_ok('select pg_temp.rollback_guard()', 'unused generation permits rollback');
 select is((select count(*) from pg_locks
- where pid=pg_backend_pid() and mode='ExclusiveLock' and granted
+ where pid=pg_backend_pid() and mode in ('ExclusiveLock','AccessExclusiveLock') and granted
  and relation in ('private.meet_content_fences'::regclass,
                   'private.meeting_documents'::regclass,
                   'public.meet_ai_chunks'::regclass,
                   'public.meet_ai_sessions'::regclass)), 4::bigint,
  'rollback locks fence and content tables before checking state');
+create table private.meet_erasure_operations(id uuid);
+select throws_ok('select pg_temp.rollback_guard()', 'P0001', 'V10 is installed; roll forward', 'V10 blocks V4 rollback even with zero generations');
 select * from finish();
 rollback;
 """)

@@ -15,6 +15,11 @@ insert into public.workspace_meetings(id,ws_id,creator_id,name) values
  (pg_temp.fid(88703),pg_temp.fid(88702),pg_temp.fid(88701),'Fence fixture');
 select lives_ok($$select public.start_meet_ai_session(pg_temp.fid(88703),pg_temp.fid(88701),pg_temp.fid(88704))$$,'fenced start');
 select is((select generation from private.meet_content_fences where meeting_id=pg_temp.fid(88703)),0::bigint,'start lazily creates generation zero');
+insert into public.meet_ai_sessions(id,meeting_id,user_id,protocol,billing_ws_id,billing_host_id)
+ values(pg_temp.fid(88710),pg_temp.fid(88703),pg_temp.fid(88701),'self_v1',pg_temp.fid(88702),pg_temp.fid(88701));
+select throws_ok($$select public.reserve_meet_ai_chunk(pg_temp.fid(88711),pg_temp.fid(88710),0,0::numeric,8::numeric)$$,
+ '55000','Legacy reservation cannot reserve self-capture chunks','merged reservation refuses self_v1');
+select is((select count(*) from public.meet_ai_chunks where session_id=pg_temp.fid(88710)),0::bigint,'self reservation refusal writes no chunk');
 select lives_ok($$select public.reserve_meet_ai_chunk(pg_temp.fid(88705),pg_temp.fid(88704),0,0::numeric,8::numeric)$$,'legacy reservation signature remains callable');
 select is((select erasure_generation from public.meet_ai_chunks where id=pg_temp.fid(88705)),0::bigint,'reservation captures generation');
 create temp table attempt as select attempt_id from public.meet_ai_chunks where id=pg_temp.fid(88705);

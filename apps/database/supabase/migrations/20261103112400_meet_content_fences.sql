@@ -1,6 +1,7 @@
 begin;
 set local lock_timeout = '2s';
 set local statement_timeout = '10s';
+lock table public.meet_ai_sessions, public.meet_ai_chunks, private.meeting_documents in access exclusive mode;
 
 create table private.meet_content_fences (
   meeting_id uuid primary key references public.workspace_meetings(id) on delete cascade,
@@ -63,8 +64,12 @@ begin
   if f.restore_hold then raise exception 'Transcript changed' using errcode='40001'; end if;
   select * into session from public.meet_ai_sessions where id = p_session_id for update;
   if not found then raise exception 'Session not found'; end if;
+  if session.protocol <> 'legacy' then
+    raise exception 'Legacy reservation cannot reserve self-capture chunks' using errcode = '55000';
+  end if;
   select * into chunk from public.meet_ai_chunks
-    where session_id = p_session_id and sequence = p_sequence for update;
+    where session_id = p_session_id and sequence = p_sequence and stream_id is null
+    for update;
   if found then
     if chunk.id <> p_id then raise exception 'Chunk identity mismatch'; end if;
     if chunk.status = 'completed' then return null; end if;

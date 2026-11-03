@@ -2,8 +2,14 @@
 begin;
 set local lock_timeout = '2s';
 set local statement_timeout = '10s';
-lock table private.meet_content_fences, private.meeting_documents, public.meet_ai_chunks, public.meet_ai_sessions in exclusive mode;
+lock table public.meet_ai_sessions, public.meet_ai_chunks, private.meeting_documents in access exclusive mode;
+lock table private.meet_content_fences in exclusive mode;
 do $$begin
+ if to_regclass('private.meet_erasure_operations') is not null
+ or to_regclass('private.meet_erasure_requests') is not null
+ or to_regclass('private.meet_transcript_erasures') is not null then
+   raise exception 'V10 is installed; roll forward';
+ end if;
  if exists(select 1 from private.meet_content_fences where generation <> 0 or doc_generation <> 0 or active_operation_key is not null or doc_hold or restore_hold)
  or exists(select 1 from private.meeting_documents where installed_doc_generation <> 0 or installed_operation_key is not null)
  or exists(select 1 from public.meet_ai_chunks where erasure_generation <> 0) then
@@ -64,8 +70,12 @@ declare
 begin
   select * into session from public.meet_ai_sessions where id = p_session_id for update;
   if not found then raise exception 'Session not found'; end if;
+  if session.protocol <> 'legacy' then
+    raise exception 'Legacy reservation cannot reserve self-capture chunks' using errcode = '55000';
+  end if;
   select * into chunk from public.meet_ai_chunks
-    where session_id = p_session_id and sequence = p_sequence for update;
+    where session_id = p_session_id and sequence = p_sequence and stream_id is null
+    for update;
   if found then
     if chunk.id <> p_id then raise exception 'Chunk identity mismatch'; end if;
     if chunk.status = 'completed' then return null; end if;
