@@ -379,13 +379,27 @@ is not exposed to any client yet; legacy sessions keep the rule above.
 - An account deletion or erase fence hides that person's speech immediately.
   Any erase, or any fenced contributor, redacts the whole mixed notes for every
   reader without revealing who asked.
-- Workspace, meeting, session or host-profile deletion removes `self_v1`
-  consent evidence with the session. The host profile foreign key is
-  `SET NULL`, so participants keep their own speech. Legacy consent evidence
-  still requires explicit service erasure first.
+- Consent is enforced in the database. `private.meet_ai_consents` is the only
+  consent source; the live room roster is never consent authority. Opening a
+  capture stream needs the account's current decision to be `allow`, and each
+  stored chunk must carry exactly the account's current consent revision (the
+  number of decisions recorded for it in that session). No decision, `deny`
+  or `withdraw` is refused. A `deny` or `withdraw` revokes the account's live
+  streams in the same transaction, and a new `allow` is the only way back.
+  Provider dispatch is recorded once, only under the current `allow` revision.
+- A revoked upload grant stays revoked: rejoining the room records admission
+  but never restores upload.
+- Deleting a session never deletes consent evidence. Workspace, meeting or
+  session deletion over consent rows is refused (`RESTRICT`, as for legacy
+  sessions) until the evidence is explicitly erased by its retention owner.
+  The host profile foreign key is `SET NULL`, so participants keep their own
+  speech.
+- Withdrawal does not hide speech captured before it; removing that speech is
+  erasure, a separate later step.
 
-Regression coverage: `apps/database/supabase/tests/meet-ai-self-v1-read-contract.sql`
-and `apps/database/supabase/tests/meet-ai-self-v1-schema.sql`.
+Regression coverage: `apps/database/supabase/tests/meet-ai-self-v1-read-contract.sql`,
+`apps/database/supabase/tests/meet-ai-self-v1-schema.sql` and
+`apps/database/supabase/tests/meet-ai-self-v1-consent.sql`.
 
 ## Missing microphone or camera
 

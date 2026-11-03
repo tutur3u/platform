@@ -1,5 +1,5 @@
 -- Meet AI self_v1 PR 1: privileges, legacy upgrade semantics, invariants and
--- N2 delete cascades on the merged #7264/#7276/#7293 schema.
+-- delete behaviour on the merged #7264/#7276/#7293 schema.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
@@ -40,7 +40,7 @@ select ok((select bool_and(has_function_privilege('service_role', p.oid, 'EXECUT
   where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'),
   'self_v1 functions are service-executable with an explicit pg_temp-last path');
 select is((select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-  where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'), 10, 'ten self_v1 functions exist');
+  where n.nspname = 'private' and p.proname like '%meet_ai_self_v1%'), 12, 'twelve self_v1 functions exist');
 
 -- N2 FK actions are explicit.
 select is((select confdeltype::text from pg_constraint where conname = 'meet_ai_sessions_user_id_fkey'), 'n',
@@ -144,6 +144,8 @@ select throws_ok($$insert into private.meet_ai_session_participants(session_id, 
 set local role service_role;
 select lives_ok($$select private.record_meet_ai_self_v1_admission(pg_temp.cid(89032), pg_temp.cid(n), 1)
   from generate_series(89002, 89004) n$$, 'room authority records actual admissions');
+insert into private.meet_ai_consents(session_id, user_id, decision, notice_version) values
+ (pg_temp.cid(89032), pg_temp.cid(89003), 'allow', 'v1'), (pg_temp.cid(89032), pg_temp.cid(89004), 'allow', 'v1');
 reset role;
 select throws_ok($$insert into private.meet_ai_capture_streams(session_id, account_id, device_epoch, input_processing, lease_expires_at)
   values (pg_temp.cid(89032), pg_temp.cid(89005), 1, 'processed_aec', now() + interval '30 seconds')$$,
@@ -163,6 +165,8 @@ select throws_ok($$insert into private.meet_ai_capture_streams(session_id, accou
   '23514', null, 'takeover allocates a strictly newer device epoch');
 select throws_ok($$update private.meet_ai_capture_streams set state = 'active', closed_at = null where id = pg_temp.cid(89051)$$,
   '55000', null, 'revoked streams stay terminal');
+insert into private.meet_ai_capture_streams(id, session_id, account_id, device_epoch, input_processing, lease_expires_at)
+ values (pg_temp.cid(89053), pg_temp.cid(89032), pg_temp.cid(89003), 2, 'processed_aec', now() + interval '30 seconds');
 create function pg_temp.self_chunk(chunk integer, stream integer, account integer, seq integer, start_ms bigint)
 returns void language sql as $$
   insert into public.meet_ai_chunks(id, session_id, sequence, start_seconds, duration_seconds, status, transcript,
@@ -172,11 +176,13 @@ returns void language sql as $$
     pg_temp.cid(stream), pg_temp.cid(account), 'microphone', sha256(chunk::text::bytea), start_ms, start_ms + 10000,
     100, start_ms * 16, 1, 0, 0);
 $$;
-select lives_ok($$select pg_temp.self_chunk(89061, 89051, 89003, 0, 0); select pg_temp.self_chunk(89062, 89052, 89004, 0, 0)$$,
+select throws_ok($$select pg_temp.self_chunk(89060, 89051, 89003, 0, 0)$$, '55000', null,
+  'a revoked (taken-over) stream stores no speech');
+select lives_ok($$select pg_temp.self_chunk(89061, 89053, 89003, 0, 0); select pg_temp.self_chunk(89062, 89052, 89004, 0, 0)$$,
   'two participants may both upload sequence 0');
-select throws_ok($$select pg_temp.self_chunk(89063, 89051, 89003, 0, 5000)$$, '23505', null,
+select throws_ok($$select pg_temp.self_chunk(89063, 89053, 89003, 0, 5000)$$, '23505', null,
   'per-stream sequence identity is unique');
-select throws_ok($$select pg_temp.self_chunk(89064, 89051, 89004, 1, 5000)$$, '23503', null,
+select throws_ok($$select pg_temp.self_chunk(89064, 89053, 89004, 1, 5000)$$, '23503', null,
   'a stream id never attributes speech to another account');
 select throws_ok($$insert into public.meet_ai_chunks(id, session_id, sequence, start_seconds, duration_seconds)
   values (pg_temp.cid(89065), pg_temp.cid(89032), 7, 0, 10)$$, '23514', null,
@@ -186,7 +192,7 @@ select throws_ok($$select public.reserve_meet_ai_chunk(pg_temp.cid(89066), pg_te
 select throws_ok($$update public.meet_ai_chunks set account_id = pg_temp.cid(89004) where id = pg_temp.cid(89061)$$,
   '55000', null, 'self_v1 speaker provenance is immutable');
 
--- N2: one 24-account cap per session; workspace deletion with self_v1 consent succeeds.
+-- N2: one 24-account cap per session; consent evidence outlives deletion attempts.
 insert into auth.users(id) select pg_temp.cid(n) from generate_series(89101, 89125) n;
 insert into public.users(id) select pg_temp.cid(n) from generate_series(89101, 89125) n on conflict do nothing;
 set local role service_role;
@@ -196,8 +202,6 @@ select throws_ok($$select private.record_meet_ai_self_v1_admission(pg_temp.cid(8
   '54000', null, 'the 25th account is refused');
 select lives_ok($$select private.record_meet_ai_self_v1_admission(pg_temp.cid(89032), pg_temp.cid(89003), 1)$$,
   're-admission of an existing account is not blocked by the cap');
-insert into private.meet_ai_consents(session_id, user_id, decision, notice_version) values
- (pg_temp.cid(89032), pg_temp.cid(89003), 'allow', 'v1'), (pg_temp.cid(89032), pg_temp.cid(89004), 'deny', 'v1');
 reset role;
 -- Host profile hard deletion (after Auth deletion removed memberships, as in
 -- production erasure) keeps the session and everyone else's speech.
@@ -218,13 +222,11 @@ select throws_ok($$delete from public.workspace_meetings where id = pg_temp.cid(
 set local role service_role;
 delete from private.meet_ai_consents where session_id = pg_temp.cid(89031);
 reset role;
-select lives_ok($$delete from public.workspaces where id = pg_temp.cid(89011)$$,
-  'workspace deletion with self_v1 consents succeeds');
-select ok(not exists (select 1 from private.meet_ai_consents where session_id = pg_temp.cid(89032))
-  and not exists (select 1 from private.meet_ai_session_participants where session_id = pg_temp.cid(89032))
-  and not exists (select 1 from private.meet_ai_capture_streams where session_id = pg_temp.cid(89032))
-  and not exists (select 1 from public.meet_ai_chunks where session_id in (pg_temp.cid(89031), pg_temp.cid(89032)))
-  and not exists (select 1 from public.meet_ai_sessions where id in (pg_temp.cid(89031), pg_temp.cid(89032))),
-  'workspace deletion leaves no orphaned consent, admission, stream, chunk or session rows');
+-- Pax decision (3 Nov): self_v1 consent records are legal evidence and are
+-- kept like legacy ones; retention of the evidence itself is owned separately.
+select throws_ok($$delete from public.workspaces where id = pg_temp.cid(89011)$$, '23503', null,
+  'workspace deletion cannot cascade away self_v1 consent evidence');
+select is((select count(*)::int from private.meet_ai_consents where session_id = pg_temp.cid(89032)), 2,
+  'self_v1 consent records survive the refused deletion');
 select * from finish();
 rollback;
