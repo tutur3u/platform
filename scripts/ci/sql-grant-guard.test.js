@@ -326,6 +326,7 @@ test('explicit historical debt is reported while unbaselined files remain enforc
     [
       'apps/database/supabase/migrations/20261028000000_new.sql',
       'apps/database/rollbacks/unversioned.sql',
+      'apps/database/supabase/seed.sql',
     ]
   );
   assert.equal(legacy.length, 6);
