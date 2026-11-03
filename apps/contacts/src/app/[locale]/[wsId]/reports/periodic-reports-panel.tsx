@@ -27,6 +27,7 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useDebounce } from '@tuturuuu/ui/hooks/use-debounce';
 import { useWorkspaceActor } from '@tuturuuu/ui/hooks/use-workspace-visibility';
 import { toast } from '@tuturuuu/ui/sonner';
+import { getBrowserTimezone } from '@tuturuuu/utils/timezone';
 import { useTranslations } from 'next-intl';
 import { useQueryStates } from 'nuqs';
 import { useEffect, useRef, useState } from 'react';
@@ -213,6 +214,7 @@ export default function PeriodicReportsPanel({
         query: debouncedQuery || undefined,
         sortBy,
         sortDirection,
+        timezone: periodStart || periodEnd ? getBrowserTimezone() : undefined,
       });
       actor.assertActive();
       return { ...page, queryScope };

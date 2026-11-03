@@ -3642,7 +3642,7 @@
     "open_full_report": "Mở báo cáo đầy đủ",
     "pending_review": "Chờ duyệt",
     "period_from": "Kỳ báo cáo từ",
-    "period_legacy_hint": "Báo cáo chưa lưu kỳ được hiển thị trong Tất cả các kỳ.",
+    "period_legacy_hint": "Báo cáo chưa lưu kỳ được lọc theo ngày tạo.",
     "period_scope": "Kỳ báo cáo: {start} – {end}",
     "period_to": "Kỳ báo cáo đến",
     "periodic": "Định kỳ",

@@ -3642,7 +3642,7 @@
     "open_full_report": "Open full report",
     "pending_review": "Pending review",
     "period_from": "Report period from",
-    "period_legacy_hint": "Reports without a saved period appear under All periods.",
+    "period_legacy_hint": "Reports without a saved period are matched by the day they were created.",
     "period_scope": "Report period: {start} – {end}",
     "period_to": "Report period to",
     "periodic": "Periodic",

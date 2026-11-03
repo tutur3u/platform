@@ -203,6 +203,8 @@ export interface ListPeriodicReportsParams {
   query?: string;
   sortBy?: 'period' | 'title' | 'updated' | 'user';
   sortDirection?: 'asc' | 'desc';
+  /** Viewer IANA timezone; the period range uses it when the workspace has none. */
+  timezone?: string;
 }
 
 export interface ListPeriodicReportsResponse {
@@ -428,6 +430,7 @@ export async function listPeriodicReports(
         q: params.query,
         sortBy: params.sortBy,
         sortDirection: params.sortDirection,
+        timezone: params.timezone,
       },
     }
   );
