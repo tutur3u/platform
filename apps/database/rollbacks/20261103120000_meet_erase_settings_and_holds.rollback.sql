@@ -4,6 +4,7 @@
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
+-- tuturuuu: reviewed(dynamic-sql-review): Selene, #7523 rollback evidence checks; static SQL only, no EXECUTE.
 do $$ begin
   if exists(select 1 from private.meet_content_holds) or exists(select 1 from private.meet_erase_settings_audit) then
     raise exception 'Preserve hold and settings audit evidence';
