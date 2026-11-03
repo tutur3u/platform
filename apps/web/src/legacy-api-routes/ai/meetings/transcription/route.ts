@@ -1,10 +1,7 @@
 import { createPOST } from '@tuturuuu/ai/meetings/transcription/route';
-import { isMeetAiEnabledOnWeb } from './meet-ai-gate';
-import { limitMeetAiUsageOnWeb } from './meet-ai-usage-limit';
 
-const POST = createPOST({
-  isMeetAiEnabled: isMeetAiEnabledOnWeb,
-  limitMeetAiUsage: limitMeetAiUsageOnWeb,
-});
+// Legacy stored-recording transcription is permanently refused; the shared
+// handler takes no gate, config or flag that could re-enable it.
+const POST = createPOST();
 
 export { POST };

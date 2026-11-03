@@ -107,3 +107,27 @@ describe.each([
     expect(mocks.admin).not.toHaveBeenCalled();
   });
 });
+describe.each([
+  { method: 'PUT', handler: PUT },
+  { method: 'PATCH', handler: PATCH },
+])('$method cannot reopen a legacy recording', ({ method, handler }) => {
+  it('refuses status "recording" before any mutation', async () => {
+    const change = query([{ id: 'session' }]);
+    mocks.from
+      .mockReturnValueOnce(query({ id: 'meeting' }))
+      .mockReturnValueOnce(query({ id: 'session', user_id: 'actor' }))
+      .mockReturnValueOnce(change);
+    const response = await handler(
+      new NextRequest('https://example.test/api/session', {
+        method,
+        body: JSON.stringify({ status: 'recording' }),
+      }),
+      context
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({
+      code: 'LEGACY_MEETING_RECORDER_RETIRED',
+    });
+    expect(change.update).not.toHaveBeenCalled();
+  });
+});

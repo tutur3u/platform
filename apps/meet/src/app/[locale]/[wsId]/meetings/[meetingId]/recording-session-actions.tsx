@@ -1,11 +1,11 @@
 'use client';
 
-import { EyeIcon, FileText, Headphones } from '@tuturuuu/icons';
+import { EyeIcon, Headphones } from '@tuturuuu/icons';
 import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useRecordingLoader } from '@/hooks/useRecordingLoader';
-import { useTranscription } from '@/hooks/useTranscription';
 import { AudioPlayer } from './components/AudioPlayer';
 import { DeleteConfirmation } from './components/DeleteConfirmation';
 import { TranscriptViewer } from './components/TranscriptViewer';
@@ -32,18 +32,14 @@ export function RecordingSessionActions({
   session,
   onDelete,
 }: RecordingSessionActionsProps) {
+  const t = useTranslations('meet.transcription');
   // Dialog states
   const [transcriptDialogOpen, setTranscriptDialogOpen] = useState(false);
   const [audioPlayerDialogOpen, setAudioPlayerDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Custom hooks
-  const { isTranscribing, transcribe } = useTranscription({
-    wsId,
-    meetingId,
-    sessionId: session.id,
-  });
-
+  // Legacy recordings are never transcribed: speaker consent cannot be
+  // verified for them (the server refuses too). Meet AI is the consented path.
   const { audioRecording, isLoadingChunks, loadError, loadRecording } =
     useRecordingLoader({
       wsId,
@@ -73,18 +69,6 @@ export function RecordingSessionActions({
             <EyeIcon className="mr-1 h-3 w-3" />
             View Transcript
           </Button>
-        ) : session.can_manage ? (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={transcribe}
-            disabled={isTranscribing || session.status === 'transcribing'}
-          >
-            <FileText className="mr-1 h-3 w-3" />
-            {isTranscribing || session.status === 'transcribing'
-              ? 'Transcribing...'
-              : 'Transcribe'}
-          </Button>
         ) : null}
         <Button
           variant="ghost"
@@ -106,6 +90,9 @@ export function RecordingSessionActions({
         )}
       </div>
 
+      {!session.transcript && session.can_manage && (
+        <p className="text-muted-foreground text-sm">{t('legacy_disabled')}</p>
+      )}
       {/* Extracted Components */}
       <TranscriptViewer
         isOpen={transcriptDialogOpen}

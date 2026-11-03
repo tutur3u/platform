@@ -1720,25 +1720,40 @@ In-room consent survives DO hibernation only under the active session UUID and i
 
 ## Recording transcription
 
-Recording transcription in Meet requires a signed-in workspace member and a
-workspace identifier and meeting ID. Personal and handle identifiers resolve on
-the server and must match the meeting row's workspace; mismatches are denied.
-Credit allowance, usage attribution and deductions use that meeting workspace.
-The default Gemini transcription model uses the existing `generate` credit
-feature and `meetings` product attribution. Guests cannot transcribe recordings.
+Decision, 3 November 2026 (Pax, on Selene's #7506 review; user D8): legacy
+stored-recording transcription is **permanently refused**, and the legacy
+meeting-page recorder is **retired**. Legacy recordings carry no trusted
+speaker provenance, so speaker consent can never be verified for them, and a
+workspace settings manager's opt-in is not speaker consent. There is no flag,
+workspace config or injected option that re-enables either path; Meet and
+Meet AI are the consented recording and transcription paths.
 
-The endpoint applies the shared API proxy limiter at ten requests per minute per
-user, across workspaces. Its configured store and unavailable-store behavior
-follow the shared limiter. Missing workspace identifiers return 400; invalid
-identifiers and non-members return 403; insufficient credit allowance returns 402; rate
-limits return 429 with `Retry-After`. Admission (workspace resolution,
-membership, rate limit, and credits) happens before any provider call and before
-any audio is sent to the provider. These rules apply to recording transcription,
-independently of live-call transcription consent.
+- `POST /api/ai/meetings/transcription` authenticates, applies the shared API
+  proxy limiter (ten requests per minute per user), verifies MEMBER status in
+  the resolved workspace, then looks up the meeting by both id and workspace.
+  Non-members get 403 before any meeting lookup. Members always receive a
+  localized 403 `LEGACY_MEETING_TRANSCRIPTION_DISABLED` refusal pointing to
+  Meet AI. No audio is read and no usage, credit or provider call happens.
+  The retired `legacy_meeting_transcription_enabled` workspace config key has
+  no effect, whether written through the generic settings API or directly
+  under RLS.
+- The legacy recorder never starts a new recording session: the record toggle
+  only stops an already-active session; `PUT`/`PATCH` refuse status
+  `recording`; the chunk and complete-recording upload routes refuse every
+  authenticated caller before parsing or storing audio. Refusals are localized
+  (English and Vietnamese) with code `LEGACY_MEETING_RECORDER_RETIRED`.
+- The meeting page shows no Start Recording or Transcribe control and opens no
+  microphone; it states that the old recorder is retired and points to Meet.
+- Existing recordings, chunks and transcripts are unchanged: listing, playback,
+  transcript viewing and deletion behave as before. No data is deleted.
 
 Regression coverage:
-`packages/ai/src/meetings/transcription/route.test.ts` and
-`packages/internal-api/src/meetings.test.ts`.
+`packages/ai/src/meetings/transcription/route.test.ts`,
+`apps/web/src/legacy-api-routes/ai/meetings/transcription/route.test.ts`
+(settings API and direct-write regression), the legacy record, recording
+session and upload route tests under
+`apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/`, and the Meet
+`meeting-actions.test.tsx` and `recording-session-actions.test.tsx` suites.
 
 
 ## Meeting AI credit ownership

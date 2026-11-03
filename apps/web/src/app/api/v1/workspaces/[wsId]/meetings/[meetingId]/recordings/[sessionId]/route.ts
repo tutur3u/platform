@@ -8,6 +8,7 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { legacyRecorderRetiredResponse } from '../../_lib/legacy-recorder-lock';
 import { canManageLegacyRecording } from '../../_lib/recording-access';
 
 export async function PUT(
@@ -98,6 +99,10 @@ export async function PUT(
         { status: 403 }
       );
     }
+
+    // The legacy recorder is retired: a session is never (re)opened for
+    // recording.
+    if (status === 'recording') return legacyRecorderRetiredResponse(request);
 
     // Update the recording session status
     const { data: changed, error: updateError } = await supabase
@@ -224,6 +229,10 @@ export async function PATCH(
         { status: 403 }
       );
     }
+
+    // The legacy recorder is retired: a session is never (re)opened for
+    // recording.
+    if (status === 'recording') return legacyRecorderRetiredResponse(request);
 
     // Update the recording session status if provided
     if (status) {
