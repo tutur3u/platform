@@ -152,6 +152,7 @@ export async function GET(request: Request, { params }: Params) {
         data: [],
         page: parsed.data.page,
         pageSize: parsed.data.pageSize,
+        summaryPartial: false,
         total: 0,
         workspace: { id: wsId, timezone: null },
       });
@@ -322,7 +323,15 @@ export async function GET(request: Request, { params }: Params) {
     const [allRows, stageSummaryRows, workspaceResult] = await Promise.all([
       collectScope('list'),
       parsed.data.stage
-        ? (collectScope('summary') as Promise<SummaryRow[]>)
+        ? (collectScope('summary') as Promise<SummaryRow[]>).catch(
+            (error: unknown) => {
+              // The all-stage cards are optional: a capped or failed read must
+              // not fail the list, so fall back to the stage-scoped counts.
+              if (!(error instanceof ReportListLimitError))
+                console.error('Error in reports GET stage summary:', error);
+              return null;
+            }
+          )
         : null,
       workspacePromise,
     ]);
@@ -338,7 +347,9 @@ export async function GET(request: Request, { params }: Params) {
           )
         : rows;
     const filteredRows = inCategory(allRows);
-    // Category counts follow the listed rows; stage counts cover every stage.
+    // Category counts follow the listed rows; stage counts cover every stage
+    // unless the summary read was unavailable (`summaryPartial`).
+    const summaryPartial = Boolean(parsed.data.stage) && !stageSummaryRows;
     const { categoryCounts } = summarizeReportList(filteredRows);
     const { counts } = summarizeReportList(
       stageSummaryRows ? inCategory(stageSummaryRows) : filteredRows
@@ -381,6 +392,7 @@ export async function GET(request: Request, { params }: Params) {
       data,
       page: parsed.data.page,
       pageSize: parsed.data.pageSize,
+      summaryPartial,
       total: listResult.count,
       workspace: workspaceResult.data,
     });

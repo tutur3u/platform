@@ -37,6 +37,10 @@ matching total and the category counts also include the selected stage. The
 periodic stage cards do not: each card counts its own stage under every other
 active filter, so opening the default Pending view shows every stage's real count
 instead of zero for the stages that are not selected (`report-summary-scope.test.ts`).
+That all-stage read never fails the page: if it exceeds the 20,000-report guard or
+errors, the list still loads, the response sets `summaryPartial`, and the cards show
+only the selected stage's count with "—" for the rest plus a hint to narrow the
+dates or search (`periodic-status-summary.test.tsx`).
 Daily counts
 recipient rows; periodic counts report records, including category counts. Changing
 a filter resets actionable selection and hides previous-scope totals while the new

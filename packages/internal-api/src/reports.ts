@@ -213,6 +213,8 @@ export interface ListPeriodicReportsResponse {
   data: PeriodicReport[];
   page: number;
   pageSize: number;
+  /** True when `counts` cover only the selected stage (all-stage read unavailable). */
+  summaryPartial?: boolean;
   total: number;
   workspace: { id: string; timezone: string | null };
 }

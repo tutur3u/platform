@@ -3728,6 +3728,7 @@
     "status_sent": "Sent",
     "status_skipped": "Skipped",
     "stop_queueing": "Stop after current request",
+    "summary_partial": "Other stage counts are unavailable for this large scope. Narrow the dates or search to see them.",
     "teacher_name": "Teacher: {name}",
     "test_only_explanation": "Only test emails have been sent. The report has not been sent through the regular delivery workflow.",
     "test_send": "Test send",

@@ -3728,6 +3728,7 @@
     "status_sent": "Đã gửi",
     "status_skipped": "Đã bỏ qua",
     "stop_queueing": "Dừng sau yêu cầu hiện tại",
+    "summary_partial": "Không đếm được các trạng thái khác cho phạm vi lớn này. Hãy thu hẹp khoảng ngày hoặc tìm kiếm để xem.",
     "teacher_name": "Giáo viên: {name}",
     "test_only_explanation": "Chỉ mới gửi email thử. Báo cáo chưa được gửi qua quy trình gửi chính thức.",
     "test_send": "Gửi thử",

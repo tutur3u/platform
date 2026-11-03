@@ -272,6 +272,8 @@ export default function PeriodicReportsPanel({
     });
   };
   const counts = currentRows ? ownedData?.pages[0]?.counts : undefined;
+  const summaryPartial =
+    currentRows && ownedData?.pages[0]?.summaryPartial === true;
   const categoryCounts = currentRows
     ? ownedData?.pages[0]?.categoryCounts
     : undefined;
@@ -372,6 +374,7 @@ export default function PeriodicReportsPanel({
       <PeriodicStatusSummary
         stage={stage}
         counts={counts}
+        partial={summaryPartial}
         onChange={(stage) =>
           void setFilters({
             stage,
