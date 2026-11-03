@@ -14,12 +14,13 @@ const BASELINE = JSON.parse(
     'utf8'
   )
 );
+const LIVE = BASELINE.previousIdentity ?? BASELINE.identity; // live identity
 const CRON_CONTROL = {
   identity: {
-    ...BASELINE.identity,
-    vars: { ...BASELINE.identity.vars, CRON_CONTROL_WEB_MODE: 'off' },
+    ...LIVE,
+    vars: { ...LIVE.vars, CRON_CONTROL_WEB_MODE: 'off' },
   },
-  previousIdentity: BASELINE.identity,
+  previousIdentity: LIVE,
   transition: {
     decision: 'CRON-WEB-MODE-1: regression fixture for additive disabled mode',
     fields: ['vars'],
@@ -533,7 +534,7 @@ const dashboardPlan = settingsPlan(BASELINE);
 function dashboardWorker(change = () => {}) {
   const live = {
     settings: {
-      bindings: bindingsFor(BASELINE.identity),
+      bindings: bindingsFor(LIVE),
     },
     service: {
       default_environment: { script: { last_deployed_from: 'dash' } },
@@ -553,7 +554,7 @@ function dashboardWorker(change = () => {}) {
     },
   };
   change(live);
-  return liveWorker(BASELINE.identity, live);
+  return liveWorker(LIVE, live);
 }
 
 test('same-version dashboard preflight passes with exact fixture settings', async () => {
@@ -561,13 +562,15 @@ test('same-version dashboard preflight passes with exact fixture settings', asyn
     plan: dashboardPlan,
     ...credentials(dashboardWorker()),
   });
-  assert.deepEqual(before.schedules, [...BASELINE.identity.crons].sort());
+  assert.deepEqual(before.schedules, [...LIVE.crons].sort());
   assert.equal(
-    BASELINE.identity.vars.CRON_CONTROL_ENABLED_JOBS,
+    LIVE.vars.CRON_CONTROL_ENABLED_JOBS,
     'database-cron-history-retention'
   );
+  assert.ok(!Object.hasOwn(LIVE.vars, 'CRON_CONTROL_WEB_MODE'));
   assert.ok(!Object.hasOwn(BASELINE.identity.vars, 'CRON_CONTROL_WEB_MODE'));
-  assert.deepEqual(BASELINE.identity.observability.traces, {
+  assert.equal(BASELINE.identity.vars.AI_STUDIO_RETENTION_MODE, 'dry-run');
+  assert.deepEqual(LIVE.observability.traces, {
     enabled: false,
     headSamplingRate: 0.05,
     persist: true,
@@ -584,7 +587,7 @@ test('dashboard cron comparison ignores order on both sides', async () => {
   unordered.target.crons.reverse();
   const api = dashboardWorker((live) => {
     live.schedules = {
-      schedules: BASELINE.identity.crons.map((cron) => ({ cron })).reverse(),
+      schedules: LIVE.crons.map((cron) => ({ cron })).reverse(),
     };
   });
   await captureBefore({ plan: unordered, ...credentials(api) });

@@ -30,6 +30,66 @@
       "0 */12 * * *",
       "0 */6 * * *",
       "0 6 * * *",
+      "17 3 * * *",
+      "43 19 * * *"
+    ],
+    "routes": [],
+    "vars": {
+      "AI_STUDIO_RETENTION_MODE": "dry-run",
+      "CRON_CONTROL_ENABLED_JOBS": "database-cron-history-retention,ai-studio-retention",
+      "CRON_CONTROL_WORKER_PROCESSORS": "",
+      "INFRASTRUCTURE_ORIGIN": "https://infrastructure.tuturuuu.com",
+      "INVENTORY_ORIGIN": "https://inventory.tuturuuu.com",
+      "PAY_ORIGIN": "https://pay.tuturuuu.com",
+      "TASKS_ORIGIN": "https://tasks.tuturuuu.com",
+      "WEB_ORIGIN": "https://tuturuuu.com"
+    },
+    "secrets": [
+      "CRON_CONTROL_DELIVERY_TOKEN",
+      "CRON_CONTROL_OPERATOR_TOKEN",
+      "SUPABASE_SECRET_KEY",
+      "SUPABASE_URL"
+    ],
+    "durableObjects": {
+      "CRON_LEDGER": {
+        "className": "CronLedger"
+      }
+    },
+    "durableObjectClasses": {
+      "CronLedger": "sqlite"
+    },
+    "unmapped": {}
+  },
+  "previousIdentity": {
+    "name": "tuturuuu-cron-control",
+    "accountId": "e8912e2867beecc673d171907bf09649",
+    "compatibilityDate": "2026-09-28",
+    "compatibilityFlags": [],
+    "workersDev": true,
+    "previewUrls": true,
+    "observability": {
+      "enabled": true,
+      "headSamplingRate": 0.05,
+      "logs": {
+        "enabled": true,
+        "headSamplingRate": 0.05,
+        "invocationLogs": true
+      },
+      "traces": {
+        "enabled": false,
+        "headSamplingRate": 0.05,
+        "persist": true
+      }
+    },
+    "crons": [
+      "* * * * *",
+      "*/10 * * * *",
+      "*/15 * * * *",
+      "*/30 * * * *",
+      "*/5 * * * *",
+      "0 */12 * * *",
+      "0 */6 * * *",
+      "0 6 * * *",
       "17 3 * * *"
     ],
     "routes": [],
@@ -57,6 +117,10 @@
       "CronLedger": "sqlite"
     },
     "unmapped": {}
+  },
+  "transition": {
+    "decision": "AI-PURGE-SCHEDULE-1: add the daily 43 19 * * * trigger, enable ai-studio-retention and default AI_STUDIO_RETENTION_MODE to dry-run (counts only); deletion needs a separate reviewed change to delete",
+    "fields": ["crons", "vars"]
   },
   "settingsDecision": "REV-6485-4: explicit expectations; deployment preflight must verify live settings before publication.",
   "dashboardAdmission": {

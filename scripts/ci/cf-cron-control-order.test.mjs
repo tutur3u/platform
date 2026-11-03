@@ -17,6 +17,8 @@ const LIVE_ORDER = [
   '*/30 * * * *',
   '*/5 * * * *',
 ];
+// AI-PURGE-SCHEDULE-1 adds one daily trigger (02:43 GMT+7) to the live set.
+const TARGET_ORDER = [...LIVE_ORDER, '43 19 * * *'];
 const app = new URL('../../apps/cron-control/', import.meta.url);
 const cfPackage = pathToFileURL(
   realpathSync(new URL('node_modules/cf/package.json', app))
@@ -61,13 +63,15 @@ async function installedCfDiff() {
   }
 }
 
-test('Cron Control passes cf schema and preserves the exact live cron set and count', () => {
+test('Cron Control passes cf schema and emits the exact reviewed cron set and count', () => {
   assertCronSet(
     resolved.worker.triggers.map(({ schedule }) => schedule),
-    LIVE_ORDER
+    TARGET_ORDER
   );
-  assertCronSet(emitted.triggers.crons, LIVE_ORDER);
+  assertCronSet(emitted.triggers.crons, TARGET_ORDER);
   assertCronSet(emitted.triggers.crons, baseline.identity.crons);
+  assertCronSet(baseline.previousIdentity.crons, LIVE_ORDER);
+  assert.deepEqual(baseline.transition.fields, ['crons', 'vars']);
   assert.equal(validated.worker.env.CRON_LEDGER.worker, validated.worker.name);
   assert.deepEqual(emitted.durable_objects.bindings, [
     { name: 'CRON_LEDGER', class_name: 'CronLedger' },
@@ -108,7 +112,7 @@ test('installed cf bE reports EMPTY drift against the recorded dbe3ed29 live fie
     compatibility_date: baseline.identity.compatibilityDate,
     compatibility_flags: baseline.identity.compatibilityFlags,
     vars: baseline.identity.vars,
-    triggers: { crons: LIVE_ORDER },
+    triggers: { crons: TARGET_ORDER },
     durable_objects: {
       bindings: [{ name: 'CRON_LEDGER', class_name: 'CronLedger' }],
     },
@@ -123,6 +127,13 @@ test('installed cf bE reports EMPTY drift against the recorded dbe3ed29 live fie
   const admitted = diff(remote, local);
   assert.equal(admitted.diff, null, admitted.diff?.toString());
   assert.equal(admitted.nonDestructive, true);
+  // The recorded live identity differs only by the reviewed transition.
+  const live = {
+    ...structuredClone(remote),
+    vars: baseline.previousIdentity.vars,
+    triggers: { crons: LIVE_ORDER },
+  };
+  assert.notEqual(diff(live, local).diff, null);
   const unpatched = structuredClone(local);
   unpatched.durable_objects.bindings[0].script_name = validated.worker.name;
   assert.equal(diff(remote, unpatched).nonDestructive, false);

@@ -1662,6 +1662,55 @@ export type Database = {
           },
         ];
       };
+      ai_studio_retention_runs: {
+        Row: {
+          batches: number;
+          cascade_content_rows: number;
+          content_rows: number;
+          evaluation_links: number;
+          held_current_month_runs: number | null;
+          held_in_flight_runs: number | null;
+          id: string;
+          mode: string;
+          recorded_at: string;
+          run_rows: number;
+          status: string;
+          step_rows: number;
+          usage_rows: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          batches: number;
+          cascade_content_rows: number;
+          content_rows: number;
+          evaluation_links: number;
+          held_current_month_runs?: number | null;
+          held_in_flight_runs?: number | null;
+          id?: string;
+          mode: string;
+          recorded_at?: string;
+          run_rows: number;
+          status: string;
+          step_rows: number;
+          usage_rows: number;
+        };
+        Update: {
+          batches?: number;
+          cascade_content_rows?: number;
+          content_rows?: number;
+          evaluation_links?: number;
+          held_current_month_runs?: number | null;
+          held_in_flight_runs?: number | null;
+          id?: string;
+          mode?: string;
+          recorded_at?: string;
+          run_rows?: number;
+          status?: string;
+          step_rows?: number;
+          usage_rows?: number;
+        };
+        Relationships: [];
+      };
       ai_studio_run_content: {
         Row: {
           created_at: string;
@@ -21189,6 +21238,10 @@ export type Database = {
         };
         Returns: boolean;
       };
+      ai_studio_metadata_cutoff: {
+        Args: { p_now: string; p_retention_days: number };
+        Returns: string;
+      };
       ai_studio_model_allowed: {
         Args: { p_api_key_id: string; p_model_id: string; p_ws_id: string };
         Returns: boolean;
@@ -22016,6 +22069,10 @@ export type Database = {
           metadata_rows_deleted: number;
         }[];
       };
+      cleanup_ai_studio_retention_batch: {
+        Args: { p_limit?: number };
+        Returns: Json;
+      };
       cleanup_rate_limits: { Args: { p_retention?: string }; Returns: number };
       clear_notification_email_copy_batch: {
         Args: { p_batch_size?: number };
@@ -22185,6 +22242,10 @@ export type Database = {
       consume_inventory_checkout_stock: {
         Args: { p_checkout_id: string; p_now?: string; p_ws_id: string };
         Returns: number;
+      };
+      count_ai_studio_retention: {
+        Args: Record<PropertyKey, never>;
+        Returns: Json;
       };
       count_task_source_filter_lists: {
         Args: {
@@ -24945,6 +25006,22 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: string;
+      };
+      record_ai_studio_retention_run: {
+        Args: {
+          p_batches: number;
+          p_cascade_content_rows: number;
+          p_content_rows: number;
+          p_evaluation_links: number;
+          p_held_current_month_runs?: number;
+          p_held_in_flight_runs?: number;
+          p_mode: string;
+          p_run_rows: number;
+          p_status: string;
+          p_step_rows: number;
+          p_usage_rows: number;
+        };
+        Returns: Json;
       };
       record_external_provider_cost: {
         Args: {

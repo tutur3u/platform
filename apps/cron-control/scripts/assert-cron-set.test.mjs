@@ -14,8 +14,8 @@ const { identity } = JSON.parse(
 );
 const expected = identity.crons;
 
-test('all nine configured crons pass when reordered', () => {
-  assert.equal(expected.length, 9);
+test('all ten configured crons pass when reordered', () => {
+  assert.equal(expected.length, 10);
   assertCronSet([...expected].reverse(), expected);
 });
 

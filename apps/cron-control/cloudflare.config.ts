@@ -29,6 +29,8 @@ export default defineConfig({
       '17 3 * * *',
       '*/30 * * * *',
       '*/5 * * * *',
+      // ai-studio-retention: 02:43 GMT+7.
+      '43 19 * * *',
     ].map((schedule) => triggers.scheduled({ schedule })),
     env: {
       WEB_ORIGIN: bindings.text('https://tuturuuu.com'),
@@ -39,8 +41,11 @@ export default defineConfig({
       PAY_ORIGIN: bindings.text('https://pay.tuturuuu.com'),
       TASKS_ORIGIN: bindings.text('https://tasks.tuturuuu.com'),
       CRON_CONTROL_ENABLED_JOBS: bindings.text(
-        'database-cron-history-retention'
+        'database-cron-history-retention,ai-studio-retention'
       ),
+      // Counts only until a reviewed change sets 'delete'; 'off' is the kill
+      // switch. Any other value also means dry-run.
+      AI_STUDIO_RETENTION_MODE: bindings.text('dry-run'),
       CRON_CONTROL_WORKER_PROCESSORS: bindings.text(''),
       SUPABASE_URL: bindings.secret(),
       SUPABASE_SECRET_KEY: bindings.secret(),
