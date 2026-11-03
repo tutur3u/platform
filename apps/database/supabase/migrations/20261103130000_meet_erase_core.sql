@@ -4,15 +4,15 @@ set local lock_timeout='2s';
 set local statement_timeout='30s';
 
 create table private.meet_content_hold_scopes (
- ws_id uuid primary key references public.workspaces(id),
+ ws_id uuid primary key references public.workspaces(id) on delete cascade,
  epoch bigint not null default 0, ledger_seq bigint not null default 0,
- pending_transition uuid, registry_ready boolean not null default false
+ pending_transition uuid, transition_started_at timestamptz, registry_ready boolean not null default false
 );
 create table private.meet_erasure_issuances (
  operation_key uuid primary key, ws_id uuid not null, meeting_id uuid not null,
  actor_user_id uuid not null, actor_kind text not null check(actor_kind in ('host','workspace_admin','subject')),
  issued_at timestamptz not null default clock_timestamp(), expires_at timestamptz not null,
- cancelled_at timestamptz, check(expires_at>issued_at)
+ cancelled_at timestamptz, check(expires_at>issued_at and expires_at<=issued_at+interval '30 seconds')
 );
 create table private.meet_erasure_operations (
  operation_key uuid primary key, ws_id uuid not null, meeting_id uuid not null,
@@ -46,6 +46,7 @@ create table private.meet_erasure_requests (
  linked_operation_key uuid,
  status text not null default 'pending' check(status in ('pending','escalated','in_progress','on_hold','completed','declined','withdrawn')),
  decline_code text check(decline_code in ('no_lines_found','not_from_subject','abusive_repeat')),
+ hold_id uuid references private.meet_content_holds(id) on delete set null, review_by timestamptz,
  held_at timestamptz, deferred_duration interval not null default interval '0', resume_status text,
  resolved_by uuid, resolved_at timestamptz, operation_key uuid, created_at timestamptz not null default now()
 );
@@ -68,8 +69,8 @@ create table private.meet_transcript_erasures (
  check((subject_tag is null and subject_key_version is null) or (octet_length(subject_tag)=32 and subject_key_version>0))
 );
 create table private.meet_erasure_events (
- id uuid primary key default gen_random_uuid(), operation_key uuid not null, ws_id uuid not null, meeting_id uuid not null,
- event text not null check(event in ('history_cleared','attested_nothing','playground_deleted','document_review_linked','owner_notified')),
+ id uuid primary key default gen_random_uuid(), operation_key uuid not null, ws_id uuid not null, meeting_id uuid,
+ event text not null check(event in ('lease_reconciled','lease_settled','lease_quarantined','transition_aborted','subject_deferred','history_cleared','attested_nothing','playground_deleted','document_review_linked','owner_notified')),
  store text, actor_user_id uuid references public.users(id) on delete set null, actor_role text not null,
  subject_tag bytea, subject_key_version smallint, created_at timestamptz not null default now()
 );
@@ -86,6 +87,37 @@ create table private.meet_content_apply_leases (
  created_at timestamptz not null default clock_timestamp(),
  check(expires_at>created_at and expires_at<=created_at+interval '30 seconds')
 );
+
+
+create function private.meet_erase_utf16_key(p text) returns integer[]
+language plpgsql immutable strict set search_path=pg_catalog,pg_temp as $$
+declare result integer[]:='{}'; c text; n integer;
+begin
+ foreach c in array regexp_split_to_array(p,'') loop
+ n:=ascii(c);
+ if n>65535 then result:=result||array[55296+(n-65536)/1024,56320+(n-65536)%1024];
+ else result:=result||n; end if;
+ end loop;
+ return result;
+end $$;
+create function private.meet_erase_canonical_json(p jsonb) returns text
+language plpgsql immutable strict set search_path=pg_catalog,pg_temp as $$
+declare result text; n numeric;
+begin
+ case jsonb_typeof(p)
+ when 'object' then
+ select '{'||coalesce(string_agg(to_jsonb(key)::text||':'||private.meet_erase_canonical_json(value),',' order by private.meet_erase_utf16_key(key)),'')||'}' into result from jsonb_each(p);
+ when 'array' then
+ select '['||coalesce(string_agg(private.meet_erase_canonical_json(value),',' order by ord),'')||']' into result from jsonb_array_elements(p) with ordinality x(value,ord);
+ when 'number' then
+ n:=p::text::numeric;
+ if n<>trunc(n) or abs(n)>9007199254740991 then raise exception 'MEET_ERASE_INVALID_JSON' using errcode='22023'; end if;
+ result:=trunc(n)::text;
+ else result:=p::text;
+ end case;
+ return result;
+end $$;
+revoke all on function private.meet_erase_utf16_key(text),private.meet_erase_canonical_json(jsonb) from public,anon,authenticated,service_role;
 
 create function private.check_meet_erase_workspace(p_ws_id uuid) returns void
 language plpgsql immutable set search_path=pg_catalog,pg_temp as $$
@@ -149,6 +181,9 @@ set search_path=pg_catalog,pg_temp set lock_timeout='2s' as $$
 declare e bigint; l private.meet_content_apply_leases;
 begin
  e:=private.check_meet_destructive_batch(p_ws_id,p_meeting_id);
+ perform 1 from private.meet_erasure_operations where operation_key=p_key for update;
+ if exists(select 1 from private.meet_content_apply_leases where operation_key=p_key and store=p_store and (settled_at is null or result='unknown')) then raise exception 'MEET_ERASE_RECONCILIATION_REQUIRED'; end if;
+ if not exists(select 1 from private.meet_erasure_plans where operation_key=p_key and plan->'stores' ? p_store) then raise exception 'MEET_ERASE_STALE'; end if;
  if p_ticket_exp is null or p_ticket_exp<=clock_timestamp() or p_ticket_exp>clock_timestamp()+interval '30 seconds' then
  raise exception 'MEET_ERASE_EXPIRED'; end if;
  if not exists(select 1 from private.meet_erasure_operations o join private.meet_erasure_store_progress s using(operation_key)
@@ -158,6 +193,30 @@ begin
  values(p_ws_id,p_meeting_id,p_key,p_store,e,p_nonce,p_ticket_exp) returning * into l;
  return l;
 end $$;
+
+
+create function private.settle_meet_erase_apply(p_lease uuid,p_fencing_token uuid,p_result text)
+returns text language plpgsql security definer set search_path=pg_catalog,pg_temp set lock_timeout='2s' as $$
+declare l private.meet_content_apply_leases; b private.meet_content_hold_scopes; outcome text;
+begin
+ select * into l from private.meet_content_apply_leases where id=p_lease;
+ if not found or l.ticket_nonce is distinct from p_fencing_token or p_result is null or p_result not in ('confirmed','refused') then raise exception 'MEET_ERASE_STALE'; end if;
+ b:=private.lock_meet_hold_barrier(l.ws_id,false);
+ perform private.lock_meet_content_fence(l.meeting_id);
+ select * into l from private.meet_content_apply_leases where id=p_lease for update;
+ if l.settled_at is not null then return l.result; end if;
+ outcome:=case when l.expires_at<=clock_timestamp() or l.hold_epoch<>b.epoch then 'unknown' else p_result end;
+ update private.meet_content_apply_leases set settled_at=clock_timestamp(),result=outcome where id=l.id;
+ if outcome='unknown' then
+ update private.meet_erasure_operations set state='held' where operation_key=l.operation_key;
+ update private.meet_erasure_store_progress set state='held',last_error_code='reconciliation_required' where operation_key=l.operation_key and store=l.store;
+ end if;
+ insert into private.meet_erasure_events(operation_key,ws_id,meeting_id,event,store,actor_role)
+ values(l.operation_key,l.ws_id,l.meeting_id,case when outcome='unknown' then 'lease_quarantined' else 'lease_settled' end,l.store,'tuturuuu_operator');
+ return outcome;
+end $$;
+revoke all on function private.settle_meet_erase_apply(uuid,uuid,text) from public,anon,authenticated,service_role;
+grant execute on function private.settle_meet_erase_apply(uuid,uuid,text) to service_role;
 
 create function private.decide_meet_erasure_finality(p_ws_id uuid,p_meeting_id uuid,p_operation_key uuid)
 returns jsonb language plpgsql security definer set search_path=pg_catalog,pg_temp set lock_timeout='2s' as $$
@@ -233,7 +292,7 @@ create function private.erase_meet_transcript_contributions(
  p_operation_key uuid,p_payload_hash bytea,p_expected_generation bigint,p_expected_digest bytea,p_expires_at timestamptz,
  p_self boolean,p_plan jsonb,p_plan_hash bytea,p_ledger_seq bigint,p_ledger_mac bytea,
  p_playground_decision text,p_history_ack boolean)
-returns jsonb language plpgsql security definer set search_path=pg_catalog,pg_temp set lock_timeout='2s' as $$
+returns jsonb language plpgsql security definer set search_path=pg_catalog,pg_temp set lock_timeout='2s' set statement_timeout='30s' as $$
 declare
  f private.meet_content_fences; i private.meet_erasure_issuances; a private.meet_transcript_erasures;
  d private.meeting_documents; t jsonb; expected jsonb; item jsonb; seg jsonb; rewritten jsonb;
@@ -267,7 +326,7 @@ begin
  -- Release only document-terminal predecessors; unrelated S-X work resumes by its own plan.
  if f.active_operation_key is not null and exists(select 1 from private.meet_erasure_store_progress where operation_key=f.active_operation_key and store in ('S-DL','S-DS','S-PL') and state not in ('confirmed','not_applicable','attested_unchanged')) then raise exception 'MEET_ERASE_CONFLICT'; end if;
  perform 1 from public.meet_ai_sessions where meeting_id=p_meeting_id order by id for update;
- if exists(select 1 from public.meet_ai_sessions where meeting_id=p_meeting_id and ended_at is null) or
+ if exists(select 1 from public.meet_ai_sessions where meeting_id=p_meeting_id and ended_at is null and created_at>clock_timestamp()-interval '3 hours') or
  exists(select 1 from public.meet_ai_chunks c join public.meet_ai_sessions s on s.id=c.session_id where s.meeting_id=p_meeting_id and c.status='processing' and c.attempt_started_at>clock_timestamp()-interval '90 seconds') then raise exception 'MEET_ERASE_PROCESSING'; end if;
  if (p_subject_account_id is null)=(p_selection is null) then raise exception 'MEET_ERASE_INVALID_TARGET'; end if;
  if p_selection is not null and (jsonb_typeof(p_selection)<>'array' or jsonb_array_length(p_selection)>500) then raise exception 'MEET_ERASE_TOO_LARGE'; end if;
@@ -303,7 +362,7 @@ begin
  'actor_role',role_name,'subject',case when p_subject_account_id is null then jsonb_build_object('kind','selection') else jsonb_build_object('tag',encode(p_subject_tag,'hex'),'key_version',p_subject_key_version) end,
  'generation_target',f.generation+1,'doc_generation_target',case when doc_plan is not null then doc_target end,
  'transcript',jsonb_build_object('chunks',t->'chunks','sessions',t->'sessions'),'document',doc_plan,'playground',pg_plan,'label_removal',null,'recording',null,'stores',stores);
- if expected is distinct from p_plan or p_plan_hash is distinct from sha256(convert_to(expected::text,'UTF8')) or p_ledger_seq is null or p_ledger_seq<=0 or p_ledger_mac is null then raise exception 'MEET_ERASE_STALE'; end if;
+ if expected is distinct from p_plan or p_plan_hash is distinct from sha256(convert_to(private.meet_erase_canonical_json(expected),'UTF8')) or p_ledger_seq is null or p_ledger_seq<=0 or p_ledger_mac is null then raise exception 'MEET_ERASE_STALE'; end if;
  -- Authoritative 9b recheck after all target locks. Shared barrier is already held, never upgraded.
  perform private.check_meet_destructive_batch(p_ws_id,p_meeting_id);
  if exists(select 1 from public.meet_ai_chunks c cross join lateral jsonb_object_keys(c.usage) k where c.id in (select (x->>'chunk_id')::uuid from jsonb_array_elements(t->'chunks') x)
@@ -346,16 +405,19 @@ end $$;
 
 create function private.defer_meet_subject_erasure(p_ws_id uuid,p_meeting_id uuid,p_actor_id uuid)
 returns uuid language plpgsql security definer set search_path=pg_catalog,pg_temp set lock_timeout='2s' as $$
-declare r uuid;
+declare r uuid; h private.meet_content_holds;
 begin
  perform private.check_meet_erase_workspace(p_ws_id);
  perform private.plan_meet_subject_erasure(p_ws_id,p_meeting_id,p_actor_id,null);
  if not exists(select 1 from private.meet_content_holds where ws_id=p_ws_id and (meeting_id is null or meeting_id=p_meeting_id) and released_at is null) then raise exception 'MEET_ERASE_NOT_HELD'; end if;
- insert into private.meet_erasure_requests(ws_id,meeting_id,requester_user_id,status,held_at,resume_status)
- values(p_ws_id,p_meeting_id,p_actor_id,'on_hold',clock_timestamp(),'pending')
+ select * into h from private.meet_content_holds where ws_id=p_ws_id and (meeting_id is null or meeting_id=p_meeting_id) and released_at is null order by review_by limit 1;
+ insert into private.meet_erasure_requests(ws_id,meeting_id,requester_user_id,status,held_at,resume_status,hold_id,review_by)
+ values(p_ws_id,p_meeting_id,p_actor_id,'on_hold',clock_timestamp(),'pending',h.id,h.review_by)
  on conflict(meeting_id,requester_user_id) where status in ('pending','escalated','in_progress','on_hold') do update
  set status='on_hold',held_at=coalesce(meet_erasure_requests.held_at,excluded.held_at),resume_status=coalesce(meet_erasure_requests.resume_status,meet_erasure_requests.status)
  returning id into r;
+ insert into private.meet_erasure_events(operation_key,ws_id,meeting_id,event,actor_user_id,actor_role)
+ select r,p_ws_id,p_meeting_id,'subject_deferred',p_actor_id,'subject' where not exists(select 1 from private.meet_erasure_events where operation_key=r and event='subject_deferred');
  return r;
 end $$;
 
@@ -372,44 +434,37 @@ begin
 end $$;
 alter table private.meet_content_hold_scopes enable row level security;
 revoke all on private.meet_content_hold_scopes from public,anon,authenticated,service_role;
-grant select,insert on private.meet_content_hold_scopes to service_role;
-grant update on private.meet_content_hold_scopes to service_role;
+grant select on private.meet_content_hold_scopes to service_role;
 alter table private.meet_erasure_issuances enable row level security;
 revoke all on private.meet_erasure_issuances from public,anon,authenticated,service_role;
-grant select,insert on private.meet_erasure_issuances to service_role;
-grant update on private.meet_erasure_issuances to service_role;
+grant select on private.meet_erasure_issuances to service_role;
 alter table private.meet_erasure_operations enable row level security;
 revoke all on private.meet_erasure_operations from public,anon,authenticated,service_role;
-grant select,insert on private.meet_erasure_operations to service_role;
-grant update on private.meet_erasure_operations to service_role;
+grant select on private.meet_erasure_operations to service_role;
 alter table private.meet_erasure_store_progress enable row level security;
 revoke all on private.meet_erasure_store_progress from public,anon,authenticated,service_role;
-grant select,insert on private.meet_erasure_store_progress to service_role;
-grant update on private.meet_erasure_store_progress to service_role;
+grant select on private.meet_erasure_store_progress to service_role;
 alter table private.meet_erasure_completions enable row level security;
 revoke all on private.meet_erasure_completions from public,anon,authenticated,service_role;
-grant select,insert on private.meet_erasure_completions to service_role;
+grant select on private.meet_erasure_completions to service_role;
 alter table private.meet_erasure_plans enable row level security;
 revoke all on private.meet_erasure_plans from public,anon,authenticated,service_role;
-grant select,insert on private.meet_erasure_plans to service_role;
+grant select on private.meet_erasure_plans to service_role;
 alter table private.meet_erasure_requests enable row level security;
 revoke all on private.meet_erasure_requests from public,anon,authenticated,service_role;
-grant select,insert on private.meet_erasure_requests to service_role;
-grant update on private.meet_erasure_requests to service_role;
+grant select on private.meet_erasure_requests to service_role;
 alter table private.meet_transcript_erasures enable row level security;
 revoke all on private.meet_transcript_erasures from public,anon,authenticated,service_role;
-grant select,insert on private.meet_transcript_erasures to service_role;
+grant select on private.meet_transcript_erasures to service_role;
 alter table private.meet_erasure_events enable row level security;
 revoke all on private.meet_erasure_events from public,anon,authenticated,service_role;
-grant select,insert on private.meet_erasure_events to service_role;
+grant select on private.meet_erasure_events to service_role;
 alter table private.meet_collaboration_rooms enable row level security;
 revoke all on private.meet_collaboration_rooms from public,anon,authenticated,service_role;
-grant select,insert on private.meet_collaboration_rooms to service_role;
-grant update on private.meet_collaboration_rooms to service_role;
+grant select on private.meet_collaboration_rooms to service_role;
 alter table private.meet_content_apply_leases enable row level security;
 revoke all on private.meet_content_apply_leases from public,anon,authenticated,service_role;
-grant select,insert on private.meet_content_apply_leases to service_role;
-grant update on private.meet_content_apply_leases to service_role;
+grant select on private.meet_content_apply_leases to service_role;
 create trigger meet_transcript_erasures_immutable before update or delete on private.meet_transcript_erasures for each row execute function private.protect_meet_erasure_record();
 create trigger meet_erasure_plans_immutable before update or delete on private.meet_erasure_plans for each row execute function private.protect_meet_erasure_record();
 create trigger meet_erasure_completions_immutable before update or delete on private.meet_erasure_completions for each row execute function private.protect_meet_erasure_record();
@@ -443,7 +498,7 @@ declare b private.meet_content_hold_scopes;
 begin
  b:=private.lock_meet_hold_barrier(p_ws_id,true);
  if p_transition is null or b.pending_transition is not null and b.pending_transition<>p_transition then raise exception 'MEET_ERASE_CONFLICT'; end if;
- update private.meet_content_hold_scopes set pending_transition=p_transition where ws_id=p_ws_id;
+ update private.meet_content_hold_scopes set pending_transition=p_transition,transition_started_at=coalesce(transition_started_at,clock_timestamp()) where ws_id=p_ws_id;
  return b.epoch;
 end $$;
 create function private.finish_meet_hold_transition(p_ws_id uuid,p_transition uuid,p_ledger_seq bigint)
@@ -453,9 +508,73 @@ begin
  b:=private.lock_meet_hold_barrier(p_ws_id,true);
  if b.pending_transition is distinct from p_transition or p_transition is null or p_ledger_seq is null or p_ledger_seq<=b.ledger_seq then raise exception 'MEET_ERASE_STALE'; end if;
  if exists(select 1 from private.meet_content_apply_leases where ws_id=p_ws_id and (settled_at is null or result='unknown')) then raise exception 'MEET_ERASE_RECONCILIATION_REQUIRED'; end if;
- update private.meet_content_hold_scopes set pending_transition=null,epoch=epoch+1,ledger_seq=p_ledger_seq,registry_ready=true where ws_id=p_ws_id returning epoch into b.epoch;
+ update private.meet_content_hold_scopes set pending_transition=null,transition_started_at=null,epoch=epoch+1,ledger_seq=p_ledger_seq,registry_ready=true where ws_id=p_ws_id returning epoch into b.epoch;
  return b.epoch;
 end $$;
 revoke all on function private.begin_meet_hold_transition(uuid,uuid),private.finish_meet_hold_transition(uuid,uuid,bigint) from public,anon,authenticated;
-grant execute on function private.begin_meet_hold_transition(uuid,uuid),private.finish_meet_hold_transition(uuid,uuid,bigint) to service_role;
+-- Only the ledger hold projector may call begin/finish/abort. No service grant.
+create function private.abort_meet_hold_transition(p_ws_id uuid,p_transition uuid)
+returns void language plpgsql security definer set search_path=pg_catalog,pg_temp set lock_timeout='2s' as $$
+declare b private.meet_content_hold_scopes;
+begin
+ b:=private.lock_meet_hold_barrier(p_ws_id,true);
+ if p_transition is null or b.pending_transition is distinct from p_transition or b.transition_started_at>clock_timestamp()-interval '30 seconds' then raise exception 'MEET_ERASE_STALE'; end if;
+ if exists(select 1 from private.meet_content_apply_leases where ws_id=p_ws_id and (settled_at is null or result='unknown')) then raise exception 'MEET_ERASE_RECONCILIATION_REQUIRED'; end if;
+ update private.meet_content_hold_scopes set pending_transition=null,transition_started_at=null where ws_id=p_ws_id;
+ insert into private.meet_erasure_events(operation_key,ws_id,meeting_id,event,actor_role)
+ values(p_transition,p_ws_id,null,'transition_aborted','tuturuuu_operator');
+end $$;
+revoke all on function private.abort_meet_hold_transition(uuid,uuid) from public,anon,authenticated,service_role;
+
+-- Issuance is immutable once allocated; cancellation belongs to finality only.
+create function private.issue_meet_erasure(p_ws uuid,p_meeting uuid,p_actor uuid,p_kind text,p_key uuid)
+returns private.meet_erasure_issuances language plpgsql security definer set search_path=pg_catalog,pg_temp as $$
+declare i private.meet_erasure_issuances;
+begin
+ perform private.check_meet_erase_workspace(p_ws);
+ if not exists(select 1 from public.workspace_meetings where id=p_meeting and ws_id=p_ws) then raise exception 'MEET_ERASE_NOT_FOUND'; end if;
+ if p_kind='subject' then perform private.plan_meet_subject_erasure(p_ws,p_meeting,p_actor);
+ elsif not exists(select 1 from public.workspace_members where ws_id=p_ws and user_id=p_actor) or
+ not (p_kind='host' and exists(select 1 from public.workspace_meetings where id=p_meeting and creator_id=p_actor) or p_kind='workspace_admin' and public.has_workspace_permission(p_ws,p_actor,'admin')) then raise exception 'MEET_ERASE_FORBIDDEN' using errcode='42501'; end if;
+ insert into private.meet_erasure_issuances(operation_key,ws_id,meeting_id,actor_user_id,actor_kind,expires_at)
+ values(p_key,p_ws,p_meeting,p_actor,p_kind,clock_timestamp()+interval '29 seconds') on conflict do nothing;
+ select * into i from private.meet_erasure_issuances where operation_key=p_key;
+ if (i.ws_id,i.meeting_id,i.actor_user_id,i.actor_kind) is distinct from (p_ws,p_meeting,p_actor,p_kind) then raise exception 'MEET_ERASE_KEY_CONFLICT'; end if;
+ return i;
+end $$;
+revoke all on function private.issue_meet_erasure(uuid,uuid,uuid,text,uuid) from public,anon,authenticated,service_role;
+grant execute on function private.issue_meet_erasure(uuid,uuid,uuid,text,uuid) to service_role;
+-- Empty inert registries can be deleted with their workspace; active holds must be released first.
+create function private.guard_meet_hold_scope_delete() returns trigger
+language plpgsql security definer set search_path=pg_catalog,pg_temp as $$
+begin
+ if old.pending_transition is not null or exists(select 1 from private.meet_content_holds where ws_id=old.ws_id and released_at is null)
+ or exists(select 1 from private.meet_content_apply_leases where ws_id=old.ws_id and (settled_at is null or result='unknown')) then raise exception 'MEET_ERASE_RECONCILIATION_REQUIRED'; end if;
+ return old;
+end $$;
+revoke all on function private.guard_meet_hold_scope_delete() from public,anon,authenticated,service_role;
+create trigger meet_hold_scope_delete before delete on private.meet_content_hold_scopes for each row execute function private.guard_meet_hold_scope_delete();
+
+-- Owner-only reconciliation requires external evidence; it cannot be an apply ack.
+create function private.reconcile_meet_erase_apply(p_lease uuid,p_token uuid,p_result text,p_evidence bytea)
+returns void language plpgsql security definer set search_path=pg_catalog,pg_temp set lock_timeout='2s' as $$
+declare l private.meet_content_apply_leases;
+begin
+ select * into l from private.meet_content_apply_leases where id=p_lease;
+ if not found or l.ticket_nonce is distinct from p_token or p_result is null or p_result not in ('confirmed','refused') or p_evidence is null or octet_length(p_evidence)<>32 then raise exception 'MEET_ERASE_STALE'; end if;
+ perform private.lock_meet_hold_barrier(l.ws_id,false);
+ perform private.lock_meet_content_fence(l.meeting_id);
+ select * into l from private.meet_content_apply_leases where id=p_lease for update;
+ if l.result is distinct from 'unknown' then raise exception 'MEET_ERASE_STALE'; end if;
+ update private.meet_content_apply_leases set result=p_result where id=l.id;
+ update private.meet_erasure_store_progress set state=case when p_result='confirmed' then 'confirmed' else 'pending' end,
+ last_error_code=null,receipt=jsonb_build_object('hash',encode(p_evidence,'hex')),updated_at=clock_timestamp()
+ where operation_key=l.operation_key and store=l.store;
+ update private.meet_erasure_operations set state='in_progress' where operation_key=l.operation_key and not exists
+ (select 1 from private.meet_erasure_store_progress where operation_key=l.operation_key and state='held');
+ insert into private.meet_erasure_events(operation_key,ws_id,meeting_id,event,store,actor_role)
+ values(l.operation_key,l.ws_id,l.meeting_id,'lease_reconciled',l.store,'tuturuuu_operator');
+end $$;
+revoke all on function private.reconcile_meet_erase_apply(uuid,uuid,text,bytea) from public,anon,authenticated,service_role;
+
 commit;

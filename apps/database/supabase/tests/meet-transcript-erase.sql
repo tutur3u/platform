@@ -1,5 +1,6 @@
 begin;
-create extension if not exists pgtap;
+create extension if not exists pgtap with schema extensions;
+set local search_path=public,extensions;
 select no_plan();
 select has_table('private','meet_erasure_plans','meet_erasure_plans exists');
 select has_table('private','meet_erasure_issuances','meet_erasure_issuances exists');
@@ -11,9 +12,27 @@ select ok(not has_table_privilege('authenticated','private.meet_erasure_plans','
 select ok(not has_table_privilege('service_role','private.meet_erasure_plans','UPDATE'),'plans are immutable to service role');
 
 
-insert into public.users(id) values ('00000000-0000-4000-8000-000000000010');
-insert into public.workspaces(id,name) values ('00000000-0000-4000-8000-000000000001','Fixture');
-insert into public.workspace_members(ws_id,user_id) values ('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000010');
+-- Every V10 table is read-only even to the trusted service boundary.
+select ok(not has_table_privilege('service_role','private.'||t,p),t||' denies '||p)
+from unnest(array['meet_content_hold_scopes','meet_erasure_issuances','meet_erasure_operations',
+'meet_erasure_store_progress','meet_erasure_completions','meet_erasure_plans','meet_erasure_requests',
+'meet_transcript_erasures','meet_erasure_events','meet_collaboration_rooms','meet_content_apply_leases']) t
+cross join unnest(array['INSERT','UPDATE','DELETE','TRUNCATE']) p;
+grant usage on schema extensions to service_role;
+set local role service_role;
+select throws_ok($$update private.meet_erasure_issuances set cancelled_at=null$$,'42501',null,'cannot uncancel issuance');
+select throws_ok($$update private.meet_content_hold_scopes set pending_transition=null$$,'42501',null,'cannot bypass hold');
+select throws_ok($$insert into private.meet_erasure_completions(operation_key) values(gen_random_uuid())$$,'42501',null,'cannot forge completion');
+select throws_ok($$insert into private.meet_erasure_events(operation_key) values(gen_random_uuid())$$,'42501',null,'cannot forge audit');
+select throws_ok($$insert into private.meet_content_apply_leases(operation_key) values(gen_random_uuid())$$,'42501',null,'cannot forge lease');
+select throws_ok($$update private.meet_erasure_store_progress set state='pending' where state='held'$$,'42501',null,'cannot bypass legal hold');
+reset role;
+select is(private.meet_erase_canonical_json('{"z":2,"a":1}'::jsonb),'{"a":1,"z":2}'::text,'canonical sorted compact JSON');
+select throws_ok($$select private.meet_erase_canonical_json('9007199254740992')$$,'22023',null,'unsafe integer refused');
+insert into auth.users(id) values ('00000000-0000-4000-8000-000000000010');
+insert into public.users(id) values ('00000000-0000-4000-8000-000000000010') on conflict do nothing;
+insert into public.workspaces(id,name,personal,creator_id) values ('00000000-0000-4000-8000-000000000001','Fixture',false,'00000000-0000-4000-8000-000000000010');
+insert into public.workspace_members(ws_id,user_id) values ('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000010') on conflict do nothing;
 insert into public.workspace_meetings(id,ws_id,creator_id,name) values ('00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000010','Fixture');
 insert into private.meet_content_hold_scopes(ws_id,registry_ready) values ('00000000-0000-4000-8000-000000000001',true);
 insert into public.meet_ai_sessions(id,meeting_id,user_id,ended_at,notes) values ('00000000-0000-4000-8000-000000000003','00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000010',now(),'{"secret":"notes"}');
@@ -26,13 +45,13 @@ begin
  select generation into g from private.lock_meet_content_fence('00000000-0000-4000-8000-000000000002');
  t:=private.meet_erasure_target('00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000010',null,null);
  insert into private.meet_erasure_issuances(operation_key,ws_id,meeting_id,actor_user_id,actor_kind,expires_at)
- values(k,'00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000010','subject',clock_timestamp()+interval '1 hour') on conflict do nothing;
+ values(k,'00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000010','subject',clock_timestamp()+interval '29 seconds') on conflict do nothing;
  select expires_at into exp from private.meet_erasure_issuances where operation_key=k;
  plan:=jsonb_build_object('v',1,'kind','meeting_erase','ws_id','00000000-0000-4000-8000-000000000001','meeting_id','00000000-0000-4000-8000-000000000002','operation_key',k,
  'actor_role','subject','subject',jsonb_build_object('tag',repeat('ab',32),'key_version',1),'generation_target',g+1,'doc_generation_target',null,
  'transcript',jsonb_build_object('chunks',t->'chunks','sessions',t->'sessions'),'document',null,'playground',null,'label_removal',null,'recording',null,'stores','["S-T","S-L","S-X:inventory"]'::jsonb);
  return private.erase_meet_transcript_contributions('00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000010','00000000-0000-4000-8000-000000000010',
- decode(repeat('ab',32),'hex'),1::smallint,null,null,why,null,'none',null,false,k,sha256(convert_to(why,'UTF8')),g,coalesce(expected_digest,decode(t->>'digest','hex')),exp,true,plan,sha256(convert_to(plan::text,'UTF8')),1,decode('ab','hex'),'none',false);
+ decode(repeat('ab',32),'hex'),1::smallint,null,null,why,null,'none',null,false,k,sha256(convert_to(why,'UTF8')),g,coalesce(expected_digest,decode(t->>'digest','hex')),exp,true,plan,sha256(convert_to(private.meet_erase_canonical_json(plan),'UTF8')),1,decode('ab','hex'),'none',false);
 end $$;
 select is(private.count_meet_subject_segments('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000010'),1,'self counts only own verified line');
 select ok(private.plan_meet_subject_erasure('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000010')::text not like '%erase me%','plan contains no content');
@@ -81,11 +100,16 @@ select throws_ok($$update private.meet_erasure_plans set ledger_seq=2$$,'55000',
 select is((select count(*) from private.meet_erasure_completions),0::bigint,'P1 never claims all-store completion');
 select is((select state from private.meet_erasure_store_progress where store='S-X:inventory'),'pending','inventory pending fail closed');
 
+savepoint forged_plan_store;
+insert into private.meet_erasure_store_progress(operation_key,store,state) values('00000000-0000-4000-8000-000000000020','S-X:forged','pending');
+select throws_ok($$select private.admit_meet_erase_apply('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000020','S-X:forged',gen_random_uuid(),clock_timestamp()+interval '10 seconds')$$,'P0001','MEET_ERASE_STALE','progress row cannot admit a store outside the immutable plan');
+rollback to forged_plan_store;
+
 -- Real independent backends: shared destructive batches, exclusive transitions.
 create extension if not exists dblink;
-select dblink_connect('v10a','dbname='||current_database()||' user='||current_user);
-select dblink_connect('v10b','dbname='||current_database()||' user='||current_user);
-select dblink_exec('v10a',$$insert into public.workspaces(id,name) values('10000000-0000-4000-8000-000000000001','Fixture'); insert into private.meet_content_hold_scopes(ws_id,registry_ready) values('10000000-0000-4000-8000-000000000001',true)$$);
+select dblink_connect('v10a',coalesce(nullif(current_setting('test.dblink_connstr',true),''),'dbname='||current_database()||' user='||current_user));
+select dblink_connect('v10b',coalesce(nullif(current_setting('test.dblink_connstr',true),''),'dbname='||current_database()||' user='||current_user));
+select dblink_exec('v10a',$$insert into auth.users(id) values('10000000-0000-4000-8000-000000000010'); insert into public.users(id) values('10000000-0000-4000-8000-000000000010') on conflict do nothing; insert into public.workspaces(id,name,personal,creator_id) values('10000000-0000-4000-8000-000000000001','Fixture',false,'10000000-0000-4000-8000-000000000010'); insert into private.meet_content_hold_scopes(ws_id,registry_ready) values('10000000-0000-4000-8000-000000000001',true)$$);
 select dblink_exec('v10a','begin');
 select * from dblink('v10a',$$select (private.lock_meet_hold_barrier('10000000-0000-4000-8000-000000000001',false)).ws_id$$) as t(id uuid);
 select lives_ok($q$select * from dblink('v10b',$$select (private.lock_meet_hold_barrier('10000000-0000-4000-8000-000000000001',false)).ws_id$$) as t(id uuid)$q$,'shared batches coexist');
@@ -100,9 +124,30 @@ select dblink_disconnect('v10a');
 select dblink_disconnect('v10b');
 select throws_ok($$select private.admit_meet_erase_apply('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000020','S-X:inventory',gen_random_uuid(),clock_timestamp()+interval '1 minute')$$,'P0001','MEET_ERASE_EXPIRED','apply lease cannot exceed 30 seconds');
 select lives_ok($$select private.admit_meet_erase_apply('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000020','S-X:inventory',gen_random_uuid(),clock_timestamp()+interval '10 seconds')$$,'apply admitted as a durable lease row');
+
+select throws_ok($$select private.admit_meet_erase_apply('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000020','S-X:inventory',gen_random_uuid(),clock_timestamp()+interval '10 seconds')$$,'P0001','MEET_ERASE_RECONCILIATION_REQUIRED','prior unacked lease blocks repeat');
+select throws_ok($$select private.settle_meet_erase_apply((select id from private.meet_content_apply_leases),gen_random_uuid(),'confirmed')$$,'P0001','MEET_ERASE_STALE','foreign token cannot settle');
+savepoint settle_live;
+select is(private.settle_meet_erase_apply(id,ticket_nonce,'confirmed'),'confirmed','current token settles live lease') from private.meet_content_apply_leases;
+select is(private.settle_meet_erase_apply(id,ticket_nonce,'confirmed'),'confirmed','settlement retry idempotent') from private.meet_content_apply_leases;
+select is((select count(*) from private.meet_erasure_events where event='lease_settled'),1::bigint,'settlement audited exactly once');
+rollback to settle_live;
 select private.begin_meet_hold_transition('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000040');
 select throws_ok($$select private.check_meet_destructive_batch('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002')$$,'55000','MEET_ERASE_REGISTRY_UNREADY','pending transition blocks new destruction');
 update private.meet_content_apply_leases set created_at=clock_timestamp()-interval '20 seconds',expires_at=clock_timestamp()-interval '10 seconds';
 select throws_ok($$select private.finish_meet_hold_transition('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000040',1)$$,'P0001','MEET_ERASE_RECONCILIATION_REQUIRED','unsettled apply blocks projection even after expiry');
+
+select is(private.settle_meet_erase_apply(id,ticket_nonce,'confirmed'),'unknown','expired lease cannot confirm') from private.meet_content_apply_leases;
+select is((select state from private.meet_erasure_operations),'held','expiry quarantines operation');
+select is((select count(*) from private.meet_erasure_events where event='lease_quarantined'),1::bigint,'expiry audit durable');
+select throws_ok($$select private.abort_meet_hold_transition('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000040')$$,'P0001','MEET_ERASE_STALE','transition abort cannot race live projector');
+update private.meet_content_hold_scopes set transition_started_at=clock_timestamp()-interval '31 seconds';
+select throws_ok($$select private.abort_meet_hold_transition('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000040')$$,'P0001','MEET_ERASE_RECONCILIATION_REQUIRED','abort cannot clear quarantine');
+
+select private.reconcile_meet_erase_apply(id,ticket_nonce,'refused',sha256('fixture'::bytea)) from private.meet_content_apply_leases;
+select is((select state from private.meet_erasure_store_progress where store='S-X:inventory'),'pending','evidenced reconciliation releases quarantine');
+select lives_ok($$select private.abort_meet_hold_transition('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000040')$$,'expired transition can be aborted after reconciliation');
+select is((select count(*) from private.meet_erasure_events where event='transition_aborted'),1::bigint,'abort audited');
+select is((select doc_generation from private.meet_content_fences where meeting_id='00000000-0000-4000-8000-000000000002'),0::bigint,'self erasure never advances document generation');
 select * from finish();
 rollback;

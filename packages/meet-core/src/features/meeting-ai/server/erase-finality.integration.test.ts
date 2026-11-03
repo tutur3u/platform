@@ -65,7 +65,7 @@ describe.skipIf(!container)(
         ),
         'utf8'
       );
-      const start = source.indexOf('insert into public.users');
+      const start = source.indexOf('insert into auth.users');
       const end = source.indexOf(
         'select is(private.count_meet_subject_segments'
       );
@@ -112,7 +112,7 @@ describe.skipIf(!container)(
 
     it('paused P1 before COMMIT stays unknown, then returns its committed receipt', async () => {
       const release = await hold(`select test_v10.execute_fixture('${key}');
-      update private.meet_erasure_issuances set issued_at=clock_timestamp()-interval '2 hours',expires_at=clock_timestamp()-interval '1 second' where operation_key='${key}';`);
+      update private.meet_erasure_issuances set issued_at=clock_timestamp()-interval '20 seconds',expires_at=clock_timestamp()-interval '1 second' where operation_key='${key}';`);
       try {
         expect(
           query(
@@ -133,7 +133,7 @@ describe.skipIf(!container)(
       const unused = '00000000-0000-4000-8000-000000000031';
       const result =
         query(`insert into private.meet_erasure_issuances(operation_key,ws_id,meeting_id,actor_user_id,actor_kind,issued_at,expires_at)
-      values('${unused}','${ws}','${meeting}','00000000-0000-4000-8000-000000000010','subject',clock_timestamp()-interval '2 hours',clock_timestamp()-interval '1 hour');
+      values('${unused}','${ws}','${meeting}','00000000-0000-4000-8000-000000000010','subject',clock_timestamp()-interval '20 seconds',clock_timestamp()-interval '10 seconds');
       select private.decide_meet_erasure_finality('${ws}','${meeting}','${unused}')->>'state';
       create function pg_temp.attempt_cancelled() returns text language plpgsql as $$
       begin perform test_v10.execute_fixture('${unused}'); return 'unexpected commit';

@@ -13213,6 +13213,85 @@ export type Database = {
           },
         ];
       };
+      meet_collaboration_rooms: {
+        Row: {
+          erased_operation_key: string | null;
+          first_seen_at: string;
+          meeting_id: string;
+          resource: string;
+          resource_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          erased_operation_key?: string | null;
+          first_seen_at?: string;
+          meeting_id: string;
+          resource: string;
+          resource_id: string;
+          ws_id: string;
+        };
+        Update: {
+          erased_operation_key?: string | null;
+          first_seen_at?: string;
+          meeting_id?: string;
+          resource?: string;
+          resource_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      meet_content_apply_leases: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          hold_epoch: number;
+          id: string;
+          meeting_id: string;
+          operation_key: string;
+          result: string | null;
+          settled_at: string | null;
+          store: string;
+          ticket_nonce: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          expires_at: string;
+          hold_epoch: number;
+          id?: string;
+          meeting_id: string;
+          operation_key: string;
+          result?: string | null;
+          settled_at?: string | null;
+          store: string;
+          ticket_nonce: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          hold_epoch?: number;
+          id?: string;
+          meeting_id?: string;
+          operation_key?: string;
+          result?: string | null;
+          settled_at?: string | null;
+          store?: string;
+          ticket_nonce?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_content_apply_leases_operation_key_fkey';
+            columns: ['operation_key'];
+            isOneToOne: false;
+            referencedRelation: 'meet_erasure_operations';
+            referencedColumns: ['operation_key'];
+          },
+        ];
+      };
       meet_content_fences: {
         Row: {
           active_operation_key: string | null;
@@ -13246,6 +13325,451 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [];
+      };
+      meet_content_hold_scopes: {
+        Row: {
+          epoch: number;
+          ledger_seq: number;
+          pending_transition: string | null;
+          registry_ready: boolean;
+          transition_started_at: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          epoch?: number;
+          ledger_seq?: number;
+          pending_transition?: string | null;
+          registry_ready?: boolean;
+          transition_started_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          epoch?: number;
+          ledger_seq?: number;
+          pending_transition?: string | null;
+          registry_ready?: boolean;
+          transition_started_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      meet_content_holds: {
+        Row: {
+          cora_approval_ref: string;
+          created_at: string;
+          created_by: string;
+          hold_ref: string;
+          id: string;
+          kind: string;
+          meeting_id: string | null;
+          released_at: string | null;
+          review_by: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          cora_approval_ref: string;
+          created_at?: string;
+          created_by: string;
+          hold_ref: string;
+          id?: string;
+          kind: string;
+          meeting_id?: string | null;
+          released_at?: string | null;
+          review_by: string;
+          ws_id: string;
+        };
+        Update: {
+          cora_approval_ref?: string;
+          created_at?: string;
+          created_by?: string;
+          hold_ref?: string;
+          id?: string;
+          kind?: string;
+          meeting_id?: string | null;
+          released_at?: string | null;
+          review_by?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      meet_erase_settings: {
+        Row: {
+          erasure_log_retention: string;
+          issuance_retention: string;
+          ledger_retention: string | null;
+          legacy_audio_retention: string | null;
+          locator_retention: string | null;
+          request_retention: string;
+          retention_purge_enabled: boolean;
+          singleton: boolean;
+        };
+        ComputedFields: never;
+        Insert: {
+          erasure_log_retention?: string;
+          issuance_retention?: string;
+          ledger_retention?: string | null;
+          legacy_audio_retention?: string | null;
+          locator_retention?: string | null;
+          request_retention?: string;
+          retention_purge_enabled?: boolean;
+          singleton?: boolean;
+        };
+        Update: {
+          erasure_log_retention?: string;
+          issuance_retention?: string;
+          ledger_retention?: string | null;
+          legacy_audio_retention?: string | null;
+          locator_retention?: string | null;
+          request_retention?: string;
+          retention_purge_enabled?: boolean;
+          singleton?: boolean;
+        };
+        Relationships: [];
+      };
+      meet_erase_settings_audit: {
+        Row: {
+          changed_at: string;
+          changed_by: string;
+          id: number;
+          new_settings: NonNullable<Json>;
+          old_settings: NonNullable<Json>;
+        };
+        ComputedFields: never;
+        Insert: {
+          changed_at?: string;
+          changed_by: string;
+          id?: never;
+          new_settings: NonNullable<Json>;
+          old_settings: NonNullable<Json>;
+        };
+        Update: {
+          changed_at?: string;
+          changed_by?: string;
+          id?: never;
+          new_settings?: NonNullable<Json>;
+          old_settings?: NonNullable<Json>;
+        };
+        Relationships: [];
+      };
+      meet_erasure_completions: {
+        Row: {
+          completed_at: string;
+          operation_key: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          completed_at?: string;
+          operation_key: string;
+        };
+        Update: {
+          completed_at?: string;
+          operation_key?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_erasure_completions_operation_key_fkey';
+            columns: ['operation_key'];
+            isOneToOne: true;
+            referencedRelation: 'meet_erasure_operations';
+            referencedColumns: ['operation_key'];
+          },
+        ];
+      };
+      meet_erasure_events: {
+        Row: {
+          actor_role: string;
+          actor_user_id: string | null;
+          created_at: string;
+          event: string;
+          id: string;
+          meeting_id: string | null;
+          operation_key: string;
+          store: string | null;
+          subject_key_version: number | null;
+          subject_tag: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_role: string;
+          actor_user_id?: string | null;
+          created_at?: string;
+          event: string;
+          id?: string;
+          meeting_id?: string | null;
+          operation_key: string;
+          store?: string | null;
+          subject_key_version?: number | null;
+          subject_tag?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          actor_role?: string;
+          actor_user_id?: string | null;
+          created_at?: string;
+          event?: string;
+          id?: string;
+          meeting_id?: string | null;
+          operation_key?: string;
+          store?: string | null;
+          subject_key_version?: number | null;
+          subject_tag?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_erasure_events_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_erasure_events_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      meet_erasure_issuances: {
+        Row: {
+          actor_kind: string;
+          actor_user_id: string;
+          cancelled_at: string | null;
+          expires_at: string;
+          issued_at: string;
+          meeting_id: string;
+          operation_key: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_kind: string;
+          actor_user_id: string;
+          cancelled_at?: string | null;
+          expires_at: string;
+          issued_at?: string;
+          meeting_id: string;
+          operation_key: string;
+          ws_id: string;
+        };
+        Update: {
+          actor_kind?: string;
+          actor_user_id?: string;
+          cancelled_at?: string | null;
+          expires_at?: string;
+          issued_at?: string;
+          meeting_id?: string;
+          operation_key?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      meet_erasure_operations: {
+        Row: {
+          completed_at: string | null;
+          created_at: string;
+          doc_generation: number;
+          generation: number;
+          meeting_id: string;
+          operation_key: string;
+          state: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          completed_at?: string | null;
+          created_at?: string;
+          doc_generation: number;
+          generation: number;
+          meeting_id: string;
+          operation_key: string;
+          state: string;
+          ws_id: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          created_at?: string;
+          doc_generation?: number;
+          generation?: number;
+          meeting_id?: string;
+          operation_key?: string;
+          state?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      meet_erasure_plans: {
+        Row: {
+          attested_state_hash: string | null;
+          created_at: string;
+          history_cutoff_id: number | null;
+          ledger_mac: string;
+          ledger_seq: number;
+          meeting_id: string;
+          operation_key: string;
+          payload_hash: string;
+          plan: NonNullable<Json>;
+          plan_hash: string;
+          plan_version: number;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attested_state_hash?: string | null;
+          created_at?: string;
+          history_cutoff_id?: number | null;
+          ledger_mac: string;
+          ledger_seq: number;
+          meeting_id: string;
+          operation_key: string;
+          payload_hash: string;
+          plan: NonNullable<Json>;
+          plan_hash: string;
+          plan_version: number;
+          ws_id: string;
+        };
+        Update: {
+          attested_state_hash?: string | null;
+          created_at?: string;
+          history_cutoff_id?: number | null;
+          ledger_mac?: string;
+          ledger_seq?: number;
+          meeting_id?: string;
+          operation_key?: string;
+          payload_hash?: string;
+          plan?: NonNullable<Json>;
+          plan_hash?: string;
+          plan_version?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_erasure_plans_operation_key_fkey';
+            columns: ['operation_key'];
+            isOneToOne: true;
+            referencedRelation: 'meet_erasure_operations';
+            referencedColumns: ['operation_key'];
+          },
+        ];
+      };
+      meet_erasure_requests: {
+        Row: {
+          created_at: string;
+          decline_code: string | null;
+          deferred_duration: string;
+          held_at: string | null;
+          hold_id: string | null;
+          id: string;
+          kind: string;
+          linked_operation_key: string | null;
+          meeting_id: string;
+          operation_key: string | null;
+          requester_user_id: string;
+          resolved_at: string | null;
+          resolved_by: string | null;
+          resume_status: string | null;
+          review_by: string | null;
+          status: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          decline_code?: string | null;
+          deferred_duration?: string;
+          held_at?: string | null;
+          hold_id?: string | null;
+          id?: string;
+          kind?: string;
+          linked_operation_key?: string | null;
+          meeting_id: string;
+          operation_key?: string | null;
+          requester_user_id: string;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          resume_status?: string | null;
+          review_by?: string | null;
+          status?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          decline_code?: string | null;
+          deferred_duration?: string;
+          held_at?: string | null;
+          hold_id?: string | null;
+          id?: string;
+          kind?: string;
+          linked_operation_key?: string | null;
+          meeting_id?: string;
+          operation_key?: string | null;
+          requester_user_id?: string;
+          resolved_at?: string | null;
+          resolved_by?: string | null;
+          resume_status?: string | null;
+          review_by?: string | null;
+          status?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_erasure_requests_hold_id_fkey';
+            columns: ['hold_id'];
+            isOneToOne: false;
+            referencedRelation: 'meet_content_holds';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      meet_erasure_store_progress: {
+        Row: {
+          attempts: number;
+          cursor: number | null;
+          last_error_code: string | null;
+          next_attempt_at: string | null;
+          operation_key: string;
+          receipt: Json | null;
+          state: string;
+          store: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          attempts?: number;
+          cursor?: number | null;
+          last_error_code?: string | null;
+          next_attempt_at?: string | null;
+          operation_key: string;
+          receipt?: Json | null;
+          state: string;
+          store: string;
+          updated_at?: string;
+        };
+        Update: {
+          attempts?: number;
+          cursor?: number | null;
+          last_error_code?: string | null;
+          next_attempt_at?: string | null;
+          operation_key?: string;
+          receipt?: Json | null;
+          state?: string;
+          store?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_erasure_store_progress_operation_key_fkey';
+            columns: ['operation_key'];
+            isOneToOne: false;
+            referencedRelation: 'meet_erasure_operations';
+            referencedColumns: ['operation_key'];
+          },
+        ];
       };
       meet_stream_events: {
         Row: {
@@ -13364,6 +13888,97 @@ export type Database = {
           {
             foreignKeyName: 'meet_stream_live_inputs_created_by_fkey';
             columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      meet_transcript_erasures: {
+        Row: {
+          actor_role: string;
+          actor_user_id: string | null;
+          chunks_touched: number;
+          created_at: string;
+          doc_blocks_removed: number;
+          doc_decision: string;
+          edited_notes_cleared: number;
+          generation_after: number;
+          id: string;
+          lines_erased: number;
+          meeting_id: string;
+          notes_cleared: number;
+          operation_key: string;
+          payload_hash: string;
+          reason: string;
+          request_id: string | null;
+          session_ids: string[];
+          shared_audio_lines: number;
+          subject_key_version: number | null;
+          subject_kind: string;
+          subject_tag: string | null;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_role: string;
+          actor_user_id?: string | null;
+          chunks_touched: number;
+          created_at?: string;
+          doc_blocks_removed?: number;
+          doc_decision: string;
+          edited_notes_cleared: number;
+          generation_after: number;
+          id?: string;
+          lines_erased: number;
+          meeting_id: string;
+          notes_cleared: number;
+          operation_key: string;
+          payload_hash: string;
+          reason: string;
+          request_id?: string | null;
+          session_ids: string[];
+          shared_audio_lines?: number;
+          subject_key_version?: number | null;
+          subject_kind: string;
+          subject_tag?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          actor_role?: string;
+          actor_user_id?: string | null;
+          chunks_touched?: number;
+          created_at?: string;
+          doc_blocks_removed?: number;
+          doc_decision?: string;
+          edited_notes_cleared?: number;
+          generation_after?: number;
+          id?: string;
+          lines_erased?: number;
+          meeting_id?: string;
+          notes_cleared?: number;
+          operation_key?: string;
+          payload_hash?: string;
+          reason?: string;
+          request_id?: string | null;
+          session_ids?: string[];
+          shared_audio_lines?: number;
+          subject_key_version?: number | null;
+          subject_kind?: string;
+          subject_tag?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_transcript_erasures_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_transcript_erasures_actor_user_id_fkey';
+            columns: ['actor_user_id'];
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
             referencedColumns: ['user_id'];
@@ -21219,6 +21834,10 @@ export type Database = {
       };
     };
     Functions: {
+      abort_meet_hold_transition: {
+        Args: { p_transition: string; p_ws_id: string };
+        Returns: undefined;
+      };
       abuse_trust_multiplier_for_tier: {
         Args: { p_tier: Database['public']['Enums']['abuse_risk_tier'] };
         Returns: number;
@@ -21378,6 +21997,35 @@ export type Database = {
           to: 'workspace_user_groups_users';
           isOneToOne: false;
           isSetofReturn: true;
+        };
+      };
+      admit_meet_erase_apply: {
+        Args: {
+          p_key: string;
+          p_meeting_id: string;
+          p_nonce: string;
+          p_store: string;
+          p_ticket_exp: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          created_at: string;
+          expires_at: string;
+          hold_epoch: number;
+          id: string;
+          meeting_id: string;
+          operation_key: string;
+          result: string | null;
+          settled_at: string | null;
+          store: string;
+          ticket_nonce: string;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'meet_content_apply_leases';
+          isOneToOne: true;
+          isSetofReturn: false;
         };
       };
       ai_agent_external_attachment_json: {
@@ -21716,6 +22364,10 @@ export type Database = {
           run_id: string;
           success: boolean;
         }[];
+      };
+      begin_meet_hold_transition: {
+        Args: { p_transition: string; p_ws_id: string };
+        Returns: number;
       };
       begin_meeting_ai_live_session: {
         Args: {
@@ -22253,6 +22905,14 @@ export type Database = {
         Args: { p_actor_user_id: string; p_target_user_id: string };
         Returns: boolean;
       };
+      check_meet_destructive_batch: {
+        Args: { p_meeting_id: string; p_ws_id: string };
+        Returns: number;
+      };
+      check_meet_erase_workspace: {
+        Args: { p_ws_id: string };
+        Returns: undefined;
+      };
       checkpoint_meeting_document:
         | {
             Args: {
@@ -22545,6 +23205,15 @@ export type Database = {
         Args: { p_checkout_id: string; p_now?: string; p_ws_id: string };
         Returns: number;
       };
+      count_meet_subject_segments: {
+        Args: {
+          p_account: string;
+          p_meeting_id: string;
+          p_session?: string;
+          p_ws_id: string;
+        };
+        Returns: number;
+      };
       count_task_source_filter_lists: {
         Args: {
           p_actor_id: string;
@@ -22711,6 +23380,18 @@ export type Database = {
       cross_app_verified_session_data: {
         Args: { p_session_data: Json; p_user_id: string };
         Returns: Json;
+      };
+      decide_meet_erasure_finality: {
+        Args: {
+          p_meeting_id: string;
+          p_operation_key: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      defer_meet_subject_erasure: {
+        Args: { p_actor_id: string; p_meeting_id: string; p_ws_id: string };
+        Returns: string;
       };
       delete_managed_cron_whitelisted_domain: {
         Args: { p_domain: string };
@@ -23121,6 +23802,36 @@ export type Database = {
         Args: { p_category_ids?: string[]; p_ws_id: string };
         Returns: string[];
       };
+      erase_meet_transcript_contributions: {
+        Args: {
+          p_actor_id: string;
+          p_doc_decision: string;
+          p_doc_freeze_confirmed: boolean;
+          p_doc_plan: Json;
+          p_expected_digest: string;
+          p_expected_generation: number;
+          p_expires_at: string;
+          p_history_ack: boolean;
+          p_ledger_mac: string;
+          p_ledger_seq: number;
+          p_meeting_id: string;
+          p_operation_key: string;
+          p_payload_hash: string;
+          p_plan: Json;
+          p_plan_hash: string;
+          p_playground_decision: string;
+          p_reason: string;
+          p_request_id: string;
+          p_selection: Json;
+          p_self: boolean;
+          p_session_id: string;
+          p_subject_account_id: string;
+          p_subject_key_version: number;
+          p_subject_tag: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       expire_ai_live_sessions: {
         Args: { p_balance_id: string };
         Returns: undefined;
@@ -23444,6 +24155,10 @@ export type Database = {
       finance_credit_cycle_date: {
         Args: { p_anchor_year: number; p_day: number; p_month_offset: number };
         Returns: string;
+      };
+      finish_meet_hold_transition: {
+        Args: { p_ledger_seq: number; p_transition: string; p_ws_id: string };
+        Returns: number;
       };
       finish_meet_transcript_purge_run: {
         Args: { p_run_id: string; p_status: string };
@@ -24561,6 +25276,31 @@ export type Database = {
         Args: { p_allow_xwf?: boolean; p_user_id?: string };
         Returns: boolean;
       };
+      issue_meet_erasure: {
+        Args: {
+          p_actor: string;
+          p_key: string;
+          p_kind: string;
+          p_meeting: string;
+          p_ws: string;
+        };
+        Returns: {
+          actor_kind: string;
+          actor_user_id: string;
+          cancelled_at: string | null;
+          expires_at: string;
+          issued_at: string;
+          meeting_id: string;
+          operation_key: string;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'meet_erasure_issuances';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       list_account_benefits: { Args: { p_user_id: string }; Returns: Json };
       list_ai_studio_consumption_events: {
         Args: {
@@ -24931,6 +25671,23 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      lock_meet_hold_barrier: {
+        Args: { p_transition?: boolean; p_ws_id: string };
+        Returns: {
+          epoch: number;
+          ledger_seq: number;
+          pending_transition: string | null;
+          registry_ready: boolean;
+          transition_started_at: string | null;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'meet_content_hold_scopes';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       lock_tutoring_hours_teacher: {
         Args: { p_teacher: string; p_ws: string };
         Returns: undefined;
@@ -25074,6 +25831,17 @@ export type Database = {
       meet_ai_self_v1_reader_role: {
         Args: { p_reader_id: string; p_session_id: string };
         Returns: string;
+      };
+      meet_erase_canonical_json: { Args: { p: Json }; Returns: string };
+      meet_erase_utf16_key: { Args: { p: string }; Returns: number[] };
+      meet_erasure_target: {
+        Args: {
+          p_account: string;
+          p_meeting_id: string;
+          p_selection: Json;
+          p_session: string;
+        };
+        Returns: Json;
       };
       meeting_programming_elevated: {
         Args: { p_meeting_id: string; p_owner_id: string };
@@ -25242,6 +26010,15 @@ export type Database = {
         Args: { p_document: Json };
         Returns: boolean;
       };
+      plan_meet_subject_erasure: {
+        Args: {
+          p_account: string;
+          p_meeting_id: string;
+          p_session?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       playground_collaboration_scope: {
         Args: { p_actor_id: string; p_id: string };
         Returns: Json;
@@ -25363,6 +26140,15 @@ export type Database = {
           p_user_id: string;
         };
         Returns: Json;
+      };
+      reconcile_meet_erase_apply: {
+        Args: {
+          p_evidence: string;
+          p_lease: string;
+          p_result: string;
+          p_token: string;
+        };
+        Returns: undefined;
       };
       reconcile_orphaned_approved_post_email_queue: {
         Args: {
@@ -25781,6 +26567,10 @@ export type Database = {
         };
         Returns: number;
       };
+      set_meet_retention_purge_enabled: {
+        Args: { p_enabled: boolean };
+        Returns: undefined;
+      };
       set_playground_collaborator: {
         Args: {
           p_actor_id: string;
@@ -25862,6 +26652,10 @@ export type Database = {
           error_code: string;
           success: boolean;
         }[];
+      };
+      settle_meet_erase_apply: {
+        Args: { p_fencing_token: string; p_lease: string; p_result: string };
+        Returns: string;
       };
       skip_rejected_post_email_queue: {
         Args: Record<PropertyKey, never>;

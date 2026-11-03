@@ -98,3 +98,11 @@ to the same disposable database; loopback trust fails dblink authentication.
 See the local Supabase development runbook. Preserve security negatives, distinguish
 restrictive MFA policies from access-granting policies, and seed provider identities
 for verified staff. Report runtime/schema regressions instead of weakening assertions.
+
+### Meet erase-core contracts
+
+For V10 privilege, lease recovery, canonical hashing and rollback verification,
+follow the [erase-core runbook](../../../../../apps/docs/build/devops/meet-transcript-retention.mdx#erase-core-admission-and-recovery).
+Use synthetic fixture identifiers. Keep full-chain reset/typegen evidence separate
+from reduced-schema PG17 results; service-role ACL checks must eventually run
+against the full migration chain as well.
