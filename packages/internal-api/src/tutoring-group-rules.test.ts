@@ -118,10 +118,79 @@ describe('accent matching v2', () => {
   }
 });
 
-it('excludes IELTS alongside DDT in the language center preset', () => {
-  for (const name of ['IELTS evening', 'DDT morning']) {
+it('excludes DDT in the language center preset', () => {
+  for (const name of ['DDT morning']) {
     expect(
       isTutoringGroupExcluded(EASY_CENTER_TUTORING_POLICY, name, 'make_up')
+    ).toBe(true);
+  }
+});
+
+it('gates IELTS defaults for old stored policies', () => {
+  for (const groupExclusions of [
+    undefined,
+    [{ scope: 'all', match: 'contains', value: 'DDT' }],
+  ]) {
+    const { groupExclusions: omitted, ...base } = EASY_CENTER_TUTORING_POLICY;
+    const saved =
+      groupExclusions === undefined ? base : { ...base, groupExclusions };
+    expect(
+      parseTutoringPolicy(saved)?.groupExclusions.some(
+        (r) => r.value === 'IELTS'
+      )
+    ).toBe(false);
+    expect(
+      parseTutoringPolicy(saved, true)?.groupExclusions.some(
+        (r) => r.value === 'IELTS'
+      )
+    ).toBe(true);
+  }
+  const saved = {
+    ...EASY_CENTER_TUTORING_POLICY,
+    groupExclusions: EASY_CENTER_TUTORING_POLICY.groupExclusions.filter(
+      (r) => r.value !== 'IELTS'
+    ),
+  };
+  expect(parseTutoringPolicy(saved, true)?.groupExclusions).toHaveLength(3);
+});
+for (const scope of ['all', 'weak_support'] as const) {
+  for (const [match, expected] of [
+    ['exact', false],
+    ['contains', true],
+    ['prefix', true],
+    ['suffix', false],
+  ] as const) {
+    it(`${scope} ${match} distinguishes operators with Vietnamese folding`, () => {
+      const policy = {
+        ...STANDARD_TUTORING_POLICY,
+        groupExclusions: [{ scope, match, value: 'duc' }],
+      };
+      expect(
+        isTutoringGroupExcluded(
+          policy,
+          'Đức class',
+          'weak_support',
+          null,
+          [],
+          true
+        )
+      ).toBe(expected);
+    });
+  }
+}
+it('folds crossed d for exact names', () => {
+  for (const [value, name] of [
+    ['DDT', 'ĐĐT'],
+    ['duc', 'Đức'],
+  ]) {
+    const policy = {
+      ...STANDARD_TUTORING_POLICY,
+      groupExclusions: [
+        { scope: 'all' as const, match: 'exact' as const, value },
+      ],
+    };
+    expect(
+      isTutoringGroupExcluded(policy, name, 'make_up', null, [], true)
     ).toBe(true);
   }
 });

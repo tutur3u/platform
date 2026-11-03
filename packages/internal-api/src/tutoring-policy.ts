@@ -107,7 +107,6 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
   weakContentReviewDays: 14,
   groupExclusions: [
     { scope: 'all', match: 'contains', value: 'DDT' },
-    { scope: 'all', match: 'contains', value: 'IELTS' },
     { scope: 'all', match: 'contains', value: 'Mẫu giáo' },
     { scope: 'all', match: 'contains', value: 'Kindergarten' },
   ],
@@ -299,17 +298,27 @@ function parseTutorGroupIds(value: unknown) {
 }
 
 /** Strict validation is shared by settings UI and the API write boundary. */
-export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
+export function parseTutoringPolicy(
+  value: unknown,
+  exclusionUpgrade = false
+): TutoringPolicy | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const saved = value as Record<string, unknown>;
   const defaults =
     saved.preset === 'easy_center'
       ? EASY_CENTER_TUTORING_POLICY
       : STANDARD_TUTORING_POLICY;
+  const defaultExclusions =
+    exclusionUpgrade && saved.preset === 'easy_center'
+      ? [
+          ...defaults.groupExclusions,
+          { scope: 'all', match: 'contains', value: 'IELTS' },
+        ]
+      : defaults.groupExclusions;
   const candidate: Record<string, unknown> = {
     weakContentReviewDays: defaults.weakContentReviewDays,
     restrictWeakContentEditors: defaults.restrictWeakContentEditors,
-    groupExclusions: defaults.groupExclusions,
+    groupExclusions: defaultExclusions,
     tutorGroupIds: [],
     supportGroupIds: [],
     shiftByGroupId: {},
@@ -334,7 +343,7 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     saved.groupExclusions[0]?.match === 'contains' &&
     saved.groupExclusions[0]?.value === 'DDT'
   ) {
-    candidate.groupExclusions = EASY_CENTER_TUTORING_POLICY.groupExclusions;
+    candidate.groupExclusions = defaultExclusions;
   }
   // Any section edit saves the policy as custom, so an easy_center policy
   // still holding an earlier template default is untouched and adopts the
@@ -541,10 +550,16 @@ export function getTutoringCampus(
   return match ? `CS${match[1]}` : null;
 }
 
-export function readTutoringPolicy(value: string | null | undefined) {
+export function readTutoringPolicy(
+  value: string | null | undefined,
+  exclusionUpgrade = false
+) {
   if (!value) return STANDARD_TUTORING_POLICY;
   try {
-    return parseTutoringPolicy(JSON.parse(value)) ?? STANDARD_TUTORING_POLICY;
+    return (
+      parseTutoringPolicy(JSON.parse(value), exclusionUpgrade) ??
+      STANDARD_TUTORING_POLICY
+    );
   } catch {
     return STANDARD_TUTORING_POLICY;
   }
@@ -584,7 +599,10 @@ export function serializeTutoringPolicyConfigRows(policy: TutoringPolicy) {
   ];
 }
 
-export function readTutoringPolicyConfigRows(rows: TutoringPolicyConfigRow[]) {
+export function readTutoringPolicyConfigRows(
+  rows: TutoringPolicyConfigRow[],
+  exclusionUpgrade = false
+) {
   const values = new Map(rows.map((row) => [row.id, row.value]));
   const base = values.get(TUTORING_POLICY_CONFIG_ID);
   if (!base) return STANDARD_TUTORING_POLICY;
@@ -605,12 +623,12 @@ export function readTutoringPolicyConfigRows(rows: TutoringPolicyConfigRow[]) {
       );
       if (chunks.some((chunk) => chunk === undefined))
         return STANDARD_TUTORING_POLICY;
-      return readTutoringPolicy(chunks.join(''));
+      return readTutoringPolicy(chunks.join(''), exclusionUpgrade);
     }
   } catch {
     return STANDARD_TUTORING_POLICY;
   }
-  return readTutoringPolicy(base);
+  return readTutoringPolicy(base, exclusionUpgrade);
 }
 
 /** Parent-message fields that every render supplies. */

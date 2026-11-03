@@ -239,8 +239,11 @@ async function getTutoringData(request: Request, { params }: Params) {
   const feedbackRows = feedbackResult.data;
   const matchingV2 = evaluateFlags(registry, {
     wsId: normalizedWsId,
-  }).tutoring_exclusion_matching_v2;
-  const policy = readTutoringPolicyConfigRows(policyResult.data ?? []);
+  }).tutoring_exclusion_upgrade;
+  const policy = readTutoringPolicyConfigRows(
+    policyResult.data ?? [],
+    matchingV2
+  );
   // Learners are listed only under the classes they belong to now.
   const [membershipResult, tagResult] = await Promise.all([
     loadQueueMemberships({

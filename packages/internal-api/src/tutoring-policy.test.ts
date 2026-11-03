@@ -250,7 +250,7 @@ describe('Easy Center tutoring shifts', () => {
     const { weakContentReviewDays, groupExclusions, ...legacy } =
       EASY_CENTER_TUTORING_POLICY;
     expect(weakContentReviewDays).toBe(14);
-    expect(groupExclusions).toHaveLength(4);
+    expect(groupExclusions).toHaveLength(3);
     expect(parseTutoringPolicy(legacy)).toMatchObject({
       weakContentReviewDays: 14,
       groupExclusions,

@@ -129,7 +129,7 @@ export const registry = [
     removeBy: '2027-01-31',
   },
   {
-    key: 'tutoring_exclusion_matching_v2',
+    key: 'tutoring_exclusion_upgrade',
     description: 'Accent insensitive tutoring class name and tag exclusions.',
     owner: 'pax',
     class: 'read',

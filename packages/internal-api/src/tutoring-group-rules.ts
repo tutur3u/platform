@@ -51,7 +51,12 @@ function matchesRule(
 ) {
   const normalize = (value: string) =>
     matchingV2
-      ? value.trim().normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+      ? value
+          .trim()
+          .normalize('NFD')
+          .replace(/\p{M}/gu, '')
+          .toLowerCase()
+          .replace(/đ/g, 'd')
       : value.trim().toLocaleLowerCase();
   const name = normalize(text);
   const value = normalize(rule.value);
