@@ -45,8 +45,15 @@
       "CLOUDFLARE_REALTIME_APP_ID",
       "CLOUDFLARE_REALTIME_APP_SECRET",
       "CLOUDFLARE_TURN_KEY_ID",
-      "CLOUDFLARE_TURN_API_TOKEN"
+      "CLOUDFLARE_TURN_API_TOKEN",
+      "MEET_AI_DISABLED_WORKSPACE_IDS"
     ]
+  },
+  // Containment: Meet AI stays off until the erase path ships. Pinned here so a
+  // redeploy can never drop them (an absent allowlist means allow-all).
+  "vars": {
+    "MEET_AI_DISABLED": "true",
+    "MEET_AI_ENABLED_WORKSPACE_IDS": ""
   },
   "account_id": "e8912e2867beecc673d171907bf09649",
   "routes": [

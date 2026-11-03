@@ -44,14 +44,19 @@
       "NEXT_PUBLIC_SUPABASE_URL",
       "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
       "SUPABASE_SECRET_KEY",
-      "GOOGLE_GENERATIVE_AI_API_KEY"
+      "GOOGLE_GENERATIVE_AI_API_KEY",
+      "MEET_AI_DISABLED_WORKSPACE_IDS"
     ]
   },
   "vars": {
     "NEXT_PUBLIC_APP_URL": "https://meet.tuturuuu.com",
     "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
     "MEET_REALTIME_URL": "wss://meet-realtime.tuturuuu.com/realtime",
-    "PARLEY_APP_URL": "https://parley.tuturuuu.com"
+    "PARLEY_APP_URL": "https://parley.tuturuuu.com",
+    // Containment: Meet AI stays off until the erase path ships. Pinned here so a
+    // redeploy can never drop them (an absent allowlist means allow-all).
+    "MEET_AI_DISABLED": "true",
+    "MEET_AI_ENABLED_WORKSPACE_IDS": ""
   },
   "durable_objects": {
     "bindings": [
