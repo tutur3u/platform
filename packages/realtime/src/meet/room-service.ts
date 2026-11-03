@@ -75,6 +75,7 @@ const command = z.union([
   personalChatReceiptCommand,
   z.discriminatedUnion('action', [
     z.object({ action: z.literal('read') }),
+    z.object({ action: z.literal('transcription.roster') }),
     z.object({
       action: z.literal('transcription.speaker'),
       accountId: z.uuid(),
@@ -142,6 +143,26 @@ export function roomService(
     token.scopes.includes('meet:workspace-member');
   const admin = token.role === 'host';
   const message = parsed.data;
+  if (message.action === 'transcription.roster') {
+    if (!admin) return fail('Only the host can check transcription consent');
+    const people = Object.values(snapshot.presence);
+    return {
+      state: snapshot,
+      body: {
+        accountIds: [
+          ...new Set([
+            ...(token.accountId ? [token.accountId] : []),
+            ...Object.keys(snapshot.approved ?? {}),
+            ...people.flatMap((person) =>
+              person.accountId ? [person.accountId] : []
+            ),
+          ]),
+        ],
+        hasGuests:
+          !token.accountId || people.some((person) => !person.accountId),
+      },
+    };
+  }
   if (message.action === 'transcription.speaker') {
     if (!admin) return fail('Only the host can attribute transcription');
     const known =

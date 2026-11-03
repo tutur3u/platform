@@ -396,3 +396,24 @@ it('limits transcript identities to signed host requests and admitted accounts',
     ).body
   ).toEqual({ accountId: stranger });
 });
+
+it('returns the server roster including approved accounts and guest presence', () => {
+  const state = initial();
+  const guestId = '00000000-0000-4000-8000-000000000001';
+  state.presence[guestId] = {
+    ...state.presence[account]!,
+    userId: guestId,
+    accountId: undefined,
+  };
+  state.approved = { [account]: { userId: account, displayName: 'Fixture' } };
+  expect(
+    roomService(
+      state,
+      { ...token, role: 'host' },
+      { action: 'transcription.roster' }
+    ).body
+  ).toEqual({ accountIds: [account], hasGuests: true });
+  expect(
+    roomService(state, token, { action: 'transcription.roster' }).status
+  ).toBe(403);
+});

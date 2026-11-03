@@ -75,7 +75,7 @@ export async function transcribeMeetChunk(
   );
   if (Either.isLeft(resolved)) throw resolved.left;
   const speakers = resolved.right;
-  await requireChunkConsent(db, sessionId, speakers);
+  await requireChunkConsent(db, sessionId, speakers, meetingId, user.id);
   const existing = await db
     .from('meet_ai_chunks')
     .select('*')
@@ -143,6 +143,7 @@ export async function transcribeMeetChunk(
       .eq('id', sessionId)
       .maybeSingle();
     if (current.error) throw new MeetAiError(500, 'Session lookup failed');
+    await requireChunkConsent(db, sessionId, speakers, meetingId, user.id);
     if (
       !current.data ||
       current.data.ended_at ||
@@ -152,7 +153,6 @@ export async function transcribeMeetChunk(
         409,
         'Transcription has ended or reservation expired'
       );
-    await requireChunkConsent(db, sessionId, speakers);
     const result = await generateBilledMeetArtifact(
       batched
         ? { audioSegments: parts.map((part) => part.bytes), hints }
@@ -187,6 +187,13 @@ export async function transcribeMeetChunk(
     const persisted = await Effect.runPromise(
       Effect.tryPromise({
         try: async () => {
+          await requireChunkConsent(
+            db,
+            sessionId,
+            speakers,
+            meetingId,
+            user.id
+          );
           let write = db.from('meet_ai_chunks').update(payload).eq('id', id);
           if (inserted.data.attempt_id)
             write = write.eq('attempt_id', inserted.data.attempt_id);

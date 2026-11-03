@@ -24938,7 +24938,7 @@ export type Database = {
       meet_ai_self_v1_consent_state: {
         Args: { p_account_id: string; p_session_id: string };
         Returns: {
-          decision: string;
+          decision: string | null;
           revision: number;
         }[];
       };
