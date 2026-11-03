@@ -9,6 +9,7 @@ import { generateObject } from 'ai';
 import { z } from 'zod';
 import { checkAiCredits, deductAiCredits } from '../../credits/check-credits';
 import { withAiMemory } from '../../memory';
+import { describeMeetAiFailure } from '../failure';
 import {
   estimateRecordingSeconds,
   MEET_AI_LIMITER_RETRY_AFTER_SECONDS,
@@ -343,7 +344,7 @@ export function createPOST({
         }
       );
     } catch (error) {
-      console.error('Transcription error:', error);
+      console.error('Transcription error', describeMeetAiFailure(error));
       return new Response('Internal server error', { status: 500 });
     }
   };
