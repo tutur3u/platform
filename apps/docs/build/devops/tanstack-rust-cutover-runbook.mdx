@@ -163,7 +163,8 @@ Release owner steps:
    action). Record the legacy `tuturuuu-meet` and `tuturuuu-meet-realtime`
    version IDs first.
 5. Keep `MEET_AI_ENABLED_WORKSPACE_IDS` set as a secret on `tuturuuu-meet`
-   (Meet AI is default-allow without it; the deploy job fails closed) and
+   (Meet AI is default-off: without it, or with it blank, every workspace is
+   denied; the deploy job also fails closed when it is missing) and
    watch errors for 30 minutes after the flip, rolling back at the first
    regression.
 3. Rollback is one step: `wrangler versions deploy <legacy-version-id>@100%

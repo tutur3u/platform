@@ -103,7 +103,7 @@ vi.mock(
 const access = {
   user: { id: 'actor' },
   isHost: false,
-  meeting: { id: 'meeting', ws_id: 'meeting-ws' },
+  meeting: { id: 'meeting', ws_id: '00000000-0000-4000-8000-0000000000f1' },
 };
 
 import { POST as personal } from '../../../routes/api/meet-call/[meetingId]/assistant/personal/route';
@@ -147,7 +147,7 @@ describe('assistant mutations workspace gate', () => {
     });
   });
 
-  it.each([undefined, '', 'other-ws'])(
+  it.each([undefined, '', '*', '00000000-0000-4000-8000-0000000000f2'])(
     'denies generation, personal chat and review writes (runtime restriction %j) before any room, credit or model call',
     async (allowlist) => {
       bind(allowlist);
@@ -180,7 +180,7 @@ describe('assistant mutations workspace gate', () => {
   );
 
   it('admits a listed workspace to the personal assistant write', async () => {
-    bind('meeting-ws');
+    bind('00000000-0000-4000-8000-0000000000f1');
     mocks.personalChat.mockResolvedValue({ text: 'ok' });
     const response = await send(personal, {
       requestId: '00000000-0000-4000-8000-0000000000e1',

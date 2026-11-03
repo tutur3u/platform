@@ -32,7 +32,10 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
           user: { id: 'actor' },
           isHost: true,
           displayName: 'Host',
-          meeting: { ws_id: 'meeting-ws', name: 'Meeting' },
+          meeting: {
+            ws_id: '00000000-0000-4000-8000-0000000000f1',
+            name: 'Meeting',
+          },
         })
       );
     } catch (error) {
@@ -93,7 +96,12 @@ describe('meet-live routes workspace gate', () => {
   ])(
     'denies %s outside the allowlist with no Durable Object or room work',
     async (_name, body) => {
-      for (const allowlist of [undefined, '', 'other-ws']) {
+      for (const allowlist of [
+        undefined,
+        '',
+        '*',
+        '00000000-0000-4000-8000-0000000000f2',
+      ]) {
         bind(allowlist);
         const response = await call(live, body);
         expect(response.status).toBe(403);
@@ -114,7 +122,7 @@ describe('meet-live routes workspace gate', () => {
   });
 
   it('admits a listed workspace to start', async () => {
-    bind('meeting-ws');
+    bind('00000000-0000-4000-8000-0000000000f1');
     const response = await call(live, {
       action: 'start',
       mode: 'personal',
