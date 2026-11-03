@@ -3,10 +3,11 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   isMeetAiEnabledForWorkspace,
+  isMeetAiEnabledWithSafety,
   meetAiSafeEnvironment,
 } from './ai-workspace-gate';
 
-const MEET_AI_EC_WORKSPACE_ID = '22222222-2222-4222-8222-222222222222';
+const MEET_AI_EC_WORKSPACE_ID = '22222222-2222-4222-8abc-222222222222';
 const protectedIds = {
   MEET_AI_PROTECTED_WORKSPACE_IDS: MEET_AI_EC_WORKSPACE_ID,
 };
@@ -102,6 +103,48 @@ describe('EC runtime safety check', () => {
     expect(
       isMeetAiEnabledForWorkspace(ordinary, meetAiSafeEnvironment(env))
     ).toBe(false);
+  });
+  it.each([
+    MEET_AI_EC_WORKSPACE_ID.replaceAll('-', ''),
+    `{${MEET_AI_EC_WORKSPACE_ID}}`,
+    MEET_AI_EC_WORKSPACE_ID.toUpperCase(),
+    ` ${MEET_AI_EC_WORKSPACE_ID} `,
+    `urn:uuid:${MEET_AI_EC_WORKSPACE_ID}`,
+  ])('safety wrapper refuses noncanonical protected identity %s', (id) => {
+    expect(
+      isMeetAiEnabledWithSafety(id, {
+        ...protectedIds,
+        MEET_AI_ENABLED_WORKSPACE_IDS: ordinary,
+      })
+    ).toBe(false);
+  });
+  it('requires the protected secret on both deployed Workers and CI checks', () => {
+    const root = resolve(__dirname, '../../../../');
+    const meet = readFileSync(
+      resolve(root, 'apps/meet/void.config.ts'),
+      'utf8'
+    );
+    expect(meet).toMatch(
+      /required:\s*\[[\s\S]*?'MEET_AI_PROTECTED_WORKSPACE_IDS'/
+    );
+    const realtime = JSON.parse(
+      readFileSync(resolve(root, 'apps/meet-realtime/wrangler.jsonc'), 'utf8')
+        .replace(/^\s*\/\/.*$/gm, '')
+        .replace(/,\s*([}\]])/g, '$1')
+    );
+    expect(realtime.secrets.required).toContain(
+      'MEET_AI_PROTECTED_WORKSPACE_IDS'
+    );
+    const workflow = readFileSync(
+      resolve(root, '.github/workflows/meet-cloudflare.yaml'),
+      'utf8'
+    );
+    const checks = workflow
+      .split('\n')
+      .filter((line) => line.includes('jq -e --argjson required'));
+    expect(checks).toHaveLength(2);
+    for (const check of checks)
+      expect(check).toContain('MEET_AI_PROTECTED_WORKSPACE_IDS');
   });
   for (const path of [
     'apps/meet/wrangler.legacy.jsonc',

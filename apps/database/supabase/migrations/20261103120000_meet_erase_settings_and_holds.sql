@@ -46,7 +46,7 @@ create table private.meet_content_holds (
   check (released_at is null or released_at >= created_at)
 );
 create index meet_content_holds_active on private.meet_content_holds(ws_id,meeting_id) where released_at is null;
--- V9 must replace this guard with ledger-backed, serialized transitions.
+-- Keep inert until V9, the store workers and V10 M3 are ready; V22 installs transitions.
 create function private.block_meet_hold_transition() returns trigger
 language plpgsql set search_path = pg_catalog, pg_temp as $$
 begin
@@ -62,7 +62,22 @@ alter table private.meet_erase_settings enable row level security;
 alter table private.meet_erase_settings_audit enable row level security;
 alter table private.meet_content_holds enable row level security;
 revoke all on private.meet_erase_settings, private.meet_erase_settings_audit, private.meet_content_holds from public, anon, authenticated, service_role;
-grant select, update on private.meet_erase_settings to service_role;
+grant select on private.meet_erase_settings to service_role;
+grant update (erasure_log_retention, request_retention, issuance_retention,
+  ledger_retention, locator_retention, legacy_audio_retention)
+  on private.meet_erase_settings to service_role;
+
+create function private.set_meet_retention_purge_enabled(p_enabled boolean)
+returns void language plpgsql security definer
+set search_path = pg_catalog, pg_temp as $$
+begin
+  update private.meet_erase_settings set retention_purge_enabled = p_enabled
+    where singleton;
+end;
+$$;
+revoke all on function private.set_meet_retention_purge_enabled(boolean)
+  from public, anon, authenticated, service_role;
+grant execute on function private.set_meet_retention_purge_enabled(boolean) to service_role;
 grant select on private.meet_erase_settings_audit, private.meet_content_holds to service_role;
 revoke all on function private.audit_meet_erase_settings(), private.block_meet_hold_transition() from public, anon, authenticated, service_role;
 commit;

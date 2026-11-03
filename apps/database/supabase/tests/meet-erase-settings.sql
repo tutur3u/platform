@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(20);
 select has_table('private','meet_erase_settings','settings table exists');
 select has_table('private','meet_content_holds','hold table exists');
 select is((select erasure_log_retention from private.meet_erase_settings), interval '3 years', 'E7 log default');
@@ -12,9 +12,17 @@ select ok(not has_table_privilege('authenticated','private.meet_content_holds','
 select ok(not has_table_privilege('service_role','private.meet_content_holds','INSERT'), 'hold transitions inert until V9');
 set local role service_role;
 select lives_ok($$update private.meet_erase_settings set request_retention=interval '2 years'$$, 'settings configurable');
+select throws_ok($$update private.meet_erase_settings set retention_purge_enabled=true$$, '42501', null, 'direct purge enable denied');
+select throws_ok($$update private.meet_erase_settings set singleton=false$$, '42501', null, 'singleton mutation denied');
 reset role;
 select is((select count(*)::int from private.meet_erase_settings_audit), 1, 'change audited');
 select throws_ok($$update private.meet_erase_settings set request_retention=interval '-1 day'$$, '23514', null, 'reject negative retention');
 select throws_ok($$insert into private.meet_content_holds(ws_id,kind,hold_ref,cora_approval_ref,review_by,created_by) values ('11111111-1111-4111-8111-111111111111','legal_hold','fixture','fixture',now()+interval '1 day','22222222-2222-4222-8222-222222222222')$$, '55000', 'Meet hold transitions require the independent ledger', 'even privileged holds require V9');
+set local role service_role;
+select lives_ok($$select private.set_meet_retention_purge_enabled(true)$$, 'audited purge enable');
+reset role;
+select ok((select retention_purge_enabled from private.meet_erase_settings), 'purge enabled through operator');
+select is((select count(*)::int from private.meet_erase_settings_audit), 2, 'operator writes audit row');
+select ok(not has_function_privilege('authenticated','private.set_meet_retention_purge_enabled(boolean)','EXECUTE'), 'client cannot enable purge');
 select * from finish();
 rollback;

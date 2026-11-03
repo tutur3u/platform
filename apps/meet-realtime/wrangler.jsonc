@@ -47,7 +47,6 @@
   ],
   "secrets": {
     "required": [
-      "MEET_AI_PROTECTED_WORKSPACE_IDS",
       "MEET_REALTIME_TOKEN_SECRET",
       "CLOUDFLARE_REALTIME_APP_ID",
       "CLOUDFLARE_REALTIME_APP_SECRET",

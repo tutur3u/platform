@@ -1,3 +1,4 @@
+-- FORBIDDEN after V10. Roll back V10 before V2; PL/pgSQL dependencies are not tracked.
 -- Manual only, before later erase slices depend on these tables.
 -- Refuse to discard any hold or settings audit evidence.
 begin;
@@ -10,6 +11,7 @@ do $$ begin
 end $$;
 drop table private.meet_content_holds;
 drop function private.block_meet_hold_transition();
+drop function private.set_meet_retention_purge_enabled(boolean);
 drop table private.meet_erase_settings;
 drop function private.audit_meet_erase_settings();
 drop table private.meet_erase_settings_audit;
