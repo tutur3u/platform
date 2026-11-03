@@ -11,7 +11,8 @@ import { assertCronSet } from './assert-cron-set.mjs';
 // that `cf deploy --prebuilt` publishes. Enabled-job slot claims, restarts,
 // stop/resume and the failure budget are covered by the ledger, dispatch and
 // control unit tests: this harness takes only declared secrets and the
-// configured job list; the production configuration enables only retention.
+// configured job list; the production configuration enables only the two
+// retention jobs, with AI Studio retention in dry-run.
 const root = fileURLToPath(new URL('..', import.meta.url));
 const TRIGGERS = [
   '*/5 * * * *',
@@ -23,6 +24,8 @@ const TRIGGERS = [
   '*/15 * * * *',
   '*/30 * * * *',
   '* * * * *',
+  // ai-studio-retention: daily 02:43 GMT+7.
+  '43 19 * * *',
 ];
 const operatorToken = randomUUID() + randomUUID();
 let worker;
@@ -44,7 +47,7 @@ after(async () => {
   await worker?.close();
 });
 
-test('source config keeps every schedule and enables only database history retention', async () => {
+test('source config keeps every schedule and enables only the two retention jobs, AI retention in dry-run', async () => {
   const { default: config } = await import(
     pathToFileURL(`${root}/cloudflare.config.ts`).href
   );
@@ -54,7 +57,12 @@ test('source config keeps every schedule and enables only database history reten
   );
   assert.deepEqual(config.worker.env.CRON_CONTROL_ENABLED_JOBS, {
     type: 'text',
-    value: 'database-cron-history-retention',
+    value: 'database-cron-history-retention,ai-studio-retention',
+  });
+  // Source must never ship delete mode: only a reviewed change may set it.
+  assert.deepEqual(config.worker.env.AI_STUDIO_RETENTION_MODE, {
+    type: 'text',
+    value: 'dry-run',
   });
   assert.deepEqual(config.worker.env.CRON_CONTROL_WORKER_PROCESSORS, {
     type: 'text',
