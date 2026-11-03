@@ -36,7 +36,8 @@ vi.mock('next/headers', () => ({
   cookies: mocks.cookies,
   headers: mocks.headers,
 }));
-vi.mock('../common', () => ({
+vi.mock('../common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../common')>()),
   checkEnvVariables: mocks.env,
   getSupabaseCookieOptions: mocks.cookieOptions,
   getSupabaseAuthCookieUrls: vi.fn(),
