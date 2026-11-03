@@ -17,7 +17,10 @@
   },
   "durable_objects": {
     "bindings": [
-      { "name": "CHANNEL_ROOM", "class_name": "ChannelRoomDurableObject" },
+      {
+        "name": "CHANNEL_ROOM",
+        "class_name": "ChannelRoomDurableObject"
+      },
       {
         "name": "COLLABORATION_ROOM",
         "class_name": "CollaborationRoomDurableObject"
@@ -37,7 +40,10 @@
       "tag": "v2-collaboration",
       "new_sqlite_classes": ["CollaborationRoomDurableObject"]
     },
-    { "tag": "v3-channels", "new_sqlite_classes": ["ChannelRoomDurableObject"] }
+    {
+      "tag": "v3-channels",
+      "new_sqlite_classes": ["ChannelRoomDurableObject"]
+    }
   ],
   "secrets": {
     "required": [
@@ -45,7 +51,9 @@
       "CLOUDFLARE_REALTIME_APP_ID",
       "CLOUDFLARE_REALTIME_APP_SECRET",
       "CLOUDFLARE_TURN_KEY_ID",
-      "CLOUDFLARE_TURN_API_TOKEN"
+      "CLOUDFLARE_TURN_API_TOKEN",
+      "MEET_AI_DISABLED_WORKSPACE_IDS",
+      "MEET_AI_PROTECTED_WORKSPACE_IDS"
     ]
   },
   "account_id": "e8912e2867beecc673d171907bf09649",
@@ -55,5 +63,9 @@
       "custom_domain": true
     }
   ],
-  "workers_dev": true
+  "workers_dev": true,
+  "vars": {
+    "MEET_AI_DISABLED": "true",
+    "MEET_AI_ENABLED_WORKSPACE_IDS": ""
+  }
 }

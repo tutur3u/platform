@@ -51,11 +51,17 @@
       "CLOUDFLARE_REALTIME_APP_ID",
       "CLOUDFLARE_REALTIME_APP_SECRET",
       "CLOUDFLARE_TURN_KEY_ID",
-      "CLOUDFLARE_TURN_API_TOKEN"
+      "CLOUDFLARE_TURN_API_TOKEN",
+      "MEET_AI_DISABLED_WORKSPACE_IDS",
+      "MEET_AI_PROTECTED_WORKSPACE_IDS"
     ]
   },
   "account_id": "e8912e2867beecc673d171907bf09649",
   "routes": [],
   "workers_dev": false,
-  "preview_urls": false
+  "preview_urls": false,
+  "vars": {
+    "MEET_AI_DISABLED": "true",
+    "MEET_AI_ENABLED_WORKSPACE_IDS": ""
+  }
 }

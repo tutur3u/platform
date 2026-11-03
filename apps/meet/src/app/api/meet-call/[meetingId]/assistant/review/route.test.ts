@@ -3,7 +3,10 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   service: vi.fn(),
   generate: vi.fn(),
-  access: { user: { id: 'requester' }, meeting: { ws_id: 'ws-team' } },
+  access: {
+    user: { id: 'requester' },
+    meeting: { ws_id: '00000000-0000-4000-8000-0000000000a1' },
+  },
 }));
 const access = mocks.access;
 vi.mock('next/server', () => ({ connection: async () => undefined }));
@@ -49,7 +52,7 @@ afterEach(() => {
 const params = { params: Promise.resolve({ meetingId: 'room' }) };
 beforeEach(() => {
   vi.clearAllMocks();
-  allowlist('ws-team');
+  allowlist('00000000-0000-4000-8000-0000000000a1');
   mocks.service.mockResolvedValue({
     text: 'Private',
     continuation: 'secret-provider-signatures',

@@ -80,6 +80,60 @@ describe('Meet chunk idempotency', () => {
     expect(from).not.toHaveBeenCalled();
     expect(mocks.generate).not.toHaveBeenCalled();
   });
+  it('preserves the missing-session reservation refusal after the session lookup races', async () => {
+    const from = vi
+      .fn()
+      .mockReturnValueOnce(
+        query({
+          data: { id, created_at: new Date().toISOString() },
+          error: null,
+        })
+      )
+      .mockReturnValueOnce(query({ data: null, error: null }));
+    const rpc = vi.fn().mockResolvedValue({
+      data: null,
+      error: { code: 'P0001', message: 'Session not found' },
+    });
+    mocks.access.mockResolvedValue({
+      db: { from, rpc },
+      meetingId: id,
+      user: { id },
+    });
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(request(), params)
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: 'Chunk cannot be submitted',
+    });
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+  it('exhausts lock retries without dispatching unfenced provider work', async () => {
+    const from = vi
+      .fn()
+      .mockReturnValueOnce(
+        query({
+          data: { id, created_at: new Date().toISOString() },
+          error: null,
+        })
+      )
+      .mockReturnValueOnce(query({ data: null, error: null }));
+    const rpc = vi
+      .fn()
+      .mockResolvedValue({ data: null, error: { code: '55P03' } });
+    mocks.access.mockResolvedValue({
+      db: { from, rpc },
+      meetingId: id,
+      user: { id },
+    });
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(request(), params)
+    );
+    expect(response.status).toBe(500);
+    expect(rpc).toHaveBeenCalledTimes(4);
+    expect(mocks.generate).not.toHaveBeenCalled();
+    expect(from).toHaveBeenCalledTimes(2);
+  });
   it('returns a completed duplicate without another provider charge', async () => {
     const existing = { id, status: 'completed', transcript: 'Already saved' };
     const from = vi

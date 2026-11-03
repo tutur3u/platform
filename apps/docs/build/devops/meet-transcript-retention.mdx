@@ -40,6 +40,16 @@ delete consent rows explicitly before deleting a session or meeting. The transcr
 purge keeps both and requires no erasure-order change. Account deletion clears the
 consent user FK and retains a random session-scoped participant pseudonym.
 
+Self-capture (`self_v1`) sessions keep consent evidence exactly like legacy
+sessions: the `RESTRICT` foreign key on `private.meet_ai_consents.session_id`
+refuses a workspace, meeting or session deletion over consent rows until that
+evidence is explicitly erased by its retention owner. While capture can still
+run (`active` or `draining`), `self_v1` consent rows cannot be deleted at all.
+They also always have a finite `purge_after` of at most creation plus 365 days
+that can only move earlier. Their admission, stream, erasure-job and account-fence stores are not
+yet in this purge's scope. Self-capture stays disabled until the expanded
+purge, and a fresh dry-run and delete approval, cover them.
+
 ## Design
 
 `private.meet_transcript_purge_control` is a singleton fence row, readable and
@@ -167,3 +177,60 @@ run and a separate approval.
 - `apps/cron-control/src/meet-transcript-retention.test.ts`: default off,
   both fences mid-run, batch and run bounds, time reserve, lost-Worker
   resumption, bounded retries, terminal states and five-day durable stop.
+
+## Erase-core admission and recovery
+
+V10 remains inert until the hold registry and store appliers are approved. Apply
+migrations in numeric order: V4 `20261103112400`, V2 `20261103120000`, then V10
+`20261103130000`. Any V9 SQL must sort after V10. Production sync must first
+include the main `20261101*` migrations, #6943 and #7505. Deploy the V2/V3 web,
+both Meet Workers and Parley changes and confirm V3 readers are live before
+activating V10. Keep V2's inert hold trigger and existing security gates unchanged. Do not seed
+hold-scope rows as part of rollout.
+
+All eleven V10 tables are read-only to `service_role`. Issuance, P1 erasure and
+apply settlement use definer functions. An apply lease carries a nonce and hold
+epoch and expires within 30 seconds. A repeated admission for an unsettled or
+unknown lease is refused. Settlement after expiry records `unknown` and
+quarantines the operation and store; it cannot confirm success. The database
+owner must reconcile using external evidence through
+`private.reconcile_meet_erase_apply`, then complete or abort the hold transition.
+An abort requires the matching transition, at least 30 seconds of age and no
+unresolved leases. Begin, finish, abort and reconciliation have no service-role
+EXECUTE grant; the future audited hold projector owns that boundary.
+
+P1 has a 30-second statement timeout. Sessions without an end time block P1 only
+when created in the last three hours. Document generation advances only for
+`blocks` or `whole`, never `leave` or self erasure. With `doc_hold=true` and
+pending document stores, documents remain unusable until the store-apply change
+finishes recovery. This behavior is latent while V10 is inert. V12 must still
+verify callback scope, freeze issuance, copy status and rewritten-copy recovery.
+
+Release active holds and reconcile leases before workspace deletion. Empty hold
+registries cascade with their workspace; the delete guard refuses active holds,
+pending transitions and unknown leases. V2 hold projections require the separate
+erase-first procedure before workspace deletion. Deferred requests release their
+hold foreign key when that projection is removed. Audit receipts retain workspace UUIDs
+without a workspace foreign key, so deleting a workspace does not drop receipts.
+
+Rollback order is V9 → V10 → V4 → V2. The V10 rollback locks all eleven tables
+and requires every table to be empty, including cancelled issuances and deferred
+requests without operations. Once used, preserve receipts and roll forward.
+
+Run `python3 apps/database/tests/meet-erase-order.py` and
+`python3 apps/database/tests/meet-erase-security.py` for source contracts.
+`meet-transcript-erase.sql` exercises PG17 privilege and lease behavior.
+The scripts `meet-erase-rollback.py`, `meet-erase-worst-case.py` and
+`meet-erase-canonical.mjs` under `apps/database/tests` emit SQL for a disposable
+PG17 database; run the JavaScript emitter with Bun. The canonical emitter imports
+V9's shared TypeScript module and checks the SQL hash against UTF-16 key ordering
+and safe-integer vectors. Timing fixtures use synthetic data and exclude remote
+store latency; they do not establish production latency.
+
+Reset the disposable database before repeating these suites: independent dblink
+sessions commit synthetic auth users, whose personal workspaces follow the normal
+deletion guard. Do not disable that guard for cleanup. If the CLI truncates a long
+macOS temporary path and reports `NOTESTS`, the test stage failed. Run the pgTAP
+SQL with psql against that same disposable database, require a zero exit status
+and no `not ok` output, then generate types. Keep the command and TAP output with
+the validation evidence.

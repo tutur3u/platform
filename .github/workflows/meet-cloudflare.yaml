@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled, converted_to_draft]
     paths:
       - 'scripts/safe-fs.js'
+      - 'scripts/check-meet-ai-containment*'
       - 'apps/meet/**'
       - 'apps/meet-realtime/**'
       - 'apps/web/src/lib/meet/**'
@@ -44,6 +45,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/safe-fs.js'
+      - 'scripts/check-meet-ai-containment*'
       - 'apps/meet/**'
       - 'apps/meet-realtime/**'
       - 'apps/web/src/lib/meet/**'
@@ -130,6 +132,10 @@ jobs:
           PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
           PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
         run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Enforce SR-919 Meet AI containment
+        run: |
+          node --test scripts/check-meet-ai-containment.test.js
+          node scripts/check-meet-ai-containment.js
       - name: Test build identity and workflow ordering
         run: node --test scripts/ci/meet-build-metadata.test.js scripts/ci/verify-meet-build-info.test.js scripts/ci/generate-build-metadata.test.js scripts/ci/verify-meet-start-output.test.js scripts/ci/meet-native-source-identity.test.js scripts/ci/meet-native-admission.test.mjs scripts/ci/meet-native-abuse-guard-stub.test.mjs scripts/ci/meet-native-lifecycle.test.mjs scripts/ci/meet-native-supplier.test.mjs scripts/ci/meet-native-evidence.test.mjs scripts/ci/meet-native-hidden.test.mjs scripts/ci/meet-native-assurance.test.mjs scripts/ci/meet-native-response-diagnostics.test.mjs scripts/ci/meet-ssr-capture.test.mjs
       - name: Test Meet public callback and current account assurance
@@ -534,8 +540,8 @@ jobs:
           test -n "$MEET_REALTIME_TOKEN_SECRET" || { echo 'Missing production Meet smoke-test credential'; exit 1; }
           bun x --no-install wrangler secret list --name tuturuuu-meet --format json > "$RUNNER_TEMP/meet-secrets.json"
           bun x --no-install wrangler secret list --name tuturuuu-meet-realtime --format json > "$RUNNER_TEMP/meet-realtime-secrets.json"
-          jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY","GOOGLE_GENERATIVE_AI_API_KEY","MEET_AI_ENABLED_WORKSPACE_IDS"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-secrets.json" > /dev/null
-          jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","CLOUDFLARE_REALTIME_APP_ID","CLOUDFLARE_REALTIME_APP_SECRET","CLOUDFLARE_TURN_KEY_ID","CLOUDFLARE_TURN_API_TOKEN"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-realtime-secrets.json" > /dev/null
+          jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY","GOOGLE_GENERATIVE_AI_API_KEY","MEET_AI_DISABLED_WORKSPACE_IDS","MEET_AI_PROTECTED_WORKSPACE_IDS"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-secrets.json" > /dev/null
+          jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","CLOUDFLARE_REALTIME_APP_ID","CLOUDFLARE_REALTIME_APP_SECRET","CLOUDFLARE_TURN_KEY_ID","CLOUDFLARE_TURN_API_TOKEN","MEET_AI_DISABLED_WORKSPACE_IDS","MEET_AI_PROTECTED_WORKSPACE_IDS"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-realtime-secrets.json" > /dev/null
       - name: Capture existing frontend and realtime rollback versions
         run: |
           for service in frontend realtime; do

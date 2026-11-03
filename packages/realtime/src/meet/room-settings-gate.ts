@@ -1,5 +1,5 @@
 import {
-  isMeetAiEnabledForWorkspace,
+  isMeetAiEnabledWithSafety as isMeetAiEnabledForWorkspace,
   type MeetAiGateEnv,
 } from './ai-workspace-gate';
 import type { MeetRealtimeClientMessage } from './messages';

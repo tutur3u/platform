@@ -350,6 +350,57 @@ notes while the host's sharing setting permits it. Room policy and approval
 state live in Cloudflare Durable Object storage; no self-hosted server or new
 database migration is required.
 
+### Self-capture read contract (not yet enabled)
+
+Product decision (30 October 2026): participant self-capture (`self_v1`)
+sessions, where each account uploads only its own microphone, use a durable
+read rule that never consults live room state. It is defined in the database and
+is not exposed to any client yet; legacy sessions keep the rule above.
+
+| Reader | Own speech | Other speakers and mixed notes |
+| --- | --- | --- |
+| Account that spoke | Always, including after leaving, removal or room cleanup, with sharing off | Only under one of the rows below |
+| Fixed session host | Always | Always |
+| Admin of the meeting's workspace | Always | Always, independent of sharing |
+| Account with a durable admission record for that session | Always | Only while the host's sharing flag for the current phase is on and session visibility is `participants` |
+| Approved but never admitted, invited, or generic workspace member | Never | Never |
+
+- Own speech never grants mixed notes, because notes contain other people's
+  speech.
+- The live or after-meeting flag is chosen from durable session state: the
+  session is post-call once it is closed at its 20-second drain deadline, the
+  deadline has passed, or the 3-hour capture lifetime plus drain has elapsed. A
+  missing room, or a room that ended early, cannot switch flags. Only the fixed
+  host changes sharing, through a revisioned write.
+- `workspace` visibility is rejected for `self_v1` and never grants reads.
+- Coverage reports only `contributing` or `not_contributing`, so a decline,
+  withdrawal, "decide later", unsupported device and offline participant look
+  the same. Only the host and admins see the roster; others see their own row.
+- An account deletion or erase fence hides that person's speech immediately.
+  Any erase, or any fenced contributor, redacts the whole mixed notes for every
+  reader without revealing who asked.
+- Consent is enforced in the database. `private.meet_ai_consents` is the only
+  consent source; the live room roster is never consent authority. Opening a
+  capture stream needs the account's current decision to be `allow`, and each
+  stored chunk must carry exactly the account's current consent revision (the
+  number of decisions recorded for it in that session). No decision, `deny`
+  or `withdraw` is refused. A `deny` or `withdraw` revokes the account's live
+  streams in the same transaction, and a new `allow` is the only way back.
+  Provider dispatch is recorded once, only under the current `allow` revision.
+- A revoked upload grant stays revoked: rejoining the room records admission
+  but never restores upload.
+- Deleting a session never deletes consent evidence. Workspace, meeting or
+  session deletion over consent rows is refused (`RESTRICT`, as for legacy
+  sessions) until the evidence is explicitly erased by its retention owner.
+  The host profile foreign key is `SET NULL`, so participants keep their own
+  speech.
+- Withdrawal does not hide speech captured before it; removing that speech is
+  erasure, a separate later step.
+
+Regression coverage: `apps/database/supabase/tests/meet-ai-self-v1-read-contract.sql`,
+`apps/database/supabase/tests/meet-ai-self-v1-schema.sql` and
+`apps/database/supabase/tests/meet-ai-self-v1-consent.sql`.
+
 ## Missing microphone or camera
 
 If enabling a device reports that none was found, the browser returned
@@ -545,13 +596,22 @@ do not grant permission to transfer a Gemini key to a new destination.
 
 ### Meet AI availability and kill switch
 
-Product decision (2 November 2026): Meet AI is available to **all workspaces by
-default**, subject to the existing credit admission and consumption rules. This
-supersedes the 31 October pilot allowlist decision. Authentication, workspace
-membership, host permissions and billing are unchanged.
+Product decision (3 November 2026): Meet AI is **default-off** and
+**allowlist-only**. A workspace gets Meet AI only when its id is explicitly
+listed in `MEET_AI_ENABLED_WORKSPACE_IDS` and no other control denies it; a
+missing or empty allowlist denies every workspace. Protected workspaces are configured
+through the server-only `MEET_AI_PROTECTED_WORKSPACE_IDS` secret. Code subtracts
+protected ids before any pilot control; missing, empty or malformed protection
+configuration denies every workspace. Never store real protected ids in source.
+This supersedes the
+2 November default-allow decision (#7410). Credit admission, authentication,
+workspace membership, host permissions and billing are unchanged and still
+apply to allowed workspaces.
 
-Every check uses the workspace the server resolved (personal, handle and id
-lookups all resolve first), never the client-supplied value, and runs before any
+Every check uses the canonical workspace UUID stored on the meeting row
+(personal, handle and id lookups resolve first), never the request spelling.
+The gate rejects noncanonical ids, including uppercase, padding, braces,
+no-hyphen and `urn:uuid:` forms, and runs before any
 database write, credit reservation or provider call. Scope:
 
 | Surface | Gated |
@@ -559,47 +619,72 @@ database write, credit reservation or provider call. Scope:
 | Transcription and notes | Session start/finish/sharing and audio chunks (`/api/meet-ai/:wsId/:meetingId`, `/chunks`) |
 | Live assistant (it transcribes audio) | `/api/meet-live` start and resume, its review route, and the Durable Object `/initialize`, `/control` resume, `/workspace-review`, the `/live-connect` upgrade, provider reconnect and alarm reconnect |
 | Note sharing | Turning `shareNotes` or `shareNotesAfterMeeting` on, at the authoritative write (`room.settings.update` and the room-state PATCH). Turning sharing off is always allowed |
-| Assistant writes | Assistant generation, personal assistant and review POSTs (including approve, deny, share, discard), and creating follow-ups from notes |
+| Assistant writes | Assistant generation, personal assistant and review POSTs (including approve, deny, share, discard), and creating follow-ups from notes. The web `/api/v1/workspaces/:wsId/meetings/:meetingId/assistant*` routes forward to these Meet routes |
+| Legacy web transcription | `apps/web` `/api/ai/meetings/transcription` uses the same gate through its server-only adapter |
+| Legacy web summary | `apps/web` `/api/ai/meetings/summary` always answers 403 `LEGACY_MEETING_AI_DISABLED` before any work |
+| Meet Worker `/api` fallback | `/api/ai/meetings` and everything below it (case-, slash- and percent-encoding-insensitive) answer 403 `MEET_AI_WORKSPACE_NOT_ENABLED` and are never forwarded to `apps/web`, with no exceptions |
 
 Never gated, so existing sessions can always end and settle: Live stop, cleanup
 and billing settlement. Reads (state, transcripts, notes, assistant GETs) keep
-their existing participant rules. Parley scenario sessions are outside the gate.
+their existing participant rules. Parley scenario sessions skip only the pilot allowlist and denylist. They obey
+the kill switch and protected-workspace deny, including missing configuration.
 
 Meet production (`meet.tuturuuu.com`) is the Cloudflare Worker `tuturuuu-meet`,
 not a Vercel deployment. Configure the following **server-only** controls on
 each gate runtime: the `tuturuuu-meet` Worker (including its Live Durable Object),
 the Meet realtime room Worker, and the web app. Never use public env variables.
+Checks run in this order; the first match wins:
 
-| Priority | Environment variable | Behavior |
+| Order | Control | Behavior |
 | --- | --- | --- |
-| 1 | `MEET_AI_DISABLED` | `1` or `true` disables Meet AI everywhere; `0` or `false` permits the next checks. Values are trimmed and case-insensitive. Unset permits; blank, malformed or non-string values deny. |
-| 2 | `MEET_AI_DISABLED_WORKSPACE_IDS` | Optional comma/whitespace-separated UUID deny list, case-insensitive. Unset/blank permits; malformed entries or non-string values deny everywhere. |
-| 3 | `MEET_AI_ENABLED_WORKSPACE_IDS` | Legacy optional rollout restriction. While the variable is **present** it is an allowlist: only listed workspaces are admitted, and a blank or whitespace-only value denies every workspace. Only an **unset** (absent) variable imposes no restriction. No wildcard. To enable all workspaces, delete the variable; never set it to blank. |
-| 4 | No restriction applies | Allow; existing credit checks still apply. |
+| 1 | Workspace id | Only a canonical lowercase hyphenated UUID from the stored meeting is accepted. Missing, blank or noncanonical ids deny. |
+| 2 | `MEET_AI_PROTECTED_WORKSPACE_IDS` | Required nonempty comma/whitespace-separated UUID secret. Listed ids are always denied. Missing, blank, malformed or non-string configuration denies every workspace, including Parley. |
+| 3 | `MEET_AI_DISABLED` (kill switch) | Present and anything other than `0`/`false` (trimmed, case-insensitive) denies every workspace, including blank and non-string values. Unset, `0` or `false` moves on. |
+| 4 | `MEET_AI_DISABLED_WORKSPACE_IDS` | Optional comma/whitespace-separated UUID deny list, case-insensitive. A listed workspace is denied; any malformed entry (including `*`) or a non-string value denies every workspace. Unset or blank moves on. |
+| 5 | `MEET_AI_ENABLED_WORKSPACE_IDS` | Required comma/whitespace-separated UUID allowlist, case-insensitive. Missing, blank, non-string, `*` or any non-UUID entry denies every workspace and is logged once per isolate (`[meet-ai-gate]`, no ids). `*` is **not** an allow-all value; an allow-all switch would need its own, separately reviewed opt-in. |
+| 6 | Allowlist match | Allow; existing credit checks still apply. |
 
 The Worker and room DO read only injected bindings, never ambient `process.env`.
-The server-only web adapter reads server env on Vercel; injected bindings win per
-control (including malformed values). A deployment with no controls allows all
-workspaces. Denials retain existing HTTP 403/error codes and report
-"Meet AI is temporarily unavailable". Stop, cleanup and billing settlement remain
-available while disabled. Parley scenario sessions retain their exemption.
+If the Meet Worker cannot read its Cloudflare context, the gate fails closed as
+if the kill switch were on. The server-only web adapter reads server env on
+Vercel; injected bindings win per control (including malformed values). A
+deployment with no controls denies every workspace. Denials retain existing
+HTTP 403/error codes and report "Meet AI is temporarily unavailable". Stop,
+cleanup and billing settlement remain available while disabled.
 
-For Rex: keep the legacy allowlist (team workspace) on all three surfaces until
-the fail-closed per-user Meet AI limiter is deployed and security-approved. For
-the all-workspace rollout, then UNSET (delete) the legacy allowlist on **all three
-surfaces**; a blank value denies everyone. Leave both new controls unset. To stop AI, set `MEET_AI_DISABLED=true`
-on all three surfaces. To exclude specific workspaces, set the same
-`MEET_AI_DISABLED_WORKSPACE_IDS` list on each. Clear the switch or set it to `false`
-to restore access. No deployment configuration or secrets are changed by this PR.
+Set `MEET_AI_PROTECTED_WORKSPACE_IDS` on every gate runtime (including Parley)
+before enabling AI; retain every protected workspace in that secret. Protected ids are always
+subtracted from the effective allowlist.
+
+Post-deploy realtime checks default to asserting 403 for enabling live and
+post-call note sharing, and success for disabling both. Only set
+`MEET_CHECK_NOTES_CANARY_WS_ID` to exercise enable paths: use a dedicated fake
+UUID with no database row, allowlisted on the realtime Worker only, never on
+Meet. Never allowlist a real workspace to satisfy a deploy check. An empty
+`MEET_AI_ENABLED_WORKSPACE_IDS` secret is the expected production default.
+
+For Rex: to enable Meet AI for a workspace, add its id to
+`MEET_AI_ENABLED_WORKSPACE_IDS` on **all three surfaces**. To stop AI, set
+`MEET_AI_DISABLED=true` on all three surfaces. To exclude specific workspaces,
+set the same `MEET_AI_DISABLED_WORKSPACE_IDS` list on each. Removing or blanking
+the allowlist turns Meet AI off; it never widens access. Containment pins `MEET_AI_DISABLED="true"` and an empty allowlist in
+both Meet and realtime deploy configs. `scripts/check-meet-ai-containment.js`
+enforces these pins in CI; lifting containment requires reviewing its single
+`CONTAINMENT_IN_FORCE` flag and the corresponding config changes. Rex must read
+back vars after every Meet deploy. Real secret values are provisioned separately.
 
 The panel reads `available` from the state response; unavailable workspaces keep
 the temporary-unavailability message and hide Start, Finish and Retry controls.
 
-Regression coverage: `workspace-gate.test.ts`, `chunks-gate.test.ts` (real access
+Regression coverage: `ai-workspace-gate.test.ts` and `ai-gate-containment.test.ts`
+(`packages/realtime`), `containment.test.ts`, `workspace-gate.test.ts`,
+`chunks-gate.test.ts` (real access
 path, zero writes and provider calls on deny), `access.test.ts`,
 `sessions.test.ts`, `followup-create.test.ts`, `assistant-gate.test.ts`, the
 Live `workspace-gate.test.ts` and `route.gate.test.ts`, `room-controls.test.ts`,
-and `room-do-empty-lifecycle.test.ts`.
+`room-do-empty-lifecycle.test.ts`, the Meet `proxy.test.ts` and
+`handler-start-handoff.test.ts` (legacy `/api/ai/meetings` 403), and the web
+`meet-ai-gate.test.ts` and summary `route.test.ts`.
 
 Apply `20260907040000_meet_ai_sessions.sql` through the normal database release
 process before enabling the feature. A missing schema produces a visible
@@ -1753,3 +1838,31 @@ uses the meeting billing workspace. Existing host-only notes and recording membe
 apply. At zero credits, chunk uploads return 402 before reserving a chunk row,
 with an error identifying the meeting workspace. Personal "Talk to Mira"
 assistant sessions (voice and text) continue to use personal credits.
+
+
+### Erase V2 migration and rollback
+
+Apply `20261103120000_meet_erase_settings_and_holds.sql` before V10
+(`20261103130000`). V4 sorts at `20261103112400`, followed by V2, then V10.
+V10 needs both foundations. Deploy V2 and V3 to web, both Meet Workers and
+Parley, and confirm V3 readers are live before V10. Existing AI containment stays.
+
+Run all three erase rollbacks in an off-peak maintenance window:
+- V10 rollback: off-peak; stop erase workers and preserve ledger evidence first.
+- V2 rollback: off-peak; run only after V10 is removed.
+- V4 rollback: off-peak; run only after V10 is removed.
+
+V2's forward migration uses a 2 s lock timeout and a 30 s statement timeout.
+
+The V2 rollback is **FORBIDDEN after V10**: roll back V10 before V2 because
+PL/pgSQL references to the holds table are not dependency-tracked. Preserve
+all hold and settings audit evidence. Keep the inert hold trigger until V9,
+the store workers and V10 M3 are ready; V22 replaces it with real transitions.
+Create no hold scopes during this foundation rollout.
+
+A runtime without `MEET_AI_PROTECTED_WORKSPACE_IDS` is AI-off everywhere,
+including Parley. Never put protected workspace IDs in source or fixtures.
+Service-role callers may configure retention periods directly; purge changes
+must use `private.set_meet_retention_purge_enabled(boolean)`, whose update
+fires the settings audit trigger in the same transaction. Purge stays OFF
+pending counsel approval; this function does not authorize enablement.
