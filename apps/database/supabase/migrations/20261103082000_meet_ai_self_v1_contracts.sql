@@ -559,9 +559,9 @@ grant execute on function private.guard_meet_ai_chunk() to service_role;
 create trigger guard_meet_ai_chunk before insert or update on public.meet_ai_chunks
   for each row execute function private.guard_meet_ai_chunk();
 
--- Consent triggers on the legal store (self_v1 sessions only; legacy and
--- guest rows keep #7264 behaviour). Decisions are strictly ordered per
--- account, and evidence cannot be deleted while capture can still run.
+-- Every consent insert uses server time. Additional self_v1 account guards
+-- strictly order decisions and keep evidence while capture can still run;
+-- legacy and guest rows otherwise keep #7264 behaviour.
 create function private.guard_meet_ai_self_v1_consent()
 returns trigger language plpgsql security definer
 set search_path = pg_catalog, pg_temp
@@ -570,6 +570,11 @@ declare
   row_ private.meet_ai_consents := case when tg_op = 'DELETE' then old else new end;
   s public.meet_ai_sessions;
 begin
+  -- prepare_meet_ai_consent has locked the session before this trigger runs.
+  -- Client timestamps never determine decision order in either protocol.
+  if tg_op = 'INSERT' then
+    new.created_at := clock_timestamp();
+  end if;
   select * into s from public.meet_ai_sessions where id = row_.session_id;
   if not found or s.protocol <> 'self_v1' or row_.user_id is null then
     return case when tg_op = 'DELETE' then old else new end;
@@ -581,9 +586,6 @@ begin
     end if;
     return old;
   end if;
-  -- Runs after prepare_meet_ai_consent has locked the session row.
-  -- Client timestamps never determine decision order, including future values.
-  new.created_at := clock_timestamp();
   if exists (select 1 from private.meet_ai_consents c
       where c.session_id = new.session_id and c.user_id = new.user_id
         and c.created_at >= new.created_at) then
