@@ -19,6 +19,19 @@ select lives_ok($$select public.reserve_meet_ai_chunk(pg_temp.fid(88705),pg_temp
 select is((select erasure_generation from public.meet_ai_chunks where id=pg_temp.fid(88705)),0::bigint,'reservation captures generation');
 create temp table attempt as select attempt_id from public.meet_ai_chunks where id=pg_temp.fid(88705);
 update private.meet_content_fences set generation=1 where meeting_id=pg_temp.fid(88703);
+select ok(has_table_privilege('service_role','private.meet_content_fences','SELECT'),'service can read the generation');
+select ok(not has_table_privilege('service_role','private.meet_content_fences','INSERT'),'service cannot insert fences');
+select ok(not has_table_privilege('service_role','private.meet_content_fences','UPDATE'),'service cannot update fences');
+select ok(not has_table_privilege('service_role','private.meet_content_fences','DELETE'),'service cannot delete fences');
+select ok(not has_table_privilege('service_role','private.meet_content_fences','TRUNCATE'),'service cannot truncate fences');
+grant usage on schema extensions to service_role;
+set local role service_role;
+select throws_ok($$delete from private.meet_content_fences$$,'42501','permission denied for table meet_content_fences','service cannot delete the advanced fence');
+select throws_ok($$update private.meet_content_fences set generation=0,restore_hold=false,doc_hold=false$$,'42501','permission denied for table meet_content_fences','service cannot rewind the advanced fence');
+reset role;
+select is((select generation from private.meet_content_fences where meeting_id=pg_temp.fid(88703)),1::bigint,'permission refusals preserve erase generation');
+select throws_ok($$select public.reserve_meet_ai_chunk(pg_temp.fid(88709),pg_temp.fid(88999),0,0::numeric,8::numeric)$$,'P0001','Session not found','missing session preserves the reservation conflict contract');
+
 select is(public.complete_meet_ai_chunk(pg_temp.fid(88705),(select attempt_id from attempt),'{"transcript":"stale","usage":{},"cost_usd":1}'::jsonb),false,'late completion refused');
 select is((select status from public.meet_ai_chunks where id=pg_temp.fid(88705)),'failed','stale attempt failed');
 select is((select transcript from public.meet_ai_chunks where id=pg_temp.fid(88705)),null::text,'no stale transcript persisted');

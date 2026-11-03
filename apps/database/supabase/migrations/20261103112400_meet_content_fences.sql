@@ -14,7 +14,8 @@ create table private.meet_content_fences (
 );
 alter table private.meet_content_fences enable row level security;
 revoke all on private.meet_content_fences from public, anon, authenticated;
-grant all on private.meet_content_fences to service_role;
+revoke all on private.meet_content_fences from service_role;
+grant select on private.meet_content_fences to service_role;
 alter table private.meeting_documents
   add column installed_doc_generation bigint not null default 0 check (installed_doc_generation >= 0),
   add column installed_operation_key uuid;
@@ -57,6 +58,7 @@ declare
   chunk public.meet_ai_chunks;
 begin
   select meeting_id into v_meeting_id from public.meet_ai_sessions where id=p_session_id;
+  if v_meeting_id is null then raise exception 'Session not found'; end if;
   f := private.lock_meet_content_fence(v_meeting_id);
   if f.restore_hold then raise exception 'Transcript changed' using errcode='40001'; end if;
   select * into session from public.meet_ai_sessions where id = p_session_id for update;

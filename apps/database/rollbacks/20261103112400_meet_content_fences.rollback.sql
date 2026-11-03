@@ -2,8 +2,11 @@
 begin;
 set local lock_timeout = '2s';
 set local statement_timeout = '10s';
+lock table private.meet_content_fences, private.meeting_documents, public.meet_ai_chunks, public.meet_ai_sessions in exclusive mode;
 do $$begin
- if exists(select 1 from private.meet_content_fences where generation <> 0 or doc_generation <> 0 or active_operation_key is not null or doc_hold or restore_hold) then
+ if exists(select 1 from private.meet_content_fences where generation <> 0 or doc_generation <> 0 or active_operation_key is not null or doc_hold or restore_hold)
+ or exists(select 1 from private.meeting_documents where installed_doc_generation <> 0 or installed_operation_key is not null)
+ or exists(select 1 from public.meet_ai_chunks where erasure_generation <> 0) then
    raise exception 'Fence is in use; roll forward';
  end if;
 end$$;
