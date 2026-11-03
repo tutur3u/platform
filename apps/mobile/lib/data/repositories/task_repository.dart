@@ -35,6 +35,7 @@ import 'package:mobile/data/models/workspace_user_option.dart';
 import 'package:mobile/data/repositories/task_pending_user_overlay.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/tasks_estimates/utils/task_label_colors.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 part 'task_repository_helpers.dart';
 part 'task_repository_local.dart';
@@ -611,18 +612,13 @@ class TaskRepository {
     bool clearEndDate = false,
     bool clearEstimationPoints = false,
   }) async {
-    for (final (value, clear, field) in [
+    _rejectValueAndClear([
       (description, clearDescription, 'description'),
       (priority, clearPriority, 'priority'),
       (startDate, clearStartDate, 'startDate'),
       (endDate, clearEndDate, 'endDate'),
       (estimationPoints, clearEstimationPoints, 'estimationPoints'),
-    ]) {
-      if (value != null && clear) {
-        final flag = 'clear${field[0].toUpperCase()}${field.substring(1)}';
-        throw ArgumentError('$field and $flag cannot both be provided');
-      }
-    }
+    ]);
 
     final updatePayload = <String, dynamic>{
       if (name != null) 'name': name,

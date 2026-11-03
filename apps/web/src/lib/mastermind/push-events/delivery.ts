@@ -1,6 +1,8 @@
 import 'server-only';
 
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { UpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
+import { mastermindRequiresExplicitGrant } from '@/lib/mastermind/access';
 import {
   type CustomPushMessageInput,
   sendCustomPushMessageBatch,
@@ -79,6 +81,10 @@ export interface MastermindPushAdminClient {
       p_ws_id: string | null;
     }
   ): QueryResult<unknown>;
+  rpc(
+    name: 'has_workspace_permission',
+    args: { p_ws_id: string; p_user_id: string; p_permission: string }
+  ): QueryResult<unknown>;
 }
 
 export interface MastermindPushDeliveryResult {
@@ -118,6 +124,23 @@ async function allowsPush(admin: MastermindPushAdminClient, userId: string) {
     p_ws_id: null,
   });
   // An unreadable preference is treated as opted out.
+  return !error && data === true;
+}
+
+/**
+ * The env allowlist names who may receive pushes; once the explicit-grant
+ * rollout flag is on, the owner must also hold manage_mastermind in the root
+ * workspace (an explicit, audited grant). An unreadable answer denies.
+ */
+async function holdsMastermindPermission(
+  admin: MastermindPushAdminClient,
+  userId: string
+) {
+  const { data, error } = await admin.rpc('has_workspace_permission', {
+    p_ws_id: ROOT_WORKSPACE_ID,
+    p_user_id: userId,
+    p_permission: 'manage_mastermind',
+  });
   return !error && data === true;
 }
 
@@ -181,6 +204,10 @@ export async function deliverMastermindPushEvent({
       const userDevices = tokensByUser.get(userId);
       if (
         !userDevices?.length ||
+        (mastermindRequiresExplicitGrant() &&
+          !(await deadline.run(() =>
+            holdsMastermindPermission(admin, userId)
+          ))) ||
         !(await deadline.run(() => allowsPush(admin, userId)))
       ) {
         result.skipped += 1;

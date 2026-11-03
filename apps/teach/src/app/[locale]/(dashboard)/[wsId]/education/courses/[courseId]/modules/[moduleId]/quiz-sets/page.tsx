@@ -37,7 +37,10 @@ export default async function WorkspaceCoursesPage({
 }: Props) {
   const t = await getTranslations();
   const { wsId: routeWsId, courseId, moduleId } = await params;
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(
+    routeWsId,
+    'update_user_groups'
+  );
 
   const { data, count } = await getData(
     { wsId: resolvedWsId, courseId, moduleId },

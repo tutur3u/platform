@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_FORM, findSessionSlotConflicts } from './tutoring-types';
 import {
   storedTutoringContent,
   storedTutoringSessions,
@@ -195,5 +196,40 @@ describe('stored tutoring sessions', () => {
       ],
     });
     expect(sessions[0]?.content).toBe('Reading');
+  });
+});
+
+describe('create drafts sharing one teacher slot', () => {
+  const slot = {
+    durationMinutes: 45,
+    sessionDate: '2026-10-31',
+    startTime: '15:15',
+    teacherUserId: 'tutor',
+  };
+  const draft = (groupId: string, studentUserId: string, slots = [slot]) => ({
+    ...DEFAULT_FORM,
+    groupId,
+    studentUserId,
+    sessionSlots: slots,
+  });
+
+  it('lets several learners from any group book the same teacher slot', () => {
+    for (const form of [
+      draft('group-a', 'learner-1'),
+      draft('group-a', 'learner-2'),
+      draft('group-b', 'learner-3'),
+    ])
+      expect(findSessionSlotConflicts(form)).toEqual([]);
+  });
+
+  it('still refuses one learner booked twice into the same slot', () => {
+    expect(
+      findSessionSlotConflicts(
+        draft('group-a', 'learner-1', [
+          slot,
+          { ...slot, teacherUserId: 'other' },
+        ])
+      )
+    ).toEqual([{ conflictType: 'student', firstIndex: 0, secondIndex: 1 }]);
   });
 });

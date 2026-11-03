@@ -20,8 +20,10 @@ import {
   rememberAdmission,
   roomSettingsMessage,
 } from './room-controls';
+import { lobbyDisplayName } from './room-display-name';
 import { outcome } from './room-outcome';
 import { recordingMessage } from './room-recording';
+import { transcriptionAnnouncements } from './transcription';
 
 export function admitOrHold(
   state: MeetRoomSnapshot,
@@ -56,7 +58,7 @@ export function admitOrHold(
         [token.userId]: {
           accountId: token.accountId,
           avatarUrl: token.avatarUrl,
-          displayName: getMeetDisplayName(token),
+          displayName: lobbyDisplayName(getMeetDisplayName(token)),
           requestedAt: now,
           userId: token.userId,
         },
@@ -79,6 +81,12 @@ export function admitOrHold(
   const previous = state.presence[token.userId];
   const person = createMeetPresence(token, now, previous?.media);
   if (previous) person.joinedAt = previous.joinedAt;
+  if (token.admission === 'lobby') {
+    person.displayName =
+      previous?.displayName ??
+      state.approved?.[token.accountId ?? token.userId]?.displayName ??
+      person.displayName;
+  }
   const next: MeetRoomSnapshot = {
     ...state,
     approved: rememberAdmission(state, person),
@@ -95,6 +103,7 @@ export function admitOrHold(
       { ...buildReady(next, token, 'admitted'), resumed: !!previous },
       roomSettingsMessage(next),
       recordingMessage(next),
+      ...transcriptionAnnouncements(next, token.userId),
       ...(next.chat ?? []).map((entry) => ({ ...entry, replayed: true })),
       ...(token.role === 'host' ? [approvedParticipantsMessage(next)] : []),
       ...(canMeetRealtimeManageParticipants(token)

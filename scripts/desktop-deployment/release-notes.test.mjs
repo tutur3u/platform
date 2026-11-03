@@ -137,7 +137,7 @@ test('history rejects option-like and non-SHA revisions before invoking git', ()
     '-n1',
     'production',
     'a'.repeat(39),
-    'a'.repeat(40) + '\n',
+    `${'a'.repeat(40)}\n`,
   ]) {
     const never = () => assert.fail('unsafe revision reached git');
     assert.equal(changesSince(revision, source, never), null);

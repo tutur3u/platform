@@ -1,7 +1,5 @@
-import { createHash, randomBytes } from 'node:crypto';
 import { hasEducationEnabled } from '@tuturuuu/education-core/tulearn/service';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { TablesInsert } from '@tuturuuu/types/supabase';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -9,6 +7,8 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { createAndSendParentInvite } from '@/lib/parent-invites';
+import { findOpenParentLinks } from '@/lib/parent-links';
 
 type Params = {
   wsId: string;
@@ -124,50 +124,34 @@ export const POST = withSessionAuth<Params>(
       }
 
       if (parsed.data.parentUserId) {
-        const { data: existingLink, error: existingLinkError } = await sbAdmin
+        // Admins can only propose a link; the parent accepts it themself.
+        const { active, pending } = await findOpenParentLinks(sbAdmin, {
+          parentUserId: parsed.data.parentUserId,
+          studentWorkspaceUserId: parsed.data.studentWorkspaceUserId,
+          wsId: normalizedWsId,
+        });
+        const existingLink = active ?? pending;
+        if (existingLink) {
+          // Never rewrite an existing link's student identity or acceptance.
+          return NextResponse.json({ link: existingLink }, { status: 200 });
+        }
+
+        const { data: link, error } = await sbAdmin
           .from('tulearn_parent_student_links')
-          .select('id')
-          .eq('ws_id', normalizedWsId)
-          .eq('parent_user_id', parsed.data.parentUserId)
-          .eq('student_workspace_user_id', parsed.data.studentWorkspaceUserId)
-          .eq('status', 'active')
-          .maybeSingle();
-
-        if (existingLinkError) throw existingLinkError;
-
-        const basePayload = {
-          student_platform_user_id: parsed.data.studentPlatformUserId,
-          accepted_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        const linkMutation = existingLink
-          ? sbAdmin
-              .from('tulearn_parent_student_links')
-              .update(basePayload)
-              .eq('id', existingLink.id)
-              .select()
-              .single()
-          : sbAdmin
-              .from('tulearn_parent_student_links')
-              .insert({
-                ...basePayload,
-                ws_id: normalizedWsId,
-                parent_user_id: parsed.data.parentUserId,
-                student_workspace_user_id: parsed.data.studentWorkspaceUserId,
-                status: 'active',
-                created_by: user.id,
-              })
-              .select()
-              .single();
-
-        const { data: link, error } = await linkMutation;
+          .insert({
+            accepted_at: null,
+            created_by: user.id,
+            parent_user_id: parsed.data.parentUserId,
+            status: 'pending',
+            student_platform_user_id: parsed.data.studentPlatformUserId,
+            student_workspace_user_id: parsed.data.studentWorkspaceUserId,
+            ws_id: normalizedWsId,
+          })
+          .select()
+          .single();
 
         if (error) throw error;
-        return NextResponse.json(
-          { link },
-          { status: existingLink ? 200 : 201 }
-        );
+        return NextResponse.json({ link }, { status: 201 });
       }
 
       const parentEmail = parsed.data.parentEmail;
@@ -178,27 +162,21 @@ export const POST = withSessionAuth<Params>(
         );
       }
 
-      const token = randomBytes(32).toString('hex');
-      const tokenHash = createHash('sha256').update(token).digest('hex');
-      const expiresAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
-      const invitePayload: TablesInsert<'tulearn_parent_invites'> = {
-        ws_id: normalizedWsId,
-        student_workspace_user_id: parsed.data.studentWorkspaceUserId,
-        parent_email: parentEmail,
-        token_hash: tokenHash,
-        invited_by: user.id,
-        expires_at: expiresAt.toISOString(),
-      };
-      const { data: invite, error } = await sbAdmin
-        .from('tulearn_parent_invites')
-        .insert(invitePayload)
-        .select(
-          'id, ws_id, student_workspace_user_id, parent_email, status, expires_at'
-        )
-        .single();
+      const result = await createAndSendParentInvite(sbAdmin, {
+        invitedBy: user.id,
+        parentEmail,
+        studentWorkspaceUserId: parsed.data.studentWorkspaceUserId,
+        wsId: normalizedWsId,
+      });
+      if (!result.ok) {
+        return NextResponse.json(
+          { message: 'Failed to send the invitation email' },
+          { status: 502 }
+        );
+      }
 
-      if (error) throw error;
-      return NextResponse.json({ invite, token }, { status: 201 });
+      // The single-use token is only delivered to the parent's inbox.
+      return NextResponse.json({ invite: result.invite }, { status: 201 });
     } catch (error) {
       console.error('Failed to create Tulearn parent link:', error);
       return NextResponse.json(

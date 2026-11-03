@@ -16,6 +16,8 @@ const reviewCategories = [
       /^\.github\//u,
       /^scripts\/ci\//u,
       /^scripts\/git-[\w-]+\.(?:c|m)?[jt]s$/u,
+      // Owns ORDER_EXEMPT_VERSIONS, which both migration order checks honour.
+      /^scripts\/check-migration-timestamps\.js$/u,
       /^tuturuuu(?:\.ci)?\.ts$/u,
       /^turbo\.json$/u,
       /(?:^|\/)CODEOWNERS$/u,
@@ -57,7 +59,7 @@ const reviewCategories = [
     category: 'runner-sandbox',
     owner: 'runtime',
     patterns: [
-      /^apps\/(?:abuse-guard|devbox-control|cron-control|coordination|playground|storage-unzip-proxy)\//u,
+      /^apps\/(?:abuse-guard|ops-hub|devbox-control|cron-control|coordination|playground|storage-unzip-proxy)\//u,
       /^packages\/(?:devbox|trigger|workflows)\//u,
       /^apps\/(?:web|infrastructure)\/src\/lib\/devboxes\//u,
       /(?:^|\/)Dockerfile[^/]*$/u,

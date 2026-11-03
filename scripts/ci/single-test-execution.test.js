@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
-const { spawnSync } = require('node:child_process');
 const test = require('node:test');
 const { readWorkflow } = require('./workflow-yaml-test-helper');
+const { runWorkflowGate } = require('./workflow-gate-test-helper');
 
 const producer = readWorkflow('turbo-unit-tests.yaml');
 const consumer = readWorkflow('codecov.yaml');
@@ -21,8 +21,10 @@ function admitted(job, needs, cancelled = false, event = 'push') {
   )(needs, () => cancelled, { event_name: event });
 }
 function gate(job, env) {
-  return spawnSync('bash', ['-e', '-o', 'pipefail', '-c', job.steps[0].run], {
-    env: { ...process.env, ...env },
+  return runWorkflowGate(job, {
+    CHANGES_RESULT: 'success',
+    CODE: 'true',
+    ...env,
   }).status;
 }
 
@@ -64,7 +66,11 @@ test('both switchboard entries independently admit the shared execution', () => 
     [false, true],
     [false, false],
   ]) {
-    const needs = { 'check-ci': enabled(), 'coverage-check-ci': enabled() };
+    const needs = {
+      changes: { result: 'success', outputs: { code: 'true' } },
+      'check-ci': enabled(),
+      'coverage-check-ci': enabled(),
+    };
     needs['check-ci'].outputs.should_run = String(unit);
     needs['coverage-check-ci'].outputs.should_run = String(coverage);
     assert.equal(
@@ -81,8 +87,21 @@ test('both switchboard entries independently admit the shared execution', () => 
       unit || coverage
     );
     assert.equal(admitted(producer.jobs['test-shards-pr'], needs), false);
+    for (const code of ['false', '', 'garbage']) {
+      needs.changes.outputs.code = code;
+      assert.equal(admitted(producer.jobs['test-shards'], needs), false);
+      assert.equal(
+        admitted(producer.jobs['test-shards-pr'], needs, false, 'pull_request'),
+        false
+      );
+    }
+    needs.changes.outputs.code = 'true';
     for (const id of ['check-ci', 'coverage-check-ci']) {
-      const failed = { 'check-ci': enabled(), 'coverage-check-ci': enabled() };
+      const failed = {
+        changes: { result: 'success', outputs: { code: 'true' } },
+        'check-ci': enabled(),
+        'coverage-check-ci': enabled(),
+      };
       failed[id].result = 'failure';
       failed[
         id === 'check-ci' ? 'coverage-check-ci' : 'check-ci'
@@ -144,6 +163,7 @@ test('original check names fail closed on red, cancelled, missing or skipped res
   }
   for (const state of ['failure', 'cancelled', 'skipped']) {
     const needs = {
+      changes: { result: 'success', outputs: { code: 'true' } },
       'coverage-check-ci': enabled(),
       'test-shards': { result: state },
       'test-shards-pr': { result: 'skipped' },
@@ -206,6 +226,7 @@ test('shared preflight retains release relevance, least privilege and release-on
   for (const output of ['should_run', 'run_checks']) {
     const needs = {
       'check-ci': enabled(),
+      changes: { result: 'success', outputs: { code: 'true' } },
       'coverage-check-ci': enabled(),
       'test-shards': { result: 'success' },
       'test-shards-pr': { result: 'skipped' },

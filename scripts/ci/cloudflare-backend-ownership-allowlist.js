@@ -1,7 +1,7 @@
 // Legacy schedule and background-work owners that predate the Cloudflare
 // backend-ownership rule. This list may only shrink: migrate an owner to
 // Cloudflare, delete its legacy definition, then delete its entry here.
-// See apps/docs/build/devops/cloudflare-backend-ownership.mdx.
+// See docs-internal/build/devops/cloudflare-backend-ownership.mdx.
 
 const TARGETS = Object.freeze({
   cronTrigger: 'cron-trigger:existing-processor',

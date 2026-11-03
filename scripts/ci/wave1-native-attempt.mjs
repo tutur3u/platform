@@ -52,6 +52,37 @@ function verifiedState(raw, token, scope) {
   return data;
 }
 
+/**
+ * Read-only, authenticated view of one app's attempt row. Used by the
+ * Worker-scoped rollback, which must never write the ledger.
+ */
+export async function readAttemptRecord({
+  request,
+  base,
+  token,
+  databaseId,
+  scope,
+  app,
+}) {
+  assert.match(
+    databaseId ?? '',
+    /^[a-f0-9-]{36}$/,
+    'Missing staging attempt D1 ID'
+  );
+  const response = await request(
+    `${base}/d1/database/${databaseId}/query`,
+    token,
+    {
+      sql: 'SELECT record FROM wave1_attempts WHERE app = ?',
+      params: [`wave1-${app}-staging`],
+    }
+  );
+  assert.equal(response.success, true, 'Attempt database request failed');
+  const rows = response.result?.[0]?.results;
+  assert.equal(rows?.length, 1, 'Missing durable attempt state');
+  return verifiedState(rows[0].record, token, scope);
+}
+
 export async function attemptLedger({
   request,
   base,

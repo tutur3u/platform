@@ -5,6 +5,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths:
       - apps/api/**
+      - apps/web/src/app/api/**
       - packages/utils/src/platform-release.ts
       - packages/utils/src/abuse-protection/**
       - bun.lock

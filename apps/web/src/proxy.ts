@@ -57,6 +57,7 @@ import { feedbackProxyPayloadLimit } from './lib/product-feedback-limits';
 import { profileMediaProxyPayloadLimit } from './lib/profile-media-proxy';
 import { guardApiCostAndCsrf } from './lib/security/api-request-guard';
 import { isVerifiedStaffCliSession } from './lib/staff-cli-session';
+import { withStagingOriginProof } from './lib/staging-origin-proof';
 import { getToolsAppOrigin } from './lib/tools-app-url';
 import { getTrackAppOrigin } from './lib/track-app-url';
 import { workspaceHomeRedirectUrl } from './lib/workspace-home-redirect';
@@ -1017,7 +1018,7 @@ async function guardGuestWorkspaceRoute({
     return null;
   }
 }
-export async function proxy(req: NextRequest): Promise<NextResponse> {
+async function webProxy(req: NextRequest): Promise<NextResponse> {
   if (
     req.nextUrl.pathname.startsWith('/api') ||
     req.nextUrl.pathname === '/native-integrity/turnstile'
@@ -1412,6 +1413,14 @@ const handleReservedRootRoute = (req: NextRequest): NextResponse | null => {
   return null;
 };
 
+export const proxy = withStagingOriginProof(
+  webProxy,
+  () =>
+    new NextResponse('Forbidden', {
+      status: 403,
+      headers: { 'Cache-Control': 'no-store' },
+    })
+);
 export const config = {
   matcher: [
     /*
@@ -1422,18 +1431,8 @@ export const config = {
      * - sw.js (service worker)
      * - monitoring (analytics)
      * - .well-known (domain verification files)
-     * Excludes files with the following extensions for static assets:
-     * - svg
-     * - png
-     * - jpg
-     * - jpeg
-     * - mp3
-     * - wav
-     * - ogg
-     * - m4a
-     * - pdf
-     * - gif
-     * - webp
+     * Excludes static assets: svg, png, jpg, jpeg, mp3, wav, ogg, m4a, pdf,
+     * gif and webp.
      */
 
     '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|site.webmanifest|manifest.webmanifest|sw.js|serwist|monitoring|\\.well-known|.*\\.(?:svg|png|jpg|jpeg|mp3|wav|ogg|m4a|pdf|gif|webp)$).*)',

@@ -8,6 +8,7 @@ export async function authorizeAbuseIntelligenceRequest(
   request: Request,
   permission:
     | 'manage_workspace_roles'
+    | 'manage_workspace_secrets'
     | 'view_infrastructure' = 'view_infrastructure'
 ) {
   const actor = await resolveSatelliteRequestActor(request, 'infra');

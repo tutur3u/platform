@@ -259,7 +259,7 @@ export function resolveTimezone(
   };
 }
 
-async function hasBypassApprovalPermission(
+export async function hasBypassApprovalPermission(
   ctx: MiraToolContext
 ): Promise<boolean> {
   const workspaceId = getWorkspaceContextWorkspaceId(ctx);
@@ -298,7 +298,8 @@ async function hasBypassApprovalPermission(
         'workspace_roles!inner(ws_id, workspace_role_permissions(permission, enabled))'
       )
       .eq('user_id', ctx.userId)
-      .eq('workspace_roles.ws_id', workspaceId);
+      .eq('workspace_roles.ws_id', workspaceId)
+      .eq('workspace_roles.workspace_role_permissions.ws_id', workspaceId);
 
   if (rolePermissionsError) {
     throw new Error(rolePermissionsError.message);

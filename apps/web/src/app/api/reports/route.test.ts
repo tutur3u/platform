@@ -33,7 +33,7 @@ it.each(['%2e%2e', '%252e%252e', '%2f..', '%5c..'])(
           type: 'bug',
           subject: 'Fixture report',
           suggestion: 'Fixture description',
-          imagePaths: [actor + '/' + segment + '/foreign.png'],
+          imagePaths: [`${actor}/${segment}/foreign.png`],
         }),
       })
     );
@@ -50,7 +50,7 @@ it('keeps ordinary actor-scoped uploads', async () => {
         type: 'bug',
         subject: 'Fixture report',
         suggestion: 'Fixture description',
-        imagePaths: [actor + '/photo.png'],
+        imagePaths: [`${actor}/photo.png`],
       }),
     })
   );

@@ -12,6 +12,10 @@ import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
+  type StorageAccessAuditScope,
+  withStorageAccessAudit,
+} from '@/lib/storage/storage-access-audit';
+import {
   resolveTopicAnnouncementsAccess,
   TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES,
   TOPIC_ANNOUNCEMENT_ATTACHMENT_UPLOAD_PATH,
@@ -184,7 +188,13 @@ async function resolveTopicAnnouncementAttachmentUploadAccess({
   return { allowed: true, contentType: resolvedContentType };
 }
 
-export async function POST(
+export const POST = withStorageAccessAudit(
+  { action: 'upload', route: '/api/v1/workspaces/[wsId]/storage/upload-url' },
+  createWorkspaceStorageUploadUrl
+);
+
+async function createWorkspaceStorageUploadUrl(
+  audit: StorageAccessAuditScope,
   request: Request,
   { params }: { params: Promise<{ wsId: string }> }
 ) {
@@ -197,6 +207,7 @@ export async function POST(
       return auth.response;
     }
     const { normalizedWsId, permissions, supabase, userId } = auth.context;
+    audit.set({ actorId: userId, wsId: normalizedWsId });
 
     let payload: unknown;
     try {
@@ -231,6 +242,7 @@ export async function POST(
     const requestedStoragePath = sanitizedPath
       ? posix.join(sanitizedPath, sanitizedFilename)
       : sanitizedFilename;
+    audit.set({ path: requestedStoragePath });
     // Topic Announcement attachments live in a private root that Drive
     // excludes; they are authorized below by the feature gate and
     // manage_users instead of Drive permissions.

@@ -1,13 +1,12 @@
 part of 'task_board_detail_page.dart';
 
-/// Assignees, due date, labels and list rows of the quick sheet. Each row
+/// Assignees, labels and list rows of the quick sheet. Each row
 /// shows the current value and opens that field's picker. While an edit
 /// saves ([enabled] false) the rows dim and take no taps.
 class _TaskQuickFieldsCard extends StatelessWidget {
   const _TaskQuickFieldsCard({
     required this.task,
     required this.board,
-    required this.list,
     required this.listName,
     required this.enabled,
     required this.callbacks,
@@ -15,7 +14,6 @@ class _TaskQuickFieldsCard extends StatelessWidget {
 
   final TaskBoardTask task;
   final TaskBoardDetail? board;
-  final TaskBoardList? list;
   final String listName;
   final bool enabled;
   final _TaskQuickActionCallbacks callbacks;
@@ -23,14 +21,8 @@ class _TaskQuickFieldsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final c = AppTokens.of(context).colorScheme;
     final assignees = _taskQuickAssignees(task, board);
     final labels = _taskQuickLabels(task, board);
-    final zone = taskTimezone(context);
-    final endDate = task.endDate == null ? null : taskDay(task.endDate!, zone);
-    final overdue =
-        taskIsOverdue(endDate: task.endDate, now: DateTime.now(), zone: zone) &&
-        !_taskIsCompletedInBoard(task, list);
     final onAssignees = enabled ? callbacks.onAssignees : null;
     final onLabels = enabled ? callbacks.onLabels : null;
     final onMove = enabled ? callbacks.onMove : null;
@@ -58,35 +50,6 @@ class _TaskQuickFieldsCard extends StatelessWidget {
             showChevron: true,
             onTap: onAssignees == null ? null : () => onAssignees(task),
           ),
-        AppGroupedRow(
-          key: const ValueKey('task-quick-due-date'),
-          leading: AppIconTile(
-            icon: LucideIcons.calendarClock,
-            tone: overdue ? AppTone.destructive : AppTone.info,
-          ),
-          title: Text(l10n.taskQuickActionsDueDate),
-          subtitle: Text(
-            endDate == null
-                ? l10n.taskQuickActionsNoDueDate
-                : '${DateFormat.yMMMd(l10n.localeName).format(endDate)}'
-                      ' · ${_taskSmartDate(context, endDate)}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: overdue ? TextStyle(color: c.destructive) : null,
-          ),
-          trailing: endDate == null
-              ? null
-              : AppIconButton(
-                  key: const ValueKey('task-quick-clear-due-date'),
-                  tooltip: l10n.taskBoardDetailRemoveDueDate,
-                  icon: const Icon(LucideIcons.x),
-                  onPressed: enabled
-                      ? () => callbacks.onClearDueDate(task)
-                      : null,
-                ),
-          showChevron: endDate == null,
-          onTap: enabled ? () => callbacks.onDueDate(task) : null,
-        ),
         if (callbacks.onLabels != null)
           AppGroupedRow(
             key: const ValueKey('task-quick-labels'),

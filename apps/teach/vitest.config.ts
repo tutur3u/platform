@@ -15,6 +15,13 @@ export default defineConfig({
   },
   resolve: {
     alias: [
+      {
+        find: '@tuturuuu/internal-api/workspace-config-ids',
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/workspace-config-ids.ts'
+        ),
+      },
       { find: '@', replacement: resolve(__dirname, './src') },
       {
         find: '@tuturuuu/supabase/next',

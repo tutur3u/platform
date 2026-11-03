@@ -42,7 +42,7 @@ void main() {
       final snapshot = accepted(MastermindSnapshotBuilder.defaults().toJson());
       expect(snapshot.schemaVersion, '1.4');
     });
-    for (final version in ['1.3', '1.2', '1.5', '2.0', '']) {
+    for (final version in ['1.3', '1.2', '1.6', '2.0', '']) {
       test('rejects schema_version "$version" as unsupported', () {
         final root = MastermindSnapshotBuilder.defaults().toJson()
           ..['schema_version'] = version;

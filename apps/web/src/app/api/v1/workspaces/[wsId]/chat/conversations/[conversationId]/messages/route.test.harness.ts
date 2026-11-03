@@ -74,7 +74,10 @@ vi.mock('@/lib/chat/private-rpc', () => ({
   chatRpcErrorResponse: (error: { code?: string }, fallback: string) =>
     Response.json(
       { message: fallback },
-      { status: error.code === '22023' ? 400 : 500 }
+      {
+        status:
+          error.code === '22023' ? 400 : error.code === '42501' ? 403 : 500,
+      }
     ),
   resolveChatRouteContext: (
     ...args: Parameters<typeof mocks.resolveChatRouteContext>

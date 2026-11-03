@@ -7,7 +7,7 @@ export async function requireQuizSetPageAccess(
   routeWsId: string,
   setId: string
 ) {
-  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
+  const { resolvedWsId } = await resolveRouteWorkspace(routeWsId, 'ai_lab');
   const permissions = await getSatelliteWorkspacePermissions(
     'teach',
     resolvedWsId

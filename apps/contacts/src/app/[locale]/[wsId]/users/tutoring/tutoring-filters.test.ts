@@ -229,3 +229,16 @@ describe('formatSessionTimeRange', () => {
     expect(formatSessionTimeRange('later', 45)).toBe('later');
   });
 });
+
+it('supports previous month and inclusive custom bounds', () => {
+  expect(resolveTutoringDateBounds('lastMonth', '2026-01-15')).toEqual({
+    fromDate: '2025-12-01',
+    toDate: '2025-12-31',
+  });
+  expect(
+    resolveTutoringDateBounds('custom', '2026-10-30', {
+      fromDate: '2026-10-01',
+      toDate: '2026-10-31',
+    })
+  ).toEqual({ fromDate: '2026-10-01', toDate: '2026-10-31' });
+});

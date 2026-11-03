@@ -41,7 +41,13 @@ function createAccess({
     const filters: Record<string, unknown> = {};
     const result = () => {
       if (table === 'workspaces') {
-        return { data: { creator_id: CREATOR_ID }, error: null };
+        const ids = filters.id as string[] | string | undefined;
+        return Array.isArray(ids)
+          ? {
+              data: ids.map((id) => ({ id, creator_id: CREATOR_ID })),
+              error: null,
+            }
+          : { data: { creator_id: CREATOR_ID }, error: null };
       }
       if (table === 'workspace_members') {
         return {
@@ -52,8 +58,18 @@ function createAccess({
       if (table === 'workspace_roles') {
         const ids = (filters.id as string[] | string | undefined) ?? [];
         return Array.isArray(ids)
-          ? { data: ids.map((id) => ({ id })), error: null }
-          : { data: { id: ids }, error: null };
+          ? {
+              data: ids.map((id) => ({
+                id,
+                name: 'Finance',
+                ws_id: 'workspace-1',
+              })),
+              error: null,
+            }
+          : {
+              data: { id: ids, name: 'Finance', ws_id: 'workspace-1' },
+              error: null,
+            };
       }
       if (table === 'workspace_role_permissions') {
         const ids = (filters.role_id as string[] | string | undefined) ?? [];
@@ -61,7 +77,7 @@ function createAccess({
           data: [ids]
             .flat()
             .filter((id) => id === BILLING_ROLE_ID)
-            .map((role_id) => ({ role_id })),
+            .map((role_id) => ({ role_id, ws_id: 'workspace-1' })),
           error: null,
         };
       }
@@ -161,6 +177,22 @@ describe('external project team creator-grant permissions', () => {
     expect(team.writtenPermissions('workspace_role_permissions')).toEqual(
       expected
     );
+  });
+
+  it('blocks a non-creator from renaming a role with a creator grant', async () => {
+    const team = createAccess({ actorId: 'admin-1' });
+    const response = await updateExternalProjectTeamRole({
+      access: team.access,
+      payload: { ...rolePayload, name: 'Renamed Finance' },
+      roleId: BILLING_ROLE_ID,
+    });
+
+    expect(response.status).toBe(403);
+    expect(
+      team.writes.some(
+        (write) => write.table === 'workspace_roles' && write.op === 'update'
+      )
+    ).toBe(false);
   });
 
   it.each([

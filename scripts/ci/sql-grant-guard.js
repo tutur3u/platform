@@ -1,19 +1,23 @@
 #!/usr/bin/env node
 
-// Fails when a new migration or rollback grants privileges to PUBLIC or anon,
-// or when a new migration creates a SECURITY DEFINER function without revoking
-// EXECUTE from PUBLIC and anon in the same file. Files before the cutoff are
-// legacy; `--report` lists them for visibility without failing.
-// Policy: apps/docs/reference/database/migrations-guide.mdx#sql-grant-guard
+// Enforces every diagnostic outside the reviewed historical-debt baseline.
+// Changed file bytes and stale baseline entries fail closed; the baseline shrinks.
+// Policy: apps/docs/reference/database/migrations-guide.mdx#declarative-grant-guard-p2-2
 
 const fs = require('node:fs');
+const {
+  resolveBase,
+  baselineReference,
+} = require('./sql-grant-guard-repository');
+const {
+  evaluateSqlFiles,
+  loadBaseline,
+} = require('./sql-grant-guard-baseline');
 const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const MIGRATIONS_DIR = 'apps/database/supabase/migrations';
 const ROLLBACKS_DIR = 'apps/database/rollbacks';
-// Files whose version prefix is below this predate the rule.
-const MIGRATION_CUTOFF = '20261028000000';
 const OPEN_ROLES = ['public', 'anon'];
 const RULES = {
   anonGrant: 'anon-grant',
@@ -28,108 +32,11 @@ const ALLOW_MARKERS = {
 
 // Returns the SQL with comments, string literals and dollar-quoted bodies
 // blanked (newlines kept, so line numbers survive), plus the `--` comments.
-function lexSql(sql) {
-  let code = '';
-  let line = 1;
-  let index = 0;
-  const comments = [];
-  const emit = (end, keep) => {
-    const chunk = sql.slice(index, end);
-    code += keep ? chunk : chunk.replace(/[^\n]/g, ' ');
-    for (const char of chunk) if (char === '\n') line++;
-    index = end;
-  };
-
-  while (index < sql.length) {
-    const char = sql[index];
-    if (sql.startsWith('--', index)) {
-      const newline = sql.indexOf('\n', index);
-      const end = newline < 0 ? sql.length : newline;
-      comments.push({ line, text: sql.slice(index + 2, end) });
-      emit(end, false);
-    } else if (sql.startsWith('/*', index)) {
-      let depth = 0;
-      let cursor = index;
-      while (cursor < sql.length) {
-        if (sql.startsWith('/*', cursor)) {
-          depth++;
-          cursor += 2;
-        } else if (sql.startsWith('*/', cursor)) {
-          depth--;
-          cursor += 2;
-          if (depth === 0) break;
-        } else cursor++;
-      }
-      emit(cursor, false);
-    } else if (char === "'") {
-      const escapes =
-        /[eE]/.test(sql[index - 1] ?? '') &&
-        !/[\w$]/.test(sql[index - 2] ?? '');
-      let cursor = index + 1;
-      while (cursor < sql.length) {
-        if (escapes && sql[cursor] === '\\') cursor += 2;
-        else if (sql[cursor] !== "'") cursor++;
-        else if (sql[cursor + 1] === "'") cursor += 2;
-        else {
-          cursor++;
-          break;
-        }
-      }
-      emit(Math.min(cursor, sql.length), false);
-    } else if (char === '"') {
-      let cursor = index + 1;
-      while (cursor < sql.length) {
-        if (sql[cursor] !== '"') cursor++;
-        else if (sql[cursor + 1] === '"') cursor += 2;
-        else {
-          cursor++;
-          break;
-        }
-      }
-      emit(Math.min(cursor, sql.length), true);
-    } else {
-      const tag =
-        char === '$' && !/[\w$]/.test(sql[index - 1] ?? '')
-          ? /^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/.exec(
-              sql.slice(index, index + 64)
-            )
-          : null;
-      if (tag) {
-        const close = sql.indexOf(tag[0], index + tag[0].length);
-        emit(close < 0 ? sql.length : close + tag[0].length, false);
-      } else {
-        code += char;
-        if (char === '\n') line++;
-        index++;
-      }
-    }
-  }
-  return { code, comments };
-}
-
-function countNewlines(text) {
-  return text.split('\n').length - 1;
-}
-
-// Splits lexed SQL into normalized (lowercase, single-spaced) statements.
-function parseStatements(sql) {
-  const { code, comments } = lexSql(sql);
-  const statements = [];
-  let line = 1;
-  for (const part of code.split(';')) {
-    const startLine = line + countNewlines(/^\s*/.exec(part)[0]);
-    const body = part.trim();
-    if (body) {
-      statements.push({
-        text: body.replace(/\s+/g, ' ').toLowerCase(),
-        startLine,
-        endLine: startLine + countNewlines(body),
-      });
-    }
-    line += countNewlines(part);
-  }
-  return { statements, comments };
-}
+const {
+  lexSql,
+  parseStatements,
+  splitStatements,
+} = require('./sql-grant-guard-lexer');
 
 function isAllowed(statement, comments, rule) {
   const marker = new RegExp(`^\\s*${ALLOW_MARKERS[rule]}\\s*:\\s*\\S`, 'i');
@@ -160,8 +67,17 @@ function splitTopLevel(text) {
 }
 
 function normalizeName(name) {
-  const plain = name.replace(/"/g, '').trim();
-  return plain.includes('.') ? plain : `public.${plain}`;
+  const parts = name.match(/"(?:[^"]|"")*"|[a-z_][\w$]*/g) ?? [];
+  const names = parts.map((part) =>
+    part.startsWith('"')
+      ? part.slice(1, -1).replaceAll('""', '"')
+      : part.toLowerCase()
+  );
+  return (names.length === 1 ? ['public', ...names] : names)
+    .map((part) =>
+      /^[a-z_][a-z0-9_$]*$/.test(part) ? part : JSON.stringify(part)
+    )
+    .join('.');
 }
 
 const MULTI_WORD_TYPES =
@@ -178,14 +94,14 @@ const TYPE_ALIASES = {
   timestamptz: 'timestamp with time zone',
   timetz: 'time with time zone',
   varchar: 'character varying',
+  timestamp: 'timestamp without time zone',
 };
 
 function normalizeType(type) {
   const plain = type
-    .replace(/"/g, '')
     .replace(/\s*\([^)]*\)/g, '')
     .replace(/\s*\[\s*\d*\s*\]/g, '[]')
-    .replace(/^public\./, '')
+    .replace(/^(?:public|pg_catalog)\./, '')
     .trim();
   const array = plain.endsWith('[]') ? '[]' : '';
   const base = array ? plain.slice(0, -2) : plain;
@@ -197,7 +113,10 @@ function normalizeType(type) {
 function signatureTypes(argumentList) {
   const types = [];
   for (const raw of splitTopLevel(argumentList)) {
-    let argument = raw.replace(/\s*(?:\bdefault\b|=).*$/, '').trim();
+    let argument = raw
+      .replace(/^(\S+)\s+(in|inout|out|variadic)\s+/, '$2 $1 ')
+      .replace(/\s*(?:\bdefault\b|=).*$/, '')
+      .trim();
     const mode = /^(in|out|inout|variadic)\s+/.exec(argument);
     if (mode) {
       if (mode[1] === 'out') continue;
@@ -213,7 +132,10 @@ function signatureTypes(argumentList) {
 // Reads `name(args)` at the start of text; returns the name, the argument
 // list (null when absent) and the remaining text.
 function readRoutine(text) {
-  const name = /^\s*((?:"[^"]*"|[^\s(,])+)\s?/.exec(text);
+  const name =
+    /^\s*((?:"(?:[^"]|"")*"|[a-z_][\w$]*)(?:\s*\.\s*(?:"(?:[^"]|"")*"|[a-z_][\w$]*))*)\s*/.exec(
+      text
+    );
   if (!name) return null;
   let rest = text.slice(name[0].length);
   if (!rest.startsWith('(')) {
@@ -225,6 +147,7 @@ function readRoutine(text) {
     if (rest[index] === '(') depth++;
     if (rest[index] === ')' && --depth === 0) break;
   }
+  if (depth !== 0 || index >= rest.length) return null;
   const args = rest.slice(1, index);
   rest = rest.slice(index + 1);
   return { name: normalizeName(name[1]), args, rest };
@@ -238,16 +161,16 @@ function roleList(text) {
       role
         .trim()
         .replace(/^group\s+/, '')
-        .replace(/"/g, '')
+        .replace(/^"([^"]*)"$/, '$1')
     );
 }
 
 // --- Rules ---------------------------------------------------------------
 
 const GRANT = /^(?:alter default privileges\s.*?)?\bgrant\s(.+?)\sto\s(.+)$/;
-const CREATE_FUNCTION = /^create (?:or replace )?function\s(.+)$/;
+const CREATE_FUNCTION = /^create (?:or replace )?(?:function|procedure)\s(.+)$/;
 const REVOKE_FUNCTION =
-  /^revoke\s.+?\son (?:function|routine)s?\s(.+?)\sfrom\s(.+)$/;
+  /^revoke\s.+?\son (?:function|routine|procedure)s?\s(.+?)\sfrom\s(.+)$/;
 
 function openGrantees(text) {
   if (!/^(?:grant|alter default privileges)\s/.test(text)) return [];
@@ -268,7 +191,14 @@ function scanSql(sql, { definerRule }) {
 
   for (const statement of statements) {
     const roles = openGrantees(statement.text);
-    if (roles.length > 0 && !isAllowed(statement, comments, RULES.anonGrant)) {
+    const grantReview =
+      /\bon (?:function|procedure|routine)s?\b/.test(statement.text) &&
+      routineGrantFindings(statement, comments, true).length === 0;
+    if (
+      roles.length > 0 &&
+      !grantReview &&
+      !isAllowed(statement, comments, RULES.anonGrant)
+    ) {
       findings.push({
         rule: RULES.anonGrant,
         line: statement.startLine,
@@ -323,64 +253,350 @@ function scanSql(sql, { definerRule }) {
   return findings.sort((left, right) => left.line - right.line);
 }
 
-const GUIDANCE = {
-  [RULES.anonGrant]:
-    'Grant to authenticated or service_role instead, or add "-- allow-anon-grant: <reason>" on the same or preceding line.',
-  [RULES.definerPublic]:
-    'Add "revoke all on function <signature> from public, anon;" in the same file, or "-- allow-definer-public: <reason>" on the same or preceding line.',
-};
+function reviewedFunctionGrant(statement, comments, key, grantees) {
+  return comments.some(({ line, text }) => {
+    if (line < statement.startLine - 1 || line > statement.endLine)
+      return false;
+    const marker =
+      /^\s*tuturuuu:\s*reviewed\(function-grant\):\s*(.+?)\s+(anon-required\s+)?review=(\S+)\s*$/.exec(
+        text
+      );
+    return (
+      marker &&
+      marker[1] === key &&
+      (!grantees.some((role) => ['anon', 'public'].includes(role)) ||
+        Boolean(marker[2]))
+    );
+  });
+}
+function routineGrantFindings(statement, comments, reviewedExceptions) {
+  const text = statement.text;
+  const grant = GRANT.exec(text);
+  if (!grant) return [];
+  const grantees = roleList(grant[2]);
+  const clients = grantees.some((role) =>
+    ['public', 'anon', 'authenticated'].includes(role)
+  );
+  const fail = (detail) => [
+    { rule: 'function-acl', line: statement.startLine, detail },
+  ];
+  if (
+    clients &&
+    (/^alter default privileges\b/.test(text) ||
+      /\bon all .+? in schema\b/.test(text))
+  )
+    return fail(
+      'broad schema and default privilege grants to PUBLIC, anon or authenticated are forbidden'
+    );
+  const targets = /\bon (?:function|procedure|routine)s?\s+(.+)$/.exec(
+    grant[1]
+  );
+  if (!targets) return [];
+  for (const target of splitTopLevel(targets[1])) {
+    const routine = readRoutine(target);
+    if (!routine || routine.args === null || routine.rest.trim())
+      return fail('routine grants require an explicit parseable argument list');
+    const key = routineKey(routine.name, signatureTypes(routine.args));
+    if (
+      clients &&
+      !(
+        reviewedExceptions &&
+        reviewedFunctionGrant(statement, comments, key, grantees)
+      )
+    )
+      return fail(
+        `${key} client grant requires a same-statement signature review marker; anon/PUBLIC also require anon-required`
+      );
+  }
+  return [];
+}
+
+// Internal and trigger routines can explicitly declare that no grant is intended.
+function scanExtensions(
+  sql,
+  { rollback = false, reviewedExceptions = true } = {}
+) {
+  const { statements, comments } = parseStatements(sql);
+  const noGrant = comments.some(({ text }) =>
+    /^\s*tuturuuu:\s*no-grant\s*\((?:internal|trigger)\)\s*$/.test(text)
+  );
+  const findings = [];
+  const reviewed = (rule, statement) =>
+    reviewedExceptions &&
+    comments.some(
+      ({ line, text }) =>
+        line >= statement.startLine - 1 &&
+        line <= statement.endLine &&
+        new RegExp(`^\\s*tuturuuu:\\s*reviewed\\(${rule}\\):\\s*\\S.*$`).test(
+          text
+        )
+    );
+  const add = (rule, statement, detail) => {
+    if (
+      rule === 'dynamic-sql-review' &&
+      /^(?:do|execute)\b/.test(statement.text) &&
+      reviewed(rule, statement)
+    )
+      return;
+    findings.push({ rule, line: statement.startLine, detail });
+  };
+  if (/\bset\s+u&"/i.test(lexSql(sql).code))
+    findings.push({
+      rule: 'function-acl',
+      line: 1,
+      detail: 'Unicode escaped identifiers require explicit security review',
+    });
+  const lexed = lexSql(sql);
+  for (const configuration of lexed.configurations) {
+    findings.push({
+      rule:
+        configuration.name === 'search_path'
+          ? 'definer-search-path'
+          : 'function-acl',
+      line: configuration.line,
+      detail:
+        'set_config of search_path or standard_conforming_strings is forbidden',
+    });
+  }
+  if (
+    /\bset\s+(?:(?:local|session)\s+)?(?:"standard_conforming_strings"|standard_conforming_strings)\s*(?:=|to\b|from\b)/i.test(
+      lexed.code.replace(/\bset(?=")/gi, 'set ')
+    )
+  )
+    findings.push({
+      rule: 'function-acl',
+      line: 1,
+      detail: 'setting standard_conforming_strings is forbidden',
+    });
+
+  lexed.bodies.forEach((body, index) => {
+    const line = lexed.bodyLines[index];
+    const owner = statements.find(
+      (s) => s.startLine <= line && s.endLine >= line
+    );
+    if (
+      /\bexecute\b/i.test(lexSql(body).code) &&
+      !(owner && reviewed('dynamic-sql-review', owner))
+    )
+      findings.push({
+        rule: 'dynamic-sql-review',
+        line,
+        detail: 'dynamic EXECUTE in a routine body requires security review',
+      });
+  });
+  for (const [index, statement] of statements.entries()) {
+    const text = statement.text;
+    if (
+      /^(?:create (?:or replace )?(?:function|procedure)|alter (?:function|procedure|routine)|grant|revoke|set)\b/.test(
+        text
+      ) &&
+      (text.match(/"(?:[^"]|"")*"/g) ?? []).some((token) =>
+        /[;\s,()]/.test(token)
+      ) &&
+      !reviewed('quoted-identifier-review', statement)
+    )
+      add(
+        'function-acl',
+        statement,
+        'complex quoted identifiers require explicit security review'
+      );
+    if (
+      rollback &&
+      (/^alter default privileges\b.*\bgrant\b/.test(text) ||
+        (GRANT.test(text) &&
+          (openGrantees(text).length ||
+            /^grant\s+(?:all\b|[^;]*\b(?:truncate|maintain)\b)/.test(text))))
+    ) {
+      add(
+        'rollback-safety',
+        statement,
+        'rollback restores unsafe grants or default privileges'
+      );
+    }
+    if (/^do\b|^execute\b/.test(text))
+      add(
+        'dynamic-sql-review',
+        statement,
+        'dynamic SQL requires explicit security review'
+      );
+    if (
+      /^alter (?:function|procedure|routine)\b/.test(text) &&
+      /\b(?:security definer|set|reset|owner to)\b/.test(text) &&
+      !reviewed('alter-routine-review', statement)
+    ) {
+      add(
+        'definer-search-path',
+        statement,
+        'ALTER routine security or configuration requires a complete reviewed CREATE definition'
+      );
+      if (/\bsecurity definer\b/.test(text))
+        add(
+          'function-acl',
+          statement,
+          'ALTER SECURITY DEFINER requires a complete reviewed CREATE and ACL block'
+        );
+    }
+    if (
+      /^grant\b/.test(text) &&
+      (!/\bon\b/.test(text.replace(/"(?:[^"]|"")*"/g, 'identifier')) ||
+        /\bwith grant option\b/.test(text))
+    )
+      add(
+        'rollback-safety',
+        statement,
+        'role membership and grant options require explicit security review'
+      );
+    findings.push(
+      ...routineGrantFindings(statement, comments, reviewedExceptions)
+    );
+    const create = CREATE_FUNCTION.exec(text);
+    if (!create) continue;
+    const routine = readRoutine(create[1]);
+    if (!routine || routine.args === null) {
+      add(
+        'function-acl',
+        statement,
+        'cannot parse routine identity; explicit review required'
+      );
+      continue;
+    }
+    const key = routineKey(routine.name, signatureTypes(routine.args));
+    const roles = new Set();
+    let granted = false;
+    let unsafeGrant = false;
+    for (const later of statements.slice(index + 1)) {
+      const revoke =
+        /^revoke all(?: privileges)? on (?:function|routine|procedure)\s+(.+?) from (.+)$/.exec(
+          later.text
+        );
+      const grant =
+        /^grant (?:execute|all(?: privileges)?) on (?:function|routine|procedure)\s+(.+?) to (.+)$/.exec(
+          later.text
+        );
+      const match = revoke || grant;
+      if (!match) continue;
+      for (const target of splitTopLevel(match[1])) {
+        const acl = readRoutine(target);
+        if (
+          !acl ||
+          acl.args === null ||
+          routineKey(acl.name, signatureTypes(acl.args)) !== key
+        )
+          continue;
+        if (revoke) for (const role of roleList(match[2])) roles.add(role);
+        else {
+          const grantees = roleList(match[2]);
+          granted ||=
+            grantees.includes('service_role') ||
+            (reviewedExceptions &&
+              reviewedFunctionGrant(later, comments, key, grantees));
+          unsafeGrant ||=
+            grantees.some((role) =>
+              ['public', 'anon', 'authenticated'].includes(role)
+            ) &&
+            !(
+              reviewedExceptions &&
+              reviewedFunctionGrant(later, comments, key, grantees)
+            );
+        }
+      }
+    }
+    if (
+      !['public', 'anon', 'authenticated'].every((role) => roles.has(role)) ||
+      unsafeGrant ||
+      (!granted && !noGrant)
+    ) {
+      add(
+        'function-acl',
+        statement,
+        `${key} requires subsequent same-file REVOKE ALL from PUBLIC, anon, authenticated and a service_role grant, signature-reviewed client grant or no-grant (internal|trigger) marker`
+      );
+    }
+    if (/\bsecurity definer\b/.test(text)) {
+      const settings = [
+        ...text.matchAll(
+          /\bset (?:"search_path"|search_path)\s*(?:=|to)\s*(.*?)(?=\s+(?:as|language|set|security|immutable|stable|volatile|parallel|cost|rows|support|begin|return|strict|leakproof|not|called|returns|window|transform|external)\b|$)/g
+        ),
+      ];
+      const setting =
+        settings.length === 1 &&
+        [...text.matchAll(/\bset (?:"search_path"|search_path)(?=\s|=)/gi)]
+          .length === 1
+          ? settings[0]
+          : null;
+      const schemas =
+        setting?.[1]
+          .split(',')
+          .map((name) =>
+            /^(?:[a-z_][a-z0-9_]*|"[a-z_][a-z0-9_]*")$/.test(name.trim())
+              ? name.trim().replaceAll('"', '')
+              : ''
+          ) ?? [];
+      if (
+        schemas[0] !== 'pg_catalog' ||
+        schemas.at(-1) !== 'pg_temp' ||
+        schemas.some(
+          (name, i) =>
+            !name ||
+            name === '$user' ||
+            /^pg_(?:toast_)?temp_/.test(name) ||
+            (name === 'pg_temp' && i !== schemas.length - 1)
+        )
+      ) {
+        add(
+          'definer-search-path',
+          statement,
+          `${key} requires pg_catalog first, pg_temp last and no empty or user-dependent schema`
+        );
+      }
+    }
+  }
+  return findings;
+}
+
+function changedSqlFiles(rootDir, env = process.env) {
+  // Resolve history even on main; enforcement itself covers every non-baselined file.
+  return resolveBase(rootDir, env);
+}
 
 // --- Repository evaluation ----------------------------------------------
 
 function listSqlFiles(rootDir = ROOT_DIR) {
-  return [MIGRATIONS_DIR, ROLLBACKS_DIR].flatMap((directory) => {
+  return [
+    MIGRATIONS_DIR,
+    ROLLBACKS_DIR,
+    'apps/database/supabase/schemas',
+  ].flatMap((directory) => {
     const absolute = path.join(rootDir, directory);
     if (!fs.existsSync(absolute)) return [];
     return fs
-      .readdirSync(absolute)
+      .readdirSync(absolute, { recursive: true })
       .filter((name) => name.endsWith('.sql'))
       .sort()
       .map((name) => `${directory}/${name}`);
   });
 }
 
-function fileVersion(file) {
-  return /^(\d{14})/.exec(path.posix.basename(file))?.[1] ?? null;
-}
-
-function evaluateSqlFiles({ files, readFile, cutoff = MIGRATION_CUTOFF }) {
-  const violations = [];
-  const legacy = [];
-  for (const file of files) {
-    const definerRule = file.startsWith(`${MIGRATIONS_DIR}/`);
-    if (!definerRule && !file.startsWith(`${ROLLBACKS_DIR}/`)) continue;
-    const version = fileVersion(file);
-    // Unversioned files cannot be shown to predate the rule.
-    const enforced = version === null || version >= cutoff;
-    for (const finding of scanSql(readFile(file), { definerRule })) {
-      const entry = {
-        ...finding,
-        file,
-        message: `${file}:${finding.line} ${finding.detail}. ${GUIDANCE[finding.rule]}`,
-      };
-      (enforced ? violations : legacy).push(entry);
-    }
-  }
-  return { violations, legacy };
-}
-
-function checkRepository(rootDir = ROOT_DIR) {
+function checkRepository(rootDir = ROOT_DIR, env = process.env) {
+  const base = changedSqlFiles(rootDir, env);
   return evaluateSqlFiles({
     files: listSqlFiles(rootDir),
+    baseline: loadBaseline(rootDir, baselineReference(rootDir, base, env)),
     readFile: (file) => fs.readFileSync(path.join(rootDir, file), 'utf8'),
+    verifiedFindings: require('./sql-grant-guard-verified-findings'),
   });
 }
 
-function formatLegacyReport(legacy, cutoff = MIGRATION_CUTOFF) {
+function formatLegacyReport(legacy) {
   const lines = [
-    `Legacy SQL grant findings in files before ${cutoff} (not enforced): ${legacy.length}`,
+    `Historical SQL diagnostic debt (not safe; explicitly baselined): ${legacy.length}`,
   ];
-  for (const rule of Object.values(RULES)) {
+  for (const rule of [
+    ...new Set([
+      ...Object.values(RULES),
+      ...legacy.map((finding) => finding.rule),
+    ]),
+  ]) {
     const findings = legacy.filter((finding) => finding.rule === rule);
     const files = new Set(findings.map((finding) => finding.file));
     lines.push(`  ${rule}: ${findings.length} in ${files.size} files`);
@@ -398,23 +614,29 @@ function formatLegacyReport(legacy, cutoff = MIGRATION_CUTOFF) {
   return lines.join('\n');
 }
 
-if (require.main === module) {
-  const { violations, legacy } = checkRepository();
-  if (process.argv.includes('--report')) {
-    console.log(formatLegacyReport(legacy));
-  } else {
-    for (const violation of violations) console.error(violation.message);
-    if (violations.length > 0) process.exit(1);
-    console.log('SQL grant guard passed.');
-  }
-}
-
 module.exports = {
-  MIGRATION_CUTOFF,
   RULES,
   checkRepository,
   evaluateSqlFiles,
   formatLegacyReport,
   lexSql,
   scanSql,
+  splitStatements,
+  listSqlFiles,
+  scanExtensions,
+  parseStatements,
+  changedSqlFiles,
 };
+
+if (require.main === module) {
+  const { violations, legacy } = checkRepository();
+  if (process.argv.includes('--report')) {
+    console.log(formatLegacyReport(legacy));
+    console.log(`Non-baselined SQL findings for triage: ${violations.length}`);
+    for (const violation of violations) console.log(violation.message);
+  } else {
+    for (const violation of violations) console.error(violation.message);
+    if (violations.length > 0) process.exit(1);
+    console.log('SQL grant guard passed.');
+  }
+}

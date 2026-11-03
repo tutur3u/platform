@@ -6,6 +6,7 @@ import { connection } from 'next/server';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { requireQuizSetPageAccess } from '@/lib/quiz-set-page-access';
+import { requireTeachWorkspaceMember } from '@/lib/require-teach-workspace-member';
 import { getQuizSetSummary } from './data';
 
 interface Props {
@@ -25,6 +26,7 @@ export default async function QuizSetDetailsLayout({
 
   const t = await getTranslations();
   const { wsId, setId } = await params;
+  await requireTeachWorkspaceMember(wsId, 'ai_lab');
   const commonHref = `/${wsId}/education/quiz-sets/${setId}`;
 
   const { resolvedWsId } = await requireQuizSetPageAccess(wsId, setId);

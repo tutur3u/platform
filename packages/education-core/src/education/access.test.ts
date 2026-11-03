@@ -167,4 +167,42 @@ describe('checkEducationWorkspaceAccess', () => {
       message: 'Education is not enabled for this workspace',
     });
   });
+  it('rejects guests before any feature flag or permission read', async () => {
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      ok: false,
+      error: 'membership_type_mismatch',
+      membershipType: 'GUEST',
+    });
+    const access = await checkEducationWorkspaceAccess({
+      context: {
+        user: { id: 'user-1' } as never,
+        supabase: mocks.sessionSupabase as never,
+      },
+      wsId: 'ws-1',
+    });
+    expect(access.ok).toBe(false);
+    if (access.ok) return;
+    expect(access.response.status).toBe(403);
+    expect(mocks.workspaceSecretMaybeSingle).not.toHaveBeenCalled();
+    expect(mocks.getPermissions).not.toHaveBeenCalled();
+  });
+
+  it('fails closed on a membership lookup error', async () => {
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      ok: false,
+      error: 'membership_lookup_failed',
+    });
+    const access = await checkEducationWorkspaceAccess({
+      context: {
+        user: { id: 'user-1' } as never,
+        supabase: mocks.sessionSupabase as never,
+      },
+      wsId: 'ws-1',
+    });
+    expect(access.ok).toBe(false);
+    if (access.ok) return;
+    expect(access.response.status).toBe(500);
+    expect(mocks.workspaceSecretMaybeSingle).not.toHaveBeenCalled();
+    expect(mocks.getPermissions).not.toHaveBeenCalled();
+  });
 });

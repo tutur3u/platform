@@ -154,7 +154,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(repository.sent.single.clearEndDate, isTrue);
-      expect(find.text('No due date'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: quickActionTile('task-quick-due-date'),
+          matching: find.text('None'),
+        ),
+        findsOneWidget,
+      );
       await drainToasts(tester);
     });
   });

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/layout/layout.dart';
@@ -8,18 +9,26 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/core/ui/icons/app_icons.dart';
 import 'package:mobile/core/ui/tokens/app_tokens.dart';
 import 'package:mobile/features/mastermind/model/snapshot.dart';
-import 'package:mobile/features/mastermind/presentation/age_text.dart';
 import 'package:mobile/features/mastermind/presentation/answered_via_labels.dart';
+import 'package:mobile/features/mastermind/presentation/ask_card_source.dart';
 import 'package:mobile/features/mastermind/presentation/display_names.dart';
 import 'package:mobile/features/mastermind/presentation/gmt7.dart';
 import 'package:mobile/features/mastermind/presentation/labels.dart';
+import 'package:mobile/features/mastermind/presentation/option_labels.dart';
+import 'package:mobile/features/mastermind/presentation/relative_time.dart';
 import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_models.dart';
+import 'package:mobile/features/mastermind/view/inbox/ask_card.dart';
+import 'package:mobile/features/mastermind/view/inbox/ask_timing_chips.dart';
 import 'package:mobile/features/mastermind/view/inbox/decision_card_actions.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_replies_watcher.dart';
+import 'package:mobile/features/mastermind/view/inbox/reply_status_panel.dart';
+import 'package:mobile/features/mastermind/view/inbox/reply_undo_bar.dart';
 import 'package:mobile/features/mastermind/view/widgets/large_text.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_clock.dart';
 import 'package:mobile/features/mastermind/view/widgets/mastermind_status_chip.dart';
+import 'package:mobile/features/mastermind/view/widgets/mastermind_time_label.dart';
 import 'package:mobile/l10n/l10n.dart';
 
 /// One ask with a meaningful title, metadata and a two-line ask preview.
@@ -35,6 +44,7 @@ class InboxItemTile extends StatelessWidget {
     this.now,
     this.showKind = false,
     this.showKindIcon = false,
+    this.askCard = false,
     super.key,
   });
 
@@ -42,7 +52,11 @@ class InboxItemTile extends StatelessWidget {
   final bool showKind;
   final bool showKindIcon;
 
-  /// The section clock, for "5 min ago". Without it no age is shown.
+  /// Shows an open ask as the Inbox ask card (the Inbox list). Compact
+  /// surfaces such as Home keep the row.
+  final bool askCard;
+
+  /// The section clock. Without it no age is shown.
   final DateTime? now;
 
   @override
@@ -78,6 +92,9 @@ class InboxItemTile extends StatelessWidget {
     ReplyItemStatus status,
     AnsweredElsewhere? elsewhere,
   ) {
+    // An open ask shows as the Inbox ask card: the question, its full text and
+    // every option, never a title alone. Closed asks, and an ask answered on
+    // another device, keep the compact row below.
     final l10n = context.l10n;
     final locale = Localizations.localeOf(context).toString();
     final title = item.hubTitle ?? itemDisplayTitle(l10n, item);
@@ -85,37 +102,44 @@ class InboxItemTile extends StatelessWidget {
     final kindLabel = kind == null
         ? null
         : MastermindLabels.itemKind(l10n, kind);
-    final detail = elsewhere != null
-        ? [answeredViaText(l10n, elsewhere.via), ?elsewhere.option].join(' · ')
-        : [?_state(l10n, entry, status), ?_age(l10n, locale)].join(' · ');
     final answeredCheck =
         elsewhere != null ||
         (item.state == ItemState.answered && item.answeredVia != null);
+    // Resolved rows sit under their GMT+7 day, so they read the time ("06:21");
+    // open ones read their age as a relative time label.
+    final resolvedTime = item.state != ItemState.open && item.resolvedAt != null
+        ? Gmt7.time(item.resolvedAt!, locale)
+        : null;
+    final state = elsewhere != null
+        ? [answeredViaText(l10n, elsewhere.via), ?elsewhere.option].join(' · ')
+        : [?_state(l10n, entry, status), ?resolvedTime].join(' · ');
+    final at = elsewhere != null || resolvedTime != null ? null : _at;
     final preview = item.hubText ?? askPreviewText(item);
-    void open() {
-      if (_canRetry(status, entry)) {
-        unawaited(
-          MastermindRepliesWatcher.cubitOf(
-            context,
-          ).retry(item.id, item.versionHash),
-        );
-      }
-      unawaited(context.push<void>(Routes.mastermindInboxItemPath(item.id)));
-    }
+    void open() => _open(context, status, entry);
 
+    final exactTime = GlobalKey<TooltipState>();
     final large = mastermindLargeText(context);
-    final row = Semantics(
+    Widget buildRow(String? spokenAge) => Semantics(
       button: true,
       label: [
+        if (item.state == ItemState.open && elsewhere == null)
+          ...askTimingSpoken(l10n, item),
         ?kindLabel,
         title,
         if (item.product case final product?) MastermindLabels.product(product),
         if (item.by case final by?) l10n.mastermindAskedBy(by),
-        if (detail.isNotEmpty) detail,
+        ?(state.isEmpty ? null : state),
+        ?spokenAge,
         if (preview.isNotEmpty) spokenAskSummary(preview),
       ].join('. '),
       hint: l10n.mastermindOpensItem,
       onTap: open,
+      customSemanticsActions: {
+        if (at != null)
+          CustomSemanticsAction(label: l10n.mastermindRelShowExact): () {
+            exactTime.currentState?.ensureTooltipVisible();
+          },
+      },
       excludeSemantics: true,
       child: AppGroupedRow(
         leading: showKindIcon
@@ -144,6 +168,8 @@ class InboxItemTile extends StatelessWidget {
               spacing: AppSpacing.xs,
               runSpacing: AppSpacing.xs,
               children: [
+                if (item.state == ItemState.open && elsewhere == null)
+                  ...askTimingChips(l10n, item),
                 if (showKind && kindLabel != null)
                   MastermindStatusChip(label: kindLabel),
                 if (item.product case final product?)
@@ -153,12 +179,14 @@ class InboxItemTile extends StatelessWidget {
                 if (item.by case final by?)
                   MastermindStatusChip(label: l10n.mastermindAskedBy(by)),
                 if (answeredCheck) const Icon(AppIcons.check, size: 14),
-                Text(
-                  detail,
-                  key: ValueKey('ask-state-${item.id}'),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                if (state.isNotEmpty)
+                  Text(
+                    state,
+                    key: ValueKey('ask-state-${item.id}'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                if (at != null) MastermindTimeLabel(at, tooltipKey: exactTime),
               ],
             ),
             if (preview.isNotEmpty)
@@ -174,11 +202,29 @@ class InboxItemTile extends StatelessWidget {
         onTap: open,
       ),
     );
+    // The spoken age is recomputed on every clock tick, not cached with the
+    // rest of the row, so a screen reader never hears a stale "5 minutes ago".
+    final row = at == null
+        ? buildRow(null)
+        : MastermindClockBuilder(
+            builder: (context, now) => buildRow(
+              mastermindSpokenTime(
+                l10n,
+                at,
+                now: now,
+                zone: mastermindTimeZoneOf(context),
+                locale: locale,
+              ),
+            ),
+          );
     if (item.state != ItemState.open) return row;
+    // In the Inbox list the card carries the title, so the compact row only
+    // shows once the ask was answered elsewhere.
+    final cardMode = askCard;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        row,
+        if (!cardMode || elsewhere != null) row,
         // Answered elsewhere: the choices fold away rather than vanish.
         AnimatedSwitcher(
           duration: MediaQuery.disableAnimationsOf(context)
@@ -199,6 +245,11 @@ class InboxItemTile extends StatelessWidget {
                   key: ValueKey('answered'),
                   width: double.infinity,
                 )
+              : cardMode
+              ? KeyedSubtree(
+                  key: const ValueKey('actions'),
+                  child: _askCard(context, status, entry),
+                )
               : Padding(
                   key: const ValueKey('actions'),
                   padding: const EdgeInsets.all(AppSpacing.sm),
@@ -206,6 +257,86 @@ class InboxItemTile extends StatelessWidget {
                 ),
         ),
       ],
+    );
+  }
+
+  /// A tap retries only when the reply is still queued and the device was
+  /// offline, then pushes the full ask and composer.
+  void _open(BuildContext context, ReplyItemStatus status, OutboxEntry? entry) {
+    if (_canRetry(status, entry)) {
+      unawaited(
+        MastermindRepliesWatcher.cubitOf(
+          context,
+        ).retry(item.id, item.versionHash),
+      );
+    }
+    unawaited(context.push<void>(Routes.mastermindInboxItemPath(item.id)));
+  }
+
+  /// This device's reply state, only when it says more than "Open".
+  String? _cardStatus(
+    AppLocalizations l10n,
+    OutboxEntry? entry,
+    ReplyItemStatus status,
+  ) => status.issue == null && entry == null
+      ? null
+      : _state(l10n, entry, status);
+
+  Widget _askCard(
+    BuildContext context,
+    ReplyItemStatus status,
+    OutboxEntry? entry,
+  ) {
+    final l10n = context.l10n;
+    final replies = MastermindRepliesWatcher.cubitOf(context);
+    final ask = inboxAskFor(item, now: now);
+    return BlocBuilder<MastermindRepliesCubit, MastermindRepliesState>(
+      bloc: replies,
+      builder: (context, state) {
+        final pending = state.pendingOptionFor(item.id, item.versionHash);
+        final queued = state.entryFor(item.id, item.versionHash);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ReplyIssueBanner(issue: state.statusFor(item.id).issue),
+            MastermindAskCard(
+              ask: ask,
+              title: item.hubTitle ?? itemDisplayTitle(l10n, item),
+              now: now,
+              statusLine: _cardStatus(l10n, queued, status),
+              onOpen: () => _open(context, status, entry),
+              onSelectOption: state.canReply
+                  ? (index) =>
+                        replies.queueOption(item: item, optionIndex: index)
+                  : null,
+              disabledNote: state.canReply
+                  ? null
+                  : switch (state.capability) {
+                      ReplyCapability.unknown ||
+                      ReplyCapability.checking => l10n.mastermindReplyChecking,
+                      ReplyCapability.unavailable =>
+                        l10n.mastermindReplyCheckFailed,
+                      _ => l10n.mastermindReplyOnMac,
+                    },
+              optionsOverride: pending != null
+                  ? ReplyUndoBar(
+                      option: plainOptionLabel(item, pending.optionIndex),
+                      onSendNow: () => replies.sendNow(item.id),
+                      onUndo: pending.committed
+                          ? null
+                          : () => replies.undoOption(item.id),
+                    )
+                  : queued != null
+                  ? ReplyEntryPanel(
+                      entry: queued,
+                      status: state.statusFor(item.id),
+                      replies: replies,
+                    )
+                  : null,
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -249,17 +380,8 @@ class InboxItemTile extends StatelessWidget {
       entry.status == OutboxStatus.pending &&
       status.issue == ReplyIssue.offline;
 
-  /// Resolved rows sit under their GMT+7 day, so they read the time ("06:21");
-  /// open ones read their age.
-  String? _age(AppLocalizations l10n, String locale) {
-    if (item.state != ItemState.open && item.resolvedAt != null) {
-      return Gmt7.time(item.resolvedAt!, locale);
-    }
-    final at = item.createdAt ?? item.resolvedAt;
-    final clock = now;
-    if (at == null || clock == null) return null;
-    return mastermindAgeText(l10n, clock.difference(at));
-  }
+  /// The instant the age is for; none without the section clock.
+  DateTime? get _at => now == null ? null : item.createdAt ?? item.resolvedAt;
 }
 
 /// A read-only option. The recommended one carries a star and the word

@@ -269,14 +269,9 @@ describe('bulk mutations with personal external tasks', () => {
     ]);
   });
 
-  it('updates every selected deadline task without dropping cache siblings', async () => {
-    const deadlineQueryKey = [
-      'kanban-deadline-tasks',
-      'personal-ws',
-      'board-1',
-      { search: '' },
-    ];
-    queryClient.setQueryData(deadlineQueryKey, [
+  it('updates every selected task in filtered caches without dropping siblings', async () => {
+    const filteredQueryKey = ['tasks-full', 'board-1', 'filtered'];
+    queryClient.setQueryData(filteredQueryKey, [
       localTask,
       externalTask,
       untouchedTask,
@@ -287,8 +282,8 @@ describe('bulk mutations with personal external tasks', () => {
       await result.current.bulkUpdatePriority('high');
     });
 
-    const deadlineTasks = queryClient.getQueryData<Task[]>(deadlineQueryKey);
-    expect(deadlineTasks?.map((task) => [task.id, task.priority])).toEqual([
+    const filteredTasks = queryClient.getQueryData<Task[]>(filteredQueryKey);
+    expect(filteredTasks?.map((task) => [task.id, task.priority])).toEqual([
       ['local-task', 'high'],
       ['external-task', 'high'],
       ['untouched-task', 'urgent'],

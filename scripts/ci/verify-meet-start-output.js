@@ -30,7 +30,14 @@ const identity = {
   compatibility_date: '2026-09-06',
   compatibility_flags: ['nodejs_compat', 'global_fetch_strictly_public'],
   placement: { region: 'aws:ap-southeast-1' },
-  services: [{ binding: 'WORKER_SELF_REFERENCE', service: 'tuturuuu-meet' }],
+  services: [
+    { binding: 'WORKER_SELF_REFERENCE', service: 'tuturuuu-meet' },
+    {
+      binding: 'ABUSE_GUARD',
+      service: 'tuturuuu-abuse-guard',
+      entrypoint: 'AbuseGuardEntrypoint',
+    },
+  ],
   r2_buckets: [
     { binding: 'NEXT_INC_CACHE_R2_BUCKET', bucket_name: 'tuturuuu-meet-cache' },
   ],

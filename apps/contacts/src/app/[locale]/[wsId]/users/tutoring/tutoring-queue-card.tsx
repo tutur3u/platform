@@ -248,6 +248,9 @@ export function TutoringQueueCard({
                 {t('weak_content_review_due')}
               </Badge>
             ) : null}
+            {row.original.support_group ? (
+              <Badge variant="outline">{t('queue_support_group')}</Badge>
+            ) : null}
           </div>
         ),
       },

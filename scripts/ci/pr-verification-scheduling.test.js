@@ -52,11 +52,13 @@ const heavy = {
   'sdk-package-qualification.yaml': ['qualify'],
   'shortener-cloudflare.yaml': ['native'],
   'sso-persistence-contract.yaml': ['contract'],
+  'task-board-database-contract.yaml': ['contract'],
   'time-tracker-control-contract.yaml': ['contract'],
   'topic-delivery-foundation-contract.yaml': ['contract'],
   'tsrs-shadow.yaml': ['shadow'],
   'tutoring-absence-credit-contract.yaml': ['contract'],
   'tutoring-teacher-hours-contract.yaml': ['contract'],
+  'workspace-permission-scope-contract.yaml': ['contract'],
 };
 for (const platform of ['android', 'ios', 'linux', 'macos', 'windows']) {
   heavy[`mobile-build-${platform}.yaml`] = [`build-${platform}`];

@@ -17,7 +17,14 @@
         "CRON_SECRET",
         "MICROSOFT_TENANT_ID"
       ],
-      "stagingHost": "calendar-staging.tuturuuu.com",
+      "stagingHost": "calendar.tutur3u.com",
+      "ingress": "access-custom-domain",
+      "stagingSecrets": [
+        "CF_ACCESS_TEAM_DOMAIN",
+        "CF_ACCESS_AUD",
+        "CF_ACCESS_CLIENT_ID",
+        "CF_ACCESS_CLIENT_SECRET"
+      ],
       "optionalSecretNames": ["TUTURUUU_APP_COORDINATION_SECRET"]
     },
     "mail": {
@@ -70,5 +77,21 @@
     "publicationVariable": "WAVE1_STAGING_PUBLICATION_ADMISSION",
     "maxUploadsPerArtifact": 1
   },
-  "zoneId": "618b9966111b23a37113d30865f1fbb0"
+  "zoneId": "618b9966111b23a37113d30865f1fbb0",
+  "webStaging": {
+    "sourceWorker": "tuturuuu-web-start-candidate",
+    "stagingWorker": "tuturuuu-web-wave1-staging",
+    "stagingHost": "web.tutur3u.com",
+    "zone": "tutur3u.com",
+    "ingress": "access-custom-domain",
+    "vars": {
+      "WEB_START_CANDIDATE": "staging",
+      "WEB_START_NATIVE_LEGAL": "off",
+      "WEB_START_NATIVE_SECURITY": "off",
+      "NEXT_PUBLIC_SUPABASE_URL": "https://fxefojytwimjiqxseqag.supabase.co",
+      "TUTURUUU_NOINDEX": "1",
+      "AUTH_COOKIE_PREFIX": "__Host-"
+    },
+    "secrets": ["CF_ACCESS_TEAM_DOMAIN", "CF_ACCESS_AUD"]
+  }
 }

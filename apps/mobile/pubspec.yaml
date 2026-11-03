@@ -90,6 +90,7 @@ dev_dependencies:
     sdk: flutter
   leak_tracker_flutter_testing: ^3.0.10
   mocktail: ^1.0.4
+  pointycastle: ^4.0.0
   shared_preferences_platform_interface: ^2.4.2
   very_good_analysis: ^11.0.0
 
@@ -111,6 +112,9 @@ flutter:
   uses-material-design: true
   assets:
     - path: assets/dev/mastermind/sample_snapshot.json
+      flavors:
+        - development
+    - path: assets/dev/mastermind/iris_fixture.json
       flavors:
         - development
     - assets/audio/meet-notice.wav

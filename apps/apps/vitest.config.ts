@@ -26,7 +26,7 @@ export default defineConfig({
     include: [
       'src/native/**/*.test.{ts,tsx}',
       'src/lib/**/*.test.ts',
-      'cloudflare/gateway-worker.test.ts',
+      'cloudflare/**/*.test.ts',
     ],
     maxWorkers: 1,
   },

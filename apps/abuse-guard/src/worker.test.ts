@@ -10,7 +10,7 @@ import {
 import { hashGuardValue } from '@tuturuuu/utils/abuse-guard/crypto';
 import { build } from 'esbuild';
 import { Miniflare } from 'miniflare';
-import { afterAll, beforeAll, describe, expect, it } from 'vite-plus/test';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vite-plus/test';
 
 const SECRET = 'test-secret-'.padEnd(48, 'x');
 const OPERATOR = 'test-operator-'.padEnd(48, 'y');
@@ -397,12 +397,25 @@ describe('secret configuration', () => {
 });
 
 describe('budget configuration', () => {
-  it('serves nothing when the family budgets are invalid', async () => {
+  it('logs invalid budget configuration once and serves two requests with 503', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     const mf = createRuntime({ familyBudgets: 'offline=99999999' });
-    await expect(httpClient(mf, 'replay').get('k')).rejects.toMatchObject({
-      code: 'guard_unavailable',
-    });
-    await mf.dispose();
+    try {
+      const client = httpClient(mf, 'offline');
+      await expect(client.get('first')).rejects.toMatchObject({
+        code: 'guard_unavailable',
+      });
+      await expect(client.get('second')).rejects.toMatchObject({
+        code: 'guard_unavailable',
+      });
+      expect(error).toHaveBeenCalledTimes(1);
+      expect(error).toHaveBeenCalledWith(
+        '[abuse-guard] invalid budget configuration (ABUSE_GUARD_DAILY_OP_BUDGET or ABUSE_GUARD_FAMILY_BUDGETS)'
+      );
+    } finally {
+      error.mockRestore();
+      await mf.dispose();
+    }
   });
 });
 

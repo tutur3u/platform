@@ -9,6 +9,9 @@ extension _TaskQuickEdits on _TaskBoardDetailPageViewState {
     List<TaskBoardList> lists,
   ) async {
     final cubit = context.read<TaskBoardDetailCubit>();
+    // The sheet opens above the page; a page-scoped timezone setting is
+    // passed down so it reads dates in the same zone as the board.
+    final timezone = context.read<TimezoneSettingsCubit?>();
     final assignBoard = _taskRowAssignBoard(context);
     final board = cubit.state.board;
     final canMove = lists.any((list) => list.id != task.listId);
@@ -43,16 +46,10 @@ extension _TaskQuickEdits on _TaskBoardDetailPageViewState {
       onPriority: (task, priority) => whenIdle(
         () => _changeTaskPriority(context, task, priority, announce: false),
       ),
-      onDueDate: (task) =>
-          whenIdle(() => _scheduleTask(context, task, announce: false)),
-      onClearDueDate: (task) => whenIdle(
-        () => _runTaskRowUpdate(
-          context,
-          task,
-          successMessage: null,
-          clearEndDate: true,
-        ),
-      ),
+      onPickDate: (task, field) =>
+          whenIdle(() => _pickTaskQuickDate(context, task, field)),
+      onClearDate: (task, field) =>
+          whenIdle(() => _clearTaskQuickDate(context, task, field)),
       onOpenDetails: (task) => closeThen(() => _openTaskDetails(context, task)),
       onAssignees: assignBoard == null
           ? null
@@ -76,8 +73,11 @@ extension _TaskQuickEdits on _TaskBoardDetailPageViewState {
       context: context,
       builder: (innerContext) {
         sheetContext = innerContext;
-        return BlocProvider.value(
-          value: cubit,
+        return MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: cubit),
+            if (timezone != null) BlocProvider.value(value: timezone),
+          ],
           child: _TaskQuickActionsSheet(
             task: task,
             lists: lists,

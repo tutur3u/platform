@@ -10,6 +10,7 @@ import {
   applyOneOriginNoindex,
   decideOneOriginRequest,
 } from '@tuturuuu/utils/one-origin-routing';
+import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
 import { verifyLiveSession } from '../src/features/live-assistant/token';
 import { configureMeetAbuseGuard } from '../src/runtime/abuse-guard';
 import { handleMeetRequest } from '../src/runtime/handler';
@@ -24,14 +25,18 @@ export { MeetingAIProvider } from './provider';
 export default {
   async fetch(incoming: Request, env: CloudflareEnv, ctx: ExecutionContext) {
     const decision = decideOneOriginRequest(incoming, meetOneOriginConfig(env));
-    if (decision.action !== 'serve') return decision.response;
+    if (decision.action !== 'serve')
+      return enforceStagingCookiePolicy(incoming, decision.response);
     configureMeetAbuseGuard(env);
     const response = applyMeetDocumentHeaders(
       incoming,
       await serveMeet(decision.request, env, ctx),
       env
     );
-    return decision.noindex ? applyOneOriginNoindex(response) : response;
+    return enforceStagingCookiePolicy(
+      incoming,
+      decision.noindex ? applyOneOriginNoindex(response) : response
+    );
   },
 };
 

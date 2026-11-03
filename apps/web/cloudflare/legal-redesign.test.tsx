@@ -24,6 +24,7 @@ describe('legal notice presentation', () => {
             ? {
                 published: true as const,
                 noticeDate: 'NOTICE',
+                mobilePrivacyEffectiveDate: '2026-11-05',
                 laterDate: 'LATER',
                 archiveLinks: { [locale]: 'ARCHIVE' },
               }

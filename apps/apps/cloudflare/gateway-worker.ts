@@ -3,6 +3,7 @@ import {
   stripAuthCookiePrefix,
 } from '@tuturuuu/supabase/next/common';
 import { getLaunchableAppByTitle } from '@tuturuuu/utils/launchable-apps';
+import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import {
@@ -184,7 +185,10 @@ export async function gatewayRequest(
   request: Request,
   env: GatewayEnvironment
 ) {
-  const result = await handleGatewayRequest(request, env);
+  const result = enforceStagingCookiePolicy(
+    request,
+    await handleGatewayRequest(request, env)
+  );
   return request.method === 'HEAD'
     ? new Response(null, { status: result.status, headers: result.headers })
     : result;
