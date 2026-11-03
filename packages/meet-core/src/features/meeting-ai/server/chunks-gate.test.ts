@@ -69,6 +69,7 @@ const upload = () => {
 const bind = (value?: string) =>
   mocks.cloudflare.mockResolvedValue({
     env: {
+      MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
       MEET_AI_ENABLED_WORKSPACE_IDS: value,
       MEET_AI_DISABLED: value ? undefined : 'true',
     },

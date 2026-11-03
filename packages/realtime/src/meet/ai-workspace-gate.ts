@@ -5,7 +5,7 @@
  * in MEET_AI_ENABLED_WORKSPACE_IDS and nothing else denies it. Evaluation
  * order, first match wins:
  *   1. missing workspace id                          -> deny
- *   2. workspace denied in code (Easy Center)        -> deny, regardless of env
+ *   2. protected config missing/invalid or id listed -> deny
  *   3. MEET_AI_DISABLED present and not 0/false      -> deny every workspace
  *   4. MEET_AI_DISABLED_WORKSPACE_IDS malformed      -> deny every workspace
  *      or listing the workspace                      -> deny
@@ -20,18 +20,15 @@ export const MEET_AI_WORKSPACE_ALLOWLIST_ENV = 'MEET_AI_ENABLED_WORKSPACE_IDS';
 export const MEET_AI_DISABLED_ENV = 'MEET_AI_DISABLED';
 export const MEET_AI_WORKSPACE_DENYLIST_ENV = 'MEET_AI_DISABLED_WORKSPACE_IDS';
 
-/** Easy Center is never a Meet AI workspace. Checked before any env control. */
-export const EASY_CENTER_WORKSPACE_ID = '42529372-c669-4833-bb32-2cab1f4ffd83';
-export const MEET_AI_CODE_DENIED_WORKSPACE_IDS: ReadonlySet<string> = new Set([
-  EASY_CENTER_WORKSPACE_ID,
-]);
+export const MEET_AI_PROTECTED_WORKSPACES_ENV =
+  'MEET_AI_PROTECTED_WORKSPACE_IDS';
 
 export type MeetAiGateEnv = object | null | undefined;
 
 const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/;
 
 function binding(env: MeetAiGateEnv, name: string): unknown {
-  return env && name in env ? Reflect.get(env, name) : undefined;
+  return env && Object.hasOwn(env, name) ? Reflect.get(env, name) : undefined;
 }
 
 function workspaceIds(raw: string) {
@@ -81,21 +78,33 @@ export function meetAiEnabledWorkspaceIds(env: MeetAiGateEnv) {
   return new Set(ids);
 }
 
-export function isMeetAiEnabledForWorkspace(
+/** Hard denies apply to Meet and Parley; only pilot lists may be bypassed. */
+export function isMeetAiHardDenied(
   wsId: string | null | undefined,
   env: MeetAiGateEnv
 ) {
   const id = typeof wsId === 'string' ? wsId.trim().toLowerCase() : '';
-  if (!id) return false;
-  if (MEET_AI_CODE_DENIED_WORKSPACE_IDS.has(id)) return false;
-
+  if (!UUID.test(id)) return true;
+  const protectedRaw = binding(env, MEET_AI_PROTECTED_WORKSPACES_ENV);
+  if (typeof protectedRaw !== 'string') return true;
+  const protectedIds = workspaceIds(protectedRaw);
+  if (!protectedIds.length || protectedIds.some((entry) => !UUID.test(entry)))
+    return true;
+  if (protectedIds.includes(id)) return true;
   const disabled = binding(env, MEET_AI_DISABLED_ENV);
-  if (
+  return (
     disabled !== undefined &&
     (typeof disabled !== 'string' ||
       !['0', 'false'].includes(disabled.trim().toLowerCase()))
-  )
-    return false;
+  );
+}
+
+export function isMeetAiEnabledForWorkspace(
+  wsId: string | null | undefined,
+  env: MeetAiGateEnv
+) {
+  if (isMeetAiHardDenied(wsId, env)) return false;
+  const id = typeof wsId === 'string' ? wsId.trim().toLowerCase() : '';
 
   const denied = binding(env, MEET_AI_WORKSPACE_DENYLIST_ENV);
   if (denied !== undefined) {

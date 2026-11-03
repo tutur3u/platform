@@ -18,7 +18,10 @@ const guest = meetRealtimeTokenPayloadSchema.parse({
   ...base,
   role: 'speaker',
 });
-const listed = { MEET_AI_ENABLED_WORKSPACE_IDS: ` ${wsId.toUpperCase()} ` };
+const listed = {
+  MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+  MEET_AI_ENABLED_WORKSPACE_IDS: ` ${wsId.toUpperCase()} `,
+};
 const status = (result: unknown) =>
   result instanceof Response ? result.status : 'settings';
 
@@ -28,10 +31,22 @@ describe('room-state settings write (authoritative note-sharing gate)', () => {
       { MEET_AI_DISABLED: 'true' },
       { MEET_AI_DISABLED: 'garbage' },
       { MEET_AI_DISABLED_WORKSPACE_IDS: wsId },
-      { MEET_AI_ENABLED_WORKSPACE_IDS: 'x' },
-      { MEET_AI_ENABLED_WORKSPACE_IDS: `x, ${wsId}` },
-      { MEET_AI_ENABLED_WORKSPACE_IDS: '' },
-      { MEET_AI_ENABLED_WORKSPACE_IDS: '*' },
+      {
+        MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+        MEET_AI_ENABLED_WORKSPACE_IDS: 'x',
+      },
+      {
+        MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+        MEET_AI_ENABLED_WORKSPACE_IDS: `x, ${wsId}`,
+      },
+      {
+        MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+        MEET_AI_ENABLED_WORKSPACE_IDS: '',
+      },
+      {
+        MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+        MEET_AI_ENABLED_WORKSPACE_IDS: '*',
+      },
       {},
       undefined,
     ]) {
@@ -101,8 +116,10 @@ describe('room-state settings write (authoritative note-sharing gate)', () => {
     expect(roomCommand(message, host, undefined).notesEligible).toBe(false);
     expect(roomCommand(message, host, {}).notesEligible).toBe(false);
     expect(
-      roomCommand(message, host, { MEET_AI_ENABLED_WORKSPACE_IDS: 'x' })
-        .notesEligible
+      roomCommand(message, host, {
+        MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+        MEET_AI_ENABLED_WORKSPACE_IDS: 'x',
+      }).notesEligible
     ).toBe(false);
   });
 });

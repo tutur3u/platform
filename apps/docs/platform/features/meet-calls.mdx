@@ -548,9 +548,11 @@ do not grant permission to transfer a Gemini key to a new destination.
 Product decision (3 November 2026): Meet AI is **default-off** and
 **allowlist-only**. A workspace gets Meet AI only when its id is explicitly
 listed in `MEET_AI_ENABLED_WORKSPACE_IDS` and no other control denies it; a
-missing or empty allowlist denies every workspace. Easy Center
-(`42529372-c669-4833-bb32-2cab1f4ffd83`) is denied in code before any env
-control is read, so no configuration can enable it. This supersedes the
+missing or empty allowlist denies every workspace. Protected workspaces are configured
+through the server-only `MEET_AI_PROTECTED_WORKSPACE_IDS` secret. Code subtracts
+protected ids before any pilot control; missing, empty or malformed protection
+configuration denies every workspace. Never store real protected ids in source.
+This supersedes the
 2 November default-allow decision (#7410). Credit admission, authentication,
 workspace membership, host permissions and billing are unchanged and still
 apply to allowed workspaces.
@@ -571,7 +573,8 @@ database write, credit reservation or provider call. Scope:
 
 Never gated, so existing sessions can always end and settle: Live stop, cleanup
 and billing settlement. Reads (state, transcripts, notes, assistant GETs) keep
-their existing participant rules. Parley scenario sessions are outside the gate.
+their existing participant rules. Parley scenario sessions skip only the pilot allowlist and denylist. They obey
+the kill switch and protected-workspace deny, including missing configuration.
 
 Meet production (`meet.tuturuuu.com`) is the Cloudflare Worker `tuturuuu-meet`,
 not a Vercel deployment. Configure the following **server-only** controls on
@@ -582,7 +585,7 @@ Checks run in this order; the first match wins:
 | Order | Control | Behavior |
 | --- | --- | --- |
 | 1 | Workspace id | Missing or blank denies. |
-| 2 | Code denylist | Easy Center is denied regardless of env. |
+| 2 | `MEET_AI_PROTECTED_WORKSPACE_IDS` | Required nonempty comma/whitespace-separated UUID secret. Listed ids are always denied. Missing, blank, malformed or non-string configuration denies every workspace, including Parley. |
 | 3 | `MEET_AI_DISABLED` (kill switch) | Present and anything other than `0`/`false` (trimmed, case-insensitive) denies every workspace, including blank and non-string values. Unset, `0` or `false` moves on. |
 | 4 | `MEET_AI_DISABLED_WORKSPACE_IDS` | Optional comma/whitespace-separated UUID deny list, case-insensitive. A listed workspace is denied; any malformed entry (including `*`) or a non-string value denies every workspace. Unset or blank moves on. |
 | 5 | `MEET_AI_ENABLED_WORKSPACE_IDS` | Required comma/whitespace-separated UUID allowlist, case-insensitive. Missing, blank, non-string, `*` or any non-UUID entry denies every workspace and is logged once per isolate (`[meet-ai-gate]`, no ids). `*` is **not** an allow-all value; an allow-all switch would need its own, separately reviewed opt-in. |
@@ -596,12 +599,26 @@ deployment with no controls denies every workspace. Denials retain existing
 HTTP 403/error codes and report "Meet AI is temporarily unavailable". Stop,
 cleanup and billing settlement remain available while disabled.
 
+Set `MEET_AI_PROTECTED_WORKSPACE_IDS` on every gate runtime (including Parley)
+before enabling AI; retain every protected workspace in that secret. Protected ids are always
+subtracted from the effective allowlist.
+
+Post-deploy realtime checks default to asserting 403 for enabling live and
+post-call note sharing, and success for disabling both. Only set
+`MEET_CHECK_NOTES_CANARY_WS_ID` to exercise enable paths: use a dedicated fake
+UUID with no database row, allowlisted on the realtime Worker only, never on
+Meet. Never allowlist a real workspace to satisfy a deploy check. An empty
+`MEET_AI_ENABLED_WORKSPACE_IDS` secret is the expected production default.
+
 For Rex: to enable Meet AI for a workspace, add its id to
 `MEET_AI_ENABLED_WORKSPACE_IDS` on **all three surfaces**. To stop AI, set
 `MEET_AI_DISABLED=true` on all three surfaces. To exclude specific workspaces,
 set the same `MEET_AI_DISABLED_WORKSPACE_IDS` list on each. Removing or blanking
-the allowlist turns Meet AI off; it never widens access. No deployment
-configuration or secrets are changed by this decision.
+the allowlist turns Meet AI off; it never widens access. Containment pins `MEET_AI_DISABLED="true"` and an empty allowlist in
+both Meet and realtime deploy configs. `scripts/check-meet-ai-containment.js`
+enforces these pins in CI; lifting containment requires reviewing its single
+`CONTAINMENT_IN_FORCE` flag and the corresponding config changes. Rex must read
+back vars after every Meet deploy. Real secret values are provisioned separately.
 
 The panel reads `available` from the state response; unavailable workspaces keep
 the temporary-unavailability message and hide Start, Finish and Retry controls.

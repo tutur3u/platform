@@ -15,12 +15,13 @@ import { isMeetAiEnabledOnWeb } from './meet-ai-gate';
 const ENV = 'MEET_AI_ENABLED_WORKSPACE_IDS';
 const WS = '11111111-1111-4111-8111-111111111111';
 const OTHER = '22222222-2222-4222-8222-222222222222';
-const EASY_CENTER = '42529372-c669-4833-bb32-2cab1f4ffd83';
+const EASY_CENTER = '00000000-0000-4000-8000-0000000000ee';
 
 describe(isMeetAiEnabledOnWeb, () => {
   beforeEach(() => {
     meetAiWorkerEnv.mockResolvedValue(undefined);
     vi.stubEnv(ENV, '');
+    vi.stubEnv('MEET_AI_PROTECTED_WORKSPACE_IDS', EASY_CENTER);
     vi.stubEnv('MEET_AI_DISABLED', undefined);
     vi.stubEnv('MEET_AI_DISABLED_WORKSPACE_IDS', undefined);
     vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -52,7 +53,7 @@ describe(isMeetAiEnabledOnWeb, () => {
     await expect(isMeetAiEnabledOnWeb(WS)).resolves.toBe(false);
   });
 
-  it('denies Easy Center in code even when it is allowlisted', async () => {
+  it('denies Easy Center by the protected secret even when it is allowlisted', async () => {
     vi.stubEnv(ENV, `${EASY_CENTER},${WS}`);
     vi.stubEnv('MEET_AI_DISABLED', 'false');
     await expect(isMeetAiEnabledOnWeb(EASY_CENTER)).resolves.toBe(false);
