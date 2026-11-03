@@ -9,6 +9,7 @@ const mock = vi.hoisted(() => ({
   form: vi.fn(),
   run: vi.fn(),
 }));
+vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({
   connection: async () => {},
   after: mock.after,
