@@ -1,3 +1,5 @@
+import { inspect } from 'node:util';
+import { APICallError, NoObjectGeneratedError } from 'ai';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   MAX_INLINE_TRANSCRIPTION_AUDIO_BYTES,
@@ -36,7 +38,8 @@ vi.mock('@ai-sdk/google', () => ({
   google: (...args: Parameters<typeof mocks.google>) => mocks.google(...args),
 }));
 
-vi.mock('ai', () => ({
+vi.mock('ai', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('ai')>()),
   generateObject: (...args: Parameters<typeof mocks.generateObject>) =>
     mocks.generateObject(...args),
 }));
@@ -339,6 +342,64 @@ describe('meeting transcription route input bounds', () => {
         })
       );
       expect(mocks.generateObject).toHaveBeenCalledOnce();
+    }
+  );
+
+  it.each(['api-call', 'no-object'])(
+    'redacts provider content from transcription logs (%s)',
+    async (kind) => {
+      const canary = 'TRANSCRIPTION_PRIVATE_CANARY';
+      const providerError = new APICallError({
+        message: canary,
+        url: `https://example.invalid/${canary}`,
+        requestBodyValues: { audio: canary },
+        responseBody: canary,
+        statusCode: 429,
+        cause: new Error(canary),
+      });
+      const error =
+        kind === 'api-call'
+          ? providerError
+          : new NoObjectGeneratedError({
+              message: canary,
+              text: canary,
+              cause: providerError,
+              response: {},
+              usage: {
+                inputTokens: 0,
+                outputTokens: 0,
+                totalTokens: 0,
+                inputTokenDetails: {
+                  noCacheTokens: 0,
+                  cacheReadTokens: 0,
+                  cacheWriteTokens: 0,
+                },
+                outputTokenDetails: { textTokens: 0, reasoningTokens: 0 },
+              },
+              finishReason: 'error',
+            });
+      const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        mocks.generateObject.mockRejectedValue(error);
+        const { request } = createRequest({ audio: createAudioFile().file });
+        const response = await post()(request);
+
+        expect(response.status).toBe(500);
+        expect(await response.text()).toBe('Internal server error');
+        expect(mocks.generateObject).toHaveBeenCalledOnce();
+        expect(log).toHaveBeenCalledOnce();
+        for (const args of log.mock.calls) {
+          for (const argument of args) {
+            expect(inspect(argument, { depth: null })).not.toContain(canary);
+          }
+        }
+        expect(log).toHaveBeenCalledWith('Transcription error', {
+          reason: kind === 'api-call' ? 'quota_exceeded' : 'runtime_error',
+          providerStatus: kind === 'api-call' ? 429 : null,
+        });
+      } finally {
+        log.mockRestore();
+      }
     }
   );
 
