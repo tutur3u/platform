@@ -1,3 +1,4 @@
+import { countCurrentCycleTasks } from '@tuturuuu/tasks-ui/tu-do/cycles/task-cycles-page-model';
 import {
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_NAME_LENGTH,
@@ -39,16 +40,20 @@ type CycleRow = {
   start_date: string | null;
   end_date: string | null;
   created_at: string;
+  board_id?: string | null;
+  deleted?: boolean | null;
   creator: {
     id: string;
     display_name: string | null;
     avatar_url: string | null;
   } | null;
-  task_cycle_tasks: { task_id: string }[] | null;
+  task_cycle_tasks: { task_id: string; created_at: string | null }[] | null;
 };
 
-const serializeCycles = (rows: CycleRow[]) =>
-  rows.map((cycle) => ({
+// A task linked to several workspace cycles counts only in its newest one.
+const serializeCycles = (rows: CycleRow[]) => {
+  const counts = countCurrentCycleTasks(rows);
+  return rows.map((cycle) => ({
     id: cycle.id,
     name: cycle.name,
     description: cycle.description,
@@ -57,8 +62,9 @@ const serializeCycles = (rows: CycleRow[]) =>
     end_date: cycle.end_date,
     created_at: cycle.created_at,
     creator: cycle.creator,
-    tasksCount: cycle.task_cycle_tasks?.length ?? 0,
+    tasksCount: counts.get(cycle.id) ?? 0,
   }));
+};
 
 export async function GET(
   _request: NextRequest,
@@ -104,7 +110,8 @@ export async function GET(
             avatar_url
           ),
           task_cycle_tasks(
-            task_id
+            task_id,
+            created_at
           )
         `
       )

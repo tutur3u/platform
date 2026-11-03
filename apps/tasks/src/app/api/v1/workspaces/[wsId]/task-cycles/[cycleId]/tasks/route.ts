@@ -6,12 +6,14 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
   cyclePlanningTaskSelect,
+  isCurrentlyInCycle,
   type RawPlanningTask,
   toCyclePlanningTask,
 } from '../../_cycle-planning-task';
 import {
   assertCycleInWorkspace,
   assertTaskInWorkspace,
+  boardSprintRefused,
   CYCLE_PLANNABLE_LIST_STATUSES,
   MAX_CYCLE_TASKS,
   resolveCycleWorkspaceAccess,
@@ -53,18 +55,30 @@ function failed(message: string, error: unknown) {
   return NextResponse.json({ error: message }, { status: 500 });
 }
 
+// The message assign_task_cycle (and the workspace guard trigger) raise with
+// 42501. Any other 42501, such as a missing EXECUTE grant after a bad deploy
+// or rollback, is a server fault, not a missing task.
+const WORKSPACE_MISMATCH_MESSAGE =
+  'Task and cycle must belong to the same workspace';
+
 /** Maps assign_task_cycle SQLSTATEs to responses (see its migration). */
-function assignFailed(error: { code?: string }) {
-  // 42501 cross-workspace, P0002 task or cycle gone: both were checked above,
-  // so they only happen when the row changed in between.
-  if (error.code === '42501' || error.code === 'P0002') {
+function assignFailed(error: { code?: string; message?: string }) {
+  // 42501 cross-workspace, P0002 task or cycle gone or deleted: all were
+  // checked above, so they only happen when a row changed in between.
+  if (
+    (error.code === '42501' && error.message === WORKSPACE_MISMATCH_MESSAGE) ||
+    error.code === 'P0002'
+  ) {
     return NextResponse.json(
       { error: 'Task or cycle not found' },
       { status: 404 }
     );
   }
+  // 22023: the cycle is a board sprint (checked above as well).
+  if (error.code === '22023') return boardSprintRefused();
   // 55P03 lock_not_available: another assign of this task held its row lock.
-  if (error.code === '55P03') {
+  // 40P01 deadlock_detected: the transaction was rolled back; retrying is safe.
+  if (error.code === '55P03' || error.code === '40P01') {
     return NextResponse.json(
       { error: 'Task is being moved by another request; retry' },
       { status: 409 }
@@ -88,10 +102,15 @@ export const GET = withSessionAuth<RouteParams>(
       );
       if (invalid) return invalid;
 
+      // in_cycle narrows the fetch to tasks linked to this cycle; cycle_links
+      // keeps only links to live workspace cycles, so board-sprint history
+      // rows and deleted cycles never decide where a task is listed.
       const { data, error } = await sbAdmin
         .from('tasks')
-        .select(cyclePlanningTaskSelect('inner'))
-        .eq('cycle_links.cycle_id', cycleId)
+        .select(cyclePlanningTaskSelect('cycle'))
+        .eq('in_cycle.cycle_id', cycleId)
+        .is('cycle_links.cycle.board_id', null)
+        .not('cycle_links.cycle.deleted', 'is', true)
         .eq('list.board.ws_id', access.wsId)
         .in('list.status', [...CYCLE_PLANNABLE_LIST_STATUSES])
         .is('deleted_at', null)
@@ -100,10 +119,11 @@ export const GET = withSessionAuth<RouteParams>(
 
       if (error) return failed('Failed to fetch cycle tasks', error);
 
+      // A task with older duplicate links is listed only in its newest cycle.
       return NextResponse.json({
-        tasks: ((data ?? []) as unknown as RawPlanningTask[]).map(
-          toCyclePlanningTask
-        ),
+        tasks: ((data ?? []) as unknown as RawPlanningTask[])
+          .filter((task) => isCurrentlyInCycle(task, cycleId))
+          .map(toCyclePlanningTask),
       });
     } catch (error) {
       return failed('Internal server error', error);
@@ -130,7 +150,8 @@ export const POST = withSessionAuth<RouteParams>(
         (await assertTaskInWorkspace(sbAdmin, access.wsId, body.taskId));
       if (invalid) return invalid;
 
-      // One transaction: lock the task, check workspaces, replace its links.
+      // One transaction: lock the task, check the cycle and both workspaces,
+      // replace its workspace-cycle links. Board-sprint rows are untouched.
       const { error } = await sbAdmin.rpc('assign_task_cycle', {
         p_task_id: body.taskId,
         p_cycle_id: cycleId,

@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
   cyclePlanningTaskSelect,
+  isInNoWorkspaceCycle,
   type RawPlanningTask,
   toCyclePlanningTask,
 } from '../_cycle-planning-task';
@@ -23,7 +24,11 @@ const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(MAX_CYCLE_TASKS).optional(),
 });
 
-/** Lists the workspace backlog: open tasks that are in no cycle. */
+/**
+ * Lists the workspace backlog: open tasks in no live workspace cycle. Board
+ * sprint rows (past sprints' history and the open sprint) and links to
+ * deleted cycles do not take a task out of the backlog.
+ */
 export const GET = withSessionAuth<RouteParams>(
   async (request: NextRequest, { supabase, user }, { wsId }) => {
     try {
@@ -43,7 +48,9 @@ export const GET = withSessionAuth<RouteParams>(
       const sbAdmin = await createAdminClient();
       const { data, error } = await sbAdmin
         .from('tasks')
-        .select(cyclePlanningTaskSelect('left'))
+        .select(cyclePlanningTaskSelect('backlog'))
+        .is('cycle_links.cycle.board_id', null)
+        .not('cycle_links.cycle.deleted', 'is', true)
         .eq('list.board.ws_id', access.wsId)
         .is('list.board.deleted_at', null)
         .is('list.board.archived_at', null)
@@ -64,9 +71,9 @@ export const GET = withSessionAuth<RouteParams>(
       }
 
       return NextResponse.json({
-        tasks: ((data ?? []) as unknown as RawPlanningTask[]).map(
-          toCyclePlanningTask
-        ),
+        tasks: ((data ?? []) as unknown as RawPlanningTask[])
+          .filter(isInNoWorkspaceCycle)
+          .map(toCyclePlanningTask),
       });
     } catch (error) {
       console.error(
