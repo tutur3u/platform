@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   credits: vi.fn(),
   generate: vi.fn(),
   speaker: vi.fn(),
+  write: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 // Limiter behavior is covered by usage-limit and chunks-limit tests.
@@ -84,6 +85,21 @@ describe('chunk upload workspace gate (real access path)', () => {
       wsId === 'personal' ? listed : wsId
     );
     mocks.membership.mockResolvedValue({ ok: true });
+    const query = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { id: meetingId, creator_id: 'actor', ws_id: unlisted },
+        error: null,
+      }),
+      insert: mocks.write,
+      update: mocks.write,
+      upsert: mocks.write,
+      delete: mocks.write,
+    };
+    query.select.mockReturnValue(query);
+    query.eq.mockReturnValue(query);
+    mocks.from.mockReturnValue(query);
   });
 
   it.each([
@@ -101,14 +117,15 @@ describe('chunk upload workspace gate (real access path)', () => {
       expect(await response.json()).toMatchObject({
         code: 'MEET_AI_WORKSPACE_NOT_ENABLED',
       });
-      expect(mocks.from).not.toHaveBeenCalled();
+      expect(mocks.from).toHaveBeenCalledExactlyOnceWith('workspace_meetings');
+      expect(mocks.write).not.toHaveBeenCalled();
       expect(mocks.credits).not.toHaveBeenCalled();
       expect(mocks.generate).not.toHaveBeenCalled();
       expect(mocks.speaker).not.toHaveBeenCalled();
     }
   );
 
-  it('admits a listed workspace past the gate, including a personal lookup', async () => {
+  it('fails closed on meeting lookup failure, including a personal lookup', async () => {
     bind(` ${listed} , ${listed}`);
     const query = {
       select: vi.fn(),
@@ -124,7 +141,7 @@ describe('chunk upload workspace gate (real access path)', () => {
       const response = await meetAiResponse(() =>
         transcribeMeetChunk(upload(), params(wsId))
       );
-      // Past the gate the request proceeds to the meeting lookup.
+      // A failed lookup never reaches policy admission or provider work.
       expect(response.status).toBe(500);
       expect(mocks.from).toHaveBeenCalledWith('workspace_meetings');
     }

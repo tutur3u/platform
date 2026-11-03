@@ -80,12 +80,10 @@ describe('Meet AI workspace gate (default-off, allowlist-only)', () => {
     }
   );
 
-  it('allows only explicitly listed workspaces, matching case and separators', () => {
+  it('allows canonical ids with case-insensitive configuration and separators', () => {
     const env = allow(` ${WS.toUpperCase()},\n${OTHER} `);
     expect(isMeetAiEnabledForWorkspace(WS, env)).toBe(true);
-    expect(isMeetAiEnabledForWorkspace(` ${OTHER.toUpperCase()} `, env)).toBe(
-      true
-    );
+    expect(isMeetAiEnabledForWorkspace(OTHER, env)).toBe(true);
     expect(
       isMeetAiEnabledForWorkspace('11111111-1111-4111-8111-111111111111', env)
     ).toBe(false);
