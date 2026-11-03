@@ -1,6 +1,8 @@
 import type { RunOutcome } from '../ledger';
 
 export interface ProcessorEnv {
+  /** 'off', 'dry-run' (default for any other value) or 'delete'. */
+  AI_STUDIO_RETENTION_MODE?: string;
   CRON_SECRET_INVENTORY: string;
   INVENTORY_ORIGIN: string;
   SUPABASE_SECRET_KEY: string;
