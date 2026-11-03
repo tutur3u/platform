@@ -53,6 +53,26 @@ function failed(message: string, error: unknown) {
   return NextResponse.json({ error: message }, { status: 500 });
 }
 
+/** Maps assign_task_cycle SQLSTATEs to responses (see its migration). */
+function assignFailed(error: { code?: string }) {
+  // 42501 cross-workspace, P0002 task or cycle gone: both were checked above,
+  // so they only happen when the row changed in between.
+  if (error.code === '42501' || error.code === 'P0002') {
+    return NextResponse.json(
+      { error: 'Task or cycle not found' },
+      { status: 404 }
+    );
+  }
+  // 55P03 lock_not_available: another assign of this task held its row lock.
+  if (error.code === '55P03') {
+    return NextResponse.json(
+      { error: 'Task is being moved by another request; retry' },
+      { status: 409 }
+    );
+  }
+  return failed('Failed to assign task to cycle', error);
+}
+
 /** Lists the tasks in this cycle as planning rows. */
 export const GET = withSessionAuth<RouteParams>(
   async (_request: NextRequest, { supabase, user }, { wsId, cycleId }) => {
@@ -110,14 +130,13 @@ export const POST = withSessionAuth<RouteParams>(
         (await assertTaskInWorkspace(sbAdmin, access.wsId, body.taskId));
       if (invalid) return invalid;
 
-      const { error } = await sbAdmin
-        .from('task_cycle_tasks')
-        .upsert(
-          { task_id: body.taskId, cycle_id: cycleId },
-          { onConflict: 'task_id' }
-        );
+      // One transaction: lock the task, check workspaces, replace its links.
+      const { error } = await sbAdmin.rpc('assign_task_cycle', {
+        p_task_id: body.taskId,
+        p_cycle_id: cycleId,
+      });
 
-      if (error) return failed('Failed to assign task to cycle', error);
+      if (error) return assignFailed(error);
 
       return NextResponse.json({ taskId: body.taskId, cycleId });
     } catch (error) {

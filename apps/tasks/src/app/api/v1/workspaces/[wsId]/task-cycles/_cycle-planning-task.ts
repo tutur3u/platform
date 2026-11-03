@@ -34,7 +34,7 @@ export function cyclePlanningTaskSelect(cycleJoin: 'inner' | 'left') {
       archived,
       board:workspace_boards!inner(id, ws_id, ticket_prefix, deleted_at, archived_at)
     ),
-    cycle_links:task_cycle_tasks!${cycleJoin}(cycle_id),
+    cycle_links:task_cycle_tasks!${cycleJoin}(cycle_id, created_at),
     assignees:task_assignees(user:users(id, display_name, avatar_url)),
     projects:task_project_tasks(project:task_projects(id, name)),
     labels:task_labels(label:workspace_task_labels(id, name))
@@ -52,7 +52,7 @@ export interface RawPlanningTask {
     status: Maybe<string>;
     board: Maybe<{ id: string; ticket_prefix: Maybe<string> }>;
   }>;
-  cycle_links: Maybe<{ cycle_id: string }[]>;
+  cycle_links: Maybe<{ cycle_id: string; created_at?: Maybe<string> }[]>;
   assignees: Maybe<
     {
       user: Maybe<{
@@ -70,6 +70,32 @@ function present<T>(value: T | null | undefined): value is T {
   return value != null;
 }
 
+type CycleLink = NonNullable<RawPlanningTask['cycle_links']>[number];
+
+function linkTime(link: CycleLink) {
+  const time = link.created_at ? Date.parse(link.created_at) : Number.NaN;
+  return Number.isNaN(time) ? Number.NEGATIVE_INFINITY : time;
+}
+
+/**
+ * Links written before one-cycle-per-task may leave a task in several cycles,
+ * returned in no particular order. Pick one deterministically: the newest
+ * created_at (missing last), then the lowest cycle_id (the table has no id).
+ */
+export function currentCycleLink(links: Maybe<CycleLink[]>) {
+  let current: CycleLink | null = null;
+  for (const link of links ?? []) {
+    if (
+      !current ||
+      linkTime(link) > linkTime(current) ||
+      (linkTime(link) === linkTime(current) && link.cycle_id < current.cycle_id)
+    ) {
+      current = link;
+    }
+  }
+  return current;
+}
+
 export function toCyclePlanningTask(
   raw: RawPlanningTask
 ): CyclePlanningTaskRow {
@@ -81,7 +107,7 @@ export function toCyclePlanningTask(
     priority: raw.priority ?? null,
     status: raw.list?.status ?? 'not_started',
     board_id: raw.list?.board?.id ?? '',
-    cycle_id: raw.cycle_links?.[0]?.cycle_id ?? null,
+    cycle_id: currentCycleLink(raw.cycle_links)?.cycle_id ?? null,
     assignees: (raw.assignees ?? [])
       .map((entry) => entry.user)
       .filter(present)

@@ -982,16 +982,18 @@ CREATE TABLE public.task_cycle_tasks (
 |------|-------------------------|
 | Same workspace | A task can join a cycle only when its board's workspace equals the cycle's workspace. The `enforce_task_cycle_task_workspace` trigger rejects other links for every role, including service-role writes. The API validates the cycle and task server-side first and returns `404`. |
 | Fixed workspace | A cycle's `ws_id` cannot change once created (`prevent_task_cycle_workspace_change`). |
-| One cycle per task | A task belongs to at most one cycle (unique index on `task_cycle_tasks.task_id`). Assigning a task to another cycle moves it. |
+| One cycle per task | Assigning goes through `public.assign_task_cycle(task, cycle)`, which locks the task row, checks both workspaces and replaces the task's existing links with one, so assigning a task to another cycle moves it. There is no unique index on `task_cycle_tasks.task_id`. Concurrent assigns of one task wait for each other; one that waits longer than 5 s gets a retryable `409`. |
 | Backlog | Open tasks with no cycle: list status `not_started`, `active` or `review`; task not deleted; list and board not deleted or archived. Backlog is derived, not stored. |
 | Excluded | Tasks in `documents` lists cannot join a cycle. |
 | Row cap | The cycle task list and the backlog each return at most 500 tasks, newest first (`?limit=` can lower the backlog cap). There is no pagination yet; larger cycles or backlogs are truncated until pagination ships as a follow-up. |
 | Access | Any workspace member can read cycle tasks and the backlog. Assigning and removing require `manage_projects`. `task_cycles` and `tasks` are not granted to the Data API `authenticated` role, so all reads and writes go through the Tasks API. |
 
 Exceptions: rows that existed before the workspace guard are not rewritten.
-Audit them with `apps/database/verification/task-cycle-cross-workspace-links.sql`
-and `apps/database/verification/task-cycle-duplicate-links.sql`; cleanup needs
-release-authority approval.
+Audit them with `apps/database/verification/task-cycle-cross-workspace-links.sql`;
+cleanup needs release-authority approval. Tasks linked to several cycles before
+one-cycle-per-task are not cleaned up either: reads report the newest link
+(latest `created_at`, then the lowest `cycle_id`), and the task's next assign
+replaces all of its links.
 
 Regression coverage: `apps/database/supabase/tests/task-cycle-workspace-guard.sql`,
 `apps/database/supabase/tests/task-cycle-one-per-task.sql`, and the route tests

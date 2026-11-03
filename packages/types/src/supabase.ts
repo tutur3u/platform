@@ -49295,6 +49295,10 @@ export type Database = {
         Args: { p_days_threshold?: number };
         Returns: number;
       };
+      assign_task_cycle: {
+        Args: { p_cycle_id: string; p_task_id: string };
+        Returns: undefined;
+      };
       atomic_sync_token_operation: {
         Args: {
           p_calendar_id?: string;
