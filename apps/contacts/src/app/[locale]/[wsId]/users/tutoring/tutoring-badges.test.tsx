@@ -1,3 +1,4 @@
+import type { TutoringAttendanceStatus, TutoringReasonType } from '@tuturuuu/internal-api';
 import { render, renderHook, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -30,8 +31,10 @@ describe('tutoring labels', () => {
   });
 });
 
+type QueueReasonType = TutoringReasonType | 'BOTH';
+
 describe('tutoring badges', () => {
-  it.each([
+  it.each<[QueueReasonType, string, string]>([
     ['ABSENT_RECOVERY', 'absent_recovery', 'text-dynamic-orange'],
     ['WEAK_SUPPORT', 'weak_support', 'text-dynamic-sky'],
     ['BOTH', 'both_reason', 'text-dynamic-purple'],
@@ -42,7 +45,7 @@ describe('tutoring badges', () => {
     expect(screen.getByText(label).className).toContain(tone);
   });
 
-  it.each([
+  it.each<[TutoringAttendanceStatus, string, string]>([
     ['DONE', 'status_done', 'text-dynamic-green'],
     ['NO_SHOW', 'status_no_show', 'text-dynamic-red'],
     ['CANCELLED', 'status_cancelled', 'text-dynamic-gray'],
