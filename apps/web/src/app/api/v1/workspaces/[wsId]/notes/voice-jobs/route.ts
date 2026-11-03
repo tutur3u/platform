@@ -1,6 +1,7 @@
 import { after, connection, NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { notesVoiceWorkspace } from '@/lib/notes-voice/access';
+import { assertNotesVoiceAiEnabled } from '@/lib/notes-voice/ai-gate';
 import {
   notesVoiceInputHash,
   validateNotesVoiceAudio,
@@ -26,6 +27,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
         auth.user,
         params.wsId
       );
+      assertNotesVoiceAiEnabled(wsId);
       const form = await readVoiceForm(request);
       const parsed = voiceRequestSchema.safeParse({
         requestId: form.get('requestId'),
@@ -49,9 +51,10 @@ export const POST = withSessionAuth<{ wsId: string }>(
       );
       if (reservation.start)
         after(() =>
-          runVoiceJob(owner, reservation.job, audio, () =>
-            notesVoiceWorkspace(auth.supabase, auth.user, wsId)
-          )
+          runVoiceJob(owner, reservation.job, audio, async () => {
+            await notesVoiceWorkspace(auth.supabase, auth.user, wsId);
+            assertNotesVoiceAiEnabled(wsId);
+          })
         );
       return NextResponse.json(publicVoiceJob(reservation.job), {
         status: reservation.job.status === 'completed' ? 200 : 202,

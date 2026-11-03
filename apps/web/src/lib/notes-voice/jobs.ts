@@ -168,6 +168,7 @@ export async function runVoiceJob(
         'pricing_unavailable',
         'workspace_denied',
         'membership_unavailable',
+        'notes_voice_ai_disabled',
       ].includes(error.code);
     try {
       await updateVoiceJob(owner, job, {
