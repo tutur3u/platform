@@ -1,3 +1,4 @@
+import { evaluateFlags, registry } from '@tuturuuu/feature-flags';
 import {
   parseTutoringPolicy,
   readTutoringPolicyConfigRows,
@@ -41,9 +42,13 @@ export async function GET(request: Request, { params }: Params) {
     );
   }
 
+  const exclusionUpgrade = evaluateFlags(registry, {
+    wsId: normalizedWsId,
+  }).tutoring_exclusion_upgrade;
   return NextResponse.json(
     {
-      policy: readTutoringPolicyConfigRows(data ?? []),
+      policy: readTutoringPolicyConfigRows(data ?? [], exclusionUpgrade),
+      exclusionUpgrade,
       isConfigured: Boolean(
         data?.some((row) => row.id === TUTORING_POLICY_CONFIG_ID)
       ),
@@ -72,7 +77,10 @@ export async function PUT(request: Request, { params }: Params) {
   } catch {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
-  const policy = parseTutoringPolicy(body);
+  const policy = parseTutoringPolicy(
+    body,
+    evaluateFlags(registry, { wsId: normalizedWsId }).tutoring_exclusion_upgrade
+  );
   if (!policy)
     return NextResponse.json(
       { message: 'Invalid tutoring policy' },

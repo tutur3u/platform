@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateTutoringPolicy } from '@tuturuuu/internal-api/tutoring';
 import {
   EASY_CENTER_TUTORING_POLICY,
+  getEasyCenterTutoringPolicy,
   parseTutoringPolicy,
   STANDARD_TUTORING_POLICY,
   type TutoringPolicy,
@@ -29,6 +30,7 @@ import { TutoringWeakRules } from './tutoring-weak-rules';
 
 interface Props {
   canConfigure: boolean;
+  exclusionUpgrade?: boolean;
   groups: UserGroup[];
   policy: TutoringPolicy;
   wsId: string;
@@ -46,6 +48,7 @@ const NUMERIC_FIELDS = [
 
 export function TutoringPolicyCard({
   canConfigure,
+  exclusionUpgrade = false,
   groups,
   policy,
   wsId,
@@ -171,7 +174,7 @@ export function TutoringPolicyCard({
             disabled={!canConfigure}
             onClick={() =>
               setDraft({
-                ...EASY_CENTER_TUTORING_POLICY,
+                ...getEasyCenterTutoringPolicy(exclusionUpgrade),
                 campusByGroupId: draft.campusByGroupId,
                 campusOptions: draft.campusOptions,
                 tutorGroupIds: draft.tutorGroupIds,

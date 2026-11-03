@@ -3,6 +3,7 @@ import { isTutoringGroupExcluded } from './tutoring-group-rules';
 import {
   EASY_CENTER_TUTORING_POLICY,
   parseTutoringPolicy,
+  getEasyCenterTutoringPolicy,
   readTutoringPolicyConfigRows,
   STANDARD_TUTORING_POLICY,
   serializeTutoringPolicyConfigRows,
@@ -175,6 +176,7 @@ for (const scope of ['all', 'weak_support'] as const) {
           true
         )
       ).toBe(expected);
+      expect(isTutoringGroupExcluded(policy, 'class Đức', 'weak_support', null, [], true)).toBe(match === 'contains' || match === 'suffix');
     });
   }
 }
@@ -193,4 +195,10 @@ it('folds crossed d for exact names', () => {
       isTutoringGroupExcluded(policy, name, 'make_up', null, [], true)
     ).toBe(true);
   }
+});
+
+it('applies IELTS only to the upgraded explicit preset', () => {
+  expect(getEasyCenterTutoringPolicy(false)).toEqual(EASY_CENTER_TUTORING_POLICY);
+  expect(getEasyCenterTutoringPolicy(true).groupExclusions).toHaveLength(4);
+  expect(getEasyCenterTutoringPolicy(true).groupExclusions.at(-1)?.value).toBe('IELTS');
 });
