@@ -1,3 +1,4 @@
+-- tuturuuu: no-grant (internal)
 -- V10. Apply only after V3 reader deployment and V2/V4 migrations; Rex gate.
 begin;
 set local lock_timeout='2s';

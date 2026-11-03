@@ -14,6 +14,7 @@ lock table private.meet_transcript_erasures in access exclusive mode;
 lock table private.meet_erasure_events in access exclusive mode;
 lock table private.meet_collaboration_rooms in access exclusive mode;
 lock table private.meet_content_apply_leases in access exclusive mode;
+-- tuturuuu: reviewed(dynamic-sql-review): fixed read-only emptiness checks; no EXECUTE or interpolated SQL.
 do $$begin if exists(select 1 from private.meet_content_hold_scopes) or exists(select 1 from private.meet_erasure_issuances) or exists(select 1 from private.meet_erasure_operations) or exists(select 1 from private.meet_erasure_store_progress) or exists(select 1 from private.meet_erasure_completions) or exists(select 1 from private.meet_erasure_plans) or exists(select 1 from private.meet_erasure_requests) or exists(select 1 from private.meet_transcript_erasures) or exists(select 1 from private.meet_erasure_events) or exists(select 1 from private.meet_collaboration_rooms) or exists(select 1 from private.meet_content_apply_leases) then raise exception 'Retain receipts: schema rollback is allowed only before first use'; end if; end$$;
 drop trigger meet_hold_scope_delete on private.meet_content_hold_scopes;
 drop function private.guard_meet_hold_scope_delete();
