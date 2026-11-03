@@ -17,7 +17,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 
 import { liveWorkspaceAllowed } from '../../../cloudflare/live/workspace-gate';
 import { assertMeetAiRoom } from './room-gate';
-import { isMeetAiAvailableForWorkspace, meetAiAvailable } from './workspace-gate';
+import {
+  isMeetAiAvailableForWorkspace,
+  meetAiAvailable,
+} from './workspace-gate';
 
 /**
  * Containment hotfix (prod line 03a410b3): the deploy env and each control on
