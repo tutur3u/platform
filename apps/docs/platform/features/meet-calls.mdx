@@ -1753,3 +1753,17 @@ uses the meeting billing workspace. Existing host-only notes and recording membe
 apply. At zero credits, chunk uploads return 402 before reserving a chunk row,
 with an error identifying the meeting workspace. Personal "Talk to Mira"
 assistant sessions (voice and text) continue to use personal credits.
+
+### Erased transcript reader readiness
+
+Transcript readers accept `{erased: true}` segments and selector-based speaker
+metadata alongside legacy chunks. Erased lines are omitted, with one removal
+notice per transcript. Any erased marker suppresses the chunk's combined-text
+fallback, including when segment metadata is malformed. Stored legacy display
+names are not rendered or supplied to notes generation. Selector label resolution
+ships separately; these readers use the existing unattributed-audio label.
+
+This reader compatibility change is always active and must deploy before the
+erase RPC can write markers. It does not enable erase, change feature flags,
+or rewrite existing transcript data. Regression coverage lives in
+`packages/ai/src/meetings/transcript.test.ts` and the shared transcript UI tests.

@@ -120,6 +120,21 @@ describe('Meet notes finalization', () => {
   });
   it.each([
     ['no chunks', []],
+    ...[
+      { erased: true },
+      { segments: [{ erased: true }] },
+      { segments: [{ erased: true }, { malformed: true }] },
+    ].map((usage) => [
+      'erased saved speech',
+      [
+        {
+          status: 'completed',
+          start_seconds: 0,
+          transcript: 'REMOVED fallback',
+          usage,
+        },
+      ],
+    ]),
     [
       'blank mixed segments',
       [

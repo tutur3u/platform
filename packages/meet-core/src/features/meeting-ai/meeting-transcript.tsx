@@ -12,18 +12,27 @@ export function MeetingTranscript({ chunks }: { chunks: MeetAiChunk[] }) {
       {!chunks.length && (
         <p className="text-muted-foreground text-sm">{t('empty')}</p>
       )}
+      {chunks.some(
+        (chunk) =>
+          chunk.erased || chunk.segments?.some((segment) => 'erased' in segment)
+      ) && (
+        <p className="text-muted-foreground text-sm">{t('removed_banner')}</p>
+      )}
       {chunks.flatMap((chunk) => {
         const segments = chunk.segments?.length
           ? chunk.segments
-          : [
-              {
-                speaker: chunk.speaker,
-                kind: chunk.speaker?.kind,
-                startSeconds: chunk.start_seconds,
-                transcript: chunk.transcript,
-              },
-            ];
-        return [...segments]
+          : chunk.erased
+            ? []
+            : [
+                {
+                  speaker: chunk.speaker,
+                  kind: chunk.speaker?.kind,
+                  startSeconds: chunk.start_seconds,
+                  transcript: chunk.transcript,
+                },
+              ];
+        return segments
+          .filter((segment) => !('erased' in segment))
           .sort((a, b) => a.startSeconds - b.startSeconds)
           .map((segment, index) => (
             <p key={`${chunk.id}:${index}`} className="text-sm">
@@ -32,7 +41,7 @@ export function MeetingTranscript({ chunks }: { chunks: MeetAiChunk[] }) {
                 {String(Math.floor(segment.startSeconds % 60)).padStart(2, '0')}
               </span>
               <span className="mb-1 block break-words font-medium">
-                {segment.speaker?.displayName ?? t('speaker_unknown')}
+                {t('speaker_unknown')}
                 {segment.kind && (
                   <span className="ml-2 font-normal text-muted-foreground text-xs">
                     {t(

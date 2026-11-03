@@ -3970,6 +3970,7 @@
       "processing": "Đang xử lý…",
       "questions": "Câu hỏi chưa giải đáp",
       "recovering": "Đang thử chép lời lại… {count} đoạn âm thanh đang được giữ tạm trên thiết bị này. Tự động thử lại trong tối đa 5 phút.",
+      "removed_banner": "Một số nội dung đã được xóa khỏi bản chép lời này.",
       "retry_notes": "Tạo ghi chú còn thiếu",
       "review_notice": "Ghi chú do AI tạo có thể có sai sót. Hãy kiểm tra các chi tiết quan trọng trước khi sử dụng.",
       "session_notes": "Ghi chú phiên {number}",

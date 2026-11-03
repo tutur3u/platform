@@ -1,7 +1,9 @@
 import {
   formatTranscriptChunk,
+  hasErasedTranscript,
+  readTranscriptChunk,
   readTranscriptSegments,
-  readTranscriptSpeaker,
+  transcriptSpeakerIdentity,
   transcriptSpeakers,
 } from '@tuturuuu/ai/meetings/transcript';
 import { MEETING_APP } from '../../../runtime';
@@ -123,9 +125,7 @@ export async function readMeetAi(request: Request, params: MeetAiParams) {
       sequence: chunk.sequence,
       start_seconds: chunk.start_seconds,
       duration_seconds: chunk.duration_seconds,
-      transcript: chunk.transcript,
-      speaker: readTranscriptSpeaker(chunk.usage),
-      segments: readTranscriptSegments(chunk.usage),
+      ...readTranscriptChunk(chunk),
       cost_usd: canManage ? chunk.cost_usd : null,
       status:
         chunk.status === 'processing' &&
@@ -305,8 +305,12 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
     const hasSavedSpeech = chunks.some((chunk) => {
       const segments = readTranscriptSegments(chunk.usage);
       return segments.length
-        ? segments.some((segment) => Boolean(segment.transcript.trim()))
-        : Boolean(chunk.transcript?.trim());
+        ? segments.some(
+            (segment) =>
+              !('erased' in segment) && Boolean(segment.transcript.trim())
+          )
+        : !hasErasedTranscript(chunk.usage) &&
+            Boolean(chunk.transcript?.trim());
     });
     const transcript =
       (incomplete
@@ -336,20 +340,20 @@ export async function changeMeetAi(request: Request, params: MeetAiParams) {
         )
       : null;
     if (result?.notes) {
-      const roster = new Map(
+      const roster = new Set(
         chunks.flatMap((chunk) =>
-          transcriptSpeakers(chunk.usage).map(
-            (speaker) => [speaker.accountId, speaker.displayName] as const
-          )
+          transcriptSpeakers(chunk.usage).map((speaker) => {
+            const identity = transcriptSpeakerIdentity(speaker);
+            return 'selector' in identity
+              ? identity.selector
+              : identity.accountId;
+          })
         )
       );
       result.notes.actionItems = result.notes.actionItems.map((item) => ({
         ...item,
         ownerId: item.ownerId && roster.has(item.ownerId) ? item.ownerId : null,
-        owner:
-          item.ownerId && roster.has(item.ownerId)
-            ? roster.get(item.ownerId)!
-            : item.owner,
+        owner: item.ownerId && roster.has(item.ownerId) ? null : item.owner,
       }));
     }
     // Reuse the settled output; only the idempotent CAS write is retried.
