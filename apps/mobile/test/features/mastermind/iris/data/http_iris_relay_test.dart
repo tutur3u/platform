@@ -234,6 +234,19 @@ void main() {
       (_) => json(body ?? {'error': 'x'}, status: status, h: h),
     ).summary()).failureOrNull!;
 
+    test('send_disabled is specific to POST send and never retries', () async {
+      final source = relay(
+        (_) => json({'error': 'send_disabled'}, status: 403),
+      );
+      final result = await source.send('hello', idempotencyKey: fixedId);
+      expect(result.failureOrNull?.kind, IrisFailureKind.sendDisabled);
+      expect(result.failureOrNull?.transient, isFalse);
+      expect(
+        (await source.summary()).failureOrNull?.kind,
+        IrisFailureKind.forbidden,
+      );
+    });
+
     test('maps auth, rate limit and kill switch', () async {
       expect((await failure(403)).kind, IrisFailureKind.forbidden);
       final limited = await failure(429, h: {'retry-after': '30'});

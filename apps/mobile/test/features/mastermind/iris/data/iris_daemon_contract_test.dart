@@ -17,6 +17,7 @@ import 'package:mobile/features/mastermind/threads/history/thread_history_models
 import '../../../../helpers/mastermind_hub_harness.dart';
 import '../../../../helpers/mastermind_iris_fixture.dart';
 import '../../../../helpers/pump_app.dart';
+import 'iris_device_v3_vector1_test.dart' as device_vectors;
 
 /// The exact bytes Forge's iris-relayd emits (synthetic content), parsed by
 /// the app's relay client. A change on either side breaks these first.
@@ -51,6 +52,7 @@ final _forwardNewer =
     '"next_before":null,"next_after":"$_newer"}';
 
 void main() {
+  group('shared device v3 vectors', device_vectors.main);
   late List<http.Request> requests;
 
   HttpIrisRelay relay(http.Response Function(http.Request) respond) =>

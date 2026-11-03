@@ -61,6 +61,9 @@ class AppLocalizationsVi extends AppLocalizations {
   }
 
   @override
+  String get assistantNotAvailableOffline => 'Không khả dụng khi ngoại tuyến';
+
+  @override
   String get assistantDownloadPhasePending => 'Đang chờ';
 
   @override
@@ -4287,6 +4290,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get habitsTitle => 'Thói quen';
 
   @override
+  String get habitsOfflineUnavailable => 'Không khả dụng ngoại tuyến';
+
+  @override
   String get habitsTodayLabel => 'Hôm nay';
 
   @override
@@ -4381,6 +4387,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get homeSectionCalendar => 'Lịch';
+
+  @override
+  String get homeNotAvailableOffline => 'Không khả dụng khi ngoại tuyến';
 
   @override
   String get homeSectionLoadFailed => 'Kéo xuống để thử lại.';
@@ -11086,6 +11095,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get timerTitle => 'Bấm giờ';
 
   @override
+  String get timerOfflineUnavailable => 'Không khả dụng ngoại tuyến';
+
+  @override
   String get timerToday => 'Hôm nay';
 
   @override
@@ -11505,6 +11517,12 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get assistantNewChatConfirmCreation => 'Bắt đầu cuộc trò chuyện mới';
+
+  @override
+  String get assistantCreationHoldBannerMessage => 'Cuộc trò chuyện gần nhất của bạn có thể chưa được lưu. Bắt đầu cuộc trò chuyện mới sẽ không thử lại cuộc trò chuyện đó và có thể tạo một cuộc trò chuyện riêng.';
+
+  @override
+  String get assistantCreationHoldDismiss => 'Đóng';
 
   @override
   String get assistantNewChatResetDenied => 'Chưa bắt đầu cuộc trò chuyện mới. Bản nháp của bạn được giữ lại. Hãy kiểm tra lịch sử trò chuyện trước khi chọn thao tác khác.';
@@ -12159,6 +12177,33 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get offlineTechnicalDetails => 'Chi tiết kỹ thuật';
+
+  @override
+  String get offlineWaitingWifi => 'Đang chờ Wi-Fi';
+
+  @override
+  String offlineWaitingRetry(String time) {
+    return 'Chờ thử lại lúc $time';
+  }
+
+  @override
+  String get offlineStatusPreparing => 'Đang chuẩn bị';
+
+  @override
+  String get offlineStatusReady => 'Sẵn sàng ngoại tuyến';
+
+  @override
+  String get offlineStatusNeverSynced => 'Chưa đồng bộ';
+
+  @override
+  String offlineStatusLastSynced(String time) {
+    return 'Đồng bộ lần cuối: $time';
+  }
+
+  @override
+  String offlineStatusSummary(int ready, int total) {
+    return '$ready / $total ứng dụng sẵn sàng ngoại tuyến';
+  }
 
   @override
   String get mailSettingsReadingGroup => 'Đọc thư';
@@ -14919,7 +14964,10 @@ class AppLocalizationsVi extends AppLocalizations {
   String get mastermindIrisDeviceCurrent => 'Thiết bị này';
 
   @override
-  String get mastermindIrisWritesOff => 'Tạm thời chưa thể gửi tin. Bạn vẫn có thể đọc cuộc trò chuyện.';
+  String get mastermindIrisSendDisabled => 'Hiện chưa thể gửi tin nhắn đến Iris';
+
+  @override
+  String get mastermindIrisWritesOff => 'Sắp có thể gửi tin nhắn đến Iris';
 
   @override
   String get mastermindIrisWritesNeedEnrol => 'Hãy đăng ký thiết bị này để gửi tin nhắn.';
@@ -15037,4 +15085,33 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get mastermindInboxTierJump => 'Cuộn tới mục này';
+
+  @override
+  String get mastermindUndoWindow => 'Thời gian hoàn tác';
+
+  @override
+  String get mastermindUndoOff => 'Tắt';
+
+  @override
+  String mastermindUndoSeconds(int seconds) {
+    return '$seconds giây';
+  }
+
+  @override
+  String get mastermindReplySendNow => 'Gửi ngay';
+
+  @override
+  String get settingsPushSummary => 'Nhận thông báo trên thiết bị này';
+
+  @override
+  String get settingsTelemetrySummary => 'Giúp cải thiện ứng dụng';
+
+  @override
+  String get settingsStorageSummary => 'Quản lý dữ liệu trên thiết bị này';
+
+  @override
+  String get settingsLearnMore => 'Tìm hiểu thêm';
+
+  @override
+  String get assistantVoiceMessagePrompt => 'Hãy nghe tin nhắn thoại này và trả lời.';
 }

@@ -6,9 +6,14 @@ import 'package:mobile/core/cache/cache_key.dart';
 import 'package:mobile/core/cache/cache_policy.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_preparation_intent.dart';
+import 'package:mobile/core/cache/offline_preparation_state.dart';
+import 'package:mobile/core/cache/offline_preparer_registry.dart';
+import 'package:mobile/core/feature_flags/mobile_flag.dart';
 import 'package:mobile/data/sources/api_client.dart';
 
-typedef OfflinePreparationTask = Future<void> Function(String workspaceId);
+export 'offline_preparation_state.dart';
+export 'offline_preparer_registry.dart';
+
 typedef OfflinePreparationLoader =
     Future<Map<String, DateTime>> Function(String userId, String workspaceId);
 typedef OfflinePreparationWriter =
@@ -17,53 +22,6 @@ typedef OfflinePreparationWriter =
       String workspaceId,
       Map<String, DateTime> completed,
     );
-
-enum OfflinePreparationStatus {
-  queued,
-  downloading,
-  ready,
-  failed,
-  unavailable,
-}
-
-class OfflinePreparationUnavailable implements Exception {
-  const OfflinePreparationUnavailable();
-}
-
-@immutable
-class OfflineProductPreparation {
-  const OfflineProductPreparation({
-    this.status = OfflinePreparationStatus.queued,
-    this.lastSuccess,
-    this.errorMessage,
-  });
-
-  final OfflinePreparationStatus status;
-  final DateTime? lastSuccess;
-  final String? errorMessage;
-}
-
-@immutable
-class OfflinePreparationState {
-  const OfflinePreparationState({
-    this.userId,
-    this.workspaceId,
-    this.running = false,
-    this.products = const {},
-    this.retryAt,
-    this.retryExhausted = false,
-  });
-
-  final String? userId;
-  final String? workspaceId;
-  final bool running;
-  final DateTime? retryAt;
-  final bool retryExhausted;
-  final Map<String, OfflineProductPreparation> products;
-  int get completed => products.values
-      .where((product) => product.status == OfflinePreparationStatus.ready)
-      .length;
-}
 
 /// Explicit scoped snapshot downloads.
 ///
@@ -76,7 +34,6 @@ class OfflinePreparationCoordinator {
       _network = Connectivity().checkConnectivity,
       _networkEvents = Connectivity().onConnectivityChanged,
       _clock = DateTime.now;
-
   @visibleForTesting
   OfflinePreparationCoordinator.forTesting({
     required OfflinePreparationLoader load,
@@ -85,20 +42,25 @@ class OfflinePreparationCoordinator {
     Future<List<ConnectivityResult>> Function()? network,
     Stream<List<ConnectivityResult>>? networkEvents,
     DateTime Function()? clock,
+    OfflinePreparerRegistry? registry,
   }) : _load = load,
        _write = write,
        _intents = intents,
        _network = network ?? (() async => [ConnectivityResult.wifi]),
        _networkEvents = networkEvents,
-       _clock = clock ?? DateTime.now;
-
+       _clock = clock ?? DateTime.now {
+    if (registry != null) this.registry = registry;
+  }
   static final OfflinePreparationCoordinator instance =
       OfflinePreparationCoordinator._();
   static const productIds = ['finance', 'inventory', 'tasks', 'calendar'];
   final ValueNotifier<OfflinePreparationState> state = ValueNotifier(
     const OfflinePreparationState(),
   );
-  final _tasks = <String, OfflinePreparationTask>{};
+  OfflinePreparerRegistry registry = OfflinePreparerRegistry(
+    isEnabled: (_) => false,
+  );
+  Iterable<String> get _productIds => {...productIds, ...registry.appKeys};
   final OfflinePreparationLoader _load;
   final OfflinePreparationWriter _write;
   final OfflinePreparationIntentStore? _intents;
@@ -118,9 +80,10 @@ class OfflinePreparationCoordinator {
   int? _resumeGeneration;
   int? _activeGeneration;
   final Set<String> _removedDuringRun = {};
-
+  static bool wifiLike(List<ConnectivityResult> interfaces) =>
+      interfaces.contains(ConnectivityResult.wifi) ||
+      interfaces.contains(ConnectivityResult.ethernet);
   int get scopeRevision => _generation;
-
   bool canContinue(String userId, String workspaceId) =>
       _busy &&
       _activeGeneration == _generation &&
@@ -130,11 +93,15 @@ class OfflinePreparationCoordinator {
   Future<void> Function(String userId, String workspaceId, String product)?
   verifyProductRetention;
 
-  void register(String productId, OfflinePreparationTask task) {
-    _tasks[productId] = task;
+  void register(
+    String productId,
+    OfflinePreparationTask task, {
+    MobileFlag? flagKey,
+  }) {
+    registry.register(productId, flagKey, task);
   }
 
-  void unregister(String productId) => _tasks.remove(productId);
+  void unregister(String productId) => registry.unregister(productId);
 
   bool _current(int generation, String userId, String workspaceId) =>
       generation == _generation &&
@@ -158,9 +125,9 @@ class OfflinePreparationCoordinator {
       workspaceId: workspaceId,
       running: _busy,
       products: {
-        for (final id in productIds)
+        for (final id in _productIds)
           id: OfflineProductPreparation(
-            status: _tasks.containsKey(id)
+            status: registry.containsKey(id)
                 ? OfflinePreparationStatus.queued
                 : OfflinePreparationStatus.unavailable,
           ),
@@ -191,9 +158,9 @@ class OfflinePreparationCoordinator {
         retryAt: _retryAt,
         retryExhausted: _retryAttempts >= 3,
         products: {
-          for (final id in productIds)
+          for (final id in _productIds)
             id: OfflineProductPreparation(
-              status: !_tasks.containsKey(id)
+              status: !registry.containsKey(id)
                   ? OfflinePreparationStatus.unavailable
                   : OfflinePreparationStatus.queued,
               lastSuccess: completed[id],
@@ -232,36 +199,36 @@ class OfflinePreparationCoordinator {
     _activeGeneration = generation;
     _removedDuringRun.clear();
     final ids = requestedProducts != null
-        ? productIds.where(requestedProducts.contains).toList()
+        ? _productIds.where(requestedProducts.contains).toList()
         : productId != null
         ? [productId]
         : resume
-        ? productIds
+        ? _productIds
               .where(
                 (id) =>
                     state.value.products[id]?.status !=
                     OfflinePreparationStatus.ready,
               )
               .toList()
-        : productIds;
+        : _productIds.toList();
     final networkSubscription = _networkEvents?.listen((interfaces) {
       if (_wifiOnly &&
-          !interfaces.contains(ConnectivityResult.wifi) &&
+          !wifiLike(interfaces) &&
           _current(generation, userId, workspaceId)) {
         _stop(clearIntent: false);
       }
     });
     _wifiOnly = wifiOnly;
-    _pendingProducts = ids.where(_tasks.containsKey).toSet();
+    _pendingProducts = ids.where(registry.containsKey).toSet();
+    var countedRetry = false;
     final products = {...state.value.products};
     void publish({required bool running}) {
-      // Retention reads yield; a verified earlier product can be evicted while
-      // a later product is checked. Never overwrite those removal events.
+      // Preserve removals that occur while retention checks yield.
       for (final id in _removedDuringRun) {
         final product = products[id];
         if (product?.status == OfflinePreparationStatus.ready) {
           products[id] = OfflineProductPreparation(
-            status: _tasks.containsKey(id)
+            status: registry.containsKey(id)
                 ? OfflinePreparationStatus.queued
                 : OfflinePreparationStatus.unavailable,
             lastSuccess: product!.lastSuccess,
@@ -296,7 +263,7 @@ class OfflinePreparationCoordinator {
       _retryTimer?.cancel();
       for (final id in ids) {
         products[id] = OfflineProductPreparation(
-          status: _tasks.containsKey(id)
+          status: registry.containsKey(id)
               ? OfflinePreparationStatus.queued
               : OfflinePreparationStatus.unavailable,
           lastSuccess: products[id]?.lastSuccess,
@@ -307,12 +274,25 @@ class OfflinePreparationCoordinator {
       if (!_current(generation, userId, workspaceId)) return;
       for (final id in ids) {
         if (!_current(generation, userId, workspaceId)) return;
-        final task = _tasks[id];
+        final task = registry[id];
         if (task == null) continue;
         if (_wifiOnly) {
           final interfaces = await _network();
           if (!_current(generation, userId, workspaceId) ||
-              !interfaces.contains(ConnectivityResult.wifi)) {
+              !wifiLike(interfaces)) {
+            if (_current(generation, userId, workspaceId)) {
+              for (final pending in _pendingProducts) {
+                final product = products[pending];
+                if (product?.status == OfflinePreparationStatus.waitingRetry) {
+                  continue;
+                }
+                products[pending] = OfflineProductPreparation(
+                  status: OfflinePreparationStatus.waitingWifi,
+                  lastSuccess: product?.lastSuccess,
+                );
+              }
+              publish(running: false);
+            }
             return;
           }
         }
@@ -334,8 +314,7 @@ class OfflinePreparationCoordinator {
             id: timestamp,
           });
           if (!_current(generation, userId, workspaceId)) return;
-          // Its successful download supersedes prior/own reconciliation.
-          // Final retention checks still detect eviction or later removals.
+          // Final retention checks still detect subsequent eviction.
           _removedDuringRun.remove(id);
           _pendingProducts.remove(id);
           if (_intents != null) await _saveIntent(userId, workspaceId);
@@ -357,15 +336,28 @@ class OfflinePreparationCoordinator {
           }
           if (error is ApiException &&
               (error.statusCode == 503 || error.statusCode == 429)) {
-            _retryAttempts++;
+            if (!countedRetry) {
+              _retryAttempts++;
+              countedRetry = true;
+            }
             final seconds = error.retryAfter ?? 30;
-            _retryAt = _clock().toUtc().add(
-              Duration(seconds: seconds.clamp(30, 15 * 60)),
+            final retryAt = _clock().toUtc().add(
+              // Bounded: no tight loop (0) and no years-long park or overflow.
+              Duration(seconds: seconds.clamp(5, 15 * 60)),
             );
-            products[id] = OfflineProductPreparation(lastSuccess: lastSuccess);
+            if (_retryAt == null || retryAt.isAfter(_retryAt!)) {
+              _retryAt = retryAt;
+            }
+            products[id] = OfflineProductPreparation(
+              status: OfflinePreparationStatus.waitingRetry,
+              lastSuccess: lastSuccess,
+              retryAt: retryAt,
+              errorMessage: '${error.statusCode}: ${error.message}',
+            );
             if (_intents != null) await _saveIntent(userId, workspaceId);
             if (!_current(generation, userId, workspaceId)) return;
-            break;
+            publish(running: true);
+            continue;
           }
           products[id] = OfflineProductPreparation(
             status:
@@ -388,7 +380,7 @@ class OfflinePreparationCoordinator {
       }
       if (_current(generation, userId, workspaceId) &&
           verifyProductRetention != null) {
-        for (final id in productIds) {
+        for (final id in _productIds) {
           if (!_current(generation, userId, workspaceId)) return;
           final product = products[id];
           if (product?.status != OfflinePreparationStatus.ready) continue;
@@ -407,7 +399,7 @@ class OfflinePreparationCoordinator {
           await verifyRetention!(userId, workspaceId);
         } on Object {
           if (_current(generation, userId, workspaceId)) {
-            for (final id in productIds) {
+            for (final id in _productIds) {
               final product = products[id];
               if (product?.status == OfflinePreparationStatus.ready) {
                 products[id] = OfflineProductPreparation(
@@ -463,7 +455,12 @@ class OfflinePreparationCoordinator {
       retryExhausted: _retryAttempts >= 3,
       products: {
         for (final entry in latest.products.entries)
-          entry.key: entry.value.status == OfflinePreparationStatus.downloading
+          entry.key: !clearIntent && _pendingProducts.contains(entry.key)
+              ? OfflineProductPreparation(
+                  status: OfflinePreparationStatus.waitingWifi,
+                  lastSuccess: entry.value.lastSuccess,
+                )
+              : entry.value.status == OfflinePreparationStatus.downloading
               ? OfflineProductPreparation(lastSuccess: entry.value.lastSuccess)
               : entry.value,
       },
@@ -520,7 +517,20 @@ class OfflinePreparationCoordinator {
     state.value = OfflinePreparationState(
       userId: latest.userId,
       workspaceId: latest.workspaceId,
-      products: latest.products,
+      products: {
+        for (final entry in latest.products.entries)
+          entry.key:
+              intent.products.contains(entry.key) &&
+                  _retryAt != null &&
+                  entry.value.status != OfflinePreparationStatus.failed
+              ? OfflineProductPreparation(
+                  status: OfflinePreparationStatus.waitingRetry,
+                  lastSuccess: entry.value.lastSuccess,
+                  retryAt: _retryAt,
+                  errorMessage: entry.value.errorMessage,
+                )
+              : entry.value,
+      },
       retryAt: _retryAt,
       retryExhausted: _retryAttempts >= 3,
     );
@@ -533,10 +543,18 @@ class OfflinePreparationCoordinator {
     if (!_current(generation, userId, workspaceId) ||
         interfaces.isEmpty ||
         interfaces.every((value) => value == ConnectivityResult.none) ||
-        intent.wifiOnly && !interfaces.contains(ConnectivityResult.wifi)) {
+        intent.wifiOnly && !wifiLike(interfaces)) {
       return;
     }
-    final pending = intent.products.where(_tasks.containsKey).toSet();
+    final pending = intent.products
+        .where(
+          (id) =>
+              registry.containsKey(id) &&
+              (_retryAt == null ||
+                  state.value.products[id]?.status !=
+                      OfflinePreparationStatus.failed),
+        )
+        .toSet();
     if (pending.isEmpty) return;
     // Only original requested modules resume; no automatic scope expansion.
     await ApiClient.offlinePreparation(
@@ -573,9 +591,7 @@ class OfflinePreparationCoordinator {
   void invalidateRetainedData({Set<String>? productIds}) {
     if (productIds?.isEmpty ?? false) return;
     if (state.value.running) {
-      _removedDuringRun.addAll(
-        productIds ?? OfflinePreparationCoordinator.productIds,
-      );
+      _removedDuringRun.addAll(productIds ?? _productIds);
     }
     final latest = state.value;
     state.value = OfflinePreparationState(
@@ -589,7 +605,7 @@ class OfflinePreparationCoordinator {
           entry.key: productIds != null && !productIds.contains(entry.key)
               ? entry.value
               : OfflineProductPreparation(
-                  status: _tasks.containsKey(entry.key)
+                  status: registry.containsKey(entry.key)
                       ? OfflinePreparationStatus.queued
                       : OfflinePreparationStatus.unavailable,
                   lastSuccess: entry.value.lastSuccess,

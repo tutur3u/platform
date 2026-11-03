@@ -175,6 +175,12 @@ abstract class AppLocalizations {
   /// **'Queued {time}'**
   String mastermindReplyQueuedAt(String time);
 
+  /// No description provided for @assistantNotAvailableOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get assistantNotAvailableOffline;
+
   /// No description provided for @assistantDownloadPhasePending.
   ///
   /// In en, this message translates to:
@@ -8257,6 +8263,12 @@ abstract class AppLocalizations {
   /// **'Habits'**
   String get habitsTitle;
 
+  /// No description provided for @habitsOfflineUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get habitsOfflineUnavailable;
+
   /// No description provided for @habitsTodayLabel.
   ///
   /// In en, this message translates to:
@@ -8436,6 +8448,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Calendar'**
   String get homeSectionCalendar;
+
+  /// No description provided for @homeNotAvailableOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get homeNotAvailableOffline;
 
   /// No description provided for @homeSectionLoadFailed.
   ///
@@ -21181,6 +21199,12 @@ abstract class AppLocalizations {
   /// **'Timer'**
   String get timerTitle;
 
+  /// No description provided for @timerOfflineUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available offline'**
+  String get timerOfflineUnavailable;
+
   /// No description provided for @timerToday.
   ///
   /// In en, this message translates to:
@@ -22014,6 +22038,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start a new chat'**
   String get assistantNewChatConfirmCreation;
+
+  /// No description provided for @assistantCreationHoldBannerMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your last chat may not have been saved. Starting a new chat does not retry it and may create a separate conversation.'**
+  String get assistantCreationHoldBannerMessage;
+
+  /// No description provided for @assistantCreationHoldDismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get assistantCreationHoldDismiss;
 
   /// No description provided for @assistantNewChatResetDenied.
   ///
@@ -23250,6 +23286,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Technical details'**
   String get offlineTechnicalDetails;
+
+  /// No description provided for @offlineWaitingWifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for Wi-Fi'**
+  String get offlineWaitingWifi;
+
+  /// No description provided for @offlineWaitingRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to retry at {time}'**
+  String offlineWaitingRetry(String time);
+
+  /// No description provided for @offlineStatusPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing'**
+  String get offlineStatusPreparing;
+
+  /// No description provided for @offlineStatusReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Ready offline'**
+  String get offlineStatusReady;
+
+  /// No description provided for @offlineStatusNeverSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Never synced'**
+  String get offlineStatusNeverSynced;
+
+  /// No description provided for @offlineStatusLastSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'Last synced: {time}'**
+  String offlineStatusLastSynced(String time);
+
+  /// No description provided for @offlineStatusSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{ready} of {total} apps ready offline'**
+  String offlineStatusSummary(int ready, int total);
 
   /// No description provided for @mailSettingsReadingGroup.
   ///
@@ -28027,10 +28105,16 @@ abstract class AppLocalizations {
   /// **'This device'**
   String get mastermindIrisDeviceCurrent;
 
+  /// No description provided for @mastermindIrisSendDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending to Iris isn\'t available yet'**
+  String get mastermindIrisSendDisabled;
+
   /// No description provided for @mastermindIrisWritesOff.
   ///
   /// In en, this message translates to:
-  /// **'Sending is off for now. You can still read the chat.'**
+  /// **'Sending to Iris is coming soon'**
   String get mastermindIrisWritesOff;
 
   /// No description provided for @mastermindIrisWritesNeedEnrol.
@@ -28218,6 +28302,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scrolls to this section'**
   String get mastermindInboxTierJump;
+
+  /// No description provided for @mastermindUndoWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo window'**
+  String get mastermindUndoWindow;
+
+  /// No description provided for @mastermindUndoOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get mastermindUndoOff;
+
+  /// No description provided for @mastermindUndoSeconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s'**
+  String mastermindUndoSeconds(int seconds);
+
+  /// No description provided for @mastermindReplySendNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Send now'**
+  String get mastermindReplySendNow;
+
+  /// No description provided for @settingsPushSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Get alerts on this device'**
+  String get settingsPushSummary;
+
+  /// No description provided for @settingsTelemetrySummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Help improve the app'**
+  String get settingsTelemetrySummary;
+
+  /// No description provided for @settingsStorageSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage data on this device'**
+  String get settingsStorageSummary;
+
+  /// No description provided for @settingsLearnMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn more'**
+  String get settingsLearnMore;
+
+  /// No description provided for @assistantVoiceMessagePrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Listen to this voice message and respond.'**
+  String get assistantVoiceMessagePrompt;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -20,7 +20,7 @@ class OfflineDownloadManifest {
     required String key,
     required String namespace,
   }) {
-    const products = {'finance', 'inventory', 'tasks', 'calendar'};
+    const products = {'finance', 'inventory', 'tasks', 'calendar', 'home'};
     if (namespace.startsWith('workspace.permissions')) return products;
     final product = namespace.split('.').first;
     final trackedProduct = namespace == 'finance.exchangeRates'
@@ -103,6 +103,12 @@ class OfflineDownloadManifest {
         'workspace:${key.workspaceId}',
       ],
     );
+    checkScope();
+    _keys.add(key);
+  }
+
+  /// Track a snapshot published through its feature authorization fence.
+  void trackPublished(CacheKey key) {
     checkScope();
     _keys.add(key);
   }

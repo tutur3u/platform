@@ -108,5 +108,8 @@ String irisReceiptText(AppLocalizations l10n, IrisOutgoing row) =>
         l10n.mastermindIrisReceiptQueued,
       IrisReceiptState.delivered => l10n.mastermindIrisReceiptSent,
       IrisReceiptState.acked => l10n.mastermindIrisReceiptSeen,
+      IrisReceiptState.failed
+          when row.failureKind == IrisFailureKind.sendDisabled =>
+        l10n.mastermindIrisSendDisabled,
       IrisReceiptState.failed => l10n.mastermindIrisReceiptFailed,
     };

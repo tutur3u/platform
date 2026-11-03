@@ -28,6 +28,13 @@ const production = defineConfig({
         binding: 'WORKER_SELF_REFERENCE',
         service: 'tuturuuu-meet',
       },
+      {
+        // Meet AI usage limiter, reached over RPC with no public endpoint or
+        // shared secret. Unbound or unreachable, the limiter fails closed.
+        binding: 'ABUSE_GUARD',
+        service: 'tuturuuu-abuse-guard',
+        entrypoint: 'AbuseGuardEntrypoint',
+      },
     ],
     r2_buckets: [
       {

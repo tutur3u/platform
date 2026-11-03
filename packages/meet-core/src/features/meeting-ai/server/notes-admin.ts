@@ -7,7 +7,7 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
  * so every caller fails closed.
  */
 export async function isMeetingNotesAdmin(input: {
-  supabase: Pick<TypedSupabaseClient, 'rpc'>;
+  supabase: TypedSupabaseClient;
   wsId: string;
   userId: string;
 }) {
