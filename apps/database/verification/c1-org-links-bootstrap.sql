@@ -1,3 +1,6 @@
+\set ON_ERROR_STOP on
+BEGIN;
+DO $$ BEGIN IF to_regnamespace('auth') IS NOT NULL THEN RAISE EXCEPTION 'c1 bootstrap: disposable DB only'; END IF; END $$;
 -- Disposable PostgreSQL only. Minimal parent schema; real main permission and MFA functions.
 CREATE EXTENSION IF NOT EXISTS pgtap;
 DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role; END IF; END $$;
@@ -10,7 +13,7 @@ CREATE TABLE auth.users(id uuid PRIMARY KEY,raw_app_meta_data jsonb DEFAULT '{}'
 CREATE TABLE auth.sessions(id uuid,user_id uuid,factor_id uuid,aal text,not_after timestamptz);
 CREATE TABLE auth.mfa_factors(id uuid,user_id uuid,status text,created_at timestamptz);
 CREATE TYPE public.workspace_member_type AS ENUM ('MEMBER','GUEST');
-CREATE TYPE public.workspace_role_permission AS ENUM ('manage_mastermind','admin','manage_subscription');
+CREATE TYPE public.workspace_role_permission AS ENUM ('manage_mastermind','admin','manage_subscription','manage_users');
 CREATE TABLE public.workspaces(id uuid PRIMARY KEY,creator_id uuid);
 CREATE TABLE public.workspace_members(ws_id uuid,user_id uuid,type public.workspace_member_type);
 CREATE TABLE public.workspace_roles(id uuid PRIMARY KEY,ws_id uuid);
@@ -304,3 +307,5 @@ GRANT EXECUTE ON FUNCTION public.account_required_mfa_satisfied() TO authenticat
 
 -- Preserve the existing abuse/rate-limit hook while protecting reads and
 -- SECURITY DEFINER RPCs as well as writes. GoTrue enrollment remains accessible.
+
+COMMIT;
