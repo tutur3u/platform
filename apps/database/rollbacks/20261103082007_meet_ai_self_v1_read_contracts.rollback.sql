@@ -1,5 +1,6 @@
 -- Manual rollback only with release-authority approval. Run first in the
--- self_v1 rollback order: 150070, 150050, 150040..150010 (each alone), 150000.
+-- self_v1 rollback order: 20261103082007, 20261103082006 (no-op),
+-- 20261103082005, 20261103082004..20261103082001 (each alone), 20261103082000.
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';

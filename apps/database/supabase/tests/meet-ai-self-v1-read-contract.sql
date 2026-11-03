@@ -34,6 +34,10 @@ select private.record_meet_ai_self_v1_admission(pg_temp.cid(89231), pg_temp.cid(
  from unnest(array[89203, 89204, 89205, 89206]) n;
 select private.record_meet_ai_self_v1_admission(pg_temp.cid(89233), pg_temp.cid(n), 1)
  from unnest(array[89203, 89204, 89205]) n;
+-- Capture needs each uploader's current allow decision (revision 1).
+insert into private.meet_ai_consents(session_id, user_id, decision, notice_version)
+ select pg_temp.cid(89231), pg_temp.cid(n), 'allow', 'v1' from generate_series(89203, 89206) n
+ union all select pg_temp.cid(89233), pg_temp.cid(n), 'allow', 'v1' from generate_series(89204, 89205) n;
 reset role;
 insert into private.meet_ai_capture_streams(id, session_id, account_id, device_epoch, input_processing, lease_expires_at)
  select pg_temp.cid(n + 38), pg_temp.cid(89231), pg_temp.cid(n), 1, 'processed_aec', now() + interval '30 seconds'

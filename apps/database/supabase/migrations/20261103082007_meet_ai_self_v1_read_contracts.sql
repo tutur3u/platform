@@ -239,7 +239,9 @@ grant execute on function private.list_meet_ai_self_v1_coverage(uuid, uuid) to s
 
 -- Durable actual admission, written only by the trusted room authority after
 -- it has admitted the account to this exact session generation. There is no
--- client or admin path to fabricate a reader record.
+-- client or admin path to fabricate a reader record. Re-admission never
+-- touches the upload grant or consent: a revoked grant stays revoked, and
+-- capture still needs the current allow decision in private.meet_ai_consents.
 create function private.record_meet_ai_self_v1_admission(
   p_session_id uuid, p_account_id uuid, p_generation integer
 ) returns private.meet_ai_session_participants
@@ -273,8 +275,7 @@ begin
   values (p_session_id, p_account_id, p_generation, p_generation)
   on conflict (session_id, account_id) do update set
     last_admitted_at = now(),
-    last_admitted_generation = excluded.last_admitted_generation,
-    upload_revoked_at = null
+    last_admitted_generation = excluded.last_admitted_generation
   returning * into admitted;
   return admitted;
 end;

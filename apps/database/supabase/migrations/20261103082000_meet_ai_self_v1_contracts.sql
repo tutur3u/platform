@@ -3,9 +3,15 @@
 -- design, 30 October 2026). Every existing row and current writer stays
 -- `legacy`; no application path creates self_v1 sessions yet, and nothing here
 -- dispatches provider work. Read/admission/sharing RPCs: 20261103082007.
--- Indexes that touch existing rows are built concurrently in 150010-150040,
--- the old global chunk sequence key is replaced in 150050, and the NOT VALID
--- constraints below are validated in 150060.
+-- Indexes that touch existing rows are built concurrently in
+-- 20261103082001-20261103082004, the old global chunk sequence key is replaced
+-- in 20261103082005, and the NOT VALID constraints below are validated in
+-- 20261103082006.
+-- Consent: private.meet_ai_consents (#7264) is the only consent source. Stream
+-- opens and chunk writes require the participant's CURRENT decision to be
+-- `allow` at the exact revision derived from that store; deny/withdraw revoke
+-- live streams; nothing (re-admission included) restores a revoked upload
+-- grant. The live room (Durable Object) roster is never consent authority.
 set local lock_timeout = '5s';
 set local statement_timeout = '60s';
 
@@ -168,25 +174,30 @@ grant execute on function private.guard_meet_ai_session() to service_role;
 create trigger guard_meet_ai_session before insert or update on public.meet_ai_sessions
   for each row execute function private.guard_meet_ai_session();
 
--- N2: workspace/meeting/session/profile cascades reach this BEFORE DELETE
--- choke point. For self_v1 the deleting transaction itself fences the session
--- and removes its consent evidence, so #7264's RESTRICT FK never blocks the
--- cascade. Legacy evidence keeps #7264's explicit-erasure-first policy.
-create function private.release_meet_ai_self_v1_consents()
-returns trigger language plpgsql security definer
+-- N2 (Pax decision, 3 November 2026): consent records are legal evidence.
+-- Deleting a self_v1 session never deletes them: #7264's RESTRICT FK on
+-- private.meet_ai_consents.session_id stays as is, exactly as for legacy
+-- sessions, so a workspace/meeting/session cascade over consent evidence is
+-- refused until the evidence is explicitly erased by its retention owner.
+
+-- Current consent of one account in one session, read from the legal store:
+-- the revision is the number of recorded decisions and the decision is the
+-- latest one. guard_meet_ai_self_v1_consent keeps self_v1 decisions strictly
+-- ordered, so "latest" is unambiguous.
+create function private.meet_ai_self_v1_consent_state(p_session_id uuid, p_account_id uuid)
+returns table (revision integer, decision text)
+language sql stable security definer
 set search_path = pg_catalog, pg_temp
 as $$
-begin
-  if old.protocol = 'self_v1' then
-    delete from private.meet_ai_consents c where c.session_id = old.id;
-  end if;
-  return old;
-end;
+  select count(*)::integer,
+    (array_agg(c.decision order by c.created_at desc, c.id desc))[1]
+  from private.meet_ai_consents c
+  where c.session_id = p_session_id and c.user_id = p_account_id
+    and p_session_id is not null and p_account_id is not null;
 $$;
-revoke all on function private.release_meet_ai_self_v1_consents() from public, anon, authenticated;
-grant execute on function private.release_meet_ai_self_v1_consents() to service_role;
-create trigger release_meet_ai_self_v1_consents before delete on public.meet_ai_sessions
-  for each row execute function private.release_meet_ai_self_v1_consents();
+revoke all on function private.meet_ai_self_v1_consent_state(uuid, uuid)
+  from public, anon, authenticated;
+grant execute on function private.meet_ai_self_v1_consent_state(uuid, uuid) to service_role;
 
 -- Durable actual admission (H3 reader eligibility) and upload grants.
 -- Approved-but-never-admitted accounts get no row; device entries cannot add
@@ -326,6 +337,9 @@ begin
          where p.session_id = new.session_id) >= 24 then
       raise exception 'self_v1 session admits at most 24 accounts' using errcode = '54000';
     end if;
+    -- Derived, never supplied: decisions recorded before admission count.
+    select st.revision into new.consent_revision
+      from private.meet_ai_self_v1_consent_state(new.session_id, new.account_id) st;
     return new;
   end if;
   if new.session_id is distinct from old.session_id
@@ -333,9 +347,18 @@ begin
      or new.first_admitted_at is distinct from old.first_admitted_at
      or new.first_admitted_generation is distinct from old.first_admitted_generation
      or new.last_admitted_generation < old.last_admitted_generation
-     or new.consent_revision < old.consent_revision
      or new.audio_seconds < old.audio_seconds or new.chunk_count < old.chunk_count then
     raise exception 'Historical admission is immutable and budgets never decrease'
+      using errcode = '55000';
+  end if;
+  if old.upload_revoked_at is not null
+     and new.upload_revoked_at is distinct from old.upload_revoked_at then
+    raise exception 'A revoked upload grant stays revoked' using errcode = '55000';
+  end if;
+  if new.consent_revision is distinct from old.consent_revision
+     and new.consent_revision is distinct from (select st.revision
+       from private.meet_ai_self_v1_consent_state(new.session_id, new.account_id) st) then
+    raise exception 'Consent revision is derived from private.meet_ai_consents'
       using errcode = '55000';
   end if;
   return new;
@@ -356,11 +379,21 @@ begin
     if new.state <> 'active' then
       raise exception 'Capture streams open active' using errcode = '23514';
     end if;
+    -- Lock the admission row first (consent decisions update it), then read
+    -- the current decision with a fresh snapshot.
+    perform 1 from private.meet_ai_session_participants p
+      where p.session_id = new.session_id and p.account_id = new.account_id
+      for share;
     if not exists (select 1 from private.meet_ai_session_participants p
         join public.meet_ai_sessions s on s.id = p.session_id
         where p.session_id = new.session_id and p.account_id = new.account_id
           and p.upload_revoked_at is null and s.capture_state = 'active') then
       raise exception 'Capture stream needs an active admitted upload grant'
+        using errcode = '55000';
+    end if;
+    if (select st.decision from private.meet_ai_self_v1_consent_state(
+        new.session_id, new.account_id) st) is distinct from 'allow' then
+      raise exception 'Capture stream needs the participant''s current allow decision'
         using errcode = '55000';
     end if;
     if exists (select 1 from private.meet_ai_capture_streams c
@@ -432,14 +465,70 @@ set search_path = pg_catalog, pg_temp
 as $$
 declare
   session_protocol text;
+  session_state text;
+  revoked_at timestamptz;
+  stream_state text;
+  consent record;
 begin
   if tg_op = 'INSERT' or new.stream_id is distinct from old.stream_id
      or new.session_id is distinct from old.session_id then
-    select s.protocol into session_protocol from public.meet_ai_sessions s
-      where s.id = new.session_id;
+    -- KEY SHARE first (the chunk FK takes it anyway): a concurrent consent
+    -- decision locks the session before the admission row, so this order
+    -- serializes instead of deadlocking.
+    select s.protocol, s.capture_state into session_protocol, session_state
+      from public.meet_ai_sessions s
+      where s.id = new.session_id for key share;
     if (new.stream_id is not null) is distinct from (session_protocol = 'self_v1') then
       raise exception 'Chunk provenance must match its session protocol'
         using errcode = '23514';
+    end if;
+    if new.stream_id is not null then
+      if session_state not in ('active', 'draining') then
+        raise exception 'self_v1 chunks are accepted only while capture runs'
+          using errcode = '55000';
+      end if;
+      -- Lock order matches the consent trigger: admission row, then stream.
+      -- A missing row is left to the composite stream FK (23503).
+      select p.upload_revoked_at into revoked_at
+        from private.meet_ai_session_participants p
+        where p.session_id = new.session_id and p.account_id = new.account_id
+        for share;
+      if found then
+        if revoked_at is not null then
+          raise exception 'self_v1 chunks need an unrevoked upload grant'
+            using errcode = '55000';
+        end if;
+        select c.state into stream_state from private.meet_ai_capture_streams c
+          where c.id = new.stream_id and c.session_id = new.session_id
+            and c.account_id = new.account_id
+          for share;
+        if found and stream_state not in ('active', 'draining') then
+          raise exception 'self_v1 chunks need a live capture stream'
+            using errcode = '55000';
+        end if;
+        select * into consent
+          from private.meet_ai_self_v1_consent_state(new.session_id, new.account_id);
+        if consent.decision is distinct from 'allow'
+           or new.capture_consent_revision is distinct from consent.revision then
+          raise exception 'self_v1 chunks need the participant''s current allow revision'
+            using errcode = '55000';
+        end if;
+      end if;
+    end if;
+  end if;
+  -- Provider dispatch is recorded once, only under the current allow revision.
+  if tg_op = 'UPDATE' and old.stream_id is not null
+     and new.dispatch_consent_revision is distinct from old.dispatch_consent_revision then
+    if old.dispatch_consent_revision is not null then
+      raise exception 'self_v1 dispatch revision is immutable once recorded'
+        using errcode = '55000';
+    end if;
+    select * into consent
+      from private.meet_ai_self_v1_consent_state(new.session_id, new.account_id);
+    if consent.decision is distinct from 'allow'
+       or new.dispatch_consent_revision is distinct from consent.revision then
+      raise exception 'self_v1 dispatch needs the participant''s current allow revision'
+        using errcode = '55000';
     end if;
   end if;
   if tg_op = 'UPDATE' and old.stream_id is not null and (
@@ -462,6 +551,78 @@ revoke all on function private.guard_meet_ai_chunk() from public, anon, authenti
 grant execute on function private.guard_meet_ai_chunk() to service_role;
 create trigger guard_meet_ai_chunk before insert or update on public.meet_ai_chunks
   for each row execute function private.guard_meet_ai_chunk();
+
+-- Consent triggers on the legal store (self_v1 sessions only; legacy and
+-- guest rows keep #7264 behaviour). Decisions are strictly ordered per
+-- account, and evidence cannot be deleted while capture can still run.
+create function private.guard_meet_ai_self_v1_consent()
+returns trigger language plpgsql security definer
+set search_path = pg_catalog, pg_temp
+as $$
+declare
+  row_ private.meet_ai_consents := case when tg_op = 'DELETE' then old else new end;
+  s public.meet_ai_sessions;
+begin
+  select * into s from public.meet_ai_sessions where id = row_.session_id;
+  if not found or s.protocol <> 'self_v1' or row_.user_id is null then
+    return case when tg_op = 'DELETE' then old else new end;
+  end if;
+  if tg_op = 'DELETE' then
+    if s.capture_state in ('active', 'draining') then
+      raise exception 'self_v1 consent evidence is kept while capture can run'
+        using errcode = '55000';
+    end if;
+    return old;
+  end if;
+  -- Runs after prepare_meet_ai_consent has locked the session row. A default
+  -- transaction-start timestamp becomes the decision's wall-clock time.
+  new.created_at := greatest(new.created_at, clock_timestamp());
+  if exists (select 1 from private.meet_ai_consents c
+      where c.session_id = new.session_id and c.user_id = new.user_id
+        and c.created_at >= new.created_at) then
+    raise exception 'self_v1 consent decisions must be recorded in order'
+      using errcode = '55000';
+  end if;
+  return new;
+end;
+$$;
+revoke all on function private.guard_meet_ai_self_v1_consent() from public, anon, authenticated;
+grant execute on function private.guard_meet_ai_self_v1_consent() to service_role;
+create trigger sequence_meet_ai_self_v1_consent before insert or delete
+  on private.meet_ai_consents
+  for each row execute function private.guard_meet_ai_self_v1_consent();
+
+-- Derive participant state from each new decision; deny/withdraw revoke every
+-- live stream of that account in the same transaction.
+create function private.sync_meet_ai_self_v1_consent()
+returns trigger language plpgsql security definer
+set search_path = pg_catalog, pg_temp
+as $$
+declare
+  consent record;
+begin
+  if new.user_id is null or not exists (select 1 from public.meet_ai_sessions s
+      where s.id = new.session_id and s.protocol = 'self_v1') then
+    return null;
+  end if;
+  select * into consent
+    from private.meet_ai_self_v1_consent_state(new.session_id, new.user_id);
+  update private.meet_ai_session_participants p
+    set consent_revision = consent.revision
+    where p.session_id = new.session_id and p.account_id = new.user_id;
+  if consent.decision is distinct from 'allow' then
+    update private.meet_ai_capture_streams c
+      set state = 'revoked', closed_at = now()
+      where c.session_id = new.session_id and c.account_id = new.user_id
+        and c.state in ('active', 'draining');
+  end if;
+  return null;
+end;
+$$;
+revoke all on function private.sync_meet_ai_self_v1_consent() from public, anon, authenticated;
+grant execute on function private.sync_meet_ai_self_v1_consent() to service_role;
+create trigger sync_meet_ai_self_v1_consent after insert on private.meet_ai_consents
+  for each row execute function private.sync_meet_ai_self_v1_consent();
 
 -- The legacy reservation RPC is host-owned and globally sequenced. Lock it to
 -- legacy sessions and legacy rows so it can never touch self_v1 streams.

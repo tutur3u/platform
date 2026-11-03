@@ -12892,6 +12892,150 @@ export type Database = {
         };
         Relationships: [];
       };
+      meet_ai_account_fences: {
+        Row: {
+          account_id: string | null;
+          completed_at: string | null;
+          expires_at: string;
+          fenced_at: string;
+          generation: number;
+          id: string;
+          progress_cursor: string | null;
+          reason: string;
+          status: string;
+          subject_digest: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          account_id?: string | null;
+          completed_at?: string | null;
+          expires_at: string;
+          fenced_at?: string;
+          generation?: number;
+          id?: string;
+          progress_cursor?: string | null;
+          reason: string;
+          status?: string;
+          subject_digest?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          account_id?: string | null;
+          completed_at?: string | null;
+          expires_at?: string;
+          fenced_at?: string;
+          generation?: number;
+          id?: string;
+          progress_cursor?: string | null;
+          reason?: string;
+          status?: string;
+          subject_digest?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_ai_account_fences_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_account_fences_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      meet_ai_capture_streams: {
+        Row: {
+          account_id: string;
+          anchor_at: string | null;
+          anchor_id: string | null;
+          anchor_sample: number | null;
+          anchor_session_ms: number | null;
+          anchor_uncertainty_ms: number | null;
+          closed_at: string | null;
+          created_at: string;
+          device_epoch: number;
+          final_sample: number | null;
+          gap_count: number;
+          highest_sequence: number | null;
+          id: string;
+          input_processing: string;
+          lease_expires_at: string;
+          session_id: string;
+          state: string;
+          uploaded_count: number;
+        };
+        ComputedFields: never;
+        Insert: {
+          account_id: string;
+          anchor_at?: string | null;
+          anchor_id?: string | null;
+          anchor_sample?: number | null;
+          anchor_session_ms?: number | null;
+          anchor_uncertainty_ms?: number | null;
+          closed_at?: string | null;
+          created_at?: string;
+          device_epoch: number;
+          final_sample?: number | null;
+          gap_count?: number;
+          highest_sequence?: number | null;
+          id?: string;
+          input_processing: string;
+          lease_expires_at: string;
+          session_id: string;
+          state?: string;
+          uploaded_count?: number;
+        };
+        Update: {
+          account_id?: string;
+          anchor_at?: string | null;
+          anchor_id?: string | null;
+          anchor_sample?: number | null;
+          anchor_session_ms?: number | null;
+          anchor_uncertainty_ms?: number | null;
+          closed_at?: string | null;
+          created_at?: string;
+          device_epoch?: number;
+          final_sample?: number | null;
+          gap_count?: number;
+          highest_sequence?: number | null;
+          id?: string;
+          input_processing?: string;
+          lease_expires_at?: string;
+          session_id?: string;
+          state?: string;
+          uploaded_count?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_ai_capture_streams_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_capture_streams_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_capture_streams_session_id_account_id_fkey';
+            columns: ['session_id', 'account_id'];
+            isOneToOne: false;
+            referencedRelation: 'meet_ai_session_participants';
+            referencedColumns: ['session_id', 'account_id'];
+          },
+        ];
+      };
       meet_ai_consents: {
         Row: {
           created_at: string;
@@ -12935,6 +13079,134 @@ export type Database = {
           {
             foreignKeyName: 'meet_ai_consents_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      meet_ai_erasure_jobs: {
+        Row: {
+          completed_at: string | null;
+          counts: NonNullable<Json>;
+          created_at: string;
+          expires_at: string;
+          fence_generation: number;
+          id: string;
+          operation_id: string;
+          progress_cursor: string | null;
+          progress_stage: string | null;
+          requested_by: string;
+          scope: string;
+          session_id: string | null;
+          status: string;
+          subject_account_id: string | null;
+          subject_digest: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          completed_at?: string | null;
+          counts?: NonNullable<Json>;
+          created_at?: string;
+          expires_at: string;
+          fence_generation: number;
+          id?: string;
+          operation_id: string;
+          progress_cursor?: string | null;
+          progress_stage?: string | null;
+          requested_by: string;
+          scope: string;
+          session_id?: string | null;
+          status?: string;
+          subject_account_id?: string | null;
+          subject_digest?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          counts?: NonNullable<Json>;
+          created_at?: string;
+          expires_at?: string;
+          fence_generation?: number;
+          id?: string;
+          operation_id?: string;
+          progress_cursor?: string | null;
+          progress_stage?: string | null;
+          requested_by?: string;
+          scope?: string;
+          session_id?: string | null;
+          status?: string;
+          subject_account_id?: string | null;
+          subject_digest?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_ai_erasure_jobs_subject_account_id_fkey';
+            columns: ['subject_account_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_erasure_jobs_subject_account_id_fkey';
+            columns: ['subject_account_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+        ];
+      };
+      meet_ai_session_participants: {
+        Row: {
+          account_id: string;
+          audio_seconds: number;
+          chunk_count: number;
+          consent_revision: number;
+          first_admitted_at: string;
+          first_admitted_generation: number;
+          last_admitted_at: string;
+          last_admitted_generation: number;
+          session_id: string;
+          upload_revoked_at: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          account_id: string;
+          audio_seconds?: number;
+          chunk_count?: number;
+          consent_revision?: number;
+          first_admitted_at?: string;
+          first_admitted_generation: number;
+          last_admitted_at?: string;
+          last_admitted_generation: number;
+          session_id: string;
+          upload_revoked_at?: string | null;
+        };
+        Update: {
+          account_id?: string;
+          audio_seconds?: number;
+          chunk_count?: number;
+          consent_revision?: number;
+          first_admitted_at?: string;
+          first_admitted_generation?: number;
+          last_admitted_at?: string;
+          last_admitted_generation?: number;
+          session_id?: string;
+          upload_revoked_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_ai_session_participants_account_id_fkey';
+            columns: ['account_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'meet_ai_session_participants_account_id_fkey';
+            columns: ['account_id'];
             isOneToOne: false;
             referencedRelation: 'nova_user_leaderboard';
             referencedColumns: ['user_id'];
@@ -23505,6 +23777,15 @@ export type Database = {
         Args: { p_currency?: string; p_days?: number; p_ws_id: string };
         Returns: Json;
       };
+      get_meet_ai_self_v1_notes: {
+        Args: { p_reader_id: string; p_session_id: string };
+        Returns: {
+          notes: Json;
+          notes_edited: Json;
+          notes_state: string;
+          transcript_revision: number;
+        }[];
+      };
       get_periodic_report_counts: {
         Args: { p_cadence?: string; p_group_ids?: string[]; p_ws_id: string };
         Returns: {
@@ -24373,6 +24654,35 @@ export type Database = {
         Args: { p_limit?: number; p_offset?: number; p_search?: string };
         Returns: Json;
       };
+      list_meet_ai_self_v1_coverage: {
+        Args: { p_reader_id: string; p_session_id: string };
+        Returns: {
+          account_id: string;
+          coverage: string;
+        }[];
+      };
+      list_meet_ai_self_v1_segments: {
+        Args: {
+          p_after_account_id?: string;
+          p_after_sequence?: number;
+          p_after_start_ms?: number;
+          p_after_stream_id?: string;
+          p_limit?: number;
+          p_reader_id: string;
+          p_session_id: string;
+        };
+        Returns: {
+          account_id: string;
+          chunk_id: string;
+          end_ms: number;
+          is_own: boolean;
+          sequence: number;
+          start_ms: number;
+          stream_id: string;
+          timing_uncertainty_ms: number;
+          transcript: string;
+        }[];
+      };
       list_personal_journal: {
         Args: { p_actor_id: string; p_before?: string; p_ws_id: string };
         Returns: Json;
@@ -24616,6 +24926,38 @@ export type Database = {
       materialize_workspace_user_group_session_series: {
         Args: { p_series_id: string; p_until?: string };
         Returns: number;
+      };
+      meet_ai_self_v1_chunk_hidden: {
+        Args: {
+          p_account_id: string;
+          p_created_at: string;
+          p_session_id: string;
+        };
+        Returns: boolean;
+      };
+      meet_ai_self_v1_consent_state: {
+        Args: { p_account_id: string; p_session_id: string };
+        Returns: {
+          decision: string;
+          revision: number;
+        }[];
+      };
+      meet_ai_self_v1_notes_redacted: {
+        Args: { p_session_id: string };
+        Returns: boolean;
+      };
+      meet_ai_self_v1_post_call: {
+        Args: {
+          p_session: Omit<
+            Database['public']['Tables']['meet_ai_sessions']['Row'],
+            Database['public']['Tables']['meet_ai_sessions']['ComputedFields']
+          >;
+        };
+        Returns: boolean;
+      };
+      meet_ai_self_v1_reader_role: {
+        Args: { p_reader_id: string; p_session_id: string };
+        Returns: string;
       };
       meeting_programming_elevated: {
         Args: { p_meeting_id: string; p_owner_id: string };
@@ -24976,6 +25318,31 @@ export type Database = {
         };
         Returns: undefined;
       };
+      record_meet_ai_self_v1_admission: {
+        Args: {
+          p_account_id: string;
+          p_generation: number;
+          p_session_id: string;
+        };
+        Returns: {
+          account_id: string;
+          audio_seconds: number;
+          chunk_count: number;
+          consent_revision: number;
+          first_admitted_at: string;
+          first_admitted_generation: number;
+          last_admitted_at: string;
+          last_admitted_generation: number;
+          session_id: string;
+          upload_revoked_at: string | null;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'meet_ai_session_participants';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       record_rate_limit_attempt: {
         Args: {
           p_db_role: string;
@@ -25287,6 +25654,16 @@ export type Database = {
           p_user_id: string;
         };
         Returns: undefined;
+      };
+      set_meet_ai_self_v1_sharing: {
+        Args: {
+          p_actor_id: string;
+          p_expected_revision: number;
+          p_session_id: string;
+          p_share_after: boolean;
+          p_share_live: boolean;
+        };
+        Returns: number;
       };
       set_playground_collaborator: {
         Args: {
@@ -25982,282 +26359,6 @@ export type Database = {
   };
   public: {
     Tables: {
-      meet_ai_account_fences: {
-        Row: {
-          account_id: string | null;
-          completed_at: string | null;
-          expires_at: string;
-          fenced_at: string;
-          generation: number;
-          id: string;
-          progress_cursor: string | null;
-          reason: string;
-          status: string;
-          subject_digest: string | null;
-          updated_at: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          account_id?: string | null;
-          completed_at?: string | null;
-          expires_at: string;
-          fenced_at?: string;
-          generation?: number;
-          id?: string;
-          progress_cursor?: string | null;
-          reason: string;
-          status?: string;
-          subject_digest?: string | null;
-          updated_at?: string;
-        };
-        Update: {
-          account_id?: string | null;
-          completed_at?: string | null;
-          expires_at?: string;
-          fenced_at?: string;
-          generation?: number;
-          id?: string;
-          progress_cursor?: string | null;
-          reason?: string;
-          status?: string;
-          subject_digest?: string | null;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'meet_ai_account_fences_account_id_fkey';
-            columns: ['account_id'];
-            isOneToOne: true;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'meet_ai_account_fences_account_id_fkey';
-            columns: ['account_id'];
-            isOneToOne: true;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-        ];
-      };
-
-      meet_ai_capture_streams: {
-        Row: {
-          account_id: string;
-          anchor_at: string | null;
-          anchor_id: string | null;
-          anchor_sample: number | null;
-          anchor_session_ms: number | null;
-          anchor_uncertainty_ms: number | null;
-          closed_at: string | null;
-          created_at: string;
-          device_epoch: number;
-          final_sample: number | null;
-          gap_count: number;
-          highest_sequence: number | null;
-          id: string;
-          input_processing: string;
-          lease_expires_at: string;
-          session_id: string;
-          state: string;
-          uploaded_count: number;
-        };
-        ComputedFields: never;
-        Insert: {
-          account_id: string;
-          anchor_at?: string | null;
-          anchor_id?: string | null;
-          anchor_sample?: number | null;
-          anchor_session_ms?: number | null;
-          anchor_uncertainty_ms?: number | null;
-          closed_at?: string | null;
-          created_at?: string;
-          device_epoch: number;
-          final_sample?: number | null;
-          gap_count?: number;
-          highest_sequence?: number | null;
-          id?: string;
-          input_processing: string;
-          lease_expires_at: string;
-          session_id: string;
-          state?: string;
-          uploaded_count?: number;
-        };
-        Update: {
-          account_id?: string;
-          anchor_at?: string | null;
-          anchor_id?: string | null;
-          anchor_sample?: number | null;
-          anchor_session_ms?: number | null;
-          anchor_uncertainty_ms?: number | null;
-          closed_at?: string | null;
-          created_at?: string;
-          device_epoch?: number;
-          final_sample?: number | null;
-          gap_count?: number;
-          highest_sequence?: number | null;
-          id?: string;
-          input_processing?: string;
-          lease_expires_at?: string;
-          session_id?: string;
-          state?: string;
-          uploaded_count?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'meet_ai_capture_streams_account_id_fkey';
-            columns: ['account_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'meet_ai_capture_streams_account_id_fkey';
-            columns: ['account_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'meet_ai_capture_streams_session_id_account_id_fkey';
-            columns: ['session_id', 'account_id'];
-            isOneToOne: false;
-            referencedRelation: 'meet_ai_session_participants';
-            referencedColumns: ['session_id', 'account_id'];
-          },
-        ];
-      };
-
-      meet_ai_erasure_jobs: {
-        Row: {
-          completed_at: string | null;
-          counts: NonNullable<Json>;
-          created_at: string;
-          expires_at: string;
-          fence_generation: number;
-          id: string;
-          operation_id: string;
-          progress_cursor: string | null;
-          progress_stage: string | null;
-          requested_by: string;
-          scope: string;
-          session_id: string | null;
-          status: string;
-          subject_account_id: string | null;
-          subject_digest: string | null;
-          updated_at: string;
-        };
-        ComputedFields: never;
-        Insert: {
-          completed_at?: string | null;
-          counts?: NonNullable<Json>;
-          created_at?: string;
-          expires_at: string;
-          fence_generation: number;
-          id?: string;
-          operation_id: string;
-          progress_cursor?: string | null;
-          progress_stage?: string | null;
-          requested_by: string;
-          scope: string;
-          session_id?: string | null;
-          status?: string;
-          subject_account_id?: string | null;
-          subject_digest?: string | null;
-          updated_at?: string;
-        };
-        Update: {
-          completed_at?: string | null;
-          counts?: NonNullable<Json>;
-          created_at?: string;
-          expires_at?: string;
-          fence_generation?: number;
-          id?: string;
-          operation_id?: string;
-          progress_cursor?: string | null;
-          progress_stage?: string | null;
-          requested_by?: string;
-          scope?: string;
-          session_id?: string | null;
-          status?: string;
-          subject_account_id?: string | null;
-          subject_digest?: string | null;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'meet_ai_erasure_jobs_subject_account_id_fkey';
-            columns: ['subject_account_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'meet_ai_erasure_jobs_subject_account_id_fkey';
-            columns: ['subject_account_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-        ];
-      };
-
-      meet_ai_session_participants: {
-        Row: {
-          account_id: string;
-          audio_seconds: number;
-          chunk_count: number;
-          consent_revision: number;
-          first_admitted_at: string;
-          first_admitted_generation: number;
-          last_admitted_at: string;
-          last_admitted_generation: number;
-          session_id: string;
-          upload_revoked_at: string | null;
-        };
-        ComputedFields: never;
-        Insert: {
-          account_id: string;
-          audio_seconds?: number;
-          chunk_count?: number;
-          consent_revision?: number;
-          first_admitted_at?: string;
-          first_admitted_generation: number;
-          last_admitted_at?: string;
-          last_admitted_generation: number;
-          session_id: string;
-          upload_revoked_at?: string | null;
-        };
-        Update: {
-          account_id?: string;
-          audio_seconds?: number;
-          chunk_count?: number;
-          consent_revision?: number;
-          first_admitted_at?: string;
-          first_admitted_generation?: number;
-          last_admitted_at?: string;
-          last_admitted_generation?: number;
-          session_id?: string;
-          upload_revoked_at?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'meet_ai_session_participants_account_id_fkey';
-            columns: ['account_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'meet_ai_session_participants_account_id_fkey';
-            columns: ['account_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-        ];
-      };
-
       abuse_activity_signals: {
         Row: {
           api_key_id: string | null;
@@ -49353,113 +49454,6 @@ export type Database = {
       };
     };
     Functions: {
-      set_meet_ai_self_v1_sharing: {
-        Args: {
-          p_actor_id: string;
-          p_expected_revision: number;
-          p_session_id: string;
-          p_share_after: boolean;
-          p_share_live: boolean;
-        };
-        Returns: number;
-      };
-
-      record_meet_ai_self_v1_admission: {
-        Args: {
-          p_account_id: string;
-          p_generation: number;
-          p_session_id: string;
-        };
-        Returns: {
-          account_id: string;
-          audio_seconds: number;
-          chunk_count: number;
-          consent_revision: number;
-          first_admitted_at: string;
-          first_admitted_generation: number;
-          last_admitted_at: string;
-          last_admitted_generation: number;
-          session_id: string;
-          upload_revoked_at: string | null;
-        };
-        SetofOptions: {
-          from: '*';
-          to: 'meet_ai_session_participants';
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
-      };
-
-      meet_ai_self_v1_chunk_hidden: {
-        Args: {
-          p_account_id: string;
-          p_created_at: string;
-          p_session_id: string;
-        };
-        Returns: boolean;
-      };
-
-      meet_ai_self_v1_notes_redacted: {
-        Args: { p_session_id: string };
-        Returns: boolean;
-      };
-
-      meet_ai_self_v1_post_call: {
-        Args: {
-          p_session: Omit<
-            Database['public']['Tables']['meet_ai_sessions']['Row'],
-            Database['public']['Tables']['meet_ai_sessions']['ComputedFields']
-          >;
-        };
-        Returns: boolean;
-      };
-
-      meet_ai_self_v1_reader_role: {
-        Args: { p_reader_id: string; p_session_id: string };
-        Returns: string;
-      };
-
-      list_meet_ai_self_v1_coverage: {
-        Args: { p_reader_id: string; p_session_id: string };
-        Returns: {
-          account_id: string;
-          coverage: string;
-        }[];
-      };
-
-      list_meet_ai_self_v1_segments: {
-        Args: {
-          p_after_account_id?: string;
-          p_after_sequence?: number;
-          p_after_start_ms?: number;
-          p_after_stream_id?: string;
-          p_limit?: number;
-          p_reader_id: string;
-          p_session_id: string;
-        };
-        Returns: {
-          account_id: string;
-          chunk_id: string;
-          end_ms: number;
-          is_own: boolean;
-          sequence: number;
-          start_ms: number;
-          stream_id: string;
-          timing_uncertainty_ms: number;
-          transcript: string;
-        }[];
-      };
-
-      get_meet_ai_self_v1_notes: {
-        Args: { p_reader_id: string; p_session_id: string };
-        Returns: {
-          notes: Json;
-          notes_edited: Json;
-          notes_state: string;
-          transcript_revision: number;
-        }[];
-      };
-
       _consume_payg_credits: {
         Args: { p_amount: number; p_ws_id: string };
         Returns: number;

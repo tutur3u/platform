@@ -1,6 +1,8 @@
 -- Manual rollback only with release-authority approval, last in the self_v1
--- order (after 150070, 150050 and the four concurrent index rollbacks; 150060
--- only validated constraints this file drops). Self_v1 sessions must be erased
+-- order (after 20261103082007, 20261103082005 and the four concurrent index
+-- rollbacks 20261103082004..20261103082001; 20261103082006 only validated
+-- constraints this file drops). Consent evidence in private.meet_ai_consents
+-- is kept: only the self_v1 triggers on it are removed. Self_v1 sessions must be erased
 -- first, and a session whose host profile was deleted needs an owner decision
 -- before user_id can become NOT NULL again.
 begin;
@@ -18,6 +20,11 @@ begin
   end if;
 end;
 $$;
+
+drop trigger sync_meet_ai_self_v1_consent on private.meet_ai_consents;
+drop function private.sync_meet_ai_self_v1_consent();
+drop trigger sequence_meet_ai_self_v1_consent on private.meet_ai_consents;
+drop function private.guard_meet_ai_self_v1_consent();
 
 drop trigger guard_meet_ai_chunk on public.meet_ai_chunks;
 drop function private.guard_meet_ai_chunk();
@@ -37,9 +44,8 @@ drop table private.meet_ai_erasure_jobs;
 drop table private.meet_ai_account_fences;
 drop function private.guard_meet_ai_capture_stream();
 drop function private.guard_meet_ai_participant();
+drop function private.meet_ai_self_v1_consent_state(uuid, uuid);
 
-drop trigger release_meet_ai_self_v1_consents on public.meet_ai_sessions;
-drop function private.release_meet_ai_self_v1_consents();
 drop trigger guard_meet_ai_session on public.meet_ai_sessions;
 drop function private.guard_meet_ai_session();
 alter table public.meet_ai_sessions
