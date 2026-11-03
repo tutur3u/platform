@@ -118,7 +118,9 @@ describe('Notes voice honours MEET_AI_DISABLED', () => {
   });
 
   it('re-checks the switch inside the scheduled job before each provider step', async () => {
-    const audio = new File([new Uint8Array(64)], 'a.wav', { type: 'audio/wav' });
+    const audio = new File([new Uint8Array(64)], 'a.wav', {
+      type: 'audio/wav',
+    });
     const form = new FormData();
     form.set('requestId', 'd6fb2145-ae9f-4f43-a209-6bb4c24c7a87');
     form.set('timezone', 'UTC');
@@ -126,7 +128,9 @@ describe('Notes voice honours MEET_AI_DISABLED', () => {
     mock.form.mockResolvedValue(form);
     mock.reserve.mockResolvedValue({ start: true, job: { status: 'queued' } });
     const scheduled: Array<() => unknown> = [];
-    mock.after.mockImplementation((task: () => unknown) => scheduled.push(task));
+    mock.after.mockImplementation((task: () => unknown) =>
+      scheduled.push(task)
+    );
     const response = await invoke(POST);
     expect(response.status).toBe(202);
     expect(scheduled).toHaveLength(1);
