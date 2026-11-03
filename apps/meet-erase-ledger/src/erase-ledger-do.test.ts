@@ -13,11 +13,11 @@ const hold = {
   kind: 'hold_create',
   operation_key: op,
   ws_id: ws,
-  meeting_id: null,
+  meeting_id: null as string | null,
   body: {
     transition_id: '33333333-3333-4333-8333-333333333333',
     hold_id: op,
-    scope: { ws_id: ws, meeting_id: null },
+    scope: { ws_id: ws, meeting_id: null as string | null },
     kind: 'legal_hold',
     at: '2026-11-03T00:00:00.000Z',
     approval_ref: '44444444-4444-4444-8444-444444444444',
@@ -47,6 +47,9 @@ async function fixture() {
     async get(k: string) {
       return remote.get(k) ?? null;
     },
+    async hasAfter(path: string) {
+      return [...remote.keys()].some((k) => k > path);
+    },
     async create(k: string, v: string) {
       if (fail) throw Error('offline');
       if (remote.has(k) && remote.get(k) !== v) throw Error('conflict');
@@ -58,6 +61,7 @@ async function fixture() {
     bucket,
     () => key,
     1,
+    ['99999999-9999-4999-8999-999999999999'],
     () => '2026-11-03T00:00:00.000Z'
   );
   return {
@@ -74,6 +78,7 @@ async function fixture() {
         bucket,
         () => key,
         1,
+        ['99999999-9999-4999-8999-999999999999'],
         () => '2026-11-04T00:00:00.000Z'
       ),
     recover: () => {
@@ -142,7 +147,7 @@ test('C3 registry uses independent events after snapshot; active holds never exp
 test('EC and free text rejected before storage', async () => {
   const f = await fixture();
   await expect(
-    f.ledger.append({ ...hold, ws_id: '42529372-c669-4833-bb32-2cab1f4ffd83' })
+    f.ledger.append({ ...hold, ws_id: '99999999-9999-4999-8999-999999999999' })
   ).rejects.toThrow();
   await expect(
     f.ledger.append({
@@ -251,4 +256,149 @@ test('private verifier rebuilds registry without exporting key material', async 
   const result = await f.ledger.verify();
   expect(result.head.seq).toBe(1);
   expect(result.holds).toHaveLength(1);
+});
+
+test('SQLite rollback cannot hide later R2 holds, including an empty local head', async () => {
+  const f = await fixture();
+  const snapshot = new Map(f.local);
+  await f.ledger.append(hold);
+  f.local.clear();
+  for (const [k, v] of snapshot) f.local.set(k, v);
+  await expect(f.restart().verify()).rejects.toThrow('LEDGER_HEAD_MISMATCH');
+});
+test('SQLite rollback to an earlier acknowledged head fails closed', async () => {
+  const f = await fixture();
+  await f.ledger.append(hold);
+  const snapshot = new Map(f.local);
+  await f.ledger.append({
+    ...hold,
+    operation_key: ws,
+    body: { ...hold.body, hold_id: ws },
+  });
+  f.local.clear();
+  for (const [k, v] of snapshot) f.local.set(k, v);
+  await expect(f.restart().verify()).rejects.toThrow('LEDGER_HEAD_MISMATCH');
+});
+for (const attack of ['orphan', 'double', 'kind', 'scope']) {
+  test(`invalid hold transition ${attack} is refused before reservation`, async () => {
+    const f = await fixture();
+    if (attack !== 'orphan') await f.ledger.append(hold);
+    const before = structuredClone(f.local);
+    const release = {
+      ...hold,
+      kind: attack === 'double' ? 'hold_create' : 'hold_release',
+      body: {
+        ...hold.body,
+        transition_id: ws,
+        ...(attack === 'kind' ? { kind: 'retention_lock' } : {}),
+      },
+    };
+    if (attack === 'scope') {
+      release.meeting_id = ws;
+      release.body.scope = { ws_id: ws, meeting_id: ws };
+    }
+    await expect(f.ledger.append(release)).rejects.toThrow(
+      'LEDGER_HOLD_CONFLICT'
+    );
+    expect(f.local).toEqual(before);
+    expect((await f.ledger.verify()).head.seq).toBe(
+      attack === 'orphan' ? 0 : 1
+    );
+  });
+}
+test('committed cannot later be cancelled', async () => {
+  const f = await fixture();
+  const base = {
+    kind: 'outcome',
+    operation_key: op,
+    ws_id: ws,
+    meeting_id: ws,
+  };
+  await f.ledger.append({
+    ...base,
+    body: {
+      state: 'committed',
+      generation_after: 1,
+      doc_generation_target: null,
+      history_cutoff_id: null,
+      attested_state_hash: null,
+    },
+  });
+  await expect(
+    f.ledger.append({
+      ...base,
+      body: { state: 'aborted', reason: 'cancelled' },
+    })
+  ).rejects.toThrow('LEDGER_COMMITTED');
+});
+test('confirmed and reconciled receipts have independent retry identities', async () => {
+  const f = await fixture();
+  const receipt = {
+    kind: 'receipt',
+    operation_key: op,
+    ws_id: ws,
+    meeting_id: ws,
+    body: {
+      store: 'S-T',
+      state: 'confirmed',
+      installed_generation: 1,
+      post_state_hash: null,
+      post_pm_hash: null,
+      verified_zero: true,
+      rows_rewritten: 1,
+      hwm: null,
+    },
+  };
+  const first = await f.ledger.append(receipt);
+  const reconciled = {
+    ...receipt,
+    body: { ...receipt.body, state: 'reconciled' },
+  };
+  const second = await f.ledger.append(reconciled);
+  expect(second.seq).toBe(first.seq + 1);
+  expect(await f.ledger.append(reconciled)).toEqual(second);
+});
+test('an unacknowledged append can commit when another caller appends', async () => {
+  const f = await fixture();
+  f.fail();
+  await expect(f.ledger.append(hold)).rejects.toThrow('LEDGER_UNACKED');
+  f.recover();
+  await f.restart().append({
+    ...hold,
+    operation_key: ws,
+    body: { ...hold.body, hold_id: ws },
+  });
+  expect((await f.ledger.verify()).holds).toHaveLength(2);
+});
+test('invalid input reports only a fixed error code', async () => {
+  const f = await fixture();
+  await expect(
+    f.ledger.append({ ...hold, 'private@example.invalid': true })
+  ).rejects.toThrow(/^LEDGER_INPUT_INVALID$/);
+});
+
+test('verification releases serialization between bounded pages and rejects a moving head', async () => {
+  const f = await fixture();
+  for (let n = 0; n < 21; n++) {
+    const id = `22222222-2222-4222-8222-${String(n).padStart(12, '0')}`;
+    await f.ledger.append({
+      ...hold,
+      operation_key: id,
+      body: { ...hold.body, hold_id: id },
+    });
+  }
+  let sections = 0;
+  const verified = await f.ledger.verify(async (fn) => {
+    sections++;
+    return fn();
+  });
+  expect(verified.holds).toHaveLength(21);
+  expect(sections).toBe(5);
+  let calls = 0;
+  await expect(
+    f.ledger.verify(async (fn) => {
+      if (++calls === 3) await f.ledger.append(hold);
+      return fn();
+    })
+  ).rejects.toThrow('LEDGER_HEAD_MISMATCH');
 });

@@ -2,8 +2,14 @@
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "tuturuuu-meet-erase-ledger",
   "main": "src/erase-ledger-do.ts",
-  "compatibility_date": "2026-11-03",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_date": "2026-08-06",
+  "secrets": {
+    "required": ["MEET_ERASE_LEDGER_KEY_V1", "MEET_AI_PROTECTED_WORKSPACE_IDS"]
+  },
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "invocation_logs": false }
+  },
   "workers_dev": false,
   "preview_urls": false,
   "routes": [],
@@ -15,7 +21,7 @@
   "migrations": [
     { "tag": "meet-erase-ledger-v1", "new_sqlite_classes": ["MeetEraseLedger"] }
   ],
-  // Provisioning is HELD: Cora confirms the non-shortenable Bucket Lock period first.
+  // Provisioning is HELD: Cora confirms retention and Selene selects a separate custody account first.
   "r2_buckets": [
     { "binding": "LEDGER_BUCKET", "bucket_name": "tuturuuu-meet-erase-ledger" }
   ]

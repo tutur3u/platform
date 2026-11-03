@@ -28,3 +28,8 @@ test('ledger and block domains use null delimiter and raw previous/block bytes',
   );
   expect(await mac(key, 'meet-erase-ledger/v1', hash, '')).not.toBe(reference);
 });
+
+test('canonical ledger JSON rejects noncanonical numeric values', () => {
+  for (const value of [NaN, Infinity, -0, 1.5, Number.MAX_SAFE_INTEGER + 1])
+    expect(() => canonical(value)).toThrow('MEET_ERASE_INVALID_JSON');
+});

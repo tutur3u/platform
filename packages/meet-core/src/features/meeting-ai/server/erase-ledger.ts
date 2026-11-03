@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { canonicalEraseJson as canonical } from './erase-canonical-json';
 
 const uuid = z.uuid().transform((s) => s.toLowerCase());
 const hash = z.string().regex(/^[0-9a-f]{64}$/);
@@ -151,14 +152,7 @@ export type Json =
   | string
   | Json[]
   | { [key: string]: Json };
-export function canonical(value: Json): string {
-  if (value === null || typeof value !== 'object') return JSON.stringify(value);
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  return `{${Object.keys(value)
-    .sort()
-    .map((k) => `${JSON.stringify(k)}:${canonical(value[k]!)}`)
-    .join(',')}}`;
-}
+export { canonicalEraseJson as canonical } from './erase-canonical-json';
 export const ZERO_MAC = '0'.repeat(64);
 export function bytes(hex: string): Uint8Array<ArrayBuffer> {
   return Uint8Array.from(hex.match(/../g) ?? [], (h) => Number.parseInt(h, 16));
@@ -169,6 +163,13 @@ export async function mac(
   previous: string,
   body: string
 ) {
+  const message = macMessage(domain, previous, body);
+  return Array.from(
+    new Uint8Array(await crypto.subtle.sign('HMAC', key, message)),
+    (b) => b.toString(16).padStart(2, '0')
+  ).join('');
+}
+function macMessage(domain: string, previous: string, body: string) {
   const prefix = new TextEncoder().encode(`${domain}\0`);
   const prev = bytes(previous);
   const data = new TextEncoder().encode(body);
@@ -176,11 +177,9 @@ export async function mac(
   message.set(prefix);
   message.set(prev, prefix.length);
   message.set(data, prefix.length + prev.length);
-  return Array.from(
-    new Uint8Array(await crypto.subtle.sign('HMAC', key, message)),
-    (b) => b.toString(16).padStart(2, '0')
-  ).join('');
+  return message;
 }
+
 export async function sha256(value: string) {
   return Array.from(
     new Uint8Array(
@@ -233,13 +232,16 @@ export async function verifyChain(
       !Number.isSafeInteger(entry.seq)
     )
       throw Error('LEDGER_CHAIN_INVALID');
-    const computed = await mac(
-      await keys(entry.key_version),
-      'meet-erase-ledger/v1',
-      entry.prev_mac,
-      canonical(unsigned)
-    );
-    if (computed !== signature) throw Error('LEDGER_CHAIN_INVALID');
+    if (
+      !/^[0-9a-f]{64}$/.test(signature) ||
+      !(await crypto.subtle.verify(
+        'HMAC',
+        await keys(entry.key_version),
+        bytes(signature),
+        macMessage('meet-erase-ledger/v1', entry.prev_mac, canonical(unsigned))
+      ))
+    )
+      throw Error('LEDGER_CHAIN_INVALID');
     head = { seq: entry.seq, mac: signature };
   }
   if (expected && (expected.seq !== head.seq || expected.mac !== head.mac))

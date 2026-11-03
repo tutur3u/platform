@@ -502,6 +502,7 @@
                   "reference/repository/routes/mail",
                   "reference/repository/routes/mastermind",
                   "reference/repository/routes/meet",
+                  "reference/repository/routes/meet-erase-ledger",
                   "reference/repository/routes/meet-realtime",
                   "reference/repository/routes/mind",
                   "reference/repository/routes/mobile",

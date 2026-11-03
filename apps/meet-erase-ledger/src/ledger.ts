@@ -18,6 +18,7 @@ export interface Storage {
 export interface Mirror {
   get(key: string): Promise<string | null>;
   create(key: string, value: string): Promise<void>;
+  hasAfter(key: string): Promise<boolean>;
 }
 export class Ledger {
   constructor(
@@ -25,6 +26,7 @@ export class Ledger {
     private mirror: Mirror,
     private keys: Keys,
     private version: number,
+    private protectedIds: readonly string[],
     private now = () => new Date().toISOString()
   ) {}
   private path(seq: number) {
@@ -40,8 +42,10 @@ export class Ledger {
     await this.storage.put('head', { seq: entry.seq, mac: entry.mac });
   }
   async append(value: unknown): Promise<Entry> {
-    const input = appendSchema.parse(value);
-    if (input.ws_id === '42529372-c669-4833-bb32-2cab1f4ffd83')
+    const parsed = appendSchema.safeParse(value);
+    if (!parsed.success) throw Error('LEDGER_INPUT_INVALID');
+    const input = parsed.data;
+    if (this.protectedIds.includes(input.ws_id))
       throw Error('LEDGER_EC_DENIED');
     if (input.kind === 'intent') {
       const p = input.body.plan;
@@ -72,7 +76,7 @@ export class Ledger {
       throw Error('LEDGER_CANCELLED');
     const identity =
       input.kind === 'receipt'
-        ? input.body.store
+        ? `${input.body.store}:${input.body.state}`
         : input.kind === 'hold_create' || input.kind === 'hold_release'
           ? input.body.transition_id
           : input.kind === 'outcome'
@@ -94,7 +98,28 @@ export class Ledger {
         throw Error('LEDGER_MIRROR_CONFLICT');
       return e;
     }
-    await this.finishPending();
+    if (input.kind === 'hold_create' || input.kind === 'hold_release') {
+      const active = await this.storage.get<{
+        scope: { ws_id: string; meeting_id: string | null };
+        kind: string;
+      }>(`hold:${input.body.hold_id}`);
+      if (
+        input.kind === 'hold_create'
+          ? active != null
+          : !active ||
+            canonical(active.scope) !== canonical(input.body.scope) ||
+            active.kind !== input.body.kind
+      )
+        throw Error('LEDGER_HOLD_CONFLICT');
+    }
+    if (
+      input.kind === 'outcome' &&
+      input.body.state === 'aborted' &&
+      input.body.reason === 'cancelled' &&
+      (await this.storage.get(`id:${input.operation_key}:outcome:committed`))
+    )
+      throw Error('LEDGER_COMMITTED');
+    await this.assertTail(await this.head());
     const head = await this.head();
     if (!Number.isSafeInteger(head.seq + 1)) throw Error('LEDGER_FULL');
     let body: Entry['body'] = input.body;
@@ -142,7 +167,11 @@ export class Ledger {
     };
     // A single durable write reserves both bytes and idempotency identity before R2 I/O.
     await this.storage.put('pending', { entry, id, digest });
-    await this.finishPending();
+    try {
+      await this.finishPending();
+    } catch {
+      throw Error('LEDGER_UNACKED');
+    }
     return entry;
   }
   private async finishPending() {
@@ -160,16 +189,41 @@ export class Ledger {
       seq: pending.entry.seq,
     });
     await this.finish(pending.entry);
+    if (
+      pending.entry.kind === 'hold_create' ||
+      pending.entry.kind === 'hold_release'
+    ) {
+      const { kind, operation_key, ws_id, meeting_id, body } = pending.entry;
+      const event = appendSchema.parse({
+        kind,
+        operation_key,
+        ws_id,
+        meeting_id,
+        body,
+      });
+      if (event.kind === 'hold_create' || event.kind === 'hold_release')
+        await this.storage.put(
+          `hold:${event.body.hold_id}`,
+          event.kind === 'hold_create' ? event.body : null
+        );
+    }
+    await this.storage.put('pending', null);
   }
   async head(): Promise<Head> {
     return (await this.storage.get<Head>('head')) ?? { seq: 0, mac: ZERO_MAC };
   }
-  async verify() {
-    const expected = await this.head();
+  private async assertTail(head: Head) {
+    if (await this.mirror.hasAfter(this.path(head.seq)))
+      throw Error('LEDGER_HEAD_MISMATCH');
+  }
+  async verify(run: <T>(fn: () => Promise<T>) => Promise<T> = (fn) => fn()) {
+    const expected = await run(() => this.head());
     let head: Head = { seq: 0, mac: ZERO_MAC };
     const holdEvents: Entry[] = [];
     do {
-      const page = await this.read(head.seq, 500);
+      const page = await run(() => this.read(head.seq, 10));
+      if (page.head.seq !== expected.seq || page.head.mac !== expected.mac)
+        throw Error('LEDGER_HEAD_MISMATCH');
       head = await verifyChain(page.entries, this.keys, undefined, head);
       holdEvents.push(
         ...page.entries.filter(
@@ -179,6 +233,7 @@ export class Ledger {
     } while (head.seq < expected.seq);
     if (head.seq !== expected.seq || head.mac !== expected.mac)
       throw Error('LEDGER_HEAD_MISMATCH');
+    await run(() => this.assertTail(expected));
     return { head, holds: [...rebuildHoldRegistry(holdEvents).values()] };
   }
   async read(after: number, limit: number) {
@@ -200,6 +255,7 @@ export class Ledger {
         throw Error('LEDGER_MIRROR_CONFLICT');
       entries.push(entry);
     }
+    if (after + limit >= head.seq) await this.assertTail(head);
     return { entries, head };
   }
 }
