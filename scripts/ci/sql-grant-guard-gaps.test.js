@@ -57,7 +57,7 @@ test('gap 4: ALTER ROUTINE SECURITY DEFINER needs a subsequent matching revoke',
     1
   );
   assert.equal(
-    scan(alter + 'revoke all on routine public.f(text) from public, anon;')
+    scan(`${alter}revoke all on routine public.f(text) from public, anon;`)
       .length,
     1
   );

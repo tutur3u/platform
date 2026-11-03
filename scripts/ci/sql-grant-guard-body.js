@@ -50,7 +50,7 @@ function nestedBodyGrants(sql) {
         findings.push({
           rule: 'anon-grant',
           line: body.line + statement.startLine - 1,
-          detail: 'literal body grant to ' + open.join(', '),
+          detail: `literal body grant to ${open.join(', ')}`,
         });
     }
   }
