@@ -131,21 +131,20 @@ describe.skipIf(!container)(
 
     it('cancelled issuance cannot later commit, and timeout never cancels it', () => {
       const unused = '00000000-0000-4000-8000-000000000031';
-      query(`insert into private.meet_erasure_issuances(operation_key,ws_id,meeting_id,actor_user_id,actor_kind,issued_at,expires_at)
-      values('${unused}','${ws}','${meeting}','00000000-0000-4000-8000-000000000010','subject',clock_timestamp()-interval '2 hours',clock_timestamp()-interval '1 hour');`);
-      expect(
-        query(
-          `select private.decide_meet_erasure_finality('${ws}','${meeting}','${unused}')->>'state';`
-        )
-      ).toBe('cancelled');
-      expect(() =>
-        query(`select test_v10.execute_fixture('${unused}');`)
-      ).toThrow(/MEET_ERASE_EXPIRED/);
-      expect(
-        query(
-          `select count(*) from private.meet_transcript_erasures where operation_key='${unused}';`
-        )
-      ).toBe('0');
+      const result =
+        query(`insert into private.meet_erasure_issuances(operation_key,ws_id,meeting_id,actor_user_id,actor_kind,issued_at,expires_at)
+      values('${unused}','${ws}','${meeting}','00000000-0000-4000-8000-000000000010','subject',clock_timestamp()-interval '2 hours',clock_timestamp()-interval '1 hour');
+      select private.decide_meet_erasure_finality('${ws}','${meeting}','${unused}')->>'state';
+      create function pg_temp.attempt_cancelled() returns text language plpgsql as $$
+      begin perform test_v10.execute_fixture('${unused}'); return 'unexpected commit';
+      exception when others then return sqlerrm; end $$;
+      select pg_temp.attempt_cancelled();
+      select count(*) from private.meet_transcript_erasures where operation_key='${unused}';`);
+      expect(result.split('\n')).toEqual([
+        'cancelled',
+        'MEET_ERASE_EXPIRED',
+        '0',
+      ]);
     });
   }
 );

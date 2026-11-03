@@ -12,7 +12,7 @@ select ok(not has_table_privilege('service_role','private.meet_erasure_plans','U
 
 
 insert into public.users(id) values ('00000000-0000-4000-8000-000000000010');
-insert into public.workspaces(id) values ('00000000-0000-4000-8000-000000000001');
+insert into public.workspaces(id,name) values ('00000000-0000-4000-8000-000000000001','Fixture');
 insert into public.workspace_members(ws_id,user_id) values ('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000010');
 insert into public.workspace_meetings(id,ws_id,creator_id,name) values ('00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000010','Fixture');
 insert into private.meet_content_hold_scopes(ws_id,registry_ready) values ('00000000-0000-4000-8000-000000000001',true);
@@ -47,7 +47,9 @@ update public.meet_ai_chunks set usage=usage-'unclassified' where id='00000000-0
 
 savepoint held_request;
 select private.begin_meet_hold_transition('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000041');
-insert into private.meet_content_holds(id,ws_id,meeting_id) values('00000000-0000-4000-8000-000000000042','00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002');
+-- Simulate V9's acknowledged projection; V2 stays inert in deployment.
+do $$begin if exists(select 1 from pg_trigger where tgrelid='private.meet_content_holds'::regclass and tgname='meet_hold_transition_inert') then alter table private.meet_content_holds disable trigger meet_hold_transition_inert; end if; end$$;
+insert into private.meet_content_holds(id,ws_id,meeting_id,kind,hold_ref,cora_approval_ref,review_by,created_by) values('00000000-0000-4000-8000-000000000042','00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','legal_hold','fixture','fixture',clock_timestamp()+interval '1 day','00000000-0000-4000-8000-000000000010');
 select private.finish_meet_hold_transition('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000041',1);
 select is(private.defer_meet_subject_erasure('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000010'),private.defer_meet_subject_erasure('00000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000010'),'C5 retries reuse the on_hold request');
 select is((select status from private.meet_erasure_requests),'on_hold','hold defers rather than declines');
@@ -83,7 +85,7 @@ select is((select state from private.meet_erasure_store_progress where store='S-
 create extension if not exists dblink;
 select dblink_connect('v10a','dbname='||current_database()||' user='||current_user);
 select dblink_connect('v10b','dbname='||current_database()||' user='||current_user);
-select dblink_exec('v10a',$$insert into public.workspaces(id) values('10000000-0000-4000-8000-000000000001'); insert into private.meet_content_hold_scopes(ws_id,registry_ready) values('10000000-0000-4000-8000-000000000001',true)$$);
+select dblink_exec('v10a',$$insert into public.workspaces(id,name) values('10000000-0000-4000-8000-000000000001','Fixture'); insert into private.meet_content_hold_scopes(ws_id,registry_ready) values('10000000-0000-4000-8000-000000000001',true)$$);
 select dblink_exec('v10a','begin');
 select * from dblink('v10a',$$select (private.lock_meet_hold_barrier('10000000-0000-4000-8000-000000000001',false)).ws_id$$) as t(id uuid);
 select lives_ok($q$select * from dblink('v10b',$$select (private.lock_meet_hold_barrier('10000000-0000-4000-8000-000000000001',false)).ws_id$$) as t(id uuid)$q$,'shared batches coexist');
