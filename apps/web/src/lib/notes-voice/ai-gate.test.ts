@@ -32,8 +32,14 @@ describe('Notes voice honours the Meet AI controls', () => {
     ['the kill switch has any non-false value', { MEET_AI_DISABLED: 'yes' }],
     ['the workspace is denylisted', { MEET_AI_DISABLED_WORKSPACE_IDS: WS }],
     ['the denylist is malformed', { MEET_AI_DISABLED_WORKSPACE_IDS: 'oops' }],
-    ['the allowlist is present but blank', { MEET_AI_ENABLED_WORKSPACE_IDS: '' }],
-    ['the allowlist omits the workspace', { MEET_AI_ENABLED_WORKSPACE_IDS: OTHER }],
+    [
+      'the allowlist is present but blank',
+      { MEET_AI_ENABLED_WORKSPACE_IDS: '' },
+    ],
+    [
+      'the allowlist omits the workspace',
+      { MEET_AI_ENABLED_WORKSPACE_IDS: OTHER },
+    ],
   ])('refuses with a stable 403 when %s', (_label, env) => {
     const error = refusal(env);
     expect(error).toBeInstanceOf(NotesVoiceError);
@@ -46,8 +52,14 @@ describe('Notes voice honours the Meet AI controls', () => {
   it.each([
     ['no control is set', {}],
     ['the kill switch is explicitly off', { MEET_AI_DISABLED: 'false' }],
-    ['another workspace is denylisted', { MEET_AI_DISABLED_WORKSPACE_IDS: OTHER }],
-    ['the allowlist names the workspace', { MEET_AI_ENABLED_WORKSPACE_IDS: WS }],
+    [
+      'another workspace is denylisted',
+      { MEET_AI_DISABLED_WORKSPACE_IDS: OTHER },
+    ],
+    [
+      'the allowlist names the workspace',
+      { MEET_AI_ENABLED_WORKSPACE_IDS: WS },
+    ],
   ])('allows when %s', (_label, env) => {
     expect(refusal(env)).toBeNull();
   });
