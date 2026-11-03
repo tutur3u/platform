@@ -155,15 +155,16 @@ select ok((select ticket_number from public.task_project_tasks
   where task_id = '00000000-0000-4000-8000-0000000e6105'
     and project_id = '00000000-0000-4000-8000-0000000e6031') is not null,
   'the member''s link gets a ticket number');
--- Linking straight from a member session fails: the allocator is SECURITY
--- INVOKER and end-user sessions hold no task_projects privileges. Left for
--- the security reviewer to decide; the function's mode is unchanged.
+-- Linking straight from a member session is denied. The allocator stays
+-- SECURITY INVOKER, and the server-only revokes on task_projects predate
+-- ticket keys, so end-user sessions cannot read or bump the counter.
+-- Legitimate linking goes through the authorized server paths above.
 set local role authenticated;
 set local request.jwt.claims = '{"role":"authenticated","sub":"00000000-0000-4000-8000-0000000e6002"}';
-select todo('end-user sessions cannot read task_projects for the invoker allocator', 1);
-select lives_ok($$insert into public.task_project_tasks (project_id, task_id)
+select throws_ok($$insert into public.task_project_tasks (project_id, task_id)
   values ('00000000-0000-4000-8000-0000000e6031', '00000000-0000-4000-8000-0000000e6106')$$,
-  'a member links a task straight from their session and gets a number');
+  '42501', null,
+  'a member session cannot link a task directly; the invoker allocator needs server-only task_projects access');
 set local role service_role;
 set local request.jwt.claims = '{"role":"service_role"}';
 select * from finish();
