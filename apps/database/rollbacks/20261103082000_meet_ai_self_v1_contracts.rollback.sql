@@ -5,9 +5,48 @@
 -- is kept: only the self_v1 triggers on it are removed. Self_v1 sessions must be erased
 -- first, and a session whose host profile was deleted needs an owner decision
 -- before user_id can become NOT NULL again.
+-- Run with psql -X -v ON_ERROR_STOP=1 -f, without -1 or an enclosing
+-- transaction. Validation must commit before the destructive rollback starts.
+-- This rollback also locks public.users and public.workspaces: use a low-traffic
+-- window with lock_timeout; do not let writers create self_v1 rows during it.
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '120s';
+-- Fixed checks only (no EXECUTE, no interpolation); they can only raise.
+-- tuturuuu: reviewed(dynamic-sql-review): no EXECUTE or interpolated SQL
+do $$
+begin
+  if exists (select 1 from public.meet_ai_sessions where protocol <> 'legacy') then
+    raise exception 'Erase self_v1 sessions before rolling back' using errcode = '55000';
+  end if;
+  if exists (select 1 from public.meet_ai_sessions where user_id is null) then
+    raise exception 'Resolve host-less sessions before restoring NOT NULL' using errcode = '55000';
+  end if;
+end;
+$$;
+
+-- Install the proof in a short transaction, then release ACCESS EXCLUSIVE
+-- before VALIDATE scans. On failure, fix the data and retry this file; the
+-- temporary check may remain, so replace it before retrying validation.
+alter table public.meet_ai_sessions
+  drop constraint if exists meet_ai_sessions_rollback_user_id_nn,
+  add constraint meet_ai_sessions_rollback_user_id_nn
+    check (user_id is not null) not valid;
+commit;
+
+begin;
+set local lock_timeout = '5s';
+set local statement_timeout = '120s';
+alter table public.meet_ai_sessions
+  validate constraint meet_ai_sessions_rollback_user_id_nn;
+commit;
+
+begin;
+set local lock_timeout = '5s';
+set local statement_timeout = '120s';
+
+-- Recheck under the locks held through the destructive transaction.
+lock table public.meet_ai_sessions, public.meet_ai_chunks in access exclusive mode;
 -- Fixed checks only (no EXECUTE, no interpolation); they can only raise.
 -- tuturuuu: reviewed(dynamic-sql-review): no EXECUTE or interpolated SQL
 do $$
@@ -69,7 +108,10 @@ alter table public.meet_ai_sessions
   drop column share_notes_after, drop column share_revision,
   drop column cost_reserved_usd, drop column cost_unknown_usd,
   drop column cost_settled_usd, drop column cost_cap_usd;
+-- Keep the validated check until SET NOT NULL has used it to skip the scan.
 alter table public.meet_ai_sessions alter column user_id set not null;
+alter table public.meet_ai_sessions
+  drop constraint meet_ai_sessions_rollback_user_id_nn;
 
 -- Restore the 20260909153000 reservation body; grants are unchanged.
 create or replace function public.reserve_meet_ai_chunk(
