@@ -514,6 +514,7 @@
                   "reference/repository/routes/redis",
                   "reference/repository/routes/rewise",
                   "reference/repository/routes/shortener",
+                  "reference/repository/routes/status-api",
                   "reference/repository/routes/storage-unzip-proxy",
                   "reference/repository/routes/storefront",
                   "reference/repository/routes/supermemory",
