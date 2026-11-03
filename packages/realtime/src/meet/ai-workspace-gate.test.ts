@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-  EASY_CENTER_WORKSPACE_ID,
   isMeetAiEnabledForWorkspace,
   meetAiEnabledWorkspaceIds,
   resetMeetAiGateWarnings,
@@ -8,8 +7,11 @@ import {
 
 const WS = '0f1a64f7-780f-4d30-9d72-5530f204e95c';
 const OTHER = '5e5217de-9bb3-4e20-8d99-526ad3e7e34f';
-const EC = EASY_CENTER_WORKSPACE_ID;
-const allow = (ids: string) => ({ MEET_AI_ENABLED_WORKSPACE_IDS: ids });
+const EC = '00000000-0000-4000-8000-0000000000ee';
+const allow = (ids: string) => ({
+  MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
+  MEET_AI_ENABLED_WORKSPACE_IDS: ids,
+});
 
 describe('Meet AI workspace gate (default-off, allowlist-only)', () => {
   let warn: ReturnType<typeof vi.spyOn>;
@@ -19,8 +21,8 @@ describe('Meet AI workspace gate (default-off, allowlist-only)', () => {
   });
   afterEach(() => warn.mockRestore());
 
-  it('pins the Easy Center id', () => {
-    expect(EC).toBe('42529372-c669-4833-bb32-2cab1f4ffd83');
+  it('uses a synthetic protected workspace fixture', () => {
+    expect(EC).toBe('00000000-0000-4000-8000-0000000000ee');
   });
 
   it.each([
@@ -69,7 +71,11 @@ describe('Meet AI workspace gate (default-off, allowlist-only)', () => {
     'denies every workspace for a non-string allowlist %j',
     (ids) => {
       expect(
-        isMeetAiEnabledForWorkspace(WS, { MEET_AI_ENABLED_WORKSPACE_IDS: ids })
+        isMeetAiEnabledForWorkspace(WS, {
+          MEET_AI_PROTECTED_WORKSPACE_IDS:
+            '00000000-0000-4000-8000-0000000000ee',
+          MEET_AI_ENABLED_WORKSPACE_IDS: ids,
+        })
       ).toBe(false);
     }
   );
@@ -90,7 +96,7 @@ describe('Meet AI workspace gate (default-off, allowlist-only)', () => {
       expect(isMeetAiEnabledForWorkspace(ws, allow(WS))).toBe(false);
   });
 
-  it('denies Easy Center in code even when it is the only allowlisted id', () => {
+  it('denies Easy Center by the protected secret even when it is the only allowlisted id', () => {
     for (const env of [
       allow(EC),
       allow(EC.toUpperCase()),
@@ -154,6 +160,28 @@ describe('Meet AI workspace gate (default-off, allowlist-only)', () => {
       ).toBe(false);
     }
   );
+
+  it.each([undefined, '', ' ', '*', `${EC},garbage`, null, [EC]])(
+    'denies even allowlisted workspaces with unusable protected config %j',
+    (value) => {
+      expect(
+        isMeetAiEnabledForWorkspace(WS, {
+          ...allow(WS),
+          MEET_AI_PROTECTED_WORKSPACE_IDS: value,
+        })
+      ).toBe(false);
+    }
+  );
+  it('ignores inherited control bindings', () => {
+    expect(isMeetAiEnabledForWorkspace(WS, Object.create(allow(WS)))).toBe(
+      false
+    );
+    const env = Object.assign(
+      Object.create({ MEET_AI_DISABLED: 'true' }),
+      allow(WS)
+    );
+    expect(isMeetAiEnabledForWorkspace(WS, env)).toBe(true);
+  });
 
   it('logs each misconfiguration once per isolate without workspace ids', () => {
     for (let i = 0; i < 3; i++)
