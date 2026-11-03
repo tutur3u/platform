@@ -13213,6 +13213,40 @@ export type Database = {
           },
         ];
       };
+      meet_content_fences: {
+        Row: {
+          active_operation_key: string | null;
+          doc_generation: number;
+          doc_hold: boolean;
+          generation: number;
+          meeting_id: string;
+          restore_hold: boolean;
+          updated_at: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          active_operation_key?: string | null;
+          doc_generation?: number;
+          doc_hold?: boolean;
+          generation?: number;
+          meeting_id: string;
+          restore_hold?: boolean;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          active_operation_key?: string | null;
+          doc_generation?: number;
+          doc_hold?: boolean;
+          generation?: number;
+          meeting_id?: string;
+          restore_hold?: boolean;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       meet_stream_events: {
         Row: {
           actor_id: string | null;
@@ -13406,6 +13440,8 @@ export type Database = {
           checkpoint_content: NonNullable<Json>;
           checkpoint_hash: string | null;
           document_id: string;
+          installed_doc_generation: number;
+          installed_operation_key: string | null;
           meeting_id: string;
           revision: number;
           updated_at: string;
@@ -13416,6 +13452,8 @@ export type Database = {
           checkpoint_content?: NonNullable<Json>;
           checkpoint_hash?: string | null;
           document_id: string;
+          installed_doc_generation?: number;
+          installed_operation_key?: string | null;
           meeting_id: string;
           revision?: number;
           updated_at?: string;
@@ -13425,6 +13463,8 @@ export type Database = {
           checkpoint_content?: NonNullable<Json>;
           checkpoint_hash?: string | null;
           document_id?: string;
+          installed_doc_generation?: number;
+          installed_operation_key?: string | null;
           meeting_id?: string;
           revision?: number;
           updated_at?: string;
@@ -19905,6 +19945,34 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_role_permissions_orphans_20261031: {
+        Row: {
+          created_at: string;
+          enabled: boolean;
+          permission: Database['public']['Enums']['workspace_role_permission'];
+          quarantined_at: string;
+          role_id: string;
+          ws_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at: string;
+          enabled: boolean;
+          permission: Database['public']['Enums']['workspace_role_permission'];
+          quarantined_at?: string;
+          role_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          enabled?: boolean;
+          permission?: Database['public']['Enums']['workspace_role_permission'];
+          quarantined_at?: string;
+          role_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       workspace_scheduling_metadata: {
         Row: {
           bumped_habits: number | null;
@@ -21667,6 +21735,11 @@ export type Database = {
           success: boolean;
         }[];
       };
+      board_sprint_end_date: {
+        Args: { p_start: string; p_weeks: number };
+        Returns: string;
+      };
+      board_sprint_next_monday: { Args: { p_day: string }; Returns: string };
       build_rate_limit_dblink_connstr: {
         Args: Record<PropertyKey, never>;
         Returns: string;
@@ -22180,18 +22253,32 @@ export type Database = {
         Args: { p_actor_user_id: string; p_target_user_id: string };
         Returns: boolean;
       };
-      checkpoint_meeting_document: {
-        Args: {
-          p_content: Json;
-          p_document_id: string;
-          p_hash: string;
-          p_meeting_id: string;
-          p_owner_id: string;
-          p_state: Json;
-          p_version: number;
-        };
-        Returns: number;
-      };
+      checkpoint_meeting_document:
+        | {
+            Args: {
+              p_content: Json;
+              p_document_id: string;
+              p_hash: string;
+              p_meeting_id: string;
+              p_owner_id: string;
+              p_state: Json;
+              p_version: number;
+            };
+            Returns: number;
+          }
+        | {
+            Args: {
+              p_content: Json;
+              p_doc_generation: number;
+              p_document_id: string;
+              p_hash: string;
+              p_meeting_id: string;
+              p_owner_id: string;
+              p_state: Json;
+              p_version: number;
+            };
+            Returns: number;
+          };
       claim_discord_interaction: {
         Args: {
           p_interaction_id: string;
@@ -22548,6 +22635,16 @@ export type Database = {
           p_name: string;
         };
         Returns: string;
+      };
+      create_planned_board_sprint: {
+        Args: { p_actor_id: string; p_after_end: string; p_board_id: string };
+        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       create_wallet_checkpoint_reconciliation: {
         Args: {
@@ -24814,6 +24911,25 @@ export type Database = {
       lock_employee_auth_pair: {
         Args: { p_actor_id: string; p_user_id: string };
         Returns: undefined;
+      };
+      lock_meet_content_fence: {
+        Args: { p_meeting_id: string };
+        Returns: {
+          active_operation_key: string | null;
+          doc_generation: number;
+          doc_hold: boolean;
+          generation: number;
+          meeting_id: string;
+          restore_hold: boolean;
+          updated_at: string;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'meet_content_fences';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       lock_tutoring_hours_teacher: {
         Args: { p_teacher: string; p_ws: string };
@@ -31111,6 +31227,7 @@ export type Database = {
           duration_seconds: number;
           end_ms: number | null;
           erase_generation: number | null;
+          erasure_generation: number;
           id: string;
           prior_cost_usd: number;
           sequence: number;
@@ -31141,6 +31258,7 @@ export type Database = {
           duration_seconds: number;
           end_ms?: number | null;
           erase_generation?: number | null;
+          erasure_generation?: number;
           id: string;
           prior_cost_usd?: number;
           sequence: number;
@@ -31170,6 +31288,7 @@ export type Database = {
           duration_seconds?: number;
           end_ms?: number | null;
           erase_generation?: number | null;
+          erasure_generation?: number;
           id?: string;
           prior_cost_usd?: number;
           sequence?: number;
@@ -31273,6 +31392,7 @@ export type Database = {
           notes_cost_usd: number | null;
           notes_deliveries: number;
           notes_edited: Json | null;
+          notes_erasure_generation: number | null;
           notes_model: string | null;
           notes_prompt_version: number | null;
           notes_provider_attempts: number;
@@ -31316,6 +31436,7 @@ export type Database = {
           notes_cost_usd?: number | null;
           notes_deliveries?: number;
           notes_edited?: Json | null;
+          notes_erasure_generation?: number | null;
           notes_model?: string | null;
           notes_prompt_version?: number | null;
           notes_provider_attempts?: number;
@@ -31358,6 +31479,7 @@ export type Database = {
           notes_cost_usd?: number | null;
           notes_deliveries?: number;
           notes_edited?: Json | null;
+          notes_erasure_generation?: number | null;
           notes_model?: string | null;
           notes_prompt_version?: number | null;
           notes_provider_attempts?: number;
@@ -37484,7 +37606,7 @@ export type Database = {
           goal: string | null;
           goal_result: string | null;
           next_cycle_id: string | null;
-          people: Json;
+          people: NonNullable<Json>;
           total_tasks: number;
           ws_id: string;
         };
@@ -37505,7 +37627,7 @@ export type Database = {
           goal?: string | null;
           goal_result?: string | null;
           next_cycle_id?: string | null;
-          people?: Json;
+          people?: NonNullable<Json>;
           total_tasks?: number;
           ws_id: string;
         };
@@ -37525,7 +37647,7 @@ export type Database = {
           goal?: string | null;
           goal_result?: string | null;
           next_cycle_id?: string | null;
-          people?: Json;
+          people?: NonNullable<Json>;
           total_tasks?: number;
           ws_id?: string;
         };
@@ -37548,6 +37670,13 @@ export type Database = {
             foreignKeyName: 'task_sprint_reports_ended_by_fkey';
             columns: ['ended_by'];
             isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_sprint_reports_ended_by_fkey';
+            columns: ['ended_by'];
+            isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -37556,6 +37685,27 @@ export type Database = {
             columns: ['next_cycle_id'];
             isOneToOne: false;
             referencedRelation: 'task_cycles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_sprint_reports_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_sprint_reports_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'task_sprint_reports_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
             referencedColumns: ['id'];
           },
           {
@@ -50070,6 +50220,14 @@ export type Database = {
       check_ws_creator:
         | { Args: { ws_id: string }; Returns: boolean }
         | { Args: { user_id: string; ws_id: string }; Returns: boolean };
+      claim_meet_ai_notes: {
+        Args: {
+          p_expected_generation: number;
+          p_session_id: string;
+          p_started_at: string;
+        };
+        Returns: boolean;
+      };
       claim_profile_banner_upload: {
         Args: {
           p_file_path: string;
@@ -50160,6 +50318,10 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: string;
+      };
+      complete_meet_ai_chunk: {
+        Args: { p_attempt_id: string; p_id: string; p_payload: Json };
+        Returns: boolean;
       };
       complete_mira_focus_session: {
         Args: { p_notes?: string; p_session_id: string };
@@ -50448,7 +50610,26 @@ export type Database = {
           p_decisions?: Json;
           p_goal_result?: string;
         };
-        Returns: Database['public']['Tables']['task_sprint_reports']['Row'];
+        Returns: {
+          added_points: number;
+          added_tasks: number;
+          backlog_tasks: number;
+          board_id: string;
+          carried_in_tasks: number;
+          carried_tasks: number;
+          committed_points: number;
+          cycle_id: string;
+          done_points: number;
+          done_tasks: number;
+          ended_at: string;
+          ended_by: string | null;
+          goal: string | null;
+          goal_result: string | null;
+          next_cycle_id: string | null;
+          people: NonNullable<Json>;
+          total_tasks: number;
+          ws_id: string;
+        };
         SetofOptions: {
           from: '*';
           to: 'task_sprint_reports';
@@ -53112,11 +53293,7 @@ export type Database = {
         Returns: Json;
       };
       move_tasks_to_board_sprint: {
-        Args: {
-          p_board_id: string;
-          p_cycle_id?: string;
-          p_task_ids: string[];
-        };
+        Args: { p_board_id: string; p_cycle_id?: string; p_task_ids: string[] };
         Returns: number;
       };
       normalize_task_sort_keys: {
@@ -53390,6 +53567,7 @@ export type Database = {
           duration_seconds: number;
           end_ms: number | null;
           erase_generation: number | null;
+          erasure_generation: number;
           id: string;
           prior_cost_usd: number;
           sequence: number;
@@ -53489,6 +53667,15 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      save_meet_ai_notes: {
+        Args: {
+          p_expected_generation: number;
+          p_payload: Json;
+          p_session_id: string;
+          p_started_at: string;
+        };
+        Returns: boolean;
+      };
       search_finance_invoices: {
         Args: {
           p_end_date?: string;
@@ -53561,7 +53748,26 @@ export type Database = {
       };
       set_board_sprint_length: {
         Args: { p_actor_id?: string; p_board_id: string; p_weeks: number };
-        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        Returns: {
+          archived: boolean | null;
+          board_id: string | null;
+          created_at: string | null;
+          creator_id: string;
+          deleted: boolean | null;
+          description: string | null;
+          end_date: string | null;
+          ended_at: string | null;
+          goal: string | null;
+          goal_result: string | null;
+          id: string;
+          name: string;
+          sequence_number: number | null;
+          start_date: string | null;
+          started_at: string | null;
+          status: string | null;
+          updated_at: string | null;
+          ws_id: string;
+        };
         SetofOptions: {
           from: '*';
           to: 'task_cycles';
@@ -53805,10 +54011,60 @@ export type Database = {
       };
       start_board_sprint: {
         Args: { p_actor_id?: string; p_cycle_id: string };
-        Returns: Database['public']['Tables']['task_cycles']['Row'];
+        Returns: {
+          archived: boolean | null;
+          board_id: string | null;
+          created_at: string | null;
+          creator_id: string;
+          deleted: boolean | null;
+          description: string | null;
+          end_date: string | null;
+          ended_at: string | null;
+          goal: string | null;
+          goal_result: string | null;
+          id: string;
+          name: string;
+          sequence_number: number | null;
+          start_date: string | null;
+          started_at: string | null;
+          status: string | null;
+          updated_at: string | null;
+          ws_id: string;
+        };
         SetofOptions: {
           from: '*';
           to: 'task_cycles';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      start_meet_ai_session: {
+        Args: { p_id?: string; p_meeting_id: string; p_user_id: string };
+        Returns: {
+          created_at: string;
+          ended_at: string | null;
+          id: string;
+          language_hint: string | null;
+          meeting_id: string;
+          notes: Json | null;
+          notes_cost_usd: number | null;
+          notes_edited: Json | null;
+          notes_erasure_generation: number | null;
+          notes_model: string | null;
+          notes_prompt_version: number | null;
+          notes_started_at: string | null;
+          notes_status: string;
+          notes_unpriced_attempts: number;
+          notes_usage: Json | null;
+          purge_after: string | null;
+          source: string;
+          transcript_purged_at: string | null;
+          user_id: string;
+          visibility: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'meet_ai_sessions';
           isOneToOne: true;
           isSetofReturn: false;
         };
