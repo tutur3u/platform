@@ -100,8 +100,9 @@ import { POST } from './route';
 const allowlist = (value: string | undefined) =>
   vi.stubGlobal(Symbol.for('__cloudflare-context__'), {
     env: {
+      MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
       MEET_AI_ENABLED_WORKSPACE_IDS: value,
-      MEET_AI_DISABLED: value ? undefined : 'true',
+      MEET_AI_DISABLED: value ? 'false' : 'true',
     },
   });
 afterEach(() => {
