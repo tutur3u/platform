@@ -36,8 +36,14 @@ describe('cyclePlanningTaskSelect', () => {
 });
 
 describe('toCyclePlanningTask cycle_id with pre-existing duplicate links', () => {
-  const older = { cycle_id: OLDER_CYCLE, created_at: '2026-01-01T00:00:00+00:00' };
-  const newer = { cycle_id: NEWER_CYCLE, created_at: '2026-02-01T00:00:00+00:00' };
+  const older = {
+    cycle_id: OLDER_CYCLE,
+    created_at: '2026-01-01T00:00:00+00:00',
+  };
+  const newer = {
+    cycle_id: NEWER_CYCLE,
+    created_at: '2026-02-01T00:00:00+00:00',
+  };
 
   it('picks the newest link whatever order PostgREST returns', () => {
     expect(toCyclePlanningTask(task([older, newer])).cycle_id).toBe(
@@ -69,9 +75,15 @@ describe('toCyclePlanningTask cycle_id with pre-existing duplicate links', () =>
   });
 
   it('compares instants, not timestamp strings', () => {
-    const utc = { cycle_id: HIGH_CYCLE, created_at: '2026-04-01T00:30:00+00:00' };
+    const utc = {
+      cycle_id: HIGH_CYCLE,
+      created_at: '2026-04-01T00:30:00+00:00',
+    };
     // 23:00 at -02:00 is 01:00 UTC, which is later than 00:30 UTC.
-    const offset = { cycle_id: LOW_CYCLE, created_at: '2026-03-31T23:00:00-02:00' };
+    const offset = {
+      cycle_id: LOW_CYCLE,
+      created_at: '2026-03-31T23:00:00-02:00',
+    };
 
     expect(toCyclePlanningTask(task([utc, offset])).cycle_id).toBe(LOW_CYCLE);
   });

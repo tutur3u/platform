@@ -221,7 +221,10 @@ describe('POST assign task to cycle', () => {
   it('returns a retryable 409 when a concurrent assign holds the task', async () => {
     mocks.rpc.mockResolvedValue({
       data: null,
-      error: { code: '55P03', message: 'canceling statement due to lock timeout' },
+      error: {
+        code: '55P03',
+        message: 'canceling statement due to lock timeout',
+      },
     });
 
     const response = await POST(request('POST'), context);
