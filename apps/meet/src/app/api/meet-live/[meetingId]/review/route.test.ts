@@ -1,3 +1,8 @@
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiPolicyResponse: async () => null,
+  workspaceAiAllowed: async () => true,
+}));
+
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 
