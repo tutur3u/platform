@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  workspaceAiAllowed: vi.fn(),
   capMaxOutputTokensByCredits: vi.fn(),
   checkAiCredits: vi.fn(),
   checkRateLimitRedis: vi.fn(),
@@ -25,6 +26,10 @@ const mocks = vi.hoisted(() => ({
   stream: vi.fn(),
   toolLoopSettings: null as null | Record<string, unknown>,
   withAiMemory: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
+  workspaceAiAllowed: mocks.workspaceAiAllowed,
 }));
 
 vi.mock('@ai-sdk/google', () => ({
@@ -216,6 +221,7 @@ async function registerRuntime() {
 describe('AI agent runtime billing controls', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.workspaceAiAllowed.mockReset().mockResolvedValue(true);
     mocks.onNewMention = null;
     mocks.onSubscribedMessage = null;
     mocks.toolLoopSettings = null;
@@ -350,6 +356,26 @@ describe('AI agent runtime billing controls', () => {
         wsId: 'workspace-1',
       })
     );
+  });
+
+  it('denies workspace policy before rate limits, credits, memory or provider work', async () => {
+    mocks.workspaceAiAllowed.mockResolvedValueOnce(false);
+    const handler = await registerRuntime();
+    const thread = createThread();
+    await handler(thread, externalMessage);
+    expect(mocks.workspaceAiAllowed).toHaveBeenCalledWith(
+      'workspace-1',
+      'unknown',
+      'user-1'
+    );
+    expect(mocks.checkRateLimitRedis).not.toHaveBeenCalled();
+    expect(mocks.resolvePlanModel).not.toHaveBeenCalled();
+    expect(mocks.checkAiCredits).not.toHaveBeenCalled();
+    expect(mocks.withAiMemory).not.toHaveBeenCalled();
+    expect(mocks.stream).not.toHaveBeenCalled();
+    expect(mocks.deductAiCredits).not.toHaveBeenCalled();
+    expect(thread.startTyping).not.toHaveBeenCalled();
+    expect(thread.post).not.toHaveBeenCalled();
   });
 
   it('posts a credit denial without invoking the model', async () => {
