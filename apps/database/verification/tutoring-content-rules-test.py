@@ -63,6 +63,10 @@ class ContentRules(unittest.TestCase):
     def count(self, expected):
         self.assertEqual(self.sql('select count(*) from public.notifications'), [str(expected)])
 
+    def test_notification_entity_uuid(self):
+        self.run_job()
+        self.assertEqual(self.sql("select pg_typeof(entity_id)::text || ':' || entity_id::text from public.notifications"), ['uuid:00000000-0000-0000-0000-000000000002'])
+
     def test_n2_day13(self):
         self.sql("update public.user_feedbacks set created_at=now()-interval '13 days'")
         self.run_job(); self.count(0)
