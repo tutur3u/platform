@@ -8,6 +8,13 @@ fn query() -> TutoringQueueQuery {
     }
 }
 
+fn context() -> QueueContext {
+    QueueContext {
+        current_keys: BTreeSet::from(["group:student".to_owned()]),
+        ..Default::default()
+    }
+}
+
 fn policy() -> QueuePolicy {
     QueuePolicy {
         reassessment_days: 14,
@@ -41,6 +48,7 @@ fn pending_recovery_reserves_an_absence_without_hiding_other_missing_sessions() 
         vec![pending],
         vec![],
         &policy(),
+        &context(),
         iso_day("2026-09-27").unwrap(),
     );
     assert_eq!(response.count, 1);
@@ -75,6 +83,7 @@ fn pending_feedback_support_is_not_suggested_twice() {
             vec![pending],
             vec![feedback],
             &policy(),
+            &context(),
             iso_day("2026-09-27").unwrap()
         )
         .count,
@@ -106,6 +115,7 @@ fn historical_absence_and_recovery_do_not_distort_recent_deficit() {
         vec![old_recovery],
         vec![],
         &policy(),
+        &context(),
         iso_day("2026-09-27").unwrap(),
     );
     assert_eq!(response.data[0].absence_deficit, 1);
@@ -140,6 +150,7 @@ fn pending_support_still_shows_stale_content_for_office_review() {
         vec![pending],
         vec![feedback],
         &policy,
+        &context(),
         iso_day("2026-09-27").unwrap(),
     );
     assert_eq!(response.count, 1);
@@ -172,6 +183,7 @@ fn earlier_make_up_cannot_consume_later_absence_for_either_reserved_status() {
             }],
             vec![],
             &policy(),
+            &context(),
             iso_day("2026-09-27").unwrap(),
         );
         assert_eq!(response.data[0].absence_deficit, 1);
@@ -221,6 +233,7 @@ fn credits_remain_scoped_to_the_original_group_and_student() {
         ],
         vec![],
         &policy(),
+        &context(),
         iso_day("2026-09-27").unwrap(),
     );
     assert_eq!(response.data[0].absence_deficit, 1);

@@ -1,0 +1,668 @@
+[
+  {
+    "name": "tag contains all",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["Special FORMAT class"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": null,
+    "rules": [
+      {
+        "scope": "all",
+        "match": "contains",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag contains make_up",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["Special FORMAT class"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "WEAK_SUPPORT",
+    "rules": [
+      {
+        "scope": "make_up",
+        "match": "contains",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag contains weak_support",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["Special FORMAT class"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "ABSENT_RECOVERY",
+    "rules": [
+      {
+        "scope": "weak_support",
+        "match": "contains",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag contains nonmatch",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["Other"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "BOTH",
+    "rules": [
+      {
+        "scope": "all",
+        "match": "contains",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag exact all",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [" FORMAT "],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": null,
+    "rules": [
+      {
+        "scope": "all",
+        "match": "exact",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag exact make_up",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [" FORMAT "],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "WEAK_SUPPORT",
+    "rules": [
+      {
+        "scope": "make_up",
+        "match": "exact",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag exact weak_support",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [" FORMAT "],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "ABSENT_RECOVERY",
+    "rules": [
+      {
+        "scope": "weak_support",
+        "match": "exact",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag exact nonmatch",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["Other"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "BOTH",
+    "rules": [
+      {
+        "scope": "all",
+        "match": "exact",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag prefix all",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["Format one"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": null,
+    "rules": [
+      {
+        "scope": "all",
+        "match": "prefix",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag prefix make_up",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["Format one"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "WEAK_SUPPORT",
+    "rules": [
+      {
+        "scope": "make_up",
+        "match": "prefix",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag prefix weak_support",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["Format one"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "ABSENT_RECOVERY",
+    "rules": [
+      {
+        "scope": "weak_support",
+        "match": "prefix",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag prefix nonmatch",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["Other"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "BOTH",
+    "rules": [
+      {
+        "scope": "all",
+        "match": "prefix",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag suffix all",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["one FORMAT"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": null,
+    "rules": [
+      {
+        "scope": "all",
+        "match": "suffix",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag suffix make_up",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["one FORMAT"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "WEAK_SUPPORT",
+    "rules": [
+      {
+        "scope": "make_up",
+        "match": "suffix",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag suffix weak_support",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["one FORMAT"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "ABSENT_RECOVERY",
+    "rules": [
+      {
+        "scope": "weak_support",
+        "match": "suffix",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag suffix nonmatch",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["Other"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "BOTH",
+    "rules": [
+      {
+        "scope": "all",
+        "match": "suffix",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "tag rule never reads name",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "BOTH",
+    "rules": [
+      {
+        "scope": "all",
+        "match": "exact",
+        "value": "Class A",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "name rule never reads tags",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["format"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "BOTH",
+    "rules": [
+      {
+        "scope": "all",
+        "match": "exact",
+        "value": "format"
+      }
+    ]
+  },
+  {
+    "name": "tag rule reads any tag",
+    "category": "tags",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": ["Other", "format"],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": null,
+    "rules": [
+      {
+        "scope": "all",
+        "match": "exact",
+        "value": "format",
+        "target": "tag"
+      }
+    ]
+  },
+  {
+    "name": "standard default DDT",
+    "category": "defaults",
+    "preset": "standard",
+    "groupName": "Class DDT",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "BOTH"
+  },
+  {
+    "name": "easy_center default DDT",
+    "category": "defaults",
+    "preset": "easy_center",
+    "groupName": "Class DDT",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": null
+  },
+  {
+    "name": "standard default Mẫu giáo",
+    "category": "defaults",
+    "preset": "standard",
+    "groupName": "Class Mẫu giáo",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "BOTH"
+  },
+  {
+    "name": "easy_center default Mẫu giáo",
+    "category": "defaults",
+    "preset": "easy_center",
+    "groupName": "Class Mẫu giáo",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": null
+  },
+  {
+    "name": "standard default Kindergarten",
+    "category": "defaults",
+    "preset": "standard",
+    "groupName": "Class Kindergarten",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "BOTH"
+  },
+  {
+    "name": "easy_center default Kindergarten",
+    "category": "defaults",
+    "preset": "easy_center",
+    "groupName": "Class Kindergarten",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": null
+  },
+  {
+    "name": "explicit empty",
+    "category": "defaults",
+    "preset": "easy_center",
+    "groupName": "Kindergarten",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "rules": [],
+    "expected": "BOTH"
+  },
+  {
+    "name": "custom override",
+    "category": "defaults",
+    "preset": "easy_center",
+    "groupName": "Kindergarten",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "rules": [
+      {
+        "scope": "all",
+        "match": "exact",
+        "value": "Other"
+      }
+    ],
+    "expected": "BOTH"
+  },
+  {
+    "name": "current absence=True feedback=False",
+    "category": "membership",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": false,
+    "expected": "ABSENT_RECOVERY"
+  },
+  {
+    "name": "current absence=False feedback=True",
+    "category": "membership",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": false,
+    "feedback": true,
+    "expected": "WEAK_SUPPORT"
+  },
+  {
+    "name": "current absence=True feedback=True",
+    "category": "membership",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "BOTH"
+  },
+  {
+    "name": "departed absence=True feedback=False",
+    "category": "membership",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [],
+    "current": false,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": false,
+    "expected": null
+  },
+  {
+    "name": "departed absence=False feedback=True",
+    "category": "membership",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [],
+    "current": false,
+    "role": null,
+    "archived": false,
+    "absence": false,
+    "feedback": true,
+    "expected": null
+  },
+  {
+    "name": "departed absence=True feedback=True",
+    "category": "membership",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [],
+    "current": false,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": null
+  },
+  {
+    "name": "teacher absence=True feedback=False",
+    "category": "membership",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [],
+    "current": true,
+    "role": "TEACHER",
+    "archived": false,
+    "absence": true,
+    "feedback": false,
+    "expected": null
+  },
+  {
+    "name": "teacher absence=False feedback=True",
+    "category": "membership",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [],
+    "current": true,
+    "role": "TEACHER",
+    "archived": false,
+    "absence": false,
+    "feedback": true,
+    "expected": null
+  },
+  {
+    "name": "teacher absence=True feedback=True",
+    "category": "membership",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [],
+    "current": true,
+    "role": "TEACHER",
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": null
+  },
+  {
+    "name": "archived absence=True feedback=False",
+    "category": "membership",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": true,
+    "absence": true,
+    "feedback": false,
+    "expected": null
+  },
+  {
+    "name": "archived absence=False feedback=True",
+    "category": "membership",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": true,
+    "absence": false,
+    "feedback": true,
+    "expected": null
+  },
+  {
+    "name": "archived absence=True feedback=True",
+    "category": "membership",
+    "preset": "standard",
+    "groupName": "Class A",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": true,
+    "absence": true,
+    "feedback": true,
+    "expected": null
+  }
+]

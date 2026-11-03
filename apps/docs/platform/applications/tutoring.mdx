@@ -71,6 +71,15 @@ content sheet can be kept with the attendance record. Managers can permanently
 delete a pending or cancelled session after an in-app confirmation. Completed
 and no-show sessions stay intact for attendance and payroll history.
 
+The live queue remains on the retained Next.js route. The Rust migration target
+has shared golden fixtures for tag exclusions, the kindergarten name defaults,
+and current learner membership filtering. Run
+`node --test scripts/tutoring-queue-parity.test.mjs` for the TypeScript helpers
+and the focused `workspaces_tutoring_queue` Rust library tests for the same
+fixtures. This coverage does not establish full route parity: support-group
+candidates and tutor-group exclusions still need separate acceptance before a
+route promotion.
+
 ## Who the support queue lists
 
 The support queue lists a learner only under the classes they belong to now:

@@ -15,8 +15,18 @@ pub(super) struct QueuePolicy {
     pub(super) group_exclusions: Vec<GroupExclusion>,
 }
 
+#[derive(Default, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+enum GroupTarget {
+    #[default]
+    Name,
+    Tag,
+}
+
 #[derive(Deserialize)]
 pub(super) struct GroupExclusion {
+    #[serde(default)]
+    target: GroupTarget,
     scope: String,
     #[serde(rename = "match")]
     match_kind: String,
@@ -80,11 +90,15 @@ pub(super) async fn load_queue_policy(
             })
             .unwrap_or_else(|| {
                 if easy_center {
-                    vec![GroupExclusion {
-                        scope: "all".to_owned(),
-                        match_kind: "contains".to_owned(),
-                        value: "DDT".to_owned(),
-                    }]
+                    ["DDT", "Mẫu giáo", "Kindergarten"]
+                        .into_iter()
+                        .map(|value| GroupExclusion {
+                            target: GroupTarget::Name,
+                            scope: "all".to_owned(),
+                            match_kind: "contains".to_owned(),
+                            value: value.to_owned(),
+                        })
+                        .collect()
                 } else {
                     Vec::new()
                 }
@@ -112,8 +126,19 @@ fn decode_policy_rows(rows: &[ConfigRow]) -> Option<Value> {
     serde_json::from_str(&json).ok()
 }
 
-pub(super) fn group_excluded(policy: &QueuePolicy, group_name: &str, reason: &str) -> bool {
-    let name = group_name.trim().to_lowercase();
+pub(super) fn has_tag_exclusions(policy: &QueuePolicy) -> bool {
+    policy
+        .group_exclusions
+        .iter()
+        .any(|rule| rule.target == GroupTarget::Tag)
+}
+
+pub(super) fn group_excluded(
+    policy: &QueuePolicy,
+    group_name: &str,
+    reason: &str,
+    tags: &[String],
+) -> bool {
     policy.group_exclusions.iter().any(|rule| {
         if rule.scope != "all" && rule.scope != reason {
             return false;
@@ -122,12 +147,20 @@ pub(super) fn group_excluded(policy: &QueuePolicy, group_name: &str, reason: &st
         if value.is_empty() {
             return false;
         }
-        match rule.match_kind.as_str() {
-            "exact" => name == value,
-            "prefix" => name.starts_with(&value),
-            "suffix" => name.ends_with(&value),
-            "contains" => name.contains(&value),
-            _ => false,
+        let matches = |text: &str| {
+            let name = text.trim().to_lowercase();
+            match rule.match_kind.as_str() {
+                "exact" => name == value,
+                "prefix" => name.starts_with(&value),
+                "suffix" => name.ends_with(&value),
+                "contains" => name.contains(&value),
+                _ => false,
+            }
+        };
+        if rule.target == GroupTarget::Tag {
+            tags.iter().any(|tag| matches(tag))
+        } else {
+            matches(group_name)
         }
     })
 }
@@ -193,8 +226,8 @@ pub(super) fn iso_day(value: &str) -> Option<i64> {
 #[cfg(test)]
 mod tests {
     use super::{
-        ConfigRow, GroupExclusion, QueuePolicy, content_review_due, decode_policy_rows,
-        group_excluded, iso_day, reassessment_due, unchanged_feedback_since,
+        ConfigRow, GroupExclusion, GroupTarget, QueuePolicy, content_review_due,
+        decode_policy_rows, group_excluded, iso_day, reassessment_due, unchanged_feedback_since,
     };
 
     #[test]
@@ -236,13 +269,14 @@ mod tests {
             absence_lookback_days: 21,
             weak_content_review_days: 14,
             group_exclusions: vec![GroupExclusion {
+                target: GroupTarget::Name,
                 scope: "all".to_owned(),
                 match_kind: "contains".to_owned(),
                 value: "DDT".to_owned(),
             }],
         };
-        assert!(group_excluded(&policy, "Kindergarten ddt", "make_up"));
-        assert!(!group_excluded(&policy, "Class 246", "weak_support"));
+        assert!(group_excluded(&policy, "Kindergarten ddt", "make_up", &[]));
+        assert!(!group_excluded(&policy, "Class 246", "weak_support", &[]));
         let since = unchanged_feedback_since(&[
             ("Unit 3".to_owned(), "2026-09-26T10:00:00Z".to_owned()),
             ("Unit  3".to_owned(), "2026-09-12T10:00:00Z".to_owned()),
