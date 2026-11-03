@@ -27,23 +27,22 @@ export type PolicyEnv = {
   STATUS_PUBLIC_COMPONENT_IDS?: string;
   STATUS_CLIENT_CONSENT_IDS?: string;
   STATUS_NEVER_PUBLIC_IDS?: string;
+  STATUS_OWNED_COMPONENT_IDS?: string;
 };
-export type Policy = Record<'approved' | 'consented' | 'never', Set<string>>;
+export type Policy = NonNullable<ReturnType<typeof readPolicy>>;
 
-// Tiers publishable with approval alone. Any other or missing tier counts
-// as client/partner and also needs recorded written consent.
-const OWNED_TIERS = new Set(['primary', 'app', 'infrastructure']);
 const UTC_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,9})?)?Z$/;
-const ids = (list: string) => new Set(list.split(',').map((id) => id.trim()));
+const ids = (list = '') => new Set(list.split(',').map((id) => id.trim()));
 
-/** Any missing policy binding fails closed: publish nothing. */
-export function readPolicy(env: PolicyEnv): Policy | null {
-  const { STATUS_PUBLIC_COMPONENT_IDS: approved } = env;
+/** Missing lists fail closed; owned IDs come only from this trusted config. */
+export function readPolicy(env: PolicyEnv) {
+  const { STATUS_PUBLIC_COMPONENT_IDS: ok } = env;
   const { STATUS_CLIENT_CONSENT_IDS: consent, STATUS_NEVER_PUBLIC_IDS: no } =
     env;
-  if (approved === undefined || consent === undefined || no === undefined)
+  if (ok === undefined || consent === undefined || no === undefined)
     return null;
-  return { approved: ids(approved), consented: ids(consent), never: ids(no) };
+  const owned = ids(env.STATUS_OWNED_COMPONENT_IDS); // unset: owns nothing
+  return { approved: ids(ok), owned, consented: ids(consent), never: ids(no) };
 }
 
 /** Strict UTC timestamp rounded down to the minute, or null. */
@@ -63,11 +62,10 @@ export function toPublicComponent(
   forceUnknown: boolean
 ): PublicComponent | null {
   if (!raw || typeof raw !== 'object') return null;
-  const { id, tier, status, updated_at } = raw as Record<string, unknown>;
+  const { id, status, updated_at } = raw as Record<string, unknown>;
   if (typeof id !== 'string' || !/^[a-z0-9-]{1,64}$/.test(id)) return null;
   if (policy.never.has(id) || !policy.approved.has(id)) return null;
-  const owned = typeof tier === 'string' && OWNED_TIERS.has(tier);
-  if (!owned && !policy.consented.has(id)) return null;
+  if (!policy.owned.has(id) && !policy.consented.has(id)) return null;
   const updated = coarseTime(updated_at);
   if (updated === null) return null;
   const known = STATES.find((state) => state === status) ?? 'unknown';

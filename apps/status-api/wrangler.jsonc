@@ -10,7 +10,7 @@
   "observability": { "enabled": true, "head_sampling_rate": 0.05 },
   "limits": { "cpu_ms": 10 },
   // Read-only snapshot store. Empty ID lists publish nothing (default deny);
-  // the STATUS_NEVER_PUBLIC_IDS secret is held outside the repo.
+  // STATUS_NEVER_PUBLIC_IDS / STATUS_OWNED_COMPONENT_IDS live outside the repo.
   "kv_namespaces": [{ "binding": "STATUS_SNAPSHOTS" }],
   "vars": { "STATUS_PUBLIC_COMPONENT_IDS": "", "STATUS_CLIENT_CONSENT_IDS": "" }
 }

@@ -10,7 +10,7 @@ export type Env = dto.PolicyEnv & { STATUS_SNAPSHOTS?: SnapshotStore };
 
 export const CURRENT_KEY = 'snapshot:current';
 export const FALLBACK_KEY = 'snapshot:last-known-good';
-// Proposed freshness for Selene's review; must stay under the 5-min gate.
+// Freshness under the 5-min gate; all caching (no stale-if-error) ends in it.
 export const STALE_AFTER_MS = 120_000;
 const NO_DATA: dto.PublicEnvelope = {
   ...{ status: 'unknown', components: [], generated_at: null },
@@ -103,10 +103,11 @@ export async function handleRequest(request: Request, env: Env, now: number) {
     stale,
     fallback,
   };
-  const ttl = Math.min(cache[0], Math.floor((STALE_AFTER_MS - age) / 1000));
+  const left = Math.floor((STALE_AFTER_MS - age) / 1000); // >= 0 when fresh
+  const ttl = Math.min(cache[0], left);
   const cacheControl = stale
     ? 'no-store'
-    : `public, s-maxage=${Math.max(0, ttl)}, stale-while-revalidate=${cache[1]}, stale-if-error=86400`;
+    : `public, max-age=0, s-maxage=${ttl}, stale-while-revalidate=${Math.min(cache[1], left - ttl)}`;
   return respond(request, 200, envelope, cacheControl);
 }
 
