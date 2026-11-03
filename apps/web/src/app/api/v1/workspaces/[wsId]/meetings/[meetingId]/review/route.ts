@@ -1,5 +1,10 @@
-import { readTranscriptChunk } from '@tuturuuu/ai/meetings/transcript';
+import { meetNotesSchema } from '@tuturuuu/ai/meetings/gemini';
+import {
+  readTranscriptChunk,
+  resolveTranscriptActionOwners,
+} from '@tuturuuu/ai/meetings/transcript';
 import { isMeetingNotesAdmin } from '@tuturuuu/meet-core/features/meeting-ai/server/notes-admin';
+import { readTranscriptRoster } from '@tuturuuu/meet-core/features/meeting-ai/server/transcript-roster';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
@@ -171,6 +176,7 @@ export async function GET(request: Request, { params }: Params) {
         0
       );
 
+    const roster = await readTranscriptRoster(admin, chunks);
     return NextResponse.json(
       {
         ended: true,
@@ -180,14 +186,26 @@ export async function GET(request: Request, { params }: Params) {
           id: session.id,
           createdAt: session.created_at,
           notesStatus: session.notes_status,
-          notes: session.notes,
+          notes:
+            session.notes === null
+              ? null
+              : (() => {
+                  const notes = meetNotesSchema.parse(session.notes);
+                  return {
+                    ...notes,
+                    actionItems: resolveTranscriptActionOwners(
+                      notes.actionItems,
+                      roster
+                    ),
+                  };
+                })(),
         })),
         chunks: chunks.map((chunk) => ({
           id: chunk.id,
           sessionId: chunk.session_id,
           sequence: chunk.sequence,
           startSeconds: chunk.start_seconds,
-          ...readTranscriptChunk(chunk),
+          ...readTranscriptChunk(chunk, roster),
           status: chunk.status,
         })),
         costs: canManage

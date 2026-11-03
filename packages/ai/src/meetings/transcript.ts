@@ -67,15 +67,32 @@ export function transcriptSpeakerIdentity(speaker: MeetTranscriptSpeaker) {
 }
 
 /** Shared API projection suppresses retained fallback text before serialization. */
-export function readTranscriptChunk(chunk: {
-  transcript: string | null;
-  usage: unknown;
-}) {
+export function readTranscriptChunk(
+  chunk: { transcript: string | null; usage: unknown },
+  roster: ReadonlyMap<string, string> = new Map()
+) {
+  const resolve = (speaker: MeetTranscriptSpeaker | null) => {
+    if (!speaker) return null;
+    const identity = transcriptSpeakerIdentity(speaker);
+    const id = 'selector' in identity ? identity.selector : identity.accountId;
+    const name = roster.get(id);
+    if (name === undefined) return null;
+    const savedName = name.trim();
+    return {
+      ...identity,
+      label:
+        savedName && !/\S+@\S+/.test(savedName) ? savedName : 'Participant',
+    };
+  };
   return {
     transcript: hasErasedTranscript(chunk.usage) ? '' : chunk.transcript,
     erased: hasErasedTranscript(chunk.usage),
-    speaker: readTranscriptSpeaker(chunk.usage),
-    segments: readTranscriptSegments(chunk.usage),
+    speaker: resolve(readTranscriptSpeaker(chunk.usage)),
+    segments: readTranscriptSegments(chunk.usage).map((segment) =>
+      'erased' in segment
+        ? segment
+        : { ...segment, speaker: resolve(segment.speaker) }
+    ),
   };
 }
 
@@ -109,4 +126,14 @@ export function formatTranscriptChunk(chunk: {
     source: speaker ? transcriptSpeakerIdentity(speaker) : null,
     text: chunk.transcript ?? '[Missing audio segment]',
   });
+}
+
+export function resolveTranscriptActionOwners<
+  T extends { ownerId?: string | null; owner: string | null },
+>(items: T[], roster: ReadonlyMap<string, string>) {
+  return items.map((item) => ({
+    ...item,
+    ownerId: item.ownerId && roster.has(item.ownerId) ? item.ownerId : null,
+    owner: item.ownerId ? (roster.get(item.ownerId) ?? null) : null,
+  }));
 }
