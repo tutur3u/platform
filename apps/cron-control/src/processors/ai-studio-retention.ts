@@ -12,7 +12,8 @@ import type { ProcessorContext, ProcessorResult } from './types';
 // AI_STUDIO_RETENTION_MODE:
 //   'off'     kill switch: no database call at all.
 //   'delete'  bounded deletion batches.
-//   anything else (unset, 'dry-run', typos): counts only, deletes nothing.
+//   'dry-run' counts only; no data writes; one counts-only log row.
+//   anything else (including unset) is off and logged.
 
 export type AiRetentionMode = 'delete' | 'dry-run' | 'off';
 
@@ -42,8 +43,10 @@ const HELD = {
 type Status = 'budget_exhausted' | 'done' | 'failed' | 'stopped' | 'unknown';
 
 export function aiRetentionMode(value: string | undefined): AiRetentionMode {
-  const mode = value?.trim();
-  return mode === 'delete' || mode === 'off' ? mode : 'dry-run';
+  if (value === 'delete' || value === 'dry-run' || value === 'off')
+    return value;
+  console.warn('AI Studio retention invalid mode; disabled');
+  return 'off';
 }
 
 export interface AiRetentionDeps {
@@ -178,7 +181,7 @@ export async function runAiStudioRetention(
     const { state } = response.value;
     const values: Partial<Record<keyof typeof COUNTERS, number>> = {};
     for (const key of Object.keys(COUNTERS) as (keyof typeof COUNTERS)[]) {
-      const bounded = key === 'content_rows' || key === 'run_rows';
+      const bounded = key === 'run_rows';
       const value = count(
         response.value[key],
         bounded ? AI_RETENTION_BATCH_LIMIT : MAX_COUNT
@@ -186,10 +189,15 @@ export async function runAiStudioRetention(
       if (value === null) return finish('unknown');
       values[key] = value;
     }
-    if (state !== 'more' && state !== 'done') return finish('unknown');
+    if (state !== 'more' && state !== 'done' && state !== 'locked')
+      return finish('unknown');
     detail.batches++;
     for (const [key, name] of Object.entries(COUNTERS))
       detail[name] += values[key as keyof typeof COUNTERS] ?? 0;
+    if (state === 'locked') {
+      detail.locked = 1;
+      return finish('failed');
+    }
     if (state === 'done') return finish('done');
   }
   detail.budgetExhausted = 1;

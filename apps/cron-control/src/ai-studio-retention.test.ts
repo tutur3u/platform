@@ -101,7 +101,7 @@ type Interceptor = (
   call: number
 ) => Response | Promise<Response> | undefined;
 
-function harness(mode?: string) {
+function harness(mode: string | undefined = 'dry-run') {
   const { store } = memoryLedgerStore();
   let core = new LedgerCore(store);
   let clock = T0;
@@ -172,15 +172,32 @@ it('is registered like the other native retention jobs, daily at 02:43 GMT+7', (
   expect(job && processorDeadlineMs(job)).toBe(300_000);
 });
 
-it('fails safe: only an exact delete or off value leaves dry-run', () => {
-  expect(aiRetentionMode(undefined)).toBe('dry-run');
-  expect(aiRetentionMode('')).toBe('dry-run');
+it('accepts only raw exact modes and fails closed for every other value', () => {
   expect(aiRetentionMode('dry-run')).toBe('dry-run');
-  expect(aiRetentionMode('DELETE')).toBe('dry-run');
-  expect(aiRetentionMode('delete-now')).toBe('dry-run');
-  expect(aiRetentionMode(' delete ')).toBe('delete');
   expect(aiRetentionMode('delete')).toBe('delete');
   expect(aiRetentionMode('off')).toBe('off');
+  for (const value of [
+    undefined,
+    '',
+    'DELETE',
+    'Delete',
+    'delete-now',
+    ' delete ',
+    '\tdelete\n',
+    ' dry-run ',
+    'OFF',
+  ])
+    expect(aiRetentionMode(value)).toBe('off');
+});
+
+it('invalid raw modes log a code only and make no database calls', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  const h = harness(' delete ');
+  expect(await h.run()).toMatchObject([{ outcome: 'ok', detail: { off: 1 } }]);
+  expect(h.fetchMock).not.toHaveBeenCalled();
+  expect(warn).toHaveBeenCalledWith(
+    'AI Studio retention invalid mode; disabled'
+  );
 });
 
 it('defaults off with no database calls until the job is enabled', async () => {
@@ -239,13 +256,11 @@ it('dry-runs by default: counts only, deletes nothing, records counts', async ()
   ]);
 });
 
-it('treats an unrecognised mode as dry-run', async () => {
+it('treats an unrecognised mode as off', async () => {
   const h = harness('Delete');
   Object.assign(h.db, { content: 10, runs: 10 });
-  expect(await h.run()).toMatchObject([
-    { outcome: 'ok', detail: { dryRun: 1 } },
-  ]);
-  expect(h.rpcs()).toEqual(['count', 'record']);
+  expect(await h.run()).toMatchObject([{ outcome: 'ok', detail: { off: 1 } }]);
+  expect(h.rpcs()).toEqual([]);
   expect(h.db.content).toBe(10);
 });
 
@@ -365,8 +380,8 @@ it('records an unknown outcome for an out-of-bounds batch summary', async () => 
     rpc === 'cleanup_ai_studio_retention_batch'
       ? Response.json({
           state: 'more',
-          content_rows: AI_RETENTION_BATCH_LIMIT + 1,
-          run_rows: 0,
+          content_rows: 0,
+          run_rows: AI_RETENTION_BATCH_LIMIT + 1,
           cascade_content_rows: 0,
           step_rows: 0,
           usage_rows: 0,
@@ -437,4 +452,44 @@ it('logs and records counts only, never row content', async () => {
   }
   for (const key of COUNT_KEYS)
     expect(Object.keys(record)).toContain(`p_${key}`);
+});
+
+it('records lock exhaustion as incomplete without retrying or reporting done', async () => {
+  const h = harness('delete');
+  h.intercept.fn = (rpc) =>
+    rpc === 'cleanup_ai_studio_retention_batch'
+      ? Response.json({
+          state: 'locked',
+          content_rows: 0,
+          run_rows: 0,
+          cascade_content_rows: 0,
+          step_rows: 0,
+          usage_rows: 0,
+          evaluation_links: 0,
+        })
+      : undefined;
+  expect(await h.run()).toMatchObject([
+    { outcome: 'failed', detail: { locked: 1, batches: 1 } },
+  ]);
+  expect(h.rpcs()).toEqual(['batch', 'record']);
+  expect(h.db.records.at(-1)).toMatchObject({ p_status: 'failed' });
+});
+
+it('accepts expired content cascades beyond the direct content selection limit', async () => {
+  const h = harness('delete');
+  h.intercept.fn = (rpc) =>
+    rpc === 'cleanup_ai_studio_retention_batch'
+      ? Response.json({
+          state: 'done',
+          content_rows: 501,
+          run_rows: 1,
+          cascade_content_rows: 0,
+          step_rows: 0,
+          usage_rows: 0,
+          evaluation_links: 0,
+        })
+      : undefined;
+  expect(await h.run()).toMatchObject([
+    { outcome: 'ok', detail: { contentRows: 501 } },
+  ]);
 });

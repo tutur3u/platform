@@ -12,7 +12,7 @@ by default (workspace policies may set 30–2555 days). Captured prompt and
 output content carries its own `expires_at` (content retention, default 30
 days) and is deleted once that passes. The Cron Control job
 `ai-studio-retention` enforces this daily at **02:43 GMT+7** (`43 19 * * *`).
-It ships in **dry-run**: it only counts until a reviewed change sets
+It ships in **dry-run**: no data writes; one counts-only log row, until a reviewed change sets
 `AI_STUDIO_RETENTION_MODE` to `delete`.
 
 ## Scope
@@ -29,7 +29,7 @@ Never touched:
 - The customer workspace covered by the never-write rule (listed in the
   migration, as in the Meet transcript purge).
 - Runs still `reserved` or `running` (credit settlement in flight).
-- Runs created in the current calendar month. The workspace monthly credit budget
+- Runs created in the current calendar month, or with dependent usage settled in that month. The workspace monthly credit budget
   sums `private.ai_studio_usage` from the start of the month, so a 30-day policy
   must not shrink it.
 - The credit ledger: `public.ai_credit_transactions`,
@@ -43,23 +43,34 @@ Never touched:
 | Function (service_role only, `SECURITY INVOKER`, `search_path = pg_catalog, pg_temp`) | Role |
 | --- | --- |
 | `private.count_ai_studio_retention()` | `STABLE` preview: counts per table, oldest/newest timestamps and cutoffs. No content or identifiers |
-| `private.cleanup_ai_studio_retention_batch(p_limit 1..1000)` | Deletes at most `p_limit` expired content rows and at most `p_limit` due runs, oldest first, `SKIP LOCKED`, and returns counts and `more`/`done` |
+| `private.cleanup_ai_studio_retention_batch(p_limit 1..1000)` | Deletes at most `p_limit` expired content rows and at most `p_limit` due runs, oldest first, `SKIP LOCKED`, and returns counts and `more`/`done`/`locked` |
 | `private.record_ai_studio_retention_run(...)` | Inserts one counts-only row into `private.ai_studio_retention_runs` |
 | `private.ai_studio_metadata_cutoff(days, now)` | `least(now - days, start of month)` |
 
 `private.cleanup_ai_studio_retention()` (the original unbounded function) is
 unchanged and not scheduled.
 
+Content categories are determined by expiry, regardless of deletion path:
+`content_rows` includes every expired row removed directly or by cascade;
+`cascade_content_rows` includes only unexpired content removed with a due run.
+Only the directly selected expired rows and parent runs have a per-batch limit;
+expired content removed by cascade is additional. Preview and summed batch
+categories reconcile on a static snapshot.
+
+The batch locks eligible runs before limiting. A nonempty remainder after a
+partial batch returns `locked`, which the Worker records as a failed incomplete
+run without retrying in the same invocation. The next daily run resumes it.
+
 The Worker side is `apps/cron-control/src/processors/ai-studio-retention.ts`:
 
 - `AI_STUDIO_RETENTION_MODE=off`: kill switch, no database call.
-- `dry-run` (the default, and any value other than exactly `off` or `delete`):
-  one count call, then one run-log row. Nothing is deleted.
+- Exact `dry-run` (the configured default): no data writes; one counts-only log row.
+- Any unrecognised raw value, including unset, whitespace and case variants: off, with a code-only warning.
 - `delete`: up to 40 batches of 500 per run, checking the Cron Control stop fence
   and a 25-second time reserve before each. No in-run retry; the next day
   continues from the remaining data.
 
-Every run writes one row to `private.ai_studio_retention_runs` (mode, status,
+Every non-off run writes one row to `private.ai_studio_retention_runs` (mode, status,
 batches and counts). A run whose log cannot be written is `failed`; five failed
 or unknown days stop the job durably in the Cron Control ledger.
 
@@ -68,7 +79,7 @@ or unknown days stop the job durably in the Cron Control ledger.
 | Bound | Per run (one a day) |
 | --- | --- |
 | Database requests | Dry run 2; delete at most 41 |
-| Rows deleted | At most 20,000 content rows and 20,000 runs (plus their cascade) |
+| Rows deleted | At most 20,000 directly selected content rows and 20,000 runs (plus their cascade) |
 | Processor time | 300 seconds |
 
 ## Enablement
@@ -108,7 +119,10 @@ backup taken before the first deleting run.
   default and a 30-day override, the batch limit, oldest-first order, cascades,
   evaluation links cleared, in-flight, current-month and never-write workspace rows kept,
   credit ledger untouched, idempotent re-run, and counts-only outputs.
+- `apps/database/scripts/ai-studio-retention-concurrency.mjs`: two real sessions
+  against a disposable Supabase PG17 container. Run with `node <script> <supabase_db_tt-...>`;
+  verifies skipping locked oldest rows, deleting later unlocked rows, and lock exhaustion.
 - `apps/cron-control/src/ai-studio-retention.test.ts`: registration and
-  schedule, dry-run by default (count only), unrecognised modes stay dry-run,
+  schedule, dry-run by default (count only), unrecognised raw modes stay off,
   the `off` kill switch, bounded delete loop, batch and time budgets, operator
   stop, out-of-bounds summaries, failures and the run log.

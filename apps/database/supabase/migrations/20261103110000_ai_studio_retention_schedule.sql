@@ -11,7 +11,8 @@
 -- Exclusions (also in the batch and the preview):
 --   * The Easy Center workspace (customer never-write rule).
 --   * Runs still 'reserved' or 'running' (credit settlement in flight).
---   * Runs created in the current calendar month, so a short workspace policy
+--   * Runs created in, or with dependent usage settled in, the current month.
+--     This uses the same session month boundary as the monthly budget. A short policy
 --     (minimum 30 days) cannot shrink the monthly credit-budget sum, which reads
 --     private.ai_studio_usage from the start of the month.
 -- The authoritative credit ledger (public.ai_credit_transactions,
@@ -101,7 +102,10 @@ begin
   aged as (
     select r.id, r.created_at,
            r.status in ('reserved', 'running') as in_flight,
-           r.created_at < c.cutoff as before_cutoff
+           (r.created_at < c.cutoff and not exists (
+             select 1 from private.ai_studio_usage u
+              where u.run_id = r.id and u.created_at >= date_trunc('month', v_now)
+           )) as before_cutoff
       from cutoffs c
       join private.ai_studio_runs r
         on r.ws_id = c.ws_id and r.created_at < c.aged_before
@@ -164,6 +168,9 @@ declare
   v_steps bigint := 0;
   v_usage bigint := 0;
   v_links bigint := 0;
+  v_expired_cascade bigint := 0;
+  v_direct_content bigint := 0;
+  v_remaining jsonb;
 begin
   if p_limit is null or p_limit < 1 or p_limit > 1000 then
     raise exception 'p_limit must be between 1 and 1000' using errcode = '22023';
@@ -184,45 +191,42 @@ begin
   delete from private.ai_studio_run_content c
    using doomed d
    where c.run_id = d.run_id;
-  get diagnostics v_content = row_count;
+  get diagnostics v_direct_content = row_count;
+  v_content := v_direct_content;
 
-  -- 2. Run metadata past its workspace's window, oldest first, one index
-  -- probe per workspace on ai_studio_runs_ws_created_idx.
+  -- 2. Run metadata past its workspace's window, oldest first.
   select g.metadata_retention_days into v_global
     from private.ai_studio_global_settings g
    where g.singleton;
   v_global := coalesce(v_global, 365);
 
+  -- Lock before LIMIT: locked oldest rows do not hide later eligible rows.
   select coalesce(array_agg(locked.id), '{}'::uuid[]) into v_run_ids
     from (
       select r.id
         from private.ai_studio_runs r
-       where r.id in (
-               select due.id
-                 from public.workspaces w
-                 left join private.workspace_ai_studio_policies p
-                   on p.ws_id = w.id
-                cross join lateral (
-                  select run.id, run.created_at
-                    from private.ai_studio_runs run
-                   where run.ws_id = w.id
-                     and run.created_at < private.ai_studio_metadata_cutoff(
-                           coalesce(p.metadata_retention_days, v_global), v_now)
-                     and run.status not in ('reserved', 'running')
-                   order by run.created_at, run.id
-                   limit p_limit
-                ) due
-                where w.id <> '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid
-                order by due.created_at, due.id
-                limit p_limit
-             )
+        join public.workspaces w on w.id = r.ws_id
+        left join private.workspace_ai_studio_policies p on p.ws_id = w.id
+       where w.id <> '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid
+         and r.created_at < private.ai_studio_metadata_cutoff(
+               coalesce(p.metadata_retention_days, v_global), v_now)
          and r.status not in ('reserved', 'running')
-       for update skip locked
+         and not exists (
+           select 1 from private.ai_studio_usage u
+            where u.run_id = r.id and u.created_at >= date_trunc('month', v_now)
+         )
+       order by r.created_at, r.id
+       limit p_limit
+       for update of r skip locked
     ) locked;
 
   if cardinality(v_run_ids) > 0 then
-    select count(*) into v_cascade from private.ai_studio_run_content
-     where run_id = any(v_run_ids);
+    -- Classify by expiry in both preview and batches, even across a boundary.
+    select count(*) filter (where expires_at > v_now),
+           count(*) filter (where expires_at <= v_now)
+      into v_cascade, v_expired_cascade
+      from private.ai_studio_run_content where run_id = any(v_run_ids);
+    v_content := v_content + v_expired_cascade;
     select count(*) into v_steps from private.ai_studio_run_steps
      where run_id = any(v_run_ids);
     select count(*) into v_usage from private.ai_studio_usage
@@ -236,9 +240,12 @@ begin
     get diagnostics v_runs = row_count;
   end if;
 
+  v_remaining := private.count_ai_studio_retention();
   return jsonb_build_object(
-    'state', case when v_content >= p_limit or v_runs >= p_limit
-      then 'more' else 'done' end,
+    'state', case
+      when (v_remaining->>'content_rows')::bigint + (v_remaining->>'run_rows')::bigint = 0 then 'done'
+      when v_direct_content >= p_limit or v_runs >= p_limit then 'more'
+      else 'locked' end,
     'content_rows', v_content,
     'run_rows', v_runs,
     'cascade_content_rows', v_cascade,
