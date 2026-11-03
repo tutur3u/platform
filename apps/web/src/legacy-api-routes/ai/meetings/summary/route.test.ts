@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  providerHandler: vi.fn(),
+  providerHandler: vi.fn(
+    async () => new Response(JSON.stringify({ ok: true }), { status: 200 })
+  ),
   createPOST: vi.fn(),
   createClient: vi.fn(),
   createAdminClient: vi.fn(),
