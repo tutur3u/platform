@@ -12,7 +12,8 @@ const claimsSchema = z
     document_id: z.guid(),
     nonce: z.guid(),
     exp: z.number().int(),
-    key_version: z.literal(1),
+    key_version: z.number().int().positive(),
+    command_nonce: z.guid().optional(),
     operation_key: z.guid().optional(),
     doc_generation: z.number().int().nonnegative().optional(),
     lease_exp: z.number().int().optional(),
@@ -23,7 +24,11 @@ const claimsSchema = z
 export async function POST(request: Request) {
   const raw =
     request.headers.get('Authorization')?.match(/^Bearer (\S+)$/)?.[1] ?? '';
-  if (!process.env.MEET_ERASE_CALLBACK_KEY_V1?.trim())
+  if (
+    !process.env.MEET_ERASE_CALLBACK_KEY_V1?.trim() ||
+    process.env.MEET_ERASE_CALLBACK_KEY_V1 ===
+      process.env.MEET_REALTIME_TOKEN_SECRET
+  )
     return new Response(null, {
       status: 503,
       headers: { 'Cache-Control': 'no-store' },
@@ -34,6 +39,8 @@ export async function POST(request: Request) {
   const headers = { 'Cache-Control': 'no-store' };
   if (
     !claims.success ||
+    claims.data.key_version !==
+      Number(process.env.MEET_ERASE_CALLBACK_KEY_VERSION ?? '1') ||
     claims.data.exp * 1000 <= Date.now() ||
     claims.data.exp * 1000 > Date.now() + 31000
   )

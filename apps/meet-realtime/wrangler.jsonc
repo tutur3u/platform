@@ -11,7 +11,11 @@
     "port": 8786,
     "local_protocol": "http"
   },
-  "vars": { "MEET_ERASE_DO_PUBLIC_KEYS": "{}" },
+  "vars": {
+    "MEET_ERASE_DO_PROTOCOL": "false",
+    "MEET_AI_DISABLED": "true",
+    "MEET_AI_ENABLED_WORKSPACE_IDS": ""
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 0.05
@@ -43,6 +47,8 @@
   "secrets": {
     "required": [
       "MEET_REALTIME_TOKEN_SECRET",
+      "MEET_ERASE_CALLBACK_KEY_V1",
+      "MEET_ERASE_DO_PUBLIC_KEYS",
       "CLOUDFLARE_REALTIME_APP_ID",
       "CLOUDFLARE_REALTIME_APP_SECRET",
       "CLOUDFLARE_TURN_KEY_ID",
@@ -56,5 +62,5 @@
       "custom_domain": true
     }
   ],
-  "workers_dev": true
+  "workers_dev": false
 }

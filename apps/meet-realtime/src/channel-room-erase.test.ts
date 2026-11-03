@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { test } from 'vitest';
 import { Y } from '../../../packages/realtime/src/collaboration/server.ts';
 import { ChannelRoomDurableObject } from './channel-room-do';
 
@@ -14,6 +14,7 @@ function fixture() {
     ['document', Y.encodeStateAsUpdate(doc)],
   ]);
   doc.destroy();
+  const alarms: number[] = [];
   const state = {
     storage: {
       async get(key: string) {
@@ -28,7 +29,9 @@ function fixture() {
       async getAlarm() {
         return null;
       },
-      async setAlarm() {},
+      async setAlarm(at: number) {
+        alarms.push(at);
+      },
     },
     blockConcurrencyWhile: (run: () => Promise<void>) => run(),
     getWebSockets: () => [],
@@ -39,6 +42,7 @@ function fixture() {
       CHANNEL_ROOM: {} as DurableObjectNamespace,
       MEET_REALTIME_TOKEN_SECRET: 'fixture-only',
       MEET_ERASE_CALLBACK_KEY_V1: 'fixture-service-key',
+      MEET_ERASE_DO_PROTOCOL: 'true',
       PLATFORM_API_BASE_URL: 'https://fixture.invalid',
     });
   const read = (r = room()) =>
@@ -56,7 +60,7 @@ function fixture() {
         },
       })
     );
-  return { values, room, read };
+  return { values, room, read, alarms };
 }
 for (const reason of [
   'doc_hold',
@@ -264,3 +268,197 @@ test('block hashes refuse stale plans; recovery receipt mismatch refuses install
   doc.destroy();
 });
 const awaitableHash = 'f'.repeat(64);
+
+test('whole erase removes every root in checkpoint bytes and keeps deleted item ids', async () => {
+  const doc = new Y.Doc();
+  doc.getMap('sidecar').set('private', 'ERASE_MAP');
+  doc.getText('notes').insert(0, 'ERASE_TEXT');
+  doc.getArray('items').push(['ERASE_ARRAY']);
+  const paragraph = new Y.XmlElement('paragraph');
+  paragraph.insert(0, [new Y.XmlText('ERASE_XML')]);
+  doc.getXmlFragment('other').insert(0, [paragraph]);
+  const stale = Y.encodeStateAsUpdate(doc);
+  const result = await applyDocumentErase(doc, command());
+  Y.applyUpdate(result.doc, stale);
+  const checkpoint = Y.encodeStateAsUpdate(result.doc);
+  assert.equal(Buffer.from(checkpoint).includes(Buffer.from('ERASE_')), false);
+  assert.equal(result.doc.getMap('sidecar').size, 0);
+  assert.equal(result.doc.getText('notes').length, 0);
+  assert.equal(result.doc.getArray('items').length, 0);
+  result.doc.destroy();
+  doc.destroy();
+});
+test('gate callbacks carry service UA and immutable claims with separate command nonce', async () => {
+  const { ChannelDocumentErase } = await import(
+    './channel-document-erase-protocol'
+  );
+  const f = fixture();
+  const room = f.room();
+  room.metadata = { topic, documentId, ownerId, checkpointAt: 0, version: 0 };
+  const original = globalThis.fetch;
+  let claims: Record<string, unknown> = {};
+  globalThis.fetch = async (_url, init) => {
+    assert.ok(
+      new Headers(init?.headers)
+        .get('User-Agent')
+        ?.startsWith('Tuturuuu-Realtime/')
+    );
+    claims = JSON.parse(String(init?.body));
+    return Response.json({});
+  };
+  try {
+    await new ChannelDocumentErase(room).platformEraseCall('admit', {
+      nonce: 'override',
+      aud: 'override',
+      command_nonce: 'ticket',
+    });
+    assert.notEqual(claims.nonce, 'override');
+    assert.equal(claims.aud, 'tuturuuu.document-erase-callback');
+    assert.equal(claims.command_nonce, 'ticket');
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+test('default-off protocol serves legacy documents without callbacks', async () => {
+  const f = fixture();
+  const room = f.room();
+  delete room.env.MEET_ERASE_DO_PROTOCOL;
+  const original = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    return new Response(null, { status: 503 });
+  };
+  try {
+    assert.equal((await f.read(room)).status, 200);
+    assert.equal(calls, 0);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+test('warm reads and socket frames use cached gate', async () => {
+  const original = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => {
+    calls++;
+    return Response.json({
+      doc_generation: 0,
+      doc_hold: false,
+      restore_hold: false,
+      document_store_states: {},
+    });
+  };
+  try {
+    const f = fixture();
+    const room = f.room();
+    assert.equal((await f.read(room)).status, 200);
+    assert.equal((await f.read(room)).status, 200);
+    const socket = {
+      close() {},
+      deserializeAttachment: () => ({ ticket: { exp: 1, docGeneration: 0 } }),
+    };
+    for (let i = 0; i < 10; i++)
+      await room.webSocketMessage(socket as unknown as WebSocket, '{}');
+    assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test('callback transport refuses HTTP and shared secrets and rotates by environment', async () => {
+  const { ChannelDocumentErase } = await import(
+    './channel-document-erase-protocol'
+  );
+  const room = fixture().room();
+  await room.fetch(new Request('https://fixture.invalid'));
+  room.metadata = { topic, documentId, ownerId, checkpointAt: 0, version: 0 };
+  const protocol = new ChannelDocumentErase(room);
+  const original = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async (_url, init) => {
+    calls++;
+    assert.equal(JSON.parse(String(init?.body)).key_version, 7);
+    return Response.json({});
+  };
+  try {
+    room.env.PLATFORM_API_BASE_URL = 'http://localhost';
+    await assert.rejects(() => protocol.platformEraseCall('generation'));
+    room.env.PLATFORM_API_BASE_URL = 'https://fixture.invalid';
+    room.env.MEET_ERASE_CALLBACK_KEY_V1 = room.env.MEET_REALTIME_TOKEN_SECRET;
+    await assert.rejects(() => protocol.platformEraseCall('generation'));
+    room.env.MEET_ERASE_CALLBACK_KEY_V1 = 'rotated-fixture-only';
+    room.env.MEET_ERASE_CALLBACK_KEY_VERSION = '7';
+    await protocol.platformEraseCall('generation');
+    assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+test('updates to non-prosemirror roots are rejected before persistence', async () => {
+  const f = fixture();
+  const room = f.room();
+  const original = globalThis.fetch;
+  globalThis.fetch = async () =>
+    Response.json({
+      doc_generation: 0,
+      doc_hold: false,
+      restore_hold: false,
+      document_store_states: {},
+    });
+  try {
+    await f.read(room);
+    const doc = new Y.Doc();
+    doc.getMap('sidecar').set('secret', 'ERASE_REJECTED');
+    let reason = '';
+    const socket = {
+      close(_code: number, value: string) {
+        reason = value;
+      },
+      deserializeAttachment: () => ({
+        ticket: {
+          topic,
+          kind: 'join',
+          role: 'editor',
+          exp: Math.floor(Date.now() / 1000) + 30,
+          docGeneration: 0,
+        },
+        windowAt: Date.now(),
+        count: 0,
+      }),
+      serializeAttachment() {},
+    };
+    await room.webSocketMessage(
+      socket as unknown as WebSocket,
+      JSON.stringify({
+        type: 'broadcast',
+        event: 'message',
+        payload: Array.from(Y.encodeStateAsUpdate(doc)),
+      })
+    );
+    assert.equal(reason, 'Invalid document root');
+    assert.equal(room.doc.share.has('sidecar'), false);
+    doc.destroy();
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test('idle document gate does not schedule recurring paid work', async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = async () =>
+    Response.json({
+      doc_generation: 0,
+      doc_hold: false,
+      restore_hold: false,
+      document_store_states: {},
+    });
+  try {
+    const f = fixture();
+    const room = f.room();
+    await f.read(room);
+    await room.alarm();
+    assert.equal(f.alarms.length, 0);
+  } finally {
+    globalThis.fetch = original;
+  }
+});

@@ -30,6 +30,8 @@ test('SQLite restart freeze/apply/release, replay, hold lease and wiped storage'
     'verify',
   ]);
   let sourceState;
+  const callbackNonces = new Set();
+  let admits = 0;
   let status = 'unknown';
   let committed = false;
   let generation = 0,
@@ -45,6 +47,7 @@ test('SQLite restart freeze/apply/release, replay, hold lease and wiped storage'
     bindings: {
       MEET_REALTIME_TOKEN_SECRET: 'fixture-only',
       MEET_ERASE_CALLBACK_KEY_V1: 'fixture-callback-only',
+      MEET_ERASE_DO_PROTOCOL: 'true',
       MEET_ERASE_DO_PUBLIC_KEYS: JSON.stringify({
         1: encode(await crypto.subtle.exportKey('raw', keys.publicKey)),
       }),
@@ -52,18 +55,26 @@ test('SQLite restart freeze/apply/release, replay, hold lease and wiped storage'
     },
     outboundService: async (request) => {
       assert.ok(request.headers.get('Authorization')?.startsWith('Bearer '));
+      assert.ok(
+        request.headers.get('User-Agent')?.startsWith('Tuturuuu-Realtime/')
+      );
       const body = await request.json();
+      assert.equal(callbackNonces.has(body.nonce), false);
+      callbackNonces.add(body.nonce);
       if (body.kind === 'status')
         return Response.json({ state: status, committed });
-      if (body.kind === 'admit')
+      if (body.kind === 'admit') {
+        admits++;
+        assert.notEqual(body.nonce, body.command_nonce);
         return Response.json({
           source_state: sourceState,
           allowed,
-          nonce: body.nonce,
+          nonce: body.command_nonce,
           operation_key: body.operation_key,
           doc_generation: body.doc_generation,
           expires_at: body.lease_exp,
         });
+      }
       return Response.json({
         doc_generation: generation,
         doc_hold: hold,
@@ -214,7 +225,9 @@ test('SQLite restart freeze/apply/release, replay, hold lease and wiped storage'
       nonce: crypto.randomUUID(),
       expected_post_pm_hash: receipt.post_pm_hash,
     };
+    const beforeRecovery = admits;
     assert.equal((await send(replay)).status, 200);
+    assert.equal(admits - beforeRecovery, 1);
     assert.equal((await dispatch('/channels/document', ticket())).status, 423);
   } finally {
     await mf.dispose();

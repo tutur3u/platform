@@ -5,6 +5,8 @@ import type { ChannelRoomEnv } from './channel-room-do';
 export async function channelRequest(request: Request, env: ChannelRoomEnv) {
   const url = new URL(request.url);
   if (url.pathname === '/channels/erase') {
+    if (env.MEET_ERASE_DO_PROTOCOL !== 'true')
+      return new Response(null, { status: 404 });
     if (request.method !== 'POST') return new Response(null, { status: 405 });
     const command = await verifyEraseCommand(
       request.headers.get('Authorization')?.match(/^Bearer (\S+)$/)?.[1] ?? '',

@@ -28,6 +28,8 @@ export interface ChannelRoomEnv {
   PLATFORM_API_BASE_URL?: string;
   MEET_ERASE_DO_PUBLIC_KEYS?: string;
   MEET_ERASE_CALLBACK_KEY_V1?: string;
+  MEET_ERASE_CALLBACK_KEY_VERSION?: string;
+  MEET_ERASE_DO_PROTOCOL?: string;
 }
 type Attachment = {
   ticket: ChannelTicket;
@@ -76,6 +78,7 @@ export class ChannelRoomDurableObject implements DurableObject {
       this.documentPresent = update !== undefined;
       this.metadata = metadata ?? null;
       this.erase = erase ?? emptyErase();
+      if (this.metadata) await this.eraseProtocol.checkDocumentGate();
     });
   }
   fetch(request: Request) {
@@ -202,7 +205,7 @@ export class ChannelRoomDurableObject implements DurableObject {
   webSocketMessage(socket: WebSocket, message: string | ArrayBuffer) {
     const run = this.serial.then(async () => {
       await this.ready;
-      if (this.metadata && !(await this.eraseProtocol.checkDocumentGate()))
+      if (this.metadata && !this.documentAllowed)
         return socket.close(4423, 'doc_locked');
       this.handleSocketMessage(socket, message);
     });
@@ -289,6 +292,10 @@ export class ChannelRoomDurableObject implements DurableObject {
           try {
             Y.applyUpdate(candidate, Y.encodeStateAsUpdate(this.doc));
             Y.applyUpdate(candidate, Uint8Array.from(parsed.payload));
+            if (
+              [...candidate.share.keys()].some((key) => key !== 'prosemirror')
+            )
+              return socket.close(1008, 'Invalid document root');
             const merged = Y.encodeStateAsUpdate(candidate);
             if (merged.length > 512 * 1024)
               return socket.close(1009, 'Document exceeds limit');
@@ -445,12 +452,20 @@ export class ChannelRoomDurableObject implements DurableObject {
           const erase = { ...this.erase, freeze: null };
           await this.state.storage.put('erase', erase);
           this.erase = erase;
+          this.eraseProtocol.invalidateGate();
         }
       } catch {}
       if (this.erase.freeze) next = Date.now() + 30000;
     }
-    if (this.metadata && (await this.eraseProtocol.checkDocumentGate()))
-      next = Math.min(next, await this.checkpointDocument());
+    if (this.metadata) {
+      if (await this.eraseProtocol.checkDocumentGate())
+        next = Math.min(next, await this.checkpointDocument());
+      if (
+        this.env.MEET_ERASE_DO_PROTOCOL === 'true' &&
+        this.state.getWebSockets().length > 0
+      )
+        next = Math.min(next, Date.now() + 30000);
+    }
     for (const socket of this.state.getWebSockets()) {
       const { ticket } = socket.deserializeAttachment() as Attachment;
       if (ticket.exp * 1000 <= Date.now()) socket.close(1008, 'Ticket expired');

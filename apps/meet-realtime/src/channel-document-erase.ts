@@ -49,8 +49,26 @@ export async function applyDocumentErase(source: Y.Doc, command: EraseCommand) {
       )
         throw new Error('Stale block');
     }
-    if (command.decision === 'whole') fragment.delete(0, fragment.length);
-    else if (command.decision === 'blocks') {
+    if (command.decision === 'whole') {
+      // Delete the existing CRDT items so stale full-state updates remain tombstoned.
+      doc.transact((transaction) => {
+        for (const root of doc.share.values()) {
+          for (let item = root._start; item; item = item.right)
+            item.delete(transaction);
+          for (const item of root._map.values()) item.delete(transaction);
+        }
+      });
+      for (const structs of doc.store.clients.values()) {
+        for (const struct of structs) {
+          if (
+            !struct.deleted ||
+            (struct instanceof Y.Item &&
+              !(struct.content instanceof Y.ContentDeleted))
+          )
+            throw new Error('Erase item GC incomplete');
+        }
+      }
+    } else if (command.decision === 'blocks') {
       const indexes = [...new Set(command.blocks.map((b) => b.index))].sort(
         (a, b) => b - a
       );

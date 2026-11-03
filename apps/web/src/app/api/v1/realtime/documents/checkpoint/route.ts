@@ -64,7 +64,9 @@ export async function POST(request: Request) {
         p_content: richTextDocumentContent(bytes),
         p_hash: body.hash,
         p_version: ticket.data.version,
-        p_doc_generation: ticket.data.docGeneration ?? 0,
+        ...(process.env.MEET_ERASE_DO_PROTOCOL === 'true'
+          ? { p_doc_generation: ticket.data.docGeneration ?? 0 }
+          : {}),
       }
     );
     return NextResponse.json({ revision }, { headers: noStore });

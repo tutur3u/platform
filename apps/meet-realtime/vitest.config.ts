@@ -1,8 +1,11 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
-// Root project discovery must not load the Cloudflare development plugin.
-// Protocol and Worker/SQLite tests run through the explicit Node test scripts
-// in Meet validation; these are not Vitest suites.
+// Keep protocol unit tests on the TS runner without loading the Worker plugin.
 export default defineConfig({
-  test: { include: [] },
+  test: {
+    root: fileURLToPath(new URL('.', import.meta.url)),
+    environment: 'node',
+    include: ['src/channel-room-erase.test.ts'],
+  },
 });

@@ -54,3 +54,24 @@ it('returns no state when nonce admission or the service is unavailable', async 
   expect(response.status).toBe(503);
   expect(await response.text()).toBe('');
 });
+it('rotates callback key versions without code changes and preserves command nonce', async () => {
+  vi.stubEnv('MEET_ERASE_CALLBACK_KEY_VERSION', '7');
+  rpc.mockResolvedValue({ allowed: true });
+  const { POST } = await import('./route');
+  expect((await POST(req())).status).toBe(401);
+  const commandNonce = '44444444-4444-4444-8444-444444444444';
+  expect(
+    (
+      await POST(
+        req({ kind: 'admit', key_version: 7, command_nonce: commandNonce })
+      )
+    ).status
+  ).toBe(200);
+  expect(rpc).toHaveBeenCalledWith('meet_document_erase_callback', {
+    p_claims: expect.objectContaining({
+      nonce: claims.nonce,
+      command_nonce: commandNonce,
+      key_version: 7,
+    }),
+  });
+});
