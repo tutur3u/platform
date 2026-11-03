@@ -13,11 +13,12 @@ import { resolveRoomSettingsPatch, roomCommand } from './room-settings-gate';
  * deploy sets, and each one alone, must deny Meet AI on the realtime Worker
  * while ordinary (non-AI) room traffic keeps working.
  */
-const EASY_CENTER = '42529372-c669-4833-bb32-2cab1f4ffd83';
+const EASY_CENTER = '00000000-0000-4000-8000-0000000000ee';
 const OTHER = '0f1a64f7-780f-4d30-9d72-5530f204e95c';
 const NOW = '2026-11-03T12:00:00.000Z';
 const CONTAINMENT = {
   MEET_AI_DISABLED: 'true',
+  MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
   MEET_AI_ENABLED_WORKSPACE_IDS: '',
   MEET_AI_DISABLED_WORKSPACE_IDS: EASY_CENTER,
 };
@@ -44,6 +45,8 @@ describe('Meet AI containment env on the realtime Worker', () => {
       for (const wsId of [OTHER, EASY_CENTER])
         expect(
           isMeetAiEnabledForWorkspace(wsId, {
+            MEET_AI_PROTECTED_WORKSPACE_IDS:
+              '00000000-0000-4000-8000-0000000000ee',
             MEET_AI_ENABLED_WORKSPACE_IDS: blank,
           })
         ).toBe(false);

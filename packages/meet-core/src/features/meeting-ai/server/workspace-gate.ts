@@ -2,12 +2,12 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import {
   isMeetAiEnabledForWorkspace,
+  isMeetAiHardDenied,
   MEET_AI_DISABLED_ENV,
   type MeetAiGateEnv,
 } from '@tuturuuu/realtime/meet';
 
 export {
-  EASY_CENTER_WORKSPACE_ID,
   isMeetAiEnabledForWorkspace,
   MEET_AI_WORKSPACE_ALLOWLIST_ENV,
   type MeetAiGateEnv,
@@ -37,12 +37,14 @@ export async function meetAiGateEnv(): Promise<MeetAiGateEnv> {
   return (await meetAiWorkerEnv()) ?? { [MEET_AI_DISABLED_ENV]: 'true' };
 }
 
-/** Parley scenario sessions are a separate product and are not part of the Meet gate. */
+/** Parley skips pilot lists, but obeys protected-workspace and global denies. */
 export function isMeetAiAvailableForWorkspace(
   wsId: string | null | undefined,
   env: MeetAiGateEnv
 ) {
-  return MEETING_APP === 'parley' || isMeetAiEnabledForWorkspace(wsId, env);
+  return MEETING_APP === 'parley'
+    ? !isMeetAiHardDenied(wsId, env)
+    : isMeetAiEnabledForWorkspace(wsId, env);
 }
 
 export async function meetAiAvailable(wsId: string | null | undefined) {
