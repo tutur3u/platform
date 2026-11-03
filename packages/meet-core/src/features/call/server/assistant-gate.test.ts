@@ -113,7 +113,10 @@ import { generateMeetAssistant } from './assistant-generation';
 
 const bind = (allowlist?: string) =>
   mocks.cloudflare.mockResolvedValue({
-    env: { MEET_AI_ENABLED_WORKSPACE_IDS: allowlist },
+    env: {
+      MEET_AI_ENABLED_WORKSPACE_IDS: allowlist,
+      MEET_AI_DISABLED: allowlist ? undefined : 'true',
+    },
   });
 const ctx = { params: Promise.resolve({ meetingId: 'meeting' }) };
 const send = (handler: typeof assistant, body: unknown) =>
@@ -145,7 +148,7 @@ describe('assistant mutations workspace gate', () => {
   });
 
   it.each([undefined, '', 'other-ws'])(
-    'denies generation, personal chat and review writes (allowlist %j) before any room, credit or model call',
+    'denies generation, personal chat and review writes (runtime restriction %j) before any room, credit or model call',
     async (allowlist) => {
       bind(allowlist);
       await expect(

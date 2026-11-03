@@ -14,7 +14,7 @@ export {
 
 /**
  * The Worker env binding, never ambient process.env. Without a Cloudflare
- * context (or without the binding) the gate has nothing to allow and denies.
+ * context the default policy allows; credit admission still applies.
  */
 export async function meetAiGateEnv(): Promise<MeetAiGateEnv> {
   try {
@@ -25,7 +25,7 @@ export async function meetAiGateEnv(): Promise<MeetAiGateEnv> {
   }
 }
 
-/** Parley scenario sessions are a separate product and are not part of the pilot. */
+/** Parley scenario sessions are a separate product and are not part of the Meet gate. */
 export function isMeetAiAvailableForWorkspace(
   wsId: string | null | undefined,
   env: MeetAiGateEnv

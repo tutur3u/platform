@@ -115,7 +115,9 @@ export class MeetLiveDurableObject {
         typeof controlWorkspaceReview
       >[0];
       if (this.saved && !this.allowed())
-        return new Response('Meeting AI is not available', { status: 403 });
+        return new Response('Meet AI is temporarily unavailable', {
+          status: 403,
+        });
       const result = this.queue.then(() =>
         controlWorkspaceReview(
           input,
@@ -145,7 +147,9 @@ export class MeetLiveDurableObject {
         | 'voice'
       >;
       if (!this.allowed(input))
-        return new Response('Meeting AI is not available', { status: 403 });
+        return new Response('Meet AI is temporarily unavailable', {
+          status: 403,
+        });
       this.saved = {
         ...input,
         startedAt: Date.now(),
@@ -175,7 +179,9 @@ export class MeetLiveDurableObject {
       if (this.saved.ended)
         return new Response('Session ended', { status: 410 });
       if (!this.allowed())
-        return new Response('Meeting AI is not available', { status: 403 });
+        return new Response('Meet AI is temporarily unavailable', {
+          status: 403,
+        });
       return Response.json(this.saved.claims);
     }
     const protocols =
@@ -206,7 +212,9 @@ export class MeetLiveDurableObject {
     )
       return new Response('Forbidden', { status: 403 });
     if (!this.allowed(saved))
-      return new Response('Meeting AI is not available', { status: 403 });
+      return new Response('Meet AI is temporarily unavailable', {
+        status: 403,
+      });
     await liveRoomCommand(this.env, saved.claims, saved.identity, {
       action: 'live.context',
     });
