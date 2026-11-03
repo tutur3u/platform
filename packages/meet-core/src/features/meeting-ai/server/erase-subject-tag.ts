@@ -13,7 +13,7 @@ export type EraseSubjectKey = {
 
 const DOMAIN = new TextEncoder().encode('meet-erase-subject/v1');
 const UUID =
-  /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$/;
+  /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/;
 
 function uuidBytes(value: string): Uint8Array {
   if (!UUID.test(value)) throw new Error('MEET_ERASE_INVALID_UUID');
@@ -38,6 +38,7 @@ export function encodeEraseSubject(subject: EraseSubject): Uint8Array {
   return message;
 }
 
+/** Any future tag verification must use a constant-time comparison. */
 export async function createEraseSubjectTag({
   key,
   ...subject
@@ -46,7 +47,7 @@ export async function createEraseSubjectTag({
 }): Promise<{ subjectTag: string; subjectKeyVersion: number }> {
   if (
     !key ||
-    key.bytes.byteLength === 0 ||
+    key.bytes.byteLength < 32 ||
     !Number.isSafeInteger(key.version) ||
     key.version < 1
   ) {

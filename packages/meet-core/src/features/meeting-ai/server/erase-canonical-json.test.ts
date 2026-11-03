@@ -34,6 +34,30 @@ describe('canonical erase JSON', () => {
   ])('refuses values outside JSON', (value) => {
     expect(() => canonicalEraseJson(value)).toThrow('MEET_ERASE_INVALID_JSON');
   });
+  it.each([
+    1.5,
+    -1.5,
+    -0,
+    Number.MAX_SAFE_INTEGER + 1,
+    Number.MIN_SAFE_INTEGER - 1,
+  ])('refuses noncanonical number %s at every depth', (value) => {
+    for (const input of [value, { number: value }, [value]]) {
+      expect(() => canonicalEraseJson(input)).toThrow(
+        'MEET_ERASE_INVALID_JSON'
+      );
+    }
+  });
+  it.each([0, 1, -1, Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER])(
+    'accepts safe integer %s',
+    (value) => {
+      expect(canonicalEraseJson(value)).toBe(String(value));
+    }
+  );
+  it('sorts by UTF-16 code units rather than Unicode code points', () => {
+    expect(canonicalEraseJson({ '\uE000': 1, '\u{10000}': 2 })).toBe(
+      '{"\u{10000}":2,"\uE000":1}'
+    );
+  });
   it('refuses cycles but allows repeated objects', () => {
     const cycle: unknown[] = [];
     cycle.push(cycle);

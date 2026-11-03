@@ -78,6 +78,8 @@ describe('erase subject tag v1', () => {
     (field) => {
       for (const value of [
         '',
+        '00000000-0000-0000-0000-000000000000',
+        'ffffffff-ffff-ffff-ffff-ffffffffffff',
         'person@example.test',
         '33333333333343338333333333333333',
         '33333333-3333-4333-7333-333333333333',
@@ -99,6 +101,22 @@ describe('erase subject tag v1', () => {
       );
     }
   );
+  it.each([1, 16, 31])('refuses a %s-byte test key', async (length) => {
+    await expect(
+      createEraseSubjectTag({
+        ...subject,
+        key: { version: 1, bytes: new Uint8Array(length) },
+      })
+    ).rejects.toThrow('MEET_ERASE_LOG_KEY_UNAVAILABLE');
+  });
+  it('accepts a test key longer than 32 bytes', async () => {
+    const key = { version: 1, bytes: new Uint8Array(33).fill(0x42) };
+    expect((await createEraseSubjectTag({ ...subject, key })).subjectTag).toBe(
+      createHmac('sha256', key.bytes)
+        .update(encodeEraseSubject(subject))
+        .digest('hex')
+    );
+  });
   it.each([0, -1, 1.5, NaN])(
     'rejects invalid key version %s',
     async (version) => {

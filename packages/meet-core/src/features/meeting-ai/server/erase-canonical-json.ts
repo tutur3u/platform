@@ -1,11 +1,18 @@
-/** Sorted object keys, ordered arrays and JSON scalar encoding for erase plans and ledger entries. */
+/**
+ * Canonical erase JSON uses safe integers, ordered arrays and JSON scalar encoding.
+ * Object keys sort by UTF-16 code units; other-language verifiers must match.
+ */
 export function canonicalEraseJson(value: unknown): string {
   const ancestors = new Set<object>();
   function encode(current: unknown): string {
     if (current === null) return 'null';
     if (typeof current === 'string' || typeof current === 'boolean')
       return JSON.stringify(current);
-    if (typeof current === 'number' && Number.isFinite(current))
+    if (
+      typeof current === 'number' &&
+      Number.isSafeInteger(current) &&
+      !Object.is(current, -0)
+    )
       return JSON.stringify(current);
     if (typeof current !== 'object' || ancestors.has(current))
       throw new Error('MEET_ERASE_INVALID_JSON');
