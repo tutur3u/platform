@@ -52,10 +52,7 @@ export async function externalPath(path: string): Promise<string> {
 
 async function boundedRead(path: string, bytes: number): Promise<Buffer> {
   const safe = await externalPath(path);
-  // Reject FIFOs, devices and directories before open(): opening a FIFO with
-  // no writer blocks. O_NONBLOCK plus the fstat below closes the race where
-  // the path is swapped after this check.
-  if (!(await stat(safe)).isFile()) throw new Error('input size');
+  // Open FIFOs without blocking, then validate the opened descriptor below.
   const file = await open(
     safe,
     constants.O_RDONLY | (constants.O_NONBLOCK ?? 0)
