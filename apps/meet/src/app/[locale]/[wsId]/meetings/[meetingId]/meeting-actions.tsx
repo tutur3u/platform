@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Mic, Share2, Square } from '@tuturuuu/icons';
+import { Share2, Square } from '@tuturuuu/icons';
 import {
   getWorkspaceMeetingRecordings,
   InternalApiError,
@@ -22,7 +22,6 @@ import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { AudioRecorder } from './audio-recorder';
 
 interface MeetingActionsProps {
   wsId: string;
@@ -40,10 +39,8 @@ interface RecordingSession {
 export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
   const queryClient = useQueryClient();
   const t = useTranslations('meet.recording_permissions');
-  const [startRecordingDialogOpen, setStartRecordingDialogOpen] =
-    useState(false);
+  const tRecorder = useTranslations('meet.legacy_recorder');
   const [stopRecordingDialogOpen, setStopRecordingDialogOpen] = useState(false);
-  const [isStartingSession, setIsStartingSession] = useState(false);
   const [isStoppingSession, setIsStoppingSession] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareLink, setShareLink] = useState('');
@@ -64,39 +61,6 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
     staleTime: 15_000,
   });
   const isRecording = activeSession?.status === 'recording';
-
-  const handleStartSession = async () => {
-    setIsStartingSession(true);
-    try {
-      const data = await toggleWorkspaceMeetingRecording<{
-        action: 'started' | 'stopped';
-        sessionId: string;
-      }>(wsId, meetingId);
-
-      if (data.action === 'started') {
-        queryClient.setQueryData(activeSessionQueryKey, {
-          id: data.sessionId,
-          status: 'recording',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          can_manage: true,
-        });
-        toast.success('Recording session started');
-      } else {
-        toast.info('Recording session stopped');
-        queryClient.setQueryData(activeSessionQueryKey, null);
-      }
-    } catch (error) {
-      console.error('Error starting recording:', error);
-      toast.error(
-        error instanceof InternalApiError && error.status === 403
-          ? t('denied')
-          : 'Failed to start recording. Please try again.'
-      );
-    } finally {
-      setIsStartingSession(false);
-    }
-  };
 
   const handleStopSession = async () => {
     if (!activeSession?.can_manage) return;
@@ -140,20 +104,11 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
 
   return (
     <div className="space-y-4">
-      {/* Unified Recording Controls */}
+      {/* The legacy recorder is retired: no new recordings start here. An
+          already-active legacy session can still be ended. */}
+      <p className="text-muted-foreground text-sm">{tRecorder('retired')}</p>
       <div className="flex gap-4">
-        {!isRecording ? (
-          <Button
-            variant="outline"
-            size="lg"
-            className="flex items-center gap-2"
-            onClick={() => setStartRecordingDialogOpen(true)}
-            disabled={isStartingSession}
-          >
-            <Mic className="h-5 w-5" />
-            {isStartingSession ? 'Starting...' : 'Start Recording'}
-          </Button>
-        ) : activeSession?.can_manage ? (
+        {isRecording && activeSession?.can_manage ? (
           <Button
             variant="destructive"
             size="lg"
@@ -171,16 +126,6 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
           Share Meeting
         </Button>
       </div>
-
-      {/* Audio Recorder */}
-      {activeSession?.can_manage && (
-        <AudioRecorder
-          wsId={wsId}
-          meetingId={meetingId}
-          sessionId={activeSession?.id || ''}
-          isRecording={isRecording}
-        />
-      )}
 
       {/* Share Meeting Dialog */}
       <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
@@ -210,42 +155,6 @@ export function MeetingActions({ wsId, meetingId }: MeetingActionsProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setShareDialogOpen(false)}>
               Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Start Recording Confirmation Dialog */}
-      <Dialog
-        open={startRecordingDialogOpen}
-        onOpenChange={setStartRecordingDialogOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Start Recording</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to start recording this meeting? All
-              participants will be notified that the recording has started.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setStartRecordingDialogOpen(false)}
-              disabled={isStartingSession}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={() => {
-                setStartRecordingDialogOpen(false);
-                handleStartSession();
-              }}
-              disabled={isStartingSession}
-              className="flex items-center gap-2"
-            >
-              <Mic className="h-4 w-4" />
-              {isStartingSession ? 'Starting...' : 'Start Recording'}
             </Button>
           </DialogFooter>
         </DialogContent>

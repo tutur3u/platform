@@ -7,6 +7,7 @@ import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { formatDistanceToNow } from 'date-fns';
+import { useTranslations } from 'next-intl';
 import { RecordingSessionActions } from './recording-session-actions';
 
 interface RecordingSession {
@@ -18,7 +19,6 @@ interface RecordingSession {
 }
 
 interface RecordingSessionsOverviewProps {
-  canTranscribeLegacy?: boolean;
   wsId: string;
   meetingId: string;
 }
@@ -82,11 +82,11 @@ const getDuration = (session: RecordingSession) => {
 };
 
 export function RecordingSessionsOverview({
-  canTranscribeLegacy = false,
   wsId,
   meetingId,
 }: RecordingSessionsOverviewProps) {
   const queryClient = useQueryClient();
+  const tRecorder = useTranslations('meet.legacy_recorder');
 
   const {
     data: sessions = [],
@@ -137,8 +137,7 @@ export function RecordingSessionsOverview({
           <Mic className="mb-4 h-12 w-12 text-muted-foreground" />
           <h3 className="mb-2 font-semibold text-lg">No Recordings Yet</h3>
           <p className="text-center text-muted-foreground">
-            Start recording this meeting to capture audio and generate
-            transcripts.
+            {tRecorder('retired')}
           </p>
         </CardContent>
       </Card>
@@ -197,7 +196,6 @@ export function RecordingSessionsOverview({
 
               <div className="flex items-center gap-2 border-t pt-2">
                 <RecordingSessionActions
-                  canTranscribeLegacy={canTranscribeLegacy}
                   wsId={wsId}
                   meetingId={meetingId}
                   session={session}

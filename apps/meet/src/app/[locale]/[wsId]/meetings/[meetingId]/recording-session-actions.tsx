@@ -1,12 +1,11 @@
 'use client';
 
-import { EyeIcon, FileText, Headphones } from '@tuturuuu/icons';
+import { EyeIcon, Headphones } from '@tuturuuu/icons';
 import type { RecordingStatus, RecordingTranscript } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useRecordingLoader } from '@/hooks/useRecordingLoader';
-import { useTranscription } from '@/hooks/useTranscription';
 import { AudioPlayer } from './components/AudioPlayer';
 import { DeleteConfirmation } from './components/DeleteConfirmation';
 import { TranscriptViewer } from './components/TranscriptViewer';
@@ -21,7 +20,6 @@ interface RecordingSession {
 }
 
 interface RecordingSessionActionsProps {
-  canTranscribeLegacy?: boolean;
   wsId: string;
   meetingId: string;
   session: RecordingSession;
@@ -29,7 +27,6 @@ interface RecordingSessionActionsProps {
 }
 
 export function RecordingSessionActions({
-  canTranscribeLegacy = false,
   wsId,
   meetingId,
   session,
@@ -41,13 +38,8 @@ export function RecordingSessionActions({
   const [audioPlayerDialogOpen, setAudioPlayerDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Custom hooks
-  const { isTranscribing, transcribe } = useTranscription({
-    wsId,
-    meetingId,
-    sessionId: session.id,
-  });
-
+  // Legacy recordings are never transcribed: speaker consent cannot be
+  // verified for them (the server refuses too). Meet AI is the consented path.
   const { audioRecording, isLoadingChunks, loadError, loadRecording } =
     useRecordingLoader({
       wsId,
@@ -77,24 +69,6 @@ export function RecordingSessionActions({
             <EyeIcon className="mr-1 h-3 w-3" />
             View Transcript
           </Button>
-        ) : session.can_manage ? (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={transcribe}
-            disabled={
-              !canTranscribeLegacy ||
-              isTranscribing ||
-              session.status === 'transcribing'
-            }
-            title={canTranscribeLegacy ? undefined : t('legacy_disabled')}
-            aria-label={canTranscribeLegacy ? undefined : t('legacy_disabled')}
-          >
-            <FileText className="mr-1 h-3 w-3" />
-            {isTranscribing || session.status === 'transcribing'
-              ? 'Transcribing...'
-              : 'Transcribe'}
-          </Button>
         ) : null}
         <Button
           variant="ghost"
@@ -116,7 +90,7 @@ export function RecordingSessionActions({
         )}
       </div>
 
-      {!canTranscribeLegacy && !session.transcript && session.can_manage && (
+      {!session.transcript && session.can_manage && (
         <p className="text-muted-foreground text-sm">{t('legacy_disabled')}</p>
       )}
       {/* Extracted Components */}
