@@ -16,8 +16,6 @@ const {
 const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
-const MIGRATIONS_DIR = 'apps/database/supabase/migrations';
-const ROLLBACKS_DIR = 'apps/database/rollbacks';
 const OPEN_ROLES = ['public', 'anon'];
 const RULES = {
   anonGrant: 'anon-grant',
@@ -561,21 +559,7 @@ function changedSqlFiles(rootDir, env = process.env) {
 
 // --- Repository evaluation ----------------------------------------------
 
-function listSqlFiles(rootDir = ROOT_DIR) {
-  return [
-    MIGRATIONS_DIR,
-    ROLLBACKS_DIR,
-    'apps/database/supabase/schemas',
-  ].flatMap((directory) => {
-    const absolute = path.join(rootDir, directory);
-    if (!fs.existsSync(absolute)) return [];
-    return fs
-      .readdirSync(absolute, { recursive: true })
-      .filter((name) => name.endsWith('.sql'))
-      .sort()
-      .map((name) => `${directory}/${name}`);
-  });
-}
+const { listSqlFiles } = require('./sql-guard-scope');
 
 function checkRepository(rootDir = ROOT_DIR, env = process.env) {
   const base = changedSqlFiles(rootDir, env);

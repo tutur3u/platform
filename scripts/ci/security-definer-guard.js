@@ -2,7 +2,6 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
-const { execFileSync } = require('node:child_process');
 const {
   statements,
   tokens,
@@ -518,15 +517,7 @@ function checkRepository({
         'utf8'
       )
     );
-  const paths =
-    files ??
-    execFileSync('git', ['ls-files', '--', `${MIGRATIONS}*.sql`], {
-      cwd: root,
-      encoding: 'utf8',
-    })
-      .trim()
-      .split('\n')
-      .filter(Boolean);
+  const paths = files ?? require('./sql-guard-scope').listSqlFiles(root);
   // Definers the SQL grant guard already accepts: frozen inherited ACLs and
   // its source-bound reviewed exceptions (one mechanism per finding; never
   // duplicate those entries in security-definer-verified-findings.json).
