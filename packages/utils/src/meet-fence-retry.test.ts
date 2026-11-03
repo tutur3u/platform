@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'vitest';
-import * as retry from './meet-fence-retry.ts';
+import * as retry from './meet-fence-retry';
 
 for (const rpc of ['reserve', 'complete', 'checkpoint']) {
   test(`${rpc}: lock retry is bounded and never proceeds without success`, async () => {
