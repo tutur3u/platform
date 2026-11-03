@@ -47,11 +47,24 @@ export function canReadRoomNotes(
     )
   );
 }
+/**
+ * Turning note sharing on is Meet AI behavior, so it follows the pilot gate at
+ * the authoritative write. Turning it off is always allowed.
+ */
+export function enablesNoteSharing(settings: {
+  shareNotes?: boolean;
+  shareNotesAfterMeeting?: boolean;
+}) {
+  return (
+    settings.shareNotes === true || settings.shareNotesAfterMeeting === true
+  );
+}
 export function applyRoomControl(
   state: MeetRoomSnapshot,
   message: MeetRealtimeClientMessage,
   token: MeetRealtimeTokenPayload,
-  now: string
+  now: string,
+  notesEligible = false
 ) {
   if (message.type === 'reaction.send') {
     if (!state.presence[token.userId])
@@ -103,6 +116,12 @@ export function applyRoomControl(
       broadcast: [{ type: 'room.title.changed', title: message.title }],
     });
   if (message.type === 'room.settings.update') {
+    if (!notesEligible && enablesNoteSharing(message.settings))
+      return denied(
+        state,
+        'permission_denied',
+        'requestId' in message ? message.requestId : undefined
+      );
     const next = {
       ...state,
       settings: { shareNotes: false, ...state.settings, ...message.settings },

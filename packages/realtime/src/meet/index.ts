@@ -1,4 +1,10 @@
 export {
+  isMeetAiEnabledForWorkspace,
+  MEET_AI_WORKSPACE_ALLOWLIST_ENV,
+  type MeetAiGateEnv,
+  meetAiEnabledWorkspaceIds,
+} from './ai-workspace-gate';
+export {
   findMeetAssistantMentions,
   getMeetAssistantMentions,
   hasMeetAssistantMention,
@@ -86,7 +92,7 @@ export {
   MEET_MAX_ROOM_PARTICIPANTS,
 } from './room-budget';
 export { mergePublicationCleanup } from './room-cleanup';
-export { canReadRoomNotes } from './room-controls';
+export { canReadRoomNotes, enablesNoteSharing } from './room-controls';
 export type {
   MeetApprovedParticipant,
   MeetReaction,
