@@ -109,3 +109,20 @@ for (const [name, sql] of [
 ]) {
   test(`review r2 detects ${name}`, () => assert.equal(grants(sql).length, 1));
 }
+
+for (const depth of [1, 2]) {
+  const comment = '/* outer ' + '/* inner '.repeat(depth) + 'tail */'.repeat(depth + 1);
+  for (const after of [false, true]) {
+    const role = after ? `U&"!0061non" UESCAPE ${comment} '!'` : `U&"!0061non" ${comment} UESCAPE '!'`;
+    for (const context of ['top', 'function', 'do', 'nested']) {
+      test(`nested trivia depth ${depth}, after ${after}, ${context}`, () => {
+        const grant = `grant select on public.secret to ${role};`;
+        const sql = context === 'top' ? grant : context === 'function'
+          ? `create function public.tmp_open() returns void language plpgsql set search_path = pg_catalog, pg_temp as $$begin ${grant} end$$; revoke all on function public.tmp_open() from public, anon, authenticated; grant execute on function public.tmp_open() to service_role; select public.tmp_open(); drop function public.tmp_open();`
+          : context === 'do' ? `do $$begin ${grant} end$$;`
+          : `do $outer$begin do $$begin ${grant} end$$; end$outer$;`;
+        assert.ok(scanSql(sql, { definerRule: true }).some(f => f.rule === 'anon-grant' || f.detail === 'unparsed UESCAPE requires scanner support'));
+      });
+    }
+  }
+}
