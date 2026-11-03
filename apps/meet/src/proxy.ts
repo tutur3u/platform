@@ -27,6 +27,11 @@ import {
   rememberMeetInvite,
 } from './features/call/lib/invite-continuation';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import {
+  isLegacyMeetAiApi,
+  LEGACY_MEET_AI_API_BODY,
+  LEGACY_MEET_AI_API_HEADERS,
+} from './lib/legacy-meet-ai-api';
 
 const AUTH_PUBLIC_PATHS = [
   ...PUBLIC_PATHS,
@@ -192,6 +197,11 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   }
 
   if (req.nextUrl.pathname.startsWith('/api')) {
+    if (isLegacyMeetAiApi(req.nextUrl.pathname))
+      return NextResponse.json(LEGACY_MEET_AI_API_BODY, {
+        status: 403,
+        headers: LEGACY_MEET_AI_API_HEADERS,
+      });
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );

@@ -63,9 +63,13 @@ const production = defineConfig({
         'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
         'SUPABASE_SECRET_KEY',
         'GOOGLE_GENERATIVE_AI_API_KEY',
+        'MEET_AI_DISABLED_WORKSPACE_IDS',
+        'MEET_AI_PROTECTED_WORKSPACE_IDS',
       ],
     },
     vars: {
+      MEET_AI_DISABLED: 'true',
+      MEET_AI_ENABLED_WORKSPACE_IDS: '',
       NEXT_PUBLIC_APP_URL: 'https://meet.tuturuuu.com',
       NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
       MEET_REALTIME_URL: 'wss://meet-realtime.tuturuuu.com/realtime',
