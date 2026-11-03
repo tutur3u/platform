@@ -62,10 +62,11 @@ beforeEach(() => {
 describe.each([
   { label: 'chunk upload', handler: chunkPost },
   { label: 'complete upload', handler: uploadPost },
-])('$label', ({ handler }) => {
-  function request() {
+])('$label is locked (legacy recorder retired)', ({ handler }) => {
+  function request(locale?: string) {
     const req = new NextRequest('https://example.test/api/upload', {
       method: 'POST',
+      headers: locale ? { 'accept-language': locale } : undefined,
     });
     const form = new FormData();
     form.set(
@@ -76,69 +77,55 @@ describe.each([
     const parse = vi.spyOn(req, 'formData').mockResolvedValue(form);
     return { req, parse };
   }
-  function arrange(
-    creatorId = 'actor',
-    data: unknown = { id: 'chunk' },
-    error: { code: string } | null = null
-  ) {
-    const chunk = query(data, error);
+  function arrange(creatorId = 'actor') {
+    const chunk = query({ id: 'chunk' });
     mocks.from
       .mockReturnValueOnce(query({ id: 'meeting' }))
       .mockReturnValueOnce(query({ id: 'session', user_id: creatorId }))
       .mockReturnValueOnce(chunk);
     return chunk;
   }
-  it('allows the recording creator to store audio and metadata', async () => {
-    const chunk = arrange();
-    const { req } = request();
-    const response = await handler(req, context);
-    expect(response.status).toBe(200);
-    expect(mocks.upload).toHaveBeenCalledOnce();
-    expect(chunk.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ session_id: 'session' })
-    );
-  });
-  it('allows a workspace admin', async () => {
-    arrange('other');
-    mocks.rpc.mockResolvedValue({ data: true, error: null });
-    const { req } = request();
-    expect((await handler(req, context)).status).toBe(200);
-    expect(mocks.rpc).toHaveBeenCalledWith('has_workspace_permission', {
-      p_ws_id: 'workspace',
-      p_user_id: 'actor',
-      p_permission: 'admin',
-    });
-  });
-  it('denies another member before parsing or storing audio', async () => {
-    const chunk = arrange('other');
-    const { req, parse } = request();
-    const response = await handler(req, context);
-    expect(response.status).toBe(403);
+  function expectNothingStored(
+    chunk: ReturnType<typeof query>,
+    parse: ReturnType<typeof vi.spyOn>
+  ) {
     expect(parse).not.toHaveBeenCalled();
     expect(mocks.admin).not.toHaveBeenCalled();
     expect(mocks.upload).not.toHaveBeenCalled();
     expect(chunk.insert).not.toHaveBeenCalled();
+  }
+  it.each([
+    ['the recording creator', 'actor', false],
+    ['a workspace admin', 'other', true],
+  ])(
+    'refuses %s before parsing or storing audio',
+    async (_, creatorId, isAdmin) => {
+      const chunk = arrange(creatorId);
+      mocks.rpc.mockResolvedValue({ data: isAdmin, error: null });
+      const { req, parse } = request();
+      const response = await handler(req, context);
+      expect(response.status).toBe(403);
+      const body = await response.json();
+      expect(body).toMatchObject({ code: 'LEGACY_MEETING_RECORDER_RETIRED' });
+      expect(body).not.toHaveProperty('success');
+      expect(body.error).toContain('Meet');
+      expectNothingStored(chunk, parse);
+    }
+  );
+  it.each([
+    ['en', 'old meeting recorder'],
+    ['vi', 'Trình ghi âm cuộc họp cũ'],
+  ])('localizes the refusal for %s', async (locale, expected) => {
+    arrange();
+    const { req } = request(locale);
+    const response = await handler(req, context);
+    expect((await response.json()).error).toContain(expected);
   });
-  it('denies a mismatched parent workspace before storage', async () => {
-    mocks.from.mockReturnValueOnce(query(null));
+  it('still requires authentication', async () => {
+    const chunk = arrange();
+    mocks.identity.mockResolvedValue({ user: null, authError: null });
     const { req, parse } = request();
-    expect((await handler(req, context)).status).toBe(404);
-    expect(parse).not.toHaveBeenCalled();
-    expect(mocks.admin).not.toHaveBeenCalled();
-  });
-  it('cleans up its object and returns 403 when RLS denies metadata', async () => {
-    arrange('actor', null, { code: '42501' });
-    const { req } = request();
-    const response = await handler(req, context);
-    expect(response.status).toBe(403);
-    expect(mocks.remove).toHaveBeenCalledOnce();
-    expect(await response.json()).not.toHaveProperty('success');
-  });
-  it('does not report success for an empty metadata result', async () => {
-    arrange('actor', null);
-    const { req } = request();
-    const response = await handler(req, context);
-    expect(response.status).toBe(403);
-    expect(mocks.remove).toHaveBeenCalledOnce();
+    expect((await handler(req, context)).status).toBe(401);
+    expectNothingStored(chunk, parse);
   });
 });

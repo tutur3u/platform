@@ -39,8 +39,11 @@ function query(data: unknown, error: { code: string } | null = null) {
   q.insert.mockReturnValue(q);
   return q;
 }
-function request() {
-  return new NextRequest('https://example.test/api/record', { method: 'POST' });
+function request(locale?: string) {
+  return new NextRequest('https://example.test/api/record', {
+    method: 'POST',
+    headers: locale ? { 'accept-language': locale } : undefined,
+  });
 }
 const context = {
   params: Promise.resolve({ wsId: 'workspace', meetingId: 'meeting' }),
@@ -120,5 +123,48 @@ describe('legacy recording stop authorization', () => {
     const response = await POST(request(), context);
     expect(response.status).toBe(500);
     expect(update.update).not.toHaveBeenCalled();
+  });
+});
+describe('legacy recorder lock', () => {
+  function arrangeNoActiveSession() {
+    const meeting = query({ id: 'meeting' });
+    const session = query(null, { code: 'PGRST116' });
+    const insert = query({ id: 'new-session' });
+    mocks.from
+      .mockReturnValueOnce(meeting)
+      .mockReturnValueOnce(session)
+      .mockReturnValueOnce(insert);
+    return { insert };
+  }
+  it.each([
+    ['creator', false],
+    ['workspace admin', true],
+  ])('refuses to start a new recording for a %s', async (_, isAdmin) => {
+    const { insert } = arrangeNoActiveSession();
+    mocks.rpc.mockResolvedValue({ data: isAdmin, error: null });
+    const response = await POST(request(), context);
+    expect(response.status).toBe(403);
+    const body = await response.json();
+    expect(body).toMatchObject({ code: 'LEGACY_MEETING_RECORDER_RETIRED' });
+    expect(body).not.toHaveProperty('action');
+    expect(body.error).toContain('Meet');
+    expect(insert.insert).not.toHaveBeenCalled();
+  });
+  it.each([
+    ['en', 'old meeting recorder'],
+    ['vi-VN,vi;q=0.9', 'Trình ghi âm cuộc họp cũ'],
+  ])('localizes the refusal for %s', async (locale, expected) => {
+    arrangeNoActiveSession();
+    const response = await POST(request(locale), context);
+    expect((await response.json()).error).toContain(expected);
+  });
+  it('still lets the creator stop a recording that was already active', async () => {
+    const { update } = arrange();
+    const response = await POST(request(), context);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ action: 'stopped' });
+    expect(update.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'pending_transcription' })
+    );
   });
 });

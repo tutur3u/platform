@@ -1,14 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  MAX_INLINE_TRANSCRIPTION_AUDIO_BYTES,
-  MAX_TRANSCRIPTION_MULTIPART_REQUEST_BYTES,
-} from './input';
+import { MAX_TRANSCRIPTION_MULTIPART_REQUEST_BYTES } from './input';
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
   meeting: vi.fn(),
+  meetingEq: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   membership: vi.fn(),
+  getWorkspaceConfig: vi.fn(),
   credits: vi.fn(),
   deduct: vi.fn(),
   limiters: vi.fn(),
@@ -16,12 +15,11 @@ const mocks = vi.hoisted(() => ({
   generateObject: vi.fn(),
   google: vi.fn(),
   withAiMemory: vi.fn(),
-  legacy: vi.fn(),
-  meetAi: vi.fn(),
-  usage: vi.fn(),
+  order: [] as string[],
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getWorkspaceConfig: mocks.getWorkspaceConfig,
   normalizeWorkspaceId: mocks.normalizeWorkspaceId,
   verifyWorkspaceMembershipType: mocks.membership,
 }));
@@ -32,21 +30,17 @@ vi.mock('../../credits/check-credits', () => ({
   checkAiCredits: mocks.credits,
   deductAiCredits: mocks.deduct,
 }));
-
 vi.mock('@ai-sdk/google', () => ({
   google: (...args: Parameters<typeof mocks.google>) => mocks.google(...args),
 }));
-
 vi.mock('ai', () => ({
   generateObject: (...args: Parameters<typeof mocks.generateObject>) =>
     mocks.generateObject(...args),
 }));
-
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: (...args: Parameters<typeof mocks.createClient>) =>
     mocks.createClient(...args),
 }));
-
 vi.mock('../../memory', () => ({
   withAiMemory: (...args: Parameters<typeof mocks.withAiMemory>) =>
     mocks.withAiMemory(...args),
@@ -54,22 +48,26 @@ vi.mock('../../memory', () => ({
 
 import { createPOST } from './route';
 
-const post = () =>
-  createPOST({
-    isLegacyMeetingTranscriptionEnabled: mocks.legacy,
-    isMeetAiEnabled: mocks.meetAi,
-    limitMeetAiUsage: mocks.usage,
-  });
+const WS_ID = '11111111-1111-4111-8111-111111111111';
+const MEETING_ID = '22222222-2222-4222-8222-222222222222';
+const REFUSAL_CODE = 'LEGACY_MEETING_TRANSCRIPTION_DISABLED';
 
-function createAudioFile({
-  size = 1,
-  type = 'audio/webm',
-}: {
-  size?: number;
-  type?: string;
-} = {}) {
-  const file = new File(['audio'], 'recording', { type });
-  Object.defineProperty(file, 'size', { configurable: true, value: size });
+// Every injected gate a caller could previously pass to re-enable the legacy
+// path, all saying "yes". The route must ignore them.
+const permissiveOptions = {
+  isLegacyMeetingTranscriptionEnabled: () => true,
+  isMeetAiEnabled: () => true,
+  limitMeetAiUsage: async () => ({ ok: true }),
+};
+const post = () =>
+  (
+    createPOST as unknown as (
+      options?: unknown
+    ) => ReturnType<typeof createPOST>
+  )(permissiveOptions);
+
+function createAudioFile() {
+  const file = new File(['audio'], 'recording', { type: 'audio/webm' });
   const arrayBuffer = vi
     .spyOn(file, 'arrayBuffer')
     .mockResolvedValue(Uint8Array.from([1, 2, 3]).buffer);
@@ -77,20 +75,21 @@ function createAudioFile({
 }
 
 function createRequest({
-  audio = null,
+  audio = createAudioFile().file as FormDataEntryValue | null,
   contentLength,
-  wsId = 'personal',
-  meetingId = '22222222-2222-4222-8222-222222222222',
+  locale,
+  wsId = 'personal' as FormDataEntryValue | null,
+  meetingId = MEETING_ID as FormDataEntryValue | null,
 }: {
   audio?: FormDataEntryValue | null;
   contentLength?: string;
+  locale?: string;
   wsId?: FormDataEntryValue | null;
   meetingId?: FormDataEntryValue | null;
 } = {}) {
   const headers = new Headers();
-  if (contentLength !== undefined) {
-    headers.set('content-length', contentLength);
-  }
+  if (contentLength !== undefined) headers.set('content-length', contentLength);
+  if (locale) headers.set('accept-language', locale);
   const formData = vi.fn().mockResolvedValue({
     get: vi.fn((key: string) => {
       if (key === 'audio') return audio;
@@ -105,232 +104,216 @@ function createRequest({
   };
 }
 
-function expectNoAiSetup() {
+function expectNoPaidWork() {
+  expect(mocks.credits).not.toHaveBeenCalled();
+  expect(mocks.deduct).not.toHaveBeenCalled();
   expect(mocks.google).not.toHaveBeenCalled();
   expect(mocks.withAiMemory).not.toHaveBeenCalled();
   expect(mocks.generateObject).not.toHaveBeenCalled();
 }
 
-describe('meeting transcription route input bounds', () => {
-  beforeEach(() => {
-    vi.resetAllMocks();
-    mocks.normalizeWorkspaceId.mockResolvedValue(
-      '11111111-1111-4111-8111-111111111111'
-    );
-    mocks.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
-    mocks.legacy.mockResolvedValue(true);
-    mocks.meetAi.mockResolvedValue(true);
-    mocks.usage.mockResolvedValue({ ok: true });
-    mocks.credits.mockResolvedValue({ allowed: true });
-    mocks.deduct.mockResolvedValue({ success: true });
-    mocks.limit.mockResolvedValue({ success: true });
-    mocks.limiters.mockResolvedValue({
-      mutate: [{ limiter: { limit: mocks.limit } }],
-    });
-    mocks.meeting.mockResolvedValue({
-      data: {
-        ws_id: '11111111-1111-4111-8111-111111111111',
-        creator_id: 'user-1',
-      },
-      error: null,
-    });
-    const query = {
-      select: () => query,
-      eq: () => query,
-      maybeSingle: mocks.meeting,
-    };
-    mocks.createClient.mockResolvedValue({
-      from: () => query,
-      auth: {
-        getUser: vi.fn().mockResolvedValue({
-          data: { user: { id: 'user-1' } },
-        }),
-      },
-    });
-    mocks.google.mockReturnValue('provider-model');
-    mocks.withAiMemory.mockResolvedValue('metered-model');
-    mocks.generateObject.mockResolvedValue({
-      usage: { inputTokens: 20, outputTokens: 10 },
-      object: {
-        durationInSeconds: 1,
-        language: 'en',
-        segments: [],
-        text: 'Transcript',
-      },
-    });
+beforeEach(() => {
+  vi.resetAllMocks();
+  mocks.order.length = 0;
+  mocks.normalizeWorkspaceId.mockResolvedValue(WS_ID);
+  mocks.membership.mockImplementation(async () => {
+    mocks.order.push('membership');
+    return { ok: true, membershipType: 'MEMBER' };
   });
-
-  it('refuses default OFF before usage, credits or provider', async () => {
-    const { file } = createAudioFile();
-    const { request } = createRequest({ audio: file });
-    mocks.legacy.mockResolvedValue(false);
-    expect((await post()(request)).status).toBe(403);
-    expect(mocks.usage).not.toHaveBeenCalled();
-    expect(mocks.credits).not.toHaveBeenCalled();
-    expectNoAiSetup();
+  mocks.getWorkspaceConfig.mockResolvedValue('true');
+  mocks.credits.mockResolvedValue({ allowed: true });
+  mocks.deduct.mockResolvedValue({ success: true });
+  mocks.limit.mockResolvedValue({ success: true });
+  mocks.limiters.mockResolvedValue({
+    mutate: [{ limiter: { limit: mocks.limit } }],
   });
-
-  it.each(['en', 'vi'])('localizes refusal in %s', async (locale) => {
-    mocks.legacy.mockResolvedValue(false);
-    const { request } = createRequest();
-    request.headers.set('accept-language', locale);
-    const response = await post()(request);
-    const body = await response.json();
-    expect(body.error).toContain(
-      locale === 'vi' ? 'Không thể' : 'Speaker consent'
-    );
-    expect(body.error).toContain('Meet AI');
+  mocks.meeting.mockImplementation(async () => {
+    mocks.order.push('meeting');
+    return { data: { ws_id: WS_ID, creator_id: 'user-1' }, error: null };
   });
-
-  it('defaults legacy transcription to OFF when no gate is configured', async () => {
-    const { file } = createAudioFile();
-    const { request } = createRequest({ audio: file });
-    const response = await createPOST({
-      isMeetAiEnabled: mocks.meetAi,
-      limitMeetAiUsage: mocks.usage,
-    })(request);
-    expect(response.status).toBe(403);
-    expect(mocks.usage).not.toHaveBeenCalled();
-    expect(mocks.credits).not.toHaveBeenCalled();
-    expectNoAiSetup();
+  const query = {
+    select: () => query,
+    eq: (...args: unknown[]) => {
+      mocks.meetingEq(...args);
+      return query;
+    },
+    maybeSingle: mocks.meeting,
+  };
+  mocks.createClient.mockResolvedValue({
+    from: () => query,
+    auth: {
+      getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1' } } }),
+    },
   });
-
-  it('refuses enabled legacy transcription for a non-creator', async () => {
-    mocks.meeting.mockResolvedValue({
-      data: {
-        ws_id: '11111111-1111-4111-8111-111111111111',
-        creator_id: 'other',
-      },
-      error: null,
-    });
-    const { file } = createAudioFile();
-    const { request } = createRequest({ audio: file });
-    expect((await post()(request)).status).toBe(403);
-    expect(mocks.usage).not.toHaveBeenCalled();
-    expect(mocks.credits).not.toHaveBeenCalled();
-    expectNoAiSetup();
+  mocks.google.mockReturnValue('provider-model');
+  mocks.withAiMemory.mockResolvedValue('metered-model');
+  mocks.generateObject.mockResolvedValue({
+    usage: { inputTokens: 20, outputTokens: 10 },
+    object: { text: 'Transcript' },
   });
+});
 
-  it.each([null, '', ' ', new File(['x'], 'workspace')])(
-    'requires a workspace field %s before reading audio',
-    async (wsId) => {
+describe('legacy meeting transcription is permanently refused', () => {
+  it.each([
+    ['with every former gate saying yes', post],
+    ['with no options', () => createPOST()],
+  ])(
+    'refuses the meeting creator %s before audio, usage, credits or provider',
+    async (_, make) => {
       const { arrayBuffer, file } = createAudioFile();
-      const { request } = createRequest({ audio: file, wsId });
-      expect((await post()(request)).status).toBe(400);
+      const { request } = createRequest({ audio: file });
+      const response = await make()(request);
+      expect(response.status).toBe(403);
+      expect(await response.json()).toMatchObject({ code: REFUSAL_CODE });
       expect(arrayBuffer).not.toHaveBeenCalled();
-      expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
-      expectNoAiSetup();
+      expectNoPaidWork();
     }
   );
 
-  it.each([
-    'invalid',
-    'unresolved',
-    'non-member',
-    'guest',
-    'lookup-error',
-    'credits',
-    'rate-limit',
-  ])('rejects %s before audio allocation or provider setup', async (reason) => {
-    if (reason === 'invalid')
-      mocks.normalizeWorkspaceId.mockRejectedValue(new Error('not found'));
-    if (reason === 'unresolved')
-      mocks.normalizeWorkspaceId.mockResolvedValue('unknown-handle');
-    if (['non-member', 'guest', 'lookup-error'].includes(reason)) {
-      mocks.membership.mockResolvedValue({ ok: false, error: reason });
-    }
-    if (reason === 'credits')
-      mocks.credits.mockResolvedValue({
-        allowed: false,
-        errorCode: 'CREDITS_EXHAUSTED',
-        errorMessage: 'AI credits insufficient',
-      });
-    if (reason === 'rate-limit')
-      mocks.limit.mockResolvedValue({
-        success: false,
-        reset: Date.now() + 60_000,
-      });
-    const { arrayBuffer, file } = createAudioFile();
-    const { formData, request } = createRequest({ audio: file });
-    const response = await post()(request);
-    expect(response.status).toBe(
-      reason === 'rate-limit' ? 429 : reason === 'credits' ? 402 : 403
-    );
-    if (reason === 'rate-limit') {
-      expect(response.headers.get('Retry-After')).toBeTruthy();
-      expect(formData).not.toHaveBeenCalled();
-      expect(mocks.credits).not.toHaveBeenCalled();
-    }
-    expect(arrayBuffer).not.toHaveBeenCalled();
-    expect(mocks.deduct).not.toHaveBeenCalled();
-    expectNoAiSetup();
+  it('ignores a legacy_meeting_transcription_enabled workspace config of true', async () => {
+    mocks.getWorkspaceConfig.mockResolvedValue('true');
+    const response = await post()(createRequest().request);
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({ code: REFUSAL_CODE });
+    expect(mocks.getWorkspaceConfig).not.toHaveBeenCalled();
+    expectNoPaidWork();
   });
 
-  it('denies a forged workspace even when the actor belongs to it', async () => {
-    mocks.normalizeWorkspaceId.mockResolvedValue(
-      '33333333-3333-4333-8333-333333333333'
-    );
-    const { request } = createRequest({
-      audio: createAudioFile().file,
-      wsId: 'other-team',
+  it('gives a non-creator member the same refusal', async () => {
+    mocks.meeting.mockResolvedValue({
+      data: { ws_id: WS_ID, creator_id: 'someone-else' },
+      error: null,
     });
-    expect((await post()(request)).status).toBe(403);
-    expect(mocks.credits).not.toHaveBeenCalled();
-    expect(mocks.deduct).not.toHaveBeenCalled();
-    expectNoAiSetup();
+    const response = await post()(createRequest().request);
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({ code: REFUSAL_CODE });
+    expectNoPaidWork();
   });
+
+  it.each([
+    ['en', 'Speaker consent cannot be verified'],
+    ['en-US,en;q=0.9', 'Speaker consent cannot be verified'],
+    ['vi', 'Không thể xác minh'],
+    ['vi-VN,vi;q=0.9', 'Không thể xác minh'],
+  ])('localizes the refusal for %s', async (locale, expected) => {
+    const response = await post()(createRequest({ locale }).request);
+    const body = await response.json();
+    expect(body.error).toContain(expected);
+    expect(body.error).toContain('Meet AI');
+  });
+});
+
+describe('legacy meeting transcription admission order', () => {
+  it('checks workspace membership before looking up the meeting', async () => {
+    await post()(createRequest().request);
+    expect(mocks.order).toEqual(['membership', 'meeting']);
+  });
+
+  it.each(['non-member', 'guest', 'lookup-error'])(
+    'refuses a %s without looking up the meeting',
+    async (reason) => {
+      mocks.membership.mockResolvedValue({ ok: false, error: reason });
+      const response = await post()(createRequest().request);
+      expect(response.status).toBe(403);
+      expect(await response.text()).toBe('Workspace access denied');
+      expect(mocks.meeting).not.toHaveBeenCalled();
+      expectNoPaidWork();
+    }
+  );
+
+  it('verifies MEMBER status in the resolved workspace', async () => {
+    await post()(createRequest().request);
+    expect(mocks.membership).toHaveBeenCalledWith(
+      expect.objectContaining({
+        wsId: WS_ID,
+        userId: 'user-1',
+        requiredType: 'MEMBER',
+      })
+    );
+  });
+
+  it('scopes the meeting lookup by both id and workspace', async () => {
+    await post()(createRequest().request);
+    expect(mocks.meetingEq).toHaveBeenCalledWith('id', MEETING_ID);
+    expect(mocks.meetingEq).toHaveBeenCalledWith('ws_id', WS_ID);
+  });
+
+  it('denies a meeting outside the workspace without the refusal body', async () => {
+    mocks.meeting.mockResolvedValue({ data: null, error: null });
+    const response = await post()(createRequest().request);
+    expect(response.status).toBe(403);
+    expect(await response.text()).toBe('Meeting access denied');
+    expectNoPaidWork();
+  });
+
+  it('fails closed when the meeting lookup errors', async () => {
+    mocks.meeting.mockResolvedValue({ data: null, error: { code: 'X' } });
+    const response = await post()(createRequest().request);
+    expect(response.status).toBe(503);
+    expectNoPaidWork();
+  });
+
+  it.each([null, '', ' ', new File(['x'], 'workspace')])(
+    'requires a workspace field %s',
+    async (wsId) => {
+      const response = await post()(createRequest({ wsId }).request);
+      expect(response.status).toBe(400);
+      expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
+      expectNoPaidWork();
+    }
+  );
+
+  it.each(['invalid', 'unresolved'])(
+    'denies an %s workspace before membership',
+    async (reason) => {
+      if (reason === 'invalid')
+        mocks.normalizeWorkspaceId.mockRejectedValue(new Error('not found'));
+      else mocks.normalizeWorkspaceId.mockResolvedValue('unknown-handle');
+      const response = await post()(createRequest().request);
+      expect(response.status).toBe(403);
+      expect(mocks.membership).not.toHaveBeenCalled();
+      expect(mocks.meeting).not.toHaveBeenCalled();
+    }
+  );
 
   it.each([null, '', 'invalid'])(
     'requires a valid meeting ID (%s)',
     async (meetingId) => {
-      const { request } = createRequest({ meetingId });
-      expect((await post()(request)).status).toBe(400);
-      expect(mocks.credits).not.toHaveBeenCalled();
-      expectNoAiSetup();
+      const response = await post()(createRequest({ meetingId }).request);
+      expect(response.status).toBe(400);
+      expect(mocks.meeting).not.toHaveBeenCalled();
+      expectNoPaidWork();
     }
   );
 
-  it.each(['not-allowlisted', 'lookup-throws', 'lookup-rejects', 'no-gate'])(
-    'fails closed on the Meet AI allowlist (%s) before credits, file reads or the provider',
-    async (reason) => {
-      if (reason === 'not-allowlisted') mocks.meetAi.mockResolvedValue(false);
-      if (reason === 'lookup-throws')
-        mocks.meetAi.mockImplementation(() => {
-          throw new Error('binding read failed');
-        });
-      if (reason === 'lookup-rejects')
-        mocks.meetAi.mockRejectedValue(new Error('binding read failed'));
-      const { arrayBuffer, file } = createAudioFile();
-      const { request } = createRequest({ audio: file });
-      const handler =
-        reason === 'no-gate'
-          ? createPOST({ isLegacyMeetingTranscriptionEnabled: mocks.legacy })
-          : createPOST({
-              isLegacyMeetingTranscriptionEnabled: mocks.legacy,
-              isMeetAiEnabled: mocks.meetAi,
-            });
-      const response = await handler(request);
-      expect(response.status).toBe(403);
-      expect(await response.text()).toBe('Meet AI is temporarily unavailable');
-      if (reason !== 'no-gate') {
-        expect(mocks.meetAi).toHaveBeenCalledWith(
-          '11111111-1111-4111-8111-111111111111'
-        );
-      }
-      expect(mocks.membership).toHaveBeenCalledOnce();
-      expect(mocks.credits).not.toHaveBeenCalled();
-      expect(arrayBuffer).not.toHaveBeenCalled();
-      expect(mocks.deduct).not.toHaveBeenCalled();
-      expectNoAiSetup();
-    }
-  );
+  it('authenticates before anything else', async () => {
+    const getUser = vi.fn().mockResolvedValue({ data: { user: null } });
+    mocks.createClient.mockResolvedValue({ auth: { getUser } });
+    const { formData, request } = createRequest({
+      contentLength: String(MAX_TRANSCRIPTION_MULTIPART_REQUEST_BYTES + 1),
+    });
+    expect((await post()(request)).status).toBe(401);
+    expect(formData).not.toHaveBeenCalled();
+  });
 
-  it('does not consult the allowlist for a non-member', async () => {
-    mocks.membership.mockResolvedValue({ ok: false, error: 'non-member' });
-    const { file } = createAudioFile();
-    const { request } = createRequest({ audio: file });
-    expect((await post()(request)).status).toBe(403);
-    expect(mocks.meetAi).not.toHaveBeenCalled();
+  it('rejects an oversized declared request before multipart parsing', async () => {
+    const { formData, request } = createRequest({
+      contentLength: String(MAX_TRANSCRIPTION_MULTIPART_REQUEST_BYTES + 1),
+    });
+    expect((await post()(request)).status).toBe(413);
+    expect(formData).not.toHaveBeenCalled();
+  });
+
+  it('rate-limits before multipart parsing', async () => {
+    mocks.limit.mockResolvedValue({
+      success: false,
+      reset: Date.now() + 60_000,
+    });
+    const { formData, request } = createRequest();
+    const response = await post()(request);
+    expect(response.status).toBe(429);
+    expect(response.headers.get('Retry-After')).toBeTruthy();
+    expect(formData).not.toHaveBeenCalled();
   });
 
   it.each(['store-null', 'no-buckets', 'get-limiters-throws', 'limit-throws'])(
@@ -343,330 +326,12 @@ describe('meeting transcription route input bounds', () => {
         mocks.limiters.mockRejectedValue(new Error('redis down'));
       if (reason === 'limit-throws')
         mocks.limit.mockRejectedValue(new Error('redis down'));
-      const { arrayBuffer, file } = createAudioFile();
-      const { formData, request } = createRequest({ audio: file });
+      const { formData, request } = createRequest();
       const response = await post()(request);
       expect(response.status).toBe(503);
       expect(response.headers.get('Retry-After')).toBeTruthy();
       expect(formData).not.toHaveBeenCalled();
       expect(mocks.membership).not.toHaveBeenCalled();
-      expect(mocks.meetAi).not.toHaveBeenCalled();
-      expect(mocks.credits).not.toHaveBeenCalled();
-      expect(arrayBuffer).not.toHaveBeenCalled();
-      expectNoAiSetup();
     }
   );
-
-  it.each(['personal', 'team-handle'])(
-    'attributes %s to its resolved workspace',
-    async (wsId) => {
-      const { file } = createAudioFile();
-      const { request } = createRequest({ audio: file, wsId });
-      const response = await post()(request);
-      expect(response.status).toBe(200);
-      expect(await response.json()).toEqual({
-        text: 'Transcript',
-        segments: [],
-        language: 'en',
-        durationInSeconds: 1,
-      });
-      expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
-        wsId,
-        expect.anything()
-      );
-      expect(mocks.membership).toHaveBeenCalledWith(
-        expect.objectContaining({
-          wsId: '11111111-1111-4111-8111-111111111111',
-          userId: 'user-1',
-          requiredType: 'MEMBER',
-        })
-      );
-      expect(mocks.credits).toHaveBeenCalledWith(
-        '11111111-1111-4111-8111-111111111111',
-        'gemini-3.1-flash-lite',
-        'generate',
-        { userId: 'user-1' }
-      );
-      expect(mocks.withAiMemory).toHaveBeenCalledWith(
-        expect.objectContaining({
-          wsId: '11111111-1111-4111-8111-111111111111',
-          product: 'meetings',
-        })
-      );
-      expect(mocks.deduct).toHaveBeenCalledWith(
-        expect.objectContaining({
-          wsId: '11111111-1111-4111-8111-111111111111',
-          feature: 'generate',
-          inputTokens: 20,
-          outputTokens: 10,
-        })
-      );
-      expect(mocks.generateObject).toHaveBeenCalledOnce();
-    }
-  );
-
-  it('authenticates before rejecting an oversized declared request', async () => {
-    const getUser = vi.fn().mockResolvedValue({ data: { user: null } });
-    mocks.createClient.mockResolvedValue({ auth: { getUser } });
-    const { formData, request } = createRequest({
-      contentLength: String(MAX_TRANSCRIPTION_MULTIPART_REQUEST_BYTES + 1),
-    });
-
-    const response = await post()(request);
-
-    expect(response.status).toBe(401);
-    expect(getUser).toHaveBeenCalledOnce();
-    expect(formData).not.toHaveBeenCalled();
-    expectNoAiSetup();
-  });
-
-  it('rejects an oversized declared request before multipart parsing', async () => {
-    const { formData, request } = createRequest({
-      contentLength: String(MAX_TRANSCRIPTION_MULTIPART_REQUEST_BYTES + 1),
-    });
-
-    const response = await post()(request);
-
-    expect(response.status).toBe(413);
-    expect(formData).not.toHaveBeenCalled();
-    expectNoAiSetup();
-  });
-
-  it.each([undefined, 'invalid', '-1'])(
-    'treats %s content length as unknown and uses the authoritative file check',
-    async (contentLength) => {
-      const { arrayBuffer, file } = createAudioFile({
-        size: MAX_INLINE_TRANSCRIPTION_AUDIO_BYTES + 1,
-      });
-      const { formData, request } = createRequest({
-        audio: file,
-        contentLength,
-      });
-
-      const response = await post()(request);
-
-      expect(response.status).toBe(413);
-      expect(formData).toHaveBeenCalledOnce();
-      expect(arrayBuffer).not.toHaveBeenCalled();
-      expectNoAiSetup();
-    }
-  );
-
-  it('does not trust a small declared length over the actual file size', async () => {
-    const { arrayBuffer, file } = createAudioFile({
-      size: MAX_INLINE_TRANSCRIPTION_AUDIO_BYTES + 1,
-    });
-    const { request } = createRequest({ audio: file, contentLength: '1' });
-
-    const response = await post()(request);
-
-    expect(response.status).toBe(413);
-    expect(arrayBuffer).not.toHaveBeenCalled();
-    expectNoAiSetup();
-  });
-
-  it.each([null, 'not-a-file'])(
-    'rejects missing or non-File audio entry %s before AI setup',
-    async (audio) => {
-      const { request } = createRequest({ audio });
-
-      const response = await post()(request);
-
-      expect(response.status).toBe(400);
-      expectNoAiSetup();
-    }
-  );
-
-  it('rejects an empty File before allocating its byte buffer', async () => {
-    const { arrayBuffer, file } = createAudioFile({ size: 0 });
-    const { request } = createRequest({ audio: file });
-
-    const response = await post()(request);
-
-    expect(response.status).toBe(400);
-    expect(arrayBuffer).not.toHaveBeenCalled();
-    expectNoAiSetup();
-  });
-
-  it.each(['audio/wav', 'video/webm', 'application/octet-stream'])(
-    'rejects unsupported media type %s before allocating its byte buffer',
-    async (type) => {
-      const { arrayBuffer, file } = createAudioFile({ type });
-      const { request } = createRequest({ audio: file });
-
-      const response = await post()(request);
-
-      expect(response.status).toBe(415);
-      expect(arrayBuffer).not.toHaveBeenCalled();
-      expectNoAiSetup();
-    }
-  );
-
-  it.each([
-    ['audio/webm', 'audio/webm'],
-    ['audio/webm;codecs=opus', 'audio/webm'],
-    ['audio/mp4', 'audio/mp4'],
-    ['audio/mp4;codecs=mp4a.40.2', 'audio/mp4'],
-    ['audio/ogg', 'audio/ogg'],
-    ['audio/ogg;codecs=opus', 'audio/ogg'],
-    ['audio/mpeg', 'audio/mpeg'],
-    ['audio/mpeg;codecs=mp3', 'audio/mpeg'],
-  ] as const)(
-    'passes %s to the provider as %s',
-    async (type, expectedMediaType) => {
-      const { arrayBuffer, file } = createAudioFile({ type });
-      const { request } = createRequest({ audio: file });
-
-      const response = await post()(request);
-
-      expect(response.status).toBe(200);
-      expect(arrayBuffer).toHaveBeenCalledOnce();
-      expect(mocks.google).toHaveBeenCalledWith('gemini-3.1-flash-lite');
-      expect(mocks.withAiMemory).toHaveBeenCalledOnce();
-      expect(mocks.generateObject).toHaveBeenCalledWith(
-        expect.objectContaining({
-          messages: [
-            {
-              content: [
-                expect.objectContaining({
-                  data: expect.any(Uint8Array),
-                  mediaType: expectedMediaType,
-                  type: 'file',
-                }),
-              ],
-              role: 'user',
-            },
-          ],
-        })
-      );
-    }
-  );
-});
-
-describe('meeting transcription Meet AI usage limiter', () => {
-  const wsId = '11111111-1111-4111-8111-111111111111';
-  const meetingId = '22222222-2222-4222-8222-222222222222';
-
-  beforeEach(() => {
-    vi.resetAllMocks();
-    mocks.normalizeWorkspaceId.mockResolvedValue(wsId);
-    mocks.membership.mockResolvedValue({ ok: true, membershipType: 'MEMBER' });
-    mocks.legacy.mockResolvedValue(true);
-    mocks.meetAi.mockResolvedValue(true);
-    mocks.usage.mockResolvedValue({ ok: true });
-    mocks.credits.mockResolvedValue({ allowed: true });
-    mocks.deduct.mockResolvedValue({ success: true });
-    mocks.limit.mockResolvedValue({ success: true });
-    mocks.limiters.mockResolvedValue({
-      mutate: [{ limiter: { limit: mocks.limit } }],
-    });
-    mocks.meeting.mockResolvedValue({
-      data: { ws_id: wsId, creator_id: 'user-1' },
-      error: null,
-    });
-    const query = {
-      select: () => query,
-      eq: () => query,
-      maybeSingle: mocks.meeting,
-    };
-    mocks.createClient.mockResolvedValue({
-      from: () => query,
-      auth: {
-        getUser: vi.fn().mockResolvedValue({
-          data: { user: { id: 'user-1' } },
-        }),
-      },
-    });
-    mocks.google.mockReturnValue('provider-model');
-    mocks.withAiMemory.mockResolvedValue('metered-model');
-    mocks.generateObject.mockResolvedValue({
-      usage: { inputTokens: 20, outputTokens: 10 },
-      object: { text: 'Transcript' },
-    });
-  });
-
-  it('charges the session user, meeting workspace and an audio estimate', async () => {
-    const { file } = createAudioFile({ size: 64_001 });
-    const { request } = createRequest({ audio: file });
-    expect((await post()(request)).status).toBe(200);
-    expect(mocks.usage).toHaveBeenCalledExactlyOnceWith({
-      kind: 'recording',
-      userId: 'user-1',
-      meetingId,
-      workspaceId: wsId,
-      audioSeconds: 33,
-    });
-    expect(mocks.usage.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.credits.mock.invocationCallOrder[0] ?? 0
-    );
-  });
-
-  it.each([
-    [
-      'a reached limit',
-      {
-        ok: false,
-        status: 429,
-        code: 'MEET_AI_RATE_LIMITED',
-        retryAfterSeconds: 12,
-        scope: 'user',
-      },
-      429,
-      '12',
-    ],
-    [
-      'an unavailable limiter',
-      {
-        ok: false,
-        status: 503,
-        code: 'MEET_AI_LIMITER_UNAVAILABLE',
-        retryAfterSeconds: 30,
-        reason: 'timeout',
-      },
-      503,
-      '30',
-    ],
-  ])(
-    'refuses %s before credits, audio read or provider setup',
-    async (_, decision, status, retryAfter) => {
-      mocks.usage.mockResolvedValue(decision);
-      const { arrayBuffer, file } = createAudioFile();
-      const { request } = createRequest({ audio: file });
-      const response = await post()(request);
-      expect(response.status).toBe(status);
-      expect(response.headers.get('Retry-After')).toBe(retryAfter);
-      expect(await response.json()).toMatchObject({ code: decision.code });
-      expect(mocks.credits).not.toHaveBeenCalled();
-      expect(arrayBuffer).not.toHaveBeenCalled();
-      expectNoAiSetup();
-    }
-  );
-
-  it.each([
-    ['throws', () => mocks.usage.mockRejectedValue(new Error('boom'))],
-    ['returns garbage', () => mocks.usage.mockResolvedValue(undefined)],
-  ])('fails closed when the limiter %s', async (_, arrange) => {
-    arrange();
-    const { file } = createAudioFile();
-    const { request } = createRequest({ audio: file });
-    const response = await post()(request);
-    expect(response.status).toBe(503);
-    expect(mocks.credits).not.toHaveBeenCalled();
-    expectNoAiSetup();
-  });
-
-  it('fails closed when no limiter is injected', async () => {
-    const { file } = createAudioFile();
-    const { request } = createRequest({ audio: file });
-    const response = await createPOST({
-      isLegacyMeetingTranscriptionEnabled: mocks.legacy,
-      isMeetAiEnabled: mocks.meetAi,
-    })(request);
-    expect(response.status).toBe(503);
-    expect(await response.json()).toMatchObject({
-      code: 'MEET_AI_LIMITER_UNAVAILABLE',
-    });
-    expect(mocks.credits).not.toHaveBeenCalled();
-    expectNoAiSetup();
-  });
 });

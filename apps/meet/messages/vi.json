@@ -4405,6 +4405,9 @@
       "recordings_hint": "Bản ghi âm và bản chép lời của cuộc họp",
       "scheduled": "Giờ họp dự kiến"
     },
+    "legacy_recorder": {
+      "retired": "Trình ghi âm cuộc họp cũ đã ngừng hoạt động. Hãy ghi âm trong Meet; các bản ghi hiện có vẫn ở đây."
+    },
     "live": {
       "add_memory": "Thêm ghi nhớ",
       "ai_participant": "Trợ lý AI",
@@ -4540,9 +4543,9 @@
     },
     "transcription": {
       "empty": "Bản ghi này không có dữ liệu âm thanh để phiên âm. Bản ghi đã lưu vẫn còn khả dụng.",
+      "legacy_disabled": "Không thể xác minh sự đồng ý của người nói cho bản ghi cũ. Hãy sử dụng Meet AI.",
       "too_large": "Bản ghi này quá lớn để phiên âm trực tiếp. Bản ghi đã lưu vẫn còn khả dụng.",
-      "unsupported_type": "Định dạng bản ghi này chưa thể được phiên âm trực tiếp. Bản ghi đã lưu vẫn còn khả dụng.",
-      "legacy_disabled": "Không thể xác minh sự đồng ý của người nói cho bản ghi cũ. Hãy sử dụng Meet AI."
+      "unsupported_type": "Định dạng bản ghi này chưa thể được phiên âm trực tiếp. Bản ghi đã lưu vẫn còn khả dụng."
     }
   },
   "meet_workspace": {

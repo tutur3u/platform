@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   toggle: vi.fn(),
   error: vi.fn(),
   success: vi.fn(),
+  getUserMedia: vi.fn(),
 }));
 vi.mock('@tuturuuu/internal-api', async () => {
   const { InternalApiError } = await import(
@@ -26,10 +27,21 @@ vi.mock('@tuturuuu/internal-api', async () => {
     toggleWorkspaceMeetingRecording: mocks.toggle,
   };
 });
-vi.mock('next-intl', () => ({
-  useTranslations: () => () =>
-    'Only the recording creator or a workspace admin can stop this recording. The recording is still active.',
-}));
+vi.mock('next-intl', async () => {
+  const messages = (await import('../../../../../../messages/en.json'))
+    .default as Record<string, unknown>;
+  const lookup = (path: string) =>
+    path
+      .split('.')
+      .reduce<unknown>(
+        (node, key) => (node as Record<string, unknown> | undefined)?.[key],
+        messages
+      );
+  return {
+    useTranslations: (namespace: string) => (key: string) =>
+      String(lookup(`${namespace}.${key}`) ?? `${namespace}.${key}`),
+  };
+});
 vi.mock('@tuturuuu/icons', () => ({
   Mic: () => null,
   Share2: () => null,
@@ -59,23 +71,22 @@ vi.mock('@tuturuuu/ui/label', () => ({ Label: () => null }));
 vi.mock('@tuturuuu/ui/sonner', () => ({
   toast: { error: mocks.error, success: mocks.success, info: vi.fn() },
 }));
-vi.mock('./audio-recorder', () => ({
-  AudioRecorder: () => <div data-testid="legacy-audio-capture" />,
-}));
 
 import { InternalApiError } from '@tuturuuu/internal-api';
 import { MeetingActions } from './meeting-actions';
 
-function show(canManage: boolean) {
+function show(canManage: boolean, active = true) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const session = { id: 'session', status: 'recording', can_manage: canManage };
+  const session = active
+    ? { id: 'session', status: 'recording', can_manage: canManage }
+    : null;
   client.setQueryData(
     ['active-recording-session', 'workspace', 'meeting'],
     session
   );
-  mocks.list.mockResolvedValue({ sessions: [session] });
+  mocks.list.mockResolvedValue({ sessions: session ? [session] : [] });
   render(
     <QueryClientProvider client={client}>
       <MeetingActions wsId="workspace" meetingId="meeting" />
@@ -85,18 +96,22 @@ function show(canManage: boolean) {
 }
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.getUserMedia.mockResolvedValue({ getTracks: () => [] });
+  Object.defineProperty(navigator, 'mediaDevices', {
+    configurable: true,
+    value: { getUserMedia: mocks.getUserMedia },
+  });
 });
 afterEach(cleanup);
 describe('legacy recording controls', () => {
   it('hides Stop from another member', () => {
     show(false);
     expect(screen.queryByRole('button', { name: 'End Recording' })).toBeNull();
-    expect(screen.queryByTestId('legacy-audio-capture')).toBeNull();
+    expect(mocks.getUserMedia).not.toHaveBeenCalled();
   });
   it('shows Stop to the authorized creator or admin', () => {
     show(true);
     expect(screen.getByRole('button', { name: 'End Recording' })).toBeTruthy();
-    expect(screen.getByTestId('legacy-audio-capture')).toBeTruthy();
   });
   it('keeps the active session and shows a clear error after a 403', async () => {
     const client = show(true);
@@ -113,7 +128,6 @@ describe('legacy recording controls', () => {
     ).toMatchObject({ id: 'session', status: 'recording' });
     expect(mocks.success).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'End Recording' })).toBeTruthy();
-    expect(screen.getByTestId('legacy-audio-capture')).toBeTruthy();
   });
   it('clears active state only after an authorized successful stop', async () => {
     const client = show(true);
@@ -124,5 +138,25 @@ describe('legacy recording controls', () => {
     expect(
       client.getQueryData(['active-recording-session', 'workspace', 'meeting'])
     ).toBeNull();
+  });
+});
+describe('legacy recorder lock', () => {
+  it('never offers Start Recording and points to Meet instead', async () => {
+    show(true, false);
+    await waitFor(() =>
+      expect(screen.getByText(/old meeting recorder is retired/i)).toBeTruthy()
+    );
+    expect(
+      screen.queryByRole('button', { name: /Start Recording/ })
+    ).toBeNull();
+    expect(
+      screen.getByText(/old meeting recorder is retired/i).textContent
+    ).toMatch(/\bMeet\b/);
+  });
+  it('never opens the microphone, even for an active legacy session', async () => {
+    show(true);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(mocks.getUserMedia).not.toHaveBeenCalled();
+    expect(screen.getByText(/old meeting recorder is retired/i)).toBeTruthy();
   });
 });
