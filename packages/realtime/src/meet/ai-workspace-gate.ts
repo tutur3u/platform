@@ -78,13 +78,16 @@ export function meetAiEnabledWorkspaceIds(env: MeetAiGateEnv) {
   return new Set(ids);
 }
 
-/** Hard denies apply to Meet and Parley; only pilot lists may be bypassed. */
+/**
+ * Hard denies apply to Meet and Parley; only pilot lists may be bypassed.
+ * Accept only canonical database UUIDs, never normalize a request identity.
+ */
 export function isMeetAiHardDenied(
   wsId: string | null | undefined,
   env: MeetAiGateEnv
 ) {
-  const id = typeof wsId === 'string' ? wsId.trim().toLowerCase() : '';
-  if (!UUID.test(id)) return true;
+  const id = typeof wsId === 'string' ? wsId : '';
+  if (id.length !== 36 || !UUID.test(id)) return true;
   const protectedRaw = binding(env, MEET_AI_PROTECTED_WORKSPACES_ENV);
   if (typeof protectedRaw !== 'string') return true;
   const protectedIds = workspaceIds(protectedRaw);
@@ -104,7 +107,7 @@ export function isMeetAiEnabledForWorkspace(
   env: MeetAiGateEnv
 ) {
   if (isMeetAiHardDenied(wsId, env)) return false;
-  const id = typeof wsId === 'string' ? wsId.trim().toLowerCase() : '';
+  const id = typeof wsId === 'string' ? wsId : '';
 
   const denied = binding(env, MEET_AI_WORKSPACE_DENYLIST_ENV);
   if (denied !== undefined) {
