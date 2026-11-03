@@ -61,9 +61,13 @@ export function meetStagingConfig() {
           'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
           'SUPABASE_SECRET_KEY',
           'GOOGLE_GENERATIVE_AI_API_KEY',
+          'MEET_AI_DISABLED_WORKSPACE_IDS',
+          'MEET_AI_PROTECTED_WORKSPACE_IDS',
         ],
       },
       vars: {
+        MEET_AI_DISABLED: 'true',
+        MEET_AI_ENABLED_WORKSPACE_IDS: '',
         NEXT_PUBLIC_APP_URL: `https://tuturuuu-meet-wave1-staging.${subdomain}.workers.dev`,
         NEXT_PUBLIC_WEB_APP_URL: 'https://web.tutur3u.com',
         MEET_REALTIME_URL: `wss://tuturuuu-meet-realtime-wave1-staging.${subdomain}.workers.dev/realtime`,

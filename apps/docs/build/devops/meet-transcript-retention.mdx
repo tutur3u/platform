@@ -40,6 +40,16 @@ delete consent rows explicitly before deleting a session or meeting. The transcr
 purge keeps both and requires no erasure-order change. Account deletion clears the
 consent user FK and retains a random session-scoped participant pseudonym.
 
+Self-capture (`self_v1`) sessions keep consent evidence exactly like legacy
+sessions: the `RESTRICT` foreign key on `private.meet_ai_consents.session_id`
+refuses a workspace, meeting or session deletion over consent rows until that
+evidence is explicitly erased by its retention owner. While capture can still
+run (`active` or `draining`), `self_v1` consent rows cannot be deleted at all.
+They also always have a finite `purge_after` of at most creation plus 365 days
+that can only move earlier. Their admission, stream, erasure-job and account-fence stores are not
+yet in this purge's scope. Self-capture stays disabled until the expanded
+purge, and a fresh dry-run and delete approval, cover them.
+
 ## Design
 
 `private.meet_transcript_purge_control` is a singleton fence row, readable and

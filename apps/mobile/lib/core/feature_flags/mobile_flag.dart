@@ -15,7 +15,12 @@ enum MobileFlag {
   offlineEditFinance('offline_edit_finance'),
   offlineEditTasks('offline_edit_tasks'),
   offlineEditCalendar('offline_edit_calendar'),
-  offlineStatusUi('offline_status_ui');
+  offlineStatusUi('offline_status_ui'),
+  meetTranscriptErase('meet_transcript_erase'),
+  meetTranscriptEraseSelf('meet_transcript_erase_self'),
+  meetErasureRequests('meet_erasure_requests'),
+  meetTranscriptEraseReceipts('meet_transcript_erase_receipts'),
+  meetSpeakerLabelRemoval('meet_speaker_label_removal');
 
   const MobileFlag(this.key);
   final String key;

@@ -69,7 +69,7 @@ reset role;
 create temporary view latest_consent as select id, decision from private.meet_ai_consents
  where session_id = '00000000-0000-4000-8000-000000008831'
  order by created_at desc, id desc limit 1;
-select is((select id::text from latest_consent), '00000000-0000-4000-8000-000000008843', 'UUID breaks equal-time ties');
+select is((select id::text from latest_consent), '00000000-0000-4000-8000-000000008843', 'latest consent is the last recorded withdrawal');
 set local role authenticated;
 select throws_ok($$delete from private.meet_ai_consents where id = '00000000-0000-4000-8000-000000008843'$$, '42501', null, 'authenticated cannot delete the latest withdrawal');
 select throws_ok($$update private.meet_ai_consents set decision = 'allow', created_at = now() - interval '2 minutes' where id = '00000000-0000-4000-8000-000000008843'$$, '42501', null, 'authenticated cannot rewrite or reorder withdrawal');

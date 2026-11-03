@@ -126,5 +126,45 @@
     "class": "ui",
     "default": false,
     "removeBy": "2027-01-31"
+  },
+  {
+    "key": "meet_transcript_erase",
+    "description": "Meet transcript erase",
+    "owner": "meet",
+    "class": "write",
+    "default": false,
+    "removeBy": "2027-01-31"
+  },
+  {
+    "key": "meet_transcript_erase_self",
+    "description": "Meet transcript erase self",
+    "owner": "meet",
+    "class": "write",
+    "default": false,
+    "removeBy": "2027-01-31"
+  },
+  {
+    "key": "meet_erasure_requests",
+    "description": "Meet erasure requests",
+    "owner": "meet",
+    "class": "write",
+    "default": false,
+    "removeBy": "2027-01-31"
+  },
+  {
+    "key": "meet_transcript_erase_receipts",
+    "description": "Meet transcript erase receipts",
+    "owner": "meet",
+    "class": "read",
+    "default": false,
+    "removeBy": "2027-01-31"
+  },
+  {
+    "key": "meet_speaker_label_removal",
+    "description": "Meet speaker label removal",
+    "owner": "meet",
+    "class": "write",
+    "default": false,
+    "removeBy": "2027-01-31"
   }
 ]
