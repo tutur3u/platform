@@ -600,6 +600,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
             </div>
           ) : (
             <TutoringPolicyCard
+              exclusionUpgrade={policyQuery.data?.exclusionUpgrade ?? false}
               canConfigure={canConfigure}
               groups={groupsQuery.data ?? []}
               policy={policy}

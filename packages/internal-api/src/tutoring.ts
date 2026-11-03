@@ -167,6 +167,7 @@ export async function getTutoringPolicy(
   return getInternalApiClient(options).json<{
     policy: TutoringPolicy;
     isConfigured: boolean;
+    exclusionUpgrade?: boolean;
   }>(`${basePath(workspaceId)}/policy`, { cache: 'no-store' });
 }
 

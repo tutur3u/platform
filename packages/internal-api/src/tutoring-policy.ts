@@ -188,6 +188,20 @@ export const EASY_CENTER_TUTORING_POLICY: TutoringPolicy = {
   ],
 };
 
+export function getEasyCenterTutoringPolicy(
+  exclusionUpgrade = false
+): TutoringPolicy {
+  return exclusionUpgrade
+    ? {
+        ...EASY_CENTER_TUTORING_POLICY,
+        groupExclusions: [
+          ...EASY_CENTER_TUTORING_POLICY.groupExclusions,
+          { scope: 'all', match: 'contains', value: 'IELTS' },
+        ],
+      }
+    : EASY_CENTER_TUTORING_POLICY;
+}
+
 /** Only untouched preset shifts receive the corrected attendance-day rules. */
 function matchesTimeRules(value: unknown, expected: TutoringTimeRule[]) {
   return (
