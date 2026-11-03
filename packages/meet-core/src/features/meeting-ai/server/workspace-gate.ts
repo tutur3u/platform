@@ -2,6 +2,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import {
   isMeetAiEnabledForWorkspace,
+  MEET_AI_DISABLED_ENV,
   type MeetAiGateEnv,
 } from '@tuturuuu/realtime/meet';
 
@@ -13,15 +14,16 @@ export {
 } from '@tuturuuu/realtime/meet';
 
 /**
- * The Worker env binding, never ambient process.env. Without a Cloudflare
- * context the default policy allows; credit admission still applies.
+ * The Worker env binding, never ambient process.env. Containment hotfix
+ * (03a410b3 line): without a Cloudflare context the gate fails closed, as if
+ * the kill switch were on, so a missing binding can never re-open Meet AI.
  */
 export async function meetAiGateEnv(): Promise<MeetAiGateEnv> {
   try {
     const { env } = await getCloudflareContext({ async: true });
     return env as unknown as MeetAiGateEnv;
   } catch {
-    return undefined;
+    return { [MEET_AI_DISABLED_ENV]: 'true' };
   }
 }
 

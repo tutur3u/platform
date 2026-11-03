@@ -68,7 +68,8 @@ describe('Meet Worker AI controls', () => {
     mocks.context.mockResolvedValue({ env: {} });
     expect(await meetAiAvailable(team)).toBe(true);
     mocks.context.mockRejectedValue(new Error('no context'));
-    expect(await meetAiAvailable(team)).toBe(true);
+    // Containment hotfix: no Cloudflare context fails closed.
+    expect(await meetAiAvailable(team)).toBe(false);
     vi.unstubAllEnvs();
   });
 });
