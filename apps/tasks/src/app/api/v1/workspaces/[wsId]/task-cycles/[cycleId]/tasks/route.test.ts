@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   normalizeWorkspaceId: vi.fn(),
   verifyWorkspaceMembershipType: vi.fn(),
   upsert: vi.fn(),
+  rpc: vi.fn(),
   deleteEq: vi.fn(),
   cycle: null as { ws_id: string } | null,
   task: null as Record<string, unknown> | null,
@@ -78,6 +79,7 @@ function listQuery() {
 }
 
 const admin = {
+  rpc: (...args: unknown[]) => mocks.rpc(...args),
   from: vi.fn((table: string) => {
     if (table === 'task_cycles') return single(() => mocks.cycle);
     if (table === 'tasks')
@@ -117,6 +119,7 @@ beforeEach(() => {
   });
   mocks.createAdminClient.mockResolvedValue(admin);
   mocks.upsert.mockResolvedValue({ error: null });
+  mocks.rpc.mockResolvedValue({ data: null, error: null });
   mocks.deleteEq.mockResolvedValue({ error: null });
   mocks.cycle = { ws_id: WS_ID };
   mocks.task = taskIn(WS_ID);
@@ -150,7 +153,7 @@ describe('POST assign task to cycle', () => {
     const response = await POST(request('POST'), context);
 
     expect(response.status).toBe(404);
-    expect(mocks.upsert).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it('rejects a cycle from another workspace without writing', async () => {
@@ -159,7 +162,7 @@ describe('POST assign task to cycle', () => {
     const response = await POST(request('POST'), context);
 
     expect(response.status).toBe(404);
-    expect(mocks.upsert).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it('rejects document-list tasks and invalid ids', async () => {
@@ -170,10 +173,10 @@ describe('POST assign task to cycle', () => {
       (await POST(request('POST', JSON.stringify({ taskId: 'x' })), context))
         .status
     ).toBe(400);
-    expect(mocks.upsert).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
-  it('moves a same-workspace task into the cycle with one upsert', async () => {
+  it('moves a same-workspace task through the assign_task_cycle rpc', async () => {
     const response = await POST(request('POST'), context);
 
     expect(response.status).toBe(200);
@@ -181,10 +184,63 @@ describe('POST assign task to cycle', () => {
       taskId: TASK_ID,
       cycleId: CYCLE_ID,
     });
-    expect(mocks.upsert).toHaveBeenCalledWith(
-      { task_id: TASK_ID, cycle_id: CYCLE_ID },
-      { onConflict: 'task_id' }
-    );
+    expect(mocks.rpc).toHaveBeenCalledTimes(1);
+    expect(mocks.rpc).toHaveBeenCalledWith('assign_task_cycle', {
+      p_task_id: TASK_ID,
+      p_cycle_id: CYCLE_ID,
+    });
+    // ON CONFLICT (task_id) needs a unique index this PR no longer adds.
+    expect(mocks.upsert).not.toHaveBeenCalled();
+  });
+
+  it('returns 404 when the database refuses a cross-workspace link', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: {
+        code: '42501',
+        message: 'Task and cycle must belong to the same workspace',
+      },
+    });
+
+    const response = await POST(request('POST'), context);
+
+    expect(response.status).toBe(404);
+  });
+
+  it('returns 404 when the task or cycle disappears before the write', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { code: 'P0002', message: 'Task not found' },
+    });
+
+    const response = await POST(request('POST'), context);
+
+    expect(response.status).toBe(404);
+  });
+
+  it('returns a retryable 409 when a concurrent assign holds the task', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { code: '55P03', message: 'canceling statement due to lock timeout' },
+    });
+
+    const response = await POST(request('POST'), context);
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Task is being moved by another request; retry',
+    });
+  });
+
+  it('returns 500 for other assign failures', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { code: 'XX000', message: 'boom' },
+    });
+
+    const response = await POST(request('POST'), context);
+
+    expect(response.status).toBe(500);
   });
 });
 
