@@ -33,7 +33,7 @@ describe('gateway assertions', () => {
       ['GET', '/events?after=5', now],
       ['DELETE', '/events?after=4', now],
       ['GET', '/events?after=4', now + 60_000],
-      ['GET', '/events?after=4', now - 1_000],
+      ['GET', '/events?after=4', now - 6_000],
     ] as const)
       expect(
         await verifyAssertion(secret, signed, method, target, time)

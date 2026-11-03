@@ -47,10 +47,32 @@ only the approved owner, cap sessions at 24 hours and enable audit logs.
 ## Data boundaries and memo
 
 The shell performs no data reads. Uncalled W2 client scaffolds use a private
-ops-hub binding stub and the user's satellite bearer for the web org API,
-refusing redirects. Before W2 uses these clients, replace the hub stub with
-the gateway HMAC assertion path and validate org API responses against the
-allowlisted schema. C1 API acceptance is required before use. There is no second person store.
+ops-hub service binding and the user's satellite bearer for the web org API,
+refusing redirects. The hub client signs GET /snapshot using the separate
+`OPS_HUB_MASTERMIND_SNAPSHOT_SECRET`, never the gateway secret. The signed
+v2 input binds key ID (`mastermind` or `gateway`), user, issue/expiry seconds,
+method and exact path plus query. The Mastermind key allows only GET /snapshot
+and GET /status without queries; all other routes return the same 404. The
+publisher still requires its separate Ed25519 credential for POST /ingest.
+Keys must have 43–256 characters with no surrounding whitespace. Assertions
+last 60 seconds, expire exclusively and tolerate at most five future issue seconds.
+
+The hub accepts a current key plus one next key per caller. For either prefix
+`OPS_HUB_MASTERMIND_SNAPSHOT` or `OPS_HUB_GATEWAY`, configure `_SECRET_NEXT`,
+`_NEXT_NOT_BEFORE` and `_NEXT_EXPIRES_AT` (10-digit Unix seconds). The overlap
+must be positive and at most 3600 seconds; the next key is rejected before its
+start and at/after its end. Missing or invalid bounds disable the next key.
+Add the next verifier key and bounded window, switch the signer within that
+window, promote next to current, then remove the next key and bounds. Keep no
+third key. Changing caller identity requires a different signed assertion.
+Deploy the v2 protocol to the hub and infrastructure gateway together; v1
+assertions fail closed. The infrastructure gateway keeps its existing route scope.
+No Mastermind secret may be provisioned until Selene re-reviews the exact SHA.
+
+Before W2 uses these clients, validate org API responses against the allowlisted
+schema. For ops-hub contract v3 (#7299), accept optional `org`, JSON `null`
+and 503 (Hub paused). Apply `readBounded(MAX_RESPONSE_BYTES)` and the gateway's
+content-type check before parsing the hub response. C1 API acceptance is required before use. There is no second person store.
 
 The memo factory is per-isolate, keyed by owner ID, bounded to 32 entries and
 expires after 60 seconds or session expiry. Run authentication and the owner

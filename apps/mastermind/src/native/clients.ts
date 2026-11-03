@@ -30,17 +30,25 @@ export function createDataClients(env: MastermindEnvironment, owner: Owner) {
   return {
     async agentSnapshot() {
       if (!env.OPS_HUB) throw new Error('Ops hub binding unavailable');
-      if (!env.OPS_HUB_GATEWAY_SECRET?.trim()) {
+      const secret = env.OPS_HUB_MASTERMIND_SNAPSHOT_SECRET;
+      if (
+        !secret ||
+        secret.length < 43 ||
+        secret.length > 256 ||
+        secret !== secret.trim()
+      ) {
         throw new Error('Ops hub signing key unavailable');
       }
       return env.OPS_HUB.fetch(
         new Request('https://ops-hub/snapshot', {
           headers: {
             [ASSERTION_HEADER]: await signAssertion(
-              env.OPS_HUB_GATEWAY_SECRET,
+              secret,
               owner.id,
               'GET',
-              '/snapshot'
+              '/snapshot',
+              Date.now(),
+              'mastermind'
             ),
           },
           redirect: 'error',

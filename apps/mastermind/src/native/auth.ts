@@ -9,7 +9,7 @@ export interface MastermindEnvironment {
   MASTERMIND_OWNER_EMAIL?: string;
   OWNER_IDS?: string;
   TUTURUUU_APP_COORDINATION_SECRET?: string;
-  OPS_HUB_GATEWAY_SECRET?: string;
+  OPS_HUB_MASTERMIND_SNAPSHOT_SECRET?: string;
   OPS_HUB?: { fetch(request: Request): Promise<Response> };
 }
 // Keep jose's cache and cooldown alive across requests within this isolate.

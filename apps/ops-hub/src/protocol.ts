@@ -147,7 +147,7 @@ export function publisherMessage(
   return result;
 }
 async function hmacKey(secret: string) {
-  if (secret.length < 43 || secret.length > 256)
+  if (secret.length < 43 || secret.length > 256 || secret !== secret.trim())
     throw new Error('Gateway unavailable');
   return crypto.subtle.importKey(
     'raw',
@@ -162,10 +162,11 @@ function assertionMessage(
   issuedAt: number,
   expiresAt: number,
   method: string,
-  target: string
+  target: string,
+  keyId: string
 ) {
   return encoder.encode(
-    `ops-hub-gateway-v1\n${userId}\n${issuedAt}\n${expiresAt}\n${method}\n${target}`
+    `ops-hub-gateway-v2\n${keyId}\n${userId}\n${issuedAt}\n${expiresAt}\n${method}\n${target}`
   );
 }
 export async function signAssertion(
@@ -173,29 +174,36 @@ export async function signAssertion(
   userId: string,
   method: string,
   target: string,
-  now = Date.now()
+  now = Date.now(),
+  keyId = 'gateway'
 ) {
+  if (!['gateway', 'mastermind'].includes(keyId))
+    throw new Error('Invalid key id');
   if (!UUID.test(userId)) throw new Error('Invalid identity');
   const issuedAt = Math.floor(now / 1000);
   const expiresAt = issuedAt + 60;
   const signature = await crypto.subtle.sign(
     'HMAC',
     await hmacKey(secret),
-    assertionMessage(userId, issuedAt, expiresAt, method, target)
+    assertionMessage(userId, issuedAt, expiresAt, method, target, keyId)
   );
-  return `${userId}.${issuedAt}.${expiresAt}.${base64(signature)}`;
+  return `${keyId}.${userId}.${issuedAt}.${expiresAt}.${base64(signature)}`;
 }
 export async function verifyAssertion(
   secret: string,
   assertion: string,
   method: string,
   target: string,
-  now = Date.now()
+  now = Date.now(),
+  keyId = 'gateway'
 ) {
   if (assertion.length > 256) return null;
-  const [userId, issued, expires, signature, extra] = assertion.split('.');
+  const [signedKeyId, userId, issued, expires, signature, ...extra] =
+    assertion.split('.');
   if (
-    extra ||
+    extra.length > 0 ||
+    signedKeyId !== keyId ||
+    !['gateway', 'mastermind'].includes(keyId) ||
     !userId ||
     !UUID.test(userId) ||
     !signature ||
@@ -206,14 +214,18 @@ export async function verifyAssertion(
   const issuedAt = Number(issued);
   const expiresAt = Number(expires);
   const seconds = Math.floor(now / 1000);
-  if (expiresAt - issuedAt !== 60 || issuedAt > seconds || seconds >= expiresAt)
+  if (
+    expiresAt - issuedAt !== 60 ||
+    issuedAt > seconds + 5 ||
+    seconds >= expiresAt
+  )
     return null;
   try {
     return (await crypto.subtle.verify(
       'HMAC',
       await hmacKey(secret),
       bytesFromBase64(signature),
-      assertionMessage(userId, issuedAt, expiresAt, method, target)
+      assertionMessage(userId, issuedAt, expiresAt, method, target, keyId)
     ))
       ? userId.toLowerCase()
       : null;
