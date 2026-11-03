@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-export const columnNameBodySchema = z.object({ name: z.string() });
+/** Max column name length, counted after trimming. */
+export const MAX_COLUMN_NAME_LENGTH = 255;
+/** Max cell text length (32 KB of text). */
+export const MAX_CELL_DATA_LENGTH = 32768;
+
+export const columnNameBodySchema = z.object({
+  name: z.string().trim().min(1).max(MAX_COLUMN_NAME_LENGTH),
+});
 
 const cellKeySchema = {
   rowId: z.string().min(1),
@@ -10,7 +17,7 @@ const cellKeySchema = {
 
 export const cellWriteBodySchema = z.object({
   ...cellKeySchema,
-  data: z.string().nullable().optional(),
+  data: z.string().max(MAX_CELL_DATA_LENGTH).nullable().optional(),
 });
 
 export const cellDeleteBodySchema = z.object(cellKeySchema);

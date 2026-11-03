@@ -50,6 +50,8 @@ const columnParams = (columnId: string) => ({
   params: Promise.resolve({ wsId: 'ws-a', datasetId: 'ds-a', columnId }),
 });
 const base = datasetUrl('ws-a', 'ds-a');
+const MAX_NAME = 255;
+const MAX_DATA = 32768;
 
 describe('dataset write routes validate request bodies', () => {
   let db: Db;
@@ -86,6 +88,44 @@ describe('dataset write routes validate request bodies', () => {
         expect(db).toEqual(seedDb());
       }
     );
+
+    it('returns 400 for blank or space-only names', async () => {
+      for (const name of ['', ' ', '   ', '\t\n ']) {
+        const response = await postColumn(
+          request(`${base}/columns`, { method: 'POST', body: { name } }),
+          params('ws-a', 'ds-a')
+        );
+        expect(response.status).toBe(400);
+      }
+      expect(db).toEqual(seedDb());
+    });
+
+    it('returns 400 for a name over the limit after trimming', async () => {
+      const response = await postColumn(
+        request(`${base}/columns`, {
+          method: 'POST',
+          body: { name: 'a'.repeat(MAX_NAME + 1) },
+        }),
+        params('ws-a', 'ds-a')
+      );
+      expect(response.status).toBe(400);
+      expect(db).toEqual(seedDb());
+    });
+
+    it('accepts a name at the limit, trimming surrounding spaces', async () => {
+      const name = 'a'.repeat(MAX_NAME);
+      const response = await postColumn(
+        request(`${base}/columns`, {
+          method: 'POST',
+          body: { name: ` ${name} ` },
+        }),
+        params('ws-a', 'ds-a')
+      );
+      expect(response.status).toBe(200);
+      expect(db.workspace_dataset_columns).toContainEqual(
+        expect.objectContaining({ dataset_id: 'ds-a', name })
+      );
+    });
 
     it('returns 400 for malformed JSON', async () => {
       const response = await postColumn(
@@ -133,6 +173,40 @@ describe('dataset write routes validate request bodies', () => {
       );
       expect(response.status).toBe(400);
       expect(db).toEqual(seedDb());
+    });
+
+    it.each(['', ' ', '   '])('returns 400 for blank name %j', async (name) => {
+      const response = await putColumn(
+        request(`${base}/columns/col-a`, { method: 'PUT', body: { name } }),
+        columnParams('col-a')
+      );
+      expect(response.status).toBe(400);
+      expect(db).toEqual(seedDb());
+    });
+
+    it('returns 400 for a name over the limit', async () => {
+      const response = await putColumn(
+        request(`${base}/columns/col-a`, {
+          method: 'PUT',
+          body: { name: 'a'.repeat(MAX_NAME + 1) },
+        }),
+        columnParams('col-a')
+      );
+      expect(response.status).toBe(400);
+      expect(db).toEqual(seedDb());
+    });
+
+    it('accepts a name at the limit and stores it trimmed', async () => {
+      const name = 'b'.repeat(MAX_NAME);
+      const response = await putColumn(
+        request(`${base}/columns/col-a`, {
+          method: 'PUT',
+          body: { name: `  ${name}  ` },
+        }),
+        columnParams('col-a')
+      );
+      expect(response.status).toBe(200);
+      expect(db.workspace_dataset_columns?.[0]?.name).toBe(name);
     });
 
     it('ignores extra fields', async () => {
@@ -196,6 +270,56 @@ describe('dataset write routes validate request bodies', () => {
         expect(response.status).toBe(400);
       }
       expect(db).toEqual(seedDb());
+    });
+
+    it('returns 400 on POST and PUT for data over the limit', async () => {
+      const key = { rowId: 'row-a', columnId: 'col-a' };
+      const data = 'x'.repeat(MAX_DATA + 1);
+      for (const [handler, method] of [
+        [postCell, 'POST'],
+        [putCell, 'PUT'],
+      ] as const) {
+        const response = await handler(
+          request(`${base}/cells`, { method, body: { ...key, data } }),
+          params('ws-a', 'ds-a')
+        );
+        expect(response.status).toBe(400);
+      }
+      expect(db).toEqual(seedDb());
+    });
+
+    it.each([1, true, ['a']])(
+      'returns 400 on POST and PUT for non-string data %j',
+      async (data) => {
+        const key = { rowId: 'row-a', columnId: 'col-a' };
+        for (const [handler, method] of [
+          [postCell, 'POST'],
+          [putCell, 'PUT'],
+        ] as const) {
+          const response = await handler(
+            request(`${base}/cells`, { method, body: { ...key, data } }),
+            params('ws-a', 'ds-a')
+          );
+          expect(response.status).toBe(400);
+        }
+        expect(db).toEqual(seedDb());
+      }
+    );
+
+    it('accepts data exactly at the limit on POST and PUT', async () => {
+      const key = { rowId: 'row-a', columnId: 'col-a' };
+      const data = 'x'.repeat(MAX_DATA);
+      for (const [handler, method] of [
+        [postCell, 'POST'],
+        [putCell, 'PUT'],
+      ] as const) {
+        const response = await handler(
+          request(`${base}/cells`, { method, body: { ...key, data } }),
+          params('ws-a', 'ds-a')
+        );
+        expect(response.status).toBe(200);
+      }
+      expect(db.workspace_dataset_cells?.at(-1)?.data).toBe(data);
     });
 
     it('ignores extra fields instead of persisting them', async () => {
