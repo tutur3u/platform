@@ -82,6 +82,13 @@ pub(super) async fn load_queue_policy(
             .as_ref()
             .and_then(|value| value.get("groupExclusions")?.as_array())
             .filter(|rules| rules.len() <= 30)
+            .filter(|rules| {
+                !(easy_center
+                    && rules.len() == 1
+                    && rules[0].get("scope").and_then(Value::as_str) == Some("all")
+                    && rules[0].get("match").and_then(Value::as_str) == Some("contains")
+                    && rules[0].get("value").and_then(Value::as_str) == Some("DDT"))
+            })
             .map(|rules| {
                 rules
                     .iter()

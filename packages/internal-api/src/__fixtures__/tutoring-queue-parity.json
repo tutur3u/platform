@@ -664,5 +664,45 @@
     "absence": true,
     "feedback": true,
     "expected": null
+  },
+  {
+    "name": "easy_center legacy DDT-only kindergarten",
+    "category": "defaults",
+    "preset": "easy_center",
+    "groupName": "Class Kindergarten",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": null,
+    "rules": [
+      {
+        "scope": "all",
+        "match": "contains",
+        "value": "DDT"
+      }
+    ]
+  },
+  {
+    "name": "custom legacy DDT-only kindergarten",
+    "category": "defaults",
+    "preset": "custom",
+    "groupName": "Class Kindergarten",
+    "tags": [],
+    "current": true,
+    "role": null,
+    "archived": false,
+    "absence": true,
+    "feedback": true,
+    "expected": "BOTH",
+    "rules": [
+      {
+        "scope": "all",
+        "match": "contains",
+        "value": "DDT"
+      }
+    ]
   }
 ]
