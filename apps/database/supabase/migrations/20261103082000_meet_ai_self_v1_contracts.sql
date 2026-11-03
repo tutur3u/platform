@@ -523,6 +523,13 @@ begin
       raise exception 'self_v1 dispatch revision is immutable once recorded'
         using errcode = '55000';
     end if;
+    -- Serialize dispatch with the consent sync trigger's participant UPDATE.
+    -- Withdraw waits for an earlier dispatch to commit; dispatch waits for an
+    -- earlier withdraw and then reads its decision. Commit this short dispatch
+    -- transaction before calling the provider; never hold it over the call.
+    perform 1 from private.meet_ai_session_participants p
+      where p.session_id = new.session_id and p.account_id = new.account_id
+      for share;
     select * into consent
       from private.meet_ai_self_v1_consent_state(new.session_id, new.account_id);
     if consent.decision is distinct from 'allow'
@@ -574,9 +581,9 @@ begin
     end if;
     return old;
   end if;
-  -- Runs after prepare_meet_ai_consent has locked the session row. A default
-  -- transaction-start timestamp becomes the decision's wall-clock time.
-  new.created_at := greatest(new.created_at, clock_timestamp());
+  -- Runs after prepare_meet_ai_consent has locked the session row.
+  -- Client timestamps never determine decision order, including future values.
+  new.created_at := clock_timestamp();
   if exists (select 1 from private.meet_ai_consents c
       where c.session_id = new.session_id and c.user_id = new.user_id
         and c.created_at >= new.created_at) then

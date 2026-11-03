@@ -134,6 +134,26 @@ select throws_ok($$update public.meet_ai_chunks set dispatch_consent_revision = 
 select throws_ok($$update public.meet_ai_chunks set dispatch_consent_revision = null where id = pg_temp.cid(89358)$$,
   '55000', null, 'a recorded dispatch revision is immutable');
 
+-- Client clock skew must never prevent a later withdrawal.
+set local role service_role;
+select lives_ok($$insert into private.meet_ai_consents(session_id, user_id, decision, notice_version, created_at)
+  values (pg_temp.cid(89331), pg_temp.cid(89305), 'allow', 'v1', clock_timestamp() + interval '10 minutes')$$,
+  'a future-dated allow is accepted with server time');
+select ok((select created_at <= clock_timestamp() from private.meet_ai_consents
+  where session_id = pg_temp.cid(89331) and user_id = pg_temp.cid(89305)),
+  'the client future timestamp is ignored');
+reset role;
+select lives_ok($$select pg_temp.open_stream(89349, 89305, 1)$$,
+  'future-dated allow permits a live capture stream');
+set local role service_role;
+select lives_ok($$select pg_temp.decide(89305, 'withdraw')$$,
+  'a future-dated allow cannot freeze later withdrawal');
+reset role;
+select is((select decision from private.meet_ai_self_v1_consent_state(pg_temp.cid(89331), pg_temp.cid(89305))),
+  'withdraw', 'withdrawal replaces the future-dated allow');
+select is((select state from private.meet_ai_capture_streams where id = pg_temp.cid(89349)), 'revoked',
+  'withdrawal after a future-dated allow revokes the live stream');
+
 -- Legal evidence: deletion during capture and session deletion keep it.
 set local role service_role;
 select throws_ok($$delete from private.meet_ai_consents where session_id = pg_temp.cid(89331)$$, '55000', null,
@@ -146,12 +166,28 @@ select throws_ok($$delete from public.meet_ai_sessions where id = pg_temp.cid(89
   'deleting a self-capture session with consent evidence is refused (RESTRICT)');
 select throws_ok($$delete from public.workspaces where id = pg_temp.cid(89311)$$, '23503', null,
   'workspace deletion cannot cascade away self-capture consent evidence');
-select is((select count(*)::int from private.meet_ai_consents where session_id = pg_temp.cid(89331)), 8,
+select is((select count(*)::int from private.meet_ai_consents where session_id = pg_temp.cid(89331)), 10,
   'every consent record of the session is kept');
 select lives_ok($$delete from public.workspace_meetings where id = pg_temp.cid(89322)$$,
   'a self-capture session without consent evidence still deletes');
 select ok(not exists (select 1 from private.meet_ai_session_participants where session_id = pg_temp.cid(89332))
   and not exists (select 1 from public.meet_ai_sessions where id = pg_temp.cid(89332)),
   'its admissions cascade with it');
+-- Erasure fences capture before removing evidence and deleting the parent.
+set local role service_role;
+select lives_ok($$delete from private.meet_ai_consents where session_id = pg_temp.cid(89331)$$,
+  'consent evidence can be erased once capture is deleted');
+reset role;
+select is((select count(*)::int from private.meet_ai_consents where session_id = pg_temp.cid(89331)), 0,
+  'erase removes all consent evidence');
+select lives_ok($$delete from public.meet_ai_sessions where id = pg_temp.cid(89331)$$,
+  'session deletion succeeds after consent erasure');
+select lives_ok($$delete from public.workspace_meetings where id = pg_temp.cid(89321);
+  delete from public.workspaces where id = pg_temp.cid(89311)$$,
+  'meeting and workspace deletion succeed after session erasure');
+select ok(not exists (select 1 from public.workspaces where id = pg_temp.cid(89311))
+  and not exists (select 1 from public.meet_ai_sessions where id = pg_temp.cid(89331))
+  and not exists (select 1 from private.meet_ai_capture_streams where session_id = pg_temp.cid(89331)),
+  'erased parents and capture streams are gone');
 select * from finish();
 rollback;
