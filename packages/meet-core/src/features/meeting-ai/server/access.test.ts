@@ -101,7 +101,7 @@ describe('Meet AI satellite authorization', () => {
         meetingId: '00000000-0000-4000-8000-000000000001',
       }),
     });
-    const signedInHost = () => {
+    const signedInHost = (storedWsId?: string) => {
       const query = {
         select: vi.fn(),
         eq: vi.fn(),
@@ -111,11 +111,70 @@ describe('Meet AI satellite authorization', () => {
         }),
       };
       query.select.mockReturnValue(query);
-      query.eq.mockReturnValue(query);
+      query.eq.mockImplementation((key: string, value: string) => {
+        if (key === 'ws_id')
+          query.maybeSingle.mockResolvedValue({
+            data: {
+              id: 'meeting',
+              creator_id: 'actor',
+              ws_id: storedWsId ?? value,
+            },
+            error: null,
+          });
+        return query;
+      });
       mocks.admin.mockResolvedValue({ from: () => query });
       mocks.user.mockResolvedValue({ id: 'actor' });
       mocks.membership.mockResolvedValue({ ok: true });
     };
+    it('gates mutations on the stored meeting workspace, never the request identity', async () => {
+      bindAllowlist(allowed);
+      signedInHost('00000000-0000-4000-8000-0000000000ee');
+      const response = await meetAiResponse(() =>
+        meetAiAccess(request(), forWorkspace(allowed), true)
+      );
+      expect(response.status).toBe(403);
+    });
+    it('returns the canonical stored identity after a noncanonical lookup', async () => {
+      bindAllowlist(allowed);
+      signedInHost(allowed);
+      const access = await meetAiAccess(
+        request(),
+        forWorkspace(allowed.replaceAll('-', '')),
+        true
+      );
+      expect(access.wsId).toBe(allowed);
+    });
+    for (const stored of ['00000000-0000-4000-8000-0000000000ee', denied]) {
+      it.each([
+        stored.replaceAll('-', ''),
+        `{${stored}}`,
+        stored.toUpperCase(),
+        ` ${stored}`,
+        `${stored}\n`,
+        `urn:uuid:${stored}`,
+      ])(
+        'denies noncanonical request %j using the protected or denylisted stored workspace',
+        async (raw) => {
+          mocks.cloudflare.mockResolvedValue({
+            env: {
+              MEET_AI_PROTECTED_WORKSPACE_IDS:
+                '00000000-0000-4000-8000-0000000000ee',
+              MEET_AI_DISABLED_WORKSPACE_IDS: denied,
+              MEET_AI_ENABLED_WORKSPACE_IDS: `${allowed},${stored}`,
+            },
+          });
+          signedInHost(stored);
+          const response = await meetAiResponse(() =>
+            meetAiAccess(request(), forWorkspace(raw), true)
+          );
+          expect(response.status).toBe(403);
+          expect(await response.json()).toMatchObject({
+            code: 'MEET_AI_WORKSPACE_NOT_ENABLED',
+          });
+        }
+      );
+    }
     it('denies every workspace when the kill switch is set', async () => {
       bindAllowlist('');
       signedInHost();
@@ -209,7 +268,7 @@ describe('Meet AI satellite authorization', () => {
       select: vi.fn(),
       eq: vi.fn(),
       maybeSingle: vi.fn().mockResolvedValue({
-        data: { id: 'meeting', creator_id: 'other' },
+        data: { id: 'meeting', creator_id: 'other', ws_id: 'workspace' },
         error: null,
       }),
     };

@@ -557,8 +557,10 @@ This supersedes the
 workspace membership, host permissions and billing are unchanged and still
 apply to allowed workspaces.
 
-Every check uses the workspace the server resolved (personal, handle and id
-lookups all resolve first), never the client-supplied value, and runs before any
+Every check uses the canonical workspace UUID stored on the meeting row
+(personal, handle and id lookups resolve first), never the request spelling.
+The gate rejects noncanonical ids, including uppercase, padding, braces,
+no-hyphen and `urn:uuid:` forms, and runs before any
 database write, credit reservation or provider call. Scope:
 
 | Surface | Gated |
@@ -584,7 +586,7 @@ Checks run in this order; the first match wins:
 
 | Order | Control | Behavior |
 | --- | --- | --- |
-| 1 | Workspace id | Missing or blank denies. |
+| 1 | Workspace id | Only a canonical lowercase hyphenated UUID from the stored meeting is accepted. Missing, blank or noncanonical ids deny. |
 | 2 | `MEET_AI_PROTECTED_WORKSPACE_IDS` | Required nonempty comma/whitespace-separated UUID secret. Listed ids are always denied. Missing, blank, malformed or non-string configuration denies every workspace, including Parley. |
 | 3 | `MEET_AI_DISABLED` (kill switch) | Present and anything other than `0`/`false` (trimmed, case-insensitive) denies every workspace, including blank and non-string values. Unset, `0` or `false` moves on. |
 | 4 | `MEET_AI_DISABLED_WORKSPACE_IDS` | Optional comma/whitespace-separated UUID deny list, case-insensitive. A listed workspace is denied; any malformed entry (including `*`) or a non-string value denies every workspace. Unset or blank moves on. |
