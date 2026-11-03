@@ -96,11 +96,10 @@ function collectDiagnostics({ files, readFile }) {
   } = require('./sql-grant-guard');
   const findings = [];
   for (const file of files) {
-    if (!SQL_DIRS.some((dir) => file.startsWith(`${dir}/`))) continue;
     const sql = readFile(file);
     const rollback = file.startsWith(`${SQL_DIRS[1]}/`);
     const diagnostics = [
-      ...scanSql(sql, { definerRule: file.startsWith(`${SQL_DIRS[0]}/`) }),
+      ...scanSql(sql, { definerRule: !rollback }),
       ...scanExtensions(sql, { rollback }),
     ];
     if (rollback) {

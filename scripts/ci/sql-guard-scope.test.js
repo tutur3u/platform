@@ -19,6 +19,7 @@ test('an unlisted SQL directory fails inventory and is still scanned by both gua
   fs.mkdirSync(path.join(tmp, 'new-app/db'), { recursive: true });
   fs.writeFileSync(path.join(tmp, file), `CREATE FUNCTION public.probe() RETURNS integer LANGUAGE sql SECURITY DEFINER AS $$ SELECT 1 $$;`);
   assert.deepEqual(listSqlFiles(tmp), [file]);
+  assert.ok(require('./sql-grant-guard-baseline').collectDiagnostics({ files: [file], readFile: () => fs.readFileSync(path.join(tmp, file), 'utf8') }).length);
   assert.ok(scanSql(fs.readFileSync(path.join(tmp, file), 'utf8'), { definerRule: true }).length);
   assert.ok(checkRepository({ root: tmp, baseline: [], historicalBlocks: [], reviewedBlocks: [] }).length);
   assert.deepEqual(scope().unlistedSqlFiles(tmp), [file]);

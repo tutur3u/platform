@@ -23,7 +23,7 @@ const SQL_DIRECTORIES = [
   "scripts/ci/fixtures"
 ];
 
-function listSqlFiles(root) {
+function listSqlFiles(root = path.resolve(__dirname, '../..')) {
   const files = [];
   function walk(directory) {
     for (const entry of fs.readdirSync(path.join(root, directory), { withFileTypes: true })) {
