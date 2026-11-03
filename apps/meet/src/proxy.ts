@@ -28,6 +28,7 @@ import {
   rememberMeetInvite,
 } from './features/call/lib/invite-continuation';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import { isLegacyMeetAiApi } from './legacy-meet-ai-api';
 
 const AUTH_PUBLIC_PATHS = [
   ...PUBLIC_PATHS,
@@ -153,6 +154,14 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   }
 
   if (req.nextUrl.pathname.startsWith('/api')) {
+    if (isLegacyMeetAiApi(req.nextUrl.pathname))
+      return NextResponse.json(
+        {
+          code: 'MEET_AI_WORKSPACE_NOT_ENABLED',
+          error: 'Meet AI is temporarily unavailable',
+        },
+        { status: 403, headers: { 'Cache-Control': 'private, no-store' } }
+      );
     const isLocalAuthApi = req.nextUrl.pathname.startsWith(
       LOCAL_AUTH_API_PREFIX
     );
