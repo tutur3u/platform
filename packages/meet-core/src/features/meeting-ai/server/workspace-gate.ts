@@ -1,14 +1,14 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
 import {
-  isMeetAiEnabledForWorkspace,
+  isMeetAiEnabledWithSafety as isMeetAiEnabledForWorkspace,
   isMeetAiHardDenied,
   MEET_AI_DISABLED_ENV,
   type MeetAiGateEnv,
 } from '@tuturuuu/realtime/meet';
 
 export {
-  isMeetAiEnabledForWorkspace,
+  isMeetAiEnabledWithSafety as isMeetAiEnabledForWorkspace,
   MEET_AI_WORKSPACE_ALLOWLIST_ENV,
   type MeetAiGateEnv,
   meetAiEnabledWorkspaceIds,

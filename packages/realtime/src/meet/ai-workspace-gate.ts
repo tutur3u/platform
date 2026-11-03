@@ -125,3 +125,47 @@ export function isMeetAiEnabledForWorkspace(
 
   return meetAiEnabledWorkspaceIds(env).has(id);
 }
+
+const safetyControls = [
+  MEET_AI_DISABLED_ENV,
+  MEET_AI_WORKSPACE_ALLOWLIST_ENV,
+  MEET_AI_WORKSPACE_DENYLIST_ENV,
+  'MEET_AI_PROTECTED_WORKSPACE_IDS',
+];
+const aiOff = Object.freeze({ MEET_AI_DISABLED: 'true' });
+let lastCheck: { values: unknown[]; env: MeetAiGateEnv } | undefined;
+
+/** Snapshot controls and cache only while every binding is unchanged. Never logs IDs. */
+export function meetAiSafeEnvironment(env: MeetAiGateEnv): MeetAiGateEnv {
+  try {
+    const values = safetyControls.map((name) => binding(env, name));
+    if (lastCheck?.values.every((value, index) => value === values[index]))
+      return lastCheck.env;
+    const snapshot = Object.fromEntries(
+      safetyControls.map((name, index) => [name, values[index]])
+    );
+    const raw = values[3];
+    const ids = typeof raw === 'string' ? workspaceIds(raw) : [];
+    const safe =
+      ids.length > 0 &&
+      ids.every(
+        (id) =>
+          /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(id) &&
+          !isMeetAiEnabledForWorkspace(id, snapshot)
+      );
+    const result = safe ? snapshot : aiOff;
+    if (!safe) console.error('meet_ai_protected_workspace_check_failed');
+    lastCheck = { values, env: result };
+    return result;
+  } catch {
+    console.error('meet_ai_protected_workspace_check_failed');
+    return aiOff;
+  }
+}
+
+export function isMeetAiEnabledWithSafety(
+  wsId: string | null | undefined,
+  env: MeetAiGateEnv
+) {
+  return isMeetAiEnabledForWorkspace(wsId, meetAiSafeEnvironment(env));
+}

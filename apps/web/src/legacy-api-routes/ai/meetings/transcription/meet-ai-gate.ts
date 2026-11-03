@@ -2,7 +2,7 @@ import 'server-only';
 
 import { meetAiWorkerEnv } from '@tuturuuu/meet-core/features/meeting-ai/server/workspace-gate';
 import {
-  isMeetAiEnabledForWorkspace,
+  isMeetAiEnabledWithSafety as isMeetAiEnabledForWorkspace,
   MEET_AI_DISABLED_ENV,
   MEET_AI_PROTECTED_WORKSPACES_ENV,
   MEET_AI_WORKSPACE_ALLOWLIST_ENV,

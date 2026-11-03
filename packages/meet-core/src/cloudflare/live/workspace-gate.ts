@@ -1,5 +1,5 @@
 import {
-  isMeetAiEnabledForWorkspace,
+  isMeetAiEnabledWithSafety as isMeetAiEnabledForWorkspace,
   isMeetAiHardDenied,
   type MeetAiGateEnv,
 } from '@tuturuuu/realtime/meet';

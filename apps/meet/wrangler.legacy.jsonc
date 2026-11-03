@@ -40,6 +40,7 @@
   ],
   "secrets": {
     "required": [
+      "MEET_AI_PROTECTED_WORKSPACE_IDS",
       "MEET_REALTIME_TOKEN_SECRET",
       "NEXT_PUBLIC_SUPABASE_URL",
       "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",

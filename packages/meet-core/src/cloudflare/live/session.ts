@@ -34,7 +34,11 @@ import { cleanupEndedLiveSession } from './session-cleanup';
 import { normalizeSavedLiveSession, type SavedSession } from './session-state';
 import { executeLiveTool } from './session-tools';
 import { markInterruptedUsage, observeSessionUsage } from './session-usage';
-import { type LiveEnvironment, LiveTurnArchive } from './storage';
+import {
+  checkLiveAiEnvironment,
+  type LiveEnvironment,
+  LiveTurnArchive,
+} from './storage';
 import { settleTickBilling } from './tick-billing';
 import { replayLiveToolResponses } from './tool-responses';
 import { reportLiveUsage } from './usage-report';
@@ -70,6 +74,7 @@ export class MeetLiveDurableObject {
     private readonly env: LiveEnvironment,
     private readonly providerFactory = connectLiveProvider
   ) {
+    checkLiveAiEnvironment(env);
     this.archive = new LiveTurnArchive(state.storage);
     this.registryQueue = new LiveRegistryQueue(state.storage, env);
     state.blockConcurrencyWhile(async () => {
