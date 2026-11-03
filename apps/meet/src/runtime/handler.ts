@@ -1,5 +1,10 @@
 import start from '@tanstack/react-start/server-entry';
 import { resolveTuturuuuWebAppUrl } from '@tuturuuu/utils/next-config';
+import {
+  isLegacyMeetAiApi,
+  LEGACY_MEET_AI_API_BODY,
+  LEGACY_MEET_AI_API_HEADERS,
+} from '../lib/legacy-meet-ai-api';
 import { proxy } from '../proxy';
 import { dispatchMeetEndpoint } from './api-registry';
 import { createLoginRedirectProbe } from './login-redirect-diagnostics';
@@ -54,6 +59,12 @@ function dispatchMeetRequest(
       const endpoint = await dispatchMeetEndpoint(forwarded);
       if (endpoint) return endpoint;
       if (forwarded.nextUrl.pathname.startsWith('/api/')) {
+        // Defense in depth behind proxy(): legacy web Meet AI is never forwarded.
+        if (isLegacyMeetAiApi(forwarded.nextUrl.pathname))
+          return Response.json(LEGACY_MEET_AI_API_BODY, {
+            status: 403,
+            headers: LEGACY_MEET_AI_API_HEADERS,
+          });
         const destination = new URL(
           `${forwarded.nextUrl.pathname}${forwarded.nextUrl.search}`,
           resolveTuturuuuWebAppUrl()

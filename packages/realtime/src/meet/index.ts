@@ -1,6 +1,8 @@
 export {
   isMeetAiEnabledForWorkspace,
+  isMeetAiHardDenied,
   MEET_AI_DISABLED_ENV,
+  MEET_AI_PROTECTED_WORKSPACES_ENV,
   MEET_AI_WORKSPACE_ALLOWLIST_ENV,
   MEET_AI_WORKSPACE_DENYLIST_ENV,
   type MeetAiGateEnv,

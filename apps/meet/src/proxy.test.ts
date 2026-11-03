@@ -2,6 +2,7 @@ import { encodeRoomCode } from '@tuturuuu/meet-core/features/call/lib/room-code'
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createBuildInfoHandler } from '../../../packages/utils/src/build-info-route';
+import { isLegacyMeetAiApi } from './lib/legacy-meet-ai-api';
 import { proxy } from './proxy';
 
 const mocks = vi.hoisted(() => {
@@ -502,4 +503,57 @@ describe('Meet public build identity boundary', () => {
     expect((await response.json()).code).toBe('MFA_REQUIRED');
     expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
   });
+});
+
+describe('Meet AI default-off: legacy web Meet AI routes', () => {
+  beforeEach(() => {
+    mocks.refreshAppSessionForRequest.mockReset();
+    mocks.refreshAppSessionForRequest.mockResolvedValue({ ok: true });
+    mocks.guardApiProxyRequest.mockReset();
+    mocks.guardApiProxyRequest.mockResolvedValue(null);
+  });
+  it.each([
+    ['POST', '/api/ai/meetings/transcription'],
+    ['POST', '/api/ai/meetings/summary'],
+    ['GET', '/api/ai/meetings'],
+    ['POST', '/api/ai/meetings/'],
+    ['POST', '/api/AI/Meetings/transcription'],
+    ['POST', '/api/ai//meetings/transcription'],
+    ['POST', '/api//ai/meetings/summary'],
+    ['POST', '/api/ai/meetings%2Ftranscription'],
+    ['POST', '/api/ai/%6Deetings/summary'],
+  ])(
+    'answers %s %s with 403 before session refresh or forwarding',
+    async (method, path) => {
+      expect(isLegacyMeetAiApi(path)).toBe(true);
+      const response = await proxy(
+        new NextRequest(`https://meet.tuturuuu.com${path}`, { method })
+      );
+      expect(response.status).toBe(403);
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(response.headers.get('x-middleware-next')).toBeNull();
+      expect((await response.json()).code).toBe(
+        'MEET_AI_WORKSPACE_NOT_ENABLED'
+      );
+      expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+      expect(mocks.guardApiProxyRequest).not.toHaveBeenCalled();
+    }
+  );
+  it.each([
+    '/api/ai/meetingsx',
+    '/api/ai/chat',
+    '/api/meet-call/5e5217de-9bb3-4e20-8d99-526ad3e7e34f/token',
+    '/api/meet-call/5e5217de-9bb3-4e20-8d99-526ad3e7e34f/public-info',
+  ])(
+    'keeps non-legacy API path %s on the normal admission path',
+    async (path) => {
+      expect(isLegacyMeetAiApi(path)).toBe(false);
+      const response = await proxy(
+        new NextRequest(`https://meet.tuturuuu.com${path}`, { method: 'POST' })
+      );
+      expect(response.status).not.toBe(403);
+      expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledOnce();
+      expect(mocks.guardApiProxyRequest).toHaveBeenCalledOnce();
+    }
+  );
 });

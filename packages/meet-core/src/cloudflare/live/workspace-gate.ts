@@ -1,5 +1,6 @@
 import {
   isMeetAiEnabledForWorkspace,
+  isMeetAiHardDenied,
   type MeetAiGateEnv,
 } from '@tuturuuu/realtime/meet';
 
@@ -7,7 +8,7 @@ import {
  * Live is transcription: the assistant's input and output audio is transcribed
  * and persisted. Eligibility uses the workspace the server resolved when the
  * session was initialized, against the Worker env binding. Parley sessions are a
- * separate product and stay outside the pilot gate.
+ * separate product that skips pilot lists, but obeys hard denies.
  */
 export function liveWorkspaceAllowed(
   env: MeetAiGateEnv,
@@ -19,8 +20,7 @@ export function liveWorkspaceAllowed(
     | undefined
 ) {
   if (!session) return false;
-  return (
-    session.claims.app === 'parley' ||
-    isMeetAiEnabledForWorkspace(session.identity.workspaceId, env)
-  );
+  return session.claims.app === 'parley'
+    ? !isMeetAiHardDenied(session.identity.workspaceId, env)
+    : isMeetAiEnabledForWorkspace(session.identity.workspaceId, env);
 }

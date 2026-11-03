@@ -85,7 +85,11 @@ vi.mock('@tuturuuu/meet-core/features/call/server/room-service', () => ({
     Response.json(
       await run({
         user: { id: 'tagger' },
-        meeting: { id: 'room', creator_id: 'creator', ws_id: 'ws-team' },
+        meeting: {
+          id: 'room',
+          creator_id: 'creator',
+          ws_id: '00000000-0000-4000-8000-0000000000a1',
+        },
       })
     ),
 }));
@@ -96,8 +100,9 @@ import { POST } from './route';
 const allowlist = (value: string | undefined) =>
   vi.stubGlobal(Symbol.for('__cloudflare-context__'), {
     env: {
+      MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
       MEET_AI_ENABLED_WORKSPACE_IDS: value,
-      MEET_AI_DISABLED: value ? undefined : 'true',
+      MEET_AI_DISABLED: value ? 'false' : 'true',
     },
   });
 afterEach(() => {
@@ -111,7 +116,7 @@ const request = () =>
   });
 beforeEach(() => {
   vi.clearAllMocks();
-  allowlist('ws-team');
+  allowlist('00000000-0000-4000-8000-0000000000a1');
 });
 it('charges the tagger personal quota and uses server-supplied recent chat', async () => {
   const response = await POST(request(), {
@@ -280,7 +285,10 @@ it.each(['invalid JSON', JSON.stringify({ messages: [], context: {} })])(
       generateMeetAssistant(
         {
           user: { id: 'tagger' },
-          meeting: { id: 'room', ws_id: 'ws-team' },
+          meeting: {
+            id: 'room',
+            ws_id: '00000000-0000-4000-8000-0000000000a1',
+          },
         } as never,
         {
           messageId: 'message',
@@ -316,8 +324,10 @@ it('settles usage but never publishes a blank model answer', async () => {
 });
 it('denies assistant generation outside the Meet AI allowlist before any quota, room or model work', async () => {
   for (const env of [
+    {},
+    { MEET_AI_ENABLED_WORKSPACE_IDS: '*' },
     { MEET_AI_DISABLED: 'true' },
-    { MEET_AI_ENABLED_WORKSPACE_IDS: 'other-ws' },
+    { MEET_AI_ENABLED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000a2' },
   ]) {
     vi.stubGlobal(Symbol.for('__cloudflare-context__'), { env });
     await expect(

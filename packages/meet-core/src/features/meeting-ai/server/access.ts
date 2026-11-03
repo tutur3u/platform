@@ -68,14 +68,6 @@ export async function meetAiAccess(
       'Workspace resolution failed'
     );
   }
-  // Pilot gate: default deny. Existing notes stay readable; the read response
-  // carries `available` so the UI can explain the disabled controls.
-  if (mutation && !(await meetAiAvailable(wsId)))
-    throw new MeetAiError(
-      403,
-      'Meet AI is temporarily unavailable',
-      'MEET_AI_WORKSPACE_NOT_ENABLED'
-    );
   const membership = await verifyWorkspaceMembershipType({
     supabase: db,
     userId: user.id,
@@ -85,12 +77,23 @@ export async function meetAiAccess(
     throw new MeetAiError(500, 'Workspace access lookup failed');
   const { data: meeting, error } = await db
     .from('workspace_meetings')
-    .select('id, creator_id, time')
+    .select('id, creator_id, time, ws_id')
     .eq('id', meetingId)
     .eq('ws_id', wsId)
     .maybeSingle();
   if (error) throw new MeetAiError(500, 'Meeting lookup failed');
   if (!meeting) throw new MeetAiError(404, 'Meeting not found');
+  // Postgres accepts alternate UUID spellings in the lookup. AI policy and all
+  // downstream callers use only the canonical identity stored on the meeting.
+  wsId = meeting.ws_id;
+  // Pilot gate: default deny. Existing notes stay readable; the read response
+  // carries `available` so the UI can explain the disabled controls.
+  if (mutation && !(await meetAiAvailable(wsId)))
+    throw new MeetAiError(
+      403,
+      'Meet AI is temporarily unavailable',
+      'MEET_AI_WORKSPACE_NOT_ENABLED'
+    );
   const parleySession = await isParleySession(
     meetingId,
     MEETING_APP === 'parley'

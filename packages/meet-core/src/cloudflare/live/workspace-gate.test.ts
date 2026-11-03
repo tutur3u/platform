@@ -81,6 +81,7 @@ function fixture(allowlist?: string) {
   const env = {
     MEET_REALTIME_TOKEN_SECRET: secret,
     NEXT_PUBLIC_APP_URL: 'https://meet.tuturuuu.com',
+    MEET_AI_PROTECTED_WORKSPACE_IDS: '00000000-0000-4000-8000-0000000000ee',
     MEET_AI_ENABLED_WORKSPACE_IDS: allowlist,
     MEET_AI_DISABLED: allowlist ? undefined : 'true',
   } as unknown as LiveEnvironment;
@@ -113,18 +114,61 @@ describe('Live (transcription) workspace gate', () => {
     mocks.begin.mockResolvedValue({ costUsd: 0 });
   });
 
-  it('allows by default, requires a session and exempts Parley sessions', () => {
-    const session = (app?: 'meet' | 'parley') => ({
+  it('denies by default, requires a session and skips only Parley pilot lists', () => {
+    const session = (app?: 'meet' | 'parley', ws = team) => ({
       claims: { app },
-      identity: identity(team),
+      identity: identity(ws),
     });
-    expect(liveWorkspaceAllowed(undefined, session())).toBe(true);
-    expect(liveWorkspaceAllowed({}, session())).toBe(true);
+    expect(liveWorkspaceAllowed(undefined, session())).toBe(false);
+    expect(liveWorkspaceAllowed({}, session())).toBe(false);
+    expect(
+      liveWorkspaceAllowed(
+        {
+          MEET_AI_PROTECTED_WORKSPACE_IDS:
+            '00000000-0000-4000-8000-0000000000ee',
+          MEET_AI_ENABLED_WORKSPACE_IDS: '',
+        },
+        session()
+      )
+    ).toBe(false);
+    expect(
+      liveWorkspaceAllowed(
+        {
+          MEET_AI_PROTECTED_WORKSPACE_IDS:
+            '00000000-0000-4000-8000-0000000000ee',
+          MEET_AI_ENABLED_WORKSPACE_IDS: '*',
+        },
+        session()
+      )
+    ).toBe(false);
     expect(liveWorkspaceAllowed({}, undefined)).toBe(false);
     expect(
-      liveWorkspaceAllowed({ MEET_AI_ENABLED_WORKSPACE_IDS: team }, session())
+      liveWorkspaceAllowed(
+        {
+          MEET_AI_PROTECTED_WORKSPACE_IDS:
+            '00000000-0000-4000-8000-0000000000ee',
+          MEET_AI_ENABLED_WORKSPACE_IDS: team,
+        },
+        session()
+      )
     ).toBe(true);
-    expect(liveWorkspaceAllowed({}, session('parley'))).toBe(true);
+    const easyCenter = '00000000-0000-4000-8000-0000000000ee';
+    expect(
+      liveWorkspaceAllowed(
+        {
+          MEET_AI_PROTECTED_WORKSPACE_IDS:
+            '00000000-0000-4000-8000-0000000000ee',
+          MEET_AI_ENABLED_WORKSPACE_IDS: easyCenter,
+        },
+        session('meet', easyCenter)
+      )
+    ).toBe(false);
+    expect(
+      liveWorkspaceAllowed(
+        { MEET_AI_PROTECTED_WORKSPACE_IDS: easyCenter },
+        session('parley')
+      )
+    ).toBe(true);
   });
 
   it('refuses /initialize for an unlisted workspace without persisting or arming an alarm', async () => {
@@ -147,11 +191,13 @@ describe('Live (transcription) workspace gate', () => {
     ).toBe(403);
   });
 
-  it('initializes with no configured controls', async () => {
-    const { object, env } = fixture(team);
+  it('refuses /initialize with no configured controls (default-off)', async () => {
+    const { object, env, storage } = fixture(team);
     delete env.MEET_AI_ENABLED_WORKSPACE_IDS;
     delete env.MEET_AI_DISABLED;
-    expect((await initialize(object, team)).status).toBe(200);
+    expect((await initialize(object, team)).status).toBe(403);
+    expect(storage.put).not.toHaveBeenCalled();
+    expect(mocks.provider).not.toHaveBeenCalled();
   });
 
   it.each([
