@@ -42,19 +42,32 @@ beforeEach(() => {
   mock.verify.mockResolvedValue({ accountId });
 });
 it.each([
-  ['Alice', 'alice@example.com', 'Alice'],
-  ['  ', 'alice@example.com', 'alice@example.com'],
-])('uses saved display name then email: %s', async (name, email, expected) => {
-  const db = database(name!, email!);
-  expect(
-    await resolveTranscriptSpeaker({
-      db: db as never,
-      meetingId: actorId,
-      actorId,
-      accountId,
-      kind: 'shared_audio',
-    })
-  ).toEqual({ accountId, displayName: expected, kind: 'shared_audio' });
+  ['Alice', 'Alice'],
+  ['  Alice  ', 'Alice'],
+  ['alice@example.com', 'Participant'],
+  ['  alice@example.com  ', 'Participant'],
+  ['Alice <alice@example.com>', 'Participant'],
+  ['', 'Participant'],
+  ['  ', 'Participant'],
+  [null, 'Participant'],
+])('uses a safe saved display name for %s', async (name, expected) => {
+  const email = 'private-email-canary@example.com';
+  const db = database(name, email);
+  const speaker = await resolveTranscriptSpeaker({
+    db: db as never,
+    meetingId: actorId,
+    actorId,
+    accountId,
+    kind: 'shared_audio',
+  });
+  expect(speaker).toEqual({
+    accountId,
+    displayName: expected,
+    kind: 'shared_audio',
+  });
+  expect(JSON.stringify(speaker)).not.toContain(email);
+  expect(JSON.stringify(speaker)).not.toContain('alice@example.com');
+  expect(db.from).toHaveBeenCalledExactlyOnceWith('users');
   expect(mock.verify).toHaveBeenCalledWith(expect.anything(), {
     action: 'transcription.speaker',
     accountId,
