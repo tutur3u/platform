@@ -1,7 +1,4 @@
-import {
-  readTranscriptSegments,
-  readTranscriptSpeaker,
-} from '@tuturuuu/ai/meetings/transcript';
+import { readTranscriptChunk } from '@tuturuuu/ai/meetings/transcript';
 import { isMeetingNotesAdmin } from '@tuturuuu/meet-core/features/meeting-ai/server/notes-admin';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
@@ -190,9 +187,7 @@ export async function GET(request: Request, { params }: Params) {
           sessionId: chunk.session_id,
           sequence: chunk.sequence,
           startSeconds: chunk.start_seconds,
-          transcript: chunk.transcript,
-          speaker: readTranscriptSpeaker(chunk.usage),
-          segments: readTranscriptSegments(chunk.usage),
+          ...readTranscriptChunk(chunk),
           status: chunk.status,
         })),
         costs: canManage
