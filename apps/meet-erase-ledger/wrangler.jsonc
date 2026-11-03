@@ -1,0 +1,22 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "tuturuuu-meet-erase-ledger",
+  "main": "src/erase-ledger-do.ts",
+  "compatibility_date": "2026-11-03",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [],
+  "durable_objects": {
+    "bindings": [
+      { "name": "MEET_ERASE_LEDGER", "class_name": "MeetEraseLedger" }
+    ]
+  },
+  "migrations": [
+    { "tag": "meet-erase-ledger-v1", "new_sqlite_classes": ["MeetEraseLedger"] }
+  ],
+  // Provisioning is HELD: Cora confirms the non-shortenable Bucket Lock period first.
+  "r2_buckets": [
+    { "binding": "LEDGER_BUCKET", "bucket_name": "tuturuuu-meet-erase-ledger" }
+  ]
+}

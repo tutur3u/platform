@@ -1237,6 +1237,9 @@
         "wrangler": "4.151.2",
       },
     },
+    "apps/meet-erase-ledger": {
+      "name": "@tuturuuu/meet-erase-ledger",
+    },
     "apps/meet-realtime": {
       "name": "@tuturuuu/meet-realtime",
       "dependencies": {
@@ -5517,6 +5520,8 @@
     "@tuturuuu/meet": ["@tuturuuu/meet@workspace:apps/meet"],
 
     "@tuturuuu/meet-core": ["@tuturuuu/meet-core@workspace:packages/meet-core"],
+
+    "@tuturuuu/meet-erase-ledger": ["@tuturuuu/meet-erase-ledger@workspace:apps/meet-erase-ledger"],
 
     "@tuturuuu/meet-realtime": ["@tuturuuu/meet-realtime@workspace:apps/meet-realtime"],
 

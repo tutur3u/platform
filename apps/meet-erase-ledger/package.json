@@ -1,0 +1,10 @@
+{
+  "name": "@tuturuuu/meet-erase-ledger",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "type-check": "tsc --project tsconfig.json",
+    "test": "bun test src/erase-ledger-do.test.ts",
+    "test:runtime": "node --test src/runtime.test.mjs"
+  }
+}
