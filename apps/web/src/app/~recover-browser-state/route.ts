@@ -1,5 +1,6 @@
 import {
   getAuthCookieName,
+  getNamespacedSupabaseDomainCookieClearHeaders,
   getSupabaseAuthCookiePattern,
 } from '@tuturuuu/supabase/next/common';
 import { type NextRequest, NextResponse } from 'next/server';
@@ -119,6 +120,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       maxAge: 0,
       path: '/',
     });
+  }
+
+  // Appended after cookies.set, which rewrites the Set-Cookie list.
+  for (const header of getNamespacedSupabaseDomainCookieClearHeaders(
+    getAuthCookieNames(request).filter((name) =>
+      SUPABASE_AUTH_COOKIE_PATTERN.test(name)
+    ),
+    request.nextUrl
+  )) {
+    response.headers.append('Set-Cookie', header);
   }
 
   return response;

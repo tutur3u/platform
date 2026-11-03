@@ -96,22 +96,51 @@ pub(super) fn message_response(status: u16, message: &str) -> BackendResponse {
     no_store_response(json_response(status, json!({ "error": message })))
 }
 
+/// Mirrors `getAuthCookieName` from `@tuturuuu/supabase/auth-cookie-policy`
+/// for the approval cookie. `None` means the configured prefix is one the
+/// TypeScript policy rejects, so no cookie is issued (fail closed).
+pub(super) fn approval_cookie_name(prefix: &str) -> Option<String> {
+    let namespace = prefix
+        .strip_prefix("__Host-")
+        .or_else(|| prefix.strip_prefix("__Secure-"));
+    let valid_charset = prefix.len() <= 64
+        && prefix
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-' || byte == b'_');
+    let unprefixed = namespace.unwrap_or(prefix).to_ascii_lowercase();
+    let ambiguous = ["sb-", "tuturuuu_", "ttr_"]
+        .iter()
+        .any(|reserved| unprefixed.starts_with(reserved));
+    let delimited = prefix.is_empty() || prefix.ends_with('-') || prefix.ends_with('_');
+    let named = namespace.is_none_or(|rest| rest.bytes().any(|byte| byte.is_ascii_alphanumeric()));
+
+    (valid_charset && delimited && named && (prefix.is_empty() || !ambiguous))
+        .then(|| format!("{prefix}{MFA_MOBILE_APPROVAL_COOKIE_NAME}"))
+}
+
 /// Appends the mobile-MFA approval `Set-Cookie` header with the same attributes
 /// the legacy `NextResponse.cookies.set` used: httpOnly, maxAge, Path=/,
-/// SameSite=Lax, and Secure when the deployment environment is production.
+/// SameSite=Lax, and Secure when the deployment environment is production or
+/// the configured name carries a `__Host-`/`__Secure-` browser prefix.
 pub(super) fn set_approval_cookie(
     response: &mut BackendResponse,
     challenge_id: &str,
     secret: &str,
     config: &BackendConfig,
 ) {
+    let Some(cookie_name) = approval_cookie_name(config.auth_cookie_name_prefix.trim()) else {
+        return;
+    };
     // `buildMfaMobileApprovalCookieValue` => `${challengeId}.${secret}`.
     let cookie_value = format!("{challenge_id}.{secret}");
     let mut cookie = format!(
-        "{MFA_MOBILE_APPROVAL_COOKIE_NAME}={cookie_value}; Path=/; HttpOnly; Max-Age={MFA_MOBILE_APPROVAL_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax"
+        "{cookie_name}={cookie_value}; Path=/; HttpOnly; Max-Age={MFA_MOBILE_APPROVAL_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax"
     );
 
-    if config.environment.trim().eq_ignore_ascii_case("production") {
+    if config.environment.trim().eq_ignore_ascii_case("production")
+        || cookie_name.starts_with("__Host-")
+        || cookie_name.starts_with("__Secure-")
+    {
         cookie.push_str("; Secure");
     }
 
@@ -297,4 +326,62 @@ pub(super) fn civil_from_days(days: i128) -> (i128, i128, i128) {
     let month = if mp < 10 { mp + 3 } else { mp - 9 };
     let year = if month <= 2 { year + 1 } else { year };
     (year, month, day)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn approval_cookie(environment: &str, prefix: &str) -> Option<String> {
+        let mut config = BackendConfig::new(environment, "backend");
+        config.auth_cookie_name_prefix = prefix.to_owned();
+        let mut response = message_response(200, "ok");
+        set_approval_cookie(&mut response, "challenge", "secret", &config);
+        response
+            .headers
+            .into_iter()
+            .find_map(|(name, value)| (name == "set-cookie").then_some(value))
+    }
+
+    #[test]
+    fn keeps_the_production_cookie_bytes_without_a_prefix() {
+        assert_eq!(
+            approval_cookie("production", "").as_deref(),
+            Some(
+                "ttr_mfa_mobile_approval=challenge.secret; Path=/; HttpOnly; Max-Age=43200; SameSite=Lax; Secure"
+            )
+        );
+    }
+
+    #[test]
+    fn uses_the_configured_namespace_like_get_auth_cookie_name() {
+        let cookie = approval_cookie("development", "staging-").unwrap();
+        assert!(cookie.starts_with("staging-ttr_mfa_mobile_approval=challenge.secret;"));
+        assert!(!cookie.contains("Secure"));
+    }
+
+    #[test]
+    fn marks_browser_prefixed_names_secure_in_every_environment() {
+        let cookie = approval_cookie("development", "__Host-staging-").unwrap();
+        assert!(cookie.starts_with("__Host-staging-ttr_mfa_mobile_approval=challenge.secret;"));
+        assert!(cookie.ends_with("; Secure"));
+        assert!(!cookie.contains("Domain"));
+    }
+
+    #[test]
+    fn issues_no_cookie_for_prefixes_the_typescript_policy_rejects() {
+        let too_long = format!("{}-", "a".repeat(64));
+        for prefix in [
+            "staging",
+            "sb-staging-",
+            "ttr_",
+            "TUTURUUU_x-",
+            "__Host-",
+            "__Secure--",
+            "stage; Domain=example.com-",
+            too_long.as_str(),
+        ] {
+            assert_eq!(approval_cookie("production", prefix), None, "{prefix}");
+        }
+    }
 }

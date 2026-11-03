@@ -75,6 +75,9 @@ fn worker_config(env: &Env) -> BackendConfig {
             .trim_end_matches('/')
             .to_owned(),
         aurora_external_workspace_id: var(env, "AURORA_EXTERNAL_WSID", "").trim().to_owned(),
+        auth_cookie_name_prefix: var(env, "NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX", "")
+            .trim()
+            .to_owned(),
         contact_data: contact_data_config_from_worker_env(env),
         cron_secret: cron_secret_from_worker_env(env),
         deployment_target: "cloudflare-workers".to_owned(),

@@ -93,3 +93,38 @@ it('staging recovery preserves production cookie sentinels and avoids site-wide 
     vi.unstubAllEnvs();
   }
 });
+
+it('staging recovery under parent-domain scope also clears domain-scoped Supabase cookies', async () => {
+  vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX', 'staging-');
+  vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_SCOPE', 'parent-domain');
+  vi.resetModules();
+  try {
+    const { POST: stagingPost } = await import('./route');
+    const response = await stagingPost(
+      new NextRequest('https://app.tuturuuu.com/~recover-browser-state', {
+        headers: {
+          origin: 'https://app.tuturuuu.com',
+          cookie:
+            'sb-prod-auth-token=production-sentinel; staging-tuturuuu_app_session=stage; staging-sb-stage-auth-token.0=stage',
+        },
+      })
+    );
+    expect(response.status).toBe(307);
+    const setCookies = response.headers.getSetCookie();
+    const domainClears = setCookies.filter((cookie) =>
+      cookie.includes('Domain=.tuturuuu.com')
+    );
+    expect(domainClears).toEqual([
+      'staging-sb-stage-auth-token.0=; Domain=.tuturuuu.com; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=lax; Secure',
+    ]);
+    expect(response.cookies.get('staging-sb-stage-auth-token.0')?.value).toBe(
+      ''
+    );
+    expect(response.cookies.get('staging-tuturuuu_app_session')?.value).toBe(
+      ''
+    );
+    expect(setCookies.join('\n')).not.toContain('sb-prod-auth-token');
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});

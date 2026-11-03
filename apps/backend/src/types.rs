@@ -9,6 +9,9 @@ pub struct BackendConfig {
     pub app_coordination_secrets: Vec<String>,
     pub aurora_external_url: String,
     pub aurora_external_workspace_id: String,
+    /// `NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX`, shared with the TypeScript
+    /// `getAuthCookieName` policy. Empty keeps the production cookie names.
+    pub auth_cookie_name_prefix: String,
     pub(crate) contact_data: contact::ContactDataConfig,
     pub cron_secret: String,
     pub deployment_target: String,
@@ -29,6 +32,7 @@ impl BackendConfig {
             app_coordination_secrets: Vec::new(),
             aurora_external_url: String::new(),
             aurora_external_workspace_id: String::new(),
+            auth_cookie_name_prefix: String::new(),
             contact_data: contact::ContactDataConfig::disabled(),
             cron_secret: String::new(),
             deployment_target: default_deployment_target().to_owned(),
@@ -57,6 +61,7 @@ impl BackendConfig {
                 .trim_end_matches('/')
                 .to_owned(),
             aurora_external_workspace_id: env("AURORA_EXTERNAL_WSID", "").trim().to_owned(),
+            auth_cookie_name_prefix: env("NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX", ""),
             contact_data: contact::contact_data_config_from_env(),
             cron_secret: cron_secret_from_env(),
             deployment_target: env("BACKEND_DEPLOYMENT_TARGET", default_deployment_target()),

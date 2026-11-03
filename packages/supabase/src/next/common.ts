@@ -1,6 +1,7 @@
 import type { CookieOptions, CookieOptionsWithName } from '@supabase/ssr';
 import {
   authCookieRequiresSecure,
+  getAuthCookieName,
   getAuthCookieScope,
   getSupabaseAuthStorageKey,
 } from '../auth-cookie-policy';
@@ -294,6 +295,29 @@ export function getHostOnlyCookieClearHeadersForNames(
   }
 
   return headers;
+}
+
+/**
+ * Domain-scoped clears for namespaced Supabase cookies written under an
+ * explicit `parent-domain` scope. Recovery cannot use Clear-Site-Data
+ * "cookies" under a namespace, and host-only clears miss Domain cookies.
+ * Returns nothing without a namespace, so production bytes are unchanged.
+ */
+export function getNamespacedSupabaseDomainCookieClearHeaders(
+  cookieNames: Iterable<string>,
+  requestUrl: string | URL
+) {
+  if (getAuthCookieName('') === '' || getAuthCookieScope() !== 'parent-domain')
+    return [];
+  const sharedCookieDomain = resolveSharedCookieDomain(requestUrl);
+  if (!sharedCookieDomain) return [];
+  const secure = sharedCookieDomain.secure || authCookieRequiresSecure();
+  return [...new Set(cookieNames)]
+    .filter(isSafeCookieName)
+    .map(
+      (name) =>
+        `${name}=; Domain=${sharedCookieDomain.cookieDomain}; Path=/; Expires=${HOST_ONLY_COOKIE_CLEAR_DATE}; Max-Age=0; SameSite=lax${secure ? '; Secure' : ''}`
+    );
 }
 
 export function getHostOnlyCookieClearHeaders(cookiesToSet: SupabaseCookie[]) {
