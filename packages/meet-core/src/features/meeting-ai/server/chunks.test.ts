@@ -91,7 +91,34 @@ describe('Meet chunk idempotency', () => {
       meetingId: id,
       user: { id },
     });
-    expect(await transcribeMeetChunk(request(), params)).toEqual(existing);
+    expect(await transcribeMeetChunk(request(), params)).toMatchObject(
+      existing
+    );
+    expect(mocks.generate).not.toHaveBeenCalled();
+  });
+  it('projects a completed erased duplicate without leaking stored usage or fallback', async () => {
+    const existing = {
+      id,
+      status: 'completed',
+      transcript: 'ERASED fallback',
+      usage: { erased: true, privateName: 'ERASED name' },
+    };
+    const from = vi
+      .fn()
+      .mockReturnValueOnce(query({ data: { id }, error: null }))
+      .mockReturnValueOnce(query({ data: existing, error: null }));
+    mocks.access.mockResolvedValue({
+      db: { from },
+      meetingId: id,
+      user: { id },
+    });
+    const output = await transcribeMeetChunk(request(), params);
+    expect(output).toMatchObject({
+      transcript: '',
+      erased: true,
+      speaker: null,
+    });
+    expect(JSON.stringify(output)).not.toContain('ERASED');
     expect(mocks.generate).not.toHaveBeenCalled();
   });
   it('retries transcript persistence without repeating a paid Gemini call', async () => {
@@ -126,7 +153,7 @@ describe('Meet chunk idempotency', () => {
       usage: {},
       costUsd: 0.001,
     });
-    expect(await transcribeMeetChunk(request(), params)).toEqual(saved);
+    expect(await transcribeMeetChunk(request(), params)).toMatchObject(saved);
     expect(mocks.generate).toHaveBeenCalledTimes(1);
     expect(from.mock.results[3]?.value.update).toHaveBeenCalledWith(
       expect.objectContaining({ usage: { speaker } })
@@ -186,7 +213,7 @@ describe('Meet chunk idempotency', () => {
   }
   it('recovers a thrown persistence response using the same settled output', async () => {
     const f = persistenceFixture(['throw', 'saved']);
-    expect(await transcribeMeetChunk(request(), params)).toEqual(f.saved);
+    expect(await transcribeMeetChunk(request(), params)).toMatchObject(f.saved);
     expect(mocks.generate).toHaveBeenCalledTimes(1);
     for (const write of f.writes) {
       expect(write.update).toHaveBeenCalledWith({
@@ -205,7 +232,7 @@ describe('Meet chunk idempotency', () => {
   });
   it('bounds mixed returned and thrown storage failures to three persistence attempts', async () => {
     const f = persistenceFixture(['error', 'throw', 'saved']);
-    expect(await transcribeMeetChunk(request(), params)).toEqual(f.saved);
+    expect(await transcribeMeetChunk(request(), params)).toMatchObject(f.saved);
     expect(mocks.generate).toHaveBeenCalledTimes(1);
     expect(
       f.writes.every((write) => write.maybeSingle.mock.calls.length === 1)
@@ -323,7 +350,9 @@ describe('Meet chunk idempotency', () => {
         meetingId: id,
         user: { id },
       });
-      expect(await transcribeMeetChunk(request(), params)).toEqual(existing);
+      expect(await transcribeMeetChunk(request(), params)).toMatchObject(
+        existing
+      );
       expect(mocks.generate).not.toHaveBeenCalled();
     }
   );

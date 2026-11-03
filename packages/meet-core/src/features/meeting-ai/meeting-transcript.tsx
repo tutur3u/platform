@@ -41,7 +41,7 @@ export function MeetingTranscript({ chunks }: { chunks: MeetAiChunk[] }) {
                 {String(Math.floor(segment.startSeconds % 60)).padStart(2, '0')}
               </span>
               <span className="mb-1 block break-words font-medium">
-                {t('speaker_unknown')}
+                {segment.speaker?.label ?? t('speaker_unknown')}
                 {segment.kind && (
                   <span className="ml-2 font-normal text-muted-foreground text-xs">
                     {t(

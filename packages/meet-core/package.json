@@ -152,6 +152,7 @@
     "./features/meeting-ai/server/followup-context.ts": "./src/features/meeting-ai/server/followup-context.ts",
     "./features/meeting-ai/server/followup-create": "./src/features/meeting-ai/server/followup-create.ts",
     "./features/meeting-ai/server/followup-create.ts": "./src/features/meeting-ai/server/followup-create.ts",
+    "./features/meeting-ai/server/transcript-roster": "./src/features/meeting-ai/server/transcript-roster.ts",
     "./features/meeting-ai/server/notes-admin": "./src/features/meeting-ai/server/notes-admin.ts",
     "./features/meeting-ai/server/notes-admin.ts": "./src/features/meeting-ai/server/notes-admin.ts",
     "./features/meeting-ai/server/room-access": "./src/features/meeting-ai/server/room-access.ts",

@@ -83,3 +83,47 @@ it('renders one removal banner and never renders erased lines or fallback text',
   ).toHaveLength(1);
   expect(screen.queryByText('RETAINED fallback')).toBeNull();
 });
+
+it('shows a resolved verified selector label and keeps unknown or erased sources unattributed', () => {
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      <MeetingTranscript
+        chunks={[
+          {
+            id: 'fixture',
+            sequence: 0,
+            start_seconds: 0,
+            duration_seconds: 3,
+            status: 'completed',
+            transcript: '',
+            cost_usd: null,
+            segments: [
+              {
+                speaker: {
+                  selector: 'verified',
+                  kind: 'microphone',
+                  label: 'Roster Alice',
+                },
+                kind: 'microphone',
+                startSeconds: 0,
+                transcript: 'Consented speech',
+              },
+              {
+                speaker: null,
+                kind: 'microphone',
+                startSeconds: 1,
+                transcript: 'Unknown source',
+              },
+              { erased: true },
+            ],
+          },
+        ]}
+      />
+    </NextIntlClientProvider>
+  );
+  expect(screen.getByText('Roster Alice')).toBeTruthy();
+  expect(screen.getByText('Unattributed audio')).toBeTruthy();
+  expect(
+    screen.getByText('Some content was removed from this transcript.')
+  ).toBeTruthy();
+});

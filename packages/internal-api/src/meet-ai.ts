@@ -35,10 +35,11 @@ export type MeetAiChunk = {
   speaker?:
     | {
         accountId: string;
-        displayName: string;
+        displayName?: string;
+        label?: string;
         kind: 'microphone' | 'shared_audio';
       }
-    | { selector: string; kind: 'microphone' | 'shared_audio' }
+    | { selector: string; kind: 'microphone' | 'shared_audio'; label?: string }
     | null;
   segments?: Array<
     | { erased: true }

@@ -18,6 +18,7 @@ const meetingQuery = {
 meetingQuery.select.mockReturnValue(meetingQuery);
 meetingQuery.eq.mockReturnValue(meetingQuery);
 
+vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({
   NextResponse: { json: Response.json },
   connection: async () => undefined,

@@ -1,3 +1,5 @@
+import { readTranscriptChunk } from '@tuturuuu/ai/meetings/transcript';
+import { readTranscriptRoster } from './transcript-roster';
 import 'server-only';
 import { MEET_AUDIO_REQUEST_MAX_BYTES } from '@tuturuuu/ai/meetings/audio-contract';
 import { Effect, Either, Schedule } from '@tuturuuu/utils/effect';
@@ -59,7 +61,12 @@ export async function transcribeMeetChunk(
     .eq('sequence', sequence)
     .maybeSingle();
   if (existing.error) throw new MeetAiError(500, 'Chunk lookup failed');
-  if (existing.data?.status === 'completed') return existing.data;
+  const project = async (chunk: NonNullable<typeof existing.data>) => {
+    const roster = await readTranscriptRoster(db, [chunk]);
+    const { usage: _usage, ...metadata } = chunk;
+    return { ...metadata, ...readTranscriptChunk(chunk, roster) };
+  };
+  if (existing.data?.status === 'completed') return project(existing.data);
   if (
     session.ended_at ||
     Date.now() - Date.parse(session.created_at) > 3 * 60 * 60 * 1000
@@ -208,7 +215,7 @@ export async function transcribeMeetChunk(
       )
     );
     if (persisted._tag === 'Left') throw persisted.left;
-    return persisted.right;
+    return project(persisted.right);
   } catch (error) {
     let failure = db
       .from('meet_ai_chunks')

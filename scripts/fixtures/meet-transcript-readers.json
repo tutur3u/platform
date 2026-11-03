@@ -1,0 +1,23 @@
+{
+  "apps/database/rollbacks/20261029100110_align_meeting_identity_and_transcript_access.rollback.sql": "74c0f2c8d3cf10bb3e6931ee48c1c25a1bd31e27597b36d21ac6fffe32ad3b14",
+  "apps/database/rollbacks/20261030044719_meet_ai_consent_schema.rollback.sql": "e715af89198a9a608a5947e8df0f8d4fc0cda299c02d3744834338fab0356602",
+  "apps/database/supabase/migrations/20260907040000_meet_ai_sessions.sql": "0b31e8ddd78597aabec3fd34ef941012b2a654a094b069f8f7e605bbbb559130",
+  "apps/database/supabase/migrations/20260909153000_meet_transcription_recovery.sql": "f018fef55d699fc78f533727a88af99f820b8422856a2cdd477b2b58cf9e0250",
+  "apps/database/supabase/migrations/20261029100110_align_meeting_identity_and_transcript_access.sql": "b4a12f047a852ecb38f6394a4a14e80588111c29c64e4bd4be5e62217da05fe6",
+  "apps/database/supabase/migrations/20261029170000_meet_transcript_retention_purge.sql": "d641ef4dcbf262315adb0d26083a311c8b3fb64b9488331e03bcedc067235f56",
+  "apps/database/supabase/migrations/20261030044719_meet_ai_consent_schema.sql": "9f741ae9d659a3b20e6ef625ee0e5449055098b58e8e3d7fc776fd1251f7df49",
+  "apps/database/supabase/migrations/20261101090100_exclude_easy_center_from_meet_transcript_purge.sql": "3c29aa455ca7cda97ae50f769589bbce2f96322177c2d5729b8d3fc7065d5e77",
+  "apps/web/src/app/api/ai/meetings/transcription/route.ts": "4a74771109b710a6a3cb91a3a6484a5ca1064647c0a8c1dcd50217c6e559c661",
+  "apps/web/src/app/api/v1/workspaces/[wsId]/meetings/[meetingId]/review/route.ts": "4c4d8b782a319416c66451a68af8fe2f7ae4730ded1a765e24020588e3c3f425",
+  "apps/web/src/legacy-api-routes/ai/meetings/transcription/route.ts": "abac44240830e8552999b7bc859dad51936422677671e5cc9bf5a3a6ead06967",
+  "packages/ai/src/meetings/transcript.ts": "bc76a6f9adfc5c5b8e2f5f07c09451d0ac26a2982ddc6929384bfd076ac67a5a",
+  "packages/internal-api/src/meet-ai.ts": "24f269a52444cb6fa9efc004479787bc7406fde60c152909468bd84d4dea499c",
+  "packages/internal-api/src/meetings.ts": "499f6ca00541fd41aa5172b5b9b2053b9ba2e5f068260af4cb63e348b0796037",
+  "packages/meet-core/src/features/meeting-ai/meeting-ai-panel.tsx": "d73b30d566aafa9c729273d084af37158d2fb221b17c97e6d09af0f25748326e",
+  "packages/meet-core/src/features/meeting-ai/meeting-transcript.tsx": "8784c8a9a5c3ecb4a7743fb104839ec2f4c06c4f7a05b71262e9a0eff9b5978d",
+  "packages/meet-core/src/features/meeting-ai/server/chunks.ts": "39514cce972503a4f083a26694842f9c469652d0b867808661ea7c456cfd310b",
+  "packages/meet-core/src/features/meeting-ai/server/sessions.ts": "b47d54721753351eed54214d6e4358ac43944ea240dd1d3b513e03049d1a59a0",
+  "packages/meet-core/src/features/meeting-ai/server/transcript-roster.ts": "476bcd70754ef5f7d4c6a0c7474d0a8da9c21b5e52e6772e4988c12992d30c21",
+  "packages/meet-core/src/features/meeting-ai/server/transcript-speaker.ts": "4c4895a7ba37a4aef2fcc9c4db302b7f2c91a0179bc973f794375dc19c01c512",
+  "packages/meet-core/src/features/meeting-ai/use-meeting-ai.ts": "5b0a424b7c083edaf679e0fc351ec6f2d544a39ef45e7ed1f125871ee90c8999"
+}

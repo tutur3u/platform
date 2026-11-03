@@ -167,7 +167,7 @@ it('projects erased chunks safely for both API consumers', () => {
     transcript: '',
     erased: true,
     speaker: null,
-    segments: [{ erased: true }, kept],
+    segments: [{ erased: true }, { ...kept, speaker: null }],
   });
   expect(JSON.stringify(projected)).not.toContain('REMOVED speech');
   expect(JSON.stringify(projected)).not.toContain('private@example.com');
@@ -180,3 +180,45 @@ it('keeps malformed marked chunks empty at the API boundary', () => {
     })
   ).toEqual({ transcript: '', erased: true, speaker: null, segments: [] });
 });
+
+it('rebuilds verified selector labels only from the current roster', () => {
+  const selector = '00000000-0000-4000-8000-000000000001';
+  const chunk = {
+    transcript: 'Speech',
+    usage: { speaker: { selector, kind: 'microphone' } },
+  };
+  expect(
+    readTranscriptChunk(chunk, new Map([[selector, 'Alice']])).speaker
+  ).toEqual({ selector, kind: 'microphone', label: 'Alice' });
+  expect(readTranscriptChunk(chunk, new Map()).speaker).toBeNull();
+  expect(
+    readTranscriptChunk(
+      { ...chunk, usage: { erased: true } },
+      new Map([[selector, 'Alice']])
+    ).speaker
+  ).toBeNull();
+});
+it.each(['', '  ', 'private@example.com', 'Name <private@example.com>'])(
+  'uses Participant for unsafe roster label %s',
+  (name) => {
+    const selector = '00000000-0000-4000-8000-000000000001';
+    expect(
+      readTranscriptChunk(
+        {
+          transcript: 'Speech',
+          usage: {
+            segments: [
+              {
+                speaker: { selector, kind: 'microphone' },
+                kind: 'microphone',
+                startSeconds: 0,
+                transcript: 'Speech',
+              },
+            ],
+          },
+        },
+        new Map([[selector, name]])
+      ).segments[0]
+    ).toMatchObject({ speaker: { label: 'Participant' } });
+  }
+);
