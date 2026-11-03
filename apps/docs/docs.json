@@ -451,6 +451,7 @@
                 "group": "API Reference",
                 "pages": [
                   "reference/api-reference/introduction",
+                  "reference/api-reference/status",
                   "reference/api-reference/ai-studio",
                   "reference/api-reference/mastermind-push-events",
                   "reference/api-reference/endpoint/generate"
