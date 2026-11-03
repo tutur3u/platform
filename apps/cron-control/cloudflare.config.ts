@@ -44,7 +44,7 @@ export default defineConfig({
         'database-cron-history-retention,ai-studio-retention'
       ),
       // Counts only until a reviewed change sets 'delete'; 'off' is the kill
-      // switch. Any other value also means dry-run.
+      // switch. Any other value (including unset or padded) means off.
       AI_STUDIO_RETENTION_MODE: bindings.text('dry-run'),
       CRON_CONTROL_WORKER_PROCESSORS: bindings.text(''),
       SUPABASE_URL: bindings.secret(),
