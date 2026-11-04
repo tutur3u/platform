@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
 set local role service_role;
 set local request.jwt.claims = '{"role":"service_role"}';
-select plan(51);
+select plan(54);
 insert into public.users (id, display_name) values
   ('00000000-0000-4000-8000-0000000e6001', 'Ticket Owner');
 insert into public.workspaces (id, name, creator_id, personal) values
@@ -205,19 +205,37 @@ select lives_ok($$update public.workspace_boards set ticket_prefix = 'LEGK' wher
   'the excluded workspace skips the board prefix check');
 select lives_ok($$update public.workspace_boards set name = 'Legacy Board Renamed' where id = '00000000-0000-4000-8000-0000000e6021'$$,
   'edits that keep the prefix skip the check');
--- Fails closed: an end-user session that writes a board prefix directly
--- cannot read task_projects, so the invoker check errors instead of passing.
--- Boards have no end-user policies (20260319101300), so a temporary grant
--- and policy let the write reach the trigger: its read decides, nothing else.
+-- End-user board writes. Boards have no end-user policies (20260319101300),
+-- so these sessions cannot write a board at all; a temporary grant and policy
+-- let a member's write reach the trigger here. Members read every project in
+-- their workspace (task_projects SELECT policy, 20250929042000_add_notes.sql
+-- l.138-144), so the invoker check sees every key for them too.
 set local role postgres;
+insert into auth.users (id) values ('00000000-0000-4000-8000-0000000e6004');
+insert into public.users (id, display_name) values
+  ('00000000-0000-4000-8000-0000000e6004', 'Board Member')
+on conflict (id) do nothing;
+insert into public.workspace_members (ws_id, user_id, type) values
+  ('00000000-0000-4000-8000-0000000e6010', '00000000-0000-4000-8000-0000000e6004', 'MEMBER')
+on conflict (ws_id, user_id) do update set type = excluded.type;
 grant select, update (ticket_prefix) on public.workspace_boards to authenticated;
 create policy pgtap_member_prefix_write on public.workspace_boards
   for all to authenticated using (true) with check (true);
+set local role service_role;
+set local request.jwt.claims = '{"role":"service_role"}';
+select is((select count(*)::integer from public.task_projects where ws_id = '00000000-0000-4000-8000-0000000e6010'),
+  6, 'the workspace has six projects');
 set local role authenticated;
-set local request.jwt.claims = '{"role":"authenticated","sub":"00000000-0000-4000-8000-0000000e6002"}';
-select throws_ok($$update public.workspace_boards set ticket_prefix = 'MEMBR' where id = '00000000-0000-4000-8000-0000000e6022'$$,
-  '42501', 'permission denied for table task_projects',
-  'a direct board prefix write from a member session fails closed');
+set local request.jwt.claims = '{"role":"authenticated","sub":"00000000-0000-4000-8000-0000000e6004"}';
+select is((select count(*)::integer from public.task_projects where ws_id = '00000000-0000-4000-8000-0000000e6010'),
+  6, 'a member sees every project in the workspace');
+with written as (
+  update public.workspace_boards set ticket_prefix = 'MEMBR'
+  where id = '00000000-0000-4000-8000-0000000e6022' returning id
+)
+select is((select count(*)::integer from written), 1, 'a member write with a free prefix reaches and updates one board');
+select throws_ok($$update public.workspace_boards set ticket_prefix = 'CORE' where id = '00000000-0000-4000-8000-0000000e6022'$$,
+  '23505', 'TASK_BOARD_TICKET_PREFIX_PROJECT_KEY', 'a member write that collides with a project key is refused');
 set local role service_role;
 set local request.jwt.claims = '{"role":"service_role"}';
 select * from finish();
