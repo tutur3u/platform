@@ -34,7 +34,9 @@ afterEach(() => {
 
 it('admits only the five exact internal origins in explicit staging mode', () => {
   expect(
-    getAppDomainMap().filter((entry) => entry.requiresExactOrigin)
+    getAppDomainMap().filter((entry) =>
+      new URL(entry.url).hostname.endsWith('.tutur3u.com')
+    )
   ).toHaveLength(5);
   for (const app of ['meet', 'calendar', 'mail', 'apps']) {
     const url = `https://${app}.tutur3u.com`;
@@ -68,7 +70,9 @@ it.each([
     });
     expect(getAppDomainByUrl('https://mail.tutur3u.com')).toBeNull();
     expect(
-      getAppDomainMap().filter((entry) => entry.requiresExactOrigin)
+      getAppDomainMap().filter((entry) =>
+        new URL(entry.url).hostname.endsWith('tutur3u.com')
+      )
     ).toEqual([]);
   }
 );

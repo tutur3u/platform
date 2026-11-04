@@ -93,7 +93,10 @@ test('staging response preserves status/body/cookie flags, pins HSTS and keeps c
 test('only shared auth cookies may carry the staging Domain, and only inside it', () => {
   const inside = 'meet.staging.tutur3u.com';
   assert.equal(stagingCookieScope(inside), '.staging.tutur3u.com');
-  assert.equal(stagingCookieScope('STAGING.tutur3u.com'), '.staging.tutur3u.com');
+  assert.equal(
+    stagingCookieScope('STAGING.tutur3u.com'),
+    '.staging.tutur3u.com'
+  );
   for (const outside of [
     ...stagingApps.map((app) => `${app}.tutur3u.com`),
     'web.tutur3u.com',
@@ -349,7 +352,10 @@ test('__Host- and app-private cookies stay host-only on every hosted staging hos
     '__Host-session=fixture; Path=/; HttpOnly; SameSite=Lax; Secure'
   );
   assert.equal(cookies[1], '__Host-legacy=fixture; Path=/; Max-Age=0; Secure');
-  assert.equal(cookies[2], '__Secure-session=fixture; Path=/; HttpOnly; Secure');
+  assert.equal(
+    cookies[2],
+    '__Secure-session=fixture; Path=/; HttpOnly; Secure'
+  );
 });
 
 test('production project is refused even when runtime ref and URL agree', async () => {
@@ -424,9 +430,7 @@ test('Meet realtime route-free preparation preserves the reviewed source and rej
   for (const changed of [
     { name: 'tuturuuu-meet-realtime-wave1-staging' },
     {
-      routes: [
-        { pattern: '*.tutur3u.com/*', zone_name: 'tutur3u.com' },
-      ],
+      routes: [{ pattern: '*.tutur3u.com/*', zone_name: 'tutur3u.com' }],
     },
     { workers_dev: true },
     { preview_urls: true },
@@ -439,7 +443,7 @@ test('Meet realtime route-free preparation preserves the reviewed source and rej
     );
 });
 
-test('offline plans fence certificates, existing Workers, seed receipts and route conflicts', async () => {
+test('offline plans read back certificates, existing Workers, seed receipts and route conflicts', async () => {
   const { provisioningPlan } = await import('./prepare.ts');
   const env = {
     WAVE1_STAGING_SUPABASE_PROJECT_REF: 's'.repeat(20),
@@ -457,11 +461,13 @@ test('offline plans fence certificates, existing Workers, seed receipts and rout
     });
     assert.equal(plan.worker, `tuturuuu-${app}-hosted-staging`);
     const tasks = plan.tasks;
-    const cert = tasks.findIndex(
-      (task) =>
-        task.operation ===
-        'BLOCKING-owner-approved-zone-certificate-exception-or-rename-hosts'
+    // One-level <app>.tutur3u.com hosts are covered by Universal SSL, so the
+    // deep-host certificate exception is gone; coverage is still read back.
+    assert.equal(
+      tasks.some((task) => /certificate-exception/u.test(task.operation)),
+      false
     );
+    assert.equal(plan.cookies, 'host-only');
     const dns = tasks.findIndex(
       (task) =>
         task.operation ===
@@ -487,8 +493,7 @@ test('offline plans fence certificates, existing Workers, seed receipts and rout
         'read-back-host-routes-HSTS-cookie-and-build-identity'
     );
     assert.ok(
-      cert >= 0 &&
-        beforeDns > cert &&
+      beforeDns >= 0 &&
         beforeDns < dns &&
         hostReadback > dns &&
         coverage > hostReadback &&
@@ -502,18 +507,6 @@ test('offline plans fence certificates, existing Workers, seed receipts and rout
       );
       assert.equal(task?.billable, false);
     }
-    const certificate = tasks[cert];
-    assert.equal(certificate?.billable, true);
-    assert.equal(
-      certificate &&
-        'ownerApprovalRequired' in certificate &&
-        certificate.ownerApprovalRequired,
-      true
-    );
-    assert.deepEqual(
-      certificate && 'hosts' in certificate && certificate.hosts,
-      stagingApps.map((name) => `${name}.tutur3u.com`)
-    );
     const inventory = tasks.findIndex(
       (task) =>
         task.operation ===
@@ -653,7 +646,10 @@ test('__Host- cookie prefix is case-insensitive and never gains a Domain attribu
       },
     });
     assert.equal(
-      stagingResponse(original, 'meet.staging.tutur3u.com').headers.getSetCookie()[0],
+      stagingResponse(
+        original,
+        'meet.staging.tutur3u.com'
+      ).headers.getSetCookie()[0],
       `${prefix}session=fixture; Path=/; HttpOnly; SameSite=Lax; Secure`
     );
   }

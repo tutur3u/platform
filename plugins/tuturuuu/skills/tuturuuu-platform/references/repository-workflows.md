@@ -269,7 +269,8 @@ no exact staging origin instead of falling back to production. Production
 markers (`TUTURUUU_DEPLOY_ENV`, Vercel, the Cloudflare production build marker
 and a production app origin) ignore the shared cookie override on every runtime.
 Regression coverage: `scripts/wave1-staging/acceptance.test.mjs`,
-`staging-cookie.test.ts`, `shared-cookie.test.ts` and
+`production-cookie-guard.test.ts`, `staging-cookie.test.ts`,
+`internal-domains.staging.test.ts` and
 `apps/apps/src/native/route-boundary.test.ts`.
 
 ## Focused route tests with unbuilt packages

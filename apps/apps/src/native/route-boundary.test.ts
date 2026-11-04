@@ -6,6 +6,7 @@ vi.mock('@tanstack/react-start/server-entry', () => ({
   default: { fetch: vi.fn(async () => new Response('app shell')) },
 }));
 vi.mock('./api.server', () => ({ apiRequest: vi.fn() }));
+
 import {
   buildGatewayRedirectUrl,
   GATEWAY_APPS,
@@ -67,7 +68,13 @@ describe('Apps native route parity', () => {
   });
   it('refuses a catalogue app with no exact staging origin instead of falling back to production', () => {
     stubStagingMode(wave1Registry);
-    const registered = new Set(['meet', 'calendar', 'mail', 'apps', 'platform']);
+    const registered = new Set([
+      'meet',
+      'calendar',
+      'mail',
+      'apps',
+      'platform',
+    ]);
     const unregistered = GATEWAY_APPS.filter(
       (app) => !registered.has(app.slug)
     );
@@ -85,18 +92,21 @@ describe('Apps native route parity', () => {
     ['a missing', undefined],
     ['an empty', ''],
     ['a rejected', 'meet:https://meet.tuturuuu.com,mail:https://evil.test'],
-  ])('fails closed for every app with %s staging registry', (_label, registry) => {
-    stubStagingMode(registry);
-    for (const app of GATEWAY_APPS) {
-      const result = gatewayDestination(
-        new URL(`https://apps.tutur3u.com/${app.slug}?tag=1`)
-      );
-      expect(result).toEqual({ kind: 'staging-unavailable', slug: app.slug });
-      expect(() => getGatewayAppOrigin(app)).toThrow(
-        /never falls back to a production origin/
-      );
+  ])(
+    'fails closed for every app with %s staging registry',
+    (_label, registry) => {
+      stubStagingMode(registry);
+      for (const app of GATEWAY_APPS) {
+        const result = gatewayDestination(
+          new URL(`https://apps.tutur3u.com/${app.slug}?tag=1`)
+        );
+        expect(result).toEqual({ kind: 'staging-unavailable', slug: app.slug });
+        expect(() => getGatewayAppOrigin(app)).toThrow(
+          /never falls back to a production origin/
+        );
+      }
     }
-  });
+  );
   it('answers 503 from the Apps Worker for a staging app with no staging origin', async () => {
     stubStagingMode(wave1Registry);
     const { appsRequest } = await import('../../cloudflare/worker');
