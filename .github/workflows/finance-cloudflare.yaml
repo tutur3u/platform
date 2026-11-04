@@ -147,7 +147,9 @@ jobs:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       FINANCE_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       VITE_FINANCE_NATIVE_PROFILE: ${{ matrix.profile }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars[format('{0}_SUPABASE_URL', matrix.profile == 'production' && 'PRODUCTION' || 'STAGING')] }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars[format('{0}_SUPABASE_PUBLISHABLE_KEY', matrix.profile == 'production' && 'PRODUCTION' || 'STAGING')] }}
+      NODE_ENV: production
       WRANGLER_SEND_METRICS: 'false'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -181,6 +183,19 @@ jobs:
       - name: Build TanStack Start Worker and assets
         working-directory: apps/finance
         run: bun run build:cloudflare
+      - name: Record emitted configuration receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/finance "$SOURCE_SHA" "$RUNNER_TEMP/finance-emitted-config.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: finance-cutover-config-${{ matrix.profile }}-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/finance-emitted-config.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Check emitted anonymous redirect and required-secret startup refusal
+        timeout-minutes: 4
+        run: node scripts/ci/finance-cutover-smoke.mjs
       - name: Package deployable output and emitted Wrangler config
         run: |
           python3 scripts/ci/finance-native-artifact.py config apps/finance
