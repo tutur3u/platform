@@ -69,6 +69,8 @@ export interface BoardSprint {
 }
 
 export interface BoardSprintsResponse {
+  /** False until verified staff enable board cycles for the workspace. */
+  cyclesEnabled: boolean;
   schemaAvailable: boolean;
   sprintLengthWeeks: BoardSprintLengthWeeks | null;
   sprints: BoardSprint[];

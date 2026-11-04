@@ -148,6 +148,7 @@ function sprintsState(sprints: BoardSprint[]) {
   const current = active ?? planningSprint;
   return {
     currentSprint: current,
+    cyclesEnabled: true,
     currentSprintTaskIds: new Set(current?.tasks.map((t) => t.task_id)),
     showsOnBoard: null,
     isError: false,

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
+  areBoardCyclesEnabled,
+  boardCyclesNotEnabledResponse,
   loadBoardSprints,
   requireSprintAccess,
   type SprintRouteParams,
@@ -20,7 +22,7 @@ export const GET = withSessionAuth<SprintRouteParams>(
       const access = await requireSprintAccess(request, params, auth, 'view');
       if ('error' in access) return access.error;
 
-      const loaded = await loadBoardSprints(access.sbAdmin, access.boardId);
+      const loaded = await loadBoardSprints(access);
       if (!loaded.ok) {
         return sprintRpcErrorResponse(loaded.error, 'Failed to load sprints');
       }
@@ -36,10 +38,22 @@ export const GET = withSessionAuth<SprintRouteParams>(
 export const PUT = withSessionAuth<SprintRouteParams>(
   async (request, auth, params) => {
     try {
-      const access = await requireSprintAccess(request, params, auth, 'manage');
+      const access = await requireSprintAccess(
+        request,
+        params,
+        auth,
+        'manage',
+        { allowWhenNotEnabled: true }
+      );
       if ('error' in access) return access.error;
 
       const body = updateSprintLengthSchema.parse(await request.json());
+      if (
+        body.sprint_length_weeks !== null &&
+        !(await areBoardCyclesEnabled(access.sbAdmin, access.wsId))
+      ) {
+        return boardCyclesNotEnabledResponse();
+      }
       const { error } = await access.sbAdmin.rpc('set_board_sprint_length', {
         p_actor_id: access.user.id,
         p_board_id: access.boardId,
@@ -49,7 +63,7 @@ export const PUT = withSessionAuth<SprintRouteParams>(
         return sprintRpcErrorResponse(error, 'Failed to update sprint length');
       }
 
-      const loaded = await loadBoardSprints(access.sbAdmin, access.boardId);
+      const loaded = await loadBoardSprints(access);
       if (!loaded.ok) {
         return sprintRpcErrorResponse(loaded.error, 'Failed to load sprints');
       }
