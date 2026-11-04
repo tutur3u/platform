@@ -17,6 +17,7 @@ import {
   type LegalDocument,
   type LegalSection,
   legalChangesCopy,
+  legalNotice,
 } from '@tuturuuu/legal';
 import type { LegalPageConfig } from './legal-types';
 
@@ -40,7 +41,10 @@ export function toLegalPageConfig(document: LegalDocument): LegalPageConfig {
     badgeIcon: icons[document.sections[0]?.icon ?? 'file'],
     badgeText: document.badge,
     locale: document.locale,
-    upcomingChanges: legalChangesCopy[document.locale].linkLine,
+    // The "Proposed updates" line is withdrawn once the notice is published.
+    upcomingChanges: legalNotice.published
+      ? undefined
+      : legalChangesCopy[document.locale].linkLine,
     effectiveDate: document.effectiveDate,
     footerText: document.footer,
     highlightedWord: document.highlightedWord,

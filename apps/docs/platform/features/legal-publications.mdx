@@ -1,7 +1,7 @@
 ---
 title: "Legal publications"
 description: "Preserve effective legal text and distinguish proposed revisions."
-updatedAt: "2026-10-30"
+updatedAt: "2026-11-04"
 audience: users
 ---
 
@@ -33,7 +33,10 @@ contrast acceptance. The Lex fixture and snapshots retain both translations,
 including the final AUP/community safety-restoration row. The separately owned
 `legal-aup-community-restore` lane must land its matching clauses before notice
 publication. Transition clauses and archived-version links also need Lex/release
-acceptance before that later publication. Never introduce a language-prevails rule.
+acceptance before that later publication. Never introduce a language-prevails rule
+("X prevails"). The 2026-11-11 Terms say that, where the English and Vietnamese
+texts differ, the version more favourable to the consumer applies (Law 19/2023/QH15
+Art 23(2)); that consumer rule is not a language-prevails rule.
 
 The binding notice starts at the top of the content and is never collapsible.
 The notice's audience and timing list stays with it; the summary table and its
@@ -64,8 +67,9 @@ Lex's final publication acceptance remain separate gates.
 While `legalNotice.published` is `false` the page is exactly the Variant 1 copy:
 no Lex notice sentence (including the non-binding line) renders, the proposed
 version block shows only "Proposed" and "Not yet in effect" (no version id, no
-date), and no draft marker is shown. When published, the block shows the real
-Terms version (without the internal draft suffix) and the notice date.
+date), and no draft marker is shown. When published, the block shows the
+2026-11-11 revision as the new Terms version, in force from the notice date, next
+to the archived 2026-08-15 version it replaces.
 
 The change list and diff cover Terms, Privacy, DPA, SLA and Subprocessors only.
 Acceptable Use and Community Guidelines are excluded because their in-force and
@@ -108,3 +112,48 @@ in-force-plus-mobile composition, identical A/B mobile text and publication guar
 `mobile-revision.test.ts` pins the September and B revisions and checks the bilingual
 B/C and F copy. Candidate legal-changes tests verify both entries, full text and
 pending-date exclusion on publication.
+
+## 2026-11-11 revision (B2B2C Privacy, Terms, DPA and Subprocessors)
+
+The 2026-11-11 revision replaces the unpublished `2026-11-02` proposal for Privacy,
+Terms, DPA and Subprocessors (EN and VI, 46 section ids, same ids in both locales).
+Its text lives in `packages/legal/src/revision-2026-11-11/source/*.generated.ts`,
+extracted verbatim from legal's frozen FINAL by
+`packages/legal/scripts/extract-final-revision.ts` (it checks the FINAL's SHA-256 and
+that every extracted line equals a FINAL line once tags are removed; run Biome on the
+output). Wording changes go back to legal and security, then re-extraction; never
+edit the generated files. The change notice (`notice-copy.ts`) comes from the same
+FINAL; `{N}`, `{N30}` and `{ARCHIVE_LINKS}` are filled from the notice config.
+
+**One publish switch.** `getLegalDocument` returns the revision for those four
+documents only while `legalNotice.published` is true, so the notice and the in-force
+pages switch together; publishing also hides the "Proposed updates" line on canonical
+pages, labels the full-text page as in force, and diffs against the archive. Only the
+release owner flips it, with `noticeDate: '2026-11-11'`, `laterDate: '2026-12-11'`,
+the real mobile release date D as `mobilePrivacyEffectiveDate`, and the Lex-approved
+`archiveLinks`. A notice date other than the revision date throws. SLA, Acceptable Use
+and Community Guidelines are not part of this text and stay as they are.
+
+**Hold units.** Text that the FINAL marks `[HOLD …]`, `[GATE …]`, `[verify …]` or
+`[PENDING …]` is a hold unit (`revision-2026-11-11/holds.ts`). Held text never
+renders; where the FINAL gives a fallback, the fallback renders until the unit is
+released. Release a unit only after its condition is confirmed for publication day:
+- The AI kill-switch group (P3, P10, T9, D9, D12, the registry Gemini row and the
+  notice row) is released together by `KS_RELEASED = true`. The Gemini row also
+  needs its console check unit.
+- Other units are released by adding their id to `RELEASED_HOLDS`. `r32` needs a
+  text change (an unfilled `[N days]`) and refuses release.
+- The mobile unit (P12 and the Firebase rows) releases itself when D is on or before
+  N; otherwise release it on D. A section whose whole body is held is dropped.
+
+**Archive.** `/legal/archive/2026-08-15` (and `/vi/…`) lists the 2026-08-15 Terms,
+Privacy, DPA, SLA and Subprocessors; each renders at `/legal/archive/2026-08-15/<kind>`
+from the same objects the canonical pages serve today (`getLegalDocumentVersion`), so
+the text is byte-identical and stays so after publication. Archive pages are noindex.
+
+Regression coverage: `packages/legal/src/revision-2026-11-11/revision.test.ts` (EN/VI
+parity, no held text or tag renders, fallbacks render, no orphaned heading, empty
+section or empty table cell after stripping, cross-references resolve, notice
+placeholders resolve, the KS switch, block release, the publication switch) and
+`apps/web/src/components/legal/legal-archive.test.tsx` (archive identity, tables).
+Existing hash locks in `legal-revisions.test.ts` keep the 2026-08-15 text unchanged.

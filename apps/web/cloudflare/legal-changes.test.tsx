@@ -97,8 +97,8 @@ describe('upcoming legal changes', () => {
     it(`${locale} never renders a pending mobile date on a published changes page`, () => {
       const config = {
         published: true as const,
-        noticeDate: 'NOTICE-DATE',
-        laterDate: upcomingLegalRevision.effectiveDate,
+        noticeDate: '2026-11-11',
+        laterDate: '2026-12-11',
         archiveLinks: { [locale]: 'ARCHIVE' },
       };
       expect(() =>
@@ -230,9 +230,9 @@ describe('upcoming legal changes', () => {
             locale={locale}
             noticeConfig={{
               published: true,
-              noticeDate: 'NOTICE-DATE',
+              noticeDate: '2026-11-11',
               mobilePrivacyEffectiveDate: '2026-11-05',
-              laterDate: 'LATER-DATE',
+              laterDate: '2026-12-11',
               archiveLinks: { [locale]: 'ARCHIVE' },
             }}
           />
@@ -243,13 +243,9 @@ describe('upcoming legal changes', () => {
       expect(proposed?.querySelector('strong')?.textContent).toBe(
         copy.published
       );
-      expect(proposed?.querySelector('p')?.textContent).toBe(
-        upcomingLegalRevision.version
-      );
-      expect(proposed?.querySelector('dd')?.textContent).toBe(
-        upcomingLegalRevision.effectiveDate
-      );
-      expect(proposed?.textContent).toContain('NOTICE-DATE');
+      // The 2026-11-11 revision is in force from the notice date N.
+      expect(proposed?.querySelector('p')?.textContent).toBe('2026-11-11');
+      expect(proposed?.querySelector('dd')?.textContent).toBe('2026-11-11');
       expect(proposed?.textContent).not.toMatch(/draft/iu);
     });
     it(`${locale} full proposals show the notice, proposal status footers and current-version links`, () => {

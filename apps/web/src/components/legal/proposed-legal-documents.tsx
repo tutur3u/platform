@@ -1,7 +1,10 @@
 import {
+  getLegalDocument,
   getProposedLegalDocument,
   type LegalLocale,
+  type LegalNoticeConfig,
   legalChangesCopy,
+  REVISION_KINDS,
 } from '@tuturuuu/legal';
 import { LegalMarkdown } from './legal-markdown';
 import { stripInternalReviewSentences } from './proposal-footer';
@@ -15,20 +18,35 @@ const kinds = [
   'acceptable-use',
   'community-guidelines',
 ] as const;
-export function ProposedLegalDocuments({ locale }: { locale: LegalLocale }) {
+const revisionKinds: readonly string[] = REVISION_KINDS;
+
+export function ProposedLegalDocuments({
+  locale,
+  notice,
+}: {
+  locale: LegalLocale;
+  /** A published notice: the revised documents are in force, not proposed. */
+  notice?: Extract<LegalNoticeConfig, { published: true }>;
+}) {
   const copy = legalChangesCopy[locale];
   return (
     <div className="proposed-documents">
       {kinds.map((kind) => {
-        const document = getProposedLegalDocument(kind, locale);
+        const inForce = Boolean(notice) && revisionKinds.includes(kind);
+        const document =
+          inForce && notice
+            ? getLegalDocument(kind, locale, notice)
+            : getProposedLegalDocument(kind, locale);
         // Internal review annotations are excluded from proposal presentation only.
         // Open decision (user): in-force footers "remove|keep". On publication
         // day the proposed footers must match whichever is chosen for the
         // in-force pages; Lex confirms then. Do not change this by itself.
-        const footer = stripInternalReviewSentences(document.footer);
+        const footer = inForce
+          ? document.footer
+          : stripInternalReviewSentences(document.footer);
         return (
           <article id={kind} key={kind}>
-            <p>{copy.proposed}</p>
+            {!inForce && <p>{copy.proposed}</p>}
             <h2>
               {document.title} {document.highlightedWord}
             </h2>

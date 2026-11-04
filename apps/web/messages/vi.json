@@ -10326,6 +10326,10 @@
       "description": "Kết nối công việc, lịch, tài liệu và công cụ kinh doanh trong một không gian làm việc mã nguồn mở. Lập kế hoạch và cộng tác với trợ lý AI Mira.",
       "title": "Không gian làm việc tất cả trong một cho đội nhóm"
     },
+    "legal_archive": {
+      "description": "Phiên bản ngày 15 tháng 8 năm 2026",
+      "title": "Văn bản pháp lý đã lưu trữ"
+    },
     "legal_changes": {
       "description": "Dự kiến — chưa có hiệu lực",
       "title": "Thay đổi sắp tới"

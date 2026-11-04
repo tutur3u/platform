@@ -3,7 +3,18 @@ import type { ReactNode } from 'react';
 type MarkdownBlock =
   | { kind: 'paragraph'; lines: string[] }
   | { items: string[]; kind: 'list'; ordered: boolean }
-  | { kind: 'quote'; lines: string[] };
+  | { kind: 'quote'; lines: string[] }
+  | { head: string[]; kind: 'table'; rows: string[][] };
+
+const tableCells = (line: string) =>
+  line
+    .trim()
+    .replace(/^\|/u, '')
+    .replace(/\|$/u, '')
+    .split('|')
+    .map((cell) => cell.trim());
+const isTableSeparator = (line: string) =>
+  /^\|(\s*:?-+:?\s*\|)+$/u.test(line.trim());
 
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
   const nodes: ReactNode[] = [];
@@ -104,9 +115,23 @@ function parseLegalMarkdown(markdown: string): MarkdownBlock[] {
     currentList = null;
   };
 
-  for (const rawLine of markdown.trim().split(/\r?\n/u)) {
-    const line = rawLine.trimEnd();
+  const lines = markdown.trim().split(/\r?\n/u);
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index]!.trimEnd();
     const trimmed = line.trim();
+
+    // GitHub-style table: a header row, a separator row, then body rows.
+    if (trimmed.startsWith('|') && isTableSeparator(lines[index + 1] ?? '')) {
+      flushParagraph();
+      flushList();
+      const rows: string[][] = [];
+      index += 2;
+      while (index < lines.length && lines[index]!.trim().startsWith('|'))
+        rows.push(tableCells(lines[index++]!));
+      index--;
+      blocks.push({ kind: 'table', head: tableCells(trimmed), rows });
+      continue;
+    }
 
     if (!trimmed) {
       flushParagraph();
@@ -167,6 +192,38 @@ export function LegalMarkdown({ children }: { children: string }) {
         >
           {renderInlineLines(block.lines, keyPrefix)}
         </blockquote>
+      );
+    }
+
+    if (block.kind === 'table') {
+      return (
+        <div className="overflow-x-auto" key={keyPrefix}>
+          <table>
+            <thead>
+              <tr>
+                {block.head.map((cell, cellIndex) => (
+                  <th key={`${keyPrefix}-head-${cellIndex}`} scope="col">
+                    {renderInline(cell, `${keyPrefix}-head-${cellIndex}`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {block.rows.map((row, rowIndex) => (
+                <tr key={`${keyPrefix}-row-${rowIndex}`}>
+                  {row.map((cell, cellIndex) => (
+                    <td key={`${keyPrefix}-cell-${rowIndex}-${cellIndex}`}>
+                      {renderInline(
+                        cell,
+                        `${keyPrefix}-cell-${rowIndex}-${cellIndex}`
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       );
     }
 
