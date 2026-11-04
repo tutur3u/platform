@@ -12,8 +12,8 @@ jobs:
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://nzamlzqfdwaaxdefwraj.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-      NEXT_PUBLIC_chat_URL: https://chat.tuturuuu.com
-      NEXT_PUBLIC_WEB_chat_URL: https://tuturuuu.com
+      NEXT_PUBLIC_APP_URL: https://chat.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       CI_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
