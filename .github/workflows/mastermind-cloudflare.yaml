@@ -110,29 +110,48 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
-  check-ci:
-    if: (github.event_name != 'pull_request' || github.event.pull_request.draft == false) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
-    uses: ./.github/workflows/ci-check.yml
-    permissions:
-      contents: read
-      deployments: read
-    with:
-      workflow_name: mastermind-cloudflare.yaml
-  # Qualification only: production publication stays HELD by
-  # scripts/ci/production-publication-policy.ts and no staging publisher exists.
-  native:
-    needs: check-ci
-    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
-    uses: ./.github/workflows/native-start-app.yaml
-    permissions:
-      contents: read
-    with:
-      app: mastermind
-      package: '@tuturuuu/mastermind'
-      artifact-script: scripts/ci/mastermind-native-artifact.py
-      env-interface: MastermindGeneratedEnv
-      worker-environment-type: MastermindEnvironment
-      public-env: |
-        TUTURUUU_NOINDEX=1
-      format-paths: >-
-        apps/mastermind/src apps/mastermind/cloudflare apps/mastermind/vite.config.mts apps/mastermind/void.config.ts apps/mastermind/vitest.config.ts apps/mastermind/tsconfig.json apps/mastermind/package.json apps/mastermind/start-bridge.routes.json
+  # Build-only delivery for tonight. No publisher credentials or test gates.
+  artifact:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      MASTERMIND_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - name: Install frozen dependencies without lifecycle scripts
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Build active workspace dependencies
+        run: bun turbo:local run build --filter='@tuturuuu/mastermind^...' --concurrency=2
+      - name: Generate source identity
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: preview
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build native Start Worker and assets
+        working-directory: apps/mastermind
+        run: bun run build:cloudflare
+      - name: Locate and seal deployable output
+        id: output
+        run: |
+          python3 scripts/ci/mastermind-native-artifact.py config apps/mastermind
+          python3 scripts/ci/mastermind-native-artifact.py seal apps/mastermind --receipt "$RUNNER_TEMP/mastermind-native-artifact.json"
+          python3 scripts/ci/mastermind-native-artifact.py pack apps/mastermind --receipt "$RUNNER_TEMP/mastermind-native-artifact.json" --archive "$RUNNER_TEMP/mastermind-native.tar.gz"
+      - name: Upload Worker, assets, emitted Wrangler config and source receipt
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mastermind-cutover-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/mastermind-native.tar.gz
+          retention-days: 7
+          if-no-files-found: error

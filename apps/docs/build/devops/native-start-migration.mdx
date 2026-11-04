@@ -11,6 +11,22 @@ The retired `apps/tanstack-web` tree is not part of this program and is not
 revived. Current hosting (Vercel, or Next.js/OpenNext Workers) stays canonical
 for an app until its explicit cutover PR merges.
 
+## Mastermind build artifact delivery
+
+`mastermind-cloudflare.yaml` builds the native Worker on GitHub and uploads
+`mastermind-cutover-<source SHA>` with `mastermind-native.tar.gz`. The app-owned
+job has no test or publication steps. The archive contains the emitted Worker,
+assets, Wrangler config, deployment pointer and exact-source hash receipt.
+Discover its config with `scripts/ci/mastermind-native-artifact.py config` after
+restoring the archive with that helper's `restore` command. Set
+`MASTERMIND_SOURCE_SHA` to the artifact's full source SHA for either operation.
+
+This build-only delivery does not admit production publication. Mastermind's
+security review and owner-only authentication remain in force. The release
+operator must preserve the canonical host's Access policy and capture the
+existing route and immutable rollback target before switching it. Auth/data
+adapter changes belong in separate PRs from build wiring.
+
 ## Web candidate pre-publication requirements
 
 Before publishing the separate Web 1 staging profile,
