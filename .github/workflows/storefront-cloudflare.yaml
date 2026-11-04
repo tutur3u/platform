@@ -192,7 +192,11 @@ jobs:
           token: ''
           team: ''
       - name: Build the Start Worker
-        run: cd apps/storefront && bun run build:cloudflare
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: cd apps/storefront && bun run build:cloudflare
+          token: ''
+          team: ''
       - name: Write the production wrangler config
         run: |
           node --input-type=module <<'JS'
