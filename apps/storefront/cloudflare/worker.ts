@@ -10,6 +10,7 @@ import { proxy, config as proxyConfig } from '../src/proxy';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 import appConfig from '../start-bridge.config';
+import { misconfiguredResponse, missingRequiredEnv } from './required-env';
 
 export interface StorefrontEnvironment {
   ASSETS: AssetsBinding;
@@ -61,6 +62,8 @@ export default {
     env: StorefrontEnvironment,
     ctx: WorkerContext
   ) {
+    const refused = misconfiguredResponse(missingRequiredEnv(env));
+    if (refused) return refused;
     const response = await (await handler)(request, env, ctx);
     return appConfig.wrapResponse
       ? appConfig.wrapResponse(response, { request, env })

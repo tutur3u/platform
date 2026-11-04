@@ -21,7 +21,13 @@ const bridge = startBridgePreset({
 
 export default defineConfig(({ command }) => ({
   base: bridge.base,
-  define: bridge.define,
+  // Production builds inline NODE_ENV so the Worker never runs dev paths.
+  define: {
+    ...bridge.define,
+    ...(command === 'build'
+      ? { 'process.env.NODE_ENV': JSON.stringify('production') }
+      : {}),
+  },
   plugins: [
     startBridgeRscPlugin({
       rscEntries: {
