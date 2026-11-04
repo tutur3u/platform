@@ -112,8 +112,11 @@ exists. The English center preset still ships its name rules, with no tag rules.
 
 The same exclusion rules apply on every tutoring screen that lists or
 suggests classes and learners for new tutoring, not only in the support queue.
-Matching ignores letter case, so a `contains` rule for `DDT` also matches
-`Starters ddt 2`.
+Matching ignores letter case and Vietnamese diacritics, in both the rule
+and the class name or tag: text is decomposed, accent marks are dropped and
+`đ`/`Đ` reads as `d`. A `contains` rule for `DDT` therefore also matches
+`Starters ddt 2`, `ĐĐT` and `Đdt`, and `Mẫu giáo` matches `Mau giao`. Exact,
+prefix and suffix rules compare the same folded text.
 
 | Screen or API | What an excluded class does |
 | --- | --- |

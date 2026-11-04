@@ -58,9 +58,23 @@ export function hasTutoringTagExclusions(policy: {
   return policy.groupExclusions.some((rule) => rule.target === 'tag');
 }
 
+/**
+ * Folds text for rule matching: decompose (NFD), drop combining marks, map
+ * đ/Đ to d (they do not decompose), then lower-case. So `DDT` matches `ĐĐT`
+ * and `Mẫu giáo` matches `Mau giao`, in either direction.
+ */
+function foldForMatch(text: string) {
+  return text
+    .trim()
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/[đĐ]/g, 'd')
+    .toLowerCase();
+}
+
 function matchesRule(rule: TutoringGroupExclusion, text: string) {
-  const name = text.trim().toLocaleLowerCase();
-  const value = rule.value.trim().toLocaleLowerCase();
+  const name = foldForMatch(text);
+  const value = foldForMatch(rule.value);
   if (!value) return false;
   if (rule.match === 'exact') return name === value;
   if (rule.match === 'prefix') return name.startsWith(value);

@@ -186,4 +186,93 @@ describe('tutoring group rules', () => {
       ).toEqual(['a1', 'a4', 'a5', 'a6']);
     });
   });
+
+  describe('diacritic-insensitive matching', () => {
+    const rule = (
+      match: 'contains' | 'exact' | 'prefix' | 'suffix',
+      value: string,
+      target?: 'tag'
+    ) => ({
+      ...STANDARD_TUTORING_POLICY,
+      groupExclusions: [
+        { scope: 'all' as const, match, value, ...(target ? { target } : {}) },
+      ],
+    });
+
+    it('matches DDT against ĐĐT, đđt and Đdt, and the other way round', () => {
+      for (const name of ['Lớp ĐĐT 2', 'đđt starters', 'Movers Đdt']) {
+        expect(
+          isTutoringGroupExcluded(rule('contains', 'DDT'), name, 'make_up')
+        ).toBe(true);
+      }
+      expect(
+        isTutoringGroupExcluded(rule('contains', 'ĐĐT'), 'Starters DDT', null)
+      ).toBe(true);
+      expect(
+        isTutoringGroupExcluded(
+          EASY_CENTER_TUTORING_POLICY,
+          'ĐĐT Hoa Mai',
+          'weak_support'
+        )
+      ).toBe(true);
+    });
+
+    it('matches Mẫu giáo against Mau giao in names and tags', () => {
+      expect(
+        isTutoringGroupExcluded(
+          EASY_CENTER_TUTORING_POLICY,
+          'MAU GIAO Hoa Mai',
+          'make_up'
+        )
+      ).toBe(true);
+      expect(
+        isTutoringGroupExcluded(
+          rule('contains', 'mau giao'),
+          'Mẫu giáo A',
+          null
+        )
+      ).toBe(true);
+      expect(
+        isTutoringGroupExcluded(
+          rule('exact', 'Mau giao', 'tag'),
+          'Class 7A',
+          null,
+          null,
+          ['Mẫu Giáo']
+        )
+      ).toBe(true);
+    });
+
+    it('keeps exact, prefix and suffix semantics on the folded text', () => {
+      expect(isTutoringGroupExcluded(rule('exact', 'ĐĐT'), ' ddt ', null)).toBe(
+        true
+      );
+      expect(isTutoringGroupExcluded(rule('exact', 'ĐĐT'), 'DDT 2', null)).toBe(
+        false
+      );
+      expect(
+        isTutoringGroupExcluded(rule('prefix', 'đđt'), 'DDT Movers', null)
+      ).toBe(true);
+      expect(
+        isTutoringGroupExcluded(rule('prefix', 'đđt'), 'Movers DDT', null)
+      ).toBe(false);
+      expect(
+        isTutoringGroupExcluded(rule('suffix', 'giáo'), 'Mau GIAO', null)
+      ).toBe(true);
+      expect(
+        isTutoringGroupExcluded(rule('suffix', 'giáo'), 'Giao tiếp 1', null)
+      ).toBe(false);
+    });
+
+    it('leaves a non-match a non-match', () => {
+      for (const name of ['English A1', 'DT Starters', 'D-D-T', 'Đội tuyển']) {
+        expect(
+          isTutoringGroupExcluded(rule('contains', 'DDT'), name, null)
+        ).toBe(false);
+      }
+      expect(
+        isTutoringGroupExcluded(rule('contains', 'Mẫu giáo'), 'Mẫu vẽ', null)
+      ).toBe(false);
+    });
+  });
 });
