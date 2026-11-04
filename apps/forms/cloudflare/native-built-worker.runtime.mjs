@@ -109,7 +109,8 @@ test('emitted forms Worker serves its root, mount and unknown paths', {
     config.compatibility_flags,
     WORKER_CONFIG.compatibilityFlags
   );
-  assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
+  assert.equal(config.workers_dev, false);
+  assert.equal(config.preview_urls, false);
   assert.equal(config.vars?.TUTURUUU_NOINDEX, PROFILE.vars.TUTURUUU_NOINDEX);
   for (const name of PUBLIC_FILES)
     assert.equal(
@@ -126,6 +127,10 @@ test('emitted forms Worker serves its root, mount and unknown paths', {
     envFiles: [staged.envFile],
     sendMetrics: false,
     bindings: {
+      TUTURUUU_APP_COORDINATION_SECRET: { type: 'plain_text', value: 'synthetic-runtime-only-coordination' },
+      SUPABASE_SECRET_KEY: { type: 'plain_text', value: 'synthetic-runtime-only-supabase' },
+      NEXT_PUBLIC_SUPABASE_URL: { type: 'plain_text', value: 'https://runtime.supabase.invalid' },
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: { type: 'plain_text', value: 'sb_publishable_runtime_fixture' },
       INTERNAL_WEB_API_ORIGIN: {
         type: 'plain_text',
         value: 'https://central.invalid',

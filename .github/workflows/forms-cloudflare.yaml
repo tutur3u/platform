@@ -192,6 +192,12 @@ jobs:
       - name: Build native Cloudflare app
         working-directory: apps/forms
         run: bun run build:cloudflare
+      - name: Exercise anonymous root and host isolation in workerd
+        working-directory: apps/forms
+        env:
+          CI: 'true'
+          CI_SOURCE_SHA: ${{ github.sha }}
+        run: bun run test:runtime
       - name: Package deployable Worker, assets and emitted Wrangler config
         run: |
           python3 scripts/ci/forms-native-artifact.py seal apps/forms --receipt "$RUNNER_TEMP/forms-receipt.json"
