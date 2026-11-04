@@ -14,7 +14,19 @@ export async function isFeeLockEnabled(wsId: string) {
       value: 'true',
     });
   } catch (error) {
-    console.error('[fee-lock] flag lookup failed; treating as off', error);
+    // Log only the message: the error object may carry a Supabase error body.
+    console.error(
+      '[fee-lock] flag lookup failed; treating as off:',
+      errorMessage(error)
+    );
     return false;
   }
+}
+
+function errorMessage(error: unknown) {
+  if (error && typeof error === 'object' && 'message' in error) {
+    const { message } = error as { message: unknown };
+    if (typeof message === 'string') return message;
+  }
+  return 'unknown error';
 }
