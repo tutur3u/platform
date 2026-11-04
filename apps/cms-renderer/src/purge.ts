@@ -1,32 +1,15 @@
 import type { RateLimit } from '@cloudflare/workers-types';
 import { z } from 'zod';
-import { cacheRequest } from './cache-key';
 import { readJson } from './http-json';
 import { authorizePurge } from './purge-auth';
+import { rotateWorkspaceCache } from './workspace-cache';
 
-const bodySchema = z.object({
-  path: z
-    .string()
-    .max(2048)
-    .startsWith('/')
-    .refine((path) => {
-      if (
-        (path !== '/' && path.endsWith('/')) ||
-        path.startsWith('//') ||
-        /[\\?#]/.test(path)
-      )
-        return false;
-      for (const char of path)
-        if ((char.codePointAt(0) ?? 0) <= 0x20) return false;
-      return new URL(path, 'https://cms.invalid').pathname === path;
-    }),
-  locale: z.string().min(2).max(10),
-  version: z.uuid(),
-});
+const bodySchema = z.object({ scope: z.literal('workspace') }).strict();
 
 export async function purgePage({
   request,
   siteId,
+  workspaceId,
   origin,
   tokensJson,
   limiter,
@@ -34,10 +17,11 @@ export async function purgePage({
 }: {
   request: Request;
   siteId: string;
+  workspaceId: string;
   origin: string;
   tokensJson: string | undefined;
   limiter: RateLimit | undefined;
-  cache: Pick<Cache, 'delete'>;
+  cache: Pick<Cache, 'put'>;
 }): Promise<Response> {
   const reply = (status: number) =>
     new Response(null, {
@@ -64,14 +48,13 @@ export async function purgePage({
     return reply(503);
   }
   if (Number(request.headers.get('content-length')) > 4096) return reply(413);
-  let body: z.infer<typeof bodySchema>;
   try {
-    body = bodySchema.parse(await readJson(request, 4096));
+    bodySchema.parse(await readJson(request, 4096));
   } catch {
     return reply(400);
   }
   try {
-    await cache.delete(cacheRequest({ origin, site: siteId, ...body }));
+    await rotateWorkspaceCache({ origin, site: siteId, workspaceId }, cache);
     return reply(204);
   } catch {
     return reply(503);

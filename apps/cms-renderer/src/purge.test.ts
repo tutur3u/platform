@@ -1,17 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { cacheRequest } from './cache-key';
 import { purgePage } from './purge';
+import { workspaceCacheEpoch } from './workspace-cache';
 
-const version = '11111111-1111-4111-8111-111111111111';
 const origin = 'https://first.invalid';
 const tokensJson = JSON.stringify({ a: 'a'.repeat(64), b: 'b'.repeat(64) });
+const scope = (site: string) => ({
+  origin,
+  site,
+  workspaceId:
+    site === 'a'
+      ? '00000000-0000-4000-8000-000000000001'
+      : '00000000-0000-4000-8000-000000000002',
+});
 function harness() {
-  const entries = new Set(
-    ['a', 'b'].map(
-      (site) =>
-        cacheRequest({ origin, site, path: '/', locale: 'vi', version }).url
-    )
-  );
+  const entries = new Map<string, Response>();
   const counts = new Map<string, number>();
   const limiter = {
     limit: async ({ key }: { key: string }) => {
@@ -21,51 +24,89 @@ function harness() {
     },
   };
   const cache = {
-    delete: async (key: RequestInfo | URL) =>
-      entries.delete(new Request(key).url),
+    match: async (key: RequestInfo | URL) =>
+      entries.get(new Request(key).url)?.clone(),
+    put: async (key: RequestInfo | URL, value: Response) => {
+      entries.set(new Request(key).url, value.clone());
+    },
   };
-  const run = (
-    siteId = 'a',
-    body: unknown = { path: '/', locale: 'vi', version }
-  ) =>
+  const request = (siteId: string, body: unknown) =>
+    new Request(`${origin}/__cms/purge`, {
+      method: 'POST',
+      headers: { authorization: `Bearer ${siteId.repeat(64)}` },
+      body: JSON.stringify(body),
+    });
+  const run = (siteId = 'a', body: unknown = { scope: 'workspace' }) =>
     purgePage({
-      request: new Request(`${origin}/__cms/purge`, {
-        method: 'POST',
-        headers: { authorization: `Bearer ${siteId.repeat(64)}` },
-        body: JSON.stringify(body),
-      }),
+      request: request(siteId, body),
       siteId,
+      workspaceId: scope(siteId).workspaceId,
       origin,
       tokensJson,
       limiter,
       cache,
     });
-  return { entries, counts, run, cache, limiter };
+  return { counts, run, request, cache };
 }
-describe('site-scoped purge route', () => {
-  it('evicts only the selected site cache key, ignoring a body site override', async () => {
+
+describe('host-scoped workspace purge', () => {
+  it('invalidates all workspace paths without affecting another site or workspace', async () => {
     const h = harness();
+    const beforeA = await workspaceCacheEpoch(scope('a'), h.cache);
+    const beforeB = await workspaceCacheEpoch(scope('b'), h.cache);
+    for (const path of ['/', '/en', '/en/about']) {
+      await h.cache.put(
+        cacheRequest({
+          ...scope('a'),
+          path,
+          locale: 'en',
+          version: 'v1',
+          epoch: beforeA,
+        }),
+        new Response('old cached page')
+      );
+    }
+    expect((await h.run()).status).toBe(204);
+    const afterA = await workspaceCacheEpoch(scope('a'), h.cache);
+    expect(afterA).not.toBe(beforeA);
+    expect(await workspaceCacheEpoch(scope('b'), h.cache)).toBe(beforeB);
+    for (const path of ['/', '/en', '/en/about']) {
+      expect(
+        await h.cache.match(
+          cacheRequest({
+            ...scope('a'),
+            path,
+            locale: 'en',
+            version: 'v1',
+            epoch: afterA,
+          })
+        )
+      ).toBeUndefined();
+    }
+    // A request already rendering during purge can fill only the old namespace.
+    await h.cache.put(
+      cacheRequest({
+        ...scope('a'),
+        path: '/',
+        locale: 'en',
+        version: 'v1',
+        epoch: beforeA,
+      }),
+      new Response('late old fill')
+    );
     expect(
-      (
-        await h.run('a', {
+      await h.cache.match(
+        cacheRequest({
+          ...scope('a'),
           path: '/',
-          locale: 'vi',
-          version,
-          siteId: 'b',
-          site: 'b',
-          origin: 'https://other.invalid',
+          locale: 'en',
+          version: 'v1',
+          epoch: afterA,
         })
-      ).status
-    ).toBe(204);
-    expect(h.entries.size).toBe(1);
-    expect(
-      h.entries.has(
-        cacheRequest({ origin, site: 'b', path: '/', locale: 'vi', version })
-          .url
       )
-    ).toBe(true);
+    ).toBeUndefined();
   });
-  it('limits each site independently before eviction', async () => {
+  it('limits each site independently before namespace rotation', async () => {
     const h = harness();
     await h.run();
     await h.run();
@@ -77,14 +118,19 @@ describe('site-scoped purge route', () => {
     expect(h.counts.get('cms-purge:b')).toBe(1);
   });
   it.each([
-    { path: '/', locale: 'vi', version: 'not-a-version-id' },
-    { path: '/about/', locale: 'vi', version },
-    { path: '//other.invalid', locale: 'vi', version },
-    { path: '/about?site=b', locale: 'vi', version },
-  ])('rejects malformed purge input without evicting any key', async (body) => {
+    {},
+    { scope: 'all' },
+    { scope: 'site' },
+    { scope: 'workspace', workspaceId: 'other' },
+    { scope: 'workspace', siteId: 'b' },
+    { scope: 'workspace', path: '/en' },
+    { scope: 'workspace', tag: 'other' },
+    { scope: 'workspace', version: 'v1' },
+  ])('rejects unknown scopes or caller-selected targets', async (body) => {
     const h = harness();
+    const before = await workspaceCacheEpoch(scope('a'), h.cache);
     expect((await h.run('a', body)).status).toBe(400);
-    expect(h.entries.size).toBe(2);
+    expect(await workspaceCacheEpoch(scope('a'), h.cache)).toBe(before);
   });
   it('fails closed for missing or broken limiter bindings', async () => {
     for (const limiter of [
@@ -96,20 +142,18 @@ describe('site-scoped purge route', () => {
       },
     ]) {
       const h = harness();
+      const before = await workspaceCacheEpoch(scope('a'), h.cache);
       const response = await purgePage({
-        request: new Request(`${origin}/__cms/purge`, {
-          method: 'POST',
-          headers: { authorization: `Bearer ${'a'.repeat(64)}` },
-          body: JSON.stringify({ path: '/', locale: 'vi', version }),
-        }),
+        request: h.request('a', { scope: 'workspace' }),
         siteId: 'a',
+        workspaceId: scope('a').workspaceId,
         origin,
         tokensJson,
         limiter,
         cache: h.cache,
       });
       expect(response.status).toBe(503);
-      expect(h.entries.size).toBe(2);
+      expect(await workspaceCacheEpoch(scope('a'), h.cache)).toBe(before);
     }
   });
 });
