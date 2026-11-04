@@ -446,6 +446,7 @@ describe('board sprint routes', () => {
 
   it('plans one more sprint and refuses past the open sprint limit', async () => {
     const sbAdmin = createAdmin({
+      ...CYCLES_ON,
       workspace_boards: { data: { sprint_length_weeks: 2 }, error: null },
       task_cycles: { data: sprintRows, error: null },
       task_sprint_reports: { data: [], error: null },
@@ -476,6 +477,7 @@ describe('board sprint routes', () => {
 
   it('removes a planned sprint of this board only', async () => {
     const sbAdmin = createAdmin({
+      ...CYCLES_ON,
       task_cycles: { data: { id: SPRINT_ID, status: 'planned' }, error: null },
     });
     sbAdmin.rpc.mockReturnValueOnce(
@@ -496,7 +498,10 @@ describe('board sprint routes', () => {
     });
     expect(response.status).toBe(409);
 
-    const elsewhere = createAdmin({ task_cycles: { data: null, error: null } });
+    const elsewhere = createAdmin({
+      ...CYCLES_ON,
+      task_cycles: { data: null, error: null },
+    });
     grantAccess(elsewhere);
     const missing = await DELETE(request('DELETE'), params(SPRINT_ID));
     expect(missing.status).toBe(404);
@@ -504,7 +509,7 @@ describe('board sprint routes', () => {
   });
 
   it('takes unique tasks out of every sprint', async () => {
-    const sbAdmin = createAdmin({});
+    const sbAdmin = createAdmin({ ...CYCLES_ON });
     sbAdmin.rpc.mockReturnValueOnce(
       rpcResult({ data: 2, error: null } as TableResult)
     );
@@ -520,6 +525,23 @@ describe('board sprint routes', () => {
       p_board_id: BOARD_ID,
       p_task_ids: [TASK_A, TASK_B],
     });
+  });
+
+  it('keeps adding, removing and parking behind the board cycles flag', async () => {
+    const sbAdmin = createAdmin({});
+    grantAccess(sbAdmin);
+
+    const responses = [
+      await ADD(request('POST', {}), params()),
+      await DELETE(request('DELETE'), params(SPRINT_ID)),
+      await UNPLAN(request('POST', { task_ids: [TASK_A] }), params()),
+    ];
+
+    for (const response of responses) {
+      expect(response.status).toBe(403);
+      expect(await response.json()).toEqual(CYCLES_GATE);
+    }
+    expect(sbAdmin.rpc).not.toHaveBeenCalled();
   });
 
   it('updates the goal of an open sprint only', async () => {
