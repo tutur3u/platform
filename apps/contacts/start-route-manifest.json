@@ -12,9 +12,9 @@
   },
   "crons": [],
   "summary": {
-    "total": 132,
+    "total": 133,
     "categories": {
-      "api": 86,
+      "api": 87,
       "api-proxy": 1,
       "api-rewrite": 2,
       "candidate-probe": 1,
@@ -22,7 +22,7 @@
       "public-asset": 1,
       "workspace-redirect": 1
     },
-    "dispositions": { "native-Start": 1, "Next-fallback": 131 }
+    "dispositions": { "native-Start": 1, "Next-fallback": 132 }
   },
   "routes": [
     {
@@ -875,6 +875,13 @@
     {
       "pattern": "/api/v1/workspaces/[wsId]/users/reports/held",
       "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/reports/held/route.ts",
+      "category": "api",
+      "owner": "contacts-next",
+      "disposition": "Next-fallback"
+    },
+    {
+      "pattern": "/api/v1/workspaces/[wsId]/users/reports/resend",
+      "source": "apps/contacts/src/app/api/v1/workspaces/[wsId]/users/reports/resend/route.ts",
       "category": "api",
       "owner": "contacts-next",
       "disposition": "Next-fallback"
