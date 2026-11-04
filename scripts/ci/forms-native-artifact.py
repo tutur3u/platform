@@ -8,7 +8,10 @@ import importlib.util
 import os
 from pathlib import Path
 
-WORKER = "tuturuuu-forms-vite-staging"
+PROFILE = os.environ.get("VITE_FORMS_NATIVE_PROFILE", "staging")
+if PROFILE not in ("staging", "production"):
+    raise ValueError("Expected forms native profile staging or production")
+WORKER = "tuturuuu-forms" if PROFILE == "production" else "tuturuuu-forms-vite-staging"
 PUBLIC_FILES = (
     "embed.js",
     "robots.txt",
@@ -24,6 +27,7 @@ def load():
     module.IDENTITY = {
         **module.IDENTITY,
         "name": WORKER,
+        "vars": {"TUTURUUU_NOINDEX": "0" if PROFILE == "production" else "1"},
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
         "workers_dev": False,

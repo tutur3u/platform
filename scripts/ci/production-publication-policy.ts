@@ -6,6 +6,7 @@ import {
 } from '../../tuturuuu.ts';
 
 const protectedSurfaces = {
+  forms: ['frontend'],
   mastermind: ['frontend'],
   meet: ['frontend', 'realtime-do'],
   calendar: ['frontend'],
