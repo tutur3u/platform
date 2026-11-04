@@ -129,6 +129,55 @@ describe('GET /finance/fee-locks', () => {
     expect([none.count, none.data[0].student_id]).toEqual([1, 'b']);
   });
 
+  it('pages past the 1000-row max_rows limit for baseline and locks', async () => {
+    const baseline = Array.from({ length: 1500 }, (_, i) =>
+      cls(`s${String(i).padStart(4, '0')}`, `S ${i}`, 1)
+    );
+    const locks = Array.from({ length: 2500 }, (_, i) => ({
+      id: `l${i}`,
+      student_id: `s${String(i).padStart(4, '0')}`,
+      status: 'draft',
+      revision: 0,
+      version: 1,
+      total_amount: 0,
+      updated_at: 't',
+      updated_by: null,
+    }));
+    const students = Array.from({ length: 1000 }, (_, i) => ({
+      id: `s${String(1500 + i).padStart(4, '0')}`,
+      full_name: `S ${1500 + i}`,
+      display_name: null,
+    }));
+    const db = fakeSupabase(
+      { fee_locks: { data: locks }, workspace_users: { data: students } },
+      { fee_lock_baseline: { data: baseline } }
+    );
+    allow(db);
+    const body = await (await get('month=2026-12&pageSize=200')).json();
+    expect(body.count).toBe(2500);
+    expect(
+      db.calls
+        .filter((c) => c.table === 'fee_locks' && c.method === 'range')
+        .map((c) => c.args)
+    ).toEqual([
+      [0, 999],
+      [1000, 1999],
+      [2000, 2999],
+    ]);
+    expect(
+      db.calls.filter(
+        (c) => c.table === 'rpc:fee_lock_baseline' && c.method === 'range'
+      )
+    ).toHaveLength(2);
+    expect(
+      Math.max(
+        ...db.calls
+          .filter((c) => c.method === 'in')
+          .map((c) => (c.args[1] as string[]).length)
+      )
+    ).toBeLessThanOrEqual(200);
+  });
+
   it('folds Vietnamese accents for search', () => {
     expect(foldFeeLockSearchText('Đặng Thị Ánh')).toBe('dang thi anh');
   });
