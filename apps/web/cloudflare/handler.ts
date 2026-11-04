@@ -1,4 +1,9 @@
+import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
 import { verifyCloudflareAccessRequest } from '@tuturuuu/utils/cloudflare-access';
+import {
+  blockedWellKnownResponse,
+  isBlockedWellKnownRequest,
+} from './blocked-well-known';
 import { type Fetcher, notMigrated, proxyNext } from './fallback';
 import { shouldRenderNativeLegal } from './native-legal';
 import { shouldRenderNativeSecurity } from './native-security';
@@ -9,6 +14,7 @@ import {
   hasHostOnlyStagingCookies,
   stagingProfile,
   type WebCandidateEnv,
+  webCandidateMounts,
 } from './profile';
 
 export type AccessVerifier = (
@@ -41,8 +47,11 @@ export function createWebCandidateHandler({
       env.WEB_START_NATIVE_SECURITY
     );
     const nativeDocument = nativeLegal || nativeSecurity;
+    const blockedWellKnown = isBlockedWellKnownRequest(request);
     let response: Response;
-    if (request.method === 'OPTIONS') {
+    if (!resolveAppBase(new URL(request.url), webCandidateMounts)) {
+      response = new Response('Web candidate disabled', { status: 503 });
+    } else if (request.method === 'OPTIONS') {
       response = answerPreflight(request);
     } else if (
       !admitted &&
@@ -62,7 +71,8 @@ export function createWebCandidateHandler({
       response = new Response('Forbidden', { status: 403 });
     } else {
       try {
-        if (nativeProbe || nativeDocument) response = await start(request);
+        if (blockedWellKnown) response = blockedWellKnownResponse();
+        else if (nativeProbe || nativeDocument) response = await start(request);
         else if (staging) response = notMigrated();
         else if (
           origin &&
@@ -93,11 +103,13 @@ export function createWebCandidateHandler({
     if (origin || admitted) {
       headers.set(
         'x-tuturuuu-web-renderer',
-        nativeProbe || nativeDocument
-          ? 'native-Start'
-          : staging
-            ? 'not-migrated'
-            : 'Next-fallback'
+        blockedWellKnown
+          ? 'native-Worker'
+          : nativeProbe || nativeDocument
+            ? 'native-Start'
+            : staging
+              ? 'not-migrated'
+              : 'Next-fallback'
       );
     }
     if (nativeDocument && (origin || admitted)) {
