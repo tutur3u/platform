@@ -5,6 +5,8 @@ import { z } from 'zod';
 export const FEE_LOCK_MAX_LINES = 50;
 export const FEE_LOCK_BATCH_MAX_ITEMS = 200;
 export const FEE_LOCK_VERSION_CONFLICT_CODE = 'FEE_LOCK_VERSION_CONFLICT';
+/** Largest magnitude NUMERIC(20,6) holds in whole units (14 integer digits). */
+export const FEE_LOCK_MAX_MONEY = 99_999_999_999_999;
 
 const hasAtMostDecimals = (digits: number) => (value: number) =>
   Number(value.toFixed(digits)) === value;
@@ -19,8 +21,8 @@ const quantitySchema = z
   .refine(hasAtMostDecimals(3), 'At most 3 decimals');
 const moneySchema = z
   .number()
-  .min(-1e14)
-  .max(1e14)
+  .min(-FEE_LOCK_MAX_MONEY)
+  .max(FEE_LOCK_MAX_MONEY)
   .refine(hasAtMostDecimals(6), 'At most 6 decimals');
 const reasonSchema = z.string().trim().max(500);
 const versionSchema = z.int().min(1);
@@ -28,7 +30,11 @@ const versionSchema = z.int().min(1);
 export const feeLockStatusSchema = z.enum(['draft', 'locked']);
 export type FeeLockStatus = z.infer<typeof feeLockStatusSchema>;
 
-/** The server also requires a reason when sessions differ from the baseline. */
+/**
+ * The server also requires a reason when sessions differ from the baseline.
+ * Every id in a line (group, product, unit, warehouse) is client-supplied:
+ * the server MUST verify each one belongs to the route's workspace before use.
+ */
 const tuitionLineInputSchema = z
   .object({
     kind: z.literal('tuition'),
@@ -73,6 +79,7 @@ export const feeLockLineInputSchema = z.union([
 ]);
 export type FeeLockLineInput = z.input<typeof feeLockLineInputSchema>;
 
+/** `student_id`, like every id in this file, must be verified against the workspace. */
 export const feeLockSaveDraftRequestSchema = z
   .object({
     student_id: z.guid(),
@@ -114,6 +121,12 @@ export const feeLockReopenRequestSchema = z.object({
   reason: reasonSchema.min(1),
 });
 
+/**
+ * `q` is raw user text. Never interpolate it into LIKE/ILIKE: pass
+ * `toFeeLockIlikePattern(q)` to SQL with the default backslash escape, or use
+ * `buildPostgrestIlikeOrFilter` from `@tuturuuu/utils/postgrest-filter` for
+ * PostgREST filters. `groupId` must be checked to belong to the workspace.
+ */
 export const feeLockListQuerySchema = z.object({
   month: feeLockMonthSchema,
   groupId: z.guid().optional(),
@@ -122,6 +135,17 @@ export const feeLockListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
 });
+/** Escapes `\`, `%` and `_` so user text matches literally in LIKE/ILIKE. */
+export function escapeFeeLockLikeText(value: string) {
+  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
+
+/** Substring ILIKE pattern for a search term, or null when it is blank. */
+export function toFeeLockIlikePattern(q: string | null | undefined) {
+  const term = q?.trim();
+  return term ? `%${escapeFeeLockLikeText(term)}%` : null;
+}
+
 export interface FeeLockListQuery {
   month: string;
   groupId?: string;
@@ -224,36 +248,3 @@ export type FeeLockBatchItemResult =
   | { id: string; result: 'ok'; version: number; revision: number }
   | { id: string; result: 'conflict'; current_version: number }
   | { id: string; result: 'not_found' };
-
-/** Immutable JSON stored in `fee_lock_revisions.snapshot` at lock time. */
-export const feeLockSnapshotSchema = z.object({
-  schema_version: z.literal(1),
-  fee_lock_id: z.guid(),
-  ws_id: z.guid(),
-  student_id: z.guid(),
-  student_name: z.string(),
-  period_month: z.string().regex(/^\d{4}-\d{2}-01$/),
-  currency: z.string().length(3),
-  revision: z.int().min(1),
-  total_amount: z.number().nonnegative(),
-  note: z.string().nullable(),
-  locked_by: z.guid().nullable(),
-  locked_at: z.string(),
-  lines: z.array(
-    z.object({
-      kind: z.enum(['tuition', 'extra']),
-      group_id: z.guid().nullable(),
-      group_name: z.string().nullable(),
-      label: z.string(),
-      unit_label: z.string().nullable(),
-      product_id: z.guid().nullable(),
-      unit_price: z.number(),
-      quantity: z.number(),
-      adjustment_amount: z.number(),
-      reason: z.string().nullable(),
-      line_amount: z.number(),
-      sort_order: z.int(),
-    })
-  ),
-});
-export type FeeLockSnapshot = z.infer<typeof feeLockSnapshotSchema>;

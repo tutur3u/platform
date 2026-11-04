@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  escapeFeeLockLikeText,
+  FEE_LOCK_MAX_MONEY,
   type FeeLockLineInput,
   feeLockBatchLockRequestSchema,
   feeLockSaveDraftRequestSchema,
-  feeLockSnapshotSchema,
+  toFeeLockIlikePattern,
 } from './finance-fee-lock-contracts';
 
 const id = (n: number) =>
@@ -82,33 +84,39 @@ describe('fee-lock contracts', () => {
   });
 });
 
-describe('fee-lock snapshot', () => {
-  it('pins schema version 1 and rejects a mid-month period', () => {
-    const snapshot = {
-      schema_version: 1,
-      fee_lock_id: id(9),
-      ws_id: id(8),
-      student_id: id(1),
-      student_name: 'Học viên mẫu',
-      period_month: '2026-12-01',
-      currency: 'VND',
-      revision: 1,
-      total_amount: 1_200_000,
-      note: null,
-      locked_by: null,
-      locked_at: '2026-11-25T03:00:00.000Z',
-      lines: [],
-    };
-    expect(feeLockSnapshotSchema.safeParse(snapshot).success).toBe(true);
-    expect(
-      feeLockSnapshotSchema.safeParse({
-        ...snapshot,
-        period_month: '2026-12-15',
-      }).success
-    ).toBe(false);
-    expect(
-      feeLockSnapshotSchema.safeParse({ ...snapshot, schema_version: 2 })
-        .success
-    ).toBe(false);
+describe('fee-lock money bound', () => {
+  const freeText = (unit_price: number) =>
+    draft([
+      tuition(id(2)),
+      {
+        kind: 'extra',
+        source: 'free_text',
+        label: 'Sách',
+        unit_label: 'bộ',
+        unit_price,
+        quantity: 1,
+      },
+    ]);
+  const adjusted = (adjustment_amount: number) =>
+    draft([tuition(id(2), { adjustment_amount, reason: 'Điều chỉnh' })]);
+
+  it('accepts the NUMERIC(20,6) maximum and rejects anything above it', () => {
+    expect(FEE_LOCK_MAX_MONEY).toBe(99_999_999_999_999);
+    const ok = (body: unknown) =>
+      feeLockSaveDraftRequestSchema.safeParse(body).success;
+    expect(ok(freeText(FEE_LOCK_MAX_MONEY))).toBe(true);
+    expect(ok(freeText(FEE_LOCK_MAX_MONEY + 1))).toBe(false);
+    expect(ok(freeText(1e14))).toBe(false);
+    expect(ok(adjusted(-FEE_LOCK_MAX_MONEY))).toBe(true);
+    expect(ok(adjusted(-FEE_LOCK_MAX_MONEY - 1))).toBe(false);
+  });
+});
+
+describe('fee-lock search escaping', () => {
+  it('escapes LIKE wildcards and the escape character', () => {
+    expect(escapeFeeLockLikeText('50%_off\\x')).toBe('50\\%\\_off\\\\x');
+    expect(toFeeLockIlikePattern('  An_%  ')).toBe('%An\\_\\%%');
+    expect(toFeeLockIlikePattern('   ')).toBeNull();
+    expect(toFeeLockIlikePattern(undefined)).toBeNull();
   });
 });
