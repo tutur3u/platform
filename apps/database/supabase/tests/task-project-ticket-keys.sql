@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
 set local role service_role;
 set local request.jwt.claims = '{"role":"service_role"}';
-select plan(43);
+select plan(50);
 insert into public.users (id, display_name) values
   ('00000000-0000-4000-8000-0000000e6001', 'Ticket Owner');
 insert into public.workspaces (id, name, creator_id, personal) values
@@ -186,5 +186,24 @@ select throws_ok($$update public.task_projects set ticket_key = 'TASK' where id 
 select lives_ok($$update public.task_projects set name = 'Platform Crew' where id = '00000000-0000-4000-8000-0000000e6031'$$,
   'edits that keep the key skip the board prefix check');
 select is((select ticket_key from public.task_projects where id = '00000000-0000-4000-8000-0000000e6031'), 'PLA2', 'the existing key stays');
+-- The reverse: a board's prefix cannot be set to a project key either.
+select throws_ok($$update public.workspace_boards set ticket_prefix = 'CORE' where id = '00000000-0000-4000-8000-0000000e6022'$$,
+  '23505', 'TASK_BOARD_TICKET_PREFIX_PROJECT_KEY', 'a board prefix cannot be edited to a project key');
+select throws_ok($$update public.workspace_boards set ticket_prefix = ' pla2 ' where id = '00000000-0000-4000-8000-0000000e6022'$$,
+  '23505', 'TASK_BOARD_TICKET_PREFIX_PROJECT_KEY', 'the board check trims and upper-cases the prefix');
+select throws_ok($$insert into public.workspace_boards (ws_id, name, creator_id, ticket_prefix)
+  values ('00000000-0000-4000-8000-0000000e6010', 'Core Board', '00000000-0000-4000-8000-0000000e6001', 'CORE')$$,
+  '23505', 'TASK_BOARD_TICKET_PREFIX_PROJECT_KEY', 'a new board cannot take a project key as its prefix');
+select lives_ok($$update public.workspace_boards set ticket_prefix = 'NEWP' where id = '00000000-0000-4000-8000-0000000e6022'$$,
+  'a free prefix is accepted');
+select lives_ok($$update public.workspace_boards set ticket_prefix = null where id = '00000000-0000-4000-8000-0000000e6022'$$,
+  'clearing a prefix is not checked');
+-- The excluded workspace is left alone: its boards may share a key.
+insert into public.task_projects (id, ws_id, name, creator_id, ticket_key) values
+  ('00000000-0000-4000-8000-0000000e6036', '42529372-c669-4833-bb32-2cab1f4ffd83', 'Legacy Keyed', '00000000-0000-4000-8000-0000000e6001', 'LEGK');
+select lives_ok($$update public.workspace_boards set ticket_prefix = 'LEGK' where id = '00000000-0000-4000-8000-0000000e6021'$$,
+  'the excluded workspace skips the board prefix check');
+select lives_ok($$update public.workspace_boards set name = 'Legacy Board Renamed' where id = '00000000-0000-4000-8000-0000000e6021'$$,
+  'edits that keep the prefix skip the check');
 select * from finish();
 rollback;

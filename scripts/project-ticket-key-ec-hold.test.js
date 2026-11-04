@@ -15,7 +15,7 @@ const MIGRATIONS_DIR = path.join(
   'apps/database/supabase/migrations'
 );
 const TICKET_KEY_MIGRATION =
-  /^\d{14}_project_ticket_(?:key|keys|key_search|key_board_prefixes|number_lock_order)\.sql$/u;
+  /^\d{14}_project_ticket_(?:key|keys|key_search|key_board_prefixes|key_board_prefix_guard|number_lock_order)\.sql$/u;
 
 // Writes whose source rows were already filtered by the held-workspace
 // exclusion in the same migration. Each entry names that filter.
@@ -62,7 +62,7 @@ const files = fs
 
 test('the project ticket key migrations are present', () => {
   assert.ok(
-    files.length >= 4,
+    files.length >= 5,
     `expected the ticket key migrations, found ${files.join(', ')}`
   );
 });
