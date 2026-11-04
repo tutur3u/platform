@@ -9,7 +9,6 @@ const f = vi.hoisted(() => ({
     name: 'Off',
   })),
 }));
-vi.mock('server-only', () => ({}));
 vi.mock('@tuturuuu/utils/workspace-ai-policy-server', () => ({
   workspaceAiAllowed: f.policy,
 }));
