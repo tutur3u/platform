@@ -3,9 +3,9 @@ import type {
   CmsBlock,
   CmsBlockPropsOf,
   CmsBlockType,
-  CmsPage,
   TipTapNode,
 } from '../schema/schema';
+import { cmsPageSchema } from '../schema/schema';
 import { Divider, Embed, Gallery, Heading } from './contract-blocks';
 import { safeUrl } from './safe-url';
 
@@ -333,6 +333,10 @@ export function renderCmsBlock(block: CmsBlock): ReactNode {
   }
 }
 
-export function CmsPageRenderer({ page }: { page: CmsPage }) {
-  return <main className="cms-page">{page.content.map(renderCmsBlock)}</main>;
+export function CmsPageRenderer({ page }: { page: unknown }) {
+  const parsed = cmsPageSchema.safeParse(page);
+  if (!parsed.success) return null;
+  return (
+    <main className="cms-page">{parsed.data.content.map(renderCmsBlock)}</main>
+  );
 }
