@@ -6,7 +6,9 @@ head with `security-review-required`. Rex owns deployment; Bea owns credentials.
 
 ## Build and verify the candidate
 
-Run on GitHub CI, or the admitted i9 code-only runner with swap below 6 GiB:
+Under rules 13-15, Rex builds locally from the exact admitted PR head. CI runs
+afterwards; do not wait for it. No i9 use, local lane installs or lane builds.
+Build commands for Rex, with production public inputs from his custody:
 
 ```sh
 bun install --frozen-lockfile --ignore-scripts
@@ -22,8 +24,10 @@ assets and config as `web-native-<full source SHA>` (`web-native.tar.gz`).
 Restore with `wave1-native-archive.py restore apps/web/cloudflare <archive>`,
 then `wave1-web-seal.mjs restored <SHA>` to recover the emitted config pointer.
 It is validation and artifact preparation, not publish.
-The M4 admits only edits, targeted unit tests and Biome. Keep the Next default
-build until the issuer works; changing the script alone would strand sign-in.
+The implementation lane admits only edits, targeted unit tests and Biome. The
+Vercel source build command explicitly selects `build:legacy`, whose bytes match
+the existing Next build script. `build` also remains Next. No live Vercel project
+settings were read or changed; Rex must confirm the project pin before cutover.
 
 ## Resolve blockers before publication
 
@@ -106,10 +110,38 @@ This code-only lane ran no hosted auth flow, production write, deploy or merge.
 ## Keep build inputs private
 
 Only the GitHub-hosted candidate build receives
-`NEXT_PUBLIC_SUPABASE_URL` from `secrets.PRODUCTION_SUPABASE_URL` and the
+`NEXT_PUBLIC_SUPABASE_URL` from `vars.PRODUCTION_SUPABASE_URL` and the
 publishable key from `vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY`. No local or
-i9 command reads those values. Public `NEXT_PUBLIC_*` and `VITE_*` values in
+implementation-lane or i9 command reads those values. Public `NEXT_PUBLIC_*` and `VITE_*` values in
 client bundles are expected. Do not print values in logs, upload env files or
 secret dumps, or pass non-public secrets into client code or artifacts.
 The build input is not exported to the artifact-sealing step. The sealed config
 retains the existing isolated staging profile.
+
+## Apply rule 12 before handing this to Rex
+
+Both emitted configurations keep `workers_dev:false` and `preview_urls:false`;
+the workerd suite expects false. Separate auth PR #7602 adds a used mount config
+with `unknownHost:'reject'`, including preflight rejection. Before serving any
+request, its binding assertion requires `CF_ACCESS_TEAM_DOMAIN` and
+`CF_ACCESS_AUD` and refuses non-production `NODE_ENV`, with no development
+fallback. Binding assertion failures return 503 without cookies. This wiring
+PR explicitly inlines `process.env.NODE_ENV` to `production` in Vite. The built
+server bundle has not been inspected locally; the startup refusal is rule 14's
+fallback. Keep both exact heads in the handoff; neither contains the other PR.
+
+Web's production `/` is a public marketing landing page. For an auth-gated app
+mount, smoke must expect anonymous `/` to redirect to `/login`, never accept
+200 as proof of auth. This candidate is behind Access, where unauthenticated
+requests receive 403; the emitted suite verifies that separately. The actual
+issuer login/session redirect flow is still unported and remains a cutover gap.
+
+Current native staging secrets: `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`.
+Current binding: `ASSETS`. No DB pooling or Hyperdrive binding is implemented;
+native data APIs do not exist. Production issuer parity also needs verified
+`TUTURUUU_APP_COORDINATION_SECRET` / `APP_COORDINATION_TOKEN_SECRET`, server
+Supabase credentials, recovery and OAuth inputs. The complete production
+inventory cannot be claimed from this candidate; Bea/Rex must reconcile names
+against the production issuer before use. Satellite rewrites, five cron
+triggers, service-worker ownership, login, refresh and tenant data access are
+known gaps. Atlas's issuer route decision remains required.
