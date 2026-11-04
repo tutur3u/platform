@@ -1,4 +1,12 @@
 export const REQUIRED_RUNTIME_NAMES = [
+  'CRON_SECRET',
+  'SEPAY_OAUTH_CLIENT_ID',
+  'SEPAY_OAUTH_CLIENT_SECRET',
+  'SEPAY_OAUTH_STATE_SECRET',
+  'SEPAY_OAUTH_TOKEN_ENCRYPTION_SECRET',
+  'ENCRYPTION_MASTER_KEY',
+  'UPSTASH_REDIS_REST_URL',
+  'UPSTASH_REDIS_REST_TOKEN',
   'TUTURUUU_APP_COORDINATION_SECRET',
   'SUPABASE_SECRET_KEY',
   'NEXT_PUBLIC_SUPABASE_URL',
@@ -6,7 +14,12 @@ export const REQUIRED_RUNTIME_NAMES = [
 ] as const;
 
 export type RuntimeEnvironment = Partial<
-  Record<(typeof REQUIRED_RUNTIME_NAMES)[number], string>
+  Record<
+    | (typeof REQUIRED_RUNTIME_NAMES)[number]
+    | 'SEPAY_WEBHOOK_API_KEY'
+    | 'SEPAY_WEBHOOK_SECRET',
+    string
+  >
 >;
 
 export function assertRuntimeEnvironment(env: RuntimeEnvironment): void {
@@ -17,6 +30,12 @@ export function assertRuntimeEnvironment(env: RuntimeEnvironment): void {
     if (typeof env[name] !== 'string' || !env[name]?.trim()) {
       throw new Error(`Missing required runtime binding: ${name}`);
     }
+  }
+  const webhookSecret = env.SEPAY_WEBHOOK_API_KEY ?? env.SEPAY_WEBHOOK_SECRET;
+  if (!webhookSecret?.trim()) {
+    throw new Error(
+      'Missing required runtime binding: SEPAY_WEBHOOK_API_KEY or SEPAY_WEBHOOK_SECRET'
+    );
   }
   if (
     env.TUTURUUU_APP_COORDINATION_SECRET ===
