@@ -170,6 +170,22 @@ workspace, checks assignment authority and seat limits, and stores roles through
 `create_workspace_email_invitation_with_roles`. Use the external-project member
 routes; ordinary workspace settings routes can reject valid CMS app sessions.
 
+### Configure renderer invalidation
+
+Set `CMS_RENDERER_SITES` on the publishing API to a hostname-keyed map with one
+verified renderer hostname per site: each value has `id` (the connected site
+ID), `workspaceId`, and `defaultLocale`. This trusted configuration matches the
+renderer-side `CMS_SITES` mapping. Inject the same `CMS_PURGE_TOKEN` on the API
+and renderer at deployment time. Never pass it through PR workflows or clients.
+
+Publication captures the previous version before the atomic publish, then sends
+one authenticated `POST /__cms/purge` for its public path, locale, and version.
+An absent old version needs no purge. The publish response includes
+`cacheInvalidation`: `purged`, `not-needed`, or `failed`. If invalidation fails,
+the publication remains committed; investigate the renderer rather than
+repeating the publish. Missing configuration for an existing page prevents
+publication before any write.
+
 ### Verify gates before enabling the first site
 
 Run these checks with disposable identities in an isolated test environment.

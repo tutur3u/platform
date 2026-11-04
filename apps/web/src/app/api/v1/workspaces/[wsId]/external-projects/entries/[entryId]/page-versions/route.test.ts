@@ -55,6 +55,7 @@ function fakeAdmin(results: Result[]) {
 function allow(admin: unknown) {
   mocks.access.mockResolvedValue({
     admin,
+    binding: { canonical_id: 'first-site' },
     normalizedWorkspaceId: WS,
     ok: true,
     user: { id: 'user-1' },
@@ -74,6 +75,11 @@ const collection = () => import('./route');
 const publish = () => import('./[versionId]/publish/route');
 
 describe('CMS page version routes', () => {
+  it('returns an error without publishing when permission lookup fails', async () => {
+    mocks.access.mockRejectedValueOnce(new Error('permission lookup failed'));
+    const response = await (await publish()).POST(post({}), context(VERSION));
+    expect(response.status).toBe(500);
+  });
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -164,6 +170,7 @@ describe('CMS page version routes', () => {
 
   it('publishes a version of this entry through the database function', async () => {
     const admin = fakeAdmin([
+      { data: [], error: null },
       { data: { id: VERSION }, error: null },
       { data: { id: VERSION, status: 'published' }, error: null },
     ]);
@@ -171,7 +178,11 @@ describe('CMS page version routes', () => {
     const response = await (await publish()).POST(post({}), context(VERSION));
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ id: VERSION, status: 'published' });
+    expect(await response.json()).toEqual({
+      id: VERSION,
+      status: 'published',
+      cacheInvalidation: 'not-needed',
+    });
     expect(mocks.access).toHaveBeenCalledWith(
       expect.objectContaining({ mode: 'publish' })
     );
@@ -183,16 +194,26 @@ describe('CMS page version routes', () => {
   });
 
   it('does not publish a version from another entry or workspace', async () => {
-    const admin = fakeAdmin([{ data: null, error: null }]);
+    const admin = fakeAdmin([
+      { data: [], error: null },
+      { data: null, error: null },
+    ]);
     allow(admin.client);
     const response = await (await publish()).POST(post({}), context(VERSION));
     expect(response.status).toBe(404);
-    expect(admin.calls.some(([method]) => method === 'rpc')).toBe(false);
+    expect(
+      admin.calls.some(
+        ([method, name]) =>
+          method === 'rpc' &&
+          name === 'publish_workspace_external_project_page_version'
+      )
+    ).toBe(false);
   });
 
   it('returns 409 when the workspace has no enabled CMS binding', async () => {
     allow(
       fakeAdmin([
+        { data: [], error: null },
         { data: { id: VERSION }, error: null },
         { data: null, error: { code: '55000', message: 'unbound' } },
       ]).client
@@ -229,6 +250,7 @@ describe('CMS page version routes', () => {
   it('maps a database permission denial to 403', async () => {
     allow(
       fakeAdmin([
+        { data: [], error: null },
         { data: { id: VERSION }, error: null },
         { data: null, error: { code: '42501', message: 'denied' } },
       ]).client
