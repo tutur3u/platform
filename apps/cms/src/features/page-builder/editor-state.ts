@@ -2,6 +2,7 @@ import {
   type CmsBlock,
   type CmsBlockType,
   type CmsPage,
+  cmsLeafBlockSchema,
   cmsPageSchema,
   createCmsBlock,
 } from '@tuturuuu/cms-blocks/schema';
@@ -46,6 +47,11 @@ type Zones = { blocks: CmsBlock[]; zone: ZoneId }[];
 export function listZones(page: CmsPage): Zones {
   const zones: Zones = [{ blocks: page.content, zone: 'root' }];
   for (const block of page.content) {
+    if (block.type === 'Section')
+      zones.push({
+        blocks: block.props.children,
+        zone: `${block.props.id}:children`,
+      });
     if (block.type === 'TwoColumn') {
       zones.push({ blocks: block.props.left, zone: `${block.props.id}:left` });
       zones.push({
@@ -73,19 +79,27 @@ function editZone(
 ): CmsPage {
   if (zone === 'root') return { ...page, content: edit([...page.content]) };
   const [parentId, field] = zone.split(':') as [string, string];
-  return {
-    ...page,
-    content: page.content.map((block) =>
-      block.props.id === parentId &&
-      block.type === 'TwoColumn' &&
-      (field === 'left' || field === 'right')
-        ? {
-            ...block,
-            props: { ...block.props, [field]: edit([...block.props[field]]) },
-          }
-        : block
-    ),
-  };
+  const content = page.content.map((block) => {
+    if (block.props.id !== parentId) return block;
+    if (block.type === 'TwoColumn' && (field === 'left' || field === 'right')) {
+      return {
+        ...block,
+        props: { ...block.props, [field]: edit([...block.props[field]]) },
+      };
+    }
+    if (block.type === 'Section' && field === 'children') {
+      const children = cmsLeafBlockSchema
+        .array()
+        .safeParse(edit([...block.props.children]));
+      return children.success
+        ? { ...block, props: { ...block.props, children: children.data } }
+        : block;
+    }
+    return block;
+  });
+  return content.every((block, index) => block === page.content[index])
+    ? page
+    : { ...page, content };
 }
 
 function insertAt(page: CmsPage, zone: ZoneId, index: number, block: CmsBlock) {
@@ -106,6 +120,10 @@ function removeById(page: CmsPage, id: string) {
 function cloneWithId(block: CmsBlock, id: string): CmsBlock {
   const copy = structuredClone(block);
   copy.props.id = id;
+  if (copy.type === 'Section') {
+    for (const child of copy.props.children)
+      child.props.id = `${id}-${child.props.id}`;
+  }
   if (copy.type === 'TwoColumn') {
     for (const child of [...copy.props.left, ...copy.props.right])
       child.props.id = `${id}-${child.props.id}`;
@@ -117,6 +135,8 @@ function applyEdit(state: EditorState, action: EditorAction): CmsPage | null {
   const { page } = state;
   switch (action.type) {
     case 'insert':
+      if (!listZones(page).some(({ zone }) => zone === action.zone))
+        return null;
       return insertAt(
         page,
         action.zone,
@@ -127,6 +147,13 @@ function applyEdit(state: EditorState, action: EditorAction): CmsPage | null {
       const found = findBlock(page, action.id);
       // A layout block cannot be dropped into one of its own zones.
       if (!found || action.zone.startsWith(`${action.id}:`)) return null;
+      if (!listZones(page).some(({ zone }) => zone === action.zone))
+        return null;
+      if (
+        (found.block.type === 'TwoColumn' || found.block.type === 'Section') &&
+        action.zone !== 'root'
+      )
+        return null;
       const sameZone = found.zone === action.zone;
       const index =
         sameZone && found.index < action.index

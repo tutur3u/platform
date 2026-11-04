@@ -2082,6 +2082,7 @@
         "@tuturuuu/apis": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/cloudflare": "workspace:*",
+        "@tuturuuu/cms-blocks": "workspace:*",
         "@tuturuuu/devbox": "workspace:*",
         "@tuturuuu/education-core": "workspace:*",
         "@tuturuuu/email-service": "workspace:*",
