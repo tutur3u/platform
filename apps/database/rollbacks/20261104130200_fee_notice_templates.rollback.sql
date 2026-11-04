@@ -1,8 +1,5 @@
--- Manual rollback only: removes fee_notice_templates and its save function.
--- Deploy app code with ENABLE_FEE_LOCK off first; the built-in default
--- template keeps working without the table. Refuses while saved templates
--- exist, because they are workspace-authored text: export and delete first.
--- Its template_saved events stay in fee_lock_events.
+-- Manual rollback only (app first: ENABLE_FEE_LOCK off; the built-in default
+-- template needs no table). Refuses while workspace-authored templates exist.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '30s';
