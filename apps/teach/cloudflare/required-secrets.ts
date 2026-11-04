@@ -15,7 +15,10 @@ export function assertRequiredSecrets(env: object) {
     const value = bindings[name];
     return typeof value !== 'string' || value.trim() === '';
   });
-  if ('ABUSE_GUARD_BACKEND' in env && env.ABUSE_GUARD_BACKEND !== undefined && env.ABUSE_GUARD_BACKEND !== 'upstash') {
+  if (
+    !('ABUSE_GUARD_BACKEND' in env) ||
+    env.ABUSE_GUARD_BACKEND !== 'upstash'
+  ) {
     throw new Error('Worker production requires ABUSE_GUARD_BACKEND=upstash');
   }
   if (missing.length > 0) {
