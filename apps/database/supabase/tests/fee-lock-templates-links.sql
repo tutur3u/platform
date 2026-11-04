@@ -5,7 +5,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(27);
+select plan(30);
 
 create function pg_temp.fid(n int) returns uuid language sql immutable as
   $$ select ('00000000-0000-4000-8000-0000000fe' || lpad(n::text, 3, '0'))::uuid $$;
@@ -108,25 +108,42 @@ select lives_ok($$insert into public.fee_lock_invoice_links(ws_id, invoice_id, f
 select throws_ok($$insert into public.fee_lock_invoice_links(ws_id, invoice_id, fee_lock_id, fee_lock_revision,
   suggested_total, charged_total) values (pg_temp.fid(910), pg_temp.fid(951), pg_temp.fid(931), 1, 0, 0)$$,
   '23505', null, 'an invoice links to a fee lock once');
+-- Same-workspace guards, one per reference.
 select throws_ok($$insert into public.fee_lock_invoice_links(ws_id, invoice_id, fee_lock_id, fee_lock_revision,
   suggested_total, charged_total) values (pg_temp.fid(910), pg_temp.fid(952), pg_temp.fid(931), 1, 0, 0)$$,
-  '23503', 'invoice does not belong to this workspace', 'an invoice from another workspace is rejected');
+  '23514', 'invoice_id does not belong to ws_id', 'an invoice from another workspace is rejected');
 select throws_ok($$insert into public.fee_lock_invoice_links(ws_id, invoice_id, fee_lock_id, fee_lock_revision,
   suggested_total, charged_total) values (pg_temp.fid(910), pg_temp.fid(951), pg_temp.fid(932), 1, 0, 0)$$,
-  '23503', null, 'a fee lock from another workspace is rejected');
+  '23514', 'fee_lock_id does not belong to ws_id', 'a fee lock from another workspace is rejected');
+select throws_ok($$update public.fee_lock_invoice_links set invoice_id = pg_temp.fid(952)
+  where invoice_id = pg_temp.fid(951)$$,
+  '23514', 'invoice_id does not belong to ws_id', 'a link cannot be moved to another workspace''s invoice');
 select throws_ok($$insert into public.fee_lock_invoice_links(ws_id, invoice_id, fee_lock_id, fee_lock_revision,
-  suggested_total, charged_total) values (pg_temp.fid(910), pg_temp.fid(951), null, 0, 0, 0)$$,
+  suggested_total, charged_total) values (pg_temp.fid(910), pg_temp.fid(951), pg_temp.fid(931), 0, 0, 0)$$,
   '23514', null, 'the linked revision is at least 1');
 
--- Deletes: a deleted fee lock keeps the link; a deleted invoice removes it.
+-- Deletes never reach financial rows: a linked invoice or fee lock stays.
 reset role;
-delete from public.fee_locks where id = pg_temp.fid(931);
-select is((select count(*)::int from public.fee_lock_invoice_links where invoice_id = pg_temp.fid(951)
-  and fee_lock_id is null and ws_id = pg_temp.fid(910) and charged_total = 1100000),
-  1, 'deleting the fee lock clears fee_lock_id and keeps the link');
-delete from public.finance_invoices where id = pg_temp.fid(951);
-select is((select count(*)::int from public.fee_lock_invoice_links where invoice_id = pg_temp.fid(951)),
-  0, 'deleting the invoice removes its links');
+select throws_ok($$delete from public.finance_invoices where id = pg_temp.fid(951)$$,
+  '23503', null, 'a linked invoice cannot be deleted');
+select throws_ok($$delete from public.fee_locks where id = pg_temp.fid(931)$$,
+  '23503', null, 'a linked fee lock cannot be deleted');
+
+-- Rollback guards (copied from apps/database/rollbacks/2026110406040[05]_*; keep in sync).
+select throws_ok($q$do $g$ begin
+  if exists (select 1 from public.fee_lock_invoice_links) then
+    raise exception 'fee lock invoice links exist; export and delete them first';
+  end if;
+  lock table public.fee_lock_invoice_links in access exclusive mode;
+end $g$$q$, 'P0001', 'fee lock invoice links exist; export and delete them first',
+  'the links rollback refuses while links exist');
+select throws_ok($q$do $g$ begin
+  if exists (select 1 from public.fee_notice_templates) then
+    raise exception 'fee notice templates exist; export and delete them first';
+  end if;
+  lock table public.fee_notice_templates in access exclusive mode;
+end $g$$q$, 'P0001', 'fee notice templates exist; export and delete them first',
+  'the templates rollback refuses while templates exist');
 
 select * from finish();
 rollback;

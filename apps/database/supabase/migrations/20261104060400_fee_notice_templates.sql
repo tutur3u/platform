@@ -10,16 +10,18 @@ SET LOCAL statement_timeout = '60s';
 
 CREATE TABLE public.fee_notice_templates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  -- Workspace-authored text, not a financial record, so it goes with the workspace.
   ws_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
   version INTEGER NOT NULL CHECK (version >= 1),
   is_active BOOLEAN NOT NULL DEFAULT false,
-  body TEXT NOT NULL CHECK (char_length(trim(body)) BETWEEN 1 AND 2000),
+  body TEXT NOT NULL CHECK (char_length(body) <= 2000 AND char_length(trim(body)) >= 1),
   item_format TEXT NOT NULL CHECK (char_length(item_format) <= 200),
   item_separator TEXT NOT NULL CHECK (char_length(item_separator) <= 20),
   payment_line TEXT NOT NULL DEFAULT '' CHECK (char_length(payment_line) <= 300),
   notice_grouping TEXT NOT NULL DEFAULT 'combined'
     CHECK (notice_grouping IN ('combined', 'per_class')),
   locale TEXT NOT NULL DEFAULT 'vi' CHECK (locale IN ('vi', 'en')),
+  -- A platform user (users has no ws_id), so no same-workspace guard applies.
   created_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   CONSTRAINT fee_notice_templates_ws_version_key UNIQUE (ws_id, version)
