@@ -9,6 +9,7 @@ SET LOCAL statement_timeout = '60s';
 
 DROP FUNCTION public.get_published_workspace_external_project_page_version(uuid, uuid);
 DROP FUNCTION public.publish_workspace_external_project_page_version(uuid, uuid, uuid);
+DROP TYPE public.workspace_external_project_page_publication;
 
 DROP TRIGGER workspace_external_project_entries_published_page_version_guard
   ON public.workspace_external_project_entries;

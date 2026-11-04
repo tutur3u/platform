@@ -46,8 +46,17 @@ ALTER TABLE public.workspace_external_project_entries
     REFERENCES public.workspace_external_project_page_versions(id, entry_id)
     ON DELETE SET NULL (published_page_version_id);
 
+CREATE INDEX workspace_external_project_entries_published_page_version_idx
+  ON public.workspace_external_project_entries (published_page_version_id);
+
 ALTER TABLE public.workspace_external_project_page_versions
   ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY account_required_mfa
+ON public.workspace_external_project_page_versions
+AS RESTRICTIVE FOR ALL TO authenticated
+USING ((SELECT public.account_required_mfa_satisfied()))
+WITH CHECK ((SELECT public.account_required_mfa_satisfied()));
 
 CREATE POLICY "Workspace external project editors can read page versions"
 ON public.workspace_external_project_page_versions
@@ -82,6 +91,9 @@ BEGIN
   FROM public.workspace_external_project_page_versions v
   WHERE v.ws_id = NEW.ws_id AND v.entry_id = NEW.entry_id;
 
+  IF current_user IN ('anon', 'authenticated') THEN
+    NEW.created_by := auth.uid();
+  END IF;
   NEW.status := 'draft';
   NEW.published_at := NULL;
   NEW.published_by := NULL;
@@ -108,7 +120,10 @@ LANGUAGE plpgsql
 SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
-  IF current_user IN ('anon', 'authenticated', 'service_role')
+  IF current_user <> pg_get_userbyid((
+      SELECT proowner FROM pg_proc
+      WHERE oid = 'public.publish_workspace_external_project_page_version(uuid,uuid,uuid)'::regprocedure
+    ))
     AND (
       (TG_OP = 'INSERT' AND NEW.published_page_version_id IS NOT NULL)
       OR (TG_OP = 'UPDATE' AND OLD.published_page_version_id
@@ -135,18 +150,35 @@ CREATE TRIGGER workspace_external_project_entries_published_page_version_guard
 -- pointer, all or nothing. Client callers act
 -- only as themselves (the helper is caller-bound); the service role passes
 -- the acting user. Republishing an older version keeps its first publish time.
+CREATE TYPE public.workspace_external_project_page_publication AS (
+  id uuid,
+  ws_id uuid,
+  entry_id uuid,
+  version_number integer,
+  schema_version integer,
+  data jsonb,
+  status text,
+  note text,
+  created_by uuid,
+  created_at timestamptz,
+  published_by uuid,
+  published_at timestamptz,
+  replaced_page_version_id uuid
+);
+
 CREATE FUNCTION public.publish_workspace_external_project_page_version(
   p_ws_id uuid,
   p_version_id uuid,
   p_actor_id uuid DEFAULT auth.uid()
 )
-RETURNS public.workspace_external_project_page_versions
+RETURNS public.workspace_external_project_page_publication
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE
   v_canonical_id text;
+  v_previous_id uuid;
   v_version public.workspace_external_project_page_versions;
 BEGIN
   IF public.can_publish_workspace_external_projects(p_ws_id, p_actor_id)
@@ -172,6 +204,11 @@ BEGIN
   IF NOT FOUND THEN
     RAISE EXCEPTION 'page version not found' USING ERRCODE = 'P0002';
   END IF;
+
+  SELECT e.published_page_version_id INTO v_previous_id
+  FROM public.workspace_external_project_entries e
+  WHERE e.id = v_version.entry_id AND e.ws_id = p_ws_id
+  FOR UPDATE;
 
   -- The audit row comes first; if it fails, nothing below runs and the whole
   -- publish rolls back (fail closed).
@@ -200,7 +237,7 @@ BEGIN
       updated_by = coalesce(p_actor_id, e.updated_by)
   WHERE e.id = v_version.entry_id AND e.ws_id = p_ws_id;
 
-  RETURN v_version;
+  RETURN ROW(v_version.id, v_version.ws_id, v_version.entry_id, v_version.version_number, v_version.schema_version, v_version.data, v_version.status, v_version.note, v_version.created_by, v_version.created_at, v_version.published_by, v_version.published_at, v_previous_id)::public.workspace_external_project_page_publication;
 END;
 $$;
 
