@@ -21,7 +21,8 @@ function hasWorkspaceExternalProjectPermission(
 
   return (
     permissions.containsPermission('manage_external_projects') ||
-    permissions.containsPermission('publish_external_projects')
+    permissions.containsPermission('publish_external_projects') ||
+    permissions.containsPermission('edit_external_projects')
   );
 }
 

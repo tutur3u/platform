@@ -100,15 +100,14 @@ workspace-scoped under `/{wsId}`; the root workspace uses the `internal` slug
 ## Onboard editors for the first site
 
 Use this runbook after the site-builder permission and publish changes have
-passed security review. The existing CMS permissions do not yet support an
-editor who can edit without publishing. Keep editor invitations on hold until
+passed security review. Keep editor invitations on hold until
 the acceptance checks below pass on the deployed revision.
 
 ### Verify the permission contract
 
-The data/API lane must provide a separate edit permission before onboarding:
+Verify the reviewed data/API contract before onboarding:
 
-- Add `edit_external_projects` to the permission enum and generated types.
+- Confirm `edit_external_projects` exists in the permission enum and generated types.
 - Map **editor** to edit and preview; map **publisher** to edit, preview, and
   `publish_external_projects`. Role names are labels; authorize by effective
   permissions, workspace membership, and the enabled site connection.

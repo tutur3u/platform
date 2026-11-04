@@ -22,7 +22,7 @@ const MODES: WorkspaceExternalProjectMode[] = [
 describe('external project access modes', () => {
   it('applies the CMS role matrix and keeps legacy modes unchanged', () => {
     const matrix: Record<string, WorkspaceExternalProjectMode[]> = {
-      edit_external_projects: ['edit'],
+      edit_external_projects: ['read', 'edit'],
       publish_external_projects: ['read', 'edit', 'publish'],
       manage_external_projects: ['read', 'edit', 'publish', 'manage'],
       none: [],
