@@ -28,7 +28,7 @@ jobs:
       # Lockfile-only resolution records the new workspace without installing on M4.
       - run: bun install --frozen-lockfile --ignore-scripts
       - name: Shared render and delivery checks
-        run: bun test packages/cms-blocks/src/render packages/sdk/src/cms-site.test.ts apps/cms-renderer/src/worker.test.ts apps/cms-renderer/src/live-delivery.test.ts
+        run: bun test packages/cms-blocks/src/render packages/sdk/src/cms-site.test.ts apps/cms-renderer/src
       - name: Build Worker and generated routes
         working-directory: apps/cms-renderer
         run: bun run build

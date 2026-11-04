@@ -5,11 +5,12 @@ import { cacheRequest, type Environment, serve } from './worker';
 
 const environment: Environment = {
   CMS_SITES: JSON.stringify({ 'first.invalid': { id: 'site-one', workspaceId: '00000000-0000-4000-8000-000000000001', defaultLocale: 'vi' } }),
+  CMS_PURGE_RATE_LIMITER: { limit: async () => ({ success: true }) },
   CMS_DELIVERY_ORIGIN: 'https://delivery.invalid', CMS_PURGE_TOKENS: JSON.stringify({ 'site-one': 'a'.repeat(64), 'site-two': 'b'.repeat(64) }),
 };
 function harness() {
   const items = new Map<string, Response>();
-  let version = 'version-one';
+  let version = '11111111-1111-4111-8111-111111111111';
   let renders = 0;
   const cache = {
     match: async (request: RequestInfo | URL) => items.get(new Request(request).url)?.clone(),
@@ -25,7 +26,7 @@ function harness() {
     run: (path: string, init?: RequestInit, env = environment) => serve(new Request(`https://first.invalid${path}`, init), env, {
       cache, fetch: delivery, render: async (_request, page) => { renders++; return new Response(`<html>${page.title}</html>`, { headers: { 'Content-Type': 'text/html' } }); },
     }),
-    nextVersion: () => { version = 'version-two'; },
+    nextVersion: () => { version = '22222222-2222-4222-8222-222222222222'; },
     renders: () => renders,
   };
 }
@@ -51,7 +52,7 @@ describe('tenant published renderer', () => {
   });
   it('requires purge authorization and invalidates only the specified version', async () => {
     const h = harness(); await h.run('/');
-    const body = JSON.stringify({ path: '/', locale: 'vi', version: 'version-one' });
+    const body = JSON.stringify({ path: '/', locale: 'vi', version: '11111111-1111-4111-8111-111111111111' });
     expect((await h.run('/__cms/purge', { method: 'POST', body })).status).toBe(401);
     expect((await h.run('/__cms/purge', { method: 'POST', body, headers: { authorization: `Bearer ${'a'.repeat(64)}` } })).status).toBe(204);
     await h.run('/'); expect(h.renders()).toBe(2);
@@ -59,7 +60,7 @@ describe('tenant published renderer', () => {
   it('binds purge authorization to the host-resolved site, never a body site id', async () => {
     const h = harness();
     const env = { ...environment, CMS_SITES: JSON.stringify({ 'first.invalid': { id: 'site-two', workspaceId: '00000000-0000-4000-8000-000000000002', defaultLocale: 'vi' } }) };
-    const body = JSON.stringify({ path: '/', locale: 'vi', version: 'version-one', siteId: 'site-one' });
+    const body = JSON.stringify({ path: '/', locale: 'vi', version: '11111111-1111-4111-8111-111111111111', siteId: 'site-one' });
     const tokenA = `Bearer ${'a'.repeat(64)}`;
     const tokenB = `Bearer ${'b'.repeat(64)}`;
     expect((await h.run('/__cms/purge', { method: 'POST', body, headers: { authorization: tokenA } }, env)).status).toBe(401);
