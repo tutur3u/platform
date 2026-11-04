@@ -191,7 +191,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24.22.0
-      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+      - run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - name: Tasks native artifact helper regressions
         run: python3 scripts/ci/tasks-native-artifact.test.py
       - name: Build application and shared dependencies without deployment
@@ -200,7 +200,7 @@ jobs:
         with:
           command: bun turbo:local run build --concurrency=2 --filter=@tuturuuu/tasks
           token: ${{ github.actor != 'dependabot[bot]' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && secrets.TURBO_TOKEN || '' }}
-          team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}
+          team: ${{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || (github.event_name != 'pull_request' && secrets.TURBO_TEAM)) || '' }}
       - name: Build the native Tasks candidate
         run: bun run --cwd apps/tasks build:cloudflare
       - name: Qualify the emitted Tasks Worker config

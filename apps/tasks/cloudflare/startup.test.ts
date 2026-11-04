@@ -1,32 +1,42 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { REQUIRED_SECRETS, startupRefusal } from './startup';
 
-const production = { TUTURUUU_REQUIRE_SECRETS: '1' };
 const secrets = Object.fromEntries(
-  REQUIRED_SECRETS.map((name) => [name, 'set'])
+  REQUIRED_SECRETS.map((name) => [name, 'fixture'])
 );
 
 describe('tasks Worker startup', () => {
-  it('serves fixture configs without the production flag', () => {
-    expect(startupRefusal({})).toBeNull();
+  beforeEach(() => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
-  it('refuses production when a required secret is missing', () => {
-    expect(startupRefusal(production)?.status).toBe(503);
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.restoreAllMocks();
   });
 
-  it('serves production when every required secret is set', () => {
-    // Vitest runs with NODE_ENV=test; the build inlines production.
-    const previous = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
-    try {
-      expect(startupRefusal({ ...production, ...secrets })).toBeNull();
-    } finally {
-      process.env.NODE_ENV = previous;
+  it.each([undefined, '', '0', '1'])(
+    'refuses missing secrets with flag %s',
+    (flag) => {
+      const response = startupRefusal({ TUTURUUU_REQUIRE_SECRETS: flag });
+      expect(response?.status).toBe(503);
+      expect(response?.headers.get('Cache-Control')).toBe('no-store');
+    }
+  );
+
+  it.each(REQUIRED_SECRETS)('requires %s without a runtime flag', (name) => {
+    for (const value of [undefined, '', ' \t\n']) {
+      expect(startupRefusal({ ...secrets, [name]: value })?.status).toBe(503);
     }
   });
 
-  it('refuses a non-production build under the production flag', () => {
-    expect(startupRefusal({ ...production, ...secrets })?.status).toBe(503);
+  it('serves when every required secret is set without a runtime flag', () => {
+    expect(startupRefusal(secrets)).toBeNull();
+  });
+
+  it('refuses a non-production build even with all secrets set', () => {
+    vi.stubEnv('NODE_ENV', 'test');
+    expect(startupRefusal(secrets)?.status).toBe(503);
   });
 });

@@ -124,6 +124,15 @@ test('emitted storefront Worker serves its root, mount and unknown paths', {
     envFiles: [staged.envFile],
     sendMetrics: false,
     bindings: {
+      INVENTORY_APP_URL: {
+        type: 'plain_text',
+        value: 'https://inventory.invalid',
+      },
+      SUPABASE_SECRET_KEY: { type: 'plain_text', value: 'fixture' },
+      TUTURUUU_APP_COORDINATION_SECRET: {
+        type: 'plain_text',
+        value: 'fixture',
+      },
       INTERNAL_WEB_API_ORIGIN: {
         type: 'plain_text',
         value: 'https://central.invalid',
