@@ -2,8 +2,16 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
+import {
+  cp,
+  mkdir,
+  mkdtemp,
+  readFile,
+  realpath,
+  rm,
+  writeFile,
+} from 'node:fs/promises';
 import { request as httpRequest } from 'node:http';
-import { cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
@@ -21,34 +29,70 @@ import { effectiveWorkerConfig } from '../../../scripts/start-bridge-codemod/wor
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
-const WORKER = "tuturuuu-rewise-vite-staging";
-const PUBLIC_FILES = ["android-chrome-192x192.png", "android-chrome-512x512.png", "apple-touch-icon.png", "favicon-16x16.png", "favicon-32x32.png", "favicon.ico", "media/github-mark.png", "media/google-logo.png", "media/logos/dark-rounded.png", "media/logos/dark.png", "media/logos/light-rounded.png", "media/logos/light.png", "media/logos/mira-dark.png", "media/logos/mira-light.png", "media/logos/og-image.png", "media/logos/transparent.png", "robots.txt", "site.webmanifest"];
+const WORKER = 'tuturuuu-rewise-vite-staging';
+const PUBLIC_FILES = [
+  'android-chrome-192x192.png',
+  'android-chrome-512x512.png',
+  'apple-touch-icon.png',
+  'favicon-16x16.png',
+  'favicon-32x32.png',
+  'favicon.ico',
+  'media/github-mark.png',
+  'media/google-logo.png',
+  'media/logos/dark-rounded.png',
+  'media/logos/dark.png',
+  'media/logos/light-rounded.png',
+  'media/logos/light.png',
+  'media/logos/mira-dark.png',
+  'media/logos/mira-light.png',
+  'media/logos/og-image.png',
+  'media/logos/transparent.png',
+  'robots.txt',
+  'site.webmanifest',
+];
 // From start-bridge.routes.json `runtime`: a status, or a redirect prefix.
-const EXPECTED = {"/":200};
+const EXPECTED = { '/': { redirect: '/login' } };
 // Response-policy probes (start-bridge.routes.json `runtimeProbes`).
-const POLICY_PROBES = [{"kind":"page","path":"/"},{"kind":"api","path":"/api/build-info"},{"kind":"notFound","path":"/__native-smoke-missing__"}];
+const POLICY_PROBES = [
+  { kind: 'page', path: '/' },
+  { kind: 'api', path: '/api/build-info' },
+  { kind: 'notFound', path: '/__native-smoke-missing__' },
+];
 // The Worker's mounts: the generated defaults plus the app-owned
 // start-bridge.config.ts overrides, exactly as cloudflare/worker.ts spreads
 // them (loaded with Node's type stripping).
-const DEFAULT_MOUNTS = {"rootHosts":["rewise.tuturuuu.com"],"mountHosts":["tuturuuu.com"],"basePath":"/rewise"};
+const DEFAULT_MOUNTS = {
+  rootHosts: ['rewise.tuturuuu.com'],
+  mountHosts: ['tuturuuu.com'],
+  basePath: '/rewise',
+};
 const { default: appConfig } = await import(
   pathToFileURL(join(app, 'start-bridge.config.ts')).href
 );
 const MOUNTS = { ...DEFAULT_MOUNTS, ...appConfig.mounts };
 // The Worker settings the codemod emitted from start-bridge.config.ts `worker`.
-const WORKER_CONFIG = {"workersDev":false,"compatibilityFlags":["nodejs_compat","global_fetch_strictly_public"]};
+const WORKER_CONFIG = {
+  workersDev: false,
+  compatibilityFlags: ['nodejs_compat', 'global_fetch_strictly_public'],
+};
 const APEX = 'tuturuuu.com';
-const MOUNTED = (MOUNTS.mountHosts ?? []).some((host) => host.toLowerCase() === APEX);
-const BASE = (MOUNTS.basePath ?? "/rewise").replace(/\/+$/u, '');
+const MOUNTED = (MOUNTS.mountHosts ?? []).some(
+  (host) => host.toLowerCase() === APEX
+);
+const BASE = (MOUNTS.basePath ?? '/rewise').replace(/\/+$/u, '');
 
 async function sha256(path) {
-  return createHash('sha256').update(await readFile(path)).digest('hex');
+  return createHash('sha256')
+    .update(await readFile(path))
+    .digest('hex');
 }
 
 // Run a disposable copy so runtime state can never touch the sealed output.
 async function stageArtifact() {
   const { configPath, config } = readNativeRuntimeConfig(app);
-  const scratch = await realpath(await mkdtemp(join(tmpdir(), 'rewise-native-')));
+  const scratch = await realpath(
+    await mkdtemp(join(tmpdir(), 'rewise-native-'))
+  );
   await cp(join(app, 'dist'), join(scratch, 'dist'), {
     recursive: true,
     verbatimSymlinks: true,
@@ -87,7 +131,10 @@ test('emitted rewise Worker serves its root, mount and unknown paths', {
     WORKER_CONFIG,
     'start-bridge.config.ts changed since the codemod ran: re-run it'
   );
-  assert.deepEqual(config.compatibility_flags, WORKER_CONFIG.compatibilityFlags);
+  assert.deepEqual(
+    config.compatibility_flags,
+    WORKER_CONFIG.compatibilityFlags
+  );
   assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
   assert.equal(config.vars?.TUTURUUU_NOINDEX, '1');
   for (const name of PUBLIC_FILES)
@@ -105,15 +152,20 @@ test('emitted rewise Worker serves its root, mount and unknown paths', {
     envFiles: [staged.envFile],
     sendMetrics: false,
     bindings: {
-      ...Object.fromEntries(Object.entries({
-        NEXT_PUBLIC_SUPABASE_URL: 'https://fixture.supabase.invalid',
-        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_fixture',
-        UPSTASH_REDIS_REST_URL: 'https://fixture.upstash.invalid',
-        UPSTASH_REDIS_REST_TOKEN: 'synthetic-smoke-only',
-        SUPABASE_SECRET_KEY: 'synthetic-smoke-only',
-        TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-smoke-only',
-      }).map(([name, value]) => [name, { type: 'plain_text', value }])),
-      INTERNAL_WEB_API_ORIGIN: { type: 'plain_text', value: 'https://central.invalid' },
+      ...Object.fromEntries(
+        Object.entries({
+          NEXT_PUBLIC_SUPABASE_URL: 'https://fixture.supabase.invalid',
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_fixture',
+          UPSTASH_REDIS_REST_URL: 'https://fixture.upstash.invalid',
+          UPSTASH_REDIS_REST_TOKEN: 'synthetic-smoke-only',
+          SUPABASE_SECRET_KEY: 'synthetic-smoke-only',
+          TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-smoke-only',
+        }).map(([name, value]) => [name, { type: 'plain_text', value }])
+      ),
+      INTERNAL_WEB_API_ORIGIN: {
+        type: 'plain_text',
+        value: 'https://central.invalid',
+      },
     },
     build: { bundle: false, processEntrypoint: false },
     dev: {
@@ -181,23 +233,26 @@ test('emitted rewise Worker serves its root, mount and unknown paths', {
     );
     assert.equal(response.status, 200, `/api/build-info: ${response.status}`);
     const info = JSON.parse(response.body);
-    assert.equal(info.appName, "rewise");
+    assert.equal(info.appName, 'rewise');
     assert.equal(info.commitHash, source);
   });
 
-  await t.test('public pages answer as start-bridge.routes.json expects', async () => {
-    assert.deepEqual(runtimeExpectationProblems(EXPECTED), []);
-    for (const [path, expected] of Object.entries(EXPECTED)) {
-      const response = await get(path);
-      const failure = runtimeOutcomeFailure({
-        path,
-        expected,
-        ...response,
-        origin: `http://${ROOT_HOST}`,
-      });
-      assert.equal(failure, null, failure ?? '');
+  await t.test(
+    'public pages answer as start-bridge.routes.json expects',
+    async () => {
+      assert.deepEqual(runtimeExpectationProblems(EXPECTED), []);
+      for (const [path, expected] of Object.entries(EXPECTED)) {
+        const response = await get(path);
+        const failure = runtimeOutcomeFailure({
+          path,
+          expected,
+          ...response,
+          origin: `http://${ROOT_HOST}`,
+        });
+        assert.equal(failure, null, failure ?? '');
+      }
     }
-  });
+  );
 
   await t.test('every configured root host serves the root page', async () => {
     for (const host of MOUNTS.rootHosts) {
@@ -212,40 +267,56 @@ test('emitted rewise Worker serves its root, mount and unknown paths', {
   });
 
   if (MOUNTED) {
-    await t.test('the apex mount serves every declared page alike', async () => {
-      for (const [path, expected] of Object.entries(EXPECTED)) {
-        const response = await call(mountedPath(BASE, path), APEX);
-        const failure = runtimeOutcomeFailure({
-          path,
-          expected,
-          ...response,
-          origin: `http://${APEX}`,
-          base: BASE,
-        });
-        assert.equal(failure, null, failure ?? '');
+    await t.test(
+      'the apex mount serves every declared page alike',
+      async () => {
+        for (const [path, expected] of Object.entries(EXPECTED)) {
+          const response = await call(mountedPath(BASE, path), APEX);
+          const failure = runtimeOutcomeFailure({
+            path,
+            expected,
+            ...response,
+            origin: `http://${APEX}`,
+            base: BASE,
+          });
+          assert.equal(failure, null, failure ?? '');
+        }
       }
-    });
+    );
   } else {
-    await t.test('a root-only app rejects the apex before any app code runs', async () => {
-      assert.equal(
-        MOUNTS.unknownHost,
-        'reject',
-        'a root-only app (no tuturuuu.com mount) must set mounts.unknownHost to "reject"'
-      );
-      const probes = [
-        ...new Set(Object.keys(EXPECTED).map((path) => mountedPath(BASE, path))),
-        '/',
-      ].map((path) => [APEX, path]);
-      probes.push(['unknown-host.invalid', '/']);
-      for (const [host, path] of probes) {
-        const before = egress.length;
-        const response = await call(path, host);
-        // The bridge's own rejection, not an app page or an app 404.
-        assert.equal(response.status, 404, `${host}${path}: ${response.status}`);
-        assert.equal(response.body, 'Not Found', `${host}${path}: app content`);
-        assert.equal(egress.length, before, `${host}${path}: egress`);
+    await t.test(
+      'a root-only app rejects the apex before any app code runs',
+      async () => {
+        assert.equal(
+          MOUNTS.unknownHost,
+          'reject',
+          'a root-only app (no tuturuuu.com mount) must set mounts.unknownHost to "reject"'
+        );
+        const probes = [
+          ...new Set(
+            Object.keys(EXPECTED).map((path) => mountedPath(BASE, path))
+          ),
+          '/',
+        ].map((path) => [APEX, path]);
+        probes.push(['unknown-host.invalid', '/']);
+        for (const [host, path] of probes) {
+          const before = egress.length;
+          const response = await call(path, host);
+          // The bridge's own rejection, not an app page or an app 404.
+          assert.equal(
+            response.status,
+            404,
+            `${host}${path}: ${response.status}`
+          );
+          assert.equal(
+            response.body,
+            'Not Found',
+            `${host}${path}: app content`
+          );
+          assert.equal(egress.length, before, `${host}${path}: egress`);
+        }
       }
-    });
+    );
   }
 
   await t.test('an unknown path is not a server error', async () => {
@@ -253,46 +324,83 @@ test('emitted rewise Worker serves its root, mount and unknown paths', {
     assert.ok(response.status < 500, String(response.status));
   });
 
-  await t.test('the response policy covers a rendered page, an API response and a 404', async () => {
-    // Real responses only: a redirect or an error never stands in for a page.
-    let executed = 0;
-    for (const probe of POLICY_PROBES) {
-      if (probe.skip) {
-        // A skipped page or 404 probe is covered by the named app fixture,
-        // which test:runtime runs alongside this file.
-        if (probe.fixture) {
-          // A distinct, app-owned file that test:runtime's glob selects.
-          assert.match(probe.fixture, FIXTURE, `${probe.kind}: ${probe.fixture} is not run by test:runtime`);
-          assert.notEqual(probe.fixture, RUNTIME_GATE, `${probe.kind}: the gate cannot replace its own probe`);
-          assert.ok(existsSync(join(app, probe.fixture)), `${probe.kind}: ${probe.fixture} is missing`);
+  await t.test(
+    'the response policy covers a rendered page, an API response and a 404',
+    async () => {
+      // Check the declared redirect and response policy for signed-out pages.
+      let executed = 0;
+      for (const probe of POLICY_PROBES) {
+        if (probe.skip) {
+          // A skipped page or 404 probe is covered by the named app fixture,
+          // which test:runtime runs alongside this file.
+          if (probe.fixture) {
+            // A distinct, app-owned file that test:runtime's glob selects.
+            assert.match(
+              probe.fixture,
+              FIXTURE,
+              `${probe.kind}: ${probe.fixture} is not run by test:runtime`
+            );
+            assert.notEqual(
+              probe.fixture,
+              RUNTIME_GATE,
+              `${probe.kind}: the gate cannot replace its own probe`
+            );
+            assert.ok(
+              existsSync(join(app, probe.fixture)),
+              `${probe.kind}: ${probe.fixture} is missing`
+            );
+          }
+          t.diagnostic(
+            `policy probe ${probe.kind} skipped (${probe.fixture ?? 'no fixture'}): ${probe.skip}`
+          );
+          continue;
         }
-        t.diagnostic(`policy probe ${probe.kind} skipped (${probe.fixture ?? 'no fixture'}): ${probe.skip}`);
-        continue;
+        executed += 1;
+        const { status, headers, body } = await get(probe.path);
+        const type = headers['content-type'] ?? '';
+        const where = `${probe.kind} ${probe.path} (${status} ${type})`;
+        if (probe.kind === 'api') {
+          assert.equal(status, 200, where);
+          assert.match(type, /application\/json/u, where);
+          assert.doesNotThrow(() => JSON.parse(body), where);
+        } else {
+          if (probe.kind === 'page') {
+            const failure = runtimeOutcomeFailure({
+              path: probe.path,
+              expected: EXPECTED[probe.path],
+              status,
+              location: headers.location,
+              origin: `http://${ROOT_HOST}`,
+            });
+            assert.equal(failure, null, failure ?? '');
+          } else {
+            assert.equal(status, 404, where);
+            assert.match(type, /text\/html/u, where);
+            assert.match(body, /<html[\s>]/iu, `${where}: an HTML document`);
+          }
+        }
+        assert.match(
+          headers['cache-control'] ?? '',
+          /\bno-store\b/u,
+          `${where}: Cache-Control no-store`
+        );
+        assert.ok(headers['x-robots-tag'], `${where}: X-Robots-Tag`);
+        assert.equal(
+          headers['x-frame-options'],
+          'DENY',
+          `${where}: X-Frame-Options`
+        );
+        assert.match(
+          headers['content-security-policy'] ?? '',
+          /frame-ancestors 'none'/u,
+          `${where}: CSP frame-ancestors`
+        );
       }
-      executed += 1;
-      const { status, headers, body } = await get(probe.path);
-      const type = headers['content-type'] ?? '';
-      const where = `${probe.kind} ${probe.path} (${status} ${type})`;
-      if (probe.kind === 'api') {
-        assert.equal(status, 200, where);
-        assert.match(type, /application\/json/u, where);
-        assert.doesNotThrow(() => JSON.parse(body), where);
-      } else {
-        assert.equal(status, probe.kind === 'page' ? 200 : 404, where);
-        assert.match(type, /text\/html/u, where);
-        assert.match(body, /<html[\s>]/iu, `${where}: an HTML document`);
-      }
-      assert.match(headers['cache-control'] ?? '', /\bno-store\b/u, `${where}: Cache-Control no-store`);
-      assert.ok(headers['x-robots-tag'], `${where}: X-Robots-Tag`);
-      assert.equal(headers['x-frame-options'], 'DENY', `${where}: X-Frame-Options`);
-      assert.match(
-        headers['content-security-policy'] ?? '',
-        /frame-ancestors 'none'/u,
-        `${where}: CSP frame-ancestors`
-      );
+      assert.ok(executed > 0, 'no response-policy probe ran');
     }
-    assert.ok(executed > 0, 'no response-policy probe ran');
-  });
+  );
 
-  t.diagnostic(`denied egress origins: ${[...new Set(egress)].join(', ') || 'none'}`);
+  t.diagnostic(
+    `denied egress origins: ${[...new Set(egress)].join(', ') || 'none'}`
+  );
 });

@@ -1,14 +1,5 @@
 import assert from 'node:assert/strict';
-import {
-  cp,
-  mkdir,
-  mkdtemp,
-  readdir,
-  readFile,
-  realpath,
-  rm,
-  writeFile,
-} from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { request as httpRequest } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -16,6 +7,7 @@ import { join, relative } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
+import { assertServerArtifact } from './server-artifact-scan.mjs';
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
@@ -25,6 +17,7 @@ const EXPECTED = {
   '/login': { redirect: 'https://tuturuuu.com/login' },
 };
 const SYNTHETIC_SECRETS = {
+  ABUSE_GUARD_BACKEND: 'upstash',
   NEXT_PUBLIC_SUPABASE_URL: 'https://rewise-smoke.supabase.invalid',
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_rewise_smoke',
   UPSTASH_REDIS_REST_URL: 'https://fixture.upstash.invalid',
@@ -35,7 +28,9 @@ const SYNTHETIC_SECRETS = {
 
 async function startWorker(t, secrets) {
   const { configPath } = readNativeRuntimeConfig(app);
-  const scratch = await realpath(await mkdtemp(join(tmpdir(), 'rewise-smoke-')));
+  const scratch = await realpath(
+    await mkdtemp(join(tmpdir(), 'rewise-smoke-'))
+  );
   t.after(() => rm(scratch, { recursive: true, force: true }));
   await cp(join(app, 'dist'), join(scratch, 'dist'), {
     recursive: true,
@@ -113,12 +108,8 @@ test('the emitted config exposes no default Cloudflare hostname', () => {
   assert.deepEqual(config.routes ?? [], []);
 });
 
-test('the emitted server has NODE_ENV inlined', async () => {
-  const files = await readdir(join(app, 'dist/server'), { recursive: true });
-  for (const file of files.filter((name) => name.endsWith('.mjs'))) {
-    const source = await readFile(join(app, 'dist/server', file), 'utf8');
-    assert.doesNotMatch(source, /process\.env\.NODE_ENV/u, file);
-  }
+test('the emitted server has no development defaults', async () => {
+  await assertServerArtifact(join(app, 'dist/server'));
 });
 
 test('signed-out requests answer as production does', {
