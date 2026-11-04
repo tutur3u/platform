@@ -99,7 +99,7 @@ $$;
 -- tuturuuu: no-grant (trigger)
 revoke all on function private.protect_project_ticket_identity() from public, anon, authenticated;
 
--- Keys assigned by the 20261101100040 backfill ship in the same release as
+-- Keys assigned by the 20261104213040 backfill ship in the same release as
 -- this migration, so re-derive any that equal a board prefix before anyone
 -- sees them. Same derivation and suffix rules as the insert trigger, in
 -- creation order per workspace. Ticket numbers do not change.

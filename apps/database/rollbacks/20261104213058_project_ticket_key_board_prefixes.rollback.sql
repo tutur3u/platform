@@ -1,6 +1,6 @@
--- Manual rollback only: restores the 20261101100040 key trigger and identity
+-- Manual rollback only: restores the 20261104213040 key trigger and identity
 -- guard, which do not treat board ticket prefixes as taken. Keys re-derived by
--- 20261101100058 keep their new values; nothing is re-keyed back.
+-- 20261104213058 keep their new values; nothing is re-keyed back.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '30s';

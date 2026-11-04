@@ -143,7 +143,7 @@
     "reason": "Redefined anon 2-arg validator passes a NULL verifier to private.redeem_cross_app_token, so it can never redeem a PKCE-bound token; single-use under FOR UPDATE; the verifier variant validate_cross_app_token_with_session_pkce is service_role only (reviewed in #7394)"
   },
   {
-    "file": "apps/database/supabase/migrations/20261101100040_project_ticket_keys.sql",
+    "file": "apps/database/supabase/migrations/20261104213040_project_ticket_keys.sql",
     "line": 189,
     "sourceDigest": "f85dbb25cf33e0d10314fe1730f318d5b5834817695b0090f80d031903e8df64",
     "rule": "dynamic-execute-acl",

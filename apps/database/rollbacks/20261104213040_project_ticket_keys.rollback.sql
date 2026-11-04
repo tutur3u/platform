@@ -1,8 +1,9 @@
 -- Manual rollback only: removes project ticket keys and per-project ticket
 -- numbers, and restores the task save and history restore functions that
--- replace every project link. Run the 20261101100055 and 20261101100050
--- rollbacks first. Export task_projects.ticket_key and
--- task_project_tasks.ticket_number before running: they are dropped.
+-- replace every project link. Run the 20261104213059, 20261104213058,
+-- 20261104213055 and 20261104213050 rollbacks first, in that order. Export
+-- task_projects.ticket_key and task_project_tasks.ticket_number before
+-- running: they are dropped.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '30s';
