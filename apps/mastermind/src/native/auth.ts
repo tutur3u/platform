@@ -12,6 +12,9 @@ export interface MastermindEnvironment {
   OPS_HUB?: { fetch(request: Request): Promise<Response> };
 }
 export function assertMastermindEnvironment(env: MastermindEnvironment): void {
+  if (process.env.NODE_ENV !== 'production') {
+    throw new Error('Mastermind requires production mode');
+  }
   const required = [
     env.CF_ACCESS_TEAM_DOMAIN,
     env.CF_ACCESS_AUD,
