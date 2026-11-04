@@ -43,9 +43,15 @@ describe('managed project hostname reservation', () => {
     'staging.tutur3u.com',
     'localhost',
     'nova.ai.vn',
-    'rewise.me',
   ])('reserves platform hostname %s', (host) => {
     expect(isReservedManagedProjectHostname(host)).toBe(true);
+  });
+
+  it.each([
+    'rewise.me',
+    'rewise.school',
+  ])('no longer treats released domain %s as a platform hostname', (host) => {
+    expect(isReservedManagedProjectHostname(host)).toBe(false);
   });
 
   it.each([

@@ -35,7 +35,6 @@ const RESERVED_MANAGED_PROJECT_HOSTNAMES = Object.freeze([
     'infrastructure',
   ].map((app) => `${app}.tutur3u.com`),
   'nova.ai.vn',
-  'rewise.me',
 ]);
 
 /** ASCII DNS name: at most 253 characters and 63 per label, no port or path. */

@@ -93,6 +93,13 @@ fn account_cors_reflects_first_party_origins_only() {
         },
         json_response(200, json!({ "ok": true })),
     );
+    let denied_school = with_account_cors(
+        BackendRequest {
+            origin: Some("https://rewise.school"),
+            ..request_for_cookie("https://rewise.school/api", "")
+        },
+        json_response(200, json!({ "ok": true })),
+    );
 
     assert_eq!(
         allowed
@@ -102,10 +109,12 @@ fn account_cors_reflects_first_party_origins_only() {
             .map(|(_, value)| value.as_str()),
         Some("https://tasks.tuturuuu.localhost")
     );
-    assert!(
-        denied
-            .headers
-            .iter()
-            .all(|(name, _)| *name != "Access-Control-Allow-Origin")
-    );
+    for response in [denied, denied_school] {
+        assert!(
+            response
+                .headers
+                .iter()
+                .all(|(name, _)| *name != "Access-Control-Allow-Origin")
+        );
+    }
 }

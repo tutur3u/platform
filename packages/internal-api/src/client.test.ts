@@ -82,6 +82,20 @@ describe('resolveInternalApiUrl', () => {
     );
   });
 
+  it.each([
+    ['NEXT_PUBLIC_APP_URL', 'https://rewise.me'],
+    ['INTERNAL_WEB_API_ORIGIN', 'https://rewise.school'],
+    ['WEB_APP_URL', 'https://api.rewise.me'],
+    ['COOLIFY_FQDN', 'rewise.school'],
+  ])('never sends API calls to a released Rewise domain in %s', (name, value) => {
+    vi.stubEnv(name, value);
+    vi.stubEnv('NODE_ENV', 'production');
+
+    expect(resolveInternalApiUrl('/api/v1/workspaces')).toBe(
+      'https://tuturuuu.com/api/v1/workspaces'
+    );
+  });
+
   it('allows platform NEXT_PUBLIC_APP_URL values on the server', () => {
     vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://tuturuuu.com');
 

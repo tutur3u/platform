@@ -1,4 +1,5 @@
 import { resolveConfiguredInternalAppDomains } from './internal-domains-env';
+import { isRetiredAppHostname, isRetiredAppUrl } from './retired-app-hosts';
 import {
   getTuturuuuPortlessAppOrigin,
   TUTURUUU_PORTLESS_APP_HOSTS,
@@ -431,6 +432,10 @@ function parseExternalAppDomainEntry(entry: string): AppDomain | null {
     return null;
   }
 
+  if (isRetiredAppUrl(url)) {
+    return null;
+  }
+
   try {
     return {
       kind: 'external',
@@ -660,7 +665,7 @@ function canonicalizeAppDomainUrl(value: URL, domain: AppDomain) {
 export function getAppDomainByUrl(value: string): AppDomainUrlMatch | null {
   const url = parseHttpUrl(value);
 
-  if (!url) {
+  if (!url || isRetiredAppHostname(url.hostname)) {
     return null;
   }
 

@@ -35,6 +35,10 @@ type HeaderAccessor = Pick<Headers, 'get'>;
 const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
 const SUPABASE_AUTH_COOKIE_PATTERN = /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
 const KNOWN_CUSTOM_SATELLITE_HOSTS = new Set(['nova.ai.vn']);
+// Mirrors RETIRED_APP_HOSTNAMES in @tuturuuu/utils/retired-app-hosts, which
+// this package does not depend on. A stale env value naming one must never
+// receive forwarded auth.
+const RETIRED_APP_HOSTNAMES = ['rewise.me', 'rewise.school'];
 const KNOWN_NON_PLATFORM_TUTURUUU_HOSTS = new Set([
   'apps.tuturuuu.com',
   'cms.tuturuuu.com',
@@ -122,7 +126,17 @@ function resolveConfiguredOrigin(value?: string): string | null {
     ? firstValue
     : `https://${firstValue}`;
 
-  return tryParseAbsoluteUrl(normalized)?.origin ?? null;
+  const url = tryParseAbsoluteUrl(normalized);
+
+  return url && !isRetiredAppHostname(url.hostname) ? url.origin : null;
+}
+
+function isRetiredAppHostname(hostname: string) {
+  const host = hostname.toLowerCase().replace(/\.+$/u, '');
+
+  return RETIRED_APP_HOSTNAMES.some(
+    (retired) => host === retired || host.endsWith(`.${retired}`)
+  );
 }
 
 function isKnownNonPlatformSatelliteOrigin(origin: string) {

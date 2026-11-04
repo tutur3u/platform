@@ -102,12 +102,13 @@ describe('web multi-account API routes', () => {
     );
   });
 
-  it('does not add credentialed account CORS for custom origins', async () => {
+  it.each([
+    'https://rewise.me',
+    'https://rewise.school',
+  ])('does not add credentialed account CORS for custom origin %s', async (origin) => {
     const response = await GET(
       new NextRequest('http://localhost/api/v1/auth/accounts', {
-        headers: {
-          origin: 'https://rewise.me',
-        },
+        headers: { origin },
       })
     );
 

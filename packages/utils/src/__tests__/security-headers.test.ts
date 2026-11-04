@@ -75,6 +75,8 @@ describe('permissions and sources', () => {
       'wss://abc.supabase.co',
     ]);
     expect(originSources('not a url')).toEqual([]);
+    expect(originSources('https://rewise.me', true)).toEqual([]);
+    expect(originSources('https://cdn.rewise.school/x')).toEqual([]);
     expect(originSources(undefined)).toEqual([]);
   });
 });
