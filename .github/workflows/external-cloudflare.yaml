@@ -10,10 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      NEXT_PUBLIC_SUPABASE_URL: https://nzamlzqfdwaaxdefwraj.supabase.co
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-      NEXT_PUBLIC_external_URL: https://external.tuturuuu.com
-      NEXT_PUBLIC_WEB_external_URL: https://tuturuuu.com
+      NEXT_PUBLIC_APP_URL: https://external.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       CI_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@v4
