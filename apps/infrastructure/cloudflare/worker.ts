@@ -63,7 +63,7 @@ const handler = (
     endpoints,
     centralFirst,
     functionBase: '/_serverFn',
-    functionProxy: createFunctionProxy({ targetApp: 'infrastructure' }),
+    functionProxy: createFunctionProxy({ targetApp: 'infra' }),
     publicAssets,
     assets: (env) => env.ASSETS,
     centralApiOrigin: (env) =>
