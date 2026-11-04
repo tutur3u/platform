@@ -1,14 +1,5 @@
 import assert from 'node:assert/strict';
-import {
-  cp,
-  mkdir,
-  mkdtemp,
-  readdir,
-  readFile,
-  realpath,
-  rm,
-  writeFile,
-} from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { request as httpRequest } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
@@ -27,6 +18,8 @@ const EXPECTED = {
   '/_serverFn': 401,
   '/verify-token': 200,
 };
+
+import { assertServerArtifact } from './server-artifact-scan.mjs';
 import { SYNTHETIC_SECRETS } from './synthetic-bindings.mjs';
 
 async function startWorker(t, secrets) {
@@ -110,12 +103,7 @@ test('the emitted config exposes no default Cloudflare hostname', () => {
 });
 
 test('the emitted server has NODE_ENV inlined', async () => {
-  const files = await readdir(join(app, 'dist/server'), { recursive: true });
-  for (const file of files.filter((name) => name.endsWith('.mjs'))) {
-    const source = await readFile(join(app, 'dist/server', file), 'utf8');
-    assert.doesNotMatch(source, /process\.env\.NODE_ENV/u, file);
-    assert.ok(!source.includes('tuturuuu-local-development-app-coordination-secret'), file);
-  }
+  await assertServerArtifact(join(app, 'dist/server'));
 });
 
 test('signed-out requests answer as production does', {
