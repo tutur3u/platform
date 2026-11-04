@@ -8,7 +8,26 @@ import { runPolicyNotice } from '@/lib/policy-notice/sender';
 // until the result reports done.
 export const maxDuration = 300;
 
-const CLIENT_ERRORS = new Set(['invalid_request', 'confirm_required']);
+const CLIENT_ERRORS = new Set([
+  'invalid_request',
+  'confirm_required',
+  'recipient_not_allowed',
+]);
+
+/**
+ * Browser calls from this same origin only: Origin must be present and equal
+ * to the route's own origin, and a Fetch Metadata header, when sent, must say
+ * same-origin. Bearer clients are not supported on this route.
+ */
+function isSameOrigin(request: Request) {
+  const origin = request.headers.get('origin');
+  const fetchSite = request.headers.get('sec-fetch-site');
+  return (
+    origin !== null &&
+    origin === new URL(request.url).origin &&
+    (fetchSite === null || fetchSite === 'same-origin')
+  );
+}
 
 /**
  * Staff-only trigger for the policy-change notice. Body (all optional):
@@ -16,6 +35,8 @@ const CLIENT_ERRORS = new Set(['invalid_request', 'confirm_required']);
  * Dry run is the default. Responses carry counts, never addresses.
  */
 export async function POST(request: Request) {
+  if (!isSameOrigin(request))
+    return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   const operator = await getPolicyNoticeOperator(request);
   if (!operator)
     return NextResponse.json({ error: 'forbidden' }, { status: 403 });

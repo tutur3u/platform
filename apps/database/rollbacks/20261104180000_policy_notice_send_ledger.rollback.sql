@@ -18,6 +18,7 @@ SELECT ('policy notice ledger has ' || count(*)
 FROM private.policy_notice_runs
 HAVING count(*) > 0;
 
+DROP FUNCTION IF EXISTS private.policy_notice_purge(text);
 DROP FUNCTION IF EXISTS private.policy_notice_health(text, text);
 DROP FUNCTION IF EXISTS private.policy_notice_record(uuid, text, text, text, text);
 DROP FUNCTION IF EXISTS private.policy_notice_claim(uuid, text, text);

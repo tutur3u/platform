@@ -14,11 +14,16 @@ export const policyNoticeLimitsSchema = z
     maxBounceRate: z.number().min(0).max(0.05).default(0.02),
     maxComplaintRate: z.number().min(0).max(0.001).default(0.001),
     maxUnknownRate: z.number().min(0).max(0.05).default(0.02),
-    minSample: z.number().int().min(20).max(10_000).default(100),
   })
   .strict();
 
 export type PolicyNoticeLimits = z.infer<typeof policyNoticeLimitsSchema>;
+
+/**
+ * Fixed, never request input: a large sample would dilute every rate and
+ * effectively disable the breaker.
+ */
+export const POLICY_NOTICE_MIN_SAMPLE = 100;
 
 export function resolvePolicyNoticeLimits(input: unknown): PolicyNoticeLimits {
   const parsed = policyNoticeLimitsSchema.safeParse(input ?? {});
@@ -27,7 +32,7 @@ export function resolvePolicyNoticeLimits(input: unknown): PolicyNoticeLimits {
 }
 
 /**
- * Rates are measured against max(attempted, minSample), so a small sample
+ * Rates are measured against max(attempted, 100), so a small sample
  * cannot hide a problem rate and one early bounce does not stop a large run.
  * A single complaint before 1,000 attempts still trips the 0.1% default.
  */
@@ -35,7 +40,7 @@ export function evaluateBreaker(
   health: DeliveryHealth,
   limits: PolicyNoticeLimits
 ): StopReason | null {
-  const sample = Math.max(health.attempted, limits.minSample);
+  const sample = Math.max(health.attempted, POLICY_NOTICE_MIN_SAMPLE);
   if (health.complaints / sample > limits.maxComplaintRate)
     return 'complaint_rate';
   if ((health.rejected + health.hardBounces) / sample > limits.maxBounceRate)

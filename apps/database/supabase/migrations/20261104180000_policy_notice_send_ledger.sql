@@ -1,7 +1,18 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+
 -- Send ledger for one-shot legal/service notices (first use: the 11 Nov 2026
 -- policy-change notice). Service-role only. The ledger keeps ids, statuses,
 -- timestamps and the SES message id; never an address or any message content.
 -- Recipients are identified by sha256(lower(trim(address))).
+--
+-- Personal data and retention: recipient_hash is an UNKEYED sha256, so anyone
+-- holding a candidate address can confirm whether it received a notice. Treat
+-- the ledger as personal data. Retention: delete a notice's rows 90 days after
+-- its last ledger activity, manually (not scheduled):
+--   select private.policy_notice_purge('policy-change-2026-11-11');
+-- The function refuses before the 90 days have passed.
 -- Rollback: apps/database/rollbacks/20261104180000_policy_notice_send_ledger.rollback.sql
 
 create table if not exists private.policy_notice_runs (
@@ -595,3 +606,48 @@ $$;
 revoke all on function private.policy_notice_health(text, text)
     from public, anon, authenticated;
 grant execute on function private.policy_notice_health(text, text) to service_role;
+
+-- Manual retention purge for one notice (see the header). Security definer so
+-- the service role needs no table-wide DELETE privilege.
+create or replace function private.policy_notice_purge(p_notice_id text)
+returns integer
+language plpgsql
+security definer
+set search_path = pg_catalog, pg_temp
+as $$
+declare
+    v_last timestamptz;
+    v_deliveries integer;
+    v_runs integer;
+begin
+    select max(greatest(r.started_at, coalesce(r.finished_at, r.started_at)))
+    into v_last
+    from private.policy_notice_runs r
+    where r.notice_id = p_notice_id;
+
+    select greatest(v_last, max(d.updated_at))
+    into v_last
+    from private.policy_notice_deliveries d
+    where d.notice_id = p_notice_id;
+
+    if v_last is null then
+        return 0;
+    end if;
+    if v_last > now() - interval '90 days' then
+        raise exception 'policy_notice_gate:retention_not_reached'
+            using errcode = 'P0001';
+    end if;
+
+    delete from private.policy_notice_deliveries where notice_id = p_notice_id;
+    get diagnostics v_deliveries = row_count;
+    delete from private.policy_notice_runs where notice_id = p_notice_id;
+    get diagnostics v_runs = row_count;
+    return v_deliveries + v_runs;
+end;
+$$;
+
+revoke all on function private.policy_notice_purge(text)
+    from public, anon, authenticated;
+grant execute on function private.policy_notice_purge(text) to service_role;
+
+COMMIT;

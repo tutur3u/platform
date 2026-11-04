@@ -499,3 +499,44 @@ test('the static rollback refuses while ledger rows exist, then drops everything
       to_regclass('private.policy_notice_deliveries') as deliveries`);
   assert.deepEqual(gone.rows[0], { fns: 0, runs: null, deliveries: null });
 });
+
+test('migration and rollback bound their locks and statements', async () => {
+  for (const path of [
+    `supabase/migrations/${MIGRATION}.sql`,
+    `rollbacks/${MIGRATION}.rollback.sql`,
+  ]) {
+    const sql = await read(path);
+    assert.match(sql, /^BEGIN;$/m, path);
+    assert.match(sql, /^SET LOCAL lock_timeout = '5s';$/m, path);
+    assert.match(sql, /^SET LOCAL statement_timeout = '\d+s';$/m, path);
+    assert.match(sql, /^COMMIT;\s*$/m, path);
+  }
+});
+
+test('the ledger purge refuses before 90 days and then deletes the notice rows', async () => {
+  const db = await setup();
+  await gateOpen(db);
+  const purge = async () =>
+    (
+      await asService(db, 'select private.policy_notice_purge($1) as deleted', [
+        NOTICE,
+      ])
+    ).rows[0].deleted;
+
+  await assert.rejects(purge(), /retention_not_reached/);
+  await db.exec(`
+    update private.policy_notice_runs
+      set started_at = now() - interval '91 days',
+          finished_at = now() - interval '91 days';
+    update private.policy_notice_deliveries
+      set created_at = now() - interval '91 days',
+          updated_at = now() - interval '91 days';
+  `);
+  // Two runs (dry run, preview) and one delivery.
+  assert.equal(await purge(), 3);
+  const { rows } = await db.query(`
+    select (select count(*)::int from private.policy_notice_runs) as runs,
+      (select count(*)::int from private.policy_notice_deliveries) as deliveries`);
+  assert.deepEqual(rows[0], { runs: 0, deliveries: 0 });
+  assert.equal(await purge(), 0);
+});
