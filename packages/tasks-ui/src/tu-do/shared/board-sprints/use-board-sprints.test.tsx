@@ -18,6 +18,7 @@ vi.mock('@tuturuuu/internal-api/task-sprints', () => ({
 }));
 
 const response: BoardSprintsResponse = {
+  cyclesEnabled: true,
   schemaAvailable: true,
   sprintLengthWeeks: 2,
   sprints: [
