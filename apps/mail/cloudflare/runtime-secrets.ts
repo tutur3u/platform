@@ -1,4 +1,5 @@
 import { assertWorkerStartup } from '@tuturuuu/start-bridge/startup';
+import { assertSnsVerification } from './sns-startup';
 
 export const requiredRuntimeSecrets = [
   'NEXT_PUBLIC_SUPABASE_URL',
@@ -15,6 +16,7 @@ export const requiredRuntimeSecrets = [
 ] as const;
 
 export function assertRuntimeSecrets(env: object) {
+  assertSnsVerification(env);
   assertWorkerStartup({
     profile: 'production',
     env,
