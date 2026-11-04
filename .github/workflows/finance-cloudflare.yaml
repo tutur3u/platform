@@ -134,52 +134,61 @@ jobs:
       deployments: read
     with:
       workflow_name: finance-cloudflare.yaml
-  # Qualification only: neither job publishes. Native deploys are operator
-  # actions inside an approved custody window.
-  native:
+  cutover-build:
     needs: check-ci
-    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
-    uses: ./.github/workflows/native-start-app.yaml
-    permissions:
-      contents: read
-    with:
-      app: finance
-      package: '@tuturuuu/finance'
-      artifact-script: scripts/ci/finance-native-artifact.py
-      env-interface: FinanceGeneratedEnv
-      worker-environment-type: FinanceEnvironment
-      helper-tests: python3 scripts/ci/finance-native-artifact.test.py
-      unit-command: bun run test && bun run type-check:cloudflare
-      runtime-setup-command: cd ../web && bun x --no-install playwright install --with-deps chromium
-      runtime-command: node --test --test-concurrency=1 cloudflare/native-built-worker.runtime.mjs
-      # The native profile pins the public Supabase URL and app/Web origins.
-      # Same-repository events use the staging publishable key; fork pull
-      # requests build with a placeholder.
-      public-env: |
-        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_finance_ci_placeholder' }}
-        TUTURUUU_NOINDEX=1
-      format-paths: >-
-        apps/finance/cloudflare apps/finance/src/start-bridge apps/finance/src/routes apps/finance/src/router.tsx apps/finance/src/start.ts apps/finance/vite.config.mts apps/finance/void.config.ts apps/finance/vitest.config.ts apps/finance/tsconfig.json apps/finance/tsconfig.cloudflare.json apps/finance/package.json apps/finance/start-bridge.routes.json apps/finance/start-bridge.config.ts
-  native-production:
-    needs: check-ci
-    # Production public values are unavailable to fork pull requests.
-    if: (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
-    uses: ./.github/workflows/native-start-app.yaml
-    permissions:
-      contents: read
-    with:
-      app: finance
-      package: '@tuturuuu/finance'
-      artifact-script: scripts/ci/finance-native-artifact.py
-      env-interface: FinanceGeneratedEnv
-      worker-environment-type: FinanceEnvironment
-      helper-tests: python3 scripts/ci/finance-native-artifact.test.py
-      unit-command: bun run test && bun run type-check:cloudflare
-      runtime-setup-command: cd ../web && bun x --no-install playwright install --with-deps chromium
-      runtime-command: node --test --test-concurrency=1 cloudflare/native-built-worker.runtime.mjs
-      profile-env: VITE_FINANCE_NATIVE_PROFILE=production
-      artifact-suffix: production
-      public-env: |
-        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-      format-paths: >-
-        apps/finance/cloudflare apps/finance/src/start-bridge apps/finance/src/routes apps/finance/src/router.tsx apps/finance/src/start.ts apps/finance/vite.config.mts apps/finance/void.config.ts apps/finance/vitest.config.ts apps/finance/tsconfig.json apps/finance/tsconfig.cloudflare.json apps/finance/package.json apps/finance/start-bridge.routes.json apps/finance/start-bridge.config.ts
+    if: needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        profile: [staging, production]
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      FINANCE_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VITE_FINANCE_NATIVE_PROFILE: ${{ matrix.profile }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars[format('{0}_SUPABASE_PUBLISHABLE_KEY', matrix.profile == 'production' && 'PRODUCTION' || 'STAGING')] }}
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - name: Require the selected public build inputs
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -n "$NEXT_PUBLIC_SUPABASE_URL"
+          test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Build required workspace suppliers
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter="@tuturuuu/finance^..." --concurrency=2
+          token: ''
+          team: ''
+      - name: Generate exact source identity
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: ${{ matrix.profile }}
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build TanStack Start Worker and assets
+        working-directory: apps/finance
+        run: bun run build:cloudflare
+      - name: Package deployable output and emitted Wrangler config
+        run: |
+          python3 scripts/ci/finance-native-artifact.py config apps/finance
+          python3 scripts/ci/finance-native-artifact.py seal apps/finance --receipt "$RUNNER_TEMP/receipt.json"
+          python3 scripts/ci/finance-native-artifact.py pack apps/finance --receipt "$RUNNER_TEMP/receipt.json" --archive "$RUNNER_TEMP/finance-native.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: finance-cutover-${{ matrix.profile }}-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/finance-native.tar.gz
+          retention-days: 7
+          if-no-files-found: error
