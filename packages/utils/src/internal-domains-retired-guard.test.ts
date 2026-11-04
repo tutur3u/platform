@@ -9,14 +9,18 @@ vi.mock('./internal-domains-env', () => ({
   ],
 }));
 
-const { getAppDomainByUrl, getAppDomainMap } = await import(
-  './internal-domains'
-);
+import {
+  type AppDomain,
+  getAppDomainByUrl,
+  getAppDomainMap,
+} from './internal-domains';
 
 describe('released domain lookup guard', () => {
   it('rejects released domains even when a registry still lists them', () => {
     expect(
-      getAppDomainMap().some((domain) => domain.url === 'https://rewise.me')
+      getAppDomainMap().some(
+        (domain: AppDomain) => domain.url === 'https://rewise.me'
+      )
     ).toBe(true);
     expect(getAppDomainByUrl('https://rewise.me/verify-token')).toBeNull();
     expect(getAppDomainByUrl('https://app.rewise.school')).toBeNull();
