@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { parseCmsPageVersion } from '@tuturuuu/cms-blocks/schema';
 import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
 import bridgeConfig from '../start-bridge.config';
+import { readJson } from './http-json';
+import { loadPublishedPage } from './live-delivery';
+import { authorizePurge } from './purge-auth';
 
 const tokensSchema = z.object({
   foreground: z.string().regex(/^#[0-9a-f]{6}$/i).default('#171717'),
@@ -13,13 +16,6 @@ const siteSchema = z.object({
   defaultLocale: z.string().min(2).max(10), tokens: tokensSchema.default({ foreground: '#171717', background: '#ffffff', font: 'sans-serif' }),
 });
 const sitesSchema = z.record(z.string(), siteSchema);
-const deliverySchema = z.object({
-  collections: z.array(z.object({ entries: z.array(z.object({
-    slug: z.string(), title: z.string(),
-    metadata: z.object({ description: z.string().optional(), ogImage: z.string().url().optional() }).passthrough().nullish(),
-    publishedPageVersion: z.object({ id: z.string(), schema_version: z.number(), blocks: z.unknown() }).nullish(),
-  })) })),
-});
 export type PublishedPage = {
   page: NonNullable<ReturnType<typeof parseCmsPageVersion>>;
   locale: string; title: string; description?: string; ogImage?: string;
@@ -48,7 +44,7 @@ export async function serve(request: Request, env: Environment, deps: Dependenci
   if (!site) return fail(404);
   if (url.pathname.startsWith('/__cms/cache')) return fail(404);
   if (url.pathname === '/__cms/purge') {
-    if (!env.CMS_PURGE_TOKEN || request.headers.get('authorization') !== `Bearer ${env.CMS_PURGE_TOKEN}`) return fail(403);
+    if (!authorizePurge(request.headers.get('authorization'), env.CMS_PURGE_TOKEN)) return fail(403);
     if (request.method !== 'POST') return fail(405);
     if (Number(request.headers.get('content-length')) > 4096) return fail(413);
     try {
@@ -61,24 +57,17 @@ export async function serve(request: Request, env: Environment, deps: Dependenci
   // Static assets are served by the Worker asset binding after an admitted host.
   if (url.pathname.startsWith('/assets/')) return env.ASSETS ? env.ASSETS.fetch(request) : fail(404);
   try {
-    const origin = new URL(env.CMS_DELIVERY_ORIGIN ?? '');
-    if (origin.protocol !== 'https:') return fail(503);
-    const deliveryUrl = new URL(`/api/v1/workspaces/${site.workspaceId}/external-projects/delivery`, origin);
-    const delivery = await deps.fetch(deliveryUrl, { signal: AbortSignal.timeout(5000), redirect: 'error' });
-    if (!delivery.ok) return fail(503);
-    const payload = deliverySchema.parse(await readJson(delivery, 4 * 1024 * 1024));
     const path = url.pathname.replace(/\/$/, '') || '/';
-    const slug = path === '/' ? 'home' : path.slice(1);
-    const entry = payload.collections.flatMap((collection) => collection.entries).find((entry) => entry.slug === slug);
-    const version = entry?.publishedPageVersion;
-    if (!entry || !version) return fail(404);
-    const page = parseCmsPageVersion({ data: version.blocks, schema_version: version.schema_version });
-    if (!page) return fail(503);
+    const delivered = await loadPublishedPage({ origin: env.CMS_DELIVERY_ORIGIN ?? '', workspaceId: site.workspaceId, path, fetch: deps.fetch });
+    if (delivered.kind === 'unbound') return fail(409);
+    if (delivered.kind === 'missing') return fail(404);
+    if (delivered.kind !== 'page') return fail(503);
+    const { page, versionId, title, description, ogImage } = delivered;
     const locale = /^\/en(?:\/|$)/.test(path) ? 'en' : site.defaultLocale;
-    const key = cacheRequest({ origin: url.origin, site: site.id, path, locale, version: version.id });
+    const key = cacheRequest({ origin: url.origin, site: site.id, path, locale, version: versionId });
     const hit = await deps.cache.match(key);
     if (hit) return request.method === 'HEAD' ? new Response(null, hit) : hit;
-    const result = await deps.render(request, { page, locale, tokens: site.tokens, title: entry.title, description: entry.metadata?.description, ogImage: entry.metadata?.ogImage });
+    const result = await deps.render(request, { page, locale, tokens: site.tokens, title, description, ogImage });
     const response = new Response(result.body, result);
     response.headers.set('Cache-Control', 'public, max-age=0, s-maxage=30');
     response.headers.set('Content-Language', locale);
@@ -86,24 +75,4 @@ export async function serve(request: Request, env: Environment, deps: Dependenci
     if (response.ok && !response.headers.has('set-cookie')) await deps.cache.put(key, response.clone());
     return request.method === 'HEAD' ? new Response(null, response) : response;
   } catch { return fail(503); }
-}
-
-async function readJson(input: Request | Response, limit: number): Promise<unknown> {
-  const reader = input.body?.getReader();
-  if (!reader) throw new Error('Missing JSON');
-  const chunks: Uint8Array[] = [];
-  let length = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      length += value.byteLength;
-      if (length > limit) throw new Error('JSON exceeds limit');
-      chunks.push(value);
-    }
-  } finally { await reader.cancel(); }
-  const bytes = new Uint8Array(length);
-  let offset = 0;
-  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
-  return JSON.parse(new TextDecoder().decode(bytes));
 }
