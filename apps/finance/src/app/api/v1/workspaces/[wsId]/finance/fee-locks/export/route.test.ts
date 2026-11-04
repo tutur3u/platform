@@ -25,6 +25,7 @@ const entry = (over: Partial<FeeLockExportEntry>): FeeLockExportEntry => ({
   revision: 2,
   student_name: 'Học viên B',
   period_month: '2026-12-01',
+  currency: 'VND',
   total_amount: 800_000,
   lines: [],
   ...over,
@@ -177,6 +178,53 @@ describe('POST /finance/fee-locks/export', () => {
       groupId: undefined,
       status: 'locked',
     });
+  });
+
+  it('adds one notice cell per locked student from the active template (per-class notices joined)', async () => {
+    // biome-ignore format: compact lines
+    const tuition = (group: string, sort: number) => ({
+      kind: 'tuition' as const, group_id: group, group_name: group, label: 'Học phí', unit_label: 'buổi',
+      unit_price: 100_000, quantity: 4, adjustment_amount: 0, reason: null, line_amount: 400_000, sort_order: sort,
+    });
+    mocks.load.mockResolvedValue({
+      entries: [
+        [
+          DRAFT,
+          entry({
+            status: 'draft',
+            revision: null,
+            student_name: 'Học viên A',
+          }),
+        ],
+        [LOCKED, entry({ lines: [tuition('Lớp A', 0), tuition('Lớp B', 1)] })],
+      ],
+    });
+    // biome-ignore format: compact row
+    const db = allow({
+      workspaces: { data: { name: 'Trung tâm X' } },
+      fee_notice_templates: {
+        data: [{ version: 3, is_active: true, body: '{{student_name}} {{class_name}}: {{total}}đ', item_format: '', item_separator: ', ', payment_line: '', notice_grouping: 'per_class', locale: 'vi', created_by: null, created_at: 't' }],
+      },
+    });
+    const response = await post({
+      month: '2026-12',
+      status: 'all',
+      include_notice: true,
+    });
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    const sheet = XLSX.read(bytes, { type: 'array' }).Sheets['Tổng hợp'];
+    expect(sheet?.N1?.v).toBe('Nội dung thông báo');
+    expect(sheet?.N2).toBeUndefined();
+    expect(sheet?.N3?.v).toBe(
+      'Học viên B Lớp A: 400.000đ\n\nHọc viên B Lớp B: 400.000đ'
+    );
+    expect(sheet?.A4).toBeUndefined();
+    expect(inserted(db)?.metadata).toMatchObject({
+      include_notice: true,
+      template_version: 3,
+    });
+    expect(db.filtered('fee_notice_templates', 'ws_id', WS)).toBe(true);
+    expect(JSON.stringify(inserted(db))).not.toMatch(/Học viên|Lớp/);
   });
 
   it('sends no file when the exported event cannot be written', async () => {

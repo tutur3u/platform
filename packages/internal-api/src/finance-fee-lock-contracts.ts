@@ -150,6 +150,8 @@ export const feeLockExportRequestSchema = z.object({
   groupId: z.guid().optional(),
   status: z.enum(['locked', 'all']).default('locked'),
   locale: z.enum(['vi', 'en']).default('vi'),
+  /** Adds "Nội dung thông báo", rendered from the active template (locked rows only). */
+  include_notice: z.boolean().default(false),
 });
 export type FeeLockExportRequest = z.input<typeof feeLockExportRequestSchema>;
 export const FEE_LOCK_EXPORT_TOO_MANY_CODE = 'FEE_LOCK_EXPORT_TOO_MANY';

@@ -3,6 +3,7 @@
 import { FileSpreadsheet } from '@tuturuuu/icons';
 import { exportFeeLocks } from '@tuturuuu/internal-api/finance-fee-lock';
 import { Button } from '@tuturuuu/ui/button';
+import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,7 @@ export interface FeeLockExportLabels {
   export_title: string;
   export_locked_only: string;
   export_all: string;
+  export_include_notice: string;
   export_too_many: (count: number) => string;
   export_done: (count: number) => string;
   export_failed: string;
@@ -56,6 +58,7 @@ function saveFile(blob: Blob, fileName: string) {
 export function FeeLockExportDialog({ wsId, month, groupId, labels }: Props) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<ExportStatus>('locked');
+  const [includeNotice, setIncludeNotice] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [year, monthNumber] = month.split('-');
@@ -64,7 +67,12 @@ export function FeeLockExportDialog({ wsId, month, groupId, labels }: Props) {
     setPending(true);
     setError(null);
     try {
-      const result = await exportFeeLocks(wsId, { month, groupId, status });
+      const result = await exportFeeLocks(wsId, {
+        month,
+        groupId,
+        status,
+        include_notice: includeNotice,
+      });
       if (!result.ok) {
         setError(labels.export_too_many(result.tooMany));
         return;
@@ -113,6 +121,16 @@ export function FeeLockExportDialog({ wsId, month, groupId, labels }: Props) {
             </div>
           ))}
         </RadioGroup>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="fee-lock-export-notice"
+            checked={includeNotice}
+            onCheckedChange={(checked) => setIncludeNotice(checked === true)}
+          />
+          <Label htmlFor="fee-lock-export-notice">
+            {labels.export_include_notice}
+          </Label>
+        </div>
         {error && (
           <p role="alert" className="text-dynamic-red text-sm">
             {error}
