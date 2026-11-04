@@ -78,6 +78,16 @@ async function consumeRefreshTokenOnce({
   }
 }
 
+/** Current Auth state for the subject; null when Auth cannot be reached. */
+async function readAuthUser(userId: string) {
+  try {
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    return await sbAdmin.auth.admin.getUserById(userId);
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
   const parsed = refreshSchema.safeParse(body);
@@ -130,9 +140,7 @@ export async function POST(request: NextRequest) {
 
   // SR-926: every refresh re-reads Auth for this subject. The new session's
   // email is the confirmed Auth email only, never the old token's claim.
-  const authLookup = await createAdminClient({ noCookie: true })
-    .then((sbAdmin) => sbAdmin.auth.admin.getUserById(verification.claims.sub))
-    .catch(() => null);
+  const authLookup = await readAuthUser(verification.claims.sub);
 
   if (!authLookup || authLookup.error) {
     return NextResponse.json(
