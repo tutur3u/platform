@@ -127,10 +127,22 @@ test('emitted forms Worker serves its root, mount and unknown paths', {
     envFiles: [staged.envFile],
     sendMetrics: false,
     bindings: {
-      TUTURUUU_APP_COORDINATION_SECRET: { type: 'plain_text', value: 'synthetic-runtime-only-coordination' },
-      SUPABASE_SECRET_KEY: { type: 'plain_text', value: 'synthetic-runtime-only-supabase' },
-      NEXT_PUBLIC_SUPABASE_URL: { type: 'plain_text', value: 'https://runtime.supabase.invalid' },
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: { type: 'plain_text', value: 'sb_publishable_runtime_fixture' },
+      TUTURUUU_APP_COORDINATION_SECRET: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only-coordination',
+      },
+      SUPABASE_SECRET_KEY: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only-supabase',
+      },
+      NEXT_PUBLIC_SUPABASE_URL: {
+        type: 'plain_text',
+        value: 'https://runtime.supabase.invalid',
+      },
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: {
+        type: 'plain_text',
+        value: 'sb_publishable_runtime_fixture',
+      },
       INTERNAL_WEB_API_ORIGIN: {
         type: 'plain_text',
         value: 'https://central.invalid',
