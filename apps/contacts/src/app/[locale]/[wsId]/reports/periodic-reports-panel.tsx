@@ -70,6 +70,11 @@ import {
   PeriodicReportsRowsLoading,
 } from './periodic-reports-loading';
 import { PeriodicReportsToolbar } from './periodic-reports-toolbar';
+import { periodicResendReason } from './periodic-resend';
+import {
+  PeriodicResendDialog,
+  type PeriodicResendIntent,
+} from './periodic-resend-dialog';
 import {
   PERIODIC_STAGES,
   PeriodicStatusSummary,
@@ -171,6 +176,9 @@ export default function PeriodicReportsPanel({
     useState<PeriodicRecipientIntent | null>(null);
   const [deliveryIntent, setDeliveryIntent] =
     useState<PeriodicDeliveryIntent | null>(null);
+  const [resendIntent, setResendIntent] = useState<PeriodicResendIntent | null>(
+    null
+  );
   const [previewSelection, setPreviewSelection] = useState<{
     emailPreview?: PeriodicEmailPreview | null;
     report: PeriodicReport;
@@ -180,6 +188,7 @@ export default function PeriodicReportsPanel({
     if (previewSelection) setPreviewSelection(null);
     if (recipientIntent) setRecipientIntent(null);
     if (batchIntent) setBatchIntent(null);
+    if (resendIntent) setResendIntent(null);
     if (selection.ids.length) setSelection({ epoch, ids: [] });
   }
 
@@ -240,6 +249,7 @@ export default function PeriodicReportsPanel({
     if (deliveryIntent) setDeliveryIntent(null);
     if (batchIntent) setBatchIntent(null);
     if (recipientIntent) setRecipientIntent(null);
+    if (resendIntent) setResendIntent(null);
     if (selection.ids.length) setSelection({ epoch, ids: [] });
   }
   const ownedData =
@@ -256,14 +266,22 @@ export default function PeriodicReportsPanel({
     ? (ownedData?.pages.flatMap((page) => page.data) ?? [])
     : [];
   const visibleReports = reports;
+  const now = Date.now();
+  const canResend = canResolveHeld && permissions.canSendReports;
+  const resendable = (report: PeriodicReport) =>
+    canResend && periodicResendReason(report, now) !== null;
   const eligible =
     permissions.canSendReports && actor && currentRows
-      ? visibleReports.filter(canSelectPeriodicDelivery)
+      ? visibleReports.filter(
+          (report) => canSelectPeriodicDelivery(report) || resendable(report)
+        )
       : [];
   const selected =
     selection.epoch === epoch
       ? eligible.filter((report) => selection.ids.includes(report.id))
       : [];
+  const selectedSend = selected.filter(canSelectPeriodicDelivery);
+  const selectedResend = selected.filter(resendable);
   const toggleSelection = (reportId: string) => {
     const ids = selected.map((report) => report.id);
     setSelection({
@@ -506,7 +524,7 @@ export default function PeriodicReportsPanel({
         total={totalReports}
         categoryCounts={categoryCounts}
         eligibleCount={eligible.length}
-        selectedCount={selected.length}
+        selectedCount={selectedSend.length}
         canSend={permissions.canSendReports}
         currentRows={currentRows}
         pending={deliveryMutation.isPending}
@@ -528,7 +546,23 @@ export default function PeriodicReportsPanel({
             actor,
             wsId,
             epoch,
-            reports: selected.map((report) => ({ ...report })),
+            reports: selectedSend.map((report) => ({ ...report })),
+          })
+        }
+        canResend={canResend}
+        resendSelectedCount={selectedResend.length}
+        onResendSelected={() =>
+          setResendIntent({
+            kind: 'selection',
+            reportIds: selectedResend.map((report) => report.id),
+          })
+        }
+        onResendScope={() =>
+          setResendIntent({
+            kind: 'scope',
+            cadence: cadence === 'all' ? 'monthly' : cadence,
+            periodStart,
+            periodEnd,
           })
         }
       />
@@ -615,6 +649,15 @@ export default function PeriodicReportsPanel({
                 (candidate) => candidate.id === report.id
               )}
               onToggleSelection={() => toggleSelection(report.id)}
+              onResend={
+                canResend
+                  ? () =>
+                      setResendIntent({
+                        kind: 'selection',
+                        reportIds: [report.id],
+                      })
+                  : undefined
+              }
               onEditRecipient={() =>
                 actor &&
                 setRecipientIntent({
@@ -689,6 +732,18 @@ export default function PeriodicReportsPanel({
           void invalidate();
         }}
       />
+      {canResend && resendIntent && (
+        <PeriodicResendDialog
+          key={JSON.stringify(resendIntent)}
+          intent={resendIntent}
+          wsId={wsId}
+          onClose={() => setResendIntent(null)}
+          onResolved={() => {
+            setSelection({ epoch, ids: [] });
+            void invalidate();
+          }}
+        />
+      )}
       <PeriodicDeliveryConfirmation
         intent={deliveryIntent}
         wsId={wsId}

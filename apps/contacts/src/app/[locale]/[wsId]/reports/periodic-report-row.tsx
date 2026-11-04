@@ -7,6 +7,7 @@ import {
   Mail,
   MoreHorizontal,
   Pencil,
+  RotateCcw,
   Send,
   Sparkles,
   XCircle,
@@ -27,6 +28,7 @@ import {
   isBlockingDeliveryCategory,
   periodicDeliveryCategory,
 } from './periodic-delivery-category';
+import { periodicResendReason } from './periodic-resend';
 import {
   PeriodicStageBadge,
   PeriodicStatusBadge,
@@ -47,6 +49,7 @@ export function PeriodicReportRow({
   selectable = false,
   selected = false,
   onToggleSelection,
+  onResend,
   report,
   wsId,
 }: {
@@ -54,6 +57,8 @@ export function PeriodicReportRow({
   selectable?: boolean;
   selected?: boolean;
   onToggleSelection?: () => void;
+  /** Admin resend (server-checked). Held rows keep Send instead. */
+  onResend?: () => void;
   approvalPending: boolean;
   generationPending: boolean;
   onApprove: () => void;
@@ -71,6 +76,9 @@ export function PeriodicReportRow({
 }) {
   const t = useTranslations('reports-hub');
   const category = periodicDeliveryCategory(report);
+  const resendReason = onResend
+    ? periodicResendReason(report, Date.now())
+    : null;
   return (
     <article className="border-border/60 border-b transition-colors last:border-b-0 hover:bg-muted/30">
       <div className="grid gap-3 p-3 md:px-4 xl:grid-cols-[minmax(0,1fr)_10rem_12rem] xl:items-center">
@@ -212,6 +220,18 @@ export function PeriodicReportRow({
             >
               <Send className="size-3.5" />
               {t('send')}
+            </Button>
+          ) : null}
+          {onResend &&
+          (resendReason === 'failed' || resendReason === 'stuck') ? (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onResend}
+              aria-label={t('resend_report')}
+            >
+              <RotateCcw className="size-3.5" />
+              {t('resend')}
             </Button>
           ) : null}
           {permissions.canSendReports ? (

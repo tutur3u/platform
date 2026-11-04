@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import PeriodicReportsPanel from './periodic-reports-panel';
@@ -30,6 +30,8 @@ const state = vi.hoisted(() => ({
   summary: vi.fn(),
   worklist: vi.fn(),
   held: vi.fn(),
+  row: vi.fn(),
+  resend: vi.fn(),
   list: vi.fn(),
   setFilters: vi.fn(),
 }));
@@ -84,7 +86,16 @@ vi.mock('./periodic-email-readiness', () => ({
   PeriodicEmailReadiness: () => null,
 }));
 vi.mock('./periodic-report-row', () => ({
-  PeriodicReportRow: () => <button type="button">Row action</button>,
+  PeriodicReportRow: (props: Record<string, unknown>) => {
+    state.row(props);
+    return <button type="button">Row action</button>;
+  },
+}));
+vi.mock('./periodic-resend-dialog', () => ({
+  PeriodicResendDialog: (props: Record<string, unknown>) => {
+    state.resend(props);
+    return null;
+  },
 }));
 vi.mock('./periodic-recipient-remediation', () => ({
   PeriodicRecipientRemediation: () => null,
@@ -334,4 +345,64 @@ it('keeps the held group visible from the default view and opens it on the appro
 it('never offers the held actions without the admin permission', async () => {
   render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
   expect(state.held.mock.lastCall?.[0]).toMatchObject({ canResolve: false });
+});
+
+it('offers per-row and bulk resend only to admins, for resendable rows', async () => {
+  const failed = {
+    id: 'failed-one',
+    report_approval_status: 'APPROVED',
+    generation_status: 'ready',
+    delivery_status: 'failed',
+    last_delivery_error: 'Email provider rejected the delivery.',
+    user_email: 'learner@example.com',
+  };
+  const failedPage = (queryScope: string) =>
+    ({ ...page(queryScope), data: [failed] }) as unknown as QueryPage;
+  const show = async (canResolveHeld: boolean) => {
+    state.row.mockClear();
+    const view = render(
+      <PeriodicReportsPanel
+        wsId="workspace"
+        permissions={permissions}
+        canResolveHeld={canResolveHeld}
+      />
+    );
+    const result = await state.options.queryFn({ pageParam: 1 });
+    state.query.data = { pages: [failedPage(result.queryScope)] };
+    view.rerender(
+      <PeriodicReportsPanel
+        wsId="workspace"
+        permissions={permissions}
+        canResolveHeld={canResolveHeld}
+      />
+    );
+    return view;
+  };
+
+  const viewer = await show(false);
+  expect(state.worklist.mock.lastCall?.[0]).toMatchObject({
+    canResend: false,
+    eligibleCount: 0,
+  });
+  expect(state.row.mock.lastCall?.[0].onResend).toBeUndefined();
+  viewer.unmount();
+
+  await show(true);
+  expect(state.worklist.mock.lastCall?.[0]).toMatchObject({
+    canResend: true,
+    eligibleCount: 1,
+    resendSelectedCount: 0,
+  });
+  const row = state.row.mock.lastCall?.[0] as { onResend: () => void };
+  act(() => row.onResend());
+  expect(state.resend.mock.lastCall?.[0]).toMatchObject({
+    intent: { kind: 'selection', reportIds: ['failed-one'] },
+  });
+  const worklist = state.worklist.mock.lastCall?.[0] as {
+    onResendScope: () => void;
+  };
+  act(() => worklist.onResendScope());
+  expect(state.resend.mock.lastCall?.[0]).toMatchObject({
+    intent: { kind: 'scope', cadence: 'monthly' },
+  });
 });

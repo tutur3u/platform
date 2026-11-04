@@ -157,6 +157,8 @@ export interface PeriodicReport {
   created_at: string;
   creator_name?: string | null;
   delivery_status: PeriodicReportDeliveryStatus;
+  /** When delivery was last requested; a queued report waits from here. */
+  delivery_requested_at?: string | null;
   test_delivery?: {
     status: PeriodicReportDeliveryStatus;
     sent_at: string | null;
@@ -642,6 +644,90 @@ export function resolveHeldPeriodicReports(
 ) {
   return getInternalApiClient(options).json<HeldPeriodicReportActionResult>(
     heldPath(workspaceId),
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+/**
+ * A queued periodic report counts as stuck after waiting this long for a
+ * worker claim: the existing "waiting more than 1 hour" queue warning, well
+ * past the 15-minute worker lease. The server decides; the UI only mirrors it.
+ */
+export const PERIODIC_RESEND_STUCK_AFTER_MINUTES = 60;
+
+/** Reports to resend: a period and/or class, or up to 100 selected ids. */
+export type ResendPeriodicReportTarget =
+  | ({ target: 'scope' } & HeldPeriodicReportScope)
+  | { target: 'selection'; reportIds: string[] };
+
+export interface ResendPeriodicReportLimits {
+  maxReportsPerAction: number;
+  actionsPerWindow: number;
+  actionWindowMinutes: number;
+  reportsPerHour: number;
+  stuckAfterMinutes: number;
+}
+
+export interface ResendPeriodicReportPreview {
+  count: number;
+  reasons: { failed: number; stuck: number; held: number };
+  limits: ResendPeriodicReportLimits;
+}
+
+export interface ResendPeriodicReportResult {
+  requested: number;
+  affected: number;
+  replayed: boolean;
+}
+
+const resendPath = (workspaceId: string) =>
+  `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/reports/resend`;
+
+/** Counts the failed, stuck or approved-unsent reports in a target. Read-only. */
+export function previewResendPeriodicReports(
+  workspaceId: string,
+  target: ResendPeriodicReportTarget,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<ResendPeriodicReportPreview>(
+    resendPath(workspaceId),
+    {
+      cache: 'no-store',
+      query:
+        target.target === 'selection'
+          ? { target: 'selection', reportIds: target.reportIds.join(',') }
+          : {
+              target: 'scope',
+              cadence: target.cadence,
+              periodStart: target.periodStart,
+              periodEnd: target.periodEnd,
+              groupId: target.groupId,
+              timezone: target.timezone,
+            },
+    }
+  );
+}
+
+/**
+ * Admin-only, audited and rate-limited resend. The server re-derives the
+ * eligible reports; `expectedCount` must match its count, and one
+ * `idempotencyKey` acts at most once.
+ */
+export function resendPeriodicReports(
+  workspaceId: string,
+  payload: ResendPeriodicReportTarget & {
+    expectedCount: number;
+    idempotencyKey: string;
+  },
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<ResendPeriodicReportResult>(
+    resendPath(workspaceId),
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

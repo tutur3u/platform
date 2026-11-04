@@ -365,6 +365,45 @@ choice in `private.periodic_report_held_actions` (actor, time, workspace,
 scope, action, counts and the affected report ids) before acting. One
 confirmation key acts at most once, so a re-click replays the recorded result.
 
+### Resend failed or stuck reports
+
+An administrator with the same two permissions can **Resend** ("Gửi lại") a
+report that:
+
+- failed with a retryable error (`failed` or `blocked` with a generic provider
+  error, the **Delivery failure** category);
+- is stuck in the queue: `queued` for more than 60 minutes without a worker
+  claim, the same threshold as the "waiting more than 1 hour" queue warning
+  and well past the 15-minute worker lease; or
+- is approved but was never sent.
+
+A report is never resent when it was sent or may have been sent (unknown
+outcome, provider accepted), is processing or recently queued, was skipped or
+cancelled by a person, or failed for a reason that needs a fix first
+(suppression, missing email, setup, approval change). A test delivery is never
+resent: Resend always requests a real send, so a stuck or failed `[TEST]` email
+would otherwise reach the recipient as the real report. Resend is offered per
+row (failed and stuck rows; held rows keep **Send**), for the selected rows
+("Gửi lại các mục đã chọn"), and per period and/or class. The confirmation
+shows the server's exact count.
+
+Each report goes through `private.request_periodic_report_resend`. Under the
+report row lock it re-checks the delivery state the administrator confirmed
+and stage (a report skipped, cancelled, sent, processing, regenerating or
+changed since the count is refused), the retryable-error rule and the delivery
+kind (a test delivery is refused), refuses anything that may already have been
+delivered, cancels a
+stuck queue row and requests delivery through
+`private.request_periodic_report_delivery` with its guards, all in one
+transaction; if delivery is refused, nothing changes. The action is recorded in
+`private.periodic_report_held_actions` with `action = 'resend'` (a selection
+has no period, class or cadence) and is rate limited per workspace in the
+shared Postgres security budget: at most 100 reports per action, 10 resends per
+fixed 10-minute window and 300 resent reports per clock hour. A denied request
+answers 429 with `Retry-After`; an unavailable budget fails closed. The held
+**Send now** and **Skip** re-checks also require no recorded delivery error,
+matching the app's held rule.
+
 The `20260911100000_periodic_report_approval_delivery.sql` migration atomically
 queues the report with its approval. Production migration CI applies it automatically
 after integration into production. Enable the setting after that workflow succeeds. `AUTO_SEND_APPROVED_REPORTS` is a workspace config, defaulting to off.

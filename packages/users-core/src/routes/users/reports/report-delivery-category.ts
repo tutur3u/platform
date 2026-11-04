@@ -36,6 +36,9 @@ export function isHeldPeriodicReport(report: HeldCandidate) {
 }
 
 // Categories describe recorded evidence, not a fresh provider or suppression check.
+// Resend treats only 'failure' as retryable; private.request_periodic_report_resend
+// (20261104121500_periodic_report_resend_action.sql) mirrors these error
+// phrases under the row lock. Keep both lists in sync.
 export function periodicDeliveryCategory(
   report: HeldCandidate & { user_email: string | null }
 ): DeliveryCategory | null {
