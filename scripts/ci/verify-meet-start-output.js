@@ -44,7 +44,8 @@ const identity = {
   ],
   images: { binding: 'IMAGES' },
   observability: { enabled: true, head_sampling_rate: 0.05 },
-  workers_dev: true,
+  workers_dev: false,
+  preview_urls: false,
   routes: [{ pattern: 'meet.tuturuuu.com', custom_domain: true }],
   durable_objects: {
     bindings: [{ name: 'MEET_LIVE', class_name: 'MeetLiveDurableObject' }],
