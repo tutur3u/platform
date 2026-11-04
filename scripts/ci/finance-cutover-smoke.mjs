@@ -11,7 +11,7 @@ const { configPath, config } = readNativeRuntimeConfig(app);
 assert.equal(config.workers_dev, false);
 assert.equal(config.preview_urls, false);
 const profile = process.env.VITE_FINANCE_NATIVE_PROFILE || 'staging';
-const host = `finance.${profile === 'production' || 'finance' !== 'finance' ? 'tuturuuu.com' : 'tutur3u.com'}`;
+const host = `finance.${profile === 'production' ? 'tuturuuu.com' : 'tutur3u.com'}`;
 const scratch = await mkdtemp(join(tmpdir(), 'finance-cutover-'));
 const sdk = createRequire(join(app, 'package.json'))('wrangler');
 let worker;
