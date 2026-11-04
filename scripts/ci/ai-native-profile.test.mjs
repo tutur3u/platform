@@ -72,7 +72,7 @@ test('startup refuses missing secrets, development keys and non-production mode'
       () =>
         execute({
           ...valid,
-          [name]: 'tuturuuu-local-development-app-coordination-secret',
+          [name]: '  tuturuuu-local-development-app-coordination-secret  ',
         }),
       /unsafe required secret/
     );

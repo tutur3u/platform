@@ -42,12 +42,12 @@ export default defineConfig(({ command }) => ({
 if (process.env.NODE_ENV !== 'production') throw new Error('Native Worker requires NODE_ENV=production');
 for (const name of ['TUTURUUU_APP_COORDINATION_SECRET', 'SUPABASE_SECRET_KEY']) {
   const value = nativeStartupEnv[name];
-  if (typeof value !== 'string' || !value.trim() || value.startsWith('tuturuuu-local-development-')) {
+  if (typeof value !== 'string' || !value.trim() || value.trim().startsWith('tuturuuu-local-development-')) {
     throw new Error('Missing or unsafe required secret: ' + name);
   }
 }
 for (const name of ['APP_COORDINATION_TOKEN_SECRET', 'SUPABASE_SERVICE_KEY', 'SUPABASE_SERVICE_ROLE_KEY']) {
-  if (nativeStartupEnv[name]?.startsWith('tuturuuu-local-development-')) throw new Error('Development signing secret forbidden: ' + name);
+  if (nativeStartupEnv[name]?.trim().startsWith('tuturuuu-local-development-')) throw new Error('Development signing secret forbidden: ' + name);
 }
 ${code}`,
           map: null,
