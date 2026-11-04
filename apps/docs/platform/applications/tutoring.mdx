@@ -27,10 +27,12 @@ payroll.
   before it started tracking make-ups. Older absences and sessions are not
   changed or deleted; they are only left out of make-up suggestions. Unset
   (the default for every existing policy) keeps the rolling window alone.
-  Linked make-up content pairs sessions with absences over the same cutoff, so
-  a make-up booked from a queue row follows the absence that row showed. A
-  pending make-up dated before the cutoff is left unpaired and shows no linked
-  notes rather than another absence's notes
+  Linked make-up content pairs sessions with absences over its own fixed
+  90-day horizon (`TUTORING_LINK_HORIZON_DAYS`), not the queue window, so
+  shortening the lookback never strips notes from a make-up booked earlier.
+  The count-from date still applies: a make-up never pairs with an absence
+  before it. An absence older than both is left unpaired, and its make-up
+  shows no linked notes rather than another absence's notes
   ([`queue/route.count-from.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/queue/route.count-from.test.ts),
   [`tutoring-absence-cutoff.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/internal-api/src/tutoring-absence-cutoff.test.ts),
   [`linked-content.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/linked-content.test.ts)).
@@ -530,8 +532,9 @@ on, no setting):
   content of a pending session links it to the notes again.
 - No-show and cancelled sessions keep whatever content they have.
 - **Which missed class**: each make-up session follows exactly one missed class.
-  Within a learner's class, absences in the lookback window and that learner's
-  pending or done make-up sessions are paired in date order. The oldest
+  Within a learner's class, absences in the last 90 days (on or after the
+  count-from date, when set; the queue lookback does not apply) and that
+  learner's pending or done make-up sessions are paired in date order. The oldest
   absence not yet covered goes to the earliest session dated on or after it.
   Sessions dated before every open absence follow no class and show no
   notes. Deleting or rescheduling a session, or editing attendance, can

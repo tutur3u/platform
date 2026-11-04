@@ -231,6 +231,87 @@ describe('linked make-up content', () => {
     expect(pending.content).toBe('2026-11-03: Unit 5: after the date');
   });
 
+  describe('when the queue window is shorter than the make-up booking', () => {
+    const now = new Date('2026-11-05T05:00:00Z');
+
+    function policy(overrides: Partial<typeof STANDARD_TUTORING_POLICY>) {
+      tables.workspace_configs = serializeTutoringPolicyConfigRows({
+        ...STANDARD_TUTORING_POLICY,
+        ...overrides,
+      }).map((row) => ({ ...row, ws_id: wsId }));
+    }
+
+    function absences(dates: string[]) {
+      tables.user_group_attendance = dates.map((date) => ({
+        group_id: 'group-1',
+        user_id: 'student-1',
+        date,
+        status: 'ABSENT',
+      }));
+    }
+
+    function notes(entries: [date: string, description: string][]) {
+      tables.workspace_user_group_sessions = entries.map(
+        ([date, description]) => ({
+          ...lesson(description),
+          starts_at: `${date}T10:00:00Z`,
+        })
+      );
+    }
+
+    async function linkedFor(pending: LinkableTutoringSession & Row) {
+      tables.workspace_tutoring_sessions = [pending];
+      const linked = await loadLinkedLessonContent({
+        sbAdmin,
+        sessions: [pending],
+        wsId,
+      });
+      return linked.get(pending.id);
+    }
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(now);
+    });
+
+    it('keeps the notes of an absence older than the queue window', async () => {
+      // Queue window 4 days; absence 10 days ago; make-up booked 3 days ago.
+      policy({ absenceLookbackDays: 4, absenceCountFromDate: null });
+      absences(['2026-10-26']);
+      notes([['2026-10-26', 'Unit 2: fractions']]);
+
+      await expect(
+        linkedFor(session({ session_date: '2026-11-02' }))
+      ).resolves.toBe('2026-10-26: Unit 2: fractions');
+    });
+
+    it('still never pairs with an absence before the count-from date', async () => {
+      // The queue window (1 day) excludes 3 Nov; the count-from date still
+      // hides 28 Oct, so the make-up follows 3 Nov.
+      policy({ absenceLookbackDays: 1, absenceCountFromDate: '2026-11-01' });
+      absences(['2026-10-28', '2026-11-03']);
+      notes([
+        ['2026-10-28', 'Unit 3: before the date'],
+        ['2026-11-03', 'Unit 5: after the date'],
+      ]);
+
+      await expect(
+        linkedFor(session({ session_date: '2026-11-05' }))
+      ).resolves.toBe('2026-11-03: Unit 5: after the date');
+    });
+
+    it('does not pair with an absence beyond the link horizon', async () => {
+      // 100 days before 5 Nov.
+      policy({ absenceLookbackDays: 4, absenceCountFromDate: null });
+      absences(['2026-07-28']);
+      notes([['2026-07-28', 'Unit 1: long ago']]);
+
+      await expect(
+        linkedFor(session({ session_date: '2026-11-02' }))
+      ).resolves.toBe('');
+    });
+  });
+
   it('never derives content over a staff edit', async () => {
     const edited = session({ content: 'Tutor plan' });
     tables.workspace_tutoring_sessions = [edited];

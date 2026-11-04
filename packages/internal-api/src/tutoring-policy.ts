@@ -1,7 +1,9 @@
 import {
   getTutoringAbsenceCountFromMax,
   getTutoringAbsenceCutoff,
+  getTutoringLinkCutoff,
   parseAbsenceCountFromDate,
+  TUTORING_LINK_HORIZON_DAYS,
 } from './tutoring-absence-count-from';
 import {
   getTutoringCampusChoices,
@@ -19,8 +21,10 @@ export {
   getTutoringAbsenceCountFromMax,
   getTutoringAbsenceCutoff,
   getTutoringCampusChoices,
+  getTutoringLinkCutoff,
   parseTutoringCampusOptions,
   TUTORING_CAMPUS_LABEL_MAX_LENGTH,
+  TUTORING_LINK_HORIZON_DAYS,
 };
 
 export const TUTORING_POLICY_CONFIG_ID = 'TUTORING_POLICY';

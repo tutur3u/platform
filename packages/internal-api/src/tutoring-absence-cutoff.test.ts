@@ -3,11 +3,13 @@ import {
   EASY_CENTER_TUTORING_POLICY,
   getTutoringAbsenceCountFromMax,
   getTutoringAbsenceCutoff,
+  getTutoringLinkCutoff,
   parseTutoringPolicy,
   readTutoringPolicy,
   readTutoringPolicyConfigRows,
   STANDARD_TUTORING_POLICY,
   serializeTutoringPolicyConfigRows,
+  TUTORING_LINK_HORIZON_DAYS,
   type TutoringPolicy,
 } from './tutoring-policy';
 
@@ -197,5 +199,40 @@ describe('getTutoringAbsenceCutoff', () => {
         now
       )
     ).toBe('2026-11-13');
+  });
+});
+
+describe('getTutoringLinkCutoff', () => {
+  const now = Date.parse('2026-11-20T03:00:00Z');
+
+  it('looks back a fixed horizon, independent of the queue window', () => {
+    expect(TUTORING_LINK_HORIZON_DAYS).toBe(90);
+    expect(
+      getTutoringLinkCutoff(
+        { absenceLookbackDays: 4, absenceCountFromDate: null },
+        now
+      )
+    ).toBe('2026-08-22');
+    expect(
+      getTutoringLinkCutoff(
+        { absenceLookbackDays: 28, absenceCountFromDate: null },
+        now
+      )
+    ).toBe('2026-08-22');
+  });
+
+  it('never reaches before the count-from date', () => {
+    expect(
+      getTutoringLinkCutoff(
+        { absenceLookbackDays: 4, absenceCountFromDate: '2026-11-01' },
+        now
+      )
+    ).toBe('2026-11-01');
+    expect(
+      getTutoringLinkCutoff(
+        { absenceLookbackDays: 4, absenceCountFromDate: '2025-01-15' },
+        now
+      )
+    ).toBe('2026-08-22');
   });
 });

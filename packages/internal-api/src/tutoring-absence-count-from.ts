@@ -38,3 +38,24 @@ export function getTutoringAbsenceCutoff(
   const from = policy.absenceCountFromDate;
   return from && from > rolling ? from : rolling;
 }
+
+/**
+ * How far back linked make-up content looks for the missed class. Fixed and
+ * longer than any queue window, so shortening the window never strips content
+ * from a make-up that was already booked.
+ */
+export const TUTORING_LINK_HORIZON_DAYS = 90;
+
+/**
+ * The earliest absence date a make-up session can pair with for linked
+ * content: the later of the fixed link horizon and the chosen count-from date.
+ * The queue window is deliberately ignored.
+ */
+export function getTutoringLinkCutoff(
+  policy: { absenceCountFromDate: string | null },
+  now = Date.now()
+) {
+  const horizon = isoDay(now - TUTORING_LINK_HORIZON_DAYS * DAY_MS);
+  const from = policy.absenceCountFromDate;
+  return from && from > horizon ? from : horizon;
+}

@@ -1,5 +1,5 @@
 import {
-  getTutoringAbsenceCutoff,
+  getTutoringLinkCutoff,
   readTutoringPolicyConfigRows,
   TUTORING_POLICY_CONFIG_ID,
 } from '@tuturuuu/internal-api/tutoring-policy';
@@ -101,9 +101,10 @@ export async function loadLinkedLessonContent({
     .eq('ws_id', wsId)
     .like('id', `${TUTORING_POLICY_CONFIG_ID}%`);
   if (policyResult.error) throw policyResult.error;
-  // Same cutoff as the queue, so a make-up booked from a queue row pairs with
-  // an absence that row showed, never one hidden by the count-from date.
-  const cutoff = getTutoringAbsenceCutoff(
+  // Its own horizon, not the queue window: shortening the window must not
+  // strip content from a make-up booked earlier. The count-from date still
+  // applies, so a make-up never pairs with an absence it hides.
+  const cutoff = getTutoringLinkCutoff(
     readTutoringPolicyConfigRows(policyResult.data ?? [])
   );
 
