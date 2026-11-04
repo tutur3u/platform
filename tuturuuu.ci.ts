@@ -14,6 +14,7 @@ export const ci = {
   'creator-identity-contract.yaml': true,
   'task-board-database-contract.yaml': true,
   'fee-lock-database-contract.yaml': true,
+  'external-project-page-versions-contract.yaml': true,
   'connected-mail-accounts-contract.yaml': true,
   'mail-profile-runtime-contract.yaml': true,
   'check-and-bump-versions.yaml': true,

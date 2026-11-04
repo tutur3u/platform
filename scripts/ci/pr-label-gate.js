@@ -48,6 +48,7 @@ const HEAVY_PR_WORKFLOWS = [
   'devbox-control-cloudflare.yaml',
   'discord-python-ci.yml',
   'external-internal-packages.yaml',
+  'external-project-page-versions-contract.yaml',
   'external-project-storage-analytics-contract.yaml',
   'fee-lock-database-contract.yaml',
   'finance-cloudflare.yaml',
