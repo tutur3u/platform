@@ -13,6 +13,7 @@ import { proxy, config as proxyConfig } from '../src/proxy';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 import appConfig from '../start-bridge.config';
+import { missingRequiredBindings } from './required-bindings';
 
 export interface ContactsEnvironment {
   ASSETS: AssetsBinding;
@@ -71,6 +72,12 @@ const handler = (
 
 export default {
   async fetch(request: Request, env: ContactsEnvironment, ctx: WorkerContext) {
+    if (missingRequiredBindings(env)) {
+      return new Response('Required configuration unavailable', {
+        status: 503,
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    }
     let response: Response;
     try {
       response = await (await handler)(request, env, ctx);
