@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Synthetic workspaces, classes and reports only. The enqueue boundary
-// (request_periodic_report_delivery) is an in-memory fake: nothing here can
-// reach a real database, queue or email provider.
+// Synthetic workspaces, classes and reports only. The database functions
+// (request_held_periodic_report_delivery, request_periodic_report_delivery and
+// skip_held_periodic_reports) are in-memory fakes: nothing here can reach a
+// real database, queue or email provider.
 const WS = '00000000-0000-4000-8000-00000000a001';
 const OTHER_WS = '00000000-0000-4000-8000-00000000b001';
 const CLASS_A = '00000000-0000-4000-8000-00000000a101';
@@ -49,6 +50,12 @@ interface Store {
   rpcCalls: Row[];
   tables: string[];
   failAuditInsert?: boolean;
+  // Rejects matching audit updates, as a database outage would.
+  failAuditUpdate?: (payload: Row) => boolean;
+  // Runs before each database function call: another admin acting meanwhile.
+  beforeRpc?: (name: string, args: Row) => void;
+  // Fails the held send of this report id.
+  failSendOf?: string;
 }
 let store: Store;
 
@@ -111,6 +118,12 @@ function fakeQuery(table: string) {
       return { data: null, error: { message: `unexpected insert ${table}` } };
     }
     const matched = rowsFor().filter((row) => filters.every((f) => f(row)));
+    if (
+      op === 'update' &&
+      table === 'periodic_report_held_actions' &&
+      store.failAuditUpdate?.(payload)
+    )
+      return { data: null, error: { code: 'XX000', message: 'audit down' } };
     if (op === 'update') {
       for (const row of matched) {
         Object.assign(row, payload);
@@ -210,12 +223,66 @@ function fakeQuery(table: string) {
   return query;
 }
 
-// The existing pipeline's guards, simulated: one queue row per report and a
-// 409 for anything already queued, processing or sent.
+const inWorkspace = (row: Row, wsId: unknown) =>
+  row.user_ws_id === wsId && row.group_ws_id === wsId;
+const stillHeld = (row: Row) =>
+  row.delivery_status === 'draft' &&
+  row.report_approval_status === 'APPROVED' &&
+  (row.delivered_at ?? null) === null &&
+  !store.queue.some(
+    (entry) => entry.report_id === row.id && entry.delivery_kind === 'send'
+  );
+
+// The database functions, simulated as the migrations define them.
 async function fakeRpc(name: string, args: Row) {
-  store.rpcCalls.push({ name, ...args });
+  store.beforeRpc?.(name, args);
+  if (name === 'skip_held_periodic_reports') {
+    store.rpcCalls.push({ name, ...args });
+    const ids = args.p_report_ids as string[];
+    const skipped = store.view.filter(
+      (row) =>
+        ids.includes(row.id as string) &&
+        inWorkspace(row, args.p_ws_id) &&
+        stillHeld(row)
+    );
+    for (const row of skipped) {
+      row.delivery_status = 'skipped';
+      row.report_stage = 'skipped';
+    }
+    return { data: skipped.map((row) => row.id), error: null };
+  }
+  if (name === 'request_held_periodic_report_delivery') {
+    store.rpcCalls.push({ name, ...args });
+    if (args.p_report_id === store.failSendOf)
+      return { data: null, error: { code: '57014', message: 'timeout' } };
+    // Held check and enqueue under one row lock.
+    const target = store.view.find(
+      (row) => row.id === args.p_report_id && inWorkspace(row, args.p_ws_id)
+    );
+    if (!target) return { data: { code: 404 }, error: null };
+    if (!stillHeld(target))
+      return {
+        data: { code: 409, message: 'This report is no longer held.' },
+        error: null,
+      };
+    return requestDelivery({
+      p_report_id: args.p_report_id,
+      p_ws_id: args.p_ws_id,
+      p_action: 'send',
+      p_delivery_enabled: args.p_delivery_enabled,
+    });
+  }
   if (name !== 'request_periodic_report_delivery')
     return { data: null, error: { message: `unexpected rpc ${name}` } };
+  return requestDelivery(args);
+}
+
+// The existing manual pipeline's guards: one queue row per report and a 409
+// only for anything already queued, processing or sent. Like the real
+// function, it may send a skipped report: a manual send after a skip is
+// allowed, so the hold has to be checked by the held function.
+function requestDelivery(args: Row) {
+  store.rpcCalls.push({ name: 'request_periodic_report_delivery', ...args });
   if (args.p_action === 'probe')
     return {
       data: { code: 400, message: 'Invalid delivery action.' },
@@ -225,7 +292,10 @@ async function fakeRpc(name: string, args: Row) {
     (row) => row.id === args.p_report_id && row.user_ws_id === args.p_ws_id
   );
   if (!target) return { data: { code: 404 }, error: null };
-  if (target.delivery_status !== 'draft')
+  if (
+    ['queued', 'sent', 'processing'].includes(String(target.delivery_status)) ||
+    target.report_approval_status !== 'APPROVED'
+  )
     return {
       data: { code: 409, message: 'Delivery is already active or sent.' },
       error: null,
@@ -553,6 +623,65 @@ describe('held approved-never-sent reports: send now', () => {
   });
 });
 
+describe('held approved-never-sent reports: Skip vs Send now race', () => {
+  const skipMeanwhile = (reportId: string) => {
+    const row = store.view.find((entry) => entry.id === reportId);
+    if (row && row.delivery_status === 'draft') {
+      row.delivery_status = 'skipped';
+      row.report_stage = 'skipped';
+    }
+  };
+  it('does not queue a report another admin skipped during the batch', async () => {
+    // Admin B skips r-02 while admin A's Send now is on r-01.
+    store.beforeRpc = (name, args) => {
+      if (
+        name === 'request_held_periodic_report_delivery' &&
+        args.p_report_id === 'r-01'
+      )
+        skipMeanwhile('r-02');
+    };
+    const response = await postHeld(sendBody());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ requested: 2, affected: 1 });
+    expect(store.queue.map((entry) => entry.report_id)).toEqual(['r-01']);
+    expect(enqueues().map((call) => call.p_report_id)).toEqual(['r-01']);
+    expect(store.view.find((row) => row.id === 'r-02')?.delivery_status).toBe(
+      'skipped'
+    );
+    expect(store.audit[0]).toMatchObject({
+      status: 'completed',
+      affected_count: 1,
+      report_ids: ['r-01'],
+    });
+  });
+  it('does not queue a report skipped after the count but before its send', async () => {
+    store.beforeRpc = (name, args) => {
+      if (
+        name === 'request_held_periodic_report_delivery' &&
+        args.p_report_id === 'r-01'
+      )
+        skipMeanwhile('r-01');
+    };
+    const response = await postHeld(sendBody());
+    expect(await response.json()).toMatchObject({ requested: 2, affected: 1 });
+    expect(store.queue.map((entry) => entry.report_id)).toEqual(['r-02']);
+    expect(store.view.find((row) => row.id === 'r-01')?.delivery_status).toBe(
+      'skipped'
+    );
+  });
+  it('sends through the held function only, scoped to the workspace', async () => {
+    await postHeld(sendBody());
+    expect(
+      store.rpcCalls
+        .filter((call) => call.name === 'request_held_periodic_report_delivery')
+        .map((call) => [call.p_report_id, call.p_ws_id])
+    ).toEqual([
+      ['r-01', WS],
+      ['r-02', WS],
+    ]);
+  });
+});
+
 describe('held approved-never-sent reports: skip', () => {
   it('moves held reports out of the group without sending, and records them', async () => {
     const response = await postHeld(sendBody({ action: 'skip' }));
@@ -585,6 +714,31 @@ describe('held approved-never-sent reports: skip', () => {
       'draft'
     );
   });
+  it('skips through the workspace-scoped held function', async () => {
+    await postHeld(sendBody({ action: 'skip' }));
+    expect(store.rpcCalls).toEqual([
+      expect.objectContaining({
+        name: 'skip_held_periodic_reports',
+        p_ws_id: WS,
+        p_report_ids: ['r-01', 'r-02'],
+      }),
+    ]);
+    // No direct table write that could skip outside the workspace.
+    expect(store.tables).not.toContain('external_user_monthly_reports');
+  });
+  it('leaves a report that another admin queued meanwhile', async () => {
+    store.beforeRpc = (name) => {
+      if (name !== 'skip_held_periodic_reports') return;
+      const row = store.view.find((entry) => entry.id === 'r-02');
+      if (row) row.delivery_status = 'queued';
+    };
+    const response = await postHeld(sendBody({ action: 'skip' }));
+    expect(await response.json()).toMatchObject({ affected: 1 });
+    expect(store.view.find((row) => row.id === 'r-02')?.delivery_status).toBe(
+      'queued'
+    );
+    expect(store.audit[0]?.report_ids).toEqual(['r-01']);
+  });
   it('skips per class', async () => {
     await postHeld(
       sendBody({ action: 'skip', groupId: CLASS_B, expectedCount: 1 })
@@ -599,6 +753,70 @@ describe('held approved-never-sent reports: skip', () => {
       group_id: CLASS_B,
       affected_count: 1,
     });
+  });
+});
+
+describe('held approved-never-sent reports: audit robustness', () => {
+  const manyHeld = (count: number) =>
+    Array.from({ length: count }, (_, index) =>
+      report(`r-${String(index + 1).padStart(3, '0')}`)
+    );
+  it('records queued report ids while a long Send now runs', async () => {
+    store.view = manyHeld(25);
+    // Report 23 times out and the 'failed' write is lost too: the row keeps
+    // the progress recorded so far instead of empty report ids.
+    store.failSendOf = 'r-023';
+    store.failAuditUpdate = (payload) => payload.status === 'failed';
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const response = await postHeld(sendBody({ expectedCount: 25 }));
+      expect(response.status).toBe(500);
+      expect(store.audit[0]).toMatchObject({
+        status: 'started',
+        affected_count: 20,
+        report_ids: manyHeld(20).map((row) => row.id),
+      });
+      expect(store.queue).toHaveLength(22);
+    } finally {
+      errors.mockRestore();
+    }
+  });
+  it('logs a failed audit failure record with the attempted ids', async () => {
+    store.failSendOf = 'r-02';
+    store.failAuditUpdate = (payload) => payload.status === 'failed';
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      expect((await postHeld(sendBody())).status).toBe(500);
+      expect(errors).toHaveBeenCalledWith(
+        'Held periodic report audit failure record failed',
+        expect.objectContaining({
+          auditId: 'audit-1',
+          attemptedReportIds: ['r-01', 'r-02'],
+          affectedReportIds: ['r-01'],
+          error: expect.objectContaining({ message: 'audit down' }),
+        })
+      );
+    } finally {
+      errors.mockRestore();
+    }
+  });
+  it('marks the audit failed with the queued ids when the failure record works', async () => {
+    store.failSendOf = 'r-02';
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      expect((await postHeld(sendBody())).status).toBe(500);
+      expect(store.audit[0]).toMatchObject({
+        status: 'failed',
+        affected_count: 1,
+        report_ids: ['r-01'],
+      });
+      expect(errors).not.toHaveBeenCalledWith(
+        'Held periodic report audit failure record failed',
+        expect.anything()
+      );
+    } finally {
+      errors.mockRestore();
+    }
   });
 });
 

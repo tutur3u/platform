@@ -24,6 +24,7 @@ const SUBJECT = '00000000-0000-4000-8000-00000000d002';
 const CLASS = '00000000-0000-4000-8000-00000000d003';
 const HELD = '00000000-0000-4000-8000-00000000d101';
 const FRESH = '00000000-0000-4000-8000-00000000d102';
+const OTHER = '00000000-0000-4000-8000-00000000d103';
 const ACTOR = '00000000-0000-4000-8000-00000000d901';
 const HELD_MIGRATION = '20261104120000_periodic_report_held_actions.sql';
 
@@ -261,6 +262,123 @@ test('Send now uses the existing request pipeline and cannot double-queue', asyn
   }
 });
 
+const heldSend = (id, ws = WS) =>
+  `select private.request_held_periodic_report_delivery('${id}', '${ws}', true) as r`;
+const heldSkip = (ids, ws = WS) =>
+  `select private.skip_held_periodic_reports('${ws}', array[${ids
+    .map((id) => `'${id}'::uuid`)
+    .join(', ')}]) as ids`;
+
+async function approveSecondHeld(db) {
+  await db.exec(`
+    insert into private.external_user_monthly_reports
+      (id, user_id, group_id, title, period_start, period_end)
+      values ('${OTHER}', '${SUBJECT}', '${CLASS}', 'September B', '2026-09-01', '2026-09-30');
+    update private.external_user_monthly_reports
+      set report_approval_status = 'APPROVED', approved_at = now() where id = '${OTHER}';
+  `);
+}
+
+test('the held migration bounds its locks in one transaction', async () => {
+  const source = await read(`supabase/migrations/${HELD_MIGRATION}`);
+  assert.match(
+    source,
+    /^BEGIN;\nSET LOCAL lock_timeout = '5s';\nSET LOCAL statement_timeout = '60s';\n/
+  );
+  assert.match(source, /\nCOMMIT;\n$/);
+  const db = await setup();
+  try {
+    await db.exec(await read(`supabase/migrations/${HELD_MIGRATION}`));
+    // Committed, not left open: a rollback now has nothing to undo.
+    await db.exec('rollback');
+    assert.notEqual(
+      (
+        await one(
+          db,
+          `select to_regclass('private.periodic_report_held_actions') as t`
+        )
+      ).t,
+      null
+    );
+  } finally {
+    await db.close();
+  }
+});
+
+test('Send now refuses a report skipped before or during the batch', async () => {
+  const db = await setup();
+  try {
+    await db.exec(await read(`supabase/migrations/${HELD_MIGRATION}`));
+    await approveWhileAutoSendOff(db);
+    await approveSecondHeld(db);
+    // Another admin's Skip on HELD commits while a Send now batch for HELD and
+    // OTHER is running (the batch counted both as held a moment earlier).
+    assert.deepEqual((await one(db, heldSkip([HELD]))).ids, [HELD]);
+    const refused = (await one(db, heldSend(HELD))).r;
+    assert.equal(refused.code, 409, 'a skipped report is not held any more');
+    assert.equal((await snapshot(db, HELD)).delivery_status, 'skipped');
+    assert.equal(await queueCount(db), 0, 'the skipped report is not queued');
+    assert.equal((await one(db, heldSend(OTHER))).r.code, 200);
+    assert.equal(await queueCount(db), 1);
+    assert.deepEqual(
+      (await claim(db)).map((row) => row.report_id),
+      [OTHER],
+      'only the still-held report reaches the worker'
+    );
+    // The check and the enqueue share the report row lock: the lock is taken
+    // before the held state is read.
+    const body = (
+      await one(
+        db,
+        `select prosrc from pg_proc where proname = 'request_held_periodic_report_delivery'`
+      )
+    ).prosrc;
+    assert.ok(body.indexOf('for update of r') > 0);
+    assert.ok(body.indexOf('for update of r') < body.indexOf("'draft'"));
+  } finally {
+    await db.close();
+  }
+});
+
+test('Skip after a Send now leaves the queued report alone; both stay in their workspace', async () => {
+  const db = await setup();
+  try {
+    await db.exec(await read(`supabase/migrations/${HELD_MIGRATION}`));
+    await approveWhileAutoSendOff(db);
+    await approveSecondHeld(db);
+    const elsewhere = '00000000-0000-4000-8000-00000000e002';
+    await db.exec(
+      `insert into public.workspaces (id, name) values ('${elsewhere}', 'Other')`
+    );
+    assert.deepEqual((await one(db, heldSkip([HELD], elsewhere))).ids, []);
+    assert.equal((await one(db, heldSend(HELD, elsewhere))).r.code, 404);
+    assert.equal((await snapshot(db, HELD)).delivery_status, 'draft');
+
+    assert.equal((await one(db, heldSend(HELD))).r.code, 200);
+    assert.deepEqual((await one(db, heldSkip([HELD, OTHER]))).ids, [OTHER]);
+    assert.equal((await snapshot(db, HELD)).delivery_status, 'queued');
+    assert.equal(
+      (await one(db, heldSend(HELD))).r.code,
+      409,
+      'no double queue'
+    );
+    assert.equal(await queueCount(db), 1);
+    // A deliberate manual send of a skipped report still works, which is why
+    // the held send needs its own check.
+    assert.equal(
+      (
+        await one(
+          db,
+          `select private.request_periodic_report_delivery('${OTHER}', '${WS}', 'send', true) as r`
+        )
+      ).r.code,
+      200
+    );
+  } finally {
+    await db.close();
+  }
+});
+
 test('held action audit is service-role only, scoped and idempotent', async () => {
   const db = await setup();
   try {
@@ -288,6 +406,31 @@ test('held action audit is service-role only, scoped and idempotent', async () =
           `${role} has no ${privilege}`
         );
       }
+    }
+    for (const fn of [
+      'private.request_held_periodic_report_delivery(uuid, uuid, boolean)',
+      'private.skip_held_periodic_reports(uuid, uuid[])',
+    ]) {
+      for (const role of ['anon', 'authenticated'])
+        assert.equal(
+          (
+            await one(
+              db,
+              `select has_function_privilege('${role}', '${fn}', 'execute') as ok`
+            )
+          ).ok,
+          false,
+          `${role} cannot execute ${fn}`
+        );
+      assert.equal(
+        (
+          await one(
+            db,
+            `select has_function_privilege('service_role', '${fn}', 'execute') as ok`
+          )
+        ).ok,
+        true
+      );
     }
     for (const privilege of ['select', 'insert', 'update'])
       assert.equal(
@@ -332,6 +475,14 @@ test('held action audit is service-role only, scoped and idempotent', async () =
     const rollback = await read(
       'rollbacks/20261104120000_periodic_report_held_actions.rollback.sql'
     );
+    const lockAt = rollback.indexOf(
+      'LOCK TABLE private.periodic_report_held_actions IN ACCESS EXCLUSIVE MODE;'
+    );
+    assert.ok(lockAt > 0, 'the rollback locks the audit table');
+    assert.ok(
+      lockAt < rollback.indexOf('IF EXISTS'),
+      'the lock comes before the empty check'
+    );
     await assert.rejects(db.exec(rollback), /audit rows exist/);
     await db.exec('rollback');
     await db.exec(`delete from ${table}`);
@@ -339,6 +490,16 @@ test('held action audit is service-role only, scoped and idempotent', async () =
     assert.equal(
       (await one(db, `select to_regclass('${table}') as t`)).t,
       null
+    );
+    assert.equal(
+      (
+        await one(
+          db,
+          `select count(*)::int as n from pg_proc where proname in ('request_held_periodic_report_delivery', 'skip_held_periodic_reports')`
+        )
+      ).n,
+      0,
+      'the rollback drops the held functions'
     );
   } finally {
     await db.close();

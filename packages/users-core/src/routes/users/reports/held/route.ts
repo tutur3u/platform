@@ -23,6 +23,8 @@ import {
   heldAuditTable,
   isHeldAuditMigrationPending,
   loadHeldReportIds,
+  requestHeldReportDelivery,
+  skipHeldReports,
 } from '../held-reports';
 import { ReportListLimitError } from '../report-list-query';
 import { resolveReportPeriodTimezone } from '../report-period-filter';
@@ -85,6 +87,10 @@ async function periodTimezone(
   return resolveReportPeriodTimezone(workspace.data?.timezone, scope.timezone);
 }
 
+// Sends between audit progress writes, so a timed-out batch still records
+// what it queued. Skips record after each chunk.
+const SEND_PROGRESS_EVERY = 10;
+
 const unauthorized = () => json({ message: 'Unauthorized' }, 403);
 const classNotFound = () => json({ message: 'Class not found' }, 404);
 const scopeTooLarge = (limit: number) =>
@@ -143,6 +149,9 @@ export async function GET(request: Request, { params }: Params) {
 
 export async function POST(request: Request, { params }: Params) {
   let auditId: string | null = null;
+  let auditWsId: string | null = null;
+  // Attempted: handed to the database. Affected: actually queued or skipped.
+  const attemptedIds: string[] = [];
   const affectedIds: string[] = [];
   let sbAdmin: AdminClient | null = null;
   try {
@@ -268,39 +277,48 @@ export async function POST(request: Request, { params }: Params) {
       throw audit.error;
     }
     auditId = audit.data.id;
+    auditWsId = wsId;
+    const admin = sbAdmin;
+    const recordProgress = async () => {
+      const progress = await heldAuditTable(admin)
+        .update({
+          affected_count: affectedIds.length,
+          report_ids: [...affectedIds],
+        })
+        .eq('id', auditId)
+        .eq('ws_id', wsId);
+      if (progress.error)
+        console.error('Held periodic report audit progress failed', {
+          auditId,
+          reportIds: affectedIds,
+          error: progress.error,
+        });
+    };
 
-    const privateDb = sbAdmin.schema('private');
     if (body.action === 'skip') {
-      // Re-checked in the write itself, so a report that changed since the
-      // count is left alone. No error text: a skip is not a delivery failure.
-      for (const ids of chunks(heldIds)) {
-        const result = await privateDb
-          .from('external_user_monthly_reports')
-          .update({ delivery_status: 'skipped' })
-          .in('id', ids)
-          .eq('delivery_status', 'draft')
-          .eq('report_approval_status', 'APPROVED')
-          .is('delivered_at', null)
-          .select('id');
-        if (result.error) throw result.error;
-        affectedIds.push(...(result.data ?? []).map((row) => row.id));
+      // Re-checked in the write itself, scoped to this workspace's subjects
+      // and classes, so a report that changed since the count is left alone.
+      // No error text: a skip is not a delivery failure.
+      const batches = chunks(heldIds);
+      for (const [index, ids] of batches.entries()) {
+        attemptedIds.push(...ids);
+        affectedIds.push(...(await skipHeldReports(admin, wsId, ids)));
+        if (index < batches.length - 1) await recordProgress();
       }
     } else {
-      // The existing per-report pipeline: same locks, 409 guards, one queue
-      // row per report, worker caps and workspace email limits.
-      for (const reportId of heldIds) {
-        const { data, error } = await privateDb.rpc(
-          'request_periodic_report_delivery',
-          {
-            p_report_id: reportId,
-            p_ws_id: wsId,
-            p_action: 'send',
-            p_delivery_enabled: true,
-          }
-        );
-        if (error) throw error;
-        if ((data as { code?: number } | null)?.code === 200)
+      // The existing per-report pipeline (same locks, 409 guards, one queue
+      // row per report, worker caps and workspace email limits), entered only
+      // while the report is still held under its row lock: a report skipped
+      // by another admin meanwhile is refused, never queued.
+      for (const [index, reportId] of heldIds.entries()) {
+        attemptedIds.push(reportId);
+        if (await requestHeldReportDelivery(admin, wsId, reportId))
           affectedIds.push(reportId);
+        if (
+          (index + 1) % SEND_PROGRESS_EVERY === 0 &&
+          index < heldIds.length - 1
+        )
+          await recordProgress();
       }
     }
 
@@ -316,6 +334,7 @@ export async function POST(request: Request, { params }: Params) {
     if (completed.error)
       console.error('Held periodic report audit completion failed', {
         auditId,
+        reportIds: affectedIds,
         error: completed.error,
       });
     return json({
@@ -325,8 +344,8 @@ export async function POST(request: Request, { params }: Params) {
       replayed: false,
     });
   } catch (error) {
-    if (auditId && sbAdmin) {
-      await heldAuditTable(sbAdmin)
+    if (auditId && auditWsId && sbAdmin) {
+      const failedError = await heldAuditTable(sbAdmin)
         .update({
           status: 'failed',
           affected_count: affectedIds.length,
@@ -334,16 +353,30 @@ export async function POST(request: Request, { params }: Params) {
           completed_at: new Date().toISOString(),
         })
         .eq('id', auditId)
+        .eq('ws_id', auditWsId)
         .then(
-          () => undefined,
-          () => undefined
+          (result: { error: unknown }) => result.error,
+          (failure: unknown) => failure ?? new Error('audit update failed')
         );
+      // The row may stay 'started'; the log keeps what was attempted.
+      if (failedError)
+        console.error('Held periodic report audit failure record failed', {
+          auditId,
+          attemptedReportIds: attemptedIds,
+          affectedReportIds: affectedIds,
+          error: failedError,
+        });
     }
     if (error instanceof ReportListLimitError)
       return scopeTooLarge(HELD_SKIP_LIMIT);
     if (isDeliveryMigrationPending(error))
       return deliveryMigrationPendingResponse();
-    console.error('Held periodic report action failed', { error });
+    console.error('Held periodic report action failed', {
+      auditId,
+      attemptedReportIds: attemptedIds,
+      affectedReportIds: affectedIds,
+      error,
+    });
     return json({ message: 'Internal server error' }, 500);
   }
 }

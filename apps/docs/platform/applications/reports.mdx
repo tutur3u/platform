@@ -348,11 +348,16 @@ reports. An administrator with both `manage_user_report_automation` and
 `send_user_group_report_emails` chooses per period and/or class:
 
 - **Send now** queues only the held reports in that scope through
+  `private.request_held_periodic_report_delivery`, which re-checks that each
+  report is still held under its row lock and then calls
   `private.request_periodic_report_delivery`, the same per-report path as a
   manual send, so its row locks, 409 guards, one queue row per report, worker
-  caps and workspace email limits all apply. At most 100 per action.
-- **Skip** marks them `skipped` without sending. They leave the list and can
-  still be sent manually later.
+  caps and workspace email limits all apply. A report another admin skipped
+  before or during the batch is refused, never queued. At most 100 per action.
+- **Skip** marks them `skipped` without sending, through
+  `private.skip_held_periodic_reports`, scoped to the workspace's subjects and
+  classes. A report queued meanwhile is left alone. Skipped reports leave the
+  list and can still be sent manually later.
 
 The server re-derives the held set from the scope (client report ids are
 rejected), re-checks the count shown in the confirmation, and records each

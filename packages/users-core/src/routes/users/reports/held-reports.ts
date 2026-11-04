@@ -58,14 +58,52 @@ export function isHeldAuditMigrationPending(error: unknown) {
   return ['42P01', 'PGRST205'].includes(String(error.code));
 }
 
-// The audit table is newer than the generated client types (Rex regenerates
-// them after applying the migration), so it is reached untyped, as in
-// lib/post-check-audit.ts.
-type UntypedPrivateSchema = { from: (table: string) => any };
+// The audit table and the held functions are newer than the generated client
+// types (Rex regenerates them after applying the migration), so they are
+// reached untyped, as in lib/post-check-audit.ts.
+type UntypedPrivateSchema = {
+  from: (table: string) => any;
+  rpc: (
+    name: string,
+    args: Record<string, unknown>
+  ) => PromiseLike<{ data: unknown; error: { code?: string } | null }>;
+};
+const untypedPrivate = (sbAdmin: TypedSupabaseClient) =>
+  (sbAdmin as any).schema('private') as UntypedPrivateSchema;
 export function heldAuditTable(sbAdmin: TypedSupabaseClient) {
-  return ((sbAdmin as any).schema('private') as UntypedPrivateSchema).from(
-    'periodic_report_held_actions'
+  return untypedPrivate(sbAdmin).from('periodic_report_held_actions');
+}
+
+/**
+ * Send now for one report, only while it is still held. The held check and the
+ * enqueue share one row lock in the database, so a Skip committed before or
+ * during a Send now batch is never queued.
+ */
+export async function requestHeldReportDelivery(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string,
+  reportId: string
+) {
+  const { data, error } = await untypedPrivate(sbAdmin).rpc(
+    'request_held_periodic_report_delivery',
+    { p_report_id: reportId, p_ws_id: wsId, p_delivery_enabled: true }
   );
+  if (error) throw error;
+  return (data as { code?: number } | null)?.code === 200;
+}
+
+/** Skip, scoped to the workspace's subjects and classes; returns skipped ids. */
+export async function skipHeldReports(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string,
+  reportIds: string[]
+): Promise<string[]> {
+  const { data, error } = await untypedPrivate(sbAdmin).rpc(
+    'skip_held_periodic_reports',
+    { p_ws_id: wsId, p_report_ids: reportIds }
+  );
+  if (error) throw error;
+  return Array.isArray(data) ? data.map(String) : [];
 }
 
 const ID_CHUNK = 200;
