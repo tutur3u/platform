@@ -14,6 +14,10 @@ create function auth.uid() returns uuid language sql stable as $$
     nullif(current_setting('request.jwt.claims', true), '')::jsonb ->> 'sub'
   ), '')::uuid
 $$;
+-- Synthetic MFA boundary; the full contract job uses the real account helper.
+create function public.account_required_mfa_satisfied() returns boolean language sql stable as $$
+  select coalesce(nullif(current_setting('test.cms_mfa_satisfied', true), ''), 'true')::boolean
+$$;
 create table auth.users(id uuid primary key);
 create table public.users(id uuid primary key);
 create table public.workspaces(id uuid primary key, name text, personal boolean, creator_id uuid);
