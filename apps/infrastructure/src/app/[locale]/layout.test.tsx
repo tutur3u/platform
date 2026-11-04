@@ -75,10 +75,6 @@ vi.mock('@tuturuuu/utils/format', () => ({
   cn: (...values: unknown[]) => values.filter(Boolean).join(' '),
 }));
 
-vi.mock('@tuturuuu/vercel', () => ({
-  VercelInsights: () => null,
-}));
-
 describe('Infrastructure locale layout', () => {
   beforeEach(() => {
     vi.clearAllMocks();

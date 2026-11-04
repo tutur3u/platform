@@ -4,10 +4,11 @@ import { join, relative, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * Guard: Vercel Web Analytics (`@vercel/analytics`) ran for every visitor,
- * including Vietnam, without consent, so it was turned off for all visitors.
- * This test fails if any app or package imports, mounts or depends on it again.
- * Re-enabling it needs a real consent gate and a deliberate change here.
+ * Guard: Vercel Web Analytics (`@vercel/analytics`) and Speed Insights
+ * (`@vercel/speed-insights`) ran for every visitor, including Vietnam, without
+ * consent, so both were turned off for all visitors. This test fails if any app
+ * or package imports, mounts or depends on either again. Re-enabling one needs
+ * a real consent gate and a deliberate change here.
  */
 
 const REPO_ROOT = resolve(__dirname, '../../../..');
@@ -32,26 +33,38 @@ const DEPENDENCY_FIELDS = [
   'optionalDependencies',
 ] as const;
 
-const ANALYTICS_IMPORT = /['"`]@vercel\/analytics(?:\/[^'"`]*)?['"`]/;
-const WRAPPER_USE = /\bVercelAnalytics\b/;
+const BANNED_PACKAGES = ['@vercel/analytics', '@vercel/speed-insights'];
+const BANNED_WRAPPERS = ['VercelAnalytics', 'VercelInsights'];
+
+const importPattern = (name: string) =>
+  new RegExp(`['"\`]${name.replace('/', '\\/')}(?:\\/[^'"\`]*)?['"\`]`);
+const BANNED_IMPORTS = BANNED_PACKAGES.map(
+  (name) => [name, importPattern(name)] as const
+);
+const WRAPPER_USES = BANNED_WRAPPERS.map(
+  (name) => [name, new RegExp(`\\b${name}\\b`)] as const
+);
 
 export function findSourceViolations(source: string): string[] {
   const found: string[] = [];
-  if (ANALYTICS_IMPORT.test(source)) found.push('imports @vercel/analytics');
-  if (WRAPPER_USE.test(source)) found.push('uses VercelAnalytics');
+  for (const [name, pattern] of BANNED_IMPORTS)
+    if (pattern.test(source)) found.push(`imports ${name}`);
+  for (const [name, pattern] of WRAPPER_USES)
+    if (pattern.test(source)) found.push(`uses ${name}`);
   return found;
 }
 
 export function findManifestViolations(manifest: string): string[] {
   const json = JSON.parse(manifest) as Record<string, unknown>;
-  return DEPENDENCY_FIELDS.filter((field) => {
+  const found: string[] = [];
+  for (const field of DEPENDENCY_FIELDS) {
     const deps = json[field];
-    return (
-      typeof deps === 'object' &&
-      deps !== null &&
-      '@vercel/analytics' in (deps as Record<string, unknown>)
-    );
-  }).map((field) => `declares @vercel/analytics in ${field}`);
+    if (typeof deps !== 'object' || deps === null) continue;
+    for (const name of BANNED_PACKAGES)
+      if (name in (deps as Record<string, unknown>))
+        found.push(`declares ${name} in ${field}`);
+  }
+  return found;
 }
 
 function walk(dir: string, out: string[]) {
@@ -97,7 +110,7 @@ function read(file: string) {
   }
 }
 
-describe('Vercel Web Analytics stays off', () => {
+describe('Vercel Web Analytics and Speed Insights stay off', () => {
   it('detects imports, wrapper mounts and manifest entries', () => {
     expect(
       findSourceViolations(
@@ -114,12 +127,29 @@ describe('Vercel Web Analytics stays off', () => {
       findSourceViolations(
         "import { SpeedInsights } from '@vercel/speed-insights/next';"
       )
+    ).toEqual(['imports @vercel/speed-insights']);
+    expect(
+      findSourceViolations("await import('@vercel/speed-insights')")
+    ).toEqual(['imports @vercel/speed-insights']);
+    expect(findSourceViolations('<VercelInsights />')).toEqual([
+      'uses VercelInsights',
+    ]);
+    expect(
+      findSourceViolations(
+        "import { redactSensitiveUrl } from '@tuturuuu/vercel';"
+      )
     ).toEqual([]);
     expect(
       findManifestViolations(
-        JSON.stringify({ dependencies: { '@vercel/analytics': '^2.0.1' } })
+        JSON.stringify({
+          dependencies: { '@vercel/analytics': '^2.0.1' },
+          devDependencies: { '@vercel/speed-insights': '^2.0.0' },
+        })
       )
-    ).toEqual(['declares @vercel/analytics in dependencies']);
+    ).toEqual([
+      'declares @vercel/analytics in dependencies',
+      'declares @vercel/speed-insights in devDependencies',
+    ]);
   });
 
   it('is not imported, mounted or declared anywhere in apps or packages', () => {
@@ -147,6 +177,7 @@ describe('Vercel Web Analytics stays off', () => {
       readFileSync(join(REPO_ROOT, 'package.json'), 'utf8')
     ) as { trustedDependencies?: string[] };
     expect(findManifestViolations(JSON.stringify(root))).toEqual([]);
-    expect(root.trustedDependencies ?? []).not.toContain('@vercel/analytics');
+    for (const name of BANNED_PACKAGES)
+      expect(root.trustedDependencies ?? []).not.toContain(name);
   });
 });

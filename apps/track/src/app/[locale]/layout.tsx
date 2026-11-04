@@ -10,7 +10,6 @@ import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
-import { VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
 import { locale as getRootLocale } from 'next/root-params';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
@@ -69,7 +68,6 @@ export default async function RootLayout({ children }: Props) {
           font.className
         )}
       >
-        <VercelInsights />
         <NuqsAdapter>
           <Suspense>
             <Providers appName={siteConfig.name}>{children}</Providers>

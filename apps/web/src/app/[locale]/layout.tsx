@@ -86,19 +86,6 @@ async function ServiceWorkerBoundary({
   );
 }
 
-async function VercelRuntimeSignals() {
-  const isVercelDeployment =
-    process.env.VERCEL === '1' || Boolean(process.env.VERCEL_URL);
-
-  if (!isVercelDeployment) {
-    return null;
-  }
-
-  const { VercelInsights } = await import('@tuturuuu/vercel');
-
-  return <VercelInsights />;
-}
-
 async function ProductionDatabaseIndicator() {
   const isProductionDatabase =
     process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('.supabase.');
@@ -133,7 +120,6 @@ export default async function RootLayout({ children }: Props) {
         )}
       >
         <ServiceWorkerBoundary serviceWorkerUrl={serviceWorkerUrl}>
-          <VercelRuntimeSignals />
           <AppThemeProvider>
             <Suspense>
               <PublicClientProviders>{children}</PublicClientProviders>

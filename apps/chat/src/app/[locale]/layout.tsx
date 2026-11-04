@@ -8,7 +8,6 @@ import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
 import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
-import { VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
 import { locale as getRootLocale } from 'next/root-params';
 import { NextIntlClientProvider } from 'next-intl';
@@ -68,7 +67,6 @@ export default async function RootLayout({ children }: Props) {
         )}
       >
         <OfflineProvider register={false}>
-          <VercelInsights />
           <Suspense>
             <NuqsAdapter>
               <Providers>

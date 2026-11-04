@@ -314,7 +314,6 @@
   },
   "trustedDependencies": [
     "@tailwindcss/oxide",
-    "@vercel/speed-insights",
     "canvas",
     "core-js",
     "cytoscape",

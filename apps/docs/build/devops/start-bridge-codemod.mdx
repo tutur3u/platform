@@ -360,11 +360,10 @@ configuration, so apps regenerate instead of forking generated files:
 | Assets binding | `@tuturuuu/start-bridge` exports `./assets` (#6753) | the Worker env types `ASSETS: AssetsBinding` (`import type` from `@tuturuuu/start-bridge/assets`), which the Workers `Fetcher` satisfies; the handler serves it through `fetchAsset` |
 | Internal API app base | `@tuturuuu/internal-api` exports `registerDefaultAppBaseResolver` (#6764) and the app depends on it | `src/start-bridge/app-base.ts` registers `createAppBaseResolver(appApiPatterns, centralFirst)` from the codegen's client-safe `api-patterns.bridge.gen.ts`: app-owned routes are mounted in the browser and absolute on the request host on the server; Web routes are untouched |
 
-The preset renders `@tuturuuu/vercel`'s Speed Insights as nothing, because
-Workers serve no `/_vercel/*` scripts; an app with an explicit `shims` list opts
-in with `inertVercel: true`. Vercel Web Analytics is off for all visitors and
-not exported; `packages/vercel/src/core/no-web-analytics.test.ts` fails if any
-app mounts or depends on it again.
+Vercel Web Analytics and Speed Insights are off for all visitors and not
+exported, so the preset no longer aliases `@tuturuuu/vercel` (the former
+`inertVercel` option is gone); `packages/vercel/src/core/no-vercel-telemetry.test.ts`
+fails if any app mounts or depends on either again.
 
 Each environment bundle (browser, SSR, rsc) carries its own internal-api
 module, so the registration is imported by `src/router.tsx`, the page route

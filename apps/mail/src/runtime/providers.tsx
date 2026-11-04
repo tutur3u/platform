@@ -5,7 +5,6 @@ import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
 import { VersionBadge } from '@tuturuuu/ui/custom/version-badge';
 import { Toaster } from '@tuturuuu/ui/sonner';
 import { getPlatformReleaseInfo } from '@tuturuuu/utils/platform-release';
-import { VercelInsights } from '@tuturuuu/vercel';
 import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider } from 'next-themes';
 import { NuqsAdapter } from 'nuqs/adapters/tanstack-router';
@@ -35,7 +34,6 @@ export function AppProviders({
       scriptProps={{ 'data-cfasync': 'false' }}
     >
       <OfflineProvider register={false}>
-        <VercelInsights />
         <NextIntlClientProvider
           locale={locale}
           messages={locale === 'vi' ? vi : en}

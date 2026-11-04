@@ -12,9 +12,6 @@
     "test": "vitest run",
     "type-check": "tsc --project tsconfig.typecheck.json"
   },
-  "dependencies": {
-    "@vercel/speed-insights": "^2.0.0"
-  },
   "devDependencies": {
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/typescript-config": "workspace:*",
