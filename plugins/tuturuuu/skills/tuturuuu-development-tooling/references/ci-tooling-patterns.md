@@ -1463,7 +1463,13 @@ must match an exact workflow file, step name and full command in
 `# unfrozen-bun-install: <reason>` documents the entry but grants no authority. Run
 `frozen-bun-install-guard.test.js` with the workflow-config, release-workflows,
 checkout-credentials and Wrangler usage tests after changing this boundary.
-Release formatting installs the locked Biome binary on trusted production content
-before checking out generated files. Keep checkout persistence disabled and push
-credentials in the push step environment. See the GitHub Actions runbook's
-frozen-install section for the operating policy.
+Exceptions must still name a live workflow step and command; delete stale entries.
+Match workflows by content, not package or file name, so renamed release
+workflows stay covered. Release formatting installs the locked Biome binary on
+trusted production content before checking out generated files. PR-facing Biome
+jobs instead run the exact Biome version pinned in `biome-check.yaml` (kept equal
+to `bun.lock` by `biome-workflow-lifecycle.test.js`) with lifecycle scripts off,
+never a binary from the PR's own lockfile. Keep checkout persistence disabled and
+push only through `scripts/ci/github-token-push.sh`, which passes the token as an
+env-config auth header so it never appears in process argv. See the GitHub
+Actions runbook's frozen-install section for the operating policy.

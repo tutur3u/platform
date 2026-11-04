@@ -69,3 +69,22 @@ test('cancelled or skipped validation cannot publish a misleading PR report', ()
   }
   assert.doesNotMatch(comment, /if: always\(\)/);
 });
+
+test('PR-facing Biome jobs run a pinned Biome, not the PR lockfile', () => {
+  // The format and lint jobs can run PR code on the self-hosted pool, so the
+  // binary must not come from a lockfile the PR itself can rewrite. The pin
+  // must still match the repository lockfile so CI and local results agree.
+  const lock = fs.readFileSync(path.join(repoRoot, 'bun.lock'), 'utf8');
+  const locked = /"@biomejs\/biome": \["@biomejs\/biome@([0-9.]+)"/u.exec(
+    lock
+  )?.[1];
+  assert.ok(locked, 'bun.lock must resolve @biomejs/biome');
+  for (const jobName of ['format', 'lint', 'apply-format']) {
+    const job = readWorkflowJobBlock('biome-check.yaml', jobName);
+    assert.doesNotMatch(job, /node_modules\/\.bin\/biome|bun install/u);
+    const pins = [...job.matchAll(/npx --yes @biomejs\/biome@(\S+) /gu)];
+    assert.ok(pins.length > 0, `${jobName} must run a pinned Biome`);
+    for (const [, version] of pins) assert.equal(version, locked);
+    assert.match(job, /npm_config_ignore_scripts: 'true'/u);
+  }
+});

@@ -102,21 +102,16 @@ jobs:
           node-version: 24
           package-manager-cache: ${{ runner.environment != 'self-hosted' }}
 
-      - name: Setup Bun
-        uses: ./.github/actions/setup-bun-with-retry
-        with:
-          bun-version: 1.4.4
-
-      # Biome runs from the committed lockfile, never an unlocked registry fetch.
-      - name: Install locked dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
-
       - name: Check Biome formatting
         id: format-check
+        # Pinned Biome (kept equal to bun.lock by biome-workflow-lifecycle.test.js),
+        # not the PR's own lockfile; package lifecycle scripts never run.
+        env:
+          npm_config_ignore_scripts: 'true'
         run: |
           # Capture biome format output and exit code
           set +e
-          biome_output=$(node_modules/.bin/biome format . 2>&1)
+          biome_output=$(npx --yes @biomejs/biome@2.5.13 format . 2>&1)
           biome_exit_code=$?
           set -e
 
@@ -206,21 +201,16 @@ jobs:
           node-version: 24
           package-manager-cache: ${{ runner.environment != 'self-hosted' }}
 
-      - name: Setup Bun
-        uses: ./.github/actions/setup-bun-with-retry
-        with:
-          bun-version: 1.4.4
-
-      # Biome runs from the committed lockfile, never an unlocked registry fetch.
-      - name: Install locked dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
-
       - name: Check Biome linting
         id: lint-check
+        # Pinned Biome (kept equal to bun.lock by biome-workflow-lifecycle.test.js),
+        # not the PR's own lockfile; package lifecycle scripts never run.
+        env:
+          npm_config_ignore_scripts: 'true'
         run: |
           # Capture biome lint output and exit code
           set +e
-          biome_output=$(node_modules/.bin/biome lint . 2>&1)
+          biome_output=$(npx --yes @biomejs/biome@2.5.13 lint . 2>&1)
           biome_exit_code=$?
           set -e
 
@@ -297,17 +287,12 @@ jobs:
         with:
           node-version: 24
 
-      - name: Setup Bun
-        uses: ./.github/actions/setup-bun-with-retry
-        with:
-          bun-version: 1.4.4
-
-      # Biome runs from the committed lockfile, never an unlocked registry fetch.
-      - name: Install locked dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
-
       - name: Apply Biome format
-        run: node_modules/.bin/biome format --write .
+        # Pinned Biome (kept equal to bun.lock by biome-workflow-lifecycle.test.js),
+        # not the PR's own lockfile; package lifecycle scripts never run.
+        env:
+          npm_config_ignore_scripts: 'true'
+        run: npx --yes @biomejs/biome@2.5.13 format --write .
 
       - name: Check for changes
         id: git-check
