@@ -231,12 +231,19 @@ test('latest is_org_member binds end-user callers outside triggers', () => {
 
 test('unreviewed cross-user trigger caller fails the guard', () => {
   const { spawnSync } = require('node:child_process');
-  const fixture = path.join(
-    MIGRATIONS_DIR,
-    '99999999999999_scope_guard_negative.sql'
-  );
-  assert.equal(fs.existsSync(fixture), false);
+  const { tmpdir } = require('node:os');
+  const scratch = fs.mkdtempSync(path.join(tmpdir(), 'scope-guard-'));
+  const migrations = path.join(scratch, 'apps/database/supabase/migrations');
+  const probe = path.join(scratch, 'scripts', path.basename(__filename));
   try {
+    fs.mkdirSync(path.dirname(migrations), { recursive: true });
+    fs.cpSync(MIGRATIONS_DIR, migrations, { recursive: true });
+    fs.mkdirSync(path.dirname(probe));
+    fs.copyFileSync(__filename, probe);
+    const fixture = path.join(
+      migrations,
+      '99999999999999_scope_guard_negative.sql'
+    );
     fs.writeFileSync(
       fixture,
       `CREATE FUNCTION public.unreviewed_scope_probe() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM public.is_org_member(NEW.user_id, NEW.ws_id); RETURN NEW; END; $$;`
@@ -248,13 +255,13 @@ test('unreviewed cross-user trigger caller fails the guard', () => {
       [
         '--test',
         '--test-name-pattern=trigger callers|trigger calls about',
-        __filename,
+        probe,
       ],
       { encoding: 'utf8', env }
     );
     assert.notEqual(result.status, 0);
     assert.match(result.stdout + result.stderr, /unreviewed_scope_probe/);
   } finally {
-    fs.unlinkSync(fixture);
+    fs.rmSync(scratch, { recursive: true, force: true });
   }
 });

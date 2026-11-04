@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   policy: vi.fn(),
   calendar: vi.fn(),
   eq: vi.fn(),
+  section: vi.fn(() => null),
+  ended: vi.fn(() => null),
 }));
 vi.mock('../../workspace-context', () => ({
   getMeetWorkspaceContext: mocks.context,
@@ -57,7 +59,7 @@ vi.mock('@tuturuuu/ui/card', () => ({
   CardTitle: () => null,
 }));
 vi.mock('@/features/call/components/call-ended', () => ({
-  CallEnded: () => null,
+  CallEnded: mocks.ended,
 }));
 vi.mock('@/features/call/components/meeting-duration-info', () => ({
   MeetingDurationInfo: () => null,
@@ -68,15 +70,26 @@ vi.mock('@/features/call/components/meeting-local-time', () => ({
 vi.mock('@/features/call/components/meeting-public-settings', () => ({
   MeetingPublicSettings: () => null,
 }));
-vi.mock('@/features/meeting-ai/meeting-ai-overview', () => ({
-  MeetingAiOverview: () => null,
+vi.mock('@/features/meeting-notes/meeting-notes-section', () => ({
+  MeetingNotesSection: mocks.section,
 }));
 vi.mock('./meeting-actions', () => ({ MeetingActions: () => null }));
 vi.mock('./recording-sessions-overview', () => ({
   RecordingSessionsOverview: () => null,
 }));
 
+import type { ReactElement, ReactNode } from 'react';
 import MeetingDetailPage from './page';
+
+function findByType(node: ReactNode, type: unknown): ReactElement[] {
+  if (Array.isArray(node)) return node.flatMap((n) => findByType(n, type));
+  if (!node || typeof node !== 'object' || !('props' in node)) return [];
+  const element = node as ReactElement<{ children?: ReactNode }>;
+  return [
+    ...(element.type === type ? [element] : []),
+    ...findByType(element.props.children, type),
+  ];
+}
 
 function deferred<T>() {
   let resolve!: (value: T) => void;
@@ -224,3 +237,49 @@ test.each([
     expect(mocks.permissions).not.toHaveBeenCalled();
   }
 );
+
+test('active rooms hand the room policy to the shared notes section', async () => {
+  const policy = {
+    ended: false,
+    canReadNotes: false,
+    settings: { shareNotes: false },
+  };
+  mocks.policy.mockResolvedValue(policy);
+  const result = await MeetingDetailPage(props);
+  const [section] = findByType(result, mocks.section);
+  expect(section?.props).toEqual({
+    wsId: 'canonical-workspace',
+    meetingId: '10000000-0000-4000-8000-000000000001',
+    title: 'Meeting',
+    isHost: true,
+    policy,
+  });
+});
+
+test('ended rooms open the notes and transcript tabs for readers', async () => {
+  const policy = {
+    ended: true,
+    canReadNotes: true,
+    settings: { shareNotesAfterMeeting: true },
+  };
+  mocks.policy.mockResolvedValue(policy);
+  const result = await MeetingDetailPage(props);
+  expect(result.type).toBe(mocks.ended);
+  expect(result.props.initialShowNotes).toBe(true);
+  expect(result.props.notes.type).toBe(mocks.section);
+  expect(result.props.notes.props).toEqual({
+    wsId: 'canonical-workspace',
+    meetingId: '10000000-0000-4000-8000-000000000001',
+    title: 'Meeting',
+    isHost: true,
+    policy,
+    sharingControl: false,
+  });
+});
+
+test('ended rooms keep notes closed for viewers the policy denies', async () => {
+  mocks.policy.mockResolvedValue({ ended: true, canReadNotes: false });
+  const result = await MeetingDetailPage(props);
+  expect(result.props.canReadNotes).toBe(false);
+  expect(result.props.initialShowNotes).toBe(false);
+});

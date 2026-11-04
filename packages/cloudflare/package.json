@@ -1,11 +1,11 @@
 {
-  "name": "@tuturuuu/turnstile",
+  "name": "@tuturuuu/cloudflare",
   "license": "MIT",
   "version": "0.2.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/tutur3u/platform",
-    "directory": "packages/turnstile"
+    "directory": "packages/cloudflare"
   },
   "publishConfig": {
     "access": "public"
@@ -14,8 +14,9 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./client": "./src/client.ts",
-    "./server": "./src/server.ts"
+    "./turnstile": "./src/turnstile/index.ts",
+    "./turnstile/client": "./src/turnstile/client.ts",
+    "./turnstile/server": "./src/turnstile/server.ts"
   },
   "scripts": {
     "type-check": "tsc --project tsconfig.typecheck.json",

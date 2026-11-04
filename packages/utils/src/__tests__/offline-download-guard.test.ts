@@ -22,7 +22,7 @@ vi.mock('@upstash/ratelimit', () => ({
     }
   },
 }));
-vi.mock('@tuturuuu/turnstile/server', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile/server', () => ({
   verifyTurnstileToken: mocks.verify,
 }));
 vi.mock('../abuse-protection/edge', () => ({

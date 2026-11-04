@@ -34,7 +34,7 @@ const serialized = [
   'release-sdk-dev.yaml',
   'release-sdk-package.yaml',
   'release-supabase-package.yaml',
-  'release-turnstile-package.yaml',
+  'release-cloudflare-package.yaml',
   'release-types-package.yaml',
   'release-typescript-config-package.yaml',
   'release-ui-package.yaml',

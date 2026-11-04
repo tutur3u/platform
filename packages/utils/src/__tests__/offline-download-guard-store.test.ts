@@ -18,7 +18,7 @@ const mocks = vi.hoisted(() => ({
   ip: vi.fn(() => '192.0.2.1'),
 }));
 vi.mock('../abuse-guard/select', () => ({ selectAbuseGuard: mocks.select }));
-vi.mock('@tuturuuu/turnstile/server', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile/server', () => ({
   verifyTurnstileToken: mocks.verify,
 }));
 vi.mock('../abuse-protection/edge', () => ({

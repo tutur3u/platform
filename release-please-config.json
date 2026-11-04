@@ -311,9 +311,9 @@
       "component": "trigger",
       "package-name": "@tuturuuu/trigger"
     },
-    "packages/turnstile": {
-      "component": "turnstile",
-      "package-name": "@tuturuuu/turnstile"
+    "packages/cloudflare": {
+      "component": "cloudflare",
+      "package-name": "@tuturuuu/cloudflare"
     },
     "packages/types": {
       "component": "types",

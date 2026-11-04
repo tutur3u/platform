@@ -1,7 +1,7 @@
 import {
   isTurnstileError,
   verifyTurnstileToken,
-} from '@tuturuuu/turnstile/server';
+} from '@tuturuuu/cloudflare/turnstile/server';
 import {
   type AbuseRiskDecision,
   type AbuseSignalType,
