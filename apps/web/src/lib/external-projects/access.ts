@@ -591,6 +591,30 @@ async function requireWorkspaceExternalProjectAccessWithAppToken({
       wsId: ROOT_WORKSPACE_ID,
     }),
   ]);
+  const memberAuthorization = await authorizeLinkedWorkspaceMember({
+    admin,
+    userId: verification.claims.sub,
+    workspaceId: normalizedWorkspaceId,
+  });
+
+  if (!memberAuthorization.ok) {
+    return {
+      ok: false as const,
+      response: createLinkedWorkspaceMemberErrorResponse(memberAuthorization),
+    };
+  }
+
+  const allowed =
+    hasWorkspaceExternalProjectPermission(workspacePermissions, mode) ||
+    hasRootExternalProjectsAdminPermission(rootPermissions);
+
+  if (!allowed) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
+    };
+  }
+
   const binding = await resolveWorkspaceExternalProjectBinding(
     normalizedWorkspaceId,
     admin
@@ -618,30 +642,6 @@ async function requireWorkspaceExternalProjectAccessWithAppToken({
         { error: 'App is not linked to this workspace' },
         { status: 403 }
       ),
-    };
-  }
-
-  const memberAuthorization = await authorizeLinkedWorkspaceMember({
-    admin,
-    userId: verification.claims.sub,
-    workspaceId: normalizedWorkspaceId,
-  });
-
-  if (!memberAuthorization.ok) {
-    return {
-      ok: false as const,
-      response: createLinkedWorkspaceMemberErrorResponse(memberAuthorization),
-    };
-  }
-
-  const allowed =
-    hasWorkspaceExternalProjectPermission(workspacePermissions, mode) ||
-    hasRootExternalProjectsAdminPermission(rootPermissions);
-
-  if (!allowed) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
     };
   }
 
@@ -708,21 +708,6 @@ async function requireWorkspaceExternalProjectAccessWithAppSession({
       wsId: ROOT_WORKSPACE_ID,
     }),
   ]);
-  const binding = await resolveWorkspaceExternalProjectBinding(
-    normalizedWorkspaceId,
-    admin
-  );
-
-  if (!binding.enabled || !binding.canonical_project) {
-    return {
-      ok: false as const,
-      response: NextResponse.json(
-        { error: 'External project studio unavailable for this workspace' },
-        { status: 404 }
-      ),
-    };
-  }
-
   const memberAuthorization = await authorizeLinkedWorkspaceMember({
     admin,
     userId: verification.claims.sub,
@@ -744,6 +729,21 @@ async function requireWorkspaceExternalProjectAccessWithAppSession({
     return {
       ok: false as const,
       response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
+    };
+  }
+
+  const binding = await resolveWorkspaceExternalProjectBinding(
+    normalizedWorkspaceId,
+    admin
+  );
+
+  if (!binding.enabled || !binding.canonical_project) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: 'External project studio unavailable for this workspace' },
+        { status: 404 }
+      ),
     };
   }
 
@@ -985,6 +985,17 @@ export async function requireWorkspaceExternalProjectAccess({
     getPermissions({ wsId: ROOT_WORKSPACE_ID, request }),
   ]);
 
+  const allowed =
+    hasWorkspaceExternalProjectPermission(workspacePermissions, mode) ||
+    hasRootExternalProjectsAdminPermission(rootPermissions);
+
+  if (!allowed) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
+    };
+  }
+
   const binding = await resolveWorkspaceExternalProjectBinding(
     normalizedWorkspaceId,
     admin
@@ -997,17 +1008,6 @@ export async function requireWorkspaceExternalProjectAccess({
         { error: 'External project studio unavailable for this workspace' },
         { status: 404 }
       ),
-    };
-  }
-
-  const allowed =
-    hasWorkspaceExternalProjectPermission(workspacePermissions, mode) ||
-    hasRootExternalProjectsAdminPermission(rootPermissions);
-
-  if (!allowed) {
-    return {
-      ok: false as const,
-      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
     };
   }
 
