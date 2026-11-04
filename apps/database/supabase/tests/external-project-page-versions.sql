@@ -6,6 +6,16 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 select no_plan();
+select ok(exists (select 1 from pg_policies
+  where schemaname = 'public' and tablename = 'workspace_external_project_page_versions'
+    and policyname = 'account_required_mfa' and permissive = 'RESTRICTIVE'
+    and cmd = 'ALL' and roles = array['authenticated']::name[]
+    and qual like '%account_required_mfa_satisfied%'
+    and with_check like '%account_required_mfa_satisfied%'),
+  'page versions require account MFA for reads and writes');
+select ok(pg_get_functiondef('public.publish_workspace_external_project_page_version(uuid,uuid,uuid)'::regprocedure)
+  ~ 'FROM public.workspace_external_project_entries e[^;]*FOR UPDATE;[^$]*INSERT INTO public.workspace_external_project_publish_events',
+  'entry row lock serializes publishes before the audit insert');
 
 -- Users: a1 creates (manages) A, b1 creates B, c1 publishes in A, e1 edits in
 -- A, d1 belongs to neither. Only A has a CMS binding.
@@ -58,8 +68,9 @@ where id = '7a9e0000-0000-4000-8000-0000000002bb';
 
 -- Manager: saves drafts (client number and status ignored), stays in A.
 set local request.jwt.claims = '{"role":"authenticated","sub":"7a9e0000-0000-4000-8000-0000000000a1"}';
-insert into public.workspace_external_project_page_versions (id, ws_id, entry_id, version_number, schema_version, data, status, published_at) values
-  ('7a9e0000-0000-4000-8000-0000000003a1', '7a9e0000-0000-4000-8000-00000000000a', '7a9e0000-0000-4000-8000-0000000002aa', 9, 1, '{"v":1}', 'published', now());
+insert into public.workspace_external_project_page_versions (id, ws_id, entry_id, version_number, schema_version, data, status, published_at, created_by) values
+  ('7a9e0000-0000-4000-8000-0000000003a1', '7a9e0000-0000-4000-8000-00000000000a', '7a9e0000-0000-4000-8000-0000000002aa', 9, 1, '{"v":1}', 'published', now(), '7a9e0000-0000-4000-8000-0000000000b1');
+select is((select created_by from public.workspace_external_project_page_versions where id = '7a9e0000-0000-4000-8000-0000000003a1'), auth.uid(), 'direct insert cannot spoof created_by');
 insert into public.workspace_external_project_page_versions (id, ws_id, entry_id, schema_version, data) values
   ('7a9e0000-0000-4000-8000-0000000003a2', '7a9e0000-0000-4000-8000-00000000000a', '7a9e0000-0000-4000-8000-0000000002aa', 1, '{"v":2}'),
   ('7a9e0000-0000-4000-8000-0000000003a3', '7a9e0000-0000-4000-8000-00000000000a', '7a9e0000-0000-4000-8000-0000000002aa', 1, '{"v":3}');
@@ -122,7 +133,7 @@ where id = '7a9e0000-0000-4000-8000-0000000002aa';
 select results_eq($$select published_page_version_id from public.workspace_external_project_entries where id = '7a9e0000-0000-4000-8000-0000000002aa'$$,
   $$values ('7a9e0000-0000-4000-8000-0000000003a1'::uuid)$$, 'publisher: a preview event or direct update cannot move the pointer');
 -- Content rollback: publish v2, then republish v1.
-select lives_ok($$select public.publish_workspace_external_project_page_version('7a9e0000-0000-4000-8000-00000000000a', '7a9e0000-0000-4000-8000-0000000003a2')$$, 'publisher: publishes v2');
+select is((public.publish_workspace_external_project_page_version('7a9e0000-0000-4000-8000-00000000000a', '7a9e0000-0000-4000-8000-0000000003a2')).replaced_page_version_id, '7a9e0000-0000-4000-8000-0000000003a1'::uuid, 'publisher: publishes v2 and returns the pointer it replaced');
 select lives_ok($$select public.publish_workspace_external_project_page_version('7a9e0000-0000-4000-8000-00000000000a', '7a9e0000-0000-4000-8000-0000000003a1')$$, 'publisher: rolls back to v1');
 select results_eq($$select published_page_version_id from public.workspace_external_project_entries where id = '7a9e0000-0000-4000-8000-0000000002aa'$$,
   $$values ('7a9e0000-0000-4000-8000-0000000003a1'::uuid)$$, 'rollback: the pointer is back on v1');
