@@ -22,7 +22,7 @@ export const pageVersionsMigrations = [
   'apps/database/supabase/migrations/20261104135900_external_project_edit_permission.sql',
   'apps/database/supabase/migrations/20261104140000_external_project_page_versions.sql',
 ];
-export const pageVersionsAssertionCount = 40;
+export const pageVersionsAssertionCount = 43;
 
 export function validatePageVersionsTrackedFiles(trackedFiles) {
   for (const required of [

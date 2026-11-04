@@ -58,7 +58,7 @@ jobs:
           node-version: 24
           package-manager-cache: false
       - name: Install dependencies
-        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile
+        run: bash scripts/ci/run-with-backoff.sh bun install --frozen-lockfile --ignore-scripts
       - name: Verify TAP parser, PGlite stand-in and rollbacks
         run: node --test apps/database/scripts/programming-database-tap.test.mjs apps/database/scripts/external-project-page-versions-contract.test.mjs apps/database/scripts/external-project-page-versions.test.mjs
       - uses: ./.github/actions/cache-supabase-images
