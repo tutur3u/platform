@@ -213,11 +213,15 @@ jobs:
           c.upload_source_maps = false;
           c.vars = {
             TUTURUUU_NOINDEX: '0',
+            NODE_ENV: 'production',
+            // Startup assertion: refuse to serve without required secrets.
+            TUTURUUU_REQUIRE_SECRETS: '1',
             NEXT_PUBLIC_APP_URL: 'https://track.tuturuuu.com',
             NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
           };
           writeFileSync(path, `${JSON.stringify(c, null, 2)}\n`);
           JS
+          if [ "$(node -p "require('./apps/track/dist/server/wrangler.json').preview_urls")" != false ]; then exit 1; fi
           test -f apps/track/dist/server/index.mjs
           test -d apps/track/dist/client
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
