@@ -5,6 +5,7 @@ import { appRobots, createRootResponsePolicy } from '@tuturuuu/start-bridge/resp
 import { defineBridgeAppConfig } from '@tuturuuu/start-bridge/start/app-config';
 
 export default defineBridgeAppConfig({
+  mounts: { mountHosts: [], unknownHost: 'reject' },
   // Robots (the app's seo-policy.json allowlist on its canonical host),
   // framing, sniffing, referrer and private caching on every response; only
   // GET/HEAD static files keep their own caching.
