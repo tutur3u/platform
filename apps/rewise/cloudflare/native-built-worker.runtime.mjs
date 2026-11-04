@@ -36,7 +36,7 @@ const { default: appConfig } = await import(
 );
 const MOUNTS = { ...DEFAULT_MOUNTS, ...appConfig.mounts };
 // The Worker settings the codemod emitted from start-bridge.config.ts `worker`.
-const WORKER_CONFIG = {"workersDev":true,"compatibilityFlags":["nodejs_compat","global_fetch_strictly_public"]};
+const WORKER_CONFIG = {"workersDev":false,"compatibilityFlags":["nodejs_compat","global_fetch_strictly_public"]};
 const APEX = 'tuturuuu.com';
 const MOUNTED = (MOUNTS.mountHosts ?? []).some((host) => host.toLowerCase() === APEX);
 const BASE = (MOUNTS.basePath ?? "/rewise").replace(/\/+$/u, '');
@@ -105,6 +105,14 @@ test('emitted rewise Worker serves its root, mount and unknown paths', {
     envFiles: [staged.envFile],
     sendMetrics: false,
     bindings: {
+      ...Object.fromEntries(Object.entries({
+        NEXT_PUBLIC_SUPABASE_URL: 'https://fixture.supabase.invalid',
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_fixture',
+        UPSTASH_REDIS_REST_URL: 'https://fixture.upstash.invalid',
+        UPSTASH_REDIS_REST_TOKEN: 'synthetic-smoke-only',
+        SUPABASE_SECRET_KEY: 'synthetic-smoke-only',
+        TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-smoke-only',
+      }).map(([name, value]) => [name, { type: 'plain_text', value }])),
       INTERNAL_WEB_API_ORIGIN: { type: 'plain_text', value: 'https://central.invalid' },
     },
     build: { bundle: false, processEntrypoint: false },
