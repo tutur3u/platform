@@ -29,7 +29,7 @@ vi.mock('next/link', () => ({
   ),
 }));
 vi.mock('@tuturuuu/meet-core/features/meeting-ai/meeting-ai-overview', () => ({
-  MeetingAiOverview: () => null,
+  MeetingAiOverview: () => <div data-testid="ai-overview" />,
 }));
 vi.mock(
   '@tuturuuu/meet-core/features/meeting-ai/notes-sharing-control',
@@ -82,4 +82,53 @@ it('refreshes stale personal and workspace meeting caches when returning from a 
     client.getQueryState(['meet-room-state', 'meeting-id'])?.isInvalidated
   ).toBe(true);
   client.clear();
+});
+
+function renderEnded(props: Partial<Parameters<typeof CallEnded>[0]> = {}) {
+  return render(
+    <QueryClientProvider client={new QueryClient()}>
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <CallEnded
+          accountId="test-account"
+          canManage={false}
+          canReadNotes
+          wsId="workspace-id"
+          meetingId="meeting-id"
+          meetingName="Test"
+          backHref="/personal/meetings"
+          {...props}
+        />
+      </NextIntlClientProvider>
+    </QueryClientProvider>
+  );
+}
+
+it('renders the supplied notes reader instead of the overview for readers', () => {
+  renderEnded({
+    initialShowNotes: true,
+    notes: <div data-testid="notes-reader" />,
+  });
+  expect(screen.getByTestId('notes-reader')).toBeTruthy();
+  expect(screen.queryByTestId('ai-overview')).toBeNull();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Hide notes & transcript' })
+  );
+  expect(screen.queryByTestId('notes-reader')).toBeNull();
+});
+
+it('keeps the overview when no notes reader is supplied', () => {
+  renderEnded({ initialShowNotes: true });
+  expect(screen.getByTestId('ai-overview')).toBeTruthy();
+});
+
+it('never renders the notes reader for viewers without notes access', () => {
+  renderEnded({
+    canReadNotes: false,
+    initialShowNotes: true,
+    notes: <div data-testid="notes-reader" />,
+  });
+  expect(screen.queryByTestId('notes-reader')).toBeNull();
+  expect(
+    screen.queryByRole('button', { name: /notes & transcript/i })
+  ).toBeNull();
 });
