@@ -11,11 +11,12 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
       NEXT_PUBLIC_APP_URL: https://hive.tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
@@ -47,6 +48,15 @@ jobs:
       - name: Build production Worker
         working-directory: apps/hive
         run: bun run build:cloudflare
+      - name: Record emitted Worker configuration
+        run: node scripts/ci/native-emitted-config-receipt.mjs "apps/hive" "$SOURCE_SHA" "$RUNNER_TEMP/native-emitted-config.json"
+      - name: Upload emitted configuration receipt
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: hive-emitted-config-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/native-emitted-config.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Check production ingress and anonymous login
         working-directory: apps/hive
         env:
