@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ access: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  access: vi.fn(),
+  purge: vi.fn(),
+  target: vi.fn(),
+}));
 vi.mock('@/lib/external-projects/access', () => ({
   requireWorkspaceExternalProjectAccess: (...args: unknown[]) =>
     mocks.access(...args),
@@ -9,6 +13,11 @@ vi.mock('@/lib/external-projects/access', () => ({
 vi.mock('next/server', async (importOriginal) => ({
   ...(await importOriginal<typeof import('next/server')>()),
   connection: vi.fn(async () => undefined),
+}));
+vi.mock('@/lib/external-projects/renderer-purge', () => ({
+  purgeWorkspaceRenderers: vi.fn(async () => 'purged'),
+  purgeRendererPage: mocks.purge,
+  rendererPurgeTarget: mocks.target,
 }));
 
 const WS = '00000000-0000-4000-8000-0000000000aa';
@@ -86,6 +95,8 @@ describe('CMS page version routes', () => {
   });
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.purge.mockResolvedValue('purged');
+    mocks.target.mockReturnValue({ body: { version: VERSION } });
     vi.stubEnv(
       'CMS_RENDERER_SITES',
       JSON.stringify({
@@ -217,6 +228,32 @@ describe('CMS page version routes', () => {
       'publish_workspace_external_project_page_version',
       { p_actor_id: 'user-1', p_version_id: VERSION, p_ws_id: WS },
     ]);
+  });
+
+  it('returns committed publication with a pending cache refresh when purge fails', async () => {
+    mocks.purge.mockResolvedValueOnce('failed');
+    const admin = fakeAdmin([
+      { data: { slug: 'home' }, error: null },
+      { data: { id: VERSION }, error: null },
+      {
+        data: {
+          id: VERSION,
+          status: 'published',
+          replaced_page_version_id: '00000000-0000-4000-8000-000000000003',
+        },
+        error: null,
+      },
+    ]);
+    allow(admin.client);
+
+    const response = await (await publish()).POST(post({}), context(VERSION));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      id: VERSION,
+      status: 'published',
+      cacheInvalidation: 'failed',
+    });
   });
 
   it('does not publish a version from another entry or workspace', async () => {
