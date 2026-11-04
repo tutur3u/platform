@@ -16,6 +16,21 @@
   "owned": {},
   "ignored": {},
   "runtime": {
-    "/": 200
+    "/": {
+      "redirect": "/login"
+    },
+    "/login": {
+      "redirect": "https://tuturuuu.com/login"
+    }
+  },
+  "runtimeProbes": {
+    "page": {
+      "skip": "signed-out users always reach central login",
+      "fixture": "cloudflare/anonymous-smoke.runtime.mjs"
+    },
+    "notFound": {
+      "skip": "unknown paths redirect signed-out users to login",
+      "fixture": "cloudflare/anonymous-smoke.runtime.mjs"
+    }
   }
 }
