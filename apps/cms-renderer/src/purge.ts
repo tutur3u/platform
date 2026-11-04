@@ -40,6 +40,12 @@ export async function purgePage({
   )
     return reply(401);
   if (request.method !== 'POST') return reply(405);
+  const contentType = request.headers
+    .get('content-type')
+    ?.split(';', 1)[0]
+    ?.trim()
+    .toLowerCase();
+  if (contentType !== 'application/json') return reply(415);
   if (!limiter) return reply(503);
   try {
     if (!(await limiter.limit({ key: `cms-purge:${siteId}` })).success)

@@ -30,15 +30,28 @@ function harness() {
       entries.set(new Request(key).url, value.clone());
     },
   };
-  const request = (siteId: string, body: unknown) =>
-    new Request(`${origin}/__cms/purge`, {
+  const request = (
+    siteId: string,
+    body: unknown,
+    contentType: string | null = 'application/json',
+    authorization = `Bearer ${siteId.repeat(64)}`
+  ) => {
+    const headers = new Headers({ authorization });
+    if (contentType) headers.set('content-type', contentType);
+    return new Request(`${origin}/__cms/purge`, {
       method: 'POST',
-      headers: { authorization: `Bearer ${siteId.repeat(64)}` },
-      body: JSON.stringify(body),
+      headers,
+      body: new TextEncoder().encode(JSON.stringify(body)),
     });
-  const run = (siteId = 'a', body: unknown = { scope: 'workspace' }) =>
+  };
+  const run = (
+    siteId = 'a',
+    body: unknown = { scope: 'workspace' },
+    contentType: string | null = 'application/json',
+    authorization = `Bearer ${siteId.repeat(64)}`
+  ) =>
     purgePage({
-      request: request(siteId, body),
+      request: request(siteId, body, contentType, authorization),
       siteId,
       workspaceId: scope(siteId).workspaceId,
       origin,
@@ -116,6 +129,41 @@ describe('host-scoped workspace purge', () => {
     expect((await h.run('b')).status).toBe(204);
     expect(h.counts.get('cms-purge:a')).toBe(3);
     expect(h.counts.get('cms-purge:b')).toBe(1);
+  });
+  it('returns 401 for Authorization values longer than 600 characters', async () => {
+    const h = harness();
+    expect(
+      (
+        await h.run(
+          'a',
+          { scope: 'workspace' },
+          'application/json',
+          `Bearer ${'x'.repeat(594)}`
+        )
+      ).status
+    ).toBe(401);
+  });
+  it.each([null, 'text/plain', 'application/jsonp'])(
+    'rejects non-JSON content type %s before namespace rotation',
+    async (contentType) => {
+      const h = harness();
+      const before = await workspaceCacheEpoch(scope('a'), h.cache);
+      expect(
+        (await h.run('a', { scope: 'workspace' }, contentType)).status
+      ).toBe(415);
+      expect(await workspaceCacheEpoch(scope('a'), h.cache)).toBe(before);
+    }
+  );
+  it('accepts application/json with a charset parameter', async () => {
+    expect(
+      (
+        await harness().run(
+          'a',
+          { scope: 'workspace' },
+          'application/json; charset=utf-8'
+        )
+      ).status
+    ).toBe(204);
   });
   it.each([
     {},

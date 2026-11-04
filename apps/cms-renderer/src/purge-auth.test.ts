@@ -29,6 +29,9 @@ describe('per-site purge authorization', () => {
       expect(check(header)).toBe(false);
     }
   });
+  it('rejects Authorization values longer than 600 characters before hashing', () => {
+    expect(check(`Bearer ${'x'.repeat(594)}`)).toBe(false);
+  });
   it('fails closed for absent, malformed, empty, short or shared-token configuration', () => {
     for (const tokens of [
       '',
