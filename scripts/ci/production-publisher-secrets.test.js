@@ -253,7 +253,8 @@ test('native Calendar/Mail validation receives no cache credentials on productio
               scope.vars.TURBO_TEAM = team;
               const expected =
                 field === 'team'
-                  ? team || 'credential:TURBO_TEAM'
+                  ? team ||
+                    (event !== 'pull_request' ? 'credential:TURBO_TEAM' : '')
                   : actor !== 'dependabot[bot]' &&
                       event !== 'pull_request' &&
                       ref === 'refs/heads/main'
@@ -434,4 +435,71 @@ test('reusable publisher admits staging main events and rejects production indep
     }
   }
   assertPublisherSecrets(job);
+});
+
+function assertPrTurboTeamWithheld(workflow) {
+  for (const [field, value] of strings(workflow)) {
+    if (!value.includes('secrets.TURBO_TEAM')) continue;
+    const scope = context('refs/pull/42/merge', '', 'pull_request');
+    scope.secrets = new Proxy(
+      {},
+      {
+        get: (_, name) => {
+          assert.notEqual(
+            name,
+            'TURBO_TEAM',
+            `${field} reads TURBO_TEAM on a PR`
+          );
+          return `credential:${String(name)}`;
+        },
+      }
+    );
+    evaluate(value, scope);
+  }
+}
+
+test('Mail Calendar Tasks PR paths never read the Turbo team secret', () => {
+  assertPrTurboTeamWithheld(workflows['mail-calendar-tasks-builds.yaml']);
+});
+
+test('rejects an unguarded Turbo team fallback on an admitted PR', () => {
+  const workflow = structuredClone(
+    workflows['mail-calendar-tasks-builds.yaml']
+  );
+  workflow.jobs.unguarded = {
+    env: {
+      TURBO_TEAM:
+        '$' +
+        "{{ github.ref != 'refs/heads/production' && (vars.TURBO_TEAM || secrets.TURBO_TEAM) || '' }}",
+    },
+  };
+  assert.throws(
+    () => assertPrTurboTeamWithheld(workflow),
+    /reads TURBO_TEAM on a PR/
+  );
+});
+
+test('Turbo team inputs retain variables and trusted-event secret fallback', () => {
+  const fields = strings(workflows['mail-calendar-tasks-builds.yaml']).filter(
+    ([, value]) => value.includes('secrets.TURBO_TEAM')
+  );
+  assert.equal(fields.length, 5);
+  for (const [, value] of fields) {
+    for (const event of ['push', 'workflow_dispatch', 'pull_request']) {
+      for (const team of ['', 'public-team']) {
+        const scope = context(
+          event === 'pull_request' ? 'refs/pull/42/merge' : 'refs/heads/main',
+          '',
+          event
+        );
+        scope.vars.TURBO_TEAM = team;
+        assert.equal(
+          evaluate(value, scope),
+          team || (event === 'pull_request' ? '' : 'credential:TURBO_TEAM')
+        );
+        scope.github.ref = 'refs/heads/production';
+        assert.equal(evaluate(value, scope), '');
+      }
+    }
+  }
 });
