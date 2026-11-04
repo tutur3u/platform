@@ -56,6 +56,9 @@ describe('editor media read boundary', () => {
   );
   it.each([
     'external-projects/other/image.png',
+    'external-projects/custom/image.png ',
+    'image.png ',
+    ' external-projects/custom/image.png',
     'finance/invoice.pdf',
     'user-groups/private.pdf',
     '../finance/a',
