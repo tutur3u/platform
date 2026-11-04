@@ -30,6 +30,10 @@ vi.mock('@/lib/external-projects/http-cache', () => ({
   MAX_VERCEL_CACHE_TAGS: 32,
 }));
 
+vi.mock('@/lib/external-projects/page-versions', () => ({
+  getPublishedPageVersion: vi.fn(),
+}));
+
 vi.mock('@/lib/external-projects/store', () => ({
   buildWorkspaceExternalProjectDeliveryPayload: (
     ...args: Parameters<
@@ -48,8 +52,23 @@ describe('external project delivery route', () => {
     });
     mocks.buildWorkspaceExternalProjectDeliveryPayload.mockResolvedValue({
       collections: [],
-      revision: 1,
+      workspaceId: '123e4567-e89b-12d3-a456-426614174000',
+      revision: '1',
     });
+  });
+
+  it('returns 409 when no enabled CMS binding exists', async () => {
+    mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValueOnce({
+      enabled: false,
+    });
+    const { GET } = await import('./route');
+    const response = await GET(new Request('https://example.com/delivery'), {
+      params: Promise.resolve({ wsId: '123e4567-e89b-12d3-a456-426614174000' }),
+    });
+    expect(response.status).toBe(409);
+    expect(
+      mocks.buildWorkspaceExternalProjectDeliveryPayload
+    ).not.toHaveBeenCalled();
   });
 
   it('rejects a malformed workspace ID before making database calls', async () => {
@@ -80,6 +99,8 @@ describe('external project delivery route', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe('no-store');
     expect(mocks.resolveWorkspaceExternalProjectBinding).toHaveBeenCalledWith(
       workspaceId,
       { kind: 'admin-db' }
