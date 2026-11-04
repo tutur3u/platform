@@ -7,6 +7,7 @@ import {
 import {
   FEE_LOCK_EXPORT_TOO_MANY_CODE,
   FEE_LOCK_VERSION_CONFLICT_CODE,
+  FEE_NOTICE_TEMPLATE_VERSION_CONFLICT_CODE,
   type FeeLockBatchItemResult,
   type FeeLockBatchLockRequest,
   type FeeLockConflictBody,
@@ -16,6 +17,12 @@ import {
   type FeeLockListQuery,
   type FeeLockListResponse,
   type FeeLockSaveDraftRequest,
+  type FeeNoticePreviewRequest,
+  type FeeNoticePreviewResponse,
+  type FeeNoticeTemplateInput,
+  type FeeNoticeTemplateResponse,
+  type FeeNoticeTemplateSaveRequest,
+  type FeeNoticeTemplateVersion,
 } from './finance-fee-lock-contracts';
 import { parseInternalApiError } from './internal-api-error';
 
@@ -183,4 +190,72 @@ export async function exportFeeLocks(
       'chot-hoc-phi.xlsx',
     rowCount: Number(response.headers.get('x-fee-lock-row-count')) || 0,
   };
+}
+
+export function getFeeNoticeTemplate(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(
+    withFinanceApiBaseUrl(options)
+  ).json<FeeNoticeTemplateResponse>(feeLocksPath(workspaceId, '/template'), {
+    cache: 'no-store',
+  });
+}
+
+/** Saves a new version; a stale `expected_version` resolves to the current template. */
+export async function saveFeeNoticeTemplate(
+  workspaceId: string,
+  payload: FeeNoticeTemplateSaveRequest,
+  options?: InternalApiClientOptions
+): Promise<
+  | { ok: true; data: FeeNoticeTemplateVersion }
+  | {
+      ok: false;
+      current: (FeeNoticeTemplateInput & { version: number | null }) | null;
+    }
+> {
+  const response = await getInternalApiClient(
+    withFinanceApiBaseUrl(options)
+  ).fetch(feeLocksPath(workspaceId, '/template'), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+  });
+  if (response.status === 409) {
+    const body = (await response
+      .clone()
+      .json()
+      .catch(() => null)) as {
+      code?: string;
+      current?: FeeNoticeTemplateInput & { version: number | null };
+    } | null;
+    if (body?.code === FEE_NOTICE_TEMPLATE_VERSION_CONFLICT_CODE) {
+      return { ok: false, current: body.current ?? null };
+    }
+  }
+  if (!response.ok) throw await parseInternalApiError(response);
+  return {
+    ok: true,
+    data: (await response.json()) as FeeNoticeTemplateVersion,
+  };
+}
+
+export function previewFeeNotice(
+  workspaceId: string,
+  payload: FeeNoticePreviewRequest,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(
+    withFinanceApiBaseUrl(options)
+  ).json<FeeNoticePreviewResponse>(
+    feeLocksPath(workspaceId, '/template/preview'),
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
 }
