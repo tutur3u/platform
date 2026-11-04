@@ -1,6 +1,6 @@
 -- Manual rollback only: restores the 20260603214534 task source filter RPCs,
 -- so ticket search matches board display numbers only and project keys such
--- as PLA-12 stop resolving. Run before the 20261101100040 rollback.
+-- as PLA-12 stop resolving. Run before the 20261104213040 rollback.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '30s';

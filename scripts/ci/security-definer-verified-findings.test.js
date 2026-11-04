@@ -98,7 +98,7 @@ const expectedVerifiedIdentities = [
     'public-execute',
   ],
   [
-    'apps/database/supabase/migrations/20261101100040_project_ticket_keys.sql',
+    'apps/database/supabase/migrations/20261104213040_project_ticket_keys.sql',
     '<dynamic-execute-acl>',
     'dynamic-execute-acl',
   ],
@@ -127,7 +127,7 @@ test('verified findings remain separate from the historical debt inventory', () 
           : entry.file.includes('030700')
             ? ['authenticated', 'service_role']
             : entry.file.includes('030500') ||
-                entry.file.includes('20261101100040')
+                entry.file.includes('20261104213040')
               ? []
               : ['service_role']
     );

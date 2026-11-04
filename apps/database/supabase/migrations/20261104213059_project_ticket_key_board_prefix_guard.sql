@@ -2,10 +2,10 @@ BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '60s';
 
--- Reverse of 20261101100058: a board's ticket prefix may not be set to a
+-- Reverse of 20261104213058: a board's ticket prefix may not be set to a
 -- project key in the same workspace, so a label like PLA-2 names one task.
 -- Only an explicit, changed prefix is checked; a board without a prefix shows
--- TASK-N, which 20261101100058 already keeps off project keys. The check
+-- TASK-N, which 20261104213058 already keeps off project keys. The check
 -- takes the workspace key lock that project key writes use, so a prefix edit
 -- and a project key write cannot pass each other.
 -- SECURITY INVOKER: board edits run through the server route as the service
