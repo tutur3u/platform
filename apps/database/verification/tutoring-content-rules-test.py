@@ -13,7 +13,7 @@ import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 PG = pathlib.Path(os.environ.get('TUTORING_PG_BIN', '/opt/homebrew/opt/postgresql@17/bin'))
-MIGRATION = ROOT / 'apps/database/supabase/migrations/20261103031000_tutoring_content_stages.sql'
+MIGRATION = ROOT / 'apps/database/supabase/migrations/20261104221000_tutoring_content_stages.sql'
 PRE_RUN = ROOT / 'apps/database/verification/tutoring-content-stages-pre-run.sql'
 # MD5 of the client workspace that only its own admins may opt in. Migrations and
 # backfills must always exclude it; the raw ID is never used as a fixture here.
@@ -51,7 +51,7 @@ class ContentRules(unittest.TestCase):
         self.sql("""
         drop schema if exists private cascade; drop schema public cascade;
         create schema public; create schema private;
-        create table public.workspace_configs(ws_id uuid, id text, value text);
+        create table public.workspace_configs(ws_id uuid, id text, value text, updated_at timestamptz not null default now());
         create table public.workspace_user_groups(id uuid primary key, ws_id uuid);
         create table public.workspace_users(id uuid primary key, ws_id uuid);
         create table public.workspace_user_groups_users(group_id uuid,user_id uuid,role text);
@@ -74,7 +74,7 @@ class ContentRules(unittest.TestCase):
         self.pre_migration()
         if MIGRATION.exists():
             self.apply_migration()
-        self.sql("insert into public.workspace_configs select ws_id,'tutoring_content_rules','true' from public.workspace_user_groups")
+        self.sql("insert into public.workspace_configs select ws_id,'tutoring_content_rules','true',now()-interval '60 days' from public.workspace_user_groups")
 
     # Rows that exist before the stage migration is applied, keyed by test name.
     PRE_MIGRATION = {
@@ -88,7 +88,7 @@ class ContentRules(unittest.TestCase):
         if self._testMethodName in self.BACKFILL_TESTS:
             # Point the exclusion at a synthetic workspace; the constant test
             # below pins the real migration text to CLIENT_WS_MD5.
-            text = text.replace(CLIENT_WS_MD5, hashlib.md5(SYNTH_EXCLUDED_WS.encode()).hexdigest())
+            text = text.replace(CLIENT_WS_MD5, hashlib.md5(SYNTH_EXCLUDED_WS.encode(), usedforsecurity=False).hexdigest())
         return text
 
     def configs_snapshot(self):
@@ -123,7 +123,7 @@ class ContentRules(unittest.TestCase):
                    '00000000-0000-0000-0000-000000000003',now(),
                    '00000000-0000-0000-0000-000000000005');
             """)
-            pre_run = PRE_RUN.read_text().replace(CLIENT_WS_MD5, hashlib.md5(ec.encode()).hexdigest())
+            pre_run = PRE_RUN.read_text().replace(CLIENT_WS_MD5, hashlib.md5(ec.encode(), usedforsecurity=False).hexdigest())
             # psql emits transaction command tags; request only query rows.
             query = pre_run[pre_run.index('with population'):pre_run.index('commit;')].rstrip().rstrip(';')
             self.assertEqual(self.sql("select string_agg(workspace_segment || ':' || legacy_receipts || ':' || would_change, ',' order by workspace_segment) from (" + query + ") counts"), ['excluded:1:0,other:1:1'])
@@ -148,18 +148,23 @@ class ContentRules(unittest.TestCase):
 
     def test_n2_day13(self):
         self.sql("update public.user_feedbacks set created_at=now()-interval '13 days'")
-        self.run_job(); self.count(0)
+        self.run_job()
+        self.count(0)
 
     def test_n2_day14_and_dedup(self):
-        self.run_job(); self.run_job(); self.count(1)
+        self.run_job()
+        self.run_job()
+        self.count(1)
 
     def test_n2_day15(self):
         self.sql("update public.user_feedbacks set created_at=now()-interval '15 days'")
-        self.run_job(); self.count(1)
+        self.run_job()
+        self.count(1)
 
     def test_flag_off(self):
         self.sql('delete from public.workspace_configs')
-        self.run_job(); self.count(0)
+        self.run_job()
+        self.count(0)
 
     def test_flag_off_edits_inert(self):
         self.sql("delete from public.workspace_configs; update public.user_feedbacks set content='edited'")
@@ -174,27 +179,35 @@ class ContentRules(unittest.TestCase):
         for change in ["content='edit'", "require_attention=false", "require_attention=true", "content='fixture'"]:
             self.sql('update public.user_feedbacks set '+change)
             self.assertEqual(self.sql('select last_reviewed_at from private.tutoring_weak_support_reviews'), before)
-        self.run_job(); self.count(2)
+        self.run_job()
+        self.count(2)
 
 
     def test_no_teacher(self):
         self.sql('delete from public.workspace_user_linked_users')
-        self.run_job(); self.count(0)
+        self.run_job()
+        self.count(0)
 
     def test_n3_waits_after_n2(self):
-        self.run_job(); self.run_job(); self.count(1)
+        self.run_job()
+        self.run_job()
+        self.count(1)
         self.sql("update private.tutoring_notification_receipts set created_at=now()-interval '14 days'")
-        self.run_job(); self.run_job(); self.count(2)
+        self.run_job()
+        self.run_job()
+        self.count(2)
 
     def test_member_edit_does_not_attest_review(self):
         self.run_job()
         self.sql("update private.tutoring_notification_receipts set created_at=now()-interval '14 days'; update public.user_feedbacks set content='updated fixture'")
-        self.run_job(); self.count(2)
+        self.run_job()
+        self.count(2)
         self.assertEqual(self.sql('select count(*) from private.tutoring_weak_support_reviews'), ['0'])
 
     def test_threshold_config(self):
         self.sql("insert into public.workspace_configs select ws_id,'tutoring_content_rules_n2_days','15' from public.workspace_user_groups")
-        self.run_job(); self.count(0)
+        self.run_job()
+        self.count(0)
 
     def test_stage_isolation(self):
         self.run_job()
@@ -217,13 +230,15 @@ class ContentRules(unittest.TestCase):
         self.sql("insert into public.workspace_configs select ws_id,'tutoring_content_rules_office_group','disabled' from public.workspace_user_groups")
         self.run_job()
         self.sql("update private.tutoring_notification_receipts set created_at=now()-interval '14 days'")
-        self.run_job(); self.count(1)
+        self.run_job()
+        self.count(1)
 
     def test_n3_threshold_config(self):
         self.sql("insert into public.workspace_configs select ws_id,'tutoring_content_rules_n3_days','15' from public.workspace_user_groups")
         self.run_job()
         self.sql("update private.tutoring_notification_receipts set created_at=now()-interval '14 days'")
-        self.run_job(); self.count(1)
+        self.run_job()
+        self.count(1)
 
     def test_service_role_only(self):
         self.assertEqual(self.sql("select has_function_privilege('authenticated','private.process_tutoring_content_rules(integer)','execute')"), ['f'])
@@ -255,7 +270,8 @@ class ContentRules(unittest.TestCase):
 
     def assert_no_derived_writes(self):
         before = self.derived_snapshot()
-        self.run_job(); self.run_job()
+        self.run_job()
+        self.run_job()
         self.assertEqual(self.derived_snapshot(), before)
 
     def test_flag_off_no_derived_writes_empty_cursor(self):
@@ -291,10 +307,12 @@ class ContentRules(unittest.TestCase):
         # Selene M1: boundary day -30, N2 receipt day -15, replacement row today.
         self.sql("update public.user_feedbacks set created_at=now()-interval '40 days'")
         self.seed_review_boundary(30)
-        self.run_job(); self.count(1)
+        self.run_job()
+        self.count(1)
         self.sql("update private.tutoring_notification_receipts set created_at=now()-interval '15 days'")
         self.replace_feedback()
-        self.run_job(); self.count(2)
+        self.run_job()
+        self.count(2)
         self.assertEqual(self.sql("select string_agg(stage,',' order by stage) from private.tutoring_notification_receipts"), ['n2,n3'])
 
     def test_seeded_n2_history_survives_replacement(self):
@@ -302,12 +320,14 @@ class ContentRules(unittest.TestCase):
         self.seed_review_boundary(30)
         self.sql("insert into private.tutoring_notification_receipts(kind,group_id,student_user_id,review_cycle_started_at,recipient_user_id,stage,created_at) select 'weak_content_review_due',group_id,student_user_id,last_reviewed_at,'00000000-0000-0000-0000-000000000005','n2',now()-interval '15 days' from private.tutoring_weak_support_reviews")
         self.replace_feedback()
-        self.run_job(); self.count(1)
+        self.run_job()
+        self.count(1)
         self.assertEqual(self.sql("select count(*) from private.tutoring_notification_receipts where stage='n3' and review_cycle_started_at=(select last_reviewed_at from private.tutoring_weak_support_reviews)"), ['1'])
 
     def test_replacement_revert_toggle_rows_do_not_postpone(self):
         self.seed_review_boundary(30)
-        self.run_job(); self.count(1)
+        self.run_job()
+        self.count(1)
         self.sql("update private.tutoring_notification_receipts set created_at=now()-interval '15 days'")
         for attention, content in [('true', 'edited'), ('false', 'edited'), ('true', 'fixture'), ('true', 'fixture')]:
             self.replace_feedback(attention, content)
@@ -320,28 +340,34 @@ class ContentRules(unittest.TestCase):
 
     def test_replacement_before_n2_does_not_postpone_n2(self):
         self.sql("update public.user_feedbacks set created_at=now()-interval '10 days'")
-        self.run_job(); self.count(0)
+        self.run_job()
+        self.count(0)
         self.replace_feedback()
         self.sql("insert into public.workspace_configs select ws_id,'tutoring_content_rules_n2_days','10' from public.workspace_user_groups")
-        self.run_job(); self.count(1)
+        self.run_job()
+        self.count(1)
 
     def test_authorized_review_starts_new_cycle(self):
         self.sql("update public.user_feedbacks set created_at=now()-interval '40 days'")
         self.seed_review_boundary(30)
-        self.run_job(); self.count(1)
+        self.run_job()
+        self.count(1)
         # Only the service-role review operation opens a new cycle.
         self.seed_review_boundary(14)
-        self.run_job(); self.count(2)
+        self.run_job()
+        self.count(2)
         self.assertEqual(self.sql("select count(distinct review_cycle_started_at) from private.tutoring_notification_receipts where stage='n2'"), ['2'])
         self.seed_review_boundary(0)
         self.replace_feedback()
-        self.run_job(); self.count(2)
+        self.run_job()
+        self.count(2)
 
     def test_future_dated_replacement_cannot_postpone_first_cycle(self):
         self.sql("insert into public.user_feedbacks values (gen_random_uuid(),'00000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000002','future',true,now()+interval '30 days')")
         self.sql("delete from public.user_feedbacks where content='fixture'")
         self.sql("insert into public.workspace_configs select ws_id,'tutoring_content_rules_n2_days','1' from public.workspace_user_groups")
-        self.run_job(); self.count(0)
+        self.run_job()
+        self.count(0)
         self.assertEqual(self.sql("select count(*) from private.tutoring_content_review_episodes where cycle_started_at<=now()"), ['1'])
 
     def test_rollback_phase1_survives_backup_failure(self):
@@ -426,10 +452,56 @@ class ContentRules(unittest.TestCase):
                 self.run_job()
                 self.assertEqual(self.ws_rows(OTHER_WS), ['0:0:0'])
         self.assertEqual(self.ws_rows('00000000-0000-0000-0000-000000000001'), ['1:1:1'])
-        # The other workspace's own admins opt in later: it starts receiving.
-        self.sql(f"update public.workspace_configs set value='true' where ws_id='{OTHER_WS}'")
+        # A fresh opt-in cannot alert the other workspace's older episode.
+        self.sql(f"update public.workspace_configs set value='true',updated_at=now() where ws_id='{OTHER_WS}'")
         self.run_job()
-        self.assertEqual(self.ws_rows(OTHER_WS), ['1:1:1'])
+        self.assertEqual(self.ws_rows(OTHER_WS), ['0:0:1'])
+        self.assertEqual(self.ws_rows('00000000-0000-0000-0000-000000000001'), ['1:1:1'])
+
+    def test_episode_at_optin_boundary_can_receive_n2(self):
+        self.sql("update public.workspace_configs set updated_at=now()-interval '14 days' where id='tutoring_content_rules'")
+        self.sql("update public.user_feedbacks set created_at=(select updated_at from public.workspace_configs where id='tutoring_content_rules')")
+        self.run_job()
+        self.count(1)
+
+    def test_pre_optin_episode_gets_no_fresh_n2(self):
+        self.sql("update public.workspace_configs set updated_at=now() where id='tutoring_content_rules'")
+        self.run_job()
+        self.run_job()
+        self.count(0)
+        self.assertEqual(self.sql("select count(*) from private.tutoring_notification_receipts"), ['0'])
+        # A replacement must retain the pinned old episode, even if dated later.
+        self.replace_feedback()
+        self.run_job()
+        self.count(0)
+        # A later authorized review opens an eligible episode.
+        self.sql("update public.workspace_configs set updated_at=now()-interval '2 days' where id='tutoring_content_rules'")
+        self.seed_review_boundary(1)
+        self.sql("insert into public.workspace_configs select ws_id,'tutoring_content_rules_n2_days','1' from public.workspace_user_groups")
+        self.sql("update public.user_feedbacks set created_at=now()-interval '14 days'")
+        self.run_job()
+        self.count(1)
+
+    def test_legacy_n1_episode_before_optin_stays_n1(self):
+        self.sql("update public.workspace_configs set updated_at=now() where id='tutoring_content_rules'")
+        self.sql("insert into private.tutoring_notification_receipts(kind,group_id,student_user_id,review_cycle_started_at,recipient_user_id,stage) select 'weak_content_review_due',group_id,user_id,created_at,'00000000-0000-0000-0000-000000000005','n1' from public.user_feedbacks")
+        before = self.sql("select r::text || '@' || r.xmin::text from private.tutoring_notification_receipts r")
+        self.run_job()
+        self.run_job()
+        self.count(0)
+        self.assertEqual(self.sql("select r::text || '@' || r.xmin::text from private.tutoring_notification_receipts r"), before)
+
+    def test_pre_optin_n2_history_can_progress_but_no_new_teacher_n2(self):
+        self.run_job()
+        self.count(1)
+        self.sql("update public.workspace_configs set updated_at=now() where id='tutoring_content_rules'")
+        self.sql("delete from private.tutoring_notification_receipts")
+        self.run_job()
+        self.count(1)
+        self.sql("insert into private.tutoring_notification_receipts(kind,group_id,student_user_id,review_cycle_started_at,recipient_user_id,stage,created_at) select 'weak_content_review_due',group_id,student_user_id,cycle_started_at,'00000000-0000-0000-0000-000000000005','n2',now()-interval '15 days' from private.tutoring_content_review_episodes")
+        self.run_job()
+        self.count(2)
+        self.assertEqual(self.sql("select count(*) from private.tutoring_notification_receipts where stage='n3'"), ['1'])
 
     @staticmethod
     def migration_code():
@@ -462,7 +534,8 @@ class ContentRules(unittest.TestCase):
     def test_legacy_weak_receipt_becomes_n2_history(self):
         # A pre-stage weak-content receipt is the teacher alert (N2), never N1.
         self.assertEqual(self.sql("select stage from private.tutoring_notification_receipts"), ['n2'])
-        self.run_job(); self.run_job()
+        self.run_job()
+        self.run_job()
         self.assertEqual(self.sql("select string_agg(stage,',' order by stage) from private.tutoring_notification_receipts"), ['n2,n3'])
 
 if __name__ == '__main__':

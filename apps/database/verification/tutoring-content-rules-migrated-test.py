@@ -4,7 +4,8 @@ import pathlib
 import unittest
 r=pathlib.Path(__file__).resolve().parents[3]
 spec=importlib.util.spec_from_file_location('fixture',r/'apps/database/verification/tutoring-content-rules-test.py')
-m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+m=importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
 class Migrated(m.ContentRules):
     def setUp(self):
         self.sql('drop schema if exists auth cascade;')

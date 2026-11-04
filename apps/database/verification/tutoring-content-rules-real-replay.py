@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Real-schema acceptance replay for 20261103031000_tutoring_content_stages.
+"""Real-schema acceptance replay for 20261104221000_tutoring_content_stages.
 
 Disposable local Supabase CLI stack only; it never accepts a remote DSN. Steps:
 1. Stage every tracked apps/database/supabase file, with every committed forward
@@ -34,11 +34,12 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import urllib.parse
 import uuid
 
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 BASE = '41038b6e182d564d2752fc42efcbc20fea4dcaca'
-TARGET = 'apps/database/supabase/migrations/20261103031000_tutoring_content_stages.sql'
+TARGET = 'apps/database/supabase/migrations/20261104221000_tutoring_content_stages.sql'
 ROLLBACK = 'apps/database/rollbacks/20261103031000_tutoring_content_stages.rollback.sql'
 EXCLUDED = ('realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,'
             'edge-runtime,logflare,vector,supavisor')
@@ -132,8 +133,17 @@ class Replay:
         for name, value in (headers or {}).items():
             request.add_header(name, value)
         data = json.dumps(body).encode() if body is not None else None
+        url = urllib.parse.urlsplit(request.full_url)
+        if (url.scheme != 'http' or url.hostname != '127.0.0.1'
+                or url.port != self.args.base_port + 1):
+            raise ValueError('Replay HTTP requests must target the disposable local API')
+        # Disable redirects so the validated loopback origin cannot change.
+        class NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, req, fp, code, msg, headers, newurl):
+                return None
+        opener = urllib.request.build_opener(NoRedirect)
         try:
-            with urllib.request.urlopen(request, data, timeout=60) as response:
+            with opener.open(request, data, timeout=60) as response:
                 status, payload = response.status, response.read().decode()
         except urllib.error.HTTPError as error:
             status, payload = error.code, error.read().decode()
@@ -223,7 +233,7 @@ class Replay:
         self.check('base chain applied count', self.manifest['applied_base_migrations'],
                    str(self.manifest['base_migration_count']))
         self.check('target not yet applied', self.q(
-            "select count(*) from supabase_migrations.schema_migrations where version='20261103031000'"), '0')
+            "select count(*) from supabase_migrations.schema_migrations where version='20261104221000'"), '0')
         self.manifest['auth_users_columns'] = self.q(
             "select count(*) from information_schema.columns where table_schema='auth' and table_name='users'")
         self.manifest['user_feedbacks_policies'] = self.q(
@@ -300,7 +310,7 @@ class Replay:
         shutil.copyfile(ROOT / TARGET, self.work / TARGET[len('apps/database/'):])
         self.sb('supabase migration up (target)', 'migration', 'up', '--local')
         self.check('target applied exactly once', self.q(
-            "select count(*) from supabase_migrations.schema_migrations where version='20261103031000'"), '1')
+            "select count(*) from supabase_migrations.schema_migrations where version='20261104221000'"), '1')
         self.check('N1 receipt stays n1, legacy weak receipts become n2', self.q(
             "select string_agg(kind || ':' || stage, ',' order by kind, stage) from private.tutoring_notification_receipts"),
             'session_completed:n1,weak_content_review_due:n2,weak_content_review_due:n2')
@@ -393,6 +403,7 @@ class Replay:
           ('%(W3)s','tutoring_content_rules_n2_days','10'),('%(W3)s','tutoring_content_rules_n3_days','3'),
           ('%(W3)s','tutoring_content_rules_office_group','%(G3O)s');
         """ % {'W1': W1, 'W3': W3, 'G3O': G3OFFICE}, 'flag ON for W1/W3 (WOFF stays non-true)')
+        self.psql("update public.workspace_configs set updated_at=now()-interval '60 days' where id='tutoring_content_rules' and value='true';", 'historical workspace opt-ins for eligible episode fixtures')
         first = self.service_run()
         self.log('first ON run: %s' % first)
         stages = lambda s: self.q("select coalesce(string_agg(stage || '@' || to_char(review_cycle_started_at,'YYYY-MM-DD\"T\"HH24:MI:SS'), ',' order by stage, review_cycle_started_at), '') from private.tutoring_notification_receipts where student_user_id='%s'" % s)
@@ -539,7 +550,7 @@ class Replay:
         ok = self.psql(rollback_sql, 'rollback standalone', check=False)
         self.check('rollback standalone exits 0', ok.returncode, 0)
         self.log('collision precheck output: %s' % ok.stdout.strip())
-        self.check('collision precheck reports collisions', len([l for l in ok.stdout.strip().splitlines() if l.count('|') == 4]) >= 1, True)
+        self.check('collision precheck reports collisions', len([line for line in ok.stdout.strip().splitlines() if line.count('|') == 4]) >= 1, True)
         self.check('backup equals live receipts (both directions)', self.q(
             "select (select count(*) from (select * from private.tutoring_notification_receipts except select * from private.tutoring_content_stage_backup) a) || ':' || (select count(*) from (select * from private.tutoring_content_stage_backup except select * from private.tutoring_notification_receipts) b)"), '0:0')
         self.check('live receipts preserved by rollback', self.q(
@@ -551,7 +562,7 @@ class Replay:
     def clean_install(self):
         self.sb('supabase db reset (target head, clean full chain)', 'db', 'reset')
         self.check('clean install: newest migration is the target', self.q(
-            'select max(version) from supabase_migrations.schema_migrations'), '20261103031000')
+            'select max(version) from supabase_migrations.schema_migrations'), '20261104221000')
         self.check('clean install: applied count = base + 1', self.q(
             'select count(*) from supabase_migrations.schema_migrations'), str(self.manifest['base_migration_count'] + 1))
         self.check('clean install: processor service-role only', self.q(

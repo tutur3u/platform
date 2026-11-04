@@ -90,7 +90,7 @@ begin
     return jsonb_build_object('sent',0);
   end if;
   for note in
-    select f.*, g.ws_id from public.user_feedbacks f
+    select f.*, g.ws_id, flag.updated_at as opted_in_at from public.user_feedbacks f
     join public.workspace_user_groups g on g.id=f.group_id
     join public.workspace_users u on u.id=f.user_id and u.ws_id=g.ws_id
     join public.workspace_configs flag on flag.ws_id=g.ws_id
@@ -142,7 +142,7 @@ begin
       from public.workspace_user_groups_users m
       join public.workspace_user_linked_users l on l.virtual_user_id=m.user_id and l.ws_id=note.ws_id
       join public.workspace_members wm on wm.user_id=l.platform_user_id and wm.ws_id=note.ws_id
-      where stage_name='n2' and m.group_id=note.group_id and m.role='TEACHER'
+      where stage_name='n2' and cycle>=note.opted_in_at and m.group_id=note.group_id and m.role='TEACHER'
       union
       select wm.user_id from public.workspace_members wm
       where stage_name='n3' and wm.ws_id=note.ws_id and (
