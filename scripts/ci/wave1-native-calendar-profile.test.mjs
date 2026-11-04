@@ -42,6 +42,23 @@ test('Calendar staging seal restores its explicit host without a provider subdom
   );
 });
 
+test('Calendar requires every runtime secret its Vercel production holds', () => {
+  const required = [
+    'ENCRYPTION_MASTER_KEY',
+    'CLOUDFLARE_COORDINATION_URL',
+    'CLOUDFLARE_COORDINATION_TOKEN',
+    'TUTURUUU_AZURE_TENANT_ID',
+  ];
+  for (const environment of ['staging', 'production']) {
+    const { secrets } = profileFor('calendar', environment, 'owner-example');
+    for (const name of required) assert.ok(secrets.includes(name), name);
+  }
+  for (const app of ['mail', 'apps'])
+    assert.ok(
+      !profileFor(app, 'production').secrets.includes('ENCRYPTION_MASTER_KEY')
+    );
+});
+
 test('production and other apps keep their existing profile identities', () => {
   assert.equal(
     profileFor('calendar', 'production').host,
