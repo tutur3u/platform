@@ -30,6 +30,7 @@ on:
         'packages/utils/**',
         'packages/vercel/**',
         'scripts/ci/cms-native-artifact.py',
+        'scripts/ci/cms-cutover-smoke.mjs',
         '.github/workflows/cms-cloudflare.yaml',
         'scripts/ci/apps-native-artifact.py',
         'scripts/ci/apps-native-runtime-pointer.mjs',
@@ -84,6 +85,7 @@ on:
         'packages/utils/**',
         'packages/vercel/**',
         'scripts/ci/cms-native-artifact.py',
+        'scripts/ci/cms-cutover-smoke.mjs',
         '.github/workflows/cms-cloudflare.yaml',
         'scripts/ci/apps-native-artifact.py',
         'scripts/ci/apps-native-runtime-pointer.mjs',
@@ -136,11 +138,12 @@ jobs:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       CMS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       VITE_CMS_NATIVE_PROFILE: ${{ matrix.profile }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ matrix.profile == 'production' && secrets.PRODUCTION_SUPABASE_URL || vars.STAGING_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars[format('{0}_SUPABASE_URL', matrix.profile == 'production' && 'PRODUCTION' || 'STAGING')] }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars[format('{0}_SUPABASE_PUBLISHABLE_KEY', matrix.profile == 'production' && 'PRODUCTION' || 'STAGING')] }}
       NEXT_PUBLIC_APP_URL: https://cms.tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       TUTURUUU_NOINDEX: '1'
+      NODE_ENV: production
       WRANGLER_SEND_METRICS: 'false'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -154,16 +157,10 @@ jobs:
         with:
           node-version: 24.22.0
       - name: Require the selected public build inputs
-        env:
-          PRODUCTION_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           test -n "$NEXT_PUBLIC_SUPABASE_URL"
           test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
-          if [ "$VITE_CMS_NATIVE_PROFILE" = production ]; then
-            test -n "$PRODUCTION_SUPABASE_URL"
-            test "$NEXT_PUBLIC_SUPABASE_URL" = "$PRODUCTION_SUPABASE_URL"
-          fi
       - run: bun install --frozen-lockfile --ignore-scripts
       - name: Build required workspace suppliers
         uses: ./.github/actions/run-with-turbo-remote-cache
@@ -180,6 +177,19 @@ jobs:
       - name: Build TanStack Start Worker and assets
         working-directory: apps/cms
         run: bun run build:cloudflare
+      - name: Record emitted configuration receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/cms "$SOURCE_SHA" "$RUNNER_TEMP/cms-emitted-config.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: cms-cutover-config-${{ matrix.profile }}-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/cms-emitted-config.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Check emitted anonymous redirect and required-secret startup refusal
+        timeout-minutes: 4
+        run: node scripts/ci/cms-cutover-smoke.mjs
       - name: Package deployable output and emitted Wrangler config
         run: |
           python3 scripts/ci/cms-native-artifact.py config apps/cms
