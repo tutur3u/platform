@@ -27,7 +27,6 @@ async function transcribeAudio(
     }
 
     const billingWorkspaceId = await resolveAiMemoryWorkspaceIdForUser({
-      fallbackWsId: '',
       supabase,
       userId: user.id,
     });

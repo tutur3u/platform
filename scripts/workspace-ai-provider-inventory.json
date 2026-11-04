@@ -151,12 +151,12 @@
   },
   {
     "path": "apps/calendar/src/app/api/v1/calendar/audio/route.ts",
-    "sha256": "e0ebb506155eec25b2d5eec596ed90a46555d51b5467cf5a4f3c57536491a23f",
+    "sha256": "37526a76872daecb9412922a1fae6a2dcc10bf5a4108e020d46aa6ff160447df",
     "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
     "boundaries": [
       {
         "path": "apps/calendar/src/app/api/v1/calendar/audio/route.ts",
-        "sha256": "e0ebb506155eec25b2d5eec596ed90a46555d51b5467cf5a4f3c57536491a23f"
+        "sha256": "37526a76872daecb9412922a1fae6a2dcc10bf5a4108e020d46aa6ff160447df"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
@@ -166,12 +166,12 @@
   },
   {
     "path": "apps/calendar/src/app/api/v1/calendar/image/route.ts",
-    "sha256": "f8b481ab686ee77e03ef9eb949d66355a0c329d50f5ef8b25a9dc73565540716",
+    "sha256": "de983bf5acc2cd2a641c8bdb70687aa616135cabc2293c85347c138e69c57745",
     "workspace": "Workspace argument at the policy call in this file; request actors come from server authentication, system actors use the owning record workspace.",
     "boundaries": [
       {
         "path": "apps/calendar/src/app/api/v1/calendar/image/route.ts",
-        "sha256": "f8b481ab686ee77e03ef9eb949d66355a0c329d50f5ef8b25a9dc73565540716"
+        "sha256": "de983bf5acc2cd2a641c8bdb70687aa616135cabc2293c85347c138e69c57745"
       },
       {
         "path": "packages/utils/src/workspace-ai-policy-server.ts",
