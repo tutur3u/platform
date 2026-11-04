@@ -133,7 +133,7 @@ jobs:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       AI_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       VITE_AI_NATIVE_PROFILE: ${{ matrix.profile }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ matrix.profile == 'production' && 'https://nzamlzqfdwaaxdefwraj.supabase.co' || vars.STAGING_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ matrix.profile == 'production' && secrets.PRODUCTION_SUPABASE_URL || vars.STAGING_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars[format('{0}_SUPABASE_PUBLISHABLE_KEY', matrix.profile == 'production' && 'PRODUCTION' || 'STAGING')] }}
       NEXT_PUBLIC_APP_URL: https://ai.tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
@@ -151,10 +151,16 @@ jobs:
         with:
           node-version: 24.22.0
       - name: Require the selected public build inputs
+        env:
+          PRODUCTION_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
         run: |
           test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
           test -n "$NEXT_PUBLIC_SUPABASE_URL"
           test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+          if [ "$VITE_AI_NATIVE_PROFILE" = production ]; then
+            test -n "$PRODUCTION_SUPABASE_URL"
+            test "$NEXT_PUBLIC_SUPABASE_URL" = "$PRODUCTION_SUPABASE_URL"
+          fi
       - run: bun install --frozen-lockfile --ignore-scripts
       - name: Build required workspace suppliers
         uses: ./.github/actions/run-with-turbo-remote-cache
