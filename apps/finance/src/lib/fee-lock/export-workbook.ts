@@ -65,7 +65,15 @@ export async function sha256Hex(bytes: Uint8Array<ArrayBuffer>) {
   ).join('');
 }
 
-/** `chot-hoc-phi-2026-12.xlsx` for `2026-12`. */
-export function feeLockExportFileName(month: string) {
-  return `chot-hoc-phi-${month}.xlsx`;
+/**
+ * `chot-hoc-phi-2026-12-1a2b3c4d.xlsx`: a validated month plus the first 8
+ * hex digits of the workspace id. It never contains user text; anything else
+ * throws.
+ */
+export function feeLockExportFileName(month: string, wsId: string) {
+  const ws = wsId.replace(/-/g, '').slice(0, 8).toLowerCase();
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month) || !/^[0-9a-f]{8}$/.test(ws)) {
+    throw new Error('Invalid fee-lock export file name');
+  }
+  return `chot-hoc-phi-${month}-${ws}.xlsx`;
 }

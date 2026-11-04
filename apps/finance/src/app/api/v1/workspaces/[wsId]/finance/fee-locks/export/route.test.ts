@@ -103,7 +103,9 @@ describe('POST /finance/fee-locks/export', () => {
     expect(Object.fromEntries(response.headers)).toMatchObject({
       'content-type':
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'content-disposition': 'attachment; filename="chot-hoc-phi-2026-12.xlsx"',
+      // No user text in the name: validated month + 8 hex digits of the ws id.
+      'content-disposition':
+        'attachment; filename="chot-hoc-phi-2026-12-00000000.xlsx"',
       'cache-control': 'no-store',
     });
     const bytes = new Uint8Array(await response.arrayBuffer());
@@ -120,9 +122,12 @@ describe('POST /finance/fee-locks/export', () => {
       actor_id: ACTOR,
     });
     expect(event?.metadata).toEqual({
+      ws_id: WS,
       period: '2026-12',
       status_filter: 'all',
       group_id: GROUP,
+      locale: 'vi',
+      sort: 'student_name:vi,fee_lock_id',
       include_notice: false,
       row_count: 2,
       sha256: await sha256Hex(bytes),
@@ -136,7 +141,7 @@ describe('POST /finance/fee-locks/export', () => {
     expect(JSON.stringify(event)).not.toMatch(/Học viên|HYPERLINK/);
   });
 
-  it('keeps metadata under 8 KB: digest only when the revision list does not fit', async () => {
+  it('keeps metadata under 8 KB, always with the request, so a cut list can be replayed', async () => {
     const many = Array.from(
       { length: 200 },
       (_, i): [string, FeeLockExportEntry] => [
@@ -146,11 +151,31 @@ describe('POST /finance/fee-locks/export', () => {
     );
     mocks.load.mockResolvedValue({ entries: many });
     const db = allow();
-    expect((await post({ month: '2026-12' })).status).toBe(200);
+    expect((await post({ month: '2026-12', locale: 'en' })).status).toBe(200);
     const metadata = inserted(db)?.metadata;
-    expect(metadata).toMatchObject({ row_count: 200, revisions_count: 200 });
+    expect(metadata).toMatchObject({
+      ws_id: WS,
+      period: '2026-12',
+      status_filter: 'locked',
+      group_id: null,
+      locale: 'en',
+      sort: 'student_name:vi,fee_lock_id',
+      row_count: 200,
+      revisions_count: 200,
+    });
     expect(metadata).not.toHaveProperty('revisions');
     expect(JSON.stringify(metadata).length).toBeLessThan(8192);
+    // Replaying the logged request (same loader order) reproduces the digest.
+    expect(metadata.revisions_sha256).toBe(
+      await sha256Hex(
+        new TextEncoder().encode(JSON.stringify(many.map(([id]) => [id, 2])))
+      )
+    );
+    expect(mocks.load).toHaveBeenCalledWith(db.client, WS, {
+      periodMonth: '2026-12-01',
+      groupId: undefined,
+      status: 'locked',
+    });
   });
 
   it('sends no file when the exported event cannot be written', async () => {
