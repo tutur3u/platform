@@ -23112,6 +23112,10 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      fee_lock_discard_new_invoice: {
+        Args: { p_invoice_id: string; p_ws_id: string };
+        Returns: boolean;
+      };
       fee_lock_lock: {
         Args: {
           p_actor_id: string;
