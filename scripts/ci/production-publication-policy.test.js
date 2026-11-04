@@ -15,7 +15,15 @@ const { dirname, join } = require('node:path');
 const { repoRoot } = require('./workflow-config-test-helpers.js');
 const { readWorkflow } = require('./workflow-yaml-test-helper.js');
 
-const apps = ['meet', 'calendar', 'mail', 'apps', 'shortener', 'mastermind'];
+const apps = [
+  'nova',
+  'meet',
+  'calendar',
+  'mail',
+  'apps',
+  'shortener',
+  'mastermind',
+];
 const heldPolicy = Object.fromEntries(
   apps.map((app) => [
     app,

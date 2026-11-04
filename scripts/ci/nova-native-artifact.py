@@ -8,7 +8,10 @@ import importlib.util
 import os
 from pathlib import Path
 
-WORKER = "tuturuuu-nova-vite-staging"
+PROFILE = os.environ.get("VITE_NOVA_NATIVE_PROFILE", "staging")
+if PROFILE not in ("staging", "production"):
+    raise ValueError("Expected nova native profile staging or production")
+WORKER = "tuturuuu-nova" if PROFILE == "production" else "tuturuuu-nova-vite-staging"
 PUBLIC_FILES = (
     "android-chrome-192x192.png",
     "android-chrome-512x512.png",
@@ -60,6 +63,7 @@ def load():
     module.IDENTITY = {
         **module.IDENTITY,
         "name": WORKER,
+        "vars": {"TUTURUUU_NOINDEX": "0" if PROFILE == "production" else "1"},
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
         "workers_dev": False,

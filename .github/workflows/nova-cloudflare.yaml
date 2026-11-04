@@ -121,15 +121,20 @@ jobs:
       deployments: read
     with:
       workflow_name: nova-cloudflare.yaml
-  # Qualification only: no staging or production publisher.
+  # Qualify both route-free identities before Rex uploads a private version.
   native:
     needs: check-ci
-    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: github.event_name != 'workflow_dispatch' && (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    strategy:
+      matrix:
+        profile: [staging, production]
     uses: ./.github/workflows/native-start-app.yaml
     permissions:
       contents: read
     with:
       app: nova
+      profile-env: VITE_NOVA_NATIVE_PROFILE=${{ matrix.profile }}
+      artifact-suffix: ${{ matrix.profile }}
       package: '@tuturuuu/nova'
       artifact-script: scripts/ci/nova-native-artifact.py
       env-interface: NovaGeneratedEnv
@@ -139,8 +144,63 @@ jobs:
       public-env: |
         NEXT_PUBLIC_SUPABASE_URL=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_URL || 'https://nova-ci.supabase.invalid' }}
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_nova_ci_placeholder' }}
-        NEXT_PUBLIC_APP_URL=https://nova.tuturuuu.com
+        NEXT_PUBLIC_APP_URL=https://nova.ai.vn
         NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
         TUTURUUU_NOINDEX=1
       format-paths: >-
         apps/nova/src/start-bridge apps/nova/src/routes apps/nova/src/router.tsx apps/nova/src/start.ts apps/nova/cloudflare apps/nova/vite.config.mts apps/nova/void.config.ts apps/nova/tsconfig.json apps/nova/package.json apps/nova/start-bridge.routes.json
+
+  cutover-build:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      APP: nova
+      SOURCE_SHA: ${{ github.sha }}
+      NOVA_SOURCE_SHA: ${{ github.sha }}
+      VITE_NOVA_NATIVE_PROFILE: production
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_APP_URL: https://nova.ai.vn
+      NEXT_PUBLIC_NOVA_APP_URL: https://nova.ai.vn
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Require production public build inputs
+        run: |
+          test -n "$NEXT_PUBLIC_SUPABASE_URL"
+          test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+      - name: Build app suppliers
+        run: bun turbo:local run build --filter='@tuturuuu/nova^...' --concurrency=2
+      - name: Stamp exact build identity
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ github.sha }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build native Cloudflare app
+        working-directory: apps/nova
+        run: bun run build:cloudflare
+      - name: Package deployable Worker, assets and emitted Wrangler config
+        run: |
+          python3 scripts/ci/nova-native-artifact.py seal apps/nova --receipt "$RUNNER_TEMP/nova-receipt.json"
+          python3 scripts/ci/nova-native-artifact.py pack apps/nova --receipt "$RUNNER_TEMP/nova-receipt.json" --archive "$RUNNER_TEMP/nova-native-production.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: nova-cutover-${{ github.sha }}
+          path: ${{ runner.temp }}/nova-native-production.tar.gz
+          retention-days: 7
+          if-no-files-found: error

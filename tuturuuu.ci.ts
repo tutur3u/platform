@@ -142,6 +142,12 @@ export const ci = {
 // Publication only: native build and original/restored acceptance remain enabled.
 // Admit each app only in an explicitly reviewed wave cutover PR.
 export const productionPublicationPolicy = {
+  nova: {
+    state: 'admitted',
+    reason:
+      'Nova native Start route-free upload with smoke and pinned rollback',
+    surfaces: ['frontend'],
+  },
   mastermind: {
     state: 'held',
     reason: 'held for wave-2 cutover: Mastermind security review required',
