@@ -16,10 +16,10 @@ jobs:
     timeout-minutes: 40
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      NEXT_PUBLIC_SUPABASE_URL: https://fxefojytwimjiqxseqag.supabase.co
+      NEXT_PUBLIC_SUPABASE_URL: https://nzamlzqfdwaaxdefwraj.supabase.co
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-      NEXT_PUBLIC_hive_URL: https://hive.tuturuuu.com
-      NEXT_PUBLIC_WEB_hive_URL: https://tuturuuu.com
+      NEXT_PUBLIC_APP_URL: https://hive.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       WRANGLER_SEND_METRICS: 'false'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
