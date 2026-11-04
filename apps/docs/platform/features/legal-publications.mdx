@@ -115,7 +115,8 @@ Publishing the notice still sends no email. The 11 Nov 2026 policy-change notice
 goes out only through the staff-only route
 `POST /api/v1/infrastructure/policy-notice` in Infrastructure. It requires a verified
 `@tuturuuu.com` staff session (`isVerifiedTuturuuuStaffSession`) that is a root
-workspace MEMBER with `manage_workspace_roles`. No credential is pasted: the route
+workspace MEMBER with `manage_workspace_roles`, called from the same origin
+(an `Origin` header equal to the route's own origin). No credential is pasted: the route
 uses the server's service role, and `EmailService.sendInternal` sends through SES
 with the root workspace's `workspace_email_credentials` row. From is the root
 sender; Reply-To is `legal@tuturuuu.com`.
@@ -134,7 +135,9 @@ sender; Reply-To is `legal@tuturuuu.com`.
 - **Order of operations:** the request defaults to a dry run. It returns counts only:
   eligible, suppressed, already sent, previously failed, and (for the record) the
   confirmed accounts excluded because they are not business-workspace owners or
-  admins. A test-list send (up to five explicit addresses) needs a completed dry run.
+  admins. A test-list send (up to five addresses) needs a completed dry run. Test-list
+  addresses must be `@tuturuuu.com` or listed in the server's
+  `POLICY_NOTICE_PREVIEW_ADDRESSES`; the request cannot widen that list.
   A live send needs a completed dry run and a sent test-list delivery for the same
   notice version. Real sends also need the exact `confirm` token:
   `send-test:<version>` or `send-live:<version>`.
@@ -146,12 +149,15 @@ sender; Reply-To is `legal@tuturuuu.com`.
   reminders. A notice goes out live in one version only. Any change to the content,
   subject, Reply-To or audience makes a new version, which needs its own dry run and
   test-list send. The `bounced` and `complained` statuses are set from SES
-  notifications and count towards the automatic stop.
+  notifications and count towards the automatic stop. `recipient_hash` is an
+  unkeyed SHA-256, so the ledger is personal data: 90 days after a notice's last
+  activity, run `select private.policy_notice_purge('<notice id>');` by hand. It
+  refuses earlier and is not scheduled.
 - **Pacing and stop:** each call sends a bounded batch: by default 2 per second,
   up to 200 per call, within 240 seconds. Repeat the call until the result says
   `done`. Before each batch, the run stops itself when the bounce, complaint or
   unknown-outcome rate crosses its threshold (defaults 2%, 0.1% and 2%, measured
-  over at least 100 attempts).
+  over at least 100 attempts, a fixed value that requests cannot change).
 
 The template is `apps/infrastructure/src/lib/policy-notice/template.ts`. It carries
 Cora's final v4 wording, with inline styles only, no images and the phone number as
