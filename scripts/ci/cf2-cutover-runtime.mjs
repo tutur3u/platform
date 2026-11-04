@@ -10,10 +10,7 @@ assert.equal(process.env.CI, 'true', 'Emitted Worker smoke runs in CI only');
 const root = resolve('apps', app);
 assert.match(sha ?? '', /^[a-f0-9]{40}$/u);
 const receipt = JSON.parse(
-  await readFile(
-    join(root, `cutover-receipt-${sha}.json`),
-    'utf8'
-  )
+  await readFile(join(root, `cutover-receipt-${sha}.json`), 'utf8')
 );
 const configPath = resolve(root, receipt.config);
 const config = JSON.parse(await readFile(configPath, 'utf8'));
