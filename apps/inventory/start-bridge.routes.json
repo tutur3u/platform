@@ -16,6 +16,8 @@
   "owned": {},
   "ignored": {},
   "runtime": {
-    "/": 307
+    "/": {
+      "redirect": "/login"
+    }
   }
 }
