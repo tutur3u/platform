@@ -469,9 +469,9 @@ export default function EditableReportPreview({
             ) : null}
             <CollapsibleContent className={cn(!isNew && 'px-4 pb-4')}>
               <ReportMonthField
-                {...{ form, isNew, report, wsId }}
+                {...{ form, isNew, newMonth, report, wsId }}
+                canApprove={canApproveReports}
                 canUpdate={canUpdateReports}
-                newMonth={newMonth}
               />
               <ReportBasicInfoDialog
                 isNew={isNew}

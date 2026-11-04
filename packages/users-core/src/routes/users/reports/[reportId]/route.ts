@@ -7,6 +7,7 @@ import {
   MAX_MONTHLY_REPORT_TEXT_LENGTH,
   MAX_MONTHLY_REPORT_TITLE_LENGTH,
 } from '../../../../features/reports/report-limits';
+import { isReportSent } from '../../../../features/reports/report-month';
 import { getUserGroupRoutePermissions } from '../../../../lib/user-groups/route-auth';
 import {
   resolveRequestActorAuthUid,
@@ -97,7 +98,9 @@ export async function PUT(request: Request, context: Params) {
     const [existing, configResult] = await Promise.all([
       privateDb
         .from('external_user_monthly_reports_workspace_view')
-        .select('id, user_id, group_id, generation_mode')
+        .select(
+          'id, user_id, group_id, generation_mode, delivery_status, delivered_at'
+        )
         .eq('id', reportId)
         .eq('user_ws_id', wsId)
         .maybeSingle(),
@@ -118,6 +121,22 @@ export async function PUT(request: Request, context: Params) {
       return NextResponse.json(
         { message: 'Error resolving report approval settings' },
         { status: 500 }
+      );
+    }
+
+    // Moving a report parents already received to another month is an
+    // approver decision; unsent reports can be moved by any editor.
+    const periodChanged =
+      parsed.data.period_start !== undefined ||
+      parsed.data.period_end !== undefined;
+    if (
+      periodChanged &&
+      isReportSent(existing.data) &&
+      !permissions.containsPermission('approve_reports')
+    ) {
+      return NextResponse.json(
+        { message: 'Only approvers can change the month of a sent report' },
+        { status: 403 }
       );
     }
 
@@ -160,7 +179,10 @@ export async function PUT(request: Request, context: Params) {
       });
     }
     let reviewActorId: string | null = null;
-    if (approvalTouched) {
+    // Approval and month changes are attributed to the acting staff member.
+    // audit.record_version keeps the old and new row of every update, and the
+    // activity log falls back to updated_by for these service-role writes.
+    if (approvalTouched || periodChanged) {
       const actorAuthUid = await resolveRequestActorAuthUid(request);
       const actorLink = actorAuthUid
         ? await getWorkspaceUserLinkForUser(wsId, actorAuthUid, {
@@ -174,6 +196,7 @@ export async function PUT(request: Request, context: Params) {
         );
       }
       reviewActorId = actorLink.virtual_user_id;
+      if (periodChanged) updatePayload.updated_by = reviewActorId;
     }
     if (approvalTouched) {
       if (

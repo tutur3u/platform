@@ -4,6 +4,7 @@ import { Save } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   defaultReportMonth,
+  isReportSent,
   reportMonthLabel,
   resolveReportMonth,
 } from '@tuturuuu/users-core/features/reports/report-month';
@@ -52,6 +53,7 @@ export function useNewReportMonth(isNew: boolean, title?: string | null) {
 
 /** New report: pick the month. Existing monthly report: change it (staff). */
 export function ReportMonthField({
+  canApprove,
   canUpdate,
   form,
   isNew,
@@ -59,6 +61,7 @@ export function ReportMonthField({
   report,
   wsId,
 }: {
+  canApprove: boolean;
   canUpdate: boolean;
   form: TitleForm;
   isNew: boolean;
@@ -87,7 +90,8 @@ export function ReportMonthField({
     <ReportMonthEditor
       key={`${report.id}:${current.month}:${current.estimated}`}
       anchor={anchor}
-      canUpdate={canUpdate}
+      // A sent report moves to another month only with approve_reports.
+      canUpdate={canUpdate && (canApprove || !isReportSent(report))}
       current={current}
       reportId={report.id!}
       wsId={wsId}

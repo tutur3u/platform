@@ -23,7 +23,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
-import { reportMonthLabel } from '@tuturuuu/users-core/features/reports/report-month';
+import {
+  isReportSent,
+  reportMonthLabel,
+} from '@tuturuuu/users-core/features/reports/report-month';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
@@ -91,6 +94,9 @@ export function PeriodicReportRow({
     report.report_month && report.report_month_estimated
       ? report.report_month
       : null;
+  // A sent report moves to another month only with approve_reports.
+  const canSetMonth =
+    onSetMonth && (permissions.canApproveReports || !isReportSent(report));
   return (
     <article className="border-border/60 border-b transition-colors last:border-b-0 hover:bg-muted/30">
       <div className="grid gap-3 p-3 md:px-4 xl:grid-cols-[minmax(0,1fr)_10rem_12rem] xl:items-center">
@@ -184,11 +190,11 @@ export function PeriodicReportRow({
           )}
         </div>
         <div className="flex min-h-9 flex-wrap items-center justify-end gap-1 xl:w-48">
-          {estimatedMonth && onSetMonth && month ? (
+          {estimatedMonth && canSetMonth && month ? (
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => onSetMonth(estimatedMonth)}
+              onClick={() => onSetMonth?.(estimatedMonth)}
               aria-label={t('set_month', { month })}
               title={t('set_month', { month })}
             >

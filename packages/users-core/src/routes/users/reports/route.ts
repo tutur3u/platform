@@ -523,6 +523,12 @@ export async function POST(request: Request, { params }: Params) {
       })
       .select('id')
       .single();
+    // A concurrent create or a title already used for this student and class.
+    if (result.error?.code === '23505')
+      return NextResponse.json(
+        { message: 'Duplicate report exists' },
+        { status: 409 }
+      );
     if (result.error) throw result.error;
     return NextResponse.json(result.data);
   } catch (error) {

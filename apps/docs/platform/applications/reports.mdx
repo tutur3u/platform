@@ -141,9 +141,22 @@ that month or the first days of the next one.
 - **Approval.** A period-only edit keeps the report's review decision: the period
   is not part of the email parents receive. Cadence and content edits still
   return the report to review. The database `review_revision` still advances.
+- **Sent reports.** Moving a report parents already received (`delivered_at`
+  set or `delivery_status = 'sent'`) to another month needs `approve_reports`;
+  the API returns 403 otherwise, and Contacts hides the action. Unsent reports
+  can be moved by anyone with the edit permission.
+- **Audit.** Every period change sets `updated_by` to the acting staff member.
+  The existing supa_audit trigger on `private.external_user_monthly_reports`
+  writes an `audit.record_version` row per update (`record_id` = report id,
+  `old_record`/`record` with the old and new `period_start`/`period_end`, `ts`),
+  which `private.list_user_group_activity_logs` attributes through `updated_by`
+  for these service-role writes. No new table or migration.
+- **One report per month.** A create for a student, class and month that
+  already has a report returns 409; so does a unique-constraint race on insert.
 
 Regression coverage: `report-month.test.ts`, `report-period-filter.test.ts`,
-`report-month-scope.test.ts`, `explicit-approval.test.ts` (users-core);
+`report-month-scope.test.ts`, `report-month-edit.test.ts`,
+`explicit-approval.test.ts` (users-core);
 `periodic-report-filters.test.ts`, `periodic-reports-panel-counts.test.tsx`,
 `periodic-report-row-month.test.tsx`, `report-month.test.tsx`,
 `editable-report-preview-reset.test.tsx` (contacts).

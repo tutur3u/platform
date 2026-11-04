@@ -104,6 +104,17 @@ export function inferReportMonth(createdAt: string, timeZone: string) {
 }
 
 /**
+ * A report parents already received. Moving it to another month needs the
+ * approve_reports permission (the reports API enforces it).
+ */
+export function isReportSent(report: {
+  delivered_at?: string | null;
+  delivery_status?: string | null;
+}) {
+  return Boolean(report.delivered_at) || report.delivery_status === 'sent';
+}
+
+/**
  * The month a monthly report is filed under: its saved period, or (for older
  * reports saved without one) the month estimated from when it was created.
  */

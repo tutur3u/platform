@@ -163,6 +163,7 @@ export interface PeriodicReport {
   created_at: string;
   creator_name?: string | null;
   delivery_status: PeriodicReportDeliveryStatus;
+  delivered_at?: string | null;
   /** When delivery was last requested; a queued report waits from here. */
   delivery_requested_at?: string | null;
   test_delivery?: {
@@ -180,8 +181,7 @@ export interface PeriodicReport {
   period_end: string | null;
   period_start: string | null;
   report_approval_status: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
-  /** Monthly only: `YYYY-MM` filed under, estimated when no period is saved. */
-  report_month?: string | null;
+  report_month?: string | null; // Monthly: YYYY-MM; estimated without a period.
   report_month_estimated?: boolean;
   score: number | null;
   title: string;

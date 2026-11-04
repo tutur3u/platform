@@ -39,13 +39,14 @@ const report: PeriodicReport = {
 
 function renderRow(
   overrides: Partial<PeriodicReport>,
-  onSetMonth?: (month: string) => void
+  onSetMonth?: (month: string) => void,
+  canApproveReports = false
 ) {
   return render(
     <PeriodicReportRow
       report={{ ...report, ...overrides }}
       wsId="workspace"
-      permissions={{ canApproveReports: false, canSendReports: false }}
+      permissions={{ canApproveReports, canSendReports: false }}
       approvalPending={false}
       generationPending={false}
       onApprove={vi.fn()}
@@ -95,4 +96,19 @@ it('offers no set-month action without the edit permission', () => {
   expect(
     screen.queryByRole('button', { name: /set_month/ })
   ).not.toBeInTheDocument();
+});
+
+it.each([
+  { delivery_status: 'sent' as const },
+  { delivered_at: '2026-11-03T02:00:00Z' },
+])('offers Set month on a sent report only to approvers %j', (sent) => {
+  const { unmount } = renderRow(sent, vi.fn());
+  expect(
+    screen.queryByRole('button', { name: /set_month/ })
+  ).not.toBeInTheDocument();
+  unmount();
+  renderRow(sent, vi.fn(), true);
+  expect(
+    screen.getByRole('button', { name: 'set_month:{"month":"10/2026"}' })
+  ).toBeInTheDocument();
 });
