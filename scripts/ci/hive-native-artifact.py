@@ -26,7 +26,8 @@ def load():
         "name": WORKER,
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
-        "workers_dev": True,
+        "workers_dev": False,
+        "preview_urls": False,
     }
     module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
     module.RECEIPT = "hive-native-artifact.json"
