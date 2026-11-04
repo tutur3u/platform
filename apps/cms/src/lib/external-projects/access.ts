@@ -50,9 +50,7 @@ export function hasRootExternalProjectsAdminPermission(
   return permissions.containsPermission('manage_external_projects');
 }
 
-export function hasCmsEditPermission(
-  permissions: PermissionsResult | null
-) {
+export function hasCmsEditPermission(permissions: PermissionsResult | null) {
   if (!permissions) return false;
 
   return (
@@ -289,8 +287,7 @@ async function resolveCmsWorkspaceAccess(rawWsId: string) {
     !isInternalWorkspace &&
     binding.enabled &&
     Boolean(binding.canonical_project) &&
-    (hasCmsEditPermission(workspacePermissions) ||
-      isRootAdmin);
+    (hasCmsEditPermission(workspacePermissions) || isRootAdmin);
   const canAccessConnectedChat =
     hasConnectedChat && hasCmsConnectedChatReadPermission(workspacePermissions);
 
