@@ -19,6 +19,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useWorkspaceUserGroups } from '@/hooks/use-workspace-user-groups';
+import { FeeLockExportDialog } from './fee-lock-export-dialog';
 import { formatFeeLockMonth, shiftFeeLockMonth } from './fee-lock-month';
 import { FeeLockTable } from './fee-lock-table';
 
@@ -30,6 +31,8 @@ interface Props {
   wsId: string;
   currency: string;
   initialMonth: string;
+  /** export_finance_data AND view_invoices, resolved on the server. */
+  canExport?: boolean;
 }
 
 function FilterSelect(props: {
@@ -54,7 +57,12 @@ function FilterSelect(props: {
   );
 }
 
-export function FeeLockPage({ wsId, currency, initialMonth }: Props) {
+export function FeeLockPage({
+  wsId,
+  currency,
+  initialMonth,
+  canExport = false,
+}: Props) {
   const t = useTranslations('ws-fee-lock');
   const common = useTranslations('common');
   const [filters, setFilters] = useState({
@@ -148,6 +156,23 @@ export function FeeLockPage({ wsId, currency, initialMonth }: Props) {
             })),
           ]}
         />
+        {canExport && (
+          <FeeLockExportDialog
+            wsId={wsId}
+            month={filters.month}
+            groupId={query.groupId}
+            labels={{
+              export: t('export'),
+              export_title: t('export_title'),
+              export_locked_only: t('export_locked_only'),
+              export_all: t('export_all'),
+              export_too_many: (count) => t('export_too_many', { count }),
+              export_done: (count) => t('export_done', { count }),
+              export_failed: t('export_failed'),
+              cancel: common('cancel'),
+            }}
+          />
+        )}
       </div>
       {error ? (
         <div role="alert" className="flex items-center gap-3 text-sm">
