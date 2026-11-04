@@ -13,10 +13,10 @@ const require = createRequire(join(app, 'package.json'));
 const host = 'learn.tuturuuu.com';
 const sdk = require('wrangler');
 
-function call(origin, requestHost) {
+function call(origin, requestHost, path = '/') {
   return new Promise((resolve, reject) => {
     const target = new URL(origin);
-    httpRequest({ hostname: target.hostname, port: target.port, path: '/', headers: { host: requestHost } }, response => {
+    httpRequest({ hostname: target.hostname, port: target.port, path, headers: { host: requestHost } }, response => {
       response.resume();
       response.on('end', () => resolve({ status: response.statusCode, location: response.headers.location }));
     }).on('error', reject).end();
@@ -55,11 +55,15 @@ test('production ingress and anonymous auth fail closed', { timeout: 120000 }, a
   const missing = await start({ SUPABASE_SECRET_KEY: { type: 'plain_text', value: 'synthetic-ci-only-secret-value' } });
   assert.equal((await call(missing.origin, host)).status, 503);
   const bindings = Object.fromEntries([
-    'TUTURUUU_learn_COORDINATION_SECRET', 'SUPABASE_SECRET_KEY',
+    'TUTURUUU_APP_COORDINATION_SECRET', 'SUPABASE_SECRET_KEY',
   ].map(name => [name, { type: 'plain_text', value: 'synthetic-ci-only-secret-value' }]));
   const ready = await start(bindings);
-  const anonymous = await call(ready.origin, host);
+  const landing = await call(ready.origin, host);
+  assert.equal(landing.status, 200);
+  const anonymous = await call(ready.origin, host, '/dashboard');
   assert.ok([301, 302, 303, 307, 308].includes(anonymous.status));
-  assert.equal(new URL(anonymous.location, `https://${host}`).pathname, '/login');
+  const login = new URL(anonymous.location, `https://${host}`);
+  assert.equal(login.pathname, '/login');
+  assert.equal(login.searchParams.get('next'), '/dashboard');
   assert.equal((await call(ready.origin, 'untrusted.invalid')).status, 404);
 });
