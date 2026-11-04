@@ -1,3 +1,4 @@
+import { purgeWorkspaceRenderers } from '@tuturuuu/utils/cms-renderer-purge';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveWorkspaceExternalProjectBinding } from '@/lib/external-projects/access';
@@ -48,6 +49,7 @@ export async function PATCH(
       workspaceId,
     });
 
+    await purgeWorkspaceRenderers(workspaceId);
     return NextResponse.json(binding);
   } catch (error) {
     return adminRouteErrorResponse(error, 'Failed to update site connection');

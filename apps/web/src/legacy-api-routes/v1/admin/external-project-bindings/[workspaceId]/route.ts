@@ -4,6 +4,7 @@ import {
   requireRootExternalProjectsAdmin,
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
+import { invalidateWorkspaceExternalProjectCache } from '@/lib/external-projects/cache';
 
 const bindingSchema = z.object({
   canonicalId: z.string().min(1).max(120).nullable(),
@@ -59,6 +60,7 @@ export async function PATCH(
       throw new Error(error.message);
     }
 
+    await invalidateWorkspaceExternalProjectCache(workspaceId);
     const binding = await resolveWorkspaceExternalProjectBinding(
       workspaceId,
       access.admin
