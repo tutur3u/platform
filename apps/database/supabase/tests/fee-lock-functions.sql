@@ -95,27 +95,27 @@ select is((pg_temp.save(1, jsonb_build_array(pg_temp.tuition(8, -100000, 'Achiev
 -- Lock, reopen, lock again.
 select throws_ok($$select private.fee_lock_lock(pg_temp.id('010'), pg_temp.id('001'), pg_temp.lock_id(), 1)$$, 'PT409', 'FEE_LOCK_VERSION_CONFLICT', 'locking with a stale version conflicts');
 select throws_ok($$select private.fee_lock_lock(pg_temp.id('011'), pg_temp.id('001'), pg_temp.lock_id(), 2)$$, 'PT404', 'FEE_LOCK_NOT_FOUND', 'another workspace cannot lock it');
-select is((select status || ':' || revision || ':' || version from private.fee_lock_lock(pg_temp.id('010'), pg_temp.id('001'), pg_temp.lock_id(), 2)),
-  'locked:1:3', 'locking writes revision 1');
+select is((select status || ':' || revision || ':' || version from private.fee_lock_lock(pg_temp.id('010'), pg_temp.id('001'), pg_temp.lock_id(), 2)), 'locked:1:3', 'locking writes revision 1');
 select ok((select snapshot ?& array['schema_version', 'ws_id', 'locked_by', 'locked_at'] and snapshot->'lines'->0 ? 'group_name' from public.fee_lock_revisions
   where fee_lock_id = pg_temp.lock_id() and revision = 1), 'the snapshot carries the feeLockSnapshotSchema keys');
-select is((select (snapshot->>'student_name') || ':' || jsonb_array_length(snapshot->'lines') || ':' || (snapshot->'lines'->0->>'reason')
-  from public.fee_lock_revisions where fee_lock_id = pg_temp.lock_id() and revision = 1), 'Student A:2:Achievement discount', 'the revision snapshots names and lines');
+select is((select (snapshot->>'student_name') || ':' || jsonb_array_length(snapshot->'lines') || ':' || (snapshot->'lines'->0->>'reason') from public.fee_lock_revisions
+  where fee_lock_id = pg_temp.lock_id() and revision = 1), 'Student A:2:Achievement discount', 'the revision snapshots names and lines');
 select throws_ok($$select pg_temp.save(3, jsonb_build_array(pg_temp.tuition(9)))$$, '55000', 'FEE_LOCK_WRONG_STATUS', 'a locked fee cannot be edited');
 select throws_ok($$select private.fee_lock_reopen(pg_temp.id('010'), pg_temp.id('001'), pg_temp.lock_id(), 3, '  ')$$, '22023', 'FEE_LOCK_REASON_REQUIRED', 'reopening needs a reason');
-select is((select status || ':' || revision || ':' || version from private.fee_lock_reopen(pg_temp.id('010'), pg_temp.id('001'), pg_temp.lock_id(), 3, 'Parent asked')),
-  'draft:1:4', 'reopening returns a draft and keeps the revision');
+select is((select status || ':' || revision || ':' || version from private.fee_lock_reopen(pg_temp.id('010'), pg_temp.id('001'), pg_temp.lock_id(), 3, 'Parent asked')), 'draft:1:4', 'reopening returns a draft and keeps the revision');
 select throws_ok($$select private.fee_lock_reopen(pg_temp.id('010'), pg_temp.id('001'), pg_temp.lock_id(), 4, 'Again')$$, '55000', 'FEE_LOCK_WRONG_STATUS', 'a draft cannot be reopened');
 select is((select revision || ':' || version from private.fee_lock_lock(pg_temp.id('010'), pg_temp.id('001'), pg_temp.lock_id(), 4)), '2:5', 'locking again writes revision 2');
 select is((select string_agg(revision::text, ',' order by revision) from public.fee_lock_revisions where fee_lock_id = pg_temp.lock_id()), '1,2', 'both revisions are kept');
 select is((select string_agg(event_type || coalesce(':' || reason, ''), ',' order by id) from public.fee_lock_events where fee_lock_id = pg_temp.lock_id()),
   'draft_saved,draft_saved,locked,reopened:Parent asked,locked', 'every write is logged once, with the reopen reason');
-
 -- Catalogue units and warehouses must belong to the workspace; the money limit; name caps.
 insert into private.inventory_products(product_id, unit_id, warehouse_id, amount, price) values
   (pg_temp.id('502'), pg_temp.id('406'), pg_temp.id('407'), null, 1), (pg_temp.id('502'), pg_temp.id('405'), pg_temp.id('408'), null, 1);
-insert into public.workspace_users(id, ws_id, full_name) values (pg_temp.id('104'), pg_temp.id('010'), repeat('Đ', 250));
+-- Real guards cap student and class names at 128 characters; only this class fixture bypasses them, to prove the 200 cap.
+insert into public.workspace_users(id, ws_id, full_name) values (pg_temp.id('104'), pg_temp.id('010'), repeat('Đ', 128));
+set local session_replication_role = replica;
 insert into public.workspace_user_groups(id, ws_id, name, starting_date) values (pg_temp.id('203'), pg_temp.id('010'), repeat('L', 250), '2026-01-01');
+set local session_replication_role = origin;
 insert into public.workspace_user_groups_users(user_id, group_id, role, created_at) values (pg_temp.id('104'), pg_temp.id('203'), 'STUDENT', '2026-06-01 00:00+07');
 select throws_ok($$select pg_temp.save(null, jsonb_build_array(pg_temp.book('502', '406', '407')), '104')$$, '22023', 'FEE_LOCK_PRODUCT_NOT_FOUND', 'a catalogue unit from another workspace is rejected');
 select throws_ok($$select pg_temp.save(null, jsonb_build_array(pg_temp.book('502', '405', '408')), '104')$$, '22023', 'FEE_LOCK_PRODUCT_NOT_FOUND', 'a catalogue warehouse from another workspace is rejected');
@@ -126,8 +126,8 @@ select throws_ok($$select pg_temp.save(null, jsonb_build_array(pg_temp.tuition(1
 select throws_ok($$select pg_temp.save(null, jsonb_build_array(jsonb_build_object('kind', 'extra', 'label', 'A', 'unit_price', 60000000000000, 'quantity', 1),
   jsonb_build_object('kind', 'extra', 'label', 'B', 'unit_price', 60000000000000, 'quantity', 1)), '104')$$, '22003', 'FEE_LOCK_AMOUNT_OUT_OF_RANGE', 'a total over the money limit is rejected with 22003');
 do $$ begin perform private.fee_lock_lock(pg_temp.id('010'), pg_temp.id('001'), (pg_temp.save(null, jsonb_build_array(pg_temp.tuition(1, 0, 'No sessions yet', '203')), '104')).id, 1); end $$;
-select is((select char_length(snapshot->>'student_name') || ':' || char_length(snapshot->'lines'->0->>'label') || ':' || char_length(snapshot->'lines'->0->>'group_name')
-  from public.fee_lock_revisions r join public.fee_locks l on l.id = r.fee_lock_id where l.student_id = pg_temp.id('104')), '200:200:200', 'snapshot student and class names are capped at 200 characters');
+select is((select (snapshot->>'student_name' = repeat('Đ', 128))::text || ':' || char_length(snapshot->'lines'->0->>'label') || ':' || char_length(snapshot->'lines'->0->>'group_name')
+  from public.fee_lock_revisions r join public.fee_locks l on l.id = r.fee_lock_id where l.student_id = pg_temp.id('104')), 'true:200:200', 'a 128-character multibyte student name snapshots intact; class names are capped at 200 characters');
 
 select * from finish();
 rollback;
