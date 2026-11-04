@@ -23,13 +23,11 @@ const ROOT_HOST = 'mind.tuturuuu.com';
 const EXPECTED = {
   '/': { redirect: '/login' },
   '/login': { redirect: 'https://tuturuuu.com/login' },
+  '/api/build-info': 401,
+  '/_serverFn': 401,
+  '/verify-token': 200,
 };
-const SYNTHETIC_SECRETS = {
-  NEXT_PUBLIC_SUPABASE_URL: 'https://mind-smoke.supabase.invalid',
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_mind_smoke',
-  SUPABASE_SECRET_KEY: 'synthetic-smoke-only',
-  TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-smoke-only',
-};
+import { SYNTHETIC_SECRETS } from './synthetic-bindings.mjs';
 
 async function startWorker(t, secrets) {
   const { configPath } = readNativeRuntimeConfig(app);
@@ -116,6 +114,7 @@ test('the emitted server has NODE_ENV inlined', async () => {
   for (const file of files.filter((name) => name.endsWith('.mjs'))) {
     const source = await readFile(join(app, 'dist/server', file), 'utf8');
     assert.doesNotMatch(source, /process\.env\.NODE_ENV/u, file);
+    assert.ok(!source.includes('tuturuuu-local-development-app-coordination-secret'), file);
   }
 });
 
