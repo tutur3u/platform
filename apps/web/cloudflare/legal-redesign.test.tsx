@@ -23,9 +23,9 @@ describe('legal notice presentation', () => {
           const noticeConfig = published
             ? {
                 published: true as const,
-                noticeDate: 'NOTICE',
+                noticeDate: '2026-11-11',
                 mobilePrivacyEffectiveDate: '2026-11-05',
-                laterDate: 'LATER',
+                laterDate: '2026-12-11',
                 archiveLinks: { [locale]: 'ARCHIVE' },
               }
             : { published: false as const, noticeDate: null, laterDate: null };
@@ -71,13 +71,14 @@ describe('legal notice presentation', () => {
             /NOT LAWYER-REVIEWED|Summary pending Lex review|CHƯA ĐƯỢC LUẬT SƯ|đang chờ Lex|requires legal review|counsel-review draft|cần được rà soát pháp lý|chờ rà soát pháp lý/iu
           );
           if (published) {
-            expect(binding?.textContent).toContain('NOTICE');
-            expect(binding?.textContent).toContain('LATER');
+            expect(binding?.textContent).toContain('2026-11-11');
+            expect(binding?.textContent).toContain('2026-12-11');
             if (!full) {
               const summary = page.querySelector(
                 '.change-layout > div > .change-summary'
               );
-              expect(summary?.querySelectorAll('tbody tr')).toHaveLength(10);
+              // 20 rows; the held KS row and R33/R34 row stay out.
+              expect(summary?.querySelectorAll('tbody tr')).toHaveLength(20);
               expect(summary?.textContent).toContain(
                 getLegalNotice(locale, noticeConfig)?.nonbinding
               );
@@ -85,7 +86,7 @@ describe('legal notice presentation', () => {
               expect(html).not.toContain('ARCHIVE_LINKS');
             }
           } else {
-            expect(binding?.textContent).not.toContain('NOTICE');
+            expect(binding?.textContent).not.toContain('2026-11-11');
             // Unpublished state is Variant 1 only: no Lex notice copy.
             expect(html).not.toContain(legalNoticeCopy[locale].nonbinding);
             expect(page.body.textContent).not.toContain(

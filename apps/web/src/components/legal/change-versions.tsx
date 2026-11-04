@@ -1,14 +1,11 @@
 import {
-  getLegalDocument,
+  AUGUST_LEGAL_VERSION,
+  getLegalDocumentVersion,
   type getLegalNotice,
-  getProposedLegalDocument,
   type LegalLocale,
-  upcomingLegalRevision,
+  REVISION_DATE,
 } from '@tuturuuu/legal';
 import { changeCopy } from './change-copy';
-
-// Internal draft marker on the proposal's version id; never shown publicly.
-const DRAFT_SUFFIX = /-draft$/u;
 
 export function ChangeVersions({
   locale,
@@ -20,8 +17,12 @@ export function ChangeVersions({
   const copy = changeCopy[locale];
   // The pair is built from the Terms only, so it is labelled as the Terms
   // rather than reading as the version of all seven documents.
-  const current = getLegalDocument('terms', locale);
-  const proposed = getProposedLegalDocument('terms', locale);
+  // The version that the 2026-11-11 revision replaces.
+  const current = getLegalDocumentVersion(
+    AUGUST_LEGAL_VERSION,
+    'terms',
+    locale
+  )!;
   return (
     <div className="change-versions">
       <p className="version-document">
@@ -45,11 +46,11 @@ export function ChangeVersions({
         {notice ? (
           <section>
             <strong>{copy.published}</strong>
-            <p>{proposed.version.replace(DRAFT_SUFFIX, '')}</p>
+            <p>{REVISION_DATE}</p>
             <dl>
               <div>
                 <dt>{copy.effective}</dt>
-                <dd>{upcomingLegalRevision.effectiveDate}</dd>
+                <dd>{notice.noticeDate}</dd>
               </div>
               <div>
                 <dt>{copy.published}</dt>
