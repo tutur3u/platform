@@ -37,19 +37,26 @@ test('ownership edits the latest claim definition', () => {
   );
 });
 
-test('145300 body is unchanged outside ownership, Judge linkage, cancellation and search path', () => {
+test('145300 body is unchanged outside ownership, Judge linkage, owner denial and search path', () => {
   const current = claim(migration);
   assert.ok(current);
   const judgeLink =
     '                and exists (select 1 from private.learn_coding_submissions submission where submission.run_id = run.id)\n';
   assert.equal(current.split(judgeLink).length - 1, 1);
+  const ownerDenial =
+    /\n {4}-- Fail closed for every workload[\s\S]*?reason=runner_owner_not_authorized[\s\S]*?\n {8}return;\n {4}end if;(?=\n {4}return query)/;
+  assert.match(current, ownerDenial);
   const withoutOwnership = current
     .replace(judgeLink, '')
     .replace(
       'set search_path = pg_catalog, pg_temp',
       'set search_path = private, public, pg_temp'
     )
-    .replace('    perform private.cancel_unauthorized_devbox_runs(25);\n', '')
+    .replace(
+      'declare\n    v_owner_id uuid;\n    v_pool text;\nbegin\n',
+      'begin\n'
+    )
+    .replace(ownerDenial, '')
     .replace(
       / {12}and run\.actor_id = lease\.actor_id[\s\S]*?(?= {12}-- A draining runner)/,
       ''
@@ -70,4 +77,16 @@ test('rollback restores exact live body with service-role-only execute', () => {
     );
     assert.doesNotMatch(sql, /grant\s+[^;]+\s+to\s+(public|anon)\b/i);
   }
+});
+
+test('the sweep is off the claim path and capped for Cron Control', () => {
+  const current = claim(migration);
+  assert.doesNotMatch(current, /cancel_unauthorized_devbox_runs/);
+  const sweep = migration.match(
+    /create or replace function private\.cancel_unauthorized_devbox_runs\([\s\S]*?\n\$\$;/i
+  )?.[0];
+  assert.ok(sweep);
+  assert.match(sweep, /returns jsonb/);
+  assert.match(sweep, /p_limit is null or p_limit < 1 or p_limit > 1000/);
+  assert.match(sweep, /order by run\.created_at\n {8}limit p_limit/);
 });

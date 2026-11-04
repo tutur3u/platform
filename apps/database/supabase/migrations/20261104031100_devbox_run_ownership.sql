@@ -5,6 +5,14 @@
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '60s';
+-- 20261104031050 is a hard prerequisite: refuse to apply without it rather
+-- than treating every personal grant as inactive.
+do $$ begin
+    if to_regclass('private.devbox_personal_pool_grants') is null
+        or to_regprocedure('private.devbox_identity_grant_active(uuid)') is null then
+        raise exception 'Apply 20261104031050_devbox_identity_grant_predicate before 20261104031100.';
+    end if;
+end $$;
 alter table private.devbox_runners
     add column if not exists pool text not null default 'fleet'
     check (pool in ('fleet', 'personal'));
@@ -19,26 +27,12 @@ $$;
 revoke all on function private.devbox_actor_is_root_member(uuid) from public, anon, authenticated;
 grant execute on function private.devbox_actor_is_root_member(uuid) to service_role;
 
+-- Delegates to the shared user_id grant contract. A missing or broken
+-- predicate raises; it is never read as "no grant".
 create or replace function private.devbox_actor_has_active_personal_grant(p_actor_id uuid)
-returns boolean language plpgsql stable security definer
+returns boolean language sql stable security definer
 set search_path = pg_catalog, pg_temp as $$
-declare v_allowed boolean;
-begin
-    -- 20261104031050 owns the shared user_id grant contract. Switch to its
-    -- predicate when present; earlier/partial rollouts deny personal access.
-    if to_regclass('private.devbox_personal_pool_grants') is null
-        or to_regprocedure('private.devbox_identity_grant_active(uuid)') is null then
-        return false;
-    end if;
-    execute 'select private.devbox_identity_grant_active($1)'
-        into v_allowed using p_actor_id;
-    return coalesce(v_allowed, false);
-exception
-    -- Per-actor denials and unavailable contract objects must not abort the
-    -- fleet cleanup. They still take the audited cancellation path below.
-    when insufficient_privilege or undefined_table or undefined_column or undefined_function then
-        return false;
-end;
+    select coalesce(private.devbox_identity_grant_active(p_actor_id), false);
 $$;
 revoke all on function private.devbox_actor_has_active_personal_grant(uuid) from public, anon, authenticated;
 grant execute on function private.devbox_actor_has_active_personal_grant(uuid) to service_role;
@@ -53,10 +47,13 @@ declare
     v_runner private.devbox_runners%rowtype;
     v_runner_id uuid;
 begin
+    if p_actor_id is null then
+        raise exception 'Devbox actor is required.' using errcode = '42501';
+    end if;
     if p_lease_id is not null then
         select * into v_lease from private.devbox_leases l
             where l.id = p_lease_id for share;
-        if not found or v_lease.actor_id <> p_actor_id then
+        if not found or v_lease.actor_id is distinct from p_actor_id then
             raise exception 'Devbox lease not found.' using errcode = '42501';
         end if;
         if v_lease.status <> 'active' or v_lease.expires_at <= now() then
@@ -64,8 +61,10 @@ begin
         end if;
     end if;
     for v_runner_id in select distinct r from unnest(array[p_runner_id, v_lease.runner_id]) r where r is not null loop
+        -- Owner and pool are immutable (preserve_devbox_runner_owner), so a
+        -- key-share lock that only blocks deletion does not race heartbeats.
         select * into v_runner from private.devbox_runners r
-            where r.id = v_runner_id for share;
+            where r.id = v_runner_id for key share;
         if not found then
             raise exception 'Devbox runner is not available to this actor.' using errcode = '42501';
         end if;
@@ -133,7 +132,7 @@ create or replace function private.preserve_devbox_lease_actor()
 returns trigger language plpgsql security definer
 set search_path = pg_catalog, pg_temp as $$
 begin
-    if new.actor_id <> old.actor_id then
+    if new.actor_id is distinct from old.actor_id then
         raise exception 'Devbox lease ownership is immutable.' using errcode = '42501';
     end if;
     return new;
@@ -144,47 +143,97 @@ grant execute on function private.preserve_devbox_lease_actor() to service_role;
 create trigger preserve_devbox_lease_actor before update of actor_id on private.devbox_leases
     for each row execute function private.preserve_devbox_lease_actor();
 
-create or replace function private.cancel_devbox_actor_queued_runs(p_actor_id uuid)
-returns void language plpgsql security definer
+-- A runner's owner and pool decide every claim and pin. Neither moves under
+-- existing leases and runs: re-own a runner by registering a new one.
+create or replace function private.preserve_devbox_runner_owner()
+returns trigger language plpgsql security definer
 set search_path = pg_catalog, pg_temp as $$
 begin
-    with stopped as (
-        update private.devbox_runs
-        set status = case when status = 'queued' then 'cancelled' else 'cancel_requested' end,
-            completed_at = case when status = 'queued' then now() else completed_at end,
+    if new.actor_id is distinct from old.actor_id or new.pool is distinct from old.pool then
+        raise exception 'Devbox runner owner and pool are immutable.' using errcode = '42501';
+    end if;
+    return new;
+end;
+$$;
+revoke all on function private.preserve_devbox_runner_owner() from public, anon, authenticated;
+grant execute on function private.preserve_devbox_runner_owner() to service_role;
+create trigger preserve_devbox_runner_owner before update of actor_id, pool on private.devbox_runners
+    for each row execute function private.preserve_devbox_runner_owner();
+
+-- Cancels the work a revoked authorization covered. Judge and playground
+-- learner work and keep leases never depend on either authorization, so
+-- they are left alone (decision 4).
+--   personal: run/build pinned (by the run or its lease) to a personal
+--             runner, and non-keep leases pinned to a personal runner. Root
+--             members keep their own personal runners without a grant.
+--   root:     every other workload, except run/build off the fleet that an
+--             active personal grant still covers, and non-keep leases that
+--             carry no Judge or playground run.
+create or replace function private.cancel_devbox_revoked_work(p_actor_id uuid, p_scope text)
+returns void language plpgsql security definer
+set search_path = pg_catalog, pg_temp as $$
+declare
+    v_grant_active boolean;
+begin
+    if p_scope is null or p_scope not in ('personal', 'root') then
+        raise exception 'Unsupported devbox revocation scope: %', p_scope using errcode = '22023';
+    end if;
+    if p_scope = 'personal' and private.devbox_actor_is_root_member(p_actor_id) then
+        return;
+    end if;
+    v_grant_active := p_scope = 'root' and private.devbox_actor_has_active_personal_grant(p_actor_id);
+    with targets as (
+        select run.id from private.devbox_runs run
+        join private.devbox_leases lease on lease.id = run.lease_id
+        where run.actor_id = p_actor_id and run.status in ('queued', 'running')
+            and run.workload not in ('judge', 'playground')
+            and case p_scope
+                when 'personal' then run.workload in ('run', 'build')
+                    and exists (select 1 from private.devbox_runners runner
+                        where runner.id in (run.runner_id, lease.runner_id) and runner.pool = 'personal')
+                else not (v_grant_active and run.workload in ('run', 'build')
+                    and not exists (select 1 from private.devbox_runners runner
+                        where runner.id in (run.runner_id, lease.runner_id) and runner.pool = 'fleet'))
+            end
+        for update of run
+    ), stopped as (
+        update private.devbox_runs run
+        set status = case when run.status = 'queued' then 'cancelled' else 'cancel_requested' end,
+            completed_at = case when run.status = 'queued' then now() else run.completed_at end,
             updated_at = now()
-        where actor_id = p_actor_id and status in ('queued', 'running')
-        returning id, status
+        from targets where run.id = targets.id
+        returning run.id, run.status
     )
     insert into private.devbox_run_events(run_id,event_type,message,metadata)
     select id, 'access_revoked', 'Devbox access revoked; cancellation requested.',
-        jsonb_build_object('reason','actor_access_revoked','status',status) from stopped;
-    update private.devbox_leases set status = 'released', released_at = now(), updated_at = now()
-        where actor_id = p_actor_id and status = 'active';
+        jsonb_build_object('reason','actor_access_revoked','scope',p_scope,'status',status) from stopped;
+    update private.devbox_leases lease
+    set status = 'released', released_at = now(), updated_at = now()
+    where lease.actor_id = p_actor_id and lease.status = 'active' and not lease.keep
+        and not exists (select 1 from private.devbox_runs learner
+            where learner.lease_id = lease.id and learner.workload in ('judge', 'playground'))
+        and case p_scope
+            when 'personal' then exists (select 1 from private.devbox_runners runner
+                where runner.id = lease.runner_id and runner.pool = 'personal')
+            else not (v_grant_active and not exists (select 1 from private.devbox_runners runner
+                where runner.id = lease.runner_id and runner.pool = 'fleet'))
+        end;
 end;
 $$;
-revoke all on function private.cancel_devbox_actor_queued_runs(uuid) from public, anon, authenticated;
-grant execute on function private.cancel_devbox_actor_queued_runs(uuid) to service_role;
+revoke all on function private.cancel_devbox_revoked_work(uuid,text) from public, anon, authenticated;
+grant execute on function private.cancel_devbox_revoked_work(uuid,text) to service_role;
 
+-- Root membership: fires only when a root MEMBER row stops being one.
 create or replace function private.cancel_devbox_runs_on_access_revocation()
 returns trigger language plpgsql security definer
 set search_path = pg_catalog, pg_temp as $$
 begin
-    if tg_table_name = 'workspace_members' then
-        if old.ws_id <> '00000000-0000-0000-0000-000000000000'::uuid or old.type <> 'MEMBER' then return null; end if;
-        if tg_op = 'UPDATE' then
-            if new.ws_id = old.ws_id and new.user_id = old.user_id and new.type = 'MEMBER' then return null; end if;
-        end if;
-        perform private.cancel_devbox_actor_queued_runs(old.user_id);
-    else
-        if tg_op = 'DELETE' then
-            perform private.cancel_devbox_actor_queued_runs(old.user_id);
-        elsif new.status is distinct from 'active' or new.suspended is distinct from false
-            or new.accepted_at is null or new.accepted_at > now()
-            or new.expires_at is null or new.expires_at <= now() then
-            perform private.cancel_devbox_actor_queued_runs(new.user_id);
-        end if;
+    if old.ws_id is distinct from '00000000-0000-0000-0000-000000000000'::uuid
+        or old.type is distinct from 'MEMBER' then return null; end if;
+    if tg_op = 'UPDATE' then
+        if new.ws_id = old.ws_id and new.user_id = old.user_id and new.type = 'MEMBER' then return null; end if;
     end if;
+    perform private.cancel_devbox_revoked_work(old.user_id, 'root');
     return null;
 end;
 $$;
@@ -192,36 +241,81 @@ revoke all on function private.cancel_devbox_runs_on_access_revocation() from pu
 grant execute on function private.cancel_devbox_runs_on_access_revocation() to service_role;
 create trigger cancel_devbox_runs_on_access_revocation after delete or update
     on public.workspace_members for each row execute function private.cancel_devbox_runs_on_access_revocation();
--- Contributor enrollment remains a separate change. Bind its revoke hook when
--- its reserved prerequisite has already created the grants table.
-do $$ begin
-    if to_regclass('private.devbox_personal_pool_grants') is not null then
-        execute 'create trigger cancel_devbox_runs_on_access_revocation after delete or update on private.devbox_personal_pool_grants for each row execute function private.cancel_devbox_runs_on_access_revocation()';
-    else
-        raise notice 'Devbox grants table absent: attach cancel_devbox_runs_on_access_revocation before enrollment.';
-    end if;
-end $$;
 
--- A bounded claim-time backstop also handles expired grants and historical rows
--- queued after an earlier removal. Dedicated learner workloads keep their gates.
-create or replace function private.cancel_unauthorized_devbox_runs(p_limit integer default 25)
-returns void language plpgsql security definer
+-- Personal grants: fires only on an active -> inactive transition of the row
+-- (UPDATE) or the DELETE of an active row. Editing or deleting a pending,
+-- suspended, revoked or already-expired grant cancels nothing; natural expiry
+-- and the personal_pools_enabled switch are left to the claim gate and sweep.
+create or replace function private.cancel_devbox_runs_on_grant_revocation()
+returns trigger language plpgsql security definer
 set search_path = pg_catalog, pg_temp as $$
 begin
-    with candidates as (
+    if not coalesce(old.status = 'active' and old.suspended = false
+        and old.accepted_at <= now() and old.expires_at > now(), false) then
+        return null;
+    end if;
+    if tg_op = 'UPDATE' and coalesce(new.user_id = old.user_id
+        and new.status = 'active' and new.suspended = false
+        and new.accepted_at <= now() and new.expires_at > now(), false) then
+        return null;
+    end if;
+    perform private.cancel_devbox_revoked_work(old.user_id, 'personal');
+    return null;
+end;
+$$;
+revoke all on function private.cancel_devbox_runs_on_grant_revocation() from public, anon, authenticated;
+grant execute on function private.cancel_devbox_runs_on_grant_revocation() to service_role;
+create trigger cancel_devbox_runs_on_grant_revocation after delete or update
+    on private.devbox_personal_pool_grants for each row execute function private.cancel_devbox_runs_on_grant_revocation();
+
+-- Backstop for natural expiry, the personal_pools_enabled switch and rows
+-- queued after a removal. It is not on the claim path: Cron Control calls it
+-- (job database-devbox-unauthorized-run-sweep). Each call reads at most
+-- p_limit of the oldest queued non-learner rows through the partial
+-- claim-queue index, checks each distinct owner once, and cancels only that
+-- window. Unauthorized rows behind a full window wait for a later call; the
+-- claim gate still refuses them meanwhile.
+create or replace function private.cancel_unauthorized_devbox_runs(p_limit integer default 1000)
+returns jsonb language plpgsql security definer
+set search_path = pg_catalog, pg_temp
+set statement_timeout = '10s'
+set lock_timeout = '1s'
+as $$
+declare
+    v_scanned integer;
+    v_cancelled integer;
+begin
+    if p_limit is null or p_limit < 1 or p_limit > 1000 then
+        raise exception 'p_limit must be between 1 and 1000' using errcode = '22023';
+    end if;
+    with scan as materialized (
+        select run.id, run.actor_id from private.devbox_runs run
+        where run.status = 'queued'
+            and run.workload in ('run', 'build', 'serve', 'tunnel', 'maintenance')
+        order by run.created_at
+        limit p_limit
+    ), denied as materialized (
+        select owner.actor_id from (select distinct scan.actor_id from scan) owner
+        where not private.devbox_actor_is_root_member(owner.actor_id)
+            and not private.devbox_actor_has_active_personal_grant(owner.actor_id)
+    ), candidates as (
         select run.id from private.devbox_runs run
-        where run.status = 'queued' and run.workload not in ('judge','playground')
-            and not private.devbox_actor_is_root_member(run.actor_id)
-            and not private.devbox_actor_has_active_personal_grant(run.actor_id)
-        order by run.created_at limit least(greatest(coalesce(p_limit,25),1),500)
+        join scan on scan.id = run.id
+        join denied on denied.actor_id = scan.actor_id
+        where run.status = 'queued'
         for update of run skip locked
     ), stopped as (
         update private.devbox_runs run set status='cancelled',completed_at=now(),updated_at=now()
         from candidates where run.id=candidates.id returning run.id
+    ), audited as (
+        insert into private.devbox_run_events(run_id,event_type,message,metadata)
+        select id,'access_revoked','Devbox run cancelled: owner is no longer authorized.',
+            jsonb_build_object('reason','actor_access_revoked') from stopped
+        returning 1
     )
-    insert into private.devbox_run_events(run_id,event_type,message,metadata)
-    select id,'access_revoked','Devbox run cancelled: owner is no longer authorized.',
-        jsonb_build_object('reason','actor_access_revoked') from stopped;
+    select (select count(*) from scan), (select count(*) from audited)
+        into v_scanned, v_cancelled;
+    return jsonb_build_object('scanned', v_scanned, 'cancelled', v_cancelled);
 end;
 $$;
 revoke all on function private.cancel_unauthorized_devbox_runs(integer) from public, anon, authenticated;
@@ -244,11 +338,24 @@ language plpgsql
 security definer
 set search_path = pg_catalog, pg_temp
 as $$
+declare
+    v_owner_id uuid;
+    v_pool text;
 begin
     -- Serialize claims sharing one runner token before checking its capacity.
     perform pg_advisory_xact_lock(hashtextextended(p_runner_id::text, 1));
     perform private.reap_stale_devbox_runs(p_runner_id, 25);
-    perform private.cancel_unauthorized_devbox_runs(25);
+    -- Fail closed for every workload when the runner owner is no longer
+    -- authorized, and say why in the database log. Re-own by registering a
+    -- new runner (devbox runbook); owner and pool are immutable.
+    select owner.actor_id, owner.pool into v_owner_id, v_pool
+        from private.devbox_runners owner where owner.id = p_runner_id;
+    if found and not (private.devbox_actor_is_root_member(v_owner_id)
+        or (v_pool = 'personal' and private.devbox_actor_has_active_personal_grant(v_owner_id))) then
+        raise log 'devbox claim denied: reason=runner_owner_not_authorized runner_id=% pool=% owner_id=%',
+            p_runner_id, v_pool, v_owner_id;
+        return;
+    end if;
     return query
     with next_run as (
         select run.id

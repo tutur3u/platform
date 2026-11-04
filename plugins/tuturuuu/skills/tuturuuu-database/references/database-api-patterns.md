@@ -547,13 +547,23 @@ revoke PUBLIC/anon/authenticated EXECUTE, and grant only service_role.
 Run the actor-fence pgTAP tests RED on main and GREEN after applying the migration;
 compare full-suite failure names and round-trip the rollback. A lease ownership
 check must cover both direct run pins and inherited lease pins. Preserve dedicated
-learner Judge/playground enqueue paths. The separate 20261104031050 migration owns the shared user_id grant predicate;
-20261104031100 delegates through a guarded lookup and binds the grant revocation hook.
-Missing contract objects or per-actor denials are inactive, and queued work is
-cancelled with an access-revocation event rather than blocking the fleet claim.
-Run `devbox-claim-cleanup.sql` with the real 20261104031050 prerequisite before 20261104031100;
-the suite verifies that the grant hook is installed by the ownership migration. Absence of an active grant
-is never permission to claim personal work on the fleet.
+learner Judge/playground enqueue paths. The separate 20261104031050 migration owns
+the shared user_id grant predicate and is a hard prerequisite: 20261104031100
+refuses to apply without it, and a missing or failing predicate raises instead of
+reading as "no grant". Compare NULL-able actors with `IS DISTINCT FROM`, never `<>`.
+
+Revocation hooks fire on transitions only: a grant row going active to inactive
+(or an active row deleted), and a root MEMBER row going away. Grant revocation
+cancels only run/build work pinned to personal runners; root removal cancels the
+other non-learner work. Neither touches Judge/playground learner work or keep
+leases. Runner `actor_id` and `pool` are immutable; re-own a runner by
+registering a new one. The unauthorized-run sweep is not on the claim path:
+Cron Control job `database-devbox-unauthorized-run-sweep` calls
+`private.cancel_unauthorized_devbox_runs(p_limit)`, which scans at most p_limit
+of the oldest queued non-learner rows. `devbox-run-ownership-revocation.sql`
+covers these rules; run it with `devbox-claim-cleanup.sql` and the real
+20261104031050 prerequisite. Absence of an active grant is never permission to
+claim personal work on the fleet.
 
 ### Azure identity-link verification
 

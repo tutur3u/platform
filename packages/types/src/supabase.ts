@@ -21586,8 +21586,8 @@ export type Database = {
         Args: { p_request_id: string; p_user_id: string };
         Returns: boolean;
       };
-      cancel_devbox_actor_queued_runs: {
-        Args: { p_actor_id: string };
+      cancel_devbox_revoked_work: {
+        Args: { p_actor_id: string; p_scope: string };
         Returns: undefined;
       };
       cancel_pending_post_email_queue_for_recipient_email: {
@@ -21596,7 +21596,7 @@ export type Database = {
       };
       cancel_unauthorized_devbox_runs: {
         Args: { p_limit?: number };
-        Returns: undefined;
+        Returns: Json;
       };
       chat_actor_can_access_conversation: {
         Args: { p_actor_user_id: string; p_conversation_id: string };

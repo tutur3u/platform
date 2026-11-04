@@ -3,21 +3,21 @@ begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '60s';
 drop trigger if exists cancel_devbox_runs_on_access_revocation on public.workspace_members;
-do $$ begin
-    if to_regclass('private.devbox_personal_pool_grants') is not null then
-        execute 'drop trigger if exists cancel_devbox_runs_on_access_revocation on private.devbox_personal_pool_grants';
-    end if;
-end $$;
+-- 20261104031050 is rolled back after this file, so its grants table exists.
+drop trigger if exists cancel_devbox_runs_on_grant_revocation on private.devbox_personal_pool_grants;
 drop trigger if exists enforce_devbox_lease_actor on private.devbox_runs;
 drop trigger if exists enforce_devbox_lease_actor on private.devbox_env_revisions;
 drop trigger if exists enforce_devbox_runner_actor on private.devbox_runs;
 drop trigger if exists enforce_devbox_runner_actor on private.devbox_leases;
 drop trigger if exists preserve_devbox_lease_actor on private.devbox_leases;
+drop trigger if exists preserve_devbox_runner_owner on private.devbox_runners;
 drop function private.enforce_devbox_lease_actor();
 drop function private.enforce_devbox_runner_actor();
 drop function private.preserve_devbox_lease_actor();
+drop function private.preserve_devbox_runner_owner();
 drop function private.cancel_devbox_runs_on_access_revocation();
-drop function private.cancel_devbox_actor_queued_runs(uuid);
+drop function private.cancel_devbox_runs_on_grant_revocation();
+drop function private.cancel_devbox_revoked_work(uuid,text);
 drop function private.check_devbox_write_ownership(uuid,uuid,uuid,text);
 create or replace function private.claim_next_devbox_run(p_runner_id uuid)
 returns table (

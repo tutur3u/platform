@@ -5,7 +5,7 @@ select no_plan();
 select ok(to_regprocedure('private.devbox_identity_grant_active(uuid)') is not null,'real 20261104031050 shared predicate is installed');
 select ok(exists(select 1 from pg_catalog.pg_trigger
     where tgrelid='private.devbox_personal_pool_grants'::regclass
-        and tgname='cancel_devbox_runs_on_access_revocation'),
+        and tgname='cancel_devbox_runs_on_grant_revocation'),
     '20261104031100 attaches cancellation hook to the real 20261104031050 grant table');
 update private.devbox_control_settings set personal_pools_enabled = true where id;
 
@@ -20,7 +20,7 @@ insert into private.devbox_runners(id,actor_id,name,pool,status,heartbeat_enable
  ('82000000-0000-4000-8000-000000000002','81000000-0000-4000-8000-000000000002','cleanup-personal','personal','online',true,now(),'{"executionMode":"trusted"}','{"run":true}');
 
 -- Each probe creates two unauthorized runs strictly ahead of one root member's
--- run. Check cancellation and its durable reason after the same claim call.
+-- run. The claim gate skips them; the Cron Control sweep cancels them.
 create temp table queue_probe(id uuid, authorized boolean);
 create function pg_temp.seed_queue() returns void language plpgsql as $$
 declare i integer; actor uuid; lease uuid; run uuid;
@@ -43,6 +43,9 @@ begin
     select c.id into claimed from private.claim_next_devbox_run('82000000-0000-4000-8000-000000000001') c;
     return next is(claimed,(select id from queue_probe where authorized),p_case||': authorized run claimed past two unauthorized runs');
     return next is((select count(*) from private.devbox_runs r join queue_probe q using(id)
+        where not q.authorized and r.status='queued'),2::bigint,p_case||': claim poll does not cancel');
+    perform private.cancel_unauthorized_devbox_runs(25);
+    return next is((select count(*) from private.devbox_runs r join queue_probe q using(id)
         where not q.authorized and r.status='cancelled' and r.completed_at is not null),2::bigint,p_case||': both unauthorized runs cancelled');
     return next is((select count(*) from private.devbox_run_events e join queue_probe q on q.id=e.run_id
         where not q.authorized and e.event_type='access_revoked' and e.metadata->>'reason'='actor_access_revoked'),2::bigint,p_case||': both cancellations have audit reasons');
@@ -57,41 +60,45 @@ select lives_ok($$select private.cancel_unauthorized_devbox_runs(25)$$,'zero gra
 select pg_temp.seed_queue();
 select * from pg_temp.check_queue('zero grants');
 
-alter function private.devbox_identity_grant_active(uuid) rename to devbox_identity_grant_active_test_saved;
-select is(private.devbox_actor_has_active_personal_grant('81000000-0000-4000-8000-000000000002'),false,'missing shared predicate fails closed');
+-- 20261104031050 is a hard prerequisite: a missing or failing predicate
+-- raises instead of cancelling work as if every grant were inactive.
 select pg_temp.seed_queue();
-select * from pg_temp.check_queue('missing predicate');
+alter function private.devbox_identity_grant_active(uuid) rename to devbox_identity_grant_active_test_saved;
+select throws_ok($$select private.devbox_actor_has_active_personal_grant('81000000-0000-4000-8000-000000000002')$$,'42883',null,'missing shared predicate raises');
+select throws_ok($$select private.cancel_unauthorized_devbox_runs(25)$$,'42883',null,'missing shared predicate fails the sweep loudly');
 alter function private.devbox_identity_grant_active_test_saved(uuid) rename to devbox_identity_grant_active;
 
 alter table private.devbox_personal_pool_grants rename to devbox_personal_pool_grants_test_saved;
-select is(private.devbox_actor_has_active_personal_grant('81000000-0000-4000-8000-000000000002'),false,'missing grant table fails closed');
-select lives_ok($$select private.cancel_unauthorized_devbox_runs(25)$$,'missing grant table cleanup does not raise');
-select pg_temp.seed_queue();
-select * from pg_temp.check_queue('missing table');
+select throws_ok($$select private.devbox_actor_has_active_personal_grant('81000000-0000-4000-8000-000000000002')$$,'42P01',null,'missing grant table raises');
+select throws_ok($$select private.cancel_unauthorized_devbox_runs(25)$$,'42P01',null,'missing grant table fails the sweep loudly');
 alter table private.devbox_personal_pool_grants_test_saved rename to devbox_personal_pool_grants;
 
--- An authorization denial from the predicate is a per-actor inactive result,
--- without catching failures in cancellation or its audit insertion.
 alter function private.devbox_identity_grant_active(uuid) rename to devbox_identity_grant_active_test_saved;
 create function private.devbox_identity_grant_active(uuid) returns boolean language plpgsql as $$
 begin raise exception 'Actor is no longer authorized.' using errcode='42501'; end $$;
 revoke all on function private.devbox_identity_grant_active(uuid) from public, anon, authenticated;
 grant execute on function private.devbox_identity_grant_active(uuid) to service_role;
-select pg_temp.seed_queue();
-select * from pg_temp.check_queue('authorization denial');
+select throws_ok($$select private.cancel_unauthorized_devbox_runs(25)$$,'42501',null,'predicate denial propagates from the sweep');
 drop function private.devbox_identity_grant_active(uuid);
 alter function private.devbox_identity_grant_active_test_saved(uuid) rename to devbox_identity_grant_active;
+select is((select count(*) from private.devbox_runs r join queue_probe q using(id) where not q.authorized and r.status='queued'),2::bigint,
+    'no work is cancelled while the predicate is unavailable');
+select * from pg_temp.check_queue('restored predicate');
 
 insert into private.devbox_personal_pool_grants(user_id,status,accepted_at,expires_at,suspended)
  values('81000000-0000-4000-8000-000000000002','active',now(),now()+interval '1 hour',false);
 select is(private.devbox_actor_has_active_personal_grant('81000000-0000-4000-8000-000000000002'),true,'active shared grant is delegated by user_id');
-create function pg_temp.personal_run(p_status text default 'queued') returns uuid language plpgsql as $$
+-- Personal work is pinned to the grantee's personal runner; grant revocation
+-- cancels only run/build work pinned there.
+create function pg_temp.personal_run(p_status text default 'queued', p_pinned boolean default true) returns uuid language plpgsql as $$
 declare lease uuid:=gen_random_uuid(); run uuid:=gen_random_uuid();
+    pin uuid:=case when p_pinned then '82000000-0000-4000-8000-000000000002'::uuid end;
 begin
-    insert into private.devbox_leases(id,actor_id,expires_at)
-        values(lease,'81000000-0000-4000-8000-000000000002',now()+interval '1 hour');
-    insert into private.devbox_runs(id,actor_id,lease_id,status,command)
-        values(run,'81000000-0000-4000-8000-000000000002',lease,p_status,array['echo','personal']);
+    insert into private.devbox_leases(id,actor_id,runner_id,expires_at)
+        values(lease,'81000000-0000-4000-8000-000000000002',pin,now()+interval '1 hour');
+    insert into private.devbox_runs(id,actor_id,lease_id,runner_id,status,command)
+        values(run,'81000000-0000-4000-8000-000000000002',lease,
+            case when p_status='running' then pin end,p_status,array['echo','personal']);
     return run;
 end $$;
 create temp table personal_probe as select pg_temp.personal_run() id;
@@ -147,14 +154,16 @@ insert into personal_probe select pg_temp.personal_run();
 update private.devbox_control_settings set personal_pools_enabled=false where id;
 select is(private.devbox_actor_has_active_personal_grant('81000000-0000-4000-8000-000000000002'),false,'shared switch disables an active grant');
 select is((select count(*) from private.claim_next_devbox_run('82000000-0000-4000-8000-000000000002')),0::bigint,'disabled switch refuses personal claim');
+do $$ begin perform private.cancel_unauthorized_devbox_runs(25); end $$;
 select is((select r.status from private.devbox_runs r join personal_probe p using(id)),'cancelled','disabled switch cancels queued personal work');
 select ok(exists(select 1 from private.devbox_run_events e join personal_probe p on p.id=e.run_id
     where e.metadata->>'reason'='actor_access_revoked'),'disabled switch cancellation has an audit reason');
 update private.devbox_control_settings set personal_pools_enabled=true where id;
 delete from private.devbox_personal_pool_grants where user_id='81000000-0000-4000-8000-000000000002';
 truncate personal_probe;
-insert into personal_probe select pg_temp.personal_run();
+insert into personal_probe select pg_temp.personal_run('queued',false);
 select is((select count(*) from private.claim_next_devbox_run('82000000-0000-4000-8000-000000000002')),0::bigint,'no grant row denies own queued personal run');
-select is((select r.status from private.devbox_runs r join personal_probe p using(id)),'cancelled','no grant row cancels personal run instead of rescanning');
+do $$ begin perform private.cancel_unauthorized_devbox_runs(25); end $$;
+select is((select r.status from private.devbox_runs r join personal_probe p using(id)),'cancelled','no grant row: the sweep cancels the personal run');
 select * from finish();
 rollback;

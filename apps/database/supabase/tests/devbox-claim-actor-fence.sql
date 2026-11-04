@@ -47,9 +47,10 @@ select is((select count(*) from private.claim_next_devbox_run('72000000-0000-400
 select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000001'),'cancelled','access revocation cancels queued runs transactionally');
 select is((select status from private.devbox_leases where id='73000000-0000-4000-8000-000000000001'),'released','access revocation releases active leases');
 select is((select count(*) from private.claim_next_devbox_run('72000000-0000-4000-8000-000000000002')),0::bigint,'runner owner membership is rechecked in database');
-update private.devbox_runners set pool='fleet' where id='72000000-0000-4000-8000-000000000002';
-select ok(not pg_temp.claims('72000000-0000-4000-8000-000000000002','71000000-0000-4000-8000-000000000001','run'),'fleet runner with removed owner cannot claim another current member run');
-update private.devbox_runners set pool='personal' where id='72000000-0000-4000-8000-000000000002';
+-- Runner pool is immutable, so the removed owner's fleet runner is separate.
+insert into private.devbox_runners(id,actor_id,name,pool,status,heartbeat_enabled,last_heartbeat_at,capabilities,enabled_features) values
+ ('72000000-0000-4000-8000-000000000006','71000000-0000-4000-8000-000000000002','fleet-b','fleet','online',true,now(),'{"executionMode":"trusted"}','{"run":true,"build":true}');
+select ok(not pg_temp.claims('72000000-0000-4000-8000-000000000006','71000000-0000-4000-8000-000000000001','run'),'fleet runner with removed owner cannot claim another current member run');
 -- Re-establish B for subsequent independent ownership cases.
 insert into public.workspace_members(ws_id,user_id,type) values('00000000-0000-0000-0000-000000000000','71000000-0000-4000-8000-000000000002','MEMBER');
 insert into private.devbox_leases(id,actor_id,status,expires_at) values
@@ -67,17 +68,14 @@ select throws_ok($$update private.devbox_leases set runner_id='72000000-0000-400
 select is((select runner_id from private.devbox_runs where id='74000000-0000-4000-8000-000000000002'),null::uuid,'rejected run pin UPDATE leaves runner unchanged');
 select is((select runner_id from private.devbox_leases where id='73000000-0000-4000-8000-000000000002'),null::uuid,'rejected lease pin UPDATE leaves runner unchanged');
 select lives_ok($$insert into private.devbox_env_revisions(actor_id,lease_id) values('71000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000000002')$$,'own env revision remains allowed');
--- Exercise the contributor revoke hook without enabling contributor access.
-create temp table contributor_grants(user_id uuid,status text,accepted_at timestamptz,expires_at timestamptz,suspended boolean);
-do $$ begin
- if to_regprocedure('private.cancel_devbox_runs_on_access_revocation()') is not null then
-   execute 'create trigger revoke_grant after update or delete on contributor_grants for each row execute function private.cancel_devbox_runs_on_access_revocation()';
- end if;
-end $$;
-insert into contributor_grants values('71000000-0000-4000-8000-000000000001','active',now(),now()+interval '1 hour',false);
-update contributor_grants set status='revoked';
-select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000002'),'cancelled','contributor grant revocation cancels queued work');
-select is((select count(*) from private.claim_next_devbox_run('72000000-0000-4000-8000-000000000001')),0::bigint,'revoked contributor work cannot fall through to fleet');
+-- A grant row transition for a root member never touches its fleet work.
+insert into private.devbox_personal_pool_grants(user_id,status,accepted_at,expires_at,suspended)
+values('71000000-0000-4000-8000-000000000001','active',now(),now()+interval '1 hour',false);
+update private.devbox_personal_pool_grants set status='revoked' where user_id='71000000-0000-4000-8000-000000000001';
+select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000002'),'queued','root member grant revocation leaves fleet work queued');
+delete from private.devbox_personal_pool_grants where user_id='71000000-0000-4000-8000-000000000001';
+select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000002'),'queued','root member grant deletion leaves fleet work queued');
+update private.devbox_runs set status='succeeded' where id='74000000-0000-4000-8000-000000000002';
 select ok(not has_function_privilege('anon','private.claim_next_devbox_run(uuid)','EXECUTE') and not has_function_privilege('authenticated','private.claim_next_devbox_run(uuid)','EXECUTE') and has_function_privilege('service_role','private.claim_next_devbox_run(uuid)','EXECUTE'),'claim execute remains service role only');
 select ok(pg_temp.claims('72000000-0000-4000-8000-000000000002','71000000-0000-4000-8000-000000000002','run','72000000-0000-4000-8000-000000000002'),'owned personal pin remains claimable');
 select throws_ok($$insert into private.devbox_runs(actor_id,lease_id,command) values('71000000-0000-4000-8000-000000000001','73000000-0000-4000-8000-000000009999',array['echo'])$$,'42501','Devbox lease not found.','unknown lease fails closed');
@@ -100,20 +98,22 @@ values('72000000-0000-4000-8000-000000000003','71000000-0000-4000-8000-000000000
 select ok(pg_temp.claims('72000000-0000-4000-8000-000000000003','71000000-0000-4000-8000-000000000003','run'),'active grantee can claim only own personal work');
 select ok(not pg_temp.claims('72000000-0000-4000-8000-000000000001','71000000-0000-4000-8000-000000000003','run'),'active grant never authorizes fleet execution');
 select ok(not pg_temp.claims('72000000-0000-4000-8000-000000000003','71000000-0000-4000-8000-000000000003','maintenance','72000000-0000-4000-8000-000000000003'),'personal grants never authorize maintenance');
-insert into private.devbox_leases(id,actor_id,status,expires_at) values('73000000-0000-4000-8000-000000000003','71000000-0000-4000-8000-000000000003','active',now()+interval '1 hour');
-insert into private.devbox_runs(id,actor_id,lease_id,status,command) values
- ('74000000-0000-4000-8000-000000000004','71000000-0000-4000-8000-000000000003','73000000-0000-4000-8000-000000000003','queued',array['echo']),
- ('74000000-0000-4000-8000-000000000005','71000000-0000-4000-8000-000000000003','73000000-0000-4000-8000-000000000003','running',array['sleep']);
+insert into private.devbox_leases(id,actor_id,runner_id,status,expires_at) values('73000000-0000-4000-8000-000000000003','71000000-0000-4000-8000-000000000003','72000000-0000-4000-8000-000000000003','active',now()+interval '1 hour');
+insert into private.devbox_runs(id,actor_id,lease_id,runner_id,status,command) values
+ ('74000000-0000-4000-8000-000000000004','71000000-0000-4000-8000-000000000003','73000000-0000-4000-8000-000000000003',null,'queued',array['echo']),
+ ('74000000-0000-4000-8000-000000000005','71000000-0000-4000-8000-000000000003','73000000-0000-4000-8000-000000000003','72000000-0000-4000-8000-000000000003','running',array['sleep']);
 update private.devbox_personal_pool_grants set status='revoked' where user_id='71000000-0000-4000-8000-000000000003';
 select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000004'),'cancelled','canonical grant revoke cancels queued work');
 select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000005'),'cancel_requested','canonical grant revoke signals running work');
 select ok(not pg_temp.claims('72000000-0000-4000-8000-000000000001','71000000-0000-4000-8000-000000000003','run'),'revoked grant cannot fall through to fleet');
--- Claim-time backstop cancels unauthorized rows inserted after the removal event.
+-- The Cron Control sweep cancels unauthorized rows inserted after the removal event.
 insert into private.devbox_leases(id,actor_id,status,expires_at) values('73000000-0000-4000-8000-000000000004','71000000-0000-4000-8000-000000000003','active',now()+interval '1 hour');
 insert into private.devbox_runs(id,actor_id,lease_id,command) values('74000000-0000-4000-8000-000000000006','71000000-0000-4000-8000-000000000003','73000000-0000-4000-8000-000000000004',array['echo']);
 select is((select count(*) from private.claim_next_devbox_run('72000000-0000-4000-8000-000000000001')),0::bigint,'claim denies unauthorized run owner');
-select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000006'),'cancelled','claim backstop cancels unauthorized queued row');
-select ok(exists(select 1 from private.devbox_run_events where run_id='74000000-0000-4000-8000-000000000006' and metadata->>'reason'='actor_access_revoked'),'claim cancellation has a reason');
+select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000006'),'queued','claim poll leaves the unauthorized row to the sweep');
+do $$ begin perform private.cancel_unauthorized_devbox_runs(1000); end $$;
+select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000006'),'cancelled','sweep cancels unauthorized queued row');
+select ok(exists(select 1 from private.devbox_run_events where run_id='74000000-0000-4000-8000-000000000006' and metadata->>'reason'='actor_access_revoked'),'sweep cancellation has a reason');
 -- Learners have no root membership or active personal grant.
 select ok(not exists(select 1 from public.workspace_members where ws_id='00000000-0000-0000-0000-000000000000' and user_id='71000000-0000-4000-8000-000000000003'),'Judge learner is not a root member');
 insert into private.devbox_runners(id,actor_id,name,pool,status,heartbeat_enabled,last_heartbeat_at,capabilities,enabled_features)
