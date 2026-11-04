@@ -32,12 +32,7 @@ export function isMeetAiEnabledForWorkspace(
 ) {
   if (!wsId?.trim()) return false;
   const disabled = binding(env, MEET_AI_DISABLED_ENV);
-  if (
-    disabled !== undefined &&
-    (typeof disabled !== 'string' ||
-      !['0', 'false'].includes(disabled.trim().toLowerCase()))
-  )
-    return false;
+  if (disabled !== 'false' && disabled !== '0') return false;
 
   const denied = binding(env, MEET_AI_WORKSPACE_DENYLIST_ENV);
   if (denied !== undefined) {

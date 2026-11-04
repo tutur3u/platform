@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   access: vi.fn(),
-  cloudflare: vi.fn(),
+  cloudflare: vi.fn(async () => ({ env: { MEET_AI_DISABLED: 'false' } })),
   generate: vi.fn(),
 }));
 vi.mock('@opennextjs/cloudflare', () => ({
@@ -321,7 +321,7 @@ it('reports workspace availability from runtime controls', async () => {
   dbWith([result([]), result([])]);
   expect((await readMeetAi(request(), params)).available).toBe(false);
   mocks.cloudflare.mockResolvedValue({
-    env: { MEET_AI_ENABLED_WORKSPACE_IDS: id },
+    env: { MEET_AI_DISABLED: 'false', MEET_AI_ENABLED_WORKSPACE_IDS: id },
   });
   dbWith([result([]), result([])]);
   expect((await readMeetAi(request(), params)).available).toBe(true);

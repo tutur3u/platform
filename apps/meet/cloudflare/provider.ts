@@ -1,10 +1,13 @@
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import { proxyMeetingProvider } from '@tuturuuu/meet-core/cloudflare/provider-proxy';
-/** Only explicitly configured Cloudflare service bindings can call this entrypoint. */
+/** Parley uses a dedicated key; the Meet AI credential is never shared. */
 export class MeetingAIProvider extends WorkerEntrypoint<{
-  GOOGLE_GENERATIVE_AI_API_KEY: string;
+  PARLEY_GOOGLE_GENERATIVE_AI_API_KEY: string;
 }> {
   fetch(request: Request) {
-    return proxyMeetingProvider(request, this.env.GOOGLE_GENERATIVE_AI_API_KEY);
+    return proxyMeetingProvider(
+      request,
+      this.env.PARLEY_GOOGLE_GENERATIVE_AI_API_KEY
+    );
   }
 }

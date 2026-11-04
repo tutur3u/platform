@@ -151,7 +151,7 @@ it('denies review writes outside the Meet AI allowlist before any Durable Object
           get: () => ({ fetch: f.fetch }),
         },
         MEET_AI_ENABLED_WORKSPACE_IDS,
-        MEET_AI_DISABLED: MEET_AI_ENABLED_WORKSPACE_IDS ? undefined : 'true',
+        MEET_AI_DISABLED: MEET_AI_ENABLED_WORKSPACE_IDS ? 'false' : 'true',
       },
     });
     for (const approved of [true, false])

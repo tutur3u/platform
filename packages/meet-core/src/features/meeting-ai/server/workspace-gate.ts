@@ -14,7 +14,7 @@ export {
 
 /**
  * The Worker env binding, never ambient process.env. Without a Cloudflare
- * context the default policy allows; credit admission still applies.
+ * context the policy disables Meet AI; credit admission is separate.
  */
 export async function meetAiGateEnv(): Promise<MeetAiGateEnv> {
   try {

@@ -105,6 +105,7 @@ export function fixtureBindings(secret) {
   assert.match(secret, /^[a-f0-9-]{72}$/);
   return {
     MEET_REALTIME_TOKEN_SECRET: { type: 'secret_text', value: secret },
+    MEET_AI_DISABLED_WORKSPACE_IDS: { type: 'secret_text', value: '' },
     SUPABASE_SECRET_KEY: { type: 'secret_text', value: secret },
     NEXT_PUBLIC_SUPABASE_URL: {
       type: 'plain_text',

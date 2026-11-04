@@ -386,3 +386,22 @@ checks creator/admin deletion refusal, server erasure ordering, random pseudonym
 reuse and account anonymization; `required-account-mfa.sql` checks MFA policy.
 `meet-transcript-retention-purge.sql` checks custom deadlines,
 forever retention, edited-note deletion, ACLs and bounded restart behavior.
+
+## Worker AI containment
+
+Meet AI is disabled when `MEET_AI_DISABLED` is absent or malformed. Only exact
+lowercase `false` or `0` enables it; workspace deny and allow lists still apply.
+Production deployments assert `MEET_AI_DISABLED=true` and an empty
+`MEET_AI_ENABLED_WORKSPACE_IDS` before publishing realtime.
+
+Parley's private `MeetingAIProvider` service entrypoint uses the separate
+`PARLEY_GOOGLE_GENERATIVE_AI_API_KEY` binding. Without that key its requests fail
+closed; it does not fall back to Meet's credential. Provision that binding only
+through the credential owner. No credential values belong in artifacts.
+
+Realtime accepts its canonical HTTPS origin and HTTP loopback fixture origins.
+Other hosts are rejected before routing, including health checks. Its workers.dev
+and preview URLs are disabled. Regression coverage is in
+`scripts/ci/meet-ai-workspace-gate.test.mjs`,
+`scripts/ci/meet-realtime-host.test.mjs`, and
+`scripts/ci/verify-meet-realtime-policy.test.mjs`.
