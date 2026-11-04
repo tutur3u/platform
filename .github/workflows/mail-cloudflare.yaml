@@ -56,12 +56,13 @@ jobs:
       STAGING_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.STAGING_SUPABASE_PUBLISHABLE_KEY || '' }}
 
   cutover-artifact:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.draft == false && contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
       contents: read
     env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
       NEXT_PUBLIC_APP_URL: https://mail.tuturuuu.com
@@ -71,6 +72,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ env.SOURCE_SHA }}
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
@@ -78,45 +80,26 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24.22.0
-      - run: bun install --frozen-lockfile
+      - name: Verify exact source checkout
+        run: test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+      - run: bun install --frozen-lockfile --ignore-scripts
       - name: Require production public build inputs
         run: test -n "$NEXT_PUBLIC_SUPABASE_URL" && test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
       - name: Generate exact source metadata
         env:
-          PLATFORM_BUILD_COMMIT_HASH: ${{ github.sha }}
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
           PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
           PLATFORM_BUILD_ENVIRONMENT: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build native Start Worker and dependencies
         run: bun turbo:local run build --filter=@tuturuuu/mail --concurrency=2
       - name: Prepare route-free production artifact for Rex
-        run: |
-          node --input-type=module <<'JS'
-          import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-          import { dirname, relative, resolve } from 'node:path';
-          const root = resolve('apps/mail');
-          const pointers = ['.wrangler/deploy/config.json', '.void/preview-deploy-config.json'].map(p => resolve(root, p)).filter(existsSync);
-          if (pointers.length !== 1) throw new Error('Expected one emitted deployment pointer');
-          const pointer = JSON.parse(readFileSync(pointers[0]));
-          const configPath = resolve(root, '.wrangler/deploy', pointer.configPath);
-          const config = JSON.parse(readFileSync(configPath));
-          config.main = relative(dirname(configPath), resolve(dirname(configPath), config.main));
-          config.assets.directory = relative(dirname(configPath), resolve(dirname(configPath), config.assets.directory));
-          delete config.configPath;
-          delete config.userConfigPath;
-          config.name = 'tuturuuu-mail';
-          config.workers_dev = false;
-          config.preview_urls = false;
-          config.routes = [];
-          config.vars = { ...config.vars, NEXT_PUBLIC_APP_URL: 'https://mail.tuturuuu.com', NEXT_PUBLIC_MAIL_APP_URL: 'https://mail.tuturuuu.com', NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com', TUTURUUU_NOINDEX: '0', MAIL_R2_BUCKET_NAME: 'tuturuuu-mail' };
-          writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
-          writeFileSync(resolve(root, 'cutover-receipt.json'), JSON.stringify({ sourceSha: process.env.GITHUB_SHA, worker: config.name, config: configPath.slice(root.length + 1), routes: [], productionRouteAttached: false }, null, 2) + '\n');
-          JS
+        run: node scripts/ci/cf2-cutover-artifact.mjs prepare mail "$SOURCE_SHA"
+      - name: Seal and pack the exact Worker, assets and config
+        run: node scripts/ci/cf2-cutover-artifact.mjs pack mail "$SOURCE_SHA" "$RUNNER_TEMP/mail-cutover"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: mail-cutover-${{ github.sha }}
-          path: |
-            apps/mail/dist/
-            apps/mail/cutover-receipt.json
+          name: mail-cutover-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/mail-cutover/
           retention-days: 7
           if-no-files-found: error
