@@ -35,10 +35,13 @@ const STAFF = {
   identities: [{ provider: 'email', identity_data: {} }],
 };
 
-function request(body: unknown = {}) {
+function request(
+  body: unknown = {},
+  headers: Record<string, string> = { origin: 'https://infra.example' }
+) {
   return new Request(
     'https://infra.example/api/v1/infrastructure/policy-notice',
-    { method: 'POST', body: JSON.stringify(body) }
+    { method: 'POST', body: JSON.stringify(body), headers }
   );
 }
 
@@ -120,6 +123,7 @@ describe('policy notice route', () => {
 
   it.each([
     ['confirm_required', 400],
+    ['recipient_not_allowed', 400],
     ['invalid_request', 400],
     ['dry_run_required', 409],
     ['test_send_required', 409],
@@ -136,5 +140,34 @@ describe('policy notice route', () => {
     const response = await POST(request());
     expect(response.status).toBe(500);
     expect(JSON.stringify(await response.json())).not.toContain('@');
+  });
+
+  it.each([
+    ['no Origin header', {}],
+    ['another origin', { origin: 'https://evil.example' }],
+    ['a sibling subdomain', { origin: 'https://mail.infra.example' }],
+    ['the opaque null origin', { origin: 'null' }],
+    [
+      'a cross-site fetch',
+      { origin: 'https://infra.example', 'sec-fetch-site': 'cross-site' },
+    ],
+  ])(
+    'refuses %s with 403 before any session lookup',
+    async (_label, headers) => {
+      const response = await POST(request({}, headers));
+      expect(response.status).toBe(403);
+      expect(mocks.actor).not.toHaveBeenCalled();
+      expect(mocks.run).not.toHaveBeenCalled();
+    }
+  );
+
+  it('accepts a same-origin browser request', async () => {
+    const response = await POST(
+      request(
+        {},
+        { origin: 'https://infra.example', 'sec-fetch-site': 'same-origin' }
+      )
+    );
+    expect(response.status).toBe(200);
   });
 });

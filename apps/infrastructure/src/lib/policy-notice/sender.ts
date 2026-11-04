@@ -28,12 +28,43 @@ export { PolicyNoticeError } from './errors';
 
 export const POLICY_NOTICE_MAX_TEST_RECIPIENTS = 5;
 
+export interface PolicyNoticeDeps {
+  store: PolicyNoticeStore;
+  mailer: PolicyNoticeMailer;
+  clock: PolicyNoticeClock;
+  notice: PolicyNoticeDefinition;
+  /** Server config (POLICY_NOTICE_PREVIEW_ADDRESSES), never request input. */
+  previewAddresses: readonly string[];
+}
+
+const STAFF_ADDRESS = /^[^\s@]+@tuturuuu\.com$/;
+const emailSchema = z.string().trim().toLowerCase().pipe(z.email());
+
+/** Parses the comma-separated preview list; invalid entries are dropped. */
+export function parsePreviewAddresses(value: string | undefined) {
+  return (value ?? '')
+    .split(',')
+    .map((entry) => emailSchema.safeParse(entry))
+    .flatMap((parsed) => (parsed.success ? [parsed.data] : []));
+}
+
+function assertTestListAllowed(
+  recipients: readonly string[],
+  previewAddresses: readonly string[]
+) {
+  const preview = new Set(previewAddresses.map((a) => a.toLowerCase()));
+  for (const address of recipients) {
+    if (!STAFF_ADDRESS.test(address) && !preview.has(address))
+      throw new PolicyNoticeError('recipient_not_allowed');
+  }
+}
+
 const requestSchema = z
   .object({
     mode: z.enum(['dry_run', 'test_list', 'live']).default('dry_run'),
     confirm: z.string().max(200).optional(),
     testRecipients: z
-      .array(z.string().trim().toLowerCase().pipe(z.email()))
+      .array(emailSchema)
       .min(1)
       .max(POLICY_NOTICE_MAX_TEST_RECIPIENTS)
       .optional(),
@@ -42,13 +73,6 @@ const requestSchema = z
   .strict();
 
 export type PolicyNoticeRequest = z.input<typeof requestSchema>;
-
-export interface PolicyNoticeDeps {
-  store: PolicyNoticeStore;
-  mailer: PolicyNoticeMailer;
-  clock: PolicyNoticeClock;
-  notice: PolicyNoticeDefinition;
-}
 
 function parseRequest(input: unknown, version: string) {
   const parsed = requestSchema.safeParse(input ?? {});
@@ -303,6 +327,8 @@ export async function runPolicyNotice(
 ): Promise<PolicyNoticeResult> {
   const version = policyNoticeVersion(deps.notice);
   const request = parseRequest(input, version);
+  if (request.testRecipients)
+    assertTestListAllowed(request.testRecipients, deps.previewAddresses);
 
   let result: PolicyNoticeResult;
   if (request.mode === 'dry_run') {

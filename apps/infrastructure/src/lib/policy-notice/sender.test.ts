@@ -6,7 +6,11 @@ import {
   policyNoticeVersion,
 } from './definition';
 import { evaluateBreaker, resolvePolicyNoticeLimits } from './limits';
-import { PolicyNoticeError, runPolicyNotice } from './sender';
+import {
+  PolicyNoticeError,
+  parsePreviewAddresses,
+  runPolicyNotice,
+} from './sender';
 import type {
   MailerOutcome,
   PolicyNoticeMailer,
@@ -20,6 +24,13 @@ const VERSION = policyNoticeVersion(NOTICE);
 const ACTOR = 'actor-id';
 const LIVE = policyNoticeConfirmToken('live', VERSION);
 const TEST = policyNoticeConfirmToken('test_list', VERSION);
+// Server-configured preview addresses (POLICY_NOTICE_PREVIEW_ADDRESSES).
+const PREVIEW = [
+  'owner@example.com',
+  'o@example.com',
+  'unsub@example.com',
+  'fine@example.com',
+];
 
 type Row = {
   mode: 'test_list' | 'live';
@@ -192,7 +203,13 @@ function clock(start = 0) {
 }
 
 async function openGate(store: FakeStore, mailer = new FakeMailer()) {
-  const deps = { store, mailer, clock: clock(), notice: NOTICE };
+  const deps = {
+    store,
+    mailer,
+    clock: clock(),
+    notice: NOTICE,
+    previewAddresses: PREVIEW,
+  };
   await runPolicyNotice({}, ACTOR, deps);
   await runPolicyNotice(
     {
@@ -229,6 +246,7 @@ describe('runPolicyNotice', () => {
       mailer,
       clock: clock(),
       notice: NOTICE,
+      previewAddresses: PREVIEW,
     });
 
     expect(result).toEqual({
@@ -268,7 +286,13 @@ describe('runPolicyNotice', () => {
               mode === 'test_list' ? ['owner@example.com'] : undefined,
           },
           ACTOR,
-          { store, mailer, clock: clock(), notice: NOTICE }
+          {
+            store,
+            mailer,
+            clock: clock(),
+            notice: NOTICE,
+            previewAddresses: PREVIEW,
+          }
         )
       ).rejects.toMatchObject({ code: 'confirm_required' });
       expect(store.calls).toEqual([]);
@@ -279,7 +303,13 @@ describe('runPolicyNotice', () => {
   it('refuses every real send until the ledger has a dry run and a test-list send', async () => {
     const store = new FakeStore(audience(2));
     const mailer = new FakeMailer();
-    const deps = { store, mailer, clock: clock(), notice: NOTICE };
+    const deps = {
+      store,
+      mailer,
+      clock: clock(),
+      notice: NOTICE,
+      previewAddresses: PREVIEW,
+    };
 
     await expect(
       runPolicyNotice(
@@ -298,7 +328,13 @@ describe('runPolicyNotice', () => {
   it('test-list mode sends only to the allowlist, once per address', async () => {
     const store = new FakeStore(audience(3));
     const mailer = new FakeMailer();
-    const deps = { store, mailer, clock: clock(), notice: NOTICE };
+    const deps = {
+      store,
+      mailer,
+      clock: clock(),
+      notice: NOTICE,
+      previewAddresses: PREVIEW,
+    };
     await runPolicyNotice({}, ACTOR, deps);
 
     const request = {
@@ -322,7 +358,13 @@ describe('runPolicyNotice', () => {
       runPolicyNotice(
         { mode: 'test_list', confirm: TEST, testRecipients: audience(6) },
         ACTOR,
-        { store, mailer: new FakeMailer(), clock: clock(), notice: NOTICE }
+        {
+          store,
+          mailer: new FakeMailer(),
+          clock: clock(),
+          notice: NOTICE,
+          previewAddresses: PREVIEW,
+        }
       )
     ).rejects.toMatchObject({ code: 'invalid_request' });
   });
@@ -340,7 +382,13 @@ describe('runPolicyNotice', () => {
     store.suppressions.set('blocked@example.com', 'blocked');
     store.suppressions.set('unsub@example.com', 'unsubscribed');
     const mailer = new FakeMailer();
-    const deps = { store, mailer, clock: clock(), notice: NOTICE };
+    const deps = {
+      store,
+      mailer,
+      clock: clock(),
+      notice: NOTICE,
+      previewAddresses: PREVIEW,
+    };
     await runPolicyNotice({}, ACTOR, deps);
     const preview = await runPolicyNotice(
       {
@@ -371,7 +419,13 @@ describe('runPolicyNotice', () => {
     const store = new FakeStore(audience(7));
     const mailer = new FakeMailer();
     await openGate(store, mailer);
-    const deps = { store, mailer, clock: clock(), notice: NOTICE };
+    const deps = {
+      store,
+      mailer,
+      clock: clock(),
+      notice: NOTICE,
+      previewAddresses: PREVIEW,
+    };
     const request = {
       mode: 'live' as const,
       confirm: LIVE,
@@ -401,7 +455,13 @@ describe('runPolicyNotice', () => {
       return { kind: 'unknown' };
     });
     await openGate(store, new FakeMailer());
-    const deps = { store, mailer, clock: clock(), notice: NOTICE };
+    const deps = {
+      store,
+      mailer,
+      clock: clock(),
+      notice: NOTICE,
+      previewAddresses: PREVIEW,
+    };
 
     const first = await runPolicyNotice(
       { mode: 'live', confirm: LIVE, limits: { maxUnknownRate: 0.05 } },
@@ -432,6 +492,7 @@ describe('runPolicyNotice', () => {
       mailer,
       clock: clock(),
       notice: NOTICE,
+      previewAddresses: PREVIEW,
     });
     expect(store.statusOf('rejected@example.com')).toBe('failed');
     expect(store.statusOf('blocked@example.com')).toBe('suppressed');
@@ -455,6 +516,7 @@ describe('runPolicyNotice', () => {
         mailer,
         clock: clock(),
         notice: NOTICE,
+        previewAddresses: PREVIEW,
       }
     );
 
@@ -480,7 +542,7 @@ describe('runPolicyNotice', () => {
         limits: { sendsPerSecond: 2, timeBudgetMs: 5_000 },
       },
       ACTOR,
-      { store, mailer, clock: time, notice: NOTICE }
+      { store, mailer, clock: time, notice: NOTICE, previewAddresses: PREVIEW }
     );
 
     expect(time.sleeps.every((ms) => ms === 500)).toBe(true);
@@ -497,7 +559,13 @@ describe('runPolicyNotice', () => {
         limits: { sendsPerSecond: 0.5, timeBudgetMs: 5_000 },
       },
       ACTOR,
-      { store: slow, mailer: slowMailer, clock: clock(), notice: NOTICE }
+      {
+        store: slow,
+        mailer: slowMailer,
+        clock: clock(),
+        notice: NOTICE,
+        previewAddresses: PREVIEW,
+      }
     );
     expect(paused).toMatchObject({ status: 'paused', done: false });
     expect(slowMailer.sent.length - 1).toBe(3);
@@ -514,7 +582,6 @@ describe('policy notice limits', () => {
       maxBounceRate: 0.02,
       maxComplaintRate: 0.001,
       maxUnknownRate: 0.02,
-      minSample: 100,
     });
     for (const bad of [
       { sendsPerSecond: 50 },
@@ -522,6 +589,8 @@ describe('policy notice limits', () => {
       { maxComplaintRate: 0.01 },
       { timeBudgetMs: 600_000 },
       { batchSize: 0 },
+      { minSample: 1_000_000 },
+      { minSample: 100 },
     ]) {
       expect(() => resolvePolicyNoticeLimits(bad)).toThrow(PolicyNoticeError);
     }
@@ -543,5 +612,105 @@ describe('policy notice limits', () => {
     expect(
       evaluateBreaker({ ...healthy, attempted: 1000, rejected: 21 }, limits)
     ).toBe('bounce_rate');
+  });
+
+  it('cannot be loosened enough to disable the bounce or complaint breaker', () => {
+    const loosest = resolvePolicyNoticeLimits({
+      maxBounceRate: 0.05,
+      maxComplaintRate: 0.001,
+      maxUnknownRate: 0.05,
+    });
+    const quiet = {
+      attempted: 100,
+      rejected: 0,
+      unknown: 0,
+      hardBounces: 0,
+      complaints: 0,
+    };
+    expect(evaluateBreaker({ ...quiet, complaints: 1 }, loosest)).toBe(
+      'complaint_rate'
+    );
+    expect(evaluateBreaker({ ...quiet, hardBounces: 6 }, loosest)).toBe(
+      'bounce_rate'
+    );
+    expect(evaluateBreaker({ ...quiet, unknown: 6 }, loosest)).toBe(
+      'unknown_rate'
+    );
+  });
+});
+
+describe('test-list allowlist', () => {
+  const deps = (previewAddresses: string[]) => {
+    const store = new FakeStore();
+    const mailer = new FakeMailer();
+    return {
+      store,
+      mailer,
+      deps: { store, mailer, clock: clock(), notice: NOTICE, previewAddresses },
+    };
+  };
+
+  it.each([
+    ['someone@gmail.com'],
+    ['staff@xwf.tuturuuu.com'],
+    ['staff@tuturuuu.com.evil.example'],
+    ['tuturuuu.com@evil.example'],
+  ])('refuses %s before any ledger or send work', async (address) => {
+    const { store, mailer, deps: d } = deps(['phucvo0708@gmail.com']);
+    await expect(
+      runPolicyNotice(
+        {
+          mode: 'test_list',
+          confirm: TEST,
+          testRecipients: ['staff@tuturuuu.com', address],
+        },
+        ACTOR,
+        d
+      )
+    ).rejects.toMatchObject({ code: 'recipient_not_allowed' });
+    expect(store.calls).toEqual([]);
+    expect(mailer.sent).toHaveLength(0);
+  });
+
+  it('allows @tuturuuu.com staff and the configured preview addresses', async () => {
+    const { mailer, deps: d } = deps(['phucvo0708@gmail.com']);
+    await runPolicyNotice({}, ACTOR, d);
+    await runPolicyNotice(
+      {
+        mode: 'test_list',
+        confirm: TEST,
+        testRecipients: ['Staff@Tuturuuu.com', 'PhucVo0708@gmail.com'],
+      },
+      ACTOR,
+      d
+    );
+    expect(mailer.sent.map((m) => m.to).sort()).toEqual([
+      'phucvo0708@gmail.com',
+      'staff@tuturuuu.com',
+    ]);
+  });
+
+  it('never takes preview addresses from the request', async () => {
+    const { mailer, deps: d } = deps([]);
+    await expect(
+      runPolicyNotice(
+        {
+          mode: 'test_list',
+          confirm: TEST,
+          testRecipients: ['someone@gmail.com'],
+          previewAddresses: ['someone@gmail.com'],
+        },
+        ACTOR,
+        d
+      )
+    ).rejects.toMatchObject({ code: 'invalid_request' });
+    expect(mailer.sent).toHaveLength(0);
+  });
+
+  it('parses the configured preview list strictly', () => {
+    expect(
+      parsePreviewAddresses(' PhucVo0708@gmail.com, not-an-address,,b@x.io ')
+    ).toEqual(['phucvo0708@gmail.com', 'b@x.io']);
+    expect(parsePreviewAddresses(undefined)).toEqual([]);
   });
 });

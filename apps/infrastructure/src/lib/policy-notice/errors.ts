@@ -1,6 +1,7 @@
 export type PolicyNoticeErrorCode =
   | 'invalid_request'
   | 'confirm_required'
+  | 'recipient_not_allowed'
   | 'dry_run_required'
   | 'test_send_required'
   | 'version_locked';
