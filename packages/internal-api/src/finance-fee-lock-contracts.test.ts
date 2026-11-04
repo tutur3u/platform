@@ -5,6 +5,7 @@ import {
   type FeeLockLineInput,
   feeLockBatchLockRequestSchema,
   feeLockSaveDraftRequestSchema,
+  feeLockSnapshotSchema,
   isFeeLockMoneyInRange,
   toFeeLockIlikePattern,
 } from './finance-fee-lock-contracts';
@@ -128,5 +129,36 @@ describe('fee-lock search escaping', () => {
     expect(toFeeLockIlikePattern('  An_%  ')).toBe('%An\\_\\%%');
     expect(toFeeLockIlikePattern('   ')).toBeNull();
     expect(toFeeLockIlikePattern(undefined)).toBeNull();
+  });
+});
+
+describe('fee-lock snapshot', () => {
+  it('pins schema version 1 and rejects a mid-month period', () => {
+    const snapshot = {
+      schema_version: 1,
+      fee_lock_id: id(9),
+      ws_id: id(8),
+      student_id: id(1),
+      student_name: 'Học viên mẫu',
+      period_month: '2026-12-01',
+      currency: 'VND',
+      revision: 1,
+      total_amount: 1_200_000,
+      note: null,
+      locked_by: null,
+      locked_at: '2026-11-25T03:00:00.000Z',
+      lines: [],
+    };
+    expect(feeLockSnapshotSchema.safeParse(snapshot).success).toBe(true);
+    expect(
+      feeLockSnapshotSchema.safeParse({
+        ...snapshot,
+        period_month: '2026-12-15',
+      }).success
+    ).toBe(false);
+    expect(
+      feeLockSnapshotSchema.safeParse({ ...snapshot, schema_version: 2 })
+        .success
+    ).toBe(false);
   });
 });
