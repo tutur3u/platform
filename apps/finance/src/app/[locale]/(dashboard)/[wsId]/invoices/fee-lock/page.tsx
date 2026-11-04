@@ -37,6 +37,7 @@ export default async function WorkspaceFeeLockPage({
       wsId={context.wsId}
       currency={context.currency}
       canExport={canExport}
+      canEditTemplate={!context.permissions.withoutPermission('manage_finance')}
       initialMonth={normalizeFeeLockMonth(month)}
     />
   );
