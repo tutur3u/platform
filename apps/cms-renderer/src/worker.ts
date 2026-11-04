@@ -6,6 +6,7 @@ import bridgeConfig from '../start-bridge.config';
 import { cacheRequest } from './cache-key';
 import { loadPublishedPage } from './live-delivery';
 import { purgePage } from './purge';
+import { workspaceCacheEpoch } from './workspace-cache';
 
 export { cacheRequest } from './cache-key';
 
@@ -40,11 +41,12 @@ export async function serve(request: Request, env: Environment, deps: Dependenci
   const site = sites[url.hostname.toLowerCase()];
   if (!site) return fail(404);
   if (url.pathname.startsWith('/__cms/cache')) return fail(404);
-  if (url.pathname === '/__cms/purge') return purgePage({ request, siteId: site.id, origin: url.origin, tokensJson: env.CMS_PURGE_TOKENS, limiter: env.CMS_PURGE_RATE_LIMITER, cache: deps.cache });
+  if (url.pathname === '/__cms/purge') return purgePage({ request, siteId: site.id, workspaceId: site.workspaceId, origin: url.origin, tokensJson: env.CMS_PURGE_TOKENS, limiter: env.CMS_PURGE_RATE_LIMITER, cache: deps.cache });
   if (!['GET', 'HEAD'].includes(request.method)) return fail(405);
   // Static assets are served by the Worker asset binding after an admitted host.
   if (url.pathname.startsWith('/assets/')) return env.ASSETS ? env.ASSETS.fetch(request) : fail(404);
   try {
+    const epoch = await workspaceCacheEpoch({ origin: url.origin, site: site.id, workspaceId: site.workspaceId }, deps.cache);
     const path = url.pathname.replace(/\/$/, '') || '/';
     const delivered = await loadPublishedPage({ origin: env.CMS_DELIVERY_ORIGIN ?? '', workspaceId: site.workspaceId, path, fetch: deps.fetch });
     if (delivered.kind === 'unbound') return fail(409);
@@ -52,7 +54,7 @@ export async function serve(request: Request, env: Environment, deps: Dependenci
     if (delivered.kind !== 'page') return fail(503);
     const { page, versionId, title, description, ogImage } = delivered;
     const locale = /^\/en(?:\/|$)/.test(path) ? 'en' : site.defaultLocale;
-    const key = cacheRequest({ origin: url.origin, site: site.id, path, locale, version: versionId });
+    const key = cacheRequest({ origin: url.origin, site: site.id, path, locale, version: versionId, workspaceId: site.workspaceId, epoch });
     const hit = await deps.cache.match(key);
     if (hit) return request.method === 'HEAD' ? new Response(null, hit) : hit;
     const result = await deps.render(request, { page, locale, tokens: site.tokens, title, description, ogImage });

@@ -21,6 +21,7 @@ export function authorizePurge({
   siteId: string;
   tokensJson: string | undefined;
 }): boolean {
+  if ((header?.length ?? 0) > 600) return false;
   let secrets: string[];
   try {
     const sites = tokensSchema.parse(JSON.parse(tokensJson ?? '{}'));
