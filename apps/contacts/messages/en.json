@@ -9474,6 +9474,8 @@
     "both_reason": "Both",
     "both_reason_tooltip": "Qualifies for both absent recovery and weak support",
     "campus": "Campus",
+    "complete_content_description": "This text is saved when you mark the session done. Edit or remove anything first. Left empty, only the lesson notes are saved.",
+    "complete_content_title": "Confirm content to save",
     "conflict_student_slots": "Session {slotA} conflicts with session {slotB} for the selected student",
     "conflict_teacher_slots": "Session {slotA} conflicts with session {slotB} for the selected teacher",
     "content": "Content",

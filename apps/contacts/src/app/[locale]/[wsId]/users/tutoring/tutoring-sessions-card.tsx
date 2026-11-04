@@ -41,6 +41,10 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import {
+  needsCompletionReview,
+  TutoringCompleteDialog,
+} from './tutoring-complete-dialog';
 import { TutoringCreateCard } from './tutoring-create-card';
 import { isTutoringContentRestricted } from './tutoring-errors';
 import {
@@ -176,6 +180,8 @@ export function TutoringSessionsCard({
     useState<TutoringSessionRecord | null>(null);
   const [deletingSession, setDeletingSession] =
     useState<TutoringSessionRecord | null>(null);
+  const [completingSession, setCompletingSession] =
+    useState<TutoringSessionRecord | null>(null);
   const [draftContent, setDraftContent] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const canExport = Boolean(
@@ -202,6 +208,28 @@ export function TutoringSessionsCard({
         isTutoringContentRestricted(error)
           ? t('content_restricted')
           : t('content_update_failed')
+      ),
+  });
+  // Saves the text the completer confirmed; blank keeps the notes-only freeze.
+  const completeSession = useMutation({
+    mutationFn: ({ id, content }: { id: string; content: string }) =>
+      updateTutoringSession(wsId, id, { attendanceStatus: 'DONE', content }),
+    onSuccess: () => {
+      toast.success(t('marked'));
+      setCompletingSession(null);
+      for (const key of [
+        'tutoring-sessions',
+        'tutoring-session-stats',
+        'tutoring-queue',
+      ]) {
+        void queryClient.invalidateQueries({ queryKey: [key, wsId] });
+      }
+    },
+    onError: (error) =>
+      toast.error(
+        isTutoringContentRestricted(error)
+          ? t('content_restricted')
+          : t('mark_failed')
       ),
   });
   const deleteSession = useMutation({
@@ -255,7 +283,12 @@ export function TutoringSessionsCard({
         setDraftContent(session.content);
       },
       onDelete: setDeletingSession,
-      onMark: actions.onMark,
+      onMark: (id, status) => {
+        const session = sessions.find((item) => item.id === id);
+        if (status === 'DONE' && session && needsCompletionReview(session))
+          setCompletingSession(session);
+        else actions.onMark(id, status);
+      },
       onParentMessage: setParentMessageSession,
       t,
       tableT,
@@ -404,6 +437,19 @@ export function TutoringSessionsCard({
         </DialogContent>
       </Dialog>
 
+      <TutoringCompleteDialog
+        isSaving={completeSession.isPending}
+        onComplete={(session, content) => {
+          if (content.trim())
+            completeSession.mutate({ id: session.id, content });
+          else {
+            setCompletingSession(null);
+            actions.onMark(session.id, 'DONE');
+          }
+        }}
+        onOpenChange={() => setCompletingSession(null)}
+        session={completingSession}
+      />
       <TutoringParentMessageDialog
         onOpenChange={(open) => !open && setParentMessageSession(null)}
         session={parentMessageSession}
