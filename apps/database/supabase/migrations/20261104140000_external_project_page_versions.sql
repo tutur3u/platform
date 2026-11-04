@@ -98,16 +98,23 @@ CREATE TRIGGER workspace_external_project_page_versions_prepare
   FOR EACH ROW
   EXECUTE FUNCTION public.prepare_workspace_external_project_page_version();
 
--- Client roles cannot move the pointer, even managers who may update entries
--- (or the legacy entry publish and preview paths). Only the publish function
--- (running as its owner) and foreign key actions change it.
+-- Client roles cannot set or move the pointer, even managers who may update
+-- entries, bulk/import upserts or the legacy entry publish and preview paths.
+-- Only the publish function (running as its owner) and foreign key actions
+-- change it.
 CREATE FUNCTION public.guard_workspace_external_project_published_page_version()
 RETURNS trigger
 LANGUAGE plpgsql
 SET search_path = pg_catalog, pg_temp
 AS $$
 BEGIN
-  IF current_user IN ('anon', 'authenticated', 'service_role') THEN
+  IF current_user IN ('anon', 'authenticated', 'service_role')
+    AND (
+      (TG_OP = 'INSERT' AND NEW.published_page_version_id IS NOT NULL)
+      OR (TG_OP = 'UPDATE' AND OLD.published_page_version_id
+        IS DISTINCT FROM NEW.published_page_version_id)
+    )
+  THEN
     RAISE EXCEPTION 'publish page versions with publish_workspace_external_project_page_version'
       USING ERRCODE = '42501';
   END IF;
@@ -118,14 +125,14 @@ $$;
 REVOKE ALL ON FUNCTION public.guard_workspace_external_project_published_page_version() FROM PUBLIC, anon, authenticated;
 
 CREATE TRIGGER workspace_external_project_entries_published_page_version_guard
-  BEFORE UPDATE OF published_page_version_id
+  BEFORE INSERT OR UPDATE OF published_page_version_id
   ON public.workspace_external_project_entries
   FOR EACH ROW
-  WHEN (OLD.published_page_version_id IS DISTINCT FROM NEW.published_page_version_id)
   EXECUTE FUNCTION public.guard_workspace_external_project_published_page_version();
 
--- Publishes one version of an entry in p_ws_id: one public publish event, the
--- version status and the entry pointer, all or nothing. Client callers act
+-- The only publication path for pages. Publishes one version of an entry in
+-- p_ws_id: the public publish event, then the version status and the entry
+-- pointer, all or nothing. Client callers act
 -- only as themselves (the helper is caller-bound); the service role passes
 -- the acting user. Republishing an older version keeps its first publish time.
 CREATE FUNCTION public.publish_workspace_external_project_page_version(
@@ -158,16 +165,16 @@ BEGIN
       USING ERRCODE = '55000';
   END IF;
 
-  UPDATE public.workspace_external_project_page_versions v
-  SET status = 'published',
-      published_at = coalesce(v.published_at, now()),
-      published_by = coalesce(v.published_by, p_actor_id)
+  SELECT v.* INTO v_version
+  FROM public.workspace_external_project_page_versions v
   WHERE v.id = p_version_id AND v.ws_id = p_ws_id
-  RETURNING v.* INTO v_version;
+  FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'page version not found' USING ERRCODE = 'P0002';
   END IF;
 
+  -- The audit row comes first; if it fails, nothing below runs and the whole
+  -- publish rolls back (fail closed).
   INSERT INTO public.workspace_external_project_publish_events (
     ws_id, canonical_external_project_id, entry_id, event_kind,
     visibility_scope, payload, triggered_by
@@ -180,6 +187,13 @@ BEGIN
     ),
     p_actor_id
   );
+
+  UPDATE public.workspace_external_project_page_versions v
+  SET status = 'published',
+      published_at = coalesce(v.published_at, now()),
+      published_by = coalesce(v.published_by, p_actor_id)
+  WHERE v.id = v_version.id
+  RETURNING v.* INTO v_version;
 
   UPDATE public.workspace_external_project_entries e
   SET published_page_version_id = v_version.id,
