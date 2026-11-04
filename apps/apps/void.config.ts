@@ -8,7 +8,8 @@ export default defineConfig({
     main: './cloudflare/worker.ts',
     compatibility_date: '2026-10-12',
     compatibility_flags: ['nodejs_compat'],
-    workers_dev: true,
+    workers_dev: false,
+    preview_urls: false,
     vars: { TUTURUUU_NOINDEX: '1' },
     assets: {
       binding: 'ASSETS',

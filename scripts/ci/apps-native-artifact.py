@@ -14,7 +14,7 @@ IDENTITY = {
     "name": "tuturuuu-apps-vite-staging",
     "compatibility_date": "2026-10-12",
     "compatibility_flags": ["nodejs_compat"],
-    "workers_dev": True,
+    "workers_dev": False, "preview_urls": False,
     "observability": {"enabled": True, "head_sampling_rate": 0.05},
     "vars": {"TUTURUUU_NOINDEX": "1"},
 }

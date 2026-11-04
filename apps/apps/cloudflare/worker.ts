@@ -1,4 +1,5 @@
 import handler from '@tanstack/react-start/server-entry';
+import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
 import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
 import { workerBuildInfo } from '@tuturuuu/utils/worker-build-info';
 import { apiRequest } from '../src/native/api.server';
@@ -12,6 +13,7 @@ import {
   appendContextCookies,
   withRequestContext,
 } from '../src/native/request-context';
+import { assertRuntimeSecrets } from './runtime-secrets';
 
 export interface AppsEnvironment {
   ASSETS: { fetch(request: Request): Promise<Response> };
@@ -98,4 +100,17 @@ export async function appsRequest(request: Request, env: AppsEnvironment) {
   });
   return enforceStagingCookiePolicy(request, result);
 }
-export default { fetch: appsRequest };
+export default {
+  fetch(request: Request, env: AppsEnvironment) {
+    assertRuntimeSecrets(env);
+    if (
+      !resolveAppBase(new URL(request.url), {
+        app: 'apps',
+        rootHosts: ['apps.tuturuuu.com', 'apps.tutur3u.com'],
+        unknownHost: 'reject',
+      })
+    )
+      return new Response('Not Found', { status: 404 });
+    return appsRequest(request, env);
+  },
+};
