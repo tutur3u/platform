@@ -260,3 +260,36 @@ export type FeeLockBatchItemResult =
   | { id: string; result: 'ok'; version: number; revision: number }
   | { id: string; result: 'conflict'; current_version: number }
   | { id: string; result: 'not_found' };
+
+/** Immutable JSON stored in `fee_lock_revisions.snapshot` at lock time. */
+export const feeLockSnapshotSchema = z.object({
+  schema_version: z.literal(1),
+  fee_lock_id: z.guid(),
+  ws_id: z.guid(),
+  student_id: z.guid(),
+  student_name: z.string(),
+  period_month: z.string().regex(/^\d{4}-\d{2}-01$/),
+  currency: z.string().length(3),
+  revision: z.int().min(1),
+  total_amount: z.number().nonnegative(),
+  note: z.string().nullable(),
+  locked_by: z.guid().nullable(),
+  locked_at: z.string(),
+  lines: z.array(
+    z.object({
+      kind: z.enum(['tuition', 'extra']),
+      group_id: z.guid().nullable(),
+      group_name: z.string().nullable(),
+      label: z.string(),
+      unit_label: z.string().nullable(),
+      product_id: z.guid().nullable(),
+      unit_price: z.number(),
+      quantity: z.number(),
+      adjustment_amount: z.number(),
+      reason: z.string().nullable(),
+      line_amount: z.number(),
+      sort_order: z.int(),
+    })
+  ),
+});
+export type FeeLockSnapshot = z.infer<typeof feeLockSnapshotSchema>;
