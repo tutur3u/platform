@@ -1,5 +1,4 @@
--- M3 20261104130200 (templates) and M4 20261104130300 (invoice links): access,
--- versioned saves, allowlist, retention, workspace guards. Synthetic fixtures only.
+-- M3 20261104130200 templates and M4 20261104130300 invoice links. Synthetic fixtures only.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
@@ -50,25 +49,18 @@ grant execute on function pg_temp.save(uuid, text, int) to service_role;
 select is((select count(*)::int from pg_class where relnamespace = 'public'::regnamespace
   and relname in ('fee_notice_templates', 'fee_lock_invoice_links') and relrowsecurity),
   2, 'RLS is enabled on both tables');
-select is((select count(*)::int from pg_policies where schemaname = 'public'
-  and tablename in ('fee_notice_templates', 'fee_lock_invoice_links') and permissive = 'PERMISSIVE'),
-  0, 'neither table has a permissive policy');
-select is((select count(*)::int from pg_policies where schemaname = 'public'
-  and tablename in ('fee_notice_templates', 'fee_lock_invoice_links') and policyname = 'account_required_mfa'),
-  2, 'both tables carry the restrictive MFA policy');
+select is((select string_agg(tablename || ':' || policyname || ':' || permissive, ',' order by tablename) from pg_policies
+  where schemaname = 'public' and tablename in ('fee_notice_templates', 'fee_lock_invoice_links')),
+  'fee_lock_invoice_links:account_required_mfa:RESTRICTIVE,fee_notice_templates:account_required_mfa:RESTRICTIVE',
+  'each table has only the restrictive MFA policy');
 select is((select count(*)::int from unnest(array['anon', 'authenticated']) r
   cross join unnest(array['public.fee_notice_templates', 'public.fee_lock_invoice_links']) t
   cross join unnest(array['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER']) p
   where has_table_privilege(r, t, p)), 0, 'anon and authenticated hold no table privilege');
-select ok(not has_function_privilege('authenticated',
-  'private.fee_notice_template_save(uuid,uuid,text,text,text,text,text,text,integer,integer)', 'EXECUTE')
-  and not has_function_privilege('anon',
-  'private.fee_notice_template_save(uuid,uuid,text,text,text,text,text,text,integer,integer)', 'EXECUTE'),
-  'clients cannot call the template save function');
-select ok(has_function_privilege('service_role',
-  'private.fee_notice_template_save(uuid,uuid,text,text,text,text,text,text,integer,integer)', 'EXECUTE'),
-  'service_role can call the template save function');
-select ok(not has_function_privilege('authenticated', 'private.fee_lock_invoice_links_check_ws()', 'EXECUTE'),
+select ok(not has_function_privilege('anon', f, 'EXECUTE') and not has_function_privilege('authenticated', f, 'EXECUTE')
+  and has_function_privilege('service_role', f, 'EXECUTE'), 'only service_role can call the template save function')
+from (values ('private.fee_notice_template_save(uuid,uuid,text,text,text,text,text,text,integer,integer)')) v(f);
+select ok(not has_function_privilege('authenticated', 'private.fee_lock_invoice_links_same_workspace()', 'EXECUTE'),
   'clients cannot call the link workspace trigger function');
 select is((select prosecdef::text || ':' || array_to_string(proconfig, ',') from pg_proc
   where oid = 'private.fee_notice_template_save(uuid,uuid,text,text,text,text,text,text,integer,integer)'::regprocedure),
@@ -128,9 +120,14 @@ select throws_ok($$insert into public.fee_lock_invoice_links(ws_id, invoice_id, 
 select throws_ok($$insert into public.fee_lock_invoice_links(ws_id, invoice_id, fee_lock_id, fee_lock_revision,
   suggested_total, charged_total) values (pg_temp.fid(910), pg_temp.fid(951), pg_temp.fid(932), 1, 0, 0)$$,
   '23514', 'fee_lock_id does not belong to ws_id', 'a fee lock from another workspace is rejected');
+-- Links are immutable after insert and cannot be truncated.
 select throws_ok($$update public.fee_lock_invoice_links set invoice_id = pg_temp.fid(952)
   where invoice_id = pg_temp.fid(951)$$,
-  '23514', 'invoice_id does not belong to ws_id', 'a link cannot be moved to another workspace''s invoice');
+  '55000', 'fee_lock_invoice_links rows are immutable', 'a link cannot be moved to another invoice');
+select throws_ok($$update public.fee_lock_invoice_links set charged_total = 1 where invoice_id = pg_temp.fid(951)$$,
+  '55000', 'fee_lock_invoice_links rows are immutable', 'linked totals cannot be changed');
+select throws_ok($$truncate public.fee_lock_invoice_links$$,
+  '55000', 'fee_lock_invoice_links rows are immutable', 'links cannot be truncated');
 select throws_ok($$insert into public.fee_lock_invoice_links(ws_id, invoice_id, fee_lock_id, fee_lock_revision,
   suggested_total, charged_total) values (pg_temp.fid(910), pg_temp.fid(951), pg_temp.fid(931), 0, 0, 0)$$,
   '23514', null, 'the linked revision is at least 1');
@@ -143,20 +140,14 @@ select throws_ok($$delete from public.fee_locks where id = pg_temp.fid(933)$$,
   '23503', null, 'a linked fee lock cannot be deleted, even a deletable draft');
 
 -- Rollback guards (copied from apps/database/rollbacks/202611041302/1303_*; keep in sync).
-select throws_ok($q$do $g$ begin
-  if exists (select 1 from public.fee_lock_invoice_links) then
-    raise exception 'fee lock invoice links exist; export and delete them first';
-  end if;
-  lock table public.fee_lock_invoice_links in access exclusive mode;
-end $g$$q$, 'P0001', 'fee lock invoice links exist; export and delete them first',
-  'the links rollback refuses while links exist');
-select throws_ok($q$do $g$ begin
-  if exists (select 1 from public.fee_notice_templates) then
-    raise exception 'fee notice templates exist; export and delete them first';
-  end if;
-  lock table public.fee_notice_templates in access exclusive mode;
-end $g$$q$, 'P0001', 'fee notice templates exist; export and delete them first',
-  'the templates rollback refuses while templates exist');
+select throws_ok($q$do $g$ begin if exists (select 1 from public.fee_lock_invoice_links) then
+  raise exception 'fee lock invoice links exist; export and delete them first'; end if;
+  lock table public.fee_lock_invoice_links in access exclusive mode; end $g$$q$, 'P0001',
+  'fee lock invoice links exist; export and delete them first', 'the links rollback refuses while links exist');
+select throws_ok($q$do $g$ begin if exists (select 1 from public.fee_notice_templates) then
+  raise exception 'fee notice templates exist; export and delete them first'; end if;
+  lock table public.fee_notice_templates in access exclusive mode; end $g$$q$, 'P0001',
+  'fee notice templates exist; export and delete them first', 'the templates rollback refuses while templates exist');
 
 select * from finish();
 rollback;
