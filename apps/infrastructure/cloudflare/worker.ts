@@ -16,6 +16,8 @@ import appConfig from '../start-bridge.config';
 
 export interface InfrastructureEnvironment {
   ASSETS: AssetsBinding;
+  TUTURUUU_APP_COORDINATION_SECRET?: string;
+  SUPABASE_SECRET_KEY?: string;
   INTERNAL_WEB_API_ORIGIN?: string;
   TUTURUUU_NOINDEX?: string;
 }
@@ -75,6 +77,13 @@ export default {
     env: InfrastructureEnvironment,
     ctx: WorkerContext
   ) {
+    if (
+      process.env.NODE_ENV !== 'production' ||
+      !env.TUTURUUU_APP_COORDINATION_SECRET?.trim() ||
+      !env.SUPABASE_SECRET_KEY?.trim()
+    ) {
+      return new Response('Service unavailable', { status: 503 });
+    }
     let response: Response;
     try {
       response = await (await handler)(request, env, ctx);
