@@ -12,7 +12,10 @@ const bridge = startBridgePreset({
 });
 export default defineConfig(({ command }) => ({
   base: bridge.base,
-  define: bridge.define,
+  define: {
+    ...bridge.define,
+    'process.env.NODE_ENV': JSON.stringify('production'),
+  },
   plugins: [voidPlugin(), tanstackStart(bridge.tanstackStart), react()],
   environments: { client: { define: bridge.clientDefine(command) } },
   resolve: { alias: bridge.alias },
