@@ -107,6 +107,7 @@ describe('POST /finance/fee-locks/export', () => {
       'content-disposition':
         'attachment; filename="chot-hoc-phi-2026-12-00000000.xlsx"',
       'cache-control': 'no-store',
+      'x-fee-lock-row-count': '2',
     });
     const bytes = new Uint8Array(await response.arrayBuffer());
     const sheet = XLSX.read(bytes, { type: 'array' }).Sheets['Tổng hợp'];

@@ -99,6 +99,7 @@ export async function POST(request: Request, { params }: Params) {
       'Content-Disposition': `attachment; filename="${feeLockExportFileName(month, wsId)}"`,
       'Cache-Control': 'no-store',
       'X-Content-Type-Options': 'nosniff',
+      'X-Fee-Lock-Row-Count': String(ordered.length),
     },
   });
 }
