@@ -1,7 +1,7 @@
 import { getAssignedCourseIds } from './courses';
 import { getAdmin } from './db';
 import { firstOf } from './helpers';
-import type { Db } from './types';
+import type { Db, TulearnRole } from './types';
 
 interface NamedGroup {
   id: string;
@@ -175,12 +175,19 @@ export async function getLearnerAssignments({
 export async function getLearnerReports({
   db,
   studentWorkspaceUserId,
+  viewerRole,
   wsId,
 }: {
   db?: Db;
   studentWorkspaceUserId: string;
+  viewerRole: TulearnRole;
   wsId: string;
 }) {
+  // INTERIM (4 Nov 2026): parents see no periodic reports until the
+  // released-stage filter ships; see the stage-filter PR.
+  // Fail closed: only the learner themself may read stored reports here.
+  if (viewerRole !== 'student') return [];
+
   const sbAdmin = await getAdmin(db);
   const courseIds = await getAssignedCourseIds({
     db: sbAdmin,
