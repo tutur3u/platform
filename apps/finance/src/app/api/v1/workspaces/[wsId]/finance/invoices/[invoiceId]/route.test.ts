@@ -142,7 +142,7 @@ describe('invoice detail route', () => {
 
     expect(response.status).toBe(409);
     expect((await response.json()).message).toBe(
-      'Hóa đơn này gắn với bảng chốt học phí; hãy mở lại bảng chốt trước khi xóa.'
+      'Hóa đơn này đã gắn với bảng chốt học phí nên không thể xóa. Nếu cần điều chỉnh, vui lòng liên hệ quản trị viên.'
     );
     expect(sbAdmin.from).toHaveBeenCalledWith('fee_lock_invoice_links');
     expect(linkQuery.eq).toHaveBeenCalledWith('ws_id', 'ws-1');

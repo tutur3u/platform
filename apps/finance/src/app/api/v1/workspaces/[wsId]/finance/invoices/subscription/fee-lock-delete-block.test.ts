@@ -23,7 +23,7 @@ describe('feeLockLinkedInvoiceResponse', () => {
     expect(await response?.json()).toEqual({
       code: FEE_LOCK_LINKED_INVOICE_CODE,
       message:
-        'Hóa đơn này gắn với bảng chốt học phí; hãy mở lại bảng chốt trước khi xóa.',
+        'Hóa đơn này đã gắn với bảng chốt học phí nên không thể xóa. Nếu cần điều chỉnh, vui lòng liên hệ quản trị viên.',
     });
     expect(FEE_LOCK_LINKED_INVOICE_MESSAGE).toContain('chốt học phí');
     expect(
