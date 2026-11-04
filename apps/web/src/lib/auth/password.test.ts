@@ -48,7 +48,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     mocks.createClient(...args),
 }));
 
-vi.mock('@tuturuuu/turnstile/server', () => ({
+vi.mock('@tuturuuu/cloudflare/turnstile/server', () => ({
   isTurnstileError: vi.fn(() => false),
   resolveTurnstileToken: (
     ...args: Parameters<typeof mocks.resolveTurnstileToken>

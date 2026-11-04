@@ -53,7 +53,7 @@
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/tasks-ui": "workspace:*",
     "@tuturuuu/trigger": "workspace:*",
-    "@tuturuuu/turnstile": "workspace:*",
+    "@tuturuuu/cloudflare": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
