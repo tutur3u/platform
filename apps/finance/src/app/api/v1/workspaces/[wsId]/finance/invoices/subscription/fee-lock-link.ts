@@ -154,3 +154,55 @@ export async function insertFeeLockLink(
   }
   return null;
 }
+
+/**
+ * Discards an invoice this request created. A fee-lock-linked invoice goes
+ * through private.fee_lock_discard_new_invoice (link, then invoice, in one
+ * transaction, audited); any other keeps the route's original child-first
+ * cleanup. `requestStartedAt` allows two minutes of app/database clock skew.
+ */
+type DiscardArgs = {
+  wsId: string;
+  invoiceId: string | null;
+  actorId: string;
+  requestStartedAt: Date;
+  linked: boolean;
+};
+export async function discardNewSubscriptionInvoice(
+  sbAdmin: TypedSupabaseClient,
+  { wsId, invoiceId, actorId, requestStartedAt, linked }: DiscardArgs
+) {
+  if (!invoiceId) return;
+  if (linked) {
+    const { data, error } = await sbAdmin
+      .schema('private')
+      .rpc('fee_lock_discard_new_invoice', {
+        p_ws_id: wsId,
+        p_invoice_id: invoiceId,
+        p_actor_id: actorId,
+        p_request_started_at: new Date(
+          requestStartedAt.getTime() - 120_000
+        ).toISOString(),
+        p_reason: 'Subscription invoice creation failed',
+      });
+    if (error || data !== true) {
+      console.error('[fee-lock] invoice discard failed', error?.code ?? data);
+    }
+    return;
+  }
+  await Promise.allSettled([
+    sbAdmin
+      .from('finance_invoice_promotions')
+      .delete()
+      .eq('invoice_id', invoiceId),
+    sbAdmin
+      .from('finance_invoice_products')
+      .delete()
+      .eq('invoice_id', invoiceId),
+    sbAdmin
+      .from('finance_invoice_user_groups')
+      .delete()
+      .eq('invoice_id', invoiceId),
+  ]);
+  await sbAdmin.from('finance_invoices').delete().eq('id', invoiceId);
+}
