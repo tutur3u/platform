@@ -153,7 +153,6 @@ jobs:
       SOURCE_SHA: ${{ github.sha }}
       TOOLS_SOURCE_SHA: ${{ github.sha }}
       VITE_TOOLS_NATIVE_PROFILE: production
-      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
       NEXT_PUBLIC_tools_URL: https://tools.tuturuuu.com
       NEXT_PUBLIC_WEB_tools_URL: https://tuturuuu.com
@@ -184,6 +183,8 @@ jobs:
           PLATFORM_BUILD_ENVIRONMENT: production
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build production Start Worker
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
         working-directory: apps/tools
         run: bun run build
       - name: Package Worker, assets and emitted Wrangler config
