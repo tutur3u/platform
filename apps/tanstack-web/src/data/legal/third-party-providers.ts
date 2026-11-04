@@ -121,19 +121,4 @@ export const thirdPartyCategories: ThirdPartyCategory[] = [
       },
     ],
   },
-  {
-    name: 'Analytics',
-    providers: [
-      {
-        name: 'Vercel Analytics',
-        purpose: 'Privacy-friendly website analytics',
-        url: 'https://vercel.com/legal/privacy-policy',
-      },
-      {
-        name: 'Vercel Speed Insights',
-        purpose: 'Web performance monitoring',
-        url: 'https://vercel.com/legal/privacy-policy',
-      },
-    ],
-  },
 ];
