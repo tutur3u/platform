@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(55);
+select plan(56);
 
 create function pg_temp.id(p text) returns uuid language sql immutable as $$ select ('00000000-0000-4000-8000-0000000fe' || p)::uuid $$;
 insert into auth.users(id, email) values (pg_temp.id('001'), 'fee-lock-owner@example.test'), (pg_temp.id('002'), 'fee-lock-staff@example.test') on conflict (id) do nothing;
@@ -32,29 +32,22 @@ create function pg_temp.ref_line(p_column text, p_id text) returns void language
     values (%L, %L, ''extra'', ''Ref'', 1, 1, 1, %L)', p_column, pg_temp.id('301'), pg_temp.id('010'), pg_temp.id(p_id)); end $$;
 
 -- Access model.
-select has_table('public', t, t || ' exists')
-from unnest(array['fee_locks', 'fee_lock_lines', 'fee_lock_revisions', 'fee_lock_events']) t;
+select has_table('public', t, t || ' exists') from unnest(array['fee_locks', 'fee_lock_lines', 'fee_lock_revisions', 'fee_lock_events']) t;
 select is((select count(*)::int from pg_class where relnamespace = 'public'::regnamespace
-  and relname in ('fee_locks', 'fee_lock_lines', 'fee_lock_revisions', 'fee_lock_events') and relrowsecurity),
-  4, 'RLS is enabled on every fee lock table');
-select is((select count(*)::int from pg_policies where schemaname = 'public' and tablename like 'fee_lock%'
-  and permissive = 'PERMISSIVE'), 0, 'fee lock tables have no permissive policies');
-select is((select count(*)::int from pg_policies where schemaname = 'public' and tablename like 'fee_lock%'
-  and policyname = 'account_required_mfa'), 4, 'every fee lock table carries the restrictive MFA policy');
+  and relname in ('fee_locks', 'fee_lock_lines', 'fee_lock_revisions', 'fee_lock_events') and relrowsecurity), 4, 'RLS is enabled on every fee lock table');
+select is((select count(*)::int from pg_policies where schemaname = 'public' and tablename like 'fee_lock%' and permissive = 'PERMISSIVE'), 0, 'fee lock tables have no permissive policies');
+select is((select count(*)::int from pg_policies where schemaname = 'public' and tablename like 'fee_lock%' and policyname = 'account_required_mfa'), 4, 'every fee lock table carries the restrictive MFA policy');
 select is((select count(*)::int from unnest(array['anon', 'authenticated']) r
   cross join unnest(array['public.fee_locks', 'public.fee_lock_lines', 'public.fee_lock_revisions', 'public.fee_lock_events']) t
   cross join unnest(array['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER']) p
   where has_table_privilege(r, t, p)), 0, 'anon and authenticated hold no privilege on fee lock tables');
-select ok(has_table_privilege('service_role', 'public.fee_locks', 'SELECT, INSERT, UPDATE, DELETE'),
-  'service_role can read and write fee locks');
+select ok(has_table_privilege('service_role', 'public.fee_locks', 'SELECT, INSERT, UPDATE, DELETE'), 'service_role can read and write fee locks');
 select ok(not has_function_privilege('authenticated', 'private.fee_lock_append_only()', 'EXECUTE')
-  and not has_function_privilege('authenticated', 'private.fee_lock_same_workspace()', 'EXECUTE'),
-  'clients cannot call the fee lock trigger functions');
+  and not has_function_privilege('authenticated', 'private.fee_lock_same_workspace()', 'EXECUTE'), 'clients cannot call the fee lock trigger functions');
 
 -- Header rules.
 select lives_ok($$insert into public.fee_locks(id, ws_id, student_id, period_month, created_by)
-  values (pg_temp.id('301'), pg_temp.id('010'), pg_temp.id('101'), '2026-12-01', pg_temp.id('001'))$$,
-  'a same-workspace student gets a draft fee lock');
+  values (pg_temp.id('301'), pg_temp.id('010'), pg_temp.id('101'), '2026-12-01', pg_temp.id('001'))$$, 'a same-workspace student gets a draft fee lock');
 select is((select status || ':' || revision || ':' || version || ':' || currency from public.fee_locks
   where id = pg_temp.id('301')), 'draft:0:1:VND', 'a new fee lock starts as a version-1 VND draft with no locked revision');
 select throws_ok($$insert into public.fee_locks(ws_id, student_id, period_month) values (pg_temp.id('010'), pg_temp.id('191'), '2026-12-01')$$,
@@ -128,6 +121,10 @@ select is((select count(*)::int from public.fee_lock_revisions where fee_lock_id
 update public.fee_locks set status = 'locked', revision = 1, locked_at = now() where id = pg_temp.id('301');
 select throws_ok($$delete from public.fee_locks where id = pg_temp.id('301')$$, '55000', 'fee_locks rows are immutable', 'a locked fee lock cannot be deleted');
 select throws_ok($$truncate public.fee_locks cascade$$, '55000', 'fee_locks rows are immutable', 'fee locks cannot be truncated');
+create function pg_temp.try(p_sql text) returns text language plpgsql as $$ begin execute p_sql; return 'ok'; exception when others then return sqlstate; end $$;
+select is(pg_temp.try($$update public.fee_locks set revision = 0 where id = pg_temp.id('301')$$) || ',' || pg_temp.try($$update public.fee_locks set ws_id = pg_temp.id('011') where id = pg_temp.id('301')$$)
+  || ',' || pg_temp.try($$update public.fee_locks set status = 'draft', version = version + 1 where id = pg_temp.id('301')$$), '55000,55000,ok',
+  'a locked fee lock cannot lower its revision or change workspace, and reopening (revision kept) still works');
 insert into public.fee_locks(id, ws_id, student_id, period_month) values (pg_temp.id('302'), pg_temp.id('010'), pg_temp.id('102'), '2026-12-01');
 insert into public.fee_lock_events(ws_id, fee_lock_id, event_type) values (pg_temp.id('010'), pg_temp.id('302'), 'draft_saved');
 select lives_ok($$delete from public.fee_locks where id = pg_temp.id('302')$$, 'a never-locked draft can be deleted');

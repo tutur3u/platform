@@ -131,9 +131,10 @@ CREATE INDEX fee_lock_events_actor_id_idx ON public.fee_lock_events (actor_id);
 
 COMMENT ON TABLE public.fee_lock_events IS 'Fee lock business audit. actor_id is the authenticated platform user passed by the finance route, not the service role.';
 
--- Immutable history: locked fee locks, revisions and events cannot be deleted or truncated, and
--- revisions and events cannot change. Allowed: cascades (workspace, or a revision's fee lock, gone),
--- deleting a never-locked draft, and FKs clearing locked_by, actor_id or fee_lock_id.
+-- Immutable history: locked fee locks, revisions and events cannot be deleted or truncated, a fee
+-- lock never lowers its revision or changes workspace, and revisions and events cannot change.
+-- Allowed: cascades (workspace, or a revision's fee lock, gone), deleting a never-locked draft, and
+-- FKs clearing locked_by, actor_id or fee_lock_id.
 CREATE FUNCTION private.fee_lock_append_only()
 RETURNS TRIGGER LANGUAGE plpgsql SET search_path = pg_catalog, pg_temp AS $$
 BEGIN
@@ -144,6 +145,8 @@ BEGIN
     ELSIF TG_TABLE_NAME = 'fee_lock_revisions' THEN
       IF NOT EXISTS (SELECT 1 FROM public.fee_locks WHERE id = OLD.fee_lock_id) THEN RETURN OLD; END IF;
     END IF;
+  ELSIF TG_OP = 'UPDATE' AND TG_TABLE_NAME = 'fee_locks' THEN
+    IF NEW.revision >= OLD.revision AND NEW.ws_id = OLD.ws_id THEN RETURN NEW; END IF;
   ELSIF TG_OP = 'UPDATE' AND TG_TABLE_NAME = 'fee_lock_revisions' THEN
     IF NEW.locked_by IS NULL AND (to_jsonb(NEW) - 'locked_by') = (to_jsonb(OLD) - 'locked_by') THEN RETURN NEW; END IF;
   ELSIF TG_OP = 'UPDATE' AND TG_TABLE_NAME = 'fee_lock_events' THEN
@@ -157,7 +160,7 @@ $$;
 -- tuturuuu: no-grant (trigger)
 REVOKE ALL ON FUNCTION private.fee_lock_append_only() FROM PUBLIC, anon, authenticated;
 
-CREATE TRIGGER fee_locks_keep_locked BEFORE DELETE ON public.fee_locks FOR EACH ROW EXECUTE FUNCTION private.fee_lock_append_only();
+CREATE TRIGGER fee_locks_keep_locked BEFORE UPDATE OR DELETE ON public.fee_locks FOR EACH ROW EXECUTE FUNCTION private.fee_lock_append_only();
 CREATE TRIGGER fee_lock_revisions_append_only BEFORE UPDATE OR DELETE ON public.fee_lock_revisions FOR EACH ROW EXECUTE FUNCTION private.fee_lock_append_only();
 CREATE TRIGGER fee_lock_events_append_only BEFORE UPDATE OR DELETE ON public.fee_lock_events FOR EACH ROW EXECUTE FUNCTION private.fee_lock_append_only();
 CREATE TRIGGER fee_locks_no_truncate BEFORE TRUNCATE ON public.fee_locks FOR EACH STATEMENT EXECUTE FUNCTION private.fee_lock_append_only();
