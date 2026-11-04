@@ -11,6 +11,13 @@ export type TipTapNode = {
   type: string;
 };
 
+const tipTapTypeSchema = z
+  .string()
+  .refine(
+    (type) => type !== 'prototype' && !Object.hasOwn(Object.prototype, type),
+    { message: 'TipTap types must not use prototype keys' }
+  );
+
 const tipTapNodeSchema: z.ZodType<TipTapNode> = z.lazy(() =>
   z.object({
     attrs: z.record(z.string(), z.unknown()).optional(),
@@ -19,12 +26,12 @@ const tipTapNodeSchema: z.ZodType<TipTapNode> = z.lazy(() =>
       .array(
         z.object({
           attrs: z.record(z.string(), z.unknown()).optional(),
-          type: z.string(),
+          type: tipTapTypeSchema,
         })
       )
       .optional(),
     text: z.string().optional(),
-    type: z.string(),
+    type: tipTapTypeSchema,
   })
 );
 
