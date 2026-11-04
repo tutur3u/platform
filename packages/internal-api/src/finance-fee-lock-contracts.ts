@@ -150,9 +150,75 @@ export const feeLockExportRequestSchema = z.object({
   groupId: z.guid().optional(),
   status: z.enum(['locked', 'all']).default('locked'),
   locale: z.enum(['vi', 'en']).default('vi'),
+  /** Adds "Nội dung thông báo", rendered from the active template (locked rows only). */
+  include_notice: z.boolean().default(false),
 });
 export type FeeLockExportRequest = z.input<typeof feeLockExportRequestSchema>;
 export const FEE_LOCK_EXPORT_TOO_MANY_CODE = 'FEE_LOCK_EXPORT_TOO_MANY';
+
+/**
+ * Notice template fields (M3 bounds). Placeholders are checked at save against
+ * the allowlist (validateFeeNoticeTemplate in @tuturuuu/finance-core); the
+ * output is plain text.
+ */
+export const feeNoticeTemplateInputSchema = z.object({
+  body: z
+    .string()
+    .max(2000)
+    .refine((body) => body.trim().length > 0, 'body_required'),
+  item_format: z.string().max(200),
+  item_separator: z.string().max(20),
+  payment_line: z.string().max(300),
+  notice_grouping: z.enum(['combined', 'per_class']),
+  locale: z.enum(['vi', 'en']),
+});
+export type FeeNoticeTemplateInput = z.infer<
+  typeof feeNoticeTemplateInputSchema
+>;
+/** `PUT /finance/fee-locks/template`; a stale `expected_version` answers 409. */
+export const feeNoticeTemplateSaveRequestSchema =
+  feeNoticeTemplateInputSchema.extend({
+    expected_version: versionSchema.optional(),
+    restored_from: versionSchema.optional(),
+  });
+export type FeeNoticeTemplateSaveRequest = z.input<
+  typeof feeNoticeTemplateSaveRequestSchema
+>;
+export const FEE_NOTICE_TEMPLATE_VERSION_CONFLICT_CODE =
+  'FEE_NOTICE_TEMPLATE_VERSION_CONFLICT';
+export const FEE_NOTICE_TEMPLATE_INVALID_CODE = 'FEE_NOTICE_TEMPLATE_INVALID';
+
+/** `POST /finance/fee-locks/template/preview`: a locked student's notice or a built-in sample; `template` previews unsaved edits. */
+export const feeNoticePreviewRequestSchema = z.object({
+  lockId: z.guid().optional(),
+  template: feeNoticeTemplateInputSchema.optional(),
+});
+export type FeeNoticePreviewRequest = z.input<
+  typeof feeNoticePreviewRequestSchema
+>;
+/** Plain text: render it as a text node, or escape it (escapeFeeNoticeHtml) for HTML. */
+export interface FeeNoticePreviewResponse {
+  source: 'lock' | 'sample';
+  template_version: number | null;
+  notices: Array<{
+    group_id: string | null;
+    text: string;
+    length: number;
+    truncated: boolean;
+  }>;
+}
+
+export interface FeeNoticeTemplateVersion extends FeeNoticeTemplateInput {
+  version: number;
+  is_active: boolean;
+  created_by: string | null;
+  created_at: string;
+}
+/** The active template (the built-in default has `version: null`) and the last 20 versions. */
+export interface FeeNoticeTemplateResponse {
+  template: FeeNoticeTemplateInput & { version: number | null };
+  versions: FeeNoticeTemplateVersion[];
+}
 
 /**
  * Escapes `\`, `%` and `_` for LIKE/ILIKE, like `escapeLikePattern` in
