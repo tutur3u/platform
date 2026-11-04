@@ -1,3 +1,4 @@
+import { missingRequiredBindings } from './required-bindings';
 // Drive staging entry. Keep the environment fence before loading bridge routes.
 /// <reference types="@vitejs/plugin-rsc/types" />
 
@@ -73,6 +74,12 @@ let handler: ReturnType<typeof createHandler> | undefined;
 
 export default {
   async fetch(request: Request, env: DriveEnvironment, ctx: WorkerContext) {
+    if (missingRequiredBindings(env)) {
+      return new Response('Required configuration unavailable', {
+        status: 503,
+        headers: { 'Cache-Control': 'no-store' },
+      });
+    }
     if (!resolveAppBase(new URL(request.url), mounts)) {
       const notFound = new Response('Not Found', {
         status: 404,
