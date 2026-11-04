@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../fixtures/first-site.json';
-import { cacheRequest, serve, type Environment } from './worker';
 import { assertProductionMode } from './production-mode';
+import { cacheRequest, type Environment, serve } from './worker';
 
 const environment: Environment = {
   CMS_SITES: JSON.stringify({ 'first.invalid': { id: 'site-one', workspaceId: '00000000-0000-4000-8000-000000000001', defaultLocale: 'vi' } }),
-  CMS_DELIVERY_ORIGIN: 'https://delivery.invalid', CMS_PURGE_TOKEN: 'synthetic-test-token',
+  CMS_DELIVERY_ORIGIN: 'https://delivery.invalid', CMS_PURGE_TOKENS: JSON.stringify({ 'site-one': 'a'.repeat(64), 'site-two': 'b'.repeat(64) }),
 };
 function harness() {
   const items = new Map<string, Response>();
@@ -52,9 +52,20 @@ describe('tenant published renderer', () => {
   it('requires purge authorization and invalidates only the specified version', async () => {
     const h = harness(); await h.run('/');
     const body = JSON.stringify({ path: '/', locale: 'vi', version: 'version-one' });
-    expect((await h.run('/__cms/purge', { method: 'POST', body })).status).toBe(403);
-    expect((await h.run('/__cms/purge', { method: 'POST', body, headers: { authorization: 'Bearer synthetic-test-token' } })).status).toBe(204);
+    expect((await h.run('/__cms/purge', { method: 'POST', body })).status).toBe(401);
+    expect((await h.run('/__cms/purge', { method: 'POST', body, headers: { authorization: `Bearer ${'a'.repeat(64)}` } })).status).toBe(204);
     await h.run('/'); expect(h.renders()).toBe(2);
+  });
+  it('binds purge authorization to the host-resolved site, never a body site id', async () => {
+    const h = harness();
+    const env = { ...environment, CMS_SITES: JSON.stringify({ 'first.invalid': { id: 'site-two', workspaceId: '00000000-0000-4000-8000-000000000002', defaultLocale: 'vi' } }) };
+    const body = JSON.stringify({ path: '/', locale: 'vi', version: 'version-one', siteId: 'site-one' });
+    const tokenA = `Bearer ${'a'.repeat(64)}`;
+    const tokenB = `Bearer ${'b'.repeat(64)}`;
+    expect((await h.run('/__cms/purge', { method: 'POST', body, headers: { authorization: tokenA } }, env)).status).toBe(401);
+    expect((await h.run('/__cms/purge', { method: 'POST', body, headers: { authorization: tokenB } }, env)).status).toBe(204);
+    const legacy = { ...environment, CMS_PURGE_TOKENS: undefined, CMS_PURGE_TOKEN: 'a'.repeat(64) };
+    expect((await h.run('/__cms/purge', { method: 'POST', body, headers: { authorization: tokenA } }, legacy)).status).toBe(401);
   });
   it('does not share cache identities between sites or locales', () => {
     const input = { origin: 'https://first.invalid', site: 'a', path: '/', locale: 'vi', version: 'v1' };

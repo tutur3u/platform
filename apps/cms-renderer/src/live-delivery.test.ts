@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../fixtures/first-site.json';
 import { loadPublishedPage } from './live-delivery';
-import { authorizePurge } from './purge-auth';
 
 const workspaceId = '00000000-0000-4000-8000-000000000001';
 const entry = {
@@ -43,16 +42,5 @@ describe('live delivery adapter', () => {
     const test = read({ error: 'No CMS binding' }, 409);
     expect(await test.result).toEqual({ kind: 'unbound' });
     expect(test.calls).toHaveLength(1);
-  });
-});
-
-describe('purge authorization', () => {
-  it('accepts the shared bearer token and denies missing or mismatched credentials', () => {
-    expect(authorizePurge('Bearer synthetic-token', 'synthetic-token')).toBe(true);
-    for (const header of [null, '', 'synthetic-token', 'Bearer synthetic-token-extra', 'Bearer synthetiC-token']) {
-      expect(authorizePurge(header, 'synthetic-token')).toBe(false);
-    }
-    expect(authorizePurge('Bearer undefined', undefined)).toBe(false);
-    expect(authorizePurge('Bearer ', '')).toBe(false);
   });
 });
