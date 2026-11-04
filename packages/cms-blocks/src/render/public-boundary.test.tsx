@@ -1,10 +1,19 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import { CmsPageRenderer, safeUrl } from './render';
+import {
+  CmsPageRenderer,
+  renderCmsBlock,
+  safeUrl,
+  TipTapContent,
+} from './render';
 
 describe('public renderer security boundary', () => {
   it.each([
     '/\\evil.com',
+    ' https://first.invalid',
+    '\ufeff/about',
+    '\u00a0/about',
+    '\u2003/about',
     '/path\\evil.com',
     '\\evil.com',
     '//evil.com',
@@ -68,5 +77,32 @@ describe('public renderer security boundary', () => {
     expect(renderToStaticMarkup(<CmsPageRenderer page={page} />)).toContain(
       'First site</h2>'
     );
+  });
+});
+
+describe('inherited-key renderer regressions', () => {
+  it.each(['__proto__', 'constructor', 'prototype'])(
+    'does not resolve %s as a node or mark component',
+    (type) => {
+      expect(() =>
+        renderToStaticMarkup(<TipTapContent doc={{ content: [{ type }] }} />)
+      ).not.toThrow();
+      const text = renderToStaticMarkup(
+        <TipTapContent
+          doc={{
+            content: [{ type: 'text', text: 'First site', marks: [{ type }] }],
+          }}
+        />
+      );
+      expect(text).toBe('First site');
+    }
+  );
+  it('returns null for an unknown runtime block after the exhaustive check', () => {
+    // Reflect.apply models an untyped JS caller without bypassing TypeScript with a cast.
+    expect(
+      Reflect.apply(renderCmsBlock, undefined, [
+        { type: '__proto__', props: { id: 'unknown' } },
+      ])
+    ).toBeNull();
   });
 });

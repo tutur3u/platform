@@ -40,7 +40,9 @@ function renderTipTapNode(node: TipTapNode, key: number): ReactNode {
           child
         );
       }
-      const Tag = MARK_TAGS[mark.type] as 'strong' | undefined;
+      const Tag = (
+        Object.hasOwn(MARK_TAGS, mark.type) ? MARK_TAGS[mark.type] : undefined
+      ) as 'strong' | undefined;
       return Tag ? <Tag key={mark.type}>{child}</Tag> : child;
     }, node.text ?? '');
     return <Fragment key={key}>{marked}</Fragment>;
@@ -52,7 +54,9 @@ function renderTipTapNode(node: TipTapNode, key: number): ReactNode {
   const Tag = (
     node.type === 'heading'
       ? `h${level >= 1 && level <= 6 ? level : 2}`
-      : NODE_TAGS[node.type]
+      : Object.hasOwn(NODE_TAGS, node.type)
+        ? NODE_TAGS[node.type]
+        : undefined
   ) as 'p' | undefined;
   return Tag ? (
     <Tag key={key}>{children}</Tag>
@@ -328,7 +332,8 @@ export function renderCmsBlock(block: CmsBlock): ReactNode {
       return <Spacer key={block.props.id} {...block.props} />;
     default: {
       const unreachable: never = block;
-      return unreachable;
+      void unreachable;
+      return null;
     }
   }
 }
