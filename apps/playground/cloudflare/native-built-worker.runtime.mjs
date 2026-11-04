@@ -135,6 +135,7 @@ test('emitted playground Worker serves its root, mount and unknown paths', {
     WORKER_CONFIG.compatibilityFlags
   );
   assert.equal(config.workers_dev, WORKER_CONFIG.workersDev);
+  assert.equal(config.preview_urls, false);
   assert.equal(config.vars?.TUTURUUU_NOINDEX, production ? '0' : '1');
   for (const name of PUBLIC_FILES)
     assert.equal(
@@ -151,6 +152,22 @@ test('emitted playground Worker serves its root, mount and unknown paths', {
     envFiles: [staged.envFile],
     sendMetrics: false,
     bindings: {
+      TUTURUUU_APP_COORDINATION_SECRET: {
+        type: 'secret_text',
+        value: 'synthetic-runtime-coordination-key',
+      },
+      SUPABASE_SECRET_KEY: {
+        type: 'secret_text',
+        value: 'synthetic-runtime-service-key',
+      },
+      NEXT_PUBLIC_SUPABASE_URL: {
+        type: 'plain_text',
+        value: 'https://playground-ci.supabase.invalid',
+      },
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: {
+        type: 'plain_text',
+        value: 'synthetic-public-key',
+      },
       INTERNAL_WEB_API_ORIGIN: {
         type: 'plain_text',
         value: 'https://central.invalid',

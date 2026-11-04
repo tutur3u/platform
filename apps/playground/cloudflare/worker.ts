@@ -13,9 +13,14 @@ import { proxy, config as proxyConfig } from '../src/proxy';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 import appConfig from '../start-bridge.config';
+import { assertStartupEnvironment } from './startup.mjs';
 
 export interface PlaygroundEnvironment {
   ASSETS: AssetsBinding;
+  TUTURUUU_APP_COORDINATION_SECRET?: string;
+  SUPABASE_SECRET_KEY?: string;
+  NEXT_PUBLIC_SUPABASE_URL?: string;
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?: string;
   INTERNAL_WEB_API_ORIGIN?: string;
   TUTURUUU_NOINDEX?: string;
 }
@@ -71,6 +76,7 @@ export default {
     env: PlaygroundEnvironment,
     ctx: WorkerContext
   ) {
+    assertStartupEnvironment(env);
     let response: Response;
     try {
       response = await (await handler)(request, env, ctx);

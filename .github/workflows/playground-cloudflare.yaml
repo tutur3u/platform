@@ -110,7 +110,7 @@ concurrency:
   cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
 jobs:
   check-ci:
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    if: github.event_name != 'workflow_dispatch' && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
     uses: ./.github/workflows/ci-check.yml
     permissions:
       contents: read
@@ -130,6 +130,7 @@ jobs:
       artifact-script: scripts/ci/playground-native-artifact.py
       env-interface: PlaygroundGeneratedEnv
       worker-environment-type: PlaygroundEnvironment
+      unit-command: node --test cloudflare/deployment-profile.test.mjs cloudflare/startup.test.mjs && bun x --no-install vitest run --passWithNoTests
       # Public staging values from repository variables for same-repository
       # events; fork pull requests (and unset variables) build with fixtures.
       public-env: |
@@ -180,9 +181,26 @@ jobs:
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build production Start Worker
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
         working-directory: apps/playground
         run: bun run build
+      - name: Record emitted configuration receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/playground "$SOURCE_SHA" "$RUNNER_TEMP/playground-emitted-config.json"
+      - name: Upload emitted configuration receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playground-config-receipt-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/playground-emitted-config.json
+          if-no-files-found: error
+          retention-days: 7
+      - name: Exercise the built Worker with synthetic runtime bindings
+        working-directory: apps/playground
+        env:
+          CI: 'true'
+          CI_SOURCE_SHA: ${{ env.SOURCE_SHA }}
+        run: bun run test:runtime
       - name: Package Worker, assets and emitted Wrangler config
         run: |
           python3 scripts/ci/playground-native-artifact.py config apps/playground
