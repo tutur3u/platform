@@ -8,10 +8,7 @@ import type {
 // extras staff added; the "Chi tiết" sheet lists every line. No phone, email,
 // parent or address fields. Text is plain; the workbook writer guards it.
 
-type ExportLine = Omit<
-  FeeLockSnapshot['lines'][number],
-  'group_id' | 'product_id'
->;
+type ExportLine = Omit<FeeLockSnapshot['lines'][number], 'product_id'>;
 
 /** A locked revision snapshot, or a draft mapped into the same shape. */
 export interface FeeLockExportEntry {
@@ -20,8 +17,11 @@ export interface FeeLockExportEntry {
   revision: number | null;
   student_name: string;
   period_month: string;
+  currency: string;
   total_amount: number;
   lines: readonly ExportLine[];
+  /** Rendered notice text for the "Nội dung thông báo" column (locked only). */
+  notice?: string | null;
 }
 
 export type FeeLockExportLocale = 'vi' | 'en';
@@ -36,6 +36,7 @@ const COPY = {
     draft: 'Bản nháp',
     tuition: 'Học phí',
     extra: 'Khoản thêm',
+    notice: 'Nội dung thông báo',
     summaryHeader: [
       'STT', 'Học viên', 'Lớp', 'Tháng', 'Số buổi', 'Học phí', 'Điều chỉnh', 'Lý do',
       'Khoản thêm', 'Tiền khoản thêm', 'Tổng', 'Trạng thái', 'Phiên bản',
@@ -52,6 +53,7 @@ const COPY = {
     draft: 'Draft',
     tuition: 'Tuition',
     extra: 'Extra item',
+    notice: 'Notice text',
     summaryHeader: [
       'No.', 'Student', 'Classes', 'Month', 'Sessions', 'Tuition', 'Adjustment', 'Reason',
       'Extra items', 'Extra items amount', 'Total', 'Status', 'Revision',
@@ -81,10 +83,13 @@ export function formatExportMonth(periodMonth: string) {
 
 export function buildFeeLockExportSheets(
   entries: readonly FeeLockExportEntry[],
-  locale: FeeLockExportLocale = 'vi'
+  locale: FeeLockExportLocale = 'vi',
+  includeNotice = false
 ): FeeLockExportSheets {
   const copy = COPY[locale];
-  const summary: FeeLockExportCell[][] = [[...copy.summaryHeader]];
+  const summary: FeeLockExportCell[][] = [
+    [...copy.summaryHeader, ...(includeNotice ? [copy.notice] : [])],
+  ];
   const detail: FeeLockExportCell[][] = [[...copy.detailHeader]];
 
   entries.forEach((entry, index) => {
@@ -119,6 +124,7 @@ export function buildFeeLockExportSheets(
       entry.total_amount,
       status,
       entry.revision,
+      ...(includeNotice ? [entry.notice ?? null] : []),
     ]);
 
     for (const line of lines) {
