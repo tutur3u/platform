@@ -6,7 +6,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 set local timezone = 'UTC';
-select plan(38);
+select plan(39);
 
 -- Fixture ids are 00000000-0000-4000-8000-0000000fe<suffix>.
 create function pg_temp.id(p text) returns uuid language sql immutable as $$ select ('00000000-0000-4000-8000-0000000fe' || p)::uuid $$;
@@ -97,6 +97,8 @@ select throws_ok($$select private.fee_lock_lock(pg_temp.id('010'), pg_temp.id('0
 select throws_ok($$select private.fee_lock_lock(pg_temp.id('011'), pg_temp.id('001'), pg_temp.lock_id(), 2)$$, 'PT404', 'FEE_LOCK_NOT_FOUND', 'another workspace cannot lock it');
 select is((select status || ':' || revision || ':' || version from private.fee_lock_lock(pg_temp.id('010'), pg_temp.id('001'), pg_temp.lock_id(), 2)),
   'locked:1:3', 'locking writes revision 1');
+select ok((select snapshot ?& array['schema_version', 'ws_id', 'locked_by', 'locked_at'] and snapshot->'lines'->0 ? 'group_name' from public.fee_lock_revisions
+  where fee_lock_id = pg_temp.lock_id() and revision = 1), 'the snapshot carries the feeLockSnapshotSchema keys');
 select is((select (snapshot->>'student_name') || ':' || jsonb_array_length(snapshot->'lines') || ':' || (snapshot->'lines'->0->>'reason')
   from public.fee_lock_revisions where fee_lock_id = pg_temp.lock_id() and revision = 1), 'Student A:2:Achievement discount', 'the revision snapshots names and lines');
 select throws_ok($$select pg_temp.save(3, jsonb_build_array(pg_temp.tuition(9)))$$, '55000', 'FEE_LOCK_WRONG_STATUS', 'a locked fee cannot be edited');
@@ -124,7 +126,7 @@ select throws_ok($$select pg_temp.save(null, jsonb_build_array(pg_temp.tuition(1
 select throws_ok($$select pg_temp.save(null, jsonb_build_array(jsonb_build_object('kind', 'extra', 'label', 'A', 'unit_price', 60000000000000, 'quantity', 1),
   jsonb_build_object('kind', 'extra', 'label', 'B', 'unit_price', 60000000000000, 'quantity', 1)), '104')$$, '22003', 'FEE_LOCK_AMOUNT_OUT_OF_RANGE', 'a total over the money limit is rejected with 22003');
 do $$ begin perform private.fee_lock_lock(pg_temp.id('010'), pg_temp.id('001'), (pg_temp.save(null, jsonb_build_array(pg_temp.tuition(1, 0, 'No sessions yet', '203')), '104')).id, 1); end $$;
-select is((select char_length(snapshot->>'student_name') || ':' || char_length(snapshot->'lines'->0->>'label') || ':' || char_length(snapshot->'lines'->0->>'group_name_snapshot')
+select is((select char_length(snapshot->>'student_name') || ':' || char_length(snapshot->'lines'->0->>'label') || ':' || char_length(snapshot->'lines'->0->>'group_name')
   from public.fee_lock_revisions r join public.fee_locks l on l.id = r.fee_lock_id where l.student_id = pg_temp.id('104')), '200:200:200', 'snapshot student and class names are capped at 200 characters');
 
 select * from finish();
