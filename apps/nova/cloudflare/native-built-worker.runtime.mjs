@@ -165,6 +165,14 @@ test('emitted nova Worker serves its root, mount and unknown paths', {
     envFiles: [staged.envFile],
     sendMetrics: false,
     bindings: {
+      UPSTASH_REDIS_REST_URL: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only',
+      },
+      UPSTASH_REDIS_REST_TOKEN: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only',
+      },
       TUTURUUU_APP_COORDINATION_SECRET: {
         type: 'plain_text',
         value: 'synthetic-runtime-only-coordination',
