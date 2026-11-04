@@ -34,3 +34,12 @@ optional Upstash/abuse-guard bindings and production env parity need Rex/Bea
 readback. No direct SQL/Hyperdrive binding or cron is introduced. Chat's
 infrastructure-specific origin rewrite needs parity confirmation. APIs otherwise
 use the existing central-first bridge. No merge or deploy by this lane.
+
+
+Follow-up publication-policy scope: the cloudflareProductionTargets entry registers
+this build-only workflow for selection. It has contents:read and no deployment
+steps or credentials. Its omission from protectedSurfaces is intentional while
+Rex performs the manual cutover; the legacy Vercel publisher remains admitted.
+A future automated Cloudflare publisher needs its own explicit publication-policy
+record when that publisher is introduced. No production policy is relaxed here.
+The codemod now emits the production NODE_ENV definition, preserving regeneration.
