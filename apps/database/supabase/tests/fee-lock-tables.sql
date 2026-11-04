@@ -114,6 +114,11 @@ select throws_ok($$truncate public.fee_lock_events$$, '55000', 'fee_lock_events 
 
 -- Deletes: locked fee locks are kept; drafts, user deletes and workspace deletes work.
 select throws_ok($$delete from public.workspace_users where id = pg_temp.id('101')$$, '23503', null, 'a student with fee locks cannot be deleted');
+-- Every auth user gets a personal workspace and membership; the personal-workspace guard admits
+-- its delete only once the auth user is gone (same order as calendar-provider-saga.sql).
+delete from public.workspace_members where user_id = pg_temp.id('002');
+delete from auth.users where id = pg_temp.id('002');
+delete from public.workspaces where personal and creator_id = pg_temp.id('002');
 delete from public.users where id = pg_temp.id('002');
 select is((select count(*)::int from public.fee_lock_revisions where fee_lock_id = pg_temp.id('301') and locked_by is null)
   + (select count(*)::int from public.fee_lock_events where fee_lock_id = pg_temp.id('301') and actor_id is null), 2,
