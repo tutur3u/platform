@@ -109,13 +109,13 @@ as $$
     select case
         when exists (
             select 1
-            from public.email_bounce_complaints b, target t
+            from private.email_bounce_complaints b, target t
             where b.event_type = 'complaint'
                 and b.email_hash in (t.hash, left(t.hash, 16))
         ) then 'complaint'
         when exists (
             select 1
-            from public.email_bounce_complaints b, target t
+            from private.email_bounce_complaints b, target t
             where b.event_type = 'bounce'
                 and b.bounce_type = 'hard'
                 and b.email_hash in (t.hash, left(t.hash, 16))
@@ -571,7 +571,7 @@ as $$
         (count(*) filter (where d.status = 'unknown'))::integer,
         (count(*) filter (
             where d.status = 'bounced' or (d.status = 'sent' and exists (
-                select 1 from public.email_bounce_complaints b
+                select 1 from private.email_bounce_complaints b
                 where b.event_type = 'bounce'
                     and b.bounce_type = 'hard'
                     and b.email_hash in (d.recipient_hash, left(d.recipient_hash, 16))
@@ -581,7 +581,7 @@ as $$
         (count(*) filter (
             where d.status = 'complained' or (
                 d.status in ('sent', 'bounced') and exists (
-                    select 1 from public.email_bounce_complaints b
+                    select 1 from private.email_bounce_complaints b
                     where b.event_type = 'complaint'
                         and b.email_hash in (d.recipient_hash, left(d.recipient_hash, 16))
                         and b.created_at >= d.created_at

@@ -200,7 +200,7 @@ test('hard bounces, complaints and do-not-send entries always classify as suppre
   const db = await setup();
   await seedAudience(db);
   await db.exec(`
-    insert into public.email_bounce_complaints (email_hash, event_type, bounce_type) values
+    insert into private.email_bounce_complaints (email_hash, event_type, bounce_type) values
       ('${hash('owner@example.com')}', 'bounce', 'hard'),
       ('${hash('admin@example.com').slice(0, 16)}', 'complaint', null),
       ('${hash('multi@example.com')}', 'bounce', 'soft');
@@ -364,7 +364,7 @@ test('health counts provider rejections and later bounces and complaints', async
     );
   }
   await db.exec(`
-    insert into public.email_bounce_complaints (email_hash, event_type, bounce_type) values
+    insert into private.email_bounce_complaints (email_hash, event_type, bounce_type) values
       ('${hash('a@example.com')}', 'bounce', 'hard'),
       ('${hash('b@example.com').slice(0, 16)}', 'complaint', null);
     -- Statuses written by the SES notification handler; each row counts once.
