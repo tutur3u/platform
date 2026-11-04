@@ -1,4 +1,7 @@
-import { isStagingSharedCookieDeployment } from '@tuturuuu/supabase/shared-cookie-domains';
+import {
+  isProductionDeployment,
+  isStagingSharedCookieDeployment,
+} from '@tuturuuu/supabase/shared-cookie-domains';
 
 export interface TuturuuuSharedCookieDomain {
   cookieDomain: string;
@@ -56,14 +59,6 @@ export const TUTURUUU_SHARED_COOKIE_DOMAIN_ENV_KEY =
 export const CONFIGURED_SHARED_COOKIE_DOMAINS = [
   '.staging.tutur3u.com',
 ] as const;
-
-function isProductionDeployment() {
-  return (
-    process.env.TUTURUUU_DEPLOY_ENV === 'production' ||
-    process.env.VERCEL_ENV === 'production' ||
-    process.env.NEXT_PUBLIC_VERCEL_ENV === 'production'
-  );
-}
 
 let productionOverrideErrorLogged = false;
 

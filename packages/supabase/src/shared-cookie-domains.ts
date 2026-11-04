@@ -36,6 +36,36 @@ export function resetProductionOverrideErrorLogForTests() {
   productionOverrideErrorLogged = false;
 }
 
+function isProductionAppUrl(value: string | undefined) {
+  if (!value) return false;
+  try {
+    const { hostname } = new URL(value);
+    return hostname === 'tuturuuu.com' || hostname.endsWith('.tuturuuu.com');
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Production on any runtime, so the shared cookie override fails closed the
+ * same way on Vercel and on Cloudflare Workers:
+ * - `TUTURUUU_DEPLOY_ENV=production`, the explicit runtime-neutral marker;
+ * - `VERCEL_ENV` / `NEXT_PUBLIC_VERCEL_ENV=production` on Vercel;
+ * - `PLATFORM_BUILD_ENVIRONMENT=production`, which the Cloudflare Worker
+ *   publishers set for production builds;
+ * - a production app origin in `NEXT_PUBLIC_APP_URL`, which every canonical
+ *   production Worker carries in its vars (Workers have no Vercel marker).
+ */
+export function isProductionDeployment() {
+  return (
+    process.env.TUTURUUU_DEPLOY_ENV === 'production' ||
+    process.env.VERCEL_ENV === 'production' ||
+    process.env.NEXT_PUBLIC_VERCEL_ENV === 'production' ||
+    process.env.PLATFORM_BUILD_ENVIRONMENT === 'production' ||
+    isProductionAppUrl(process.env.NEXT_PUBLIC_APP_URL)
+  );
+}
+
 /** One policy for server runtime admission and the build-inlined browser signal. */
 export function isStagingSharedCookieDeployment(domain: string | undefined) {
   const deployEnv = process.env.TUTURUUU_DEPLOY_ENV;
@@ -46,10 +76,7 @@ export function isStagingSharedCookieDeployment(domain: string | undefined) {
   ) {
     throw new Error('Public staging signal conflicts with TUTURUUU_DEPLOY_ENV');
   }
-  const production =
-    deployEnv === 'production' ||
-    process.env.VERCEL_ENV === 'production' ||
-    process.env.NEXT_PUBLIC_VERCEL_ENV === 'production';
+  const production = isProductionDeployment();
   const staging =
     deployEnv === 'staging' ||
     (deployEnv === undefined &&
@@ -63,14 +90,6 @@ export function isStagingSharedCookieDeployment(domain: string | undefined) {
     throw new Error('Staging requires the staging shared cookie domain');
   }
   return staging;
-}
-
-function isProductionDeployment() {
-  return (
-    process.env.TUTURUUU_DEPLOY_ENV === 'production' ||
-    process.env.VERCEL_ENV === 'production' ||
-    process.env.NEXT_PUBLIC_VERCEL_ENV === 'production'
-  );
 }
 
 export function getTuturuuuSharedCookieDomains(): readonly TuturuuuSharedCookieDomain[] {

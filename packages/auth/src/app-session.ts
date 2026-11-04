@@ -1,4 +1,3 @@
-import { stagingCookieDomain } from '@tuturuuu/supabase/next/common';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { getTuturuuuSharedCookieDomains } from '@tuturuuu/utils/shared-cookie';
@@ -36,14 +35,12 @@ export function getAppSessionUserFromRequest(
 export function getAppSessionCookieOptions(
   options: { expires?: Date } = {}
 ): Partial<ResponseCookie> {
-  const staging = stagingCookieDomain(process.env.NEXT_PUBLIC_APP_URL);
   return {
-    ...(staging ? { domain: staging.cookieDomain } : {}),
     expires: options.expires,
     httpOnly: true,
     path: '/',
     sameSite: 'lax',
-    secure: staging?.secure || process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === 'production',
   };
 }
 
