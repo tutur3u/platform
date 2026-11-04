@@ -8,6 +8,11 @@ export const FEE_LOCK_VERSION_CONFLICT_CODE = 'FEE_LOCK_VERSION_CONFLICT';
 /** Largest magnitude NUMERIC(20,6) holds in whole units (14 integer digits). */
 export const FEE_LOCK_MAX_MONEY = 99_999_999_999_999;
 
+/** Fits NUMERIC(20,6); routes check computed amounts (and SQLSTATE 22003) to answer 400. */
+export function isFeeLockMoneyInRange(value: number) {
+  return Number.isFinite(value) && Math.abs(value) <= FEE_LOCK_MAX_MONEY;
+}
+
 const hasAtMostDecimals = (digits: number) => (value: number) =>
   Number(value.toFixed(digits)) === value;
 
@@ -31,9 +36,8 @@ export const feeLockStatusSchema = z.enum(['draft', 'locked']);
 export type FeeLockStatus = z.infer<typeof feeLockStatusSchema>;
 
 /**
- * The server also requires a reason when sessions differ from the baseline.
- * Every id in a line (group, product, unit, warehouse) is client-supplied:
- * the server MUST verify each one belongs to the route's workspace before use.
+ * The server also requires a reason when sessions differ from the baseline, and
+ * MUST verify every client-supplied id (group, product, unit, warehouse) is in the workspace.
  */
 const tuitionLineInputSchema = z
   .object({
@@ -63,13 +67,18 @@ const extraLineInputSchema = z.discriminatedUnion('source', [
     unit_id: z.guid(),
     warehouse_id: z.guid(),
   }),
-  z.object({
-    ...extraLineBase,
-    source: z.literal('free_text'),
-    label: z.string().trim().min(1).max(200),
-    unit_label: z.string().trim().min(1).max(40),
-    unit_price: moneySchema.nonnegative(),
-  }),
+  z
+    .object({
+      ...extraLineBase,
+      source: z.literal('free_text'),
+      label: z.string().trim().min(1).max(200),
+      unit_label: z.string().trim().min(1).max(40),
+      unit_price: moneySchema.nonnegative(),
+    })
+    .refine((line) => isFeeLockMoneyInRange(line.unit_price * line.quantity), {
+      path: ['unit_price'],
+      message: 'line_amount_overflow',
+    }),
 ]);
 
 /** Clients never send prices for catalogue lines or any totals. */
@@ -135,7 +144,10 @@ export const feeLockListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
 });
-/** Escapes `\`, `%` and `_` so user text matches literally in LIKE/ILIKE. */
+/**
+ * Escapes `\`, `%` and `_` for LIKE/ILIKE, like `escapeLikePattern` in
+ * `@tuturuuu/utils/search-helper`, which this published package cannot import.
+ */
 export function escapeFeeLockLikeText(value: string) {
   return value.replace(/[\\%_]/g, (char) => `\\${char}`);
 }
