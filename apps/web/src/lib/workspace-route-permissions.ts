@@ -57,7 +57,11 @@ export function getWorkspaceRoutePermissionRequirements(
         : EDUCATION_ROUTE_PERMISSIONS;
     case 'epm':
     case 'external-projects':
-      return ['manage_external_projects', 'publish_external_projects'];
+      return [
+        'manage_external_projects',
+        'publish_external_projects',
+        'edit_external_projects',
+      ];
     case 'finance':
       if (subSection === 'invoices') {
         if (nestedSection === 'new') {
