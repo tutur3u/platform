@@ -44,9 +44,22 @@ export function hasTutoringTagExclusions(policy: {
   return policy.groupExclusions.some((rule) => rule.target === 'tag');
 }
 
-function matchesRule(rule: TutoringGroupExclusion, text: string) {
-  const name = text.trim().toLocaleLowerCase();
-  const value = rule.value.trim().toLocaleLowerCase();
+function matchesRule(
+  rule: TutoringGroupExclusion,
+  text: string,
+  matchingV2: boolean
+) {
+  const normalize = (value: string) =>
+    matchingV2
+      ? value
+          .trim()
+          .normalize('NFD')
+          .replace(/\p{M}/gu, '')
+          .toLowerCase()
+          .replace(/đ/g, 'd')
+      : value.trim().toLocaleLowerCase();
+  const name = normalize(text);
+  const value = normalize(rule.value);
   if (!value) return false;
   if (rule.match === 'exact') return name === value;
   if (rule.match === 'prefix') return name.startsWith(value);
@@ -67,14 +80,15 @@ export function isTutoringGroupExcluded(
   groupName: string,
   reason: 'make_up' | 'weak_support',
   groupId?: string | null,
-  groupTags: readonly string[] = []
+  groupTags: readonly string[] = [],
+  matchingV2 = false
 ) {
   if (groupId && policy.tutorGroupIds.includes(groupId.toLowerCase()))
     return true;
   return policy.groupExclusions.some((rule) => {
     if (rule.scope !== 'all' && rule.scope !== reason) return false;
     return rule.target === 'tag'
-      ? groupTags.some((tag) => matchesRule(rule, tag))
-      : matchesRule(rule, groupName);
+      ? groupTags.some((tag) => matchesRule(rule, tag, matchingV2))
+      : matchesRule(rule, groupName, matchingV2);
   });
 }

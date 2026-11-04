@@ -1,3 +1,4 @@
+import { evaluateFlags, registry } from '@tuturuuu/feature-flags';
 import {
   hasTutoringTagExclusions,
   isTutoringGroupExcluded,
@@ -236,7 +237,13 @@ async function getTutoringData(request: Request, { params }: Params) {
   const attendanceRows = attendanceResult.data;
   const reservedRows = reservedResult.data;
   const feedbackRows = feedbackResult.data;
-  const policy = readTutoringPolicyConfigRows(policyResult.data ?? []);
+  const matchingV2 = evaluateFlags(registry, {
+    wsId: normalizedWsId,
+  }).tutoring_exclusion_upgrade;
+  const policy = readTutoringPolicyConfigRows(
+    policyResult.data ?? [],
+    matchingV2
+  );
   // Learners are listed only under the classes they belong to now.
   const [membershipResult, tagResult] = await Promise.all([
     loadQueueMemberships({
@@ -423,7 +430,14 @@ async function getTutoringData(request: Request, { params }: Params) {
     const tags = groupTags.get(groupId) ?? [];
     const hasAbsent =
       deficit > 0 &&
-      !isTutoringGroupExcluded(policy, groupName, 'make_up', groupId, tags);
+      !isTutoringGroupExcluded(
+        policy,
+        groupName,
+        'make_up',
+        groupId,
+        tags,
+        matchingV2
+      );
     const completedDay = feedback
       ? completedFeedbackDays.get(feedback.id)
       : undefined;
@@ -432,7 +446,8 @@ async function getTutoringData(request: Request, { params }: Params) {
       groupName,
       'weak_support',
       groupId,
-      tags
+      tags,
+      matchingV2
     );
     const feedbackWeak = Boolean(
       feedback &&
