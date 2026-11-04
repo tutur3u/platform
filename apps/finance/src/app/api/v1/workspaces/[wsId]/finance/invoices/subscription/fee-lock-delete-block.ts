@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 export const FEE_LOCK_LINKED_INVOICE_CODE = 'FEE_LOCK_LINKED_INVOICE';
 /** Product copy (Phase 1 decision): a pre-filled invoice is never deleted silently. */
 export const FEE_LOCK_LINKED_INVOICE_MESSAGE =
-  'Hóa đơn này gắn với bảng chốt học phí; hãy mở lại bảng chốt trước khi xóa.';
+  'Hóa đơn này đã gắn với bảng chốt học phí nên không thể xóa. Nếu cần điều chỉnh, vui lòng liên hệ quản trị viên.';
 
 /**
  * When an invoice delete is blocked by a foreign key (23503), answers 409 with
