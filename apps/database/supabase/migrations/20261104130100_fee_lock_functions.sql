@@ -195,8 +195,7 @@ BEGIN
 END;
 $$;
 
--- Locks a draft: revision + 1 and an immutable snapshot.
-CREATE FUNCTION private.fee_lock_lock(p_ws_id UUID, p_actor_id UUID, p_lock_id UUID, p_expected_version INTEGER)
+CREATE FUNCTION private.fee_lock_lock(p_ws_id UUID, p_actor_id UUID, p_lock_id UUID, p_expected_version INTEGER) -- revision + 1, immutable snapshot
 RETURNS public.fee_locks LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
 DECLARE v_lock public.fee_locks; v_snapshot JSONB;
 BEGIN
@@ -207,12 +206,12 @@ BEGIN
   UPDATE public.fee_locks SET status = 'locked', revision = revision + 1, version = version + 1, locked_by = p_actor_id,
     locked_at = now(), updated_by = p_actor_id, updated_at = now() WHERE id = v_lock.id RETURNING * INTO v_lock;
 
-  SELECT jsonb_build_object(
-    'fee_lock_id', v_lock.id, 'student_id', v_lock.student_id, 'student_name', left(coalesce(wu.full_name, wu.display_name), 200),
-    'period_month', v_lock.period_month, 'currency', v_lock.currency, 'total_amount', v_lock.total_amount,
-    'note', v_lock.note, 'revision', v_lock.revision, 'locked_at', v_lock.locked_at,
-    'lines', coalesce((SELECT jsonb_agg(to_jsonb(l) - 'ws_id' - 'fee_lock_id' ORDER BY l.sort_order, l.id)
-      FROM public.fee_lock_lines l WHERE l.fee_lock_id = v_lock.id), '[]'::jsonb)
+  -- Shape: feeLockSnapshotSchema (schema_version 1) in @tuturuuu/internal-api.
+  SELECT jsonb_build_object('schema_version', 1, 'fee_lock_id', v_lock.id, 'ws_id', v_lock.ws_id, 'student_id', v_lock.student_id,
+    'student_name', left(coalesce(wu.full_name, wu.display_name), 200), 'period_month', v_lock.period_month, 'currency', v_lock.currency,
+    'total_amount', v_lock.total_amount, 'note', v_lock.note, 'revision', v_lock.revision, 'locked_by', v_lock.locked_by, 'locked_at', v_lock.locked_at,
+    'lines', coalesce((SELECT jsonb_agg((to_jsonb(l) - 'ws_id' - 'fee_lock_id' - 'group_name_snapshot') || jsonb_build_object('group_name', l.group_name_snapshot)
+      ORDER BY l.sort_order, l.id) FROM public.fee_lock_lines l WHERE l.fee_lock_id = v_lock.id), '[]'::jsonb)
   ) INTO v_snapshot
   FROM public.workspace_users wu WHERE wu.id = v_lock.student_id;
 
