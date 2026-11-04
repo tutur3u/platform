@@ -2,9 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   previous: vi.fn(),
+  invalidate: vi.fn(),
   publish: vi.fn(),
   purge: vi.fn(),
   target: vi.fn(),
+}));
+vi.mock('./cache', () => ({
+  invalidateWorkspaceExternalProjectCache: mocks.invalidate,
 }));
 vi.mock('./page-versions', () => ({
   getPublishedPageVersion: mocks.previous,
@@ -40,11 +44,15 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocks.previous.mockResolvedValue({ id: 'old-version' });
   mocks.target.mockReturnValue({ body: { version: 'old-version' } });
-  mocks.publish.mockResolvedValue({ id: 'new-version', status: 'published' });
+  mocks.publish.mockResolvedValue({
+    id: 'new-version',
+    status: 'published',
+    replaced_page_version_id: 'transaction-prior-version',
+  });
   mocks.purge.mockResolvedValue('purged');
 });
 describe('atomic publication then purge', () => {
-  it('captures the prior pointer and purges only after atomic publish', async () => {
+  it('purges the pointer returned by the transaction after atomic publish', async () => {
     expect(await run()).toMatchObject({
       id: 'new-version',
       cacheInvalidation: 'purged',
@@ -52,10 +60,14 @@ describe('atomic publication then purge', () => {
     expect(mocks.target).toHaveBeenCalledWith({
       ...scope,
       slug: 'en/about',
-      version: 'old-version',
+      version: 'new-version',
     });
-    expect(mocks.previous.mock.invocationCallOrder[0]).toBeLessThan(
-      mocks.publish.mock.invocationCallOrder[0] ?? Number.NaN
+    expect(mocks.previous).not.toHaveBeenCalled();
+    expect(mocks.invalidate).toHaveBeenCalledWith(scope.workspaceId);
+    expect(mocks.purge).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: { version: 'transaction-prior-version' },
+      })
     );
     expect(mocks.publish.mock.invocationCallOrder[0]).toBeLessThan(
       mocks.purge.mock.invocationCallOrder[0] ?? Number.NaN
@@ -69,7 +81,9 @@ describe('atomic publication then purge', () => {
   });
   it('does not publish on a pointer lookup or configuration error', async () => {
     const failure = new Error('lookup failed');
-    mocks.previous.mockRejectedValueOnce(failure);
+    mocks.target.mockImplementationOnce(() => {
+      throw failure;
+    });
     await expect(run()).rejects.toBe(failure);
     expect(mocks.publish).not.toHaveBeenCalled();
     const configurationFailure = new Error('unconfigured');
@@ -88,9 +102,12 @@ describe('atomic publication then purge', () => {
     expect(mocks.publish).toHaveBeenCalledOnce();
   });
   it('does not purge an absent old version on first publication', async () => {
-    mocks.previous.mockResolvedValueOnce(null);
+    mocks.publish.mockResolvedValueOnce({
+      id: 'new-version',
+      replaced_page_version_id: null,
+    });
     expect(await run()).toMatchObject({ cacheInvalidation: 'not-needed' });
-    expect(mocks.target).not.toHaveBeenCalled();
+    expect(mocks.target).toHaveBeenCalledOnce();
     expect(mocks.purge).not.toHaveBeenCalled();
   });
 });

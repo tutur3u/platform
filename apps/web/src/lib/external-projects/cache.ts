@@ -1,4 +1,5 @@
 import { invalidateByTag } from '@vercel/functions';
+import { purgeWorkspaceRenderers } from './renderer-purge';
 
 export const EXTERNAL_PROJECT_PUBLIC_CACHE_CONTROL =
   'public, max-age=0, s-maxage=86400, stale-while-revalidate=43200';
@@ -19,10 +20,10 @@ export async function invalidateWorkspaceExternalProjectCache(
   workspaceId: string,
   assetIds: string[] = []
 ) {
-  if (!process.env.VERCEL) return;
-
-  await invalidateByTag([
-    workspaceExternalProjectCacheTag(workspaceId),
-    ...assetIds.map(externalProjectAssetCacheTag),
-  ]);
+  if (process.env.VERCEL)
+    await invalidateByTag([
+      workspaceExternalProjectCacheTag(workspaceId),
+      ...assetIds.map(externalProjectAssetCacheTag),
+    ]);
+  await purgeWorkspaceRenderers(workspaceId);
 }

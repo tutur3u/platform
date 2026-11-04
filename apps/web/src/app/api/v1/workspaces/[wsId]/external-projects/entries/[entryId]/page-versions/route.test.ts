@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({ access: vi.fn() }));
 vi.mock('@/lib/external-projects/access', () => ({
@@ -75,6 +75,10 @@ const collection = () => import('./route');
 const publish = () => import('./[versionId]/publish/route');
 
 describe('CMS page version routes', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
   it('returns an error without publishing when permission lookup fails', async () => {
     mocks.access.mockRejectedValueOnce(new Error('permission lookup failed'));
     const response = await (await publish()).POST(post({}), context(VERSION));
@@ -82,6 +86,21 @@ describe('CMS page version routes', () => {
   });
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv(
+      'CMS_RENDERER_SITES',
+      JSON.stringify({
+        'site.example': {
+          id: 'first-site',
+          workspaceId: WS,
+          defaultLocale: 'vi',
+          purgeToken: 'a'.repeat(43),
+        },
+      })
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response(null, { status: 204 }))
+    );
   });
 
   it('lists versions of the entry in the caller workspace with edit access', async () => {
@@ -170,9 +189,16 @@ describe('CMS page version routes', () => {
 
   it('publishes a version of this entry through the database function', async () => {
     const admin = fakeAdmin([
-      { data: [], error: null },
+      { data: { slug: 'home' }, error: null },
       { data: { id: VERSION }, error: null },
-      { data: { id: VERSION, status: 'published' }, error: null },
+      {
+        data: {
+          id: VERSION,
+          status: 'published',
+          replaced_page_version_id: null,
+        },
+        error: null,
+      },
     ]);
     allow(admin.client);
     const response = await (await publish()).POST(post({}), context(VERSION));
@@ -195,7 +221,7 @@ describe('CMS page version routes', () => {
 
   it('does not publish a version from another entry or workspace', async () => {
     const admin = fakeAdmin([
-      { data: [], error: null },
+      { data: { slug: 'home' }, error: null },
       { data: null, error: null },
     ]);
     allow(admin.client);
@@ -213,7 +239,7 @@ describe('CMS page version routes', () => {
   it('returns 409 when the workspace has no enabled CMS binding', async () => {
     allow(
       fakeAdmin([
-        { data: [], error: null },
+        { data: { slug: 'home' }, error: null },
         { data: { id: VERSION }, error: null },
         { data: null, error: { code: '55000', message: 'unbound' } },
       ]).client
@@ -222,6 +248,17 @@ describe('CMS page version routes', () => {
     expect(response.status).toBe(409);
   });
 
+  it.each(['{', '{"invalid":{}}'])(
+    'returns 500 for server misconfiguration: %s',
+    async (config) => {
+      vi.stubEnv('CMS_RENDERER_SITES', config);
+      const admin = fakeAdmin([{ data: { slug: 'home' }, error: null }]);
+      allow(admin.client);
+      const response = await (await publish()).POST(post({}), context(VERSION));
+      expect(response.status).toBe(500);
+      expect(admin.calls.some(([method]) => method === 'rpc')).toBe(false);
+    }
+  );
   it('delivers only the published version through the database read', async () => {
     const { getPublishedPageVersion } = await import(
       '@/lib/external-projects/page-versions'
@@ -250,7 +287,7 @@ describe('CMS page version routes', () => {
   it('maps a database permission denial to 403', async () => {
     allow(
       fakeAdmin([
-        { data: [], error: null },
+        { data: { slug: 'home' }, error: null },
         { data: { id: VERSION }, error: null },
         { data: null, error: { code: '42501', message: 'denied' } },
       ]).client
