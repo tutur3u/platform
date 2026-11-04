@@ -1,3 +1,4 @@
+import { isStaffOnlyWorkspaceSecretName } from '@tuturuuu/utils/staff-only-workspace-secrets';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const verifySecret = vi.hoisted(() => vi.fn());
@@ -43,5 +44,11 @@ describe('fee-lock flag', () => {
     verifySecret.mockResolvedValueOnce(true);
     await expect(requireFeeLockEnabled(WS_ID)).resolves.toBeNull();
     expect(feeLockNotFoundResponse().status).toBe(404);
+  });
+});
+
+describe('fee-lock flag reservation', () => {
+  it('keeps ENABLE_FEE_LOCK on the shared staff-only secret list', () => {
+    expect(isStaffOnlyWorkspaceSecretName(FEE_LOCK_ENABLED_SECRET)).toBe(true);
   });
 });

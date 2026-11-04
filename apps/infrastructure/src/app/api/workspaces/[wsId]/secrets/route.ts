@@ -51,7 +51,7 @@ export async function POST(req: Request, { params }: Params) {
 
   if (!(await canMutateInfrastructureSecret(auth, parsed.data.name))) {
     return NextResponse.json(
-      { message: 'Only Tuturuuu employees can enable managed cron jobs.' },
+      { message: 'Only Tuturuuu employees can change this workspace secret.' },
       { status: 403 }
     );
   }

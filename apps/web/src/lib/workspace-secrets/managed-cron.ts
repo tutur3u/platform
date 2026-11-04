@@ -9,17 +9,8 @@ import {
 } from '@tuturuuu/supabase/next/server';
 
 export const MANAGED_CRON_ENABLED_SECRET = 'MANAGED_CRON_ENABLED';
-
-// Workspace secrets that only verified Tuturuuu staff may change.
-// ENABLE_BOARD_CYCLES turns on board cycles in the tasks app.
-const STAFF_ONLY_SECRET_NAMES = new Set([
-  MANAGED_CRON_ENABLED_SECRET,
-  'ENABLE_BOARD_CYCLES',
-]);
-
-export function isManagedCronEnableSecretName(name?: string | null) {
-  return STAFF_ONLY_SECRET_NAMES.has(name?.trim().toUpperCase() ?? '');
-}
+// Covers every staff-only secret: the one list in @tuturuuu/utils.
+export { isStaffOnlyWorkspaceSecretName as isManagedCronEnableSecretName } from '@tuturuuu/utils/staff-only-workspace-secrets';
 
 export async function canMutateManagedCronEnableSecret(request: Request) {
   const supabase = await createClient(request);
