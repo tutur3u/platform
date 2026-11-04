@@ -256,10 +256,26 @@ export interface FeeLockConflictBody {
   current: FeeLockHeader;
 }
 
-export type FeeLockBatchItemResult =
-  | { id: string; result: 'ok'; version: number; revision: number }
-  | { id: string; result: 'conflict'; current_version: number }
-  | { id: string; result: 'not_found' };
+/** `conflict` means ONLY a version race; a rule failure (an empty draft) is `invalid` with its FEE_LOCK_* code. */
+export const FEE_LOCK_EMPTY_CODE = 'FEE_LOCK_EMPTY';
+const batchItem = <T extends z.ZodRawShape>(shape: T) =>
+  z.object({ id: z.guid(), ...shape });
+export const feeLockBatchItemResultSchema = z.discriminatedUnion('result', [
+  batchItem({
+    result: z.literal('ok'),
+    version: versionSchema,
+    revision: z.int().min(1),
+  }),
+  batchItem({ result: z.literal('conflict'), current_version: versionSchema }),
+  batchItem({ result: z.literal('not_found') }),
+  batchItem({
+    result: z.literal('invalid'),
+    code: z.string().regex(/^FEE_LOCK_[A-Z_]+$/),
+  }),
+]);
+export type FeeLockBatchItemResult = z.infer<
+  typeof feeLockBatchItemResultSchema
+>;
 
 // Immutable JSON in `fee_lock_revisions.snapshot`. Bounds match the inputs and M1 columns. Names come from the workspace at lock
 // time; M2 must cap them at FEE_LOCK_MAX_NAME_LENGTH when it writes a snapshot.
