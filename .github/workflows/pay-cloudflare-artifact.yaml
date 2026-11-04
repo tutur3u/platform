@@ -1,0 +1,47 @@
+name: Pay Cloudflare artifact
+on:
+  push:
+    branches: [cf/pay-20261104-artifact]
+  pull_request:
+    paths: ['apps/pay/**', 'packages/**', 'bun.lock', '.github/workflows/pay-cloudflare.yaml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CONTACTS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_pay_ci_placeholder' }}
+      NEXT_PUBLIC_APP_URL: https://pay.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      VITE_PAY_NATIVE_PROFILE: production
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.CONTACTS_SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Build app dependencies
+        run: bun turbo:local run build --filter='@tuturuuu/pay^...' --concurrency=2
+      - name: Build Pay Start Worker and assets
+        run: bun run --cwd apps/pay build:cloudflare
+      - name: Seal deployable output
+        run: |
+          python3 scripts/ci/pay-native-artifact.py seal apps/pay --receipt "$RUNNER_TEMP/pay-native.json"
+          python3 scripts/ci/pay-native-artifact.py pack apps/pay --receipt "$RUNNER_TEMP/pay-native.json" --archive "$RUNNER_TEMP/pay-native.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pay-native-${{ env.CONTACTS_SOURCE_SHA }}
+          path: ${{ runner.temp }}/pay-native.tar.gz
+          if-no-files-found: error
+          retention-days: 7
