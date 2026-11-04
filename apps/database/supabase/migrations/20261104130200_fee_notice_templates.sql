@@ -2,9 +2,8 @@ BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '60s';
 
--- One active, versioned plain-text fee notice template per workspace; each save
--- adds a version (last 20 kept) via private.fee_notice_template_save, called
--- only by finance routes after the ENABLE_FEE_LOCK and permission checks.
+-- One active, versioned notice template per workspace (last 20 kept), saved only via
+-- private.fee_notice_template_save by finance routes after flag and permission checks.
 
 CREATE TABLE public.fee_notice_templates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -57,8 +56,7 @@ CREATE FUNCTION private.fee_notice_template_save(
 )
 RETURNS public.fee_notice_templates
 LANGUAGE plpgsql
--- Invoker rights: only service_role may call it, and it already owns the writes.
-SECURITY INVOKER
+SECURITY INVOKER -- service_role-only caller that already owns the writes
 SET search_path = pg_catalog, pg_temp
 AS $$
 DECLARE

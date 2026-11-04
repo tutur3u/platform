@@ -35,8 +35,7 @@ CREATE INDEX fee_lock_invoice_links_created_by_idx ON public.fee_lock_invoice_li
 COMMENT ON TABLE public.fee_lock_invoice_links IS
   'Invoice to fee-lock revision links (suggested vs charged total). The invoice and the fee lock must both belong to ws_id. Deletes never cascade into or out of this table.';
 
--- Same-workspace guard per reference (pattern of 20261026193000); finance_invoices
--- has no (id, ws_id) key to reference.
+-- Same-workspace guard per reference (pattern of 20261026193000).
 CREATE FUNCTION private.fee_lock_invoice_links_same_workspace()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -61,8 +60,14 @@ $$;
 REVOKE ALL ON FUNCTION private.fee_lock_invoice_links_same_workspace() FROM PUBLIC, anon, authenticated;
 
 CREATE TRIGGER fee_lock_invoice_links_same_workspace
-  BEFORE INSERT OR UPDATE OF ws_id, invoice_id, fee_lock_id ON public.fee_lock_invoice_links
+  BEFORE INSERT ON public.fee_lock_invoice_links
   FOR EACH ROW EXECUTE FUNCTION private.fee_lock_invoice_links_same_workspace();
+
+-- Immutable after insert, never truncated (M1's guard, 55000); only deletable.
+CREATE TRIGGER fee_lock_invoice_links_immutable BEFORE UPDATE ON public.fee_lock_invoice_links
+  FOR EACH ROW EXECUTE FUNCTION private.fee_lock_append_only();
+CREATE TRIGGER fee_lock_invoice_links_no_truncate BEFORE TRUNCATE ON public.fee_lock_invoice_links
+  FOR EACH STATEMENT EXECUTE FUNCTION private.fee_lock_append_only();
 
 ALTER TABLE public.fee_lock_invoice_links ENABLE ROW LEVEL SECURITY;
 CREATE POLICY account_required_mfa ON public.fee_lock_invoice_links AS RESTRICTIVE FOR ALL TO authenticated

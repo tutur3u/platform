@@ -36,7 +36,7 @@ select has_table('public', t, t || ' exists') from unnest(array['fee_locks', 'fe
 select is((select count(*)::int from pg_class where relnamespace = 'public'::regnamespace
   and relname in ('fee_locks', 'fee_lock_lines', 'fee_lock_revisions', 'fee_lock_events') and relrowsecurity), 4, 'RLS is enabled on every fee lock table');
 select is((select count(*)::int from pg_policies where schemaname = 'public' and tablename like 'fee_lock%' and permissive = 'PERMISSIVE'), 0, 'fee lock tables have no permissive policies');
-select is((select count(*)::int from pg_policies where schemaname = 'public' and tablename like 'fee_lock%' and policyname = 'account_required_mfa'), 4, 'every fee lock table carries the restrictive MFA policy');
+select is((select count(*)::int from pg_policies where schemaname = 'public' and tablename in ('fee_locks', 'fee_lock_lines', 'fee_lock_revisions', 'fee_lock_events') and policyname = 'account_required_mfa'), 4, 'every fee lock table carries the restrictive MFA policy');
 select is((select count(*)::int from unnest(array['anon', 'authenticated']) r
   cross join unnest(array['public.fee_locks', 'public.fee_lock_lines', 'public.fee_lock_revisions', 'public.fee_lock_events']) t
   cross join unnest(array['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER']) p
@@ -92,7 +92,9 @@ select throws_ok($$update public.fee_lock_revisions set total_amount = 0 where f
   '55000', 'fee_lock_revisions rows are immutable', 'a locked revision cannot be changed');
 select throws_ok($$delete from public.fee_lock_revisions where fee_lock_id = pg_temp.id('301')$$,
   '55000', 'fee_lock_revisions rows are immutable', 'a locked revision cannot be deleted directly');
-select throws_ok($$truncate public.fee_lock_revisions$$, '55000', 'fee_lock_revisions rows are immutable', 'revisions cannot be truncated');
+-- fee_lock_invoice_links (20261104130300) references revisions, so a plain TRUNCATE is refused by Postgres first.
+select throws_ok($$truncate public.fee_lock_revisions$$, '0A000', null, 'revisions cannot be truncated while links reference them');
+select throws_ok($$truncate public.fee_lock_revisions cascade$$, '55000', 'fee_lock_revisions rows are immutable', 'revisions cannot be truncated, even with cascade');
 select throws_ok($$insert into public.fee_lock_revisions(fee_lock_id, ws_id, revision, total_amount, snapshot) values
   (pg_temp.id('301'), pg_temp.id('010'), 1, 0, '{}')$$, '23505', null, 'a revision number is used once per fee lock');
 select throws_ok($$insert into public.fee_lock_revisions(fee_lock_id, ws_id, revision, total_amount, snapshot) values
