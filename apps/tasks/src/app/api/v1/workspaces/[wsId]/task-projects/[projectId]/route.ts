@@ -316,7 +316,10 @@ async function updateProject(
 
     if (updateError?.code === '23505') {
       return NextResponse.json(
-        { error: 'Project key is already used in this workspace' },
+        {
+          error:
+            'Project key is already used by a project or board in this workspace',
+        },
         { status: 409 }
       );
     }
