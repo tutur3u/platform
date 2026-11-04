@@ -2433,7 +2433,7 @@ export async function publishWorkspaceExternalProjectEntry(
     actorId: string;
     binding: WorkspaceExternalProjectBinding;
     entryId: string;
-    eventKind: 'publish' | 'preview' | 'unpublish';
+    eventKind: 'publish' | 'unpublish';
     visibilityScope: string;
     workspaceId: string;
   },
@@ -2463,7 +2463,7 @@ export async function publishWorkspaceExternalProjectEntry(
   const payload = await buildWorkspaceExternalProjectDeliveryPayload(
     {
       binding,
-      includeDrafts: eventKind === 'preview',
+      includeDrafts: false,
       workspaceId,
     },
     admin
