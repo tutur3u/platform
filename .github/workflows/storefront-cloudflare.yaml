@@ -159,8 +159,8 @@ jobs:
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       TRUSTED: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.PRODUCTION_SUPABASE_URL || 'https://storefront-ci.supabase.invalid' }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_storefront_ci_placeholder' }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://storefront-ci.supabase.invalid' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_storefront_ci_placeholder' }}
       NEXT_PUBLIC_APP_URL: https://store.tuturuuu.com
       NEXT_PUBLIC_STOREFRONT_APP_URL: https://store.tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
@@ -197,6 +197,17 @@ jobs:
           command: cd apps/storefront && bun run build:cloudflare
           token: ''
           team: ''
+      - name: Record bounded emitted config receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/storefront "$SOURCE_SHA" "$RUNNER_TEMP/storefront-emitted-config.json"
+      - name: Retain emitted config receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: storefront-cutover-config-receipt-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/storefront-emitted-config.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Write the production wrangler config
         run: |
           node --input-type=module <<'JS'
