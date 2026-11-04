@@ -92,7 +92,7 @@ test('pgTAP suite passes, rollback removes everything, and the migration re-appl
     const assertions = lines.filter((line) => /^(not )?ok \d+/.test(line));
     const failures = lines.filter((line) => /^not ok|^# Looks like/.test(line));
     assert.ok(
-      assertions.length >= 40,
+      assertions.length === 43,
       `expected the full suite, got ${assertions.length}`
     );
     assert.deepEqual(failures, [], lines.join('\n'));
