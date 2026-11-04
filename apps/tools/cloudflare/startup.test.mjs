@@ -2,6 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { assertStartupEnvironment } from './startup.mjs';
 
+const previousNodeEnv = process.env.NODE_ENV;
+process.env.NODE_ENV = 'production';
+test.after(() => {
+  if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+  else process.env.NODE_ENV = previousNodeEnv;
+});
+
 const valid = {
   ASSETS: { fetch() {} },
   TUTURUUU_APP_COORDINATION_SECRET:
@@ -32,4 +39,13 @@ test('startup refuses missing bindings, required values and development signing 
       }),
     /Development/
   );
+});
+
+test('startup refuses a non-production server runtime', () => {
+  process.env.NODE_ENV = 'development';
+  try {
+    assert.throws(() => assertStartupEnvironment(valid), /NODE_ENV=production/);
+  } finally {
+    process.env.NODE_ENV = 'production';
+  }
 });
