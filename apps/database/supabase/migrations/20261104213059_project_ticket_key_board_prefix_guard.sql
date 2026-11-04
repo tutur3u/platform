@@ -9,10 +9,8 @@ SET LOCAL statement_timeout = '60s';
 -- takes the workspace key lock that project key writes use, so a prefix edit
 -- and a project key write cannot pass each other.
 -- SECURITY INVOKER: board edits run through the server route as the service
--- role. End-user sessions have no workspace_boards policy (20260319101300),
--- so they cannot write boards directly. Should one be added, workspace
--- members already read every project in their workspace, so the check would
--- still see every key; a policy for non-members would need another review.
+-- role. End-user sessions cannot read task_projects, so a direct prefix write
+-- from one fails closed instead of skipping the check.
 -- Workspace 42529372-c669-4833-bb32-2cab1f4ffd83 is excluded: its projects
 -- keep a NULL key and its boards are left alone. Nothing here writes data.
 create function private.guard_board_ticket_prefix_project_key()

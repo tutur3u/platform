@@ -205,11 +205,12 @@ select lives_ok($$update public.workspace_boards set ticket_prefix = 'LEGK' wher
   'the excluded workspace skips the board prefix check');
 select lives_ok($$update public.workspace_boards set name = 'Legacy Board Renamed' where id = '00000000-0000-4000-8000-0000000e6021'$$,
   'edits that keep the prefix skip the check');
--- End-user board writes. Boards have no end-user policies (20260319101300),
--- so these sessions cannot write a board at all; a temporary grant and policy
--- let a member's write reach the trigger here. Members read every project in
--- their workspace (task_projects SELECT policy, 20250929042000_add_notes.sql
--- l.138-144), so the invoker check sees every key for them too.
+-- End-user board writes fail closed. task_projects is server-only: like every
+-- public table with a description column, it has no end-user policies or
+-- grants (20260312113000_lock_description_tables_to_server_apis.sql), so the
+-- invoker check cannot read it from an end-user session. Boards have no
+-- end-user policies either (20260319101300), so a temporary grant and policy
+-- let an MFA-satisfied member's write reach the board and its trigger here.
 set local role postgres;
 insert into auth.users (id) values ('00000000-0000-4000-8000-0000000e6004');
 insert into public.users (id, display_name) values
@@ -221,21 +222,19 @@ on conflict (ws_id, user_id) do update set type = excluded.type;
 grant select, update (ticket_prefix) on public.workspace_boards to authenticated;
 create policy pgtap_member_prefix_write on public.workspace_boards
   for all to authenticated using (true) with check (true);
-set local role service_role;
-set local request.jwt.claims = '{"role":"service_role"}';
-select is((select count(*)::integer from public.task_projects where ws_id = '00000000-0000-4000-8000-0000000e6010'),
-  6, 'the workspace has six projects');
 set local role authenticated;
 set local request.jwt.claims = '{"role":"authenticated","sub":"00000000-0000-4000-8000-0000000e6004"}';
-select is((select count(*)::integer from public.task_projects where ws_id = '00000000-0000-4000-8000-0000000e6010'),
-  6, 'a member sees every project in the workspace');
+select throws_ok($$select count(*) from public.task_projects$$,
+  '42501', 'permission denied for table task_projects', 'members cannot read task_projects');
 with written as (
-  update public.workspace_boards set ticket_prefix = 'MEMBR'
+  update public.workspace_boards set ticket_prefix = null
   where id = '00000000-0000-4000-8000-0000000e6022' returning id
 )
-select is((select count(*)::integer from written), 1, 'a member write with a free prefix reaches and updates one board');
+select is((select count(*)::integer from written), 1, 'a member prefix write reaches the board when it skips the check');
+select throws_ok($$update public.workspace_boards set ticket_prefix = 'MEMBR' where id = '00000000-0000-4000-8000-0000000e6022'$$,
+  '42501', 'permission denied for table task_projects', 'a free member prefix fails closed');
 select throws_ok($$update public.workspace_boards set ticket_prefix = 'CORE' where id = '00000000-0000-4000-8000-0000000e6022'$$,
-  '23505', 'TASK_BOARD_TICKET_PREFIX_PROJECT_KEY', 'a member write that collides with a project key is refused');
+  '42501', 'permission denied for table task_projects', 'a colliding member prefix fails closed');
 set local role service_role;
 set local request.jwt.claims = '{"role":"service_role"}';
 select * from finish();
