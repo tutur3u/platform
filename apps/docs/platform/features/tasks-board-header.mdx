@@ -1,0 +1,97 @@
+---
+title: "Tasks board header"
+description: "Shared board navigation, people and project filters, Focus and priority sorting"
+---
+
+## Scope and default
+
+The Tasks board header belongs to the shared board UI used by Web and Tasks.
+Project Tasks tabs reuse the header with project-specific actions. A new board
+view starts on Kanban with all lists, no people or project selection, no search
+and no explicit sort. Saved board view, people, project and priority-sort choices
+can restore on return; search is not saved. Removed label, priority-value, date,
+estimate and source filters do not restore from saved settings or another viewer.
+
+## Two rows
+
+The first row contains the board breadcrumb/picker, search, Share, New task and
+More, in that order. Presence avatars sit before search when collaboration is
+available. Searching from Timeline switches to List so results can be shown.
+
+The second row contains people pills, Project and Focus on the left, then Clear
+when filters are active, priority Sort and View on the right. View offers the
+views available on that surface: Kanban, List, Timeline, My Tasks, Drafts and
+Recycle bin. Controls wrap on smaller screens while keeping their order.
+
+## People and projects
+
+People pills use the board's complete viewable-member roster, together with
+assignees already present on its tasks. Your pill comes first, followed by task
+count and name. Five people are visible; the rest are in the overflow menu.
+Picking only yourself means Mine. Adding another person changes the selection
+to those people together; it must not keep an additional Mine restriction.
+Unassigned and named people exclude each other.
+
+Project allows one or more workspace projects and excludes deleted projects.
+People, Unassigned and project counts describe the unfiltered board tasks, not
+the current filtered result. Counts stay hidden while any list has unvisited,
+loading or remaining pages. Member and project options remain usable, including
+Unassigned when no loaded task is unassigned yet.
+
+Applying another viewer's filters keeps only the header's supported choices.
+Mine is relative to the receiving viewer and is enabled only when that viewer
+is the sole selected assignee. Legacy source, label, date, estimate and
+priority-value restrictions cannot silently narrow the joined view.
+
+## Focus and sorting
+
+Focus shows your open tasks, highest priority first. Open includes Not started,
+Active and Review lists, and excludes Done and Closed. It selects you alone,
+clears Unassigned and the Project selection, and keeps the current search.
+Clicking an active Focus again removes its people restriction, open-list scope
+and priority sort. Clear resets the filters, search and sort while preserving
+the empty-list display preference. A filtered-empty project Tasks tab retains
+the header and Clear so the viewer can recover.
+
+Sort offers only highest priority first, lowest priority first, and clearing the
+sort to return to the board's normal order. It does not offer due-date, name,
+creation-date or estimate sorting.
+
+## More and button tones
+
+More contains Choose tasks, Board settings, Refresh, Hide sidebar, Create board
+and the personal Planner, when each action is available. Board settings uses the
+existing contextual settings dialog. Hide sidebar appears only when the sidebar
+is available and visible. Planner appears only on personal Kanban boards.
+
+Tone buttons use blue for filters and Focus, purple for Sort and View, and cyan
+for Share. Changed controls fill with their tone: a selected project, active
+Focus, explicit priority sort or a view other than the default Kanban. Idle
+controls retain a light tint and border. People pills highlight selected people
+and dim unselected people while a selection is active.
+
+## Exceptions
+
+Public boards show the board title instead of the member board picker. Public
+read-only boards keep search, Sort and the permitted views; member-only people,
+Project, Focus, presence, Share, task creation and More actions are absent. The
+header does not query private board members for public or read-only boards.
+Read-only boards use local filtering rather than member mutations.
+
+Unshared personal workspaces omit presence avatars; personal boards shared with
+guests can show them. The personal Planner remains in More on Kanban only.
+My Tasks replaces the board picker with its own title and keeps its existing
+workspace-wide task content. Project Tasks tabs omit people and Project options
+when no board header data is supplied, retain Link tasks, and hide board-manager
+actions. The shared UI and its Next.js and native app adapters follow the same
+header contract; this decision does not change board access permissions.
+
+Regression coverage:
+
+- `packages/tasks-ui/src/tu-do/shared/board-header/board-filter-state.test.ts`
+- `packages/tasks-ui/src/tu-do/shared/board-header/use-board-header-data.test.tsx`
+- `packages/tasks-ui/src/tu-do/shared/__tests__/board-header.test.tsx`
+- `packages/tasks-ui/src/tu-do/shared/__tests__/board-views.test.tsx`
+- `packages/tasks-ui/src/tu-do/shared/board-user-presence-avatars.test.tsx`
+- `packages/tasks-ui/src/tu-do/projects/projectId/task-project-detail.test.tsx`
+- `packages/tasks-ui/src/tu-do/projects/projectId/components/__tests__/tasks-tab-layout.test.tsx`

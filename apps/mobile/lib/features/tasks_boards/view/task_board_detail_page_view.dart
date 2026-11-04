@@ -285,27 +285,20 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
             );
           }
 
-          if (state.status == TaskBoardDetailStatus.error && detail == null) {
-            return Stack(
-              children: [
-                shellActionRegistration,
-                shellMiniNavRegistration,
-                _TaskBoardDetailErrorState(
-                  message: context.l10n.taskBoardDetailLoadError,
-                  onRetry: () => context.read<TaskBoardDetailCubit>().reload(),
-                ),
-              ],
-            );
-          }
-
           if (detail == null) {
             return Stack(
               children: [
                 shellActionRegistration,
                 shellMiniNavRegistration,
-                _TaskBoardDetailErrorState(
-                  message: context.l10n.taskBoardDetailLoadError,
-                  onRetry: () => context.read<TaskBoardDetailCubit>().reload(),
+                NovaRefreshIndicator.state(
+                  onRefresh: () => context.read<TaskBoardDetailCubit>().reload(
+                    retainError: true,
+                  ),
+                  child: _TaskBoardDetailErrorState(
+                    message: context.l10n.taskBoardDetailLoadError,
+                    onRetry: () =>
+                        context.read<TaskBoardDetailCubit>().reload(),
+                  ),
                 ),
               ],
             );
@@ -316,8 +309,14 @@ class _TaskBoardDetailPageViewState extends State<_TaskBoardDetailPageView> {
               children: [
                 shellActionRegistration,
                 shellMiniNavRegistration,
-                _NoListsState(
-                  onCreateList: () => unawaited(_openCreateListDialog(context)),
+                NovaRefreshIndicator.state(
+                  onRefresh: () => context.read<TaskBoardDetailCubit>().reload(
+                    retainError: true,
+                  ),
+                  child: _NoListsState(
+                    onCreateList: () =>
+                        unawaited(_openCreateListDialog(context)),
+                  ),
                 ),
               ],
             );

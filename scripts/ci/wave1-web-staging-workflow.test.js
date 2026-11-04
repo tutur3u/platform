@@ -24,22 +24,27 @@ test('dispatch-only from main, serialized, read-only by default', () => {
   assert.equal(workflow.jobs.admit.if, "github.ref == 'refs/heads/main'");
 });
 
-test('the serving-order gate: verify before seal, publish and readback', () => {
-  assert.deepEqual(needs('next-deploy'), ['admit']);
-  assert.deepEqual(needs('next-verify'), ['next-deploy']);
-  assert.deepEqual(needs('seal-worker'), ['next-verify']);
+test('native-only serving chain', () => {
+  assert.deepEqual(needs('seal-worker'), ['admit']);
   assert.deepEqual(needs('restored'), ['seal-worker']);
-  assert.deepEqual(needs('publish-worker').sort(), ['next-verify', 'restored']);
-  assert.deepEqual(needs('verify-ingress').sort(), [
-    'next-verify',
-    'publish-worker',
-  ]);
+  assert.deepEqual(needs('publish-worker'), ['restored']);
+  assert.deepEqual(needs('verify-ingress'), ['publish-worker']);
+  assert.doesNotMatch(
+    text,
+    /VERCEL_|wave1-web-next-staging|WEB_STAGING_NEXT_ADMISSION|next-deploy|next-verify/
+  );
+});
+
+test('every secret-bearing job transitively needs preflight', () => {
+  assert.deepEqual(needs('admit'), ['preflight']);
+  const ancestors = (job) => needs(job).flatMap((n) => [n, ...ancestors(n)]);
+  for (const [job, config] of Object.entries(workflow.jobs))
+    if (JSON.stringify(config).includes('secrets.'))
+      assert.ok(ancestors(job).includes('preflight'), job);
 });
 
 test('credentials live only in their protected environments', () => {
   const env = (job) => workflow.jobs[job].environment;
-  assert.equal(env('next-deploy'), 'wave1-web-next-staging');
-  assert.equal(env('next-verify'), 'wave1-web-next-staging');
   assert.equal(env('publish-worker'), 'wave1-web-staging');
   assert.equal(env('verify-ingress'), 'wave1-web-staging');
   for (const job of ['admit', 'seal-worker', 'restored']) {
@@ -52,14 +57,9 @@ test('credentials live only in their protected environments', () => {
   assert.ok(!/secrets\.CLOUDFLARE_API_TOKEN\b|secrets: inherit/u.test(text));
 });
 
-test('only next-verify can record verified, and only publish-worker uploads', () => {
+test('only publish-worker uploads and ingress performs readback', () => {
   const runs = (job) =>
     workflow.jobs[job].steps.map((s) => s.run ?? '').join('\n');
-  assert.match(runs('next-verify'), /wave1-web-next\.mjs verify/);
-  for (const job of Object.keys(workflow.jobs).filter(
-    (j) => j !== 'next-verify'
-  ))
-    assert.doesNotMatch(runs(job), /wave1-web-next\.mjs verify/, job);
   assert.match(
     runs('publish-worker'),
     /wave1-native-publish\.mjs publish web staging/
@@ -67,9 +67,8 @@ test('only next-verify can record verified, and only publish-worker uploads', ()
   for (const job of Object.keys(workflow.jobs).filter(
     (j) => j !== 'publish-worker'
   ))
-    assert.doesNotMatch(runs(job), /wave1-native-publish\.mjs publish/, job);
+    assert.doesNotMatch(runs(job), /wave1-native-publish\.mjs publish/);
   assert.match(runs('verify-ingress'), /readback\.mjs --app web/);
-  assert.match(runs('verify-ingress'), /wave1-web-next\.mjs recheck/);
 });
 
 test('the workflow never performs serving, domain, Access or DNS changes', () => {
@@ -90,7 +89,7 @@ test('the workflow never performs serving, domain, Access or DNS changes', () =>
   assert.match(text, /never attaches domains/u);
 });
 
-// M1: repo build code never sees deploy, provider or control credentials.
+// Check explicit step environments; this does not isolate a shared runner.
 const forbiddenCredential =
   /^(VERCEL_TOKEN|CLOUDFLARE_|WAVE1_CONTROL_READ_TOKEN)/u;
 const buildCode =
@@ -126,12 +125,6 @@ test('no build step sees VERCEL_TOKEN*, CLOUDFLARE_* or WAVE1_CONTROL_READ_TOKEN
       );
     }
   assert.ok(builds >= 6, 'build steps were found');
-  const deploy = workflow.jobs['next-deploy'].steps;
-  const build = deploy.find((s) => /vercel build/u.test(s.with?.command ?? ''));
-  assert.ok(build && !build.env?.VERCEL_TOKEN && !build.env?.VERCEL_ORG_ID);
-  assert.ok(
-    deploy.find((s) => /vercel pull/u.test(s.run ?? '')).env.VERCEL_TOKEN
-  );
 });
 
 // R-c: neither the workflow nor any publisher/readback source changes the
@@ -141,7 +134,6 @@ test('the Access phase and serving intent are never written', () => {
   const sources = [
     'wave1-native-publish.mjs',
     'wave1-ingress-preflight.mjs',
-    'wave1-web-next.mjs',
     'wave1-web-rollback.mjs',
     '../wave1-staging/readback.mjs',
   ].map((name) => fs.readFileSync(path.join(__dirname, name), 'utf8'));
@@ -172,4 +164,18 @@ test('a red verify-ingress rolls back only the staging Worker', () => {
   for (const [name, job] of Object.entries(workflow.jobs))
     if (name !== 'verify-ingress')
       assert.ok(!JSON.stringify(job).includes('wave1-web-rollback'), name);
+});
+
+test('all Web staging jobs disable install scripts', () => {
+  let installs = 0;
+  for (const [name, job] of Object.entries(workflow.jobs))
+    for (const step of job.steps ?? [])
+      for (const command of `${step.run ?? ''}\n${step.with?.command ?? ''}`
+        .replace(/\\\n/gu, ' ')
+        .split(/[\n;&|]/u)) {
+        if (!/\bbun\s+install\b/u.test(command)) continue;
+        installs++;
+        assert.match(command, /(?:^|\s)--ignore-scripts(?:\s|$)/u, name);
+      }
+  assert.ok(installs >= 3, 'all Web staging installs were scanned');
 });

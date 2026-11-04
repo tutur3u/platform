@@ -130,3 +130,6 @@ app.*.map.json
 firebase.json
 firepit-log.txt
 GoogleService-Info.plist
+
+# Android native Firebase files are injected locally or by CI.
+**/google-services.json

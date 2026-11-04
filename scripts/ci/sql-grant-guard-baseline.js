@@ -207,7 +207,13 @@ function evaluateSqlFiles({
         entry.digest === finding.digest &&
         typeof entry.reason === 'string' &&
         entry.reason.trim().length > 0 &&
-        (entry.class === undefined || entry.class === 'fixed-forward') &&
+        (entry.class === undefined ||
+          entry.class === 'fixed-forward' ||
+          (entry.class === 'rollback' &&
+            /^apps\/database\/rollbacks\/\d{14}_[a-zA-Z0-9_]+\.rollback\.sql$/.test(
+              entry.path
+            ) &&
+            entry.rule === 'definer-search-path')) &&
         (entry.class !== 'fixed-forward' ||
           (typeof entry.requiredMigration === 'string' &&
             /^apps\/database\/supabase\/migrations\/[a-zA-Z0-9_]+\.sql$/.test(

@@ -21,16 +21,16 @@ test('hard host guard rejects prod and confusable destinations before browser la
     'https://contacts.tuturuuu.com',
     'https://tuturuuu.com',
     'https://contacts.staging.tuturuuu.com',
-    'https://contacts.staging.tutur3u.com.evil.test',
+    'https://contacts.tutur3u.com.evil.test',
     'https://contacts.staging.tutur3u.cоm',
     'https://contacts.stаging.tutur3u.com',
-    'https://contacts.staging.tutur3u.com.',
-    'https://contacts.staging.tutur3u.com:444',
-    'https://contacts.staging.tutur3u.com/path',
-    'https://contacts.staging.tutur3u.com?x=1',
-    'https://contacts.staging.tutur3u.com#x',
-    'https://user:pass@contacts.staging.tutur3u.com',
-    'http://contacts.staging.tutur3u.com',
+    'https://contacts.tutur3u.com.',
+    'https://contacts.tutur3u.com:444',
+    'https://contacts.tutur3u.com/path',
+    'https://contacts.tutur3u.com?x=1',
+    'https://contacts.tutur3u.com#x',
+    'https://user:pass@contacts.tutur3u.com',
+    'http://contacts.tutur3u.com',
     'https://example.workers.dev',
   ]) {
     assert.throws(() => stagingOrigin(host, 'contacts'));
@@ -39,7 +39,7 @@ test('hard host guard rejects prod and confusable destinations before browser la
     );
   }
   assert.equal(stagingOrigin(config.baseURL, 'contacts'), config.baseURL);
-  assert.equal(config.webOrigin, 'https://web.staging.tutur3u.com');
+  assert.equal(config.webOrigin, 'https://web.tutur3u.com');
   assert.throws(() => stagingOrigin('https://tuturuuu.com', 'issuer'));
 });
 test('requires exact source, disposable consent and pinned non-production DB', () => {
@@ -72,7 +72,7 @@ test('egress denies production and all tutoring, feedback, payment domain mutati
     'https://contacts.tuturuuu.com/ws/users',
     'https://tuturuuu.com/api/auth/login',
     'https://nzamlzqfdwaaxdefwraj.supabase.co/auth/v1/token',
-    'https://contacts.staging.tutur3u.com.evil.test/api/auth/login',
+    'https://contacts.tutur3u.com.evil.test/api/auth/login',
   ]) {
     for (const method of ['GET', 'POST'])
       assert.equal(allowedRequest({ ...config, url, method }), false);

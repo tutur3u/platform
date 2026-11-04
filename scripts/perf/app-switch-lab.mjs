@@ -16,7 +16,7 @@ import { writeFile } from 'node:fs/promises';
  *     --from https://tuturuuu.com/personal --link 'a[href*="meet"]' \
  *     --runs 30 --throttle slow4g --storage-state /secure/state.json
  *   node scripts/perf/app-switch-lab.mjs ttfb \
- *     --urls https://tuturuuu.com/,https://one-origin.staging.tutur3u.com/
+ *     --urls https://tuturuuu.com/,https://one-origin.tutur3u.com/
  */
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';

@@ -45,7 +45,7 @@ function fixture(t, app = 'mail') {
               WEB_START_CANDIDATE: 'off',
               WEB_START_NATIVE_LEGAL: 'off',
               WEB_START_NATIVE_SECURITY: 'off',
-              AUTH_COOKIE_DOMAIN: '.staging.tutur3u.com',
+              AUTH_COOKIE_PREFIX: '__Host-',
               NEXT_PUBLIC_SUPABASE_URL:
                 'https://fxefojytwimjiqxseqag.supabase.co',
             }

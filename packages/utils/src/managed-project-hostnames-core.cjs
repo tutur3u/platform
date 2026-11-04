@@ -4,12 +4,36 @@
 /** Platform cookie zones; managed projects may not claim them or any subdomain. */
 const PLATFORM_HOSTNAME_ZONES = Object.freeze([
   'tuturuuu.com',
+  // Staging apex and every <app>.tutur3u.com host: a customer-controlled
+  // subdomain could set Domain=tutur3u.com cookies that the apex receives.
+  'tutur3u.com',
   'staging.tutur3u.com',
 ]);
 
 /** Exact platform names outside the zones above. */
 const RESERVED_MANAGED_PROJECT_HOSTNAMES = Object.freeze([
   'localhost',
+  ...[
+    'web',
+    'calendar',
+    'contacts',
+    'finance',
+    'meet',
+    'mail',
+    'apps',
+    'ai',
+    'cms',
+    'forms',
+    'inventory',
+    'nova',
+    'storefront',
+    'tasks',
+    'track',
+    'drive',
+    'tools',
+    'pay',
+    'infrastructure',
+  ].map((app) => `${app}.tutur3u.com`),
   'nova.ai.vn',
   'rewise.me',
 ]);

@@ -12,6 +12,7 @@ export const ci = {
   'periodic-report-delivery-contract.yaml': true,
   'security-egress-contract.yaml': true,
   'creator-identity-contract.yaml': true,
+  'task-board-database-contract.yaml': true,
   'connected-mail-accounts-contract.yaml': true,
   'mail-profile-runtime-contract.yaml': true,
   'check-and-bump-versions.yaml': true,
@@ -70,6 +71,8 @@ export const ci = {
   'release-sdk-package.yaml': true,
   'release-supabase-package.yaml': true,
   'release-please.yaml': true,
+  'release-realtime-package.yaml': true,
+  'release-turnstile-package.yaml': true,
   'release-types-package.yaml': true,
   'release-typescript-config-package.yaml': true,
   'release-ui-package.yaml': true,
@@ -130,6 +133,9 @@ export const ci = {
   'web-start-candidate.yaml': true,
   'nova-cloudflare.yaml': true,
   'inventory-cloudflare.yaml': true,
+  'tools-cloudflare.yaml': true,
+  'pay-cloudflare.yaml': true,
+  'playground-cloudflare.yaml': true,
 };
 
 // Publication only: native build and original/restored acceptance remain enabled.
@@ -139,7 +145,12 @@ export const productionPublicationPolicy = {
     state: 'held',
     reason: 'held for wave-2 cutover: Mastermind security review required',
   },
-  meet: { state: 'held', reason: 'held for wave-1 cutover' },
+  meet: {
+    state: 'admitted',
+    reason:
+      'Meet native Start + Void cutover on the tuturuuu-meet Worker with private version smoke and one-step version rollback',
+    surfaces: ['frontend', 'realtime-do'],
+  },
   calendar: {
     state: 'admitted',
     reason:

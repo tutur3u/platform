@@ -1,0 +1,29 @@
+{
+  "appDir": "src/app",
+  "api": {
+    "out": "src/start-bridge/api-registry.bridge.gen.ts",
+    "patternsOut": "src/start-bridge/api-patterns.bridge.gen.ts",
+    "lazy": true
+  },
+  "pages": {
+    "out": "src/start-bridge/page-registry.bridge.gen.ts"
+  },
+  "stripSegments": {},
+  "owned": {},
+  "ignored": {},
+  "runtime": {
+    "/": {
+      "redirect": "https://central.invalid/login"
+    }
+  },
+  "runtimeProbes": {
+    "page": {
+      "skip": "staff-only: every page requires a verified staff session",
+      "fixture": "cloudflare/staff-auth.runtime.mjs"
+    },
+    "notFound": {
+      "skip": "unknown paths redirect signed-out users to login",
+      "fixture": "cloudflare/staff-auth.runtime.mjs"
+    }
+  }
+}

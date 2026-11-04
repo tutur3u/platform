@@ -49,7 +49,7 @@ Use this checklist for Supabase, RLS, API route, and database type changes.
 ## Verification
 
 - For SR-327 persisted-GUC fixtures, follow the
-  [administrator-seeded replay](../../../../../apps/docs/platform/architecture/system-design/security-architecture.mdx#immediate-notification-trigger-credentials-sr-327)
+  [administrator-seeded replay](https://github.com/tutur3u/internal-docs/blob/main/apps/docs/platform/architecture/system-design/security-architecture.mdx#immediate-notification-trigger-credentials)
   after an unmodified local reset; keep fixture SQL outside the migration chain.
 
 - Run local migration checks or focused pgTAP tests where available.

@@ -51,25 +51,6 @@ for (const app of ['cms', 'contacts', 'finance', 'inventory', 'tasks']) {
     'steps.stage_deployment.outputs.url',
   ];
 }
-for (const pkg of [
-  'ai',
-  'apis',
-  'devbox',
-  'editor',
-  'google',
-  'hooks',
-  'icons',
-  'internal-api',
-  'supabase',
-  'types',
-  'typescript-config',
-  'ui',
-  'utils',
-]) {
-  acceptedOutputInterpolations[`release-${pkg}-package.yaml`] = [
-    'steps.artifact.outputs.path',
-  ];
-}
 
 function outputInterpolations(script) {
   return [...script.matchAll(/\$\{\{\s*([\s\S]*?)\s*\}\}/gu)]
@@ -235,6 +216,13 @@ test('migration checks treat PR file names as data', (t) => {
   git(repo, 'config', 'user.email', 'ci@example.com');
   git(repo, 'config', 'user.name', 'CI');
   fs.writeFileSync(path.join(migrations, '20260101000000_base.sql'), '');
+  // The step reads the reviewed order exemptions from the checked-out script
+  // (the actions/checkout tree), so the fixture carries the same file.
+  fs.mkdirSync(path.join(repo, 'scripts'));
+  fs.copyFileSync(
+    path.join(repoRoot, 'scripts/check-migration-timestamps.js'),
+    path.join(repo, 'scripts/check-migration-timestamps.js')
+  );
   git(repo, 'add', '.');
   git(repo, 'commit', '-q', '-m', 'base');
   const base = git(repo, 'rev-parse', 'HEAD');

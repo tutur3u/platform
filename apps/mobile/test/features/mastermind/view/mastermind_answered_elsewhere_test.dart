@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:mobile/core/ui/components/app_button.dart';
 import 'package:mobile/features/mastermind/presentation/inbox_segment.dart';
 import 'package:mobile/features/mastermind/replies/answered_elsewhere_cubit.dart';
 import 'package:mobile/features/mastermind/replies/mastermind_replies_cubit.dart';
 import 'package:mobile/features/mastermind/replies/reply_outcome.dart';
+import 'package:mobile/features/mastermind/view/inbox/ask_card_options.dart';
 import 'package:mobile/features/mastermind/view/inbox/decision_card_actions.dart';
 import 'package:mobile/features/mastermind/view/inbox/inbox_item_tile.dart';
 import 'package:mobile/features/mastermind/view/inbox/mastermind_inbox_page.dart';
@@ -105,7 +105,7 @@ Future<void> _segment(WidgetTester tester, String label) async {
 }
 
 Finder _option(String label) =>
-    find.descendant(of: find.byType(AppButton), matching: find.text(label));
+    find.descendant(of: find.byType(AskOptionTile), matching: find.text(label));
 
 void main() {
   setUpAll(initializeDateFormatting);

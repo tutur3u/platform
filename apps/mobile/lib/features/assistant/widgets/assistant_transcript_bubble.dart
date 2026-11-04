@@ -35,6 +35,7 @@ class AssistantTranscriptBubble extends StatefulWidget {
     this.reactions = const [],
     this.actorId,
     this.onReply,
+    this.onRetryAttachment,
     this.onReact,
     this.onRefreshReactions,
     this.isActionCurrent,
@@ -57,6 +58,7 @@ class AssistantTranscriptBubble extends StatefulWidget {
   final List<ChatReactionSummary> reactions;
   final String? actorId;
   final VoidCallback? onReply;
+  final VoidCallback? onRetryAttachment;
   final ValueChanged<String>? onReact;
   final VoidCallback? onRefreshReactions;
   final bool Function()? isActionCurrent;
@@ -242,6 +244,7 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
                                 .map(
                                   (attachment) => AssistantAttachmentPreview(
                                     attachment: attachment,
+                                    onRetry: widget.onRetryAttachment,
                                   ),
                                 )
                                 .toList(growable: false),
@@ -298,7 +301,10 @@ class _AssistantTranscriptBubbleState extends State<AssistantTranscriptBubble> {
         runSpacing: 8,
         children: [
           for (final attachment in attachments)
-            AssistantAttachmentPreview(attachment: attachment),
+            AssistantAttachmentPreview(
+              attachment: attachment,
+              onRetry: widget.onRetryAttachment,
+            ),
         ],
       ),
   ];

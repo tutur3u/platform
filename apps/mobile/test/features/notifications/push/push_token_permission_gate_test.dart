@@ -10,6 +10,7 @@ import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/notifications/push/delivered_inbox_notifications.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class _Messaging extends Mock implements FirebaseMessaging {}
 
@@ -57,7 +58,13 @@ void main() {
   });
 
   setUp(() {
-    messenger.setMockMethodCallHandler(channel, (_) async => true);
+    SharedPreferences.setMockInitialValues({});
+    messenger
+      ..setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/firebase_messaging'),
+        (_) async => <String, dynamic>{},
+      )
+      ..setMockMethodCallHandler(channel, (_) async => true);
     refreshes = StreamController<String>.broadcast();
     registered = [];
     calls = [];
@@ -124,7 +131,12 @@ void main() {
   tearDown(() async {
     await service.dispose();
     await refreshes.close();
-    messenger.setMockMethodCallHandler(channel, null);
+    messenger
+      ..setMockMethodCallHandler(channel, null)
+      ..setMockMethodCallHandler(
+        const MethodChannel('plugins.flutter.io/firebase_messaging'),
+        null,
+      );
   });
 
   Future<void> refresh(String token) async {
@@ -132,6 +144,123 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     await Future<void>.delayed(Duration.zero);
   }
+
+  test('Firebase startup waits for sign-in', () async {
+    var starts = 0;
+    service.firebaseInitializer = ({required pushAllowed}) async {
+      if (pushAllowed) starts++;
+      return pushAllowed;
+    };
+    await service.initialize();
+    expect(starts, 0);
+    verifyNever(messaging.getNotificationSettings);
+    await service.startSession(_actor);
+    expect(starts, 0);
+    verifyNever(messaging.getToken);
+    status = AuthorizationStatus.authorized;
+    await service.refreshRegistration();
+    expect(starts, 1);
+    verify(messaging.getToken).called(1);
+  });
+
+  test(
+    'push off drains an in-flight FCM token before token and FID deletion',
+    () async {
+      status = AuthorizationStatus.authorized;
+      final entered = Completer<void>();
+      final token = Completer<String?>();
+      when(messaging.getToken).thenAnswer((_) {
+        calls.add('getToken');
+        entered.complete();
+        return token.future;
+      });
+      service.firebaseInitializer = ({required pushAllowed}) async {
+        if (!pushAllowed) calls.add('deleteFID');
+        return pushAllowed;
+      };
+      final starting = service.startSession(_actor);
+      await entered.future;
+      final stopping = service.setPushEnabled(enabled: false);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, isNot(contains('deleteToken')));
+      expect(calls, isNot(contains('deleteFID')));
+      token.complete('synthetic-inflight-token');
+      await Future.wait([starting, stopping]);
+      expect(calls.where((c) => c == 'deleteToken'), hasLength(1));
+      expect(
+        calls.indexOf('deleteFID'),
+        greaterThan(calls.indexOf('deleteToken')),
+      );
+      expect(registered, isEmpty);
+      verify(
+        () => repository.unregisterDevice(
+          deviceId: any(named: 'deviceId'),
+          appFlavor: any(named: 'appFlavor'),
+        ),
+      ).called(1);
+    },
+  );
+
+  test('push off waits for an outstanding server registration', () async {
+    status = AuthorizationStatus.authorized;
+    final pending = Completer<void>();
+    final entered = Completer<void>();
+    when(
+      () => repository.registerDevice(
+        deviceId: any(named: 'deviceId'),
+        token: any(named: 'token'),
+        platform: any(named: 'platform'),
+        appFlavor: any(named: 'appFlavor'),
+      ),
+    ).thenAnswer((_) {
+      entered.complete();
+      return pending.future;
+    });
+    final starting = service.startSession(_actor);
+    await entered.future;
+    final stopping = service.setPushEnabled(enabled: false);
+    await Future<void>.delayed(Duration.zero);
+    verifyNever(
+      () => repository.unregisterDevice(
+        deviceId: any(named: 'deviceId'),
+        appFlavor: any(named: 'appFlavor'),
+      ),
+    );
+    pending.complete();
+    await Future.wait([starting, stopping]);
+    verify(
+      () => repository.unregisterDevice(
+        deviceId: 'synthetic-device',
+        appFlavor: AppFlavor.development.value,
+      ),
+    ).called(1);
+  });
+
+  test('signed out startup never reads a token', () async {
+    await service.initialize();
+    await service.ensurePermissionPrompted();
+    verifyNever(messaging.getToken);
+    verifyNever(() => messaging.setAutoInitEnabled(true));
+  });
+
+  test('push off deletes token and unregisters server device', () async {
+    status = AuthorizationStatus.authorized;
+    await service.startSession(_actor);
+    calls.clear();
+    when(() => messaging.isAutoInitEnabled).thenReturn(true);
+    await service.setPushEnabled(enabled: false);
+    expect(calls, ['autoInit:false', 'deleteToken']);
+    verify(
+      () => repository.unregisterDevice(
+        deviceId: 'synthetic-device',
+        appFlavor: AppFlavor.development.value,
+      ),
+    ).called(1);
+    calls.clear();
+    clearInteractions(messaging);
+    await service.startSession(_actor);
+    verifyNever(messaging.getToken);
+  });
 
   test('token refresh while unauthorized is not registered', () async {
     await service.startSession(_actor);
@@ -240,11 +369,24 @@ void main() {
     expect(registered, isEmpty);
   });
 
+  test(
+    'token refresh cannot re-register while sign-out cleanup is closing',
+    () async {
+      status = AuthorizationStatus.authorized;
+      await service.startSession(_actor);
+      registered.clear();
+      await service.disableTelemetry();
+      await refresh('synthetic-closing-token');
+      expect(registered, isEmpty);
+    },
+  );
+
   test('sign-out still unregisters the device', () async {
     status = AuthorizationStatus.authorized;
     await service.startSession(_actor);
 
     await service.stopSession();
+    expect(calls, contains('deleteToken'));
 
     verify(
       () => repository.unregisterDevice(

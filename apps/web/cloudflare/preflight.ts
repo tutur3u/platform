@@ -6,8 +6,8 @@
  * issuer therefore never forwards OPTIONS to Next, reads no body, touches no
  * session and makes no subrequest; a preflight is answered here or nowhere.
  */
-const stagingOrigin =
-  /^https:\/\/[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.staging\.tutur3u\.com$/u;
+import { isStagingAppOrigin } from '@tuturuuu/utils/staging-hosts';
+
 const requestedHeaders = /^[A-Za-z0-9-]+(?:\s*,\s*[A-Za-z0-9-]+)*$/u;
 
 export function answerPreflight(request: Request) {
@@ -17,7 +17,7 @@ export function answerPreflight(request: Request) {
   });
   const origin = request.headers.get('origin') ?? '';
   // Exact single-label staging origins only, matching the shared cookie zone.
-  if (stagingOrigin.test(origin)) {
+  if (isStagingAppOrigin(origin)) {
     headers.set('access-control-allow-origin', origin);
     headers.set('access-control-allow-credentials', 'true');
     headers.set(

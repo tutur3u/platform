@@ -109,6 +109,7 @@ class _AccountSecurityPageState extends State<AccountSecurityPage>
     return NovaRefreshIndicator(
       onRefresh: _load,
       child: AppPageListView(
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
           if (_loading) const NovaLoadingIndicator(size: 20),
           if (_failed)

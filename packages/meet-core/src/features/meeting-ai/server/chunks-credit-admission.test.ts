@@ -7,16 +7,28 @@ const mocks = vi.hoisted(() => ({
   generate: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
+// Limiter behavior is covered by usage-limit and chunks-limit tests.
+vi.mock('./usage-limit', () => ({ enforceMeetAiUsage: async () => {} }));
 // Authorization is covered separately; avoid loading built auth packages here.
 vi.mock('@tuturuuu/satellite/auth', () => ({}));
-vi.mock('@tuturuuu/supabase/next/server', () => ({}));
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: async () => ({
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({
+            data: { ws_id: 'meeting-workspace' },
+            error: null,
+          }),
+        }),
+      }),
+    }),
+  }),
+}));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({}));
 vi.mock('@tuturuuu/ai/meetings/gemini', () => ({}));
 vi.mock('@tuturuuu/ai/credits/check-credits', () => ({
   checkAiCredits: mocks.check,
-}));
-vi.mock('../../call/server/room-service', () => ({
-  personalWorkspace: async () => 'personal-workspace',
 }));
 vi.mock('./transcript-speaker', () => ({
   resolveTranscriptSpeaker: async () => null,
@@ -79,24 +91,40 @@ function storage(...results: unknown[]) {
 }
 beforeEach(() => vi.resetAllMocks());
 
-it('refuses an unbillable upload before reserving a transcript row', async () => {
-  const { from, rpc } = storage();
-  mocks.check.mockResolvedValue({
-    allowed: false,
-    errorCode: 'DAILY_LIMIT_REACHED',
-  });
-  const response = await meetAiResponse(() =>
-    transcribeMeetChunk(request(), params)
-  );
-  expect(response.status).toBe(402);
-  expect(await response.json()).toMatchObject({
-    code: 'MEET_AI_CREDITS_DAILY_LIMIT',
-  });
-  // No reservation means no failed "[Missing audio segment]" row.
-  expect(rpc).not.toHaveBeenCalled();
-  expect(from).toHaveBeenCalledTimes(2);
-  expect(mocks.generate).not.toHaveBeenCalled();
-});
+it.each(['DAILY_LIMIT_REACHED', 'CREDITS_EXHAUSTED'])(
+  'refuses %s before reserving a transcript row',
+  async (errorCode) => {
+    const { from, rpc } = storage();
+    mocks.check.mockResolvedValue({
+      allowed: false,
+      errorCode,
+    });
+    const response = await meetAiResponse(() =>
+      transcribeMeetChunk(request(), params)
+    );
+    expect(response.status).toBe(402);
+    const failure = await response.json();
+    expect(failure).toMatchObject({
+      code:
+        errorCode === 'CREDITS_EXHAUSTED'
+          ? 'MEET_AI_CREDITS_EXHAUSTED'
+          : 'MEET_AI_CREDITS_DAILY_LIMIT',
+    });
+    if (errorCode === 'CREDITS_EXHAUSTED') {
+      expect(failure.error).toBe('The meeting workspace is out of AI credits');
+      expect(mocks.check).toHaveBeenCalledWith(
+        'meeting-workspace',
+        expect.any(String),
+        'generate',
+        { userId: id }
+      );
+    }
+    // No reservation means no failed "[Missing audio segment]" row.
+    expect(rpc).not.toHaveBeenCalled();
+    expect(from).toHaveBeenCalledTimes(2);
+    expect(mocks.generate).not.toHaveBeenCalled();
+  }
+);
 
 it('retries a transient credit check and transcribes with that admission', async () => {
   const saved = { id, status: 'completed', transcript: 'Hello' };
@@ -119,6 +147,6 @@ it('retries a transient credit check and transcribes with that admission', async
   expect(mocks.generate).toHaveBeenCalledWith(
     { audio: expect.any(Uint8Array), hints: expect.anything() },
     expect.objectContaining({ userId: id, attemptId: id }),
-    { workspaceId: 'personal-workspace', allowance }
+    { workspaceId: 'meeting-workspace', allowance }
   );
 });

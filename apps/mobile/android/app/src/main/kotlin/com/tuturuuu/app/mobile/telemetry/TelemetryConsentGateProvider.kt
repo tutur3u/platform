@@ -1,10 +1,6 @@
 package com.tuturuuu.app.mobile.telemetry
 
-import android.content.ContentProvider
-import android.content.ContentValues
 import android.content.Context
-import android.database.Cursor
-import android.net.Uri
 import android.util.Log
 
 /**
@@ -19,32 +15,20 @@ import android.util.Log
  *
  * The preference file and key mirror the SDK DataCollectionArbiter.
  */
-class TelemetryConsentGateProvider : ContentProvider() {
-    override fun onCreate(): Boolean {
-        context?.let { clearPersistedCrashCollection(it) }
-        return true
+class TelemetryConsentGateProvider : TelemetryGateProvider() {
+    override fun runGate(context: Context) {
+        // Reset even a stored Allow: authentication is unknown during process startup.
+        val editor = context.getSharedPreferences(
+            PersistedAnalyticsGate.PREFERENCES, Context.MODE_PRIVATE,
+        ).edit()
+        PersistedAnalyticsGate.disable { key, value -> editor.putBoolean(key, value) }
+        check(editor.commit()) { "Cannot persist Analytics startup disable" }
+        FirebaseStartupGate.setMeasurementComponentsEnabled(context, false)
+        // Firebase Messaging persists this override above the manifest default.
+        context.getSharedPreferences("com.google.firebase.messaging", Context.MODE_PRIVATE)
+            .edit().putBoolean("auto_init", false).commit()
+        clearPersistedCrashCollection(context)
     }
-
-    override fun query(
-        uri: Uri,
-        projection: Array<out String>?,
-        selection: String?,
-        selectionArgs: Array<out String>?,
-        sortOrder: String?,
-    ): Cursor? = null
-
-    override fun getType(uri: Uri): String? = null
-
-    override fun insert(uri: Uri, values: ContentValues?): Uri? = null
-
-    override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int = 0
-
-    override fun update(
-        uri: Uri,
-        values: ContentValues?,
-        selection: String?,
-        selectionArgs: Array<out String>?,
-    ): Int = 0
 
     companion object {
         private const val CRASHLYTICS_PREFS = "com.google.firebase.crashlytics"

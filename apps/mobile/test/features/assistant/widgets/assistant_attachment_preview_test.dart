@@ -22,6 +22,42 @@ void main() {
   });
   tearDownAll(() => directory.delete(recursive: true));
 
+  testWidgets('dark audio chip at 2x text exposes inline retry', (
+    tester,
+  ) async {
+    var retries = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData.dark(),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: AssistantAttachmentPreview(
+            attachment: const AssistantAttachment(
+              id: 'voice',
+              name: 'voice-message.m4a',
+              size: 4,
+              type: 'audio/mp4',
+              uploadState: AssistantAttachmentUploadState.error,
+              failure: AssistantAttachmentFailure.network,
+            ),
+            onRetry: () => retries++,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('Retry'));
+    expect(retries, 1);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('phone media viewer keeps vertical gestures without dismissing', (
     tester,
   ) async {

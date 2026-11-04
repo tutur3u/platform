@@ -41,6 +41,7 @@
   "packages/devbox": "0.3.2",
   "packages/education-core": "0.5.0",
   "packages/editor": "0.8.3",
+  "packages/feature-flags": "0.0.0",
   "packages/finance-core": "0.4.2",
   "packages/payment-core": "0.6.1",
   "packages/email-service": "0.7.1",

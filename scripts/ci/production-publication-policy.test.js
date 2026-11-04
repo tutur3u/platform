@@ -41,10 +41,6 @@ function fixture(t, policy) {
     'scripts/ci/wave1-ingress-topology.mjs',
     'scripts/ci/wave1-ingress-policies.mjs',
     'scripts/native-cutover/route-pattern.mjs',
-    // The real Web issuer gates the publisher imports, and their imports.
-    'scripts/ci/wave1-web-next.mjs',
-    'scripts/ci/wave1-web-next-ledger.mjs',
-    'scripts/ci/wave1-web-vercel.mjs',
     'scripts/wave1-staging/readback-probes.mjs',
     'scripts/ci/wave1-native-upload-error.mjs',
     'scripts/ci/wave1-native-upload-limits.mjs',
@@ -263,12 +259,10 @@ test('known unrelated publisher retains normal selection even with malformed pro
   );
 });
 
-test('Calendar admission opens only its frontend while other wave-1 apps remain held', (t) => {
+test('Calendar and Meet admissions open only their publishers while other wave-1 apps remain held', (t) => {
   const root = fixture(t);
-  assert.equal(
-    runPolicy(root, 'calendar-cloudflare.yaml').output,
-    'allowed=true\n'
-  );
+  for (const workflow of ['calendar-cloudflare.yaml', 'meet-cloudflare.yaml'])
+    assert.equal(runPolicy(root, workflow).output, 'allowed=true\n');
   for (const event of ['push', 'workflow_dispatch']) {
     const [native, legacy] = plan(
       root,
@@ -277,16 +271,19 @@ test('Calendar admission opens only its frontend while other wave-1 apps remain 
     );
     assert.equal(native.shouldRun, true);
     assert.equal(legacy.shouldRun, false);
+    const [meetNative, meetLegacy] = plan(
+      root,
+      ['meet-cloudflare.yaml', 'vercel-production-meet.yaml'],
+      event
+    );
+    assert.equal(meetNative.shouldRun, true);
+    assert.equal(meetLegacy.shouldRun, false);
   }
-  for (const app of ['meet', 'mail', 'apps']) {
+  for (const app of ['mail', 'apps'])
     assert.equal(
-      runPolicy(
-        root,
-        app === 'meet' ? 'meet-cloudflare.yaml' : `${app}-cloudflare.yaml`
-      ).output,
+      runPolicy(root, `${app}-cloudflare.yaml`).output,
       'allowed=false\n'
     );
-  }
 });
 
 const publishers = [

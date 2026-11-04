@@ -1,6 +1,8 @@
 ---
 title: Native Calendar preferences
 description: Web ownership, authorization and protection for native timezone settings.
+updatedAt: "2026-10-25"
+audience: users
 ---
 
 Personal calendar preferences are scoped to the authenticated user. Settings
@@ -39,9 +41,9 @@ acceptance. The guard also covers existing Web browser/server consumers without
 proofs; their proof coverage or a separately reviewed trusted-browser policy is
 mandatory before activation. Missing headers never grant an exemption. Proofs
 never replace workspace authorization or hosting clearance. See the
-[native integrity rollout](/build/devops/calendar-native-api-protection#native-integrity-rollout-default-off)
+[native integrity rollout](/platform/architecture/system-design/security-architecture)
 for exact configuration, capacity, retention/deletion and rollback gates.
-The [regression inventory](/build/devops/calendar-native-api-protection#regression-evidence)
+The [regression inventory](/platform/architecture/system-design/security-architecture)
 links shared-domain, Web auth/guard/header, rewrite ownership and Flutter origin
 coverage for this decision; provider configuration and device acceptance are
 separate release evidence.

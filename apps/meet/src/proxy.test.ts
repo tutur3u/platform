@@ -1,3 +1,4 @@
+import { encodeRoomCode } from '@tuturuuu/meet-core/features/call/lib/room-code';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createBuildInfoHandler } from '../../../packages/utils/src/build-info-route';
@@ -244,11 +245,88 @@ describe('Meet proxy auth handoff', () => {
 
     expect(response).toBe(verifyResponse);
     expect(mocks.consumeVerifyTokenRequest).toHaveBeenCalledWith(
-      request,
+      expect.any(NextRequest),
       expect.objectContaining({ locales: expect.any(Array) })
     );
     expect(mocks.authProxy).not.toHaveBeenCalled();
     expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
+  });
+
+  function verifiedRequest() {
+    const [request] = mocks.consumeVerifyTokenRequest.mock.calls.at(-1) as [
+      NextRequest,
+    ];
+    return request;
+  }
+
+  it('sends a verified root sign-in straight to personal meetings', async () => {
+    const request = new NextRequest(
+      'https://meet.tuturuuu.com/verify-token?token=copy-token&nextUrl=%2F',
+      { headers: { cookie: 'session=abc' } }
+    );
+
+    await proxy(request);
+
+    const verified = verifiedRequest();
+    expect(verified).not.toBe(request);
+    expect(verified.nextUrl.pathname).toBe('/verify-token');
+    expect(verified.nextUrl.searchParams.get('token')).toBe('copy-token');
+    expect(verified.nextUrl.searchParams.get('nextUrl')).toBe(
+      '/personal/meetings'
+    );
+    expect(verified.headers.get('cookie')).toBe('session=abc');
+    expect(verified.method).toBe('GET');
+  });
+
+  it('keeps the locale when a verified sign-in targets the locale root', async () => {
+    mocks.normalizeAuthRedirectPath.mockImplementationOnce(
+      (value: string | null | undefined) => value ?? '/'
+    );
+    await proxy(
+      new NextRequest(
+        'https://meet.tuturuuu.com/vi/verify-token?token=copy-token&nextUrl=%2Fvi'
+      )
+    );
+
+    expect(verifiedRequest().nextUrl.searchParams.get('nextUrl')).toBe(
+      '/vi/personal/meetings'
+    );
+  });
+
+  it('treats a missing next target as the root', async () => {
+    await proxy(
+      new NextRequest('https://meet.tuturuuu.com/verify-token?token=copy-token')
+    );
+
+    expect(verifiedRequest().nextUrl.searchParams.get('nextUrl')).toBe(
+      '/personal/meetings'
+    );
+  });
+
+  it.each([
+    [
+      'a non-root target',
+      'https://meet.tuturuuu.com/verify-token?token=copy-token&nextUrl=%2Fr%2Fabc',
+      {},
+    ],
+    [
+      'a pending room invite',
+      'https://meet.tuturuuu.com/verify-token?token=copy-token&nextUrl=%2F',
+      {
+        cookie: `meet_pending_invite=${encodeURIComponent(
+          `/r/${encodeRoomCode('00000000-0000-4000-8000-000000000001')}`
+        )}`,
+      },
+    ],
+  ])('leaves the verify target alone for %s', async (_case, url, headers) => {
+    mocks.normalizeAuthRedirectPath.mockImplementationOnce(
+      (value: string | null | undefined) => value ?? '/'
+    );
+    const request = new NextRequest(url, { headers });
+
+    await proxy(request);
+
+    expect(verifiedRequest()).toBe(request);
   });
 
   it('redirects authenticated root requests to personal workspace meetings', async () => {
