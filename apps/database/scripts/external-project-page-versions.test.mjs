@@ -11,6 +11,10 @@ const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 const MIGRATION =
   'supabase/migrations/20261104140000_external_project_page_versions.sql';
+const PERMISSION =
+  'supabase/migrations/20261104135900_external_project_edit_permission.sql';
+const PERMISSION_ROLLBACK =
+  'rollbacks/20261104135900_external_project_edit_permission.rollback.sql';
 const ROLLBACK =
   'rollbacks/20261104140000_external_project_page_versions.rollback.sql';
 
@@ -43,6 +47,17 @@ async function setup() {
       )
     );
   }
+  // Main's publish event policies, exactly as shipped.
+  for (const action of ['read', 'create']) {
+    await db.exec(
+      await canonical(
+        '20260401190000_external_project_studio.sql',
+        `CREATE POLICY "Workspace external project publishers can ${action} publish events"`,
+        ';'
+      )
+    );
+  }
+  await db.exec(await read(PERMISSION));
   await db.exec(await read(MIGRATION));
   return db;
 }
@@ -65,7 +80,9 @@ const catalog = async (db) =>
         and column_name = 'published_page_version_id') as pointer,
       (select count(*)::int from pg_proc where proname in ('publish_workspace_external_project_page_version',
         'prepare_workspace_external_project_page_version',
-        'check_workspace_external_project_published_page_version')) as functions`)
+        'guard_workspace_external_project_published_page_version',
+        'get_published_workspace_external_project_page_version',
+        'can_edit_workspace_external_projects')) as functions`)
   ).rows[0];
 
 test('pgTAP suite passes, rollback removes everything, and the migration re-applies', async () => {
@@ -75,7 +92,7 @@ test('pgTAP suite passes, rollback removes everything, and the migration re-appl
     const assertions = lines.filter((line) => /^(not )?ok \d+/.test(line));
     const failures = lines.filter((line) => /^not ok|^# Looks like/.test(line));
     assert.ok(
-      assertions.length >= 20,
+      assertions.length >= 40,
       `expected the full suite, got ${assertions.length}`
     );
     assert.deepEqual(failures, [], lines.join('\n'));
@@ -83,15 +100,17 @@ test('pgTAP suite passes, rollback removes everything, and the migration re-appl
     assert.deepEqual(await catalog(db), {
       version_table: true,
       pointer: true,
-      functions: 3,
+      functions: 5,
     });
     await db.exec(await read(ROLLBACK));
+    await db.exec(await read(PERMISSION_ROLLBACK));
     assert.deepEqual(await catalog(db), {
       version_table: false,
       pointer: false,
       functions: 0,
     });
 
+    await db.exec(await read(PERMISSION));
     await db.exec(await read(MIGRATION));
     const again = await runTap(db);
     assert.deepEqual(
