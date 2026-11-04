@@ -184,9 +184,20 @@ jobs:
         run: bun run --silent scripts/ci/generate-build-metadata.ts
       - name: Build production Start Worker
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
         working-directory: apps/tools
         run: bun run build
+      - name: Record emitted configuration receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/tools "$SOURCE_SHA" "$RUNNER_TEMP/tools-emitted-config.json"
+      - name: Upload emitted configuration receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: tools-config-receipt-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/tools-emitted-config.json
+          if-no-files-found: error
+          retention-days: 7
       - name: Exercise the built Worker with synthetic runtime bindings
         working-directory: apps/tools
         env:
