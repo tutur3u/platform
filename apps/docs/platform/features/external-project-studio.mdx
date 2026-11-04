@@ -346,11 +346,10 @@ the site from the host and immediately evict that site's workspace delivery tag
 and rendered paths. This covers legacy unpublish, entry deletion, binding disable,
 and page publication through the shared cache invalidator. A rejected or offline
 renderer causes an error after the mutation commits, with only the site id logged.
-Do not retry the mutation as though it rolled back. With purge failure and the
-current delivery cache policy, stale content can persist for 24 hours plus up to
-12 hours stale-while-revalidate. This is an unresolved release hold for unpublish;
-renderer acceptance and an outage policy are required before enabling cached
-public delivery. A successful publisher request alone does not prove eviction.
+Do not retry the mutation as though it rolled back. CMS public delivery uses 300 seconds of shared caching plus at most 60 seconds
+of stale-while-revalidate on both 200 and 304 responses. This bounds that delivery
+cache to about six minutes during purge outages. Renderer acceptance must confirm
+its rendered-page cache obeys the same outage bound before enabling public delivery. A successful publisher request alone does not prove eviction.
 
 Legacy unpublish uses `unpublish_workspace_external_project_page`, which checks
 the actor, locks the entry, inserts the audit and clears the published pointer
