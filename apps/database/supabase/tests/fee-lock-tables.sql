@@ -1,10 +1,10 @@
--- Fee lock tables (20261104060200): service-role-only access, CHECK and unique
+-- Fee lock tables (20261104130000): service-role-only access, CHECK and unique
 -- rules, same-workspace guards, append-only revisions and delete behaviour.
 -- Synthetic fixtures only; ids are 00000000-0000-4000-8000-0000000fe<suffix>.
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(50);
+select plan(55);
 
 create function pg_temp.id(p text) returns uuid language sql immutable as $$ select ('00000000-0000-4000-8000-0000000fe' || p)::uuid $$;
 insert into auth.users(id, email) values (pg_temp.id('001'), 'fee-lock-owner@example.test'), (pg_temp.id('002'), 'fee-lock-staff@example.test') on conflict (id) do nothing;
@@ -47,7 +47,7 @@ select is((select count(*)::int from unnest(array['anon', 'authenticated']) r
   where has_table_privilege(r, t, p)), 0, 'anon and authenticated hold no privilege on fee lock tables');
 select ok(has_table_privilege('service_role', 'public.fee_locks', 'SELECT, INSERT, UPDATE, DELETE'),
   'service_role can read and write fee locks');
-select ok(not has_function_privilege('authenticated', 'private.fee_lock_revisions_append_only()', 'EXECUTE')
+select ok(not has_function_privilege('authenticated', 'private.fee_lock_append_only()', 'EXECUTE')
   and not has_function_privilege('authenticated', 'private.fee_lock_same_workspace()', 'EXECUTE'),
   'clients cannot call the fee lock trigger functions');
 
@@ -96,45 +96,48 @@ select throws_ok(format('select pg_temp.ref_line(%L, %L)', c, other), '23514', c
 select lives_ok($$insert into public.fee_lock_revisions(fee_lock_id, ws_id, revision, total_amount, snapshot, locked_by)
   values (pg_temp.id('301'), pg_temp.id('010'), 1, 1330000, '{"revision": 1}', pg_temp.id('002'))$$, 'a revision snapshot can be written');
 select throws_ok($$update public.fee_lock_revisions set total_amount = 0 where fee_lock_id = pg_temp.id('301')$$,
-  '55000', 'fee_lock_revisions is append-only', 'a locked revision cannot be changed');
+  '55000', 'fee_lock_revisions rows are immutable', 'a locked revision cannot be changed');
 select throws_ok($$delete from public.fee_lock_revisions where fee_lock_id = pg_temp.id('301')$$,
-  '55000', 'fee_lock_revisions is append-only', 'a locked revision cannot be deleted directly');
-select throws_ok($$truncate public.fee_lock_revisions$$, '55000', 'fee_lock_revisions is append-only', 'revisions cannot be truncated');
+  '55000', 'fee_lock_revisions rows are immutable', 'a locked revision cannot be deleted directly');
+select throws_ok($$truncate public.fee_lock_revisions$$, '55000', 'fee_lock_revisions rows are immutable', 'revisions cannot be truncated');
 select throws_ok($$insert into public.fee_lock_revisions(fee_lock_id, ws_id, revision, total_amount, snapshot) values
   (pg_temp.id('301'), pg_temp.id('010'), 1, 0, '{}')$$, '23505', null, 'a revision number is used once per fee lock');
 select throws_ok($$insert into public.fee_lock_revisions(fee_lock_id, ws_id, revision, total_amount, snapshot) values
   (pg_temp.id('301'), pg_temp.id('010'), 2, 0, jsonb_build_object('pad', repeat('x', 70000)))$$, '23514', null, 'a snapshot is capped at 64 KB');
 
--- Events.
+-- Events are append-only too.
 select lives_ok($$insert into public.fee_lock_events(ws_id, fee_lock_id, event_type, actor_id, revision, after_total, metadata)
-  values (pg_temp.id('010'), pg_temp.id('301'), 'locked', pg_temp.id('001'), 1, 1330000, '{"line_count": 3}')$$,
-  'a lock event can be recorded');
-insert into public.fee_locks(id, ws_id, student_id, period_month) values (pg_temp.id('391'), pg_temp.id('011'), pg_temp.id('191'), '2026-12-01');
+  values (pg_temp.id('010'), pg_temp.id('301'), 'locked', pg_temp.id('002'), 1, 1330000, '{"line_count": 3}')$$, 'a lock event can be recorded');
+insert into public.fee_locks(id, ws_id, student_id, period_month, status, revision, locked_at) values (pg_temp.id('391'), pg_temp.id('011'), pg_temp.id('191'), '2026-12-01', 'locked', 1, now());
 select throws_ok($$insert into public.fee_lock_events(ws_id, fee_lock_id, event_type) values (pg_temp.id('010'), pg_temp.id('391'), 'draft_saved')$$,
   '23503', null, 'an event cannot name a fee lock of another workspace');
-select throws_ok($$insert into public.fee_lock_events(ws_id, event_type) values (pg_temp.id('010'), 'sent')$$,
-  '23514', null, 'event types are limited to the Phase 1 list');
-select throws_ok($$insert into public.fee_lock_events(ws_id, event_type, after_total) values (pg_temp.id('010'), 'exported', -1)$$,
-  '23514', null, 'event totals cannot be negative');
+select throws_ok($$insert into public.fee_lock_events(ws_id, event_type) values (pg_temp.id('010'), 'sent')$$, '23514', null, 'event types are limited to the Phase 1 list');
+select throws_ok($$insert into public.fee_lock_events(ws_id, event_type, after_total) values (pg_temp.id('010'), 'exported', -1)$$, '23514', null, 'event totals cannot be negative');
 select throws_ok($$insert into public.fee_lock_events(ws_id, event_type, metadata)
   values (pg_temp.id('010'), 'exported', jsonb_build_object('pad', repeat('x', 9000)))$$, '23514', null, 'event metadata is capped at 8 KB');
+select throws_ok($$update public.fee_lock_events set reason = 'edited' where ws_id = pg_temp.id('010')$$, '55000', 'fee_lock_events rows are immutable', 'an event cannot be changed');
+select throws_ok($$delete from public.fee_lock_events where ws_id = pg_temp.id('010')$$, '55000', 'fee_lock_events rows are immutable', 'an event cannot be deleted');
+select throws_ok($$truncate public.fee_lock_events$$, '55000', 'fee_lock_events rows are immutable', 'events cannot be truncated');
 
--- Deletes.
-select throws_ok($$delete from public.workspace_users where id = pg_temp.id('101')$$, '23503', null,
-  'a student with fee locks cannot be deleted');
+-- Deletes: locked fee locks are kept; drafts, user deletes and workspace deletes work.
+select throws_ok($$delete from public.workspace_users where id = pg_temp.id('101')$$, '23503', null, 'a student with fee locks cannot be deleted');
 delete from public.users where id = pg_temp.id('002');
-select is((select count(*)::int from public.fee_lock_revisions where fee_lock_id = pg_temp.id('301')
-  and locked_by is null and total_amount = 1330000), 1, 'deleting the locking user keeps the revision and clears locked_by');
-delete from public.fee_locks where id = pg_temp.id('301');
-select is((select count(*)::int from public.fee_lock_lines where fee_lock_id = pg_temp.id('301'))
-  + (select count(*)::int from public.fee_lock_revisions where fee_lock_id = pg_temp.id('301')),
-  0, 'deleting a fee lock removes its lines and revisions');
-select is((select count(*)::int from public.fee_lock_events where ws_id = pg_temp.id('010')
-  and fee_lock_id is null and event_type = 'locked'), 1, 'events outlive their fee lock with fee_lock_id cleared');
+select is((select count(*)::int from public.fee_lock_revisions where fee_lock_id = pg_temp.id('301') and locked_by is null)
+  + (select count(*)::int from public.fee_lock_events where fee_lock_id = pg_temp.id('301') and actor_id is null), 2,
+  'deleting a user keeps the revision and the event and clears locked_by and actor_id');
+update public.fee_locks set status = 'locked', revision = 1, locked_at = now() where id = pg_temp.id('301');
+select throws_ok($$delete from public.fee_locks where id = pg_temp.id('301')$$, '55000', 'fee_locks rows are immutable', 'a locked fee lock cannot be deleted');
+select throws_ok($$truncate public.fee_locks cascade$$, '55000', 'fee_locks rows are immutable', 'fee locks cannot be truncated');
+insert into public.fee_locks(id, ws_id, student_id, period_month) values (pg_temp.id('302'), pg_temp.id('010'), pg_temp.id('102'), '2026-12-01');
+insert into public.fee_lock_events(ws_id, fee_lock_id, event_type) values (pg_temp.id('010'), pg_temp.id('302'), 'draft_saved');
+select lives_ok($$delete from public.fee_locks where id = pg_temp.id('302')$$, 'a never-locked draft can be deleted');
+select is((select count(*)::int from public.fee_lock_events where ws_id = pg_temp.id('010') and fee_lock_id is null and event_type = 'draft_saved'), 1,
+  'events outlive a deleted draft with fee_lock_id cleared');
 insert into public.fee_lock_revisions(fee_lock_id, ws_id, revision, total_amount, snapshot) values (pg_temp.id('391'), pg_temp.id('011'), 1, 0, '{}');
-select lives_ok($$delete from public.workspaces where id = pg_temp.id('011')$$, 'deleting a workspace removes its students, fee locks and revisions');
-select is((select count(*)::int from public.fee_locks where ws_id = pg_temp.id('011'))
-  + (select count(*)::int from public.fee_lock_revisions where ws_id = pg_temp.id('011')), 0, 'no fee lock rows remain for the deleted workspace');
+insert into public.fee_lock_events(ws_id, fee_lock_id, event_type, revision) values (pg_temp.id('011'), pg_temp.id('391'), 'locked', 1);
+select lives_ok($$delete from public.workspaces where id = pg_temp.id('011')$$, 'deleting a workspace removes its locked fee locks, revisions and events');
+select is((select count(*)::int from public.fee_locks where ws_id = pg_temp.id('011')) + (select count(*)::int from public.fee_lock_revisions where ws_id = pg_temp.id('011'))
+  + (select count(*)::int from public.fee_lock_events where ws_id = pg_temp.id('011')), 0, 'no fee lock rows remain for the deleted workspace');
 
 select * from finish();
 rollback;

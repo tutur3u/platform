@@ -16,8 +16,7 @@ SET LOCAL statement_timeout = '60s';
 CREATE TABLE public.fee_locks (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   ws_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
-  -- NO ACTION: a student with fee locks cannot be deleted (merge moves them
-  -- first), while a workspace delete still cascades both in one statement.
+  -- NO ACTION: a student with fee locks cannot be deleted; a workspace delete still cascades.
   student_id UUID NOT NULL REFERENCES public.workspace_users(id) ON DELETE NO ACTION,
   period_month DATE NOT NULL CHECK (period_month = date_trunc('month', period_month)::date),
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'locked')),
@@ -33,8 +32,7 @@ CREATE TABLE public.fee_locks (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   locked_at TIMESTAMPTZ,
   CONSTRAINT fee_locks_ws_student_period_key UNIQUE (ws_id, student_id, period_month),
-  -- Target of the child (fee_lock_id, ws_id) keys: a child row can never
-  -- claim another workspace than its header.
+  -- Target of the child (fee_lock_id, ws_id) keys: children stay in the header's workspace.
   CONSTRAINT fee_locks_id_ws_key UNIQUE (id, ws_id),
   CONSTRAINT fee_locks_locked_state_check
     CHECK (status <> 'locked' OR (revision >= 1 AND locked_at IS NOT NULL))
@@ -106,32 +104,7 @@ CREATE INDEX fee_lock_revisions_locked_by_idx ON public.fee_lock_revisions (lock
 
 COMMENT ON TABLE public.fee_lock_revisions IS 'Append-only snapshot of a fee lock at each lock (header, lines, student and class names at lock time). Phase 2 sends from these, never from live rows.';
 
--- Append-only. Allowed: the foreign key clearing locked_by when that user is
--- deleted, and cascade deletes once the parent fee lock or workspace is gone.
--- UPDATE, direct DELETE and TRUNCATE are refused.
-CREATE FUNCTION private.fee_lock_revisions_append_only()
-RETURNS TRIGGER LANGUAGE plpgsql SET search_path = pg_catalog, pg_temp AS $$
-BEGIN
-  IF TG_OP = 'UPDATE' AND NEW.locked_by IS NULL AND OLD.locked_by IS NOT NULL
-    AND (to_jsonb(NEW) - 'locked_by') = (to_jsonb(OLD) - 'locked_by') THEN RETURN NEW; END IF;
-  IF TG_OP = 'DELETE' AND (NOT EXISTS (SELECT 1 FROM public.fee_locks WHERE id = OLD.fee_lock_id)
-    OR NOT EXISTS (SELECT 1 FROM public.workspaces WHERE id = OLD.ws_id)) THEN RETURN OLD; END IF;
-  RAISE EXCEPTION 'fee_lock_revisions is append-only' USING ERRCODE = '55000';
-END;
-$$;
-
--- tuturuuu: no-grant (trigger)
-REVOKE ALL ON FUNCTION private.fee_lock_revisions_append_only() FROM PUBLIC, anon, authenticated;
-
-CREATE TRIGGER fee_lock_revisions_append_only
-  BEFORE UPDATE OR DELETE ON public.fee_lock_revisions
-  FOR EACH ROW EXECUTE FUNCTION private.fee_lock_revisions_append_only();
-CREATE TRIGGER fee_lock_revisions_no_truncate
-  BEFORE TRUNCATE ON public.fee_lock_revisions
-  FOR EACH STATEMENT EXECUTE FUNCTION private.fee_lock_revisions_append_only();
-
--- 4. Business events. Metadata holds ids, counts and digests only: no names
--- or phone numbers. The full Phase 1 event list is set now.
+-- 4. Business events (full Phase 1 list). Metadata: ids, counts, digests only; no names or phones.
 CREATE TABLE public.fee_lock_events (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   ws_id UUID NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
@@ -147,8 +120,7 @@ CREATE TABLE public.fee_lock_events (
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb
     CHECK (jsonb_typeof(metadata) = 'object' AND octet_length(metadata::text) <= 8192),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  -- An event names a fee lock of its own workspace; deleting the lock keeps
-  -- the event and clears only fee_lock_id.
+  -- An event names a fee lock of its own workspace; deleting the lock clears only fee_lock_id.
   CONSTRAINT fee_lock_events_fee_lock_fkey FOREIGN KEY (fee_lock_id, ws_id)
     REFERENCES public.fee_locks (id, ws_id) ON DELETE SET NULL (fee_lock_id)
 );
@@ -158,6 +130,39 @@ CREATE INDEX fee_lock_events_fee_lock_created_idx ON public.fee_lock_events (fee
 CREATE INDEX fee_lock_events_actor_id_idx ON public.fee_lock_events (actor_id);
 
 COMMENT ON TABLE public.fee_lock_events IS 'Fee lock business audit. actor_id is the authenticated platform user passed by the finance route, not the service role.';
+
+-- Immutable history: locked fee locks, revisions and events cannot be deleted or truncated, and
+-- revisions and events cannot change. Allowed: cascades (workspace, or a revision's fee lock, gone),
+-- deleting a never-locked draft, and FKs clearing locked_by, actor_id or fee_lock_id.
+CREATE FUNCTION private.fee_lock_append_only()
+RETURNS TRIGGER LANGUAGE plpgsql SET search_path = pg_catalog, pg_temp AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    IF NOT EXISTS (SELECT 1 FROM public.workspaces WHERE id = OLD.ws_id) THEN RETURN OLD; END IF;
+    IF TG_TABLE_NAME = 'fee_locks' THEN
+      IF OLD.revision = 0 THEN RETURN OLD; END IF;
+    ELSIF TG_TABLE_NAME = 'fee_lock_revisions' THEN
+      IF NOT EXISTS (SELECT 1 FROM public.fee_locks WHERE id = OLD.fee_lock_id) THEN RETURN OLD; END IF;
+    END IF;
+  ELSIF TG_OP = 'UPDATE' AND TG_TABLE_NAME = 'fee_lock_revisions' THEN
+    IF NEW.locked_by IS NULL AND (to_jsonb(NEW) - 'locked_by') = (to_jsonb(OLD) - 'locked_by') THEN RETURN NEW; END IF;
+  ELSIF TG_OP = 'UPDATE' AND TG_TABLE_NAME = 'fee_lock_events' THEN
+    IF (NEW.fee_lock_id IS NULL OR NEW.fee_lock_id = OLD.fee_lock_id) AND (NEW.actor_id IS NULL OR NEW.actor_id = OLD.actor_id)
+      AND (to_jsonb(NEW) - 'fee_lock_id' - 'actor_id') = (to_jsonb(OLD) - 'fee_lock_id' - 'actor_id') THEN RETURN NEW; END IF;
+  END IF;
+  RAISE EXCEPTION '% rows are immutable', TG_TABLE_NAME USING ERRCODE = '55000';
+END;
+$$;
+
+-- tuturuuu: no-grant (trigger)
+REVOKE ALL ON FUNCTION private.fee_lock_append_only() FROM PUBLIC, anon, authenticated;
+
+CREATE TRIGGER fee_locks_keep_locked BEFORE DELETE ON public.fee_locks FOR EACH ROW EXECUTE FUNCTION private.fee_lock_append_only();
+CREATE TRIGGER fee_lock_revisions_append_only BEFORE UPDATE OR DELETE ON public.fee_lock_revisions FOR EACH ROW EXECUTE FUNCTION private.fee_lock_append_only();
+CREATE TRIGGER fee_lock_events_append_only BEFORE UPDATE OR DELETE ON public.fee_lock_events FOR EACH ROW EXECUTE FUNCTION private.fee_lock_append_only();
+CREATE TRIGGER fee_locks_no_truncate BEFORE TRUNCATE ON public.fee_locks FOR EACH STATEMENT EXECUTE FUNCTION private.fee_lock_append_only();
+CREATE TRIGGER fee_lock_revisions_no_truncate BEFORE TRUNCATE ON public.fee_lock_revisions FOR EACH STATEMENT EXECUTE FUNCTION private.fee_lock_append_only();
+CREATE TRIGGER fee_lock_events_no_truncate BEFORE TRUNCATE ON public.fee_lock_events FOR EACH STATEMENT EXECUTE FUNCTION private.fee_lock_append_only();
 
 -- 5. Same-workspace guards: the referenced tables have no (id, ws_id) key, so a
 -- trigger checks them (as in 20261026193000).
@@ -188,12 +193,10 @@ $$;
 -- tuturuuu: no-grant (trigger)
 REVOKE ALL ON FUNCTION private.fee_lock_same_workspace() FROM PUBLIC, anon, authenticated;
 
-CREATE TRIGGER fee_locks_same_workspace
-  BEFORE INSERT OR UPDATE OF ws_id, student_id ON public.fee_locks
+CREATE TRIGGER fee_locks_same_workspace BEFORE INSERT OR UPDATE OF ws_id, student_id ON public.fee_locks
   FOR EACH ROW EXECUTE FUNCTION private.fee_lock_same_workspace();
-CREATE TRIGGER fee_lock_lines_same_workspace
-  BEFORE INSERT OR UPDATE OF ws_id, group_id, product_id, unit_id, warehouse_id ON public.fee_lock_lines
-  FOR EACH ROW EXECUTE FUNCTION private.fee_lock_same_workspace();
+CREATE TRIGGER fee_lock_lines_same_workspace BEFORE INSERT OR UPDATE OF ws_id, group_id, product_id, unit_id, warehouse_id
+  ON public.fee_lock_lines FOR EACH ROW EXECUTE FUNCTION private.fee_lock_same_workspace();
 
 -- 6. Access: service role only. RLS is on with no permissive policy, so a
 -- mistaken grant still exposes nothing. The restrictive MFA policy keeps these
@@ -204,17 +207,13 @@ ALTER TABLE public.fee_lock_revisions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.fee_lock_events ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY account_required_mfa ON public.fee_locks AS RESTRICTIVE FOR ALL TO authenticated
-  USING ((SELECT public.account_required_mfa_satisfied()))
-  WITH CHECK ((SELECT public.account_required_mfa_satisfied()));
+  USING ((SELECT public.account_required_mfa_satisfied())) WITH CHECK ((SELECT public.account_required_mfa_satisfied()));
 CREATE POLICY account_required_mfa ON public.fee_lock_lines AS RESTRICTIVE FOR ALL TO authenticated
-  USING ((SELECT public.account_required_mfa_satisfied()))
-  WITH CHECK ((SELECT public.account_required_mfa_satisfied()));
+  USING ((SELECT public.account_required_mfa_satisfied())) WITH CHECK ((SELECT public.account_required_mfa_satisfied()));
 CREATE POLICY account_required_mfa ON public.fee_lock_revisions AS RESTRICTIVE FOR ALL TO authenticated
-  USING ((SELECT public.account_required_mfa_satisfied()))
-  WITH CHECK ((SELECT public.account_required_mfa_satisfied()));
+  USING ((SELECT public.account_required_mfa_satisfied())) WITH CHECK ((SELECT public.account_required_mfa_satisfied()));
 CREATE POLICY account_required_mfa ON public.fee_lock_events AS RESTRICTIVE FOR ALL TO authenticated
-  USING ((SELECT public.account_required_mfa_satisfied()))
-  WITH CHECK ((SELECT public.account_required_mfa_satisfied()));
+  USING ((SELECT public.account_required_mfa_satisfied())) WITH CHECK ((SELECT public.account_required_mfa_satisfied()));
 
 REVOKE ALL ON public.fee_locks, public.fee_lock_lines, public.fee_lock_revisions, public.fee_lock_events
   FROM PUBLIC, anon, authenticated;

@@ -1,7 +1,6 @@
--- Manual rollback only: drops the fee lock tables and trigger functions. Roll back
--- 20261104060300 first and deploy with ENABLE_FEE_LOCK off. Refuses while any fee
--- lock or event exists (export and delete them first): checked without a lock to
--- fail fast, then again under ACCESS EXCLUSIVE so nothing arrives before the drop.
+-- Manual rollback: roll back 20261104130100 first, deploy with ENABLE_FEE_LOCK off. Refuses while fee
+-- locks or events exist (export, then delete with the immutability triggers disabled). Checked unlocked
+-- to fail fast, then again under ACCESS EXCLUSIVE so nothing arrives before the drop.
 BEGIN;
 SET LOCAL lock_timeout = '5s';
 SET LOCAL statement_timeout = '30s';
@@ -28,6 +27,6 @@ DROP TABLE public.fee_lock_revisions;
 DROP TABLE public.fee_lock_lines;
 DROP TABLE public.fee_locks;
 DROP FUNCTION private.fee_lock_same_workspace();
-DROP FUNCTION private.fee_lock_revisions_append_only();
+DROP FUNCTION private.fee_lock_append_only();
 
 COMMIT;
