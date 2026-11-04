@@ -27,10 +27,13 @@ payroll.
   before it started tracking make-ups. Older absences and sessions are not
   changed or deleted; they are only left out of make-up suggestions. Unset
   (the default for every existing policy) keeps the rolling window alone.
-  Linked make-up content keeps pairing already-booked sessions over the rolling
-  window, so setting the date never changes notes on existing sessions
+  Linked make-up content pairs sessions with absences over the same cutoff, so
+  a make-up booked from a queue row follows the absence that row showed. A
+  pending make-up dated before the cutoff is left unpaired and shows no linked
+  notes rather than another absence's notes
   ([`queue/route.count-from.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/queue/route.count-from.test.ts),
-  [`tutoring-absence-cutoff.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/internal-api/src/tutoring-absence-cutoff.test.ts)).
+  [`tutoring-absence-cutoff.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/internal-api/src/tutoring-absence-cutoff.test.ts),
+  [`linked-content.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/linked-content.test.ts)).
   Scheduling from a queue row fills the learner, group, reason, and suggested
   times for the missing sessions. Staff choose the tutoring teacher separately. A pending recovery
   session reserves one absence, so staff do not schedule the same make-up twice.
@@ -53,11 +56,13 @@ payroll.
   opens only that section with **Save** and **Cancel**. Cancel discards the
   section draft, and other sections stay read-only while it is open. Saving merges
   only that section’s fields into the latest loaded policy, preserving refreshed
-  values in other sections. Applying a preset intentionally replaces the full
-  draft. Save, Cancel, and editor inputs are disabled during a pending save; a
+  values in other sections. Applying a preset replaces the draft except
+  workspace-specific fields (campuses, tutor groups, group shifts, and the
+  count-absences-from date). Save, Cancel, and editor inputs are disabled during a pending save; a
   failed save retains the draft for retry. Operators can adjust session length, lead time, support
   session count, absence lookback, the count-absences-from date (a real date no
-  later than tomorrow in UTC; it can be cleared), reassessment and follow-up
+  later than tomorrow in UTC; it can be cleared, and an invalid stored date
+  reads as unset without resetting the rest of the policy), reassessment and follow-up
   intervals, scheduling horizon,
   class-time exceptions, named shifts, scoped group-name or group-tag exclusion rules,
   needs-tutoring groups,

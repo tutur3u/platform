@@ -1,4 +1,5 @@
 import {
+  getTutoringAbsenceCutoff,
   readTutoringPolicyConfigRows,
   TUTORING_POLICY_CONFIG_ID,
 } from '@tuturuuu/internal-api/tutoring-policy';
@@ -100,10 +101,11 @@ export async function loadLinkedLessonContent({
     .eq('ws_id', wsId)
     .like('id', `${TUTORING_POLICY_CONFIG_ID}%`);
   if (policyResult.error) throw policyResult.error;
-  const policy = readTutoringPolicyConfigRows(policyResult.data ?? []);
-  const cutoff = new Date(Date.now() - policy.absenceLookbackDays * 86_400_000)
-    .toISOString()
-    .slice(0, 10);
+  // Same cutoff as the queue, so a make-up booked from a queue row pairs with
+  // an absence that row showed, never one hidden by the count-from date.
+  const cutoff = getTutoringAbsenceCutoff(
+    readTutoringPolicyConfigRows(policyResult.data ?? [])
+  );
 
   const [attendanceResult, reservationResult] = await Promise.all([
     sbAdmin

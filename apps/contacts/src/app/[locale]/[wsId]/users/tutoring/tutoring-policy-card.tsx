@@ -5,6 +5,7 @@ import { X } from '@tuturuuu/icons';
 import { updateTutoringPolicy } from '@tuturuuu/internal-api/tutoring';
 import {
   EASY_CENTER_TUTORING_POLICY,
+  getTutoringAbsenceCountFromMax,
   parseTutoringPolicy,
   STANDARD_TUTORING_POLICY,
   type TutoringPolicy,
@@ -234,6 +235,7 @@ export function TutoringPolicyCard({
             <Input
               disabled={!canConfigure}
               id="policy-absenceCountFromDate"
+              max={getTutoringAbsenceCountFromMax()}
               onChange={(event) =>
                 edit({ absenceCountFromDate: event.target.value || null })
               }

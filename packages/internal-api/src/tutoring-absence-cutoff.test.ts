@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   EASY_CENTER_TUTORING_POLICY,
+  getTutoringAbsenceCountFromMax,
   getTutoringAbsenceCutoff,
   parseTutoringPolicy,
+  readTutoringPolicy,
   readTutoringPolicyConfigRows,
   STANDARD_TUTORING_POLICY,
   serializeTutoringPolicyConfigRows,
+  type TutoringPolicy,
 } from './tutoring-policy';
 
 // 1 Nov 2026 10:00 in GMT+7.
@@ -107,6 +110,65 @@ describe('absenceCountFromDate', () => {
       groupExclusions: EASY_CENTER_TUTORING_POLICY.groupExclusions,
       absenceCountFromDate: '2026-11-01',
     });
+  });
+});
+
+describe('reading a stored absenceCountFromDate', () => {
+  // Custom policy with Easy Center exclusions, so a reset to standard shows.
+  const saved = {
+    ...EASY_CENTER_TUTORING_POLICY,
+    preset: 'custom' as const,
+    campusByGroupId: {
+      '11111111-1111-4111-8111-111111111111': 'Legacy Annex',
+    },
+  };
+  const stored = (absenceCountFromDate: unknown) =>
+    serializeTutoringPolicyConfigRows({
+      ...saved,
+      absenceCountFromDate,
+    } as unknown as TutoringPolicy);
+
+  it.each(['2026-02-30', '2099-01-01', '01-11-2026', 20261101, {}])(
+    'reads a bad stored date %j as null and keeps the rest',
+    (value) => {
+      const policy = readTutoringPolicyConfigRows(stored(value));
+      expect(policy).toEqual({ ...saved, absenceCountFromDate: null });
+      expect(policy.groupExclusions).toEqual(
+        EASY_CENTER_TUTORING_POLICY.groupExclusions
+      );
+      expect(
+        readTutoringPolicy(
+          JSON.stringify({ ...saved, absenceCountFromDate: value })
+        )
+      ).toEqual({ ...saved, absenceCountFromDate: null });
+    }
+  );
+
+  it('still falls back to standard when another field is invalid', () => {
+    expect(
+      readTutoringPolicy(
+        JSON.stringify({
+          ...saved,
+          leadMinutes: -1,
+          absenceCountFromDate: '2026-02-30',
+        })
+      )
+    ).toEqual(STANDARD_TUTORING_POLICY);
+  });
+
+  it('keeps rejecting a bad date at the write boundary', () => {
+    expect(
+      parseTutoringPolicy({ ...saved, absenceCountFromDate: '2026-02-30' }, NOW)
+    ).toBeNull();
+  });
+});
+
+describe('getTutoringAbsenceCountFromMax', () => {
+  it('is tomorrow in UTC, the latest date the parser accepts', () => {
+    expect(getTutoringAbsenceCountFromMax(NOW.getTime())).toBe('2026-11-02');
+    expect(
+      getTutoringAbsenceCountFromMax(Date.parse('2026-10-31T16:59:00Z'))
+    ).toBe('2026-11-01');
   });
 });
 

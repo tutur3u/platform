@@ -157,21 +157,4 @@ describe('tutoring queue absence count-from date', () => {
     configRows = [];
     expect(await missedDates()).toEqual(['2026-10-25', '2026-11-10']);
   });
-
-  it('a make-up booked before the date does not consume a later absence', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-11-20T05:00:00Z'));
-    usePolicy({ absenceLookbackDays: 60, absenceCountFromDate: '2026-11-01' });
-    attendanceRows = ['2026-10-28', '2026-11-03'].map(absent);
-    reservedRows = [
-      {
-        group_id: 'group',
-        student_user_id: 'student',
-        reason_type: 'ABSENT_RECOVERY',
-        attendance_status: 'DONE',
-        session_date: '2026-10-30',
-      },
-    ];
-    expect(await missedDates()).toEqual(['2026-11-03']);
-  });
 });

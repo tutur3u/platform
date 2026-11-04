@@ -1,6 +1,10 @@
 // @vitest-environment node
+import {
+  STANDARD_TUTORING_POLICY,
+  serializeTutoringPolicyConfigRows,
+} from '@tuturuuu/internal-api/tutoring-policy';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   FREEZE_TIMEOUT_MS,
   freezeLinkedLessonContent,
@@ -134,6 +138,8 @@ beforeEach(() => {
   ];
 });
 
+afterEach(() => vi.useRealTimers());
+
 describe('linked make-up content', () => {
   it('only links pending absence sessions without stored content', () => {
     expect(isLinkedContentSession(session())).toBe(true);
@@ -182,6 +188,47 @@ describe('linked make-up content', () => {
       wsId,
     });
     expect(after.get(pending.id)).toBe(`${missedDate}: Unit 4: past tense`);
+  });
+
+  it('pairs only with absences the queue counts once a count-from date is set', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date('2026-11-05T05:00:00Z'));
+    tables.workspace_configs = serializeTutoringPolicyConfigRows({
+      ...STANDARD_TUTORING_POLICY,
+      absenceLookbackDays: 21,
+      absenceCountFromDate: '2026-11-01',
+    }).map((row) => ({ ...row, ws_id: wsId }));
+    tables.user_group_attendance = ['2026-10-28', '2026-11-03'].map((date) => ({
+      group_id: 'group-1',
+      user_id: 'student-1',
+      date,
+      status: 'ABSENT',
+    }));
+    tables.workspace_user_group_sessions = [
+      {
+        ...lesson('Unit 3: before the date'),
+        starts_at: '2026-10-28T10:00:00Z',
+      },
+      {
+        ...lesson('Unit 5: after the date'),
+        starts_at: '2026-11-03T10:00:00Z',
+      },
+    ];
+    const pending = session({ session_date: '2026-11-05' });
+    tables.workspace_tutoring_sessions = [pending];
+
+    const linked = await loadLinkedLessonContent({
+      sbAdmin,
+      sessions: [pending],
+      wsId,
+    });
+    expect(linked.get(pending.id)).toBe('2026-11-03: Unit 5: after the date');
+
+    pending.attendance_status = 'DONE';
+    await expect(
+      freezeLinkedLessonContent({ sbAdmin, sessionId: pending.id, wsId })
+    ).resolves.toBe('stored');
+    expect(pending.content).toBe('2026-11-03: Unit 5: after the date');
   });
 
   it('never derives content over a staff edit', async () => {

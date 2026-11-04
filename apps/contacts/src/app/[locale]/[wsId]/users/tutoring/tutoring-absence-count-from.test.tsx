@@ -4,7 +4,7 @@ import {
   STANDARD_TUTORING_POLICY,
   type TutoringPolicy,
 } from '@tuturuuu/internal-api/tutoring-policy';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import en from '../../../../../../messages/en.json';
 import vi_ from '../../../../../../messages/vi.json';
 import { TutoringPolicyCard } from './tutoring-policy-card';
@@ -39,6 +39,18 @@ function editTiming() {
 
 describe('count absences from a chosen date', () => {
   beforeEach(() => vi.clearAllMocks());
+  afterEach(() => vi.useRealTimers());
+
+  it('limits the picker to tomorrow in UTC, as the server does', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    // 1 Nov 2026 10:00 GMT+7.
+    vi.setSystemTime(new Date('2026-11-01T03:00:00Z'));
+    renderCard(STANDARD_TUTORING_POLICY);
+    editTiming();
+    expect(
+      screen.getByLabelText('policy_absenceCountFromDate')
+    ).toHaveAttribute('max', '2026-11-02');
+  });
 
   it('saves a chosen date from the timing section', () => {
     renderCard(EASY_CENTER_TUTORING_POLICY);

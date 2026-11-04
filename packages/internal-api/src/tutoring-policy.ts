@@ -1,4 +1,9 @@
 import {
+  getTutoringAbsenceCountFromMax,
+  getTutoringAbsenceCutoff,
+  parseAbsenceCountFromDate,
+} from './tutoring-absence-count-from';
+import {
   getTutoringCampusChoices,
   parseTutoringCampusOptions,
   TUTORING_CAMPUS_LABEL_MAX_LENGTH,
@@ -11,6 +16,8 @@ import {
 } from './tutoring-group-rules';
 
 export {
+  getTutoringAbsenceCountFromMax,
+  getTutoringAbsenceCutoff,
   getTutoringCampusChoices,
   parseTutoringCampusOptions,
   TUTORING_CAMPUS_LABEL_MAX_LENGTH,
@@ -275,39 +282,6 @@ function isWeekdayList(value: unknown) {
     value.length <= 7 &&
     value.every((day) => isIntegerInRange(day, 0, 6))
   );
-}
-
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const DAY_MS = 86_400_000;
-
-function isoDay(time: number) {
-  return new Date(time).toISOString().slice(0, 10);
-}
-
-/**
- * A real calendar date no later than tomorrow in UTC, which is at or after
- * today in every workspace timezone; null and absent both clear it.
- */
-function parseAbsenceCountFromDate(value: unknown, now: Date) {
-  if (value === undefined || value === null) return { date: null };
-  if (typeof value !== 'string' || !ISO_DATE.test(value)) return null;
-  const time = Date.parse(`${value}T00:00:00Z`);
-  if (!Number.isFinite(time) || isoDay(time) !== value) return null;
-  if (value > isoDay(now.getTime() + DAY_MS)) return null;
-  return { date: value };
-}
-
-/**
- * The earliest absence date that feeds make-up suggestions: the later of the
- * rolling lookback and the chosen count-from date.
- */
-export function getTutoringAbsenceCutoff(
-  policy: Pick<TutoringPolicy, 'absenceLookbackDays' | 'absenceCountFromDate'>,
-  now = Date.now()
-) {
-  const rolling = isoDay(now - policy.absenceLookbackDays * DAY_MS);
-  const from = policy.absenceCountFromDate;
-  return from && from > rolling ? from : rolling;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -592,7 +566,18 @@ export function getTutoringCampus(
 export function readTutoringPolicy(value: string | null | undefined) {
   if (!value) return STANDARD_TUTORING_POLICY;
   try {
-    return parseTutoringPolicy(JSON.parse(value)) ?? STANDARD_TUTORING_POLICY;
+    const saved: unknown = JSON.parse(value);
+    // A bad stored count-from date only clears the date on read; dropping the
+    // whole policy would lose exclusions and shifts. Saves still reject it.
+    const withoutCountFrom =
+      saved && typeof saved === 'object' && !Array.isArray(saved)
+        ? { ...saved, absenceCountFromDate: null }
+        : saved;
+    return (
+      parseTutoringPolicy(saved) ??
+      parseTutoringPolicy(withoutCountFrom) ??
+      STANDARD_TUTORING_POLICY
+    );
   } catch {
     return STANDARD_TUTORING_POLICY;
   }
