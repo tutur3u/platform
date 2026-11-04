@@ -14,7 +14,7 @@ export async function GET(
 ) {
   const { jobId, wsId } = await params;
   const access = await requireWorkspaceExternalProjectAccess({
-    mode: 'read',
+    mode: 'publish',
     request,
     wsId,
   });

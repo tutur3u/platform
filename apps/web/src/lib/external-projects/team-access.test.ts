@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
+import { requireWorkspaceExternalProjectAccess } from './access';
 import {
   addExternalProjectRoleMembers,
   createExternalProjectTeamRole,
   removeExternalProjectRoleMember,
+  requireExternalProjectTeamAccess,
   updateExternalProjectTeamDefaultPermissions,
   updateExternalProjectTeamRole,
 } from './team-access';
@@ -353,4 +355,19 @@ describe('CMS explicit grant writes', () => {
     expect(response.status).toBe(200);
     expect(calls.upsertedRolePermissions).toEqual([]);
   });
+});
+
+it('requires management access before reading team member/email data', async () => {
+  vi.mocked(requireWorkspaceExternalProjectAccess).mockResolvedValueOnce({
+    ok: false,
+    response: new Response(null, { status: 403 }),
+  } as never);
+  const result = await requireExternalProjectTeamAccess({
+    request: new Request('https://example.com/members'),
+    wsId: 'workspace',
+  });
+  expect(result.ok).toBe(false);
+  expect(requireWorkspaceExternalProjectAccess).toHaveBeenCalledWith(
+    expect.objectContaining({ mode: 'manage' })
+  );
 });

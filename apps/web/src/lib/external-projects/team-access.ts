@@ -88,7 +88,7 @@ export async function requireExternalProjectTeamAccess({
   wsId: string;
 }) {
   let access = await requireWorkspaceExternalProjectAccess({
-    mode: 'read',
+    mode: capability === 'view' ? 'manage' : 'read',
     request,
     wsId,
   });
