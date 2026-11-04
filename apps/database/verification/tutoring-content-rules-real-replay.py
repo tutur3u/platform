@@ -6,12 +6,12 @@ Disposable local Supabase CLI stack only; it never accepts a remote DSN. Steps:
    migration through the merge base (the target migration held back), under a
    unique project id and port block, then `supabase start` (real bootstrap,
    GoTrue auth schema, roles, RLS, seed.sql).
-2. Seed synthetic non-EC data (plus synthetic forbidden-EC-ID rows) through real
+2. Seed synthetic data (plus a synthetic opted-out workspace) through real
    constraints: GoTrue users, workspaces, groups, links, members, an N1 receipt,
    an authorized review boundary and pre-stage N2 history.
 3. Apply the target with `supabase migration up` (the CLI runner).
 4. Assert ACLs, real PostgREST/JWT member operations, OFF = zero derived writes,
-   ON behaviour, EC = zero results, day 13/14/15, config overrides, targeting,
+   ON behaviour, opted-out workspace = zero results, day 13/14/15, config overrides, targeting,
    dedup, N1 compatibility and bounded cursor progress.
 5. Rollback standalone with an injected backup failure, then successfully.
 6. `supabase db reset` at the target head (clean full-chain install), then stop
@@ -40,7 +40,6 @@ ROOT = pathlib.Path(__file__).resolve().parents[3]
 BASE = '41038b6e182d564d2752fc42efcbc20fea4dcaca'
 TARGET = 'apps/database/supabase/migrations/20261103031000_tutoring_content_stages.sql'
 ROLLBACK = 'apps/database/rollbacks/20261103031000_tutoring_content_stages.rollback.sql'
-EC = '42529372-c669-4833-bb32-2cab1f4ffd83'
 EXCLUDED = ('realtime,storage-api,imgproxy,mailpit,postgres-meta,studio,'
             'edge-runtime,logflare,vector,supavisor')
 PORTS = {('db', 'shadow_port'): 0, ('api', 'port'): 1, ('db', 'port'): 2,
@@ -61,12 +60,13 @@ def fixed(n):
     return '00000000-0000-4000-8000-%012d' % n
 
 
-W1, W2, W3, WEC = fixed(101), fixed(102), fixed(103), EC
-G1, G1B, G2, G3, G3OFFICE, GEC = (fixed(201), fixed(202), fixed(203),
+# WOFF is a synthetic workspace whose opt-in is never the literal 'true'.
+W1, W2, W3, WOFF = fixed(101), fixed(102), fixed(103), fixed(104)
+G1, G1B, G2, G3, G3OFFICE, GOFF = (fixed(201), fixed(202), fixed(203),
                                   fixed(204), fixed(205), fixed(206))
 # Students (virtual workspace users) and teacher/office virtual users.
-S1, S1B, S13, S14, S15, SNT, S2, S3, SEC = (fixed(301 + i) for i in range(9))
-TV1, TV2, TV3, OV3, TVEC = (fixed(401 + i) for i in range(5))
+S1, S1B, S13, S14, S15, SNT, S2, S3, SOFF = (fixed(301 + i) for i in range(9))
+TV1, TV2, TV3, OV3, TVOFF = (fixed(401 + i) for i in range(5))
 
 
 class Replay:
@@ -240,38 +240,38 @@ class Replay:
         self.password = 'Replay-' + uuid.uuid4().hex
         users = {name: self.gotrue_user('%s@tcr-replay.invalid' % name)
                  for name in ['teacher1', 'office1', 'member1', 'teacher2', 'teacher3',
-                              'office3', 'ecteacher']}
+                              'office3', 'offteacher']}
         self.users = users
         self.check('GoTrue users mirrored to public.users', self.q(
             "select count(*) from public.users where id in (%s)" % ','.join("'%s'" % v for v in users.values())), '7')
         sql = []
         for ws, creator, name in [(W1, 'office1', 'Replay W1'), (W2, 'teacher2', 'Replay W2'),
-                                  (W3, 'teacher3', 'Replay W3'), (WEC, 'ecteacher', 'Synthetic forbidden EC id')]:
+                                  (W3, 'teacher3', 'Replay W3'), (WOFF, 'offteacher', 'Synthetic opted-out workspace')]:
             sql.append("insert into public.workspaces(id,name,creator_id) values ('%s','%s','%s');" % (ws, name, users[creator]))
         for ws, members in [(W1, ['teacher1', 'office1', 'member1']), (W2, ['teacher2']),
-                            (W3, ['teacher3', 'office3']), (WEC, ['ecteacher'])]:
+                            (W3, ['teacher3', 'office3']), (WOFF, ['offteacher'])]:
             for member in members:
                 sql.append("insert into public.workspace_members(ws_id,user_id) values ('%s','%s') on conflict do nothing;" % (ws, users[member]))
         virtual = [(S1, W1), (S1B, W1), (S13, W1), (S14, W1), (S15, W1), (SNT, W1), (S2, W2),
-                   (S3, W3), (SEC, WEC), (TV1, W1), (TV2, W2), (TV3, W3), (OV3, W3), (TVEC, WEC)]
+                   (S3, W3), (SOFF, WOFF), (TV1, W1), (TV2, W2), (TV3, W3), (OV3, W3), (TVOFF, WOFF)]
         for vid, ws in virtual:
             sql.append("insert into public.workspace_users(id,ws_id,full_name) values ('%s','%s','Synthetic %s');" % (vid, ws, vid[-4:]))
         for group, ws, name in [(G1, W1, 'Replay class 1'), (G1B, W1, 'Replay class no teacher'),
                                 (G2, W2, 'Replay class 2'), (G3, W3, 'Replay class 3'),
-                                (G3OFFICE, W3, 'Replay office'), (GEC, WEC, 'Synthetic EC class')]:
+                                (G3OFFICE, W3, 'Replay office'), (GOFF, WOFF, 'Synthetic opted-out class')]:
             sql.append("insert into public.workspace_user_groups(id,ws_id,name) values ('%s','%s','%s');" % (group, ws, name))
         for group, uid, role in [(G1, S1, 'STUDENT'), (G1, S1B, 'STUDENT'), (G1, S13, 'STUDENT'),
                                  (G1, S14, 'STUDENT'), (G1, S15, 'STUDENT'), (G1B, SNT, 'STUDENT'),
                                  (G1, TV1, 'TEACHER'), (G2, S2, 'STUDENT'), (G2, TV2, 'TEACHER'),
                                  (G3, S3, 'STUDENT'), (G3, TV3, 'TEACHER'), (G3OFFICE, OV3, 'STUDENT'),
-                                 (GEC, SEC, 'STUDENT'), (GEC, TVEC, 'TEACHER')]:
+                                 (GOFF, SOFF, 'STUDENT'), (GOFF, TVOFF, 'TEACHER')]:
             sql.append("insert into public.workspace_user_groups_users(group_id,user_id,role) values ('%s','%s','%s');" % (group, uid, role))
         for ws, vid, member in [(W1, TV1, 'teacher1'), (W2, TV2, 'teacher2'), (W3, TV3, 'teacher3'),
-                                (W3, OV3, 'office3'), (WEC, TVEC, 'ecteacher')]:
+                                (W3, OV3, 'office3'), (WOFF, TVOFF, 'offteacher')]:
             sql.append("insert into public.workspace_user_linked_users(ws_id,virtual_user_id,platform_user_id) values ('%s','%s','%s');" % (ws, vid, users[member]))
         for student, group, days in [(S1, G1, 40), (S1B, G1, 40), (S13, G1, 13), (S14, G1, 14),
                                      (S15, G1, 15), (SNT, G1B, 20), (S2, G2, 40), (S3, G3, 10),
-                                     (SEC, GEC, 40)]:
+                                     (SOFF, GOFF, 40)]:
             sql.append("insert into public.user_feedbacks(user_id,group_id,content,require_attention,created_at) values ('%s','%s','synthetic weak support',true,now()-interval '%d days');" % (student, group, days))
         self.psql('\n'.join(sql), 'seed synthetic workspaces')
         # Authorized review boundaries and pre-stage N2 history, written as the
@@ -352,8 +352,8 @@ class Replay:
             ('absent flag, seeded cursor', "insert into private.tutoring_content_scan_cursor values (true,'%s');" % fixed(998)),
             ("flag 'false' (W1), seeded cursor", "insert into public.workspace_configs(ws_id,id,value) values ('%s','tutoring_content_rules','false');" % W1),
             ("flag 'TRUE' (W1), seeded cursor", "update public.workspace_configs set value='TRUE' where ws_id='%s' and id='tutoring_content_rules';" % W1),
-            ("flag 'true' only on forbidden EC id", "insert into public.workspace_configs(ws_id,id,value) values ('%s','tutoring_content_rules','true');" % WEC),
-            ('forbidden EC only, empty cursor', 'delete from private.tutoring_content_scan_cursor;'),
+            ("flag 'yes' only on opted-out WOFF", "insert into public.workspace_configs(ws_id,id,value) values ('%s','tutoring_content_rules','yes');" % WOFF),
+            ('opted-out WOFF only, empty cursor', 'delete from private.tutoring_content_scan_cursor;'),
         ]
         for name, setup in cases:
             if setup:
@@ -392,7 +392,7 @@ class Replay:
           ('%(W1)s','tutoring_content_rules','true'),('%(W3)s','tutoring_content_rules','true'),
           ('%(W3)s','tutoring_content_rules_n2_days','10'),('%(W3)s','tutoring_content_rules_n3_days','3'),
           ('%(W3)s','tutoring_content_rules_office_group','%(G3O)s');
-        """ % {'W1': W1, 'W3': W3, 'G3O': G3OFFICE}, 'flag ON for W1/W3 (EC flag stays true)')
+        """ % {'W1': W1, 'W3': W3, 'G3O': G3OFFICE}, 'flag ON for W1/W3 (WOFF stays non-true)')
         first = self.service_run()
         self.log('first ON run: %s' % first)
         stages = lambda s: self.q("select coalesce(string_agg(stage || '@' || to_char(review_cycle_started_at,'YYYY-MM-DD\"T\"HH24:MI:SS'), ',' order by stage, review_cycle_started_at), '') from private.tutoring_notification_receipts where student_user_id='%s'" % s)
@@ -484,14 +484,14 @@ class Replay:
             "select count(*) from private.tutoring_content_review_episodes where student_user_id='%s'" % S1B), '2')
         self.check('new S1B cycle sends nothing before day 14', self.q(
             "select count(*) from private.tutoring_notification_receipts where student_user_id='%s' and review_cycle_started_at > now()-interval '1 hour'" % S1B), '0')
-        # EC: zero tenant results.
+        # Opted-out workspace (non-'true' value): zero tenant results.
         for table, column in [('private.tutoring_notification_receipts', 'group_id'),
                               ('private.tutoring_content_review_episodes', 'group_id'),
                               ('private.tutoring_weak_support_reviews', 'group_id')]:
-            self.check('forbidden EC fixture: zero rows in %s' % table, self.q(
-                "select count(*) from %s where %s='%s'" % (table, column, GEC)), '0')
-        self.check('forbidden EC fixture: zero notifications', self.q(
-            "select count(*) from public.notifications where ws_id='%s'" % WEC), '0')
+            self.check('opted-out fixture: zero rows in %s' % table, self.q(
+                "select count(*) from %s where %s='%s'" % (table, column, GOFF)), '0')
+        self.check('opted-out fixture: zero notifications', self.q(
+            "select count(*) from public.notifications where ws_id='%s'" % WOFF), '0')
         # N1 compatibility.
         self.check('N1 receipt unchanged', self.q(
             "select count(*) || ':' || min(stage) from private.tutoring_notification_receipts where kind='session_completed'"), '1:n1')

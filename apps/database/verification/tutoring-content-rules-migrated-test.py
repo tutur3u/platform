@@ -18,7 +18,7 @@ class Migrated(m.ContentRules):
             self.sql('begin;'+(migrations/name).read_text()+'commit;')
         self.sql('drop table private.tutoring_content_scan_cursor; drop table if exists private.tutoring_content_review_episodes; drop function private.process_tutoring_content_rules(integer);')
         self.pre_migration()
-        self.sql('begin;'+m.MIGRATION.read_text()+'commit;')
+        self.apply_migration()
     def test_n1_receipt_dedup(self):
         self.sql("insert into private.workspace_tutoring_sessions values ('00000000-0000-0000-0000-000000000006'); insert into private.tutoring_notification_receipts(kind,tutoring_session_id,recipient_user_id) values ('session_completed','00000000-0000-0000-0000-000000000006','00000000-0000-0000-0000-000000000005')")
         self.sql('insert into private.tutoring_notification_receipts(kind,tutoring_session_id,recipient_user_id) select kind,tutoring_session_id,recipient_user_id from private.tutoring_notification_receipts on conflict do nothing')

@@ -1,3 +1,8 @@
+-- Apply-time data writes: exactly one, the legacy receipt backfill below, and it
+-- excludes the client workspace that holds the opt-in-only ruling. This file never
+-- writes public.workspace_configs or any opt-in, never seeds the scan cursor or
+-- review episodes, and inserts no other row for any workspace. The stage column
+-- default is metadata-only and does not rewrite existing receipts.
 -- One atomic swap is required. The migration runner wraps multi-statement files
 -- in a transaction, so CREATE INDEX CONCURRENTLY is unavailable here.
 set local lock_timeout = '5s';
@@ -8,9 +13,11 @@ alter table private.tutoring_notification_receipts
   add column stage text not null default 'n1'
   constraint tutoring_notification_receipts_stage_check check (stage in ('n1','n2','n3'));
 -- A pre-stage weak-content receipt is the teacher alert, so it is N2 history of
--- its cycle (N1 is the session-completed notice). Use the processor's excluded
--- workspace identity, hashed to avoid duplicating its raw ID. Both timeouts above
--- cover this data step as well as the schema changes.
+-- its cycle (N1 is the session-completed notice). Migrations and backfills
+-- always exclude the client workspace with the opt-in ruling; it is matched by
+-- the MD5 of its ID so the raw ID is not repeated in the repository. Its legacy
+-- receipts stay N1. Both timeouts above cover this data step as well as the
+-- schema changes.
 update private.tutoring_notification_receipts r set stage='n2'
   from public.workspace_user_groups g
   where r.group_id=g.id and r.kind='weak_content_review_due'
@@ -73,12 +80,13 @@ begin
   if not pg_try_advisory_xact_lock(hashtextextended('tutoring_content_rules',0)) then
     return jsonb_build_object('sent',0);
   end if;
-  -- Kill switch first: with no enabled non-EC workspace there is no eligible
-  -- population, so the run returns before its first derived write (cursor,
-  -- episode, receipt or notification).
+  -- Per-workspace opt-in first, and it is the only workspace gate: a workspace
+  -- is eligible only when its own admins set workspace_configs
+  -- tutoring_content_rules to the literal 'true'. Absent or any other value is
+  -- OFF. With no opted-in workspace the run returns before its first derived
+  -- write (cursor, episode, receipt or notification).
   if not exists(select 1 from public.workspace_configs flag
-      where flag.id='tutoring_content_rules' and flag.value='true'
-        and flag.ws_id <> '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid) then
+      where flag.id='tutoring_content_rules' and flag.value='true') then
     return jsonb_build_object('sent',0);
   end if;
   for note in
@@ -87,7 +95,7 @@ begin
     join public.workspace_users u on u.id=f.user_id and u.ws_id=g.ws_id
     join public.workspace_configs flag on flag.ws_id=g.ws_id
       and flag.id='tutoring_content_rules' and flag.value='true'
-    where g.ws_id <> '42529372-c669-4833-bb32-2cab1f4ffd83'::uuid and f.require_attention
+    where f.require_attention
       and f.id>coalesce((select after_id from private.tutoring_content_scan_cursor), '00000000-0000-0000-0000-000000000000'::uuid)
       and exists(select 1 from public.workspace_user_groups_users m
         where m.group_id=f.group_id and m.user_id=f.user_id and m.role='STUDENT')

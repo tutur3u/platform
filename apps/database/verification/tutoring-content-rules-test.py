@@ -14,6 +14,14 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[3]
 PG = pathlib.Path(os.environ.get('TUTORING_PG_BIN', '/opt/homebrew/opt/postgresql@17/bin'))
 MIGRATION = ROOT / 'apps/database/supabase/migrations/20261103031000_tutoring_content_stages.sql'
+PRE_RUN = ROOT / 'apps/database/verification/tutoring-content-stages-pre-run.sql'
+# MD5 of the client workspace that only its own admins may opt in. Migrations and
+# backfills must always exclude it; the raw ID is never used as a fixture here.
+CLIENT_WS_MD5 = 'c736c4be0acb08f8625bb5ebe9ad8fe2'
+# Synthetic stand-in for that workspace in behavioural backfill tests only.
+SYNTH_EXCLUDED_WS = '00000000-0000-4000-8000-0000000000e1'
+# Second synthetic workspace for per-workspace opt-in scoping.
+OTHER_WS = '00000000-0000-0000-0000-000000000021'
 
 class ContentRules(unittest.TestCase):
     @classmethod
@@ -65,7 +73,7 @@ class ContentRules(unittest.TestCase):
         """)
         self.pre_migration()
         if MIGRATION.exists():
-            self.sql('begin;' + MIGRATION.read_text() + 'commit;')
+            self.apply_migration()
         self.sql("insert into public.workspace_configs select ws_id,'tutoring_content_rules','true' from public.workspace_user_groups")
 
     # Rows that exist before the stage migration is applied, keyed by test name.
@@ -73,10 +81,35 @@ class ContentRules(unittest.TestCase):
         'test_legacy_weak_receipt_becomes_n2_history': "insert into private.tutoring_notification_receipts(kind,group_id,student_user_id,review_cycle_started_at,recipient_user_id,created_at) select 'weak_content_review_due',group_id,user_id,created_at,'00000000-0000-0000-0000-000000000005',now()-interval '14 days' from public.user_feedbacks",
     }
 
+    BACKFILL_TESTS = {'test_backfill_excludes_client_receipts'}
+
+    def migration_text(self):
+        text = MIGRATION.read_text()
+        if self._testMethodName in self.BACKFILL_TESTS:
+            # Point the exclusion at a synthetic workspace; the constant test
+            # below pins the real migration text to CLIENT_WS_MD5.
+            text = text.replace(CLIENT_WS_MD5, hashlib.md5(SYNTH_EXCLUDED_WS.encode()).hexdigest())
+        return text
+
+    def configs_snapshot(self):
+        return self.sql("select count(*)::text || ':' || coalesce(md5(string_agg(t::text || '@' || t.xmin::text, ',' order by t::text)), '-') from public.workspace_configs t")
+
+    def apply_migration(self):
+        self.configs_before_migration = self.configs_snapshot()
+        self.sql('begin;' + self.migration_text() + 'commit;')
+        self.configs_after_migration = self.configs_snapshot()
+
     def pre_migration(self):
-        if self._testMethodName == 'test_backfill_excludes_ec_receipts':
-            # Reuse the processor's identity rule; never duplicate its raw ID.
-            ec = re.search(r"flag.ws_id <> '([^']+)'::uuid", MIGRATION.read_text()).group(1)
+        if self._testMethodName == 'test_migration_writes_no_workspace_configs':
+            # Existing opt-in rows (none 'true') must be left byte-for-byte alone.
+            self.sql(f"""
+                insert into public.workspace_configs values
+                  ('00000000-0000-0000-0000-000000000001','tutoring_content_rules','false'),
+                  ('{OTHER_WS}','tutoring_content_rules_n2_days','10'),
+                  ('{SYNTH_EXCLUDED_WS}','UNRELATED','x');
+            """)
+        if self._testMethodName in self.BACKFILL_TESTS:
+            ec = SYNTH_EXCLUDED_WS
             self.sql(f"""
                 insert into public.workspace_user_groups values
                   ('00000000-0000-0000-0000-000000000012','{ec}') on conflict do nothing;
@@ -90,10 +123,10 @@ class ContentRules(unittest.TestCase):
                    '00000000-0000-0000-0000-000000000003',now(),
                    '00000000-0000-0000-0000-000000000005');
             """)
-            pre_run = (ROOT / 'apps/database/verification/tutoring-content-stages-pre-run.sql').read_text()
+            pre_run = PRE_RUN.read_text().replace(CLIENT_WS_MD5, hashlib.md5(ec.encode()).hexdigest())
             # psql emits transaction command tags; request only query rows.
             query = pre_run[pre_run.index('with population'):pre_run.index('commit;')].rstrip().rstrip(';')
-            self.assertEqual(self.sql("select string_agg(workspace_segment || ':' || legacy_receipts || ':' || would_change, ',' order by workspace_segment) from (" + query + ") counts"), ['EC:1:0,non-EC:1:1'])
+            self.assertEqual(self.sql("select string_agg(workspace_segment || ':' || legacy_receipts || ':' || would_change, ',' order by workspace_segment) from (" + query + ") counts"), ['excluded:1:0,other:1:1'])
             self.ec_receipt_before = self.sql("""
                 select (to_jsonb(r)-'stage')::text || '@' || r.xmin::text
                 from private.tutoring_notification_receipts r
@@ -132,11 +165,6 @@ class ContentRules(unittest.TestCase):
         self.sql("delete from public.workspace_configs; update public.user_feedbacks set content='edited'")
         self.assertEqual(self.sql('select count(*) from private.tutoring_weak_support_reviews'), ['0'])
 
-    def test_ec_excluded(self):
-        self.sql("update public.workspace_user_groups set ws_id='42529372-c669-4833-bb32-2cab1f4ffd83'; update public.workspace_users set ws_id='42529372-c669-4833-bb32-2cab1f4ffd83'; update public.workspace_configs set ws_id='42529372-c669-4833-bb32-2cab1f4ffd83'; update public.user_feedbacks set content='edited'")
-        self.run_job()
-        self.assertEqual(self.sql('select count(*) from private.tutoring_weak_support_reviews'), ['0'])
-        self.count(0)
 
     def test_member_round_trips_preserve_authorized_boundary(self):
         self.sql("insert into private.tutoring_weak_support_reviews values ('00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000003',now()-interval '15 days')")
@@ -148,19 +176,6 @@ class ContentRules(unittest.TestCase):
             self.assertEqual(self.sql('select last_reviewed_at from private.tutoring_weak_support_reviews'), before)
         self.run_job(); self.count(2)
 
-    def test_ec_matrix_linked_recipient(self):
-        ec = '42529372-c669-4833-bb32-2cab1f4ffd83'
-        for table in ['workspace_user_groups','workspace_users','workspace_configs','workspace_user_linked_users','workspace_members']:
-            self.sql(f"update public.{table} set ws_id='{ec}'")
-        for enabled in ['false','true']:
-            with self.subTest(flag=enabled):
-                self.sql(f"update public.workspace_configs set value='{enabled}'")
-                for change in ["content='edit'", "require_attention=false", "require_attention=true", "content='fixture'"]:
-                    self.sql('update public.user_feedbacks set '+change)
-                    self.assertEqual(self.sql('select count(*) from private.tutoring_weak_support_reviews'), ['0'])
-                self.run_job(); self.count(0)
-                self.assertEqual(self.sql('select count(*) from private.tutoring_notification_receipts'), ['0'])
-                self.assertEqual(self.sql('select count(*) from private.tutoring_content_scan_cursor'), ['0'])
 
     def test_no_teacher(self):
         self.sql('delete from public.workspace_user_linked_users')
@@ -264,12 +279,6 @@ class ContentRules(unittest.TestCase):
                 self.sql(f"update public.workspace_configs set value='{value}'")
                 self.assert_no_derived_writes()
 
-    def test_flag_on_only_for_ec_is_off(self):
-        ec = '42529372-c669-4833-bb32-2cab1f4ffd83'
-        self.sql(f"update public.workspace_configs set ws_id='{ec}'")
-        self.assert_no_derived_writes()
-        self.sql("insert into private.tutoring_content_scan_cursor values (true, 'ffffffff-ffff-ffff-ffff-fffffffffffe')")
-        self.assert_no_derived_writes()
 
     def seed_review_boundary(self, days_ago):
         self.sql(f"insert into private.tutoring_weak_support_reviews values ('00000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000003',now()-interval '{days_ago} days') on conflict (group_id,student_user_id) do update set last_reviewed_at=excluded.last_reviewed_at")
@@ -352,19 +361,11 @@ class ContentRules(unittest.TestCase):
         self.assertEqual(self.sql('select count(*) from (select * from private.tutoring_notification_receipts except select * from private.tutoring_content_stage_backup) d'), ['0'])
         self.assertEqual(self.sql('select count(*) from private.tutoring_content_stage_backup'), ['2'])
 
-    def test_backfill_identity_matches_processor(self):
-        migration = MIGRATION.read_text()
-        ec = re.search(r"flag.ws_id <> '([^']+)'::uuid", migration).group(1)
-        digest = hashlib.md5(ec.encode()).hexdigest()
-        predicate = "md5(g.ws_id::text) <> '" + digest + "'"
-        self.assertIn(predicate, migration)
-        pre_run = (ROOT / 'apps/database/verification/tutoring-content-stages-pre-run.sql').read_text()
-        self.assertIn("md5(g.ws_id::text) = '" + digest + "'", pre_run)
 
     def test_backfill_timeouts(self):
         self.assertEqual(self.sql("begin;" + MIGRATION.read_text().split('-- Constant default')[0] + "select current_setting('lock_timeout') || ':' || current_setting('statement_timeout');"), ['5s:30s'])
 
-    def test_backfill_excludes_ec_receipts(self):
+    def test_backfill_excludes_client_receipts(self):
         self.assertEqual(self.sql("""
             select string_agg(stage,',' order by group_id)
             from private.tutoring_notification_receipts
@@ -374,6 +375,89 @@ class ContentRules(unittest.TestCase):
             from private.tutoring_notification_receipts r
             where group_id='00000000-0000-0000-0000-000000000012'
         """), self.ec_receipt_before)
+
+    # Opt-in contract on synthetic workspaces: only the workspace's own literal
+    # 'true' enables writes; absent or any other value writes nothing.
+    def add_workspace(self, ws, n):
+        group, student, teacher, platform = (f'00000000-0000-0000-0000-0000000000{n}{i}' for i in range(2, 6))
+        # The real-DDL harness has FK parents for workspaces and platform users.
+        self.sql(f"""do $x$ begin
+            if to_regclass('public.workspaces') is not null then
+              execute 'insert into public.workspaces(id) values (''{ws}'') on conflict do nothing';
+              execute 'insert into public.users(id) values (''{platform}'') on conflict do nothing';
+            end if; end $x$;""")
+        self.sql(f"""
+            insert into public.workspace_user_groups values ('{group}','{ws}');
+            insert into public.workspace_users values ('{student}','{ws}');
+            insert into public.workspace_user_groups_users values ('{group}','{student}','STUDENT'),('{group}','{teacher}','TEACHER');
+            insert into public.workspace_user_linked_users values ('{ws}','{teacher}','{platform}');
+            insert into public.workspace_members values ('{ws}','{platform}');
+            insert into public.user_feedbacks values (gen_random_uuid(),'{student}','{group}','fixture',true,now()-interval '14 days');
+        """)
+
+    def ws_rows(self, ws):
+        return self.sql(f"""select (select count(*) from public.notifications where ws_id='{ws}') || ':' ||
+            (select count(*) from private.tutoring_notification_receipts r join public.workspace_user_groups g on g.id=r.group_id where g.ws_id='{ws}') || ':' ||
+            (select count(*) from private.tutoring_content_review_episodes e join public.workspace_user_groups g on g.id=e.group_id where g.ws_id='{ws}')""")
+
+    def test_optin_absent_writes_nothing(self):
+        self.sql("delete from public.workspace_configs where id='tutoring_content_rules'")
+        self.assert_no_derived_writes()
+        self.assertEqual(self.ws_rows('00000000-0000-0000-0000-000000000001'), ['0:0:0'])
+
+    def test_optin_true_writes(self):
+        self.run_job()
+        self.assertEqual(self.ws_rows('00000000-0000-0000-0000-000000000001'), ['1:1:1'])
+
+    def test_optin_other_values_write_nothing(self):
+        for value in ['false', 'TRUE', 'True', ' true', 'true ', '1', 'yes', 'on', '']:
+            with self.subTest(value=value):
+                self.sql(f"update public.workspace_configs set value='{value}' where id='tutoring_content_rules'")
+                self.assert_no_derived_writes()
+                self.assertEqual(self.ws_rows('00000000-0000-0000-0000-000000000001'), ['0:0:0'])
+
+    def test_optin_is_per_workspace(self):
+        self.add_workspace(OTHER_WS, 3)
+        for value in [None, 'false', 'yes']:
+            with self.subTest(other=value):
+                self.sql(f"delete from public.workspace_configs where ws_id='{OTHER_WS}'")
+                if value is not None:
+                    self.sql(f"insert into public.workspace_configs values ('{OTHER_WS}','tutoring_content_rules','{value}')")
+                self.run_job()
+                self.assertEqual(self.ws_rows(OTHER_WS), ['0:0:0'])
+        self.assertEqual(self.ws_rows('00000000-0000-0000-0000-000000000001'), ['1:1:1'])
+        # The other workspace's own admins opt in later: it starts receiving.
+        self.sql(f"update public.workspace_configs set value='true' where ws_id='{OTHER_WS}'")
+        self.run_job()
+        self.assertEqual(self.ws_rows(OTHER_WS), ['1:1:1'])
+
+    @staticmethod
+    def migration_code():
+        return re.sub(r'--[^\n]*', '', MIGRATION.read_text())
+
+    def test_migration_writes_no_workspace_configs(self):
+        self.assertEqual(self.configs_after_migration, self.configs_before_migration)
+        # Seeded rows were present (the real-DDL harness applies twice, so >=).
+        self.assertGreaterEqual(int(self.configs_before_migration[0].split(':')[0]), 3)
+        text = self.migration_code().lower()
+        self.assertIsNone(re.search(r'(insert\s+into|update|delete\s+from|merge\s+into|truncate)\s+(public\.)?workspace_configs', text))
+        # workspace_configs is only read, inside the runtime function body.
+        outside = text[:text.index('as $$')] + text[text.index('end $$'):]
+        self.assertNotIn('workspace_configs', outside)
+        self.assertNotIn('tutoring_content_scan_cursor(singleton', outside.replace(' ', ''))
+
+    def test_migration_excludes_client_workspace_at_apply_time(self):
+        text = self.migration_code()
+        body = text[text.index('as $$'):text.index('end $$')]
+        # Runtime: the opt-in is the only gate, no hard-coded workspace exclusion.
+        self.assertNotIn(CLIENT_WS_MD5, body)
+        self.assertIsNone(re.search(r'ws_id\s*<>', body))
+        # Apply time: the only data-touching statement excludes the client workspace.
+        outside = text[:text.index('as $$')] + text[text.index('end $$'):]
+        dml = re.findall(r'^\s*(?:insert\s+into|update|delete\s+from|merge\s+into)\b[^;]*;', outside, re.I | re.M)
+        self.assertEqual(len(dml), 1, dml)
+        self.assertIn("md5(g.ws_id::text) <> '" + CLIENT_WS_MD5 + "'", dml[0])
+        self.assertIn("md5(g.ws_id::text) = '" + CLIENT_WS_MD5 + "'", PRE_RUN.read_text())
 
     def test_legacy_weak_receipt_becomes_n2_history(self):
         # A pre-stage weak-content receipt is the teacher alert (N2), never N1.
