@@ -1,9 +1,9 @@
 import { resolveConfiguredInternalAppDomains } from './internal-domains-env';
-import { isRetiredAppHostname, isRetiredAppUrl } from './retired-app-hosts';
 import {
   getTuturuuuPortlessAppOrigin,
   TUTURUUU_PORTLESS_APP_HOSTS,
 } from './portless';
+import { isRetiredAppHostname, isRetiredAppUrl } from './retired-app-hosts';
 import { getConfiguredSharedCookieDomainOverride } from './shared-cookie';
 
 export const PRODUCTION_INTERNAL_APP_DOMAINS = [

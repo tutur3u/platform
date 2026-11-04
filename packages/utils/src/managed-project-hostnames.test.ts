@@ -47,12 +47,12 @@ describe('managed project hostname reservation', () => {
     expect(isReservedManagedProjectHostname(host)).toBe(true);
   });
 
-  it.each([
-    'rewise.me',
-    'rewise.school',
-  ])('no longer treats released domain %s as a platform hostname', (host) => {
-    expect(isReservedManagedProjectHostname(host)).toBe(false);
-  });
+  it.each(['rewise.me', 'rewise.school'])(
+    'no longer treats released domain %s as a platform hostname',
+    (host) => {
+      expect(isReservedManagedProjectHostname(host)).toBe(false);
+    }
+  );
 
   it.each([
     'Forms.Tuturuuu.COM',

@@ -102,19 +102,21 @@ describe('web multi-account API routes', () => {
     );
   });
 
-  it.each([
-    'https://rewise.me',
-    'https://rewise.school',
-  ])('does not add credentialed account CORS for custom origin %s', async (origin) => {
-    const response = await GET(
-      new NextRequest('http://localhost/api/v1/auth/accounts', {
-        headers: { origin },
-      })
-    );
+  it.each(['https://rewise.me', 'https://rewise.school'])(
+    'does not add credentialed account CORS for custom origin %s',
+    async (origin) => {
+      const response = await GET(
+        new NextRequest('http://localhost/api/v1/auth/accounts', {
+          headers: { origin },
+        })
+      );
 
-    expect(response.headers.get('Access-Control-Allow-Origin')).toBe(null);
-    expect(response.headers.get('Access-Control-Allow-Credentials')).toBe(null);
-  });
+      expect(response.headers.get('Access-Control-Allow-Origin')).toBe(null);
+      expect(response.headers.get('Access-Control-Allow-Credentials')).toBe(
+        null
+      );
+    }
+  );
 
   it('allows credentialed first-party account API preflight requests', () => {
     const response = switchOPTIONS(
