@@ -16,8 +16,8 @@ jobs:
     timeout-minutes: 40
     env:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name == 'workflow_dispatch' && secrets.PRODUCTION_SUPABASE_URL || (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_URL || 'https://hive-ci.supabase.invalid' }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_hive_ci_placeholder' }}
       NEXT_PUBLIC_APP_URL: https://hive.tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       WRANGLER_SEND_METRICS: 'false'
