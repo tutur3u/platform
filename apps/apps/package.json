@@ -12,7 +12,8 @@
     "build:cloudflare": "vp build",
     "test:cloudflare": "vp test run --config vitest.config.ts && node --test cloudflare/owned-process-group.test.mjs cloudflare/runtime-deadline.test.mjs",
     "test": "vp test run --config vitest.config.ts",
-    "test:runtime": "node --test cloudflare/native-built-worker.test.mjs"
+    "test:runtime": "node --test cloudflare/native-built-worker.test.mjs",
+    "build:legacy": "next build --turbopack"
   },
   "dependencies": {
     "@fontsource-variable/noto-sans": "5.3.0",
