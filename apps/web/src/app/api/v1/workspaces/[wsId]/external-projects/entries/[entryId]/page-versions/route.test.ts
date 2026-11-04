@@ -78,7 +78,7 @@ describe('CMS page version routes', () => {
     vi.clearAllMocks();
   });
 
-  it('lists versions of the entry in the caller workspace with read access', async () => {
+  it('lists versions of the entry in the caller workspace with edit access', async () => {
     const admin = fakeAdmin([{ data: [{ id: VERSION }], error: null }]);
     allow(admin.client);
     const response = await (await collection()).GET(
@@ -89,7 +89,7 @@ describe('CMS page version routes', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual([{ id: VERSION }]);
     expect(mocks.access).toHaveBeenCalledWith(
-      expect.objectContaining({ mode: 'read', wsId: 'ieeai' })
+      expect.objectContaining({ mode: 'edit', wsId: 'ieeai' })
     );
     expect(admin.calls).toContainEqual(['eq', 'ws_id', WS]);
     expect(admin.calls).toContainEqual(['eq', 'entry_id', ENTRY]);
@@ -103,7 +103,7 @@ describe('CMS page version routes', () => {
     const response = await (await collection()).POST(post({}), context());
     expect(response.status).toBe(403);
     expect(mocks.access).toHaveBeenCalledWith(
-      expect.objectContaining({ mode: 'manage' })
+      expect.objectContaining({ mode: 'edit' })
     );
   });
 
@@ -188,6 +188,42 @@ describe('CMS page version routes', () => {
     const response = await (await publish()).POST(post({}), context(VERSION));
     expect(response.status).toBe(404);
     expect(admin.calls.some(([method]) => method === 'rpc')).toBe(false);
+  });
+
+  it('returns 409 when the workspace has no enabled CMS binding', async () => {
+    allow(
+      fakeAdmin([
+        { data: { id: VERSION }, error: null },
+        { data: null, error: { code: '55000', message: 'unbound' } },
+      ]).client
+    );
+    const response = await (await publish()).POST(post({}), context(VERSION));
+    expect(response.status).toBe(409);
+  });
+
+  it('delivers only the published version through the database read', async () => {
+    const { getPublishedPageVersion } = await import(
+      '@/lib/external-projects/page-versions'
+    );
+    const admin = fakeAdmin([
+      { data: [{ id: VERSION, status: 'published' }], error: null },
+      { data: [], error: null },
+    ]);
+    const scope = { entryId: ENTRY, workspaceId: WS };
+    expect(await getPublishedPageVersion(admin.client as never, scope)).toEqual(
+      {
+        id: VERSION,
+        status: 'published',
+      }
+    );
+    expect(
+      await getPublishedPageVersion(admin.client as never, scope)
+    ).toBeNull();
+    expect(admin.calls[0]).toEqual([
+      'rpc',
+      'get_published_workspace_external_project_page_version',
+      { p_entry_id: ENTRY, p_ws_id: WS },
+    ]);
   });
 
   it('maps a database permission denial to 403', async () => {
