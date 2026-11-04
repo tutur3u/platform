@@ -107,4 +107,54 @@ describe('invoice detail route', () => {
       message: 'Insufficient permissions to change the wallet for invoices',
     });
   });
+
+  it('answers the fee-lock 409 when a pre-filled invoice is blocked from deletion', async () => {
+    const { DELETE } = await import('./route');
+    const INVOICE = '00000000-0000-4000-8000-0000000fe851';
+    const link = { data: { id: 'link-1' }, error: null };
+    const linkQuery = {
+      eq: vi.fn(),
+      limit: vi.fn(),
+      maybeSingle: vi.fn(async () => link),
+      select: vi.fn(),
+    };
+    for (const key of ['eq', 'limit', 'select'] as const)
+      linkQuery[key].mockReturnValue(linkQuery);
+    const sbAdmin = {
+      from: vi.fn(() => linkQuery),
+      rpc: vi.fn(async () => ({ data: null, error: { code: '23503' } })),
+    };
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: withPermissions(['delete_invoices']),
+        sbAdmin,
+        user: { id: 'user-1' },
+      },
+    });
+
+    const response = await DELETE(
+      new Request('http://localhost/x', { method: 'DELETE' }),
+      {
+        params: Promise.resolve({ invoiceId: INVOICE, wsId: 'ws-1' }),
+      }
+    );
+
+    expect(response.status).toBe(409);
+    expect((await response.json()).message).toBe(
+      'Hóa đơn này đã gắn với bảng chốt học phí nên không thể xóa. Nếu cần điều chỉnh, vui lòng liên hệ quản trị viên.'
+    );
+    expect(sbAdmin.from).toHaveBeenCalledWith('fee_lock_invoice_links');
+    expect(linkQuery.eq).toHaveBeenCalledWith('ws_id', 'ws-1');
+    link.data = null as never;
+    const other = await DELETE(
+      new Request('http://localhost/x', { method: 'DELETE' }),
+      {
+        params: Promise.resolve({ invoiceId: INVOICE, wsId: 'ws-1' }),
+      }
+    );
+    expect((await other.json()).message).toBe(
+      'Invoice has linked records that must be reviewed before deletion'
+    );
+  });
 });
