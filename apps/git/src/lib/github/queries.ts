@@ -2,6 +2,7 @@ import 'server-only';
 
 import { cacheLife, cacheTag } from 'next/cache';
 import { githubRequest, githubRequestWithMetadata } from './api';
+import { GitHubMirrorError } from './errors';
 import { requireRegisteredRepository } from './registry';
 import type {
   GitHubCommit,
@@ -83,6 +84,25 @@ export async function getRepositoryMetadata(owner: string, name: string) {
   return githubRequest<GitHubRepository>({ path: '', repository });
 }
 
+function encodeContentPath(path: string) {
+  return path.split('/').map((segment) => {
+    let decoded = segment;
+    try {
+      decoded = decodeURIComponent(segment);
+    } catch {
+      // Already-decoded file names may contain a literal percent sign.
+    }
+    if (
+      !decoded || decoded === '.' || decoded === '..' || /[\\/\0]/u.test(decoded)
+    ) {
+      throw new GitHubMirrorError(
+        'Invalid repository content path', 400, 'invalid_content_path'
+      );
+    }
+    return encodeURIComponent(segment);
+  }).join('/');
+}
+
 export async function getRepositoryContent(
   owner: string,
   name: string,
@@ -90,10 +110,11 @@ export async function getRepositoryContent(
   ref?: string
 ) {
   'use cache';
+  const encodedPath = encodeContentPath(path);
   metadataCache(owner, name, `content:${ref ?? 'default'}:${path}`);
   const repository = await requireRegisteredRepository(owner, name);
   return githubRequest<GitHubContent | GitHubContent[]>({
-    path: `/contents/${path.split('/').map(encodeURIComponent).join('/')}`,
+    path: `/contents/${encodedPath}`,
     query: { ref },
     repository,
   });
