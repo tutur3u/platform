@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { ExternalProjectDeliveryPayload } from '@tuturuuu/types';
 import { z } from 'zod';
-import { getPublishedPageVersion } from './page-versions';
+import { getPublishedPageVersion, type PageVersionRow } from './page-versions';
 
 export async function attachPublishedPageVersions(
   payload: ExternalProjectDeliveryPayload,
@@ -20,7 +20,10 @@ export async function attachPublishedPageVersions(
     throw new Error('CMS page delivery exceeds entry limit');
   const versions = new Map<
     string,
-    Awaited<ReturnType<typeof getPublishedPageVersion>>
+    Pick<
+      PageVersionRow,
+      'id' | 'entry_id' | 'schema_version' | 'data' | 'published_at'
+    > | null
   >();
   for (let offset = 0; offset < entries.length; offset += 8) {
     await Promise.all(
@@ -38,7 +41,18 @@ export async function attachPublishedPageVersions(
         ) {
           throw new Error('Published page scope mismatch');
         }
-        versions.set(entry.id, version);
+        versions.set(
+          entry.id,
+          version
+            ? {
+                id: version.id,
+                entry_id: version.entry_id,
+                schema_version: version.schema_version,
+                data: version.data,
+                published_at: version.published_at,
+              }
+            : null
+        );
       })
     );
   }

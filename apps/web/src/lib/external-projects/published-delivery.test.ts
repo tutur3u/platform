@@ -33,6 +33,11 @@ const version = {
   entry_id: 'entry',
   data: { content: [] },
   schema_version: 1,
+  published_at: '2026-11-04T00:00:00Z',
+  note: 'Private editorial note',
+  created_by: 'editor',
+  published_by: 'publisher',
+  version_number: 7,
 };
 const run = () => attachPublishedPageVersions(payload, {} as never);
 beforeEach(() => {
@@ -45,7 +50,20 @@ describe('live published page snapshots', () => {
     expect(result.collections[0]?.entries[0]).toMatchObject({
       slug: 'en/about',
       metadata: { description: 'About', ogImage: 'https://example.com/og.png' },
-      publishedPageVersion: version,
+      publishedPageVersion: {
+        id: version.id,
+        entry_id: version.entry_id,
+        schema_version: version.schema_version,
+        data: version.data,
+        published_at: version.published_at,
+      },
+    });
+    expect(result.collections[0]?.entries[0]?.publishedPageVersion).toEqual({
+      id: version.id,
+      entry_id: version.entry_id,
+      schema_version: version.schema_version,
+      data: version.data,
+      published_at: version.published_at,
     });
     expect(read).toHaveBeenCalledWith(
       {},
