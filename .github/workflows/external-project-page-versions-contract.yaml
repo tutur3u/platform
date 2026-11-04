@@ -9,7 +9,7 @@ on:
       - 'apps/database/rollbacks/*external_project_edit_permission*'
       - 'apps/database/rollbacks/*external_project_page_versions*'
       - 'apps/database/scripts/verify-external-project-page-versions-contract.mjs'
-      - 'apps/database/scripts/external-project-page-versions*.test.mjs'
+      - 'apps/database/scripts/external-project-page-versions*.mjs'
       - 'apps/database/scripts/fixtures/external-project-page-versions-schema.sql'
       - 'apps/database/scripts/programming-database-tap.mjs'
       - 'apps/database/scripts/run-supabase*.js'
