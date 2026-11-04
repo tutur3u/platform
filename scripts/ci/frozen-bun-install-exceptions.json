@@ -270,11 +270,6 @@
     "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
   ],
   [
-    "wave1-web-staging.yaml",
-    "Install Vercel CLI",
-    "bash scripts/ci/run-with-backoff.sh bun install --global vercel@59.25.0 --ignore-scripts"
-  ],
-  [
     "release-please.yaml",
     "Normalize generated release formatting",
     "bun install --lockfile-only --ignore-scripts"

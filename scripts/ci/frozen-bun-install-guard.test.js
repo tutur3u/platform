@@ -18,6 +18,8 @@ const exceptions = require('./frozen-bun-install-exceptions.json');
 const MARKER = /#\s*unfrozen-bun-install:/;
 const JUSTIFICATION = /#\s*unfrozen-bun-install:\s*\S+/;
 
+const commandText = (line) => line.trim().replace(/^run:\s*/, '');
+
 function findUnfrozenInstalls(text, file = 'fixture.yaml') {
   const lines = text.replace(/\\\n[ \t]*/g, ' ').split('\n');
   const violations = [];
@@ -27,7 +29,6 @@ function findUnfrozenInstalls(text, file = 'fixture.yaml') {
       ([workflow, step, exactCommand]) =>
         workflow === file && step === stepName && exactCommand === command
     );
-  const commandText = (line) => line.trim().replace(/^run:\s*/, '');
 
   lines.forEach((line, index) => {
     // Reset at every job or step, including unnamed steps.
@@ -138,7 +139,7 @@ test('only exact reviewed workflow, step and safe command can be exempted', () =
     [
       'release-please.yaml',
       'Normalize generated release formatting',
-      command + ' --force',
+      `${command} --force`,
     ],
     [
       'vercel-preview-new.yaml',
@@ -173,8 +174,27 @@ test('every reviewed exception disables lifecycle scripts and rejects command dr
       ).length > 0
     );
     assert.ok(
-      findUnfrozenInstalls(releaseFixture(command + ' --force', step), file)
+      findUnfrozenInstalls(releaseFixture(`${command} --force`, step), file)
         .length > 0
+    );
+  }
+});
+
+test('every reviewed exception still names a live workflow step and command', () => {
+  // A stale entry would silently re-authorize the command if it reappears.
+  for (const [file, step, command] of exceptions) {
+    const workflowPath = path.join(workflowsDir, file);
+    assert.ok(fs.existsSync(workflowPath), `${file} no longer exists`);
+    const lines = fs.readFileSync(workflowPath, 'utf8').split('\n');
+    const start = lines.indexOf(`      - name: ${step}`);
+    assert.ok(start >= 0, `${file}: step "${step}" no longer exists`);
+    const end = lines.findIndex(
+      (line, index) => index > start && /^ {0,6}\S/.test(line)
+    );
+    const block = lines.slice(start, end < 0 ? undefined : end);
+    assert.ok(
+      block.some((line) => commandText(line) === command),
+      `${file}: ${step}: command drifted: ${command}`
     );
   }
 });
