@@ -134,6 +134,75 @@ describe('CMS page version routes', () => {
     expect(admin.calls).toEqual([]);
   });
 
+  it('rejects an oversized declared length without reading or parsing', async () => {
+    const admin = fakeAdmin([]);
+    allow(admin.client);
+    const request = post({ data: PAGE, schemaVersion: 1 });
+    request.headers.set('content-length', String(3 * 1024 * 1024));
+    const read = vi.spyOn(request.body!, 'getReader');
+    const parse = vi.spyOn(JSON, 'parse');
+    const response = await (await collection()).POST(request, context());
+    const parsed = parse.mock.calls.length;
+    parse.mockRestore();
+    expect(response.status).toBe(413);
+    expect(read).not.toHaveBeenCalled();
+    expect(parsed).toBe(0);
+    expect(admin.calls).toEqual([]);
+  });
+
+  it.each([null, '1'])(
+    'caps the stream with Content-Length %s before parsing',
+    async (length) => {
+      const admin = fakeAdmin([]);
+      allow(admin.client);
+      const cancel = vi.fn();
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new Uint8Array(1024 * 1024));
+          controller.enqueue(new Uint8Array(1024 * 1024));
+          controller.enqueue(new Uint8Array(1024 * 1024));
+        },
+        cancel,
+      });
+      const request = post({});
+      // A real byte stream without Request's Node-only duplex constructor option.
+      Object.defineProperty(request, 'body', { value: stream });
+      if (length !== null) request.headers.set('content-length', length);
+      const { POST } = await collection();
+      const parse = vi.spyOn(JSON, 'parse');
+      const response = await POST(request, context());
+      const parsed = parse.mock.calls.length;
+      parse.mockRestore();
+      expect(response.status).toBe(413);
+      expect(parsed).toBe(0);
+      expect(cancel).toHaveBeenCalledOnce();
+      expect(stream.locked).toBe(false);
+      expect(admin.calls).toEqual([]);
+    }
+  );
+
+  it('rejects deeply nested RichText with 400 before insertion', async () => {
+    const admin = fakeAdmin([]);
+    allow(admin.client);
+    const depth = 10000;
+    const doc =
+      '{"type":"doc","content":[' +
+      '{"type":"blockquote","content":['.repeat(depth) +
+      '{"type":"text","text":"Hello"}' +
+      ']}'.repeat(depth) +
+      ']}';
+    const request = new Request('http://localhost/x', {
+      method: 'POST',
+      body:
+        '{"schemaVersion":1,"data":{"schemaVersion":1,"root":{"props":{}},"content":[{"type":"RichText","props":{"id":"body","doc":' +
+        doc +
+        '}}]}}',
+    });
+    const response = await (await collection()).POST(request, context());
+    expect(response.status).toBe(400);
+    expect(admin.calls).toEqual([]);
+  });
+
   it('lists versions of the entry in the caller workspace with edit access', async () => {
     const admin = fakeAdmin([{ data: [{ id: VERSION }], error: null }]);
     allow(admin.client);
