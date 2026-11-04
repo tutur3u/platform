@@ -127,6 +127,39 @@ test('emitted inventory Worker serves its root, mount and unknown paths', {
     envFiles: [staged.envFile],
     sendMetrics: false,
     bindings: {
+      SEPAY_WEBHOOK_API_KEY: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only',
+      },
+      CRON_SECRET: { type: 'plain_text', value: 'synthetic-runtime-only' },
+      SEPAY_OAUTH_CLIENT_ID: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only',
+      },
+      SEPAY_OAUTH_CLIENT_SECRET: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only',
+      },
+      SEPAY_OAUTH_STATE_SECRET: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only',
+      },
+      SEPAY_OAUTH_TOKEN_ENCRYPTION_SECRET: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only',
+      },
+      ENCRYPTION_MASTER_KEY: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only',
+      },
+      UPSTASH_REDIS_REST_URL: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only',
+      },
+      UPSTASH_REDIS_REST_TOKEN: {
+        type: 'plain_text',
+        value: 'synthetic-runtime-only',
+      },
       TUTURUUU_APP_COORDINATION_SECRET: {
         type: 'plain_text',
         value: 'synthetic-runtime-only-coordination',

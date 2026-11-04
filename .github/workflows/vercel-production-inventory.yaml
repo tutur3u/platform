@@ -20,9 +20,11 @@ jobs:
       allowed: ${{ steps.policy.outputs.allowed }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version: 24.22.0
       - id: policy
         run: node scripts/ci/production-publication-policy.ts vercel-production-inventory.yaml "$GITHUB_STEP_SUMMARY"
 
@@ -49,7 +51,7 @@ jobs:
       - name: Use Node.js 24
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 24
+          node-version: 24.22.0
 
       - name: Install dependencies
         run: bash scripts/ci/run-with-backoff.sh bun install

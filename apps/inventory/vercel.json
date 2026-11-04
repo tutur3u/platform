@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd ../.. && bun turbo:local run build --filter='@tuturuuu/inventory^...' && cd apps/inventory && bun run build:legacy",
+  "buildCommand": "cd ../.. && bun turbo:local run build --filter=@tuturuuu/inventory",
   "installCommand": "cd ../.. && bun install --frozen-lockfile --minimum-release-age=0",
   "regions": ["sin1"],
   "crons": [
