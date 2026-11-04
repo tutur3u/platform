@@ -10,8 +10,7 @@
 * **learn:** require parent consent for Tulearn parent links (SR-238) ([#7062](https://github.com/tutur3u/platform/issues/7062)) ([b085a0e](https://github.com/tutur3u/platform/commit/b085a0e331aa758fd1e8f490df284b6bf22ed63a))
 * **learn:** use typed clients for parent consent helpers ([#7252](https://github.com/tutur3u/platform/issues/7252)) ([d64dc27](https://github.com/tutur3u/platform/commit/d64dc2728e57220415fe5dcf6e2101c717fdbe8f))
 * **tulearn:** interim, parents see no periodic reports (fail-closed) ([#7539](https://github.com/tutur3u/platform/issues/7539)) ([b3b1e48](https://github.com/tutur3u/platform/commit/b3b1e483cc6922ee0fd8480ab43847833c93316b))
-* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening ([#7057](https://github.com/tutur3u/platform/issues/7057)) ([99aa5a8](https://github.com/tutur3u/platform/commit/99aa5a84b735abd4970bebb70bc7ccc3e8081c53))
-* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening ([#7057](https://github.com/tutur3u/platform/issues/7057)) ([c678300](https://github.com/tutur3u/platform/commit/c678300a63eba6c8e6b57ead465d247fd0d38331))
+* **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening ([#7057](https://github.com/tutur3u/platform/issues/7057)) ([99aa5a8](https://github.com/tutur3u/platform/commit/99aa5a84b735abd4970bebb70bc7ccc3e8081c53)) ([c678300](https://github.com/tutur3u/platform/commit/c678300a63eba6c8e6b57ead465d247fd0d38331))
 * **tutoring,topic-announcements:** enforce the tutoring gate, weak-content and search hardening. ([c678300](https://github.com/tutur3u/platform/commit/c678300a63eba6c8e6b57ead465d247fd0d38331))
 
 ## [0.32.0](https://github.com/tutur3u/platform/compare/learn-v0.31.1...learn-v0.32.0) (2026-10-24)
