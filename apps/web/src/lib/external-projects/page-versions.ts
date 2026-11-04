@@ -36,7 +36,7 @@ type PageVersionsDatabase = Omit<Database, 'public'> & {
     Functions: Public['Functions'] & {
       publish_workspace_external_project_page_version: {
         Args: { p_actor_id: string; p_version_id: string; p_ws_id: string };
-        Returns: PageVersionRow;
+        Returns: PageVersionRow & { replaced_page_version_id: string | null };
       };
       get_published_workspace_external_project_page_version: {
         Args: { p_entry_id: string; p_ws_id: string };
