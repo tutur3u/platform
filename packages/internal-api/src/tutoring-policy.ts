@@ -36,7 +36,17 @@ export interface TutoringTimeRule {
 export type { TutoringGroupExclusion };
 export { hasTutoringTagExclusions, isTutoringGroupExcluded };
 
+export const TUTORING_STUDENT_OVERRIDE_LIMIT = 500;
+
+export interface TutoringStudentDayOverride {
+  weekdays: number[];
+  note?: string;
+  updatedAt: string;
+  updatedBy: string;
+}
+
 export interface TutoringPolicy {
+  studentDayOverrides?: Record<string, TutoringStudentDayOverride>;
   preset: 'standard' | 'easy_center' | 'custom';
   durationMinutes: number;
   leadMinutes: number;
@@ -261,7 +271,7 @@ function isIntegerInRange(value: unknown, min: number, max: number) {
   );
 }
 
-function isWeekdayList(value: unknown) {
+function isWeekdayList(value: unknown): value is number[] {
   return (
     Array.isArray(value) &&
     value.length >= 1 &&
@@ -380,6 +390,45 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     Array.isArray(candidate.shiftByGroupId)
   )
     return null;
+  const studentDayOverrides: Record<string, TutoringStudentDayOverride> = {};
+  if (saved.studentDayOverrides !== undefined) {
+    if (
+      !saved.studentDayOverrides ||
+      typeof saved.studentDayOverrides !== 'object' ||
+      Array.isArray(saved.studentDayOverrides)
+    )
+      return null;
+    const entries = Object.entries(saved.studentDayOverrides);
+    if (entries.length > TUTORING_STUDENT_OVERRIDE_LIMIT) return null;
+    for (const [id, raw] of entries) {
+      if (
+        !UUID.test(id) ||
+        !raw ||
+        typeof raw !== 'object' ||
+        Array.isArray(raw)
+      )
+        continue;
+      const entry = raw as Record<string, unknown>;
+      if (
+        !isWeekdayList(entry.weekdays) ||
+        new Set(entry.weekdays).size !== entry.weekdays.length ||
+        (entry.note !== undefined &&
+          (typeof entry.note !== 'string' || entry.note.length > 200)) ||
+        typeof entry.updatedAt !== 'string' ||
+        !/^\d{4}-\d{2}-\d{2}T/.test(entry.updatedAt) ||
+        !Number.isFinite(Date.parse(entry.updatedAt)) ||
+        typeof entry.updatedBy !== 'string' ||
+        !UUID.test(entry.updatedBy)
+      )
+        continue;
+      studentDayOverrides[id.toLowerCase()] = {
+        weekdays: [...entry.weekdays].sort((a, b) => a - b),
+        ...(typeof entry.note === 'string' ? { note: entry.note.trim() } : {}),
+        updatedAt: entry.updatedAt,
+        updatedBy: entry.updatedBy,
+      };
+    }
+  }
   const tutorGroupIds = parseTutorGroupIds(candidate.tutorGroupIds);
   const supportGroupIds = parseTutorGroupIds(candidate.supportGroupIds);
   if (!tutorGroupIds || !supportGroupIds) return null;
@@ -443,6 +492,7 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
   }
 
   return {
+    ...(saved.studentDayOverrides !== undefined ? { studentDayOverrides } : {}),
     preset: candidate.preset as TutoringPolicy['preset'],
     durationMinutes: candidate.durationMinutes as number,
     leadMinutes: candidate.leadMinutes as number,
