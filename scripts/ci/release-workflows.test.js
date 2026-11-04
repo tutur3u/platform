@@ -15,6 +15,16 @@ const {
 } = require('./workflow-config-test-helpers.js');
 
 const PACKAGE_PROVENANCE_REPOSITORY_URL = 'https://github.com/tutur3u/platform';
+const rootPackageJson = JSON.parse(
+  fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')
+);
+const expectedBiomeCliVersion = rootPackageJson.devDependencies[
+  '@biomejs/biome'
+].replace(/^[^\d]*/u, '');
+const expectedBiomeCliVersionPattern = expectedBiomeCliVersion.replaceAll(
+  '.',
+  '\\.'
+);
 const tanstackWebVercelWorkflows = new Set([
   'vercel-preview-tanstack-web.yaml',
   'vercel-production-tanstack-web.yaml',
@@ -636,15 +646,21 @@ test('Biome workflow runs pinned npm Biome CLI and prints captured output when c
   }
 
   assert.doesNotMatch(workflow, /biomejs\/setup-biome@v2/u);
-  // Biome must come from the frozen lockfile install, never a registry fetch.
-  assert.doesNotMatch(workflow, /npx\b[^\n]*biome/u);
+  // An exact pinned Biome, never a binary chosen by the PR's own lockfile
+  // (biome-workflow-lifecycle.test.js keeps the pin equal to bun.lock).
   for (const [job, command] of [
     [formatJob, 'format \\. 2>&1'],
     [lintJob, 'lint \\. 2>&1'],
     [applyFormatJob, 'format --write \\.'],
   ]) {
-    assert.match(job, /bun install --frozen-lockfile --ignore-scripts/u);
-    assert.match(job, new RegExp(`node_modules/\\.bin/biome ${command}`, 'u'));
+    assert.doesNotMatch(job, /node_modules\/\.bin\/biome/u);
+    assert.match(
+      job,
+      new RegExp(
+        `npx --yes @biomejs/biome@${expectedBiomeCliVersionPattern} ${command}`,
+        'u'
+      )
+    );
   }
 });
 
@@ -878,7 +894,7 @@ test('Release Please workflow is production-scoped and prefers bot token', () =>
   );
   assert.match(
     cleanupStep,
-    /git push "https:\/\/x-access-token:\$\{PUSH_TOKEN\}@github\.com\/\$\{GITHUB_REPOSITORY\}\.git" --delete "\$\{RELEASE_NOTES_BRANCH\}"/
+    /bash scripts\/ci\/github-token-push\.sh --delete "\$\{RELEASE_NOTES_BRANCH\}"/
   );
   assert.match(
     cleanupStep,
