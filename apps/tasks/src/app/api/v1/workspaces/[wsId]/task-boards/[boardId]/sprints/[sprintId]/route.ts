@@ -64,7 +64,7 @@ export const PATCH = withSessionAuth<SprintRouteParams>(
         return sprintRpcErrorResponse(error, 'Failed to update sprint');
       }
 
-      const loaded = await loadBoardSprints(access.sbAdmin, access.boardId);
+      const loaded = await loadBoardSprints(access);
       if (!loaded.ok) {
         return sprintRpcErrorResponse(loaded.error, 'Failed to load sprints');
       }

@@ -10,6 +10,11 @@ today's views. A workspace member who can edit the board turns sprints on from
 Board settings by picking a length of one or two weeks; Off turns them off again
 and keeps every past sprint and report.
 
+Board cycles ship dark. Until verified Tuturuuu staff set the workspace secret
+`ENABLE_BOARD_CYCLES=true`, the Board settings card stays hidden, and turning
+sprints on, editing goals, moving tasks, starting and ending all return 403
+`BOARD_CYCLES_NOT_ENABLED`. Reading sprints and turning them off still work.
+
 A sprint is a task cycle with a `board_id`. A board has at most one running
 sprint and one sprint being planned. Sprints run Monday to Friday of their last
 week, so the next sprint starts the Monday after the current one ends. Changing

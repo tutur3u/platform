@@ -52,9 +52,19 @@ const TASK_B = '00000000-0000-4000-8000-000000000a02';
 
 type TableResult = { data: unknown; error: unknown };
 
+// Board cycles stay off unless the workspace has ENABLE_BOARD_CYCLES=true.
+const CYCLES_ON = {
+  workspace_secrets: { data: [{ name: 'ENABLE_BOARD_CYCLES' }], error: null },
+};
+const CYCLES_GATE = {
+  code: 'BOARD_CYCLES_NOT_ENABLED',
+  error: 'Board cycles are not enabled for this workspace',
+};
+
 function createAdmin(tables: Record<string, TableResult>) {
   const rpc = vi.fn(async () => ({ data: null, error: null }));
   const update = vi.fn();
+  const filters: [string, string, unknown][] = [];
   const from = vi.fn((table: string) => {
     const result = tables[table] ?? { data: null, error: null };
     // A resolved promise with chainable query methods, like a PostgREST builder.
@@ -62,9 +72,13 @@ function createAdmin(tables: Record<string, TableResult>) {
       Promise.resolve(result),
       {}
     ) as Promise<TableResult> & Record<string, unknown>;
-    for (const method of ['select', 'eq', 'not', 'in']) {
+    for (const method of ['select', 'not', 'in']) {
       query[method] = vi.fn(() => query);
     }
+    query.eq = vi.fn((column: string, value: unknown) => {
+      filters.push([table, column, value]);
+      return query;
+    });
     query.order = vi.fn(async () => result);
     query.maybeSingle = vi.fn(async () => result);
     query.update = vi.fn((values: unknown) => {
@@ -73,7 +87,7 @@ function createAdmin(tables: Record<string, TableResult>) {
     });
     return query;
   });
-  return { from, rpc, update };
+  return { filters, from, rpc, update };
 }
 
 function grantAccess(
@@ -179,6 +193,7 @@ describe('board sprint routes', () => {
 
   it('lists sprints with membership, reports and the board length', async () => {
     const sbAdmin = createAdmin({
+      ...CYCLES_ON,
       workspace_boards: { data: { sprint_length_weeks: 2 }, error: null },
       task_cycles: { data: sprintRows, error: null },
       task_sprint_reports: { data: [reportRow], error: null },
@@ -190,6 +205,7 @@ describe('board sprint routes', () => {
 
     expect(response.status).toBe(200);
     expect(body.schemaAvailable).toBe(true);
+    expect(body.cyclesEnabled).toBe(true);
     expect(body.sprintLengthWeeks).toBe(2);
     expect(body.sprints.map((s: { name: string }) => s.name)).toEqual([
       'Sprint 13',
@@ -260,6 +276,7 @@ describe('board sprint routes', () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
+      cyclesEnabled: false,
       schemaAvailable: false,
       sprintLengthWeeks: null,
       sprints: [],
@@ -283,6 +300,7 @@ describe('board sprint routes', () => {
 
   it('turns sprints on with the actor and returns the refreshed sprints', async () => {
     const sbAdmin = createAdmin({
+      ...CYCLES_ON,
       workspace_boards: { data: { sprint_length_weeks: 1 }, error: null },
       task_cycles: { data: [], error: null },
       task_sprint_reports: { data: [], error: null },
@@ -301,10 +319,16 @@ describe('board sprint routes', () => {
       p_weeks: 1,
     });
     expect((await response.json()).sprintLengthWeeks).toBe(1);
+    // The flag is read from the board's own workspace.
+    expect(sbAdmin.filters).toContainEqual([
+      'workspace_secrets',
+      'ws_id',
+      'ws-1',
+    ]);
   });
 
   it('rejects sprint lengths other than one or two weeks', async () => {
-    const sbAdmin = createAdmin({});
+    const sbAdmin = createAdmin({ ...CYCLES_ON });
     grantAccess(sbAdmin);
 
     const response = await PUT(
@@ -317,6 +341,7 @@ describe('board sprint routes', () => {
 
   it('ends a sprint with decisions and maps state errors to 409', async () => {
     const sbAdmin = createAdmin({
+      ...CYCLES_ON,
       task_cycles: { data: { id: SPRINT_ID, status: 'active' }, error: null },
     });
     sbAdmin.rpc.mockResolvedValueOnce({
@@ -347,7 +372,7 @@ describe('board sprint routes', () => {
   });
 
   it('moves unique task ids into a sprint for board editors', async () => {
-    const sbAdmin = createAdmin({});
+    const sbAdmin = createAdmin({ ...CYCLES_ON });
     sbAdmin.rpc.mockResolvedValueOnce({ data: 2, error: null } as never);
     grantAccess(sbAdmin, 'guest');
 
@@ -367,6 +392,7 @@ describe('board sprint routes', () => {
 
   it('updates the goal of an open sprint only', async () => {
     const sbAdmin = createAdmin({
+      ...CYCLES_ON,
       task_cycles: {
         data: { id: SPRINT_ID, status: 'completed' },
         error: null,
@@ -381,5 +407,79 @@ describe('board sprint routes', () => {
 
     expect(response.status).toBe(409);
     expect(sbAdmin.update).not.toHaveBeenCalled();
+  });
+
+  describe('while board cycles are not enabled for the workspace', () => {
+    const offTables = () =>
+      createAdmin({
+        workspace_secrets: { data: [], error: null },
+        workspace_boards: { data: { sprint_length_weeks: 2 }, error: null },
+        task_cycles: { data: sprintRows, error: null },
+        task_sprint_reports: { data: [reportRow], error: null },
+      });
+
+    it('refuses every write that turns on, plans, starts or ends cycles', async () => {
+      const sbAdmin = offTables();
+      grantAccess(sbAdmin);
+
+      const responses = await Promise.all([
+        PUT(request('PUT', { sprint_length_weeks: 1 }), params()),
+        PATCH(request('PATCH', { goal: 'Ship' }), params(SPRINT_ID)),
+        START(request('POST', {}), params(SPRINT_ID)),
+        END(request('POST', {}), params(SPRINT_ID)),
+        MOVE(request('POST', { task_ids: [TASK_A] }), params(SPRINT_ID)),
+      ]);
+
+      expect(responses.map((response) => response.status)).toEqual([
+        403, 403, 403, 403, 403,
+      ]);
+      for (const response of responses) {
+        expect(await response.json()).toEqual(CYCLES_GATE);
+      }
+      expect(sbAdmin.rpc).not.toHaveBeenCalled();
+      expect(sbAdmin.update).not.toHaveBeenCalled();
+    });
+
+    it('fails closed when the flag cannot be read', async () => {
+      const sbAdmin = createAdmin({
+        workspace_secrets: { data: null, error: { message: 'boom' } },
+      });
+      grantAccess(sbAdmin);
+
+      const response = await START(request('POST', {}), params(SPRINT_ID));
+
+      expect(response.status).toBe(403);
+      expect(sbAdmin.rpc).not.toHaveBeenCalled();
+    });
+
+    it('still lets a board turn cycles off', async () => {
+      const sbAdmin = offTables();
+      grantAccess(sbAdmin);
+
+      const response = await PUT(
+        request('PUT', { sprint_length_weeks: null }),
+        params()
+      );
+
+      expect(response.status).toBe(200);
+      expect(sbAdmin.rpc).toHaveBeenCalledWith('set_board_sprint_length', {
+        p_actor_id: 'user-1',
+        p_board_id: BOARD_ID,
+        p_weeks: null,
+      });
+    });
+
+    it('keeps reading existing cycles and reports the flag as off', async () => {
+      const sbAdmin = offTables();
+      grantAccess(sbAdmin);
+
+      const response = await GET(request('GET'), params());
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body.cyclesEnabled).toBe(false);
+      expect(body.sprintLengthWeeks).toBe(2);
+      expect(body.sprints).toHaveLength(2);
+    });
   });
 });

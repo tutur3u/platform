@@ -79,6 +79,28 @@ describe('managed cron secret mutations', () => {
     expect(response.status).toBe(403);
     expect(mocks.write).not.toHaveBeenCalled();
   });
+  it('keeps the board cycles flag with employees too', async () => {
+    mocks.rows = [
+      { id: 'secret', name: 'ENABLE_BOARD_CYCLES', ws_id: 'tenant' },
+    ];
+    const body = JSON.stringify({
+      name: ' enable_board_cycles ',
+      value: 'true',
+    });
+    const params = {
+      params: Promise.resolve({ wsId: 'tenant', secretId: 'secret' }),
+    };
+    const created = await POST(
+      new Request('https://e.test', { method: 'POST', body }),
+      params
+    );
+    const deleted = await DELETE(
+      new Request('https://e.test', { method: 'DELETE' }),
+      params
+    );
+    expect([created.status, deleted.status]).toEqual([403, 403]);
+    expect(mocks.write).not.toHaveBeenCalled();
+  });
   it('preserves employee mutations', async () => {
     mocks.email = 'employee@tuturuuu.com';
     const response = await POST(
