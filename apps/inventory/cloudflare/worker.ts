@@ -11,7 +11,12 @@ import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
 import appConfig from '../start-bridge.config';
 
-export interface InventoryEnvironment {
+import {
+  assertRuntimeEnvironment,
+  type RuntimeEnvironment,
+} from './runtime-environment';
+
+export interface InventoryEnvironment extends RuntimeEnvironment {
   ASSETS: AssetsBinding;
   INTERNAL_WEB_API_ORIGIN?: string;
   TUTURUUU_NOINDEX?: string;
@@ -57,6 +62,7 @@ const handler = (
 
 export default {
   async fetch(request: Request, env: InventoryEnvironment, ctx: WorkerContext) {
+    assertRuntimeEnvironment(env);
     const response = await (await handler)(request, env, ctx);
     return appConfig.wrapResponse
       ? appConfig.wrapResponse(response, { request, env })
