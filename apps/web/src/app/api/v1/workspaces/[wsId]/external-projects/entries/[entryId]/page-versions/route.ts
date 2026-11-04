@@ -8,7 +8,7 @@ import { handlePageVersionRequest, type PageVersionParams } from './respond';
 
 export async function GET(request: Request, context: PageVersionParams) {
   await connection();
-  return handlePageVersionRequest(request, context, 'read', (access, scope) =>
+  return handlePageVersionRequest(request, context, 'edit', (access, scope) =>
     listPageVersions(access.admin, scope)
   );
 }
@@ -17,7 +17,7 @@ export async function POST(request: Request, context: PageVersionParams) {
   return handlePageVersionRequest(
     request,
     context,
-    'manage',
+    'edit',
     async (access, scope) =>
       savePageVersionDraft(access.admin, {
         ...scope,

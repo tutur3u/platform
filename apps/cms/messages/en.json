@@ -16066,6 +16066,8 @@
     "display": "Display",
     "edit": "Edit role",
     "edit_description": "Edit an existing role in this workspace.",
+    "edit_external_projects": "Edit CMS drafts",
+    "edit_external_projects_description": "Allows members to save and privately preview draft pages for bound CMS projects, without publishing.",
     "edit_role_description": "Customize this role's name, permissions, and assigned members",
     "expand_members": "Expand members",
     "export_finance_data": "Allow exporting finance data",

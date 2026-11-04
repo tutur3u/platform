@@ -38,6 +38,10 @@ type PageVersionsDatabase = Omit<Database, 'public'> & {
         Args: { p_actor_id: string; p_version_id: string; p_ws_id: string };
         Returns: PageVersionRow;
       };
+      get_published_workspace_external_project_page_version: {
+        Args: { p_entry_id: string; p_ws_id: string };
+        Returns: PageVersionRow[];
+      };
     };
   };
 };
@@ -54,7 +58,7 @@ export const savePageVersionSchema = z.object({
 
 export class PageVersionError extends Error {
   constructor(
-    readonly status: 400 | 403 | 404,
+    readonly status: 400 | 403 | 404 | 409,
     message: string
   ) {
     super(message);
@@ -70,6 +74,8 @@ function toPageVersionError(error: { code?: string; message: string }) {
   if (error.code === '23503' || error.code === 'P0002')
     return new PageVersionError(404, 'Page version or entry not found');
   if (error.code === '42501') return new PageVersionError(403, 'Forbidden');
+  if (error.code === '55000')
+    return new PageVersionError(409, 'CMS project is not bound');
   if (error.code === '23514')
     return new PageVersionError(400, 'Invalid page version');
   return new Error(error.message);
@@ -149,4 +155,18 @@ export async function publishPageVersion(
   );
   if (error) throw toPageVersionError(error);
   return data;
+}
+
+// Delivery read for the renderer: the entry's published version only, never a
+// draft, or null when the page is unpublished. Service role only.
+export async function getPublishedPageVersion(
+  admin: TypedSupabaseClient,
+  { entryId, workspaceId }: Scope
+) {
+  const { data, error } = await db(admin).rpc(
+    'get_published_workspace_external_project_page_version',
+    { p_entry_id: entryId, p_ws_id: workspaceId }
+  );
+  if (error) throw toPageVersionError(error);
+  return data?.[0] ?? null;
 }
