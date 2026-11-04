@@ -63,7 +63,7 @@ function verifier(cert = certificate()) {
 describe('SNS signature verification', () => {
   it('accepts a correctly signed SignatureVersion 2 notification', async () => {
     const { verify, fetchCertificate } = verifier();
-    expect(await verify(notification())).toBe(true);
+    expect(await verify(notification())).toBe('valid');
     expect(fetchCertificate).toHaveBeenCalledWith(new URL(CERT_URL));
   });
 
@@ -80,7 +80,7 @@ describe('SNS signature verification', () => {
       SubscribeURL: `https://sns.ap-southeast-1.amazonaws.com/?Action=ConfirmSubscription&TopicArn=${encodeURIComponent(TOPIC)}&Token=abc`,
       Token: 'abc',
     });
-    expect(await verify(envelope)).toBe(true);
+    expect(await verify(envelope)).toBe('valid');
   });
 
   it('rejects a tampered message', async () => {
@@ -88,18 +88,20 @@ describe('SNS signature verification', () => {
     const envelope = notification();
     expect(
       await verify({ ...envelope, Message: '{"notificationType":"Complaint"}' })
-    ).toBe(false);
+    ).toBe('invalid');
   });
 
   it('rejects a signature from another key', async () => {
     const other = generateKeyPairSync('rsa', { modulusLength: 2048 });
     const { verify } = verifier(certificate({}, other.publicKey));
-    expect(await verify(notification())).toBe(false);
+    expect(await verify(notification())).toBe('invalid');
   });
 
   it('rejects SignatureVersion 1 (SHA1)', async () => {
     const { verify, fetchCertificate } = verifier();
-    expect(await verify(notification({ SignatureVersion: '1' }))).toBe(false);
+    expect(await verify(notification({ SignatureVersion: '1' }))).toBe(
+      'invalid'
+    );
     expect(fetchCertificate).not.toHaveBeenCalled();
   });
 
@@ -115,7 +117,7 @@ describe('SNS signature verification', () => {
     'not a url',
   ])('rejects an untrusted signing certificate URL: %s', async (url) => {
     const { verify, fetchCertificate } = verifier();
-    expect(await verify(notification({ SigningCertURL: url }))).toBe(false);
+    expect(await verify(notification({ SigningCertURL: url }))).toBe('invalid');
     expect(fetchCertificate).not.toHaveBeenCalled();
   });
 
@@ -126,7 +128,7 @@ describe('SNS signature verification', () => {
     ['not issued by Amazon', { issuer: 'C=US\nO=Evil Corp\nCN=Evil CA' }],
   ])('rejects a signing certificate that is %s', async (_label, overrides) => {
     const { verify } = verifier(certificate(overrides));
-    expect(await verify(notification())).toBe(false);
+    expect(await verify(notification())).toBe('invalid');
   });
 
   it('accepts a certificate issued for the regional SNS host', async () => {
@@ -136,7 +138,7 @@ describe('SNS signature verification', () => {
           name === 'sns.ap-southeast-1.amazonaws.com' ? name : undefined,
       })
     );
-    expect(await verify(notification())).toBe(true);
+    expect(await verify(notification())).toBe('valid');
   });
 
   it.each([
@@ -145,20 +147,20 @@ describe('SNS signature verification', () => {
     ['unparseable', 'yesterday'],
   ])('rejects a timestamp that is %s', async (_label, Timestamp) => {
     const { verify } = verifier();
-    expect(await verify(notification({ Timestamp }))).toBe(false);
+    expect(await verify(notification({ Timestamp }))).toBe('invalid');
   });
 
   it('rejects a malformed topic ARN or a missing certificate', async () => {
     const { verify } = verifier();
     expect(await verify(notification({ TopicArn: 'arn:aws:sns:bad' }))).toBe(
-      false
+      'invalid'
     );
     const missing = createSnsVerifier({
       fetchCertificate: async () => null,
       parseCertificate: () => certificate(),
       now: () => NOW,
     });
-    expect(await missing(notification())).toBe(false);
+    expect(await missing(notification())).toBe('invalid');
   });
 
   it('fetches each signing certificate once', async () => {
@@ -166,6 +168,34 @@ describe('SNS signature verification', () => {
     await verify(notification());
     await verify(notification({ MessageId: 'sns-message-2' }));
     expect(fetchCertificate).toHaveBeenCalledTimes(1);
+  });
+  it('reports a transient certificate fetch failure as unavailable, never invalid', async () => {
+    const fetchCertificate = vi
+      .fn<(url: URL) => Promise<string | null>>()
+      .mockRejectedValueOnce(new Error('ETIMEDOUT'))
+      .mockResolvedValueOnce('PEM');
+    const verify = createSnsVerifier({
+      fetchCertificate,
+      parseCertificate: () => certificate(),
+      now: () => NOW,
+    });
+    expect(await verify(notification())).toBe('unavailable');
+    // The failure is not cached: the retry fetches again and verifies.
+    expect(await verify(notification())).toBe('valid');
+    expect(fetchCertificate).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps at most 32 certificates, evicting the least recently used', async () => {
+    const { verify, fetchCertificate } = verifier();
+    const url = (n: number) =>
+      `https://sns.ap-southeast-1.amazonaws.com/SimpleNotificationService-${n}.pem`;
+    for (let n = 0; n < 33; n++)
+      await verify(notification({ SigningCertURL: url(n) }));
+    expect(fetchCertificate).toHaveBeenCalledTimes(33);
+    await verify(notification({ SigningCertURL: url(32) }));
+    expect(fetchCertificate).toHaveBeenCalledTimes(33);
+    await verify(notification({ SigningCertURL: url(0) }));
+    expect(fetchCertificate).toHaveBeenCalledTimes(34);
   });
 });
 

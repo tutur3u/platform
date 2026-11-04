@@ -346,3 +346,16 @@ test('the static rollback refuses while receipts exist, then drops its objects',
     ledger: 'private.policy_notice_deliveries',
   });
 });
+
+test('migration and rollback bound their locks and statements', async () => {
+  for (const path of [
+    `supabase/migrations/${MIGRATION}.sql`,
+    `rollbacks/${MIGRATION}.rollback.sql`,
+  ]) {
+    const sql = await read(path);
+    assert.match(sql, /^BEGIN;$/m, path);
+    assert.match(sql, /^SET LOCAL lock_timeout = '5s';$/m, path);
+    assert.match(sql, /^SET LOCAL statement_timeout = '\d+s';$/m, path);
+    assert.match(sql, /^COMMIT;\s*$/m, path);
+  }
+});

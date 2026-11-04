@@ -150,7 +150,9 @@ SNS at `POST /api/v1/webhooks/email/ses` in the web app.
   empty. The SNS signature must be SignatureVersion 2 (RSA-SHA256) and at most a
   day old. The signing certificate must come from the topic's own
   `https://sns.<region>.amazonaws.com/SimpleNotificationService-*.pem`, be in
-  date, be issued by Amazon and be valid for the SNS host; otherwise 401. A
+  date, be issued by Amazon and be valid for the SNS host; otherwise 401. If the
+  certificate cannot be fetched right now (network error, timeout, 5xx or 429), the
+  answer is 503 so SNS retries. Up to 32 certificates are cached. A
   subscription confirmation is confirmed only through that same regional host's
   `ConfirmSubscription` URL for the same topic.
 - **Effect:** each SNS `MessageId` is processed once
@@ -162,7 +164,9 @@ SNS at `POST /api/v1/webhooks/email/ses` in the web app.
   bounces are recorded but suppress nothing. A policy-notice ledger row sent with
   the same SES message id becomes `bounced` or `complained`, which the notice's
   automatic stop counts.
-- **Limits:** 300 requests per minute per client IP and a 256 KiB body.
+- **Limits:** 300 requests per minute per client IP; the limiter fails open, and
+  logs it, when Redis is unavailable. The body is capped at 256 KiB while it is
+  read, so a larger body is cut off with 413 and never buffered whole.
 
 AWS setup (no credentials in code): create an SNS topic with
 `SignatureVersion=2`, publish SES Bounce and Complaint notifications for the

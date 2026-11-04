@@ -3,7 +3,7 @@ import 'server-only';
 import { X509Certificate } from 'node:crypto';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { resolveClientIp } from '@tuturuuu/utils/abuse-protection/client-ip';
-import { checkRateLimitRedis } from '@/lib/rate-limit';
+import { checkRateLimitRedis, getRedisClient } from '@/lib/rate-limit';
 import type { SesNotificationDeps, SesNotificationRecord } from './handler';
 import { createSnsVerifier, snsTopicRegion } from './sns';
 
@@ -21,11 +21,18 @@ export function configuredTopicArns(
     .filter((arn) => snsTopicRegion(arn) !== null);
 }
 
-async function fetchCertificate(url: URL) {
+/**
+ * Fetches an SNS signing certificate. Network errors, timeouts, 5xx and 429
+ * throw (transient: the webhook answers 503 and SNS retries). Any other
+ * non-2xx or a body that is not a PEM certificate is null (invalid).
+ */
+export async function fetchSigningCertificate(url: URL) {
   const response = await fetch(url, {
     redirect: 'error',
     signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
+  if (response.status >= 500 || response.status === 429)
+    throw new Error(`Signing certificate fetch failed (${response.status})`);
   if (!response.ok) return null;
   const pem = await response.text();
   return pem.length <= MAX_CERTIFICATE_BYTES &&
@@ -36,7 +43,7 @@ async function fetchCertificate(url: URL) {
 
 // One verifier per server instance, so signing certificates are cached.
 const verify = createSnsVerifier({
-  fetchCertificate,
+  fetchCertificate: fetchSigningCertificate,
   parseCertificate: (pem) => new X509Certificate(pem),
   now: () => Date.now(),
 });
@@ -74,9 +81,16 @@ export function createSesNotificationDeps(): SesNotificationDeps {
       return response.ok;
     },
     record,
-    allowRequest: async (ip) =>
-      (await checkRateLimitRedis(`ses-notifications:${ip}`, RATE_LIMIT))
-        .allowed,
+    allowRequest: async (ip) => {
+      if (!(await getRedisClient())) {
+        console.warn(
+          '[SesNotifications] Rate limiter unavailable; failing open'
+        );
+        return true;
+      }
+      return (await checkRateLimitRedis(`ses-notifications:${ip}`, RATE_LIMIT))
+        .allowed;
+    },
     clientIp: (request) => resolveClientIp(request.headers),
   };
 }
