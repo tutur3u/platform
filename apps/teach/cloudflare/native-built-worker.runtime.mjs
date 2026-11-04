@@ -108,6 +108,8 @@ test('emitted teach Worker serves its root, mount and unknown paths', {
       ...Object.fromEntries(Object.entries({
         NEXT_PUBLIC_SUPABASE_URL: 'https://fixture.supabase.invalid',
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_fixture',
+        UPSTASH_REDIS_REST_URL: 'https://fixture.upstash.invalid',
+        UPSTASH_REDIS_REST_TOKEN: 'synthetic-smoke-only',
         SUPABASE_SECRET_KEY: 'synthetic-smoke-only',
         TUTURUUU_APP_COORDINATION_SECRET: 'synthetic-smoke-only',
       }).map(([name, value]) => [name, { type: 'plain_text', value }])),
