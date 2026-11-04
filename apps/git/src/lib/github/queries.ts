@@ -93,7 +93,7 @@ export async function getRepositoryContent(
   metadataCache(owner, name, `content:${ref ?? 'default'}:${path}`);
   const repository = await requireRegisteredRepository(owner, name);
   return githubRequest<GitHubContent | GitHubContent[]>({
-    path: `/contents/${path}`,
+    path: `/contents/${path.split('/').map(encodeURIComponent).join('/')}`,
     query: { ref },
     repository,
   });
