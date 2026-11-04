@@ -6,6 +6,7 @@ import {
   FileText,
   HandCoins,
   LayoutDashboard,
+  Lock,
   Receipt,
   Repeat,
   Tags,
@@ -19,9 +20,11 @@ import { getTranslations } from 'next-intl/server';
 export type { NavLink } from '@tuturuuu/ui/custom/navigation';
 
 export async function getNavigationLinks({
+  feeLockEnabled = false,
   permissions,
   personalOrWsId,
 }: {
+  feeLockEnabled?: boolean;
   permissions?: PermissionsResult;
   personalOrWsId: string;
 }): Promise<(NavLink | null)[]> {
@@ -57,6 +60,16 @@ export async function getNavigationLinks({
       icon: <FileText className="h-4 w-4" />,
       disabled: withoutPermission('view_invoices'),
     },
+    // `null` renders a separator, so the gated item is spread in or omitted.
+    ...(feeLockEnabled && !withoutPermission('view_invoices')
+      ? [
+          {
+            title: t('ws-fee-lock.title'),
+            href: `/${personalOrWsId}/invoices/fee-lock`,
+            icon: <Lock className="h-4 w-4" />,
+          },
+        ]
+      : []),
     {
       title: t('sidebar_tabs.promotions'),
       href: `/${personalOrWsId}/promotions`,

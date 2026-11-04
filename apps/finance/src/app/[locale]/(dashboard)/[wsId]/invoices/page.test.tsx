@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   accessDenied: vi.fn(() => null),
   getFinanceWorkspaceContext: vi.fn(),
   invoicesPage: vi.fn(() => null),
+  isFeeLockEnabled: vi.fn(async () => false),
   notFound: vi.fn(() => {
     throw new Error('not-found');
   }),
@@ -17,6 +18,12 @@ vi.mock('@/components/invoices/invoice-access-denied', () => ({
 }));
 vi.mock('@/lib/workspace', () => ({
   getFinanceWorkspaceContext: mocks.getFinanceWorkspaceContext,
+}));
+vi.mock('@/lib/fee-lock-access', () => ({
+  isFeeLockEnabled: mocks.isFeeLockEnabled,
+}));
+vi.mock('next-intl/server', () => ({
+  getTranslations: async () => (key: string) => key,
 }));
 vi.mock('next/navigation', () => ({ notFound: mocks.notFound }));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
@@ -73,6 +80,25 @@ describe('Finance invoice list access', () => {
     });
     await expect(child.props.params).resolves.toEqual({
       wsId: 'workspace-1',
+    });
+    expect(child.props.feeLockHref).toBeUndefined();
+  });
+
+  it('links the pending tab to fee lock only when ENABLE_FEE_LOCK is on', async () => {
+    mocks.getFinanceWorkspaceContext.mockResolvedValue(
+      contextWithPermission(true)
+    );
+    mocks.isFeeLockEnabled.mockResolvedValueOnce(true);
+
+    const page = await WorkspaceInvoicesPage({
+      params: Promise.resolve({ wsId: 'workspace-alias' }),
+      searchParams: Promise.resolve({} as never),
+    });
+
+    expect(mocks.isFeeLockEnabled).toHaveBeenCalledWith('workspace-1');
+    expect(page.props.children.props).toMatchObject({
+      feeLockHref: '/workspace-1/invoices/fee-lock',
+      feeLockLabel: 'open_from_pending',
     });
   });
 
