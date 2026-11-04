@@ -71,3 +71,19 @@ export function activeFeeNoticeTemplate(
   };
   return fields;
 }
+
+/** `{{centre_name}}`: the workspace name, read with the gate's workspace id. */
+export async function getFeeNoticeCentreName(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string
+): Promise<
+  { name: string; response?: never } | { name?: never; response: NextResponse }
+> {
+  const { data, error } = await sbAdmin
+    .from('workspaces')
+    .select('name')
+    .eq('id', wsId)
+    .maybeSingle();
+  if (error) return { response: feeLockErrorResponse(error) };
+  return { name: data?.name ?? '' };
+}
