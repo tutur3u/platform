@@ -1,3 +1,7 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+
 DROP TRIGGER IF EXISTS workspace_ai_policy_audit_insert ON public.workspace_secrets;
 DROP TRIGGER IF EXISTS workspace_ai_policy_audit_update ON public.workspace_secrets;
 DROP TRIGGER IF EXISTS workspace_ai_policy_audit_delete ON public.workspace_secrets;
@@ -45,3 +49,5 @@ $$;
 
 REVOKE ALL ON FUNCTION public.guard_workspace_reserved_secrets()
 FROM PUBLIC, anon, authenticated;
+
+COMMIT;

@@ -1,3 +1,7 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+
 -- tuturuuu: no-grant (trigger)
 CREATE OR REPLACE FUNCTION public.guard_workspace_reserved_secrets()
 RETURNS trigger
@@ -66,3 +70,5 @@ CREATE TRIGGER workspace_ai_policy_audit_delete
 AFTER DELETE ON public.workspace_secrets FOR EACH ROW
 WHEN (OLD.name IN ('AI_ENABLED', 'AI_EDUCATION_SCOPE', 'ENABLE_EDUCATION'))
 EXECUTE FUNCTION audit.insert_update_delete_trigger();
+
+COMMIT;
