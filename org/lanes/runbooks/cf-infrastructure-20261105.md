@@ -1,48 +1,73 @@
-# infrastructure Cloudflare cutover — Rex
+# infrastructure cutover for Rex
 
-Build on GitHub only: `cd apps/infrastructure && bun run build:cloudflare`.
-The app-owned `infrastructure-cloudflare.yaml` uploads `infrastructure-cloudflare-<source SHA>`.
-Download and extract `infrastructure-cloudflare.tar.gz` into an empty directory. Its
-emitted Wrangler config is inside `dist` (resolve `configPath` in `.wrangler/deploy/config.json`).
-Use that emitted config with `wrangler deploy --config <configPath>`.
-Worker: `tuturuuu-infrastructure`. Assets: `dist/client`, binding `ASSETS`.
-No deploy tokens are used by the build workflow.
+Build the exact pushed PR head with production public configuration. Rex owns
+local builds and deployment under rule 13; CI is a later check. This lane runs no
+local installs or builds. From the repository root, build workspace suppliers:
 
-| Name | Current production requirement | Worker parity |
+```sh
+bun turbo:local run build --filter="@tuturuuu/infrastructure^..." --concurrency=2
+cd apps/infrastructure
+bun run build:cloudflare
+```
+
+The Worker build is `build:cloudflare` (`vp build --configLoader runner`). The
+default `build` and `build:legacy` still run Next to preserve Vercel behavior.
+Do not use the app's default `build` to produce the Worker.
+
+The app-owned `infrastructure-cloudflare.yaml` packages `infrastructure-cloudflare-<source SHA>`.
+Extract `infrastructure-cloudflare.tar.gz` into an empty directory. Resolve `configPath`
+from `.wrangler/deploy/config.json` relative to `.wrangler/deploy/`, then use
+`wrangler deploy --config <resolved path>`. Keep the emitted `dist` layout intact.
+Worker: `tuturuuu-infrastructure`. Asset binding: `ASSETS`, from `dist/client`.
+
+| Name | Requirement |
+| --- | --- |
+| NEXT_PUBLIC_SUPABASE_URL | Production public build URL |
+| NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY | Production public build key |
+| NEXT_PUBLIC_APP_URL | https://infrastructure.tuturuuu.com |
+| NEXT_PUBLIC_WEB_APP_URL | https://tuturuuu.com |
+| INTERNAL_WEB_API_ORIGIN | Shared web API origin |
+| SUPABASE_SECRET_KEY | Required startup/server secret; provision by name only |
+| TUTURUUU_APP_COORDINATION_SECRET | Required startup/session secret; provision by name only |
+| CRON_SECRET | Required for cron HTTP calls; existing VERCEL_CRON_SECRET fallback is supported |
+
+Infrastructure has **5 Vercel crons and no Worker scheduled trigger**. All five
+are cutover gaps until Rex assigns and verifies their scheduler ownership; they
+do not migrate by copying HTTP routes. CRON_SECRET (or existing legacy
+VERCEL_CRON_SECRET) is required for their authenticated HTTP calls.
+
+| Existing Vercel path | Schedule | Cloudflare status |
 | --- | --- | --- |
-| NEXT_PUBLIC_SUPABASE_URL | production project URL | CI public build value; also set Worker var |
-| NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY | public production key | repository variable for build; Worker var |
-| NEXT_PUBLIC_APP_URL | https://infrastructure.tuturuuu.com | CI value and Worker var |
-| NEXT_PUBLIC_WEB_APP_URL | https://tuturuuu.com | CI value and Worker var |
-| INTERNAL_WEB_API_ORIGIN | shared API origin | https://tuturuuu.com |
-| SUPABASE_SECRET_KEY | server-side data access, if used | Bea/Rex copy by name only |
-| TUTURUUU_APP_COORDINATION_SECRET | shared app session verification | Bea/Rex copy by name only |
+| `/api/cron/infrastructure/sample-resources` | `* * * * *` | No scheduled trigger |
+| `/api/cron/infrastructure/docker-recovery-alerts` | `*/5 * * * *` | No scheduled trigger |
+| `/api/cron/infrastructure/sync-trust-cache` | `*/10 * * * *` | No scheduled trigger |
+| `/api/cron/calendar/provider-sync` | `*/15 * * * *` | No scheduled trigger |
+| `/api/cron/calendar/smart-schedule` | `0 */6 * * *` | No scheduled trigger |
 
-This is a source inventory; Rex/Bea must reconcile actual production names without
-sharing values. No D1, R2 or KV bindings are introduced by this conversion.
+Additional gaps: Next output-file tracing of cron.config.json is not automatically
+carried over. Confirm the internal-accounts employee rewrite in the hosted app.
+Any direct Postgres path needs Hyperdrive review.
 
-Routes: assign `infrastructure.tuturuuu.com` as a custom domain to `tuturuuu-infrastructure`.
-The bridge also supports `tuturuuu.com/infrastructure`; tonight switch only the app domain.
-Does it load: https://infrastructure.tuturuuu.com/ .
-Optional follow-up smoke: load the home page, shared sign-in, then one core
-create/read flow with a dedicated operator account. Tonight adds no test gate.
-Rex checks the page loads after switching and flips back if dead.
+Active runtime check: `CI=true bun run test:runtime` uses
+`cloudflare/native-auth.runtime.mjs`. It checks startup-secret refusal, anonymous
+`/` to `/login`, and unknown-host rejection. Runtime has not been executed by
+this lane. CI also records the emitted configuration receipt.
 
-ROLLBACK_POINTER
+Ingress: workers_dev=false, preview_urls=false and unknownHost=reject. Production
+NODE_ENV is defined at build time; startup refuses to serve without production
+mode and both required startup secrets. Rex must verify the built server bytes.
 
-Expected downtime: no intentional outage; propagation and in-flight requests can
-briefly see either origin. Leave the Vercel deployment available until accepted.
-Security-review-required: yes (framework adapter reaches existing auth/data code).
-Tonight follows Atlas/Pax cutover direction; no merge or deployment by this lane.
+Domain: `infrastructure.tuturuuu.com`; retain existing `tuturuuu.com/infrastructure` routing as
+applicable. Load check: https://infrastructure.tuturuuu.com/ . Follow-up smoke covers shared
+sign-in and one core create/read flow with an operator fixture.
 
-Selene conditions: workers_dev and preview_urls are false; unknown hosts reject.
-CI inlines NODE_ENV=production, checks missing secrets return 503, checks anonymous
-GET / redirects to /login and verifies unknown-host rejection. No local build/test.
-The default build remains Next; build:legacy is identical, so the existing Vercel
-build command is preserved without changing its project. CF CI explicitly runs
-build:cloudflare. Remote Vercel project configuration was not read or changed.
-Required startup secrets: TUTURUUU_APP_COORDINATION_SECRET, SUPABASE_SECRET_KEY.
-Known gaps: no Worker scheduled trigger is configured. Monitoring cron routes
-need explicit trigger ownership; cron.config.json output-file tracing from Next
-is not automatically carried over. Internal-accounts employee beforeFiles rewrite
-parity needs hosted confirmation. Direct Postgres paths need Hyperdrive review.
+Rollback: before switching, Rex records the existing origin/domain route and its
+current deployment or Worker version. This lane has not pinned that deployment.
+Restore the saved origin/route immediately if the Worker fails to load. No database
+migration is included. Keep the existing production deployment available.
+
+Expected downtime: no intentional outage; route propagation is unmeasured.
+Merge only the full reviewed chain or a squash of the top PR. Earlier wiring
+layers are incomplete independently. Security review remains required. No merge
+or deploy is performed by this lane. Shared startup-helper adoption is a separate
+follow-up after its dependency merges; it is not part of this build head.
