@@ -1,32 +1,11 @@
+import { type LegalNoticeConfig, legalNotice } from './notice-config';
 import { legalNoticeCopy } from './notice-copy';
 import { requireMobilePrivacyReleaseDate } from './revisions';
 import type { LegalLocale } from './types';
 
-export type LegalNoticeConfig =
-  | {
-      published: false;
-      noticeDate: null;
-      laterDate: null;
-      archiveLinks?: null;
-    }
-  | {
-      published: true;
-      noticeDate: string;
-      laterDate: string;
-      mobilePrivacyEffectiveDate?: string;
-      // Markdown for the "Previous text" link line, per locale. Publish gate:
-      // Lex approves the real archive URLs before publication; do not invent
-      // them. Publishing without the rendered locale's entry throws.
-      archiveLinks: Partial<Record<LegalLocale, string>>;
-    };
-
-// Only the release owner may enable this after the user's explicit notice go.
-export const legalNotice: LegalNoticeConfig = {
-  published: false,
-  noticeDate: null,
-  laterDate: null,
-  archiveLinks: null,
-};
+// The config lives in a dependency-free module so app shells can read it
+// through `@tuturuuu/legal/notice-config` without loading the legal corpus.
+export { type LegalNoticeConfig, legalNotice } from './notice-config';
 
 export function getLegalNotice(
   locale: LegalLocale,

@@ -25,7 +25,7 @@ proposal footers, current-version links, headings, dates and indexing).
 ## What changed presentation and publishing gate
 
 The EN/VI `/legal/changes` pages default to the approved Variant 1 notice that
-updates are not yet in effect. `packages/legal/src/notice.ts` keeps `legalNotice`
+updates are not yet in effect. `packages/legal/src/notice-config.ts` keeps `legalNotice`
 unpublished with both dates unset. Only the release owner may enable the notice
 and set N and N+30 after the user's explicit go. Enabling presentation does not
 activate contracts or send email. Lex owns all legal wording; Maya owns brand and
@@ -34,6 +34,24 @@ including the final AUP/community safety-restoration row. The separately owned
 `legal-aup-community-restore` lane must land its matching clauses before notice
 publication. Transition clauses and archived-version links also need Lex/release
 acceptance before that later publication. Never introduce a language-prevails rule.
+
+### In-app change notice banner
+
+The same `legalNotice` config also drives a dismissible EN/VI in-app banner
+("We've updated our Terms and Privacy Policy" / "See what changed" →
+`/legal/changes`) for everyone who is not reached by the owner/admin email.
+`isLegalNoticeWindowOpen` in `packages/legal/src/notice-window.ts` opens it only
+while published and noticeDate ≤ today ≤ laterDate as Asia/Ho_Chi_Minh calendar
+days; there is no second switch. `LegalNoticeBanner`
+(`@tuturuuu/satellite/legal-notice-banner`) mounts in the web dashboard shell next
+to the personal-workspace prompt, in the shared satellite `SidebarStructure` (linking
+to `https://tuturuuu.com/legal/changes`) and on the web login page. Dismissal is per
+browser per notice version (localStorage keyed by noticeDate, with an in-memory
+fallback when storage throws); it sends no tracking. Not covered: the Flutter mobile
+app and parents/students without a platform account. Regression coverage:
+`notice-window.test.ts`, `legal-notice-banner.test.tsx`,
+`sidebar-structure-legal-notice.test.tsx`, `dashboard-shell-legal-notice.test.tsx` and
+`page-legal-notice.test.tsx`.
 
 The binding notice starts at the top of the content and is never collapsible.
 The notice's audience and timing list stays with it; the summary table and its

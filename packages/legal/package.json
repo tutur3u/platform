@@ -14,7 +14,9 @@
     "vitest": "^5.0.5"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./notice-config": "./src/notice-config.ts",
+    "./notice-window": "./src/notice-window.ts"
   },
   "packageManager": "bun@1.4.4"
 }

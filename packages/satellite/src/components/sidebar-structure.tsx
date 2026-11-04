@@ -21,6 +21,11 @@ import {
   type AppBrandId,
   WorkspaceSelectVisibilityToggle,
 } from './fixed-app-brand';
+import {
+  LEGAL_NOTICE_FLOATING_CLASSNAME,
+  LegalNoticeBanner,
+  PLATFORM_LEGAL_CHANGES_URL,
+} from './legal-notice-banner';
 import { SidebarSettingsButton } from './sidebar-settings-button';
 import { SidebarStructureContent } from './sidebar-structure-content';
 
@@ -249,6 +254,10 @@ export function SidebarStructure({
           ) : (
             children
           )}
+          <LegalNoticeBanner
+            className={LEGAL_NOTICE_FLOATING_CLASSNAME}
+            href={PLATFORM_LEGAL_CHANGES_URL}
+          />
         </SatelliteShell>
       </WorkspaceSelectorProvider>
     </>

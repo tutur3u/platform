@@ -74,6 +74,7 @@ vi.mock('./form', () => ({
 }));
 
 vi.mock('next-intl', () => ({
+  useLocale: () => 'en',
   useTranslations: () => (key: string, values?: Record<string, string>) => {
     const messages: Record<string, string> = {
       'account_switcher.add_account': 'Add account',
