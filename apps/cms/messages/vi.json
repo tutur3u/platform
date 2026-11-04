@@ -5263,6 +5263,53 @@
       "zoom_in_action": "Phóng to",
       "zoom_out_action": "Thu nhỏ"
     },
+    "page_builder": {
+      "blocks": {
+        "CardGrid": "Lưới thẻ",
+        "CtaButton": "Nút",
+        "EventDetails": "Chi tiết sự kiện",
+        "EventList": "Danh sách sự kiện",
+        "Hero": "Ảnh bìa",
+        "Image": "Hình ảnh",
+        "RichText": "Văn bản",
+        "Spacer": "Khoảng trống",
+        "TwoColumn": "Hai cột"
+      },
+      "categories": {
+        "content": "Nội dung",
+        "events": "Sự kiện",
+        "layout": "Bố cục"
+      },
+      "delete": "Xóa",
+      "drop_here": "Thả khối vào đây",
+      "duplicate": "Nhân bản",
+      "fields": {
+        "alt": "Văn bản thay thế",
+        "caption": "Chú thích",
+        "columns": "Số cột",
+        "ctaHref": "Liên kết nút",
+        "ctaLabel": "Nhãn nút",
+        "description": "Mô tả",
+        "doc": "Nội dung",
+        "endsAt": "Kết thúc",
+        "heading": "Tiêu đề mục",
+        "href": "Liên kết",
+        "imageUrl": "URL hình ảnh",
+        "label": "Nhãn",
+        "location": "Địa điểm",
+        "ratio": "Tỉ lệ cột",
+        "registerHref": "Liên kết đăng ký",
+        "size": "Kích thước",
+        "src": "URL hình ảnh",
+        "startsAt": "Bắt đầu",
+        "subtitle": "Phụ đề",
+        "title": "Tiêu đề",
+        "variant": "Kiểu"
+      },
+      "inspector_empty": "Chọn một khối để chỉnh sửa",
+      "redo": "Làm lại",
+      "undo": "Hoàn tác"
+    },
     "root": {
       "action_panel_description": "Tạo mẫu site, chuẩn bị kết nối site và giữ cài đặt phân phối nâng cao luôn mới từ một trung tâm nội bộ.",
       "action_panel_title": "Thao tác site",

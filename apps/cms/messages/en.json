@@ -5263,6 +5263,53 @@
       "zoom_in_action": "Zoom in",
       "zoom_out_action": "Zoom out"
     },
+    "page_builder": {
+      "blocks": {
+        "CardGrid": "Card grid",
+        "CtaButton": "Button",
+        "EventDetails": "Event details",
+        "EventList": "Event list",
+        "Hero": "Hero",
+        "Image": "Image",
+        "RichText": "Rich text",
+        "Spacer": "Spacer",
+        "TwoColumn": "Two columns"
+      },
+      "categories": {
+        "content": "Content",
+        "events": "Events",
+        "layout": "Layout"
+      },
+      "delete": "Delete",
+      "drop_here": "Drop blocks here",
+      "duplicate": "Duplicate",
+      "fields": {
+        "alt": "Alt text",
+        "caption": "Caption",
+        "columns": "Columns",
+        "ctaHref": "Button link",
+        "ctaLabel": "Button label",
+        "description": "Description",
+        "doc": "Content",
+        "endsAt": "Ends at",
+        "heading": "Heading",
+        "href": "Link",
+        "imageUrl": "Image URL",
+        "label": "Label",
+        "location": "Location",
+        "ratio": "Column ratio",
+        "registerHref": "Registration link",
+        "size": "Size",
+        "src": "Image URL",
+        "startsAt": "Starts at",
+        "subtitle": "Subtitle",
+        "title": "Title",
+        "variant": "Style"
+      },
+      "inspector_empty": "Select a block to edit it",
+      "redo": "Redo",
+      "undo": "Undo"
+    },
     "root": {
       "action_panel_description": "Create site templates, prepare site connections, and keep advanced delivery settings current from one internal control room.",
       "action_panel_title": "Site operations",
