@@ -93,17 +93,30 @@ export async function PUT(request: Request, context: Params) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
     }
 
+    // Only a month change reads the delivery state (for the sent-report gate
+    // below); ordinary draft saves keep their original tenant read.
+    const periodChanged =
+      parsed.data.period_start !== undefined ||
+      parsed.data.period_end !== undefined;
     const sbAdmin = await createAdminClient();
     const privateDb = sbAdmin.schema('private');
+    const reportView = privateDb.from(
+      'external_user_monthly_reports_workspace_view'
+    );
     const [existing, configResult] = await Promise.all([
-      privateDb
-        .from('external_user_monthly_reports_workspace_view')
-        .select(
-          'id, user_id, group_id, generation_mode, delivery_status, delivered_at'
-        )
-        .eq('id', reportId)
-        .eq('user_ws_id', wsId)
-        .maybeSingle(),
+      periodChanged
+        ? reportView
+            .select(
+              'id, user_id, group_id, generation_mode, delivery_status, delivered_at'
+            )
+            .eq('id', reportId)
+            .eq('user_ws_id', wsId)
+            .maybeSingle()
+        : reportView
+            .select('id, user_id, group_id, generation_mode')
+            .eq('id', reportId)
+            .eq('user_ws_id', wsId)
+            .maybeSingle(),
       sbAdmin
         .from('workspace_configs')
         .select('value')
@@ -126,9 +139,6 @@ export async function PUT(request: Request, context: Params) {
 
     // Moving a report parents already received to another month is an
     // approver decision; unsent reports can be moved by any editor.
-    const periodChanged =
-      parsed.data.period_start !== undefined ||
-      parsed.data.period_end !== undefined;
     if (
       periodChanged &&
       isReportSent(existing.data) &&

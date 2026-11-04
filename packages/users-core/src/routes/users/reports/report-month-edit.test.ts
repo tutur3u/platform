@@ -141,6 +141,14 @@ describe('C1: moving a sent report to another month', () => {
       const calls = database({ existing });
       expect((await put(october)).status).toBe(403);
       expect(updateOf(calls)).toBeUndefined();
+      // Only a month change reads the delivery state.
+      expect(calls).toContainEqual({
+        table: 'external_user_monthly_reports_workspace_view',
+        method: 'select',
+        args: [
+          'id, user_id, group_id, generation_mode, delivery_status, delivered_at',
+        ],
+      });
     }
   );
 
