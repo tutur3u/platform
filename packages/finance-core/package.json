@@ -8,7 +8,9 @@
     ".": "./src/index.ts",
     "./route-auth": "./src/route-auth.ts",
     "./storage-access": "./src/storage-access.ts",
-    "./storage-limits": "./src/storage-limits.ts"
+    "./storage-limits": "./src/storage-limits.ts",
+    "./fee-lock": "./src/fee-lock/index.ts",
+    "./fee-lock/access": "./src/fee-lock/access.ts"
   },
   "license": "MIT",
   "scripts": {

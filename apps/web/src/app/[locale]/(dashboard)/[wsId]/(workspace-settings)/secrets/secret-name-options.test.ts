@@ -1,3 +1,4 @@
+import { FEE_LOCK_ENABLED_SECRET } from '@tuturuuu/finance-core/fee-lock';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@tuturuuu/utils/topic-announcements';
 import { describe, expect, it } from 'vitest';
 import { KNOWN_SECRETS } from './constants';
@@ -12,6 +13,16 @@ describe('workspace secret name options', () => {
       expect.objectContaining({
         defaultValue: 'false',
         name: TOPIC_ANNOUNCEMENTS_SECRET,
+        type: 'boolean',
+      })
+    );
+  });
+
+  it('lists the fee-lock flag as a boolean secret that defaults off', () => {
+    expect(KNOWN_SECRETS).toContainEqual(
+      expect.objectContaining({
+        defaultValue: 'false',
+        name: FEE_LOCK_ENABLED_SECRET,
         type: 'boolean',
       })
     );

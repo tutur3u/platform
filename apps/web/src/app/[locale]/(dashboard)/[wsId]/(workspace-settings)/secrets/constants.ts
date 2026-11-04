@@ -1,3 +1,4 @@
+import { FEE_LOCK_ENABLED_SECRET } from '@tuturuuu/finance-core/fee-lock';
 import { WORKSPACE_STORAGE_SECRET_DEFINITIONS } from '@tuturuuu/storage-core/workspace-storage-config';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@tuturuuu/utils/topic-announcements';
 
@@ -225,6 +226,13 @@ export const KNOWN_SECRETS: SecretDefinition[] = [
   {
     name: 'ENABLE_FINANCE',
     description: 'Enables finance management features.',
+    type: 'boolean',
+    defaultValue: 'false',
+  },
+  {
+    name: FEE_LOCK_ENABLED_SECRET,
+    description:
+      'Enables monthly fee locking (chốt học phí), notice templates and the fee-lock Excel export in Finance.',
     type: 'boolean',
     defaultValue: 'false',
   },
