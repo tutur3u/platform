@@ -52,9 +52,8 @@ test('production ingress and anonymous auth fail closed', { timeout: 120000 }, a
     await worker.ready;
     return { worker, origin: (await worker.url).origin };
   }
-  const missing = await start({});
+  const missing = await start({ SUPABASE_SECRET_KEY: { type: 'plain_text', value: 'synthetic-ci-only-secret-value' } });
   assert.equal((await call(missing.origin, host)).status, 503);
-  await missing.worker.dispose();
   const bindings = Object.fromEntries([
     'TUTURUUU_learn_COORDINATION_SECRET', 'SUPABASE_SECRET_KEY',
   ].map(name => [name, { type: 'plain_text', value: 'synthetic-ci-only-secret-value' }]));
