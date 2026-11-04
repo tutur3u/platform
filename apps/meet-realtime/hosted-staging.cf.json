@@ -58,39 +58,38 @@
   },
   "routes": [
     {
-      "pattern": "meet.staging.tutur3u.com/realtime*",
+      "pattern": "meet.tutur3u.com/realtime*",
       "zone_name": "tutur3u.com"
     },
     {
-      "pattern": "meet.staging.tutur3u.com/room-state*",
+      "pattern": "meet.tutur3u.com/room-state*",
       "zone_name": "tutur3u.com"
     },
     {
-      "pattern": "meet.staging.tutur3u.com/room-device*",
+      "pattern": "meet.tutur3u.com/room-device*",
       "zone_name": "tutur3u.com"
     },
     {
-      "pattern": "meet.staging.tutur3u.com/room-service*",
+      "pattern": "meet.tutur3u.com/room-service*",
       "zone_name": "tutur3u.com"
     },
     {
-      "pattern": "meet.staging.tutur3u.com/channels*",
+      "pattern": "meet.tutur3u.com/channels*",
       "zone_name": "tutur3u.com"
     },
     {
-      "pattern": "meet.staging.tutur3u.com/collaboration*",
+      "pattern": "meet.tutur3u.com/collaboration*",
       "zone_name": "tutur3u.com"
     },
     {
-      "pattern": "meet.staging.tutur3u.com/health*",
+      "pattern": "meet.tutur3u.com/health*",
       "zone_name": "tutur3u.com"
     }
   ],
   "workers_dev": false,
   "preview_urls": false,
   "vars": {
-    "NEXT_PUBLIC_APP_URL": "https://meet.staging.tutur3u.com",
-    "NEXT_PUBLIC_WEB_APP_URL": "https://staging.tutur3u.com",
-    "AUTH_COOKIE_DOMAIN": ".staging.tutur3u.com"
+    "NEXT_PUBLIC_APP_URL": "https://meet.tutur3u.com",
+    "NEXT_PUBLIC_WEB_APP_URL": "https://web.tutur3u.com"
   }
 }

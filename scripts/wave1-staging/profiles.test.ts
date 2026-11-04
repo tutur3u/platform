@@ -6,25 +6,30 @@ import {
   stagingApps,
   stagingBuildInputs,
 } from './profiles.ts';
-import { stagingRequest, stagingResponse } from './response.ts';
+import {
+  scopeStagingCookie,
+  stagingCookieScope,
+  stagingRequest,
+  stagingResponse,
+} from './response.ts';
 
 for (const app of stagingApps) {
   test(`${app}: exact staging route, isolated resources and cookie boundary`, () => {
     const profile = hostedStagingProfile(app, {
       ref: 's'.repeat(20),
     }).cloudflare;
-    const host = `${app}.staging.tutur3u.com`;
+    const host = `${app}.tutur3u.com`;
     assert.equal(profile.name, `tuturuuu-${app}-hosted-staging`);
     assert.deepEqual(profile.routes, [
       { pattern: `${host}/*`, zone_name: 'tutur3u.com' },
     ]);
     assert.equal(profile.workers_dev, false);
     assert.equal(profile.preview_urls, false);
-    assert.equal(profile.vars.AUTH_COOKIE_DOMAIN, '.staging.tutur3u.com');
+    assert.equal('AUTH_COOKIE_DOMAIN' in profile.vars, false);
     assert.equal(profile.vars.NEXT_PUBLIC_APP_URL, `https://${host}`);
     assert.equal(
       profile.vars.NEXT_PUBLIC_WEB_APP_URL,
-      'https://staging.tutur3u.com'
+      'https://web.tutur3u.com'
     );
     assert.equal(JSON.stringify(profile).includes('tuturuuu.com'), false);
     assert.equal(stagingRequest(new Request(`https://${host}/`), app), null);
@@ -46,31 +51,106 @@ for (const app of stagingApps) {
   });
 }
 
-test('staging response preserves status/body/cookie flags and pins HSTS/domain', async () => {
-  const original = new Response('stage', {
-    status: 201,
-    headers: {
-      'Set-Cookie':
-        'session=fixture; Path=/; Domain=.tuturuuu.com; HttpOnly; SameSite=Lax; Secure',
-    },
-  });
-  original.headers.append('Set-Cookie', 'other=fixture; Path=/; Max-Age=0');
-  const response = stagingResponse(original);
-  assert.equal(response.status, 201);
-  assert.equal(await response.text(), 'stage');
-  assert.equal(
-    response.headers.get('Strict-Transport-Security'),
-    'max-age=31536000'
-  );
-  assert.match(response.headers.get('X-Robots-Tag') ?? '', /noindex/u);
-  const cookies = response.headers.getSetCookie();
-  assert.equal(cookies.length, 2);
-  for (const cookie of cookies) {
-    assert.match(cookie, /; Domain=\.staging\.tutur3u\.com; Secure$/u);
-    assert.equal(cookie.includes('.tuturuuu.com'), false);
+test('staging response preserves status/body/cookie flags, pins HSTS and keeps cookies host-only', async () => {
+  for (const app of stagingApps) {
+    const original = new Response('stage', {
+      status: 201,
+      headers: {
+        'Set-Cookie':
+          'session=fixture; Path=/; Domain=.tuturuuu.com; HttpOnly; SameSite=Lax; Secure',
+      },
+    });
+    original.headers.append('Set-Cookie', 'other=fixture; Path=/; Max-Age=0');
+    original.headers.append(
+      'Set-Cookie',
+      'sb-stagingref-auth-token=fixture; Path=/; Domain=.tuturuuu.com; HttpOnly'
+    );
+    original.headers.append(
+      'Set-Cookie',
+      'tuturuuu_app_session=fixture; Path=/; HttpOnly; SameSite=Lax'
+    );
+    const response = stagingResponse(original, `${app}.tutur3u.com`);
+    assert.equal(response.status, 201);
+    assert.equal(await response.text(), 'stage');
+    assert.equal(
+      response.headers.get('Strict-Transport-Security'),
+      'max-age=31536000'
+    );
+    assert.match(response.headers.get('X-Robots-Tag') ?? '', /noindex/u);
+    const cookies = response.headers.getSetCookie();
+    assert.equal(cookies.length, 4);
+    // The exact <app>.tutur3u.com hosts sit outside the shared staging domain,
+    // so even the shared auth cookies stay host-only there.
+    for (const cookie of cookies) {
+      assert.match(cookie, /; Secure$/u);
+      assert.doesNotMatch(cookie, /domain=/iu);
+    }
+    assert.match(cookies[0] ?? '', /HttpOnly; SameSite=Lax/u);
+    assert.match(cookies[1] ?? '', /Max-Age=0/u);
   }
-  assert.match(cookies[0] ?? '', /HttpOnly; SameSite=Lax/u);
-  assert.match(cookies[1] ?? '', /Max-Age=0/u);
+});
+
+test('only shared auth cookies may carry the staging Domain, and only inside it', () => {
+  const inside = 'meet.staging.tutur3u.com';
+  assert.equal(stagingCookieScope(inside), '.staging.tutur3u.com');
+  assert.equal(stagingCookieScope('STAGING.tutur3u.com'), '.staging.tutur3u.com');
+  for (const outside of [
+    ...stagingApps.map((app) => `${app}.tutur3u.com`),
+    'web.tutur3u.com',
+    'evilstaging.tutur3u.com',
+    'staging.tutur3u.com.evil.test',
+    'meet.tuturuuu.com',
+  ])
+    assert.equal(stagingCookieScope(outside), null, outside);
+  for (const name of [
+    'sb-stagingref-auth-token',
+    'sb-stagingref-auth-token.0',
+    'sb-stagingref-auth-token.12',
+    'sb-stagingref-auth-token-code-verifier',
+    'tuturuuu_app_session',
+    'tuturuuu_app_session_refresh',
+    'tuturuuu_web_app_session',
+    'tuturuuu_web_app_session_refresh',
+  ])
+    assert.equal(
+      scopeStagingCookie(`${name}=fixture; Path=/; HttpOnly`, inside),
+      `${name}=fixture; Path=/; HttpOnly; Domain=.staging.tutur3u.com; Secure`,
+      name
+    );
+  // App-private cookies (CSRF/state, OAuth state and PKCE, locale, app-local
+  // sessions, near-miss names) stay host-scoped even inside the shared domain.
+  for (const name of [
+    'session',
+    'NEXT_LOCALE',
+    'csrf_token',
+    'google_oauth_state',
+    'microsoft_oauth_code_verifier',
+    'meet_session',
+    'sb-stagingref-auth-token-extra',
+    'xsb-stagingref-auth-token',
+    'tuturuuu_app_session_extra',
+    '__Secure-session',
+  ])
+    assert.equal(
+      scopeStagingCookie(
+        `${name}=fixture; Path=/; Domain=.staging.tutur3u.com; HttpOnly; Secure`,
+        inside
+      ),
+      `${name}=fixture; Path=/; HttpOnly; Secure`,
+      name
+    );
+  for (const name of [
+    '__Host-tuturuuu_app_session',
+    '__host-sb-stagingref-auth-token',
+  ])
+    assert.equal(
+      scopeStagingCookie(
+        `${name}=fixture; Domain=.staging.tutur3u.com; Path=/; Secure `,
+        inside
+      ),
+      `${name}=fixture; Path=/; Secure`,
+      name
+    );
 });
 
 test('build inputs refuse missing refs, production Supabase and absent public keys', () => {
@@ -79,8 +159,8 @@ test('build inputs refuse missing refs, production Supabase and absent public ke
     WAVE1_PRODUCTION_SUPABASE_PROJECT_REF: 'p'.repeat(20),
     NEXT_PUBLIC_SUPABASE_URL: `https://${'s'.repeat(20)}.supabase.co`,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'disposable-public-fixture',
-    NEXT_PUBLIC_APP_URL: 'https://calendar.staging.tutur3u.com',
-    NEXT_PUBLIC_WEB_APP_URL: 'https://staging.tutur3u.com',
+    NEXT_PUBLIC_APP_URL: 'https://calendar.tutur3u.com',
+    NEXT_PUBLIC_WEB_APP_URL: 'https://web.tutur3u.com',
     NEXT_PUBLIC_TUTURUUU_STAGING: '1',
     NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN: '.staging.tutur3u.com',
   };
@@ -117,15 +197,15 @@ test('provisioning preparation emits no DNS action and refuses wrong artifact id
     WAVE1_PRODUCTION_SUPABASE_PROJECT_REF: 'p'.repeat(20),
     NEXT_PUBLIC_SUPABASE_URL: `https://${'s'.repeat(20)}.supabase.co`,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'disposable-public-fixture',
-    NEXT_PUBLIC_APP_URL: 'https://calendar.staging.tutur3u.com',
-    NEXT_PUBLIC_WEB_APP_URL: 'https://staging.tutur3u.com',
+    NEXT_PUBLIC_APP_URL: 'https://calendar.tutur3u.com',
+    NEXT_PUBLIC_WEB_APP_URL: 'https://web.tutur3u.com',
     NEXT_PUBLIC_TUTURUUU_STAGING: '1',
     NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN: '.staging.tutur3u.com',
   };
   for (const app of stagingApps) {
     const plan = provisioningPlan(app, {
       ...env,
-      NEXT_PUBLIC_APP_URL: `https://${app}.staging.tutur3u.com`,
+      NEXT_PUBLIC_APP_URL: `https://${app}.tutur3u.com`,
     });
     assert.equal(plan.execute, false);
     assert.equal(plan.createsDns, false);
@@ -137,7 +217,7 @@ test('provisioning preparation emits no DNS action and refuses wrong artifact id
     const inputs = stagingBuildInputs(
       {
         ...env,
-        NEXT_PUBLIC_APP_URL: `https://${app}.staging.tutur3u.com`,
+        NEXT_PUBLIC_APP_URL: `https://${app}.tutur3u.com`,
       },
       app
     );
@@ -167,7 +247,7 @@ test('provisioning preparation emits no DNS action and refuses wrong artifact id
     );
     assert.throws(() =>
       routeFreeConfig(
-        { ...config, routes: [{ pattern: '*.staging.tutur3u.com/*' }] },
+        { ...config, routes: [{ pattern: '*.tutur3u.com/*' }] },
         app,
         inputs
       )
@@ -197,7 +277,7 @@ test('durable serving stop and wrong project refuse work across fresh invocation
     assert.equal(
       (
         await stagingFetch(
-          new Request('https://meet.staging.tutur3u.com'),
+          new Request('https://meet.tutur3u.com'),
           'meet',
           { ...env, WAVE1_STAGING_SERVING_ENABLED: '0' },
           serve
@@ -208,7 +288,7 @@ test('durable serving stop and wrong project refuse work across fresh invocation
     assert.equal(
       (
         await stagingFetch(
-          new Request('https://meet.staging.tutur3u.com'),
+          new Request('https://meet.tutur3u.com'),
           'meet',
           {
             ...env,
@@ -235,7 +315,7 @@ test('durable serving stop and wrong project refuse work across fresh invocation
   assert.equal(
     (
       await stagingFetch(
-        new Request('https://meet.staging.tutur3u.com'),
+        new Request('https://meet.tutur3u.com'),
         'meet',
         env,
         serve
@@ -246,7 +326,7 @@ test('durable serving stop and wrong project refuse work across fresh invocation
   assert.equal(calls, 1);
 });
 
-test('__Host- cookies stay host-only while shared cookies retain the staging domain', () => {
+test('__Host- and app-private cookies stay host-only on every hosted staging host', () => {
   const original = new Response(null);
   original.headers.append(
     'Set-Cookie',
@@ -260,16 +340,16 @@ test('__Host- cookies stay host-only while shared cookies retain the staging dom
     'Set-Cookie',
     '__Secure-session=fixture; Path=/; HttpOnly'
   );
-  const cookies = stagingResponse(original).headers.getSetCookie();
+  const cookies = stagingResponse(
+    original,
+    'calendar.tutur3u.com'
+  ).headers.getSetCookie();
   assert.equal(
     cookies[0],
     '__Host-session=fixture; Path=/; HttpOnly; SameSite=Lax; Secure'
   );
   assert.equal(cookies[1], '__Host-legacy=fixture; Path=/; Max-Age=0; Secure');
-  assert.equal(
-    cookies[2],
-    '__Secure-session=fixture; Path=/; HttpOnly; Domain=.staging.tutur3u.com; Secure'
-  );
+  assert.equal(cookies[2], '__Secure-session=fixture; Path=/; HttpOnly; Secure');
 });
 
 test('production project is refused even when runtime ref and URL agree', async () => {
@@ -277,7 +357,7 @@ test('production project is refused even when runtime ref and URL agree', async 
   let calls = 0;
   for (let restart = 0; restart < 2; restart++) {
     const response = await stagingFetch(
-      new Request('https://calendar.staging.tutur3u.com'),
+      new Request('https://calendar.tutur3u.com'),
       'calendar',
       {
         WAVE1_STAGING_SERVING_ENABLED: '1',
@@ -315,8 +395,8 @@ test('build inputs deny the public production ref even with a falsely labelled p
         WAVE1_PRODUCTION_SUPABASE_PROJECT_REF: 'p'.repeat(20),
         NEXT_PUBLIC_SUPABASE_URL: 'https://nzamlzqfdwaaxdefwraj.supabase.co',
         NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'public-fixture',
-        NEXT_PUBLIC_APP_URL: 'https://calendar.staging.tutur3u.com',
-        NEXT_PUBLIC_WEB_APP_URL: 'https://staging.tutur3u.com',
+        NEXT_PUBLIC_APP_URL: 'https://calendar.tutur3u.com',
+        NEXT_PUBLIC_WEB_APP_URL: 'https://web.tutur3u.com',
         NEXT_PUBLIC_TUTURUUU_STAGING: '1',
         NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN: '.staging.tutur3u.com',
       },
@@ -345,7 +425,7 @@ test('Meet realtime route-free preparation preserves the reviewed source and rej
     { name: 'tuturuuu-meet-realtime-wave1-staging' },
     {
       routes: [
-        { pattern: '*.staging.tutur3u.com/*', zone_name: 'tutur3u.com' },
+        { pattern: '*.tutur3u.com/*', zone_name: 'tutur3u.com' },
       ],
     },
     { workers_dev: true },
@@ -366,14 +446,14 @@ test('offline plans fence certificates, existing Workers, seed receipts and rout
     WAVE1_PRODUCTION_SUPABASE_PROJECT_REF: 'p'.repeat(20),
     NEXT_PUBLIC_SUPABASE_URL: `https://${'s'.repeat(20)}.supabase.co`,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'public-fixture',
-    NEXT_PUBLIC_WEB_APP_URL: 'https://staging.tutur3u.com',
+    NEXT_PUBLIC_WEB_APP_URL: 'https://web.tutur3u.com',
     NEXT_PUBLIC_TUTURUUU_STAGING: '1',
     NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN: '.staging.tutur3u.com',
   };
   for (const app of stagingApps) {
     const plan = provisioningPlan(app, {
       ...env,
-      NEXT_PUBLIC_APP_URL: `https://${app}.staging.tutur3u.com`,
+      NEXT_PUBLIC_APP_URL: `https://${app}.tutur3u.com`,
     });
     assert.equal(plan.worker, `tuturuuu-${app}-hosted-staging`);
     const tasks = plan.tasks;
@@ -418,7 +498,7 @@ test('offline plans fence certificates, existing Workers, seed receipts and rout
       const task = tasks[index];
       assert.deepEqual(
         task && 'hosts' in task && task.hosts,
-        stagingApps.map((name) => `${name}.staging.tutur3u.com`)
+        stagingApps.map((name) => `${name}.tutur3u.com`)
       );
       assert.equal(task?.billable, false);
     }
@@ -432,7 +512,7 @@ test('offline plans fence certificates, existing Workers, seed receipts and rout
     );
     assert.deepEqual(
       certificate && 'hosts' in certificate && certificate.hosts,
-      stagingApps.map((name) => `${name}.staging.tutur3u.com`)
+      stagingApps.map((name) => `${name}.tutur3u.com`)
     );
     const inventory = tasks.findIndex(
       (task) =>
@@ -573,7 +653,7 @@ test('__Host- cookie prefix is case-insensitive and never gains a Domain attribu
       },
     });
     assert.equal(
-      stagingResponse(original).headers.getSetCookie()[0],
+      stagingResponse(original, 'meet.staging.tutur3u.com').headers.getSetCookie()[0],
       `${prefix}session=fixture; Path=/; HttpOnly; SameSite=Lax; Secure`
     );
   }
@@ -591,5 +671,38 @@ test('Turbo strict build hashes and forwards both public project refs', () => {
       turbo.tasks.build.env.includes(name),
       `Missing build env ${name}`
     );
+  }
+});
+
+test('served staging responses never widen auth or app-private cookies on exact hosts', async () => {
+  const { stagingFetch } = await import('./response.ts');
+  const ref = 's'.repeat(20);
+  for (const app of stagingApps) {
+    const response = await stagingFetch(
+      new Request(`https://${app}.tutur3u.com/`),
+      app,
+      {
+        WAVE1_STAGING_SERVING_ENABLED: '1',
+        WAVE1_STAGING_SUPABASE_PROJECT_REF: ref,
+        NEXT_PUBLIC_SUPABASE_URL: `https://${ref}.supabase.co`,
+      },
+      () => {
+        const served = new Response('ok');
+        served.headers.append(
+          'Set-Cookie',
+          `sb-${ref}-auth-token=fixture; Path=/; Domain=.staging.tutur3u.com`
+        );
+        served.headers.append(
+          'Set-Cookie',
+          'oauth_state=fixture; Path=/; Domain=.staging.tutur3u.com'
+        );
+        served.headers.append('Set-Cookie', 'NEXT_LOCALE=en; Path=/');
+        return served;
+      }
+    );
+    assert.equal(response.status, 200);
+    const cookies = response.headers.getSetCookie();
+    assert.equal(cookies.length, 3);
+    for (const cookie of cookies) assert.doesNotMatch(cookie, /domain=/iu);
   }
 });

@@ -5,6 +5,11 @@ export const productionSupabaseProjectRefs: readonly string[] = [
 export const stagingApps = ['meet', 'calendar', 'mail', 'apps'] as const;
 export type StagingApp = (typeof stagingApps)[number];
 export const stagingWebOrigin = 'https://web.tutur3u.com';
+/**
+ * The only accepted shared-cookie override. Main's staging guard requires it
+ * whenever NEXT_PUBLIC_TUTURUUU_STAGING=1, but the exact `<app>.tutur3u.com`
+ * hosts are outside it, so every hosted staging cookie stays host-only.
+ */
 export const stagingCookieDomain = '.staging.tutur3u.com';
 const requiredSecrets = {
   meet: ['MEET_REALTIME_TOKEN_SECRET', 'GOOGLE_GENERATIVE_AI_API_KEY'],
@@ -118,11 +123,9 @@ export function hostedStagingProfile(app: StagingApp, inputs: { ref: string }) {
         [`NEXT_PUBLIC_${app.toUpperCase()}_APP_URL`]: origin,
         NEXT_PUBLIC_WEB_APP_URL: stagingWebOrigin,
         INTERNAL_WEB_API_ORIGIN: stagingWebOrigin,
-        AUTH_COOKIE_DOMAIN: stagingCookieDomain,
         NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN: stagingCookieDomain,
         NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS: [
           `platform:${stagingWebOrigin}`,
-          'platform:https://web.staging.tutur3u.com',
           ...stagingApps.map((name) => `${name}:https://${stagingHost(name)}`),
         ].join(','),
         NEXT_PUBLIC_TUTURUUU_STAGING: '1',

@@ -23,8 +23,8 @@ export function provisioningPlan(app: StagingApp, env: Env) {
   return {
     schema: 1,
     app,
-    host: `${app}.staging.tutur3u.com`,
-    cookieDomain: '.staging.tutur3u.com',
+    host: stagingHost(app),
+    cookies: 'host-only',
     worker: profile.cloudflare.name,
     execute: false,
     createsDns: false,
@@ -33,18 +33,6 @@ export function provisioningPlan(app: StagingApp, env: Env) {
         operation: 'verify-account-and-scoped-token',
         cli: ['cf', 'auth', 'whoami', '--json'],
         billable: false,
-      },
-      {
-        operation:
-          'BLOCKING-owner-approved-zone-certificate-exception-or-rename-hosts',
-        zone: 'tutur3u.com',
-        hosts: stagingApps.map(stagingHost),
-        certificate:
-          'Advanced Certificate Manager / exact-host Advanced certificate pack',
-        ownerApprovalRequired: true,
-        approvalScope:
-          'billable zone-level exception before DNS and route attachment',
-        billable: true,
       },
       {
         operation:
@@ -176,7 +164,7 @@ export function routeFreeConfig(
   if (data.name !== `tuturuuu-${app}-hosted-staging` || data.no_bundle !== true)
     throw new Error('Require exact emitted prebundled staging identity');
   const expectedRoutes = [
-    { pattern: `${app}.staging.tutur3u.com/*`, zone_name: 'tutur3u.com' },
+    { pattern: `${stagingHost(app)}/*`, zone_name: 'tutur3u.com' },
   ];
   if (JSON.stringify(data.routes) !== JSON.stringify(expectedRoutes))
     throw new Error('Unexpected staging topology');
@@ -204,6 +192,19 @@ export function routeFreeConfig(
   );
   const expected = hostedStagingProfile(app, inputs).cloudflare;
   assert.deepEqual(data.vars, expected.vars, 'Unreviewed staging environment');
+  assert.deepEqual(
+    data.compatibility_flags,
+    expected.compatibility_flags,
+    'Unreviewed staging compatibility flags'
+  );
+  const assets = data.assets;
+  assert.ok(
+    assets &&
+      typeof assets === 'object' &&
+      Reflect.get(assets, 'run_worker_first') === true &&
+      Reflect.get(assets, 'binding') === expected.assets.binding,
+    'Static assets must run through the staging host wrapper'
+  );
   for (const key of [
     'services',
     'r2_buckets',
