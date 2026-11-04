@@ -9,10 +9,8 @@ import {
 } from '@tuturuuu/supabase/next/server';
 
 export const MANAGED_CRON_ENABLED_SECRET = 'MANAGED_CRON_ENABLED';
-
-export function isManagedCronEnableSecretName(name?: string | null) {
-  return name?.trim().toUpperCase() === MANAGED_CRON_ENABLED_SECRET;
-}
+// Covers every staff-only secret: the one list in @tuturuuu/utils.
+export { isStaffOnlyWorkspaceSecretName as isManagedCronEnableSecretName } from '@tuturuuu/utils/staff-only-workspace-secrets';
 
 export async function canMutateManagedCronEnableSecret(request: Request) {
   const supabase = await createClient(request);

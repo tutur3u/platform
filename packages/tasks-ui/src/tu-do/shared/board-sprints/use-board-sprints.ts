@@ -52,6 +52,7 @@ export function useBoardSprints({
     );
     const currentSprint = sprintsOn ? getCurrentBoardSprint(sprints) : null;
     return {
+      cyclesEnabled: data?.cyclesEnabled === true,
       schemaAvailable: data?.schemaAvailable === true,
       sprints,
       sprintsOn,

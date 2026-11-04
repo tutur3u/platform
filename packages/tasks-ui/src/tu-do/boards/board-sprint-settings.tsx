@@ -27,8 +27,14 @@ export function BoardSprintSettings({
       ? 'off'
       : String(sprints.sprintLengthWeeks);
 
-  // Hidden until the sprint migration has reached this database.
-  if (sprints.isLoading || sprints.isError || !sprints.schemaAvailable) {
+  // Hidden until the sprint migration has reached this database and verified
+  // staff have enabled board cycles for the workspace.
+  if (
+    sprints.isLoading ||
+    sprints.isError ||
+    !sprints.schemaAvailable ||
+    !sprints.cyclesEnabled
+  ) {
     return null;
   }
 

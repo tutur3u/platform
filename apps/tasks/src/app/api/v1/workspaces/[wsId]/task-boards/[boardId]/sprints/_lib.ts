@@ -28,11 +28,41 @@ export const goalResultSchema = z.enum(['met', 'partly', 'missed']);
 // manage: turn sprints on, start and end them (workspace members who can edit).
 export type SprintAccessLevel = 'view' | 'plan' | 'manage';
 
+// Board cycles ship dark until the rework lands: every write needs this
+// workspace secret, which only verified Tuturuuu staff can set.
+export const BOARD_CYCLES_ENABLED_SECRET = 'ENABLE_BOARD_CYCLES';
+
+export async function areBoardCyclesEnabled(
+  sbAdmin: TypedSupabaseClient,
+  wsId: string
+) {
+  if (!wsId) return false;
+  const { data, error } = await sbAdmin
+    .from('workspace_secrets')
+    .select('name')
+    .eq('ws_id', wsId)
+    .eq('name', BOARD_CYCLES_ENABLED_SECRET)
+    .eq('value', 'true');
+  return !error && (data?.length ?? 0) > 0;
+}
+
+export function boardCyclesNotEnabledResponse() {
+  return NextResponse.json(
+    {
+      code: 'BOARD_CYCLES_NOT_ENABLED',
+      error: 'Board cycles are not enabled for this workspace',
+    },
+    { status: 403 }
+  );
+}
+
 export async function requireSprintAccess(
   request: Request,
   params: SprintRouteParams,
   auth: SessionAuthContext,
-  level: SprintAccessLevel
+  level: SprintAccessLevel,
+  // Only turning cycles off may skip the flag.
+  { allowWhenNotEnabled = false } = {}
 ) {
   const access = await requireBoardAccess(request, params, auth, {
     requiredPermission: level === 'view' ? 'view' : 'edit',
@@ -46,6 +76,14 @@ export async function requireSprintAccess(
         { status: 403 }
       ),
     };
+  }
+
+  if (
+    level !== 'view' &&
+    !allowWhenNotEnabled &&
+    !(await areBoardCyclesEnabled(access.sbAdmin, access.wsId))
+  ) {
+    return { error: boardCyclesNotEnabledResponse() };
   }
 
   return access;
@@ -192,18 +230,25 @@ export function serializeSprint(
 }
 
 const UNAVAILABLE: BoardSprintsResponse = {
+  cyclesEnabled: false,
   schemaAvailable: false,
   sprintLengthWeeks: null,
   sprints: [],
 };
 
-export async function loadBoardSprints(
-  sbAdmin: TypedSupabaseClient,
-  boardId: string
-): Promise<
+export async function loadBoardSprints({
+  boardId,
+  sbAdmin,
+  wsId,
+}: {
+  boardId: string;
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+}): Promise<
   | { ok: true; data: BoardSprintsResponse }
   | { ok: false; error: SprintQueryError }
 > {
+  const cyclesEnabled = areBoardCyclesEnabled(sbAdmin, wsId).catch(() => false);
   const [boardResult, sprintsResult, reportsResult] = await Promise.all([
     sbAdmin
       .from('workspace_boards')
@@ -238,6 +283,7 @@ export async function loadBoardSprints(
   return {
     ok: true,
     data: {
+      cyclesEnabled: await cyclesEnabled,
       schemaAvailable: true,
       sprintLengthWeeks:
         weeks === 1 || weeks === 2 ? (weeks as BoardSprintLengthWeeks) : null,

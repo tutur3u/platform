@@ -14,11 +14,13 @@ vi.mock('./access', () => ({
   getWorkspaceSecretsAccess: getWorkspaceSecretsAccessMock,
 }));
 
+const staffOnly = await vi.hoisted(
+  () => import('@tuturuuu/utils/staff-only-workspace-secrets')
+);
 vi.mock('@/lib/workspace-secrets/managed-cron', () => ({
   canMutateManagedCronEnableSecret: canMutateManagedCronEnableSecretMock,
   createManagedCronSecretAdminClient: createManagedCronSecretAdminClientMock,
-  isManagedCronEnableSecretName: (name?: string | null) =>
-    name?.trim().toUpperCase() === 'MANAGED_CRON_ENABLED',
+  isManagedCronEnableSecretName: staffOnly.isStaffOnlyWorkspaceSecretName,
   MANAGED_CRON_ENABLED_SECRET: 'MANAGED_CRON_ENABLED',
 }));
 
@@ -172,6 +174,29 @@ describe('workspace secrets collection route', () => {
     });
     expect(userInsertMock).not.toHaveBeenCalled();
     expect(response.status).toBe(200);
+  });
+
+  it('refuses ENABLE_FEE_LOCK from non-staff without writing', async () => {
+    const userInsertMock = vi.fn();
+    getWorkspaceSecretsAccessMock.mockResolvedValue({
+      allowed: true,
+      db: { from: vi.fn(() => ({ insert: userInsertMock })) },
+      resolvedWsId: 'resolved-ws',
+    });
+
+    const response = await POST(
+      new Request('http://localhost', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: 'ENABLE_FEE_LOCK', value: 'true' }),
+      }),
+      { params: Promise.resolve({ wsId: 'friendly-ws' }) }
+    );
+
+    expect(response.status).toBe(403);
+    expect(canMutateManagedCronEnableSecretMock).toHaveBeenCalledOnce();
+    expect(userInsertMock).not.toHaveBeenCalled();
+    expect(createManagedCronSecretAdminClientMock).not.toHaveBeenCalled();
   });
 
   it('returns the access helper status when authorization fails', async () => {
