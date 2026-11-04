@@ -216,3 +216,6 @@ jobs:
           path: ${{ runner.temp }}/rewise-cutover.tar.gz
           retention-days: 7
           if-no-files-found: error
+      - name: Anonymous smoke on the sealed output in workerd
+        working-directory: apps/rewise
+        run: node --test cloudflare/anonymous-smoke.runtime.mjs
