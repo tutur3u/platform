@@ -140,6 +140,36 @@ failure message, validates the submitted address, and records the current actor.
 Existing blacklist entries retain their reason and actor. Ordinary messages and
 delay notifications do not produce automatic blacklist suggestions.
 
+## SES bounce and complaint notifications
+
+Platform outbound email learns about bounces and complaints from SES through
+SNS at `POST /api/v1/webhooks/email/ses` in the web app.
+
+- **Trust:** the topic ARN must be listed in `SES_NOTIFICATIONS_TOPIC_ARNS`
+  (comma-separated). Otherwise the request gets 403, or 503 while the variable is
+  empty. The SNS signature must be SignatureVersion 2 (RSA-SHA256) and at most a
+  day old. The signing certificate must come from the topic's own
+  `https://sns.<region>.amazonaws.com/SimpleNotificationService-*.pem`, be in
+  date, be issued by Amazon and be valid for the SNS host; otherwise 401. A
+  subscription confirmation is confirmed only through that same regional host's
+  `ConfirmSubscription` URL for the same topic.
+- **Effect:** each SNS `MessageId` is processed once
+  (`private.ses_notification_receipts`). Permanent bounces and complaints add an
+  `email_blacklist` row (`ses_hard_bounce` or `ses_complaint`), which
+  `EmailService` checks before every send; an existing entry is kept. Every
+  bounce and complaint is recorded in `private.email_bounce_complaints` by
+  address hash, with no message body or headers. Transient and undetermined
+  bounces are recorded but suppress nothing. A policy-notice ledger row sent with
+  the same SES message id becomes `bounced` or `complained`, which the notice's
+  automatic stop counts.
+- **Limits:** 300 requests per minute per client IP and a 256 KiB body.
+
+AWS setup (no credentials in code): create an SNS topic with
+`SignatureVersion=2`, publish SES Bounce and Complaint notifications for the
+sending identity (or a configuration set event destination) to it, subscribe the
+HTTPS endpoint above, and set `SES_NOTIFICATIONS_TOPIC_ARNS` on the web app. The
+subscription confirms itself once the variable is set.
+
 ## Architecture
 
 ### Native Start runtime
