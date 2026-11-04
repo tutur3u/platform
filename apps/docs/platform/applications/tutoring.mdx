@@ -118,6 +118,17 @@ and the class name or tag: text is decomposed, accent marks are dropped and
 `Starters ddt 2`, `ĐĐT` and `Đdt`, and `Mẫu giáo` matches `Mau giao`. Exact,
 prefix and suffix rules compare the same folded text.
 
+A single-word **contains** value matches only as its own token: no letter may
+touch it on either side, while digits, spaces and punctuation count as
+borders. `DDT` therefore matches `DDT`, `DDT1`, `DDT-A`, `Lớp DDT 2` and
+`ĐĐT`, but not `GDĐT` (the education-department abbreviation), `KĐĐT` or
+`ADĐT`, so a class such as `Ôn thi Sở GDĐT` stays eligible. A value with a
+space, such as `Mẫu giáo`, keeps plain substring matching.
+
+Class tag rules apply on the same screens: when the policy has a tag rule,
+Contacts loads the workspace class tags so the class picker, suggestions and
+queue filter hide a class excluded only by its tag.
+
 | Screen or API | What an excluded class does |
 | --- | --- |
 | Support queue (`GET …/tutoring/queue`) | Its learners are not listed as needing make-up or weak support. |

@@ -289,12 +289,18 @@ export function tutoringQueueFilterGroups<
 >(
   policy: Pick<TutoringPolicy, 'groupExclusions' | 'tutorGroupIds'>,
   groups: readonly T[],
-  selectedGroupId: string
+  selectedGroupId: string,
+  tagsByGroupId?: ReadonlyMap<string, readonly string[]>
 ): T[] {
   const eligible = new Set(
     [
-      ...filterTutoringEligibleGroups(policy, groups, 'make_up'),
-      ...filterTutoringEligibleGroups(policy, groups, 'weak_support'),
+      ...filterTutoringEligibleGroups(policy, groups, 'make_up', tagsByGroupId),
+      ...filterTutoringEligibleGroups(
+        policy,
+        groups,
+        'weak_support',
+        tagsByGroupId
+      ),
     ].map((group) => group.id)
   );
   return groups.filter(

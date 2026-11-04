@@ -23,6 +23,7 @@ export function TutoringDraftChoices({
   wsId,
   form,
   groupName,
+  groupTags,
   policy,
   today,
   schedule,
@@ -36,6 +37,7 @@ export function TutoringDraftChoices({
   form: TutoringFormValues;
   /** The chosen class's name, read by the workspace exclusion rules. */
   groupName?: string | null;
+  groupTags?: readonly string[];
   policy: TutoringPolicy;
   today: string;
   schedule: WorkspaceUserGroupSession[];
@@ -85,6 +87,7 @@ export function TutoringDraftChoices({
   if (!form.groupId || !form.studentUserId) return null;
   const exclusion = {
     groupName,
+    groupTags,
     reason: tutoringExclusionReason(form.reasonType),
   };
   const suggestions =

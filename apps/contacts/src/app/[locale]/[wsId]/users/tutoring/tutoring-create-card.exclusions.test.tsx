@@ -121,3 +121,39 @@ it('explains an excluded class and offers no suggestion or save for it', () => {
   expect(screen.queryByText('Draft choices')).not.toBeInTheDocument();
   expect(screen.getByRole('button', { name: /create/ })).toBeDisabled();
 });
+
+it('reads class tags, so a class excluded only by a tag is not offered', () => {
+  const tagPolicy = {
+    ...STANDARD_TUTORING_POLICY,
+    groupExclusions: [
+      {
+        scope: 'all' as const,
+        match: 'exact' as const,
+        value: 'DDT',
+        target: 'tag' as const,
+      },
+    ],
+  };
+  const { rerender } = render(
+    <TutoringCreateCard
+      {...props}
+      form={DEFAULT_FORM}
+      groupTags={new Map([['english', ['DDT']]])}
+      policy={tagPolicy}
+    />
+  );
+  expect(classOptions()).toEqual([
+    'Starters ddt 2',
+    'Mẫu giáo Hoa Mai',
+    'Kindergarten K1',
+  ]);
+  rerender(
+    <TutoringCreateCard
+      {...props}
+      form={{ ...DEFAULT_FORM, groupId: 'english' }}
+      groupTags={new Map([['english', ['DDT']]])}
+      policy={tagPolicy}
+    />
+  );
+  expect(screen.getByText('group_excluded')).toBeInTheDocument();
+});

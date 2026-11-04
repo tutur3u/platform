@@ -95,6 +95,8 @@ interface Props {
   error: string | null;
   filters: TutoringSessionFilters;
   groups: UserGroup[];
+  /** Class tag names, loaded only when the policy has a tag exclusion rule. */
+  groupTags?: ReadonlyMap<string, readonly string[]>;
   isLoading: boolean;
   isRefreshing: boolean;
   isMarking: boolean;
@@ -157,6 +159,7 @@ export function TutoringSessionsCard({
   error,
   filters,
   groups,
+  groupTags,
   isLoading,
   isRefreshing,
   isMarking,
@@ -392,6 +395,7 @@ export function TutoringSessionsCard({
           <TutoringCreateCard
             form={create.form}
             groups={groups}
+            groupTags={groupTags}
             isSubmitting={create.isSubmitting}
             onChange={actions.onCreateFormChange}
             onSubmit={actions.onCreate}

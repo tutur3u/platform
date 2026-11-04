@@ -275,4 +275,61 @@ describe('tutoring group rules', () => {
       ).toBe(false);
     });
   });
+
+  describe('single-word contains rules match whole tokens', () => {
+    const contains = (value: string) => ({
+      ...STANDARD_TUTORING_POLICY,
+      groupExclusions: [
+        { scope: 'all' as const, match: 'contains' as const, value },
+      ],
+    });
+
+    it('matches DDT as its own token, next to digits and punctuation', () => {
+      for (const name of [
+        'DDT',
+        'DDT1',
+        'DDT-A',
+        'Lớp DDT 2',
+        'ĐĐT',
+        'GDĐT DDT',
+      ])
+        expect(isTutoringGroupExcluded(contains('DDT'), name, null), name).toBe(
+          true
+        );
+    });
+
+    it('does not match DDT inside a longer word such as GDĐT', () => {
+      for (const name of ['GDĐT', 'KĐĐT', 'ADĐT', 'Ôn thi Sở GDĐT', 'DDTX'])
+        expect(isTutoringGroupExcluded(contains('DDT'), name, null), name).toBe(
+          false
+        );
+      expect(
+        isTutoringGroupExcluded(
+          EASY_CENTER_TUTORING_POLICY,
+          'Ôn thi Sở GDĐT',
+          'make_up'
+        )
+      ).toBe(false);
+    });
+
+    it('keeps plain substring matching for multi-word values', () => {
+      for (const name of ['Lớp mẫu giáo 2', 'Mẫu giáoA', 'xmau giao'])
+        expect(
+          isTutoringGroupExcluded(contains('mẫu giáo'), name, null),
+          name
+        ).toBe(true);
+    });
+
+    it('leaves exact, prefix and suffix rules unchanged', () => {
+      const rule = (match: 'exact' | 'prefix' | 'suffix') => ({
+        ...STANDARD_TUTORING_POLICY,
+        groupExclusions: [{ scope: 'all' as const, match, value: 'DDT' }],
+      });
+      expect(isTutoringGroupExcluded(rule('prefix'), 'DDTX 1', null)).toBe(
+        true
+      );
+      expect(isTutoringGroupExcluded(rule('suffix'), 'GDĐT', null)).toBe(true);
+      expect(isTutoringGroupExcluded(rule('exact'), 'GDĐT', null)).toBe(false);
+    });
+  });
 });

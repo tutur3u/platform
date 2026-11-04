@@ -325,4 +325,26 @@ describe('support queue class filter', () => {
       )
     ).toEqual(['ddt', 'english']);
   });
+
+  it('reads class tags for tag rules', () => {
+    const tagPolicy = {
+      ...STANDARD_TUTORING_POLICY,
+      groupExclusions: [
+        {
+          scope: 'all' as const,
+          match: 'exact' as const,
+          value: 'DDT',
+          target: 'tag' as const,
+        },
+      ],
+    };
+    expect(
+      tutoringQueueFilterGroups(
+        tagPolicy,
+        groups,
+        'all',
+        new Map([['english', ['DDT']]])
+      ).map((group) => group.id)
+    ).toEqual(['ddt', 'kg']);
+  });
 });

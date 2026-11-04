@@ -17,6 +17,7 @@ import {
 } from '@tuturuuu/internal-api';
 import { getTutoringPolicy } from '@tuturuuu/internal-api/tutoring';
 import {
+  hasTutoringTagExclusions,
   STANDARD_TUTORING_POLICY,
   tutoringExclusionReason,
 } from '@tuturuuu/internal-api/tutoring-policy';
@@ -44,6 +45,7 @@ import {
   type TutoringSessionFilters,
   toIsoDate,
 } from './tutoring-filters';
+import { loadTutoringGroupTags } from './tutoring-group-tags';
 import { TutoringOverview } from './tutoring-overview';
 import { TutoringPayroll } from './tutoring-payroll';
 import { TutoringPolicyCard } from './tutoring-policy-card';
@@ -246,6 +248,20 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
     queryFn: () => listAllWorkspaceUserGroups(wsId, { status: 'active' }),
     staleTime: 5 * 60_000,
   });
+
+  // Tag exclusion rules read class tags; load them only when such a rule
+  // exists, so the class picker and queue filter match what the server refuses.
+  const groupTagsQuery = useQuery({
+    enabled:
+      hasTutoringTagExclusions(policy) &&
+      (createDialogOpen || tab === 'queue' || sessionsQuery.isFetched),
+    queryKey: ['tutoring-group-tags', wsId],
+    queryFn: () => loadTutoringGroupTags(wsId),
+    staleTime: 5 * 60_000,
+  });
+  const groupTags = hasTutoringTagExclusions(policy)
+    ? groupTagsQuery.data
+    : undefined;
 
   const invalidateTutoring = () => {
     for (const key of [
@@ -524,6 +540,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
             exportQuery={sessionQuery}
             filters={filters}
             groups={groupsQuery.data ?? []}
+            groupTags={groupTags}
             isLoading={sessionsQuery.isLoading}
             isRefreshing={sessionsQuery.isFetching && !sessionsQuery.isLoading}
             error={sessionsQuery.isError ? t('sessions_load_failed') : null}
@@ -587,6 +604,7 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
               studentUserId: queueStudentId,
             }}
             groups={groupsQuery.data ?? []}
+            groupTags={groupTags}
             pagination={{ page: queuePage, pageSize: queuePageSize }}
             policy={policy}
             wsId={wsId}

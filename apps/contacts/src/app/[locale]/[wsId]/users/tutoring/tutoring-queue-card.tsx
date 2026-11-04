@@ -55,6 +55,8 @@ interface Props {
   enabled: boolean;
   filters: TutoringQueueFilters;
   groups: UserGroup[];
+  /** Class tag names, loaded only when the policy has a tag exclusion rule. */
+  groupTags?: ReadonlyMap<string, readonly string[]>;
   pagination: { page: number; pageSize: number };
   policy: TutoringPolicy;
   schedulingKey: string | null;
@@ -91,6 +93,7 @@ export function TutoringQueueCard({
   enabled,
   filters,
   groups,
+  groupTags,
   pagination,
   policy,
   schedulingKey,
@@ -145,14 +148,17 @@ export function TutoringQueueCard({
   const groupOptions = useMemo<ComboboxOption[]>(
     () => [
       { label: t('all_groups'), value: 'all' },
-      ...tutoringQueueFilterGroups(policy, groups, filters.groupId).map(
-        (group) => ({
-          label: group.name || group.id,
-          value: group.id,
-        })
-      ),
+      ...tutoringQueueFilterGroups(
+        policy,
+        groups,
+        filters.groupId,
+        groupTags
+      ).map((group) => ({
+        label: group.name || group.id,
+        value: group.id,
+      })),
     ],
-    [filters.groupId, groups, policy, t]
+    [filters.groupId, groupTags, groups, policy, t]
   );
 
   const reasonLabels: Record<string, string> = {

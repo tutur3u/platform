@@ -46,6 +46,8 @@ const REASON_TYPES: TutoringReasonType[] = [
 interface Props {
   form: TutoringFormValues;
   groups: UserGroup[];
+  /** Class tag names, loaded only when the policy has a tag exclusion rule. */
+  groupTags?: ReadonlyMap<string, readonly string[]>;
   isSubmitting: boolean;
   students: WorkspaceBasicUserRecord[];
   onChange: (next: TutoringFormValues) => void;
@@ -57,6 +59,7 @@ interface Props {
 export function TutoringCreateCard({
   form,
   groups,
+  groupTags,
   isSubmitting,
   students,
   onChange,
@@ -103,9 +106,11 @@ export function TutoringCreateCard({
 
   const selectedGroupName =
     groups.find((group) => group.id === form.groupId)?.name ?? null;
+  const selectedGroupTags = groupTags?.get(form.groupId);
   const groupExcluded = isTutoringFormGroupExcluded({
     form,
     groupName: selectedGroupName,
+    groupTags: selectedGroupTags,
     policy,
   });
 
@@ -115,6 +120,7 @@ export function TutoringCreateCard({
         calendar: classSchedule.data?.data ?? [],
         groupId: form.groupId,
         groupName: selectedGroupName,
+        groupTags: selectedGroupTags,
         loaded: classSchedule.isSuccess,
         policy,
         reasonType: form.reasonType,
@@ -127,6 +133,7 @@ export function TutoringCreateCard({
       form.reasonType,
       policy,
       selectedGroupName,
+      selectedGroupTags,
       today,
     ]
   );
@@ -138,7 +145,8 @@ export function TutoringCreateCard({
       filterTutoringEligibleGroups(
         policy,
         groups,
-        tutoringExclusionReason(form.reasonType)
+        tutoringExclusionReason(form.reasonType),
+        groupTags
       ).map((group) => group.id)
     );
     return groups
@@ -147,7 +155,7 @@ export function TutoringCreateCard({
         label: group.name || group.id,
         value: group.id,
       }));
-  }, [form.groupId, form.reasonType, groups, policy]);
+  }, [form.groupId, form.reasonType, groupTags, groups, policy]);
 
   const teacherOptions = useMemo<ComboboxOption[]>(() => {
     const managers =
@@ -375,6 +383,7 @@ export function TutoringCreateCard({
                       ? missedDate
                       : addDaysToIsoDate(today, -1),
                   groupName: selectedGroupName,
+                  groupTags: selectedGroupTags,
                   policy,
                   schedule,
                 });
@@ -411,6 +420,7 @@ export function TutoringCreateCard({
           wsId={wsId}
           form={form}
           groupName={selectedGroupName}
+          groupTags={selectedGroupTags}
           policy={policy}
           today={today}
           schedule={schedule}

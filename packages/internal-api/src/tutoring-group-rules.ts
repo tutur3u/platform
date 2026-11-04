@@ -79,7 +79,35 @@ function matchesRule(rule: TutoringGroupExclusion, text: string) {
   if (rule.match === 'exact') return name === value;
   if (rule.match === 'prefix') return name.startsWith(value);
   if (rule.match === 'suffix') return name.endsWith(value);
-  return name.includes(value);
+  return /\s/.test(value) ? name.includes(value) : containsToken(name, value);
+}
+
+const LETTER = /\p{L}/u;
+
+/**
+ * A single-word `contains` value matches only as its own token: no letter may
+ * touch it on either side, while digits, spaces and punctuation are borders.
+ * Folding makes `ĐĐT` read as `ddt`, so without this a `DDT` rule would also
+ * hide `GDĐT`, the education-department abbreviation. A value edge that is not
+ * a letter (such as `-k`) needs no border on that side.
+ */
+function containsToken(name: string, value: string) {
+  const needsStart = LETTER.test(value[0] ?? '');
+  const needsEnd = LETTER.test(value.at(-1) ?? '');
+  for (
+    let index = name.indexOf(value);
+    index !== -1;
+    index = name.indexOf(value, index + 1)
+  ) {
+    const before = name[index - 1];
+    const after = name[index + value.length];
+    if (
+      (!needsStart || !before || !LETTER.test(before)) &&
+      (!needsEnd || !after || !LETTER.test(after))
+    )
+      return true;
+  }
+  return false;
 }
 
 /**

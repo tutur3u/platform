@@ -155,3 +155,40 @@ describe('excluded classes', () => {
     ).toBeGreaterThan(0);
   });
 });
+
+describe('tag-excluded classes', () => {
+  it('fills no slot for a class excluded by its tag', () => {
+    const policy = {
+      ...EASY_CENTER_TUTORING_POLICY,
+      groupExclusions: [
+        {
+          scope: 'all' as const,
+          match: 'exact' as const,
+          value: 'DDT',
+          target: 'tag' as const,
+        },
+      ],
+    };
+    expect(
+      applyTutoringSuggestions({
+        form,
+        fromDate: '2026-10-05',
+        groupName: 'English A1',
+        groupTags: ['ddt'],
+        policy,
+        schedule: [classAt('2026-10-28T11:00:00Z')],
+      }).message
+    ).toEqual({ key: 'suggestion_excluded', values: {} });
+    expect(
+      resolveTutoringClassSchedule({
+        calendar: [],
+        groupId: GROUP,
+        groupName: 'English A1',
+        groupTags: ['DDT'],
+        loaded: true,
+        policy: { ...policy, shiftByGroupId: { [GROUP]: 'Shift 2' } },
+        today: '2026-10-26',
+      })
+    ).toEqual([]);
+  });
+});

@@ -40,6 +40,7 @@ export function resolveTutoringClassSchedule({
   calendar,
   groupId,
   groupName,
+  groupTags,
   loaded,
   policy,
   reasonType,
@@ -48,6 +49,7 @@ export function resolveTutoringClassSchedule({
   calendar: WorkspaceUserGroupSession[];
   groupId: string;
   groupName?: string | null;
+  groupTags?: readonly string[];
   loaded: boolean;
   policy: TutoringPolicy;
   reasonType?: string;
@@ -60,6 +62,7 @@ export function resolveTutoringClassSchedule({
     fromDate: today,
     groupId,
     groupName,
+    groupTags,
     policy,
     reason: tutoringExclusionReason(reasonType),
   });
@@ -69,10 +72,12 @@ export function resolveTutoringClassSchedule({
 export function isTutoringFormGroupExcluded({
   form,
   groupName,
+  groupTags,
   policy,
 }: {
   form: Pick<TutoringFormValues, 'groupId' | 'reasonType'>;
   groupName?: string | null;
+  groupTags?: readonly string[];
   policy: TutoringPolicy;
 }) {
   return (
@@ -81,7 +86,8 @@ export function isTutoringFormGroupExcluded({
       policy,
       groupName ?? '',
       tutoringExclusionReason(form.reasonType),
-      form.groupId
+      form.groupId,
+      groupTags
     )
   );
 }
@@ -91,16 +97,18 @@ export function applyTutoringSuggestions({
   form,
   fromDate,
   groupName,
+  groupTags,
   policy,
   schedule,
 }: {
   form: TutoringFormValues;
   fromDate: string;
   groupName?: string | null;
+  groupTags?: readonly string[];
   policy: TutoringPolicy;
   schedule: WorkspaceUserGroupSession[];
 }): { form: TutoringFormValues | null; message: TutoringSuggestionMessage } {
-  if (isTutoringFormGroupExcluded({ form, groupName, policy }))
+  if (isTutoringFormGroupExcluded({ form, groupName, groupTags, policy }))
     return { form: null, message: { key: 'suggestion_excluded', values: {} } };
   const total = form.sessionSlots.length;
   const suggestions = suggestTutoringSlots(
@@ -110,7 +118,7 @@ export function applyTutoringSuggestions({
     policy,
     form.reasonType === 'WEAK_SUPPORT' ? 'consecutive' : 'separate',
     new Date(),
-    { groupName, reason: tutoringExclusionReason(form.reasonType) }
+    { groupName, groupTags, reason: tutoringExclusionReason(form.reasonType) }
   );
   if (!suggestions.length) {
     const upcoming = schedule.filter(
