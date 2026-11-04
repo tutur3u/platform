@@ -489,12 +489,18 @@ jobs:
       - name: Prepare route-free production artifact for Rex
         run: |
           node --input-type=module <<'JS'
-          import { readFileSync, writeFileSync } from 'node:fs';
-          import { resolve } from 'node:path';
+          import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+          import { dirname, relative, resolve } from 'node:path';
           const root = resolve('apps/apps');
-          const pointer = JSON.parse(readFileSync(resolve(root, '.wrangler/deploy/config.json')));
+          const pointers = ['.wrangler/deploy/config.json', '.void/preview-deploy-config.json'].map(p => resolve(root, p)).filter(existsSync);
+          if (pointers.length !== 1) throw new Error('Expected one emitted deployment pointer');
+          const pointer = JSON.parse(readFileSync(pointers[0]));
           const configPath = resolve(root, '.wrangler/deploy', pointer.configPath);
           const config = JSON.parse(readFileSync(configPath));
+          config.main = relative(dirname(configPath), resolve(dirname(configPath), config.main));
+          config.assets.directory = relative(dirname(configPath), resolve(dirname(configPath), config.assets.directory));
+          delete config.configPath;
+          delete config.userConfigPath;
           config.name = 'tuturuuu-apps';
           config.workers_dev = false;
           config.preview_urls = false;
