@@ -142,9 +142,11 @@ describe('external project delivery route', () => {
     );
     expect(response.status).toBe(304);
     expect(await response.text()).toBe('');
-    expect(response.headers.get('Cache-Control')).toBe('public, max-age=60');
+    expect(response.headers.get('Cache-Control')).toBe(
+      'public, max-age=0, s-maxage=300, stale-while-revalidate=60'
+    );
     expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe(
-      'max-age=86400, stale-while-revalidate=43200'
+      'max-age=300, stale-while-revalidate=60'
     );
     expect(response.headers.get('Vercel-Cache-Tag')).toContain(
       `workspace-${workspaceId}`
@@ -193,9 +195,11 @@ describe('external project delivery route', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get('Cache-Control')).toBe('public, max-age=60');
+    expect(response.headers.get('Cache-Control')).toBe(
+      'public, max-age=0, s-maxage=300, stale-while-revalidate=60'
+    );
     expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe(
-      'max-age=86400, stale-while-revalidate=43200'
+      'max-age=300, stale-while-revalidate=60'
     );
     expect(response.headers.get('Vercel-Cache-Tag')).toContain(
       `workspace-${workspaceId}`
