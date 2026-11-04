@@ -4,7 +4,7 @@
 begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(57);
+select plan(58);
 
 create function pg_temp.id(p text) returns uuid language sql immutable as $$ select ('00000000-0000-4000-8000-0000000fe' || p)::uuid $$;
 insert into auth.users(id, email) values (pg_temp.id('001'), 'fee-lock-owner@example.test'), (pg_temp.id('002'), 'fee-lock-staff@example.test') on conflict (id) do nothing;
