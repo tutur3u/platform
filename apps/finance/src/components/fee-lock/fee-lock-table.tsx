@@ -16,6 +16,18 @@ import {
 } from '@tuturuuu/ui/table';
 import { useLocale, useTranslations } from 'next-intl';
 
+/**
+ * Currency formatter for fee-lock amounts. A malformed currency code makes
+ * Intl.NumberFormat throw, so fall back to plain number formatting.
+ */
+export function createFeeLockMoneyFormatter(locale: string, currency: string) {
+  try {
+    return new Intl.NumberFormat(locale, { style: 'currency', currency });
+  } catch {
+    return new Intl.NumberFormat(locale);
+  }
+}
+
 interface Props {
   rows: FeeLockListRow[];
   currency: string;
@@ -25,7 +37,7 @@ export function FeeLockTable({ rows, currency }: Props) {
   const t = useTranslations('ws-fee-lock');
   const locale = useLocale();
   const { isConfidential } = useFinanceConfidentialVisibility();
-  const money = new Intl.NumberFormat(locale, { style: 'currency', currency });
+  const money = createFeeLockMoneyFormatter(locale, currency);
   const amount = (value: number | null) =>
     value === null
       ? '—'

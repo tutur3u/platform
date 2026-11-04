@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const visibility = vi.hoisted(() => ({ isConfidential: false }));
 vi.mock('next-intl', () => ({
@@ -16,7 +16,7 @@ vi.mock(
   })
 );
 
-import { FeeLockTable } from './fee-lock-table';
+import { createFeeLockMoneyFormatter, FeeLockTable } from './fee-lock-table';
 
 const lock = (status: 'draft' | 'locked') => ({
   id: `lock-${status}`,
@@ -39,6 +39,11 @@ const rows = [null, lock('draft'), lock('locked')].map((value, index) => ({
 })) as never;
 
 describe('FeeLockTable', () => {
+  afterEach(() => {
+    cleanup();
+    visibility.isConfidential = false;
+  });
+
   it('shows baseline, locked total and status per student', () => {
     render(<FeeLockTable rows={rows} currency="VND" />);
     expect(screen.getByText('status_none')).toBeTruthy();
@@ -53,5 +58,25 @@ describe('FeeLockTable', () => {
     visibility.isConfidential = true;
     render(<FeeLockTable rows={rows} currency="VND" />);
     expect(screen.getAllByText('••••')).toHaveLength(5);
+  });
+
+  it('falls back to plain numbers for an invalid currency code', () => {
+    render(<FeeLockTable rows={rows} currency="not-a-code" />);
+    expect(screen.getAllByText('1.200.000')).toHaveLength(3);
+    expect(screen.getAllByText('1.100.000')).toHaveLength(2);
+  });
+});
+
+describe('createFeeLockMoneyFormatter', () => {
+  it('formats with the currency when the code is valid', () => {
+    expect(createFeeLockMoneyFormatter('en-US', 'USD').format(12.5)).toBe(
+      '$12.50'
+    );
+  });
+
+  it('does not throw on an invalid currency code', () => {
+    expect(createFeeLockMoneyFormatter('en-US', 'US').format(1234.5)).toBe(
+      '1,234.5'
+    );
   });
 });
