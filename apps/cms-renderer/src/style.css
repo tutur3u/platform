@@ -1,7 +1,9 @@
 body { margin: 0; font-family: sans-serif; }
 .cms-page { max-width: 76rem; padding: 1.5rem; margin-inline: auto; }
-.cms-page img { max-width: 100%; height: auto; }
+.cms-page img, .cms-page video { max-width: 100%; height: auto; }
 .cms-columns, .cms-card-grid { display: grid; gap: 1.5rem; }
 .cms-page figure { margin: 0; }
 .cms-button { display: inline-block; padding: .75rem 1rem; border: 1px solid currentColor; border-radius: .25rem; }
-@media (max-width: 48rem) { .cms-columns, .cms-card-grid { grid-template-columns: 1fr !important; } }
+@media (max-width: 48rem) { .cms-columns, .cms-card-grid, .cms-gallery { grid-template-columns: 1fr !important; } }
+
+.cms-page iframe { width: 100%; max-width: 100%; aspect-ratio: 16 / 9; border: 0; }
