@@ -13,6 +13,7 @@ import {
 // Synthetic fixtures only.
 const line = (over: Partial<FeeLockExportEntry['lines'][number]>) => ({
   kind: 'tuition' as const,
+  group_id: null,
   group_name: 'Lớp A',
   label: 'Học phí Lớp A',
   unit_label: 'buổi',
@@ -26,7 +27,7 @@ const line = (over: Partial<FeeLockExportEntry['lines'][number]>) => ({
 });
 // biome-ignore format: compact fixture
 const twoClasses: FeeLockExportEntry = {
-  status: 'locked', revision: 2, student_name: 'Học viên Một', period_month: '2026-12-01', total_amount: 1_350_000,
+  status: 'locked', revision: 2, student_name: 'Học viên Một', period_month: '2026-12-01', currency: 'VND', total_amount: 1_350_000,
   lines: [
     line({ kind: 'extra', group_name: null, label: 'Sách', unit_label: 'bộ', unit_price: 150_000, quantity: 1, line_amount: 150_000, sort_order: 2 }),
     line({}),
@@ -38,6 +39,7 @@ const draft: FeeLockExportEntry = {
   revision: null,
   student_name: '=HYPERLINK("https://evil.test","x")',
   period_month: '2026-12-01',
+  currency: 'VND',
   total_amount: 800_000,
   lines: [line({ reason: '+cmd' })],
 };
@@ -58,6 +60,20 @@ describe('buildFeeLockExportSheets', () => {
       'Học phí Lớp B',
       'Sách',
     ]);
+  });
+
+  // biome-ignore format: dense
+  it('adds the notice column (14th) only when asked, guarded like any text', () => {
+    const { summary } = buildFeeLockExportSheets(
+      [{ ...twoClasses, notice: '=HYPERLINK("x")' }, draft],
+      'vi',
+      true
+    );
+    expect(summary[0]).toHaveLength(14);
+    expect(summary[0]?.[13]).toBe('Nội dung thông báo');
+    expect([summary[1]?.[13], summary[2]?.[13]]).toEqual(['=HYPERLINK("x")', null]);
+    const book = XLSX.read(writeFeeLockWorkbook(buildFeeLockExportSheets([{ ...twoClasses, notice: '=HYPERLINK("x")' }], 'vi', true)), { type: 'array' });
+    expect(book.Sheets['Tổng hợp']?.N2).toMatchObject({ t: 's', v: `'=HYPERLINK("x")` });
   });
 
   it('keeps the agreed 13 summary columns and has English headers', () => {

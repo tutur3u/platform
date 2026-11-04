@@ -1,3 +1,4 @@
+import { renderFeeNotice } from '@tuturuuu/finance-core/fee-lock';
 import { feeLockExportRequestSchema } from '@tuturuuu/internal-api/finance-fee-lock-contracts';
 import type { Json } from '@tuturuuu/types/supabase';
 import { NextResponse } from 'next/server';
@@ -9,6 +10,11 @@ import {
   writeFeeLockWorkbook,
 } from '@/lib/fee-lock/export-workbook';
 import { feeLockErrorResponse, getFeeLockRouteContext } from '../access';
+import {
+  activeFeeNoticeTemplate,
+  getFeeNoticeCentreName,
+  listFeeNoticeTemplates,
+} from '../template/template-store';
 import { loadFeeLockExportEntries } from './load-entries';
 
 interface Params {
@@ -43,7 +49,7 @@ export async function POST(request: Request, { params }: Params) {
       { status: 400 }
     );
   }
-  const { month, groupId, status, locale } = parsed.data;
+  const { month, groupId, status, locale, include_notice } = parsed.data;
 
   const loaded = await loadFeeLockExportEntries(sbAdmin, wsId, {
     periodMonth: `${month}-01`,
@@ -52,11 +58,33 @@ export async function POST(request: Request, { params }: Params) {
   });
   if (loaded.response) return loaded.response;
   const ordered = loaded.entries;
+  let entries = ordered.map(([, entry]) => entry);
+  let templateVersion: number | null = null;
+  if (include_notice) {
+    const [listed, centre] = await Promise.all([
+      listFeeNoticeTemplates(sbAdmin, wsId),
+      getFeeNoticeCentreName(sbAdmin, wsId),
+    ]);
+    if (listed.response) return listed.response;
+    if (centre.response) return centre.response;
+    const template = activeFeeNoticeTemplate(listed.versions);
+    templateVersion = template.version;
+    // One cell per student (Trà 15:12 Q1): per-class notices share the cell.
+    entries = entries.map((entry) =>
+      entry.status !== 'locked'
+        ? entry
+        : {
+            ...entry,
+            notice: renderFeeNotice(entry, template, {
+              centreName: centre.name,
+            })
+              .map((notice) => notice.text)
+              .join('\n\n'),
+          }
+    );
+  }
   const bytes = writeFeeLockWorkbook(
-    buildFeeLockExportSheets(
-      ordered.map(([, entry]) => entry),
-      locale
-    )
+    buildFeeLockExportSheets(entries, locale, include_notice)
   );
 
   // Ids, enums, counts and digests only: no names (design §2.4). The request
@@ -72,10 +100,10 @@ export async function POST(request: Request, { params }: Params) {
     group_id: groupId ?? null,
     locale,
     sort: EXPORT_SORT,
-    include_notice: false,
+    include_notice,
     row_count: ordered.length,
     sha256: await sha256Hex(bytes),
-    template_version: null,
+    template_version: templateVersion,
     revisions_count: revisions.length,
     revisions_sha256: await sha256Hex(
       new TextEncoder().encode(JSON.stringify(revisions))
