@@ -16,16 +16,16 @@ const tap = (n) =>
   ].join('\n');
 
 test('all forty assertions must pass with no missing, extra, failed or skipped outcome', () => {
-  assert.equal(pageVersionsAssertionCount, 40);
-  assert.doesNotThrow(() => assertPageVersionsTap(tap(40)));
+  assert.equal(pageVersionsAssertionCount, 43);
+  assert.doesNotThrow(() => assertPageVersionsTap(tap(43)));
   for (const invalid of [
-    tap(39),
+    tap(42),
     tap(41),
-    tap(40).replace('ok 40', 'not ok 40'),
-    tap(40).replace('ok 40 - assertion 40', ''),
-    tap(40).replace('assertion 40', 'assertion 40 # SKIP'),
-    tap(40).replace('ok 40', 'ok 39'),
-    `${tap(40)}\nBail out! incomplete`,
+    tap(43).replace('ok 43', 'not ok 43'),
+    tap(43).replace('ok 43 - assertion 43', ''),
+    tap(43).replace('assertion 43', 'assertion 43 # SKIP'),
+    tap(43).replace('ok 43', 'ok 42'),
+    `${tap(43)}\nBail out! incomplete`,
   ])
     assert.throws(() => assertPageVersionsTap(invalid));
 });
