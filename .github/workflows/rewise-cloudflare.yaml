@@ -1,0 +1,218 @@
+name: Rewise Cloudflare Source
+on:
+  workflow_call:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    paths:
+      [
+        'apps/rewise/**',
+        'packages/ai/**',
+        'packages/apis/**',
+        'packages/auth/**',
+        'packages/cloudflare/**',
+        'packages/google/**',
+        'packages/hooks/**',
+        'packages/icons/**',
+        'packages/internal-api/**',
+        'packages/offline/**',
+        'packages/payment/**',
+        'packages/payment-core/**',
+        'packages/realtime/**',
+        'packages/satellite/**',
+        'packages/start-bridge/**',
+        'packages/storage-core/**',
+        'packages/supabase/**',
+        'packages/types/**',
+        'packages/typescript-config/**',
+        'packages/ui/**',
+        'packages/utils/**',
+        'packages/vercel/**',
+        'scripts/ci/rewise-native-artifact.py',
+        '.github/workflows/rewise-cloudflare.yaml',
+        'scripts/ci/apps-native-artifact.py',
+        'scripts/ci/apps-native-runtime-pointer.mjs',
+        'scripts/ci/native-emitted-config-receipt.mjs',
+        'scripts/ci/native-config-default-probe.mjs',
+        'scripts/ci/native-receipt-layout.mjs',
+        'scripts/ci/production-publication-policy.ts',
+        'scripts/start-bridge-codemod/runtime-outcome.mjs',
+        'scripts/start-bridge-codemod/worker-config.mjs',
+        'bun.lock',
+        '.github/workflows/native-start-app.yaml',
+        '.github/workflows/ci-check.yml',
+        '.github/actions/setup-bun-with-retry/action.yml',
+        '.github/actions/run-with-turbo-remote-cache/action.yml',
+        'scripts/ci/generate-build-metadata.ts',
+        'scripts/ci/check-workflow-config.ts',
+        'scripts/ci/workflow-config-core.ts',
+        'scripts/ci/workspace-dependency-closure.ts',
+        'scripts/ci/resolve-changed-files-core.ts',
+        'scripts/ci/resolve-changed-files.ts',
+        'package.json',
+        'turbo.json',
+        'tuturuuu.ts',
+        'tuturuuu.ci.ts',
+      ]
+  push:
+    branches: [main]
+    paths:
+      [
+        'apps/rewise/**',
+        'packages/ai/**',
+        'packages/apis/**',
+        'packages/auth/**',
+        'packages/cloudflare/**',
+        'packages/google/**',
+        'packages/hooks/**',
+        'packages/icons/**',
+        'packages/internal-api/**',
+        'packages/offline/**',
+        'packages/payment/**',
+        'packages/payment-core/**',
+        'packages/realtime/**',
+        'packages/satellite/**',
+        'packages/start-bridge/**',
+        'packages/storage-core/**',
+        'packages/supabase/**',
+        'packages/types/**',
+        'packages/typescript-config/**',
+        'packages/ui/**',
+        'packages/utils/**',
+        'packages/vercel/**',
+        'scripts/ci/rewise-native-artifact.py',
+        '.github/workflows/rewise-cloudflare.yaml',
+        'scripts/ci/apps-native-artifact.py',
+        'scripts/ci/apps-native-runtime-pointer.mjs',
+        'scripts/ci/native-emitted-config-receipt.mjs',
+        'scripts/ci/native-config-default-probe.mjs',
+        'scripts/ci/native-receipt-layout.mjs',
+        'scripts/ci/production-publication-policy.ts',
+        'scripts/start-bridge-codemod/runtime-outcome.mjs',
+        'scripts/start-bridge-codemod/worker-config.mjs',
+        'bun.lock',
+        '.github/workflows/native-start-app.yaml',
+        '.github/workflows/ci-check.yml',
+        '.github/actions/setup-bun-with-retry/action.yml',
+        '.github/actions/run-with-turbo-remote-cache/action.yml',
+        'scripts/ci/generate-build-metadata.ts',
+        'scripts/ci/check-workflow-config.ts',
+        'scripts/ci/workflow-config-core.ts',
+        'scripts/ci/workspace-dependency-closure.ts',
+        'scripts/ci/resolve-changed-files-core.ts',
+        'scripts/ci/resolve-changed-files.ts',
+        'package.json',
+        'turbo.json',
+        'tuturuuu.ts',
+        'tuturuuu.ci.ts',
+      ]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}-${{ (github.run_attempt > 1 || (github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && (github.event_name != 'push' || github.ref == 'refs/heads/production' || startsWith(github.ref, 'refs/heads/release-please--branches--')))) && format('{0}-{1}-{2}', github.sha, github.run_id, github.run_attempt) || 'latest' }}${{ github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'ready-for-ci') && '-unadmitted' || '' }}
+  cancel-in-progress: ${{ !(github.run_attempt > 1) && (github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'push' && github.ref != 'refs/heads/production' && !startsWith(github.ref, 'refs/heads/release-please--branches--'))) }}
+jobs:
+  check-ci:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    uses: ./.github/workflows/ci-check.yml
+    permissions:
+      contents: read
+      deployments: read
+    with:
+      workflow_name: rewise-cloudflare.yaml
+  # Staging-profile qualification runs on demand until the app declares its
+  # signed-out runtime outcomes and its proxy admits /api/build-info.
+  native:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true' && github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/native-start-app.yaml
+    permissions:
+      contents: read
+    with:
+      app: rewise
+      package: '@tuturuuu/rewise'
+      artifact-script: scripts/ci/rewise-native-artifact.py
+      env-interface: RewiseGeneratedEnv
+      worker-environment-type: RewiseEnvironment
+      # Public staging values from repository variables for same-repository
+      # events; fork pull requests (and unset variables) build with fixtures.
+      public-env: |
+        NEXT_PUBLIC_SUPABASE_URL=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_URL || 'https://rewise-ci.supabase.invalid' }}
+        NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && vars.STAGING_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_rewise_ci_placeholder' }}
+        NEXT_PUBLIC_APP_URL=https://rewise.tuturuuu.com
+        NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
+        TUTURUUU_NOINDEX=1
+      format-paths: >-
+        apps/rewise/src/start-bridge apps/rewise/src/routes apps/rewise/src/router.tsx apps/rewise/src/start.ts apps/rewise/cloudflare apps/rewise/vite.config.mts apps/rewise/void.config.ts apps/rewise/native-profile.ts apps/rewise/native-profile.test.ts apps/rewise/tsconfig.json apps/rewise/package.json apps/rewise/start-bridge.routes.json
+  # Production-profile Worker + assets + emitted Wrangler config. No deployment
+  # and no provider credential: the sealed archive is deployed by hand at cutover.
+  cutover-artifact:
+    needs: check-ci
+    if: needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.labels.*.name, 'ready-for-ci')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      APPS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      REWISE_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      VITE_REWISE_NATIVE_PROFILE: production
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_APP_URL: https://rewise.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      TUTURUUU_NOINDEX: '0'
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - name: Require exact source and production public inputs
+        run: |
+          test "$(git rev-parse HEAD)" = "$SOURCE_SHA"
+          test -n "$NEXT_PUBLIC_SUPABASE_URL"
+          test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Build workspace suppliers
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter="@tuturuuu/rewise^..." --concurrency=2
+          token: ''
+          team: ''
+      - name: Generate exact source identity
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build the production Start Worker and assets
+        working-directory: apps/rewise
+        run: bun run build:cloudflare
+      - name: Seal and pack Worker, assets and emitted Wrangler config
+        run: |
+          python3 scripts/ci/rewise-native-artifact.py config apps/rewise
+          python3 scripts/ci/rewise-native-artifact.py seal apps/rewise --receipt "$RUNNER_TEMP/receipt.json"
+          python3 scripts/ci/rewise-native-artifact.py pack apps/rewise --receipt "$RUNNER_TEMP/receipt.json" --archive "$RUNNER_TEMP/rewise-cutover.tar.gz"
+      - name: Record bounded emitted config receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/rewise "$SOURCE_SHA" "$RUNNER_TEMP/rewise-emitted-config.json"
+      - name: Retain the emitted config receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewise-cutover-config-receipt-${{ env.SOURCE_SHA }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/rewise-emitted-config.json
+          retention-days: 7
+          if-no-files-found: error
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: rewise-cutover-production-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/rewise-cutover.tar.gz
+          retention-days: 7
+          if-no-files-found: error
