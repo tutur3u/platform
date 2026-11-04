@@ -144,6 +144,16 @@ export const feeLockListQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
 });
+/** `POST /finance/fee-locks/export`: one .xlsx row per student; `groupId` is checked against the workspace. */
+export const feeLockExportRequestSchema = z.object({
+  month: feeLockMonthSchema,
+  groupId: z.guid().optional(),
+  status: z.enum(['locked', 'all']).default('locked'),
+  locale: z.enum(['vi', 'en']).default('vi'),
+});
+export type FeeLockExportRequest = z.input<typeof feeLockExportRequestSchema>;
+export const FEE_LOCK_EXPORT_TOO_MANY_CODE = 'FEE_LOCK_EXPORT_TOO_MANY';
+
 /**
  * Escapes `\`, `%` and `_` for LIKE/ILIKE, like `escapeLikePattern` in
  * `@tuturuuu/utils/search-helper`, which this published package cannot import.
