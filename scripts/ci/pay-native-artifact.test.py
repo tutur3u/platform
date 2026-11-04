@@ -22,6 +22,18 @@ WORKER = "tuturuuu-pay-vite-staging"
 
 
 class PayArtifactTest(unittest.TestCase):
+    def test_production_rejects_sandbox_or_missing_mode(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            profile = Path(temporary) / "production-profile.json"
+            for value in ("true", "", None, False):
+                profile.write_text(json.dumps({"POLAR_SANDBOX": value}))
+                with patch.object(wrapper, "PROFILE", profile), patch.dict(os.environ, {"VITE_PAY_NATIVE_PROFILE": "production"}):
+                    with self.assertRaisesRegex(RuntimeError, "POLAR_SANDBOX=false"):
+                        wrapper.load()
+            profile.write_text(json.dumps({"POLAR_SANDBOX": "false"}))
+            with patch.object(wrapper, "PROFILE", profile), patch.dict(os.environ, {"VITE_PAY_NATIVE_PROFILE": "production"}):
+                self.assertEqual(wrapper.load().IDENTITY["name"], "tuturuuu-pay")
+
     def fixture(self):
         temporary = tempfile.TemporaryDirectory(prefix="pay-output-fixture-")
         self.addCleanup(temporary.cleanup)
