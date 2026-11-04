@@ -59,6 +59,15 @@ function PolicySummary({
             <dd className="font-medium">{policy[field]}</dd>
           </div>
         ))}
+        <div>
+          <dt className="text-muted-foreground text-sm">
+            {t('policy_absenceCountFromDate')}
+          </dt>
+          <dd className="font-medium">
+            {policy.absenceCountFromDate ??
+              t('policy_absenceCountFromDate_unset')}
+          </dd>
+        </div>
       </dl>
     );
   if (id === 'exceptions')

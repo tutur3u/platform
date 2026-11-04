@@ -1,4 +1,11 @@
 import {
+  getTutoringAbsenceCountFromMax,
+  getTutoringAbsenceCutoff,
+  getTutoringLinkCutoff,
+  parseAbsenceCountFromDate,
+  TUTORING_LINK_HORIZON_DAYS,
+} from './tutoring-absence-count-from';
+import {
   getTutoringCampusChoices,
   parseTutoringCampusOptions,
   TUTORING_CAMPUS_LABEL_MAX_LENGTH,
@@ -11,9 +18,13 @@ import {
 } from './tutoring-group-rules';
 
 export {
+  getTutoringAbsenceCountFromMax,
+  getTutoringAbsenceCutoff,
   getTutoringCampusChoices,
+  getTutoringLinkCutoff,
   parseTutoringCampusOptions,
   TUTORING_CAMPUS_LABEL_MAX_LENGTH,
+  TUTORING_LINK_HORIZON_DAYS,
 };
 
 export const TUTORING_POLICY_CONFIG_ID = 'TUTORING_POLICY';
@@ -42,6 +53,12 @@ export interface TutoringPolicy {
   leadMinutes: number;
   weakSupportSessions: number;
   absenceLookbackDays: number;
+  /**
+   * Workspace-local `YYYY-MM-DD`. Absences dated before it never feed make-up
+   * suggestions, on top of the rolling lookback; null counts the whole window.
+   * Older absences stay recorded; they are only left out of the queue.
+   */
+  absenceCountFromDate: string | null;
   reassessmentDays: number;
   followUpDays: number;
   weakContentReviewDays: number;
@@ -83,6 +100,7 @@ export const STANDARD_TUTORING_POLICY: TutoringPolicy = {
   leadMinutes: 45,
   weakSupportSessions: 1,
   absenceLookbackDays: 28,
+  absenceCountFromDate: null,
   reassessmentDays: 14,
   followUpDays: 7,
   weakContentReviewDays: 0,
@@ -298,7 +316,10 @@ function parseTutorGroupIds(value: unknown) {
 }
 
 /** Strict validation is shared by settings UI and the API write boundary. */
-export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
+export function parseTutoringPolicy(
+  value: unknown,
+  now = new Date()
+): TutoringPolicy | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const saved = value as Record<string, unknown>;
   const defaults =
@@ -380,6 +401,11 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     Array.isArray(candidate.shiftByGroupId)
   )
     return null;
+  const absenceCountFrom = parseAbsenceCountFromDate(
+    candidate.absenceCountFromDate,
+    now
+  );
+  if (!absenceCountFrom) return null;
   const tutorGroupIds = parseTutorGroupIds(candidate.tutorGroupIds);
   const supportGroupIds = parseTutorGroupIds(candidate.supportGroupIds);
   if (!tutorGroupIds || !supportGroupIds) return null;
@@ -448,6 +474,7 @@ export function parseTutoringPolicy(value: unknown): TutoringPolicy | null {
     leadMinutes: candidate.leadMinutes as number,
     weakSupportSessions: candidate.weakSupportSessions as number,
     absenceLookbackDays: candidate.absenceLookbackDays as number,
+    absenceCountFromDate: absenceCountFrom.date,
     reassessmentDays: candidate.reassessmentDays as number,
     followUpDays: candidate.followUpDays as number,
     weakContentReviewDays: candidate.weakContentReviewDays as number,
@@ -543,7 +570,18 @@ export function getTutoringCampus(
 export function readTutoringPolicy(value: string | null | undefined) {
   if (!value) return STANDARD_TUTORING_POLICY;
   try {
-    return parseTutoringPolicy(JSON.parse(value)) ?? STANDARD_TUTORING_POLICY;
+    const saved: unknown = JSON.parse(value);
+    // A bad stored count-from date only clears the date on read; dropping the
+    // whole policy would lose exclusions and shifts. Saves still reject it.
+    const withoutCountFrom =
+      saved && typeof saved === 'object' && !Array.isArray(saved)
+        ? { ...saved, absenceCountFromDate: null }
+        : saved;
+    return (
+      parseTutoringPolicy(saved) ??
+      parseTutoringPolicy(withoutCountFrom) ??
+      STANDARD_TUTORING_POLICY
+    );
   } catch {
     return STANDARD_TUTORING_POLICY;
   }

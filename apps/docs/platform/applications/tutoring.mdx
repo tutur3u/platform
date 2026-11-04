@@ -20,6 +20,22 @@ payroll.
 - **Needs support** is the queue of learners with an absence deficit within the
   configured recent attendance window
   (`ABSENT_RECOVERY`), a `require_attention` feedback (`WEAK_SUPPORT`), or both.
+  An optional **Count absences from** date (`absenceCountFromDate`,
+  workspace-local `YYYY-MM-DD`) narrows that window further: the queue counts
+  only absences on or after the later of the rolling lookback start and that
+  date. It lets a centre that adopted the app mid-term ignore absences from
+  before it started tracking make-ups. Older absences and sessions are not
+  changed or deleted; they are only left out of make-up suggestions. Unset
+  (the default for every existing policy) keeps the rolling window alone.
+  Linked make-up content pairs sessions with absences over its own fixed
+  90-day horizon (`TUTORING_LINK_HORIZON_DAYS`), not the queue window, so
+  shortening the lookback never strips notes from a make-up booked earlier.
+  The count-from date still applies: a make-up never pairs with an absence
+  before it. An absence older than both is left unpaired, and its make-up
+  shows no linked notes rather than another absence's notes
+  ([`queue/route.count-from.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/queue/route.count-from.test.ts),
+  [`tutoring-absence-cutoff.test.ts`](https://github.com/tutur3u/platform/blob/main/packages/internal-api/src/tutoring-absence-cutoff.test.ts),
+  [`linked-content.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/linked-content.test.ts)).
   Scheduling from a queue row fills the learner, group, reason, and suggested
   times for the missing sessions. Staff choose the tutoring teacher separately. A pending recovery
   session reserves one absence, so staff do not schedule the same make-up twice.
@@ -42,10 +58,14 @@ payroll.
   opens only that section with **Save** and **Cancel**. Cancel discards the
   section draft, and other sections stay read-only while it is open. Saving merges
   only that section’s fields into the latest loaded policy, preserving refreshed
-  values in other sections. Applying a preset intentionally replaces the full
-  draft. Save, Cancel, and editor inputs are disabled during a pending save; a
+  values in other sections. Applying a preset replaces the draft except
+  workspace-specific fields (campuses, tutor groups, group shifts, and the
+  count-absences-from date). Save, Cancel, and editor inputs are disabled during a pending save; a
   failed save retains the draft for retry. Operators can adjust session length, lead time, support
-  session count, absence lookback, reassessment and follow-up intervals, scheduling horizon,
+  session count, absence lookback, the count-absences-from date (a real date no
+  later than tomorrow in UTC; it can be cleared, and an invalid stored date
+  reads as unset without resetting the rest of the policy), reassessment and follow-up
+  intervals, scheduling horizon,
   class-time exceptions, named shifts, scoped group-name or group-tag exclusion rules,
   needs-tutoring groups,
   the unchanged-content review interval, group-to-campus labels, and the parent
@@ -512,8 +532,9 @@ on, no setting):
   content of a pending session links it to the notes again.
 - No-show and cancelled sessions keep whatever content they have.
 - **Which missed class**: each make-up session follows exactly one missed class.
-  Within a learner's class, absences in the lookback window and that learner's
-  pending or done make-up sessions are paired in date order. The oldest
+  Within a learner's class, absences in the last 90 days (on or after the
+  count-from date, when set; the queue lookback does not apply) and that
+  learner's pending or done make-up sessions are paired in date order. The oldest
   absence not yet covered goes to the earliest session dated on or after it.
   Sessions dated before every open absence follow no class and show no
   notes. Deleting or rescheduling a session, or editing attendance, can
