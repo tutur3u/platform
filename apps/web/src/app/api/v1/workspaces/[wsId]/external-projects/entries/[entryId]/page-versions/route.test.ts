@@ -1,3 +1,4 @@
+import { cmsPageSchema } from '@tuturuuu/cms-blocks/schema';
 import { NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,6 +11,8 @@ vi.mock('next/server', async (importOriginal) => ({
   ...(await importOriginal<typeof import('next/server')>()),
   connection: vi.fn(async () => undefined),
 }));
+
+const PAGE = { schemaVersion: 1, content: [], root: { props: {} } };
 
 const WS = '00000000-0000-4000-8000-0000000000aa';
 const ENTRY = '00000000-0000-4000-8000-000000000001';
@@ -78,6 +81,59 @@ describe('CMS page version routes', () => {
     vi.clearAllMocks();
   });
 
+  it.each([
+    { content: [] },
+    { ...PAGE, content: [{ type: 'UnknownBlock', props: { id: 'block' } }] },
+    { ...PAGE, schemaVersion: 999 },
+  ])('rejects invalid CMS page data before insertion', async (data) => {
+    const admin = fakeAdmin([
+      { data: { id: VERSION, status: 'draft' }, error: null },
+    ]);
+    allow(admin.client);
+    const response = await (await collection()).POST(
+      post({ schemaVersion: 1, data }),
+      context()
+    );
+    expect(response.status).toBe(400);
+    expect(admin.calls).toEqual([]);
+  });
+
+  it('rejects pages above the two MiB limit', async () => {
+    const admin = fakeAdmin([
+      { data: { id: VERSION, status: 'draft' }, error: null },
+    ]);
+    allow(admin.client);
+    const data = {
+      ...PAGE,
+      content: [
+        {
+          type: 'RichText',
+          props: {
+            id: 'body',
+            doc: {
+              type: 'doc',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [
+                    { type: 'text', text: 'x'.repeat(2 * 1024 * 1024 + 1) },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+    };
+    expect(cmsPageSchema.safeParse(data).success).toBe(true);
+    const response = await (await collection()).POST(
+      post({ schemaVersion: 1, data }),
+      context()
+    );
+    expect(response.status).toBe(400);
+    expect(admin.calls).toEqual([]);
+  });
+
   it('lists versions of the entry in the caller workspace with edit access', async () => {
     const admin = fakeAdmin([{ data: [{ id: VERSION }], error: null }]);
     allow(admin.client);
@@ -113,7 +169,7 @@ describe('CMS page version routes', () => {
     ]);
     allow(admin.client);
     const response = await (await collection()).POST(
-      post({ data: { content: [] }, note: ' first ', schemaVersion: 1 }),
+      post({ data: PAGE, note: ' first ', schemaVersion: 1 }),
       context()
     );
 
@@ -122,7 +178,7 @@ describe('CMS page version routes', () => {
       'insert',
       {
         created_by: 'user-1',
-        data: { content: [] },
+        data: PAGE,
         entry_id: ENTRY,
         note: 'first',
         schema_version: 1,
@@ -145,7 +201,7 @@ describe('CMS page version routes', () => {
       params: Promise.resolve({ entryId: 'nope', wsId: 'ieeai' }),
     };
     expect(
-      (await POST(post({ data: {}, schemaVersion: 1 }), badId)).status
+      (await POST(post({ data: PAGE, schemaVersion: 1 }), badId)).status
     ).toBe(400);
     expect(admin.calls.filter(([method]) => method === 'insert')).toEqual([]);
   });
@@ -156,7 +212,7 @@ describe('CMS page version routes', () => {
         .client
     );
     const response = await (await collection()).POST(
-      post({ data: {}, schemaVersion: 1 }),
+      post({ data: PAGE, schemaVersion: 1 }),
       context()
     );
     expect(response.status).toBe(404);

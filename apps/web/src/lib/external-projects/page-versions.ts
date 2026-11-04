@@ -1,3 +1,8 @@
+import {
+  CMS_BLOCKS_SCHEMA_VERSION,
+  CMS_PAGE_VERSION_MAX_BYTES,
+  cmsPageSchema,
+} from '@tuturuuu/cms-blocks/schema';
 import type {
   SupabaseClient,
   TypedSupabaseClient,
@@ -51,9 +56,14 @@ const SUMMARY_COLUMNS =
   'id, ws_id, entry_id, version_number, schema_version, status, note, created_by, created_at, published_by, published_at';
 
 export const savePageVersionSchema = z.object({
-  data: z.record(z.string(), z.unknown()),
+  data: cmsPageSchema.refine(
+    (data) =>
+      new TextEncoder().encode(JSON.stringify(data)).byteLength <=
+      CMS_PAGE_VERSION_MAX_BYTES,
+    'Page is too large'
+  ),
   note: z.string().trim().max(500).optional(),
-  schemaVersion: z.number().int().min(1),
+  schemaVersion: z.literal(CMS_BLOCKS_SCHEMA_VERSION),
 });
 
 export class PageVersionError extends Error {
