@@ -4214,17 +4214,20 @@ export type Database = {
       devbox_control_settings: {
         Row: {
           id: boolean;
+          personal_pools_enabled: boolean;
           require_reported_execution_mode: boolean;
           updated_at: string;
         };
         ComputedFields: never;
         Insert: {
           id?: boolean;
+          personal_pools_enabled?: boolean;
           require_reported_execution_mode?: boolean;
           updated_at?: string;
         };
         Update: {
           id?: boolean;
+          personal_pools_enabled?: boolean;
           require_reported_execution_mode?: boolean;
           updated_at?: string;
         };
@@ -4344,6 +4347,31 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
+      };
+      devbox_personal_pool_grants: {
+        Row: {
+          accepted_at: string | null;
+          expires_at: string;
+          status: string;
+          suspended: boolean;
+          user_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          accepted_at?: string | null;
+          expires_at: string;
+          status?: string;
+          suspended?: boolean;
+          user_id: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          expires_at?: string;
+          status?: string;
+          suspended?: boolean;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       devbox_preview_requests: {
         Row: {
@@ -22508,6 +22536,10 @@ export type Database = {
       detect_wallet_interest_transactions: {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
+      };
+      devbox_identity_grant_active: {
+        Args: { p_user_id: string };
+        Returns: boolean;
       };
       devbox_reports_fresh_trusted: {
         Args: { p_capabilities: Json; p_capabilities_updated_at: string };
