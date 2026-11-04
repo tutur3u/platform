@@ -11,10 +11,10 @@ function configure() {
         id: 'first-site',
         workspaceId,
         defaultLocale: 'vi',
+        purgeToken: 'a'.repeat(43),
       },
     })
   );
-  vi.stubEnv('CMS_PURGE_TOKEN', 'test-only-token');
 }
 afterEach(() => vi.unstubAllEnvs());
 describe('renderer purge', () => {
@@ -37,7 +37,16 @@ describe('renderer purge', () => {
     expect(() =>
       rendererPurgeTarget({ ...scope, workspaceId: 'other', slug: 'home' })
     ).toThrow();
-    vi.stubEnv('CMS_PURGE_TOKEN', '');
+    vi.stubEnv(
+      'CMS_RENDERER_SITES',
+      JSON.stringify({
+        'first-site.example': {
+          id: 'first-site',
+          workspaceId,
+          defaultLocale: 'vi',
+        },
+      })
+    );
     expect(() => rendererPurgeTarget({ ...scope, slug: 'home' })).toThrow();
   });
   it('sends one authenticated request for the previous cache version', async () => {
@@ -56,7 +65,7 @@ describe('renderer purge', () => {
         method: 'POST',
         redirect: 'error',
         headers: {
-          Authorization: 'Bearer test-only-token',
+          Authorization: `Bearer ${'a'.repeat(43)}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -67,6 +76,50 @@ describe('renderer purge', () => {
       })
     );
   });
+  it('selects only the trusted origin token and rejects duplicate or short tokens', () => {
+    const sites = {
+      'first-site.example': {
+        id: 'first-site',
+        workspaceId,
+        defaultLocale: 'vi',
+        purgeToken: 'a'.repeat(43),
+      },
+      'second-site.example': {
+        id: 'second-site',
+        workspaceId,
+        defaultLocale: 'vi',
+        purgeToken: 'b'.repeat(43),
+      },
+    };
+    vi.stubEnv('CMS_RENDERER_SITES', JSON.stringify(sites));
+    expect(rendererPurgeTarget({ ...scope, slug: 'home' }).token).toBe(
+      'a'.repeat(43)
+    );
+    expect(
+      rendererPurgeTarget({ ...scope, siteId: 'second-site', slug: 'home' })
+        .token
+    ).toBe('b'.repeat(43));
+    sites['second-site.example'].purgeToken = 'a'.repeat(43);
+    vi.stubEnv('CMS_RENDERER_SITES', JSON.stringify(sites));
+    expect(() => rendererPurgeTarget({ ...scope, slug: 'home' })).toThrow();
+    sites['second-site.example'].purgeToken = 'short';
+    vi.stubEnv('CMS_RENDERER_SITES', JSON.stringify(sites));
+    expect(() => rendererPurgeTarget({ ...scope, slug: 'home' })).toThrow();
+  });
+  it.each(['{', '{"bad":{}}'])(
+    'wraps invalid server config as a server error: %s',
+    (config) => {
+      vi.stubEnv('CMS_RENDERER_SITES', config);
+      try {
+        rendererPurgeTarget({ ...scope, slug: 'home' });
+        throw new Error('expected rejection');
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+        if (!(error instanceof Error)) throw error;
+        expect(error.constructor).toBe(Error);
+      }
+    }
+  );
   it('reports rejection and network failure without retrying', async () => {
     configure();
     const target = rendererPurgeTarget({ ...scope, slug: 'home' });

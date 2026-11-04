@@ -26,7 +26,7 @@ async function canonical(migration, start, end) {
   return source.slice(from, to + end.length);
 }
 
-async function setup() {
+export async function setup() {
   const db = new PGlite({ extensions: { pgtap } });
   await db.exec(
     await read('scripts/fixtures/external-project-page-versions-schema.sql')

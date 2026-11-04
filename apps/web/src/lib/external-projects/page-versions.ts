@@ -34,6 +34,10 @@ type PageVersionsDatabase = Omit<Database, 'public'> & {
       };
     };
     Functions: Public['Functions'] & {
+      unpublish_workspace_external_project_page: {
+        Args: { p_actor_id: string; p_entry_id: string; p_ws_id: string };
+        Returns: Public['Tables']['workspace_external_project_entries']['Row'];
+      };
       publish_workspace_external_project_page_version: {
         Args: { p_actor_id: string; p_version_id: string; p_ws_id: string };
         Returns: PageVersionRow & { replaced_page_version_id: string | null };
@@ -169,4 +173,20 @@ export async function getPublishedPageVersion(
   );
   if (error) throw toPageVersionError(error);
   return data?.[0] ?? null;
+}
+
+export async function unpublishPageVersion(
+  admin: TypedSupabaseClient,
+  { actorId, entryId, workspaceId }: Scope & { actorId: string }
+) {
+  const { data, error } = await db(admin).rpc(
+    'unpublish_workspace_external_project_page',
+    {
+      p_actor_id: actorId,
+      p_entry_id: entryId,
+      p_ws_id: workspaceId,
+    }
+  );
+  if (error) throw toPageVersionError(error);
+  return data;
 }
