@@ -7,9 +7,10 @@ import {
   composeMissedClassText,
   getMissedClassNotes,
   MISSED_CLASS_LABELS_VI,
+  POST_LESSON_WINDOW_DAYS,
   type TutoringLessonNoteSession,
 } from '@tuturuuu/utils/tutoring-lesson-content';
-import { loadLinkedClassPosts } from './linked-posts';
+import { LINKED_ROW_LIMIT, loadLinkedClassPosts } from './linked-posts';
 
 /** The tutoring-session fields that decide whether content is still linked. */
 export interface LinkableTutoringSession {
@@ -170,8 +171,9 @@ export async function loadLinkedLessonContent({
   }
 
   // Class sessions are timestamped; widen by a day for timezone offsets and let
-  // the local-date match decide. The tail also covers the days a late report
-  // may be written on, so a later lesson can claim it.
+  // the local-date match decide. The head covers every lesson a post on the
+  // first date could report on, so attribution does not depend on the batch;
+  // the tail covers the days a late report may be written on.
   const [lessonsResult, postsByGroup] = await Promise.all([
     privateDb
       .from('workspace_user_group_sessions')
@@ -181,13 +183,17 @@ export async function loadLinkedLessonContent({
       .eq('ws_id', wsId)
       .in('group_id', groupIds)
       .eq('status', 'scheduled')
-      .gte('starts_at', shiftIsoDate(first, -1))
-      .lt('starts_at', shiftIsoDate(last, 3)),
+      .gte('starts_at', shiftIsoDate(first, -1 - POST_LESSON_WINDOW_DAYS))
+      .lt('starts_at', shiftIsoDate(last, 3))
+      .order('starts_at', { ascending: true })
+      .limit(LINKED_ROW_LIMIT),
     includePosts
-      ? loadLinkedClassPosts({ first, groupIds, last, sbAdmin })
+      ? loadLinkedClassPosts({ first, groupIds, last, sbAdmin, wsId })
       : new Map(),
   ]);
   if (lessonsResult.error) throw lessonsResult.error;
+  if ((lessonsResult.data?.length ?? 0) >= LINKED_ROW_LIMIT)
+    throw new Error('Linked tutoring lessons exceeded the row limit');
 
   const lessonsByGroup = new Map<string, TutoringLessonNoteSession[]>();
   for (const row of lessonsResult.data ?? []) {
@@ -231,12 +237,10 @@ export const FREEZE_TIMEOUT_MS = 3000;
 export const LINKED_CONTENT_NOT_STORED = 'LINKED_CONTENT_NOT_STORED';
 
 async function storeLinkedLessonContent({
-  includePosts,
   sbAdmin,
   sessionId,
   wsId,
 }: {
-  includePosts?: boolean;
   sbAdmin: TypedSupabaseClient;
   sessionId: string;
   wsId: string;
@@ -255,9 +259,10 @@ async function storeLinkedLessonContent({
   // edit that must never be overwritten.
   if (session?.content.trim() !== '') return 'skipped' as const;
 
-  // Derive as if still pending: the notes as they stood at completion.
+  // Derive as if still pending: the notes as they stood at completion. Post
+  // text is never copied here; a completer who may read posts saves it as
+  // content they confirmed.
   const linked = await loadLinkedLessonContent({
-    includePosts,
     sbAdmin,
     sessions: [{ ...session, attendance_status: 'PENDING' }],
     wsId,
@@ -290,8 +295,6 @@ async function storeLinkedLessonContent({
  * still in flight at the timeout may land afterwards.
  */
 export async function freezeLinkedLessonContent(input: {
-  /** The completing actor holds `view_user_groups_posts`. */
-  includePosts?: boolean;
   sbAdmin: TypedSupabaseClient;
   sessionId: string;
   wsId: string;

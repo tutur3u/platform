@@ -118,20 +118,30 @@ function daysBetween(from: string, to: string) {
   );
 }
 
+interface LessonStart {
+  date: string;
+  startsAt: number;
+}
+
 /**
- * The lesson a post reports on: the latest scheduled class session on or
- * before the post's created date, within `POST_LESSON_WINDOW_DAYS`; otherwise
- * the created date itself. A report written the next morning, before the next
- * lesson, belongs to the previous lesson.
+ * The lesson a post reports on: the latest scheduled class session that had
+ * started by the time the post was written, within `POST_LESSON_WINDOW_DAYS`
+ * of its created date; otherwise the created date itself. A report written the
+ * next morning, before that day's lesson starts, belongs to the previous one.
  */
-function postLessonDate(created: string, lessonDates: string[]) {
-  let best: string | null = null;
-  for (const date of lessonDates) {
-    const lag = daysBetween(date, created);
-    if (lag < 0 || lag > POST_LESSON_WINDOW_DAYS) continue;
-    if (!best || date > best) best = date;
+function postLessonDate(
+  createdAt: string,
+  created: string,
+  lessons: LessonStart[]
+) {
+  const writtenAt = Date.parse(createdAt);
+  let best: LessonStart | null = null;
+  for (const lesson of lessons) {
+    if (lesson.startsAt > writtenAt) continue;
+    if (daysBetween(lesson.date, created) > POST_LESSON_WINDOW_DAYS) continue;
+    if (!best || lesson.startsAt > best.startsAt) best = lesson;
   }
-  return best ?? created;
+  return best?.date ?? created;
 }
 
 /**
@@ -148,14 +158,20 @@ export function getMissedClassNotes(
 ): MissedClassNotes {
   const lessons = getMissedLessonNotes(sessions, missedDates);
   const missed = new Set(missedDates);
-  const lessonDates = sessions
+  const lessonStarts = sessions
     .filter((session) => session.status === 'scheduled')
-    .map(localDate)
-    .filter((date): date is string => Boolean(date));
+    .map((session) => ({
+      date: localDate(session),
+      startsAt: Date.parse(session.startsAt),
+    }))
+    .filter((item): item is LessonStart =>
+      Boolean(item.date && Number.isFinite(item.startsAt))
+    );
   const entries = posts
     .map((post) => {
       const created = zonedDate(post.createdAt, timeZone);
-      const date = created && postLessonDate(created, lessonDates);
+      const date =
+        created && postLessonDate(post.createdAt, created, lessonStarts);
       if (!date || !missed.has(date)) return null;
       const text = [post.title?.trim(), post.content?.trim()]
         .filter(Boolean)

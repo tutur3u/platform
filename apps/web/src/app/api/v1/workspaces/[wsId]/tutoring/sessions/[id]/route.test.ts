@@ -219,6 +219,25 @@ describe('PUT tutoring session completion', () => {
     );
   });
 
+  it.each([
+    ['with', false],
+    ['without', true],
+  ])(
+    'never copies class posts on completion %s post access',
+    async (_label, denied) => {
+      mocks.getPermissions.mockResolvedValue({
+        withoutPermission: (permission: string) =>
+          permission === 'view_user_groups_posts' ? denied : false,
+      });
+
+      expect((await complete()).status).toBe(200);
+      expect(mocks.freeze).toHaveBeenCalledTimes(1);
+      expect(mocks.freeze.mock.calls[0]?.[0]).not.toHaveProperty(
+        'includePosts'
+      );
+    }
+  );
+
   it('keeps text sent with the completion as a manual edit', async () => {
     expect((await complete({ content: 'Tutor plan' })).status).toBe(200);
     expect(query.update).toHaveBeenCalledWith(

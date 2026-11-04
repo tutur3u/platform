@@ -6,6 +6,7 @@ const wsId = '5d23287f-9094-4714-b8e0-dcce877464a0';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  freeze: vi.fn(),
   getPermissions: vi.fn(),
   notifyCompletionSafely: vi.fn(),
 }));
@@ -23,6 +24,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: async () => wsId,
   getPermissions: mocks.getPermissions,
+}));
+vi.mock('@/lib/tutoring/linked-content', () => ({
+  freezeLinkedLessonContent: mocks.freeze,
+  LINKED_CONTENT_NOT_STORED: 'LINKED_CONTENT_NOT_STORED',
 }));
 vi.mock('@/lib/tutoring/completion-notification', () => ({
   notifyCompletionSafely: mocks.notifyCompletionSafely,
@@ -54,6 +59,7 @@ async function mark(attendanceStatus: string) {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.notifyCompletionSafely.mockResolvedValue(undefined);
+  mocks.freeze.mockResolvedValue('stored');
   mocks.createAdminClient.mockResolvedValue({
     schema: () => ({ from: () => query }),
   });
@@ -86,4 +92,26 @@ describe('mark tutoring session', () => {
     expect((await mark('DONE')).status).toBe(404);
     expect(mocks.notifyCompletionSafely).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ['with', false],
+    ['without', true],
+  ])(
+    'stores lesson notes only, never class posts, %s post access',
+    async (_label, denied) => {
+      mocks.getPermissions.mockResolvedValue({
+        wsId,
+        withoutPermission: (permission: string) =>
+          permission === 'view_user_groups_posts' ? denied : false,
+      });
+
+      expect((await mark('DONE')).status).toBe(200);
+      expect(mocks.freeze).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionId, wsId })
+      );
+      expect(mocks.freeze.mock.calls[0]?.[0]).not.toHaveProperty(
+        'includePosts'
+      );
+    }
+  );
 });

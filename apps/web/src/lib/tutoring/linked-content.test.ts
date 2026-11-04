@@ -34,6 +34,7 @@ function matches(row: Row, filters: Filter[]) {
 function query(table: string) {
   const filters: Filter[] = [];
   let updateValues: Row | null = null;
+  let limit = Number.POSITIVE_INFINITY;
   const builder = {
     select: () => builder,
     update: (values: Row) => {
@@ -64,6 +65,11 @@ function query(table: string) {
       filters.push(['like', column, value]);
       return builder;
     },
+    order: () => builder,
+    limit: (count: number) => {
+      limit = count;
+      return builder;
+    },
     maybeSingle: async () => ({
       data: (tables[table] ?? []).find((row) => matches(row, filters)) ?? null,
       error: null,
@@ -78,7 +84,9 @@ function query(table: string) {
         return resolve({ data: null, error: null });
       }
       return resolve({
-        data: (tables[table] ?? []).filter((row) => matches(row, filters)),
+        data: (tables[table] ?? [])
+          .filter((row) => matches(row, filters))
+          .slice(0, limit),
         error: null,
       });
     },
@@ -143,6 +151,7 @@ beforeEach(() => {
   for (const key of Object.keys(tables)) delete tables[key];
   updates.length = 0;
   tables.workspace_configs = [];
+  tables.workspace_user_groups = [{ id: 'group-1', ws_id: wsId }];
   tables.user_group_attendance = [
     {
       group_id: 'group-1',
@@ -369,22 +378,16 @@ describe('linked make-up content', () => {
     expect(linked.get(pending.id)).toBe('');
   });
 
-  it('freezes the report on completion and keeps done sessions frozen', async () => {
+  it('never copies reports into content on completion', async () => {
     const completed = session({ attendance_status: 'DONE' });
     tables.workspace_tutoring_sessions = [completed];
     tables.workspace_user_group_sessions = [lesson('Unit 4: past tense')];
     tables.user_group_posts = [report('Daily report')];
 
     await expect(
-      freezeLinkedLessonContent({
-        includePosts: true,
-        sbAdmin,
-        sessionId: completed.id,
-        wsId,
-      })
+      freezeLinkedLessonContent({ sbAdmin, sessionId: completed.id, wsId })
     ).resolves.toBe('stored');
-    const frozen = withPosts(`${missedDate}: Unit 4: past tense`);
-    expect(completed.content).toBe(frozen);
+    expect(completed.content).toBe(`${missedDate}: Unit 4: past tense`);
 
     tables.user_group_posts = [report('Edited later')];
     const linked = await loadLinkedLessonContent({
@@ -394,6 +397,60 @@ describe('linked make-up content', () => {
       wsId,
     });
     expect(linked.has(completed.id)).toBe(false);
-    expect(completed.content).toBe(frozen);
+    expect(completed.content).toBe(`${missedDate}: Unit 4: past tense`);
+  });
+
+  it('reads every lesson a report could belong to, whatever the batch', async () => {
+    // No lesson on the missed date; one two days earlier claims the report.
+    const pending = session();
+    tables.workspace_tutoring_sessions = [pending];
+    tables.workspace_user_group_sessions = [
+      { ...lesson(null), starts_at: `${recent(7)}T11:00:00Z` },
+    ];
+    tables.user_group_posts = [
+      { ...report('Daily report'), created_at: `${missedDate}T01:00:00Z` },
+    ];
+
+    const linked = await loadLinkedLessonContent({
+      includePosts: true,
+      sbAdmin,
+      sessions: [pending],
+      wsId,
+    });
+    expect(linked.get(pending.id)).toBe('');
+  });
+
+  it('fails instead of composing from a truncated post list', async () => {
+    const pending = session();
+    tables.workspace_tutoring_sessions = [pending];
+    tables.workspace_user_group_sessions = [lesson(null)];
+    tables.user_group_posts = Array.from({ length: 1000 }, (_, index) =>
+      report(`Report ${index}`)
+    );
+
+    await expect(
+      loadLinkedLessonContent({
+        includePosts: true,
+        sbAdmin,
+        sessions: [pending],
+        wsId,
+      })
+    ).rejects.toThrow('row limit');
+  });
+
+  it('reads posts only for groups in the workspace', async () => {
+    const pending = session();
+    tables.workspace_tutoring_sessions = [pending];
+    tables.workspace_user_group_sessions = [lesson(null)];
+    tables.workspace_user_groups = [{ id: 'group-1', ws_id: 'ws-other' }];
+    tables.user_group_posts = [report('Daily report')];
+
+    const linked = await loadLinkedLessonContent({
+      includePosts: true,
+      sbAdmin,
+      sessions: [pending],
+      wsId,
+    });
+    expect(linked.get(pending.id)).toBe('');
   });
 });

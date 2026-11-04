@@ -103,7 +103,7 @@ describe('missed class posts', () => {
   });
 
   it('keeps session notes and posts apart and reports dates with neither', () => {
-    // 23/10 has its own lesson, so its report stays on 23/10.
+    // Written 23/10 10:00, before that day's 18:00 lesson: 22/10's report.
     const sessions = [
       lesson('2026-10-22T11:00:00Z', 'Unit 3'),
       lesson('2026-10-23T11:00:00Z', null),
@@ -119,9 +119,9 @@ describe('missed class posts', () => {
     ).toEqual({
       content: '2026-10-22: Unit 3',
       contentByDate: { '2026-10-22': '2026-10-22: Unit 3' },
-      postContent: '2026-10-23: Ôn tập',
-      postContentByDate: { '2026-10-23': '2026-10-23: Ôn tập' },
-      missingDates: ['2026-10-24'],
+      postContent: '2026-10-22: Ôn tập',
+      postContentByDate: { '2026-10-22': '2026-10-22: Ôn tập' },
+      missingDates: ['2026-10-23', '2026-10-24'],
     });
   });
 

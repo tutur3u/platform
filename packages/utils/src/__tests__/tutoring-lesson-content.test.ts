@@ -309,23 +309,34 @@ describe('getMissedClassNotes', () => {
     ).toBe('');
   });
 
-  it('keeps a report on its own day when that day has a lesson', () => {
-    const report = post({
-      content: 'Same-day report',
-      createdAt: '2026-10-06T01:00:00.000Z',
-      title: null,
-    });
+  it('attributes by start time when classes meet on consecutive days', () => {
+    // Mon 10-05 and Tue 10-06, both 18:00 local.
     const lessons = [
       lesson(),
       lesson({ startsAt: '2026-10-06T11:00:00.000Z' }),
     ];
+    const at = (createdAt: string, dates: string[]) =>
+      getMissedClassNotes(
+        lessons,
+        [post({ content: 'Report', createdAt, title: null })],
+        dates,
+        HCM
+      ).postContent;
 
-    expect(
-      getMissedClassNotes(lessons, [report], ['2026-10-06'], HCM).postContent
-    ).toBe('2026-10-06: Same-day report');
-    expect(
-      getMissedClassNotes(lessons, [report], ['2026-10-05'], HCM).postContent
-    ).toBe('');
+    // Tue 10:00 local, before Tuesday's lesson starts: Monday's report.
+    expect(at('2026-10-06T03:00:00.000Z', ['2026-10-05'])).toBe(
+      '2026-10-05: Report'
+    );
+    expect(at('2026-10-06T03:00:00.000Z', ['2026-10-06'])).toBe('');
+    // Tue 20:00 local, after Tuesday's lesson: Tuesday's report.
+    expect(at('2026-10-06T13:00:00.000Z', ['2026-10-06'])).toBe(
+      '2026-10-06: Report'
+    );
+    expect(at('2026-10-06T13:00:00.000Z', ['2026-10-05'])).toBe('');
+    // Tue 00:30 local, just after midnight: still Monday's.
+    expect(at('2026-10-05T17:30:00.000Z', ['2026-10-05'])).toBe(
+      '2026-10-05: Report'
+    );
   });
 
   it('falls back to the created date beyond the lesson window', () => {

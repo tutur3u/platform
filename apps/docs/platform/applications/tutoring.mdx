@@ -332,10 +332,13 @@ always on, no setting):
   **posts** (bài viết, such as the daily report) about that lesson. When both
   exist the draft labels them "Lesson notes" and "Class posts". Posts have no
   lesson date of their own, so a post belongs to the latest scheduled class
-  session on or before the day it was created, within two days; with no
-  session in that window it belongs to the day it was created. A daily report
-  written the next morning, before the next lesson, therefore belongs to the
-  previous lesson, and a report written on a lesson day belongs to that day.
+  session that had **started** when the post was written, within two days of
+  the day it was written; with no such session it belongs to the day it was
+  written. A daily report written the next morning, before that day's lesson
+  starts, therefore belongs to the previous lesson, even when the class meets
+  on consecutive days; one written after a lesson starts belongs to that
+  lesson. An announcement posted before class on a lesson day moves to the
+  previous lesson too: daily reports are the common case.
   Days are read in the class's time zone (the class session's own zone,
   falling back to Asia/Ho_Chi_Minh when the group has no session in range).
   Approval does not gate a post: pending posts count, rejected posts are
@@ -515,9 +518,13 @@ on, no setting):
   daily report), attributed and labelled as in the
   [scheduling draft](#content-to-teach-follows-the-reason), so a report written
   after the make-up was booked still appears. Posts are shown only to viewers
-  with `view_user_groups_posts`; completion stores them only when the actor
-  completing the session holds that permission. The server composes the labels
-  in Vietnamese ("Ghi chú buổi học" / "Bài viết của lớp").
+  with `view_user_groups_posts`. Completion never copies post text by itself:
+  it stores the session notes only. Post text is saved only as content the
+  completing user, holding that permission, sends with the completion, and
+  stored content follows the normal release rules before learners or parents
+  see it. Once stored, the text is plain content readable by anyone who can
+  read the session. The server composes the labels in Vietnamese ("Ghi chú
+  buổi học" / "Bài viết của lớp").
 - When the session is **marked done** (row action or session edit), the notes as
   they stand are stored on the session and are **frozen**. Later edits to the
   class notes no longer change it.
@@ -556,6 +563,7 @@ counts as a manual edit. If the lookup fails, the list shows the stored content
 and completion still succeeds. Regression coverage:
 [`linked-content.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/lib/tutoring/linked-content.test.ts)
 (notes and posts filled after scheduling, post permission, rejected posts,
+posts never copied on completion, row limit, workspace scope,
 frozen after completion, manual edit kept,
 lookup failure, whitespace-only content, bounded wait, pairing order),
 [`sessions/[id]/route.test.ts`](https://github.com/tutur3u/platform/blob/main/apps/web/src/app/api/v1/workspaces/%5BwsId%5D/tutoring/sessions/%5Bid%5D/route.test.ts)
