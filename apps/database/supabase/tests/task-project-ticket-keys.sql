@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
 set local role service_role;
 set local request.jwt.claims = '{"role":"service_role"}';
-select plan(50);
+select plan(51);
 insert into public.users (id, display_name) values
   ('00000000-0000-4000-8000-0000000e6001', 'Ticket Owner');
 insert into public.workspaces (id, name, creator_id, personal) values
@@ -205,5 +205,20 @@ select lives_ok($$update public.workspace_boards set ticket_prefix = 'LEGK' wher
   'the excluded workspace skips the board prefix check');
 select lives_ok($$update public.workspace_boards set name = 'Legacy Board Renamed' where id = '00000000-0000-4000-8000-0000000e6021'$$,
   'edits that keep the prefix skip the check');
+-- Fails closed: an end-user session that writes a board prefix directly
+-- cannot read task_projects, so the invoker check errors instead of passing.
+-- Boards have no end-user policies (20260319101300), so a temporary grant
+-- and policy let the write reach the trigger: its read decides, nothing else.
+set local role postgres;
+grant select, update (ticket_prefix) on public.workspace_boards to authenticated;
+create policy pgtap_member_prefix_write on public.workspace_boards
+  for all to authenticated using (true) with check (true);
+set local role authenticated;
+set local request.jwt.claims = '{"role":"authenticated","sub":"00000000-0000-4000-8000-0000000e6002"}';
+select throws_ok($$update public.workspace_boards set ticket_prefix = 'MEMBR' where id = '00000000-0000-4000-8000-0000000e6022'$$,
+  '42501', 'permission denied for table task_projects',
+  'a direct board prefix write from a member session fails closed');
+set local role service_role;
+set local request.jwt.claims = '{"role":"service_role"}';
 select * from finish();
 rollback;
