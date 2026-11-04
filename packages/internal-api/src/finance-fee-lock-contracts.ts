@@ -292,7 +292,7 @@ export const feeLockSnapshotSchema = z.object({
         adjustment_amount: moneySchema,
         reason: reasonSchema.nullable(),
         line_amount: moneySchema.nonnegative(),
-        sort_order: z.int(),
+        sort_order: z.int().min(0).max(32_767), // SMALLINT
       })
     )
     .max(FEE_LOCK_MAX_LINES),
