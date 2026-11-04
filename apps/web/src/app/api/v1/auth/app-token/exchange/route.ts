@@ -637,7 +637,7 @@ async function exchangeAppToken(request: NextRequest) {
   return createExchangeTokenResponse({
     assurance,
     mfa,
-    email: userProfile.email ?? authIdentity.email,
+    email: authIdentity.email,
     normalizedWorkspaceId:
       exchangeAuthorization.normalizedWorkspaceId ??
       workspaceSessionAuthorization?.normalizedWorkspaceId,

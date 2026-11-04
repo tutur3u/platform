@@ -37,6 +37,7 @@ const trackedFiles = execFileSync(
 const fixtures = [
   'public-creator-identity.sql',
   'profile-media-upload-limits.sql',
+  'private-details-auth-email.sql',
 ];
 const ports = await chooseAvailablePortBlock(identity);
 const metadata = await stageDisposableProject({
