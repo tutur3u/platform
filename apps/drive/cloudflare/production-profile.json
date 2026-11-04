@@ -1,0 +1,11 @@
+{
+  "DRIVE_NATIVE_PROFILE": "production",
+  "TUTURUUU_NOINDEX": "1",
+  "NEXT_PUBLIC_APP_URL": "https://drive.tuturuuu.com",
+  "NEXT_PUBLIC_DRIVE_APP_URL": "https://drive.tuturuuu.com",
+  "DRIVE_APP_URL": "https://drive.tuturuuu.com",
+  "NEXT_PUBLIC_WEB_APP_URL": "https://tuturuuu.com",
+  "WEB_APP_URL": "https://tuturuuu.com",
+  "TTR_URL": "https://tuturuuu.com",
+  "INTERNAL_WEB_API_ORIGIN": "https://tuturuuu.com"
+}

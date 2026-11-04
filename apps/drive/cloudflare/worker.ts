@@ -15,6 +15,7 @@ import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-polic
 import { proxy, config as proxyConfig } from '../src/proxy';
 import { centralFirst } from '../src/start-bridge/central-first';
 import { publicAssets } from '../src/start-bridge/public-assets.bridge.gen';
+import { isDriveProductionEnvironment } from '../src/start-candidate/production-policy';
 import {
   isDriveStagingEnvironment,
   type stagingVars,
@@ -24,6 +25,7 @@ import appConfig from '../start-bridge.config';
 export interface DriveEnvironment
   extends Partial<Record<keyof typeof stagingVars, string>> {
   ASSETS: AssetsBinding;
+  DRIVE_NATIVE_PROFILE?: string;
   INTERNAL_WEB_API_ORIGIN?: string;
   TUTURUUU_NOINDEX?: string;
 }
@@ -84,8 +86,12 @@ export default {
         })) ?? notFound
       );
     }
-    if (!isDriveStagingEnvironment(env)) {
-      return new Response('Staging configuration unavailable', {
+    if (
+      !(new URL(request.url).hostname === 'drive.tuturuuu.com'
+        ? isDriveProductionEnvironment(env)
+        : isDriveStagingEnvironment(env))
+    ) {
+      return new Response('Drive configuration unavailable', {
         status: 503,
         headers: {
           'Cache-Control': 'private, no-store',
