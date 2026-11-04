@@ -21,7 +21,11 @@ export async function readPageVersionBody(request: Request): Promise<unknown> {
       if (done) break;
       bytes += value.byteLength;
       if (bytes > CMS_SAVE_REQUEST_MAX_BYTES) {
-        await reader.cancel();
+        try {
+          await reader.cancel();
+        } catch {
+          // Cancellation is best effort; preserve the request-size response.
+        }
         throw tooLarge();
       }
       chunks.push(decoder.decode(value, { stream: true }));
