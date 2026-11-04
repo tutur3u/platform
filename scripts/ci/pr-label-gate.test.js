@@ -49,6 +49,7 @@ const PROTECTED_TRIGGERS = {
   'docs-seo-check.yaml': '78c7f5ff99020ac9',
   'external-internal-packages.yaml': '4d532cf88497bbd2',
   'external-project-storage-analytics-contract.yaml': '02e3e1d0d939ac56',
+  'fee-lock-database-contract.yaml': '0a3cc2c97958f5cd',
   'finance-cloudflare.yaml': 'c9f3cfad0a28a7d8',
   'forms-cloudflare.yaml': '0e554fe52a0af9c8',
   'i18n-check.yaml': '78c7f5ff99020ac9',
