@@ -31,10 +31,15 @@ test('signed-in catalogue, redirects and exact-source canonical fence evidence',
   const second = await redirect(page, `${local.pathname}${local.search}`);
   expect(second.status()).toBe(307);
   const target = new URL(second.headers().location ?? '');
-  expect(target.origin).toBe('https://meet.staging.tutur3u.com');
+  expect(target.origin).toBe('https://meet.tutur3u.com');
   expect(target.pathname).toBe('/a%2Fb');
   expect(target.searchParams.getAll('tag')).toEqual(['1', '2']);
   expect(target.searchParams.get('source')).toBe('apps');
+  // A catalogue app with no exact staging origin fails closed: no redirect at
+  // all, so staging can never send a signed-in visitor to production.
+  const unregistered = await redirect(page, '/pay?tag=1');
+  expect(unregistered.status()).toBe(503);
+  expect(unregistered.headers().location).toBeUndefined();
   // A canonical Host probe over public staging ingress would address production.
   // Consume the matching real workerd browser receipt instead.
   const receipt = z

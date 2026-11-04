@@ -1,7 +1,17 @@
 // @vitest-environment node
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GATEWAY_APPS } from '../lib/apps-registry';
+
+vi.mock('@tanstack/react-start/server-entry', () => ({
+  default: { fetch: vi.fn(async () => new Response('app shell')) },
+}));
+vi.mock('./api.server', () => ({ apiRequest: vi.fn() }));
+import {
+  buildGatewayRedirectUrl,
+  GATEWAY_APPS,
+  getGatewayAppOrigin,
+  StagingGatewayOriginError,
+} from '../lib/apps-registry';
 import { canonicalLocaleRedirect, localeCookie, requestLocale } from './locale';
 import { gatewayDestination } from './redirect';
 
@@ -23,7 +33,7 @@ describe('Apps native route parity', () => {
       expect(target.searchParams.get('source')).toBe('apps');
     }
   });
-  it('selects exact hosted staging origins only in explicit staging mode', () => {
+  const stubStagingMode = (registry: string | undefined) => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('NEXT_PUBLIC_TUTURUUU_STAGING', '1');
     vi.stubEnv('VERCEL_ENV', 'preview');
@@ -32,26 +42,73 @@ describe('Apps native route parity', () => {
       'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
       '.staging.tutur3u.com'
     );
-    vi.stubEnv(
-      'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
-      'platform:https://staging.tutur3u.com,' +
-        ['meet', 'calendar', 'mail', 'apps']
-          .map((name) => `${name}:https://${name}.staging.tutur3u.com`)
-          .join(',')
-    );
+    vi.stubEnv('NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS', registry);
+  };
+  const wave1Registry =
+    'platform:https://web.tutur3u.com,' +
+    ['meet', 'calendar', 'mail', 'apps']
+      .map((name) => `${name}:https://${name}.tutur3u.com`)
+      .join(',');
+  it('selects exact hosted staging origins only in explicit staging mode', () => {
+    stubStagingMode(wave1Registry);
     for (const app of ['meet', 'calendar', 'mail', 'apps', 'platform']) {
       const result = gatewayDestination(
-        new URL(`https://apps.staging.tutur3u.com/${app}/a%2Fb?tag=1&tag=2`)
+        new URL(`https://apps.tutur3u.com/${app}/a%2Fb?tag=1&tag=2`)
       );
       const origin =
         app === 'platform'
-          ? 'https://staging.tutur3u.com'
-          : `https://${app}.staging.tutur3u.com`;
+          ? 'https://web.tutur3u.com'
+          : `https://${app}.tutur3u.com`;
       expect(result).toEqual({
         kind: 'redirect',
         href: `${origin}/a%2Fb?tag=1&tag=2&source=apps`,
       });
     }
+  });
+  it('refuses a catalogue app with no exact staging origin instead of falling back to production', () => {
+    stubStagingMode(wave1Registry);
+    const registered = new Set(['meet', 'calendar', 'mail', 'apps', 'platform']);
+    const unregistered = GATEWAY_APPS.filter(
+      (app) => !registered.has(app.slug)
+    );
+    expect(unregistered.length).toBeGreaterThan(0);
+    for (const app of unregistered) {
+      expect(
+        gatewayDestination(new URL(`https://apps.tutur3u.com/${app.slug}`))
+      ).toEqual({ kind: 'staging-unavailable', slug: app.slug });
+      expect(() => buildGatewayRedirectUrl({ app, searchParams: {} })).toThrow(
+        StagingGatewayOriginError
+      );
+    }
+  });
+  it.each([
+    ['a missing', undefined],
+    ['an empty', ''],
+    ['a rejected', 'meet:https://meet.tuturuuu.com,mail:https://evil.test'],
+  ])('fails closed for every app with %s staging registry', (_label, registry) => {
+    stubStagingMode(registry);
+    for (const app of GATEWAY_APPS) {
+      const result = gatewayDestination(
+        new URL(`https://apps.tutur3u.com/${app.slug}?tag=1`)
+      );
+      expect(result).toEqual({ kind: 'staging-unavailable', slug: app.slug });
+      expect(() => getGatewayAppOrigin(app)).toThrow(
+        /never falls back to a production origin/
+      );
+    }
+  });
+  it('answers 503 from the Apps Worker for a staging app with no staging origin', async () => {
+    stubStagingMode(wave1Registry);
+    const { appsRequest } = await import('../../cloudflare/worker');
+    const response = await appsRequest(
+      new Request('https://apps.tutur3u.com/pay/a?tag=1'),
+      { ASSETS: { fetch: async () => new Response('asset') } }
+    );
+    expect(response.status).toBe(503);
+    expect(response.headers.get('Location')).toBeNull();
+    expect(await response.text()).toContain(
+      'staging never falls back to production'
+    );
   });
   it('never selects an origin from untrusted query or slug', () => {
     vi.stubEnv('NODE_ENV', 'production');

@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import {
   buildGatewayRedirectUrl,
   getGatewayApp,
+  StagingGatewayOriginError,
 } from '../src/lib/apps-registry';
 import {
   CatalogueEntry,
@@ -130,11 +131,21 @@ async function handleGatewayRequest(request: Request, env: GatewayEnvironment) {
         url.searchParams.getAll(key),
       ])
     );
-    const destination = buildGatewayRedirectUrl({
-      app,
-      path: path.slice(1),
-      searchParams,
-    });
+    let destination: string;
+    try {
+      destination = buildGatewayRedirectUrl({
+        app,
+        path: path.slice(1),
+        searchParams,
+      });
+    } catch (error) {
+      if (error instanceof StagingGatewayOriginError)
+        return response(
+          503,
+          'No staging origin is registered for this app; staging never falls back to production'
+        );
+      throw error;
+    }
     // A staging build must never redirect a visitor to a developer's localhost.
     if (new URL(destination).origin !== new URL(app.productionUrl).origin)
       return response(503, 'Gateway build environment unavailable');

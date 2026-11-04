@@ -21,12 +21,49 @@ export function getGatewayApp(slug: string) {
   return getLaunchableApp(slug);
 }
 
+/**
+ * Thrown in explicit staging mode when an app has no exact staging origin. The
+ * gateway fails closed instead of falling back to a production origin.
+ */
+export class StagingGatewayOriginError extends Error {
+  readonly slug: string;
+
+  constructor(slug: string) {
+    super(
+      `No exact staging origin is registered for "${slug}" in NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS; staging never falls back to a production origin`
+    );
+    this.name = 'StagingGatewayOriginError';
+    this.slug = slug;
+  }
+}
+
+export function isStagingGatewayMode() {
+  return process.env.NEXT_PUBLIC_TUTURUUU_STAGING === '1';
+}
+
+function isProductionAppHostname(hostname: string) {
+  return hostname === 'tuturuuu.com' || hostname.endsWith('.tuturuuu.com');
+}
+
 export function getGatewayAppOrigin(app: GatewayApp) {
-  if (process.env.NEXT_PUBLIC_TUTURUUU_STAGING === '1') {
+  if (isStagingGatewayMode()) {
     const staging = getAppDomainMap().find(
       (domain) => domain.name === app.slug && domain.requiresExactOrigin
     );
-    if (staging) return staging.url;
+    let origin: URL | null = null;
+    try {
+      origin = staging ? new URL(staging.url) : null;
+    } catch {
+      origin = null;
+    }
+    if (
+      !staging ||
+      !origin ||
+      origin.protocol !== 'https:' ||
+      isProductionAppHostname(origin.hostname)
+    )
+      throw new StagingGatewayOriginError(app.slug);
+    return staging.url;
   }
   return getLaunchableAppOrigin(app);
 }
