@@ -3,6 +3,7 @@ import { resolveFinanceRouteAuthContext } from '@tuturuuu/finance-core/route-aut
 import { canReassignFinanceWallet } from '@tuturuuu/utils/finance';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { feeLockLinkedInvoiceResponse } from '../subscription/fee-lock-delete-block';
 
 interface Params {
   params: Promise<{
@@ -167,6 +168,11 @@ export async function DELETE(req: Request, { params }: Params) {
   });
 
   if (error) {
+    const feeLockBlock =
+      error.code === '23503'
+        ? await feeLockLinkedInvoiceResponse(sbAdmin, wsId, invoiceId)
+        : null;
+    if (feeLockBlock) return feeLockBlock;
     const status =
       error.code === '23503' ? 409 : error.code === 'PGRST202' ? 503 : 500;
     return NextResponse.json(
