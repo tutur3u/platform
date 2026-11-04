@@ -28,6 +28,7 @@ test('Calendar staging seal restores its explicit host without a provider subdom
   assert.equal(config.workers_dev, false);
   assert.equal(config.preview_urls, false);
   assert.deepEqual(config.routes, []);
+  assert.equal(config.vars.NODE_ENV, 'production');
   assert.equal(
     config.vars.NEXT_PUBLIC_CALENDAR_APP_URL,
     'https://calendar.tutur3u.com'
