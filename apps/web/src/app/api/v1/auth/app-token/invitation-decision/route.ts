@@ -17,9 +17,11 @@ import {
 } from '@/lib/app-coordination/invitation-action-token';
 import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
 import {
-  createExchangeTokenBody,
-  type ExchangeUserProfile,
-} from '@/lib/auth/external-app-exchange-response';
+  type AuthUserIdentity,
+  getAuthUserIdentity,
+  getExchangeUserProfile,
+} from '@/lib/auth/external-app-exchange-profile';
+import { createExchangeTokenBody } from '@/lib/auth/external-app-exchange-response';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 import {
   acceptAppTokenInvitation,
@@ -89,27 +91,6 @@ type PrivateReplaySchema = {
   ) => InvitationActionReplayTable;
 };
 
-type AuthUserIdentity = {
-  email: string | null;
-  metadata: Record<string, unknown> | null;
-};
-
-type UserPrivateDetailsRow = {
-  email?: string | null;
-  full_name?: string | null;
-};
-
-type UserProfileRow = {
-  avatar_url?: string | null;
-  display_name?: string | null;
-  id?: string | null;
-  user_private_details?: UserPrivateDetailsRow | UserPrivateDetailsRow[] | null;
-};
-
-function cleanString(value: unknown) {
-  return typeof value === 'string' && value.trim() ? value.trim() : null;
-}
-
 async function releaseInvitationActionToken(admin: AdminDb, tokenJti: string) {
   const privateDb = admin.schema('private') as unknown as PrivateReplaySchema;
   try {
@@ -128,37 +109,6 @@ async function releaseInvitationActionToken(admin: AdminDb, tokenJti: string) {
       error: error instanceof Error ? error.message : String(error),
     });
   }
-}
-
-function firstCleanString(...values: unknown[]) {
-  for (const value of values) {
-    const cleaned = cleanString(value);
-    if (cleaned) return cleaned;
-  }
-
-  return null;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function getPrivateDetails(
-  value: UserProfileRow['user_private_details']
-): UserPrivateDetailsRow | null {
-  if (Array.isArray(value)) {
-    return value[0] ?? null;
-  }
-
-  return value ?? null;
-}
-
-function getUserProfileRow(value: unknown): UserProfileRow | null {
-  if (!isRecord(value)) {
-    return null;
-  }
-
-  return value as UserProfileRow;
 }
 
 function getAllowedScopesForDecision({
@@ -191,90 +141,6 @@ function getAllowedScopesForDecision({
   }
 
   return scopes;
-}
-
-async function getAuthUserIdentity({
-  admin,
-  fallbackEmail,
-  userId,
-}: {
-  admin: AdminDb;
-  fallbackEmail: string | null;
-  userId: string;
-}): Promise<AuthUserIdentity> {
-  const { data, error } = await admin.auth.admin.getUserById(userId);
-
-  if (error) {
-    console.warn('Failed to fetch invitation decision auth user profile', {
-      error: error.message,
-      userId,
-    });
-
-    return {
-      email: fallbackEmail,
-      metadata: null,
-    };
-  }
-
-  return {
-    email: fallbackEmail ?? cleanString(data.user?.email),
-    metadata: isRecord(data.user?.user_metadata)
-      ? data.user.user_metadata
-      : null,
-  };
-}
-
-async function getExchangeUserProfile({
-  admin,
-  authIdentity,
-  userId,
-}: {
-  admin: AdminDb;
-  authIdentity: AuthUserIdentity;
-  userId: string;
-}): Promise<ExchangeUserProfile> {
-  const { data, error } = await admin
-    .from('users')
-    .select(
-      'id, display_name, avatar_url, user_private_details(email, full_name)'
-    )
-    .eq('id', userId)
-    .maybeSingle();
-
-  if (error) {
-    console.warn('Failed to fetch invitation decision user profile', {
-      error: error.message,
-      userId,
-    });
-  }
-
-  const userProfile = error ? null : getUserProfileRow(data);
-  const privateDetails = getPrivateDetails(userProfile?.user_private_details);
-  const displayName = firstCleanString(
-    userProfile?.display_name,
-    authIdentity.metadata?.display_name
-  );
-  const fullName = firstCleanString(
-    privateDetails?.full_name,
-    authIdentity.metadata?.full_name
-  );
-  const email = firstCleanString(privateDetails?.email, authIdentity.email);
-  const avatarUrl = firstCleanString(
-    userProfile?.avatar_url,
-    authIdentity.metadata?.avatar_url
-  );
-
-  return {
-    avatarUrl,
-    avatar_url: avatarUrl,
-    displayName,
-    display_name: displayName,
-    email,
-    fullName,
-    full_name: fullName,
-    id: firstCleanString(userProfile?.id) ?? userId,
-    name: firstCleanString(displayName, fullName, email),
-  };
 }
 
 function verifyInvitationActionToken({
@@ -418,21 +284,32 @@ async function createAcceptedInvitationSessionResponse({
   }
 
   const { policy } = await getAppCoordinationSessionPolicy({ db: admin });
-  const authIdentity = await getAuthUserIdentity({
-    admin,
-    fallbackEmail: claims.email,
-    userId: claims.sub,
-  });
+  // SR-926: the session email is re-read from confirmed Auth state, never
+  // from the invitation token claim or the user-editable profile column.
+  let authIdentity: AuthUserIdentity;
+  try {
+    authIdentity = await getAuthUserIdentity({
+      sbAdmin: admin,
+      sessionData: null,
+      userId: claims.sub,
+    });
+  } catch {
+    return invitationDecisionError({
+      code: 'AUTH_IDENTITY_UNAVAILABLE',
+      error: 'Unable to verify app account identity',
+      status: 503,
+    });
+  }
   const userProfile = await getExchangeUserProfile({
-    admin,
     authIdentity,
+    sbAdmin: admin,
     userId: claims.sub,
   });
 
   return NextResponse.json(
     createExchangeTokenBody({
       mfa: claims.mfa ?? null,
-      email: userProfile.email ?? authIdentity.email,
+      email: authIdentity.email,
       normalizedWorkspaceId: workspaceId,
       policy,
       scopes,
