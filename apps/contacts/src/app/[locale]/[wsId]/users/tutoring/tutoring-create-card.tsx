@@ -7,7 +7,11 @@ import type {
   WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
 import { listWorkspaceUserGroupSessions } from '@tuturuuu/internal-api';
-import type { TutoringPolicy } from '@tuturuuu/internal-api/tutoring-policy';
+import {
+  filterTutoringEligibleGroups,
+  type TutoringPolicy,
+  tutoringExclusionReason,
+} from '@tuturuuu/internal-api/tutoring-policy';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
@@ -22,6 +26,7 @@ import { addDaysToIsoDate, toIsoDate } from './tutoring-filters';
 import { WorkspacePersonPicker } from './tutoring-people-picker';
 import {
   applyTutoringSuggestions,
+  isTutoringFormGroupExcluded,
   resolveTutoringClassSchedule,
 } from './tutoring-suggestion-apply';
 import {
@@ -96,26 +101,53 @@ export function TutoringCreateCard({
     staleTime: 5 * 60_000,
   });
 
+  const selectedGroupName =
+    groups.find((group) => group.id === form.groupId)?.name ?? null;
+  const groupExcluded = isTutoringFormGroupExcluded({
+    form,
+    groupName: selectedGroupName,
+    policy,
+  });
+
   const schedule = useMemo(
     () =>
       resolveTutoringClassSchedule({
         calendar: classSchedule.data?.data ?? [],
         groupId: form.groupId,
+        groupName: selectedGroupName,
         loaded: classSchedule.isSuccess,
         policy,
+        reasonType: form.reasonType,
         today,
       }),
-    [classSchedule.data, classSchedule.isSuccess, form.groupId, policy, today]
+    [
+      classSchedule.data,
+      classSchedule.isSuccess,
+      form.groupId,
+      form.reasonType,
+      policy,
+      selectedGroupName,
+      today,
+    ]
   );
 
-  const groupOptions = useMemo<ComboboxOption[]>(
-    () =>
-      groups.map((group) => ({
+  // Classes the workspace excludes from this kind of tutoring are not offered;
+  // a class already chosen stays visible so the warning below can explain it.
+  const groupOptions = useMemo<ComboboxOption[]>(() => {
+    const eligible = new Set(
+      filterTutoringEligibleGroups(
+        policy,
+        groups,
+        tutoringExclusionReason(form.reasonType)
+      ).map((group) => group.id)
+    );
+    return groups
+      .filter((group) => eligible.has(group.id) || group.id === form.groupId)
+      .map((group) => ({
         label: group.name || group.id,
         value: group.id,
-      })),
-    [groups]
-  );
+      }));
+  }, [form.groupId, form.reasonType, groups, policy]);
 
   const teacherOptions = useMemo<ComboboxOption[]>(() => {
     const managers =
@@ -285,7 +317,17 @@ export function TutoringCreateCard({
         </p>
       </div>
 
-      {form.reasonType !== 'CUSTOM' ? (
+      {groupExcluded ? (
+        <p
+          className="flex items-center gap-2 rounded-lg border border-dynamic-orange/25 bg-dynamic-orange/10 p-3 text-dynamic-orange text-sm"
+          role="alert"
+        >
+          <TriangleAlert className="h-4 w-4 shrink-0" />
+          {t('group_excluded')}
+        </p>
+      ) : null}
+
+      {form.reasonType !== 'CUSTOM' && !groupExcluded ? (
         <div className="space-y-3 rounded-xl border bg-muted/30 p-4">
           <div>
             <h3 className="font-semibold text-sm">{t('suggestion_title')}</h3>
@@ -332,6 +374,7 @@ export function TutoringCreateCard({
                     form.reasonType === 'ABSENT_RECOVERY'
                       ? missedDate
                       : addDaysToIsoDate(today, -1),
+                  groupName: selectedGroupName,
                   policy,
                   schedule,
                 });
@@ -363,18 +406,21 @@ export function TutoringCreateCard({
         </div>
       ) : null}
 
-      <TutoringDraftChoices
-        wsId={wsId}
-        form={form}
-        policy={policy}
-        today={today}
-        schedule={schedule}
-        missingCount={classSchedule.data?.missing?.length ?? 0}
-        scheduleLoading={classSchedule.isFetching}
-        scheduleError={classSchedule.isError}
-        onRetrySchedule={() => void classSchedule.refetch()}
-        onChange={onChange}
-      />
+      {groupExcluded ? null : (
+        <TutoringDraftChoices
+          wsId={wsId}
+          form={form}
+          groupName={selectedGroupName}
+          policy={policy}
+          today={today}
+          schedule={schedule}
+          missingCount={classSchedule.data?.missing?.length ?? 0}
+          scheduleLoading={classSchedule.isFetching}
+          scheduleError={classSchedule.isError}
+          onRetrySchedule={() => void classSchedule.refetch()}
+          onChange={onChange}
+        />
+      )}
 
       <TutoringCreateSlots
         conflictingIndexes={conflictingIndexes}
@@ -432,7 +478,12 @@ export function TutoringCreateCard({
 
       <Button
         className="w-full"
-        disabled={isSubmitting || Boolean(firstConflict) || !hasRequiredFields}
+        disabled={
+          isSubmitting ||
+          Boolean(firstConflict) ||
+          !hasRequiredFields ||
+          groupExcluded
+        }
         onClick={onSubmit}
         size="lg"
       >

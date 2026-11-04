@@ -9,6 +9,20 @@ export interface TutoringGroupExclusion {
   target?: 'name' | 'tag';
 }
 
+/**
+ * The rule scope a session reason reads. Make-up and weak-support sessions
+ * also read rules scoped to them; a custom session reads only `all` rules.
+ */
+export type TutoringExclusionReason = 'make_up' | 'weak_support';
+
+export function tutoringExclusionReason(
+  reasonType: string | null | undefined
+): TutoringExclusionReason | null {
+  if (reasonType === 'ABSENT_RECOVERY') return 'make_up';
+  if (reasonType === 'WEAK_SUPPORT') return 'weak_support';
+  return null;
+}
+
 /** Strictly parsed exclusion rules; null when any rule is invalid. */
 export function parseTutoringGroupExclusions(
   value: unknown[]
@@ -57,7 +71,8 @@ function matchesRule(rule: TutoringGroupExclusion, text: string) {
 /**
  * Match groups using the workspace editable eligibility rules. Tutor groups
  * hold no real students, so they are excluded whatever their name is. Tag
- * rules match any of the class group tag names.
+ * rules match any of the class group tag names. A null reason reads only
+ * rules scoped to `all`.
  */
 export function isTutoringGroupExcluded(
   policy: {
@@ -65,7 +80,7 @@ export function isTutoringGroupExcluded(
     tutorGroupIds: string[];
   },
   groupName: string,
-  reason: 'make_up' | 'weak_support',
+  reason: TutoringExclusionReason | null,
   groupId?: string | null,
   groupTags: readonly string[] = []
 ) {
@@ -77,4 +92,32 @@ export function isTutoringGroupExcluded(
       ? groupTags.some((tag) => matchesRule(rule, tag))
       : matchesRule(rule, groupName);
   });
+}
+
+/**
+ * Classes staff may arrange new tutoring for. Every screen that lists classes
+ * or learners for arranging or suggesting tutoring reads this, the same rules
+ * the support queue reads; booked sessions and history are never filtered.
+ */
+export function filterTutoringEligibleGroups<
+  T extends { id: string; name?: string | null },
+>(
+  policy: {
+    groupExclusions: TutoringGroupExclusion[];
+    tutorGroupIds: string[];
+  },
+  groups: readonly T[],
+  reason: TutoringExclusionReason | null,
+  tagsByGroupId?: ReadonlyMap<string, readonly string[]>
+): T[] {
+  return groups.filter(
+    (group) =>
+      !isTutoringGroupExcluded(
+        policy,
+        group.name ?? '',
+        reason,
+        group.id,
+        tagsByGroupId?.get(group.id) ?? []
+      )
+  );
 }

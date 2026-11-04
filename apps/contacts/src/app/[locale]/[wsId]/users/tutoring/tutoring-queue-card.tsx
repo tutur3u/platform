@@ -28,6 +28,7 @@ import {
   canEndWeakSupport,
   TutoringEndWeakSupport,
 } from './tutoring-end-weak-support';
+import { tutoringQueueFilterGroups } from './tutoring-filters';
 import { WorkspacePersonPicker } from './tutoring-people-picker';
 import { TutoringQueueContent } from './tutoring-queue-content';
 
@@ -140,15 +141,18 @@ export function TutoringQueueCard({
     filters.groupId !== 'all' ||
     filters.studentUserId !== 'all';
 
+  // Classes excluded from all tutoring hold nobody here, so they are not offered.
   const groupOptions = useMemo<ComboboxOption[]>(
     () => [
       { label: t('all_groups'), value: 'all' },
-      ...groups.map((group) => ({
-        label: group.name || group.id,
-        value: group.id,
-      })),
+      ...tutoringQueueFilterGroups(policy, groups, filters.groupId).map(
+        (group) => ({
+          label: group.name || group.id,
+          value: group.id,
+        })
+      ),
     ],
-    [groups, t]
+    [filters.groupId, groups, policy, t]
   );
 
   const reasonLabels: Record<string, string> = {

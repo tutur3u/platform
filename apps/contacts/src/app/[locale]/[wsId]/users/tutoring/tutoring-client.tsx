@@ -16,7 +16,10 @@ import {
   type TutoringQueueItem,
 } from '@tuturuuu/internal-api';
 import { getTutoringPolicy } from '@tuturuuu/internal-api/tutoring';
-import { STANDARD_TUTORING_POLICY } from '@tuturuuu/internal-api/tutoring-policy';
+import {
+  STANDARD_TUTORING_POLICY,
+  tutoringExclusionReason,
+} from '@tuturuuu/internal-api/tutoring-policy';
 import { suggestTutoringSlots } from '@tuturuuu/internal-api/tutoring-suggestion';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -353,12 +356,23 @@ export function TutoringClient({ wsId, canManage, canConfigure }: Props) {
     ]);
     if (!current()) return;
     if (futureSchedule.status === 'fulfilled') {
+      // The queue already leaves out excluded classes; the suggestion reads the
+      // same rules so a stale row can never be offered times.
       suggestions = suggestTutoringSlots(
         futureSchedule.value.data ?? [],
         addDaysToIsoDate(today, -1),
         count,
         policy,
-        item.reason_type === 'WEAK_SUPPORT' ? 'consecutive' : 'separate'
+        item.reason_type === 'WEAK_SUPPORT' ? 'consecutive' : 'separate',
+        new Date(),
+        {
+          groupName: item.group_name,
+          reason: tutoringExclusionReason(
+            item.reason_type === 'WEAK_SUPPORT'
+              ? 'WEAK_SUPPORT'
+              : 'ABSENT_RECOVERY'
+          ),
+        }
       );
     }
     if (missedLessons.status === 'fulfilled' && missedLessons.value) {

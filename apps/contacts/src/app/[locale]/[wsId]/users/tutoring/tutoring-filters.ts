@@ -1,5 +1,9 @@
 import type { TutoringSessionRecord } from '@tuturuuu/internal-api';
 import type { ListTutoringSessionsParams } from '@tuturuuu/internal-api/tutoring';
+import {
+  filterTutoringEligibleGroups,
+  type TutoringPolicy,
+} from '@tuturuuu/internal-api/tutoring-policy';
 
 export const TUTORING_DATE_RANGES = [
   'upcoming',
@@ -272,5 +276,28 @@ export function canExportTutoringFormat(
       (Date.parse(query.toDate) - Date.parse(query.fromDate)) / 86_400_000 +
         1 <=
         MAX_PAYROLL_RANGE_DAYS
+  );
+}
+
+/**
+ * Classes the support queue can be filtered by: those the workspace still
+ * allows make-up or weak support for, plus the current filter. The schedule's
+ * own filters keep every class, so booked history stays reachable.
+ */
+export function tutoringQueueFilterGroups<
+  T extends { id: string; name?: string | null },
+>(
+  policy: Pick<TutoringPolicy, 'groupExclusions' | 'tutorGroupIds'>,
+  groups: readonly T[],
+  selectedGroupId: string
+): T[] {
+  const eligible = new Set(
+    [
+      ...filterTutoringEligibleGroups(policy, groups, 'make_up'),
+      ...filterTutoringEligibleGroups(policy, groups, 'weak_support'),
+    ].map((group) => group.id)
+  );
+  return groups.filter(
+    (group) => eligible.has(group.id) || group.id === selectedGroupId
   );
 }

@@ -72,7 +72,8 @@ payroll.
   message template. Only members with
   `manage_workspace_settings` can save it.
   The English center preset excludes kindergarten group names containing
-  `DDT`, `Mẫu giáo`, or `Kindergarten` from all tutoring suggestions. Existing
+  `DDT`, `Mẫu giáo`, or `Kindergarten` from all tutoring (see
+  [Where class exclusions apply](#where-class-exclusions-apply)). Existing
   policies using the earlier unmodified `DDT` preset inherit these rules;
   custom rules remain as saved. Staff can add other naming patterns used by
   their workspace. Rule scope (all, make-up, or weak support), name match
@@ -106,6 +107,44 @@ default) or the class's group tags. A class format such as kindergarten, DDT
 or IELTS is not a class field, so staff who tag classes by format add a
 **Class tag** rule for each excluded format. Tags are read only when a tag rule
 exists. The English center preset still ships its name rules, with no tag rules.
+
+### Where class exclusions apply
+
+The same exclusion rules apply on every tutoring screen that lists or
+suggests classes and learners for new tutoring, not only in the support queue.
+Matching ignores letter case, so a `contains` rule for `DDT` also matches
+`Starters ddt 2`.
+
+| Screen or API | What an excluded class does |
+| --- | --- |
+| Support queue (`GET …/tutoring/queue`) | Its learners are not listed as needing make-up or weak support. |
+| Create session → class picker | The class is not offered. A class already chosen stays selected and shows a warning instead of suggestions. |
+| Create session → suggested times and staff-reviewed draft choices | No times are suggested for it, including times implied by an assigned shift. |
+| Scheduling from a queue row | No times are suggested for it. |
+| Create session (`POST …/tutoring/sessions`) | Refused with `422` and `code: TUTORING_GROUP_EXCLUDED`, so no screen or client can book a new session in it. |
+
+Make-up sessions read rules scoped to **all** or **make-up**; weak-support
+sessions read **all** or **weak support**; custom sessions read only **all**
+rules. Tutor groups count as excluded everywhere, as before.
+
+A learner in both an excluded and an ordinary class is skipped only under the
+excluded class: they still appear in the queue, the class picker and the
+suggestions under the ordinary class.
+
+Booked history is not affected. Sessions already booked in an excluded class
+stay in the schedule, the filters, the exports and payroll, and staff can still
+edit, mark, reschedule or delete them. Exclusion only stops new sessions.
+
+A custom policy without a `DDT` rule does not exclude DDT classes; the rules
+come only from the workspace policy, which staff with
+`manage_workspace_settings` edit in Settings → weak support.
+
+Regression coverage: `packages/internal-api/src/tutoring-group-rules.test.ts`,
+`tutoring-suggestion.test.ts`, `tutoring-shift-assignment.test.ts`,
+`apps/web/src/lib/tutoring/group-exclusion.test.ts`,
+`tutoring/sessions/route.test.ts`, `tutoring/queue/route.test.ts`, and the
+Contacts `tutoring-create-card.exclusions.test.tsx` and
+`tutoring-suggestion-apply.test.ts`.
 
 **Needs-tutoring groups** (Settings → weak support, empty by default) list
 learners who need tutoring without an absence or flagged feedback. Every
@@ -758,6 +797,10 @@ placeholders while data is in flight.
 
 The create button stays disabled until the group, learner, and every slot
 (date, time, 1–480 minutes, teacher) are complete and no two slots overlap.
+It also stays disabled for a class the workspace excludes from tutoring; the
+form says so. To arrange tutoring there, change the exclusion rules in
+Settings → weak support. See
+[Where class exclusions apply](#where-class-exclusions-apply).
 
 ## Tutoring teacher assignment
 
