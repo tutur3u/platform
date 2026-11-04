@@ -6,6 +6,7 @@ import type { ReadonlyRequestCookies } from 'next/dist/server/web/spec-extension
 import { sanitizeSupabaseAuthCookies } from './auth-cookie-sanitizer';
 import {
   checkEnvVariables,
+  getAuthCookieName,
   getSupabaseAuthCookieUrls,
   getSupabaseCookieOptions,
   type SupabaseCookie,
@@ -15,7 +16,7 @@ import {
   wrapRequestClientForProxyOnlyTables,
 } from './protected-tables';
 
-const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
+const APP_SESSION_COOKIE_NAME = getAuthCookieName('tuturuuu_app_session');
 const APP_SESSION_BEARER_PREFIX = 'ttr_app_';
 const SUPABASE_SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 400;
 

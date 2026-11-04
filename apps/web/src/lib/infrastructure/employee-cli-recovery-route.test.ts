@@ -11,7 +11,8 @@ const mock = vi.hoisted(() => ({
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/server', () => ({ connection: vi.fn() }));
-vi.mock('@tuturuuu/supabase/next/common', () => ({
+vi.mock('@tuturuuu/supabase/next/common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@tuturuuu/supabase/next/common')>()),
   checkEnvVariables: vi.fn(),
 }));
 vi.mock('@tuturuuu/utils/required-mfa-app-session', () => ({

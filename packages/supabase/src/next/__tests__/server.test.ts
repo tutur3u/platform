@@ -9,7 +9,6 @@ import {
   createDynamicClient,
 } from '../server';
 
-// Mock dependencies
 vi.mock('@supabase/ssr', () => ({
   createServerClient: vi.fn(),
   createBrowserClient: vi.fn(),
@@ -20,7 +19,8 @@ vi.mock('next/headers', () => ({
   headers: vi.fn(),
 }));
 
-vi.mock('../common', () => ({
+vi.mock('../common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../common.js')>()),
   checkEnvVariables: ({ useSecretKey }: { useSecretKey: boolean }) => ({
     url: 'https://test.supabase.co',
     key: useSecretKey ? 'test-secret-key' : 'test-publishable-key',

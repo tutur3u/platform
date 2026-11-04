@@ -52,6 +52,13 @@ export default defineConfig({
         ),
       },
       {
+        find: '@tuturuuu/supabase/auth-cookie-policy',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/auth-cookie-policy.ts'
+        ),
+      },
+      {
         find: '@tuturuuu/supabase/next/common',
         replacement: resolve(
           __dirname,

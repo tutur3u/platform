@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { NextRequest } from 'next/server';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   provider: vi.fn(),
@@ -105,3 +105,30 @@ it('never grants a machine plan from an unvalidated workspace or API key', async
   await resolveApiCostIdentity(request);
   expect(mocks.key).toHaveBeenCalledTimes(2);
 });
+
+afterEach(() => vi.unstubAllEnvs());
+it.each([
+  ['', 'sb-cost-auth-token.0', true],
+  ['staging-', 'staging-sb-cost-auth-token.0', true],
+  ['staging-', 'sb-cost-auth-token.0', false],
+])(
+  'revalidates provider cookies only in the active namespace %s / %s',
+  async (prefix, name, expected) => {
+    vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX', prefix);
+    vi.resetModules();
+    const { resolveApiCostUserId: resolve } = await import(
+      './api-cost-identity'
+    );
+    mocks.provider.mockResolvedValue({
+      user: { id: 'verified' },
+      authError: null,
+    });
+    const user = await resolve(
+      new NextRequest('https://staging.example/api', {
+        headers: { cookie: `${name}=token` },
+      })
+    );
+    expect(user).toBe(expected ? 'verified' : undefined);
+    expect(mocks.provider).toHaveBeenCalledTimes(expected ? 1 : 0);
+  }
+);

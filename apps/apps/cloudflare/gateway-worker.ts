@@ -1,3 +1,7 @@
+import {
+  getAuthCookieName,
+  stripAuthCookiePrefix,
+} from '@tuturuuu/supabase/next/common';
 import { getLaunchableAppByTitle } from '@tuturuuu/utils/launchable-apps';
 import { enforceStagingCookiePolicy } from '@tuturuuu/utils/staging-cookie-policy';
 import { createElement } from 'react';
@@ -15,12 +19,14 @@ import {
 type Assets = { fetch(request: Request): Promise<Response> };
 export type GatewayEnvironment = { ASSETS: Assets; SOURCE_SHA?: string };
 const originalOrigin = 'https://apps.tuturuuu.com';
-const sessionCookies = new Set([
-  'tuturuuu_app_session',
-  'tuturuuu_web_app_session',
-  'tuturuuu_app_session_refresh',
-  'tuturuuu_web_app_session_refresh',
-]);
+const sessionCookies = new Set(
+  [
+    'tuturuuu_app_session',
+    'tuturuuu_web_app_session',
+    'tuturuuu_app_session_refresh',
+    'tuturuuu_web_app_session_refresh',
+  ].map(getAuthCookieName)
+);
 
 function headers() {
   return new Headers({
@@ -46,7 +52,8 @@ function authenticatedEntry(request: Request) {
   return (request.headers.get('cookie') ?? '').split(';').some((part) => {
     const name = part.trim().split('=', 1)[0] ?? '';
     return (
-      sessionCookies.has(name) || /^sb-.+-auth-token(?:\.\d+)?$/.test(name)
+      sessionCookies.has(name) ||
+      /^sb-.+-auth-token(?:\.\d+)?$/.test(stripAuthCookiePrefix(name) ?? '')
     );
   });
 }

@@ -20,6 +20,14 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
+      '@tuturuuu/supabase/auth-cookie-policy': new URL(
+        '../../packages/supabase/src/auth-cookie-policy.ts',
+        import.meta.url
+      ).pathname,
+      '@tuturuuu/supabase/next/common': new URL(
+        '../../packages/supabase/src/next/common.ts',
+        import.meta.url
+      ).pathname,
       '@tuturuuu/internal-api': new URL(
         '../../packages/internal-api/src',
         import.meta.url

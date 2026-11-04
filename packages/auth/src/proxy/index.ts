@@ -19,6 +19,7 @@ import {
   hasSupportedSupabaseAuthCookie,
 } from '../app-session';
 import {
+  clearMfaMobileApprovalCookie,
   hashMfaMobileApprovalSecret,
   MFA_MOBILE_APPROVAL_COOKIE_NAME,
   MFA_MOBILE_APPROVAL_KIND,
@@ -454,15 +455,6 @@ function asRecord(value: unknown): Record<string, unknown> {
   }
 
   return {};
-}
-
-function clearMfaMobileApprovalCookie(response: NextResponse) {
-  response.cookies.set(MFA_MOBILE_APPROVAL_COOKIE_NAME, '', {
-    maxAge: 0,
-    path: '/',
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-  });
 }
 
 function sessionIdFromClaims(claims: unknown) {

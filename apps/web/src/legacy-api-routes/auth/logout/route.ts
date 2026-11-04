@@ -1,4 +1,4 @@
-import { MFA_MOBILE_APPROVAL_COOKIE_NAME } from '@tuturuuu/auth/mfa-mobile-approval';
+import { clearMfaMobileApprovalCookie } from '@tuturuuu/auth/mfa-mobile-approval';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
@@ -19,12 +19,7 @@ export async function POST() {
   if (error) return NextResponse.json({ error }, { status: 500 });
 
   const response = NextResponse.json({ success: true });
-  response.cookies.set(MFA_MOBILE_APPROVAL_COOKIE_NAME, '', {
-    maxAge: 0,
-    path: '/',
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-  });
+  clearMfaMobileApprovalCookie(response);
 
   return response;
 }

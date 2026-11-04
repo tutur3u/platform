@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { NextRequest, NextResponse } from 'next/server';
-import { beforeEach, expect, it, vi } from 'vitest';
-import { guardBrowserApiSession } from '../required-mfa-api-session';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { guardBrowserApiSession } from '../required-mfa-api-session.js';
 
 const update = vi.hoisted(() => vi.fn());
 vi.mock('@tuturuuu/supabase/next/proxy', () => ({ updateSession: update }));
@@ -73,3 +73,38 @@ it('removes superseded app credentials from the actual forwarded provider reques
     'tuturuuu_'
   );
 });
+
+afterEach(() => vi.unstubAllEnvs());
+
+it.each([
+  ['', 'sb-project-auth-token.0', true],
+  ['staging-', 'staging-sb-project-auth-token.0', true],
+  ['staging-', 'sb-project-auth-token.0', false],
+])(
+  'refreshes only the configured provider namespace %s / %s',
+  async (prefix, name, expected) => {
+    vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX', prefix);
+    vi.resetModules();
+    const { guardBrowserApiSession: guard } = await import(
+      '../required-mfa-api-session.js'
+    );
+    update.mockResolvedValue({
+      res: NextResponse.next(),
+      claims: { sub: 'provider-user' },
+    });
+    const request = new NextRequest('https://staging.example/api/v1/users/me', {
+      headers: {
+        cookie: `${name}=provider; ${prefix}tuturuuu_app_session=stale; tuturuuu_web_app_session=production`,
+      },
+    });
+    await guard(request, async () => {
+      expect(request.cookies.has(`${prefix}tuturuuu_app_session`)).toBe(
+        !expected
+      );
+      if (prefix)
+        expect(request.cookies.has('tuturuuu_web_app_session')).toBe(true);
+      return null;
+    });
+    expect(update).toHaveBeenCalledTimes(expected ? 1 : 0);
+  }
+);

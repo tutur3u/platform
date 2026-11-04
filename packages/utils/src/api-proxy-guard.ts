@@ -1,3 +1,8 @@
+import {
+  getAuthCookieName,
+  getSupabaseAuthCookiePattern,
+  getSupabaseAuthStorageKey,
+} from '@tuturuuu/supabase/next/common';
 import type { NextRequest, NextResponse } from 'next/server';
 import {
   extractIPFromRequest,
@@ -104,7 +109,7 @@ export type GuardOptions = {
 };
 
 const GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN =
-  /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
+  getSupabaseAuthCookiePattern('i');
 const NO_READ_RATE_LIMITS: RateLimitConfig[] = [];
 
 function parsePositiveIntEnv(
@@ -595,18 +600,6 @@ export function hasAuthenticatedBearerToken(headers: Headers): boolean {
   return looksLikeSupabaseJwt(token) || looksLikeWorkspaceApiKey(token);
 }
 
-function getSupabaseAuthStorageKey(url: string | undefined): string | null {
-  if (!url) {
-    return null;
-  }
-
-  try {
-    return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
-  } catch {
-    return null;
-  }
-}
-
 function isSupabaseAuthCookieName(
   cookieName: string,
   storageKeys: string[]
@@ -629,10 +622,16 @@ function isSupabaseAuthCookieName(
 
 function getSupabaseAuthStorageKeys(): string[] {
   const storageKeys = [
-    getSupabaseAuthStorageKey(process.env.NEXT_PUBLIC_SUPABASE_URL),
-    getSupabaseAuthStorageKey(process.env.SUPABASE_SERVER_URL),
-  ].filter((value): value is string => Boolean(value));
-
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVER_URL,
+  ].flatMap((url) => {
+    if (!url) return [];
+    try {
+      return [getSupabaseAuthStorageKey(url)];
+    } catch {
+      return [];
+    }
+  });
   return [...new Set(storageKeys)];
 }
 
@@ -711,7 +710,7 @@ export async function getProxySessionSubjectKeyFromCookieHeader(
   const cookie =
     parseCookieHeaderEdge(cookieHeader).find(
       (entry) =>
-        entry.name === 'tuturuuu_app_session' ||
+        entry.name === getAuthCookieName('tuturuuu_app_session') ||
         GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN.test(entry.name)
     ) ?? null;
 

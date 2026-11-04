@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getTranslations: vi.fn(),
@@ -143,4 +143,51 @@ describe('Hive browser state recovery route', () => {
       response.cookies.get('sb-resolved-kingfish-21146-auth-token')
     ).toBeUndefined();
   });
+});
+
+afterEach(() => vi.unstubAllEnvs());
+it('clears namespaced Hive provider cookies while preserving production names', async () => {
+  vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX', '__Host-staging-');
+  vi.resetModules();
+  mocks.getTranslations.mockResolvedValue(
+    (key: string) => translations[key] ?? key
+  );
+  const { POST: recover } = await import('./route');
+  const name = '__Host-staging-sb-project-auth-token.0';
+  const response = await recover(
+    new NextRequest('https://hive.tuturuuu.com/~recover-browser-state', {
+      headers: {
+        origin: 'https://hive.tuturuuu.com',
+        cookie: `${name}=stage; sb-project-auth-token=production`,
+      },
+    })
+  );
+  expect(response.cookies.getAll().map(({ name }) => name)).toEqual([name]);
+  expect(response.cookies.get(name)).toMatchObject({ secure: true, maxAge: 0 });
+  expect(response.cookies.get(name)?.domain).toBeUndefined();
+});
+
+it('also clears domain-scoped namespaced provider cookies under parent-domain scope', async () => {
+  vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX', 'staging-');
+  vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_SCOPE', 'parent-domain');
+  vi.resetModules();
+  mocks.getTranslations.mockResolvedValue(
+    (key: string) => translations[key] ?? key
+  );
+  const { POST: recover } = await import('./route');
+  const name = 'staging-sb-project-auth-token.0';
+  const response = await recover(
+    new NextRequest('https://hive.tuturuuu.com/~recover-browser-state', {
+      headers: {
+        origin: 'https://hive.tuturuuu.com',
+        cookie: `${name}=stage; sb-project-auth-token=production`,
+      },
+    })
+  );
+  const setCookies = response.headers.getSetCookie();
+  expect(response.cookies.get(name)?.domain).toBeUndefined();
+  expect(setCookies.filter((cookie) => cookie.includes('Domain='))).toEqual([
+    `${name}=; Domain=.tuturuuu.com; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Max-Age=0; SameSite=lax; Secure`,
+  ]);
+  expect(setCookies.join('\n')).not.toContain('sb-project-auth-token=;');
 });

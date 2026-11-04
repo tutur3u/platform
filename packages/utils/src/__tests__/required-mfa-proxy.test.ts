@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccountAssuranceDependencies } from '../required-mfa-request';
 
 const check = vi.hoisted(() => vi.fn());
@@ -103,3 +103,24 @@ describe('required MFA proxy responses', () => {
     expect(isAccountAssuranceRecoveryPath(path)).toBe(false);
   });
 });
+
+afterEach(() => vi.unstubAllEnvs());
+it.each([
+  ['', 'sb-project-auth-token.0', true],
+  ['staging-', 'staging-sb-project-auth-token.0', true],
+  ['staging-', 'sb-project-auth-token.0', false],
+  ['staging-', 'staging-tuturuuu_app_session', true],
+  ['staging-', 'tuturuuu_app_session', false],
+  ['staging-', 'staging-tuturuuu_web_app_session', true],
+])(
+  'checks MFA only for the configured namespace %s / %s',
+  async (prefix, name, expected) => {
+    vi.stubEnv('NEXT_PUBLIC_AUTH_COOKIE_NAME_PREFIX', prefix);
+    await guardRequiredAccountMfa(
+      request(undefined, { cookie: `${name}=token` }),
+      dependencies,
+      { userId: 'actor' }
+    );
+    expect(check).toHaveBeenCalledTimes(expected ? 1 : 0);
+  }
+);

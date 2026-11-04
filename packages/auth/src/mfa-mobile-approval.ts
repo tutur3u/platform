@@ -1,9 +1,43 @@
+import { getAuthCookieName } from '@tuturuuu/supabase/next/common';
+
 export const MFA_MOBILE_APPROVAL_KIND = 'mfa_mobile_approval';
-export const MFA_MOBILE_APPROVAL_COOKIE_NAME = 'ttr_mfa_mobile_approval';
+export const MFA_MOBILE_APPROVAL_COOKIE_NAME = getAuthCookieName(
+  'ttr_mfa_mobile_approval'
+);
 export const MFA_MOBILE_APPROVAL_CHALLENGE_TTL_SECONDS = 5 * 60;
 export const MFA_MOBILE_APPROVAL_SESSION_TTL_SECONDS = 12 * 60 * 60;
 export const MFA_MOBILE_APPROVAL_COOKIE_MAX_AGE_SECONDS =
   MFA_MOBILE_APPROVAL_SESSION_TTL_SECONDS;
+
+/** Browsers reject `__Host-`/`__Secure-` cookies without Secure in any environment. */
+export function mfaMobileApprovalCookieRequiresSecure() {
+  return (
+    process.env.NODE_ENV === 'production' ||
+    /^__(?:Host|Secure)-/.test(MFA_MOBILE_APPROVAL_COOKIE_NAME)
+  );
+}
+
+export function clearMfaMobileApprovalCookie(response: {
+  cookies: {
+    set(
+      name: string,
+      value: string,
+      options: {
+        maxAge: number;
+        path: string;
+        sameSite: 'lax';
+        secure: boolean;
+      }
+    ): unknown;
+  };
+}) {
+  response.cookies.set(MFA_MOBILE_APPROVAL_COOKIE_NAME, '', {
+    maxAge: 0,
+    path: '/',
+    sameSite: 'lax',
+    secure: mfaMobileApprovalCookieRequiresSecure(),
+  });
+}
 
 const PAIR_CODE_ALPHABET = '0123456789';
 const SECRET_ALPHABET =

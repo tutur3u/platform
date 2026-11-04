@@ -1,3 +1,4 @@
+import { mfaMobileApprovalCookieRequiresSecure } from '@tuturuuu/auth/mfa-mobile-approval';
 import type { NextRequest } from 'next/server';
 import { connection, NextResponse } from 'next/server';
 import {
@@ -51,7 +52,7 @@ export async function GET(
           maxAge: result.cookie.maxAge,
           path: '/',
           sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production',
+          secure: mfaMobileApprovalCookieRequiresSecure(),
         });
       }
 

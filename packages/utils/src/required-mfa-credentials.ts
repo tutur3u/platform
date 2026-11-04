@@ -1,4 +1,5 @@
 import {
+  getAuthCookieName,
   getSupabaseAuthCookieUrls,
   getSupabaseAuthStorageKey,
 } from '@tuturuuu/supabase/next/common';
@@ -12,7 +13,10 @@ export function accountAssuranceCredentials(request: NextRequest): string[] {
     ?.match(/^Bearer\s+(\S+)$/i)?.[1];
   const tokens = new Set<string>();
   if (bearer && /^(?:eyJ|ttr_app_)/.test(bearer)) tokens.add(bearer);
-  for (const name of ['tuturuuu_web_app_session', 'tuturuuu_app_session']) {
+  for (const name of [
+    getAuthCookieName('tuturuuu_web_app_session'),
+    getAuthCookieName('tuturuuu_app_session'),
+  ]) {
     const token = request.cookies.get(name)?.value;
     if (token?.startsWith('ttr_app_')) tokens.add(token);
   }
@@ -49,10 +53,10 @@ export function accountAssuranceCredentials(request: NextRequest): string[] {
  * forwarded request, not merely ignore them during policy enforcement. */
 export function discardAppCookiesForVerifiedProvider(request: NextRequest) {
   for (const name of [
-    'tuturuuu_app_session',
-    'tuturuuu_web_app_session',
-    'tuturuuu_app_session_refresh',
-    'tuturuuu_web_app_session_refresh',
+    getAuthCookieName('tuturuuu_app_session'),
+    getAuthCookieName('tuturuuu_web_app_session'),
+    getAuthCookieName('tuturuuu_app_session_refresh'),
+    getAuthCookieName('tuturuuu_web_app_session_refresh'),
   ])
     request.cookies.delete(name);
 }

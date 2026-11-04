@@ -5,7 +5,8 @@ vi.mock('@supabase/ssr', () => ({
   createBrowserClient: vi.fn(() => ({})),
   createServerClient: vi.fn(),
 }));
-vi.mock('../common', () => ({
+vi.mock('../common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../common')>()),
   checkEnvVariables: () => ({
     url: 'https://example.supabase.co',
     key: 'test-service-key',

@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/auth/app-session';
 import { resolveSupabaseSessionRequest } from '@tuturuuu/auth/supabase-session-user';
 import { reserveSecurityBudget } from '@tuturuuu/storage-core/security-budget';
+import { getSupabaseAuthCookiePattern } from '@tuturuuu/supabase/next/common';
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import { PRODUCTION_INTERNAL_APP_DOMAINS } from '@tuturuuu/utils/internal-domains';
 import type { NextRequest } from 'next/server';
@@ -23,7 +24,7 @@ export async function resolveApiCostUserId(request: NextRequest) {
     (!authorization &&
       request.cookies
         .getAll()
-        .some(({ name }) => /^sb-.*-auth-token(?:\.\d+)?$/u.test(name)));
+        .some(({ name }) => getSupabaseAuthCookiePattern().test(name)));
   if (provider) {
     const credential = createHash('sha256')
       .update(authorization || request.headers.get('cookie') || '')

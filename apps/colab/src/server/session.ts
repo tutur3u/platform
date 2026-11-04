@@ -1,8 +1,9 @@
 import { type Identity, RoomError } from '@tuturuuu/multiplayer';
+import { getSupabaseAuthCookiePattern } from '@tuturuuu/supabase/next/common';
 import { authenticate, sessionCookie, sign } from './auth';
 import type { Env } from './env';
 
-const centralCookie = /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?=/;
+const centralCookie = getSupabaseAuthCookiePattern();
 const renewalWindow = 5 * 60_000;
 type AccountSession = Identity & { profileHydrated?: boolean };
 
@@ -50,14 +51,14 @@ export function centralAuthCookies(request: Request) {
   return (request.headers.get('cookie') ?? '')
     .split(';')
     .map((value) => value.trim())
-    .filter((value) => centralCookie.test(value))
+    .filter((value) => centralCookie.test(value.split('=', 1)[0] ?? ''))
     .join('; ');
 }
 
 export function renewedCentralCookies(response: Response) {
   return response.headers
     .getSetCookie()
-    .filter((value) => centralCookie.test(value));
+    .filter((value) => centralCookie.test(value.split('=', 1)[0] ?? ''));
 }
 
 /** Revalidate with central Auth; never renew from an expired Colab token alone. */

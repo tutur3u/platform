@@ -1,5 +1,20 @@
 import type { CookieOptions, CookieOptionsWithName } from '@supabase/ssr';
+import {
+  authCookieRequiresSecure,
+  getAuthCookieName,
+  getAuthCookieScope,
+  getSupabaseAuthStorageKey,
+} from '../auth-cookie-policy';
 import { getTuturuuuSharedCookieDomains } from '../shared-cookie-domains';
+
+export {
+  authCookieRequiresSecure,
+  getAuthCookieName,
+  getAuthCookieScope,
+  getSupabaseAuthCookiePattern,
+  getSupabaseAuthStorageKey,
+  stripAuthCookiePrefix,
+} from '../auth-cookie-policy';
 
 export type SupabaseCookie = {
   name: string;
@@ -138,10 +153,6 @@ function resolveSharedCookieDomain(url: string | URL | null | undefined) {
   }
 
   return null;
-}
-
-export function getSupabaseAuthStorageKey(url: string): string {
-  return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
 }
 
 function getSupabaseCookieNameUrl(supabaseUrl: string) {
@@ -286,6 +297,29 @@ export function getHostOnlyCookieClearHeadersForNames(
   return headers;
 }
 
+/**
+ * Domain-scoped clears for namespaced Supabase cookies written under an
+ * explicit `parent-domain` scope. Recovery cannot use Clear-Site-Data
+ * "cookies" under a namespace, and host-only clears miss Domain cookies.
+ * Returns nothing without a namespace, so production bytes are unchanged.
+ */
+export function getNamespacedSupabaseDomainCookieClearHeaders(
+  cookieNames: Iterable<string>,
+  requestUrl: string | URL
+) {
+  if (getAuthCookieName('') === '' || getAuthCookieScope() !== 'parent-domain')
+    return [];
+  const sharedCookieDomain = resolveSharedCookieDomain(requestUrl);
+  if (!sharedCookieDomain) return [];
+  const secure = sharedCookieDomain.secure || authCookieRequiresSecure();
+  return [...new Set(cookieNames)]
+    .filter(isSafeCookieName)
+    .map(
+      (name) =>
+        `${name}=; Domain=${sharedCookieDomain.cookieDomain}; Path=/; Expires=${HOST_ONLY_COOKIE_CLEAR_DATE}; Max-Age=0; SameSite=lax${secure ? '; Secure' : ''}`
+    );
+}
+
 export function getHostOnlyCookieClearHeaders(cookiesToSet: SupabaseCookie[]) {
   const headers = new Set<string>();
 
@@ -305,6 +339,19 @@ export function getHostOnlyCookieClearHeaders(cookiesToSet: SupabaseCookie[]) {
   return [...headers];
 }
 
+export function hostOnlyAuthCookieRequiresSecure(
+  requestUrl?: string | URL | null
+) {
+  const url = normalizeUrlLike(requestUrl ?? getConfiguredAppUrl());
+  const host = url?.hostname;
+  const local =
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '[::1]' ||
+    host?.endsWith('.localhost');
+  return authCookieRequiresSecure() || !local || url?.protocol === 'https:';
+}
+
 export function getSupabaseCookieOptions(
   supabaseUrl: string,
   requestUrl?: string | URL | null
@@ -316,10 +363,13 @@ export function getSupabaseCookieOptions(
     sameSite: 'lax',
   };
 
-  if (sharedCookieDomain) {
+  if (getAuthCookieScope() === 'parent-domain' && sharedCookieDomain) {
     options.domain = sharedCookieDomain.cookieDomain;
     options.secure = sharedCookieDomain.secure;
+  } else if (getAuthCookieScope() === 'host-only') {
+    options.secure = hostOnlyAuthCookieRequiresSecure(requestUrl);
   }
+  if (authCookieRequiresSecure()) options.secure = true;
 
   return options;
 }

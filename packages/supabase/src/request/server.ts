@@ -4,13 +4,14 @@ import type { Database } from '@tuturuuu/types';
 import { sanitizeSupabaseAuthCookies } from '../next/auth-cookie-sanitizer';
 import {
   checkEnvVariables,
+  getAuthCookieName,
   getSupabaseAuthCookieUrls,
   getSupabaseCookieOptions,
   type SupabaseCookie,
 } from '../next/common';
 import { wrapRequestClientForProxyOnlyTables } from '../next/protected-tables';
 
-const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
+const APP_SESSION_COOKIE_NAME = getAuthCookieName('tuturuuu_app_session');
 const APP_SESSION_BEARER_PREFIX = 'ttr_app_';
 
 export type RequestClientFetchOptions = {

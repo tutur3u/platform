@@ -1,12 +1,23 @@
+import { fileURLToPath } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite-plus';
 export default defineConfig({
   plugins: [react()],
   resolve: {
+    alias: {
+      '@tuturuuu/supabase/next/common': fileURLToPath(
+        new URL('../../packages/supabase/src/next/common.ts', import.meta.url)
+      ),
+    },
     conditions: ['bun', 'module', 'node', 'development|production'],
   },
   ssr: {
     resolve: {
+      alias: {
+        '@tuturuuu/supabase/next/common': fileURLToPath(
+          new URL('../../packages/supabase/src/next/common.ts', import.meta.url)
+        ),
+      },
       conditions: ['bun', 'module', 'node', 'development|production'],
     },
   },

@@ -1,5 +1,9 @@
 import { createHash } from 'node:crypto';
 import type { SupabaseClient } from '@tuturuuu/supabase';
+import {
+  getAuthCookieName,
+  getSupabaseAuthCookiePattern,
+} from '@tuturuuu/supabase/next/common';
 import type { Database, Json } from '@tuturuuu/types';
 import {
   classifyPotentialSpamUserAgent,
@@ -198,8 +202,8 @@ function getSessionSubjectKey(
   const cookies = parseCookieHeader(readHeader(headers, 'cookie'));
   const authCookie = cookies.find(
     (cookie) =>
-      cookie.name === 'tuturuuu_app_session' ||
-      /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i.test(cookie.name)
+      cookie.name === getAuthCookieName('tuturuuu_app_session') ||
+      getSupabaseAuthCookiePattern('i').test(cookie.name)
   );
 
   if (!authCookie) {
