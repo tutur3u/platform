@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   buildWorkspaceExternalProjectDeliveryPayload: vi.fn(),
   createAdminClient: vi.fn(),
+  requireWorkspaceExternalProjectAccess: vi.fn(),
+  ifNoneMatchMatches: vi.fn(),
   resolveWorkspaceExternalProjectBinding: vi.fn(),
 }));
 
@@ -12,7 +14,8 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 vi.mock('@/lib/external-projects/access', () => ({
-  requireWorkspaceExternalProjectAccess: vi.fn(),
+  requireWorkspaceExternalProjectAccess:
+    mocks.requireWorkspaceExternalProjectAccess,
   resolveWorkspaceExternalProjectBinding: (
     ...args: Parameters<typeof mocks.resolveWorkspaceExternalProjectBinding>
   ) => mocks.resolveWorkspaceExternalProjectBinding(...args),
@@ -26,8 +29,12 @@ vi.mock('@/lib/external-projects/cache', () => ({
 }));
 
 vi.mock('@/lib/external-projects/http-cache', () => ({
-  ifNoneMatchMatches: vi.fn(() => false),
+  ifNoneMatchMatches: mocks.ifNoneMatchMatches,
   MAX_VERCEL_CACHE_TAGS: 32,
+}));
+
+vi.mock('@/lib/external-projects/page-versions', () => ({
+  getPublishedPageVersion: vi.fn(),
 }));
 
 vi.mock('@/lib/external-projects/store', () => ({
@@ -40,7 +47,8 @@ vi.mock('@/lib/external-projects/store', () => ({
 
 describe('external project delivery route', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    mocks.ifNoneMatchMatches.mockReturnValue(false);
     mocks.createAdminClient.mockResolvedValue({ kind: 'admin-db' });
     mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValue({
       canonical_project: { id: 'canonical-project' },
@@ -48,8 +56,115 @@ describe('external project delivery route', () => {
     });
     mocks.buildWorkspaceExternalProjectDeliveryPayload.mockResolvedValue({
       collections: [],
-      revision: 1,
+      workspaceId: '123e4567-e89b-12d3-a456-426614174000',
+      revision: '1',
     });
+  });
+
+  it.each([401, 403])(
+    'denies preview with status %i before delivery reads',
+    async (status) => {
+      const denied = Response.json({ error: 'Denied' }, { status });
+      mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
+        ok: false,
+        response: denied,
+      });
+      const { GET } = await import('./route');
+      const request = new Request('https://example.com/delivery?preview=true');
+      const response = await GET(request, {
+        params: Promise.resolve({ wsId: 'preview-workspace' }),
+      });
+      expect(response).toBe(denied);
+      expect(mocks.requireWorkspaceExternalProjectAccess).toHaveBeenCalledWith({
+        mode: 'edit',
+        request,
+        wsId: 'preview-workspace',
+      });
+      expect(mocks.createAdminClient).not.toHaveBeenCalled();
+      expect(
+        mocks.resolveWorkspaceExternalProjectBinding
+      ).not.toHaveBeenCalled();
+      expect(
+        mocks.buildWorkspaceExternalProjectDeliveryPayload
+      ).not.toHaveBeenCalled();
+    }
+  );
+
+  it('serves drafts only through edit access with private no-store caching', async () => {
+    const binding = {
+      enabled: true,
+      canonical_project: { id: 'preview-project' },
+    };
+    const admin = { kind: 'preview-admin' };
+    mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
+      ok: true,
+      binding,
+      admin,
+      normalizedWorkspaceId: 'preview-workspace',
+    });
+    const { GET } = await import('./route');
+    const request = new Request('https://example.com/delivery?preview=true');
+    const response = await GET(request, {
+      params: Promise.resolve({ wsId: 'alias' }),
+    });
+    expect(response.status).toBe(200);
+    expect(mocks.requireWorkspaceExternalProjectAccess).toHaveBeenCalledWith({
+      mode: 'edit',
+      request,
+      wsId: 'alias',
+    });
+    expect(
+      mocks.buildWorkspaceExternalProjectDeliveryPayload
+    ).toHaveBeenCalledWith(
+      { binding, includeDrafts: true, workspaceId: 'preview-workspace' },
+      admin
+    );
+    expect(await response.json()).toEqual({
+      collections: [],
+      workspaceId: '123e4567-e89b-12d3-a456-426614174000',
+      revision: '1',
+    });
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(response.headers.get('Vercel-Cache-Tag')).toBeNull();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.resolveWorkspaceExternalProjectBinding).not.toHaveBeenCalled();
+  });
+
+  it('retains CDN cache headers and workspace purge tag on a 304', async () => {
+    mocks.ifNoneMatchMatches.mockReturnValue(true);
+    const { GET } = await import('./route');
+    const workspaceId = '123e4567-e89b-12d3-a456-426614174000';
+    const response = await GET(
+      new Request('https://example.com/delivery', {
+        headers: { 'if-none-match': 'fixture-etag' },
+      }),
+      { params: Promise.resolve({ wsId: workspaceId }) }
+    );
+    expect(response.status).toBe(304);
+    expect(await response.text()).toBe('');
+    expect(response.headers.get('Cache-Control')).toBe(
+      'public, max-age=0, s-maxage=300, stale-while-revalidate=60'
+    );
+    expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe(
+      'max-age=300, stale-while-revalidate=60'
+    );
+    expect(response.headers.get('Vercel-Cache-Tag')).toContain(
+      `workspace-${workspaceId}`
+    );
+  });
+
+  it('returns 409 when no enabled CMS binding exists', async () => {
+    mocks.resolveWorkspaceExternalProjectBinding.mockResolvedValueOnce({
+      enabled: false,
+    });
+    const { GET } = await import('./route');
+    const response = await GET(new Request('https://example.com/delivery'), {
+      params: Promise.resolve({ wsId: '123e4567-e89b-12d3-a456-426614174000' }),
+    });
+    expect(response.status).toBe(409);
+    expect(
+      mocks.buildWorkspaceExternalProjectDeliveryPayload
+    ).not.toHaveBeenCalled();
   });
 
   it('rejects a malformed workspace ID before making database calls', async () => {
@@ -80,6 +195,15 @@ describe('external project delivery route', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(response.headers.get('Cache-Control')).toBe(
+      'public, max-age=0, s-maxage=300, stale-while-revalidate=60'
+    );
+    expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe(
+      'max-age=300, stale-while-revalidate=60'
+    );
+    expect(response.headers.get('Vercel-Cache-Tag')).toContain(
+      `workspace-${workspaceId}`
+    );
     expect(mocks.resolveWorkspaceExternalProjectBinding).toHaveBeenCalledWith(
       workspaceId,
       { kind: 'admin-db' }
