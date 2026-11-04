@@ -1,20 +1,21 @@
 name: Drive Cloudflare artifact
 on:
-  push:
-    branches: [cf/drive-20261104-artifact]
   pull_request:
-    paths: ['apps/drive/**', 'packages/**', 'bun.lock', '.github/workflows/drive-cloudflare.yaml']
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    paths: ['apps/drive/**', 'packages/**', 'scripts/ci/**', 'bun.lock', '.github/workflows/drive-cloudflare-artifact.yaml']
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   build:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      CONTACTS_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || 'sb_publishable_drive_ci_placeholder' }}
+      NODE_ENV: production
+      DRIVE_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.PRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
       NEXT_PUBLIC_APP_URL: https://drive.tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       VITE_DRIVE_NATIVE_PROFILE: production
@@ -22,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ env.CONTACTS_SOURCE_SHA }}
+          ref: ${{ env.DRIVE_SOURCE_SHA }}
           persist-credentials: false
       - uses: ./.github/actions/setup-bun-with-retry
         with:
@@ -35,13 +36,28 @@ jobs:
         run: bun turbo:local run build --filter='@tuturuuu/drive^...' --concurrency=2
       - name: Build Drive Start Worker and assets
         run: bun run --cwd apps/drive build:cloudflare
+      - name: Record emitted configuration receipt
+        if: always()
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/drive "${{ env.DRIVE_SOURCE_SHA }}" "$RUNNER_TEMP/drive-emitted-config.json"
+      - name: Retain emitted configuration receipt
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: drive-config-receipt-${{ env.DRIVE_SOURCE_SHA }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/drive-emitted-config.json
+          if-no-files-found: error
+      - name: Anonymous authentication and host-isolation smoke
+        run: node --test apps/drive/cloudflare/cutover.runtime.mjs
       - name: Seal deployable output
+        if: github.event_name == 'workflow_dispatch'
         run: |
           python3 scripts/ci/drive-native-artifact.py seal apps/drive --receipt "$RUNNER_TEMP/drive-native.json"
           python3 scripts/ci/drive-native-artifact.py pack apps/drive --receipt "$RUNNER_TEMP/drive-native.json" --archive "$RUNNER_TEMP/drive-native.tar.gz"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - name: Upload deployable artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: drive-native-${{ env.CONTACTS_SOURCE_SHA }}
+          name: drive-native-${{ env.DRIVE_SOURCE_SHA }}
           path: ${{ runner.temp }}/drive-native.tar.gz
           if-no-files-found: error
           retention-days: 7
