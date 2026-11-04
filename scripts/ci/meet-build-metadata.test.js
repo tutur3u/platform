@@ -58,7 +58,7 @@ test('Meet generates source metadata before dependency and Worker builds', () =>
   const env = steps[index].env;
   assert.equal(
     env.PLATFORM_BUILD_ENVIRONMENT,
-    "${{ (github.ref == 'refs/heads/production' || inputs.deployable_artifact) && 'production' || 'preview' }}"
+    "${{ github.ref == 'refs/heads/production' && 'production' || 'preview' }}"
   );
   assert.equal(env.PLATFORM_BUILD_REF_NAME, '${{ github.ref_name }}');
   assert.equal(env.PLATFORM_BUILD_COMMIT_HASH, '${{ env.SOURCE_SHA }}');
@@ -631,7 +631,7 @@ test('Meet exact normalization helper and public probe changes select both workf
   );
 });
 
-test('Meet builds with production Supabase values only on production or by explicit request', () => {
+test('Meet builds with production Supabase values only on the production ref', () => {
   // The validate gate admits only the sealed public CI fixture .dev.vars, so main
   // pushes must build with the same placeholders as pull requests.
   const build = workflow.jobs.validate.steps.find(
@@ -643,8 +643,8 @@ test('Meet builds with production Supabase values only on production or by expli
       key: build.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     },
     {
-      url: "${{ github.ref != 'refs/heads/production' && !inputs.deployable_artifact && 'https://meet-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}",
-      key: "${{ github.ref != 'refs/heads/production' && !inputs.deployable_artifact && 'sb_publishable_meet_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}",
+      url: "${{ github.ref != 'refs/heads/production' && 'https://meet-ci.supabase.invalid' || secrets.PRODUCTION_SUPABASE_URL }}",
+      key: "${{ github.ref != 'refs/heads/production' && 'sb_publishable_meet_ci_placeholder' || secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}",
     }
   );
 });
