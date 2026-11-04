@@ -4,3 +4,5 @@ node_modules
 tsconfig.tsbuildinfo
 .env
 .env.local
+.void/
+.void-wrangler.jsonc
