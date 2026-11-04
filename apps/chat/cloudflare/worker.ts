@@ -71,6 +71,7 @@ export default {
   async fetch(request: Request, env: ChatEnvironment, ctx: WorkerContext) {
     let response: Response;
     try {
+      if (process.env.NODE_ENV !== 'production') throw new Error('Production runtime required');
       const required = ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
         'SUPABASE_SECRET_KEY', 'TUTURUUU_APP_COORDINATION_SECRET'] as const;
       if (!env.ASSETS || required.some((name) => !env[name]?.trim())) {
