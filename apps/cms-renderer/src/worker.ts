@@ -1,6 +1,6 @@
-import { z } from 'zod';
-import { parseCmsPageVersion } from '@tuturuuu/cms-blocks/schema';
+import type { parseCmsPageVersion } from '@tuturuuu/cms-blocks/schema';
 import { resolveAppBase } from '@tuturuuu/start-bridge/mounts';
+import { z } from 'zod';
 import bridgeConfig from '../start-bridge.config';
 import { readJson } from './http-json';
 import { loadPublishedPage } from './live-delivery';
@@ -21,7 +21,7 @@ export type PublishedPage = {
   locale: string; title: string; description?: string; ogImage?: string;
   tokens: z.infer<typeof tokensSchema>;
 };
-export type Environment = { CMS_SITES?: string; CMS_DELIVERY_ORIGIN?: string; CMS_PURGE_TOKEN?: string; ASSETS?: { fetch: typeof fetch } };
+export type Environment = { CMS_SITES?: string; CMS_DELIVERY_ORIGIN?: string; CMS_PURGE_TOKENS?: string; ASSETS?: { fetch: typeof fetch } };
 type Dependencies = { fetch: typeof fetch; cache: Pick<Cache, 'match' | 'put' | 'delete'>; render: (request: Request, page: PublishedPage) => Promise<Response> };
 
 export function cacheRequest({ origin, site, path, locale, version }: { origin: string; site: string; path: string; locale: string; version: string }) {
@@ -44,7 +44,7 @@ export async function serve(request: Request, env: Environment, deps: Dependenci
   if (!site) return fail(404);
   if (url.pathname.startsWith('/__cms/cache')) return fail(404);
   if (url.pathname === '/__cms/purge') {
-    if (!authorizePurge(request.headers.get('authorization'), env.CMS_PURGE_TOKEN)) return fail(403);
+    if (!authorizePurge({ header: request.headers.get('authorization'), siteId: site.id, tokensJson: env.CMS_PURGE_TOKENS })) return fail(401);
     if (request.method !== 'POST') return fail(405);
     if (Number(request.headers.get('content-length')) > 4096) return fail(413);
     try {
