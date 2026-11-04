@@ -2,13 +2,19 @@ import {
   type FeeLockListResponse,
   type FeeLockListRow,
   feeLockListQuerySchema,
+  feeLockSaveDraftRequestSchema,
+  isFeeLockMoneyInRange,
 } from '@tuturuuu/internal-api/finance-fee-lock-contracts';
+import type { Json } from '@tuturuuu/types';
 import { searchParamsToRecord } from '@tuturuuu/utils/search-params-record';
 import { NextResponse } from 'next/server';
 import {
   feeLockErrorResponse,
+  feeLockWriteErrorResponse,
   getFeeLockCurrency,
   getFeeLockRouteContext,
+  invalidFeeLockBody,
+  parseFeeLockBody,
 } from './access';
 import { readAllInChunks, readAllPages } from './read-pages';
 
@@ -193,4 +199,52 @@ export async function GET(request: Request, { params }: Params) {
     currency,
   };
   return NextResponse.json(body);
+}
+
+/**
+ * Save a draft (create_invoices). The body carries quantities, catalogue ids
+ * and reasons only; private.fee_lock_save_draft checks every id against the
+ * workspace and computes every amount, with the platform user as the actor.
+ */
+export async function PUT(request: Request, { params }: Params) {
+  const { wsId: rawWsId } = await params;
+  const access = await getFeeLockRouteContext(request, rawWsId, [
+    'create_invoices',
+  ]);
+  if (access.response) return access.response;
+  const { normalizedWsId: wsId, sbAdmin, user } = access.context;
+
+  const body = await parseFeeLockBody(request, feeLockSaveDraftRequestSchema);
+  if (!body) return invalidFeeLockBody();
+  // Client-sent amounts must fit FEE_LOCK_MAX_MONEY; SQL rechecks every computed amount (22003).
+  const inRange = body.lines.every((line) =>
+    'unit_price' in line
+      ? isFeeLockMoneyInRange(line.unit_price * line.quantity)
+      : isFeeLockMoneyInRange(
+          'adjustment_amount' in line ? line.adjustment_amount : 0
+        )
+  );
+  if (!inRange) return feeLockErrorResponse({ code: '22003' });
+
+  const periodMonth = `${body.month}-01`;
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .rpc('fee_lock_save_draft', {
+      p_ws_id: wsId,
+      p_actor_id: user.id,
+      p_student_id: body.student_id,
+      p_month: periodMonth,
+      // NULL creates a new draft; the generated argument type is non-null.
+      p_expected_version: (body.expected_version ?? null) as unknown as number,
+      p_lines: body.lines as unknown as Json,
+      p_note: body.note,
+      p_currency: await getFeeLockCurrency(wsId),
+    });
+  if (error) {
+    return feeLockWriteErrorResponse(sbAdmin, wsId, error, {
+      student_id: body.student_id,
+      period_month: periodMonth,
+    });
+  }
+  return NextResponse.json(data);
 }
