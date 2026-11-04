@@ -116,45 +116,50 @@ goes out only through the staff-only route
 `POST /api/v1/infrastructure/policy-notice` in Infrastructure. It requires a verified
 `@tuturuuu.com` staff session (`isVerifiedTuturuuuStaffSession`) that is a root
 workspace MEMBER with `manage_workspace_roles`. No credential is pasted: the route
-uses the server's service role, and SES keys come from the root workspace's
-`workspace_email_credentials` row through `EmailService.sendInternal`.
+uses the server's service role, and `EmailService.sendInternal` sends through SES
+with the root workspace's `workspace_email_credentials` row. From is the root
+sender; Reply-To is `legal@tuturuuu.com`.
 
-- **Recipients:** owners (creators) and administrators (MEMBER with an enabled
-  `admin` permission through a role or member defaults) of non-deleted workspaces,
-  personal workspaces included. Only confirmed, active, non-anonymous accounts that
-  are not banned are included. Each address gets one email, however many
-  workspaces it owns or administers.
-- **Suppression:** hard bounces, complaints, domain entries and every
-  `email_blacklist` entry other than the global unsubscribe always suppress.
-  Under the legal ruling of 4 Nov 2026 (Cora), the global unsubscribe
-  (`recipient_unsubscribed`) does not stop this required service notice.
-  `marketingUnsubscribe` in `apps/infrastructure/src/lib/policy-notice/definition.ts`
-  is the single switch (`'send'`; `'suppress'` restores it). Test-list addresses
-  never get that bypass.
-- **Order of operations:** the request defaults to a dry run, which returns counts
-  only (eligible, suppressed, already sent, previously failed). A test-list send
-  (up to five explicit addresses) needs a completed dry run. A live send needs a
-  completed dry run and a sent test-list delivery for the same notice version.
-  Real sends also need the exact `confirm` token: `send-test:<version>` or
-  `send-live:<version>`.
+- **Recipients (user decision "notify A"):** owners (creators) and administrators
+  (MEMBER with an enabled `admin` permission through a role or member defaults) of
+  non-deleted, non-personal (business) workspaces. Only confirmed, active,
+  non-anonymous accounts that are not banned are included. Each address gets one
+  email, however many workspaces it owns or administers. Personal-only accounts,
+  members, students and parents get no email; they are covered by the in-app
+  notice instead.
+- **Suppression:** every suppression is honoured, with no bypass. That covers hard
+  bounces, complaints, every `email_blacklist` entry (do-not-email, domain blocks)
+  and the global "Tuturuuu system emails" unsubscribe (`recipient_unsubscribed`).
+  The email service's own blacklist check also runs on every send.
+- **Order of operations:** the request defaults to a dry run. It returns counts only:
+  eligible, suppressed, already sent, previously failed, and (for the record) the
+  confirmed accounts excluded because they are not business-workspace owners or
+  admins. A test-list send (up to five explicit addresses) needs a completed dry run.
+  A live send needs a completed dry run and a sent test-list delivery for the same
+  notice version. Real sends also need the exact `confirm` token:
+  `send-test:<version>` or `send-live:<version>`.
 - **Ledger:** `private.policy_notice_runs` and `private.policy_notice_deliveries`
   (service role only) are keyed by notice id, notice version and the SHA-256 of the
   address. They store statuses, timestamps and the SES message id, never an address
   or message content. A recipient's row is claimed before dispatch, so retries and
   restarts never send twice. Unknown outcomes are never retried, and there are no
   reminders. A notice goes out live in one version only. Any change to the content,
-  subject, audience or unsubscribe switch makes a new version, which needs its own
-  dry run and test-list send.
+  subject, Reply-To or audience makes a new version, which needs its own dry run and
+  test-list send. The `bounced` and `complained` statuses are set from SES
+  notifications and count towards the automatic stop.
 - **Pacing and stop:** each call sends a bounded batch: by default 2 per second,
   up to 200 per call, within 240 seconds. Repeat the call until the result says
   `done`. Before each batch, the run stops itself when the bounce, complaint or
   unknown-outcome rate crosses its threshold (defaults 2%, 0.1% and 2%, measured
   over at least 100 attempts).
 
-The template is `apps/infrastructure/src/lib/policy-notice/template.ts` (v3): notice
-v2 with inline styles only, no images, the phone number as plain text, and the
-required-notice footer in both parts. Regression coverage:
-`template.test.ts` (the SES provider's own sanitizer, links allowlist, no images and
-v2 parity), `sender.test.ts`, `mailer.test.ts`, the route's `route.test.ts`, and
-`apps/database/scripts/policy-notice-ledger.test.mjs` (the migration and static
-rollback against PGlite). No email has been sent by these tests.
+The template is `apps/infrastructure/src/lib/policy-notice/template.ts`. It carries
+Cora's final v4 wording, with inline styles only, no images and the phone number as
+plain text. Regression coverage:
+`template.test.ts` (the SES provider's own sanitizer, Reply-To, the links allowlist,
+no images and v4 parity), `sender.test.ts`, `mailer.test.ts`, the route's
+`route.test.ts`, and `apps/database/scripts/policy-notice-ledger.test.mjs` (the
+migration and static rollback against PGlite). No email has been sent by these tests.
+
+The in-app notice for accounts that get no email is separate. `legalNotice` only
+renders on `/legal/changes`; no signed-in banner reads it yet.

@@ -1,7 +1,6 @@
-// Policy-change notice, template v3: notice v2 made sanitizer-safe, plus the
-// required-notice footer from the legal ruling of 4 Nov 2026. Inline styles
-// only. Every difference from v2 is listed in the pull request and enforced by
-// template.test.ts against the v2 fixture.
+// Policy-change notice: Cora's final v4 wording (4 Nov 2026), made
+// sanitizer-safe. Inline styles only. Every difference from v4 is listed in the
+// pull request and enforced by template.test.ts against the v4 fixture.
 
 export const POLICY_NOTICE_SUBJECT =
   'Tuturuuu: cập nhật Điều khoản và Chính sách quyền riêng tư';
@@ -14,10 +13,10 @@ export const POLICY_NOTICE_ALLOWED_LINKS: readonly string[] = [
 ];
 
 export const POLICY_NOTICE_FOOTER_VI =
-  'Đây là thông báo bắt buộc về Điều khoản và Chính sách quyền riêng tư, được gửi đến mọi chủ sở hữu và quản trị viên không gian làm việc, kể cả khi bạn đã hủy nhận email tiếp thị. Lựa chọn nhận email tiếp thị của bạn không thay đổi.';
+  'Đây là email thông báo về thay đổi Điều khoản và Chính sách quyền riêng tư của Tuturuuu, không phải email quảng cáo.';
 
 export const POLICY_NOTICE_FOOTER_EN =
-  'This is a required notice about our Terms and Privacy Policy, sent to every workspace owner and administrator, including those who have unsubscribed from marketing emails. Your marketing email preferences are unchanged.';
+  "This is a service notice about changes to Tuturuuu's Terms and Privacy Policy, not a marketing email.";
 
 const FONT =
   "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;";
@@ -35,7 +34,7 @@ const ITEM = 'margin-bottom:6px;';
 const BODY = 'margin:0 0 12px 0;font-size:15px;line-height:24px;color:#1F2937;';
 const CONTACT = 'margin:0;font-size:14px;line-height:22px;color:#4B5563;';
 const FOOTER_NOTE =
-  'margin:12px 0 0 0;font-size:13px;line-height:20px;color:#4B5563;';
+  'margin:12px 0 0 0;font-size:13px;line-height:20px;color:#6B7280;';
 const LINK = 'color:#4180E9;';
 
 function buttons(labels: [string, string, string]) {
@@ -65,7 +64,7 @@ export const POLICY_NOTICE_HTML = `<div style="display:none;max-height:0;overflo
     </tr></table>
 
     <h1 style="margin:24px 0 8px 0;${H1}">Chúng tôi cập nhật Điều khoản và Chính sách quyền riêng tư</h1>
-    <p style="${LEAD}">Bạn nhận được email này vì bạn là chủ sở hữu hoặc quản trị viên một không gian làm việc trên Tuturuuu.</p>
+    <p style="${LEAD}">Bạn nhận được email này vì bạn là chủ sở hữu hoặc quản trị viên của một không gian làm việc trên Tuturuuu.</p>
 
     <h2 style="${H2}">Điểm chính</h2>
     <ul style="${LIST}">
@@ -121,7 +120,7 @@ export const POLICY_NOTICE_HTML = `<div style="display:none;max-height:0;overflo
 export const POLICY_NOTICE_TEXT = `Tuturuuu
 
 CHÚNG TÔI CẬP NHẬT ĐIỀU KHOẢN VÀ CHÍNH SÁCH QUYỀN RIÊNG TƯ
-Bạn nhận được email này vì bạn là chủ sở hữu hoặc quản trị viên một không gian làm việc trên Tuturuuu.
+Bạn nhận được email này vì bạn là chủ sở hữu hoặc quản trị viên của một không gian làm việc trên Tuturuuu.
 
 Điểm chính
 - Nói rõ vai trò: trường học, trung tâm và doanh nghiệp quản lý dữ liệu học viên, khách hàng của mình; Tuturuuu xử lý dữ liệu thay cho họ.

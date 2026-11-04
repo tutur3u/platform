@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { SESEmailProvider } from '@tuturuuu/email-service/providers/ses';
 import { describe, expect, it } from 'vitest';
+import { POLICY_CHANGE_NOTICE } from './definition';
 import {
   POLICY_NOTICE_ALLOWED_LINKS,
   POLICY_NOTICE_FOOTER_EN,
@@ -13,8 +14,9 @@ import {
 
 const fixture = (name: string) =>
   readFileSync(resolve(__dirname, '__fixtures__', name), 'utf8');
-const V2_HTML = fixture('notice-v2.html.txt');
-const V2_TEXT = fixture('notice-v2.txt');
+// Cora's final v4 wording, byte-for-byte (sha256 fdf906d0… and 119d9f48…).
+const V4_HTML = fixture('notice-v4.html.txt');
+const V4_TEXT = fixture('notice-v4.txt');
 const VI_CONTACT =
   'Câu hỏi và yêu cầu về quyền riêng tư: legal@tuturuuu.com · 1900 1509';
 const EN_CONTACT =
@@ -25,10 +27,8 @@ function parse(html: string) {
 }
 
 // Text a reader can see: the body only, so <title> and <style> never count.
-function visibleText(html: string, without: string[] = []) {
-  let text = (parse(html).body.textContent ?? '').replace(/\s+/g, ' ').trim();
-  for (const part of without) text = text.replace(part, ' ');
-  return text.replace(/\s+/g, ' ').trim();
+function visibleText(html: string) {
+  return (parse(html).body.textContent ?? '').replace(/\s+/g, ' ').trim();
 }
 
 function hrefs(html: string) {
@@ -60,6 +60,7 @@ async function sendThroughSesProvider() {
       subject: POLICY_NOTICE_SUBJECT,
       html: POLICY_NOTICE_HTML,
       text: POLICY_NOTICE_TEXT,
+      replyTo: POLICY_CHANGE_NOTICE.replyTo,
     },
   });
   expect(result.success).toBe(true);
@@ -69,15 +70,17 @@ async function sendThroughSesProvider() {
       Subject: { Data: string };
       Body: { Html?: { Data: string }; Text?: { Data: string } };
     };
+    ReplyToAddresses?: string[];
   };
   return {
     html: input.Message.Body.Html?.Data ?? '',
     text: input.Message.Body.Text?.Data ?? '',
     subject: input.Message.Subject.Data,
+    replyTo: input.ReplyToAddresses,
   };
 }
 
-describe('policy notice template v3', () => {
+describe('policy notice template (v4 wording)', () => {
   it('uses inline styles only: no <style>, classes, role, lang or comments', () => {
     expect(POLICY_NOTICE_HTML).not.toMatch(/<style|<head|<meta|<title/i);
     expect(POLICY_NOTICE_HTML).not.toMatch(/\sclass=|\srole=|\slang=/i);
@@ -101,6 +104,13 @@ describe('policy notice template v3', () => {
     expect(sent.html.length).toBeGreaterThan(0);
     expect(sent.text).toBe(POLICY_NOTICE_TEXT);
     expect(sent.subject).toBe(POLICY_NOTICE_SUBJECT);
+  });
+
+  it('replies to legal@tuturuuu.com', async () => {
+    const sent = await sendThroughSesProvider();
+
+    expect(POLICY_CHANGE_NOTICE.replyTo).toEqual(['legal@tuturuuu.com']);
+    expect(sent.replyTo).toEqual(['legal@tuturuuu.com']);
   });
 
   it('shows the phone number as plain text, never a tel: link', async () => {
@@ -148,7 +158,7 @@ describe('policy notice template v3', () => {
     }
   });
 
-  it('adds the required-notice footer after each contact line, in both parts', () => {
+  it('adds the service-notice footer after each contact line, in both parts', () => {
     const html = visibleText(POLICY_NOTICE_HTML);
     expect(html.indexOf(POLICY_NOTICE_FOOTER_VI)).toBeGreaterThan(
       html.indexOf(VI_CONTACT)
@@ -164,24 +174,19 @@ describe('policy notice template v3', () => {
     );
   });
 
-  it('keeps the v2 wording apart from the listed robustness changes', () => {
-    // Content identical to v2 except the added footer lines.
-    expect(
-      visibleText(POLICY_NOTICE_HTML, [
-        POLICY_NOTICE_FOOTER_VI,
-        POLICY_NOTICE_FOOTER_EN,
-      ])
-    ).toBe(visibleText(V2_HTML));
+  it('keeps the v4 wording exactly, apart from the listed robustness changes', () => {
+    expect(visibleText(POLICY_NOTICE_HTML)).toBe(visibleText(V4_HTML));
     // Same links minus tel:, which became plain text.
     expect(hrefs(POLICY_NOTICE_HTML)).toEqual(
-      hrefs(V2_HTML).filter((href) => !href.startsWith('tel:'))
+      hrefs(V4_HTML).filter((href) => !href.startsWith('tel:'))
     );
-    expect(POLICY_NOTICE_SUBJECT).toBe(parse(V2_HTML).title);
-    expect(POLICY_NOTICE_TEXT).toBe(
-      V2_TEXT.replace(
-        VI_CONTACT,
-        `${VI_CONTACT}\n\n${POLICY_NOTICE_FOOTER_VI}`
-      ).replace(EN_CONTACT, `${EN_CONTACT}\n\n${POLICY_NOTICE_FOOTER_EN}`)
+    expect(POLICY_NOTICE_SUBJECT).toBe(parse(V4_HTML).title);
+    expect(POLICY_NOTICE_TEXT).toBe(V4_TEXT);
+    expect(POLICY_NOTICE_FOOTER_VI).toBe(
+      'Đây là email thông báo về thay đổi Điều khoản và Chính sách quyền riêng tư của Tuturuuu, không phải email quảng cáo.'
+    );
+    expect(POLICY_NOTICE_FOOTER_EN).toBe(
+      "This is a service notice about changes to Tuturuuu's Terms and Privacy Policy, not a marketing email."
     );
   });
 });

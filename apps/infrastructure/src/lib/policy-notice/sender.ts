@@ -50,26 +50,6 @@ export interface PolicyNoticeDeps {
   notice: PolicyNoticeDefinition;
 }
 
-const ALWAYS_SUPPRESSED = new Set<Suppression>([
-  'complaint',
-  'hard_bounce',
-  'blocked',
-]);
-
-// Test-list addresses are typed by an operator, so they never get the
-// unsubscribe bypass; only system-selected owners and admins can.
-function effectiveSuppression(
-  suppression: Suppression | null,
-  notice: PolicyNoticeDefinition,
-  mode: SendMode
-): Suppression | null {
-  if (suppression === null) return null;
-  if (ALWAYS_SUPPRESSED.has(suppression)) return suppression;
-  return mode === 'live' && notice.marketingUnsubscribe === 'send'
-    ? null
-    : suppression;
-}
-
 function parseRequest(input: unknown, version: string) {
   const parsed = requestSchema.safeParse(input ?? {});
   if (!parsed.success) throw new PolicyNoticeError('invalid_request');
@@ -116,7 +96,6 @@ class SendSession {
   constructor(
     private readonly deps: PolicyNoticeDeps,
     private readonly runId: string,
-    private readonly mode: SendMode,
     private readonly limits: PolicyNoticeLimits,
     private readonly deadline: number
   ) {}
@@ -149,40 +128,20 @@ class SendSession {
     this.counts[claimed ? 'suppressed' : 'skipped']++;
   }
 
-  /** Returns false when the time budget is spent before this recipient. */
+  /**
+   * Every suppression is honoured, unsubscribes included. Returns false when
+   * the time budget is spent before this recipient.
+   */
   async deliver(recipient: Recipient): Promise<boolean> {
     const { store, mailer, notice } = this.deps;
-    const suppression = effectiveSuppression(
-      recipient.suppression,
-      notice,
-      this.mode
-    );
-    if (suppression) {
-      await this.suppress(recipient, suppression);
+    if (recipient.suppression) {
+      await this.suppress(recipient, recipient.suppression);
       return true;
     }
     if (!(await this.pace())) return false;
     if (!(await store.claim(this.runId, recipient.recipientHash, null))) {
       this.counts.skipped++;
       return true;
-    }
-
-    let bypassUnsubscribe = false;
-    if (recipient.suppression === 'unsubscribed') {
-      // The bypass skips the email service's own blacklist check, so confirm
-      // right before dispatch that the global unsubscribe is still the only entry.
-      const [fresh] = await store.classify([recipient.email]);
-      const current = fresh?.suppression ?? null;
-      const blocking = effectiveSuppression(current, notice, this.mode);
-      if (blocking) {
-        await store.record(this.runId, recipient.recipientHash, {
-          status: 'suppressed',
-          suppression: blocking,
-        });
-        this.counts.suppressed++;
-        return true;
-      }
-      bypassUnsubscribe = current === 'unsubscribed';
     }
 
     this.dispatched = true;
@@ -194,7 +153,7 @@ class SendSession {
         html: notice.html,
         text: notice.text,
         noticeId: notice.id,
-        bypassUnsubscribe,
+        replyTo: notice.replyTo,
       });
     } catch (error) {
       console.error('[PolicyNotice] Dispatch threw; outcome unknown', {
@@ -259,7 +218,6 @@ async function runSend(
   const session = new SendSession(
     deps,
     runId,
-    mode,
     limits,
     clock.now() + limits.timeBudgetMs
   );
@@ -306,7 +264,6 @@ async function runSend(
       const page = await store.nextRecipients({
         noticeId: notice.id,
         version,
-        includePersonalWorkspaces: notice.includePersonalWorkspaces,
         limit: Math.min(
           limits.batchSize,
           limits.maxSendsPerInvocation - session.processed
@@ -352,8 +309,6 @@ export async function runPolicyNotice(
     const counts = await deps.store.counts({
       noticeId: deps.notice.id,
       version,
-      includePersonalWorkspaces: deps.notice.includePersonalWorkspaces,
-      honourUnsubscribes: deps.notice.marketingUnsubscribe === 'suppress',
     });
     const runId = await startRun(deps, version, 'dry_run', actorId);
     await deps.store.finishRun(runId, 'completed', null, {

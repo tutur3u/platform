@@ -1,7 +1,7 @@
 export type PolicyNoticeMode = 'dry_run' | 'test_list' | 'live';
 export type SendMode = Exclude<PolicyNoticeMode, 'dry_run'>;
 
-/** 'unsubscribed' is the global unsubscribe; the rest always suppress. */
+/** Every reason suppresses; 'unsubscribed' is the global unsubscribe. */
 export type Suppression =
   | 'complaint'
   | 'hard_bounce'
@@ -20,6 +20,8 @@ export interface AudienceCounts {
   alreadySent: number;
   /** Earlier failed or unknown outcomes; never retried automatically. */
   previouslyFailed: number;
+  /** For the record: confirmed accounts outside the audience. */
+  excludedPersonalOnly: number;
 }
 
 export interface DeliveryHealth {
@@ -44,12 +46,7 @@ export type DeliveryOutcome =
   | { status: 'suppressed'; suppression: Suppression };
 
 export interface PolicyNoticeStore {
-  counts(input: {
-    noticeId: string;
-    version: string;
-    includePersonalWorkspaces: boolean;
-    honourUnsubscribes: boolean;
-  }): Promise<AudienceCounts>;
+  counts(input: { noticeId: string; version: string }): Promise<AudienceCounts>;
   /** Throws `policy_notice_gate:<code>` when the ledger gate refuses. */
   startRun(input: {
     noticeId: string;
@@ -66,7 +63,6 @@ export interface PolicyNoticeStore {
   nextRecipients(input: {
     noticeId: string;
     version: string;
-    includePersonalWorkspaces: boolean;
     limit: number;
   }): Promise<Recipient[]>;
   classify(emails: string[]): Promise<Recipient[]>;
@@ -97,8 +93,7 @@ export interface PolicyNoticeMailer {
     html: string;
     text: string;
     noticeId: string;
-    /** Only for a recipient whose sole suppression is the global unsubscribe. */
-    bypassUnsubscribe: boolean;
+    replyTo: string[];
   }): Promise<MailerOutcome>;
 }
 
