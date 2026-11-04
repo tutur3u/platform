@@ -2,21 +2,23 @@ name: git Cloudflare Build
 on:
   workflow_dispatch:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
     paths: ['apps/git/**', 'packages/**', 'bun.lock', '.github/workflows/git-cloudflare.yaml']
 permissions:
   contents: read
 jobs:
   build:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ github.event_name != 'pull_request' && secrets.PRODUCTION_SUPABASE_URL || vars.PRODUCTION_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
       NEXT_PUBLIC_APP_URL: https://git.tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       CI_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: ./.github/actions/setup-bun-with-retry
@@ -30,12 +32,23 @@ jobs:
       - name: Build Start Worker
         working-directory: apps/git
         run: bun run build:cloudflare
+      - name: Check bridge routes and native types
+        working-directory: apps/git
+        run: |
+          bun run routes:check
+          bun run type-check:cloudflare
+      - name: Record emitted config receipt
+        run: node scripts/ci/native-emitted-config-receipt.mjs apps/git "$CI_SOURCE_SHA" "$RUNNER_TEMP/git-config-receipt.json"
+      - name: Anonymous root and closed ingress smoke
+        working-directory: apps/git
+        run: node --test cloudflare/anonymous.runtime.mjs
       - name: Package deployable Worker and assets
         run: |
           mkdir -p "$RUNNER_TEMP/cutover"
           tar -czf "$RUNNER_TEMP/cutover/git-worker.tgz" -C apps/git dist
+          cp "$RUNNER_TEMP/git-config-receipt.json" "$RUNNER_TEMP/cutover/"
           echo "$CI_SOURCE_SHA" > "$RUNNER_TEMP/cutover/SOURCE_SHA"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: git-cutover-${{ github.event.pull_request.head.sha || github.sha }}
           path: ${{ runner.temp }}/cutover/
