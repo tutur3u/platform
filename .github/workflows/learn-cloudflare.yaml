@@ -1,0 +1,59 @@
+name: learn Cloudflare artifact
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
+    paths: ['apps/learn/**', 'packages/**', 'bun.lock', '.github/workflows/learn-cloudflare.yaml']
+permissions:
+  contents: read
+concurrency:
+  group: learn-cloudflare-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci')
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      NEXT_PUBLIC_SUPABASE_URL: https://nzamlzqfdwaaxdefwraj.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_APP_URL: https://learn.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.SOURCE_SHA }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Record exact source identity
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ env.SOURCE_SHA }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.head_ref || github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build native app and workspace suppliers
+        uses: ./.github/actions/run-with-turbo-remote-cache
+        with:
+          command: bun turbo:local run build --filter=@tuturuuu/learn --concurrency=2
+          token: ''
+          team: ''
+      - name: Package deployable Worker, config and assets
+        run: |
+          test -d apps/learn/dist/client
+          test -f apps/learn/.wrangler/deploy/config.json
+          printf '%s\n' "$SOURCE_SHA" > apps/learn/dist/SOURCE_SHA
+          tar -C apps/learn -czf "$RUNNER_TEMP/learn-cloudflare.tar.gz" dist .wrangler/deploy/config.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: learn-cloudflare-${{ env.SOURCE_SHA }}
+          path: ${{ runner.temp }}/learn-cloudflare.tar.gz
+          retention-days: 7
+          if-no-files-found: error
