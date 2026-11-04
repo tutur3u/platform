@@ -54,6 +54,7 @@ const identity = {
     { tag: 'meet-live-v1', new_sqlite_classes: ['MeetLiveDurableObject'] },
   ],
   vars: {
+    NODE_ENV: 'production',
     NEXT_PUBLIC_APP_URL: 'https://meet.tuturuuu.com',
     NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
     MEET_REALTIME_URL: 'wss://meet-realtime.tuturuuu.com/realtime',
