@@ -3,8 +3,9 @@
 // in-memory PGlite schema: no real database, queue or email provider, and
 // nothing can send. Proves that private.request_periodic_report_resend
 // re-checks the confirmed state under the row lock: a report in flight, sent,
-// with an unknown outcome or skipped is never queued again, a stuck queue row
-// is re-requested exactly once, and a refusal changes nothing.
+// with an unknown outcome, skipped, regenerating, failed for a non-retryable
+// error or a test delivery is never queued again, a stuck queue row is
+// re-requested exactly once, and a refusal changes nothing.
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -59,6 +60,12 @@ async function setup() {
   );
   await db.exec(
     await canonical(
+      '20260912110000_periodic_report_stages.sql',
+      'create or replace function private.periodic_report_stage('
+    )
+  );
+  await db.exec(
+    await canonical(
       RESEND_MIGRATION,
       'create or replace function private.request_periodic_report_resend('
     )
@@ -77,13 +84,21 @@ async function setup() {
 }
 
 const one = async (db, sql) => (await db.query(sql)).rows[0];
-const resend = async (db, expected) =>
+const resendResult = async (db, expected) =>
   (
     await one(
       db,
       `select private.request_periodic_report_resend('${REPORT}', '${WS}', '${expected}', true) as r`
     )
-  ).r.code;
+  ).r;
+const resend = async (db, expected) => (await resendResult(db, expected)).code;
+const kind = async (db) =>
+  (
+    await one(
+      db,
+      `select delivery_kind as k from private.user_report_email_queue where report_id = '${REPORT}'`
+    )
+  )?.k;
 const request = async (db, action) =>
   (
     await one(
@@ -206,6 +221,97 @@ test('a failed or approved-unsent report is resent once; a skipped one never', a
     for (const expected of ['draft', 'failed', 'queued', 'blocked'])
       assert.equal(await resend(db, expected), 409, expected);
     assert.equal((await state(db)).report, 'skipped');
+  } finally {
+    await db.close();
+  }
+});
+
+test('a stuck or failed test delivery is never resent as a real send', async () => {
+  const db = await setup();
+  try {
+    assert.equal(await request(db, 'test'), 200);
+    assert.equal(await kind(db), 'test');
+    await ageQueue(db, 120);
+    const stuck = await resendResult(db, 'queued');
+    assert.equal(stuck.code, 409, 'a stuck test');
+    assert.match(stuck.message, /test deliveries are never resent/i);
+    assert.deepEqual(await state(db), {
+      report: 'queued',
+      queue: 'queued',
+      rows: 1,
+    });
+    assert.equal(await kind(db), 'test', 'the stuck test is not cancelled');
+
+    for (const status of ['failed', 'blocked']) {
+      await db.exec(`update private.user_report_email_queue
+        set status = '${status}', last_error = 'Email provider rejected the delivery.';
+        update private.external_user_monthly_reports
+        set delivery_status = '${status}', last_delivery_error = 'Email provider rejected the delivery.'`);
+      const failed = await resendResult(db, status);
+      assert.equal(failed.code, 409, `a ${status} test`);
+      assert.match(failed.message, /test deliveries are never resent/i);
+      assert.equal((await state(db)).queue, status);
+      assert.equal(await kind(db), 'test', 'never converted to a real send');
+    }
+  } finally {
+    await db.close();
+  }
+});
+
+test('a stage change since the count is refused, even with the same delivery state', async () => {
+  const db = await setup();
+  try {
+    // Held (approved, never sent), then regenerated after the count.
+    await db.exec(`update private.external_user_monthly_reports
+      set generation_status = 'generating'`);
+    assert.equal(await resend(db, 'draft'), 409, 'regenerating');
+    await db.exec(`update private.external_user_monthly_reports
+      set generation_status = 'draft'`);
+    assert.equal(await resend(db, 'draft'), 409, 'back to draft');
+    assert.equal((await state(db)).rows, 0);
+
+    // A failed report regenerating is refused too.
+    await db.exec(`update private.external_user_monthly_reports
+      set generation_status = 'generating', delivery_status = 'failed',
+        last_delivery_error = 'Email provider rejected the delivery.'`);
+    assert.equal(await resend(db, 'failed'), 409, 'failed, regenerating');
+    assert.equal((await state(db)).rows, 0);
+
+    await db.exec(`update private.external_user_monthly_reports
+      set generation_status = 'ready'`);
+    assert.equal(await resend(db, 'failed'), 200, 'stage failed again');
+  } finally {
+    await db.close();
+  }
+});
+
+test('a failed or blocked report is resent only for a retryable error', async () => {
+  const db = await setup();
+  try {
+    for (const error of [
+      'Recipient is unsubscribed or blocked.',
+      'Suppression lookup unavailable.',
+      'Subject profile email is missing.',
+      'Delivery gate blocked: disabled',
+      'Periodic report email contract mismatch.',
+      'Delivery migration is not applied.',
+      'Email provider is not configured.',
+      'Report approval changed before rendering.',
+      'Report is not approved.',
+      'Report subject changed before rendering.',
+    ])
+      for (const status of ['failed', 'blocked']) {
+        await db.exec(`update private.external_user_monthly_reports
+          set delivery_status = '${status}', last_delivery_error = '${error}'`);
+        const result = await resendResult(db, status);
+        assert.equal(result.code, 409, `${status}: ${error}`);
+        assert.match(result.message, /fix the delivery error/i);
+      }
+    assert.equal((await state(db)).rows, 0, 'nothing queued');
+    await db.exec(`update private.external_user_monthly_reports
+      set delivery_status = 'blocked',
+        last_delivery_error = 'Periodic report email delivery is disabled for this workspace.'`);
+    assert.equal(await resend(db, 'blocked'), 200, 'a gate since enabled');
   } finally {
     await db.close();
   }

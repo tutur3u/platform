@@ -380,15 +380,19 @@ report that:
 A report is never resent when it was sent or may have been sent (unknown
 outcome, provider accepted), is processing or recently queued, was skipped or
 cancelled by a person, or failed for a reason that needs a fix first
-(suppression, missing email, setup, approval change). Resend is offered per
+(suppression, missing email, setup, approval change). A test delivery is never
+resent: Resend always requests a real send, so a stuck or failed `[TEST]` email
+would otherwise reach the recipient as the real report. Resend is offered per
 row (failed and stuck rows; held rows keep **Send**), for the selected rows
 ("Gửi lại các mục đã chọn"), and per period and/or class. The confirmation
 shows the server's exact count.
 
 Each report goes through `private.request_periodic_report_resend`. Under the
 report row lock it re-checks the delivery state the administrator confirmed
-(a report skipped, cancelled, sent, processing or changed since the count is
-refused), refuses anything that may already have been delivered, cancels a
+and stage (a report skipped, cancelled, sent, processing, regenerating or
+changed since the count is refused), the retryable-error rule and the delivery
+kind (a test delivery is refused), refuses anything that may already have been
+delivered, cancels a
 stuck queue row and requests delivery through
 `private.request_periodic_report_delivery` with its guards, all in one
 transaction; if delivery is refused, nothing changes. The action is recorded in

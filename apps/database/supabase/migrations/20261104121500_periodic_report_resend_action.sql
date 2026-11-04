@@ -29,7 +29,14 @@ comment on table private.periodic_report_held_actions is
 
 -- Resend one report, only from the delivery state the admin confirmed, under
 -- the report row lock. A report skipped, cancelled, sent, processing or
--- changed in any way since the count is refused, never queued. A stuck queue
+-- changed in any way since the count (delivery state or stage) is refused,
+-- never queued. A test delivery is never resent: resend always requests a real
+-- send, so a stuck or failed [TEST] email would otherwise reach the recipient
+-- as the real report. A failed or blocked report is resent only for a
+-- retryable error, the same rule as the app's Delivery failure category
+-- (periodicDeliveryCategory in
+-- packages/users-core/src/routes/users/reports/report-delivery-category.ts;
+-- keep both lists in sync). A stuck queue
 -- row (queued for more than 60 minutes, past the 15-minute worker lease) is
 -- cancelled and re-requested in the same transaction, so a worker either
 -- claimed it first (and this refuses) or never sees it twice. Delivery itself
@@ -64,12 +71,32 @@ begin
   if report.delivery_status is distinct from p_expected_status
      or report.report_approval_status is distinct from 'APPROVED'
      or report.delivered_at is not null
+     -- The stage the admin saw: approved (held) for a draft, else the same
+     -- as the delivery state. A report regenerating since is refused.
+     or private.periodic_report_stage(report.generation_status,
+       report.report_approval_status::text, report.delivery_status)
+       is distinct from (case p_expected_status
+         when 'draft' then 'approved' else p_expected_status end)
      or (p_expected_status = 'draft'
        and nullif(btrim(report.last_delivery_error), '') is not null) then
     return jsonb_build_object('code', 409, 'message', 'This report changed. Review it again.');
   end if;
+  -- Only a retryable error: suppression, missing email, setup or approval
+  -- errors need a fix first. Unknown outcomes are refused below.
+  if p_expected_status in ('failed', 'blocked')
+     and report.last_delivery_error ilike any (array[
+       '%suppression%', '%unsubscribed%', '%recipient is blocked%',
+       '%profile email is missing%', '%delivery gate blocked%', '%contract%',
+       '%migration%', '%not configured%', '%approval changed%',
+       '%not approved%', '%subject changed%']) then
+    return jsonb_build_object('code', 409, 'message', 'Fix the delivery error before resending this report.');
+  end if;
   select * into queue from private.user_report_email_queue
     where report_id = p_report_id for update;
+  -- A test delivery stays a test: never re-request it as a real send.
+  if queue.delivery_kind = 'test' then
+    return jsonb_build_object('code', 409, 'message', 'Test deliveries are never resent. Send a test again, or use Send for the real report.');
+  end if;
   -- Sent or possibly sent: never again. request_periodic_report_delivery
   -- also refuses these, but only for its own queue-row wording.
   if queue.sent_at is not null or queue.provider_message_id is not null

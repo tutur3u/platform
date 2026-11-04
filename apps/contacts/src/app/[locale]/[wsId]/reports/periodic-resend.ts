@@ -17,6 +17,8 @@ export function periodicResendReason(
 ): ResendRowReason | null {
   if (report.report_approval_status !== 'APPROVED') return null;
   if (!report.user_email?.trim()) return null;
+  // A test delivery is never resent as a real send.
+  if (report.test_delivery) return null;
   const category = periodicDeliveryCategory(report);
   if (category === 'unknown') return null;
   if (report.delivery_status === 'queued') {

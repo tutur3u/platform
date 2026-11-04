@@ -148,9 +148,11 @@ const minutesAgo = (now: number, at: string | null | undefined) => {
  * Why a report may be resent, or null when it must not be. Never: a report
  * that was sent or may have been sent (unknown outcome, provider accepted),
  * is in flight (processing, or queued for less than the stuck threshold),
- * was skipped or cancelled by a person, is not approved, has no recipient, or
+ * was skipped or cancelled by a person, is not approved, has no recipient,
  * failed for a reason that needs a fix first (suppression, missing email,
- * infrastructure, approval change).
+ * infrastructure, approval change), or is a test delivery. Resend always
+ * requests a real send, so a stuck or failed [TEST] email is never resent: it
+ * would reach the recipient as the real report.
  */
 export function resendReason(
   report: ResendReport,
@@ -161,6 +163,7 @@ export function resendReason(
   if (report.report_approval_status !== 'APPROVED') return null;
   if (!report.user_email?.trim()) return null;
   if (queue) {
+    if (queue.delivery_kind === 'test') return null;
     if (queue.sent_at || queue.provider_message_id) return null;
     if (queue.status === 'sent' && queue.delivery_kind === 'send') return null;
     if (queue.status === 'processing') return null;
@@ -168,6 +171,13 @@ export function resendReason(
   }
   if (report.delivery_status === 'processing') return null;
   if (unknownOutcome(report.last_delivery_error)) return null;
+  // The database refuses a report whose stage moved on (e.g. regenerating).
+  if (
+    report.report_stage &&
+    report.report_stage !==
+      (report.delivery_status === 'draft' ? 'approved' : report.delivery_status)
+  )
+    return null;
 
   if (queue?.status === 'queued' || report.delivery_status === 'queued') {
     if (report.delivery_status !== 'queued') return null;

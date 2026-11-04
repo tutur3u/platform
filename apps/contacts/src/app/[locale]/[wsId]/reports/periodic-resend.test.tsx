@@ -152,6 +152,14 @@ describe('client resend hint', () => {
     ])
       expect(periodicResendReason(value, NOW)).toBeNull();
   });
+
+  it('never offers resend for a stuck or failed test delivery', () => {
+    for (const value of [
+      report({ ...stuck, test_delivery: { status: 'queued', sent_at: null } }),
+      report({ ...failed, test_delivery: { status: 'failed', sent_at: null } }),
+    ])
+      expect(periodicResendReason(value, NOW)).toBeNull();
+  });
 });
 
 describe('per-row Resend', () => {

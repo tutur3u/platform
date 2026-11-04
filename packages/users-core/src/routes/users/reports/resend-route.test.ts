@@ -229,8 +229,11 @@ function fakeQuery(table: string) {
 
 const UNKNOWN =
   'Email delivery outcome is unknown. Check provider logs before retrying.';
+const NOT_RETRYABLE =
+  /suppression|unsubscribed|recipient is blocked|profile email is missing|delivery gate blocked|contract|migration|not configured|approval changed|not approved|subject changed/i;
 // private.request_periodic_report_resend, simulated: under the row lock it
-// re-checks the confirmed state, refuses anything possibly sent, re-checks a
+// re-checks the confirmed state and stage, refuses a non-retryable error or a
+// test delivery, refuses anything possibly sent, re-checks a
 // stuck row, cancels it and delegates to request_periodic_report_delivery's
 // guards (409 for processing, sent, still queued or unknown outcome). A
 // refusal changes nothing.
@@ -248,13 +251,24 @@ async function fakeRpc(name: string, args: Row) {
   if (!target) return { data: { code: 404 }, error: null };
   const queue = store.queue.find((row) => row.report_id === target.id);
   const conflict = { data: { code: 409 }, error: null };
+  const expectedStage =
+    args.p_expected_status === 'draft' ? 'approved' : args.p_expected_status;
   if (
     target.delivery_status !== args.p_expected_status ||
+    target.report_stage !== expectedStage ||
     target.report_approval_status !== 'APPROVED' ||
     target.delivered_at ||
     (args.p_expected_status === 'draft' && target.last_delivery_error)
   )
     return conflict;
+  if (
+    (args.p_expected_status === 'failed' ||
+      args.p_expected_status === 'blocked') &&
+    NOT_RETRYABLE.test(String(target.last_delivery_error ?? ''))
+  )
+    return conflict;
+  // A test delivery is never re-requested as a real send.
+  if (queue?.delivery_kind === 'test') return conflict;
   const errors = `${target.last_delivery_error ?? ''} ${queue?.last_error ?? ''}`;
   if (
     queue?.sent_at ||
@@ -446,10 +460,23 @@ describe('resend eligibility', () => {
     provider_message_id: null,
     ...change,
   });
+  // The view's stage follows the delivery state unless a test overrides it.
   const reason = (
     change: Partial<ResendReport>,
     q: ResendQueue | null = null
-  ) => resendReason({ ...base, ...change }, q, NOW);
+  ) =>
+    resendReason(
+      {
+        ...base,
+        report_stage:
+          !change.delivery_status || change.delivery_status === 'draft'
+            ? 'approved'
+            : change.delivery_status,
+        ...change,
+      },
+      q,
+      NOW
+    );
   const stuck = {
     delivery_status: 'queued',
     report_stage: 'queued',
@@ -477,10 +504,42 @@ describe('resend eligibility', () => {
     // Report says queued, but no queue row will ever deliver it.
     expect(reason(stuck, null)).toBe('stuck');
     expect(reason({})).toBe('held');
-    // A finished test send does not make a report sent.
-    expect(reason({}, queue({ status: 'sent', delivery_kind: 'test' }))).toBe(
-      'held'
-    );
+  });
+
+  it('never resends a test delivery as a real send', () => {
+    const failed = {
+      delivery_status: 'failed',
+      last_delivery_error: 'Email provider rejected the delivery.',
+    };
+    // The same reports as real sends are eligible...
+    expect(reason(stuck, queue())).toBe('stuck');
+    expect(reason(failed, queue({ status: 'failed' }))).toBe('failed');
+    // ...but a stuck, failed or blocked [TEST] delivery is not.
+    const test = { delivery_kind: 'test' };
+    expect(reason(stuck, queue(test))).toBeNull();
+    expect(reason(failed, queue({ ...test, status: 'failed' }))).toBeNull();
+    expect(
+      reason(
+        { ...failed, delivery_status: 'blocked' },
+        queue({ ...test, status: 'blocked' })
+      )
+    ).toBeNull();
+    // A finished test is not resent either; held Send now stays available.
+    expect(reason({}, queue({ ...test, status: 'sent' }))).toBeNull();
+  });
+
+  it('excludes a report whose stage moved on, as the database re-check does', () => {
+    expect(reason({ report_stage: 'processing' })).toBeNull();
+    expect(
+      reason({ ...stuck, report_stage: 'processing' }, queue())
+    ).toBeNull();
+    expect(
+      reason({
+        delivery_status: 'failed',
+        last_delivery_error: 'Email provider rejected the delivery.',
+        report_stage: 'processing',
+      })
+    ).toBeNull();
   });
 
   it('excludes sent reports and any report that may have been sent', () => {
@@ -715,6 +774,84 @@ describe('resend action', () => {
     expect((await response.json()).count).toBe(0);
     expect(store.rpcCalls).toEqual([]);
     expect(store.audit).toEqual([]);
+  });
+
+  it('never resends a stuck or failed test delivery, even when selected', async () => {
+    store.view.push(
+      report('13', {
+        delivery_status: 'queued',
+        report_stage: 'queued',
+        delivery_requested_at: ago(STUCK_QUEUED_AFTER_MINUTES + 30),
+      }),
+      report('14', {
+        delivery_status: 'failed',
+        report_stage: 'failed',
+        last_delivery_error: 'Email provider rejected the delivery.',
+      })
+    );
+    store.queue.push(
+      queueRow('13', { delivery_kind: 'test' }),
+      queueRow('14', {
+        delivery_kind: 'test',
+        status: 'failed',
+        last_error: 'Email provider rejected the delivery.',
+      })
+    );
+    const ids = [id('13'), id('14')];
+    const counted = await preview(`?target=selection&reportIds=${ids}`);
+    expect((await counted.json()).count).toBe(0);
+    const response = await resend({
+      target: 'selection',
+      reportIds: ids,
+      expectedCount: 2,
+      idempotencyKey: '00000000-0000-4000-8000-0000000000e6',
+    });
+    expect(response.status).toBe(409);
+    expect((await response.json()).count).toBe(0);
+    expect(store.rpcCalls).toEqual([]);
+    expect(
+      store.queue
+        .filter((row) => ids.includes(String(row.report_id)))
+        .map((row) => [row.delivery_kind, row.status])
+    ).toEqual([
+      ['test', 'queued'],
+      ['test', 'failed'],
+    ]);
+  });
+
+  it('refuses in the database a report that became a test delivery after the count', async () => {
+    // An admin sends a test between the count and the resend.
+    store.beforeRpc = (args) => {
+      if (args.p_report_id === id('01')) {
+        const row = store.queue.find((q) => q.report_id === id('01'));
+        if (row) Object.assign(row, { delivery_kind: 'test' });
+      }
+    };
+    const response = await resend(scopeBody());
+    expect(await response.json()).toMatchObject({ requested: 3, affected: 2 });
+    expect(queuedAgain()).toEqual([id('02'), id('03')]);
+    expect(store.queue.find((q) => q.report_id === id('01'))).toMatchObject({
+      delivery_kind: 'test',
+      status: 'failed',
+    });
+    expect(store.audit[0]).toMatchObject({
+      affected_count: 2,
+      report_ids: [id('02'), id('03')],
+    });
+  });
+
+  it('refuses in the database a report whose stage changed after the count', async () => {
+    store.beforeRpc = (args) => {
+      if (args.p_report_id === id('03'))
+        Object.assign(store.view[2] as Row, {
+          generation_status: 'generating',
+          report_stage: 'processing',
+        });
+    };
+    const response = await resend(scopeBody());
+    expect(await response.json()).toMatchObject({ requested: 3, affected: 2 });
+    expect(queuedAgain()).toEqual([id('01'), id('02')]);
+    expect(store.queue.some((q) => q.report_id === id('03'))).toBe(false);
   });
 
   it('replays a re-click without acting again or charging the rate limit', async () => {
