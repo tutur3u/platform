@@ -7,8 +7,23 @@ export const DELIVERY_CATEGORIES = [
   'unknown',
   'approval',
   'failure',
+  'held',
 ] as const;
 export type DeliveryCategory = (typeof DELIVERY_CATEGORIES)[number];
+
+// Approved, but no delivery was ever requested. Approval queues a send only
+// while auto-send is on at that moment, so these wait for an explicit admin
+// choice. Mirrors the server classification in users-core.
+export function isHeldPeriodicReport(report: PeriodicReport) {
+  return (
+    (report.report_stage
+      ? report.report_stage === 'approved'
+      : report.generation_status === 'ready') &&
+    report.report_approval_status === 'APPROVED' &&
+    report.delivery_status === 'draft' &&
+    !report.last_delivery_error?.trim()
+  );
+}
 
 // Categories describe recorded evidence, not a fresh provider or suppression check.
 export function periodicDeliveryCategory(
@@ -49,5 +64,11 @@ export function periodicDeliveryCategory(
     error
   )
     return 'failure';
+  if (isHeldPeriodicReport(report)) return 'held';
   return null;
+}
+
+// Held is a waiting state, not a recorded blocker: it keeps manual Send and Test.
+export function isBlockingDeliveryCategory(category: DeliveryCategory | null) {
+  return category !== null && category !== 'held';
 }

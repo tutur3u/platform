@@ -47,6 +47,7 @@ import {
 } from './periodic-delivery-selection';
 import { PeriodicDeliveryWorklist } from './periodic-delivery-worklist';
 import { PeriodicEmailReadiness } from './periodic-email-readiness';
+import { PeriodicHeldReports } from './periodic-held-reports';
 import {
   type PeriodicRecipientIntent,
   PeriodicRecipientRemediation,
@@ -78,6 +79,7 @@ export default function PeriodicReportsPanel({
   permissions,
   wsId,
   cadence: controlledCadence,
+  canResolveHeld = false,
 }: {
   permissions: {
     canApproveReports: boolean;
@@ -90,6 +92,8 @@ export default function PeriodicReportsPanel({
   };
   wsId: string;
   cadence?: PeriodicReportCadence | 'all';
+  /** Admin Send now / Skip for approved, never-sent reports (server-checked). */
+  canResolveHeld?: boolean;
 }) {
   const t = useTranslations('reports-hub');
   const queryClient = useQueryClient();
@@ -278,6 +282,19 @@ export default function PeriodicReportsPanel({
     ? ownedData?.pages[0]?.categoryCounts
     : undefined;
   const totalReports = currentRows ? ownedData?.pages[0]?.total : undefined;
+  // All stages in scope, so the group stays visible on the default view.
+  const heldCount = counts?.held;
+  const changeCategory = (category: DeliveryCategory | null) => {
+    setCategoryFilter(category);
+    // Held reports are all in the approved stage; show them, not an empty list.
+    if (category === 'held')
+      void setFilters({
+        stage: 'approved',
+        approval: 'all',
+        delivery: 'all',
+        generation: 'all',
+      });
+  };
   const numberFormatter = new Intl.NumberFormat();
   const invalidate = () =>
     Promise.all([
@@ -494,7 +511,8 @@ export default function PeriodicReportsPanel({
         currentRows={currentRows}
         pending={deliveryMutation.isPending}
         categoryFilter={categoryFilter}
-        onCategoryChange={setCategoryFilter}
+        heldCount={heldCount}
+        onCategoryChange={changeCategory}
         onSelectAll={() =>
           setSelection({
             epoch,
@@ -513,6 +531,16 @@ export default function PeriodicReportsPanel({
             reports: selected.map((report) => ({ ...report })),
           })
         }
+      />
+      <PeriodicHeldReports
+        wsId={wsId}
+        heldCount={heldCount}
+        canResolve={canResolveHeld}
+        cadence={cadence}
+        periodStart={periodStart}
+        periodEnd={periodEnd}
+        onReview={() => changeCategory('held')}
+        onResolved={() => void invalidate()}
       />
       {reportsQuery.isPlaceholderData && (
         <p role="status" className="text-muted-foreground text-xs">

@@ -23,7 +23,10 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { periodicDeliveryCategory } from './periodic-delivery-category';
+import {
+  isBlockingDeliveryCategory,
+  periodicDeliveryCategory,
+} from './periodic-delivery-category';
 import {
   PeriodicStageBadge,
   PeriodicStatusBadge,
@@ -201,7 +204,7 @@ export function PeriodicReportRow({
           !['queued', 'processing', 'sent', 'failed', 'blocked'].includes(
             report.delivery_status
           ) &&
-          !category ? (
+          !isBlockingDeliveryCategory(category) ? (
             <Button
               size="sm"
               variant="outline"
@@ -263,7 +266,7 @@ function DeliveryMenu({
         !['queued', 'processing', 'sent', 'failed', 'blocked'].includes(
           report.delivery_status
         ) &&
-        !periodicDeliveryCategory(report) ? (
+        !isBlockingDeliveryCategory(periodicDeliveryCategory(report)) ? (
           <>
             <DropdownMenuItem onSelect={() => onDeliveryIntent('test')}>
               <Send className="mr-2 h-4 w-4" />

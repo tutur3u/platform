@@ -5,15 +5,40 @@ export const DELIVERY_CATEGORIES = [
   'unknown',
   'approval',
   'failure',
+  'held',
 ] as const;
 export type DeliveryCategory = (typeof DELIVERY_CATEGORIES)[number];
 
-// Categories describe recorded evidence, not a fresh provider or suppression check.
-export function periodicDeliveryCategory(report: {
+interface HeldCandidate {
   delivery_status: string | null;
-  user_email: string | null;
+  delivered_at?: string | null;
+  generation_status?: string | null;
   last_delivery_error: string | null;
-}): DeliveryCategory | null {
+  report_approval_status?: string | null;
+  report_stage?: string | null;
+}
+
+// Approved, but no delivery was ever requested: not queued, processing, sent,
+// failed, blocked, skipped or cancelled. Approval queues a send only while
+// auto-send is on at that moment, so these wait for an explicit choice.
+// Classification only: nothing here, or anywhere automatic, requests them.
+export function isHeldPeriodicReport(report: HeldCandidate) {
+  const approvedStage = report.report_stage
+    ? report.report_stage === 'approved'
+    : report.generation_status === 'ready';
+  return (
+    approvedStage &&
+    report.report_approval_status === 'APPROVED' &&
+    report.delivery_status === 'draft' &&
+    !report.delivered_at &&
+    !report.last_delivery_error?.trim()
+  );
+}
+
+// Categories describe recorded evidence, not a fresh provider or suppression check.
+export function periodicDeliveryCategory(
+  report: HeldCandidate & { user_email: string | null }
+): DeliveryCategory | null {
   if (report.delivery_status === 'sent') return null;
   const error = report.last_delivery_error?.toLowerCase() ?? '';
   if (
@@ -49,5 +74,6 @@ export function periodicDeliveryCategory(report: {
     error
   )
     return 'failure';
+  if (isHeldPeriodicReport(report)) return 'held';
   return null;
 }

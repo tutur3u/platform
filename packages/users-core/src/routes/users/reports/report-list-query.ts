@@ -109,6 +109,8 @@ export function summarizeReportList(rows: CountableReport[]) {
       blocked: stages.blocked,
       failed: stages.failed,
       delivered: stages.sent,
+      // Approved, never requested: waiting for an explicit admin choice.
+      held: categoryCounts.held,
     },
   };
 }

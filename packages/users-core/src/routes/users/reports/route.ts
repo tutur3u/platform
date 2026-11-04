@@ -92,7 +92,7 @@ const ListReportsSchema = z.object({
 
 // Columns needed to summarize the stage cards and delivery categories.
 const SUMMARY_COLUMNS =
-  'id,report_stage,delivery_status,user_email,last_delivery_error';
+  'id,report_stage,delivery_status,user_email,last_delivery_error,report_approval_status,generation_status,delivered_at';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -319,6 +319,9 @@ export async function GET(request: Request, { params }: Params) {
       | 'delivery_status'
       | 'user_email'
       | 'last_delivery_error'
+      | 'report_approval_status'
+      | 'generation_status'
+      | 'delivered_at'
     >;
     const [allRows, stageSummaryRows, workspaceResult] = await Promise.all([
       collectScope('list'),

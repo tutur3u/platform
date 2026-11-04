@@ -35,6 +35,9 @@ const fixture = [
   id,
   report_stage: stage,
   delivery_status: stage === 'sent' ? 'sent' : 'draft',
+  report_approval_status: stage === 'pending' ? 'PENDING' : 'APPROVED',
+  generation_status: 'ready',
+  delivered_at: stage === 'sent' ? '2026-10-21T03:00:00Z' : null,
   user_email: `${id}@example.test`,
   last_delivery_error: null,
   created_at: '2026-10-20T03:00:00Z',
@@ -120,7 +123,30 @@ it('reports every stage count on first load while listing only the default pendi
   expect(body.counts.pendingReview).toBe(3);
   expect(body.counts.approved).toBe(2);
   expect(body.counts.delivered).toBe(1);
+  // Approved, never-sent reports stay visible from the default pending view.
+  expect(body.counts.held).toBe(2);
+  expect(body.categoryCounts.held).toBe(0);
   expect(body.summaryPartial).toBe(false);
+});
+
+it('counts held reports from the all-stage summary columns', async () => {
+  const response = await GET(
+    new Request('https://example.test/reports?stage=pending&category=held'),
+    { params: Promise.resolve({ wsId: 'workspace' }) }
+  );
+  const body = await response.json();
+  expect(body.data).toEqual([]);
+  expect(body.counts.held).toBe(2);
+  const summary = reportQueries().find(
+    (url) => url.searchParams.get('select') !== '*'
+  );
+  expect(summary?.searchParams.get('select')?.split(',')).toEqual(
+    expect.arrayContaining([
+      'report_approval_status',
+      'generation_status',
+      'delivered_at',
+    ])
+  );
 });
 
 it.each(['cap', 'error'] as const)(
