@@ -108,6 +108,17 @@ describe('writeFeeLockWorkbook', () => {
       'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
     );
     expect(await sha256Hex(bytes)).toMatch(/^[0-9a-f]{64}$/);
-    expect(feeLockExportFileName('2026-12')).toBe('chot-hoc-phi-2026-12.xlsx');
+    const ws = '0000000A-0000-4000-8000-0000000fe010';
+    expect(feeLockExportFileName('2026-12', ws)).toBe(
+      'chot-hoc-phi-2026-12-0000000a.xlsx'
+    );
+    for (const [month, id] of [
+      ['2026-12"; x=.exe', ws],
+      ['2026-13', ws],
+      ['2026-12', 'personal'],
+      ['2026-12', 'Nguyễn Văn A'],
+    ]) {
+      expect(() => feeLockExportFileName(month ?? '', id ?? '')).toThrow();
+    }
   });
 });
