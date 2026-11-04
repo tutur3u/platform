@@ -35,7 +35,7 @@ test('cutover builds package both profiles without a test prerequisite', () => {
     'utf8'
   );
   assert.match(workflow, /profile: \[staging, production\]/);
-  assert.match(workflow, /nzamlzqfdwaaxdefwraj.supabase.co/);
+  assert.match(workflow, /secrets.PRODUCTION_SUPABASE_URL/);
   assert.match(workflow, /cms-cutover-/);
   assert.match(workflow, /cms-native-artifact.py pack/);
   assert.doesNotMatch(workflow, /needs:.*native|run:.*test:runtime/);
