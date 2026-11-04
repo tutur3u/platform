@@ -1,4 +1,5 @@
 import type { Tables } from '@tuturuuu/types';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import type { MiraToolContext } from '../mira-tools';
 import {
   getWorkspaceContextWorkspaceId,
@@ -116,6 +117,16 @@ export async function executeSetWorkspaceContext(
       strict: true,
     });
 
+    if (
+      !(await workspaceAiAllowed(
+        resolvedContext.wsId,
+        'unknown',
+        ctx.userId,
+        true
+      ))
+    ) {
+      return { error: 'Workspace AI is unavailable' };
+    }
     ctx.workspaceContext = resolvedContext;
 
     return {

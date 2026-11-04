@@ -1,6 +1,7 @@
 import { assertMeetAiRoom } from '@tuturuuu/meet-core/features/meeting-ai/server/room-gate';
 import { getScenarioPrompt } from '@tuturuuu/meet-core/parley/repository';
 import { MEETING_APP } from '@tuturuuu/meet-core/runtime';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import { meetingProviderTransport } from '../../meeting-ai/server/provider-transport';
 import 'server-only';
 import { capMaxOutputTokensByCredits } from '@tuturuuu/ai/credits/cap-output-tokens';
@@ -70,6 +71,8 @@ export async function generateMeetAssistant(
       })
     : undefined;
   const workspaceId = existing?.workspaceId ?? input.workspaceId ?? wsId;
+  if (!(await workspaceAiAllowed(workspaceId, 'learner-data', access.user.id)))
+    throw new MeetCallAccessError(403, 'Workspace AI is unavailable');
   const db = await createAdminClient({ noCookie: true });
   const membership = await verifyWorkspaceMembershipType({
     supabase: db,

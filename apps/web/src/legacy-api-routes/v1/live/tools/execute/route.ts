@@ -5,6 +5,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TablesUpdate } from '@tuturuuu/types';
+import { workspaceAiAllowed } from '@tuturuuu/utils/workspace-ai-policy-server';
 import {
   getWorkspaceTier,
   normalizeWorkspaceId,
@@ -22,7 +23,6 @@ export async function POST(req: Request) {
   let functionName: string | undefined;
 
   try {
-    // 1. Authenticate user
     const supabase = await createClient(req);
     const { user } = await resolveAuthenticatedSessionUser(supabase);
 
@@ -41,7 +41,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Normalize workspace ID (personal → UUID, internal → ROOT_WORKSPACE_ID)
     let normalizedWsId: string;
     try {
       normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
@@ -82,7 +81,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // 4. Check tier requirement for voice assistant capability
+    if (!(await workspaceAiAllowed(normalizedWsId, 'unknown', user.id, true))) {
+      return Response.json(
+        { error: 'Workspace AI is unavailable' },
+        { status: 403 }
+      );
+    }
+
     const currentTier = await getWorkspaceTier(normalizedWsId, {
       useAdmin: true,
     });
@@ -94,7 +99,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // 5. Execute the tool based on function name
     let result: unknown;
 
     switch (functionName) {
@@ -123,7 +127,6 @@ export async function POST(req: Request) {
         result = await getTasksByAssignee(normalizedWsId, args);
         break;
 
-      // Visualization tools
       case 'visualize_task_list':
         result = await visualizeTaskList(normalizedWsId, user.id, args);
         break;
@@ -180,8 +183,6 @@ export async function POST(req: Request) {
   }
 }
 
-// Tool implementations
-
 async function getMyTasks(
   normalizedWsId: string,
   userId: string,
@@ -190,7 +191,6 @@ async function getMyTasks(
   const supabase = await createClient();
   const category = (args.category as string) || 'all';
 
-  // Fetch all accessible tasks using the RPC function
   const { data: rpcTasks, error: tasksError } = await supabase.rpc(
     'get_user_accessible_tasks',
     {
@@ -213,7 +213,6 @@ async function getMyTasks(
     throw new Error(`Failed to fetch tasks: ${tasksError.message}`);
   }
 
-  // Map RPC results to a simpler structure
   // Note: The RPC already filters by p_list_statuses, so returned tasks are in specified statuses
   type RpcTask = {
     task_id: string;
