@@ -314,7 +314,6 @@
   },
   "trustedDependencies": [
     "@tailwindcss/oxide",
-    "@vercel/analytics",
     "@vercel/speed-insights",
     "canvas",
     "core-js",

@@ -8,7 +8,7 @@ import { Toaster } from '@tuturuuu/ui/sonner';
 import { font, generateCommonMetadata } from '@tuturuuu/utils/common/nextjs';
 import { cn } from '@tuturuuu/utils/format';
 import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
-import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
+import { VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
 import { locale as getRootLocale } from 'next/root-params';
 import { NuqsAdapter } from 'nuqs/adapters/next/app';
@@ -64,7 +64,6 @@ export default async function RootLayout({ children }: Props) {
           font.className
         )}
       >
-        <VercelAnalytics />
         <VercelInsights />
         <Suspense fallback={null}>
           <NuqsAdapter>

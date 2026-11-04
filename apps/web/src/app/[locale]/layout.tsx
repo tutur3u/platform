@@ -94,14 +94,9 @@ async function VercelRuntimeSignals() {
     return null;
   }
 
-  const { VercelAnalytics, VercelInsights } = await import('@tuturuuu/vercel');
+  const { VercelInsights } = await import('@tuturuuu/vercel');
 
-  return (
-    <>
-      <VercelAnalytics />
-      <VercelInsights />
-    </>
-  );
+  return <VercelInsights />;
 }
 
 async function ProductionDatabaseIndicator() {

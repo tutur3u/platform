@@ -1,25 +1,14 @@
 'use client';
 
-import { Analytics, type AnalyticsProps } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import type { ComponentProps } from 'react';
 import { redactSensitiveUrl } from './redact-url';
 
 export { redactSensitiveUrl } from './redact-url';
 
-/** Vercel Analytics with credential-bearing URL parameters redacted. */
-export function VercelAnalytics(props: AnalyticsProps) {
-  const { beforeSend } = props;
-  return (
-    <Analytics
-      {...props}
-      beforeSend={(event) => {
-        const next = beforeSend ? beforeSend(event) : event;
-        return next && { ...next, url: redactSensitiveUrl(next.url) };
-      }}
-    />
-  );
-}
+// Vercel Web Analytics is intentionally not exported.
+// It ran for every visitor without consent, so it was turned off for all
+// visitors. `no-web-analytics.test.ts` fails if it is mounted again.
 
 /** Vercel Speed Insights with credential-bearing URL parameters redacted. */
 export function VercelInsights(props: ComponentProps<typeof SpeedInsights>) {

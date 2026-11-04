@@ -76,7 +76,6 @@ vi.mock('@tuturuuu/utils/format', () => ({
 }));
 
 vi.mock('@tuturuuu/vercel', () => ({
-  VercelAnalytics: () => null,
   VercelInsights: () => null,
 }));
 

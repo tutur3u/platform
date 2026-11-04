@@ -7,7 +7,7 @@ import { Toaster } from '@tuturuuu/ui/sonner';
 import { generateCommonMetadata } from '@tuturuuu/utils/common/metadata';
 import { cn } from '@tuturuuu/utils/format';
 import { resolveRootLocale } from '@tuturuuu/utils/i18n-root-locale';
-import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
+import { VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata, Viewport } from 'next';
 import { Outfit } from 'next/font/google';
 import { locale as getRootLocale } from 'next/root-params';
@@ -76,7 +76,6 @@ export default async function RootLayout({ children }: Props) {
     <html className="dark" lang={locale} suppressHydrationWarning>
       <body className={cn(HIVE_BODY_CLASS_NAME, outfit.className)}>
         <OfflineProvider register={false}>
-          <VercelAnalytics />
           <VercelInsights />
           <Suspense>
             <Providers>
