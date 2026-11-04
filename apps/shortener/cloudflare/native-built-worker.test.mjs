@@ -16,10 +16,12 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { readNativeRuntimeConfig } from '../../../scripts/ci/apps-native-runtime-pointer.mjs';
 import { createShortenerFixture } from './native-fixture.mjs';
+import profiles from './native-profiles.json' with { type: 'json' };
 
 const app = await realpath(fileURLToPath(new URL('../', import.meta.url)));
 const require = createRequire(join(app, 'package.json'));
-const WORKER = 'tuturuuu-shortener-vite-staging';
+const PROFILE = process.env.VITE_SHORTENER_NATIVE_PROFILE || 'staging';
+const { workerName: WORKER, vars: PROFILE_VARS } = profiles[PROFILE];
 const PUBLIC_FILES = [
   'android-chrome-192x192.png',
   'android-chrome-512x512.png',
@@ -78,7 +80,7 @@ test('emitted Shortener Worker preserves redirects, aliases, pages and API owner
   assert.equal(config.assets.run_worker_first, true);
   assert.equal(config.assets.not_found_handling, 'none');
   assert.ok(config.compatibility_flags.includes('nodejs_compat'));
-  assert.deepEqual(config.vars, { TUTURUUU_NOINDEX: '1' });
+  assert.deepEqual(config.vars, PROFILE_VARS);
   for (const name of PUBLIC_FILES)
     assert.equal(
       await sha256(join(app, 'dist/client', name)),
@@ -180,14 +182,23 @@ test('emitted Shortener Worker preserves redirects, aliases, pages and API owner
   );
 
   await t.test(
-    'production hosts stay fenced and aliases keep raw queries',
+    'production hosts follow the profile fence and aliases keep raw queries',
     async () => {
-      for (const host of ['ttr.gg', 'www.ttr.gg', 'shortener.tuturuuu.com']) {
+      const open = PROFILE === 'production';
+      const expected = open
+        ? { 'www.ttr.gg': 308, 'shortener.tuturuuu.com': 307 }
+        : { 'ttr.gg': 503, 'www.ttr.gg': 503, 'shortener.tuturuuu.com': 503 };
+      for (const [host, status] of Object.entries(expected)) {
         const before = fixture.clicks.length;
         const response = await worker.fetch(`https://${host}/abc123?a=1&a=2`, {
           redirect: 'manual',
         });
-        assert.equal(response.status, 503);
+        assert.equal(response.status, status);
+        if (open)
+          assert.equal(
+            response.headers.get('location'),
+            'https://ttr.gg/abc123?a=1&a=2'
+          );
         await response.text();
         assert.equal(fixture.clicks.length, before);
       }

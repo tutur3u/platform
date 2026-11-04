@@ -1,13 +1,15 @@
-"""Validate and preserve the Shortener staging artifact; never deploy.
+"""Validate and preserve a Shortener native artifact (staging by default); never deploy.
 
 Reuses the reviewed Apps seal/restore implementation with Shortener's own
 Worker identity, public files and source-SHA channel.
 """
 import importlib.util
+import json
 import os
 from pathlib import Path
 
-WORKER = "tuturuuu-shortener-vite-staging"
+PROFILE_ENV = "VITE_SHORTENER_NATIVE_PROFILE"
+PROFILES = json.loads((Path(__file__).resolve().parents[2] / "apps/shortener/cloudflare/native-profiles.json").read_text())
 PUBLIC_FILES = (
     "android-chrome-192x192.png",
     "android-chrome-512x512.png",
@@ -20,13 +22,18 @@ PUBLIC_FILES = (
 )
 
 
-def load():
+def load(name=None):
+    name = name if name is not None else os.environ.get(PROFILE_ENV) or "staging"
+    if name not in PROFILES:
+        raise ValueError(f"unknown {PROFILE_ENV}: {name}")
+    selected = PROFILES[name]
+    worker = selected["workerName"]
     path = Path(__file__).with_name("apps-native-artifact.py")
     spec = importlib.util.spec_from_file_location("shortener_native_artifact_base", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    module.IDENTITY = {**module.IDENTITY, "name": WORKER}
-    module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": WORKER}
+    module.IDENTITY = {**module.IDENTITY, "name": worker, "workers_dev": selected["workersDev"], "vars": dict(selected["vars"])}
+    module.NORMALIZED_DEFAULTS = {**module.NORMALIZED_DEFAULTS, "topLevelName": worker}
     module.RECEIPT = "shortener-native-artifact.json"
     module.PUBLIC_FILES = PUBLIC_FILES
     return module

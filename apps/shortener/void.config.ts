@@ -1,17 +1,24 @@
 import { defineConfig } from 'void/config';
+import {
+  resolveShortenerNativeProfile,
+  SHORTENER_NATIVE_PROFILE_ENV,
+} from './cloudflare/native-profile.ts';
 
-// Staging identity only. The canonical hosts stay fenced in the Worker until a
-// reviewed cutover admits Shortener in the production publication policy.
+// Staging by default. Routes attach at cutover, never from config.
+const profile = resolveShortenerNativeProfile(
+  process.env[SHORTENER_NATIVE_PROFILE_ENV]
+);
+
 export default defineConfig({
   target: 'cloudflare',
   remote: false,
   cloudflare: {
-    name: 'tuturuuu-shortener-vite-staging',
+    name: profile.workerName,
     main: './cloudflare/worker.ts',
     compatibility_date: '2026-10-12',
     compatibility_flags: ['nodejs_compat'],
-    workers_dev: true,
-    vars: { TUTURUUU_NOINDEX: '1' },
+    workers_dev: profile.workersDev,
+    vars: profile.vars,
     assets: {
       binding: 'ASSETS',
       directory: './dist/client',

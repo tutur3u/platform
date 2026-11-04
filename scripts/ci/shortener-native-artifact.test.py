@@ -49,6 +49,17 @@ class ShortenerArtifactTest(unittest.TestCase):
         self.assertEqual(base.IDENTITY["name"], "tuturuuu-apps-vite-staging")
         self.assertEqual(base.PUBLIC_FILES, ("robots.txt", "sitemap.xml"))
 
+    def test_production_profile_is_routeless_and_opens_the_host_fence(self):
+        production = wrapper.load("production")
+        self.assertEqual(production.IDENTITY["name"], "tuturuuu-shortener")
+        self.assertEqual(production.NORMALIZED_DEFAULTS["topLevelName"], "tuturuuu-shortener")
+        self.assertIs(production.IDENTITY["workers_dev"], False)
+        self.assertEqual(production.IDENTITY["vars"]["SHORTENER_CANONICAL_HOST_ENABLED"], "1")
+        self.assertNotIn("TUTURUUU_NOINDEX", production.IDENTITY["vars"])
+        self.assertNotIn("SHORTENER_CANONICAL_HOST_ENABLED", artifact.IDENTITY["vars"])
+        with self.assertRaisesRegex(ValueError, "unknown VITE_SHORTENER_NATIVE_PROFILE"):
+            wrapper.load("preview")
+
     def test_seal_pack_restore_round_trip(self):
         app, _ = self.fixture()
         receipt = artifact.artifact(app, SHA)

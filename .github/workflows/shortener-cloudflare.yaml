@@ -118,8 +118,7 @@ jobs:
       deployments: read
     with:
       workflow_name: shortener-cloudflare.yaml
-  # Qualification only: production publication stays HELD by
-  # scripts/ci/production-publication-policy.ts and no staging publisher exists.
+  # Qualification only: these jobs hold no provider credential and never publish.
   native:
     needs: check-ci
     if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
@@ -141,5 +140,28 @@ jobs:
         NEXT_PUBLIC_APP_URL=https://ttr.gg
         NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
         TUTURUUU_NOINDEX=1
+      format-paths: >-
+        apps/shortener/src/link apps/shortener/src/native apps/shortener/src/components apps/shortener/src/routes apps/shortener/src/router.tsx apps/shortener/src/start.ts apps/shortener/cloudflare apps/shortener/vite.config.mts apps/shortener/void.config.ts apps/shortener/vitest.config.ts apps/shortener/tsconfig.json apps/shortener/package.json apps/shortener/start-bridge.routes.json
+  native-production:
+    needs: check-ci
+    # Production public values are unavailable to fork pull requests.
+    if: (needs.check-ci.outputs.should_run == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)) && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    uses: ./.github/workflows/native-start-app.yaml
+    permissions:
+      contents: read
+    with:
+      app: shortener
+      package: '@tuturuuu/shortener'
+      artifact-script: scripts/ci/shortener-native-artifact.py
+      env-interface: ShortenerGeneratedEnv
+      worker-environment-type: ShortenerEnvironment
+      helper-tests: python3 scripts/ci/shortener-native-artifact.test.py
+      profile-env: VITE_SHORTENER_NATIVE_PROFILE=production
+      artifact-suffix: production
+      # The Worker reads Supabase settings at runtime from provisioned secrets;
+      # no browser code uses them, so they stay out of this build.
+      public-env: |
+        NEXT_PUBLIC_APP_URL=https://ttr.gg
+        NEXT_PUBLIC_WEB_APP_URL=https://tuturuuu.com
       format-paths: >-
         apps/shortener/src/link apps/shortener/src/native apps/shortener/src/components apps/shortener/src/routes apps/shortener/src/router.tsx apps/shortener/src/start.ts apps/shortener/cloudflare apps/shortener/vite.config.mts apps/shortener/void.config.ts apps/shortener/vitest.config.ts apps/shortener/tsconfig.json apps/shortener/package.json apps/shortener/start-bridge.routes.json
