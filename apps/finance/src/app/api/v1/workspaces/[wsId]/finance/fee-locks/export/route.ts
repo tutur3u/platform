@@ -16,6 +16,8 @@ interface Params {
 }
 
 const METADATA_BUDGET = 7000; // fee_lock_events.metadata is capped at 8 KB
+/** The order loadFeeLockExportEntries returns, logged so an export can be replayed. */
+const EXPORT_SORT = 'student_name:vi,fee_lock_id';
 
 /**
  * Server-built Excel export of a month's fee locks: locked revisions (their
@@ -57,14 +59,19 @@ export async function POST(request: Request, { params }: Params) {
     )
   );
 
-  // Ids, counts and digests only: no names (design §2.4).
+  // Ids, enums, counts and digests only: no names (design §2.4). The request
+  // parameters are always logged, so a revision list left out for size can be
+  // rebuilt and checked against revisions_sha256.
   const revisions = ordered.flatMap(([id, entry]) =>
     entry.revision === null ? [] : [[id, entry.revision]]
   );
   const metadata: Record<string, Json> = {
+    ws_id: wsId,
     period: month,
     status_filter: status,
     group_id: groupId ?? null,
+    locale,
+    sort: EXPORT_SORT,
     include_notice: false,
     row_count: ordered.length,
     sha256: await sha256Hex(bytes),
@@ -89,7 +96,7 @@ export async function POST(request: Request, { params }: Params) {
     status: 200,
     headers: {
       'Content-Type': FEE_LOCK_EXPORT_CONTENT_TYPE,
-      'Content-Disposition': `attachment; filename="${feeLockExportFileName(month)}"`,
+      'Content-Disposition': `attachment; filename="${feeLockExportFileName(month, wsId)}"`,
       'Cache-Control': 'no-store',
       'X-Content-Type-Options': 'nosniff',
     },
