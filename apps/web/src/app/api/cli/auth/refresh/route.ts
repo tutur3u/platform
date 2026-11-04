@@ -4,6 +4,7 @@ import {
   verifyCliRefreshToken,
 } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getConfirmedAuthEmail } from '@tuturuuu/supabase/next/user';
 import {
   isKnownReplay,
   preLimitReplayAttempt,
@@ -127,12 +128,24 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const sbAdmin = await createAdminClient({ noCookie: true });
-  const { data, error } = await sbAdmin.auth.admin.getUserById(
-    verification.claims.sub
-  );
+  // SR-926: every refresh re-reads Auth for this subject. The new session's
+  // email is the confirmed Auth email only, never the old token's claim.
+  const authLookup = await createAdminClient({ noCookie: true })
+    .then((sbAdmin) => sbAdmin.auth.admin.getUserById(verification.claims.sub))
+    .catch(() => null);
 
-  if (error || !data.user) {
+  if (!authLookup || authLookup.error) {
+    return NextResponse.json(
+      {
+        code: 'AUTH_IDENTITY_UNAVAILABLE',
+        error: 'Unable to verify account identity',
+      },
+      { status: 503, headers: { 'Retry-After': '30' } }
+    );
+  }
+
+  const { data } = authLookup;
+  if (!data.user || data.user.id !== verification.claims.sub) {
     return NextResponse.json(
       { error: 'Invalid or expired refresh token' },
       { status: 401 }
@@ -153,7 +166,7 @@ export async function POST(request: NextRequest) {
   const policy = await getCliAppSessionPolicy();
   const session = createCliAppSession({
     accessExpiresInSeconds: policy.cliAccessTtlSeconds,
-    email: data.user.email ?? verification.claims.email,
+    email: getConfirmedAuthEmail(data.user),
     mfa: verification.claims.mfa,
     refreshExpiresInSeconds: policy.cliRefreshTtlSeconds,
     userId: verification.claims.sub,

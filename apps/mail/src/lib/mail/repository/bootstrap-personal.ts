@@ -3,7 +3,7 @@ import type { MailRouteContext } from '../types';
 import {
   type AnyRecord,
   getCanonicalUserDisplayName,
-  normalizeAddress,
+  getConfirmedOwnerAddress,
   privateTable,
   SYSTEM_LABELS,
 } from './shared';
@@ -19,7 +19,11 @@ export async function resolvePersonalMailbox(
   admin: AnyRecord,
   ctx: MailRouteContext
 ) {
-  const email = normalizeAddress(ctx.user.email ?? '');
+  // SR-926: never ctx.user.email, which comes from the bearer claim.
+  const email = await getConfirmedOwnerAddress(admin, ctx.user.id);
+  if (!email) {
+    throw new Error('A confirmed account email is required for a mailbox');
+  }
   const [displayName, existing, memberRows] = await Promise.all([
     getCanonicalUserDisplayName(admin, ctx.user.id),
     privateTable(admin, 'mail_mailboxes')
@@ -60,6 +64,7 @@ export async function resolvePersonalMailbox(
   return {
     displayName,
     mailbox,
+    ownerAddress: email,
     memberRows: [
       ...memberRows.filter((row) => row.mailbox_id !== mailbox.id),
       { mailbox_id: mailbox.id as string, role: 'owner' },

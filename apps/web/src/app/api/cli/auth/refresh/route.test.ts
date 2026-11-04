@@ -1,4 +1,8 @@
-import { createCliAppSession } from '@tuturuuu/auth/cli-session';
+import {
+  createCliAppSession,
+  verifyCliAccessToken,
+  verifyCliRefreshToken,
+} from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { NextRequest } from 'next/server';
@@ -35,15 +39,16 @@ describe('CLI auth refresh route', () => {
     vi.mocked(createAdminClient).mockResolvedValue({
       auth: {
         admin: {
-          getUserById: vi.fn().mockResolvedValue({
+          getUserById: vi.fn(async (id: string) => ({
             data: {
               user: {
                 email: 'agent@example.com',
-                id: 'user-1',
+                email_confirmed_at: '2026-06-01T00:00:00.000Z',
+                id,
               },
             },
             error: null,
-          }),
+          })),
         },
       },
     } as never);
@@ -280,5 +285,99 @@ describe('CLI auth refresh route', () => {
       'CLI refresh replay protection unavailable; continuing'
     );
     expect(createAdminClient).toHaveBeenCalled();
+  });
+  describe('SR-926 email authority', () => {
+    const forgedEmail = 'sr926-forged@attacker.example';
+
+    function mockAuthLookup(
+      result:
+        | { data: { user: Record<string, unknown> | null }; error: unknown }
+        | Error
+    ) {
+      vi.mocked(createAdminClient).mockResolvedValue({
+        auth: {
+          admin: {
+            getUserById: vi.fn(async () => {
+              if (result instanceof Error) throw result;
+              return result;
+            }),
+          },
+        },
+      } as never);
+    }
+
+    async function refreshForged(userId: string) {
+      const oldSession = createCliAppSession({ email: forgedEmail, userId });
+      return POST(refreshRequest(oldSession.refresh.token));
+    }
+
+    it('re-mints a forged-email token with the confirmed Auth email', async () => {
+      const response = await refreshForged('user-sr926-a');
+
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(JSON.stringify(body)).not.toContain(forgedEmail);
+      const access = verifyCliAccessToken(body.session.access_token);
+      const refresh = verifyCliRefreshToken(body.session.refresh_token);
+      expect(access.ok && access.claims.email).toBe('agent@example.com');
+      expect(refresh.ok && refresh.claims.email).toBe('agent@example.com');
+    });
+
+    it('carries no email, never the claim, when Auth email is unconfirmed', async () => {
+      mockAuthLookup({
+        data: {
+          user: {
+            email: 'agent@example.com',
+            email_confirmed_at: null,
+            id: 'user-sr926-b',
+          },
+        },
+        error: null,
+      });
+
+      const response = await refreshForged('user-sr926-b');
+
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(JSON.stringify(body)).not.toContain(forgedEmail);
+      const access = verifyCliAccessToken(body.session.access_token);
+      expect(access.ok).toBe(true);
+      if (access.ok) expect(access.claims.email ?? null).toBeNull();
+    });
+
+    it('fails closed with 503 when Auth returns an error', async () => {
+      mockAuthLookup({ data: { user: null }, error: { message: 'down' } });
+
+      const response = await refreshForged('user-sr926-c');
+
+      expect(response.status).toBe(503);
+      const body = await response.json();
+      expect(body.code).toBe('AUTH_IDENTITY_UNAVAILABLE');
+      expect(body.session).toBeUndefined();
+    });
+
+    it('fails closed with 503 when the Auth lookup throws', async () => {
+      mockAuthLookup(new Error('network'));
+
+      const response = await refreshForged('user-sr926-d');
+
+      expect(response.status).toBe(503);
+      expect((await response.json()).session).toBeUndefined();
+    });
+
+    it('refuses a refresh when Auth returns a different subject', async () => {
+      mockAuthLookup({
+        data: {
+          user: {
+            email: 'agent@example.com',
+            email_confirmed_at: '2026-06-01T00:00:00.000Z',
+            id: 'someone-else',
+          },
+        },
+        error: null,
+      });
+
+      expect((await refreshForged('user-sr926-e')).status).toBe(401);
+    });
   });
 });
