@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { SECURITY, UNSAFE } from './fields';
+import { orgTextAllowed, orgTextDenied, singleScript } from './org-text';
+
+export { orgTextDenied };
 
 // Stable join ID, not a confidentiality control: roleKey is public.
 // Publisher: first 16 bytes of HMAC-SHA256(secret, role key), lowercase hex.
@@ -7,23 +9,14 @@ export const orgKeySchema = z
   .string()
   .length(32)
   .regex(/^[a-f0-9]{32}$/);
-// Name alternatives below are fixture-specific canaries, not general name detection.
-const ORG_UNSAFE =
-  /(?:^|\s)(?:\/[\w.-]+|[a-z]:\\|\.\.?\/)|\b(?:feature|feat|fix|bugfix|hotfix|release|chore|docs|refactor|perf|claude)\/|\b(?:thread|run|session)[-_:][a-z0-9_-]+|\b(?:ignore (?:all |previous )?instructions|system prompt|you are (?:an? |the )|assistant:|<\/?(?:system|prompt)>|customer|khách hàng)\b|\b(?:Nguyễn Văn An|Trần Thị Bình|Lê Minh Châu)\b/iu;
-export function orgTextDenied(value: string) {
-  value = value.normalize('NFKC').replace(/[\p{Cc}\p{Cf}]/gu, '');
-  return UNSAFE.test(value) || SECURITY.test(value) || ORG_UNSAFE.test(value);
-}
+// Every org text field rejects (never strips or rewrites) invisible, control,
+// separator and non-NFC/NFKC-stable input, so the stored value is what renders.
 const boundedText = (max: number) =>
-  z
-    .string()
-    .min(1)
-    .max(max)
-    .refine((value) =>
-      [...value].every((c) => c.charCodeAt(0) > 31 && c.charCodeAt(0) !== 127)
-    );
+  z.string().min(1).max(max).refine(orgTextAllowed);
 const cleanText = (max: number) =>
   boundedText(max).refine((value) => !orgTextDenied(value));
+// Identifier-like fields also refuse letters mixed from several scripts.
+const identText = (max: number) => cleanText(max).refine(singleScript);
 export const orgStatusSchema = z.enum([
   'working',
   'waiting',
@@ -46,12 +39,12 @@ export const orgAreaSchema = z.enum([
 ]);
 const orgNodeFields = {
   key: orgKeySchema,
-  label: cleanText(80),
-  role: cleanText(80),
+  label: identText(80),
+  role: identText(80),
   area: orgAreaSchema.optional(),
-  team: cleanText(64).optional(),
-  pool: cleanText(64).optional(),
-  modelFamily: cleanText(80).optional(),
+  team: identText(64).optional(),
+  pool: identText(64).optional(),
+  modelFamily: identText(80).optional(),
   status: orgStatusSchema,
   activity: orgActivitySchema,
   taskTitle: boundedText(80)

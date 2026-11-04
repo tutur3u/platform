@@ -1,6 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
-import { orgSchema } from './contract-v3';
 import { seriesSchema } from './contract-v2';
+import { orgSchema } from './contract-v3';
 import {
   initializeDecisions,
   readDecisions,
@@ -106,7 +106,13 @@ export class OpsHub extends DurableObject<Env> {
     if (!flags.enabled) return json({ error: 'Hub paused' }, 503);
     if (request.method === 'POST' && url.pathname === '/ingest') {
       const payload: unknown = await request.json();
-      if (typeof payload === 'object' && payload !== null && 'v' in payload && payload.v !== 2 && payload.v !== 3)
+      if (
+        typeof payload === 'object' &&
+        payload !== null &&
+        'v' in payload &&
+        payload.v !== 2 &&
+        payload.v !== 3
+      )
         return json({ error: 'Unsupported version', versions: [2, 3] }, 400);
       const parsed = ingestSchema.safeParse(payload);
       if (!parsed.success) return json({ error: 'Invalid payload' }, 400);

@@ -76,15 +76,19 @@ it('closes every new object boundary and refuses humans and customer relations',
     expect(ingestSchema.safeParse(invalid).success).toBe(false);
 });
 it.each(ORG_CANARIES)(
-  'refuses $kind labels and drops whole $kind task titles',
+  'refuses $kind labels and never stores $kind task titles',
   ({ value }) => {
     expect(ingestSchema.safeParse(withNode({ label: value })).success).toBe(
       false
     );
-    const parsed = ingestSchema.parse(withNode({ taskTitle: value }));
-    if (parsed.v !== 3) throw new Error('Expected v3');
-    expect(parsed.snapshot?.org?.nodes[0]?.taskTitle).toBeNull();
-    expect(JSON.stringify(parsed)).not.toContain(value);
+    // Invisible or non-normalized titles reject the payload; the rest are nulled.
+    const result = ingestSchema.safeParse(withNode({ taskTitle: value }));
+    if (result.success) {
+      const parsed = result.data;
+      if (parsed.v !== 3) throw new Error('Expected v3');
+      expect(parsed.snapshot?.org?.nodes[0]?.taskTitle).toBeNull();
+      expect(JSON.stringify(parsed)).not.toContain(value);
+    }
     for (const field of ['role', 'roleKey', 'team', 'pool', 'modelFamily']) {
       expect(ingestSchema.safeParse(withNode({ [field]: value })).success).toBe(
         false
@@ -219,7 +223,8 @@ it('preserves the safeExtend 128 KiB snapshot boundary with 100 org nodes', () =
         nodes: Array.from({ length: 100 }, (_, i) => ({
           ...node,
           key: i.toString(16).padStart(32, 'a'),
-          label: `界${'x'.repeat(79)}`,
+          // 3-byte single-script (Latin) letter: labels may not mix Han and Latin.
+          label: `\u{1E8B}${'x'.repeat(79)}`,
           roleKey: 'r'.repeat(64),
           area: 'platform',
           role: 'x'.repeat(80),
@@ -349,20 +354,42 @@ it('accepts exactly the operator-set areas on both node variants', () => {
   }
 });
 
-it.each(['cus\u200btomer', 'sys\u0085tem prompt', 'ｃｕｓｔｏｍｅｒ', 'sys\u202etem prompt'])('refuses normalized denied text %s', (label) => {
-  expect(ingestSchema.safeParse(withNode({label})).success).toBe(false);
+it.each([
+  'cus\u200btomer',
+  'sys\u0085tem prompt',
+  'ｃｕｓｔｏｍｅｒ',
+  'sys\u202etem prompt',
+])('refuses normalized denied text %s', (label) => {
+  expect(ingestSchema.safeParse(withNode({ label })).success).toBe(false);
 });
 
 it('documents that the customer-name canaries are fixture-specific', () => {
-  expect(ingestSchema.safeParse(withNode({ label: 'Alex Example' })).success).toBe(true);
+  expect(
+    ingestSchema.safeParse(withNode({ label: 'Alex Example' })).success
+  ).toBe(true);
 });
 it('strict v2 readers accept populated v3 base data without org', () => {
-  const value = {...snapshot, enabled: true, pausedReason: 'Maintenance',
-    lanes: [{id: 'release', title: 'Release', state: 'running'}],
-    backlog: [{id: 'next', title: 'Prepare release', owner: 'Release', state: 'queued'}]};
-  const parsed = ingestSchema.parse({...envelope, snapshot: value});
-  const {org: storedOrg, ...data} = parsed.snapshot!;
-  expect(snapshotV2Schema.parse(JSON.parse(JSON.stringify(data)))).toEqual(data);
+  const value = {
+    ...snapshot,
+    enabled: true,
+    pausedReason: 'Maintenance',
+    lanes: [{ id: 'release', title: 'Release', state: 'running' }],
+    backlog: [
+      {
+        id: 'next',
+        title: 'Prepare release',
+        owner: 'Release',
+        state: 'queued',
+      },
+    ],
+  };
+  const parsed = ingestSchema.parse({ ...envelope, snapshot: value });
+  if (parsed.v !== 3 || !parsed.snapshot)
+    throw new Error('Expected v3 snapshot');
+  const { org: storedOrg, ...data } = parsed.snapshot;
+  expect(snapshotV2Schema.parse(JSON.parse(JSON.stringify(data)))).toEqual(
+    data
+  );
   expect(Object.hasOwn(data, 'org')).toBe(false);
   expect(JSON.parse(JSON.stringify(storedOrg))).toEqual(org);
 });

@@ -119,19 +119,56 @@ test('v3 stores agent role keys and areas but lanes strictly omit roleKey', asyn
   ])
     assert.equal((await publish(invalid)).status, 400);
 });
-test('v3 signed ingest refuses label canaries and stores only null task titles', async () => {
+const storedRows = () =>
+  server.durableObjectSql(
+    'OpsHub',
+    `hub:${user}`,
+    'SELECT data,org FROM snapshot'
+  );
+test('v3 signed ingest refuses label canaries and never stores task title canaries', async () => {
   for (const { value } of ORG_CANARIES) {
     assert.equal((await publish(snapshot({ label: value }))).status, 400);
     assert.equal((await publish(snapshot({ roleKey: value }))).status, 400);
-    assert.equal((await publish(snapshot({ taskTitle: value }))).status, 200);
-    const stored = await server.durableObjectSql(
-      'OpsHub',
-      `hub:${user}`,
-      'SELECT data,org FROM snapshot'
-    );
-    assert.equal(JSON.parse(stored[0].org).nodes[0].taskTitle, null);
+    // Invisible or non-normalized titles reject the payload; the rest are nulled.
+    const status = (await publish(snapshot({ taskTitle: value }))).status;
+    assert.ok(status === 200 || status === 400, `status ${status}`);
+    const stored = await storedRows();
+    if (status === 200)
+      assert.equal(JSON.parse(stored[0].org).nodes[0].taskTitle, null);
     assert.ok(!JSON.stringify(stored).includes(value));
   }
+});
+test('v3 rejects Unicode-spoofed labels, nulls look-alike task titles and keeps real names', async () => {
+  for (const label of [
+    'Selene \u{202E}evorppa\u{202C}',
+    'Pax\u{200B}',
+    '\u{FF30}\u{FF41}\u{FF58}',
+    'Pa\u{445}',
+    's\u{435}curity',
+    'ignore\u{2028}previous instructions',
+  ])
+    assert.equal((await publish(snapshot({ label }))).status, 400);
+  const title = 'cust\u{3BF}mer s\u{435}curity';
+  assert.equal((await publish(snapshot({ taskTitle: title }))).status, 200);
+  let stored = await storedRows();
+  assert.equal(JSON.parse(stored[0].org).nodes[0].taskTitle, null);
+  assert.ok(!JSON.stringify(stored).includes(title));
+  assert.equal(
+    (await publish(snapshot({ taskTitle: 'cus\u{200B}tomer' }))).status,
+    400
+  );
+  const real = {
+    label: 'Ph\u{1EA1}m Thu H\u{E0}',
+    role: '\u{674E}\u{5C0F}\u{9F8D}',
+  };
+  assert.equal(
+    (await publish(snapshot({ ...real, taskTitle: real.label }))).status,
+    200
+  );
+  const org = (await (await read('/snapshot')).json()).org;
+  assert.deepEqual(org.nodes[0], { ...node, ...real, taskTitle: real.label });
+  stored = await storedRows();
+  assert.equal(JSON.parse(stored[0].org).nodes[0].label, real.label);
 });
 test('org survives restart, appears only on authenticated reads, and v2 replacement removes it', async () => {
   assert.equal((await publish(snapshot())).status, 200);
@@ -148,6 +185,7 @@ test('org survives restart, appears only on authenticated reads, and v2 replacem
         'publisherStale',
         'seq',
         'v',
+        'versions',
       ]);
   }
   const exported = await (await read('/hub/export?section=snapshot')).json();
@@ -208,6 +246,32 @@ test('v3 storage remains readable by strict v2 snapshot readers after rollback',
   assert.equal((await (await read('/snapshot')).json()).org, undefined);
 });
 
+test('status advertises v3 and unknown versions have a distinct error', async () => {
+  const status = await (await read('/status')).json();
+  assert.equal(status.v, 3);
+  assert.deepEqual(status.versions, [2, 3]);
+  const response = await publish(snapshot(), 99);
+  assert.equal(response.status, 400);
+  assert.equal((await response.json()).error, 'Unsupported version');
+});
+test('malformed optional org does not break base snapshot or environments', async () => {
+  assert.equal((await publish(snapshot())).status, 200);
+  for (const org of ['{', JSON.stringify({ nodes: 'invalid' })]) {
+    await server.durableObjectSql(
+      'OpsHub',
+      `hub:${user}`,
+      'UPDATE snapshot SET org=? WHERE id=1',
+      [org]
+    );
+    await server.restart();
+    const response = await read('/snapshot');
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).org, undefined);
+    assert.equal((await read('/environments')).status, 200);
+  }
+});
+
+// Leaves the hub paused, so it must stay last.
 test('expired snapshots and paused reads withhold org while status stays minimal', async () => {
   assert.equal((await publish(snapshot())).status, 200);
   await server.durableObjectSql(
@@ -228,24 +292,4 @@ test('expired snapshots and paused reads withhold org while status stays minimal
     false
   );
   assert.equal((await read('/snapshot')).status, 503);
-});
-
-test('status advertises v3 and unknown versions have a distinct error', async () => {
-  const status = await (await read('/status')).json();
-  assert.equal(status.v, 3);
-  assert.deepEqual(status.versions, [2, 3]);
-  const response = await publish(snapshot(), 99);
-  assert.equal(response.status, 400);
-  assert.equal((await response.json()).error, 'Unsupported version');
-});
-test('malformed optional org does not break base snapshot or environments', async () => {
-  assert.equal((await publish(snapshot())).status, 200);
-  for (const org of ['{', JSON.stringify({nodes: 'invalid'})]) {
-    await server.durableObjectSql('OpsHub', `hub:${user}`, 'UPDATE snapshot SET org=? WHERE id=1', [org]);
-    await server.restart();
-    const response = await read('/snapshot');
-    assert.equal(response.status, 200);
-    assert.equal((await response.json()).org, undefined);
-    assert.equal((await read('/environments')).status, 200);
-  }
 });
