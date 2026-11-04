@@ -5,14 +5,10 @@
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '60s';
--- 20261104031050 is a hard prerequisite: refuse to apply without it rather
--- than treating every personal grant as inactive.
-do $$ begin
-    if to_regclass('private.devbox_personal_pool_grants') is null
-        or to_regprocedure('private.devbox_identity_grant_active(uuid)') is null then
-        raise exception 'Apply 20261104031050_devbox_identity_grant_predicate before 20261104031100.';
-    end if;
-end $$;
+-- Prerequisite: apply 20261104031050 first. This select errors
+-- (undefined_table/undefined_function) if it is missing, so the migration
+-- refuses to apply rather than treating every personal grant as inactive.
+select 'private.devbox_personal_pool_grants'::regclass, 'private.devbox_identity_grant_active(uuid)'::regprocedure;
 alter table private.devbox_runners
     add column if not exists pool text not null default 'fleet'
     check (pool in ('fleet', 'personal'));

@@ -34,7 +34,7 @@ returns table (
 )
 language plpgsql
 security definer
-set search_path = private, public, pg_temp
+set search_path = pg_catalog, private, public, pg_temp
 as $$
 begin
     -- Serialize claims sharing one runner token before checking its capacity.
@@ -174,7 +174,7 @@ create or replace function private.set_devbox_runner_feature(
 returns jsonb
 language plpgsql
 security definer
-set search_path = private, public, pg_temp
+set search_path = pg_catalog, private, public, pg_temp
 as $$
 declare
     v_features jsonb;

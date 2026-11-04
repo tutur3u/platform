@@ -64,8 +64,16 @@ test('145300 body is unchanged outside ownership, Judge linkage, owner denial an
   assert.equal(withoutOwnership, claim(live));
 });
 
-test('rollback restores exact live body with service-role-only execute', () => {
-  assert.equal(claim(rollback), claim(live));
+test('rollback restores exact live body (pg_catalog-pinned search path) with service-role-only execute', () => {
+  const liveSearchPath = 'set search_path = private, public, pg_temp';
+  assert.equal(claim(live).split(liveSearchPath).length - 1, 1);
+  assert.equal(
+    claim(rollback),
+    claim(live).replace(
+      liveSearchPath,
+      'set search_path = pg_catalog, private, public, pg_temp'
+    )
+  );
   for (const sql of [migration, rollback]) {
     assert.match(
       sql,
