@@ -1,7 +1,11 @@
 import { getCurrencyMinorUnits } from './calculator';
 
-// Pure plain-text renderer shared by the template preview, the Excel notice
-// column and the Phase-2 sender, always fed a locked revision snapshot.
+// Pure renderer shared by the template preview, the Excel notice column and the
+// Phase-2 sender, always fed a locked revision snapshot. Default (Trà 15:12 Q1):
+// one combined notice per student per period, covering all their classes plus
+// any extras staff added. Output is PLAIN TEXT: HTML senders must escape it, and
+// the Excel export must write it as a string cell (with sanitizeSpreadsheetText)
+// so a value such as `=HYPERLINK(...)` never becomes a formula.
 
 export type FeeNoticeGrouping = 'combined' | 'per_class';
 export type FeeNoticeLocale = 'vi' | 'en';
@@ -44,22 +48,6 @@ export interface RenderedFeeNotice {
 }
 
 export const FEE_NOTICE_MAX_LENGTH = 2000;
-export const FEE_NOTICE_TEMPLATE_LIMITS = {
-  body: 2000,
-  item_format: 200,
-  item_separator: 20,
-  payment_line: 300,
-} as const;
-
-/** Allowlisted placeholders per template field; anything else is rejected. */
-export const FEE_NOTICE_PLACEHOLDERS = {
-  body: 'centre_name month student_name class_name tuition tuition_amount session_count items items_with_prefix total payment_line'.split(
-    ' '
-  ),
-  item_format: 'name price unit quantity amount'.split(' '),
-  payment_line: 'centre_name month student_name class_name'.split(' '),
-};
-
 export const DEFAULT_FEE_NOTICE_TEMPLATE: FeeNoticeTemplate = {
   body: '{{centre_name}} xin thông báo học phí tháng {{month}} của {{student_name}}: {{tuition}}{{items_with_prefix}}. Tổng: {{total}}đ. {{payment_line}} {{centre_name}} cảm ơn!',
   item_format: '{{name}}: {{price}}đ/{{unit}}',
@@ -70,7 +58,7 @@ export const DEFAULT_FEE_NOTICE_TEMPLATE: FeeNoticeTemplate = {
   locale: 'vi',
 };
 
-const PLACEHOLDER = /\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g;
+export const FEE_NOTICE_PLACEHOLDER_PATTERN = /\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g;
 function isUnsafeCodePoint(code: number) {
   if (code === 0x0a) return false;
   return (
@@ -90,36 +78,6 @@ export function stripControlCharacters(value: string) {
   return result;
 }
 
-export type FeeNoticeTemplateIssue =
-  | { field: keyof typeof FEE_NOTICE_TEMPLATE_LIMITS; code: 'too_long' }
-  | {
-      field: 'body' | 'item_format' | 'payment_line';
-      code: 'unknown_placeholder';
-      name: string;
-    };
-
-/** Save-time validation: unknown placeholders are rejected, not dropped. */
-export function validateFeeNoticeTemplate(
-  template: Pick<FeeNoticeTemplate, keyof typeof FEE_NOTICE_TEMPLATE_LIMITS>
-): FeeNoticeTemplateIssue[] {
-  const issues: FeeNoticeTemplateIssue[] = [];
-  for (const [field, limit] of Object.entries(FEE_NOTICE_TEMPLATE_LIMITS)) {
-    const key = field as keyof typeof FEE_NOTICE_TEMPLATE_LIMITS;
-    if (template[key].length > limit)
-      issues.push({ field: key, code: 'too_long' });
-  }
-  for (const [field, allowed] of Object.entries(FEE_NOTICE_PLACEHOLDERS)) {
-    const key = field as keyof typeof FEE_NOTICE_PLACEHOLDERS;
-    for (const match of template[key].matchAll(PLACEHOLDER)) {
-      const name = match[1] ?? '';
-      if (!allowed.includes(name)) {
-        issues.push({ field: key, code: 'unknown_placeholder', name });
-      }
-    }
-  }
-  return issues;
-}
-
 /** Groups digits the vi-VN way (1.200.000) or en (1,200,000). */
 export function formatFeeNoticeNumber(
   value: number,
@@ -135,11 +93,24 @@ export function formatFeeNoticeNumber(
   return `${sign}${grouped}${trimmed ? decimal + trimmed : ''}`;
 }
 
+// Own properties only: {{constructor}} or {{__proto__}} must not reach Object.prototype.
 function fill(template: string, values: Record<string, string>) {
-  return template.replace(
-    PLACEHOLDER,
-    (_m, name: string) => values[name] ?? ''
+  return template.replace(FEE_NOTICE_PLACEHOLDER_PATTERN, (_m, name: string) =>
+    Object.hasOwn(values, name) ? (values[name] ?? '') : ''
   );
+}
+
+// Cuts at a grapheme boundary so no surrogate pair or emoji sequence is split.
+function capText(text: string, max: number) {
+  let out = '';
+  let count = 0;
+  for (const { segment } of new Intl.Segmenter().segment(text)) {
+    const size = Array.from(segment).length;
+    if (count + size > max) break;
+    out += segment;
+    count += size;
+  }
+  return out;
 }
 
 type NoticeLine = FeeNoticeSnapshot['lines'][number];
@@ -147,18 +118,16 @@ type NoticeLine = FeeNoticeSnapshot['lines'][number];
 function splitByClass(sorted: NoticeLine[]) {
   const tuition = sorted.filter((line) => line.kind === 'tuition');
   const extras = sorted.filter((line) => line.kind === 'extra');
-  const fallback = tuition[0]?.group_id ?? null;
-  return tuition.map((line) => ({
+  // Each extra belongs to exactly one tuition line: the first with its class,
+  // else the first line, so lines sharing a group_id never duplicate it.
+  const owner = (extra: NoticeLine) =>
+    Math.max(
+      0,
+      tuition.findIndex((t) => t.group_id === extra.group_id)
+    );
+  return tuition.map((line, index) => ({
     group_id: line.group_id,
-    lines: [
-      line,
-      ...extras.filter((extra) => {
-        const owner = tuition.some((t) => t.group_id === extra.group_id)
-          ? extra.group_id
-          : fallback;
-        return owner === line.group_id;
-      }),
-    ],
+    lines: [line, ...extras.filter((extra) => owner(extra) === index)],
   }));
 }
 
@@ -235,14 +204,14 @@ export function renderFeeNotice(
       payment_line: fill(template.payment_line, base),
     };
     const full = stripControlCharacters(fill(template.body, values));
-    const text = full.slice(0, FEE_NOTICE_MAX_LENGTH);
+    const length = Array.from(full).length;
     return {
       group_id: scope.group_id,
-      text,
-      length: full.length,
-      truncated: full.length > text.length,
+      text: capText(full, FEE_NOTICE_MAX_LENGTH),
+      length,
+      truncated: length > FEE_NOTICE_MAX_LENGTH,
       over_soft_limit:
-        options.softLimit !== undefined && full.length > options.softLimit,
+        options.softLimit !== undefined && length > options.softLimit,
     };
   });
 }
