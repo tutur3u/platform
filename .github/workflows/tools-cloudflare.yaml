@@ -154,8 +154,8 @@ jobs:
       TOOLS_SOURCE_SHA: ${{ github.sha }}
       VITE_TOOLS_NATIVE_PROFILE: production
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-      NEXT_PUBLIC_tools_URL: https://tools.tuturuuu.com
-      NEXT_PUBLIC_WEB_tools_URL: https://tuturuuu.com
+      NEXT_PUBLIC_APP_URL: https://tools.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       TUTURUUU_NOINDEX: '0'
       WRANGLER_SEND_METRICS: 'false'
     steps:
