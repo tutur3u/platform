@@ -52,6 +52,25 @@ describe('resolveScopeCycles', () => {
   it('returns nulls without cycles', () => {
     expect(resolveScopeCycles([], NOW)).toEqual({ current: null, next: null });
   });
+
+  it("ignores a board's own cycles, which are planned on that board", () => {
+    const boardSprint = {
+      ...CYCLES[1]!,
+      id: 'board-sprint',
+      board_id: 'board-1',
+      start_date: '2026-10-27',
+    };
+    const { current, next } = resolveScopeCycles(
+      [
+        boardSprint,
+        { ...boardSprint, id: 'board-next', status: 'planned' as const },
+        ...CYCLES,
+      ],
+      NOW
+    );
+    expect(current?.id).toBe('cycle-now');
+    expect(next?.id).toBe('cycle-next');
+  });
 });
 
 describe('groupTasksByStatus', () => {

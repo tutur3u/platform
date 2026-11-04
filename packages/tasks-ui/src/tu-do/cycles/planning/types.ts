@@ -46,6 +46,8 @@ export interface CyclePlanningCycle {
   status: 'planned' | 'active' | 'completed' | 'cancelled' | null;
   start_date: string | null;
   end_date: string | null;
+  /** Set on a board's own cycles (board sprints); null on workspace cycles. */
+  board_id?: string | null;
 }
 
 /** Sentinels mixed into `assigneeIds` next to real user ids. */

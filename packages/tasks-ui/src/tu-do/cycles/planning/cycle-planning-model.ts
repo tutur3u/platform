@@ -49,12 +49,15 @@ function startsBefore(a: CyclePlanningCycle, b: CyclePlanningCycle) {
 /**
  * The cycles behind the Current and Next scopes. Current is the active
  * cycle (the latest started, if several), else a planned cycle whose dates
- * include today. Next is the earliest planned cycle after it.
+ * include today. Next is the earliest planned cycle after it. Only workspace
+ * cycles count: a board's own cycles are planned on that board, and the
+ * cycle-task routes refuse them.
  */
 export function resolveScopeCycles(
-  cycles: CyclePlanningCycle[],
+  allCycles: CyclePlanningCycle[],
   now: Date = new Date()
 ) {
+  const cycles = allCycles.filter((cycle) => cycle.board_id == null);
   const today = localDay(now);
   const active = cycles
     .filter((cycle) => cycle.status === 'active')
