@@ -108,7 +108,8 @@ This code-only lane ran no hosted auth flow, production write, deploy or merge.
 Only the GitHub-hosted candidate build receives
 `NEXT_PUBLIC_SUPABASE_URL` from `secrets.PRODUCTION_SUPABASE_URL` and the
 publishable key from `vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY`. No local or
-i9 command reads those values. A pre-upload check rejects output containing
-the build-time URL without printing the value or the matching file contents.
-The secret is not exported to the artifact-sealing step. The sealed config
-retains the existing isolated staging profile, not the production URL.
+i9 command reads those values. Public `NEXT_PUBLIC_*` and `VITE_*` values in
+client bundles are expected. Do not print values in logs, upload env files or
+secret dumps, or pass non-public secrets into client code or artifacts.
+The build input is not exported to the artifact-sealing step. The sealed config
+retains the existing isolated staging profile.

@@ -58,20 +58,6 @@ jobs:
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-      - name: Reject build-time URL disclosure before artifact preparation
-        env:
-          BUILD_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
-        run: |
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
-          value = os.environ.get('BUILD_SUPABASE_URL', '')
-          if not value:
-              raise SystemExit('Required build-time Supabase URL is missing')
-          for path in Path('apps/web/cloudflare/dist').rglob('*'):
-              if path.is_file() and value.encode() in path.read_bytes():
-                  raise SystemExit('Build-time Supabase URL found in output; upload blocked')
-          PY
       - name: Resolve the candidate's emitted Wrangler config
         id: emitted
         run: |
