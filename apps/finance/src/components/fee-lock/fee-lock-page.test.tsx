@@ -12,6 +12,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   exportDialog: vi.fn((_props: unknown) => null),
   list: vi.fn(),
+  templateEditor: vi.fn((_props: unknown) => null),
 }));
 vi.mock('@tuturuuu/internal-api/finance-fee-lock', () => ({
   listFeeLocks: mocks.list,
@@ -19,14 +20,21 @@ vi.mock('@tuturuuu/internal-api/finance-fee-lock', () => ({
 vi.mock('./fee-lock-export-dialog', () => ({
   FeeLockExportDialog: mocks.exportDialog,
 }));
+vi.mock('./fee-notice-template-editor', () => ({
+  FeeNoticeTemplateEditor: mocks.templateEditor,
+}));
 vi.mock('@/hooks/use-workspace-user-groups', () => ({
   useWorkspaceUserGroups: () => ({ data: [] }),
 }));
 vi.mock('next-intl', () => ({
   useLocale: () => 'vi',
   useTranslations:
-    () => (key: string, values?: { count?: number; revision?: number }) =>
-      values ? `${key}:${values.revision ?? values.count}` : key,
+    () =>
+    (
+      key: string,
+      values?: { count?: number; name?: string; revision?: number }
+    ) =>
+      values ? `${key}:${values.revision ?? values.count ?? values.name}` : key,
 }));
 vi.mock(
   '@tuturuuu/ui/finance/shared/charts/use-finance-confidential-visibility',
@@ -50,7 +58,7 @@ const row = (status: 'none' | 'locked', name: string) => ({
   student_name: name,
 });
 const lastQuery = () => mocks.list.mock.lastCall?.[1];
-const renderPage = (canExport?: boolean) =>
+const renderPage = (canExport?: boolean, canEditTemplate?: boolean) =>
   render(
     <QueryClientProvider
       client={
@@ -62,6 +70,7 @@ const renderPage = (canExport?: boolean) =>
         currency="VND"
         initialMonth="2026-12"
         canExport={canExport}
+        canEditTemplate={canEditTemplate}
       />
     </QueryClientProvider>
   );
@@ -70,6 +79,7 @@ describe('FeeLockPage', () => {
   afterEach(() => {
     cleanup();
     mocks.exportDialog.mockClear();
+    mocks.templateEditor.mockClear();
   });
 
   it('refetches by page, month, search and retry', async () => {
@@ -146,5 +156,38 @@ describe('FeeLockPage', () => {
         month: '2027-01',
       })
     );
+  });
+
+  it('opens the notice template tab, editable only with canEditTemplate', async () => {
+    mocks.list.mockResolvedValue({ count: 0, data: [] });
+    const openTemplate = async (canEdit?: boolean) => {
+      cleanup();
+      renderPage(false, canEdit);
+      await screen.findByText('no_students');
+      // Radix tabs only mount the active panel, so the editor waits for a click.
+      expect(mocks.templateEditor).not.toHaveBeenCalled();
+      fireEvent.mouseDown(screen.getByRole('tab', { name: 'template_tab' }));
+      await waitFor(() => expect(mocks.templateEditor).toHaveBeenCalled());
+      expect(screen.queryByText('no_students')).toBeNull();
+      const props = mocks.templateEditor.mock.lastCall?.[0] as {
+        canEdit: boolean;
+        labels: Record<string, string | ((name: string) => string)>;
+        wsId: string;
+      };
+      mocks.templateEditor.mockClear();
+      return props;
+    };
+    expect(await openTemplate()).toMatchObject({ canEdit: false, wsId: WS_ID });
+    const props = await openTemplate(true);
+    expect(props.canEdit).toBe(true);
+    const { unknown_placeholder, ...text } = props.labels;
+    expect(
+      typeof unknown_placeholder === 'function' && unknown_placeholder('phone')
+    ).toBe('unknown_placeholder:phone');
+    expect(text.save).toBe('save');
+    for (const key of Object.keys(text).filter((k) => k !== 'save')) {
+      expect(text[key]).toBe(key);
+    }
+    expect(Object.keys(props.labels)).toHaveLength(15);
   });
 });

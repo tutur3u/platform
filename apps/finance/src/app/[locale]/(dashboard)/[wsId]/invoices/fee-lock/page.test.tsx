@@ -31,14 +31,20 @@ const render = (month?: string) =>
     params: Promise.resolve({ wsId: 'alias' }),
     searchParams: Promise.resolve({ month }),
   });
-const setup = (enabled: boolean, canView = true, canExport = true) => {
+const setup = (
+  enabled: boolean,
+  canView = true,
+  canExport = true,
+  canManage = true
+) => {
   mocks.enabled.mockResolvedValue(enabled);
   mocks.context.mockResolvedValue({
     currency: 'VND',
     permissions: {
       withoutPermission: (p: string) =>
         (p === 'view_invoices' && !canView) ||
-        (p === 'export_finance_data' && !canExport),
+        (p === 'export_finance_data' && !canExport) ||
+        (p === 'manage_finance' && !canManage),
     },
     user: { id: 'user-1' },
     wsId: WS_ID,
@@ -79,6 +85,18 @@ describe('fee-lock page gating', () => {
     setup(true, false, true);
     expect((await render()).type).toBe(mocks.accessDenied);
     setup(true, false, false);
+    expect((await render()).type).toBe(mocks.accessDenied);
+  });
+
+  it('shows the notice template with view_invoices; editing needs manage_finance', async () => {
+    setup(true);
+    expect((await render()).props.canEditTemplate).toBe(true);
+    setup(true, true, true, false);
+    const page = await render();
+    expect(page.type).toBe(mocks.feeLockPage);
+    expect(page.props.canEditTemplate).toBe(false);
+    // Like the template GET: without view_invoices there is no tab to view.
+    setup(true, false, true, true);
     expect((await render()).type).toBe(mocks.accessDenied);
   });
 });
