@@ -18,6 +18,7 @@ export default defineConfig({
       not_found_handling: 'none',
     },
     workers_dev: false,
+    preview_urls: false,
     vars: {
       NEXT_PUBLIC_APP_URL: 'https://mail.tuturuuu.com',
       NEXT_PUBLIC_MAIL_APP_URL: 'https://mail.tuturuuu.com',
