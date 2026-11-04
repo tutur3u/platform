@@ -11,11 +11,17 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/cache_warmup_coordinator.dart';
 import 'package:mobile/core/cache/offline_download_manifest.dart';
 import 'package:mobile/core/cache/offline_preparation_coordinator.dart';
+import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/app_flavor.dart';
+import 'package:mobile/core/config/consent_gate.dart';
+import 'package:mobile/core/feature_flags/mobile_flags.dart';
+import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/deep_link_launcher.dart';
 import 'package:mobile/core/router/deep_links.dart';
 import 'package:mobile/core/router/routes.dart';
+import 'package:mobile/core/startup/optional_startup.dart';
+import 'package:mobile/core/startup/startup_state.dart';
 import 'package:mobile/core/theme/appearance/appearance_scope.dart';
 import 'package:mobile/core/theme/appearance/appearance_settings.dart';
 import 'package:mobile/core/theme/appearance/appearance_theme.dart';
@@ -25,38 +31,51 @@ import 'package:mobile/core/widgets/shadcn_material_bridge.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/calendar_repository.dart';
+import 'package:mobile/data/repositories/documents_offline_preparation.dart';
 import 'package:mobile/data/repositories/education_access_repository.dart';
 import 'package:mobile/data/repositories/finance_repository.dart';
 import 'package:mobile/data/repositories/habit_tracker_repository.dart';
 import 'package:mobile/data/repositories/habits_access_repository.dart';
+import 'package:mobile/data/repositories/habits_offline_preparation.dart';
 import 'package:mobile/data/repositories/inventory_access_repository.dart';
 import 'package:mobile/data/repositories/inventory_repository.dart';
 import 'package:mobile/data/repositories/profile_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/repositories/task_repository.dart';
+import 'package:mobile/data/repositories/time_tracker_offline_preparation.dart';
 import 'package:mobile/data/repositories/time_tracker_repository.dart';
 import 'package:mobile/data/repositories/version_check_repository.dart';
 import 'package:mobile/data/repositories/workspace_permissions_repository.dart';
 import 'package:mobile/data/repositories/workspace_repository.dart';
+import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/features/app_version/cubit/app_version_cubit.dart';
 import 'package:mobile/features/app_version/view/app_version_gate.dart';
 import 'package:mobile/features/apps/cubit/app_tab_cubit.dart';
 import 'package:mobile/features/assistant/bridge/app_assistant_client_action_bridge.dart';
 import 'package:mobile/features/assistant/bridge/assistant_client_actions.dart';
 import 'package:mobile/features/assistant/data/assistant_repository.dart';
+import 'package:mobile/features/assistant/data/mira_offline_preparation.dart';
+import 'package:mobile/features/audience_mode/audience_mode.dart';
 import 'package:mobile/features/audience_mode/audience_mode_cubit.dart';
 import 'package:mobile/features/audience_mode/audience_mode_repository.dart';
 import 'package:mobile/features/auth/cubit/auth_cubit.dart';
 import 'package:mobile/features/auth/cubit/auth_state.dart';
 import 'package:mobile/features/calendar/cubit/calendar_cubit.dart';
+import 'package:mobile/features/chat/data/chat_offline_preparation.dart';
+import 'package:mobile/features/classes/data/classes_today_repository.dart';
+import 'package:mobile/features/dashboard/home_offline_preparation.dart';
 import 'package:mobile/features/desktop_update/desktop_uri_receipt.dart';
 import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/finance/cubit/finance_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_cubit.dart';
 import 'package:mobile/features/inventory/cubit/inventory_access_cubit.dart';
+import 'package:mobile/features/mail/data/mail_offline_preparation.dart';
+import 'package:mobile/features/mastermind/privacy/mastermind_privacy_shield.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_auth_reset.dart';
+import 'package:mobile/features/mastermind/runtime/mastermind_offline_preparation.dart';
 import 'package:mobile/features/mastermind/runtime/mastermind_runtime.dart';
+import 'package:mobile/features/notes/notes_offline_preparation.dart';
 import 'package:mobile/features/notifications/data/archive_opened_notification.dart';
 import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/profile/cubit/profile_cubit.dart';
@@ -89,6 +108,7 @@ import 'package:mobile/features/time_tracker/cubit/time_tracker_cubit.dart';
 import 'package:mobile/features/time_tracker/cubit/time_tracker_requests_cubit.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_controller.dart';
 import 'package:mobile/features/time_tracker/pomodoro/pomodoro_state.dart';
+import 'package:mobile/features/time_tracker/utils/history_period.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 import 'package:mobile/l10n/l10n.dart';
@@ -121,6 +141,8 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
+  final _mobileFlags = MobileFlags();
+  StreamSubscription<MobileFlagsState>? _chatOfflineFlags;
   late final AuthRepository _authRepo;
   late final WorkspaceRepository _workspaceRepo;
   late final SettingsRepository _settingsRepo;
@@ -160,6 +182,8 @@ class _AppState extends State<App> {
   late final GoRouter _router;
   late final _AppLifecycleObserver _lifecycleObserver;
   StreamSubscription<Uri>? _appLinkSubscription;
+  StreamSubscription<MobileFlagsState>? _timeTrackerOfflineFlags;
+  StreamSubscription<MobileFlagsState>? _habitsOfflineFlags;
   MobileDeepLink? _pendingDeepLink;
   DateTime? _backgroundedAt;
 
@@ -182,16 +206,23 @@ class _AppState extends State<App> {
       ownsApiClient: true,
       ownsHttpClient: true,
     );
-    _assistantRepository = AssistantRepository();
+    _assistantRepository = AssistantRepository(
+      offlineReadEnabled: () =>
+          _mobileFlags.enabled(MobileFlag.offlineReadMira),
+    );
     PushNotificationService.instance.configure(
       appFlavor: widget.appFlavor,
       settingsRepository: _settingsRepo,
       onOpen: _handlePushNavigation,
     );
-    unawaited(PushNotificationService.instance.initialize());
+    // Local-notification, FCM and token setup is not needed to paint; it runs
+    // once the first frame is out. Sign-in changes still start sessions now.
+    scheduleOptionalStartup(_startPushAfterFirstFrame);
     _authCubit = AuthCubit(
       authRepository: _authRepo,
       onBeforeSignOut: () async {
+        // Sign-out and account switch revoke collection before auth changes.
+        await PushNotificationService.instance.disableTelemetry();
         await ReminderService.instance.stopSession();
         await PushNotificationService.instance.stopSession();
       },
@@ -232,6 +263,10 @@ class _AppState extends State<App> {
     );
     _mastermind = MastermindRuntime.create(
       userId: () => _authCubit.state.user?.id,
+      isPersonalWorkspace: (wsId) => [
+        ?_workspaceCubit.state.currentWorkspace,
+        ..._workspaceCubit.state.workspaces,
+      ].any((workspace) => workspace.id == wsId && workspace.personal),
     );
     _appTabCubit = AppTabCubit(settingsRepository: _settingsRepo);
     _shellChromeActionsCubit = ShellChromeActionsCubit();
@@ -260,6 +295,9 @@ class _AppState extends State<App> {
       _appTabCubit,
       mastermindAccessCubit: _mastermind.access,
       initialLocation: widget.initialRoute,
+      telemetryConsent: consentGate.isEligible(widget.appFlavor)
+          ? TelemetryPreference.instance
+          : null,
     );
     _unregisterAssistantActions = AssistantClientActions.register(
       AppAssistantClientActionBridge(
@@ -285,11 +323,6 @@ class _AppState extends State<App> {
     unawaited(_appVersionCubit.checkVersion());
     // BlocListener misses initial auth; load synchronously resolved workspaces.
     if (_authCubit.state.status == AuthStatus.authenticated) {
-      unawaited(
-        PushNotificationService.instance.startSession(
-          _authCubit.state.user!.id,
-        ),
-      );
       unawaited(_pomodoroController.restore(_authCubit.state.user!.id));
       _shellProfileCubit.primeFromAuthenticatedUser(_authCubit.state.user!);
       unawaited(
@@ -298,6 +331,27 @@ class _AppState extends State<App> {
       unawaited(_loadWorkspacesWithReminders());
     }
     _bindAudienceMode();
+  }
+
+  String? _pushSessionUserId;
+
+  Future<void> _startPushSession(String userId) {
+    _pushSessionUserId = userId;
+    return PushNotificationService.instance.startSession(userId);
+  }
+
+  /// Initializes push, and starts the session if still signed in.
+  ///
+  /// Reads auth when it runs, so a sign-out or account switch before the first
+  /// frame never registers a stale token.
+  Future<void> _startPushAfterFirstFrame() async {
+    if (!mounted) return;
+    await startPushForCurrentAccount(
+      currentUserId: () => _appearanceAccountId(_authCubit.state),
+      initialize: PushNotificationService.instance.initialize,
+      startSession: _startPushSession,
+      sessionAlreadyStarted: (id) => _pushSessionUserId == id,
+    );
   }
 
   /// The mode belongs to one account in one workspace.
@@ -436,6 +490,10 @@ class _AppState extends State<App> {
 
   @override
   void dispose() {
+    unawaited(_timeTrackerOfflineFlags?.cancel());
+    unawaited(_habitsOfflineFlags?.cancel());
+    unawaited(_chatOfflineFlags?.cancel());
+    unawaited(_mobileFlags.close());
     _unregisterAssistantActions();
     _unregisterOfflinePreparation();
     WidgetsBinding.instance.removeObserver(_lifecycleObserver);
@@ -471,6 +529,7 @@ class _AppState extends State<App> {
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: _authCubit),
+        BlocProvider.value(value: _mobileFlags),
         BlocProvider.value(value: _appVersionCubit),
         BlocProvider.value(value: _workspaceCubit),
         BlocProvider.value(value: _localeCubit),
@@ -507,12 +566,11 @@ class _AppState extends State<App> {
                 unawaited(_themeCubit.bindAccount(_appearanceAccountId(state)));
                 // The device Pomodoro belongs to one account.
                 unawaited(_pomodoroController.restore(state.user?.id));
+                if (state.status != AuthStatus.authenticated) {
+                  _pushSessionUserId = null;
+                }
                 if (state.status == AuthStatus.authenticated) {
-                  unawaited(
-                    PushNotificationService.instance.startSession(
-                      state.user!.id,
-                    ),
-                  );
+                  unawaited(_startPushSession(state.user!.id));
                   context.read<ShellProfileCubit>().primeFromAuthenticatedUser(
                     state.user!,
                   );
@@ -535,6 +593,9 @@ class _AppState extends State<App> {
               },
             ),
             mastermindAuthResetListener(_mastermind),
+            BlocListener<MobileFlags, MobileFlagsState>(
+              listener: (_, flags) => _registerFlaggedOfflineProducts(flags),
+            ),
             BlocListener<WorkspaceCubit, WorkspaceState>(
               listenWhen: (previous, current) =>
                   previous.currentWorkspace?.id != current.currentWorkspace?.id,
@@ -611,15 +672,23 @@ class _AppState extends State<App> {
                       return AppearanceBackdrop(
                         settings: appearance,
                         child: ShadcnMaterialBridge(
-                          child: AuthSessionBoundary(
-                            identity: authIdentity,
-                            child: DismissKeyboardOnPointerDown(
-                              child: AppLockBoundary(
-                                excluded: isAppLockExcludedRoute(
-                                  _currentMatchedLocation(),
-                                ),
-                                child: MobileMfaApprovalListener(
-                                  child: AppVersionGate(child: child!),
+                          child: MastermindPrivacyShield(
+                            location: () => _router
+                                .routerDelegate
+                                .currentConfiguration
+                                .uri
+                                .path,
+                            locationChanges: _router.routerDelegate,
+                            child: AuthSessionBoundary(
+                              identity: authIdentity,
+                              child: DismissKeyboardOnPointerDown(
+                                child: AppLockBoundary(
+                                  excluded: isAppLockExcludedRoute(
+                                    _currentMatchedLocation(),
+                                  ),
+                                  child: MobileMfaApprovalListener(
+                                    child: AppVersionGate(child: child!),
+                                  ),
                                 ),
                               ),
                             ),

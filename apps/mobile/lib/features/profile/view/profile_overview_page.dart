@@ -21,6 +21,7 @@ import 'package:mobile/features/shell/view/floating_shell_dock.dart';
 import 'package:mobile/features/shell/view/shell_chrome_actions.dart';
 import 'package:mobile/features/shell/view/shell_title_override.dart';
 import 'package:mobile/l10n/l10n.dart';
+import 'package:mobile/widgets/nova_refresh_indicator.dart';
 
 /// Account home. Opening personal activity never implies consent to share it.
 class ProfileOverviewPage extends StatefulWidget {
@@ -49,6 +50,8 @@ class ProfileOverviewPage extends StatefulWidget {
 }
 
 class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
+  final _activityKey = GlobalKey<ProfileActivitySectionState>();
+
   bool _timeline = false;
   bool _dates = false;
 
@@ -147,48 +150,63 @@ class _ProfileOverviewPageState extends State<ProfileOverviewPage> {
                 ),
               )
             else
-              AppPageListView(
-                key: ValueKey(_timeline),
-                kind: AppPageKind.root,
-                topInset: floatingShellHeaderInset(context),
-                children: [
-                  _OverviewLayout(
-                    identity: ProfileIdentityCard(
-                      profile: profile,
-                      avatarUrl: avatarUrl,
-                      userId: userId,
-                      loading: profile == null && state.error == null,
+              NovaRefreshIndicator(
+                onRefresh: () async {
+                  final user = context.read<AuthCubit>().state.user;
+                  await Future.wait([
+                    if (user != null)
+                      context
+                          .read<ShellProfileCubit>()
+                          .loadFromAuthenticatedUser(user, forceRefresh: true),
+                    if (_activityKey.currentState case final activity?)
+                      activity.refresh(),
+                  ]);
+                },
+                child: AppPageListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  key: ValueKey(_timeline),
+                  kind: AppPageKind.root,
+                  topInset: floatingShellHeaderInset(context),
+                  children: [
+                    _OverviewLayout(
+                      identity: ProfileIdentityCard(
+                        profile: profile,
+                        avatarUrl: avatarUrl,
+                        userId: userId,
+                        loading: profile == null && state.error == null,
+                      ),
+                      activity: userId == null
+                          ? null
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Focus Time is tracked time; See all opens the
+                                // Timer statistics.
+                                AppSectionHeader(
+                                  key: const ValueKey('you-focus-time'),
+                                  title: l10n.profileFocusTime,
+                                  actionLabel: l10n.homeSeeAll,
+                                  onAction: () => context.go(Routes.timerStats),
+                                ),
+                                ProfileActivitySection(
+                                  key: _activityKey,
+                                  showHeader: false,
+                                  // Focus Time is all task-linked tracked time.
+                                  taskLinked: true,
+                                  replayToken: widget.replayToken,
+                                  cacheUserId: widget.cacheUserId,
+                                  statsLoader: widget.statsLoader,
+                                  timezoneLoader: widget.timezoneLoader,
+                                ),
+                              ],
+                            ),
                     ),
-                    activity: userId == null
-                        ? null
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              // Focus Time is tracked time; See all opens the
-                              // Timer statistics.
-                              AppSectionHeader(
-                                key: const ValueKey('you-focus-time'),
-                                title: l10n.profileFocusTime,
-                                actionLabel: l10n.homeSeeAll,
-                                onAction: () => context.go(Routes.timerStats),
-                              ),
-                              ProfileActivitySection(
-                                showHeader: false,
-                                // Focus Time is all task-linked tracked time.
-                                taskLinked: true,
-                                replayToken: widget.replayToken,
-                                cacheUserId: widget.cacheUserId,
-                                statsLoader: widget.statsLoader,
-                                timezoneLoader: widget.timezoneLoader,
-                              ),
-                            ],
-                          ),
-                  ),
-                  const SizedBox(height: AppLayout.sectionGap),
-                  ProfileYouRows(
-                    onOpenTimeline: () => setState(() => _timeline = true),
-                  ),
-                ],
+                    const SizedBox(height: AppLayout.sectionGap),
+                    ProfileYouRows(
+                      onOpenTimeline: () => setState(() => _timeline = true),
+                    ),
+                  ],
+                ),
               ),
           ],
         );

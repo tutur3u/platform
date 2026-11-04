@@ -78,8 +78,16 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
     );
   }
 
-  Future<void> loadBoards(String wsId, {bool forceRefresh = false}) async {
+  /// [retainError] keeps a visible error state and its message while the
+  /// pull-to-refresh gesture reloads; an explicit Retry leaves it false so
+  /// the page re-enters its loading state.
+  Future<void> loadBoards(
+    String wsId, {
+    bool forceRefresh = false,
+    bool retainError = false,
+  }) async {
     if (isClosed) return;
+    final sameWorkspace = _lastLoadWsId == wsId;
     _lastLoadWsId = wsId;
     final cacheKey = _cacheKey(wsId);
     final cached = await CacheStore.instance.read<Map<String, dynamic>>(
@@ -97,12 +105,21 @@ class TaskEstimatesCubit extends Cubit<TaskEstimatesState> {
         ),
       );
     }
+    final keepError =
+        retainError &&
+        sameWorkspace &&
+        state.status == TaskEstimatesStatus.error;
     emit(
       state.copyWith(
         status: cached.hasValue
             ? TaskEstimatesStatus.loaded
+            : keepError ||
+                  (sameWorkspace &&
+                      state.status != TaskEstimatesStatus.initial &&
+                      state.status != TaskEstimatesStatus.error)
+            ? state.status
             : TaskEstimatesStatus.loading,
-        error: null,
+        error: keepError ? state.error : null,
       ),
     );
 

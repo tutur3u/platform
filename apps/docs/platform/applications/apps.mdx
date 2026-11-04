@@ -2,6 +2,7 @@
 title: 'Apps Gateway'
 description: 'Central launcher and redirect gateway for routable Tuturuuu web apps.'
 updatedAt: '2026-05-21'
+audience: users
 ---
 
 ## Overview
@@ -109,15 +110,15 @@ retain their existing behavior until explicit cutover.
 
 `scripts/ci/wave1-native-publishers.test.js` covers path/method/cache behavior;
 CI original/restored workerd acceptance checks the actual bundled identity.
-See the [native publisher runbook](/build/devops/wave1-native-publishers).
+See the native publisher runbook.
 
 ## Hosted staging destinations
 
-With `NEXT_PUBLIC_TUTURUUU_STAGING=1`, the Apps gateway resolves Platform, Meet,
-Calendar, Mail and Apps through the five explicit `staging.tutur3u.com` registry
-origins. Redirects retain encoded paths and repeated query parameters. Other
-catalogue entries keep their existing destinations and are inspected without
-navigation during staging acceptance. Ordinary mode retains its current local
-and production origin selection. The regression is
-`apps/apps/src/native/route-boundary.test.ts`; the hosted check is
-`apps/web/e2e-wave1-staging/apps.spec.ts`.
+In explicit staging mode (`NEXT_PUBLIC_TUTURUUU_STAGING=1`), the Apps gateway
+redirects only to the exact staging origins registered in
+`NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS`. It never falls back to a production
+origin. A catalogue entry without an exact staging origin, or a missing
+registry, makes the gateway refuse the request with a clear error. Redirects
+keep encoded paths and repeated query parameters. Ordinary mode keeps its current
+local and production origin selection. The regression is
+`apps/apps/src/native/route-boundary.test.ts`.

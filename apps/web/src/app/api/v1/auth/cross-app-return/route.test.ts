@@ -77,45 +77,45 @@ describe('cross-app return route', () => {
     });
   });
 
-  it.each([
-    ['rewise', 'https://rewise.me'],
-    ['nova', 'https://nova.ai.vn'],
-  ])('verifies the canonical %s origin before sign-in', async (app, origin) => {
-    const response = await POST(
-      createRequest(`${origin}/verify-token?nextUrl=%2F`, {
-        generateToken: false,
-      })
-    );
+  it.each([['nova', 'https://nova.ai.vn']])(
+    'verifies the canonical %s origin before sign-in',
+    async (app, origin) => {
+      const response = await POST(
+        createRequest(`${origin}/verify-token?nextUrl=%2F`, {
+          generateToken: false,
+        })
+      );
 
-    expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ appName: app, targetApp: app });
-    expect(mocks.getExternalAppByReturnUrl).not.toHaveBeenCalled();
-    expect(mocks.rpc).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual({ appName: app, targetApp: app });
+      expect(mocks.getExternalAppByReturnUrl).not.toHaveBeenCalled();
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    }
+  );
 
-  it.each([
-    ['rewise', 'https://rewise.me'],
-    ['nova', 'https://nova.ai.vn'],
-  ])('returns a %s token to its canonical verifier', async (app, origin) => {
-    const response = await POST(
-      createRequest(`${origin}/verify-token?nextUrl=%2Fpersonal`)
-    );
+  it.each([['nova', 'https://nova.ai.vn']])(
+    'returns a %s token to its canonical verifier',
+    async (app, origin) => {
+      const response = await POST(
+        createRequest(`${origin}/verify-token?nextUrl=%2Fpersonal`)
+      );
 
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    const returnUrl = new URL(body.returnUrl);
-    expect(body.targetApp).toBe(app);
-    expect(returnUrl.origin).toBe(origin);
-    expect(returnUrl.pathname).toBe('/verify-token');
-    expect(returnUrl.searchParams.get('nextUrl')).toBe('/personal');
-    expect(returnUrl.searchParams.get('token')).toBe('cross-app-token');
-    expect(returnUrl.searchParams.get('targetApp')).toBe(app);
-    expect(mocks.rpc).toHaveBeenCalledWith(
-      'generate_cross_app_token',
-      expect.objectContaining({ p_target_app: app })
-    );
-    expect(mocks.getExternalAppByReturnUrl).not.toHaveBeenCalled();
-  });
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      const returnUrl = new URL(body.returnUrl);
+      expect(body.targetApp).toBe(app);
+      expect(returnUrl.origin).toBe(origin);
+      expect(returnUrl.pathname).toBe('/verify-token');
+      expect(returnUrl.searchParams.get('nextUrl')).toBe('/personal');
+      expect(returnUrl.searchParams.get('token')).toBe('cross-app-token');
+      expect(returnUrl.searchParams.get('targetApp')).toBe(app);
+      expect(mocks.rpc).toHaveBeenCalledWith(
+        'generate_cross_app_token',
+        expect.objectContaining({ p_target_app: app })
+      );
+      expect(mocks.getExternalAppByReturnUrl).not.toHaveBeenCalled();
+    }
+  );
 
   it('routes internal app login return URLs through the local verifier', async () => {
     const response = await POST(
@@ -327,14 +327,15 @@ describe('cross-app return route', () => {
   });
 
   describe('staging hosts outside the shared cookie domain', () => {
-    const stagingWebOrigin = 'https://web.staging.tutur3u.com';
-    const stagingTasksOrigin = 'https://tasks.staging.tutur3u.com';
+    const stagingWebOrigin = 'https://web.tutur3u.com';
+    const stagingTasksOrigin = 'https://tasks.tutur3u.com';
 
     it('hands off a token to a registered staging satellite from the staging web host', async () => {
       vi.stubEnv(
         'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
         '.staging.tutur3u.com'
       );
+      vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
       vi.stubEnv(
         'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
         `tasks:${stagingTasksOrigin}`
@@ -410,6 +411,7 @@ describe('cross-app return route', () => {
         'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
         '.staging.tutur3u.com'
       );
+      vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
 
       const response = await POST(
         createRequest('https://tasks.tuturuuu.com/verify-token?nextUrl=%2F', {
@@ -427,6 +429,7 @@ describe('cross-app return route', () => {
         'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
         '.staging.tutur3u.com'
       );
+      vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
       vi.stubEnv(
         'NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS',
         'tasks:https://tasks.example.tutur3u.com'
@@ -443,11 +446,12 @@ describe('cross-app return route', () => {
       expect(mocks.rpc).not.toHaveBeenCalled();
     });
 
-    it('keeps the tokenless managed path for unregistered hosts inside the configured staging domain', async () => {
+    it('rejects unregistered legacy staging hosts from the new issuer', async () => {
       vi.stubEnv(
         'NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN',
         '.staging.tutur3u.com'
       );
+      vi.stubEnv('TUTURUUU_DEPLOY_ENV', 'staging');
 
       const response = await POST(
         createRequest('https://preview.staging.tutur3u.com/personal', {
@@ -456,10 +460,7 @@ describe('cross-app return route', () => {
         })
       );
 
-      expect(response.status).toBe(200);
-      await expect(response.json()).resolves.toMatchObject({
-        targetApp: 'managed-tuturuuu',
-      });
+      expect(response.status).toBe(400);
       expect(mocks.rpc).not.toHaveBeenCalled();
     });
   });

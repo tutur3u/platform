@@ -112,7 +112,7 @@ export async function POST(
       p_history_id: validation.data.historyId,
       p_fields: validation.data.fields,
     };
-    const revertRpc = supabase.rpc.bind(supabase) as unknown as RevertRpc;
+    const revertRpc = (supabase.rpc as unknown as RevertRpc).bind(supabase);
     const { data, error } = await revertRpc(
       isAppSession
         ? 'revert_task_to_history_for_actor'

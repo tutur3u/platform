@@ -2,6 +2,7 @@
 title: "Mobile Workspace Tools"
 description: "Shared mobile navigation, tablet layouts, caching, and workspace application behavior."
 updatedAt: 2026-10-03
+audience: users
 ---
 
 ## Overview
@@ -236,6 +237,19 @@ bubbles must not install a competing native text-selection long-press recognizer
 Other standalone markdown views remain selectable.
 
 ## Responsive Loading And Cache Verification
+
+### Push token registration and notification permission
+
+The mobile app creates and registers a push (FCM) device token only while the
+operating-system notification permission is authorized or provisional. Firebase
+Messaging auto-init is disabled in the Android manifest and iOS `Info.plist`, so
+the SDK creates no token before permission is granted. The app enables auto-init
+after permission is granted. A token refresh is sent to the server only while
+permission is still granted. If permission is later revoked, the next
+registration sync disables auto-init and deletes the local token. If deletion
+fails, later unauthorized syncs retry until deletion succeeds. Sign-out still
+unregisters the device. Regression coverage:
+`push_token_permission_gate_test.dart`.
 
 ### Device task and calendar reminders
 
@@ -1966,7 +1980,8 @@ dragging on a 68dp-per-day grid. It applies to every device size.
 - Undated tasks are listed under **Unscheduled tasks** with a hint to add
   dates; the earlier cap of eight with a "+N" count is gone.
 - Tapping a row opens the task quick actions. Rescheduling moves from dragging
-  bars to the task's date fields; the drag and resize handles are removed.
+  bars to the sheet's [Dates rows](#task-quick-actions-sheet), which set and
+  clear the start and due dates; the drag and resize handles are removed.
 - No count chips: the range chip, the "N tasks" chips and the per-list task
   totals are gone. The day header names the day instead of counting tasks.
 - Rows build lazily in both directions from Today, and the agenda is rebuilt
@@ -2051,11 +2066,19 @@ sheet. It replaces the earlier button grid; the long-press menu is unchanged.
   None clears the priority. Every mobile task surface (cards, filters, bulk
   edit, row menu, recycle bin, My tasks and the timer task picker) uses the
   same labels and icons.
-- **Fields**: Assignees (team workspaces with members), Due date (with a clear
-  button), Labels (boards with labels) and Move task. Each row shows its
-  current value and opens its picker. A task is overdue once its due day,
-  in the user's timezone setting, is before today; a task without a due date
-  is never overdue.
+- **Dates**: Start date and Due date rows show the day, or None, and open the
+  task editor's date picker; each set date has a clear button. Days are read
+  and saved in the user's timezone setting: a start date at the first instant
+  of the picked day, a due date at its last second, so the task lands on that
+  day in the Timeline. As in the editor, a start after the due day moves the
+  due date onto it, and a due date before the start moves the start onto it.
+  Picking the current day saves nothing. These rows replace Timeline
+  drag-to-reschedule. A task is overdue once its due day, in the user's
+  timezone setting, is before today; a task without a due date is never
+  overdue.
+- **Fields**: Assignees (team workspaces with members), Labels (boards with
+  labels) and Move task. Each row shows its current value and opens its
+  picker.
 - **Open full details** closes the sheet and opens the task.
 - Priority and field edits keep the sheet open and update it in place, so
   several can be made in a row. They save without a success toast because the
@@ -2070,7 +2093,11 @@ colours, English and Vietnamese labels including None),
 `task_board_quick_actions_test.dart` (icons, labels and order, selected
 semantics, statuses offered, None clears, dropped concurrent edit with every
 control disabled, status move, due-date clear, 320dp at 2x text,
-light/dark/blob renders), `task_board_detail_cubit_mutation_guard_test.dart`
+light/dark/blob renders), `task_board_quick_actions_dates_test.dart` (both
+dates or None, a picked start or due day, the range pull, an unchanged day,
+start-date clear, rollback with an error toast, the timezone setting),
+`task_repository_test.dart` (a zoned date saves as that zone's day),
+`task_board_detail_cubit_mutation_guard_test.dart`
 (a rejected concurrent update or move changes nothing)
 and `task_board_quick_actions_edits_test.dart` (consecutive edits save from
 the live task). Widget tests do not establish touch feel on devices.
@@ -2184,3 +2211,63 @@ remains with the route. Regression coverage:
 `packages/utils/src/__tests__/request-whiteboard-bounds.test.ts`,
 `apps/database/supabase/tests/description-table-hardening.sql`, and
 `apps/database/supabase/tests/readiness-whiteboard-contracts.sql`.
+
+## Mobile feature-flag evaluation
+
+The mobile flag reader uses the authenticated
+[`GET /api/v1/mobile/feature-flags`](/build/development-tools/feature-flags)
+contract. Its initial 16 flags default OFF for every user and workspace. When the
+reader gates an offline capability, `mobile_offline` must be ON along with its
+individual `offline_` flag; the master switch forces reads, writes and status UI
+OFF. The v0 endpoint returns registry defaults without targeting or overrides.
+This registry does not change authorization or existing offline implementations
+that have not adopted the reader. Workspace context requires membership, and
+conditional responses perform the same access checks as full responses. The TTL
+is 30 seconds; the browser response is private and requires revalidation, and
+shared/CDN output caching is disabled. Identity comes only from the authenticated
+session, never a query parameter.
+
+Regression evidence: `packages/feature-flags/src/index.test.ts` covers defaults
+and the master switch; the colocated mobile feature-flags route tests cover
+session authentication, membership, invalid IDs and conditional responses.
+
+### Notes offline preparation
+
+With both `mobile_offline` and `offline_read_notes` enabled (default OFF),
+explicit preparation stores the inbox and archive using the existing Notes
+screen cache keys. The list endpoint includes note bodies; at most 200 notes
+and 1 MiB combined across both tabs are retained. Larger responses publish no
+new snapshot and show the existing localized unavailable preparation state.
+Existing pending-edit overlays and flag-OFF reads are unchanged. The Offline
+screen supplies last-synced status. Regression:
+`notes_offline_preparation_test.dart` opens the real cold page offline and checks both tab keys.
+
+### Documents offline list preparation
+
+With both `mobile_offline` and `offline_read_documents` enabled (default OFF),
+explicit preparation stores the default first page (30 rows) in the same
+`documents.list` cache read by Documents. It retains only id, name, visibility,
+and creation date; document bodies and files are excluded. Responses exceeding
+200 rows or 1 MiB are unavailable and publish no new snapshot. Search and later
+pages retain their own cached responses; preparation preserves them. Existing list behavior is unchanged
+with the flag OFF. The Offline screen supplies localized availability and
+last-synced status. Regression: `documents_offline_preparation_test.dart`.
+
+## Habits offline preparation
+
+With `mobile_offline` and `offline_read_habits` enabled (default off),
+the mobile download prepares the complete self tracker list and its detail
+responses used by the Habits screen. Each response list is capped at 200 items
+and the complete download at 1 MiB. All responses are checked before publication;
+an exceeded budget shows “Not available offline” rather than a truncated list.
+The existing read-through cache supplies stored responses and the Offline settings
+row supplies the last successful synchronization time. Other scopes are unchanged.
+Regression coverage: `habits_offline_preparation_test.dart`.
+
+The Habits download also publishes the self `habits.workspace` snapshot through
+the screen's authorization and account-revision fences. Cold list, first detail
+and activity reads retain that authorized snapshot when fresh transport fails;
+fresh reads still require authorization and a definitive 401/403 revokes it.
+Retention checks include the published workspace snapshot. Regression coverage
+opens the real cold `HabitsCubit` after preparation with transport denied and
+checks entries, definitive denial, and revocation during download.

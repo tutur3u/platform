@@ -162,15 +162,10 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     }
   }
 
-  /// [announce] false skips the success toast, for surfaces that already
-  /// show the saved value, such as the quick sheet.
-  Future<void> _scheduleTask(
-    BuildContext context,
-    TaskBoardTask task, {
-    bool announce = true,
-  }) async {
-    final now = DateTime.now();
-    final current = task.endDate?.toLocal();
+  Future<void> _scheduleTask(BuildContext context, TaskBoardTask task) async {
+    final zone = taskTimezone(context);
+    final now = taskDay(DateTime.now(), zone);
+    final current = task.endDate == null ? null : taskDay(task.endDate!, zone);
     final picked = await showAppDatePicker(
       context: context,
       initialDate: current ?? now,
@@ -179,15 +174,11 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     );
     if (picked == null || !context.mounted) return;
 
-    // Due dates land at the end of the chosen local day, as the bulk
-    // due-date actions do.
-    final endDate = DateTime(picked.year, picked.month, picked.day, 23, 59, 59);
+    final endDate = taskEndOfDayIn(picked, zone);
     await _runTaskRowUpdate(
       context,
       task,
-      successMessage: announce
-          ? context.l10n.taskBoardDetailDueDateUpdated
-          : null,
+      successMessage: context.l10n.taskBoardDetailDueDateUpdated,
       endDate: endDate,
     );
   }
@@ -248,13 +239,17 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
 
   /// Saves one field change through [TaskBoardDetailCubit.updateTask],
   /// carrying every other editable field over unchanged. A null
-  /// [successMessage] saves quietly; failures always show a toast.
+  /// [successMessage] saves quietly; failures always show a toast and the
+  /// cubit restores the task. Dates are sent in the timezone setting, so a
+  /// carried-over date keeps the day the board shows for it.
   Future<void> _runTaskRowUpdate(
     BuildContext context,
     TaskBoardTask task, {
     required String? successMessage,
     String? priority,
     bool clearPriority = false,
+    DateTime? startDate,
+    bool clearStartDate = false,
     DateTime? endDate,
     bool clearEndDate = false,
     List<String>? labelIds,
@@ -265,6 +260,9 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
     // navigator's own context sits above it.
     final toastContext = context;
     final fallbackErrorMessage = context.l10n.commonSomethingWentWrong;
+    final zone = taskTimezone(context);
+    final start = clearStartDate ? null : startDate ?? task.startDate;
+    final end = clearEndDate ? null : endDate ?? task.endDate;
 
     try {
       await cubit.updateTask(
@@ -274,8 +272,9 @@ extension _TaskRowActions on _TaskBoardDetailPageViewState {
             : context.l10n.taskBoardDetailUntitledTask,
         priority: clearPriority ? null : priority ?? task.priority,
         clearPriority: clearPriority,
-        startDate: task.startDate,
-        endDate: clearEndDate ? null : endDate ?? task.endDate,
+        startDate: start == null ? null : taskInZone(start, zone),
+        endDate: end == null ? null : taskInZone(end, zone),
+        clearStartDate: clearStartDate,
         clearEndDate: clearEndDate,
         estimationPoints: task.estimationPoints,
         labelIds: labelIds ?? task.labelIds,

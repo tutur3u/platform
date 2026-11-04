@@ -86,8 +86,21 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
     );
   }
 
-  Future<void> loadBoards(String wsId, {int? pageSize}) async {
-    await _loadBoardsForPage(wsId, page: 1, pageSize: pageSize, reset: true);
+  /// [retainError] keeps a visible error state and its message while the
+  /// pull-to-refresh gesture reloads; an explicit Retry leaves it false so
+  /// the page re-enters its loading state.
+  Future<void> loadBoards(
+    String wsId, {
+    int? pageSize,
+    bool retainError = false,
+  }) async {
+    await _loadBoardsForPage(
+      wsId,
+      page: 1,
+      pageSize: pageSize,
+      reset: true,
+      retainError: retainError,
+    );
   }
 
   void setFilter(TaskBoardsFilter filter) {
@@ -113,9 +126,15 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
     required bool reset,
     int? pageSize,
     bool forceRefresh = false,
+    bool retainError = false,
   }) async {
     final requestToken = ++_loadRequestToken;
     final workspaceChanged = state.workspaceId != wsId;
+    final keepError =
+        retainError &&
+        reset &&
+        !workspaceChanged &&
+        state.status == TaskBoardsStatus.error;
     final cacheKey = _cacheKey(wsId);
     final normalizedPage = page < 1 ? 1 : page;
     final normalizedPageSize = (pageSize ?? state.pageSize).clamp(1, 200);
@@ -151,7 +170,13 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
 
     emit(
       state.copyWith(
-        status: hasCachedReset || isLoadingMore
+        status:
+            hasCachedReset ||
+                isLoadingMore ||
+                keepError ||
+                (!workspaceChanged &&
+                    state.status != TaskBoardsStatus.initial &&
+                    state.status != TaskBoardsStatus.error)
             ? state.status
             : TaskBoardsStatus.loading,
         workspaceId: wsId,
@@ -164,7 +189,7 @@ class TaskBoardsCubit extends Cubit<TaskBoardsState> {
             ? state.boards
             : const [],
         isLoadingMore: isLoadingMore,
-        clearError: true,
+        clearError: !keepError,
       ),
     );
 

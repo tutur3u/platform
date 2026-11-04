@@ -2,6 +2,7 @@
 title: ChatGPT subscriptions
 updatedAt: 2026-10-02
 description: Use a personal ChatGPT plan for eligible chat requests in a local or self-hosted Tuturuuu installation.
+audience: developers
 ---
 
 Local and self-hosted installations can connect personal ChatGPT accounts through
@@ -46,19 +47,9 @@ Each account/workspace registration has its own issued client ID and credential
 record. To reconnect a saved registration, add `--client <ISSUED_CLIENT_ID>`.
 Do not copy one account's client ID onto another account's tokens.
 
-For a remote self-hosted server, complete OAuth locally, transfer the protected
-credential file over SSH to a private temporary path, then run the import utility
-on the server with the same Tuturuuu user UUID:
-
-```sh
-bun scripts/chatgpt-connect.ts --user <TUTURUUU_USER_UUID> --import-file /private/transferred-file.json
-```
-
-The credential filename is the SHA-256 digest of the Tuturuuu user UUID followed
-by `.json` in `CHATGPT_SUBSCRIPTIONS_DIR`. The import preserves the server's own
-host ID. Securely remove the temporary transfer file after import. Stop using the
-local session so only the server refreshes the imported rotating refresh token.
-OpenAI currently does not offer host-specific revocation for transferred sessions.
+For a remote self-hosted server, connect the account on that server with the
+same command. Do not copy credential files between machines. OpenAI currently
+does not offer host-specific revocation for transferred sessions.
 
 ## Use your plan
 

@@ -10,16 +10,18 @@ const resolve = (total?: string, split?: string) =>
 describe('resolveFamilyBudgets', () => {
   it('splits the default total by family shares', () => {
     expect(resolve()).toEqual({
-      offline: 600_000,
+      offline: 500_000,
       password: 100_000,
       proxy: 200_000,
       replay: 100_000,
+      meet: 100_000,
     });
     expect(resolve(' 1000 ', '')).toEqual({
-      offline: 600,
+      offline: 500,
       password: 100,
       proxy: 200,
       replay: 100,
+      meet: 100,
     });
   });
 
@@ -29,6 +31,7 @@ describe('resolveFamilyBudgets', () => {
       password: 10_000,
       proxy: 20_000,
       replay: 5,
+      meet: 10_000,
     });
   });
 

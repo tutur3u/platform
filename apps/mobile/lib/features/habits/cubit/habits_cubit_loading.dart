@@ -406,6 +406,7 @@ extension _HabitsLoading on HabitsCubit {
   Future<void> _loadTrackerDetail(
     String trackerId, {
     bool refresh = false,
+    bool retainError = false,
   }) async {
     if (!_scopeActive) return;
     final epoch = _workspaceEpoch;
@@ -452,15 +453,22 @@ extension _HabitsLoading on HabitsCubit {
       }
     }
 
+    final keepError =
+        retainError &&
+        refresh &&
+        state.selectedTrackerId == trackerId &&
+        state.detailStatus == HabitsStatus.error;
     final requestToken = ++_detailRequestToken;
     _publish(
       state.copyWith(
         selectedTrackerId: trackerId,
-        detailStatus: hasVisibleDetail
+        detailStatus: keepError
+            ? HabitsStatus.error
+            : hasVisibleDetail
             ? HabitsStatus.loaded
             : HabitsStatus.loading,
-        isDetailRefreshing: hasVisibleDetail,
-        detailError: null,
+        isDetailRefreshing: keepError || hasVisibleDetail,
+        detailError: keepError ? state.detailError : null,
       ),
     );
 

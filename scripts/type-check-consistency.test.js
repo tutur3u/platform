@@ -67,6 +67,8 @@ test('workspace tsc build type-check scripts use the cache-invalidation wrapper'
     'apps/tasks/package.json': 'type-check:native',
     // Forms also checks its Cloudflare project after the wrapped build check.
     'apps/forms/package.json': 'type-check:cloudflare',
+    // Drive checks its Start + Void Cloudflare project the same way.
+    'apps/drive/package.json': 'type-check:cloudflare',
   };
   const invalidScripts = [];
 

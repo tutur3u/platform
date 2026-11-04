@@ -17,8 +17,8 @@ class _TaskQuickActionCallbacks {
   const _TaskQuickActionCallbacks({
     required this.onStatus,
     required this.onPriority,
-    required this.onDueDate,
-    required this.onClearDueDate,
+    required this.onPickDate,
+    required this.onClearDate,
     required this.onOpenDetails,
     this.onAssignees,
     this.onLabels,
@@ -29,8 +29,8 @@ class _TaskQuickActionCallbacks {
 
   /// A null priority clears it (the web's None).
   final void Function(TaskBoardTask task, String? priority) onPriority;
-  final void Function(TaskBoardTask task) onDueDate;
-  final void Function(TaskBoardTask task) onClearDueDate;
+  final void Function(TaskBoardTask task, _TaskQuickDate field) onPickDate;
+  final void Function(TaskBoardTask task, _TaskQuickDate field) onClearDate;
   final void Function(TaskBoardTask task) onOpenDetails;
   final void Function(TaskBoardTask task)? onAssignees;
   final void Function(TaskBoardTask task)? onLabels;
@@ -54,8 +54,8 @@ TaskBoardTask? _taskQuickActionsLiveTask(
   return null;
 }
 
-/// Tap-to-edit sheet for one task: status, priority, assignees, due date,
-/// labels and list, then the full details.
+/// Tap-to-edit sheet for one task: status, priority, start and due dates,
+/// assignees, labels and list, then the full details.
 ///
 /// The sheet follows the board cubit, so a priority or field edit updates
 /// it in place and several edits can be made in a row.
@@ -126,10 +126,17 @@ class _TaskQuickActionsSheet extends StatelessWidget {
             onSelected: (value) => callbacks.onPriority(live, value),
           ),
           const SizedBox(height: AppLayout.sectionGap),
+          _TaskQuickSectionCaption(l10n.taskBoardDetailTaskDates),
+          _TaskQuickDatesCard(
+            task: live,
+            list: list,
+            enabled: !busy,
+            callbacks: callbacks,
+          ),
+          const SizedBox(height: AppLayout.sectionGap),
           _TaskQuickFieldsCard(
             task: live,
             board: board,
-            list: list,
             listName: listName,
             enabled: !busy,
             callbacks: callbacks,

@@ -521,9 +521,10 @@ String _taskReference(TaskBoardTask task, TaskBoardDetail board) {
   return id.substring(0, 8).toUpperCase();
 }
 
-String _taskSmartDate(BuildContext context, DateTime date) {
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
+/// [date] relative to [now] (the device clock when null).
+String _taskSmartDate(BuildContext context, DateTime date, {DateTime? now}) {
+  final clock = now ?? DateTime.now();
+  final today = DateTime(clock.year, clock.month, clock.day);
   final target = DateTime(date.year, date.month, date.day);
   final diff = target.difference(today).inDays;
 

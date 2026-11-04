@@ -77,12 +77,33 @@ String _encodeQueryParameters(Map<String, String> params) {
   return Uri(queryParameters: params).query;
 }
 
-DateTime _startOfDay(DateTime date) {
-  return DateTime(date.year, date.month, date.day);
-}
+// A [tz.TZDateTime] keeps its own zone, so a day picked in the user's
+// timezone setting saves as that zone's day rather than the device's.
+DateTime _startOfDay(DateTime date) => date is tz.TZDateTime
+    ? tz.TZDateTime(date.location, date.year, date.month, date.day)
+    : DateTime(date.year, date.month, date.day);
 
-DateTime _endOfDay(DateTime date) {
-  return DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
+DateTime _endOfDay(DateTime date) => date is tz.TZDateTime
+    ? tz.TZDateTime(
+        date.location,
+        date.year,
+        date.month,
+        date.day,
+        23,
+        59,
+        59,
+        999,
+      )
+    : DateTime(date.year, date.month, date.day, 23, 59, 59, 999);
+
+/// Throws when an update sets a field and also asks to clear it.
+void _rejectValueAndClear(List<(Object?, bool, String)> fields) {
+  for (final (value, clear, field) in fields) {
+    if (value != null && clear) {
+      final flag = 'clear${field[0].toUpperCase()}${field.substring(1)}';
+      throw ArgumentError('$field and $flag cannot both be provided');
+    }
+  }
 }
 
 String _taskStartDateIso(DateTime date) {

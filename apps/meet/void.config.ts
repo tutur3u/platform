@@ -29,6 +29,13 @@ const production = defineConfig({
         binding: 'WORKER_SELF_REFERENCE',
         service: 'tuturuuu-meet',
       },
+      {
+        // Meet AI usage limiter, reached over RPC with no public endpoint or
+        // shared secret. Unbound or unreachable, the limiter fails closed.
+        binding: 'ABUSE_GUARD',
+        service: 'tuturuuu-abuse-guard',
+        entrypoint: 'AbuseGuardEntrypoint',
+      },
     ],
     r2_buckets: [
       {
@@ -64,6 +71,11 @@ const production = defineConfig({
       NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
       MEET_REALTIME_URL: 'wss://meet-realtime.tuturuuu.com/realtime',
       PARLEY_APP_URL: 'https://parley.tuturuuu.com',
+      // Meet AI containment (A1, 3 Nov 2026). It must match the live Worker vars,
+      // because a deploy replaces vars and dropping these would turn Meet AI back on.
+      // Lifting containment is a reviewed change to these two lines.
+      MEET_AI_DISABLED: 'true',
+      MEET_AI_ENABLED_WORKSPACE_IDS: '',
     },
     durable_objects: {
       bindings: [

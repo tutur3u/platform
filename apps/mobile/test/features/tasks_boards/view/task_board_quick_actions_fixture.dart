@@ -5,6 +5,7 @@ import 'package:mobile/data/models/task_board_task.dart';
 import 'package:mobile/data/models/task_label.dart';
 import 'package:mobile/data/models/task_project_summary.dart';
 import 'package:mobile/data/models/workspace_user_option.dart';
+import 'package:mobile/features/settings/cubit/timezone_settings_cubit.dart';
 
 import 'task_board_row_actions_fixture.dart';
 
@@ -12,6 +13,8 @@ typedef QuickActionUpdate = ({
   String taskId,
   String? priority,
   bool clearPriority,
+  DateTime? startDate,
+  bool clearStartDate,
   DateTime? endDate,
   bool clearEndDate,
   List<String>? labelIds,
@@ -19,7 +22,8 @@ typedef QuickActionUpdate = ({
 });
 
 /// Keeps task state between reads so refreshes return what was saved, and
-/// records every field the quick sheet sends.
+/// records every field the quick sheet sends. [updateError] fails updates
+/// before anything is saved.
 class QuickActionsRepository extends RowActionsRepository {
   final Map<String, TaskBoardTask> tasks = {
     'task-1': TaskBoardTask(
@@ -27,6 +31,7 @@ class QuickActionsRepository extends RowActionsRepository {
       listId: 'list-1',
       name: 'Alpha task',
       priority: 'high',
+      startDate: DateTime(2026, 10, 20),
       endDate: DateTime(2026, 10, 24, 23, 59, 59),
       labelIds: const ['label-1'],
     ),
@@ -37,6 +42,7 @@ class QuickActionsRepository extends RowActionsRepository {
     ),
   };
   final List<QuickActionUpdate> sent = [];
+  Future<void>? updateBarrier;
 
   @override
   Future<TaskBoardDetail> getTaskBoardDetail(
@@ -102,10 +108,14 @@ class QuickActionsRepository extends RowActionsRepository {
     bool clearEndDate = false,
     bool clearEstimationPoints = false,
   }) async {
+    await updateBarrier;
+    if (updateError != null) throw updateError!;
     sent.add((
       taskId: taskId,
       priority: priority,
       clearPriority: clearPriority,
+      startDate: startDate,
+      clearStartDate: clearStartDate,
       endDate: endDate,
       clearEndDate: clearEndDate,
       labelIds: labelIds,
@@ -117,6 +127,7 @@ class QuickActionsRepository extends RowActionsRepository {
       listId: current.listId,
       name: name ?? current.name,
       priority: clearPriority ? null : priority ?? current.priority,
+      startDate: clearStartDate ? null : startDate ?? current.startDate,
       endDate: clearEndDate ? null : endDate ?? current.endDate,
       labelIds: labelIds ?? current.labelIds,
       assigneeIds: assigneeIds ?? current.assigneeIds,
@@ -126,31 +137,46 @@ class QuickActionsRepository extends RowActionsRepository {
 
 Finder quickActionTile(String key) => find.byKey(ValueKey(key));
 
-/// Pumps the board, lets its first loads finish and taps Alpha task.
+/// Pumps the board, lets its first loads finish and taps [taskName].
 Future<void> openQuickActionsSheet(
   WidgetTester tester, {
   required RowActionsWorkspaceCubit workspaceCubit,
   required QuickActionsRepository repository,
+  String taskName = 'Alpha task',
+  TimezoneSettingsCubit? timezone,
 }) async {
   await pumpRowActionsBoard(
     tester,
     workspaceCubit: workspaceCubit,
     repository: repository,
+    timezone: timezone,
   );
-  await tester.tap(find.text('Alpha task').first);
+  await tester.tap(find.text(taskName).first);
   await tester.pumpAndSettle();
 }
 
-/// Waits for the board's current mutation. Its cache invalidation does real
-/// file work, so fake time alone never completes it. The cache store is a
-/// process-wide singleton that serializes writes; tests that chain several
-/// mutations therefore run alone in their own file.
-Future<void> settleQuickActionMutation(WidgetTester tester) async {
+/// Settles the edit's UI. Chained saves explicitly wait for the original
+/// mutation's cache work; single edits and deliberately dropped edits do not.
+Future<void> settleQuickActionMutation(
+  WidgetTester tester, {
+  bool waitForCompletion = false,
+  Duration timeout = const Duration(seconds: 30),
+}) async {
+  await tester.pump();
+  final cubit = readRowActionsCubit(tester);
+  if (!cubit.state.isMutating) return;
   await tester.pumpAndSettle();
-  for (var i = 0; i < 50; i++) {
-    if (!readRowActionsCubit(tester).state.isMutating) break;
+  if (!waitForCompletion) return;
+  // The save's cache work runs on real async I/O, so bound the wait in real
+  // time and give that work real time on each turn; the fake test clock can
+  // run out long before a loaded CI runner finishes the save.
+  final elapsed = Stopwatch()..start();
+  while (cubit.state.isMutating) {
+    if (elapsed.elapsed > timeout) {
+      fail('quick-action save did not complete within 30s');
+    }
     await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 10)),
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
     );
     await tester.pump(const Duration(milliseconds: 100));
   }

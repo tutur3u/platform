@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { vi } from 'vitest';
 import { signMastermindPushEvent } from '@/lib/mastermind/push-events/signature';
@@ -53,6 +54,9 @@ export const redis = {
 export const fixture = {
   devices: [] as Array<{ user_id: string; token: string }>,
   preferences: {} as Record<string, boolean>,
+  /** Owners holding manage_mastermind in the root workspace. */
+  permissionHolders: new Set<string>(),
+  permissionError: false,
   deviceQuery: { in: vi.fn() },
   tokenDelete: vi.fn(),
 };
@@ -69,6 +73,7 @@ export function setUpPushEventsFixture() {
   vi.stubEnv('MASTERMIND_PUSH_HMAC_SECRET_NEXT', '');
   vi.stubEnv('MASTERMIND_PUSH_OWNER_IDS', `${OWNER}, ${SECOND_OWNER}`);
   vi.stubEnv('MASTERMIND_PUSH_LOCALE', '');
+  vi.stubEnv('MASTERMIND_REQUIRE_EXPLICIT_GRANT', '');
 
   store.clear();
   redis.set.mockImplementation(
@@ -117,6 +122,8 @@ export function setUpPushEventsFixture() {
     { user_id: STRANGER, token: 'stranger-token' },
   ];
   fixture.preferences = { [OWNER]: true, [SECOND_OWNER]: true };
+  fixture.permissionHolders = new Set([OWNER, SECOND_OWNER]);
+  fixture.permissionError = false;
   fixture.deviceQuery.in.mockImplementation(
     (_column: string, ids: string[]) => ({
       limit: vi.fn(async () => ({
@@ -133,10 +140,23 @@ export function setUpPushEventsFixture() {
         eq: vi.fn(() => ({ in: fixture.tokenDelete })),
       })),
     })),
-    rpc: vi.fn(async (_name: string, args: { p_user_id: string }) => ({
-      data: fixture.preferences[args.p_user_id] ?? true,
-      error: null,
-    })),
+    rpc: vi.fn(
+      async (
+        name: string,
+        args: { p_user_id: string; p_ws_id?: string; p_permission?: string }
+      ) =>
+        name === 'has_workspace_permission'
+          ? fixture.permissionError
+            ? { data: null, error: { message: 'lookup failed' } }
+            : {
+                data:
+                  args.p_ws_id === ROOT_WORKSPACE_ID &&
+                  args.p_permission === 'manage_mastermind' &&
+                  fixture.permissionHolders.has(args.p_user_id),
+                error: null,
+              }
+          : { data: fixture.preferences[args.p_user_id] ?? true, error: null }
+    ),
   } as never);
 
   vi.mocked(sendCustomPushMessageBatch).mockResolvedValue({

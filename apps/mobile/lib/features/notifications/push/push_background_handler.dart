@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io' show Platform;
 
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:mobile/features/notifications/push/inbox_push_identity.dart';
@@ -68,14 +67,6 @@ Future<void> _createNotificationChannelIfNeeded(
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   if (message.notification != null) {
-    return;
-  }
-
-  try {
-    if (Firebase.apps.isEmpty) {
-      await Firebase.initializeApp();
-    }
-  } on Object {
     return;
   }
 

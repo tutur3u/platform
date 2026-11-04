@@ -2,6 +2,7 @@
 title: 'Documenting'
 description: 'Learn how to contribute to our documentation.'
 updatedAt: '2026-10-08'
+audience: developers
 ---
 
 ## Preview and validate
@@ -33,6 +34,31 @@ The inventory covers maintained app routes, packages, toolchains, and declared
 and locked dependencies. Do not hand-edit generated reference pages. It excludes
 paused Rust/TanStack source and dependency refreshes. Version references describe
 checked-in versions, not the newest upstream release or a deployment claim.
+
+Generated pages under `reference/repository/` carry `noindex: true` in their
+frontmatter. They remain public and visible in navigation, but stay out of site
+search, search-engine indexing, AI assistant context, `llms.txt`, and
+`llms-full.txt`. The inventory generator owns this flag. Keep `seo.indexing`
+unset (or at its default) in `docs.json`; `"all"` can override the exclusions.
+See Mintlify's [indexing rules](https://www.mintlify.com/docs/organize/hidden-pages#search-seo-and-ai-indexing)
+and [LLM files](https://www.mintlify.com/docs/ai/llmstxt).
+Authored package guides, including SDK and masonry, stay indexed.
+
+The pinned 4.2.1184 static exporter excludes these pages from its search index
+and emits their HTML with `noindex`, but still lists them in its `llms.txt`.
+It emits no `llms-full.txt`. Use hosted checks below to verify the documented
+LLM exclusions; a successful static export does not establish them.
+
+After an authorized deployment, fetch `llms-full.txt` and confirm that no
+`Source: https://docs.tuturuuu.com/reference/repository/` sections remain;
+ordinary links to those pages may remain. Check `llms.txt` for excluded entries,
+following any split indexes it links. Fetch every generated page anonymously:
+it must return HTTP 200 with its body and a robots `noindex` directive. Confirm
+that the Reference navigation still lists those pages. Search for exact generated
+page titles and distinctive body text in the site's search: those pages must be
+absent, while an authored guide still returns results. Record full-file byte size
+after the deployment and search-index refresh. Source checks alone do not prove
+hosted LLM output or search behavior.
 
 `docs-seo-check.yaml` runs inventory, navigation/link, SEO-policy tests, and strict
 Mintlify validation in CI. Strict validation compiles docs; do not run it or app

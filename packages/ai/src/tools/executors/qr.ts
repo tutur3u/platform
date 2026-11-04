@@ -1,5 +1,5 @@
-import { clampSignedUrlTtl } from '@tuturuuu/storage-core/signed-url-policy';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { clampSignedUrlTtl } from '@tuturuuu/utils/signed-url-policy';
 import QRCode from 'qrcode';
 import type { MiraToolContext } from '../mira-tools';
 import { getWorkspaceContextWorkspaceId } from '../workspace-context';

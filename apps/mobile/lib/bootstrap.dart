@@ -5,17 +5,19 @@ import 'dart:ui';
 
 import 'package:bloc/bloc.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/cache/offline_mutation_queue.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/core/config/app_flavor.dart';
+import 'package:mobile/core/config/consent_gate.dart';
 import 'package:mobile/core/config/env.dart';
 import 'package:mobile/core/config/firebase_options_selector.dart';
 import 'package:mobile/core/interaction/app_haptics.dart';
+import 'package:mobile/core/observability/firebase_admission.dart';
 import 'package:mobile/core/observability/mobile_observability.dart';
+import 'package:mobile/core/observability/telemetry_preference.dart';
 import 'package:mobile/core/startup/optional_startup.dart';
 import 'package:mobile/core/startup/startup_state.dart';
 import 'package:mobile/core/theme/app_theme.dart';
@@ -25,7 +27,7 @@ import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
 import 'package:mobile/features/assistant/local/assistant_model_downloads.dart';
-import 'package:mobile/features/notifications/push/push_background_handler.dart';
+import 'package:mobile/features/notifications/push/push_notification_service.dart';
 import 'package:mobile/features/settings/cubit/appearance_resolution.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart' as shad;
 
@@ -65,26 +67,8 @@ Future<void> bootstrap(
   Env.assertSecureForRelease();
   registerLucideLicenses();
   ApiConfig.configure(appFlavor);
-  await AppHaptics.initialize();
 
   final settingsRepository = SettingsRepository();
-  shad.ThemeMode initialThemeMode;
-  try {
-    initialThemeMode = _parseThemeMode(await settingsRepository.getThemeMode());
-  } on Object catch (e, st) {
-    log('Failed to load theme mode, defaulting to system: $e', stackTrace: st);
-    initialThemeMode = shad.ThemeMode.system;
-  }
-  final resolvedBrightness = AppTheme.resolveBrightness(
-    initialThemeMode,
-    WidgetsBinding.instance.platformDispatcher.platformBrightness,
-  );
-
-  // Ensure system UI is visible and properly configured
-  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(
-    AppTheme.systemUiOverlayStyleFor(resolvedBrightness),
-  );
 
   FlutterError.onError = (details) {
     MobileObservability.instance.recordFatal(
@@ -98,16 +82,78 @@ Future<void> bootstrap(
     logChanges: appFlavor != AppFlavor.production,
   );
 
-  // Initialize Supabase with secure storage
-  try {
-    await Firebase.initializeApp(options: firebaseOptionsForFlavor(appFlavor));
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-    await MobileObservability.instance.initialize(appFlavor);
-    PlatformDispatcher.instance.onError = (error, stack) =>
-        MobileObservability.instance.recordFatal('platform', error, stack);
-  } on Object catch (e, st) {
-    log('Failed to initialize Firebase: $e', stackTrace: st);
-  }
+  final push = PushNotificationService.instance;
+  final firebaseAdmission = FirebaseAdmission(
+    initialize:
+        ({
+          required signedIn,
+          required pushAllowed,
+          required telemetryAllowed,
+        }) async {
+          if (Platform.isIOS || Platform.isAndroid) {
+            final admitted =
+                await const MethodChannel(
+                  'mobile/firebase_startup',
+                ).invokeMethod<bool>('initialize', {
+                  'signedIn': signedIn,
+                  'pushAllowed': pushAllowed,
+                  'telemetryAllowed': telemetryAllowed,
+                });
+            if (admitted != true) return false;
+          }
+          if (Firebase.apps.isEmpty) {
+            await Firebase.initializeApp(
+              options: firebaseOptionsForFlavor(appFlavor),
+            );
+            await Firebase.app().setAutomaticDataCollectionEnabled(false);
+          }
+          return true;
+        },
+    telemetry: ({required enabled}) => MobileObservability.instance.initialize(
+      appFlavor,
+      collectionEnabled: enabled,
+    ),
+    unregisterPush: () => push.prepareInstallationDeletion(strict: true),
+    deleteInstallation: () => const MethodChannel(
+      'mobile/firebase_startup',
+    ).invokeMethod<void>('deleteInstallation'),
+  );
+  push.firebaseInitializer = ({required pushAllowed}) =>
+      firebaseAdmission.update(
+        signedIn: push.hasActiveSession,
+        pushAllowed: pushAllowed,
+        telemetryAllowed:
+            consentGate.isEligible(appFlavor) &&
+            TelemetryPreference.instance.enabled,
+      );
+
+  // Local preference reads touch neither Firebase nor consent, so they overlap
+  // the consent read and gated admission below. Both settle before Supabase
+  // starts. Consent is read and applied inside one serialized
+  // `TelemetryPreference.initialize` call: Firebase is initialized only from
+  // there (and from push admission after sign-in), never from this join.
+  final preferences = await initializeBootstrapServices<_LocalPreferences>(
+    initializePlatformServices: () async {
+      try {
+        await TelemetryPreference.instance.initialize(
+          promptEligible: consentGate.isEligible(appFlavor),
+          apply: ({required enabled}) async {
+            await firebaseAdmission.update(
+              signedIn: push.hasActiveSession,
+              pushAllowed: push.pushAdmitted,
+              telemetryAllowed: consentGate.isEligible(appFlavor) && enabled,
+            );
+          },
+        );
+        PlatformDispatcher.instance.onError = (error, stack) =>
+            MobileObservability.instance.recordFatal('platform', error, stack);
+      } on Object catch (e, st) {
+        log('Failed to initialize Firebase: $e', stackTrace: st);
+      }
+    },
+    loadLocalPreferences: () => _loadLocalPreferences(settingsRepository),
+  );
+  final initialThemeMode = preferences.themeMode;
 
   try {
     await initSupabase();
@@ -140,19 +186,10 @@ Future<void> bootstrap(
     },
   );
 
-  // Pre-load the user's last routes so the router starts there directly.
-  // Prefer the more specific tab route if it's a sub-route of a mini-app,
-  // otherwise fall back to the app route or generic tab route.
-  final lastTabRoute = await settingsRepository.getLastTabRoute();
-  final lastAppRoute = await settingsRepository.getLastAppRoute();
-  // Use lastTabRoute if it's more specific (e.g., /timer/history vs /timer)
-  // otherwise fall back to lastAppRoute or lastTabRoute
-  final initialRoute = lastTabRoute ?? lastAppRoute;
-
   runApp(
     await builder(
       appFlavor: appFlavor,
-      initialRoute: initialRoute,
+      initialRoute: preferences.initialRoute,
       initialThemeMode: initialThemeMode,
       initialAppearance: initialAppearance,
     ),
@@ -162,6 +199,42 @@ Future<void> bootstrap(
     // Settings still exposes failures and permits a fresh initialization retry.
     scheduleOptionalStartup(AssistantModelDownloads.instance.initialize);
   }
+}
+
+typedef _LocalPreferences = ({shad.ThemeMode themeMode, String? initialRoute});
+
+/// Reads the local settings the first frame needs and applies system chrome.
+///
+/// Does not touch Firebase or Supabase, so it can overlap their initialization.
+Future<_LocalPreferences> _loadLocalPreferences(
+  SettingsRepository settingsRepository,
+) async {
+  await AppHaptics.initialize();
+
+  shad.ThemeMode themeMode;
+  try {
+    themeMode = _parseThemeMode(await settingsRepository.getThemeMode());
+  } on Object catch (e, st) {
+    log('Failed to load theme mode, defaulting to system: $e', stackTrace: st);
+    themeMode = shad.ThemeMode.system;
+  }
+  final resolvedBrightness = AppTheme.resolveBrightness(
+    themeMode,
+    WidgetsBinding.instance.platformDispatcher.platformBrightness,
+  );
+
+  // Ensure system UI is visible and properly configured
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(
+    AppTheme.systemUiOverlayStyleFor(resolvedBrightness),
+  );
+
+  // Pre-load the user's last routes so the router starts there directly.
+  // Prefer the more specific tab route if it's a sub-route of a mini-app,
+  // otherwise fall back to the app route or generic tab route.
+  final lastTabRoute = await settingsRepository.getLastTabRoute();
+  final lastAppRoute = await settingsRepository.getLastAppRoute();
+  return (themeMode: themeMode, initialRoute: lastTabRoute ?? lastAppRoute);
 }
 
 shad.ThemeMode _parseThemeMode(String mode) {

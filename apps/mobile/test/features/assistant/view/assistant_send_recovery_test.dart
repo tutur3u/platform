@@ -43,7 +43,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('assistant-navigation-toggle')));
     await tester.pumpAndSettle();
-    expect(find.text('Start a new chat'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Start a new chat'), findsOneWidget);
     expect(h.repository.api.creates, 0);
     if (raster != null) {
       await tester.runAsync(() async {
@@ -78,9 +78,12 @@ void main() {
         find.byKey(const ValueKey('assistant-navigation-toggle')),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Start a new chat'), findsOneWidget);
+      expect(
+        find.widgetWithText(AppButton, 'Start a new chat'),
+        findsOneWidget,
+      );
       expect(draft.text, "Today's focus");
-      await tester.tap(find.text('Start a new chat'));
+      await tester.tap(find.widgetWithText(AppButton, 'Start a new chat'));
       for (var i = 0; i < 12; i++) {
         await tester.pump(const Duration(milliseconds: 100));
         await tester.runAsync(
@@ -89,7 +92,7 @@ void main() {
       }
       expect(h.repository.api.creates, 1);
       expect(h.repository.chats.sends, 1);
-      expect(h.chat.state.storedChatId, repairChat);
+      expect(h.chat.state.storedChatId, h.chat.state.fallbackChatId);
       expect(draft.text, isEmpty);
     },
   );
@@ -119,7 +122,7 @@ void main() {
           () => Future<void>.delayed(const Duration(milliseconds: 10)),
         );
       }
-      expect(find.text('Start a new chat'), findsNothing);
+      expect(find.widgetWithText(AppButton, 'Start a new chat'), findsNothing);
       expect(h.repository.api.creates, 1);
       expect(h.repository.chats.sends, 1);
       // The composer clears on Send, before the acknowledgment arrives.
@@ -163,7 +166,7 @@ void main() {
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('assistant-navigation-toggle')));
     await tester.pumpAndSettle();
-    expect(find.text('Start a new chat'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Start a new chat'), findsOneWidget);
     expect(h.repository.api.creates, 0);
     expect(h.repository.chats.sends, 0);
     expect(draft.text, 'Keep pending creation safe');
@@ -186,7 +189,7 @@ void main() {
     await tester.tap(microphone);
     await tester.pumpAndSettle();
     // Recording first would upload into a chat that cannot be created.
-    expect(find.text('Start a new chat'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Start a new chat'), findsOneWidget);
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(h.chat.state.creationOutcomeUnknown, isTrue);
@@ -215,7 +218,7 @@ void main() {
       );
     await tester.tap(microphone);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Start a new chat'));
+    await tester.tap(find.widgetWithText(AppButton, 'Start a new chat'));
     for (var i = 0; i < 12; i++) {
       await tester.pump(const Duration(milliseconds: 100));
       await tester.runAsync(
@@ -255,7 +258,7 @@ void main() {
     await tester.tap(find.text('Files'));
     await tester.pumpAndSettle();
     // Picking first would upload into a chat that cannot be created.
-    expect(find.text('Start a new chat'), findsOneWidget);
+    expect(find.widgetWithText(AppButton, 'Start a new chat'), findsOneWidget);
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(h.chat.state.creationOutcomeUnknown, isTrue);

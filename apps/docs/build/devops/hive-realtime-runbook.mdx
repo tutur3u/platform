@@ -2,6 +2,7 @@
 title: Hive Realtime Runbook
 description: Operating notes for the Hive WebSocket service and satellite app deployment.
 updatedAt: '2026-10-26'
+audience: developers
 ---
 
 Hive realtime lives in `apps/hive-realtime`. It is a Bun WebSocket service used
@@ -10,8 +11,8 @@ Yjs helpers live in `@tuturuuu/realtime/hive` so `apps/hive`,
 `apps/hive-realtime`, and `apps/web` use the same message schemas.
 
 The retained Bun/Docker service is not the native Cloudflare target. Follow the
-[Cloudflare migration plan](/build/devops/hive-cloudflare-migration) for replacement
-and the [maintenance runbook](/build/devops/hive-cloudflare-maintenance) for the
+Cloudflare migration plan for replacement
+and the maintenance runbook for the
 separately approved interim response. Docker remains paused; these procedures do
 not authorize service restarts.
 

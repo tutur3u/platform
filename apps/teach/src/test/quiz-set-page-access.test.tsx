@@ -5,8 +5,13 @@ const state = vi.hoisted(() => ({
   permission: true,
   from: vi.fn(),
 }));
+vi.mock('@tuturuuu/satellite/auth', () => ({
+  getSatelliteAppSessionUser: async () => ({ id: 'user-1' }),
+}));
 vi.mock('@tuturuuu/satellite/workspace-access', () => ({
   getSatelliteWorkspacePermissions: async () => ({
+    membershipType: 'MEMBER',
+    wsId: 'workspace-a',
     containsPermission: () => state.permission,
     withoutPermission: () => !state.permission,
   }),
@@ -21,6 +26,10 @@ vi.mock('@/lib/education-page-access', () => ({
   requireEducationPageAccess: async () => undefined,
 }));
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  verifyWorkspaceMembershipType: async () => ({
+    ok: true,
+    membershipType: 'MEMBER',
+  }),
   getWorkspace: async () => ({ id: 'workspace-a' }),
 }));
 vi.mock('next/navigation', () => ({
@@ -69,7 +78,7 @@ import Quizzes from '../app/[locale]/(dashboard)/[wsId]/education/quiz-sets/[set
 beforeEach(() => {
   state.own = false;
   state.permission = true;
-  state.from.mockReset().mockImplementation((_table: string) => {
+  state.from.mockReset().mockImplementation((table: string) => {
     const filters: Record<string, string> = {};
     const query = {
       select: () => query,
@@ -81,7 +90,12 @@ beforeEach(() => {
       range: () => query,
       limit: () => query,
       maybeSingle: async () => ({
-        data: filters.ws_id && !state.own ? null : { id: 'set', name: 'set' },
+        data:
+          table === 'workspace_secrets'
+            ? { value: 'true' }
+            : filters.ws_id && !state.own
+              ? null
+              : { id: 'set', name: 'set' },
         error: null,
       }),
       // biome-ignore lint/suspicious/noThenProperty: Supabase query builders are awaitable.

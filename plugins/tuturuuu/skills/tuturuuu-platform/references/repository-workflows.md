@@ -5,7 +5,7 @@ Consult only the section relevant to the current task. Paths are repository-rela
 ## 4. Repository Map
 
 - `apps/web`: maintained Next.js platform on port `7803`; live route owner
-  alongside the owning Next.js satellites. Its [Web 1 Start candidate](../../../../../apps/docs/build/devops/web-start-candidate.mdx)
+  alongside the owning Next.js satellites. Its [Web 1 Start candidate](https://github.com/tutur3u/internal-docs/blob/main/docs-internal/build/devops/web-start-candidate.mdx)
   is default-off and forwards existing routes to an attested staging Next origin.
   Use `build:candidate` only on an admitted remote host or CI; inventory generation
   and focused proxy tests are build-free. Commit only route-level inventory;
@@ -254,38 +254,30 @@ to IPC or Web startup; a missing later artifact is secondary when the gate faile
 
 ## Wave-1 hosted staging acceptance
 
-Use the [hosted staging runbook](../../../../../apps/docs/build/devops/wave1-native-cutover.mdx#hosted-staging-acceptance-on-tutur3ucom)
-for the four exact app hosts under `staging.tutur3u.com`, cookie/HSTS boundaries,
-Supabase isolation, Release Desk provisioning and cutover-lead readiness receipts.
-The acceptance config is separate from local Web E2E setup; never use its local
-seed/dev-session helpers against hosted staging. Keep browser suites out of Vitest
-and register pure guard tests with the script collector. Profile public origins
-must be supplied before Vite builds, as well as in Worker runtime configuration.
-A listed case or source guard pass is not hosted acceptance or cutover evidence.
+The hosted staging runbook lives in the private internal-docs repository. Keep
+the hosted acceptance config separate from local Web E2E setup, and never use
+its local seed or dev-session helpers against hosted staging. Keep browser suites
+out of Vitest and register pure guard tests with the script collector. Hosted
+staging uses its own dedicated Worker identities; never bootstrap, reseed or
+reuse the signed admissions of the existing route-free publishers.
 
-Hosted staging uses distinct `tuturuuu-<app>-hosted-staging` Workers and
-`tuturuuu-meet-realtime-hosted-staging`; never bootstrap/reseed the existing
-route-free publishers or reuse their signed admissions. Hosted R2 names are
-`tuturuuu-mail-hosted-staging` and `tuturuuu-meet-hosted-staging-cache`;
-check Worker and bucket names against both existing publisher profiles. Inventory
-existing Workers, buckets and routes before writes, adopting present resources only with explicit owner
-approval. The four deep hostnames require a blocking, owner-approved billable
-zone-level ACM/Advanced certificate exception; the issuer's one-level hostname
-uses Universal SSL. Read back active certificate coverage before DNS and again
-before acceptance. Realtime preparation accepts the reviewed source config and
-writes its route-free derivative in private output, resolving source/alias paths;
-frontend preparation accepts prebundled emitted configs and keeps sibling paths.
-Pin emitted Supabase refs to independently validated build
-inputs and retain the public production-ref deny-list in the Worker. Route
-attachment no-ops only for the same pattern/Worker, stops on conflicts and records
-all route IDs. Calendar service workers are enabled only in the offline test;
-that case does not prove interception of service-worker egress.
+Staging cookies stay host-only. The hosted response wrapper only ever scopes the
+Supabase auth and app-session cookies, and only to the accepted shared cookie
+domain when the request host is inside it. Other cookies and `__Host-` cookies
+never get a Domain attribute. In staging mode the Apps gateway refuses apps with
+no exact staging origin instead of falling back to production. Production
+markers (`TUTURUUU_DEPLOY_ENV`, Vercel, the Cloudflare production build marker
+and a production app origin) ignore the shared cookie override on every runtime.
+Regression coverage: `scripts/wave1-staging/acceptance.test.mjs`,
+`staging-cookie.test.ts`, `shared-cookie.test.ts` and
+`apps/apps/src/native/route-boundary.test.ts`.
 
-Hosted wave-1 staging requires the explicit accepted
-`NEXT_PUBLIC_TUTURUUU_SHARED_COOKIE_DOMAIN=.staging.tutur3u.com` override and
-`NEXT_PUBLIC_TUTURUUU_INTERNAL_APP_DOMAINS` exact-origin registrations.
-`NEXT_PUBLIC_TUTURUUU_STAGING` alone does not grant cookie or origin trust.
-Production deployment markers ignore the override. Keep the five candidate
-apps separate from the central issuer at `https://staging.tutur3u.com`.
-Regression coverage: `staging-cookie-domain.test.ts`, `staging-cookie.test.ts`,
-`shared-cookie.test.ts`, and `e2e-wave1-staging/policy.test.ts`.
+## Focused route tests with unbuilt packages
+
+When a test partially imports route utilities to keep a pure parameter parser
+real, mock the unused satellite actor and workspace access dependencies. Otherwise
+loading the module can import package distributions before the mocked request
+context is used. The Forms form-ID route test preserves its seeded-ID parser
+assertion while mocking those unused boundaries; it runs without building
+`internal-api`. Keep resource authorization tests on the real mutation helper
+with fixture clients, and check that denials happen before any writes.

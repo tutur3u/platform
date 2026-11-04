@@ -1,6 +1,7 @@
 import 'package:mobile/features/mastermind/model/snapshot.dart';
 import 'package:mobile/features/mastermind/presentation/activity_model.dart';
 import 'package:mobile/features/mastermind/presentation/open_asks.dart';
+import 'package:mobile/features/mastermind/presentation/security_rows.dart';
 import 'package:mobile/features/mastermind/presentation/ship_model.dart';
 import 'package:mobile/features/mastermind/presentation/usage_model.dart';
 
@@ -30,16 +31,17 @@ final class MastermindHomeModel {
     final needsYou = openAsks(snapshot);
     final decisions = [...snapshot.decisions]
       ..sort((a, b) => b.at.compareTo(a.at));
-    final activity = [...snapshot.now.digest]
-      ..sort((a, b) {
+    final activity = singleSecurityEvent(
+      [...snapshot.now.digest]..sort((a, b) {
         final byTime = b.ts.compareTo(a.ts);
         return byTime != 0 ? byTime : b.seq.compareTo(a.seq);
-      });
+      }),
+    );
     final pools = MastermindUsageModel.from(snapshot).pools;
     return MastermindHomeModel._(
       needsYou: _orderNeedsYou(needsYou),
       generatedAt: snapshot.generatedAt,
-      security: _onePerProduct(snapshot.now.needsYou),
+      security: singleSecurityRow(snapshot.now.needsYou),
       lanes: MastermindActivity.from(snapshot),
       failingEnvironments: [
         for (final row in snapshot.environments)
@@ -66,7 +68,7 @@ final class MastermindHomeModel {
   final List<NeedsYou> needsYou;
   final DateTime generatedAt;
 
-  /// At most one per product, never counted.
+  /// At most one row for the whole list, never counted.
   final List<SecurityItem> security;
 
   /// True running, waiting, idle and failed counts plus "waiting on you".
@@ -127,12 +129,4 @@ List<ProductRelease> _mostRecent(List<ProductRelease> releases) {
       return a.$1.compareTo(b.$1);
     });
   return [for (final entry in indexed) entry.$2];
-}
-
-List<SecurityItem> _onePerProduct(List<NeedsYouItem> items) {
-  final seen = <Product?>{};
-  return [
-    for (final item in items)
-      if (item is SecurityItem && seen.add(item.product)) item,
-  ];
 }

@@ -4,6 +4,7 @@
  * corresponds to the intended local date and time in the user's timezone.
  */
 
+import { Temporal } from '@js-temporal/polyfill';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -40,8 +41,12 @@ export function buildDateInTimezone(
   tz: string
 ): Date {
   const resolved = resolveTaskTimezone(tz);
-  const s = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')} ${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`;
-  return dayjs.tz(s, resolved).toDate();
+  // Compatible selects the earlier repeated time and advances spring gaps.
+  const zoned = Temporal.ZonedDateTime.from(
+    { year, month, day, hour, minute, timeZone: resolved },
+    { disambiguation: 'compatible' }
+  );
+  return new Date(zoned.epochMilliseconds);
 }
 
 /**

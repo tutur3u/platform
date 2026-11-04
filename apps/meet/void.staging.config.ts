@@ -65,7 +65,7 @@ export function meetStagingConfig() {
       },
       vars: {
         NEXT_PUBLIC_APP_URL: `https://tuturuuu-meet-wave1-staging.${subdomain}.workers.dev`,
-        NEXT_PUBLIC_WEB_APP_URL: 'https://web.staging.tutur3u.com',
+        NEXT_PUBLIC_WEB_APP_URL: 'https://web.tutur3u.com',
         MEET_REALTIME_URL: `wss://tuturuuu-meet-realtime-wave1-staging.${subdomain}.workers.dev/realtime`,
         TUTURUUU_NOINDEX: '1',
       },

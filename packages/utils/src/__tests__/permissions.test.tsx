@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { describe, expect, it } from 'vitest';
 import { ROOT_WORKSPACE_ID } from '../constants';
+import { EXPLICIT_GRANT_PERMISSIONS } from '../explicit-grant-permissions';
 import { permissions } from '../permissions';
 
 describe('workspace permission catalog', () => {
@@ -148,6 +149,9 @@ describe('workspace permission catalog', () => {
     expect(permissionIds).toContain('manage_internal_accounts');
     expect(permissionIds).toContain('manage_git_repositories');
     expect(permissionIds).toContain('manage_external_migrations');
+    for (const permissionId of EXPLICIT_GRANT_PERMISSIONS) {
+      expect(permissionIds).not.toContain(permissionId);
+    }
     expect(permissionIds).toContain('manage_workspace_secrets');
     expect(new Set(permissionIds).size).toBe(permissionIds.length);
   });
