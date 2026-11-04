@@ -436,6 +436,9 @@ test('release normalization captures prior immutable provenance and stages only 
     workflow,
     /RELEASE_SHA: \$\{\{ steps\.normalize\.outputs\.release_sha \}\}/
   );
-  assert.match(workflow, /echo "release_sha=\$\{release_sha\}" >> "\$GITHUB_OUTPUT"/);
+  assert.match(
+    workflow,
+    /echo "release_sha=\$\{release_sha\}" >> "\$GITHUB_OUTPUT"/
+  );
   assert.doesNotMatch(workflow, /git add (?:--all|apps\/docs\/)/);
 });
