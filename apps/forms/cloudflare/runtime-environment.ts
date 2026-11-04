@@ -10,6 +10,9 @@ export type RuntimeEnvironment = Partial<
 >;
 
 export function assertRuntimeEnvironment(env: RuntimeEnvironment): void {
+  if (process.env.NODE_ENV !== 'production') {
+    throw new Error('Worker requires NODE_ENV=production');
+  }
   for (const name of REQUIRED_RUNTIME_NAMES) {
     if (typeof env[name] !== 'string' || !env[name]?.trim()) {
       throw new Error(`Missing required runtime binding: ${name}`);

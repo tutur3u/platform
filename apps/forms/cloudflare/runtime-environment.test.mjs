@@ -6,6 +6,7 @@ import {
 } from './runtime-environment.ts';
 
 test('startup rejects every missing or blank required binding', () => {
+  process.env.NODE_ENV = 'production';
   const valid = Object.fromEntries(
     REQUIRED_RUNTIME_NAMES.map((name) => [name, 'synthetic-unit-only'])
   );
@@ -29,5 +30,13 @@ test('startup rejects every missing or blank required binding', () => {
           'tuturuuu-local-development-app-coordination-secret',
       }),
     /Development coordination secret is forbidden/
+  );
+});
+
+test('startup rejects a non-production runtime', () => {
+  process.env.NODE_ENV = 'development';
+  assert.throws(
+    () => assertRuntimeEnvironment({}),
+    /Worker requires NODE_ENV=production/
   );
 });
