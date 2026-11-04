@@ -245,10 +245,13 @@ export function renderCmsBlock(block: CmsBlock): ReactNode {
       />
     );
   }
-  const Component = cmsLeafRenderers[block.type] as (
-    props: typeof block.props
-  ) => ReactNode;
-  return <Component key={block.props.id} {...block.props} />;
+  // Block types without a renderer yet (owned by the renderer lane) render nothing.
+  const Component = (
+    cmsLeafRenderers as Partial<
+      Record<CmsBlock['type'], (props: typeof block.props) => ReactNode>
+    >
+  )[block.type];
+  return Component ? <Component key={block.props.id} {...block.props} /> : null;
 }
 
 export function CmsPageRenderer({ page }: { page: CmsPage }) {

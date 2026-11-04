@@ -139,6 +139,69 @@ export const cmsBlockRegistry: { [T in CmsBlockType]: CmsBlockDefinition<T> } =
       defaults: { left: [], ratio: '1:1', right: [] },
       fields: { left: zone, ratio: select(['1:1', '1:2', '2:1']), right: zone },
     },
+    Section: {
+      category: 'layout',
+      defaults: {
+        anchor: '',
+        background: 'none',
+        children: [],
+        padding: 'md',
+        width: 'default',
+      },
+      fields: {
+        anchor: text,
+        background: select(['none', 'muted', 'accent']),
+        children: zone,
+        padding: select(['none', 'sm', 'md', 'lg']),
+        width: select(['narrow', 'default', 'wide', 'full']),
+      },
+    },
+    Heading: {
+      category: 'content',
+      defaults: { align: 'left', anchor: '', level: '2', text: 'Heading' },
+      fields: {
+        align: select(['left', 'center', 'right']),
+        anchor: text,
+        level: select(['1', '2', '3', '4', '5', '6']),
+        text,
+      },
+    },
+    Gallery: {
+      category: 'content',
+      defaults: { aspect: 'auto', columns: '3', images: [] },
+      fields: {
+        aspect: select(['auto', 'square', 'video']),
+        columns: select(['2', '3', '4']),
+        images: {
+          itemFields: { alt: text, caption: text, src: image },
+          kind: 'list',
+        },
+      },
+    },
+    Embed: {
+      category: 'content',
+      defaults: { aspect: '16:9', title: '', url: '' },
+      fields: { aspect: select(['16:9', '4:3', '1:1']), title: text, url },
+    },
+    Accordion: {
+      category: 'content',
+      defaults: { heading: '', items: [] },
+      fields: {
+        heading: text,
+        items: {
+          itemFields: { answer: richtext, question: text },
+          kind: 'list',
+        },
+      },
+    },
+    Divider: {
+      category: 'layout',
+      defaults: { spacing: 'md', variant: 'solid' },
+      fields: {
+        spacing: select(['sm', 'md', 'lg']),
+        variant: select(['solid', 'dashed']),
+      },
+    },
   };
 
 export const cmsBlockTypes = Object.keys(cmsBlockRegistry) as CmsBlockType[];
