@@ -119,21 +119,102 @@ test('generated formatting is path-scoped and race-safe', () => {
   );
 });
 
+const releaseSteps = releaseJob.split(/\n {6}- name: /u);
+const stepNamed = (name) => releaseSteps.find((step) => step.startsWith(name));
+
 test('the admin token is not persisted and reaches only the push steps', () => {
   assert.match(releaseJob, /persist-credentials: false/);
-  const steps = releaseJob.split(/\n {6}- name: /u);
-  const withPushToken = steps.filter((step) => /PUSH_TOKEN:/u.test(step));
+  const withPushToken = releaseSteps.filter((step) =>
+    /PUSH_TOKEN:/u.test(step)
+  );
   assert.equal(withPushToken.length, 2);
   for (const step of withPushToken) {
-    assert.match(
-      step,
-      /git push "https:\/\/x-access-token:\$\{PUSH_TOKEN\}@github\.com\/\$\{GITHUB_REPOSITORY\}\.git"/u
-    );
+    // The token travels only through the helper's environment, never a URL.
+    assert.match(step, /bash scripts\/ci\/github-token-push\.sh /u);
+    assert.doesNotMatch(step, /x-access-token|\$\{?PUSH_TOKEN\b|git push/u);
   }
-  const formatStep = steps.find((step) =>
-    step.startsWith('Normalize generated release formatting')
-  );
+  const formatStep = stepNamed('Normalize generated release formatting');
   assert.doesNotMatch(formatStep, /secrets\.RELEASE_PLEASE_TOKEN|git push/u);
+});
+
+test('only the reviewed steps receive the admin token, each in its own step env', () => {
+  // SR-393: the two Node API scripts still need the admin token; pin the set so
+  // no other step (or a job-level env) can gain it without a reviewed change.
+  const header = releaseJob.slice(0, releaseJob.indexOf('\n    steps:'));
+  assert.doesNotMatch(header, /RELEASE_PLEASE_TOKEN \|\||^ {4}env:/mu);
+  const tokenSteps = releaseSteps
+    .slice(1)
+    .filter((step) => /secrets\.RELEASE_PLEASE_TOKEN/u.test(step))
+    .map((step) => step.split('\n')[0]);
+  assert.deepEqual(tokenSteps, [
+    'Checkout release automation',
+    'Recover overflow release notes',
+    'Create or update release PR',
+    'Push normalized release branch',
+    'Normalize generated release description',
+    'Delete tagged overflow release notes',
+  ]);
+  assert.doesNotMatch(
+    stepNamed('Approve untouched release PR'),
+    /RELEASE_PLEASE_TOKEN \|\|/u
+  );
+});
+
+test('the token push helper keeps the token out of every process argv', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'token-push-'));
+  try {
+    const log = path.join(directory, 'git.log');
+    const bin = path.join(directory, 'git');
+    fs.writeFileSync(
+      bin,
+      '#!/bin/sh\n{ printf "argv:%s\\n" "$*"; env | grep "^GIT_CONFIG_"; } >> "$GIT_LOG"\n',
+      { mode: 0o755 }
+    );
+    // Deliberately not PAT-shaped: the helper treats the token as opaque.
+    const token = 'fixture-push-token-not-a-real-credential-0123456789';
+    const encoded = Buffer.from(`x-access-token:${token}`).toString('base64');
+    const run = (env, ...args) =>
+      spawnSync(
+        'bash',
+        [path.join(repoRoot, 'scripts/ci/github-token-push.sh'), ...args],
+        {
+          encoding: 'utf8',
+          env: {
+            PATH: `${directory}:${process.env.PATH}`,
+            GIT_LOG: log,
+            GITHUB_REPOSITORY: 'example/repo',
+            ...env,
+          },
+        }
+      );
+    const result = run(
+      { PUSH_TOKEN: token, GITHUB_ACTIONS: 'true' },
+      'abc:refs/heads/x',
+      '--force-with-lease=refs/heads/x:def'
+    );
+    assert.equal(result.status, 0, result.stderr);
+    const recorded = fs.readFileSync(log, 'utf8');
+    const argv = recorded.split('\n').filter((l) => l.startsWith('argv:'));
+    assert.deepEqual(argv, [
+      'argv:push https://github.com/example/repo.git abc:refs/heads/x --force-with-lease=refs/heads/x:def',
+    ]);
+    assert.match(
+      recorded,
+      /^GIT_CONFIG_KEY_0=http\.https:\/\/github\.com\/\.extraheader$/mu
+    );
+    assert.ok(
+      recorded.includes(`GIT_CONFIG_VALUE_0=AUTHORIZATION: basic ${encoded}\n`)
+    );
+    assert.ok(!argv.join('\n').includes(token));
+    assert.ok(!argv.join('\n').includes(encoded));
+    assert.ok(result.stdout.includes(`::add-mask::${encoded}`));
+    assert.ok(!result.stdout.includes(token));
+
+    const missing = run({}, '--delete', 'x');
+    assert.notEqual(missing.status, 0);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
 });
 
 test('generated lock refresh is bounded, version-only, and preserves authors', () => {

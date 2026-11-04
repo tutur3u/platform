@@ -183,7 +183,8 @@ jobs:
           PUSH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
         run: |
           set -euo pipefail
-          git push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+          # The helper passes the token as an env-config auth header, never argv.
+          bash scripts/ci/github-token-push.sh \
             "${NORMALIZED_SHA}:refs/heads/${RELEASE_BRANCH}" \
             --force-with-lease="refs/heads/${RELEASE_BRANCH}:${RELEASE_SHA}"
 
@@ -209,7 +210,7 @@ jobs:
             exit 0
           fi
 
-          if git push "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" --delete "${RELEASE_NOTES_BRANCH}" 2>&1; then
+          if bash scripts/ci/github-token-push.sh --delete "${RELEASE_NOTES_BRANCH}" 2>&1; then
             echo "Deleted origin/${RELEASE_NOTES_BRANCH} after tagging."
             exit 0
           fi

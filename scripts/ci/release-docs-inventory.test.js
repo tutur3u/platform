@@ -429,7 +429,13 @@ test('release normalization captures prior immutable provenance and stages only 
   assert.ok(lock < derived && derived < guard && guard < amend);
   assert.match(
     workflow,
-    /--force-with-lease="refs\/heads\/\$\{RELEASE_BRANCH\}:\$\{release_sha\}"/
+    /--force-with-lease="refs\/heads\/\$\{RELEASE_BRANCH\}:\$\{RELEASE_SHA\}"/
   );
+  // The lease value is the exact remote SHA the normalize step amended.
+  assert.match(
+    workflow,
+    /RELEASE_SHA: \$\{\{ steps\.normalize\.outputs\.release_sha \}\}/
+  );
+  assert.match(workflow, /echo "release_sha=\$\{release_sha\}" >> "\$GITHUB_OUTPUT"/);
   assert.doesNotMatch(workflow, /git add (?:--all|apps\/docs\/)/);
 });
