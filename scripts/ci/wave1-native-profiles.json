@@ -15,7 +15,11 @@
         "MICROSOFT_CLIENT_ID",
         "MICROSOFT_CLIENT_SECRET",
         "CRON_SECRET",
-        "MICROSOFT_TENANT_ID"
+        "MICROSOFT_TENANT_ID",
+        "ENCRYPTION_MASTER_KEY",
+        "CLOUDFLARE_COORDINATION_URL",
+        "CLOUDFLARE_COORDINATION_TOKEN",
+        "TUTURUUU_AZURE_TENANT_ID"
       ],
       "stagingHost": "calendar.tutur3u.com",
       "ingress": "access-custom-domain",
