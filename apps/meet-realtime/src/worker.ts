@@ -1,5 +1,6 @@
 import type { ChannelRoomEnv } from './channel-room-do';
 import { channelRequest } from './channel-worker';
+import { isKnownMeetRealtimeHost } from './host-policy';
 
 export { ChannelRoomDurableObject } from './channel-room-do';
 
@@ -26,6 +27,8 @@ export default {
     env: MeetRoomEnv & CollaborationRoomEnv & ChannelRoomEnv
   ): Promise<Response> {
     const url = new URL(request.url);
+    if (!isKnownMeetRealtimeHost(request))
+      return new Response('Not found', { status: 404 });
     if (
       ['/channels', '/channels/publish', '/channels/document'].includes(
         url.pathname

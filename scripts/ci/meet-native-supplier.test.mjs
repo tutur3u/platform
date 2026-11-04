@@ -54,6 +54,7 @@ test('supplier requires both exact version/hash pins', () => {
   const bindings = fixtureBindings(randomUUID() + randomUUID());
   assert.deepEqual(Object.keys(bindings).sort(), [
     'GOOGLE_GENERATIVE_AI_API_KEY',
+    'MEET_AI_DISABLED_WORKSPACE_IDS',
     'MEET_REALTIME_TOKEN_SECRET',
     'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
     'NEXT_PUBLIC_SUPABASE_URL',

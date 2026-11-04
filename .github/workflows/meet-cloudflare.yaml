@@ -27,6 +27,10 @@ on:
       - 'scripts/ci/native-wrangler-runtime.test.mjs'
       - 'scripts/ci/native-wrangler-runtime.runtime.mjs'
       - 'scripts/ci/meet-build-metadata.test.js'
+      - 'scripts/ci/verify-meet-realtime-policy*'
+      - 'scripts/ci/meet-ai-workspace-gate.test.mjs'
+      - 'scripts/ci/meet-realtime-host.test.mjs'
+      - 'scripts/ci/meet-parley-provider.test.mjs'
       - 'scripts/ci/verify-meet-start-output*'
       - 'scripts/ci/meet-emitted-defaults.mjs'
       - 'scripts/ci/native-config-default-probe.mjs'
@@ -64,6 +68,10 @@ on:
       - 'scripts/ci/native-wrangler-runtime.test.mjs'
       - 'scripts/ci/native-wrangler-runtime.runtime.mjs'
       - 'scripts/ci/meet-build-metadata.test.js'
+      - 'scripts/ci/verify-meet-realtime-policy*'
+      - 'scripts/ci/meet-ai-workspace-gate.test.mjs'
+      - 'scripts/ci/meet-realtime-host.test.mjs'
+      - 'scripts/ci/meet-parley-provider.test.mjs'
       - 'scripts/ci/verify-meet-start-output*'
       - 'scripts/ci/meet-emitted-defaults.mjs'
       - 'scripts/ci/native-config-default-probe.mjs'
@@ -123,7 +131,11 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24.22.0
-      - run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Test realtime containment controls
+        run: node --experimental-strip-types --test scripts/ci/meet-ai-workspace-gate.test.mjs scripts/ci/meet-parley-provider.test.mjs scripts/ci/meet-realtime-host.test.mjs scripts/ci/verify-meet-realtime-policy.test.mjs
+      - name: Assert realtime AI containment
+        run: node scripts/ci/verify-meet-realtime-policy.mjs
       - name: Generate shared build metadata
         env:
           PLATFORM_BUILD_ENVIRONMENT: ${{ github.ref == 'refs/heads/production' && 'production' || 'preview' }}
@@ -399,7 +411,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24.22.0
-      - run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile --ignore-scripts
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: meet-worker-${{ env.SOURCE_SHA }}
@@ -448,6 +460,8 @@ jobs:
       allowed: ${{ steps.policy.outputs.allowed }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
@@ -464,8 +478,6 @@ jobs:
     environment: meet-production
     env:
       CLOUDFLARE_ACCOUNT_ID: e8912e2867beecc673d171907bf09649
-      # The existing account deployment credential can bootstrap Meet; prefer its own credential when configured.
-      CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN || secrets.COLAB_CLOUDFLARE_API_TOKEN }}
     concurrency:
       group: meet-cloudflare-production-deploy
       cancel-in-progress: false
@@ -483,7 +495,7 @@ jobs:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24.22.0
-      - run: bun install --frozen-lockfile
+      - run: bun install --frozen-lockfile --ignore-scripts
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: meet-worker-${{ env.SOURCE_SHA }}
@@ -529,6 +541,7 @@ jobs:
       - name: Verify required production secret names
         working-directory: apps/meet
         env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN }}
           MEET_REALTIME_TOKEN_SECRET: ${{ secrets.MEET_REALTIME_TOKEN_SECRET }}
         run: |
           test -n "$MEET_REALTIME_TOKEN_SECRET" || { echo 'Missing production Meet smoke-test credential'; exit 1; }
@@ -537,6 +550,8 @@ jobs:
           jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","NEXT_PUBLIC_SUPABASE_URL","NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY","SUPABASE_SECRET_KEY","GOOGLE_GENERATIVE_AI_API_KEY","MEET_AI_DISABLED_WORKSPACE_IDS"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-secrets.json" > /dev/null
           jq -e --argjson required '["MEET_REALTIME_TOKEN_SECRET","CLOUDFLARE_REALTIME_APP_ID","CLOUDFLARE_REALTIME_APP_SECRET","CLOUDFLARE_TURN_KEY_ID","CLOUDFLARE_TURN_API_TOKEN","MEET_AI_DISABLED_WORKSPACE_IDS"]' 'map(.name) as $names | all($required[]; . as $name | $names | index($name) != null)' "$RUNNER_TEMP/meet-realtime-secrets.json" > /dev/null
       - name: Capture existing frontend and realtime rollback versions
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN }}
         run: |
           for service in frontend realtime; do
             worker=tuturuuu-meet
@@ -553,13 +568,19 @@ jobs:
           path: ${{ runner.temp }}/meet-rollback-*.json
           retention-days: 7
           if-no-files-found: error
+      - name: Assert realtime AI containment before deployment
+        run: node scripts/ci/verify-meet-realtime-policy.mjs
       - name: Deploy signaling before the frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN }}
         run: |
           test -n "$CLOUDFLARE_API_TOKEN" || { echo 'Missing Cloudflare deployment credential'; exit 1; }
           bun x --no-install wrangler deploy -c apps/meet-realtime/wrangler.jsonc --message "$GITHUB_SHA"
       # Void 1.1.12 CLI rebuilds/wraps after build gates and rejects targeted
       # placement with pinned secrets. Publish its qualified SDK output unchanged.
       - name: Deploy the verified frontend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.MEET_CLOUDFLARE_API_TOKEN }}
         working-directory: apps/meet
         timeout-minutes: 10
         run: |

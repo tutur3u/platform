@@ -70,7 +70,7 @@ const bind = (value?: string) =>
   mocks.cloudflare.mockResolvedValue({
     env: {
       MEET_AI_ENABLED_WORKSPACE_IDS: value,
-      MEET_AI_DISABLED: value ? undefined : 'true',
+      MEET_AI_DISABLED: value ? 'false' : 'true',
     },
   });
 

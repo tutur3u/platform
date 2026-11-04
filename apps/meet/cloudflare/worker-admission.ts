@@ -14,10 +14,7 @@ function present(vars: Record<string, unknown>, name: string) {
 
 function aiExplicitlyOn(vars: Record<string, unknown>) {
   const disabled = vars.MEET_AI_DISABLED;
-  return (
-    typeof disabled === 'string' &&
-    ['0', 'false'].includes(disabled.trim().toLowerCase())
-  );
+  return disabled === 'false' || disabled === '0';
 }
 
 export function missingMeetSecrets(env: object) {

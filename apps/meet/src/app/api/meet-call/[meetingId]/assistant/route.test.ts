@@ -97,7 +97,7 @@ const allowlist = (value: string | undefined) =>
   vi.stubGlobal(Symbol.for('__cloudflare-context__'), {
     env: {
       MEET_AI_ENABLED_WORKSPACE_IDS: value,
-      MEET_AI_DISABLED: value ? undefined : 'true',
+      MEET_AI_DISABLED: value ? 'false' : 'true',
     },
   });
 afterEach(() => {
