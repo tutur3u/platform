@@ -161,4 +161,54 @@ describe('fee-lock snapshot', () => {
         .success
     ).toBe(false);
   });
+
+  it('bounds strings, line count, amounts, timestamps and months like the inputs', () => {
+    const line = {
+      kind: 'tuition',
+      group_id: id(2),
+      group_name: 'Lớp A',
+      label: 'Lớp A',
+      unit_label: 'buổi',
+      product_id: null,
+      unit_price: 150_000,
+      quantity: 8,
+      adjustment_amount: 0,
+      reason: null,
+      line_amount: 1_200_000,
+      sort_order: 0,
+    };
+    const base = {
+      schema_version: 1,
+      fee_lock_id: id(9),
+      ws_id: id(8),
+      student_id: id(1),
+      student_name: 'Học viên mẫu',
+      period_month: '2026-12-01',
+      currency: 'VND',
+      revision: 1,
+      total_amount: 1_200_000,
+      note: null,
+      locked_by: null,
+      locked_at: '2026-11-25T10:00:00+07:00',
+      lines: [line],
+    };
+    const ok = (patch: object, linePatch: object = {}) =>
+      feeLockSnapshotSchema.safeParse({
+        ...base,
+        lines: [{ ...line, ...linePatch }],
+        ...patch,
+      }).success;
+    expect(ok({})).toBe(true);
+    expect(ok({ student_name: 'x'.repeat(201) })).toBe(false);
+    expect(ok({ note: 'x'.repeat(2001) })).toBe(false);
+    expect(ok({ period_month: '2026-13-01' })).toBe(false);
+    expect(ok({ locked_at: 'yesterday' })).toBe(false);
+    expect(ok({ total_amount: FEE_LOCK_MAX_MONEY + 1 })).toBe(false);
+    expect(ok({ lines: Array.from({ length: 51 }, () => line) })).toBe(false);
+    expect(ok({}, { label: 'x'.repeat(201) })).toBe(false);
+    expect(ok({}, { reason: 'x'.repeat(501) })).toBe(false);
+    expect(ok({}, { quantity: 0 })).toBe(false);
+    expect(ok({}, { line_amount: -1 })).toBe(false);
+    expect(ok({}, { adjustment_amount: -FEE_LOCK_MAX_MONEY - 1 })).toBe(false);
+  });
 });

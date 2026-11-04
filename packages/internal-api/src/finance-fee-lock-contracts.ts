@@ -261,35 +261,40 @@ export type FeeLockBatchItemResult =
   | { id: string; result: 'conflict'; current_version: number }
   | { id: string; result: 'not_found' };
 
-/** Immutable JSON stored in `fee_lock_revisions.snapshot` at lock time. */
+// Immutable JSON in `fee_lock_revisions.snapshot`. Bounds match the inputs and M1 columns. Names come from the workspace at lock
+// time; M2 must cap them at FEE_LOCK_MAX_NAME_LENGTH when it writes a snapshot.
+export const FEE_LOCK_MAX_NAME_LENGTH = 200;
+const nameSchema = z.string().max(FEE_LOCK_MAX_NAME_LENGTH);
 export const feeLockSnapshotSchema = z.object({
   schema_version: z.literal(1),
   fee_lock_id: z.guid(),
   ws_id: z.guid(),
   student_id: z.guid(),
-  student_name: z.string(),
-  period_month: z.string().regex(/^\d{4}-\d{2}-01$/),
+  student_name: nameSchema,
+  period_month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-01$/),
   currency: z.string().length(3),
   revision: z.int().min(1),
-  total_amount: z.number().nonnegative(),
-  note: z.string().nullable(),
+  total_amount: moneySchema.nonnegative(),
+  note: z.string().max(2000).nullable(),
   locked_by: z.guid().nullable(),
-  locked_at: z.string(),
-  lines: z.array(
-    z.object({
-      kind: z.enum(['tuition', 'extra']),
-      group_id: z.guid().nullable(),
-      group_name: z.string().nullable(),
-      label: z.string(),
-      unit_label: z.string().nullable(),
-      product_id: z.guid().nullable(),
-      unit_price: z.number(),
-      quantity: z.number(),
-      adjustment_amount: z.number(),
-      reason: z.string().nullable(),
-      line_amount: z.number(),
-      sort_order: z.int(),
-    })
-  ),
+  locked_at: z.iso.datetime({ offset: true }),
+  lines: z
+    .array(
+      z.object({
+        kind: z.enum(['tuition', 'extra']),
+        group_id: z.guid().nullable(),
+        group_name: nameSchema.nullable(),
+        label: z.string().min(1).max(200),
+        unit_label: z.string().max(40).nullable(),
+        product_id: z.guid().nullable(),
+        unit_price: moneySchema.nonnegative(),
+        quantity: quantitySchema,
+        adjustment_amount: moneySchema,
+        reason: reasonSchema.nullable(),
+        line_amount: moneySchema.nonnegative(),
+        sort_order: z.int(),
+      })
+    )
+    .max(FEE_LOCK_MAX_LINES),
 });
 export type FeeLockSnapshot = z.infer<typeof feeLockSnapshotSchema>;
