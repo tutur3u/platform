@@ -8,7 +8,10 @@ import importlib.util
 import os
 from pathlib import Path
 
-WORKER = "tuturuuu-inventory-vite-staging"
+PROFILE = os.environ.get("VITE_INVENTORY_NATIVE_PROFILE", "staging")
+if PROFILE not in ("staging", "production"):
+    raise ValueError("Expected inventory native profile staging or production")
+WORKER = "tuturuuu-inventory" if PROFILE == "production" else "tuturuuu-inventory-vite-staging"
 PUBLIC_FILES = (
     "robots.txt",
 )
@@ -22,6 +25,7 @@ def load():
     module.IDENTITY = {
         **module.IDENTITY,
         "name": WORKER,
+        "vars": {"TUTURUUU_NOINDEX": "0" if PROFILE == "production" else "1"},
         "compatibility_date": "2026-10-12",
         "compatibility_flags": ["nodejs_compat","global_fetch_strictly_public"],
         "workers_dev": False,

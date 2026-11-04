@@ -127,15 +127,20 @@ jobs:
       deployments: read
     with:
       workflow_name: inventory-cloudflare.yaml
-  # Qualification only: no staging or production publisher.
+  # Qualify both route-free identities before Rex uploads a private version.
   native:
     needs: check-ci
-    if: (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    if: github.event_name != 'workflow_dispatch' && (needs.check-ci.outputs.should_run == 'true') && (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'ready-for-ci'))
+    strategy:
+      matrix:
+        profile: [staging, production]
     uses: ./.github/workflows/native-start-app.yaml
     permissions:
       contents: read
     with:
       app: inventory
+      profile-env: VITE_INVENTORY_NATIVE_PROFILE=${{ matrix.profile }}
+      artifact-suffix: ${{ matrix.profile }}
       package: '@tuturuuu/inventory'
       artifact-script: scripts/ci/inventory-native-artifact.py
       env-interface: InventoryGeneratedEnv
@@ -152,3 +157,58 @@ jobs:
         TUTURUUU_NOINDEX=1
       format-paths: >-
         apps/inventory/src/start-bridge apps/inventory/src/routes apps/inventory/src/router.tsx apps/inventory/src/start.ts apps/inventory/cloudflare apps/inventory/vite.config.mts apps/inventory/void.config.ts apps/inventory/tsconfig.json apps/inventory/package.json apps/inventory/start-bridge.routes.json
+
+  cutover-build:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      APP: inventory
+      SOURCE_SHA: ${{ github.sha }}
+      INVENTORY_SOURCE_SHA: ${{ github.sha }}
+      VITE_INVENTORY_NATIVE_PROFILE: production
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_APP_URL: https://inventory.tuturuuu.com
+      NEXT_PUBLIC_INVENTORY_APP_URL: https://inventory.tuturuuu.com
+      NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
+      WRANGLER_SEND_METRICS: 'false'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/setup-bun-with-retry
+        with:
+          bun-version: 1.4.4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.0
+      - run: bun install --frozen-lockfile --ignore-scripts
+      - name: Require production public build inputs
+        run: |
+          test -n "$NEXT_PUBLIC_SUPABASE_URL"
+          test -n "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
+      - name: Build app suppliers
+        run: bun turbo:local run build --filter='@tuturuuu/inventory^...' --concurrency=2
+      - name: Stamp exact build identity
+        env:
+          PLATFORM_BUILD_COMMIT_HASH: ${{ github.sha }}
+          PLATFORM_BUILD_REF_NAME: ${{ github.ref_name }}
+          PLATFORM_BUILD_ENVIRONMENT: production
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+      - name: Build native Cloudflare app
+        working-directory: apps/inventory
+        run: bun run build:cloudflare
+      - name: Package deployable Worker, assets and emitted Wrangler config
+        run: |
+          python3 scripts/ci/inventory-native-artifact.py seal apps/inventory --receipt "$RUNNER_TEMP/inventory-receipt.json"
+          python3 scripts/ci/inventory-native-artifact.py pack apps/inventory --receipt "$RUNNER_TEMP/inventory-receipt.json" --archive "$RUNNER_TEMP/inventory-native-production.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: inventory-cutover-${{ github.sha }}
+          path: ${{ runner.temp }}/inventory-native-production.tar.gz
+          retention-days: 7
+          if-no-files-found: error
