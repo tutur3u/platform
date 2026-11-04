@@ -36,9 +36,10 @@ export default async function CmsPageBuilderPage({ params }: Props) {
   const entry = studio.entries.find((item) => item.id === entryId);
   if (!entry) notFound();
 
-  // Drafts load from and save to the page-versions API once its client lands (#7591).
+  // The route/action layer (CMS-D) passes onSaveDraft/onPublish wired to the page-versions API.
   return (
     <PageBuilderClient
+      canPublishPages={access.canPublishPages}
       entryTitle={entry.title}
       initialPage={createEmptyCmsPage(entry.title)}
     />

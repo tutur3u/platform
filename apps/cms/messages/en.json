@@ -5264,6 +5264,7 @@
       "zoom_out_action": "Zoom out"
     },
     "page_builder": {
+      "action_failed": "Could not update the page",
       "blocks": {
         "CardGrid": "Card grid",
         "CtaButton": "Button",
@@ -5281,6 +5282,7 @@
         "layout": "Layout"
       },
       "delete": "Delete",
+      "draft_saved": "Draft saved",
       "drop_here": "Drop blocks here",
       "duplicate": "Duplicate",
       "fields": {
@@ -5307,7 +5309,10 @@
         "variant": "Style"
       },
       "inspector_empty": "Select a block to edit it",
+      "publish": "Publish",
+      "published": "Page published",
       "redo": "Redo",
+      "save_draft": "Save draft",
       "undo": "Undo"
     },
     "root": {

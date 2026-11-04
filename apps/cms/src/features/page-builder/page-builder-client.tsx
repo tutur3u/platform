@@ -26,8 +26,12 @@ import {
   findBlock,
   type ZoneId,
 } from './editor-state';
+import {
+  type PageBuilderActionProps,
+  PageBuilderActions,
+} from './page-builder-actions';
 
-interface Props {
+interface Props extends PageBuilderActionProps {
   entryTitle: string;
   initialPage: CmsPage;
 }
@@ -118,6 +122,12 @@ export function PageBuilderClient(props: Props) {
           >
             <Redo2 className="size-4" />
           </Button>
+          <PageBuilderActions
+            canPublishPages={props.canPublishPages}
+            onPublish={props.onPublish}
+            onSaveDraft={props.onSaveDraft}
+            page={state.page}
+          />
         </header>
         <div className="grid min-h-0 flex-1 grid-cols-[14rem_minmax(0,1fr)_18rem]">
           <aside className="min-h-0 overflow-y-auto border-r bg-muted/30">
