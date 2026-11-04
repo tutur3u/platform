@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
-import { registerHooks, stripTypeScriptTypes } from 'node:module';
-import { readFileSync } from 'node:fs';
+import { registerHooks } from 'node:module';
 import test from 'node:test';
 import { matchRoute } from '../../../../../packages/start-bridge/src/core/route-match.ts';
 
 const queriesUrl = new URL('./queries.ts', import.meta.url).href;
 const fixtureUrl = `data:text/javascript,${encodeURIComponent(`
+  export class GitHubMirrorError extends Error {
+    constructor(message, status, code) { super(message); Object.assign(this, { status, code }); }
+  }
   export const requests = [];
   export const lookups = [];
   export async function githubRequest(request) { requests.push(request); return { type: 'file' }; }
@@ -16,17 +18,11 @@ const fixtureUrl = `data:text/javascript,${encodeURIComponent(`
   export function cacheLife() {}
   export function cacheTag() {}
 `)}`;
-const errorsUrl = new URL('./errors.ts', import.meta.url).href;
 const hooks = registerHooks({
-  load(url, context, nextLoad) {
-    if (url === errorsUrl) return { format: 'module', source: stripTypeScriptTypes(readFileSync(new URL(url), 'utf8'), { mode: 'transform' }), shortCircuit: true };
-    return nextLoad(url, context);
-  },
   resolve(specifier, context, nextResolve) {
-    if (context.parentURL === queriesUrl && ['server-only', 'next/cache', './api', './registry'].includes(specifier)) {
+    if (context.parentURL === queriesUrl && ['server-only', 'next/cache', './api', './registry', './errors'].includes(specifier)) {
       return { url: fixtureUrl, shortCircuit: true };
     }
-    if (context.parentURL === queriesUrl && specifier === './errors') return { url: errorsUrl, shortCircuit: true };
     return nextResolve(specifier, context);
   },
 });
