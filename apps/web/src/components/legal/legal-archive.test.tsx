@@ -20,17 +20,23 @@ const published = {
   mobilePrivacyEffectiveDate: '2026-11-11',
   archiveLinks: { en: 'x', vi: 'x' },
 } satisfies LegalNoticeConfig;
+const unpublished = {
+  published: false,
+  noticeDate: null,
+  laterDate: null,
+} satisfies LegalNoticeConfig;
 
 describe('legal archive 2026-08-15', () => {
   for (const locale of ['en', 'vi'] as const)
     for (const kind of ARCHIVED_KINDS)
-      it(`${locale} ${kind}: serves the current canonical text unchanged`, () => {
-        const canonical = toLegalPageConfig(getLegalDocument(kind, locale));
+      it(`${locale} ${kind}: serves the frozen 2026-08-15 text unchanged`, () => {
+        // Pinned to the 2026-08-15 record, not to whatever the live page
+        // serves, so it still holds after the notice is published. The pinned
+        // hashes live in legal-archive-freeze.test.ts.
+        const august = getLegalDocument(kind, locale, unpublished);
+        const canonical = toLegalPageConfig(august);
         const archived = getArchivedLegalPageConfig(kind, locale);
         expect(archived).toEqual({ ...canonical, upcomingChanges: undefined });
-        // Same objects, so the text is byte-identical, and it stays so after
-        // the 2026-11-11 revision is published.
-        const august = getLegalDocument(kind, locale);
         expect(
           getArchivedLegalPageConfig(kind, locale).sections.map(
             (s) => s.content
