@@ -111,22 +111,60 @@ function trustedCertificate(
 }
 
 export interface SnsVerifierDeps {
+  /**
+   * Resolves the PEM, or null when the certificate definitively does not
+   * exist (4xx, not a certificate). Throws on a transient failure.
+   */
   fetchCertificate(url: URL): Promise<string | null>;
   parseCertificate(pem: string): SigningCertificate;
   now(): number;
 }
 
 /**
+ * 'invalid' is a real verification failure (401). 'unavailable' means the
+ * signing certificate could not be fetched right now (5xx, so SNS retries).
+ */
+export type SnsVerification = 'valid' | 'invalid' | 'unavailable';
+
+export const SNS_CERTIFICATE_CACHE_SIZE = 32;
+
+/**
  * Verifies an SNS message signature: SignatureVersion 2 (RSA-SHA256) only,
  * a fresh timestamp, a signing certificate URL on the topic's own regional
  * host sns.<region>.amazonaws.com, and a certificate that is in date, issued
- * by Amazon and valid for the SNS host. Certificates are cached per URL.
+ * by Amazon and valid for the SNS host. Fetched certificates are kept in a
+ * small least-recently-used cache; failures are never cached.
  */
 export function createSnsVerifier(deps: SnsVerifierDeps) {
   const certificates = new Map<string, Promise<string | null>>();
 
-  return async function verifySnsEnvelope(envelope: SnsEnvelope) {
-    if (envelope.SignatureVersion !== '2') return false;
+  const certificate = (url: URL) => {
+    const cached = certificates.get(url.href);
+    if (cached) {
+      certificates.delete(url.href);
+      certificates.set(url.href, cached);
+      return cached;
+    }
+    const pending = deps.fetchCertificate(url);
+    certificates.set(url.href, pending);
+    pending.then(
+      (pem) => {
+        if (pem === null) certificates.delete(url.href);
+      },
+      () => certificates.delete(url.href)
+    );
+    while (certificates.size > SNS_CERTIFICATE_CACHE_SIZE) {
+      const oldest = certificates.keys().next().value;
+      if (oldest === undefined) break;
+      certificates.delete(oldest);
+    }
+    return pending;
+  };
+
+  return async function verifySnsEnvelope(
+    envelope: SnsEnvelope
+  ): Promise<SnsVerification> {
+    if (envelope.SignatureVersion !== '2') return 'invalid';
     const now = deps.now();
     const sentAt = Date.parse(envelope.Timestamp);
     if (
@@ -134,35 +172,33 @@ export function createSnsVerifier(deps: SnsVerifierDeps) {
       now - sentAt > MAX_AGE_MS ||
       sentAt - now > MAX_CLOCK_SKEW_MS
     )
-      return false;
+      return 'invalid';
 
     const certUrl = regionalSnsUrl(envelope.SigningCertURL, envelope.TopicArn);
     if (certUrl?.search !== '' || !CERT_PATH.test(certUrl.pathname))
-      return false;
+      return 'invalid';
 
-    let pending = certificates.get(certUrl.href);
-    if (!pending) {
-      pending = deps.fetchCertificate(certUrl).catch(() => null);
-      certificates.set(certUrl.href, pending);
+    let pem: string | null;
+    try {
+      pem = await certificate(certUrl);
+    } catch {
+      return 'unavailable';
     }
-    const pem = await pending;
-    if (!pem) {
-      certificates.delete(certUrl.href);
-      return false;
-    }
+    if (!pem) return 'invalid';
 
     try {
-      const certificate = deps.parseCertificate(pem);
-      if (!trustedCertificate(certificate, envelope.TopicArn, now))
-        return false;
+      const parsed = deps.parseCertificate(pem);
+      if (!trustedCertificate(parsed, envelope.TopicArn, now)) return 'invalid';
       return verifySignature(
         'RSA-SHA256',
         Buffer.from(snsSigningPayload(envelope), 'utf8'),
-        certificate.publicKey,
+        parsed.publicKey,
         Buffer.from(envelope.Signature, 'base64')
-      );
+      )
+        ? 'valid'
+        : 'invalid';
     } catch {
-      return false;
+      return 'invalid';
     }
   };
 }

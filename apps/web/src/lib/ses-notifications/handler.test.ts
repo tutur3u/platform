@@ -60,7 +60,7 @@ function request(body: unknown, ip = '203.0.113.7') {
 function deps(overrides: Partial<SesNotificationDeps> = {}) {
   const base = {
     topicArns: [TOPIC],
-    verify: vi.fn(async () => true),
+    verify: vi.fn(async () => 'valid' as const),
     confirmSubscription: vi.fn(async () => true),
     record: vi.fn(async () => 'recorded' as const),
     allowRequest: vi.fn(async () => true),
@@ -81,7 +81,7 @@ afterEach(() => vi.restoreAllMocks());
 
 describe('SES notification webhook', () => {
   it('rejects an invalid signature with 401 and records nothing', async () => {
-    const d = deps({ verify: vi.fn(async () => false) });
+    const d = deps({ verify: vi.fn(async () => 'invalid' as const) });
     const response = await handleSesNotificationRequest(
       request(envelope(bounce('Permanent'))),
       d
@@ -292,5 +292,46 @@ describe('SES notification webhook', () => {
     );
     expect(response.status).toBe(500);
     expect(logs.join('')).not.toContain('@');
+  });
+
+  it('returns 503 when the signing certificate is temporarily unavailable, so SNS retries', async () => {
+    const d = deps({ verify: vi.fn(async () => 'unavailable' as const) });
+    const response = await handleSesNotificationRequest(
+      request(envelope(bounce('Permanent'))),
+      d
+    );
+    expect(response.status).toBe(503);
+    expect(d.record).not.toHaveBeenCalled();
+  });
+
+  it('stops reading a chunked body without Content-Length at the cap (413)', async () => {
+    const chunk = new Uint8Array(16 * 1024).fill(0x20);
+    const totalChunks = 200; // 3.2 MiB if fully read
+    let pulled = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled++;
+        if (pulled > totalChunks) controller.close();
+        else controller.enqueue(chunk);
+      },
+    });
+    const streamed = new Request(
+      'https://tuturuuu.com/api/v1/webhooks/email/ses',
+      {
+        method: 'POST',
+        body,
+        headers: { 'x-forwarded-for': '203.0.113.7' },
+        duplex: 'half',
+      } as RequestInit
+    );
+    expect(streamed.headers.get('content-length')).toBeNull();
+    const d = deps();
+
+    const response = await handleSesNotificationRequest(streamed, d);
+
+    expect(response.status).toBe(413);
+    const capChunks = Math.ceil(SES_WEBHOOK_MAX_BODY_BYTES / chunk.length);
+    expect(pulled).toBeLessThanOrEqual(capChunks + 3);
+    expect(d.verify).not.toHaveBeenCalled();
   });
 });

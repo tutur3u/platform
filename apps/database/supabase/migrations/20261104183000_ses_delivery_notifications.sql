@@ -1,3 +1,7 @@
+BEGIN;
+SET LOCAL lock_timeout = '5s';
+SET LOCAL statement_timeout = '60s';
+
 -- SES bounce and complaint notifications delivered through SNS.
 -- Receipts make each SNS message idempotent; no message body or address is
 -- stored in them. Hard bounces and complaints go into public.email_blacklist,
@@ -122,3 +126,5 @@ revoke all on function private.record_ses_notification(text, text, text, text, t
     from public, anon, authenticated;
 grant execute on function private.record_ses_notification(text, text, text, text, text, text, text[])
     to service_role;
+
+COMMIT;

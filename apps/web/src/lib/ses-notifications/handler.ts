@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import {
   type SnsEnvelope,
+  type SnsVerification,
   snsEnvelopeSchema,
   trustedSubscribeUrl,
 } from './sns';
@@ -22,7 +23,7 @@ export interface SesNotificationRecord {
 
 export interface SesNotificationDeps {
   topicArns: readonly string[];
-  verify(envelope: SnsEnvelope): Promise<boolean>;
+  verify(envelope: SnsEnvelope): Promise<SnsVerification>;
   confirmSubscription(url: URL): Promise<boolean>;
   record(input: SesNotificationRecord): Promise<'recorded' | 'duplicate'>;
   allowRequest(clientIp: string): Promise<boolean>;
@@ -61,6 +62,28 @@ function defaultClientIp(request: Request) {
   return (
     request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
   );
+}
+
+/**
+ * Reads the body up to the cap with a byte counter, cancelling the stream as
+ * soon as it is exceeded, so an oversized body is never buffered whole.
+ */
+async function readBodyWithinCap(request: Request) {
+  if (!request.body) return '';
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    size += value.byteLength;
+    if (size > SES_WEBHOOK_MAX_BODY_BYTES) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    chunks.push(value);
+  }
+  return new TextDecoder().decode(Buffer.concat(chunks));
 }
 
 function parseJson(text: string): unknown {
@@ -112,8 +135,9 @@ function toRecord(
 
 /**
  * SES bounce and complaint notifications delivered by SNS. Order: rate limit,
- * size and shape, topic allowlist (403), signature (401), then the message.
- * Errors return 500 so SNS retries; the store is idempotent on MessageId.
+ * size and shape, topic allowlist (403), signature (401; 503 when the signing
+ * certificate is temporarily unavailable), then the message. Errors return
+ * 5xx so SNS retries; the store is idempotent on MessageId.
  */
 export async function handleSesNotificationRequest(
   request: Request,
@@ -126,9 +150,8 @@ export async function handleSesNotificationRequest(
   const declared = Number(request.headers.get('content-length'));
   if (Number.isFinite(declared) && declared > SES_WEBHOOK_MAX_BODY_BYTES)
     return json({ error: 'too_large' }, 413);
-  const text = await request.text();
-  if (Buffer.byteLength(text, 'utf8') > SES_WEBHOOK_MAX_BODY_BYTES)
-    return json({ error: 'too_large' }, 413);
+  const text = await readBodyWithinCap(request);
+  if (text === null) return json({ error: 'too_large' }, 413);
 
   const parsed = snsEnvelopeSchema.safeParse(parseJson(text));
   if (!parsed.success) return json({ error: 'invalid_request' }, 400);
@@ -138,7 +161,17 @@ export async function handleSesNotificationRequest(
     return json({ error: 'not_configured' }, 503);
   if (!deps.topicArns.includes(envelope.TopicArn))
     return json({ error: 'forbidden' }, 403);
-  if (!(await deps.verify(envelope)))
+  const verification = await deps.verify(envelope);
+  if (verification === 'unavailable') {
+    console.warn(
+      '[SesNotifications] Signing certificate unavailable; SNS will retry',
+      {
+        snsMessageId: envelope.MessageId,
+      }
+    );
+    return json({ error: 'certificate_unavailable' }, 503);
+  }
+  if (verification !== 'valid')
     return json({ error: 'invalid_signature' }, 401);
 
   try {
