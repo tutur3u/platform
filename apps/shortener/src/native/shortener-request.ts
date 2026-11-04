@@ -169,6 +169,11 @@ export async function shortenerRequest(
       }),
       false
     );
+  if (
+    env.SHORTENER_CANONICAL_HOST_ENABLED === '1' &&
+    !PRODUCTION_HOSTS.has(url.hostname)
+  )
+    return finalize(request, plain('Unknown host', 404), false);
   const alias = hostRedirect(url, search);
   if (alias) return finalize(request, alias, true);
   const identity = deps.buildInfo(request);

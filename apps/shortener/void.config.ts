@@ -18,6 +18,7 @@ export default defineConfig({
     compatibility_date: '2026-10-12',
     compatibility_flags: ['nodejs_compat'],
     workers_dev: profile.workersDev,
+    ...(profile.workersDev ? {} : { preview_urls: false }),
     vars: profile.vars,
     assets: {
       binding: 'ASSETS',

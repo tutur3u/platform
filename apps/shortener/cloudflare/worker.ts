@@ -7,6 +7,7 @@ import {
   setContextPage,
   withRequestContext,
 } from '../src/native/request-context';
+import { missingSecretsResponse } from '../src/native/required-secrets';
 import {
   type ShortenerEnvironment,
   shortenerRequest,
@@ -19,6 +20,8 @@ export function shortenerWorkerRequest(
   request: Request,
   env: ShortenerEnvironment
 ) {
+  const refused = missingSecretsResponse(env);
+  if (refused) return refused;
   return withRequestContext(request, async () =>
     appendContextCookies(
       await shortenerRequest(request, env, {

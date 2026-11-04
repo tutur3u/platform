@@ -54,11 +54,25 @@ class ShortenerArtifactTest(unittest.TestCase):
         self.assertEqual(production.IDENTITY["name"], "tuturuuu-shortener")
         self.assertEqual(production.NORMALIZED_DEFAULTS["topLevelName"], "tuturuuu-shortener")
         self.assertIs(production.IDENTITY["workers_dev"], False)
+        self.assertIs(production.IDENTITY["preview_urls"], False)
+        self.assertNotIn("preview_urls", artifact.IDENTITY)
         self.assertEqual(production.IDENTITY["vars"]["SHORTENER_CANONICAL_HOST_ENABLED"], "1")
         self.assertNotIn("TUTURUUU_NOINDEX", production.IDENTITY["vars"])
         self.assertNotIn("SHORTENER_CANONICAL_HOST_ENABLED", artifact.IDENTITY["vars"])
         with self.assertRaisesRegex(ValueError, "unknown VITE_SHORTENER_NATIVE_PROFILE"):
             wrapper.load("preview")
+
+    def test_rejects_uninlined_node_env_and_dev_secret_in_server_code(self):
+        app, _ = self.fixture()
+        server = app / "dist/server"
+        server.mkdir(parents=True, exist_ok=True)
+        for marker in wrapper.FORBIDDEN_SERVER_MARKERS:
+            (server / "chunk.mjs").write_text(f"const x = {marker!r};")
+            with self.assertRaisesRegex(ValueError, "forbidden server marker"):
+                artifact.validate_output(app)
+        (server / "chunk.mjs").unlink()
+        (server / "chunk.mjs.map").write_text(wrapper.FORBIDDEN_SERVER_MARKERS[0])
+        artifact.validate_output(app)
 
     def test_seal_pack_restore_round_trip(self):
         app, _ = self.fixture()

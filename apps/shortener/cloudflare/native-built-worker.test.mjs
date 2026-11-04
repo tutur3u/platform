@@ -81,6 +81,10 @@ test('emitted Shortener Worker preserves redirects, aliases, pages and API owner
   assert.equal(config.assets.not_found_handling, 'none');
   assert.ok(config.compatibility_flags.includes('nodejs_compat'));
   assert.deepEqual(config.vars, PROFILE_VARS);
+  if (PROFILE === 'production') {
+    assert.equal(config.workers_dev, false);
+    assert.equal(config.preview_urls, false);
+  }
   for (const name of PUBLIC_FILES)
     assert.equal(
       await sha256(join(app, 'dist/client', name)),
@@ -131,8 +135,11 @@ test('emitted Shortener Worker preserves redirects, aliases, pages and API owner
   const url = await worker.url;
   assert.equal(url.hostname, '127.0.0.1');
   const origin = url.origin;
+  // Production rejects unknown hosts, so it is exercised on its canonical one.
   const get = (path, init = {}) =>
-    fetch(`${origin}${path}`, { redirect: 'manual', ...init });
+    PROFILE === 'production'
+      ? worker.fetch(`https://ttr.gg${path}`, { redirect: 'manual', ...init })
+      : fetch(`${origin}${path}`, { redirect: 'manual', ...init });
 
   await t.test('build identity is the exact compiled source', async () => {
     const info = await (await get('/api/build-info')).json();
@@ -201,6 +208,11 @@ test('emitted Shortener Worker preserves redirects, aliases, pages and API owner
           );
         await response.text();
         assert.equal(fixture.clicks.length, before);
+      }
+      if (open) {
+        const unknown = await fetch(`${origin}/abc123`, { redirect: 'manual' });
+        assert.equal(unknown.status, 404);
+        await unknown.text();
       }
     }
   );
