@@ -55,6 +55,43 @@ jobs:
       - run: node --experimental-strip-types --test apps/web/e2e-wave1-staging/policy.test.ts
       - run: bun x --no-install tsc --noEmit -p apps/web/tsconfig.wave1-staging.json
       - run: bun run --cwd apps/web build:candidate
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
+      - name: Reject build-time URL disclosure before artifact preparation
+        env:
+          BUILD_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          value = os.environ.get('BUILD_SUPABASE_URL', '')
+          if not value:
+              raise SystemExit('Required build-time Supabase URL is missing')
+          for path in Path('apps/web/cloudflare/dist').rglob('*'):
+              if path.is_file() and value.encode() in path.read_bytes():
+                  raise SystemExit('Build-time Supabase URL found in output; upload blocked')
+          PY
+      - name: Resolve the candidate's emitted Wrangler config
+        id: emitted
+        run: |
+          node --input-type=module -e "import { readNativeRuntimeConfig } from './scripts/ci/apps-native-runtime-pointer.mjs'; console.log('config=' + readNativeRuntimeConfig('apps/web/cloudflare').configPath)" >> "$GITHUB_OUTPUT"
+      - name: Qualify the candidate Wrangler adapter without publication
+        working-directory: apps/web
+        env:
+          EMITTED_CONFIG: ${{ steps.emitted.outputs.config }}
+        run: bun x --no-install wrangler deploy --dry-run --config "$EMITTED_CONFIG" --outdir "$RUNNER_TEMP/web-native-dry-run"
+      - name: Seal the deployable issuer candidate without credentials
+        env:
+          SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: node scripts/ci/wave1-web-seal.mjs prepare "$SOURCE_SHA"
+      - run: python3 scripts/ci/wave1-native-archive.py pack apps/web/cloudflare "$RUNNER_TEMP/web-native.tar.gz"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: web-native-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ${{ runner.temp }}/web-native.tar.gz
+          retention-days: 14
+          if-no-files-found: error
       - run: bun run --cwd apps/web test:candidate:runtime
       - run: bun run --cwd apps/web type-check:candidate
       - run: bun x --no-install biome check apps/web/cloudflare apps/web/vite.config.mts apps/web/tsconfig.candidate.json
