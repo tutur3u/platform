@@ -3,7 +3,7 @@ create extension if not exists pgtap with schema extensions;
 set local search_path = public, private, extensions;
 set local role service_role;
 set local request.jwt.claims = '{"role":"service_role"}';
-select plan(36);
+select plan(43);
 insert into public.users (id, display_name) values
   ('00000000-0000-4000-8000-0000000e6001', 'Ticket Owner');
 insert into public.workspaces (id, name, creator_id, personal) values
@@ -167,5 +167,24 @@ select throws_ok($$insert into public.task_project_tasks (project_id, task_id)
   'a member session cannot link a task directly; the invoker allocator needs server-only task_projects access');
 set local role service_role;
 set local request.jwt.claims = '{"role":"service_role"}';
+-- Project keys avoid board ticket prefixes in the same workspace. A board
+-- without a prefix shows TASK-N, so TASK is taken too.
+insert into public.workspace_boards (id, ws_id, name, creator_id, ticket_prefix) values
+  ('00000000-0000-4000-8000-0000000e6022', '00000000-0000-4000-8000-0000000e6010', 'Prefixed Board', '00000000-0000-4000-8000-0000000e6001', ' brd ');
+insert into public.task_projects (id, ws_id, name, creator_id) values
+  ('00000000-0000-4000-8000-0000000e6034', '00000000-0000-4000-8000-0000000e6010', 'Brd Launch', '00000000-0000-4000-8000-0000000e6001'),
+  ('00000000-0000-4000-8000-0000000e6035', '00000000-0000-4000-8000-0000000e6010', 'Task Force', '00000000-0000-4000-8000-0000000e6001');
+select is((select ticket_key from public.task_projects where id = '00000000-0000-4000-8000-0000000e6034'), 'BRD2', 'generated keys skip a board prefix');
+select is((select ticket_key from public.task_projects where id = '00000000-0000-4000-8000-0000000e6035'), 'TAS', 'only an exact board prefix is taken');
+select throws_ok($$insert into public.task_projects (ws_id, name, creator_id, ticket_key)
+  values ('00000000-0000-4000-8000-0000000e6010', 'Chosen Board', '00000000-0000-4000-8000-0000000e6001', 'BRD')$$,
+  '23505', 'PROJECT_TICKET_KEY_BOARD_PREFIX', 'a chosen key cannot equal a board prefix');
+select throws_ok($$update public.task_projects set ticket_key = 'BRD' where id = '00000000-0000-4000-8000-0000000e6031'$$,
+  '23505', 'PROJECT_TICKET_KEY_BOARD_PREFIX', 'an edited key cannot equal a board prefix');
+select throws_ok($$update public.task_projects set ticket_key = 'TASK' where id = '00000000-0000-4000-8000-0000000e6031'$$,
+  '23505', 'PROJECT_TICKET_KEY_BOARD_PREFIX', 'TASK is taken while a board has no prefix');
+select lives_ok($$update public.task_projects set name = 'Platform Crew' where id = '00000000-0000-4000-8000-0000000e6031'$$,
+  'edits that keep the key skip the board prefix check');
+select is((select ticket_key from public.task_projects where id = '00000000-0000-4000-8000-0000000e6031'), 'PLA2', 'the existing key stays');
 select * from finish();
 rollback;

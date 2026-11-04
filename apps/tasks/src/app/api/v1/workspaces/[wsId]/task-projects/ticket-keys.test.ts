@@ -125,7 +125,8 @@ describe('project ticket key routes', () => {
     expect(created.status).toBe(409);
     expect(updated.status).toBe(409);
     expect(await updated.json()).toEqual({
-      error: 'Project key is already used in this workspace',
+      error:
+        'Project key is already used by a project or board in this workspace',
     });
   });
   it('lets members without project management create projects with a derived key', async () => {
