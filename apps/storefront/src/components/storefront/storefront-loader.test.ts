@@ -44,6 +44,14 @@ describe('getOptionalInventoryPublicStorefront', () => {
     ).resolves.toBe(null);
   });
 
+  it('returns null when the public API answers without a storefront body', async () => {
+    getInventoryPublicStorefrontMock.mockResolvedValue({ error: 'blocked' });
+
+    await expect(
+      getOptionalInventoryPublicStorefront('any-shop')
+    ).resolves.toBe(null);
+  });
+
   it('returns a real demo storefront response when the public API succeeds', async () => {
     const realPayload = {
       bundles: [],

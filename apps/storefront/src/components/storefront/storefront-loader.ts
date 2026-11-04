@@ -9,7 +9,10 @@ export async function getOptionalInventoryPublicStorefront(
   options?: Parameters<typeof getInventoryPublicStorefront>[1]
 ) {
   try {
-    return await getInventoryPublicStorefront(storeSlug, options);
+    const response = await getInventoryPublicStorefront(storeSlug, options);
+    // A non-storefront body (for example a proxy or egress error page on
+    // Cloudflare) must not crash the render with an undefined storefront.
+    return isPublicStorefrontResponse(response) ? response : null;
   } catch (error) {
     if (!isNotFoundError(error)) throw error;
     if (storeSlug === DEMO_STOREFRONT_SLUG) return demoPublicStorefront;
@@ -23,5 +26,15 @@ export function isNotFoundError(error: unknown) {
     error !== null &&
     'status' in error &&
     (error as { status?: unknown }).status === 404
+  );
+}
+
+function isPublicStorefrontResponse<T>(value: T): value is NonNullable<T> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'storefront' in value &&
+    typeof (value as { storefront?: unknown }).storefront === 'object' &&
+    (value as { storefront?: unknown }).storefront !== null
   );
 }
