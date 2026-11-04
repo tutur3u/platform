@@ -108,11 +108,11 @@ select is((select revision || ':' || version from private.fee_lock_lock(pg_temp.
 select is((select string_agg(revision::text, ',' order by revision) from public.fee_lock_revisions where fee_lock_id = pg_temp.lock_id()), '1,2', 'both revisions are kept');
 select is((select string_agg(event_type || coalesce(':' || reason, ''), ',' order by id) from public.fee_lock_events where fee_lock_id = pg_temp.lock_id()),
   'draft_saved,draft_saved,locked,reopened:Parent asked,locked', 'every write is logged once, with the reopen reason');
--- Catalogue units and warehouses must belong to the workspace; the money limit; name caps.
 insert into private.inventory_products(product_id, unit_id, warehouse_id, amount, price) values
   (pg_temp.id('502'), pg_temp.id('406'), pg_temp.id('407'), null, 1), (pg_temp.id('502'), pg_temp.id('405'), pg_temp.id('408'), null, 1);
--- Real guards cap student and class names at 128 characters; only this class fixture bypasses them, to prove the 200 cap.
+-- Real names cap at 128 (CHECK name_strict_length_check + trigger); to prove the 200 cap, this rolled-back test drops the CHECKs and skips triggers for one class row.
 insert into public.workspace_users(id, ws_id, full_name) values (pg_temp.id('104'), pg_temp.id('010'), repeat('Đ', 128));
+alter table public.workspace_user_groups drop constraint if exists name_strict_length_check, drop constraint if exists name_strict_bytes_check;
 set local session_replication_role = replica;
 insert into public.workspace_user_groups(id, ws_id, name, starting_date) values (pg_temp.id('203'), pg_temp.id('010'), repeat('L', 250), '2026-01-01');
 set local session_replication_role = origin;
