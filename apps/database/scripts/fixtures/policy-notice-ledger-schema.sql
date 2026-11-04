@@ -62,7 +62,8 @@ create table public.email_blacklist (
   value text not null,
   reason text
 );
-create table public.email_bounce_complaints (
+-- Moved to private by 20260519232130_private_schema_cleanup.sql.
+create table private.email_bounce_complaints (
   id uuid primary key default gen_random_uuid(),
   email_hash text not null,
   event_type text not null,
@@ -72,3 +73,4 @@ create table public.email_bounce_complaints (
 
 -- Supabase grants table access on public to service_role; auth stays closed.
 grant select on all tables in schema public to service_role;
+grant all on table private.email_bounce_complaints to service_role;
