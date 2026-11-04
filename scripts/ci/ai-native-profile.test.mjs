@@ -39,7 +39,7 @@ print(m.load().IDENTITY['name'])
 test('cutover builds package both profiles without a test prerequisite', () => {
   const workflow = readFileSync('.github/workflows/ai-cloudflare.yaml', 'utf8');
   assert.match(workflow, /profile: \[staging, production\]/);
-  assert.match(workflow, /vars.PRODUCTION_SUPABASE_URL/);
+  assert.match(workflow, /vars\[format\('\{0\}_SUPABASE_URL'/);
   assert.match(workflow, /ai-cutover-/);
   assert.match(workflow, /ai-native-artifact.py pack/);
   assert.doesNotMatch(workflow, /needs:.*native|run:.*test:runtime/);

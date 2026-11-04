@@ -133,8 +133,8 @@ jobs:
       SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       AI_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       VITE_AI_NATIVE_PROFILE: ${{ matrix.profile }}
-      NEXT_PUBLIC_SUPABASE_URL: ${{ matrix.profile == 'production' && vars.PRODUCTION_SUPABASE_URL || vars.STAGING_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ matrix.profile == 'production' && vars.PRODUCTION_SUPABASE_PUBLISHABLE_KEY || vars.STAGING_SUPABASE_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars[format('{0}_SUPABASE_URL', matrix.profile == 'production' && 'PRODUCTION' || 'STAGING')] }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars[format('{0}_SUPABASE_PUBLISHABLE_KEY', matrix.profile == 'production' && 'PRODUCTION' || 'STAGING')] }}
       NEXT_PUBLIC_APP_URL: https://ai.tuturuuu.com
       NEXT_PUBLIC_WEB_APP_URL: https://tuturuuu.com
       TUTURUUU_NOINDEX: '1'
