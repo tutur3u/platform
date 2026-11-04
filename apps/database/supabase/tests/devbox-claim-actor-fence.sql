@@ -91,7 +91,7 @@ values('74000000-0000-4000-8000-000000000003','71000000-0000-4000-8000-000000000
 delete from public.workspace_members where ws_id='00000000-0000-0000-0000-000000000000' and user_id='71000000-0000-4000-8000-000000000002';
 select is((select status from private.devbox_runs where id='74000000-0000-4000-8000-000000000003'),'cancel_requested','member removal signals running work');
 select ok(exists(select 1 from private.devbox_run_events where run_id='74000000-0000-4000-8000-000000000003' and metadata->>'reason'='actor_access_revoked'),'revocation records a durable reason');
--- The real 20261027152050 prerequisite supplies the user_id grant contract.
+-- The real 20261104031050 prerequisite supplies the user_id grant contract.
 update private.devbox_control_settings set personal_pools_enabled = true where id;
 insert into private.devbox_personal_pool_grants(user_id,status,accepted_at,expires_at,suspended)
 values('71000000-0000-4000-8000-000000000003','active',now(),now()+interval '1 hour',false);

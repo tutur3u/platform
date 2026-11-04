@@ -1,8 +1,10 @@
--- SR-332/333/334. Reserved after 20261027152000.
+-- SR-332/333/334. Applies after 20261104031050 (#7142, shared grant predicate).
 -- Composes 20261023103000 drain/feature hardening, 20261026145000 mode
 -- admission, and the LIVE 20261026145300 bounded reaper/claim definition.
 -- Existing fleet designation is retained; personal runners are owner-only.
 begin;
+set local lock_timeout = '5s';
+set local statement_timeout = '60s';
 alter table private.devbox_runners
     add column if not exists pool text not null default 'fleet'
     check (pool in ('fleet', 'personal'));
@@ -22,7 +24,7 @@ returns boolean language plpgsql stable security definer
 set search_path = pg_catalog, pg_temp as $$
 declare v_allowed boolean;
 begin
-    -- 20261027152050 owns the shared user_id grant contract. Switch to its
+    -- 20261104031050 owns the shared user_id grant contract. Switch to its
     -- predicate when present; earlier/partial rollouts deny personal access.
     if to_regclass('private.devbox_personal_pool_grants') is null
         or to_regprocedure('private.devbox_identity_grant_active(uuid)') is null then

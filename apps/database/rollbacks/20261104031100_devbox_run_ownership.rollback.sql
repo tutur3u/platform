@@ -1,5 +1,7 @@
 -- Restores the exact LIVE 145300 claim definition and service-only ACL.
 begin;
+set local lock_timeout = '5s';
+set local statement_timeout = '60s';
 drop trigger if exists cancel_devbox_runs_on_access_revocation on public.workspace_members;
 do $$ begin
     if to_regclass('private.devbox_personal_pool_grants') is not null then

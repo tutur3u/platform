@@ -2,11 +2,11 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 select no_plan();
-select ok(to_regprocedure('private.devbox_identity_grant_active(uuid)') is not null,'real 152050 shared predicate is installed');
+select ok(to_regprocedure('private.devbox_identity_grant_active(uuid)') is not null,'real 20261104031050 shared predicate is installed');
 select ok(exists(select 1 from pg_catalog.pg_trigger
     where tgrelid='private.devbox_personal_pool_grants'::regclass
         and tgname='cancel_devbox_runs_on_access_revocation'),
-    '152100 attaches cancellation hook to the real 152050 grant table');
+    '20261104031100 attaches cancellation hook to the real 20261104031050 grant table');
 update private.devbox_control_settings set personal_pools_enabled = true where id;
 
 insert into public.users(id) values
