@@ -68,7 +68,7 @@ export const savePageVersionSchema = z.object({
 
 export class PageVersionError extends Error {
   constructor(
-    readonly status: 400 | 403 | 404 | 409,
+    readonly status: 400 | 403 | 404 | 409 | 413,
     message: string
   ) {
     super(message);

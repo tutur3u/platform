@@ -8,30 +8,47 @@ import { resolveCmsEmbed } from './embed';
  */
 export const CMS_BLOCKS_SCHEMA_VERSION = 1;
 
+export type TipTapAttribute = string | number | boolean | null;
+export type TipTapAttributes = Record<string, TipTapAttribute>;
+
 export type TipTapNode = {
-  attrs?: Record<string, unknown>;
+  attrs?: TipTapAttributes;
   content?: TipTapNode[];
-  marks?: { attrs?: Record<string, unknown>; type: string }[];
+  marks?: { attrs?: TipTapAttributes; type: string }[];
   text?: string;
   type: string;
 };
 
-const tipTapNodeSchema: z.ZodType<TipTapNode> = z.lazy(() =>
-  z.object({
-    attrs: z.record(z.string(), z.unknown()).optional(),
-    content: z.array(tipTapNodeSchema).optional(),
-    marks: z
-      .array(
-        z.object({
-          attrs: z.record(z.string(), z.unknown()).optional(),
-          type: z.string(),
-        })
-      )
-      .optional(),
-    text: z.string().optional(),
-    type: z.string(),
-  })
-);
+/** Maximum node depth below the document root. */
+export const CMS_TIPTAP_MAX_DEPTH = 32;
+
+const tipTapAttributesSchema = z
+  .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+  .optional();
+
+function tipTapNodeAtDepth(depth: number): z.ZodType<TipTapNode> {
+  return z.lazy(() =>
+    z.object({
+      attrs: tipTapAttributesSchema,
+      content: (depth >= CMS_TIPTAP_MAX_DEPTH
+        ? z.array(z.never()).max(0)
+        : z.array(tipTapNodeAtDepth(depth + 1))
+      ).optional(),
+      marks: z
+        .array(
+          z.object({
+            attrs: tipTapAttributesSchema,
+            type: z.string(),
+          })
+        )
+        .optional(),
+      text: z.string().optional(),
+      type: z.string(),
+    })
+  );
+}
+
+const tipTapNodeSchema = tipTapNodeAtDepth(1);
 
 /** TipTap/ProseMirror JSON (`editor.getJSON()`), the same shape packages/editor emits. */
 export const tipTapDocSchema = z.object({

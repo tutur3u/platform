@@ -4,6 +4,7 @@ import {
   savePageVersionDraft,
   savePageVersionSchema,
 } from '@/lib/external-projects/page-versions';
+import { readPageVersionBody } from './read-body';
 import { handlePageVersionRequest, type PageVersionParams } from './respond';
 
 export async function GET(request: Request, context: PageVersionParams) {
@@ -22,7 +23,7 @@ export async function POST(request: Request, context: PageVersionParams) {
       savePageVersionDraft(access.admin, {
         ...scope,
         actorId: access.user.id,
-        input: savePageVersionSchema.parse(await request.json()),
+        input: savePageVersionSchema.parse(await readPageVersionBody(request)),
       }),
     201
   );
