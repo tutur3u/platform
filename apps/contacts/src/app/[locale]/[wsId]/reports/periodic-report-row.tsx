@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  CalendarDays,
   Check,
   ChevronDown,
   Eye,
@@ -22,6 +23,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { reportMonthLabel } from '@tuturuuu/users-core/features/reports/report-month';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
@@ -50,9 +52,12 @@ export function PeriodicReportRow({
   selected = false,
   onToggleSelection,
   onResend,
+  onSetMonth,
   report,
   wsId,
 }: {
+  /** Saves the estimated month of a report without one (edit permission). */
+  onSetMonth?: (month: string) => void;
   onEditRecipient?: () => void;
   selectable?: boolean;
   selected?: boolean;
@@ -79,6 +84,13 @@ export function PeriodicReportRow({
   const resendReason = onResend
     ? periodicResendReason(report, Date.now())
     : null;
+  const month = report.report_month
+    ? reportMonthLabel(report.report_month)
+    : null;
+  const estimatedMonth =
+    report.report_month && report.report_month_estimated
+      ? report.report_month
+      : null;
   return (
     <article className="border-border/60 border-b transition-colors last:border-b-0 hover:bg-muted/30">
       <div className="grid gap-3 p-3 md:px-4 xl:grid-cols-[minmax(0,1fr)_10rem_12rem] xl:items-center">
@@ -122,9 +134,19 @@ export function PeriodicReportRow({
               </p>
             ) : null}
             <p className="text-muted-foreground text-xs">
-              {report.period_start && report.period_end
-                ? `${report.period_start} – ${report.period_end}`
-                : t('manual_report')}
+              {month
+                ? t('month_option', { month })
+                : report.period_start && report.period_end
+                  ? `${report.period_start} – ${report.period_end}`
+                  : t('manual_report')}
+              {estimatedMonth ? (
+                <span
+                  className="ml-1.5 rounded border border-dashed px-1"
+                  title={t('estimated_month_hint')}
+                >
+                  {t('estimated_month')}
+                </span>
+              ) : null}
             </p>
             {report.last_delivery_error ? (
               <p className="mt-1 line-clamp-1 text-destructive text-xs">
@@ -162,6 +184,18 @@ export function PeriodicReportRow({
           )}
         </div>
         <div className="flex min-h-9 flex-wrap items-center justify-end gap-1 xl:w-48">
+          {estimatedMonth && onSetMonth && month ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onSetMonth(estimatedMonth)}
+              aria-label={t('set_month', { month })}
+              title={t('set_month', { month })}
+            >
+              <CalendarDays className="size-3.5" />
+              {t('set_month', { month })}
+            </Button>
+          ) : null}
           {report.generation_mode === 'ai' &&
           report.generation_status !== 'ready' ? (
             <Button

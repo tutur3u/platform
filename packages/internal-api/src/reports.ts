@@ -21,6 +21,12 @@ export {
   type PeriodicReportDeliveryBatchProgress,
   type PeriodicReportDeliveryBatchResult,
 } from './reports-delivery-batch';
+export {
+  getPeriodicReportDeliveryDiagnostics,
+  getPeriodicReportEmailPreview,
+  type PeriodicReportDeliveryDiagnostics,
+  type PeriodicReportEmailPreview,
+} from './reports-delivery-diagnostics';
 
 export interface CreateReportUploadUrlPayload {
   filename: string;
@@ -174,6 +180,9 @@ export interface PeriodicReport {
   period_end: string | null;
   period_start: string | null;
   report_approval_status: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
+  /** Monthly only: `YYYY-MM` filed under, estimated when no period is saved. */
+  report_month?: string | null;
+  report_month_estimated?: boolean;
   score: number | null;
   title: string;
   updated_at: string;
@@ -201,6 +210,8 @@ export interface ListPeriodicReportsParams {
   approvalStatus?: 'UNAPPROVED' | 'PENDING' | 'APPROVED' | 'REJECTED';
   periodStart?: string;
   periodEnd?: string;
+  /** `YYYY-MM`: the month reports cover (saved period, else estimated). */
+  month?: string;
   cadence?: PeriodicReportCadence | 'all';
   category?: PeriodicReportDeliveryCategory;
   deliveryStatus?: PeriodicReportDeliveryStatus;
@@ -428,6 +439,7 @@ export async function listPeriodicReports(
         approvalStatus: params.approvalStatus,
         periodStart: params.periodStart,
         periodEnd: params.periodEnd,
+        month: params.month,
         cadence: params.cadence,
         category: params.category,
         generationStatus: params.generationStatus,
@@ -735,67 +747,4 @@ export function resendPeriodicReports(
       cache: 'no-store',
     }
   );
-}
-
-export interface PeriodicReportDeliveryDiagnostics {
-  report: {
-    user_email: string | null;
-    delivery_status: PeriodicReportDeliveryStatus;
-    delivered_at: string | null;
-    delivery_requested_at: string | null;
-    last_delivery_error: string | null;
-  };
-  queue: {
-    status: PeriodicReportDeliveryStatus;
-    recipient_email: string;
-    delivery_kind: 'send' | 'test';
-    attempt_count: number;
-    next_attempt_at: string;
-    sent_at: string | null;
-    last_error: string | null;
-    provider_message_id: string | null;
-  } | null;
-  attempts: Array<{
-    id: string;
-    status: 'sent' | 'failed' | 'blocked';
-    attempted_at: string;
-    error_message: string | null;
-    provider_message_id: string | null;
-  }>;
-}
-
-export function getPeriodicReportDeliveryDiagnostics(
-  workspaceId: string,
-  reportId: string,
-  options?: InternalApiClientOptions
-) {
-  return getInternalApiClient(options).json<PeriodicReportDeliveryDiagnostics>(
-    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/reports/${encodePathSegment(reportId)}/delivery`,
-    { cache: 'no-store' }
-  );
-}
-
-export interface PeriodicReportEmailPreview {
-  html: string;
-  title: string;
-  content: string;
-  feedback: string;
-  recipient: string | null;
-}
-
-export async function getPeriodicReportEmailPreview(
-  wsId: string,
-  reportId: string,
-  options?: InternalApiClientOptions
-) {
-  const preview = await getInternalApiClient(
-    options
-  ).json<PeriodicReportEmailPreview>(
-    `/api/v1/workspaces/${encodePathSegment(wsId)}/users/reports/${encodePathSegment(reportId)}/delivery?preview=true`,
-    { cache: 'no-store' }
-  );
-  if (typeof preview.html !== 'string' || !preview.html.trim()) {
-    throw new Error('Email preview is not available yet.');
-  }
-  return preview;
 }

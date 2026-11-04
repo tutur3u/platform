@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import PeriodicReportsPanel from './periodic-reports-panel';
 
 type QueryPage = {
@@ -34,6 +34,7 @@ const state = vi.hoisted(() => ({
   resend: vi.fn(),
   list: vi.fn(),
   setFilters: vi.fn(),
+  toolbar: vi.fn(),
 }));
 vi.mock('@tanstack/react-query', () => ({
   keepPreviousData: (data: unknown) => data,
@@ -135,7 +136,10 @@ vi.mock('./periodic-status-summary', () => ({
   },
 }));
 vi.mock('./periodic-reports-toolbar', () => ({
-  PeriodicReportsToolbar: () => null,
+  PeriodicReportsToolbar: (props: Record<string, unknown>) => {
+    state.toolbar(props);
+    return null;
+  },
 }));
 vi.mock('./periodic-delivery-worklist', () => ({
   PeriodicDeliveryWorklist: (props: {
@@ -277,18 +281,91 @@ it('retains current rows and totals during same-scope background refresh', async
   expect(state.summary.mock.lastCall?.[0].counts).toEqual(counts);
 });
 
-it('sends the viewer timezone only with a period range, including a cross-month one', async () => {
+it('sends the viewer timezone only with a month or a period range, including a cross-month one', async () => {
+  state.filters = { ...state.filters, cadence: 'weekly' };
   render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
   await state.options.queryFn({ pageParam: 1 });
   expect(state.list.mock.lastCall?.[1].timezone).toBeUndefined();
+  expect(state.list.mock.lastCall?.[1].month).toBeUndefined();
 
-  state.filters = { ...state.filters, start: '2026-10-01', end: '2026-11-03' };
+  state.filters = {
+    ...state.filters,
+    cadence: 'monthly',
+    start: '2026-10-01',
+    end: '2026-11-03',
+  };
   render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
   await state.options.queryFn({ pageParam: 1 });
   expect(state.list.mock.lastCall?.[1]).toMatchObject({
     periodStart: '2026-10-01',
     periodEnd: '2026-11-03',
     timezone: 'Asia/Ho_Chi_Minh',
+  });
+  // The advanced range replaces the month; they are never sent together.
+  expect(state.list.mock.lastCall?.[1].month).toBeUndefined();
+});
+
+describe('monthly worklist month', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it.each([
+    ['2026-11-02T09:00:00+07:00', '2026-10'],
+    ['2026-11-11T09:00:00+07:00', '2026-11'],
+  ])('on %s opens on report month %s by default', async (now, month) => {
+    vi.setSystemTime(new Date(now));
+    render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+    await state.options.queryFn({ pageParam: 1 });
+    expect(state.list.mock.lastCall?.[1]).toMatchObject({
+      cadence: 'monthly',
+      month,
+      timezone: 'Asia/Ho_Chi_Minh',
+    });
+    expect(state.list.mock.lastCall?.[1].periodStart).toBeUndefined();
+  });
+
+  it('reads the month from the URL and lists every month for All months', async () => {
+    vi.setSystemTime(new Date('2026-11-02T09:00:00+07:00'));
+    state.filters = { ...state.filters, month: '2026-09' };
+    render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+    await state.options.queryFn({ pageParam: 1 });
+    expect(state.list.mock.lastCall?.[1].month).toBe('2026-09');
+
+    state.filters = { ...state.filters, month: 'all' };
+    render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+    await state.options.queryFn({ pageParam: 1 });
+    expect(state.list.mock.lastCall?.[1].month).toBeUndefined();
+  });
+
+  it('writes a picked month to the URL and clears any custom range', () => {
+    vi.setSystemTime(new Date('2026-11-02T09:00:00+07:00'));
+    render(<PeriodicReportsPanel wsId="workspace" permissions={permissions} />);
+    const toolbar = state.toolbar.mock.lastCall?.[0];
+    expect(toolbar).toMatchObject({ reportMonth: '2026-10' });
+    toolbar.onMonthChange('2026-09');
+    expect(state.setFilters).toHaveBeenLastCalledWith({
+      month: '2026-09',
+      start: '',
+      end: '',
+    });
+  });
+
+  it('shows the selected month counts on the status cards', async () => {
+    vi.setSystemTime(new Date('2026-11-02T09:00:00+07:00'));
+    const { rerender } = render(
+      <PeriodicReportsPanel wsId="workspace" permissions={permissions} />
+    );
+    await ownedResult();
+    rerender(
+      <PeriodicReportsPanel wsId="workspace" permissions={permissions} />
+    );
+    // The counts come from the same month-scoped response as the list.
+    expect(state.list.mock.lastCall?.[1].month).toBe('2026-10');
+    expect(state.summary.mock.lastCall?.[0].counts).toEqual(counts);
   });
 });
 

@@ -125,6 +125,9 @@ export async function PUT(request: Request, context: Params) {
       { schema: 'private' },
       'external_user_monthly_reports'
     > = { ...parsed.data, updated_at: new Date().toISOString() };
+    // The report month (period_start/period_end) is filing metadata: it is
+    // not in the email parents receive, so moving a report to another month
+    // keeps its review decision. Cadence and content still need re-review.
     const reviewableFieldsChanged =
       parsed.data.title !== undefined ||
       parsed.data.content !== undefined ||
@@ -133,8 +136,6 @@ export async function PUT(request: Request, context: Params) {
       parsed.data.score !== undefined ||
       parsed.data.scores !== undefined ||
       parsed.data.cadence !== undefined ||
-      parsed.data.period_start !== undefined ||
-      parsed.data.period_end !== undefined ||
       parsed.data.generation_mode !== undefined ||
       parsed.data.generation_status !== undefined;
     const isAiReport =
