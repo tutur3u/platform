@@ -289,6 +289,9 @@
       "name": "@tuturuuu/cms",
       "version": "0.38.0",
       "dependencies": {
+        "@dnd-kit/core": "^6.3.1",
+        "@dnd-kit/sortable": "^10.0.0",
+        "@dnd-kit/utilities": "^3.2.2",
         "@hookform/resolvers": "^5.9.2",
         "@tanstack/react-query": "^5.104.5",
         "@tanstack/react-router": "1.170.45",
@@ -298,6 +301,7 @@
         "@tuturuuu/ai": "workspace:*",
         "@tuturuuu/apis": "workspace:*",
         "@tuturuuu/auth": "workspace:*",
+        "@tuturuuu/cms-blocks": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/offline": "workspace:*",
@@ -2380,6 +2384,21 @@
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
         "@types/node": "^26.6.5",
+        "typescript": "7.0.2",
+        "vitest": "^5.0.5",
+      },
+    },
+    "packages/cms-blocks": {
+      "name": "@tuturuuu/cms-blocks",
+      "version": "0.0.0",
+      "dependencies": {
+        "react": "^19.2.8",
+        "zod": "^4.6.7",
+      },
+      "devDependencies": {
+        "@types/react": "~19.2.18",
+        "@types/react-dom": "~19.2.7",
+        "react-dom": "^19.2.8",
         "typescript": "7.0.2",
         "vitest": "^5.0.5",
       },
@@ -5447,6 +5466,8 @@
     "@tuturuuu/cloudflare": ["@tuturuuu/cloudflare@workspace:packages/cloudflare"],
 
     "@tuturuuu/cms": ["@tuturuuu/cms@workspace:apps/cms"],
+
+    "@tuturuuu/cms-blocks": ["@tuturuuu/cms-blocks@workspace:packages/cms-blocks"],
 
     "@tuturuuu/colab": ["@tuturuuu/colab@workspace:apps/colab"],
 

@@ -33,6 +33,9 @@
     "test:runtime": "node --test cloudflare/*.runtime.mjs"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@hookform/resolvers": "^5.9.2",
     "@tanstack/react-query": "^5.104.5",
     "@tanstack/react-router": "1.170.45",
@@ -42,6 +45,7 @@
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/apis": "workspace:*",
     "@tuturuuu/auth": "workspace:*",
+    "@tuturuuu/cms-blocks": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/offline": "workspace:*",
